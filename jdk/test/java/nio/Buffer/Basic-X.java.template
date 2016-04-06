@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -336,6 +336,103 @@ public class Basic$Type$
 
     }
 
+    private static void testAlign(final ByteBuffer b, boolean direct) {
+        // index out-of bounds
+        tryCatch(b, IllegalArgumentException.class, () -> b.alignmentOffset(-1, (short) 1));
+
+        // unit size values
+        tryCatch(b, IllegalArgumentException.class, () -> b.alignmentOffset(0, (short) 0));
+        for (int us = 1; us < 65; us++) {
+            int _us = us;
+            if ((us & (us - 1)) != 0) {
+                // unit size not a power of two
+                tryCatch(b, IllegalArgumentException.class, () -> b.alignmentOffset(0, _us));
+            } else {
+                if (direct || us <= 8) {
+                    b.alignmentOffset(0, us);
+                } else {
+                    // unit size > 8 with non-direct buffer
+                    tryCatch(b, UnsupportedOperationException.class, () -> b.alignmentOffset(0, _us));
+                }
+            }
+        }
+
+        // Probe for long misalignment at index zero for a newly created buffer
+        ByteBuffer empty = direct ? ByteBuffer.allocateDirect(0) : ByteBuffer.allocate(0);
+        int longMisalignmentAtZero = empty.alignmentOffset(0, 8);
+
+        if (direct) {
+            // Freshly created direct byte buffers should be aligned at index 0
+            // for ref and primitive values (see Unsafe.allocateMemory)
+            if (longMisalignmentAtZero != 0)
+                fail("Direct byte buffer misalligned at index 0 for ref and primitive values " + longMisalignmentAtZero);
+        } else {
+            // For heap byte buffers misalignment may occur on 32-bit systems
+            // where Unsafe.ARRAY_BYTE_BASE_OFFSET % 8 == 4 and not 0
+            // Note the GC will preserve alignment of the base address of the
+            // array
+            if (jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET % 8 != longMisalignmentAtZero)
+                fail("Heap byte buffer misalligned at index 0 for ref and primitive values " + longMisalignmentAtZero);
+        }
+
+        // Ensure test buffer is correctly aligned at index 0
+        if (b.alignmentOffset(0, 8) != longMisalignmentAtZero)
+            fail("Test input buffer not correctly aligned at index 0", b);
+
+        // Test misalignment values
+        for (int us : new int[]{1, 2, 4, 8}) {
+            for (int i = 0; i < us * 2; i++) {
+                int am = b.alignmentOffset(i, us);
+                int expectedAm = (longMisalignmentAtZero + i) % us;
+
+                if (am != expectedAm)
+                    fail(String.format("b.alignmentOffset(%d, %d) == %d incorrect, expected %d", i, us, am, expectedAm));
+            }
+        }
+
+        // Created aligned slice to test against
+        int ap = 8 - longMisalignmentAtZero;
+        int al = b.limit() - b.alignmentOffset(b.limit(), 8);
+        ByteBuffer ab = b.position(ap).limit(al).
+                slice();
+        if (ab.limit() == 0)
+            fail("Test input buffer not sufficiently sized to cover an aligned region for all values", b);
+        if (ab.alignmentOffset(0, 8) != 0)
+            fail("Aligned test input buffer not correctly aligned at index 0", ab);
+
+        for (int us : new int[]{1, 2, 4, 8}) {
+            for (int p = 1; p < 16; p++) {
+                int l = ab.limit() - p;
+
+                ByteBuffer as = ab.slice().position(p).limit(l).
+                        alignedSlice(us);
+
+                ck(as, 0, as.position());
+                ck(as, as.capacity(), as.limit());
+                if (b.isDirect() != as.isDirect())
+                    fail("Lost direction", as);
+                if (b.isReadOnly() != as.isReadOnly())
+                    fail("Lost read-only", as);
+
+                if (as.alignmentOffset(0, us) != 0)
+                    fail("Buffer not correctly aligned at index 0", as);
+
+                if (as.alignmentOffset(as.limit(), us) != 0)
+                    fail("Buffer not correctly aligned at limit", as);
+
+                int p_mod = ab.alignmentOffset(p, us);
+                int l_mod = ab.alignmentOffset(l, us);
+                // Round up position
+                p = (p_mod > 0) ? p + (us - p_mod) : p;
+                // Round down limit
+                l = l - l_mod;
+
+                int ec = l - p;
+                if (as.limit() != ec)
+                    fail("Buffer capacity incorrect, expected: " + ec, as);
+            }
+        }
+    }
 #end[byte]
 
     private static void fail(String problem,
@@ -854,6 +951,11 @@ public class Basic$Type$
 
         relPut(b);                       // Required by testViews
 
+#if[byte]
+        // Test alignment
+
+        testAlign(b, direct);
+#end[byte]
     }
 
 #if[char]
