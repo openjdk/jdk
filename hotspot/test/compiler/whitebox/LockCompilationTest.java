@@ -29,7 +29,7 @@
  * @build LockCompilationTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI LockCompilationTest
+ * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCounterDecay LockCompilationTest
  * @summary testing of WB::lock/unlockCompilation()
  */
 
@@ -50,7 +50,7 @@ public class LockCompilationTest extends CompilerWhiteBoxTest {
         // Only compile SimpleTestCase$Helper.method and exclude all other to ensure no
         // contention on the compile queue causes problems.
         String directive =
-                "[{ match:\"*SimpleTestCase$Helper.method\", Exclude:false}, " +
+                "[{ match:\"*SimpleTestCaseHelper.method\", Exclude:false}, " +
                 " { match:\"*.*\", Exclude:true}]";
         if (WHITE_BOX.addCompilerDirective(directive) != 2) {
             throw new RuntimeException("Could not add directive");
