@@ -211,47 +211,6 @@ createGlobalRefs(JNIEnv *env, InvokeRequest *request)
     return error;
 }
 
-/*
- * Delete global references from the request which got put there before a
- * invoke request was carried out. See fillInvokeRequest() and invoker invoke*()
- * impls.
- */
-static void
-deleteGlobalRefs(JNIEnv *env, InvokeRequest *request)
-{
-    void *cursor;
-    jint argIndex = 0;
-    jvalue *argument = request->arguments;
-    jbyte argumentTag = firstArgumentTypeTag(request->methodSignature, &cursor);
-
-    if (request->clazz != NULL) {
-        tossGlobalRef(env, &(request->clazz));
-    }
-    if (request->instance != NULL) {
-        tossGlobalRef(env, &(request->instance));
-    }
-    /* Delete global argument references */
-    while (argIndex < request->argumentCount) {
-        if ((argumentTag == JDWP_TAG(OBJECT)) ||
-            (argumentTag == JDWP_TAG(ARRAY))) {
-            if (argument->l != NULL) {
-                tossGlobalRef(env, &(argument->l));
-            }
-        }
-        argument++;
-        argIndex++;
-        argumentTag = nextArgumentTypeTag(&cursor);
-    }
-    /* Delete potentially saved return values */
-    if ((request->invokeType == INVOKE_CONSTRUCTOR) ||
-        (returnTypeTag(request->methodSignature) == JDWP_TAG(OBJECT)) ||
-        (returnTypeTag(request->methodSignature) == JDWP_TAG(ARRAY))) {
-        if (request->returnValue.l != NULL) {
-            tossGlobalRef(env, &(request->returnValue.l));
-        }
-    }
-}
-
 static jvmtiError
 fillInvokeRequest(JNIEnv *env, InvokeRequest *request,
                   jbyte invokeType, jbyte options, jint id,
@@ -777,13 +736,6 @@ invoker_completeInvokeRequest(jthread thread)
         (void)outStream_writeObjectRef(env, &out, exc);
         outStream_sendReply(&out);
     }
-
-    /*
-     * At this time, there's no need to retain global references on
-     * arguments since the reply is processed. No one will deal with
-     * this request ID anymore, so we must call deleteGlobalRefs().
-     */
-    deleteGlobalRefs(env, request);
 }
 
 jboolean
