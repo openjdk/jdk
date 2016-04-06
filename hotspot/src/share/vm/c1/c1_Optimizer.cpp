@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,7 @@
 #include "utilities/bitMap.inline.hpp"
 #include "compiler/compileLog.hpp"
 
-define_array(ValueSetArray, ValueSet*);
-define_stack(ValueSetList, ValueSetArray);
-
+typedef GrowableArray<ValueSet*> ValueSetList;
 
 Optimizer::Optimizer(IR* ir) {
   assert(ir->is_valid(), "IR must be valid");
@@ -583,8 +581,8 @@ class NullCheckEliminator: public ValueVisitor {
 
   ValueSet* state()                               { return _set; }
   void      set_state_from (ValueSet* state)      { _set->set_from(state); }
-  ValueSet* state_for      (BlockBegin* block)    { return _block_states[block->block_id()]; }
-  void      set_state_for  (BlockBegin* block, ValueSet* stack) { _block_states[block->block_id()] = stack; }
+  ValueSet* state_for      (BlockBegin* block)    { return _block_states.at(block->block_id()); }
+  void      set_state_for  (BlockBegin* block, ValueSet* stack) { _block_states.at_put(block->block_id(), stack); }
   // Returns true if caused a change in the block's state.
   bool      merge_state_for(BlockBegin* block,
                             ValueSet*   incoming_state);
@@ -595,7 +593,7 @@ class NullCheckEliminator: public ValueVisitor {
     : _opt(opt)
     , _set(new ValueSet())
     , _last_explicit_null_check(NULL)
-    , _block_states(BlockBegin::number_of_blocks(), NULL)
+    , _block_states(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), NULL)
     , _work_list(new BlockList()) {
     _visitable_instructions = new ValueSet();
     _visitor.set_eliminator(this);
@@ -1164,19 +1162,19 @@ void Optimizer::eliminate_null_checks() {
   // handlers and iterate over them as well
   int nblocks = BlockBegin::number_of_blocks();
   BlockList blocks(nblocks);
-  boolArray visited_block(nblocks, false);
+  boolArray visited_block(nblocks, nblocks, false);
 
   blocks.push(ir()->start());
-  visited_block[ir()->start()->block_id()] = true;
+  visited_block.at_put(ir()->start()->block_id(), true);
   for (int i = 0; i < blocks.length(); i++) {
-    BlockBegin* b = blocks[i];
+    BlockBegin* b = blocks.at(i);
     // exception handlers need to be treated as additional roots
     for (int e = b->number_of_exception_handlers(); e-- > 0; ) {
       BlockBegin* excp = b->exception_handler_at(e);
       int id = excp->block_id();
-      if (!visited_block[id]) {
+      if (!visited_block.at(id)) {
         blocks.push(excp);
-        visited_block[id] = true;
+        visited_block.at_put(id, true);
         nce.iterate(excp);
       }
     }
@@ -1185,9 +1183,9 @@ void Optimizer::eliminate_null_checks() {
     for (int s = end->number_of_sux(); s-- > 0; ) {
       BlockBegin* next = end->sux_at(s);
       int id = next->block_id();
-      if (!visited_block[id]) {
+      if (!visited_block.at(id)) {
         blocks.push(next);
-        visited_block[id] = true;
+        visited_block.at_put(id, true);
       }
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -356,7 +356,7 @@ void BlockListBuilder::mark_loops() {
 
   _active = BitMap(BlockBegin::number_of_blocks());         _active.clear();
   _visited = BitMap(BlockBegin::number_of_blocks());        _visited.clear();
-  _loop_map = intArray(BlockBegin::number_of_blocks(), 0);
+  _loop_map = intArray(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), 0);
   _next_loop_index = 0;
   _next_block_number = _blocks.length();
 
@@ -1353,7 +1353,7 @@ void GraphBuilder::lookup_switch() {
   } else {
     // collect successors & keys
     BlockList* sux = new BlockList(l + 1, NULL);
-    intArray* keys = new intArray(l, 0);
+    intArray* keys = new intArray(l, l, 0);
     int i;
     bool has_bb = false;
     for (i = 0; i < l; i++) {
@@ -1709,7 +1709,7 @@ void GraphBuilder::check_args_for_profiling(Values* obj_args, int expected) {
   bool ignored_will_link;
   ciSignature* declared_signature = NULL;
   ciMethod* real_target = method()->get_method_at_bci(bci(), ignored_will_link, &declared_signature);
-  assert(expected == obj_args->length() || real_target->is_method_handle_intrinsic(), "missed on arg?");
+  assert(expected == obj_args->max_length() || real_target->is_method_handle_intrinsic(), "missed on arg?");
 #endif
 }
 
@@ -1720,7 +1720,7 @@ Values* GraphBuilder::collect_args_for_profiling(Values* args, ciMethod* target,
   if (obj_args == NULL) {
     return NULL;
   }
-  int s = obj_args->size();
+  int s = obj_args->max_length();
   // if called through method handle invoke, some arguments may have been popped
   for (int i = start, j = 0; j < s && i < args->length(); i++) {
     if (args->at(i)->type()->is_object_kind()) {
@@ -2157,7 +2157,7 @@ void GraphBuilder::new_multi_array(int dimensions) {
   ciKlass* klass = stream()->get_klass(will_link);
   ValueStack* state_before = !klass->is_loaded() || PatchALot ? copy_state_before() : copy_state_exhandling();
 
-  Values* dims = new Values(dimensions, NULL);
+  Values* dims = new Values(dimensions, dimensions, NULL);
   // fill in all dimensions
   int i = dimensions;
   while (i-- > 0) dims->at_put(i, ipop());
@@ -3760,9 +3760,9 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
       int start = 0;
       Values* obj_args = args_list_for_profiling(callee, start, has_receiver);
       if (obj_args != NULL) {
-        int s = obj_args->size();
+        int s = obj_args->max_length();
         // if called through method handle invoke, some arguments may have been popped
-        for (int i = args_base+start, j = 0; j < obj_args->size() && i < state()->stack_size(); ) {
+        for (int i = args_base+start, j = 0; j < obj_args->max_length() && i < state()->stack_size(); ) {
           Value v = state()->stack_at_inc(i);
           if (v->type()->is_object_kind()) {
             obj_args->push(v);
@@ -4079,7 +4079,7 @@ void GraphBuilder::push_scope_for_jsr(BlockBegin* jsr_continuation, int jsr_dest
   // properly clone all blocks in jsr region as well as exception
   // handlers containing rets
   BlockList* new_bci2block = new BlockList(bci2block()->length());
-  new_bci2block->push_all(bci2block());
+  new_bci2block->appendAll(bci2block());
   data->set_bci2block(new_bci2block);
   data->set_scope(scope());
   data->setup_jsr_xhandlers();
