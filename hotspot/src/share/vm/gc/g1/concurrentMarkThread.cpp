@@ -183,6 +183,11 @@ void ConcurrentMarkThread::run_service() {
         }
       } while (cm()->restart_for_overflow());
 
+      if (!cm()->has_aborted()) {
+        G1ConcPhaseTimer t(_cm, "Concurrent Create Live Data");
+        cm()->create_live_data();
+      }
+
       double end_time = os::elapsedVTime();
       // Update the total virtual time before doing this, since it will try
       // to measure it to get the vtime for this marking.  We purposely

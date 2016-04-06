@@ -135,10 +135,17 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
   // use the same value for "in_resource_area".)
   void resize(idx_t size_in_bits, bool in_resource_area = true);
 
+  // Pretouch the entire range of memory this BitMap covers.
+  void pretouch();
+
   // Accessing
   idx_t size() const                    { return _size; }
   idx_t size_in_words() const           {
     return word_index(size() + BitsPerWord - 1);
+  }
+
+  static idx_t size_in_words(size_t size_in_bits) {
+    return word_index(size_in_bits + BitsPerWord - 1);
   }
 
   bool at(idx_t index) const {
