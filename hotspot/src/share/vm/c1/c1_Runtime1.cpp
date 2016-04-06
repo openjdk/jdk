@@ -320,9 +320,11 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, StubRoutines::updateBytesCRC32());
   FUNCTION_CASE(entry, StubRoutines::dexp());
   FUNCTION_CASE(entry, StubRoutines::dlog());
+  FUNCTION_CASE(entry, StubRoutines::dlog10());
   FUNCTION_CASE(entry, StubRoutines::dpow());
   FUNCTION_CASE(entry, StubRoutines::dsin());
   FUNCTION_CASE(entry, StubRoutines::dcos());
+  FUNCTION_CASE(entry, StubRoutines::dtan());
 
 #undef FUNCTION_CASE
 
