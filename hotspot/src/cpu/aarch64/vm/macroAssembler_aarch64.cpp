@@ -4670,6 +4670,61 @@ void MacroAssembler::arrays_equals(Register a1, Register a2,
   BLOCK_COMMENT(is_string ? "} string_equals" : "} array_equals");
 }
 
+// base:   Address of a buffer to be zeroed, 8 bytes aligned.
+// cnt:    Count in 8-byte unit.
+void MacroAssembler::zero_words(Register base, Register cnt)
+{
+  fill_words(base, cnt, zr);
+}
+
+// base:   Address of a buffer to be filled, 8 bytes aligned.
+// cnt:    Count in 8-byte unit.
+// value:  Value to be filled with.
+// base will point to the end of the buffer after filling.
+void MacroAssembler::fill_words(Register base, Register cnt, Register value)
+{
+//  Algorithm:
+//
+//    scratch1 = cnt & 7;
+//    cnt -= scratch1;
+//    p += scratch1;
+//    switch (scratch1) {
+//      do {
+//        cnt -= 8;
+//          p[-8] = v;
+//        case 7:
+//          p[-7] = v;
+//        case 6:
+//          p[-6] = v;
+//          // ...
+//        case 1:
+//          p[-1] = v;
+//        case 0:
+//          p += 8;
+//      } while (cnt);
+//    }
+
+  assert_different_registers(base, cnt, value, rscratch1, rscratch2);
+
+  Label entry, loop;
+  const int unroll = 8; // Number of str instructions we'll unroll
+
+  andr(rscratch1, cnt, unroll - 1);  // tmp1 = cnt % unroll
+  cbz(rscratch1, entry);
+  sub(cnt, cnt, rscratch1);          // cnt -= tmp1
+  // base always points to the end of the region we're about to fill
+  add(base, base, rscratch1, Assembler::LSL, 3);
+  adr(rscratch2, entry);
+  sub(rscratch2, rscratch2, rscratch1, Assembler::LSL, 2);
+  br(rscratch2);
+  bind(loop);
+  add(base, base, unroll * 8);
+  sub(cnt, cnt, unroll);
+  for (int i = -unroll; i < 0; i++)
+    str(value, Address(base, i * 8));
+  bind(entry);
+  cbnz(cnt, loop);
+}
 
 // encode char[] to byte[] in ISO_8859_1
 void MacroAssembler::encode_iso_array(Register src, Register dst,
