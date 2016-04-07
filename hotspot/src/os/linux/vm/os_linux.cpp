@@ -2163,7 +2163,7 @@ static bool print_model_name_and_flags(outputStream* st, char* buf, size_t bufle
         bool model_name_printed = false;
         if (strstr(buf, "model name") != NULL) {
           if (!model_name_printed) {
-            st->print_raw("\nCPU Model and flags from /proc/cpuinfo:\n");
+            st->print_raw("CPU Model and flags from /proc/cpuinfo:\n");
             st->print_raw(buf);
             model_name_printed = true;
           } else {
@@ -4671,25 +4671,13 @@ jint os::init_2(void) {
   guarantee(polling_page != MAP_FAILED, "os::init_2: failed to allocate polling page");
 
   os::set_polling_page(polling_page);
-
-#ifndef PRODUCT
-  if (Verbose && PrintMiscellaneous) {
-    tty->print("[SafePoint Polling address: " INTPTR_FORMAT "]\n",
-               (intptr_t)polling_page);
-  }
-#endif
+  log_info(os)("SafePoint Polling address: " INTPTR_FORMAT, p2i(polling_page));
 
   if (!UseMembar) {
     address mem_serialize_page = (address) ::mmap(NULL, Linux::page_size(), PROT_READ | PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
     guarantee(mem_serialize_page != MAP_FAILED, "mmap Failed for memory serialize page");
     os::set_memory_serialize_page(mem_serialize_page);
-
-#ifndef PRODUCT
-    if (Verbose && PrintMiscellaneous) {
-      tty->print("[Memory Serialize  Page address: " INTPTR_FORMAT "]\n",
-                 (intptr_t)mem_serialize_page);
-    }
-#endif
+    log_info(os)("Memory Serialize Page address: " INTPTR_FORMAT, p2i(mem_serialize_page));
   }
 
   // initialize suspend/resume support - must do this before signal_sets_init()
@@ -4732,10 +4720,8 @@ jint os::init_2(void) {
 #endif
 
   Linux::libpthread_init();
-  if (PrintMiscellaneous && (Verbose || WizardMode)) {
-    tty->print_cr("[HotSpot is running with %s, %s]\n",
-                  Linux::glibc_version(), Linux::libpthread_version());
-  }
+  log_info(os)("HotSpot is running with %s, %s",
+               Linux::glibc_version(), Linux::libpthread_version());
 
   if (UseNUMA) {
     if (!Linux::libnuma_init()) {
@@ -4776,16 +4762,12 @@ jint os::init_2(void) {
     struct rlimit nbr_files;
     int status = getrlimit(RLIMIT_NOFILE, &nbr_files);
     if (status != 0) {
-      if (PrintMiscellaneous && (Verbose || WizardMode)) {
-        perror("os::init_2 getrlimit failed");
-      }
+      log_info(os)("os::init_2 getrlimit failed: %s", os::strerror(errno));
     } else {
       nbr_files.rlim_cur = nbr_files.rlim_max;
       status = setrlimit(RLIMIT_NOFILE, &nbr_files);
       if (status != 0) {
-        if (PrintMiscellaneous && (Verbose || WizardMode)) {
-          perror("os::init_2 setrlimit failed");
-        }
+        log_info(os)("os::init_2 setrlimit failed: %s", os::strerror(errno));
       }
     }
   }
