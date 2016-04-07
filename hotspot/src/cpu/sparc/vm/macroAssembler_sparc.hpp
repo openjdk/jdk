@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1392,6 +1392,11 @@ public:
 
   void array_equals(bool is_array_equ, Register ary1, Register ary2,
                     Register limit, Register tmp, Register result, bool is_byte);
+  // test for negative bytes in input string of a given size, result 0 if none
+  void has_negatives(Register inp, Register size, Register result,
+                     Register t2, Register t3, Register t4,
+                     Register t5);
+
 #endif
 
   // Use BIS for zeroing
