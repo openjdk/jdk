@@ -29,15 +29,15 @@ import compiler.whitebox.CompilerWhiteBoxTest;
  * @library /testlibrary /test/lib /
  * @modules java.management
  * @build DeoptimizeFramesTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI -Xmixed
+ *                   -XX:+WhiteBoxAPI -Xmixed -XX:-UseCounterDecay
  *                   -XX:CompileCommand=compileonly,DeoptimizeFramesTest$TestCaseImpl::method
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-DeoptimizeRandom -XX:-DeoptimizeALot
  *                   DeoptimizeFramesTest true
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI -Xmixed
+ *                   -XX:+WhiteBoxAPI -Xmixed -XX:-UseCounterDecay
  *                   -XX:CompileCommand=compileonly,DeoptimizeFramesTest$TestCaseImpl::method
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-DeoptimizeRandom -XX:-DeoptimizeALot
  *                   DeoptimizeFramesTest false

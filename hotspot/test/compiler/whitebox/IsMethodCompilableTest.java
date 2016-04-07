@@ -27,12 +27,13 @@
  * @library /testlibrary /test/lib /
  * @modules java.base/sun.misc
  *          java.management
- * @build jdk.test.lib.* sun.hotspot.WhiteBox
+ * @build jdk.test.lib.*
+ *        sun.hotspot.WhiteBox
  * @build IsMethodCompilableTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main ClassFileInstaller jdk.test.lib.Platform
- * @run main/othervm/timeout=2400 -Xbootclasspath/a:. -Xmixed -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:PerMethodRecompilationCutoff=3 -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCase$Helper::* IsMethodCompilableTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ *                                jdk.test.lib.Platform
+ * @run main/othervm/timeout=2400 -Xbootclasspath/a:. -Xmixed -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:PerMethodRecompilationCutoff=3 -XX:-UseCounterDecay -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::* IsMethodCompilableTest
  * @summary testing of WB::isMethodCompilable()
  * @author igor.ignatyev@oracle.com
  */
