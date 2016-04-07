@@ -387,7 +387,8 @@ hotspot_jprt = \
   :hotspot_fast_compiler_2 \
   :hotspot_fast_compiler_3 \
   :hotspot_fast_compiler_closed \
-  :hotspot_fast_gc \
+  :hotspot_fast_gc_1 \
+  :hotspot_fast_gc_2 \
   :hotspot_fast_gc_closed \
   :hotspot_fast_gc_gcold \
   :hotspot_fast_runtime \

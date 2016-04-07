@@ -48,6 +48,7 @@
   LOG_TAG(classpath) \
   LOG_TAG(compaction) \
   LOG_TAG(constraints) \
+  LOG_TAG(coops) \
   LOG_TAG(cpu) \
   LOG_TAG(cset) \
   LOG_TAG(defaultmethods) \
