@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verificationType.hpp"
 #include "classfile/verifier.hpp"
 
@@ -39,6 +40,39 @@ VerificationType VerificationType::from_tag(u1 tag) {
       ShouldNotReachHere();
       return bogus_type();
   }
+}
+
+bool VerificationType::resolve_and_check_assignability(instanceKlassHandle klass, Symbol* name,
+         Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object, TRAPS) {
+  Klass* obj = SystemDictionary::resolve_or_fail(
+      name, Handle(THREAD, klass->class_loader()),
+      Handle(THREAD, klass->protection_domain()), true, CHECK_false);
+  if (log_is_enabled(Debug, class, resolve)) {
+    Verifier::trace_class_resolution(obj, klass());
+  }
+
+  KlassHandle this_class(THREAD, obj);
+
+  if (this_class->is_interface() && (!from_field_is_protected ||
+      from_name != vmSymbols::java_lang_Object())) {
+    // If we are not trying to access a protected field or method in
+    // java.lang.Object then, for arrays, we only allow assignability
+    // to interfaces java.lang.Cloneable and java.io.Serializable.
+    // Otherwise, we treat interfaces as java.lang.Object.
+    return !from_is_array ||
+      this_class == SystemDictionary::Cloneable_klass() ||
+      this_class == SystemDictionary::Serializable_klass();
+  } else if (from_is_object) {
+    Klass* from_class = SystemDictionary::resolve_or_fail(
+        from_name, Handle(THREAD, klass->class_loader()),
+        Handle(THREAD, klass->protection_domain()), true, CHECK_false);
+    if (log_is_enabled(Debug, class, resolve)) {
+      Verifier::trace_class_resolution(from_class, klass());
+    }
+    return InstanceKlass::cast(from_class)->is_subclass_of(this_class());
+  }
+
+  return false;
 }
 
 bool VerificationType::is_reference_assignable_from(
@@ -58,33 +92,17 @@ bool VerificationType::is_reference_assignable_from(
       // any object or array is assignable to java.lang.Object
       return true;
     }
-    Klass* obj = SystemDictionary::resolve_or_fail(
-        name(), Handle(THREAD, klass->class_loader()),
-        Handle(THREAD, klass->protection_domain()), true, CHECK_false);
-    if (log_is_enabled(Debug, class, resolve)) {
-      Verifier::trace_class_resolution(obj, klass());
+
+    if (DumpSharedSpaces && SystemDictionaryShared::add_verification_constraint(klass(),
+              name(), from.name(), from_field_is_protected, from.is_array(),
+              from.is_object())) {
+      // If add_verification_constraint() returns true, the resolution/check should be
+      // delayed until runtime.
+      return true;
     }
 
-    KlassHandle this_class(THREAD, obj);
-
-    if (this_class->is_interface() && (!from_field_is_protected ||
-        from.name() != vmSymbols::java_lang_Object())) {
-      // If we are not trying to access a protected field or method in
-      // java.lang.Object then, for arrays, we only allow assignability
-      // to interfaces java.lang.Cloneable and java.io.Serializable.
-      // Otherwise, we treat interfaces as java.lang.Object.
-      return !from.is_array() ||
-        this_class == SystemDictionary::Cloneable_klass() ||
-        this_class == SystemDictionary::Serializable_klass();
-    } else if (from.is_object()) {
-      Klass* from_class = SystemDictionary::resolve_or_fail(
-          from.name(), Handle(THREAD, klass->class_loader()),
-          Handle(THREAD, klass->protection_domain()), true, CHECK_false);
-      if (log_is_enabled(Debug, class, resolve)) {
-        Verifier::trace_class_resolution(from_class, klass());
-      }
-      return InstanceKlass::cast(from_class)->is_subclass_of(this_class());
-    }
+    return resolve_and_check_assignability(klass(), name(), from.name(),
+          from_field_is_protected, from.is_array(), from.is_object(), THREAD);
   } else if (is_array() && from.is_array()) {
     VerificationType comp_this = get_component(context, CHECK_false);
     VerificationType comp_from = from.get_component(context, CHECK_false);

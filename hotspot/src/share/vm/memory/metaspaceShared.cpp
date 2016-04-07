@@ -806,6 +806,10 @@ void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
       exit(1);
     }
   }
+
+  // Copy the verification constraints from C_HEAP-alloced GrowableArrays to RO-alloced
+  // Arrays
+  SystemDictionaryShared::finalize_verification_constraints();
 }
 
 void MetaspaceShared::prepare_for_dumping() {
