@@ -32,6 +32,7 @@
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "interpreter/bytecodeTracer.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
@@ -1967,7 +1968,7 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
   __ push(RegSet::range(r0, r15), sp);
   __ mov(c_rarg2, r0);  // Pass itos
   __ call_VM(noreg,
-             CAST_FROM_FN_PTR(address, SharedRuntime::trace_bytecode),
+             CAST_FROM_FN_PTR(address, InterpreterRuntime::trace_bytecode),
              c_rarg1, c_rarg2, c_rarg3);
   __ pop(RegSet::range(r0, r15), sp);
   __ pop(state);

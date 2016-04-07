@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class Test2GbHeap {
     if (output.getOutput().contains("Could not reserve enough space for 2097152KB object heap")) {
       // Will fail on machines with too little memory (and Windows 32-bit VM), ignore such failures.
       output.shouldHaveExitValue(1);
-    } else if (output.getOutput().contains("G1 GC is disabled in this release")) {
+    } else if (output.getOutput().contains("-XX:+UseG1GC not supported in this VM")) {
       // G1 is not supported on embedded, ignore such failures.
       output.shouldHaveExitValue(1);
     } else {

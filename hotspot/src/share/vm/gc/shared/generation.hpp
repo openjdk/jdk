@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/referenceProcessor.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/universe.hpp"
@@ -377,7 +378,7 @@ class Generation: public CHeapObj<mtGC> {
     // have to guard against non-monotonicity.
     NOT_PRODUCT(
       if (now < _time_of_last_gc) {
-        warning("time warp: " JLONG_FORMAT " to " JLONG_FORMAT, _time_of_last_gc, now);
+        log_warning(gc)("time warp: " JLONG_FORMAT " to " JLONG_FORMAT, _time_of_last_gc, now);
       }
     )
     return _time_of_last_gc;

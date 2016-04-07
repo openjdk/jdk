@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -61,11 +61,11 @@ public class TestMaxMinHeapFreeRatioFlags {
         negativeTest(-1, false, 50, false, options);
         negativeTest(50, true, -1, true, options);
 
-        positiveTest(10, false, 90, false, options);
-        positiveTest(10, true, 80, false, options);
-        positiveTest(20, false, 70, true, options);
-        positiveTest(25, true, 65, true, options);
-        positiveTest(40, false, 50, false, options);
+        positiveTest(10, false, 90, false, true, options);
+        positiveTest(10, true, 80, false, true, options);
+        positiveTest(20, false, 70, true, true, options);
+        positiveTest(25, true, 65, true, true, options);
+        positiveTest(40, false, 50, false, true, options);
     }
 
     /**
@@ -79,7 +79,7 @@ public class TestMaxMinHeapFreeRatioFlags {
      * @param options additional options for JVM
      */
     public static void positiveTest(int minRatio, boolean useXminf,
-            int maxRatio, boolean useXmaxf,
+            int maxRatio, boolean useXmaxf, boolean shrinkHeapInSteps,
             LinkedList<String> options) throws Exception {
 
         LinkedList<String> vmOptions = new LinkedList<>(options);
@@ -90,9 +90,11 @@ public class TestMaxMinHeapFreeRatioFlags {
                 "-Xms" + HEAP_SIZE,
                 "-XX:NewSize=" + NEW_SIZE,
                 "-XX:MaxNewSize=" + MAX_NEW_SIZE,
+                "-XX:" + (shrinkHeapInSteps ? '+' : '-') + "ShrinkHeapInSteps",
                 RatioVerifier.class.getName(),
                 Integer.toString(minRatio),
-                Integer.toString(maxRatio)
+                Integer.toString(maxRatio),
+                Boolean.toString(shrinkHeapInSteps)
         );
 
         ProcessBuilder procBuilder = ProcessTools.createJavaProcessBuilder(vmOptions.toArray(new String[vmOptions.size()]));
@@ -151,8 +153,8 @@ public class TestMaxMinHeapFreeRatioFlags {
         public static LinkedList<Object> garbage = new LinkedList<>();
 
         public static void main(String args[]) throws Exception {
-            if (args.length != 2) {
-                throw new IllegalArgumentException("Expected 2 args: <minRatio> <maxRatio>");
+            if (args.length != 3) {
+                throw new IllegalArgumentException("Expected 3 args: <minRatio> <maxRatio> <shrinkHeapInSteps>");
             }
             if (GCTypes.OldGCType.getOldGCType() == GCTypes.OldGCType.PSOld) {
                 System.out.println("Test is not applicable to parallel GC");
@@ -161,8 +163,10 @@ public class TestMaxMinHeapFreeRatioFlags {
 
             double minRatio = Integer.valueOf(args[0]) / 100.0;
             double maxRatio = Integer.valueOf(args[1]) / 100.0;
+            boolean shrinkHeapInSteps = Boolean.valueOf(args[2]);
 
             long maxHeapSize = getMax();
+            int gcTries = (shrinkHeapInSteps ? GC_TRIES : 1);
 
             // commit 0.5 of total heap size to have enough space
             // to both shink and expand
@@ -170,7 +174,7 @@ public class TestMaxMinHeapFreeRatioFlags {
                 garbage.add(new byte[ARRAY_LENGTH]);
             }
 
-            forceGC();
+            forceGC(gcTries);
             // Verify that current heap free ratio lies between specified limits
             verifyRatio(minRatio, maxRatio);
 
@@ -185,7 +189,7 @@ public class TestMaxMinHeapFreeRatioFlags {
                 memoryToFill -= CHUNK_SIZE;
             }
 
-            forceGC();
+            forceGC(gcTries);
             // Verify that after memory allocation heap free ratio is still conforming specified limits
             verifyRatio(minRatio, maxRatio);
             // Verify that heap was actually expanded
@@ -204,7 +208,7 @@ public class TestMaxMinHeapFreeRatioFlags {
                 memoryToFree -= CHUNK_SIZE;
             }
 
-            forceGC();
+            forceGC(gcTries);
             // Verify that heap free ratio is still conforming specified limits
             verifyRatio(minRatio, maxRatio);
             // Verify that heap was actually shrinked
@@ -214,8 +218,8 @@ public class TestMaxMinHeapFreeRatioFlags {
 
         }
 
-        public static void forceGC() {
-            for (int i = 0; i < GC_TRIES; i++) {
+        public static void forceGC(int gcTries) {
+            for (int i = 0; i < gcTries; i++) {
                 System.gc();
                 try {
                     Thread.sleep(10);

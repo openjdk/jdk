@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,25 @@ class LogTagLevelExpression;
 // kept implicitly in the LogTagSets and their LogOutputLists. During configuration the tagsets
 // are iterated over and updated accordingly.
 class LogConfiguration : public AllStatic {
+ public:
+  // Function for listeners
+  typedef void (*UpdateListenerFunction)(void);
+
+  // Register callback for config change.
+  // The callback is always called with ConfigurationLock held,
+  // hence doing log reconfiguration from the callback will deadlock.
+  // The main Java thread may call this callback if there is an early registration
+  // else the attach listener JavaThread, started via diagnostic command, will be executing thread.
+  // The main purpose of this callback is to see if a loglevel have been changed.
+  // There is no way to unregister.
+  static void register_update_listener(UpdateListenerFunction cb);
+
  private:
   static LogOutput**  _outputs;
   static size_t       _n_outputs;
+
+  static UpdateListenerFunction*    _listener_callbacks;
+  static size_t                     _n_listener_callbacks;
 
   // Create a new output. Returns NULL if failed.
   static LogOutput* new_output(char* name, const char* options, outputStream* errstream);
@@ -59,6 +75,9 @@ class LogConfiguration : public AllStatic {
 
   // Configure output (add or update existing configuration) to log on tag-level combination using specified decorators.
   static void configure_output(size_t idx, const LogTagLevelExpression& tag_level_expression, const LogDecorators& decorators);
+
+  // This should be called after any configuration change while still holding ConfigurationLock
+  static void notify_update_listeners();
 
  public:
   // Initialization and finalization of log configuration, to be run at vm startup and shutdown respectively.
