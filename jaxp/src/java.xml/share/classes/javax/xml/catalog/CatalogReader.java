@@ -186,7 +186,7 @@ class CatalogReader extends DefaultHandler implements EntityResolver, URIResolve
                     }
                     //override property settings with those from the catalog file
                     catalog.setResolve(resolve);
-                    catalog.setPrefer(defer);
+                    catalog.setDeferred(defer);
                     catalogEntry = new CatalogEntry(base, prefer, defer, resolve);
                 } else {
                     catalogEntry = new CatalogEntry(base, prefer);
