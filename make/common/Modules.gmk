@@ -115,6 +115,7 @@ PLATFORM_MODULES += \
     #
 
 JRE_TOOL_MODULES += \
+    jdk.jdwp.agent \
     jdk.pack200 \
     jdk.scripting.nashorn.shell \
     #
