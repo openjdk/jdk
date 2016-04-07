@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,14 @@
  *          jdk.vm.ci/jdk.vm.ci.runtime
  *          jdk.vm.ci/jdk.vm.ci.amd64
  *          jdk.vm.ci/jdk.vm.ci.sparc
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI compiler.jvmci.code.SimpleDebugInfoTest
+ * @compile CodeInstallationTest.java DebugInfoTest.java TestAssembler.java amd64/AMD64TestAssembler.java sparc/SPARCTestAssembler.java
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI jdk.vm.ci.code.test.SimpleDebugInfoTest
  */
 
-package compiler.jvmci.code;
+package jdk.vm.ci.code.test;
+
+import org.junit.Assume;
+import org.junit.Test;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.hotspot.HotSpotConstant;
@@ -44,9 +48,6 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
-
-import org.junit.Assume;
-import org.junit.Test;
 
 public class SimpleDebugInfoTest extends DebugInfoTest {
 
@@ -99,7 +100,6 @@ public class SimpleDebugInfoTest extends DebugInfoTest {
         testIntInLocal(compiler);
     }
 
-
     public static float floatOnStack() {
         return 42.0f;
     }
@@ -148,7 +148,6 @@ public class SimpleDebugInfoTest extends DebugInfoTest {
         testFloatOnStack(compiler);
         testFloatInLocal(compiler);
     }
-
 
     public static long longOnStack() {
         return 42;
@@ -201,7 +200,6 @@ public class SimpleDebugInfoTest extends DebugInfoTest {
         testLongOnStack(compiler);
         testLongInLocal(compiler);
     }
-
 
     public static Class<?> objectOnStack() {
         return SimpleDebugInfoTest.class;

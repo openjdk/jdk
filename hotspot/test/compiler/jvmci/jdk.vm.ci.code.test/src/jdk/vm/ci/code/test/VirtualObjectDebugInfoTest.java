@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,17 @@
  *          jdk.vm.ci/jdk.vm.ci.runtime
  *          jdk.vm.ci/jdk.vm.ci.amd64
  *          jdk.vm.ci/jdk.vm.ci.sparc
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI compiler.jvmci.code.VirtualObjectDebugInfoTest
+ * @compile CodeInstallationTest.java DebugInfoTest.java TestAssembler.java amd64/AMD64TestAssembler.java sparc/SPARCTestAssembler.java
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI jdk.vm.ci.code.test.VirtualObjectDebugInfoTest
  */
 
-package compiler.jvmci.code;
+package jdk.vm.ci.code.test;
 
 import java.util.ArrayList;
 import java.util.Objects;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.VirtualObject;
@@ -49,9 +53,6 @@ import jdk.vm.ci.meta.JavaValue;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 public class VirtualObjectDebugInfoTest extends DebugInfoTest {
 
     private static class TestClass {
@@ -61,11 +62,11 @@ public class VirtualObjectDebugInfoTest extends DebugInfoTest {
         private float floatField;
         private Object[] arrayField;
 
-        public TestClass() {
+        TestClass() {
             this.longField = 8472;
             this.intField = 42;
             this.floatField = 3.14f;
-            this.arrayField = new Object[] { Integer.valueOf(58), this, null, Integer.valueOf(17), "Hello, World!" };
+            this.arrayField = new Object[]{Integer.valueOf(58), this, null, Integer.valueOf(17), "Hello, World!"};
         }
 
         @Override
@@ -75,10 +76,7 @@ public class VirtualObjectDebugInfoTest extends DebugInfoTest {
             }
 
             TestClass other = (TestClass) o;
-            if (this.longField != other.longField
-                || this.intField != other.intField
-                || this.floatField != other.floatField
-                || this.arrayField.length != other.arrayField.length) {
+            if (this.longField != other.longField || this.intField != other.intField || this.floatField != other.floatField || this.arrayField.length != other.arrayField.length) {
                 return false;
             }
 
@@ -94,6 +92,11 @@ public class VirtualObjectDebugInfoTest extends DebugInfoTest {
             }
 
             return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return super.hashCode();
         }
     }
 
