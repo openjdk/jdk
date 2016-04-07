@@ -83,6 +83,21 @@ suite = {
       "workingSets" : "API,JVMCI",
     },
 
+    "jdk.vm.ci.code.test" : {
+      "subDir" : "test/compiler/jvmci",
+      "sourceDirs" : ["src"],
+      "dependencies" : [
+        "mx:JUNIT",
+        "jdk.vm.ci.amd64",
+        "jdk.vm.ci.sparc",
+        "jdk.vm.ci.code",
+        "jdk.vm.ci.hotspot",
+      ],
+      "checkstyle" : "jdk.vm.ci.services",
+      "javaCompliance" : "1.8",
+      "workingSets" : "API,JVMCI",
+    },
+
     "jdk.vm.ci.runtime" : {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "sourceDirs" : ["src"],
