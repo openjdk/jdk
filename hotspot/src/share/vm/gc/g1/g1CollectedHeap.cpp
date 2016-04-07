@@ -1425,6 +1425,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
       // the full GC has compacted objects and updated TAMS but not updated
       // the prev bitmap.
       if (G1VerifyBitmaps) {
+        GCTraceTime(Debug, gc)("Clear Bitmap for Verification");
         _cm->clear_prev_bitmap(workers());
       }
       _verifier->check_bitmaps("Full GC End");
@@ -1944,7 +1945,7 @@ jint G1CollectedHeap::initialize() {
   const uint max_region_idx = (1U << (sizeof(RegionIdx_t)*BitsPerByte-1)) - 1;
   guarantee((max_regions() - 1) <= max_region_idx, "too many regions");
 
-  G1RemSet::initialize(max_regions());
+  g1_rem_set()->initialize(max_capacity(), max_regions());
 
   size_t max_cards_per_region = ((size_t)1 << (sizeof(CardIdx_t)*BitsPerByte-1)) - 1;
   guarantee(HeapRegion::CardsPerRegion > 0, "make sure it's initialized");
@@ -4787,27 +4788,23 @@ public:
 class G1ParScrubRemSetTask: public AbstractGangTask {
 protected:
   G1RemSet* _g1rs;
-  BitMap* _region_bm;
-  BitMap* _card_bm;
   HeapRegionClaimer _hrclaimer;
 
 public:
-  G1ParScrubRemSetTask(G1RemSet* g1_rs, BitMap* region_bm, BitMap* card_bm, uint num_workers) :
+  G1ParScrubRemSetTask(G1RemSet* g1_rs, uint num_workers) :
     AbstractGangTask("G1 ScrubRS"),
     _g1rs(g1_rs),
-    _region_bm(region_bm),
-    _card_bm(card_bm),
     _hrclaimer(num_workers) {
   }
 
   void work(uint worker_id) {
-    _g1rs->scrub(_region_bm, _card_bm, worker_id, &_hrclaimer);
+    _g1rs->scrub(worker_id, &_hrclaimer);
   }
 };
 
-void G1CollectedHeap::scrub_rem_set(BitMap* region_bm, BitMap* card_bm) {
+void G1CollectedHeap::scrub_rem_set() {
   uint num_workers = workers()->active_workers();
-  G1ParScrubRemSetTask g1_par_scrub_rs_task(g1_rem_set(), region_bm, card_bm, num_workers);
+  G1ParScrubRemSetTask g1_par_scrub_rs_task(g1_rem_set(), num_workers);
   workers()->run_task(&g1_par_scrub_rs_task);
 }
 
