@@ -407,7 +407,9 @@ static AliasedFlag const aliased_jvm_flags[] = {
   { NULL, NULL}
 };
 
+// NOTE: A compatibility request will be necessary for each alias to be removed.
 static AliasedLoggingFlag const aliased_logging_flags[] = {
+  { "PrintCompressedOopsMode",   LogLevel::Info,  true,  LOG_TAGS(gc, heap, coops) },
   { "TraceBiasedLocking",        LogLevel::Info,  true,  LOG_TAGS(biasedlocking) },
   { "TraceClassLoading",         LogLevel::Info,  true,  LOG_TAGS(classload) },
   { "TraceClassLoadingPreorder", LogLevel::Debug, true,  LOG_TAGS(classload, preorder) },
@@ -2184,15 +2186,11 @@ void Arguments::set_heap_size() {
       if (!FLAG_IS_DEFAULT(HeapBaseMinAddress)) {
         if (HeapBaseMinAddress < DefaultHeapBaseMinAddress) {
           // matches compressed oops printing flags
-          if (PrintCompressedOopsMode || (PrintMiscellaneous && Verbose)) {
-            jio_fprintf(defaultStream::error_stream(),
-                        "HeapBaseMinAddress must be at least " SIZE_FORMAT
-                        " (" SIZE_FORMAT "G) which is greater than value given "
-                        SIZE_FORMAT "\n",
-                        DefaultHeapBaseMinAddress,
-                        DefaultHeapBaseMinAddress/G,
-                        HeapBaseMinAddress);
-          }
+          log_debug(gc, heap, coops)("HeapBaseMinAddress must be at least " SIZE_FORMAT
+                                     " (" SIZE_FORMAT "G) which is greater than value given " SIZE_FORMAT,
+                                     DefaultHeapBaseMinAddress,
+                                     DefaultHeapBaseMinAddress/G,
+                                     HeapBaseMinAddress);
           FLAG_SET_ERGO(size_t, HeapBaseMinAddress, DefaultHeapBaseMinAddress);
         }
       }
