@@ -27,6 +27,7 @@
 #include "classfile/classFileStream.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verifier.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/dependencyContext.hpp"
@@ -597,6 +598,8 @@ bool InstanceKlass::link_class_impl(
 
         // also sets rewritten
         this_k->rewrite_class(CHECK_false);
+      } else if (this_k->is_shared()) {
+        SystemDictionaryShared::check_verification_constraints(this_k, CHECK_false);
       }
 
       // relocate jsrs and link methods after they are all rewritten

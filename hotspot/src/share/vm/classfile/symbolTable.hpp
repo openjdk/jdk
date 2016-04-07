@@ -253,6 +253,8 @@ public:
 
   // Sharing
   static void serialize(SerializeClosure* soc);
+  static u4 encode_shared(Symbol* sym);
+  static Symbol* decode_shared(u4 offset);
 
   // Rehash the symbol table if it gets out of balance
   static void rehash_table();
