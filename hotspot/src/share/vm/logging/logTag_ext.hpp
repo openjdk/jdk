@@ -21,23 +21,9 @@
  * questions.
  *
  */
+#ifndef SHARE_VM_LOGGING_LOGTAG_EXT_HPP
+#define SHARE_VM_LOGGING_LOGTAG_EXT_HPP
 
-#ifndef SHARE_VM_RUNTIME_LOG_TIMER_HPP
-#define SHARE_VM_RUNTIME_LOG_TIMER_HPP
+#define LOG_TAG_LIST_EXT
 
-#include "logging/log.hpp"
-#include "runtime/timer.hpp"
-
-// TraceStartupTime is used for tracing the execution time of a block with logging
-// Usage:
-//  { TraceStartupTime t("block time")
-//    some_code();
-//  }
-//
-
-class TraceStartupTime : public TraceTime {
-  public:
-    TraceStartupTime(const char* s) : TraceTime(s, log_is_enabled(Info, startuptime), LogTag::_startuptime) {}
-};
-
-#endif // SHARE_VM_RUNTIME_LOG_TIMER_HPP
+#endif // SHARE_VM_LOGGING_LOGTAG_EXT_HPP

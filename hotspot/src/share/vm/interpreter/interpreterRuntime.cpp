@@ -37,6 +37,7 @@
 #include "interpreter/templateTable.hpp"
 #include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/instanceKlass.hpp"
@@ -173,9 +174,6 @@ IRT_END
 
 
 IRT_ENTRY(void, InterpreterRuntime::anewarray(JavaThread* thread, ConstantPool* pool, int index, jint size))
-  // Note: no oopHandle for pool & klass needed since they are not used
-  //       anymore after new_objArray() and no GC can happen before.
-  //       (This may have to change if this code changes!)
   Klass*    klass = pool->klass_at(index, CHECK);
   objArrayOop obj = oopFactory::new_objArray(klass, size, CHECK);
   thread->set_vm_result(obj);
@@ -1414,3 +1412,17 @@ IRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* thread, 
   }
 IRT_END
 #endif // INCLUDE_JVMTI
+
+#ifndef PRODUCT
+// This must be a IRT_LEAF function because the interpreter must save registers on x86 to
+// call this, which changes rsp and makes the interpreter's expression stack not walkable.
+// The generated code still uses call_VM because that will set up the frame pointer for
+// bcp and method.
+IRT_LEAF(intptr_t, InterpreterRuntime::trace_bytecode(JavaThread* thread, intptr_t preserve_this_value, intptr_t tos, intptr_t tos2))
+  const frame f = thread->last_frame();
+  assert(f.is_interpreted_frame(), "must be an interpreted frame");
+  methodHandle mh(thread, f.interpreter_frame_method());
+  BytecodeTracer::trace(mh, f.interpreter_frame_bcp(), tos, tos2);
+  return preserve_this_value;
+IRT_END
+#endif // !PRODUCT

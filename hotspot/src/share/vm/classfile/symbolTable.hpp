@@ -175,6 +175,7 @@ public:
   }
 
   static unsigned int hash_symbol(const char* s, int len);
+  static unsigned int hash_shared_symbol(const char* s, int len);
 
   static Symbol* lookup(const char* name, int len, TRAPS);
   // lookup only, won't add. Also calculate hash.

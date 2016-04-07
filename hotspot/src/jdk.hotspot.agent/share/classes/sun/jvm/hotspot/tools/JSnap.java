@@ -25,10 +25,14 @@
 package sun.jvm.hotspot.tools;
 
 import java.io.*;
+import java.util.*;
+import java.util.stream.*;
 import sun.jvm.hotspot.debugger.JVMDebugger;
 import sun.jvm.hotspot.runtime.*;
 
 public class JSnap extends Tool {
+
+    private boolean all;
 
     public JSnap() {
         super();
@@ -45,7 +49,7 @@ public class JSnap extends Tool {
             if (prologue.accessible()) {
                 PerfMemory.iterate(new PerfMemory.PerfDataEntryVisitor() {
                         public boolean visit(PerfDataEntry pde) {
-                            if (pde.supported()) {
+                            if (all || pde.supported()) {
                                 out.print(pde.name());
                                 out.print('=');
                                 out.println(pde.valueAsString());
@@ -62,8 +66,24 @@ public class JSnap extends Tool {
         }
     }
 
+    @Override
+    protected void printFlagsUsage() {
+        System.out.println("    -a\tto print all performance counters");
+        super.printFlagsUsage();
+    }
+
     public static void main(String[] args) {
         JSnap js = new JSnap();
+        js.all = Arrays.stream(args)
+                       .anyMatch(s -> s.equals("-a"));
+
+        if (js.all) {
+            args = Arrays.stream(args)
+                         .filter(s -> !s.equals("-a"))
+                         .collect(Collectors.toList())
+                         .toArray(new String[0]);
+        }
+
         js.execute(args);
     }
 }

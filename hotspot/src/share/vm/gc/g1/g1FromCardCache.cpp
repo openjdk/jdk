@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@ void G1FromCardCache::initialize(uint num_par_rem_sets, uint max_num_regions) {
   guarantee(_cache == NULL, "Should not call this multiple times");
 
   _max_regions = max_num_regions;
-  _cache = Padded2DArray<int, mtGC>::create_unfreeable(num_par_rem_sets,
-                                                       _max_regions,
+  _cache = Padded2DArray<int, mtGC>::create_unfreeable(_max_regions,
+                                                       num_par_rem_sets,
                                                        &_static_mem_size);
 
   invalidate(0, _max_regions);

@@ -45,6 +45,7 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/filemap.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/klass.inline.hpp"
@@ -67,6 +68,7 @@
 #include "runtime/signature.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/threadService.hpp"
+#include "trace/traceMacros.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
 #if INCLUDE_CDS
@@ -435,7 +437,7 @@ void SystemDictionary::validate_protection_domain(instanceKlassHandle klass,
   if (log_is_enabled(Debug, protectiondomain)) {
     ResourceMark rm;
     // Print out trace information
-    outputStream* log = LogHandle(protectiondomain)::debug_stream();
+    outputStream* log = Log(protectiondomain)::debug_stream();
     log->print_cr("Checking package access");
     log->print("class loader: "); class_loader()->print_value_on(log);
     log->print(" protection domain: "); protection_domain()->print_value_on(log);
@@ -1649,6 +1651,8 @@ void SystemDictionary::define_instance_class(instanceKlassHandle k, TRAPS) {
       JvmtiExport::post_class_load((JavaThread *) THREAD, k());
 
   }
+
+  TRACE_KLASS_DEFINITION(k, THREAD);
 
 }
 
