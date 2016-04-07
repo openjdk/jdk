@@ -68,7 +68,8 @@ final class RSAClientKeyExchange extends HandshakeMessage {
             ProtocolVersion maxVersion,
             SecureRandom generator, PublicKey publicKey) throws IOException {
         if (publicKey.getAlgorithm().equals("RSA") == false) {
-            throw new SSLKeyException("Public key not of type RSA");
+            throw new SSLKeyException("Public key not of type RSA: " +
+                publicKey.getAlgorithm());
         }
         this.protocolVersion = protocolVersion;
 
@@ -100,7 +101,8 @@ final class RSAClientKeyExchange extends HandshakeMessage {
             int messageSize, PrivateKey privateKey) throws IOException {
 
         if (privateKey.getAlgorithm().equals("RSA") == false) {
-            throw new SSLKeyException("Private key not of type RSA");
+            throw new SSLKeyException("Private key not of type RSA: " +
+                 privateKey.getAlgorithm());
         }
 
         if (currentVersion.useTLS10PlusSpec()) {
@@ -161,8 +163,8 @@ final class RSAClientKeyExchange extends HandshakeMessage {
             }
         } catch (InvalidKeyException ibk) {
             // the message is too big to process with RSA
-            throw new SSLProtocolException(
-                "Unable to process PreMasterSecret, may be too big");
+            throw new SSLException(
+                "Unable to process PreMasterSecret", ibk);
         } catch (Exception e) {
             // unlikely to happen, otherwise, must be a provider exception
             if (debug != null && Debug.isOn("handshake")) {
