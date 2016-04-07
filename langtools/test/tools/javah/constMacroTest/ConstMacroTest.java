@@ -30,7 +30,7 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
+ *          jdk.compiler/com.sun.tools.javah
  * @build toolbox.ToolBox toolbox.JavahTask
  * @run main ConstMacroTest
  */

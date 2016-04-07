@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  *   The first two tests are on an inner class name whose name does not contain $.
  *   The second two tests are on an inner class name whose name does contain $.
  *   The last test is on an outer class whose name contains $.
- * @modules jdk.compiler
+ * @modules jdk.compiler/com.sun.tools.javah
  * @run main T7185778 T7185778$inner
  * @run main T7185778 T7185778.inner
  * @run main T7185778 T7185778$inner$

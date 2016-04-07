@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 7126832
- * @modules jdk.compiler
+ * @modules jdk.compiler/com.sun.tools.javah
  * @compile java.java
  * @summary com.sun.tools.javac.api.ClientCodeWrapper$WrappedJavaFileManager cannot be cast
  * @run main T7126832
