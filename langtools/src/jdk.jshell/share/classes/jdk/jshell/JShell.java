@@ -29,12 +29,14 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.ArrayList;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.MissingResourceException;
 import java.util.Objects;
+import java.util.ResourceBundle;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
@@ -42,7 +44,6 @@ import java.util.function.Supplier;
 import jdk.internal.jshell.debug.InternalDebugControl;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
-import static jdk.internal.jshell.debug.InternalDebugControl.DBG_EVNT;
 import static jdk.jshell.Util.expunge;
 import jdk.jshell.Snippet.Status;
 
@@ -91,10 +92,11 @@ public class JShell implements AutoCloseable {
     private final Map<Subscription, Consumer<SnippetEvent>> keyStatusListeners = new HashMap<>();
     private boolean closed = false;
 
-
     private ExecutionControl executionControl = null;
     private SourceCodeAnalysisImpl sourceCodeAnalysis = null;
 
+    private static final String L10N_RB_NAME    = "jdk.jshell.resources.l10n";
+    private static ResourceBundle outputRB  = null;
 
     JShell(Builder b) {
         this.in = b.in;
@@ -558,8 +560,8 @@ public class JShell implements AutoCloseable {
         checkIfAlive();
         checkValidSnippet(snippet);
         if (snippet.status() != Status.VALID) {
-            throw new IllegalArgumentException("Snippet parameter of varValue() '" +
-                    snippet + "' must be VALID, it is: " + snippet.status());
+            throw new IllegalArgumentException(
+                    messageFormat("jshell.exc.var.not.valid",  snippet, snippet.status()));
         }
         String value = executionControl().commandVarValue(maps.classFullName(snippet), snippet.name());
         return expunge(value);
@@ -680,7 +682,7 @@ public class JShell implements AutoCloseable {
      */
     private void checkIfAlive()  throws IllegalStateException {
         if (closed) {
-            throw new IllegalStateException("JShell (" + this + ") has been closed.");
+            throw new IllegalStateException(messageFormat("jshell.exc.closed", this));
         }
     }
 
@@ -693,13 +695,36 @@ public class JShell implements AutoCloseable {
      */
     private Snippet checkValidSnippet(Snippet sn) {
         if (sn == null) {
-            throw new NullPointerException("Snippet must not be null");
+            throw new NullPointerException(messageFormat("jshell.exc.null"));
         } else {
             if (sn.key().state() != this) {
-                throw new IllegalArgumentException("Snippet not from this JShell");
+                throw new IllegalArgumentException(messageFormat("jshell.exc.alien"));
             }
             return sn;
         }
+    }
+
+    /**
+     * Format using resource bundle look-up using MessageFormat
+     *
+     * @param key the resource key
+     * @param args
+     */
+    String messageFormat(String key, Object... args) {
+        if (outputRB == null) {
+            try {
+                outputRB = ResourceBundle.getBundle(L10N_RB_NAME);
+            } catch (MissingResourceException mre) {
+                throw new InternalError("Cannot find ResourceBundle: " + L10N_RB_NAME);
+            }
+        }
+        String s;
+        try {
+            s = outputRB.getString(key);
+        } catch (MissingResourceException mre) {
+            throw new InternalError("Missing resource: " + key + " in " + L10N_RB_NAME);
+        }
+        return MessageFormat.format(s, args);
     }
 
 }
