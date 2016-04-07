@@ -37,9 +37,11 @@
  * @summary Stress test looks for lost unparks
  * @library /lib/testlibrary/
  * @modules java.management
+ * @run main/timeout=1200 ParkLoops
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
@@ -53,6 +55,7 @@ import java.util.concurrent.locks.LockSupport;
 import jdk.testlibrary.Utils;
 
 public final class ParkLoops {
+    static final long TEST_TIMEOUT_SECONDS = Utils.adjustTimeout(1000);
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
     static final int THREADS = 4;
     static final int ITERS = 30_000;
@@ -130,7 +133,7 @@ public final class ParkLoops {
             pool.submit(unparker);
         }
         try {
-          if (!done.await(LONG_DELAY_MS, MILLISECONDS)) {
+          if (!done.await(TEST_TIMEOUT_SECONDS, SECONDS)) {
             dumpAllStacks();
             throw new AssertionError("lost unpark");
           }
