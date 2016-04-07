@@ -156,12 +156,6 @@ public class JdkInternalMiscUnsafeAccessTestInt {
             assertEquals(x, 2, "putVolatile int value");
         }
 
-        // Lazy
-        {
-            UNSAFE.putOrderedInt(base, offset, 1);
-            int x = UNSAFE.getIntVolatile(base, offset);
-            assertEquals(x, 1, "putRelease int value");
-        }
 
         // Lazy
         {
@@ -305,3 +299,4 @@ public class JdkInternalMiscUnsafeAccessTestInt {
         }
     }
 }
+

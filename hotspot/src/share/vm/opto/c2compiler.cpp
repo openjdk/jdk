@@ -484,9 +484,6 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_putCharUnaligned:
   case vmIntrinsics::_putIntUnaligned:
   case vmIntrinsics::_putLongUnaligned:
-  case vmIntrinsics::_putOrderedObject:
-  case vmIntrinsics::_putOrderedInt:
-  case vmIntrinsics::_putOrderedLong:
   case vmIntrinsics::_loadFence:
   case vmIntrinsics::_storeFence:
   case vmIntrinsics::_fullFence:

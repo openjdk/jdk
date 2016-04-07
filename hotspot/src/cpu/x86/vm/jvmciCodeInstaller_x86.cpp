@@ -96,7 +96,7 @@ void CodeInstaller::pd_patch_MetaspaceConstant(int pc_offset, Handle constant, T
 #endif
   } else {
     address operand = Assembler::locate_operand(pc, Assembler::imm_operand);
-    *((Metadata**) operand) = record_metadata_reference(constant, CHECK);
+    *((void**) operand) = record_metadata_reference(constant, CHECK);
     TRACE_jvmci_3("relocating (metaspace constant) at " PTR_FORMAT "/" PTR_FORMAT, p2i(pc), p2i(operand));
   }
 }

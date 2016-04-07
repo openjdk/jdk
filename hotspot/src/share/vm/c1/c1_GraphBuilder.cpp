@@ -3450,9 +3450,6 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee) {
   case vmIntrinsics::_putLong_raw        : append_unsafe_put_raw(callee, T_LONG  ); return;
   case vmIntrinsics::_putFloat_raw       : append_unsafe_put_raw(callee, T_FLOAT ); return;
   case vmIntrinsics::_putDouble_raw      : append_unsafe_put_raw(callee, T_DOUBLE);  return;
-  case vmIntrinsics::_putOrderedObject   : append_unsafe_put_obj(callee, T_OBJECT,  true); return;
-  case vmIntrinsics::_putOrderedInt      : append_unsafe_put_obj(callee, T_INT,     true); return;
-  case vmIntrinsics::_putOrderedLong     : append_unsafe_put_obj(callee, T_LONG,    true); return;
   case vmIntrinsics::_compareAndSwapLong:
   case vmIntrinsics::_compareAndSwapInt:
   case vmIntrinsics::_compareAndSwapObject: append_unsafe_CAS(callee); return;

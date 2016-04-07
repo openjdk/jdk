@@ -592,9 +592,6 @@ bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
   case vmIntrinsics::_putLong_raw:
   case vmIntrinsics::_putFloat_raw:
   case vmIntrinsics::_putDouble_raw:
-  case vmIntrinsics::_putOrderedObject:
-  case vmIntrinsics::_putOrderedLong:
-  case vmIntrinsics::_putOrderedInt:
   case vmIntrinsics::_getAndAddInt:
   case vmIntrinsics::_getAndAddLong:
   case vmIntrinsics::_getAndSetInt:

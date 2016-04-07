@@ -156,12 +156,6 @@ public class JdkInternalMiscUnsafeAccessTestLong {
             assertEquals(x, 2L, "putVolatile long value");
         }
 
-        // Lazy
-        {
-            UNSAFE.putOrderedLong(base, offset, 1L);
-            long x = UNSAFE.getLongVolatile(base, offset);
-            assertEquals(x, 1L, "putRelease long value");
-        }
 
         // Lazy
         {
@@ -305,3 +299,4 @@ public class JdkInternalMiscUnsafeAccessTestLong {
         }
     }
 }
+

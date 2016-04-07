@@ -289,6 +289,7 @@
   template(java_lang_invoke_MutableCallSite,          "java/lang/invoke/MutableCallSite")         \
   template(java_lang_invoke_VolatileCallSite,         "java/lang/invoke/VolatileCallSite")        \
   template(java_lang_invoke_MethodHandle,             "java/lang/invoke/MethodHandle")            \
+  template(java_lang_invoke_VarHandle,                "java/lang/invoke/VarHandle")               \
   template(java_lang_invoke_MethodType,               "java/lang/invoke/MethodType")              \
   template(java_lang_invoke_MethodType_signature,     "Ljava/lang/invoke/MethodType;")            \
   template(java_lang_invoke_MemberName_signature,     "Ljava/lang/invoke/MemberName;")            \
@@ -655,7 +656,7 @@
                                                                                                                   \
   /* JVMTI/java.lang.instrument support and VM Attach mechanism */                                                \
   template(jdk_internal_module_Modules,                "jdk/internal/module/Modules")                             \
-  template(sun_misc_VMSupport,                         "sun/misc/VMSupport")                                      \
+  template(jdk_internal_vm_VMSupport,                  "jdk/internal/vm/VMSupport")                               \
   template(transformedByAgent_name,                    "transformedByAgent")                                      \
   template(transformedByAgent_signature,               "(Ljava/lang/reflect/Module;)V")                           \
   template(appendToClassPathForInstrumentation_name,   "appendToClassPathForInstrumentation")                     \
@@ -1328,16 +1329,6 @@
   do_intrinsic(_weakCompareAndSwapInt,            jdk_internal_misc_Unsafe,  weakCompareAndSwapInt_name,            compareAndSwapInt_signature,        F_R) \
   do_intrinsic(_weakCompareAndSwapIntAcquire,     jdk_internal_misc_Unsafe,  weakCompareAndSwapIntAcquire_name,     compareAndSwapInt_signature,        F_R) \
   do_intrinsic(_weakCompareAndSwapIntRelease,     jdk_internal_misc_Unsafe,  weakCompareAndSwapIntRelease_name,     compareAndSwapInt_signature,        F_R) \
-                                                                                                                        \
-  do_intrinsic(_putOrderedObject,         jdk_internal_misc_Unsafe,        putOrderedObject_name, putOrderedObject_signature, F_RN) \
-   do_name(     putOrderedObject_name,                           "putOrderedObject")                                    \
-   do_alias(    putOrderedObject_signature,                     /*(LObject;JLObject;)V*/ putObject_signature)           \
-  do_intrinsic(_putOrderedLong,           jdk_internal_misc_Unsafe,        putOrderedLong_name, putOrderedLong_signature, F_RN)  \
-   do_name(     putOrderedLong_name,                             "putOrderedLong")                                      \
-   do_alias(    putOrderedLong_signature,                       /*(Ljava/lang/Object;JJ)V*/ putLong_signature)          \
-  do_intrinsic(_putOrderedInt,            jdk_internal_misc_Unsafe,        putOrderedInt_name, putOrderedInt_signature,   F_RN)  \
-   do_name(     putOrderedInt_name,                              "putOrderedInt")                                       \
-   do_alias(    putOrderedInt_signature,                        /*(Ljava/lang/Object;JI)V*/ putInt_signature)           \
                                                                                                                         \
   do_intrinsic(_getAndAddInt,             jdk_internal_misc_Unsafe,     getAndAddInt_name, getAndAddInt_signature, F_R)       \
    do_name(     getAndAddInt_name,                                      "getAndAddInt")                                       \
