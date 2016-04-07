@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 #
 
 # @test
-# @bug 6332666 6863624 7180362 8003846 8074350 8074351 8130246
+# @bug 6332666 6863624 7180362 8003846 8074350 8074351 8130246 8149735
 # @summary tests the capability of replacing the currency data with user
 #     specified currency properties file
 # @build PropertiesTest
@@ -85,12 +85,13 @@ PROPS=${TESTSRC}${FS}currency.properties
 # Dump built-in currency data
 
 run PropertiesTest -d dump1
-
+if [ ! -f dump1 ]; then  echo "file dump1 not created. Test cannot execute.  Failed."; exit 1; fi
 
 # Dump built-in currency data + overrides in properties file specified
 # by system property.
 
 run -Djava.util.currency.data=${PROPS} PropertiesTest -d dump2
+if [ ! -f dump2 ]; then  echo "file dump2 not created. Test cannot execute.  Failed."; exit 1; fi
 run PropertiesTest -c dump1 dump2 ${PROPS}
 
 
@@ -102,7 +103,7 @@ run PropertiesTest -c dump1 dump2 ${PROPS}
 WRITABLEJDK=.${FS}testjava
 cp -H -R $TESTJAVA $WRITABLEJDK || exit 1
 PROPLOCATION=${WRITABLEJDK}${FS}lib
-chmod -R +w $WRITABLEJDK || exit 1
+chmod -R a+rx $WRITABLEJDK || exit 1
 cp ${PROPS} $PROPLOCATION || exit 1
 echo "Properties location: ${PROPLOCATION}"
 
@@ -110,6 +111,7 @@ echo "Properties location: ${PROPLOCATION}"
 echo ''
 ${WRITABLEJDK}${FS}bin${FS}java ${TESTVMOPTS} -cp ${TESTCLASSES} PropertiesTest -d dump3
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
+if [ ! -f dump3 ]; then  echo "file dump3 not created. Test cannot execute.  Failed."; exit 1; fi
 
 # Cleanup
 rm -rf $WRITABLEJDK

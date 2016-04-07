@@ -27,6 +27,7 @@ package sun.jvmstat.perfdata.monitor.protocol.local;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import jdk.internal.vm.VMSupport;
 
 /**
  * Class to provide translations from the local Vm Identifier
@@ -291,7 +292,7 @@ public class PerfDataFile {
          * the same directory. Instead of guessing which directory the
          * VM is using, we will ask.
          */
-        String tmpdir = sun.misc.VMSupport.getVMTemporaryDirectory();
+        String tmpdir = VMSupport.getVMTemporaryDirectory();
 
         /*
          * Assure that the string returned has a trailing File.separator

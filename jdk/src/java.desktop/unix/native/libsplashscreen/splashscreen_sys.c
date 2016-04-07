@@ -797,10 +797,60 @@ SplashReconfigure(Splash * splash) {
     sendctl(splash, SPLASHCTL_RECONFIGURE);
 }
 
-SPLASHEXPORT char*
+SPLASHEXPORT jboolean
 SplashGetScaledImageName(const char* jarName, const char* fileName,
-                           float *scaleFactor)
+                           float *scaleFactor, char *scaledImgName,
+                           const size_t scaledImageNameLength)
 {
     *scaleFactor = 1;
-    return NULL;
+#ifndef __linux__
+    return JNI_FALSE;
+#endif
+    *scaleFactor = getNativeScaleFactor();
+    if (*scaleFactor == 2.0) {
+        size_t length = 0;
+        char *stringToAppend = ".java-scale2x";
+        char *dupFileName = strdup(fileName);
+        char *fileExtension = strrchr(dupFileName, '.');
+        if (fileExtension == NULL) {
+            length = strlen(dupFileName) + strlen(stringToAppend) + 1;
+            if (length > scaledImageNameLength) {
+                *scaleFactor = 1;
+                free(dupFileName);
+                return JNI_FALSE;
+            }
+            int retVal = snprintf(scaledImgName, length, "%s%s",
+                dupFileName, stringToAppend);
+            if (retVal < 0 || (retVal != length - 1)) {
+                free(dupFileName);
+                *scaleFactor = 1;
+                return JNI_FALSE;
+            }
+        } else {
+            int length_without_ext = fileExtension - dupFileName;
+            length = length_without_ext +
+                strlen(stringToAppend) + strlen(fileExtension) + 1;
+            if (length > scaledImageNameLength) {
+                *scaleFactor = 1;
+                free(dupFileName);
+                return JNI_FALSE;
+            }
+            int retVal = snprintf(scaledImgName, length, "%.*s%s%s",
+                length_without_ext, dupFileName, stringToAppend, fileExtension);
+            if (retVal < 0 || retVal != length - 1) {
+                free(dupFileName);
+                *scaleFactor = 1;
+                return JNI_FALSE;
+            }
+        }
+        free(dupFileName);
+        FILE *fp;
+        if (!(fp = fopen(scaledImgName, "r"))) {
+            *scaleFactor = 1;
+            return JNI_FALSE;
+        }
+        fclose(fp);
+        return JNI_TRUE;
+    }
+    return JNI_FALSE;
 }

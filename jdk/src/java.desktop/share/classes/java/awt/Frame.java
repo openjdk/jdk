@@ -38,6 +38,7 @@ import javax.accessibility.AccessibleContext;
 import javax.accessibility.AccessibleRole;
 import javax.accessibility.AccessibleState;
 import javax.accessibility.AccessibleStateSet;
+import javax.swing.WindowConstants;
 
 import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;

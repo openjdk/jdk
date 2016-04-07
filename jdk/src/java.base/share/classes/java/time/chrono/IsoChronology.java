@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,14 +61,17 @@
  */
 package java.time.chrono;
 
-import java.io.InvalidObjectException;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.ERA;
+import static java.time.temporal.ChronoField.HOUR_OF_DAY;
+import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.PROLEPTIC_MONTH;
+import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoField.YEAR_OF_ERA;
 
+import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.time.Clock;
@@ -79,8 +82,9 @@ import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.Period;
 import java.time.Year;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
@@ -131,6 +135,8 @@ public final class IsoChronology extends AbstractChronology implements Serializa
      * Serialization version.
      */
     private static final long serialVersionUID = -1440403870442975015L;
+
+    private static final long DAYS_0000_TO_1970 = (146097 * 5L) - (30L * 365L + 7L); // taken from LocalDate
 
     /**
      * Restricted constructor.
@@ -262,6 +268,94 @@ public final class IsoChronology extends AbstractChronology implements Serializa
     public LocalDate date(TemporalAccessor temporal) {
         return LocalDate.from(temporal);
     }
+
+    //-----------------------------------------------------------------------
+    /**
+     * Gets the number of seconds from the epoch of 1970-01-01T00:00:00Z.
+     * <p>
+     * The number of seconds is calculated using the year,
+     * month, day-of-month, hour, minute, second, and zoneOffset.
+     *
+     * @param prolepticYear  the year, from MIN_YEAR to MAX_YEAR
+     * @param month  the month-of-year, from 1 to 12
+     * @param dayOfMonth  the day-of-month, from 1 to 31
+     * @param hour  the hour-of-day, from 0 to 23
+     * @param minute  the minute-of-hour, from 0 to 59
+     * @param second  the second-of-minute, from 0 to 59
+     * @param zoneOffset the zone offset, not null
+     * @return the number of seconds relative to 1970-01-01T00:00:00Z, may be negative
+     * @throws DateTimeException if the value of any argument is out of range,
+     *         or if the day-of-month is invalid for the month-of-year
+     * @since 9
+     */
+     @Override
+     public long epochSecond(int prolepticYear, int month, int dayOfMonth,
+                             int hour, int minute, int second, ZoneOffset zoneOffset) {
+        YEAR.checkValidValue(prolepticYear);
+        MONTH_OF_YEAR.checkValidValue(month);
+        DAY_OF_MONTH.checkValidValue(dayOfMonth);
+        HOUR_OF_DAY.checkValidValue(hour);
+        MINUTE_OF_HOUR.checkValidValue(minute);
+        SECOND_OF_MINUTE.checkValidValue(second);
+        Objects.requireNonNull(zoneOffset, "zoneOffset");
+        if (dayOfMonth > 28) {
+            int dom = numberOfDaysOfMonth(prolepticYear, month);
+            if (dayOfMonth > dom) {
+                if (dayOfMonth == 29) {
+                    throw new DateTimeException("Invalid date 'February 29' as '" + prolepticYear + "' is not a leap year");
+                } else {
+                    throw new DateTimeException("Invalid date '" + Month.of(month).name() + " " + dayOfMonth + "'");
+                }
+            }
+        }
+
+        long totalDays = 0;
+        int timeinSec = 0;
+        totalDays += 365L * prolepticYear;
+        if (prolepticYear >= 0) {
+            totalDays += (prolepticYear + 3L) / 4 - (prolepticYear + 99L) / 100 + (prolepticYear + 399L) / 400;
+        } else {
+            totalDays -= prolepticYear / -4 - prolepticYear / -100 + prolepticYear / -400;
+        }
+        totalDays += (367 * month - 362) / 12;
+        totalDays += dayOfMonth - 1;
+        if (month > 2) {
+            totalDays--;
+            if (IsoChronology.INSTANCE.isLeapYear(prolepticYear) == false) {
+                totalDays--;
+            }
+        }
+        totalDays -= DAYS_0000_TO_1970;
+        timeinSec = (hour * 60 + minute ) * 60 + second;
+        return Math.addExact(Math.multiplyExact(totalDays, 86400L), timeinSec - zoneOffset.getTotalSeconds());
+     }
+
+    /**
+     * Gets the number of days for the given month in the given year.
+     *
+     * @param year the year to represent, from MIN_YEAR to MAX_YEAR
+     * @param month the month-of-year to represent, from 1 to 12
+     * @return the number of days for the given month in the given year
+     */
+    private int numberOfDaysOfMonth(int year, int month) {
+        int dom;
+        switch (month) {
+            case 2:
+                dom = (IsoChronology.INSTANCE.isLeapYear(year) ? 29 : 28);
+                break;
+            case 4:
+            case 6:
+            case 9:
+            case 11:
+                dom = 30;
+                break;
+            default:
+                dom = 31;
+                break;
+        }
+        return dom;
+    }
+
 
     /**
      * Obtains an ISO local date-time from another date-time object.

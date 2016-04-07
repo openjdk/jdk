@@ -628,10 +628,14 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         volatile V val;
         volatile Node<K,V> next;
 
-        Node(int hash, K key, V val, Node<K,V> next) {
+        Node(int hash, K key, V val) {
             this.hash = hash;
             this.key = key;
             this.val = val;
+        }
+
+        Node(int hash, K key, V val, Node<K,V> next) {
+            this(hash, key, val);
             this.next = next;
         }
 
@@ -1024,8 +1028,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             if (tab == null || (n = tab.length) == 0)
                 tab = initTable();
             else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
-                if (casTabAt(tab, i, null,
-                             new Node<K,V>(hash, key, value, null)))
+                if (casTabAt(tab, i, null, new Node<K,V>(hash, key, value)))
                     break;                   // no lock when adding to empty bin
             }
             else if ((fh = f.hash) == MOVED)
@@ -1048,8 +1051,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                 }
                                 Node<K,V> pred = e;
                                 if ((e = e.next) == null) {
-                                    pred.next = new Node<K,V>(hash, key,
-                                                              value, null);
+                                    pred.next = new Node<K,V>(hash, key, value);
                                     break;
                                 }
                             }
@@ -1709,7 +1711,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                         Node<K,V> node = null;
                         try {
                             if ((val = mappingFunction.apply(key)) != null)
-                                node = new Node<K,V>(h, key, val, null);
+                                node = new Node<K,V>(h, key, val);
                         } finally {
                             setTabAt(tab, i, node);
                         }
@@ -1740,7 +1742,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                         if (pred.next != null)
                                             throw new IllegalStateException("Recursive update");
                                         added = true;
-                                        pred.next = new Node<K,V>(h, key, val, null);
+                                        pred.next = new Node<K,V>(h, key, val);
                                     }
                                     break;
                                 }
@@ -1909,7 +1911,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                         try {
                             if ((val = remappingFunction.apply(key, null)) != null) {
                                 delta = 1;
-                                node = new Node<K,V>(h, key, val, null);
+                                node = new Node<K,V>(h, key, val);
                             }
                         } finally {
                             setTabAt(tab, i, node);
@@ -1951,8 +1953,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                         if (pred.next != null)
                                             throw new IllegalStateException("Recursive update");
                                         delta = 1;
-                                        pred.next =
-                                            new Node<K,V>(h, key, val, null);
+                                        pred.next = new Node<K,V>(h, key, val);
                                     }
                                     break;
                                 }
@@ -2030,7 +2031,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             if (tab == null || (n = tab.length) == 0)
                 tab = initTable();
             else if ((f = tabAt(tab, i = (n - 1) & h)) == null) {
-                if (casTabAt(tab, i, null, new Node<K,V>(h, key, value, null))) {
+                if (casTabAt(tab, i, null, new Node<K,V>(h, key, value))) {
                     delta = 1;
                     val = value;
                     break;
@@ -2065,8 +2066,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                 if ((e = e.next) == null) {
                                     delta = 1;
                                     val = value;
-                                    pred.next =
-                                        new Node<K,V>(h, key, val, null);
+                                    pred.next = new Node<K,V>(h, key, val);
                                     break;
                                 }
                             }
@@ -2227,7 +2227,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     static final class ForwardingNode<K,V> extends Node<K,V> {
         final Node<K,V>[] nextTable;
         ForwardingNode(Node<K,V>[] tab) {
-            super(MOVED, null, null, null);
+            super(MOVED, null, null);
             this.nextTable = tab;
         }
 
@@ -2263,7 +2263,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     static final class ReservationNode<K,V> extends Node<K,V> {
         ReservationNode() {
-            super(RESERVED, null, null, null);
+            super(RESERVED, null, null);
         }
 
         Node<K,V> find(int h, Object k) {
@@ -2690,12 +2690,12 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns a list on non-TreeNodes replacing those in given list.
+     * Returns a list of non-TreeNodes replacing those in given list.
      */
     static <K,V> Node<K,V> untreeify(Node<K,V> b) {
         Node<K,V> hd = null, tl = null;
         for (Node<K,V> q = b; q != null; q = q.next) {
-            Node<K,V> p = new Node<K,V>(q.hash, q.key, q.val, null);
+            Node<K,V> p = new Node<K,V>(q.hash, q.key, q.val);
             if (tl == null)
                 hd = p;
             else
@@ -2801,7 +2801,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
          * Creates bin with initial set of nodes headed by b.
          */
         TreeBin(TreeNode<K,V> b) {
-            super(TREEBIN, null, null, null);
+            super(TREEBIN, null, null);
             this.first = b;
             TreeNode<K,V> r = null;
             for (TreeNode<K,V> x = b, next; x != null; x = next) {

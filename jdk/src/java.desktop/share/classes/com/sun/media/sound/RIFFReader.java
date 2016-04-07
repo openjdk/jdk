@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,12 @@ public final class RIFFReader extends InputStream {
     private long filepointer = 0;
     private final String fourcc;
     private String riff_type = null;
-    private long ckSize = Integer.MAX_VALUE;
+    private final long ckSize;
     private InputStream stream;
-    private long avail = Integer.MAX_VALUE;
+    private long avail = 0xffffffffL; // MAX_UNSIGNED_INT
     private RIFFReader lastiterator = null;
 
-    public RIFFReader(InputStream stream) throws IOException {
+    public RIFFReader(final InputStream stream) throws IOException {
 
         if (stream instanceof RIFFReader) {
             root = ((RIFFReader) stream).root;
@@ -63,11 +63,13 @@ public final class RIFFReader extends InputStream {
                 // because it is expected to
                 // always contain a string value
                 riff_type = null;
+                ckSize = 0;
                 avail = 0;
                 return;
             }
-            if (b != 0)
+            if (b != 0) {
                 break;
+            }
         }
 
         byte[] fourcc = new byte[4];
@@ -78,9 +80,6 @@ public final class RIFFReader extends InputStream {
         avail = ckSize;
 
         if (getFormat().equals("RIFF") || getFormat().equals("LIST")) {
-            if (avail > Integer.MAX_VALUE) {
-                throw new RIFFInvalidDataException("Chunk size too big");
-            }
             byte[] format = new byte[4];
             readFully(format);
             this.riff_type = new String(format, "ascii");
@@ -207,7 +206,7 @@ public final class RIFFReader extends InputStream {
 
     @Override
     public int available() {
-        return (int)avail;
+        return avail > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) avail;
     }
 
     public void finish() throws IOException {

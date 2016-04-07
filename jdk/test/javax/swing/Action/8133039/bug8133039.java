@@ -37,6 +37,7 @@ import sun.swing.UIAction;
  * @test
  * @bug 8133039
  * @summary Provide public API to sun.swing.UIAction#isEnabled(Object)
+ * @modules java.desktop/sun.swing
  * @author Alexander Scherbatiy
  */
 public class bug8133039 {

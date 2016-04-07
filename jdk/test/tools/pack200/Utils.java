@@ -32,21 +32,32 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.net.URI;
+import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Pack200;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static java.nio.file.StandardCopyOption.*;
 import static java.nio.file.StandardOpenOption.*;
+
 
 /**
  *
@@ -544,10 +555,6 @@ class Utils {
         return getAjavaCmd("jar");
     }
 
-    static String getJimageCmd() {
-        return getAjavaCmd("jimage");
-    }
-
     static String getAjavaCmd(String cmdStr) {
         File binDir = new File(JavaHome, "bin");
         File unpack200File = IsWindows
@@ -562,29 +569,88 @@ class Utils {
         return cmd;
     }
 
-    static File createRtJar() throws IOException {
-        File libDir = new File(JavaHome, "lib");
-        File modules = new File(libDir, "modules");
-        List<String> cmdList = new ArrayList<>();
-        cmdList.add(getJimageCmd());
-        cmdList.add("extract");
-        cmdList.add(modules.getAbsolutePath());
-        cmdList.add("--dir");
-        cmdList.add("out");
-        runExec(cmdList);
-
+    // used to get all classes
+    static File createRtJar() throws Exception {
         File rtJar = new File("rt.jar");
-        cmdList.clear();
-        cmdList.add(getJarCmd());
-        // cmdList.add("cvf"); too noisy
-        cmdList.add("cf");
-        cmdList.add(rtJar.getName());
-        cmdList.add("-C");
-        cmdList.add("out");
-        cmdList.add(".");
-        runExec(cmdList);
-
-        recursiveDelete(new File("out"));
+        new JrtToZip(".*\\.class", rtJar).run();
         return rtJar;
+    }
+
+    // used to select the contents
+    static File createRtJar(String pattern) throws Exception {
+        File rtJar = new File("rt.jar");
+        new JrtToZip(pattern, rtJar).run();
+        return rtJar;
+    }
+
+    /*
+     * A helper class to create a pseudo rt.jar.
+     */
+    static class JrtToZip {
+
+        final File outFile;
+        final Pattern pattern;
+
+        public static void main(String[] args) throws Exception {
+            new JrtToZip(args[0], new File(args[1])).run();
+        }
+
+        JrtToZip(String pattern, File outFile) throws Exception {
+            this.pattern = Pattern.compile(pattern);
+            this.outFile = outFile;
+        }
+
+        void run() throws Exception {
+            URI uri = URI.create("jar:" + outFile.toURI());
+            Map<String, String> env = new HashMap<>();
+            env.put("create", "true");
+            try (FileSystem zipfs = FileSystems.newFileSystem(uri, env)) {
+                toZipfs(zipfs);
+            }
+        }
+
+        void toZipfs(FileSystem zipfs) throws Exception {
+            FileSystem jrtfs = FileSystems.getFileSystem(URI.create("jrt:/"));
+            for (Path root : jrtfs.getRootDirectories()) {
+                Files.walkFileTree(root, new FileVisitor<Path>() {
+                    @Override
+                    public FileVisitResult preVisitDirectory(Path dir,
+                            BasicFileAttributes attrs) throws IOException {
+                        // ignore unneeded directory
+                        if (dir.startsWith("/packages"))
+                            return FileVisitResult.SKIP_SUBTREE;
+
+                        // pre-create required directories
+                        Path zpath = zipfs.getPath(dir.toString());
+                        Files.createDirectories(zpath);
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult visitFile(Path file,
+                            BasicFileAttributes attrs) throws IOException {
+                        Matcher matcher = pattern.matcher(file.toString());
+                        if (matcher.matches()) {
+                            // System.out.println("x: " + file);
+                            Path zpath = zipfs.getPath(file.toString());
+                            Files.copy(file, zpath, REPLACE_EXISTING);
+                        }
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult visitFileFailed(Path file,
+                            IOException exc) throws IOException {
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult postVisitDirectory(Path dir,
+                            IOException exc) throws IOException {
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            }
+        }
     }
 }

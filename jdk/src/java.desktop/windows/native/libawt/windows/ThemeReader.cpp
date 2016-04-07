@@ -31,6 +31,8 @@
 #include "awt_Object.h"
 #include "awt_Component.h"
 
+#include "math.h"
+
 // Important note about VC6 and VC7 (or XP Platform SDK)   !
 //
 // These type definitions have been imported from UxTheme.h
@@ -68,6 +70,11 @@ typedef struct _MARGINS
 #define TMT_TRANSPARENT 2201
 #endif // _UXTHEME_H_
 
+#if defined(_MSC_VER) && _MSC_VER >= 1800
+#  define ROUND_TO_INT(num)    ((int) round(num))
+#else
+#  define ROUND_TO_INT(num)    ((int) floor((num) + 0.5))
+#endif
 
 #define ALPHA_MASK 0xff000000
 #define RED_MASK 0xff0000
@@ -745,6 +752,23 @@ JNIEXPORT jobject JNICALL Java_sun_awt_windows_ThemeReader_getPosition
     return NULL;
 }
 
+void rescale(SIZE *size) {
+    HWND hWnd = ::GetDesktopWindow();
+    HDC hDC = ::GetDC(hWnd);
+    int dpiX = ::GetDeviceCaps(hDC, LOGPIXELSX);
+    int dpiY = ::GetDeviceCaps(hDC, LOGPIXELSY);
+
+    if (dpiX !=0 && dpiX != 96) {
+        float invScaleX = 96.0f / dpiX;
+        size->cx = ROUND_TO_INT(size->cx * invScaleX);
+    }
+    if (dpiY != 0 && dpiY != 96) {
+        float invScaleY = 96.0f / dpiY;
+        size->cy = ROUND_TO_INT(size->cy * invScaleY);
+    }
+    ::ReleaseDC(hWnd, hDC);
+}
+
 /*
  * Class:     sun_awt_windows_ThemeReader
  * Method:    getPartSize
@@ -770,6 +794,8 @@ JNIEXPORT jobject JNICALL Java_sun_awt_windows_ThemeReader_getPartSize
                 dimMID = env->GetMethodID(dimClassID, "<init>", "(II)V");
                 CHECK_NULL_RETURN(dimMID, NULL);
             }
+
+            rescale(&size);
             jobject dimObj = env->NewObject(dimClassID, dimMID, size.cx, size.cy);
             if (safe_ExceptionOccurred(env)) {
                 env->ExceptionDescribe();

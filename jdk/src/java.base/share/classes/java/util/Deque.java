@@ -174,7 +174,7 @@ package java.util;
  * that do allow null elements are strongly encouraged <i>not</i> to
  * take advantage of the ability to insert nulls.  This is so because
  * {@code null} is used as a special return value by various methods
- * to indicated that the deque is empty.
+ * to indicate that the deque is empty.
  *
  * <p>{@code Deque} implementations generally do not define
  * element-based versions of the {@code equals} and {@code hashCode}

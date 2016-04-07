@@ -25,6 +25,7 @@
 
 package sun.awt;
 
+import java.awt.peer.TaskbarPeer;
 import java.awt.*;
 import java.awt.dnd.DragGestureEvent;
 import java.awt.dnd.InvalidDnDOperationException;
@@ -71,6 +72,23 @@ public interface ComponentFactory {
      * @since 1.6
      */
     default DesktopPeer createDesktopPeer(Desktop target) {
+        throw new HeadlessException();
+    }
+
+    /**
+     * Creates this toolkit's implementation of the {@code Taskbar} using the
+     * specified peer interface.
+     *
+     * @param  target the taskbar to be implemented
+     * @return this toolkit's implementation of the {@code Taskbar}
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless() returns
+     *         true
+     * @see java.awt.GraphicsEnvironment#isHeadless
+     * @see java.awt.Taskbar
+     * @see java.awt.peer.TaskbarPeer
+     * @since 9
+     */
+    default TaskbarPeer createTaskbarPeer(Taskbar target) {
         throw new HeadlessException();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,193 +22,240 @@
  */
 
 /*
-  test
-  @bug 4118621
-  @summary tests that selected text isn't scrolled when there is enough room.
-  @author prs: area=TextField
-  @run applet/manual=yesno ScrollSelectionTest.html
-*/
-
-/**
- * ScrollSelectionTest.java
- *
- * summary: tests that selected text isn't scrolled when there is enough room.
+ @test
+ @bug 4118621 8149636
+ @summary Test the selection scrolling in TextField.
+ @run main/manual ScrollSelectionTest
  */
-
-import java.applet.Applet;
+import java.awt.Button;
 import java.awt.Dialog;
+import java.awt.FlowLayout;
 import java.awt.Frame;
-import java.awt.TextField;
+import java.awt.Panel;
 import java.awt.TextArea;
+import java.awt.TextField;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
-public class ScrollSelectionTest extends Applet
- {
+public class ScrollSelectionTest {
 
-   Frame frame = new Frame("ScrollSelectionTest frame");
-   TextField tf = new TextField(40);
+    static Frame mainFrame;
+    static TextField textField;
 
-   public void init()
-    {
-      tf.setText("abcdefghijklmnopqrstuvwxyz");
-      frame.add(tf);
-      tf.select(0, 20);
+    private static void init() throws Exception {
+        String[] instructions
+                = {
+                    "INSTRUCTIONS: There are 2 Tests",
+                    "Test1: Text visibility with Scroll",
+                    "This is a test for a win32 specific problem",
+                    "If you see all the letters from 'a' to 'z' and",
+                    "letters from 'a' to 't' are selected then test passes.",
+                    "You may have to activate the frame to see the selection",
+                    "highlighted (e.g. by clicking on frame's title).",
+                    ".",
+                    "Test2: Flicker with selection scroll",
+                    "Mouse press on the TextField text.",
+                    "Move mouse towards left or right with selecting text.",
+                    "Move mouse away outside the bounds of TextField.",
+                    "No flicker should be observed.",
+                };
 
-      String[] instructions = {
-          "INSTRUCTIONS:",
-          "This is a test for a win32 specific problem",
-         "If you see all the letters from 'a' to 'z' and",
-          "letters from 'a' to 't' are selected then test passes.",
-          "You may have to activate the frame to see the selection"
-          + " highlighted (e.g. by clicking on frame's title)."
-      };
-      Sysout.createDialogWithInstructions( instructions );
+        Sysout.createDialog();
+        Sysout.printInstructions(instructions);
+    }
 
-    }// init()
+    public static void initTestWindow() {
+        mainFrame = new Frame("ScrollSelectionTest frame");
+        mainFrame.setBounds(500, 0, 400, 200);
 
-   public void start ()
-    {
-      setSize (300,300);
-      setVisible(true);
+        textField = new TextField(40);
+        textField.setText("abcdefghijklmnopqrstuvwxyz");
+        mainFrame.add(textField);
+        mainFrame.setLayout(new FlowLayout());
+        textField.select(0, 20);
+        mainFrame.setVisible(true);
+    }
 
-      frame.setVisible(true);
-      frame.setBounds (400, 0, 300, 300);
+    public static void dispose() {
+        Sysout.dispose();
+        mainFrame.dispose();
+    }
 
-    }// start()
+    /**
+     * ***************************************************
+     * Standard Test Machinery Section DO NOT modify anything in this section --
+     * it's a standard chunk of code which has all of the synchronization
+     * necessary for the test harness. By keeping it the same in all tests, it
+     * is easier to read and understand someone else's test, as well as insuring
+     * that all tests behave correctly with the test harness. There is a section
+     * following this for test-defined classes
+     * ****************************************************
+     */
+    private static boolean theTestPassed = false;
+    private static boolean testGeneratedInterrupt = false;
+    private static String failureMessage = "";
+    private static Thread mainThread = null;
+    final private static int sleepTime = 300000;
 
- }// class ScrollSelectionTest
+    public static void main(String args[]) throws Exception {
+        mainThread = Thread.currentThread();
+        try {
+            init();
+            initTestWindow();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
+            mainThread.sleep(sleepTime);
+        } catch (InterruptedException e) {
+            dispose();
+            if (testGeneratedInterrupt && !theTestPassed) {
+                throw new Exception(failureMessage);
+            }
+        }
+        if (!testGeneratedInterrupt) {
+            dispose();
+            throw new RuntimeException("Timed out after " + sleepTime / 1000
+                    + " seconds");
+        }
+    }
 
-/****************************************************
- Standard Test Machinery
- DO NOT modify anything below -- it's a standard
-  chunk of code whose purpose is to make user
-  interaction uniform, and thereby make it simpler
-  to read and understand someone else's test.
- ****************************************************/
+    public static synchronized void pass() {
+        theTestPassed = true;
+        testGeneratedInterrupt = true;
+        mainThread.interrupt();
+    }
 
+    public static synchronized void fail(String whyFailed) {
+        theTestPassed = false;
+        testGeneratedInterrupt = true;
+        failureMessage = whyFailed;
+        mainThread.interrupt();
+    }
+}
+
+// *********** End Standard Test Machinery Section **********
 /**
- This is part of the standard test machinery.
- It creates a dialog (with the instructions), and is the interface
-  for sending text messages to the user.
- To print the instructions, send an array of strings to Sysout.createDialog
-  WithInstructions method.  Put one line of instructions per array entry.
- To display a message for the tester to see, simply call Sysout.println
-  with the string to be displayed.
- This mimics System.out.println but works within the test harness as well
-  as standalone.
+ * **************************************************
+ * Standard Test Machinery DO NOT modify anything below -- it's a standard chunk
+ * of code whose purpose is to make user interaction uniform, and thereby make
+ * it simpler to read and understand someone else's test.
+ * **************************************************
  */
+/**
+ * This is part of the standard test machinery. It creates a dialog (with the
+ * instructions), and is the interface for sending text messages to the user. To
+ * print the instructions, send an array of strings to Sysout.createDialog
+ * WithInstructions method. Put one line of instructions per array entry. To
+ * display a message for the tester to see, simply call Sysout.println with the
+ * string to be displayed. This mimics System.out.println but works within the
+ * test harness as well as standalone.
+ */
+class Sysout {
+    private static TestDialog dialog;
+    private static Frame frame;
 
-class Sysout
- {
-   private static TestDialog dialog;
-
-   public static void createDialogWithInstructions( String[] instructions )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      dialog.printInstructions( instructions );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
+    public static void createDialog() {
+        frame = new Frame();
+        dialog = new TestDialog(frame, "Instructions");
+        String[] defInstr = {"Instructions will appear here. ", ""};
+        dialog.printInstructions(defInstr);
+        dialog.setVisible(true);
+        println("Any messages for the tester will display here.");
     }
 
-   public static void createDialog( )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      String[] defInstr = { "Instructions will appear here. ", "" } ;
-      dialog.printInstructions( defInstr );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
+    public static void printInstructions(String[] instructions) {
+        dialog.printInstructions(instructions);
     }
 
-
-   public static void printInstructions( String[] instructions )
-    {
-      dialog.printInstructions( instructions );
+    public static void println(String messageIn) {
+        dialog.displayMessage(messageIn);
     }
 
-
-   public static void println( String messageIn )
-    {
-      dialog.displayMessage( messageIn );
+    public static void dispose() {
+        dialog.dispose();
+        frame.dispose();
     }
-
- }// Sysout  class
+}
 
 /**
-  This is part of the standard test machinery.  It provides a place for the
-   test instructions to be displayed, and a place for interactive messages
-   to the user to be displayed.
-  To have the test instructions displayed, see Sysout.
-  To have a message to the user be displayed, see Sysout.
-  Do not call anything in this dialog directly.
-  */
-class TestDialog extends Dialog
- {
+ * This is part of the standard test machinery. It provides a place for the test
+ * instructions to be displayed, and a place for interactive messages to the
+ * user to be displayed. To have the test instructions displayed, see Sysout. To
+ * have a message to the user be displayed, see Sysout. Do not call anything in
+ * this dialog directly.
+ */
+class TestDialog extends Dialog implements ActionListener {
+    TextArea instructionsText;
+    TextArea messageText;
+    int maxStringLength = 80;
+    Panel buttonP;
+    Button failB;
+    Button passB;
 
-   TextArea instructionsText;
-   TextArea messageText;
-   int maxStringLength = 80;
+    // DO NOT call this directly, go through Sysout
+    public TestDialog(Frame frame, String name) {
+        super(frame, name);
+        int scrollBoth = TextArea.SCROLLBARS_BOTH;
+        instructionsText = new TextArea("", 15, maxStringLength, scrollBoth);
+        add("North", instructionsText);
 
-   //DO NOT call this directly, go through Sysout
-   public TestDialog( Frame frame, String name )
-    {
-      super( frame, name );
-      int scrollBoth = TextArea.SCROLLBARS_BOTH;
-      instructionsText = new TextArea( "", 15, maxStringLength, scrollBoth );
-      add( "North", instructionsText );
+        messageText = new TextArea("", 5, maxStringLength, scrollBoth);
+        add("Center", messageText);
 
-      messageText = new TextArea( "", 5, maxStringLength, scrollBoth );
-      add("South", messageText);
+        buttonP = new Panel();
+        passB = new Button("pass");
+        passB.setActionCommand("pass");
+        passB.addActionListener(this);
+        buttonP.add("East", passB);
 
-      pack();
+        failB = new Button("Fail");
+        failB.setActionCommand("fail");
+        failB.addActionListener(this);
+        buttonP.add("West", failB);
 
-      show();
-    }// TestDialog()
-
-   //DO NOT call this directly, go through Sysout
-   public void printInstructions( String[] instructions )
-    {
-      //Clear out any current instructions
-      instructionsText.setText( "" );
-
-      //Go down array of instruction strings
-
-      String printStr, remainingStr;
-      for( int i=0; i < instructions.length; i++ )
-       {
-         //chop up each into pieces maxSringLength long
-         remainingStr = instructions[ i ];
-         while( remainingStr.length() > 0 )
-          {
-            //if longer than max then chop off first max chars to print
-            if( remainingStr.length() >= maxStringLength )
-             {
-               //Try to chop on a word boundary
-               int posOfSpace = remainingStr.
-                  lastIndexOf( ' ', maxStringLength - 1 );
-
-               if( posOfSpace <= 0 ) posOfSpace = maxStringLength - 1;
-
-               printStr = remainingStr.substring( 0, posOfSpace + 1 );
-               remainingStr = remainingStr.substring( posOfSpace + 1 );
-             }
-            //else just print
-            else
-             {
-               printStr = remainingStr;
-               remainingStr = "";
-             }
-
-            instructionsText.append( printStr + "\n" );
-
-          }// while
-
-       }// for
-
-    }//printInstructions()
-
-   //DO NOT call this directly, go through Sysout
-   public void displayMessage( String messageIn )
-    {
-      messageText.append( messageIn + "\n" );
+        add("South", buttonP);
+        pack();
+        setVisible(true);
     }
 
- }// TestDialog  class
+    // DO NOT call this directly, go through Sysout
+    public void printInstructions(String[] instructions) {
+        instructionsText.setText("");
+        String printStr, remainingStr;
+        for (int i = 0; i < instructions.length; i++) {
+            remainingStr = instructions[i];
+            while (remainingStr.length() > 0) {
+                if (remainingStr.length() >= maxStringLength) {
+                    int posOfSpace = remainingStr.
+                            lastIndexOf(' ', maxStringLength - 1);
+
+                    if (posOfSpace <= 0) {
+                        posOfSpace = maxStringLength - 1;
+                    }
+
+                    printStr = remainingStr.substring(0, posOfSpace + 1);
+                    remainingStr = remainingStr.substring(posOfSpace + 1);
+                }
+                else {
+                    printStr = remainingStr;
+                    remainingStr = "";
+                }
+                instructionsText.append(printStr + "\n");
+            }
+        }
+    }
+
+    public void displayMessage(String messageIn) {
+        messageText.append(messageIn + "\n");
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getActionCommand().equals("pass")) {
+            ScrollSelectionTest.pass();
+        } else {
+            ScrollSelectionTest.fail("User Clicked Fail");
+        }
+    }
+}

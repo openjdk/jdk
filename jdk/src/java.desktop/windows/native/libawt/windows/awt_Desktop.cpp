@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,44 @@
 #include <jni.h>
 #include <shellapi.h>
 #include <float.h>
+#include <shlobj.h>
+#include "awt_Toolkit.h"
+
+#define BUFFER_LIMIT   MAX_PATH+1
+
+#define NOTIFY_FOR_ALL_SESSIONS 1
+#define NOTIFY_FOR_THIS_SESSION 0
+
+typedef BOOL (WINAPI *WTSRegisterSessionNotification)(HWND,DWORD);
+static WTSRegisterSessionNotification fn_WTSRegisterSessionNotification;
+
+BOOL isSuddenTerminationEnabled = TRUE;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/*
+ * Class:     sun_awt_windows_WDesktopPeer
+ * Method:    init
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_sun_awt_windows_WDesktopPeer_init
+  (JNIEnv *, jclass) {
+    static HMODULE libWtsapi32 = NULL;
+    if (libWtsapi32 == NULL) {
+        libWtsapi32 = JDK_LoadSystemLibrary("Wtsapi32.dll");
+        if (libWtsapi32) {
+            fn_WTSRegisterSessionNotification = (WTSRegisterSessionNotification)
+                    GetProcAddress(libWtsapi32, "WTSRegisterSessionNotification");
+            if (fn_WTSRegisterSessionNotification) {
+                HWND hwnd = AwtToolkit::GetInstance().GetHWnd();
+                //used for UserSessionListener
+                fn_WTSRegisterSessionNotification(hwnd, NOTIFY_FOR_THIS_SESSION);
+            }
+        }
+    }
+}
 
 /*
  * Class:     sun_awt_windows_WDesktopPeer
@@ -80,6 +114,53 @@ JNIEXPORT jstring JNICALL Java_sun_awt_windows_WDesktopPeer_ShellExecute
     }
 
     return NULL;
+}
+
+/*
+ * Class:     sun_awt_windows_WDesktopPeer
+ * Method:    moveToTrash
+ * Signature: (Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WDesktopPeer_moveToTrash
+  (JNIEnv *env, jclass, jstring jpath)
+{
+    LPCTSTR pathStr = JNU_GetStringPlatformChars(env, jpath, (jboolean *)NULL);
+    if (pathStr) {
+        try {
+            LPTSTR fileBuffer = new TCHAR[BUFFER_LIMIT];
+            memset(fileBuffer, 0, BUFFER_LIMIT * sizeof(TCHAR));
+            // the fileBuffer is double null terminated string
+            _tcsncpy(fileBuffer, pathStr, BUFFER_LIMIT - 2);
+
+            SHFILEOPSTRUCT fop;
+            memset(&fop, 0, sizeof(SHFILEOPSTRUCT));
+            fop.hwnd = NULL;
+            fop.wFunc = FO_DELETE;
+            fop.pFrom = fileBuffer;
+            fop.fFlags = FOF_ALLOWUNDO;
+
+            int res = SHFileOperation(&fop);
+
+            delete[] fileBuffer;
+            JNU_ReleaseStringPlatformChars(env, jpath, pathStr);
+
+            return !res ? JNI_TRUE : JNI_FALSE;
+        } catch (std::bad_alloc&) {
+            JNU_ReleaseStringPlatformChars(env, jpath, pathStr);
+        }
+    }
+    return JNI_FALSE;
+}
+
+/*
+ * Class:     sun_awt_windows_WDesktopPeer
+ * Method:    setSuddenTerminationEnabled
+ * Signature: (Z)V
+ */
+JNIEXPORT void JNICALL Java_sun_awt_windows_WDesktopPeer_setSuddenTerminationEnabled
+  (JNIEnv *, jclass, jboolean enabled)
+{
+    isSuddenTerminationEnabled = enabled;
 }
 
 #ifdef __cplusplus

@@ -191,6 +191,17 @@ public class BaseMultiResolutionImageTest {
         if (!passed) {
             throw new RuntimeException("Resolution variants list is modifiable!");
         }
+
+        passed = false;
+        try {
+            mrImage.getGraphics();
+        } catch (UnsupportedOperationException e) {
+            passed = true;
+        }
+
+        if (!passed) {
+            throw new RuntimeException("getGraphics() method shouldn't be supported!");
+        }
     }
 
     private static int getSize(int i) {

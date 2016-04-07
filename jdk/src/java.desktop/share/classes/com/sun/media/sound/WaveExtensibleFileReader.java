@@ -184,6 +184,7 @@ public final class WaveExtensibleFileReader extends SunFileReader {
         // long framerate = 1;
         int framesize = 1;
         int bits = 1;
+        long dataSize = 0;
         int validBitsPerSample = 1;
         long channelMask = 0;
         GUID subFormat = null;
@@ -214,6 +215,7 @@ public final class WaveExtensibleFileReader extends SunFileReader {
 
             }
             if (chunk.getFormat().equals("data")) {
+                dataSize = chunk.getSize();
                 data_found = true;
                 break;
             }
@@ -247,8 +249,12 @@ public final class WaveExtensibleFileReader extends SunFileReader {
         } else {
             throw new UnsupportedAudioFileException();
         }
+        long frameLength = dataSize / audioformat.getFrameSize();
+        if (frameLength > Integer.MAX_VALUE) {
+            frameLength = AudioSystem.NOT_SPECIFIED;
+        }
         return new AudioFileFormat(AudioFileFormat.Type.WAVE, audioformat,
-                                   AudioSystem.NOT_SPECIFIED);
+                                   (int) frameLength);
     }
 
     @Override

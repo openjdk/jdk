@@ -1719,6 +1719,9 @@ public class BasicInternalFrameUI extends InternalFrameUI
                 if ((frame.getParent() != null) && !componentListenerAdded) {
                     f.getParent().addComponentListener(componentListener);
                     componentListenerAdded = true;
+                    if (f.isMaximum()) {
+                        maximizeFrame(f);
+                    }
                 }
             } else if (JInternalFrame.TITLE_PROPERTY == prop ||
                     prop == "closable" || prop == "iconable" ||

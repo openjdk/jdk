@@ -487,12 +487,9 @@ public abstract class X11SurfaceData extends XSurfaceData {
             makePipes();
         }
         CompositeType comptype = sg2d.imageComp;
-        if (sg2d.transformState < SunGraphics2D.TRANSFORM_TRANSLATESCALE &&
-            (CompositeType.SrcOverNoEa.equals(comptype) ||
+        if ((CompositeType.SrcOverNoEa.equals(comptype) ||
              CompositeType.SrcNoEa.equals(comptype)))
         {
-            x += sg2d.transX;
-            y += sg2d.transY;
             SunToolkit.awtLock();
             try {
                 boolean needExposures = canSourceSendExposures(x, y, w, h);

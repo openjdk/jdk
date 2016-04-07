@@ -43,16 +43,18 @@ import javax.swing.SwingUtilities;
  */
 public class MultiMonPrintDlgTest implements ActionListener {
 
-    Frame primaryFrame = null;
-    Frame secFrame = null;
-    GraphicsDevice gd[] = GraphicsEnvironment.getLocalGraphicsEnvironment().
+    private static boolean testPassed;
+    private static Thread mainThread;
+    private static boolean testGeneratedInterrupt;
+    private static int sleepTime = 30000;
+    private static String message = "User has not executed the test";
+
+    static Frame primaryFrame = null;
+    static Frame secFrame = null;
+    static GraphicsDevice gd[] = GraphicsEnvironment.getLocalGraphicsEnvironment().
                             getScreenDevices();
 
-    public MultiMonPrintDlgTest() throws Exception {
-        if (gd.length <= 1) {
-            System.out.println("This test should be run only on dual-monitor systems. Aborted!!");
-            return;
-        }
+    private static void init() throws Exception {
 
         String[] instructions =
             {
@@ -70,6 +72,10 @@ public class MultiMonPrintDlgTest implements ActionListener {
                     instructions,
                     "information", JOptionPane.INFORMATION_MESSAGE);
         });
+    }
+
+    private void executeTest() {
+
         GraphicsDevice defDev = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
         int x = 0;
         Frame f = null;
@@ -95,31 +101,67 @@ public class MultiMonPrintDlgTest implements ActionListener {
     }
 
     public void actionPerformed (ActionEvent ae) {
-        try {
-            javax.print.attribute.PrintRequestAttributeSet prSet =
-                  new javax.print.attribute.HashPrintRequestAttributeSet();
-            java.awt.print.PrinterJob.getPrinterJob().pageDialog(prSet);
-            Window w = KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();
-            int dialogButton = JOptionPane.showConfirmDialog (w,
-                            "Did the pageDialog shown in non-default monitor?",
-                            null, JOptionPane.YES_NO_OPTION);
-            if(dialogButton == JOptionPane.NO_OPTION) {
-                throw new RuntimeException("PageDialog is shown in wrong monitor");
-            }
+        javax.print.attribute.PrintRequestAttributeSet prSet =
+              new javax.print.attribute.HashPrintRequestAttributeSet();
+        java.awt.print.PrinterJob.getPrinterJob().pageDialog(prSet);
+        Window w = KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();
+        int dialogButton = JOptionPane.showConfirmDialog (w,
+                        "Did the pageDialog shown in non-default monitor?",
+                        null, JOptionPane.YES_NO_OPTION);
+        if(dialogButton == JOptionPane.NO_OPTION) {
+            fail("PageDialog is shown in wrong monitor");
+        } else {
             java.awt.print.PrinterJob.getPrinterJob().printDialog(prSet);
             dialogButton = JOptionPane.showConfirmDialog (w,
-                            "Did the printDialog shown in non-default monitor?",
-                            null, JOptionPane.YES_NO_OPTION);
+                        "Did the printDialog shown in non-default monitor?",
+                        null, JOptionPane.YES_NO_OPTION);
             if(dialogButton == JOptionPane.NO_OPTION) {
-                throw new RuntimeException("PrintDialog is shown in wrong monitor");
+                fail("PrintDialog is shown in wrong monitor");
+            } else {
+                pass();
             }
-        } finally {
-            primaryFrame.dispose();
-            secFrame.dispose();
         }
     }
 
+    private static void dispose() {
+        primaryFrame.dispose();
+        secFrame.dispose();
+    }
+
+    public static synchronized void pass() {
+        testPassed = true;
+        testGeneratedInterrupt = true;
+        mainThread.interrupt();
+    }
+
+    public static synchronized void fail(String msg) {
+        testPassed = false;
+        message = msg;
+        testGeneratedInterrupt = true;
+        mainThread.interrupt();
+    }
+
     public static void main (String args[]) throws Exception {
+        if (gd.length <= 1) {
+            System.out.println("This test should be run only on dual-monitor systems. Aborted!!");
+            return;
+        }
+        init();
         MultiMonPrintDlgTest test = new MultiMonPrintDlgTest();
+        test.executeTest();
+        mainThread = Thread.currentThread();
+
+        try {
+            mainThread.sleep(sleepTime);
+        } catch (InterruptedException ex) {
+            dispose();
+            if (!testPassed && testGeneratedInterrupt) {
+                throw new RuntimeException(message);
+            }
+        }
+        if (!testGeneratedInterrupt) {
+            dispose();
+            throw new RuntimeException(message);
+        }
     }
 }
