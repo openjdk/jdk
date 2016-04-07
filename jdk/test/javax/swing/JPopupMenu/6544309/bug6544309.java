@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,14 @@
    @run main bug6544309
 */
 
-import javax.swing.*;
-import java.awt.event.*;
-import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+
+import javax.swing.JDialog;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.SwingUtilities;
 
 public class bug6544309 {
     private JDialog dialog;
@@ -41,6 +46,8 @@ public class bug6544309 {
 
     public static void main(String[] args) throws Exception {
         robot = new ExtendedRobot();
+        // move mouse outside menu to prevent auto selection
+        robot.mouseMove(100,100);
         final bug6544309 test = new bug6544309();
         try {
             SwingUtilities.invokeAndWait(new Runnable() {

@@ -42,6 +42,8 @@ SUNWprivate_1.1 {
 		SplashInit;
 		SplashClose;
                 SplashSetFileJarName;
+                SplashSetScaleFactor;
+                SplashGetScaledImageName;
 	local:
 		*;
 };

@@ -182,6 +182,9 @@ module java.base {
         java.desktop;
     exports jdk.internal.util.jar to
         jdk.jartool;
+    exports jdk.internal.vm to
+        java.management,
+        jdk.jvmstat;
     exports sun.net to
         java.httpclient;
     exports sun.net.dns to

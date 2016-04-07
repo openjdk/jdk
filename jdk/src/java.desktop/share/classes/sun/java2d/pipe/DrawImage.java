@@ -340,8 +340,8 @@ public class DrawImage implements DrawImagePipe
      * <li> Image will be used only once and acceleration caching wouldn't help
      * </ul>
      */
-    BufferedImage makeBufferedImage(Image img, Color bgColor, int type,
-                                    int sx1, int sy1, int sx2, int sy2)
+    private BufferedImage makeBufferedImage(Image img, Color bgColor, int type,
+                                            int sx1, int sy1, int sx2, int sy2)
     {
         final int width = sx2 - sx1;
         final int height = sy2 - sy1;
@@ -430,10 +430,16 @@ public class DrawImage implements DrawImagePipe
 
         if (isBgOperation(srcData, bgColor)) {
             // We cannot perform bg operations during transform so make
-            // an opaque temp image with the appropriate background
-            // and work from there.
-            img = makeBufferedImage(img, bgColor, BufferedImage.TYPE_INT_RGB,
-                                    sx1, sy1, sx2, sy2);
+            // a temp image with the appropriate background based on
+            // background alpha value and work from there. If background
+            // alpha is opaque use INT_RGB else use INT_ARGB so that we
+            // will not lose translucency of background.
+
+            int bgAlpha = bgColor.getAlpha();
+            int type = ((bgAlpha == 255)
+                        ? BufferedImage.TYPE_INT_RGB
+                        : BufferedImage.TYPE_INT_ARGB);
+            img = makeBufferedImage(img, bgColor, type, sx1, sy1, sx2, sy2);
             // Temp image has appropriate subimage at 0,0 now.
             sx2 -= sx1;
             sy2 -= sy1;

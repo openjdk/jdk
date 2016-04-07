@@ -51,10 +51,7 @@
 #include "Devices.h"
 #include <d2d1.h>
 #pragma comment(lib, "d2d1")
-
-#ifndef MDT_Effective_DPI
-#define MDT_Effective_DPI 0
-#endif
+#include "systemScale.h"
 
 uns_ordered_dither_array img_oda_alpha;
 
@@ -655,58 +652,9 @@ int AwtWin32GraphicsDevice::ScaleDownY(int y)
 
 void AwtWin32GraphicsDevice::InitDesktopScales()
 {
-    unsigned x = 0;
-    unsigned y = 0;
     float dpiX = -1.0f;
     float dpiY = -1.0f;
-
-    // for debug purposes
-    static float scale = -2.0f;
-    if (scale == -2) {
-        scale = -1;
-        char *uiScale = getenv("J2D_UISCALE");
-        if (uiScale != NULL) {
-            scale = (float)strtod(uiScale, NULL);
-            if (errno == ERANGE || scale <= 0) {
-                scale = -1;
-            }
-        }
-    }
-
-    if (scale > 0) {
-        SetScale(scale, scale);
-        return;
-    }
-
-    typedef HRESULT(WINAPI GetDpiForMonitorFunc)(HMONITOR, int, UINT*, UINT*);
-    static HMODULE hLibSHCoreDll = NULL;
-    static GetDpiForMonitorFunc *lpGetDpiForMonitor = NULL;
-
-    if (hLibSHCoreDll == NULL) {
-        hLibSHCoreDll = JDK_LoadSystemLibrary("shcore.dll");
-        if (hLibSHCoreDll != NULL) {
-            lpGetDpiForMonitor = (GetDpiForMonitorFunc*)GetProcAddress(
-                hLibSHCoreDll, "GetDpiForMonitor");
-        }
-    }
-
-    if (lpGetDpiForMonitor != NULL) {
-        HRESULT hResult = lpGetDpiForMonitor(GetMonitor(),
-                                             MDT_Effective_DPI, &x, &y);
-        if (hResult == S_OK) {
-            dpiX = static_cast<float>(x);
-            dpiY = static_cast<float>(y);
-        }
-    } else {
-        ID2D1Factory* m_pDirect2dFactory;
-        HRESULT res = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED,
-                                        &m_pDirect2dFactory);
-        if (res == S_OK) {
-            m_pDirect2dFactory->GetDesktopDpi(&dpiX, &dpiY);
-            m_pDirect2dFactory->Release();
-        }
-    }
-
+    GetScreenDpi(GetMonitor(), &dpiX, &dpiY);
     if (dpiX > 0 && dpiY > 0) {
         SetScale(dpiX / 96, dpiY / 96);
     }
@@ -1472,3 +1420,4 @@ Java_sun_awt_Win32GraphicsDevice_initNativeScale
         device->InitDesktopScales();
     }
 }
+

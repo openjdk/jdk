@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,57 +21,59 @@
  * questions.
  */
 
-/*
-  test
-  @bug       5028014
-  @summary   Focus request & mouse click performed nearly synchronously shouldn't lead to a focus race.
-  @author    anton.tarasov@sun.com: area=awt-focus
-  @run       applet MouseClickRequestFocusRaceTest.html
-*/
+import java.awt.AWTException;
+import java.awt.FlowLayout;
+import java.awt.KeyboardFocusManager;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
-import java.awt.*;
-import javax.swing.*;
-import java.awt.event.*;
-import java.applet.Applet;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.WindowConstants;
 
-public class MouseClickRequestFocusRaceTest extends Applet {
-    Robot robot;
-    JFrame frame1 = new JFrame("Frame-1") {
+import jdk.testlibrary.OSInfo;
+
+/**
+ * @test
+ * @bug 5028014
+ * @summary Focus request & mouse click being performed nearly synchronously
+ *          shouldn't break the focus subsystem
+ * @author  anton.tarasov@sun.com: area=awt-focus
+ * @library ../../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
+ * @run main MouseClickRequestFocusRaceTest
+ */
+public class MouseClickRequestFocusRaceTest {
+    static Robot robot;
+    static JFrame frame1 = new JFrame("Frame-1") {
             public String toString() { return "Frame-1";}
         };
-    JFrame frame2 = new JFrame("Frame-2") {
+    static JFrame frame2 = new JFrame("Frame-2") {
             public String toString() { return "Frame-2";}
         };
-    JButton button1 = new JButton("button-1") {
+    static JButton button1 = new JButton("button-1") {
             public String toString() { return "button-1";}
         };
-    JButton button2 = new JButton("button-2") {
+    static JButton button2 = new JButton("button-2") {
             public String toString() { return "button-2";}
         };
-    JPopupMenu popup = new JPopupMenu();
+    static JPopupMenu popup = new JPopupMenu();
 
     public static void main(String[] args) {
-        MouseClickRequestFocusRaceTest app = new MouseClickRequestFocusRaceTest();
-        app.init();
-        app.start();
-    }
-
-    public void init() {
         try {
             robot = new Robot();
+            robot.setAutoWaitForIdle(true);
+            robot.setAutoDelay(100);
         } catch (AWTException e) {
             throw new RuntimeException("Error: unable to create robot", e);
         }
-        // Create instructions for the user here, as well as set up
-        // the environment -- set the layout manager, add buttons,
-        // etc.
-        this.setLayout (new BorderLayout ());
-        Sysout.createDialogWithInstructions(new String[]
-            {"Automatic test. Simply wait until it is done."
-            });
-    }
-
-    public void start() {
         frame1.add(button1);
         frame2.add(button2);
         frame1.setBounds(0, 0, 200, 300);
@@ -110,198 +112,64 @@ public class MouseClickRequestFocusRaceTest extends Applet {
 
         frame1.setVisible(true);
         frame2.setVisible(true);
-//        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
-        robot.delay(1000);
 
-        test();
+        robot.delay(1000);
+        try {
+            test();
+        } finally {
+            frame1.dispose();
+            frame2.dispose();
+        }
     }
 
-    public void test() {
+    public static void test() {
         // Right click Frame-1
         robot.mouseMove(frame1.getLocation().x + 100, frame1.getLocation().y + 200);
         robot.mousePress(InputEvent.BUTTON3_MASK);
-        robot.delay(100);
         robot.mouseRelease(InputEvent.BUTTON3_MASK);
 
-//        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
         robot.delay(1000);
 
         // Left click Frame-2
         robot.mouseMove(frame2.getLocation().x + 100, frame1.getLocation().y + 200);
         robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.delay(100);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
 
-//        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
         robot.delay(1000);
 
         JComponent focusOwner = (JComponent)KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
         JFrame focusedWindow = (JFrame)KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusedWindow();
 
-        Sysout.println("focus owner: " + focusOwner);
-        Sysout.println("focused window: " + focusedWindow);
+        System.out.println("focus owner: " + focusOwner);
+        System.out.println("focused window: " + focusedWindow);
 
         // Verify that the focused window is the ancestor of the focus owner
         if (!focusedWindow.isAncestorOf(focusOwner)) {
-            throw new TestFailedException("The focus owner is not in the focused window!");
+            throw new RuntimeException("The focus owner is not in the focused window!");
         }
 
-        // Try to close native focused window
-        robot.keyPress(KeyEvent.VK_ALT);
-        robot.keyPress(KeyEvent.VK_F4);
-        robot.keyRelease(KeyEvent.VK_F4);
-        robot.keyRelease(KeyEvent.VK_ALT);
-
-//        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
-        robot.delay(1000);
-
-        // Verify that the Java focused window really mapped the native focused window.
-        if (focusedWindow.isVisible()) {
-            throw new TestFailedException("The focused window is different on Java and on the native level.");
-        }
-    }
-
-    class TestFailedException extends RuntimeException {
-        public TestFailedException(String cause) {
-            super("Test failed.");
-            Sysout.println(cause);
+        if (!OSInfo.getOSType().equals(OSInfo.OSType.MACOSX)) {
+            // Try to close native focused window
+            robot.keyPress(KeyEvent.VK_ALT);
+            robot.keyPress(KeyEvent.VK_F4);
+            robot.keyRelease(KeyEvent.VK_F4);
+            robot.keyRelease(KeyEvent.VK_ALT);
+            robot.delay(1000);
+            // Verify that the Java focused window really mapped the native focused window.
+            if (focusedWindow.isVisible()) {
+                throw new RuntimeException("The focused window is different on Java and on the native level.");
+            }
+        } else {
+            // Try to move native focus to previous window
+            robot.keyPress(KeyEvent.VK_CONTROL);
+            robot.keyPress(KeyEvent.VK_F4);
+            robot.keyRelease(KeyEvent.VK_F4);
+            robot.keyRelease(KeyEvent.VK_CONTROL);
+            robot.delay(1000);
+            // Verify that the Java focused window really mapped the native focused window.
+            if (focusedWindow.isFocused()) {
+                throw new RuntimeException("The focused window is different on Java and on the native level.");
+            }
         }
     }
 }
-
-/****************************************************
- Standard Test Machinery
- DO NOT modify anything below -- it's a standard
-  chunk of code whose purpose is to make user
-  interaction uniform, and thereby make it simpler
-  to read and understand someone else's test.
- ****************************************************/
-
-/**
- This is part of the standard test machinery.
- It creates a dialog (with the instructions), and is the interface
-  for sending text messages to the user.
- To print the instructions, send an array of strings to Sysout.createDialog
-  WithInstructions method.  Put one line of instructions per array entry.
- To display a message for the tester to see, simply call Sysout.println
-  with the string to be displayed.
- This mimics System.out.println but works within the test harness as well
-  as standalone.
- */
-
-class Sysout
-{
-    static TestDialog dialog;
-
-    public static void createDialogWithInstructions( String[] instructions )
-    {
-        dialog = new TestDialog( new Frame(), "Instructions" );
-        dialog.printInstructions( instructions );
-//        dialog.setVisible(true);
-        println( "Any messages for the tester will display here." );
-    }
-
-    public static void createDialog( )
-    {
-        dialog = new TestDialog( new Frame(), "Instructions" );
-        String[] defInstr = { "Instructions will appear here. ", "" } ;
-        dialog.printInstructions( defInstr );
-//        dialog.setVisible(true);
-        println( "Any messages for the tester will display here." );
-    }
-
-
-    public static void printInstructions( String[] instructions )
-    {
-        dialog.printInstructions( instructions );
-    }
-
-
-    public static void println( String messageIn )
-    {
-        dialog.displayMessage( messageIn );
-    }
-
-}// Sysout  class
-
-/**
-  This is part of the standard test machinery.  It provides a place for the
-   test instructions to be displayed, and a place for interactive messages
-   to the user to be displayed.
-  To have the test instructions displayed, see Sysout.
-  To have a message to the user be displayed, see Sysout.
-  Do not call anything in this dialog directly.
-  */
-class TestDialog extends Dialog
-{
-
-    TextArea instructionsText;
-    TextArea messageText;
-    int maxStringLength = 80;
-
-    //DO NOT call this directly, go through Sysout
-    public TestDialog( Frame frame, String name )
-    {
-        super( frame, name );
-        int scrollBoth = TextArea.SCROLLBARS_BOTH;
-        instructionsText = new TextArea( "", 15, maxStringLength, scrollBoth );
-        add( "North", instructionsText );
-
-        messageText = new TextArea( "", 5, maxStringLength, scrollBoth );
-        add("Center", messageText);
-
-        pack();
-
-//        setVisible(true);
-    }// TestDialog()
-
-    //DO NOT call this directly, go through Sysout
-    public void printInstructions( String[] instructions )
-    {
-        //Clear out any current instructions
-        instructionsText.setText( "" );
-
-        //Go down array of instruction strings
-
-        String printStr, remainingStr;
-        for( int i=0; i < instructions.length; i++ )
-        {
-            //chop up each into pieces maxSringLength long
-            remainingStr = instructions[ i ];
-            while( remainingStr.length() > 0 )
-            {
-                //if longer than max then chop off first max chars to print
-                if( remainingStr.length() >= maxStringLength )
-                {
-                    //Try to chop on a word boundary
-                    int posOfSpace = remainingStr.
-                        lastIndexOf( ' ', maxStringLength - 1 );
-
-                    if( posOfSpace <= 0 ) posOfSpace = maxStringLength - 1;
-
-                    printStr = remainingStr.substring( 0, posOfSpace + 1 );
-                    remainingStr = remainingStr.substring( posOfSpace + 1 );
-                }
-                //else just print
-                else
-                {
-                    printStr = remainingStr;
-                    remainingStr = "";
-                }
-
-                instructionsText.append( printStr + "\n" );
-
-            }// while
-
-        }// for
-
-    }//printInstructions()
-
-    //DO NOT call this directly, go through Sysout
-    public void displayMessage( String messageIn )
-    {
-        messageText.append( messageIn + "\n" );
-        System.out.println(messageIn);
-    }
-
-}// TestDialog  class

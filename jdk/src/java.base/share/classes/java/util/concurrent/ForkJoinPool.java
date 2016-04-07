@@ -289,7 +289,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * on to try or create other queues -- they block only when
      * creating and registering new queues. Because it is used only as
      * a spinlock, unlocking requires only a "releasing" store (using
-     * putOrderedInt).  The qlock is also used during termination
+     * putIntRelease).  The qlock is also used during termination
      * detection, in which case it is forced to a negative
      * non-lockable value.
      *
@@ -1071,7 +1071,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                         popped = true;
                         top = s;
                     }
-                    U.putOrderedInt(this, QLOCK, 0);
+                    U.putIntRelease(this, QLOCK, 0);
                 }
             }
             return popped;
@@ -1261,7 +1261,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                                         popped = true;
                                         top = s - 1;
                                     }
-                                    U.putOrderedInt(this, QLOCK, 0);
+                                    U.putIntRelease(this, QLOCK, 0);
                                     if (popped)
                                         return t;
                                 }

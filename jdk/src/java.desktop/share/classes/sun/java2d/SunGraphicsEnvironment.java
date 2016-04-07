@@ -208,9 +208,9 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
      * to use Mincho instead of Gothic for dialoginput in JA locales
      * on windows. Not needed on other platforms.
      *
-     * DO NOT MOVE OR RENAME OR OTHERWISE ALTER THIS METHOD.
-     * ITS USED BY SOME NON-JRE INTERNAL CODE.
+     * @deprecated as of JDK9. To be removed in a future release
      */
+    @Deprecated
     public static void useAlternateFontforJALocales() {
         getFontManagerForSGE().useAlternateFontforJALocales();
     }

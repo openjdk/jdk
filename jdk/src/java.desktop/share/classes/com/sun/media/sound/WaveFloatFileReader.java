@@ -59,10 +59,10 @@ public final class WaveFloatFileReader extends SunFileReader {
         long samplerate = 1;
         int framesize = 1;
         int bits = 1;
+        long dataSize = 0;
 
         while (riffiterator.hasNextChunk()) {
             RIFFReader chunk = riffiterator.nextChunk();
-
             if (chunk.getFormat().equals("fmt ")) {
                 fmt_found = true;
 
@@ -77,6 +77,7 @@ public final class WaveFloatFileReader extends SunFileReader {
                 bits = chunk.readUnsignedShort();
             }
             if (chunk.getFormat().equals("data")) {
+                dataSize = chunk.getSize();
                 data_found = true;
                 break;
             }
@@ -87,8 +88,13 @@ public final class WaveFloatFileReader extends SunFileReader {
         AudioFormat audioformat = new AudioFormat(
                 Encoding.PCM_FLOAT, samplerate, bits, channels,
                 framesize, samplerate, false);
+        long frameLength = dataSize / audioformat.getFrameSize();
+        if (frameLength > Integer.MAX_VALUE) {
+            frameLength = AudioSystem.NOT_SPECIFIED;
+        }
+
         return new AudioFileFormat(AudioFileFormat.Type.WAVE, audioformat,
-                                   AudioSystem.NOT_SPECIFIED);
+                                   (int) frameLength);
     }
 
     @Override

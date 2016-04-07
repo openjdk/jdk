@@ -157,27 +157,12 @@ AwtTextField::HandleEvent(MSG *msg, BOOL synthetic)
 
         /*
          * We consume WM_MOUSEMOVE while the left mouse button is pressed,
-         * so we have to simulate autoscrolling when mouse is moved outside
-         * of the client area.
+         * so we have to simulate selection autoscrolling when mouse is moved
+         * outside of the client area.
          */
         POINT p;
-        RECT r;
-        BOOL bScrollLeft = FALSE;
-        BOOL bScrollRight = FALSE;
-        BOOL bScrollUp = FALSE;
-        BOOL bScrollDown = FALSE;
-
         p.x = msg->pt.x;
         p.y = msg->pt.y;
-        VERIFY(::GetClientRect(GetHWnd(), &r));
-
-        if (p.x < 0) {
-            bScrollLeft = TRUE;
-            p.x = 0;
-        } else if (p.x > r.right) {
-            bScrollRight = TRUE;
-            p.x = r.right - 1;
-        }
         LONG lCurPos = EditGetCharFromPos(p);
 
         if (GetStartSelectionPos() != -1 &&
@@ -192,32 +177,6 @@ AwtTextField::HandleEvent(MSG *msg, BOOL synthetic)
             cr.cpMax = GetLastSelectionPos();
 
             EditSetSel(cr);
-        }
-
-        if (bScrollLeft == TRUE || bScrollRight == TRUE) {
-            SCROLLINFO si;
-            memset(&si, 0, sizeof(si));
-            si.cbSize = sizeof(si);
-            si.fMask = SIF_PAGE | SIF_POS | SIF_RANGE;
-
-            SendMessage(EM_SHOWSCROLLBAR, SB_HORZ, TRUE);
-            VERIFY(::GetScrollInfo(GetHWnd(), SB_HORZ, &si));
-            SendMessage(EM_SHOWSCROLLBAR, SB_HORZ, FALSE);
-
-            if (bScrollLeft == TRUE) {
-                si.nPos = si.nPos - si.nPage / 2;
-                si.nPos = max(si.nMin, si.nPos);
-            } else if (bScrollRight == TRUE) {
-                si.nPos = si.nPos + si.nPage / 2;
-                si.nPos = min(si.nPos, si.nMax);
-            }
-            /*
-             * Okay to use 16-bit position since RichEdit control adjusts
-             * its scrollbars so that their range is always 16-bit.
-             */
-            DASSERT(abs(si.nPos) < 0x8000);
-            SendMessage(WM_HSCROLL,
-                        MAKEWPARAM(SB_THUMBPOSITION, LOWORD(si.nPos)));
         }
         delete msg;
         return mrConsume;

@@ -127,6 +127,16 @@ ULONG __stdcall AwtDropTarget::Release() {
     return (ULONG)refs;
 }
 
+void ScaleDown(POINT &cp, HWND m_window) {
+    int screen = AwtWin32GraphicsDevice::DeviceIndexForWindow(m_window);
+    Devices::InstanceAccess devices;
+    AwtWin32GraphicsDevice* device = devices->GetDevice(screen);
+    if (device) {
+        cp.x = device->ScaleDownX(cp.x);
+        cp.y = device->ScaleDownY(cp.y);
+    }
+}
+
 /**
  * DragEnter
  */
@@ -176,6 +186,7 @@ HRESULT __stdcall AwtDropTarget::DragEnter(IDataObject __RPC_FAR *pDataObj, DWOR
 
         cp.x = pt.x - wr.left;
         cp.y = pt.y - wr.top;
+        ScaleDown(cp, m_window);
 
         jint actions = call_dTCenter(env, m_dtcp, m_target,
                                      (jint)cp.x, (jint)cp.y,
@@ -237,6 +248,7 @@ HRESULT __stdcall AwtDropTarget::DragOver(DWORD grfKeyState, POINTL pt, DWORD __
 
     cp.x = pt.x - wr.left;
     cp.y = pt.y - wr.top;
+    ScaleDown(cp, m_window);
 
     actions = call_dTCmotion(env, m_dtcp, m_target,(jint)cp.x, (jint)cp.y,
                              ::convertDROPEFFECTToActions(mapModsToDROPEFFECT(*pdwEffect, grfKeyState)),
@@ -336,6 +348,7 @@ HRESULT __stdcall AwtDropTarget::Drop(IDataObject __RPC_FAR *pDataObj, DWORD grf
 
     cp.x = pt.x - wr.left;
     cp.y = pt.y - wr.top;
+    ScaleDown(cp, m_window);
 
     m_dropActions = java_awt_dnd_DnDConstants_ACTION_NONE;
 

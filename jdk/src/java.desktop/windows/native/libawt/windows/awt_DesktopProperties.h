@@ -73,8 +73,8 @@ class AwtDesktopProperties {
         void SetIntegerProperty(LPCTSTR, int);
         void SetStringProperty(LPCTSTR, LPTSTR);
         void SetColorProperty(LPCTSTR, DWORD);
-        void SetFontProperty(HDC, int, LPCTSTR);
-        void SetFontProperty(LPCTSTR, const LOGFONT &);
+        void SetFontProperty(HDC, int, LPCTSTR, float invScale);
+        void SetFontProperty(LPCTSTR, const LOGFONT &, float invScale);
         void SetSoundProperty(LPCTSTR, LPCTSTR);
 
         JNIEnv * GetEnv() {

@@ -81,13 +81,15 @@ public interface FontManager {
      *
      * @param fontFile the file holding the font data
      * @param fontFormat the expected font format
+     * @param all whether to retrieve all fonts in the resource or
+     *        just the first one.
      * @param isCopy {@code true} if the file is a copy and needs to be
      *        deleted, {@code false} otherwise
      *
      * @return the created Font2D instance
      */
-    public Font2D createFont2D(File fontFile, int fontFormat,
-                               boolean isCopy, CreatedFontTracker tracker)
+    public Font2D[] createFont2D(File fontFile, int fontFormat, boolean all,
+                                 boolean isCopy, CreatedFontTracker tracker)
         throws FontFormatException;
 
     /**

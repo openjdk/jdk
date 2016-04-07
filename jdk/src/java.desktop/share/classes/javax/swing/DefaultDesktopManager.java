@@ -129,8 +129,12 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
             } catch (PropertyVetoException e2) {
             }
         } else {
+            Container c = f.getParent();
+            if (c == null) {
+                return;
+            }
             f.setNormalBounds(f.getBounds());
-            Rectangle desktopBounds = f.getParent().getBounds();
+            Rectangle desktopBounds = c.getBounds();
             setBoundsForFrame(f, 0, 0,
                 desktopBounds.width, desktopBounds.height);
         }

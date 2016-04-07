@@ -93,7 +93,8 @@ case "$1" in
 esac
 
 
-EXTRA_OPTS="-XaddExports:java.base/sun.util.locale.provider=ALL-UNNAMED,java.base/sun.util.resources=ALL-UNNAMED"
+EXTRA_OPTS="-XaddExports:java.base/sun.util.locale.provider=ALL-UNNAMED \
+ -XaddExports:java.base/sun.util.resources=ALL-UNNAMED"
 
 # compile
 cp ${TESTSRC}${FS}ProviderTest.java .

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,12 +40,16 @@
     NSMenu *fDockMenu;
     CMenuBar *fDefaultMenuBar;
 
+    NSProgressIndicator *fProgressIndicator;
+
     BOOL fHandlesDocumentTypes;
     BOOL fHandlesURLTypes;
 }
 
 @property (nonatomic, retain) NSMenuItem *fPreferencesMenu;
 @property (nonatomic, retain) NSMenuItem *fAboutMenu;
+
+@property (nonatomic, retain) NSProgressIndicator *fProgressIndicator;
 
 @property (nonatomic, retain) NSMenu *fDockMenu;
 @property (nonatomic, retain) CMenuBar *fDefaultMenuBar;

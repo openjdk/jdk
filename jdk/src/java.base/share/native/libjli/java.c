@@ -2003,16 +2003,21 @@ ShowSplashScreen()
     void *image_data = NULL;
     float scale_factor = 1;
     char *scaled_splash_name = NULL;
-
+    jboolean isImageScaled = JNI_FALSE;
+    size_t maxScaledImgNameLength = 0;
     if (file_name == NULL){
         return;
     }
+    maxScaledImgNameLength = DoSplashGetScaledImgNameMaxPstfixLen(file_name);
 
-    scaled_splash_name = DoSplashGetScaledImageName(
-                        jar_name, file_name, &scale_factor);
+    scaled_splash_name = JLI_MemAlloc(
+                            maxScaledImgNameLength * sizeof(char));
+    isImageScaled = DoSplashGetScaledImageName(jar_name, file_name,
+                            &scale_factor,
+                            scaled_splash_name, maxScaledImgNameLength);
     if (jar_name) {
 
-        if (scaled_splash_name) {
+        if (isImageScaled) {
             image_data = JLI_JarUnpackFile(
                     jar_name, scaled_splash_name, &data_size);
         }
@@ -2030,17 +2035,14 @@ ShowSplashScreen()
         }
     } else {
         DoSplashInit();
-        if (scaled_splash_name) {
+        if (isImageScaled) {
             DoSplashSetScaleFactor(scale_factor);
             DoSplashLoadFile(scaled_splash_name);
         } else {
             DoSplashLoadFile(file_name);
         }
     }
-
-    if (scaled_splash_name) {
-        JLI_MemFree(scaled_splash_name);
-    }
+    JLI_MemFree(scaled_splash_name);
 
     DoSplashSetFileJarName(file_name, jar_name);
 

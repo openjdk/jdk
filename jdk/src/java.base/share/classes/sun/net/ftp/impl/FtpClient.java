@@ -440,7 +440,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
                     code = Integer.parseInt(response, 0, 3, 10);
                 } catch (NumberFormatException e) {
                     code = -1;
-                } catch (StringIndexOutOfBoundsException e) {
+                } catch (IndexOutOfBoundsException e) {
                     /* this line doesn't contain a response code, so
                     we just completely ignore it */
                     continue;

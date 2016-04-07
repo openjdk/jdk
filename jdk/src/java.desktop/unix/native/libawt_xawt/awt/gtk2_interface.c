@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -831,6 +831,10 @@ gboolean gtk2_load(JNIEnv *env)
             fp_gtk_separator_tool_item_new =
                 dl_symbol("gtk_vseparator_new");
         }
+
+        fp_g_list_append = dl_symbol("g_list_append");
+        fp_g_list_free = dl_symbol("g_list_free");
+        fp_g_list_free_full = dl_symbol("g_list_free_full");
     }
     /* Now we have only one kind of exceptions: NO_SYMBOL_EXCEPTION
      * Otherwise we can check the return value of setjmp method.

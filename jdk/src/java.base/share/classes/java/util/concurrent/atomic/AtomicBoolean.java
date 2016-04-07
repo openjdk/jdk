@@ -136,7 +136,7 @@ public class AtomicBoolean implements java.io.Serializable {
      * @since 1.6
      */
     public final void lazySet(boolean newValue) {
-        U.putOrderedInt(this, VALUE, (newValue ? 1 : 0));
+        U.putIntRelease(this, VALUE, (newValue ? 1 : 0));
     }
 
     /**

@@ -175,31 +175,6 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
         return scale;
     }
 
-    @Override
-    public boolean copyArea(SunGraphics2D sg2d, int x, int y, int w, int h,
-                            int dx, int dy) {
-        final int state = sg2d.transformState;
-        if (state > SunGraphics2D.TRANSFORM_TRANSLATESCALE
-            || sg2d.compositeState >= SunGraphics2D.COMP_XOR) {
-            return false;
-        }
-        if (state <= SunGraphics2D.TRANSFORM_ANY_TRANSLATE) {
-            x += sg2d.transX;
-            y += sg2d.transY;
-        } else if (state == SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
-            final double[] coords = {x, y, x + w, y + h, x + dx, y + dy};
-            sg2d.transform.transform(coords, 0, coords, 0, 3);
-            x = (int) Math.ceil(coords[0] - 0.5);
-            y = (int) Math.ceil(coords[1] - 0.5);
-            w = ((int) Math.ceil(coords[2] - 0.5)) - x;
-            h = ((int) Math.ceil(coords[3] - 0.5)) - y;
-            dx = ((int) Math.ceil(coords[4] - 0.5)) - x;
-            dy = ((int) Math.ceil(coords[5] - 0.5)) - y;
-        }
-        oglRenderPipe.copyArea(sg2d, x, y, w, h, dx, dy);
-        return true;
-    }
-
     protected native void clearWindow();
 
     public static class CGLWindowSurfaceData extends CGLSurfaceData {
