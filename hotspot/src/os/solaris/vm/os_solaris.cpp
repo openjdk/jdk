@@ -2754,13 +2754,13 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
     pd_unmap_memory(addr, bytes);
   }
 
-  if (PrintMiscellaneous && Verbose) {
+  if (log_is_enabled(Warning, os)) {
     char buf[256];
     buf[0] = '\0';
     if (addr == NULL) {
       jio_snprintf(buf, sizeof(buf), ": %s", os::strerror(err));
     }
-    warning("attempt_reserve_memory_at: couldn't reserve " SIZE_FORMAT " bytes at "
+    log_info(os)("attempt_reserve_memory_at: couldn't reserve " SIZE_FORMAT " bytes at "
             PTR_FORMAT ": reserve_memory_helper returned " PTR_FORMAT
             "%s", bytes, requested_addr, addr, buf);
   }
@@ -2790,9 +2790,7 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
           assert(i > 0, "gap adjustment code problem");
           have_adjusted_gap = true;  // adjust the gap only once, just in case
           gap = actual_gap;
-          if (PrintMiscellaneous && Verbose) {
-            warning("attempt_reserve_memory_at: adjusted gap to 0x%lx", gap);
-          }
+          log_info(os)("attempt_reserve_memory_at: adjusted gap to 0x%lx", gap);
           unmap_memory(base[i], bytes);
           unmap_memory(base[i-1], size[i-1]);
           i-=2;
@@ -2824,8 +2822,8 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
       } else {
         size_t bottom_overlap = base[i] + bytes - requested_addr;
         if (bottom_overlap >= 0 && bottom_overlap < bytes) {
-          if (PrintMiscellaneous && Verbose && bottom_overlap == 0) {
-            warning("attempt_reserve_memory_at: possible alignment bug");
+          if (bottom_overlap == 0) {
+            log_info(os)("attempt_reserve_memory_at: possible alignment bug");
           }
           unmap_memory(requested_addr, bottom_overlap);
           size[i] = bytes - bottom_overlap;
@@ -4355,8 +4353,8 @@ static pset_getloadavg_type pset_getloadavg_ptr = NULL;
 void init_pset_getloadavg_ptr(void) {
   pset_getloadavg_ptr =
     (pset_getloadavg_type)dlsym(RTLD_DEFAULT, "pset_getloadavg");
-  if (PrintMiscellaneous && Verbose && pset_getloadavg_ptr == NULL) {
-    warning("pset_getloadavg function not found");
+  if (pset_getloadavg_ptr == NULL) {
+    log_warning(os)("pset_getloadavg function not found");
   }
 }
 
@@ -4439,25 +4437,13 @@ jint os::init_2(void) {
   }
 
   os::set_polling_page(polling_page);
-
-#ifndef PRODUCT
-  if (Verbose && PrintMiscellaneous) {
-    tty->print("[SafePoint Polling address: " INTPTR_FORMAT "]\n",
-               (intptr_t)polling_page);
-  }
-#endif
+  log_info(os)("SafePoint Polling address: " INTPTR_FORMAT, p2i(polling_page));
 
   if (!UseMembar) {
     address mem_serialize_page = (address)Solaris::mmap_chunk(NULL, page_size, MAP_PRIVATE, PROT_READ | PROT_WRITE);
     guarantee(mem_serialize_page != NULL, "mmap Failed for memory serialize page");
     os::set_memory_serialize_page(mem_serialize_page);
-
-#ifndef PRODUCT
-    if (Verbose && PrintMiscellaneous) {
-      tty->print("[Memory Serialize  Page address: " INTPTR_FORMAT "]\n",
-                 (intptr_t)mem_serialize_page);
-    }
-#endif
+    log_info(os)("Memory Serialize Page address: " INTPTR_FORMAT, p2i(mem_serialize_page));
   }
 
   // Check minimum allowable stack size for thread creation and to initialize
@@ -4537,16 +4523,12 @@ jint os::init_2(void) {
     struct rlimit nbr_files;
     int status = getrlimit(RLIMIT_NOFILE, &nbr_files);
     if (status != 0) {
-      if (PrintMiscellaneous && (Verbose || WizardMode)) {
-        perror("os::init_2 getrlimit failed");
-      }
+      log_info(os)("os::init_2 getrlimit failed: %s", os::strerror(errno));
     } else {
       nbr_files.rlim_cur = nbr_files.rlim_max;
       status = setrlimit(RLIMIT_NOFILE, &nbr_files);
       if (status != 0) {
-        if (PrintMiscellaneous && (Verbose || WizardMode)) {
-          perror("os::init_2 setrlimit failed");
-        }
+        log_info(os)("os::init_2 setrlimit failed: %s", os::strerror(errno));
       }
     }
   }

@@ -3459,25 +3459,13 @@ jint os::init_2(void) {
   guarantee(polling_page != MAP_FAILED, "os::init_2: failed to allocate polling page");
 
   os::set_polling_page(polling_page);
-
-#ifndef PRODUCT
-  if (Verbose && PrintMiscellaneous) {
-    tty->print("[SafePoint Polling address: " INTPTR_FORMAT "]\n",
-               (intptr_t)polling_page);
-  }
-#endif
+  log_info(os)("SafePoint Polling address: " INTPTR_FORMAT, p2i(polling_page));
 
   if (!UseMembar) {
     address mem_serialize_page = (address) ::mmap(NULL, Bsd::page_size(), PROT_READ | PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
     guarantee(mem_serialize_page != MAP_FAILED, "mmap Failed for memory serialize page");
     os::set_memory_serialize_page(mem_serialize_page);
-
-#ifndef PRODUCT
-    if (Verbose && PrintMiscellaneous) {
-      tty->print("[Memory Serialize  Page address: " INTPTR_FORMAT "]\n",
-                 (intptr_t)mem_serialize_page);
-    }
-#endif
+    log_info(os)("Memory Serialize Page address: " INTPTR_FORMAT, p2i(mem_serialize_page));
   }
 
   // initialize suspend/resume support - must do this before signal_sets_init()
@@ -3519,9 +3507,7 @@ jint os::init_2(void) {
     struct rlimit nbr_files;
     int status = getrlimit(RLIMIT_NOFILE, &nbr_files);
     if (status != 0) {
-      if (PrintMiscellaneous && (Verbose || WizardMode)) {
-        perror("os::init_2 getrlimit failed");
-      }
+      log_info(os)("os::init_2 getrlimit failed: %s", os::strerror(errno));
     } else {
       nbr_files.rlim_cur = nbr_files.rlim_max;
 
@@ -3534,9 +3520,7 @@ jint os::init_2(void) {
 
       status = setrlimit(RLIMIT_NOFILE, &nbr_files);
       if (status != 0) {
-        if (PrintMiscellaneous && (Verbose || WizardMode)) {
-          perror("os::init_2 setrlimit failed");
-        }
+        log_info(os)("os::init_2 setrlimit failed: %s", os::strerror(errno));
       }
     }
   }
