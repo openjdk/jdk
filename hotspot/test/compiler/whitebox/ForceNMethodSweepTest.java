@@ -38,12 +38,12 @@ import compiler.whitebox.CompilerWhiteBoxTest;
  * @library /testlibrary /test/lib /
  * @modules java.management
  * @build ForceNMethodSweepTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:-TieredCompilation -XX:+WhiteBoxAPI
- *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCase$Helper::*
- *                   -XX:-BackgroundCompilation ForceNMethodSweepTest
+ *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
+ *                   -XX:-BackgroundCompilation -XX:-UseCounterDecay ForceNMethodSweepTest
  * @summary testing of WB::forceNMethodSweep
  */
 public class ForceNMethodSweepTest extends CompilerWhiteBoxTest {
