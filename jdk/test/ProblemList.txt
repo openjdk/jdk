@@ -282,6 +282,8 @@ sun/security/krb5/auto/HttpNegotiateServer.java                 8038079 generic-
 
 sun/security/tools/keytool/autotest.sh                          8130302 generic-all
 
+sun/security/provider/NSASuiteB/TestDSAGenParameterSpec.java    8137255 generic-all
+
 ############################################################################
 
 # jdk_sound
