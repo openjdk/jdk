@@ -345,6 +345,8 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // Support for parallelization of rescan and marking.
   const size_t rescan_task_size()  const { return _rescan_task_size;  }
   const size_t marking_task_size() const { return _marking_task_size; }
+  // Return ergonomic max size for CMSRescanMultiple and CMSConcMarkMultiple.
+  const size_t max_flag_size_for_task_size() const;
   SequentialSubTasksDone* conc_par_seq_tasks() {return &_conc_par_seq_tasks; }
   void initialize_sequential_subtasks_for_rescan(int n_threads);
   void initialize_sequential_subtasks_for_marking(int n_threads,
