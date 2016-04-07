@@ -583,9 +583,9 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      */
     final CompletableFuture<T> postFire(CompletableFuture<?> a, int mode) {
         if (a != null && a.stack != null) {
-            if (mode < 0 || a.result == null)
+            if (a.result == null)
                 a.cleanStack();
-            else
+            else if (mode >= 0)
                 a.postComplete();
         }
         if (result != null && stack != null) {
@@ -1107,9 +1107,9 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     final CompletableFuture<T> postFire(CompletableFuture<?> a,
                                         CompletableFuture<?> b, int mode) {
         if (b != null && b.stack != null) { // clean second source
-            if (mode < 0 || b.result == null)
+            if (b.result == null)
                 b.cleanStack();
-            else
+            else if (mode >= 0)
                 b.postComplete();
         }
         return postFire(a, mode);
