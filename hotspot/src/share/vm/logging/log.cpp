@@ -32,6 +32,8 @@
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logOutput.hpp"
+#include "logging/logTagLevelExpression.hpp"
+#include "logging/logTagSet.hpp"
 #include "logging/logStream.inline.hpp"
 #include "memory/resourceArea.hpp"
 
@@ -43,6 +45,13 @@
 
 #define assert_char_not_in(c, s) \
   assert(strchr(s, c) == NULL, "Expected '%s' to *not* contain character '%c'", s, c)
+
+void Test_log_tag_combinations_limit() {
+  assert(LogTagLevelExpression::MaxCombinations > LogTagSet::ntagsets(),
+      "Combination limit (" SIZE_FORMAT ") not sufficient "
+      "for configuring all available tag sets (" SIZE_FORMAT ")",
+      LogTagLevelExpression::MaxCombinations, LogTagSet::ntagsets());
+}
 
 class TestLogFile {
  private:
