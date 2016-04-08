@@ -1,6 +1,5 @@
 #
-# Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
-# Copyright 2009 Red Hat, Inc.
+# Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -20,18 +19,9 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
 #
 
-# Setup for Zero (non-Shark) version of VM
-
-# Select which files to use (in top.make)
-TYPE = ZERO
-
-# Install libjvm.so, etc in in server directory.
-VM_SUBDIR = server
-
-# Disable trace for zero builds
-# NOTE: This is used for simple comparison with the new build system, and
-# should not be merged into mainline with build-infra.
-INCLUDE_TRACE := false
+JVM_handle_linux_signal
+numa_error
+numa_warn
+sysThreadAvailableStackWithSlack

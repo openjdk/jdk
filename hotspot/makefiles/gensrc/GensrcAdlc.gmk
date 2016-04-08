@@ -1,0 +1,192 @@
+#
+# Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+$(eval $(call IncludeCustomExtension, hotspot, gensrc/GensrcAdlc.gmk))
+
+ifeq ($(call check-jvm-feature, compiler2), true)
+
+  ADLC_SUPPORT_DIR := $(JVM_SUPPORT_DIR)/adlc
+
+  ##############################################################################
+  # Build the ad compiler (the adlc build tool)
+
+  # Flags depending on the build platform/tool chain
+  # NOTE: No optimization or debug flags set here
+  ifeq ($(OPENJDK_BUILD_OS), linux)
+    ADLC_CFLAGS := -fno-exceptions -DLINUX
+  else ifeq ($(OPENJDK_BUILD_OS), solaris)
+    ADLC_LDFLAGS := -m64
+    ADLC_CFLAGS := -m64
+    ADLC_CFLAGS_WARNINGS := +w
+  else ifeq ($(OPENJDK_BUILD_OS), aix)
+    # FIXME: Not implemented. These flags are likely, however
+    # ADLC_LDFLAGS := -q64
+    # ADLC_CFLAGS := -qnortti -qnoeh -q64
+  else ifeq ($(OPENJDK_BUILD_OS), windows)
+    ADLC_LDFLAGS := -nologo
+    ADLC_CFLAGS := -nologo -EHsc
+    # NOTE: The old build also have -D_CRT_SECURE_NO_DEPRECATE but it doesn't
+    # seem needed any more.
+    ADLC_CFLAGS_WARNINGS := -W3 -D_CRT_SECURE_NO_WARNINGS
+  endif
+
+  # NOTE: The old build didn't set -DASSERT for windows but it doesn't seem to
+  # hurt.
+  ADLC_CFLAGS += -DASSERT
+
+  ADLC_CFLAGS += -D$(HOTSPOT_TARGET_CPU_DEFINE)
+
+  ADLC_CFLAGS += -I$(HOTSPOT_TOPDIR)/src/share/vm
+
+  $(eval $(call SetupNativeCompilation, BUILD_ADLC, \
+      TOOLCHAIN := TOOLCHAIN_BUILD_LINK_CXX, \
+      SRC := $(HOTSPOT_TOPDIR)/src/share/vm/adlc, \
+      EXTRA_FILES := $(HOTSPOT_TOPDIR)/src/share/vm/opto/opcodes.cpp, \
+      CFLAGS := $(ADLC_CFLAGS) $(ADLC_CFLAGS_WARNINGS), \
+      LDFLAGS := $(ADLC_LDFLAGS), \
+      LIBS := $(ADLC_LIBS), \
+      OBJECT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/adlc/objs, \
+      OUTPUT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/adlc, \
+      PROGRAM := adlc, \
+      DEBUG_SYMBOLS := false, \
+      DISABLED_WARNINGS_clang := parentheses tautological-compare, \
+      DISABLED_WARNINGS_solstudio := notemsource, \
+  ))
+
+  ADLC_TOOL := $(BUILD_ADLC_TARGET)
+
+  ##############################################################################
+  # Transform the ad source files into C++ source files using adlc
+
+  # Setup flags for the adlc build tool (ADLCFLAGS).
+  ADLCFLAGS += -q -T
+
+  # ADLC flags depending on target OS
+  ifeq ($(OPENJDK_TARGET_OS), linux)
+    ADLCFLAGS += -DLINUX=1 -D_GNU_SOURCE=1
+  else ifeq ($(OPENJDK_TARGET_OS), solaris)
+    ADLCFLAGS += -DSOLARIS=1 -DSPARC_WORKS=1
+  else ifeq ($(OPENJDK_TARGET_OS), aix)
+    # FIXME: Not implemented
+  else ifeq ($(OPENJDK_TARGET_OS), macosx)
+    ADLCFLAGS += -D_ALLBSD_SOURCE=1 -D_GNU_SOURCE=1
+  endif
+
+  ifneq ($(OPENJDK_TARGET_OS), windows)
+    # NOTE: Windows adlc flags was different in the old build. Is this really
+    # correct?
+
+    # -g makes #line directives in the generated C++ files.
+    ADLCFLAGS += -g
+
+    ADLCFLAGS += -D$(HOTSPOT_TARGET_CPU_DEFINE)=1
+  endif
+
+  # This generates checks in the generated C++ files that _LP64 is correctly
+  # (un)defined when compiling them.
+  ifeq ($(OPENJDK_TARGET_CPU_BITS), 64)
+    ADLCFLAGS += -D_LP64=1
+  else
+    ADLCFLAGS += -U_LP64
+  endif
+
+  ##############################################################################
+  # Concatenate all ad source files into a single file, which will be fed to
+  # adlc. Also include a #line directive at the start of every included file
+  # (after the initial header block), stating the original source file name.
+  #
+  # Normally, debugging is done directly on the ad_<arch>*.cpp files, but the
+  # #line directives in those files will be pointing back to <arch>.ad.
+
+  # AD_SRC_ROOTS might have been added to by a custom extension
+  AD_SRC_ROOTS += $(HOTSPOT_TOPDIR)/src
+
+  AD_SRC_FILES := $(call uniq, $(wildcard $(foreach d, $(AD_SRC_ROOTS), \
+      $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/vm/$(HOTSPOT_TARGET_CPU).ad \
+      $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/vm/$(HOTSPOT_TARGET_CPU_ARCH).ad \
+      $d/os_cpu/$(HOTSPOT_TARGET_OS)_$(HOTSPOT_TARGET_CPU_ARCH)/vm/$(HOTSPOT_TARGET_OS)_$(HOTSPOT_TARGET_CPU_ARCH).ad \
+    )))
+
+  SINGLE_AD_SRCFILE := $(ADLC_SUPPORT_DIR)/all-ad-src.ad
+
+  INSERT_FILENAME_AWK_SCRIPT := \
+      '{ \
+         if (CUR_FN != FILENAME) { CUR_FN=FILENAME; NR_BASE=NR-1; need_lineno=1 } \
+         if (need_lineno && $$0 !~ /\/\//) \
+           { print "\n\n\#line " (NR-NR_BASE) " \"" FILENAME "\""; need_lineno=0 }; \
+         print \
+       }'
+
+  $(SINGLE_AD_SRCFILE): $(AD_SRC_FILES)
+	$(call LogInfo, Preprocessing adlc files $(^F))
+	$(call MakeDir, $(@D))
+	$(NAWK) $(INSERT_FILENAME_AWK_SCRIPT) $^ > $@
+
+  ##############################################################################
+  # Run the adlc tool on the single concatenated ad source file, and store the
+  # output in support/adlc for further processing.
+  ADLC_RUN_MARKER := $(ADLC_SUPPORT_DIR)/_adlc_run.marker
+
+  $(ADLC_RUN_MARKER): $(BUILD_ADLC) $(SINGLE_AD_SRCFILE)
+	$(call LogInfo, Generating adlc files)
+	$(call MakeDir, $(@D))
+	$(call ExecuteWithLog, $(ADLC_SUPPORT_DIR)/adlc_run, \
+	    $(FIXPATH) $(ADLC_TOOL) $(ADLCFLAGS) $(SINGLE_AD_SRCFILE) \
+	        -c$(ADLC_SUPPORT_DIR)/ad_$(HOTSPOT_TARGET_CPU).cpp \
+	        -h$(ADLC_SUPPORT_DIR)/ad_$(HOTSPOT_TARGET_CPU).hpp \
+	        -a$(ADLC_SUPPORT_DIR)/dfa_$(HOTSPOT_TARGET_CPU).cpp \
+	        -v$(ADLC_SUPPORT_DIR)/adGlobals_$(HOTSPOT_TARGET_CPU).hpp)
+	$(TOUCH) $@
+
+  ##############################################################################
+  # Finally copy the generated files from support/adlc into gensrc/adfiles,
+  # and postprocess them by fixing dummy #line directives.
+
+  ADLC_GENERATED_FILES := $(addprefix $(JVM_VARIANT_OUTPUTDIR)/gensrc/adfiles/, \
+      ad_$(HOTSPOT_TARGET_CPU).cpp \
+      ad_$(HOTSPOT_TARGET_CPU).hpp \
+      ad_$(HOTSPOT_TARGET_CPU)_clone.cpp \
+      ad_$(HOTSPOT_TARGET_CPU)_expand.cpp \
+      ad_$(HOTSPOT_TARGET_CPU)_format.cpp \
+      ad_$(HOTSPOT_TARGET_CPU)_gen.cpp \
+      ad_$(HOTSPOT_TARGET_CPU)_misc.cpp \
+      ad_$(HOTSPOT_TARGET_CPU)_peephole.cpp \
+      ad_$(HOTSPOT_TARGET_CPU)_pipeline.cpp \
+      adGlobals_$(HOTSPOT_TARGET_CPU).hpp \
+      dfa_$(HOTSPOT_TARGET_CPU).cpp \
+  )
+
+  $(JVM_VARIANT_OUTPUTDIR)/gensrc/adfiles/%: $(ADLC_RUN_MARKER)
+	$(call LogInfo, Postprocessing adlc file $*)
+	$(call MakeDir, $(@D))
+	$(NAWK) \
+	    'BEGIN { print "#line 1 \"$*\""; } \
+	     /^#line 999999$$/ {print "#line " (NR+1) " \"$*\""; next} \
+	     {print}' \
+	    < $(ADLC_SUPPORT_DIR)/$* > $@
+
+  TARGETS := $(ADLC_GENERATED_FILES)
+
+endif
