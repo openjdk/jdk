@@ -2958,9 +2958,6 @@ public:
   develop(bool, TraceStackWalk, false,                                      \
           "Trace stack walking")                                            \
                                                                             \
-  product(bool, MemberNameInStackFrame, true,                               \
-          "Use MemberName in StackFrame")                                   \
-                                                                            \
   /* notice: the max range value here is max_jint, not max_intx  */         \
   /* because of overflow issue                                   */         \
   NOT_EMBEDDED(diagnostic(intx, GuaranteedSafepointInterval, 1000,          \
