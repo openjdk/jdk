@@ -207,7 +207,8 @@ public class TIFFDirectoryWriteReadTest {
         // RGB: PhotometricInterpretation = 2
         f = dir.getTIFFField(BaselineTIFFTagSet.TAG_PHOTOMETRIC_INTERPRETATION);
         check(f.getCount() == 1, "invalid count");
-        check(f.getAsInt(0) == 2, "invalid photometric interpretation for RGB");
+        check(f.getAsInt(0) == BaselineTIFFTagSet.PHOTOMETRIC_INTERPRETATION_RGB,
+            "invalid photometric interpretation value");
 
         String rat = " resolution must be rational";
         f = dir.getTIFFField(BaselineTIFFTagSet.TAG_X_RESOLUTION);
