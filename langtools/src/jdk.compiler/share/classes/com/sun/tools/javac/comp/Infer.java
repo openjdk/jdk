@@ -716,6 +716,8 @@ public class Infer {
             this.t = t;
         }
 
+        public abstract IncorporationAction dup(UndetVar that);
+
         /**
          * Incorporation action entry-point. Subclasses should define the logic associated with
          * this incorporation action.
@@ -762,6 +764,11 @@ public class Infer {
             this.from = from;
             this.typeFunc = typeFunc;
             this.optFilter = typeFilter;
+        }
+
+        @Override
+        public IncorporationAction dup(UndetVar that) {
+            return new CheckBounds(that, t, typeFunc, optFilter, from);
         }
 
         @Override
@@ -832,6 +839,11 @@ public class Infer {
         }
 
         @Override
+        public IncorporationAction dup(UndetVar that) {
+            return new EqCheckLegacy(that, t, from);
+        }
+
+        @Override
         EnumSet<InferenceBound> boundsToCheck() {
             return (from == InferenceBound.EQ) ?
                             EnumSet.allOf(InferenceBound.class) :
@@ -847,8 +859,17 @@ public class Infer {
         EnumSet<InferenceBound> to;
 
         CheckInst(UndetVar uv, InferenceBound ib, InferenceBound... rest) {
+            this(uv, EnumSet.of(ib, rest));
+        }
+
+        CheckInst(UndetVar uv, EnumSet<InferenceBound> to) {
             super(uv, uv.getInst(), InferenceBound.EQ);
-            this.to = EnumSet.of(ib, rest);
+            this.to = to;
+        }
+
+        @Override
+        public IncorporationAction dup(UndetVar that) {
+            return new CheckInst(that, to);
         }
 
         @Override
@@ -868,6 +889,11 @@ public class Infer {
     class SubstBounds extends CheckInst {
         SubstBounds(UndetVar uv) {
             super(uv, InferenceBound.LOWER, InferenceBound.EQ, InferenceBound.UPPER);
+        }
+
+        @Override
+        public IncorporationAction dup(UndetVar that) {
+            return new SubstBounds(that);
         }
 
         @Override
@@ -907,6 +933,11 @@ public class Infer {
 
         public CheckUpperBounds(UndetVar uv, Type t) {
             super(uv, t);
+        }
+
+        @Override
+        public IncorporationAction dup(UndetVar that) {
+            return new CheckUpperBounds(that, t);
         }
 
         @Override
@@ -956,6 +987,11 @@ public class Infer {
         public PropagateBounds(UndetVar uv, Type t, InferenceBound ib) {
             super(uv, t);
             this.ib = ib;
+        }
+
+        @Override
+        public IncorporationAction dup(UndetVar that) {
+            return new PropagateBounds(that, t, ib);
         }
 
         void apply(InferenceContext inferenceContext, Warner warner) {

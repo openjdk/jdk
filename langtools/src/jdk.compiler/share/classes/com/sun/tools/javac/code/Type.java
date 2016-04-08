@@ -2000,7 +2000,10 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             }
             uv2.inst = inst;
             uv2.listener = listener;
-            uv2.incorporationActions = new ArrayDeque<>(incorporationActions);
+            uv2.incorporationActions = new ArrayDeque<>();
+            for (IncorporationAction action : incorporationActions) {
+                uv2.incorporationActions.add(action.dup(uv2));
+            }
         }
 
         @Override
