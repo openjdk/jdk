@@ -384,7 +384,7 @@ public class JShell implements AutoCloseable {
     /**
      * The specified path is added to the end of the classpath used in eval().
      * Note that the unnamed package is not accessible from the package in which
-     * {@link JShell#eval()} code is placed.
+     * {@link JShell#eval(String)} code is placed.
      * @param path the path to add to the classpath.
      */
     public void addToClasspath(String path) {
