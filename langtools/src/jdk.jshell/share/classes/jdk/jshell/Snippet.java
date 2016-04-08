@@ -526,7 +526,7 @@ public abstract class Snippet {
      * The unique identifier for the snippet. No two active snippets will have
      * the same id().  Value of id has no prescribed meaning.  The details of
      * how the id is generated and the mechanism to change it is documented in
-     * {@link JShell.Builder#idGenerator()}.
+     * {@link JShell.Builder#idGenerator(BiFunction)}.
      * @return the snippet id string.
      */
     public String id() {
