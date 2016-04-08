@@ -1,6 +1,5 @@
 #
-# Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
-# Copyright 2009 Red Hat, Inc.
+# Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,15 +22,17 @@
 #  
 #
 
-# Setup for Zero (non-Shark) version of VM
+# Define library interface.
 
-# Select which files to use (in top.make)
-TYPE = ZERO
-
-# Install libjvm.so, etc in in server directory.
-VM_SUBDIR = server
-
-# Disable trace for zero builds
-# NOTE: This is used for simple comparison with the new build system, and
-# should not be merged into mainline with build-infra.
-INCLUDE_TRACE := false
+SUNWprivate_1.1 {
+        global:
+            JVM_begin_signal_setting;
+            JVM_end_signal_setting;
+            JVM_get_libjsig_version;
+            JVM_get_signal_action;
+            sigaction;
+            signal;
+            sigset;
+        local:
+                *;
+};
