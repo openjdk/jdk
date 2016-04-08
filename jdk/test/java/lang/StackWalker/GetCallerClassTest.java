@@ -25,8 +25,7 @@
  * @test
  * @bug 8140450
  * @summary Basic test for StackWalker.getCallerClass()
- * @run main/othervm -XX:-MemberNameInStackFrame GetCallerClassTest
- * @run main/othervm -XX:+MemberNameInStackFrame GetCallerClassTest
+ * @run main/othervm GetCallerClassTest
  * @run main/othervm GetCallerClassTest sm
  */
 
