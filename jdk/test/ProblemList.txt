@@ -289,6 +289,7 @@ sun/security/provider/NSASuiteB/TestDSAGenParameterSpec.java    8137255 generic-
 # jdk_sound
 
 javax/sound/midi/Gervill/SoftProvider/GetDevice.java            8059743 generic-all
+javax/sound/sampled/DirectAudio/bug6400879.java                 8148915 linux-all
 
 ############################################################################
 
