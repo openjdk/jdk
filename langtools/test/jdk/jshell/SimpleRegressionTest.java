@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test 8130450
  * @summary simple regression test
  * @build KullaTesting TestingInputStream
  * @run testng SimpleRegressionTest
@@ -39,6 +39,7 @@ import jdk.jshell.SnippetEvent;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
+import static jdk.jshell.Snippet.Status.OVERWRITTEN;
 import static jdk.jshell.Snippet.SubKind.TEMP_VAR_EXPRESSION_SUBKIND;
 import static jdk.jshell.Snippet.Status.VALID;
 
@@ -97,5 +98,17 @@ public class SimpleRegressionTest extends KullaTesting {
         Snippet sn = methodKey(assertEval("<R> R n(R x) { return x; }", added(VALID)));
         VarSnippet sne = varKey(assertEval("n(5)", added(VALID)));
         assertEquals(sne.typeName(), "Integer");
+    }
+
+    // 8130450
+    public void testDuplicate() {
+        Snippet snm = methodKey(assertEval("void mm() {}", added(VALID)));
+        assertEval("void mm() {}",
+                ste(MAIN_SNIPPET, VALID, VALID, false, null),
+                ste(snm, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
+        Snippet snv = varKey(assertEval("boolean b;", added(VALID)));
+        assertEval("boolean b;",
+                ste(MAIN_SNIPPET, VALID, VALID, false, null),
+                ste(snv, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
     }
 }

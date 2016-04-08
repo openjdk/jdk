@@ -449,13 +449,6 @@ class Eval {
 
     private List<SnippetEvent> declare(Snippet si, DiagList generatedDiagnostics) {
         Unit c = new Unit(state, si, null, generatedDiagnostics);
-
-        // Ignores duplicates
-        //TODO: remove, modify, or move to edit
-        if (c.isRedundant()) {
-            return Collections.emptyList();
-        }
-
         Set<Unit> ins = new LinkedHashSet<>();
         ins.add(c);
         Set<Unit> outs = compileAndLoad(ins);
