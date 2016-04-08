@@ -27,7 +27,7 @@
  * @bug 6859338
  * @summary Assertion failure in sharedRuntime.cpp
  *
- * @run main/othervm -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:-InlineObjectHash -Xbatch -XX:-ProfileInterpreter Test6859338
+ * @run main/othervm -Xcomp -XX:+IgnoreUnrecognizedVMOptions  -XX:-InlineObjectHash -Xbatch -XX:-ProfileInterpreter Test6859338
  */
 
 public class Test6859338 {

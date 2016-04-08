@@ -738,7 +738,7 @@ public:
           "Control whether SHA instructions can be used "                   \
           "on SPARC, on ARM and on x86")                                    \
                                                                             \
-  diagnostic(bool, UseGHASHIntrinsics, false,                               \
+  product(bool, UseGHASHIntrinsics, false,                                  \
           "Use intrinsics for GHASH versions of crypto")                    \
                                                                             \
   product(size_t, LargePageSizeInBytes, 0,                                  \
@@ -808,27 +808,27 @@ public:
   product(bool, UseInlineCaches, true,                                      \
           "Use Inline Caches for virtual calls ")                           \
                                                                             \
-  diagnostic(bool, InlineArrayCopy, true,                                   \
+  develop(bool, InlineArrayCopy, true,                                      \
           "Inline arraycopy native that is known to be part of "            \
           "base library DLL")                                               \
                                                                             \
-  diagnostic(bool, InlineObjectHash, true,                                  \
+  develop(bool, InlineObjectHash, true,                                     \
           "Inline Object::hashCode() native that is known to be part "      \
           "of base library DLL")                                            \
                                                                             \
-  diagnostic(bool, InlineNatives, true,                                     \
+  develop(bool, InlineNatives, true,                                        \
           "Inline natives that are known to be part of base library DLL")   \
                                                                             \
-  diagnostic(bool, InlineMathNatives, true,                                 \
+  develop(bool, InlineMathNatives, true,                                    \
           "Inline SinD, CosD, etc.")                                        \
                                                                             \
-  diagnostic(bool, InlineClassNatives, true,                                \
+  develop(bool, InlineClassNatives, true,                                   \
           "Inline Class.isInstance, etc")                                   \
                                                                             \
-  diagnostic(bool, InlineThreadNatives, true,                               \
+  develop(bool, InlineThreadNatives, true,                                  \
           "Inline Thread.currentThread, etc")                               \
                                                                             \
-  diagnostic(bool, InlineUnsafeOps, true,                                   \
+  develop(bool, InlineUnsafeOps, true,                                      \
           "Inline memory ops (native methods) from Unsafe")                 \
                                                                             \
   product(bool, CriticalJNINatives, true,                                   \
@@ -837,34 +837,34 @@ public:
   notproduct(bool, StressCriticalJNINatives, false,                         \
           "Exercise register saving code in critical natives")              \
                                                                             \
-  diagnostic(bool, UseAESIntrinsics, false,                                 \
+  product(bool, UseAESIntrinsics, false,                                    \
           "Use intrinsics for AES versions of crypto")                      \
                                                                             \
-  diagnostic(bool, UseAESCTRIntrinsics, false,                              \
+  product(bool, UseAESCTRIntrinsics, false,                                 \
           "Use intrinsics for the paralleled version of AES/CTR crypto")    \
                                                                             \
-  diagnostic(bool, UseSHA1Intrinsics, false,                                \
+  product(bool, UseSHA1Intrinsics, false,                                   \
           "Use intrinsics for SHA-1 crypto hash function. "                 \
           "Requires that UseSHA is enabled.")                               \
                                                                             \
-  diagnostic(bool, UseSHA256Intrinsics, false,                              \
+  product(bool, UseSHA256Intrinsics, false,                                 \
           "Use intrinsics for SHA-224 and SHA-256 crypto hash functions. "  \
           "Requires that UseSHA is enabled.")                               \
                                                                             \
-  diagnostic(bool, UseSHA512Intrinsics, false,                              \
+  product(bool, UseSHA512Intrinsics, false,                                 \
           "Use intrinsics for SHA-384 and SHA-512 crypto hash functions. "  \
           "Requires that UseSHA is enabled.")                               \
                                                                             \
-  diagnostic(bool, UseCRC32Intrinsics, false,                               \
+  product(bool, UseCRC32Intrinsics, false,                                  \
           "use intrinsics for java.util.zip.CRC32")                         \
                                                                             \
-  diagnostic(bool, UseCRC32CIntrinsics, false,                              \
+  product(bool, UseCRC32CIntrinsics, false,                                 \
           "use intrinsics for java.util.zip.CRC32C")                        \
                                                                             \
-  diagnostic(bool, UseAdler32Intrinsics, false,                             \
+  product(bool, UseAdler32Intrinsics, false,                                \
           "use intrinsics for java.util.zip.Adler32")                       \
                                                                             \
-  diagnostic(bool, UseVectorizedMismatchIntrinsic, false,                   \
+  product(bool, UseVectorizedMismatchIntrinsic, false,                      \
           "Enables intrinsification of ArraysSupport.vectorizedMismatch()") \
                                                                             \
   diagnostic(ccstrlist, DisableIntrinsic, "",                               \

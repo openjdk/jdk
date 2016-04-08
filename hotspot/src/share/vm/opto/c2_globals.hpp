@@ -595,26 +595,26 @@
   product(bool, BlockLayoutRotateLoops, true,                               \
           "Allow back branches to be fall throughs in the block layour")    \
                                                                             \
-  diagnostic(bool, InlineReflectionGetCallerClass, true,                    \
+  develop(bool, InlineReflectionGetCallerClass, true,                       \
           "inline sun.reflect.Reflection.getCallerClass(), known to be "    \
           "part of base library DLL")                                       \
                                                                             \
-  diagnostic(bool, InlineObjectCopy, true,                                  \
+  develop(bool, InlineObjectCopy, true,                                     \
           "inline Object.clone and Arrays.copyOf[Range] intrinsics")        \
                                                                             \
-  diagnostic(bool, SpecialStringCompareTo, true,                            \
+  develop(bool, SpecialStringCompareTo, true,                               \
           "special version of string compareTo")                            \
                                                                             \
-  diagnostic(bool, SpecialStringIndexOf, true,                              \
+  develop(bool, SpecialStringIndexOf, true,                                 \
           "special version of string indexOf")                              \
                                                                             \
-  diagnostic(bool, SpecialStringEquals, true,                               \
+  develop(bool, SpecialStringEquals, true,                                  \
           "special version of string equals")                               \
                                                                             \
-  diagnostic(bool, SpecialArraysEquals, true,                               \
+  develop(bool, SpecialArraysEquals, true,                                  \
           "special version of Arrays.equals(char[],char[])")                \
                                                                             \
-  diagnostic(bool, SpecialEncodeISOArray, true,                             \
+  product(bool, SpecialEncodeISOArray, true,                                \
           "special version of ISO_8859_1$Encoder.encodeISOArray")           \
                                                                             \
   develop(bool, BailoutToInterpreterForThrows, false,                       \
@@ -716,22 +716,22 @@
   diagnostic(bool, OptimizeExpensiveOps, true,                              \
           "Find best control for expensive operations")                     \
                                                                             \
-  diagnostic(bool, UseMathExactIntrinsics, true,                            \
+  product(bool, UseMathExactIntrinsics, true,                               \
           "Enables intrinsification of various java.lang.Math functions")   \
                                                                             \
-  diagnostic(bool, UseMultiplyToLenIntrinsic, false,                        \
+  product(bool, UseMultiplyToLenIntrinsic, false,                           \
           "Enables intrinsification of BigInteger.multiplyToLen()")         \
                                                                             \
-  diagnostic(bool, UseSquareToLenIntrinsic, false,                          \
+  product(bool, UseSquareToLenIntrinsic, false,                             \
           "Enables intrinsification of BigInteger.squareToLen()")           \
                                                                             \
-  diagnostic(bool, UseMulAddIntrinsic, false,                               \
+  product(bool, UseMulAddIntrinsic, false,                                  \
           "Enables intrinsification of BigInteger.mulAdd()")                \
                                                                             \
-  diagnostic(bool, UseMontgomeryMultiplyIntrinsic, false,                   \
+  product(bool, UseMontgomeryMultiplyIntrinsic, false,                      \
           "Enables intrinsification of BigInteger.montgomeryMultiply()")    \
                                                                             \
-  diagnostic(bool, UseMontgomerySquareIntrinsic, false,                     \
+  product(bool, UseMontgomerySquareIntrinsic, false,                        \
           "Enables intrinsification of BigInteger.montgomerySquare()")      \
                                                                             \
   product(bool, UseTypeSpeculation, true,                                   \
