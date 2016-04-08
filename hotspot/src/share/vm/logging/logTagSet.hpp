@@ -64,6 +64,10 @@ class LogTagSet VALUE_OBJ_CLASS_SPEC {
     return _list;
   }
 
+  static size_t ntagsets() {
+    return _ntagsets;
+  }
+
   LogTagSet* next() {
     return _next;
   }
