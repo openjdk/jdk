@@ -231,9 +231,11 @@ class VM_ThreadStop: public VM_Operation {
 };
 
 class VM_ClearICs: public VM_Operation {
+ private:
+  bool _preserve_static_stubs;
  public:
-  VM_ClearICs() {}
-  void doit()         { CodeCache::clear_inline_caches(); }
+  VM_ClearICs(bool preserve_static_stubs) { _preserve_static_stubs = preserve_static_stubs; }
+  void doit();
   VMOp_Type type() const { return VMOp_ClearICs; }
 };
 

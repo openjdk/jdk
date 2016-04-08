@@ -194,6 +194,9 @@
            "Map number of unrolls for main loop via "                       \
            "Superword Level Parallelism analysis")                          \
                                                                             \
+  product_pd(bool, PostLoopMultiversioning,                                 \
+           "Multi versioned post loops to eliminate range checks")          \
+                                                                            \
   notproduct(bool, TraceSuperWordLoopUnrollAnalysis, false,                 \
           "Trace what Superword Level Parallelism analysis applies")        \
                                                                             \
@@ -229,20 +232,11 @@
   develop(bool, TraceLoopOpts, false,                                       \
           "Trace executed loop optimizations")                              \
                                                                             \
-  diagnostic(bool, LoopLimitCheck, true,                                    \
-          "Generate a loop limits check for overflow")                      \
-                                                                            \
   develop(bool, TraceLoopLimitCheck, false,                                 \
           "Trace generation of loop limits checks")                         \
                                                                             \
-  diagnostic(bool, RangeLimitCheck, true,                                   \
-          "Additional overflow checks during range check elimination")      \
-                                                                            \
   develop(bool, TraceRangeLimitCheck, false,                                \
           "Trace additional overflow checks in RCE")                        \
-                                                                            \
-  diagnostic(bool, UnrollLimitCheck, true,                                  \
-          "Additional overflow checks during loop unroll")                  \
                                                                             \
   /* OptimizeFill not yet supported on PowerPC. */                          \
   product(bool, OptimizeFill, true PPC64_ONLY(&& false),                    \

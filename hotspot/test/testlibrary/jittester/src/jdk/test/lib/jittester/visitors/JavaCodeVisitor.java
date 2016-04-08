@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,21 +164,15 @@ public class JavaCodeVisitor implements Visitor<String> {
         code.append(node.getChildren().stream()
                 .map(p -> p.accept(this))
                 .collect(Collectors.joining("][", "[", "]")));
-        code.append(";\n")
-                .append(PrintingUtils.align(node.getParent().getLevel()))
+        code.append(";\n");
+        if (!TypeList.isBuiltIn(arrayType)) {
+            code.append(PrintingUtils.align(node.getParent().getLevel()))
                 .append("java.util.Arrays.fill(")
                 .append(name)
-                .append(", ");
-        if (TypeList.find("boolean") == arrayType) {
-            code.append("false");
-        } else if (TypeList.isBuiltIn(arrayType)) {
-            code.append("0");
-        } else {
-            code.append("new ")
+                .append(", new ")
                 .append(type)
-                .append("()");
+                .append("());\n");
         }
-        code.append(");\n");
         return code.toString();
     }
 

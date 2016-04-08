@@ -437,7 +437,7 @@ JVMCIEnv::CodeInstallResult JVMCIEnv::check_for_system_dictionary_modification(D
       stringStream st(buffer, O_BUFLEN);
       deps.print_dependency(witness, true, &st);
       *failure_detail = st.as_string();
-      if (env == NULL || counter_changed) {
+      if (env == NULL || counter_changed || deps.type() == Dependencies::evol_method) {
         return JVMCIEnv::dependencies_failed;
       } else {
         // The dependencies were invalid at the time of installation

@@ -521,8 +521,10 @@ IRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
 #ifndef CC_INTERP
     continuation = Interpreter::remove_activation_entry();
 #endif
+#if COMPILER2_OR_JVMCI
     // Count this for compilation purposes
     h_method->interpreter_throwout_increment(THREAD);
+#endif
   } else {
     // handler in this method => change bci/bcp to handler bci/bcp and continue there
     handler_pc = h_method->code_base() + handler_bci;
