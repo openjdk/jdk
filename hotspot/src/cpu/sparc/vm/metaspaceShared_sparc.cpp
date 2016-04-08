@@ -65,8 +65,6 @@ void MetaspaceShared::generate_vtable_methods(void** vtbl_list,
   *vtable = dummy_vtable;
   *md_top += vtable_bytes;
 
-  guarantee(*md_top <= md_end, "Insufficient space for vtables.");
-
   // Get ready to generate dummy methods.
 
   CodeBuffer cb((unsigned char*)*mc_top, mc_end - *mc_top);
