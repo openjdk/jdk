@@ -24,8 +24,10 @@
 /*
  * @test
  * @summary jdeps should flag jdk.unsupported exported API as internal
- * @modules jdk.jdeps/com.sun.tools.jdeps
- * @build Foo
+ * @modules java.base/jdk.internal.misc
+ *          jdk.jdeps/com.sun.tools.jdeps
+ *          jdk.unsupported
+ * @build Foo Bar
  * @run testng JDKUnsupportedTest
  */
 
@@ -47,9 +49,12 @@ public class JDKUnsupportedTest {
         return new Object[][]{
             { "Foo.class", new String[][] {
                                new String[] { "java.lang", "java.base" },
-                               new String[] { "sun.misc", "JDK internal API (java.base)" }
-                           }
-            }
+                               new String[] { "jdk.internal.misc", "JDK internal API (java.base)" }
+                           } },
+            { "Bar.class", new String[][] {
+                               new String[] { "java.lang", "java.base" },
+                               new String[] { "sun.misc", "JDK internal API (jdk.unsupported)" }
+                           } }
         };
     }
 
