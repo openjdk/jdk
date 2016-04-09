@@ -400,7 +400,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonproduct_nonstatic_field(Method,           _compiled_invocation_count,                    int)                                   \
   volatile_nonstatic_field(Method,             _code,                                         nmethod*)                              \
   nonstatic_field(Method,                      _i2i_entry,                                    address)                               \
-  nonstatic_field(Method,                      _adapter,                                      AdapterHandlerEntry*)                  \
   volatile_nonstatic_field(Method,             _from_compiled_entry,                          address)                               \
   volatile_nonstatic_field(Method,             _from_interpreted_entry,                       address)                               \
   volatile_nonstatic_field(ConstMethod,        _fingerprint,                                  uint64_t)                              \
