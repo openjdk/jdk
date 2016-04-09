@@ -25,7 +25,7 @@
  * @test
  * @bug 8011901
  * @summary instruct xaddL_no_res shouldn't allow 64 bit constants.
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  * @run main/othervm -XX:-BackgroundCompilation Test8011901
  *
  */

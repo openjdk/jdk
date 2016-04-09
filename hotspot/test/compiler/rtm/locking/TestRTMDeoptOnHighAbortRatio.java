@@ -28,7 +28,7 @@
  * @summary Verify that on high abort ratio method will be recompiled
  *          without rtm locking.
  * @library /testlibrary /test/lib /compiler/testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestRTMDeoptOnHighAbortRatio
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

@@ -27,7 +27,7 @@
  * @bug 8006088
  * @summary Test ergonomics decisions related to minimum and initial heap size.
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestMinInitialErgonomics TestMaxHeapSizeTools
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

@@ -26,7 +26,7 @@
  * @bug 8035968
  * @summary Verify that SHA-1 intrinsic is actually used.
  * @library /testlibrary /test/lib /compiler/testlibrary ../
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestSHA intrinsics.Verifier TestSHA1Intrinsics
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

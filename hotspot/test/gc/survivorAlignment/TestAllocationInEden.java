@@ -27,7 +27,7 @@
  * @summary Verify that object's alignment in eden space is not affected by
  *          SurvivorAlignmentInBytes option.
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestAllocationInEden SurvivorAlignmentTestMain AlignmentHelper
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

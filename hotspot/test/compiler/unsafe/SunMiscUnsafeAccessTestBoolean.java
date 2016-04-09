@@ -25,7 +25,7 @@
  * @test
  * @bug 8143628
  * @summary Test unsafe access for boolean
- * @modules java.base/sun.misc
+ * @modules jdk.unsupported/sun.misc
  * @run testng/othervm -Diters=100   -Xint                   SunMiscUnsafeAccessTestBoolean
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 SunMiscUnsafeAccessTestBoolean
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  SunMiscUnsafeAccessTestBoolean
@@ -131,7 +131,9 @@ public class SunMiscUnsafeAccessTestBoolean {
 
 
 
+
     }
 
 }
+
 

@@ -28,7 +28,7 @@
  * @summary Verify that rtm locking is used for stack locks before
  *          inflation and after it used for inflated locks.
  * @library /testlibrary /test/lib /compiler/testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestUseRTMAfterLockInflation
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

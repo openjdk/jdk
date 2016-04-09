@@ -28,7 +28,7 @@ import sha.predicate.IntrinsicPredicates;
  * @bug 8035968
  * @summary Verify that SHA-256 multi block intrinsic is actually used.
  * @library /testlibrary /test/lib /compiler/testlibrary ../
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestSHA intrinsics.Verifier TestSHA256MultiBlockIntrinsics
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

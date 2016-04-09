@@ -27,7 +27,7 @@
  * @bug 8014240
  * @summary Test output of G1PrintRegionRememberedSetInfo
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main TestPrintRegionRememberedSetInfo
  * @author thomas.schatzl@oracle.com

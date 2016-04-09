@@ -26,7 +26,7 @@
  * @bug 8054492
  * @summary "Casting can result in redundant null checks in generated code"
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build ClassFileInstaller sun.hotspot.WhiteBox jdk.test.lib.*
  * @build NullCheckDroppingsTest

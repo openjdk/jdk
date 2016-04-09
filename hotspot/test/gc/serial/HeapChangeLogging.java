@@ -25,7 +25,7 @@
  * @test HeapChangeLogging.java
  * @bug 8027440
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build HeapChangeLogging
  * @summary Allocate to get a promotion failure and verify that that heap change logging is present.

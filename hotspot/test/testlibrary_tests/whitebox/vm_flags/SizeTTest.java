@@ -25,7 +25,7 @@
  * @test SizeTTest
  * @bug 8054823
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management/sun.management
  * @build SizeTTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

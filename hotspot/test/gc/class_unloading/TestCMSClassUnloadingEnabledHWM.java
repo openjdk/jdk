@@ -26,7 +26,7 @@
  * @key gc
  * @bug 8049831
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestCMSClassUnloadingEnabledHWM
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

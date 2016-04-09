@@ -27,7 +27,7 @@
  * @bug 8025441 8145534
  * @key gc
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management/sun.management
  * @summary Ensure that various values of worker threads/concurrent
  * refinement threads do not crash the VM.

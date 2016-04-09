@@ -26,7 +26,7 @@
  * @bug 8004924
  * @summary Checks that jmap -heap contains the flag CompressedClassSpaceSize
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:CompressedClassSpaceSize=50m CompressedClassSpaceSizeInJmapHeap
  */

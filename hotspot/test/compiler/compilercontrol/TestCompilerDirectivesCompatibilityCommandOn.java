@@ -25,7 +25,7 @@
  * @test TestCompilerDirectivesCompatibilityCommandOn
  * @bug 8137167
  * @library /testlibrary /test/lib /
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  * @build jdk.test.lib.*

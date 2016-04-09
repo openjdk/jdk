@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8025692
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @library /testlibrary
  * @compile TestLogTouchedMethods.java PrintTouchedMethods.java

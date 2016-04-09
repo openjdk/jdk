@@ -31,7 +31,7 @@ import jdk.test.lib.*;
  * @bug 8055286 8056964 8059847 8069035
  * @summary "Checks parsing of -XX:CompileCommand=option"
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main CheckCompileCommandOption
  */

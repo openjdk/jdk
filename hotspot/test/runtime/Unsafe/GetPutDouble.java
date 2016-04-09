@@ -25,7 +25,7 @@
  * @test
  * @summary Verify behaviour of Unsafe.get/putDouble
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main GetPutDouble
  */

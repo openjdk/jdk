@@ -26,7 +26,7 @@
  * @bug 8027314
  * @summary Warn if diagnostic or experimental vm option is used and -XX:+UnlockDiagnosticVMOptions or -XX:+UnlockExperimentalVMOptions, respectively, isn't specified. Warn if develop or notproduct vm option is used with product version of VM.
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 
