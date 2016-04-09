@@ -66,6 +66,7 @@ BOOT_MODULES += \
     jdk.sctp \
     jdk.security.auth \
     jdk.security.jgss \
+    jdk.unsupported \
     jdk.vm.ci \
     #
 
