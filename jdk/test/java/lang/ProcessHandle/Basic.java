@@ -37,7 +37,8 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /test/lib/share/classes
- * @modules jdk.management
+ * @modules java.base/jdk.internal.misc
+ *          jdk.management
  * @run testng Basic
  * @summary Basic tests for ProcessHandler
  * @author Roger Riggs
