@@ -26,7 +26,7 @@
  * @bug 8030955
  * @summary Allow multiple calls to PerfMemory::destroy() without asserting.
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main PerfMemDestroy
  */

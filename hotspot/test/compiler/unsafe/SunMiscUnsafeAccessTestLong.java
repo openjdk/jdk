@@ -25,7 +25,7 @@
  * @test
  * @bug 8143628
  * @summary Test unsafe access for long
- * @modules java.base/sun.misc
+ * @modules jdk.unsupported/sun.misc
  * @run testng/othervm -Diters=100   -Xint                   SunMiscUnsafeAccessTestLong
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 SunMiscUnsafeAccessTestLong
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  SunMiscUnsafeAccessTestLong
@@ -165,6 +165,7 @@ public class SunMiscUnsafeAccessTestLong {
 
 
 
+
         UNSAFE.putLong(base, offset, 1L);
 
         // Compare
@@ -181,6 +182,7 @@ public class SunMiscUnsafeAccessTestLong {
             long x = UNSAFE.getLong(base, offset);
             assertEquals(x, 2L, "failing compareAndSwap long value");
         }
+
 
 
         // Compare set and get
@@ -211,4 +213,5 @@ public class SunMiscUnsafeAccessTestLong {
         }
     }
 }
+
 

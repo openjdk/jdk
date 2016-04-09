@@ -33,7 +33,7 @@ import jdk.test.lib.*;
  * @bug 8038076
  * @library /testlibrary
  * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/sun.misc
+ *          java.base/jdk.internal.misc
  *          java.management
  * @compile -XDignore.symbol.file TestMultiANewArray.java
  * @run main/othervm TestMultiANewArray 49

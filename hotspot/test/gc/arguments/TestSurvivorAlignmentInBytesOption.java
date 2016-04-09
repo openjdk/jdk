@@ -34,7 +34,7 @@ import jdk.test.lib.cli.CommandLineOptionTest;
  *           & vm.opt.UnlockExperimentalVMOptions == null
  *           & (vm.opt.IgnoreUnrecognizedVMOptions == null
  *              | vm.opt.IgnoreUnrecognizedVMOptions == "false")
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main TestSurvivorAlignmentInBytesOption
  */

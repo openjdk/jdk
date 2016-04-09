@@ -25,7 +25,7 @@
  * @test
  * @library /testlibrary
  * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/sun.misc
+ *          java.base/jdk.internal.misc
  *          java.management
  * @compile -XDignore.symbol.file UnsupportedClassFileVersion.java
  * @run main UnsupportedClassFileVersion

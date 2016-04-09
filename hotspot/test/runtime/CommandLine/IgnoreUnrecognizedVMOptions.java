@@ -29,7 +29,7 @@ import jdk.test.lib.*;
  * @summary -XX:+IgnoreUnrecognizedVMOptions should work according to the spec from JDK-8129855
  *
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main IgnoreUnrecognizedVMOptions
  */

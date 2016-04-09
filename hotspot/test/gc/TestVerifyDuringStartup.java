@@ -26,7 +26,7 @@
  * @bug 8010463 8011343 8011898
  * @summary Simple test run with -XX:+VerifyDuringStartup -XX:-UseTLAB to verify 8010463
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 

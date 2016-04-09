@@ -26,7 +26,7 @@
  * @bug 8072016
  * @summary Infinite deoptimization/recompilation cycles in case of arraycopy with tightly coupled allocation
  * @library /testlibrary /test/lib /compiler/whitebox /
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestArrayCopyNoInitDeopt
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

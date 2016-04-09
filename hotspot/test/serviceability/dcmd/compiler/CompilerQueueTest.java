@@ -25,7 +25,7 @@
  * @test CompilerQueueTest
  * @bug 8054889
  * @library /testlibrary /test/lib /
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor

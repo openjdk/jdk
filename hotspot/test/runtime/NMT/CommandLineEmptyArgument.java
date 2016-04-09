@@ -26,7 +26,7 @@
  * @key nmt
  * @summary Empty argument to NMT should result in an informative error message
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 

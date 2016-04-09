@@ -28,7 +28,7 @@
  * @summary Verify UseRTMForStackLocks option processing on CPU with
  *          rtm support when VM supports rtm locking.
  * @library /testlibrary /test/lib /compiler/testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestUseRTMForStackLocksOptionOnSupportedConfig
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

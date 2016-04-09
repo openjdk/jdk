@@ -34,7 +34,7 @@
  * @bug 7123945
  * @bug 8016029
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.desktop
  *          java.management
  * @run main OomWhileParsingRepeatedJsr

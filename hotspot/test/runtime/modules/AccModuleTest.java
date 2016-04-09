@@ -24,7 +24,7 @@
 /*
  * @test
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  * @compile acc_module.jcod
  * @build AccModuleTest
  * @run main AccModuleTest

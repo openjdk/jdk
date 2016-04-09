@@ -27,7 +27,7 @@
  * @summary Verify processing of UseBMI1Instructions option on CPU without
  *          BMI1 feature support.
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestUseBMI1InstructionsOnUnsupportedCPU
  *        BMIUnsupportedCPUTest

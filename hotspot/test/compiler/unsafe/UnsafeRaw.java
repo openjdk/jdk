@@ -26,7 +26,7 @@
  * @bug 8058744
  * @summary Invalid pattern-matching of address computations in raw unsafe
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm -Xbatch UnsafeRaw
  */

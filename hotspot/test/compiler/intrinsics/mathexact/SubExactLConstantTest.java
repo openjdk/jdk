@@ -27,7 +27,7 @@
  * @bug 8027353
  * @summary Test constant subtractExact
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile SubExactLConstantTest.java Verify.java
  * @run main SubExactLConstantTest

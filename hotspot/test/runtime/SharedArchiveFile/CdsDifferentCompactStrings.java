@@ -26,7 +26,7 @@
  * @summary CDS (class data sharing) requires the same -XX:[+-]CompactStrings
  *          setting between archive creation time and load time.
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 

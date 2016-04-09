@@ -25,7 +25,7 @@
  * @test
  * @bug 8143628
  * @summary Test unsafe access for Object
- * @modules java.base/sun.misc
+ * @modules jdk.unsupported/sun.misc
  * @run testng/othervm -Diters=100   -Xint                   SunMiscUnsafeAccessTestObject
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 SunMiscUnsafeAccessTestObject
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  SunMiscUnsafeAccessTestObject
@@ -136,6 +136,7 @@ public class SunMiscUnsafeAccessTestObject {
 
 
 
+
         UNSAFE.putObject(base, offset, "foo");
 
         // Compare
@@ -154,6 +155,7 @@ public class SunMiscUnsafeAccessTestObject {
         }
 
 
+
         // Compare set and get
         {
             Object o = UNSAFE.getAndSetObject(base, offset, "foo");
@@ -165,4 +167,5 @@ public class SunMiscUnsafeAccessTestObject {
     }
 
 }
+
 

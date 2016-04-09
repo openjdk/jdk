@@ -24,7 +24,7 @@
 /* @test
  * @bug 8022853
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  * @build jdk.test.lib.*
  * @run main GetUncompressedObject
  */

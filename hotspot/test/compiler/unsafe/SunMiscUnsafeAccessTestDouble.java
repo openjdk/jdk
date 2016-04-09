@@ -25,7 +25,7 @@
  * @test
  * @bug 8143628
  * @summary Test unsafe access for double
- * @modules java.base/sun.misc
+ * @modules jdk.unsupported/sun.misc
  * @run testng/othervm -Diters=100   -Xint                   SunMiscUnsafeAccessTestDouble
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 SunMiscUnsafeAccessTestDouble
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  SunMiscUnsafeAccessTestDouble
@@ -160,6 +160,7 @@ public class SunMiscUnsafeAccessTestDouble {
 
 
 
+
     }
 
     static void testAccess(long address) {
@@ -171,4 +172,5 @@ public class SunMiscUnsafeAccessTestDouble {
         }
     }
 }
+
 

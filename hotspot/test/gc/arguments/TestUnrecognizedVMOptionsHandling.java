@@ -27,7 +27,7 @@
  * @bug 8017611
  * @summary Tests handling unrecognized VM options
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm TestUnrecognizedVMOptionsHandling
  */

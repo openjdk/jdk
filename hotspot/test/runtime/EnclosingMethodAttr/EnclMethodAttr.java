@@ -26,7 +26,7 @@
  * @bug 8044738
  * @library /testlibrary
  * @summary Check attribute_length of EnclosingMethod attribute
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main EnclMethodAttr
  */

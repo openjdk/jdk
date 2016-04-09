@@ -26,7 +26,7 @@
  * @bug 8054823
  * @summary Tests the setFlag and printFlag attach command
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.attach/sun.tools.attach

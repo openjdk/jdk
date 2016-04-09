@@ -29,7 +29,7 @@ import sun.hotspot.code.BlobType;
 /*
  * @test RandomAllocationTest
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build RandomAllocationTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

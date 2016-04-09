@@ -26,7 +26,7 @@
  * @bug 8024924
  * @summary Test non constant addExact
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile AddExactILoopDependentTest.java Verify.java
  * @run main AddExactILoopDependentTest
