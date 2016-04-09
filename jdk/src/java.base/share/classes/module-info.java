@@ -86,8 +86,7 @@ module java.base {
     // see JDK-8044773
     exports jdk.net;
 
-    // These will move to a jdk.internal module via JEP-260
-    exports sun.misc;
+    // This will move to a jdk.internal module via JEP-260
     exports sun.reflect;
 
 
@@ -173,6 +172,7 @@ module java.base {
         java.xml,
         jdk.charsets,
         jdk.scripting.nashorn,
+        jdk.unsupported,
         jdk.vm.ci;
     exports jdk.internal.perf to
         java.desktop,
@@ -180,6 +180,8 @@ module java.base {
         jdk.jvmstat;
     exports jdk.internal.ref to
         java.desktop;
+    exports jdk.internal.vm.annotation to
+        jdk.unsupported;
     exports jdk.internal.util.jar to
         jdk.jartool;
     exports jdk.internal.vm to

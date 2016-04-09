@@ -24,6 +24,8 @@
  */
 
 module java.logging {
+    // 8153158
+    requires jdk.unsupported;
     exports java.util.logging;
     provides jdk.internal.logger.DefaultLoggerFinder with
         sun.util.logging.internal.LoggingProviderImpl;

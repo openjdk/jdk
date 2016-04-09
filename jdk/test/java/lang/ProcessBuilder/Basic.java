@@ -29,7 +29,6 @@
  *      4947220 7018606 7034570 4244896 5049299 8003488 8054494 8058464
  *      8067796
  * @summary Basic tests for Process and Environment Variable code
- * @modules java.base/sun.misc
  * @run main/othervm/timeout=300 Basic
  * @run main/othervm/timeout=300 -Djdk.lang.Process.launchMechanism=fork Basic
  * @author Martin Buchholz
