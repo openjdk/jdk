@@ -23,7 +23,7 @@
 
 import sun.misc.Unsafe;
 
-public class Foo {
+public class Bar {
     public void run() {
         Unsafe unsafe = Unsafe.getUnsafe();
     }
