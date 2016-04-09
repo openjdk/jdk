@@ -1402,7 +1402,13 @@ public class JShellTool {
         Consumer<String> saveHandler = new SaveHandler(src, srcSet);
         Consumer<String> errorHandler = s -> hard("Edit Error: %s", s);
         if (editor == null) {
-            EditPad.edit(errorHandler, src, saveHandler);
+            try {
+                EditPad.edit(errorHandler, src, saveHandler);
+            } catch (RuntimeException ex) {
+                errormsg("jshell.err.cant.launch.editor", ex);
+                fluffmsg("jshell.msg.try.set.editor");
+                return false;
+            }
         } else {
             ExternalEditor.edit(editor, errorHandler, src, saveHandler, input);
         }

@@ -438,7 +438,7 @@ public class ReplToolTesting {
             }
             setCommandInput(cmd + "\n");
         } else {
-            assertOutput(getCommandOutput(), out, "command output: " + cmd);
+            assertOutput(getCommandOutput().trim(), out==null? out : out.trim(), "command output: " + cmd);
             assertOutput(getCommandErrorOutput(), err, "command error: " + cmd);
             assertOutput(getUserOutput(), print, "user output: " + cmd);
             assertOutput(getUserErrorOutput(), usererr, "user error: " + cmd);
