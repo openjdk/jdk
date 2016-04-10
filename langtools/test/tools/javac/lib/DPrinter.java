@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1042,6 +1042,11 @@ public class DPrinter {
             printLimitedEscapedString("body", node.getBody());
             printString("diag", node.getDiagnostic().getMessage(Locale.getDefault()));
             return visitTree(node, null);
+        }
+
+        public Void visitHidden(HiddenTree node, Void p) {
+            printList("body", node.getBody());
+            return visitBlockTag(node, null);
         }
 
         public Void visitIdentifier(IdentifierTree node, Void p) {

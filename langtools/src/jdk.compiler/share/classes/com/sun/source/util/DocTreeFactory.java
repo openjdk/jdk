@@ -42,6 +42,7 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.ErroneousTree;
+import com.sun.source.doctree.HiddenTree;
 import com.sun.source.doctree.IdentifierTree;
 import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.InheritDocTree;
@@ -154,6 +155,13 @@ public interface DocTreeFactory {
      * @return an {@code ExceptionTree} object
      */
     ThrowsTree newExceptionTree(ReferenceTree name, List<? extends DocTree> description);
+
+    /**
+     * Create a new {@code HiddenTree} object, to represent an {@code {@hidden } } tag.
+     * @param text the content of the tag
+     * @return a {@code HiddenTree} object
+     */
+    HiddenTree newHiddenTree(List<? extends DocTree> text);
 
     /**
      * Create a new {@code IdentifierTree} object, to represent an identifier, such as in a

@@ -170,8 +170,7 @@ public class ClassTree {
                 continue;
             }
 
-            if (configuration.javafx
-                    && !utils.getBlockTags(aClass, "treatAsPrivate").isEmpty()) {
+            if (utils.isHidden(aClass)) {
                 continue;
             }
 

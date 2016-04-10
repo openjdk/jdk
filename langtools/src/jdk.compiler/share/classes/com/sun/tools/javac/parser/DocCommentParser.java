@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.sun.source.doctree.AttributeTree.ValueKind;
+import com.sun.source.doctree.DocTree;
 import com.sun.tools.javac.parser.DocCommentParser.TagParser.Kind;
 import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.parser.Tokens.TokenKind;
@@ -1061,6 +1062,14 @@ public class DocCommentParser {
                     DCReference ref = reference(false);
                     List<DCTree> description = blockContent();
                     return m.at(pos).newExceptionTree(ref, description);
+                }
+            },
+
+            // @hidden hidden-text
+            new TagParser(Kind.BLOCK, DCTree.Kind.HIDDEN) {
+                public DCTree parse(int pos) {
+                    List<DCTree> reason = blockContent();
+                    return m.at(pos).newHiddenTree(reason);
                 }
             },
 
