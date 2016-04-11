@@ -224,8 +224,7 @@ SUNWprivate_1.1 {
 		Java_java_lang_System_setOut0;
 		Java_java_lang_Thread_registerNatives;
 		Java_java_lang_Throwable_fillInStackTrace;
-                Java_java_lang_Throwable_getStackTraceDepth;
-                Java_java_lang_Throwable_getStackTraceElement;
+                Java_java_lang_Throwable_getStackTraceElements;
 		Java_java_security_AccessController_doPrivileged__Ljava_security_PrivilegedAction_2;
 		Java_java_security_AccessController_doPrivileged__Ljava_security_PrivilegedAction_2Ljava_security_AccessControlContext_2;
 		Java_java_security_AccessController_doPrivileged__Ljava_security_PrivilegedExceptionAction_2;
