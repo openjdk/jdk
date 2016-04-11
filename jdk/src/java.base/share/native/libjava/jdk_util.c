@@ -47,7 +47,7 @@ JDK_GetVersionInfo0(jdk_version_info* info, size_t info_size) {
                         (version_build & 0xFF);
     info->patch_version = version_patch;
     info->thread_park_blocker = 1;
-    // Advertise presence of sun.misc.PostVMInitHook:
+    // Advertise presence of PostVMInitHook:
     // future optimization: detect if this is enabled.
     info->post_vm_init_hook_enabled = 1;
     info->pending_list_uses_discovered_field = 1;

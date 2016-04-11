@@ -26,7 +26,7 @@
  * @bug 8024927
  * @summary Testing address of compressed class pointer space as best as possible.
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 

@@ -26,7 +26,7 @@
  * @bug 8022595
  * @summary JSR292: deadlock during class loading of MethodHandles, MethodHandleImpl & MethodHandleNatives
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm ConcurrentClassLoadingTest
  */

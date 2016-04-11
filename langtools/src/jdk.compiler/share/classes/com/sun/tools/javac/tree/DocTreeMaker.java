@@ -60,6 +60,7 @@ import com.sun.tools.javac.tree.DCTree.DCDocRoot;
 import com.sun.tools.javac.tree.DCTree.DCEndElement;
 import com.sun.tools.javac.tree.DCTree.DCEntity;
 import com.sun.tools.javac.tree.DCTree.DCErroneous;
+import com.sun.tools.javac.tree.DCTree.DCHidden;
 import com.sun.tools.javac.tree.DCTree.DCIdentifier;
 import com.sun.tools.javac.tree.DCTree.DCIndex;
 import com.sun.tools.javac.tree.DCTree.DCInheritDoc;
@@ -273,6 +274,13 @@ public class DocTreeMaker implements DocTreeFactory {
     public DCThrows newExceptionTree(ReferenceTree name, List<? extends DocTree> description) {
         // TODO: verify the reference is just to a type (not a field or method)
         DCThrows tree = new DCThrows(Kind.EXCEPTION, (DCReference) name, cast(description));
+        tree.pos = pos;
+        return tree;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCHidden newHiddenTree(List<? extends DocTree> text) {
+        DCHidden tree = new DCHidden(cast(text));
         tree.pos = pos;
         return tree;
     }

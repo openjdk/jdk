@@ -62,7 +62,7 @@ public class ToolFormatTest extends ReplToolTesting {
                     (a) -> assertCommand(a, "/set format test result '={value} ' expression", ""),
                     (a) -> assertCommand(a, "/set format test display '{pre}{action}{ftype}{fname}{result}{resolve}'", ""),
                     (a) -> assertCommand(a, "/set format test display '{pre}HI this is enum' enum", ""),
-                    (a) -> assertCommand(a, "/set feedback test", "$ Feedback mode: test"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set feedback test", "$ Feedback mode: test"),
                     (a) -> assertCommand(a, "class D {}", "$ ADD :D OK"),
                     (a) -> assertCommand(a, "void m() {}", "$ ADD []:m OK"),
                     (a) -> assertCommand(a, "interface EX extends EEX {}", "$ ADD :EX NODEF"),
@@ -184,18 +184,18 @@ public class ToolFormatTest extends ReplToolTesting {
                     (a) -> assertCommandOutputStartsWith(a, "/set newmode te2",
                             "|  Created new feedback mode: te2"),
                     (a) -> assertCommandOutputStartsWith(a, "/set newmode te2 command",
-                            "|  Expected a new feedback mode name. te2 is a known feedback mode"),
+                            "|  Expected a new feedback mode name. 'te2' is a known feedback mode"),
                     (a) -> assertCommandOutputStartsWith(a, "/set newmode te command normal",
                             "|  Created new feedback mode: te"),
                     (a) -> assertCommand(a, "/set format te errorpre 'ERROR: '", ""),
                     (a) -> assertCommandOutputStartsWith(a, "/set feedback te",
                             ""),
                     (a) -> assertCommandOutputStartsWith(a, "/set ",
-                            "ERROR: The /set command requires arguments"),
+                            "ERROR: The '/set' command requires a sub-command and arguments"),
                     (a) -> assertCommandOutputStartsWith(a, "/set xyz",
-                            "ERROR: Not a valid argument to /set"),
+                            "ERROR: Invalid '/set' argument: xyz"),
                     (a) -> assertCommandOutputStartsWith(a, "/set f",
-                            "ERROR: Ambiguous argument to /set"),
+                            "ERROR: Ambiguous sub-command argument to '/set': f"),
                     (a) -> assertCommandOutputStartsWith(a, "/set feedback",
                             "ERROR: Expected a feedback mode"),
                     (a) -> assertCommandOutputStartsWith(a, "/set feedback xyz",
@@ -260,21 +260,6 @@ public class ToolFormatTest extends ReplToolTesting {
                     (a) -> assertCommandOutputContains(a, "/help /set format", "display"),
                     (a) -> assertCommandOutputContains(a, "/hel /se for", "vardecl"),
                     (a) -> assertCommandOutputContains(a, "/help /set editor", "temporary file")
-            );
-        } finally {
-            assertCommandCheckOutput(false, "/set feedback normal", s -> {
-            });
-        }
-    }
-
-    public void testSetHelpError() {
-        try {
-            test(
-                    (a) -> assertCommandOutputStartsWith(a, "/set newmode te command normal", "|  Created new feedback mode: te"),
-                    (a) -> assertCommand(a, "/set format te errorpre 'ERROR: '", ""),
-                    (a) -> assertCommandOutputStartsWith(a, "/set feedback te", "|  Feedback mode: te"),
-                    (a) -> assertCommandOutputContains(a, "/help /set xyz", "ERROR: Not a valid argument to /set: xyz"),
-                    (a) -> assertCommandOutputContains(a, "/help /set f", "ERROR: Ambiguous argument to /set: f")
             );
         } finally {
             assertCommandCheckOutput(false, "/set feedback normal", s -> {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -341,6 +341,7 @@ void jar::write_central_directory() {
 void jar::openJarFile(const char* fname) {
   if (!jarfp) {
     PRINTCR((1, "jar::openJarFile: opening %s\n",fname));
+    jarname = fname;
     jarfp = fopen(fname, "wb");
     if (!jarfp) {
       fprintf(u->errstrm, "Error: Could not open jar file: %s\n",fname);
@@ -551,7 +552,8 @@ static jlong read_input_via_gzip(unpacker* u,
       break;
     }
     int nr = readlen - zs.avail_out;
-    u->gzcrc = crc32(u->gzcrc, (const unsigned char *)bufptr, nr);
+    u->gzin->gzlen += nr;
+    u->gzin->gzcrc = crc32(u->gzin->gzcrc, (const unsigned char *)bufptr, nr);
     numread += nr;
     bufptr += nr;
     assert(numread <= maxlen);
@@ -562,15 +564,44 @@ static jlong read_input_via_gzip(unpacker* u,
         zs.avail_in -= TRAILER_LEN;
       } else {
         // Bug: 5023768,we read past the TRAILER_LEN to see if there is
-        // any extraneous data, as we don't support concatenated .gz
-        // files just yet.
+        // any extraneous data, as we don't support concatenated .gz files.
         int extra = (int) read_gzin_fn(u, inbuf, 1, inbuflen);
         zs.avail_in += extra - TRAILER_LEN;
       }
-      // %%% should check final CRC and length here
       // %%% should check for concatenated *.gz files here
       if (zs.avail_in > 0)
         u->abort("garbage after end of deflated input stream");
+
+      // at this point we know there are no trailing bytes,
+      // we are safe to get the crc and len.
+      if (u->gzin->gzcrc != 0) {
+        // Read the CRC information from the gzip container
+        fseek(u->infileptr, -TRAILER_LEN, SEEK_END);
+        uint filecrc;
+        uint filelen;
+        fread(&filecrc, sizeof(filecrc), 1, u->infileptr);
+        fread(&filelen, sizeof(filelen), 1, u->infileptr);
+        filecrc = SWAP_INT(filecrc);
+        filelen = SWAP_INT(filelen);
+        if (u->gzin->gzcrc != filecrc ||
+                // rfc1952; ISIZE is the input size modulo 2^32
+                u->gzin->gzlen != (filelen & 0xffffffff)) { // CRC error
+
+          PRINTCR((1, "crc: 0x%x 0x%x\n", u->gzin->gzcrc,  filecrc));
+          PRINTCR((1, "len: 0x%x 0x%x\n", u->gzin->gzlen,  filelen));
+
+          if (u->jarout != null) {
+            // save the file name first, if any
+            const char* outfile = u->jarout->jarname;
+            u->jarout->closeJarFile(false);
+            if (outfile != null) {
+              remove(outfile);
+            }
+          }
+          // Print out the error and exit with return code != 0
+          u->abort("CRC error, invalid compressed data.");
+        }
+      }
       // pop this filter off:
       u->gzin->free();
       break;
@@ -590,7 +621,8 @@ void gunzip::init(unpacker* u_) {
   zstream = NEW(z_stream, 1);
   u->gzin = this;
   u->read_input_fn = read_input_via_gzip;
-  u->gzcrc = crc32(0, Z_NULL, 0);
+  u->gzin->gzcrc = crc32(0, Z_NULL, 0);
+  u->gzin->gzlen = 0;
 }
 
 void gunzip::start(int magic) {

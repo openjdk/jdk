@@ -685,15 +685,17 @@ public class TagletManager {
         addStandardTaglet(new SimpleTaglet(EXCEPTION.tagName, null,
                 SimpleTaglet.METHOD + SimpleTaglet.CONSTRUCTOR));
         addStandardTaglet(!nosince, new SimpleTaglet(SINCE.tagName, message.getText("doclet.Since"),
-               SimpleTaglet.ALL));
+                SimpleTaglet.ALL));
         addStandardTaglet(showversion, new SimpleTaglet(VERSION.tagName, message.getText("doclet.Version"),
                 SimpleTaglet.PACKAGE + SimpleTaglet.TYPE + SimpleTaglet.OVERVIEW));
         addStandardTaglet(showauthor, new SimpleTaglet(AUTHOR.tagName, message.getText("doclet.Author"),
                 SimpleTaglet.PACKAGE + SimpleTaglet.TYPE + SimpleTaglet.OVERVIEW));
         addStandardTaglet(new SimpleTaglet(SERIAL_DATA.tagName, message.getText("doclet.SerialData"),
-            SimpleTaglet.EXCLUDED));
+                SimpleTaglet.EXCLUDED));
+        addStandardTaglet(new SimpleTaglet(HIDDEN.tagName, message.getText("doclet.Hidden"),
+                SimpleTaglet.FIELD + SimpleTaglet.METHOD + SimpleTaglet.TYPE));
         customTags.put((temp = new SimpleTaglet("factory", message.getText("doclet.Factory"),
-            SimpleTaglet.METHOD)).getName(), temp);
+                SimpleTaglet.METHOD)).getName(), temp);
         addStandardTaglet(new SeeTaglet());
         //Standard inline tags
         addStandardTaglet(new DocRootTaglet());

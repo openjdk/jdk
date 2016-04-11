@@ -274,6 +274,14 @@ public class ClassReader {
             diagFactory);
     }
 
+    public ClassFinder.BadEnclosingMethodAttr badEnclosingMethod(Object... args) {
+        return new ClassFinder.BadEnclosingMethodAttr (
+            currentOwner.enclClass(),
+            currentClassFile,
+            diagFactory.fragment("bad.enclosing.method", args),
+            diagFactory);
+    }
+
 /************************************************************************
  * Buffer Access
  ***********************************************************************/
@@ -1297,7 +1305,7 @@ public class ClassReader {
 
         MethodSymbol m = findMethod(nt, c.members_field, self.flags());
         if (nt != null && m == null)
-            throw badClassFile("bad.enclosing.method", self);
+            throw badEnclosingMethod(self);
 
         self.name = simpleBinaryName(self.flatname, c.flatname) ;
         self.owner = m != null ? m : c;

@@ -49,7 +49,8 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077350 8081566 8081567 8098852 8136597
  * @library /test/lib/share/classes
- * @modules jdk.management
+ * @modules java.base/jdk.internal.misc
+ *          jdk.management
  * @build jdk.test.lib.Platform jdk.test.lib.Utils
  * @run testng InfoTest
  * @summary Functions of ProcessHandle.Info

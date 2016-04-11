@@ -42,7 +42,7 @@ import jdk.test.lib.dcmd.PidJcmdExecutor;
  * @summary Test of diagnostic command GC.heap_dump
  * @library /testlibrary
  * @library /test/lib/share/classes
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor

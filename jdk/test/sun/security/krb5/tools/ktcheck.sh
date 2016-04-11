@@ -61,7 +61,8 @@ rm $KEYTAB
 EXTRA_OPTIONS="-Djava.security.krb5.conf=${TESTSRC}${FS}onlythree.conf"
 KTAB="${TESTJAVA}${FS}bin${FS}ktab -J${EXTRA_OPTIONS} -k $KEYTAB -f"
 CHECK="${TESTJAVA}${FS}bin${FS}java -cp ${TESTCLASSES} ${TESTVMOPTS} ${EXTRA_OPTIONS} \
-        -XaddExports:java.security.jgss/sun.security.krb5.internal.ktab=ALL-UNNAMED,java.security.jgss/sun.security.krb5=ALL-UNNAMED \
+        -XaddExports:java.security.jgss/sun.security.krb5.internal.ktab=ALL-UNNAMED \
+        -XaddExports:java.security.jgss/sun.security.krb5=ALL-UNNAMED \
         KtabCheck $KEYTAB"
 
 echo ${EXTRA_OPTIONS}

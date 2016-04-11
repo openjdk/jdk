@@ -28,6 +28,7 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javah
  * @build toolbox.ToolBox toolbox.JavahTask
  * @run main ModuleClass
  */

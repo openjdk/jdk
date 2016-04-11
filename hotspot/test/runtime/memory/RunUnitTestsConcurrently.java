@@ -25,7 +25,7 @@
  * @test
  * @summary Test launches unit tests inside vm concurrently
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build RunUnitTestsConcurrently
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

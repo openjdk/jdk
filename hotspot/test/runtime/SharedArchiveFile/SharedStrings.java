@@ -30,7 +30,7 @@
  * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @requires (vm.gc=="G1" | vm.gc=="null")
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar
  * @build SharedStringsWb SharedStrings BasicJarBuilder sun.hotspot.WhiteBox

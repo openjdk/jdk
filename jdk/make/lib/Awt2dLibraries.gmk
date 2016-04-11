@@ -312,7 +312,7 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
         $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/common/awt \
         #
 
-    ifneq ($(filter $(OPENJDK_TARGET_OS),linux solaris), )
+    ifneq ($(filter $(OPENJDK_TARGET_OS),linux solaris aix), )
       LIBAWT_XAWT_DIRS += $(JDK_TOPDIR)/src/java.desktop/unix/native/common/awt/systemscale
     endif
 
@@ -888,7 +888,7 @@ ifndef BUILD_HEADLESS_ONLY
     LIBSPLASHSCREEN_DIRS += $(JDK_TOPDIR)/src/java.desktop/macosx/native/libsplashscreen
   endif
 
-  ifneq ($(filter $(OPENJDK_TARGET_OS),linux solaris), )
+  ifneq ($(filter $(OPENJDK_TARGET_OS),linux solaris aix), )
     LIBSPLASHSCREEN_DIRS += $(JDK_TOPDIR)/src/java.desktop/unix/native/common/awt/systemscale
   endif
 

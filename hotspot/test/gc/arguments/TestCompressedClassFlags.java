@@ -29,7 +29,7 @@ import jdk.test.lib.*;
  * @summary Tests that VM prints a warning when -XX:CompressedClassSpaceSize
  *          is used together with -XX:-UseCompressedClassPointers
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 public class TestCompressedClassFlags {

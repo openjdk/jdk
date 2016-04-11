@@ -29,7 +29,7 @@
  *          to initialize all compiler threads. The option -Xcomp gives the VM more time to
  *          trigger the old bug.
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 import jdk.test.lib.*;

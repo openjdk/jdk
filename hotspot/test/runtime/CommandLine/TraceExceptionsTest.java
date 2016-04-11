@@ -26,7 +26,7 @@
  * @bug 8048933
  * @summary TraceExceptions output should have the exception message - useful for ClassNotFoundExceptions especially
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 

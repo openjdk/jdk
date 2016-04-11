@@ -33,7 +33,7 @@ import java.io.File;
  * @bug 8028623
  * @summary Test hashing of extended characters in Serviceability Agent.
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor

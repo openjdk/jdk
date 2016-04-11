@@ -26,7 +26,7 @@
  * @key nmt
  * @summary Running with NMT summary should not result in an error
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 

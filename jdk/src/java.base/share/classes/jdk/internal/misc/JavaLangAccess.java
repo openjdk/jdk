@@ -33,6 +33,7 @@ import java.lang.reflect.Module;
 import java.net.URL;
 import java.security.AccessControlContext;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import jdk.internal.module.ServicesCatalog;
@@ -144,6 +145,12 @@ public interface JavaLangAccess {
      * if doesn't already exist.
      */
     ServicesCatalog createOrGetServicesCatalog(ClassLoader cl);
+
+    /**
+     * Returns the ConcurrentHashMap used as a storage for ClassLoaderValue(s)
+     * associated with the given class loader, creating it if it doesn't already exist.
+     */
+    ConcurrentHashMap<?, ?> createOrGetClassLoaderValueMap(ClassLoader cl);
 
     /**
      * Returns a class loaded by the bootstrap class loader.

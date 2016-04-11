@@ -122,7 +122,8 @@ tznp
 tznp8013086
 EOF
 
-EXTRAOPTS="-XaddExports:java.base/sun.util.locale=ALL-UNNAMED,java.base/sun.util.locale.provider=ALL-UNNAMED"
+EXTRAOPTS="-XaddExports:java.base/sun.util.locale=ALL-UNNAMED \
+ -XaddExports:java.base/sun.util.locale.provider=ALL-UNNAMED"
 
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d ${SPIDIR}${FS}dest \
     ${SPIDIR}${FS}src${FS}tznp.java \

@@ -71,7 +71,7 @@ public class AddExportsTest {
         boolean compiled = CompilerUtils.compile(
                 SRC_DIR.resolve(TEST1_MODULE),
                 MODS_DIR.resolve(TEST1_MODULE),
-                "-XaddExports:java.base/sun.misc=m1");
+                "-XaddExports:java.base/jdk.internal.misc=m1");
         assertTrue(compiled, "module " + TEST1_MODULE + " did not compile");
 
         // javac -d upgrademods/java.transaction src/java.transaction/**
@@ -118,16 +118,16 @@ public class AddExportsTest {
 
 
     /**
-     * Run class path application that uses sun.misc.Unsafe
+     * Run class path application that uses jdk.internal.misc.Unsafe
      */
     public void testUnnamedModule() throws Exception {
 
-        // java -XaddExports:java.base/sun.misc=ALL-UNNAMED \
+        // java -XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED \
         //      -cp mods/$TESTMODULE jdk.test.UsesUnsafe
 
         String classpath = MODS_DIR.resolve(TEST1_MODULE).toString();
         int exitValue
-            = executeTestJava("-XaddExports:java.base/sun.misc=ALL-UNNAMED",
+            = executeTestJava("-XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED",
                               "-cp", classpath,
                               TEST1_MAIN_CLASS)
                 .outputTo(System.out)
@@ -139,16 +139,16 @@ public class AddExportsTest {
 
 
     /**
-     * Run named module that uses sun.misc.Unsafe
+     * Run named module that uses jdk.internal.misc.Unsafe
      */
     public void testNamedModule() throws Exception {
 
-        //  java -XaddExports:java.base/sun.misc=test \
+        //  java -XaddExports:java.base/jdk.internal.misc=test \
         //       -mp mods -m $TESTMODULE/$MAIN_CLASS
 
         String mid = TEST1_MODULE + "/" + TEST1_MAIN_CLASS;
         int exitValue =
-            executeTestJava("-XaddExports:java.base/sun.misc=" + TEST1_MODULE,
+            executeTestJava("-XaddExports:java.base/jdk.internal.misc=" + TEST1_MODULE,
                             "-mp", MODS_DIR.toString(),
                             "-m", mid)
                 .outputTo(System.out)
@@ -240,13 +240,13 @@ public class AddExportsTest {
     public Object[][] badValues() {
         return new Object[][]{
 
-            { "java.base/sun.misc",                  null }, // missing target
-            { "java.base/sun.misc=sun.monkey",       null }, // unknown target
-            { "java.monkey/sun.monkey=ALL-UNNAMED",  null }, // unknown module
-            { "java.base/sun.monkey=ALL-UNNAMED",    null }, // unknown package
-            { "java.monkey/sun.monkey=ALL-UNNAMED",  null }, // unknown module/package
-            { "java.base=ALL-UNNAMED",               null }, // missing package
-            { "java.base/=ALL-UNNAMED",              null }  // missing package
+            { "java.base/jdk.internal.misc",            null }, // missing target
+            { "java.base/jdk.internal.misc=sun.monkey", null }, // unknown target
+            { "java.monkey/sun.monkey=ALL-UNNAMED",     null }, // unknown module
+            { "java.base/sun.monkey=ALL-UNNAMED",       null }, // unknown package
+            { "java.monkey/sun.monkey=ALL-UNNAMED",     null }, // unknown module/package
+            { "java.base=ALL-UNNAMED",                  null }, // missing package
+            { "java.base/=ALL-UNNAMED",                 null }  // missing package
 
         };
     }

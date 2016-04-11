@@ -390,6 +390,29 @@ public abstract class DCTree implements DocTree {
 
     }
 
+    public static class DCHidden extends DCBlockTag implements HiddenTree {
+        public final List<DCTree> body;
+
+        DCHidden(List<DCTree> body) {
+            this.body = body;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() {
+            return Kind.HIDDEN;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
+            return v.visitHidden(this, d);
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public List<? extends DocTree> getBody() {
+            return body;
+        }
+    }
+
     public static class DCIdentifier extends DCTree implements IdentifierTree {
         public final Name name;
 

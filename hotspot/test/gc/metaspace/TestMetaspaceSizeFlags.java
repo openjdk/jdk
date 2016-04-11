@@ -31,7 +31,7 @@ import jdk.test.lib.ProcessTools;
  * @bug 8024650
  * @summary Test that metaspace size flags can be set correctly
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 public class TestMetaspaceSizeFlags {

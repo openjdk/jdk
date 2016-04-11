@@ -32,7 +32,7 @@ import sun.hotspot.WhiteBox;
  * @requires os.maxMemory > 3G
  *
  * @summary Stress G1 Remembered Set by creating a lot of cross region links
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

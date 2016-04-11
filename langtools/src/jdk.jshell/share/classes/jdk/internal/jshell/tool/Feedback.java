@@ -33,10 +33,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 import static java.util.stream.Collectors.joining;
 
 /**
@@ -111,22 +109,6 @@ class Feedback {
 
     public boolean setPrompt(JShellTool tool, ArgTokenizer at) {
         return new Setter(tool, at).setPrompt();
-    }
-
-    public void printFeedbackHelp(JShellTool tool) {
-        new Setter(tool, null).printFeedbackHelp();
-    }
-
-    public void printFormatHelp(JShellTool tool) {
-        new Setter(tool, null).printFormatHelp();
-    }
-
-    public void printNewModeHelp(JShellTool tool) {
-        new Setter(tool, null).printNewModeHelp();
-    }
-
-    public void printPromptHelp(JShellTool tool) {
-        new Setter(tool, null).printPromptHelp();
     }
 
     {
@@ -555,38 +537,18 @@ class Feedback {
             this.at = at;
         }
 
-        void hard(String format, Object... args) {
-            tool.hard(format, args);
-        }
-
-        void hardrb(String key) {
-            tool.hardrb(key);
-        }
-
-        <E extends Enum<E>> void hardEnums(EnumSet<E> es, Function<E, String> e2s) {
-            hardPairs(es.stream(), ev -> ev.name().toLowerCase(Locale.US), e2s);
-        }
-
-        <T> void hardPairs(Stream<T> stream, Function<T, String> a, Function<T, String> b) {
-            tool.hardPairs(stream, a, b);
-        }
-
         void fluff(String format, Object... args) {
             tool.fluff(format, args);
         }
 
-        void error(String format, Object... args) {
-            tool.error(format, args);
+        void fluffmsg(String format, Object... args) {
+            tool.fluffmsg(format, args);
         }
 
-        void errorat(String format, Object... args) {
-            Object[] a2 = Arrays.copyOf(args, args.length + 1);
-            a2[args.length] = at.whole();
-            tool.error(format + " -- /set %s", a2);
-        }
-
-        void fluffRaw(String format, Object... args) {
-            tool.fluffRaw(format, args);
+        void errorat(String messageKey, Object... args) {
+            Object[] a2 = Arrays.copyOf(args, args.length + 2);
+            a2[args.length] = "/set " + at.whole();
+            tool.errormsg(messageKey, a2);
         }
 
         // For /set prompt <mode> "<prompt>" "<continuation-prompt>"
@@ -597,7 +559,7 @@ class Feedback {
             if (valid) {
                 m.setPrompts(prompt, continuationPrompt);
             } else {
-                fluff("See '/help /set prompt' for help");
+                fluffmsg("jshell.msg.see", "/help /set prompt");
             }
             return valid;
         }
@@ -606,17 +568,17 @@ class Feedback {
         boolean setNewMode() {
             String umode = at.next();
             if (umode == null) {
-                errorat("Expected new feedback mode");
+                errorat("jshell.err.feedback.expected.new.feedback.mode");
                 valid = false;
             }
             if (modeMap.containsKey(umode)) {
-                errorat("Expected a new feedback mode name. %s is a known feedback mode", umode);
+                errorat("jshell.err.feedback.expected.mode.name", umode);
                 valid = false;
             }
             String[] fluffOpt = at.next("command", "quiet");
             boolean fluff = fluffOpt == null || fluffOpt.length != 1 || "command".equals(fluffOpt[0]);
             if (fluffOpt != null && fluffOpt.length != 1) {
-                errorat("Specify either 'command' or 'quiet'");
+                errorat("jshell.err.feedback.command.quiet");
                 valid = false;
             }
             Mode om = null;
@@ -629,9 +591,9 @@ class Feedback {
                         ? new Mode(umode, fluff, om)
                         : new Mode(umode, fluff);
                 modeMap.put(umode, nm);
-                fluff("Created new feedback mode: %s", nm.name);
+                fluffmsg("jshell.msg.feedback.new.mode", nm.name);
             } else {
-                fluff("See '/help /set newmode' for help");
+                fluffmsg("jshell.msg.see", "/help /set newmode");
             }
             return valid;
         }
@@ -641,9 +603,9 @@ class Feedback {
             Mode m = nextMode();
             if (valid && m != null) {
                 mode = m;
-                fluff("Feedback mode: %s", mode.name);
+                fluffmsg("jshell.msg.feedback.mode", mode.name);
             } else {
-                fluff("See '/help /set feedback' for help");
+                fluffmsg("jshell.msg.see", "/help /set feedback");
             }
             return valid;
         }
@@ -653,7 +615,7 @@ class Feedback {
             Mode m = nextMode();
             String field = at.next();
             if (field == null || at.isQuoted()) {
-                errorat("Expected field name missing");
+                errorat("jshell.err.feedback.expected.field");
                 valid = false;
             }
             String format = valid? nextFormat() : null;
@@ -675,7 +637,7 @@ class Feedback {
                                 format));
                 }
             } else {
-                fluff("See '/help /set format' for help");
+                fluffmsg("jshell.msg.see", "/help /set format");
             }
             return valid;
         }
@@ -687,7 +649,7 @@ class Feedback {
 
         Mode toMode(String umode) {
             if (umode == null) {
-                errorat("Expected a feedback mode");
+                errorat("jshell.err.feedback.expected.mode");
                 valid = false;
                 return null;
             }
@@ -705,11 +667,11 @@ class Feedback {
             } else {
                 valid = false;
                 if (matches.length == 0) {
-                    errorat("Does not match any current feedback mode: %s", umode);
+                    errorat("jshell.err.feedback.does.not.match.mode", umode);
                 } else {
-                    errorat("Matches more then one current feedback mode: %s", umode);
+                    errorat("jshell.err.feedback.ambiguous.mode", umode);
                 }
-                fluff("The feedback mode should be one of the following:");
+                fluffmsg("jshell.msg.feedback.mode.following");
                 modeMap.keySet().stream()
                         .forEach(mk -> fluff("   %s", mk));
                 return null;
@@ -720,12 +682,12 @@ class Feedback {
         final String nextFormat() {
             String format = at.next();
             if (format == null) {
-                errorat("Expected format missing");
+                errorat("jshell.err.feedback.expected.format");
                 valid = false;
                 return null;
             }
             if (!at.isQuoted()) {
-                errorat("Format '%s' must be quoted", format);
+                errorat("jshell.err.feedback.must.be.quoted", format);
                 valid = false;
                 return null;
             }
@@ -748,19 +710,19 @@ class Feedback {
                         if (!as.isEmpty()) {
                             Selector<?> sel = selectorMap.get(as);
                             if (sel == null) {
-                                errorat("Not a valid selector %s in %s", as, s);
+                                errorat("jshell.err.feedback.not.a.valid.selector", as, s);
                                 valid = false;
                                 return;
                             }
                             SelectorCollector<?> collector = sel.collector(this);
                             if (lastCollector == null) {
                                 if (!collector.isEmpty()) {
-                                    errorat("Selector kind in multiple sections of selector list %s in %s", as, s);
+                                    errorat("jshell.err.feedback.multiple.sections", as, s);
                                     valid = false;
                                     return;
                                 }
                             } else if (collector != lastCollector) {
-                                errorat("Different selector kinds in same sections of selector list %s in %s", as, s);
+                                errorat("jshell.err.feedback.different.selector.kinds", as, s);
                                 valid = false;
                                 return;
                             }
@@ -770,37 +732,6 @@ class Feedback {
                     }
                 }
             }
-        }
-
-        final void printFormatHelp() {
-            hardrb("help.set.format");
-            hardrb("help.set.format.case");
-            hardEnums(EnumSet.allOf(FormatCase.class), ev -> ev.doc);
-            hardrb("help.set.format.action");
-            hardEnums(EnumSet.allOf(FormatAction.class), ev -> ev.doc);
-            hardrb("help.set.format.when");
-            hardEnums(EnumSet.allOf(FormatWhen.class), ev -> ev.doc);
-            hardrb("help.set.format.resolve");
-            hardEnums(EnumSet.allOf(FormatResolve.class), ev -> ev.doc);
-            hardrb("help.set.format.unresolved");
-            hardEnums(EnumSet.allOf(FormatUnresolved.class), ev -> ev.doc);
-            hardrb("help.set.format.errors");
-            hardEnums(EnumSet.allOf(FormatErrors.class), ev -> ev.doc);
-            hardrb("help.set.format.end");
-        }
-
-        final void printFeedbackHelp() {
-            hardrb("help.set.feedback");
-            modeMap.keySet().stream()
-                    .forEach(m -> hard("   %s", m));
-        }
-
-        final void printNewModeHelp() {
-            hardrb("help.set.newmode");
-        }
-
-        final void printPromptHelp() {
-            hardrb("help.set.prompt");
         }
     }
 }

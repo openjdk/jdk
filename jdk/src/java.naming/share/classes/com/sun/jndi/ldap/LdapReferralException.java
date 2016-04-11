@@ -217,13 +217,15 @@ final public class LdapReferralException extends
             System.out.println("LdapReferralException.setReferralInfo");
 
         this.referrals = referrals;
-        if (referrals != null) {
-            referralCount = referrals.size();
-        }
+        referralCount = (referrals == null) ? 0 : referrals.size();
 
         if (debug) {
-            for (int i = 0; i < referralCount; i++) {
-                System.out.println("  [" + i + "] " + referrals.elementAt(i));
+            if (referrals != null) {
+                for (int i = 0; i < referralCount; i++) {
+                    System.out.println("  [" + i + "] " + referrals.elementAt(i));
+                }
+            } else {
+                System.out.println("setReferralInfo : referrals == null");
             }
         }
     }

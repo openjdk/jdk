@@ -318,9 +318,9 @@ oop MethodHandles::init_field_MemberName(Handle mname, fieldDescriptor& fd, bool
 
 // JVM 2.9 Special Methods:
 // A method is signature polymorphic if and only if all of the following conditions hold :
-// * It is declared in the java.lang.invoke.MethodHandle class.
+// * It is declared in the java.lang.invoke.MethodHandle/VarHandle classes.
 // * It has a single formal parameter of type Object[].
-// * It has a return type of Object.
+// * It has a return type of Object for a polymorphic return type, otherwise a fixed return type.
 // * It has the ACC_VARARGS and ACC_NATIVE flags set.
 bool MethodHandles::is_method_handle_invoke_name(Klass* klass, Symbol* name) {
   if (klass == NULL)
@@ -328,14 +328,36 @@ bool MethodHandles::is_method_handle_invoke_name(Klass* klass, Symbol* name) {
   // The following test will fail spuriously during bootstrap of MethodHandle itself:
   //    if (klass != SystemDictionary::MethodHandle_klass())
   // Test the name instead:
-  if (klass->name() != vmSymbols::java_lang_invoke_MethodHandle())
+  if (klass->name() != vmSymbols::java_lang_invoke_MethodHandle() &&
+      klass->name() != vmSymbols::java_lang_invoke_VarHandle()) {
     return false;
+  }
+
+  // Look up signature polymorphic method with polymorphic return type
   Symbol* poly_sig = vmSymbols::object_array_object_signature();
-  Method* m = InstanceKlass::cast(klass)->find_method(name, poly_sig);
-  if (m == NULL)  return false;
-  int required = JVM_ACC_NATIVE | JVM_ACC_VARARGS;
-  int flags = m->access_flags().as_int();
-  return (flags & required) == required;
+  InstanceKlass* iklass = InstanceKlass::cast(klass);
+  Method* m = iklass->find_method(name, poly_sig);
+  if (m != NULL) {
+    int required = JVM_ACC_NATIVE | JVM_ACC_VARARGS;
+    int flags = m->access_flags().as_int();
+    if ((flags & required) == required) {
+      return true;
+    }
+  }
+
+  // Look up signature polymorphic method with non-polymorphic (non Object) return type
+  int me;
+  int ms = iklass->find_method_by_name(name, &me);
+  if (ms == -1) return false;
+  for (; ms < me; ms++) {
+    Method* m = iklass->methods()->at(ms);
+    int required = JVM_ACC_NATIVE | JVM_ACC_VARARGS;
+    int flags = m->access_flags().as_int();
+    if ((flags & required) == required && ArgumentCount(m->signature()).size() == 1) {
+      return true;
+    }
+  }
+  return false;
 }
 
 
@@ -395,8 +417,16 @@ vmIntrinsics::ID MethodHandles::signature_polymorphic_name_id(Symbol* name) {
   // Cover the case of invokeExact and any future variants of invokeFoo.
   Klass* mh_klass = SystemDictionary::well_known_klass(
                               SystemDictionary::WK_KLASS_ENUM_NAME(MethodHandle_klass) );
-  if (mh_klass != NULL && is_method_handle_invoke_name(mh_klass, name))
+  if (mh_klass != NULL && is_method_handle_invoke_name(mh_klass, name)) {
     return vmIntrinsics::_invokeGeneric;
+  }
+
+  // Cover the case of methods on VarHandle.
+  Klass* vh_klass = SystemDictionary::well_known_klass(
+                              SystemDictionary::WK_KLASS_ENUM_NAME(VarHandle_klass) );
+  if (vh_klass != NULL && is_method_handle_invoke_name(vh_klass, name)) {
+    return vmIntrinsics::_invokeGeneric;
+  }
 
   // Note: The pseudo-intrinsic _compiledLambdaForm is never linked against.
   // Instead it is used to mark lambda forms bound to invokehandle or invokedynamic.
@@ -405,7 +435,8 @@ vmIntrinsics::ID MethodHandles::signature_polymorphic_name_id(Symbol* name) {
 
 vmIntrinsics::ID MethodHandles::signature_polymorphic_name_id(Klass* klass, Symbol* name) {
   if (klass != NULL &&
-      klass->name() == vmSymbols::java_lang_invoke_MethodHandle()) {
+      (klass->name() == vmSymbols::java_lang_invoke_MethodHandle() ||
+       klass->name() == vmSymbols::java_lang_invoke_VarHandle())) {
     vmIntrinsics::ID iid = signature_polymorphic_name_id(name);
     if (iid != vmIntrinsics::_none)
       return iid;
@@ -1197,10 +1228,10 @@ JVM_ENTRY(jobject, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh,
       THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "obsolete MemberName format");
     }
     if ((flags & ALL_KINDS) == IS_FIELD) {
-      THROW_MSG_NULL(vmSymbols::java_lang_NoSuchMethodError(), "field resolution failed");
+      THROW_MSG_NULL(vmSymbols::java_lang_NoSuchFieldError(), "field resolution failed");
     } else if ((flags & ALL_KINDS) == IS_METHOD ||
                (flags & ALL_KINDS) == IS_CONSTRUCTOR) {
-      THROW_MSG_NULL(vmSymbols::java_lang_NoSuchFieldError(), "method resolution failed");
+      THROW_MSG_NULL(vmSymbols::java_lang_NoSuchMethodError(), "method resolution failed");
     } else {
       THROW_MSG_NULL(vmSymbols::java_lang_LinkageError(), "resolution failed");
     }

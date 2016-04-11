@@ -132,7 +132,7 @@ class ConsoleIOContext extends IOContext {
                     } catch (IOException ex) {
                         throw new IllegalStateException(ex);
                     }
-                    result.add("<press tab to see more>");
+                    result.add(repl.messageFormat("jshell.console.see.more"));
                     return cursor; //anchor should not be used.
                 }
 
@@ -337,7 +337,7 @@ class ConsoleIOContext extends IOContext {
                 fixes.add(0, new Fix() {
                     @Override
                     public String displayName() {
-                        return "Do nothing";
+                        return repl.messageFormat("jshell.console.do.nothing");
                     }
 
                     @Override
@@ -353,7 +353,7 @@ class ConsoleIOContext extends IOContext {
                     char2Fix.put((char) ('0' + i), fix);
                     in.println("" + i + ": " + fixes.get(i).displayName());
                 }
-                in.print("Choice: ");
+                in.print(repl.messageFormat("jshell.console.choice"));
                 in.flush();
                 int read;
 
@@ -438,7 +438,7 @@ class ConsoleIOContext extends IOContext {
                 return new FixResult(Collections.singletonList(new Fix() {
                     @Override
                     public String displayName() {
-                        return "Create variable";
+                        return repl.messageFormat("jshell.console.create.variable");
                     }
                     @Override
                     public void perform(ConsoleReader in) throws IOException {
@@ -472,14 +472,14 @@ class ConsoleIOContext extends IOContext {
                 }
                 if (res.isResolvable()) {
                     return new FixResult(Collections.emptyList(),
-                                         "\nThe identifier is resolvable in this context.");
+                            repl.messageFormat("jshell.console.resolvable"));
                 } else {
                     String error = "";
                     if (fixes.isEmpty()) {
-                        error = "\nNo candidate fully qualified names found to import.";
+                        error = repl.messageFormat("jshell.console.no.candidate");
                     }
                     if (!res.isUpToDate()) {
-                        error += "\nResults may be incomplete; try again later for complete results.";
+                        error += repl.messageFormat("jshell.console.incomplete");
                     }
                     return new FixResult(fixes, error);
                 }

@@ -153,6 +153,7 @@ class SymbolPropertyTable;
   /* support for dynamic typing; it's OK if these are NULL in earlier JDKs */                                            \
   do_klass(DirectMethodHandle_klass,                    java_lang_invoke_DirectMethodHandle,       Opt                 ) \
   do_klass(MethodHandle_klass,                          java_lang_invoke_MethodHandle,             Pre                 ) \
+  do_klass(VarHandle_klass,                             java_lang_invoke_VarHandle,                Pre                 ) \
   do_klass(MemberName_klass,                            java_lang_invoke_MemberName,               Pre                 ) \
   do_klass(MethodHandleNatives_klass,                   java_lang_invoke_MethodHandleNatives,      Pre                 ) \
   do_klass(LambdaForm_klass,                            java_lang_invoke_LambdaForm,               Opt                 ) \
@@ -518,7 +519,8 @@ public:
   // JSR 292
   // find a java.lang.invoke.MethodHandle.invoke* method for a given signature
   // (asks Java to compute it if necessary, except in a compiler thread)
-  static methodHandle find_method_handle_invoker(Symbol* name,
+  static methodHandle find_method_handle_invoker(KlassHandle klass,
+                                                 Symbol* name,
                                                  Symbol* signature,
                                                  KlassHandle accessing_klass,
                                                  Handle *appendix_result,

@@ -48,7 +48,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import jdk.test.lib.process.*;
 import static jdk.test.lib.Asserts.assertTrue;

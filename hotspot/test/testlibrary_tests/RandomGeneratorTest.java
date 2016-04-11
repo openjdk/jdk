@@ -25,7 +25,7 @@
  * @test
  * @summary Verify correctnes of the random generator from Utility.java
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver RandomGeneratorTest SAME_SEED
  * @run driver RandomGeneratorTest NO_SEED

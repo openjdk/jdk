@@ -28,7 +28,7 @@ import jdk.test.lib.*;
  * @bug 8059604
  * @summary "Add CompileThresholdScaling flag to control when methods are first compiled (with +/-TieredCompilation)"
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main CheckCompileThresholdScaling
  */

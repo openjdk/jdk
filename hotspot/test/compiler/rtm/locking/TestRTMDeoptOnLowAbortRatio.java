@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify that on low abort ratio method will be recompiled.
  * @library /testlibrary /test/lib /compiler/testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestRTMDeoptOnLowAbortRatio
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

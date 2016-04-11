@@ -29,7 +29,7 @@
  * @summary Tests argument processing for NeverTenure, AlwaysTenure,
  * and MaxTenuringThreshold
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestObjectTenuringFlags FlagsValue
  * @run main/othervm TestObjectTenuringFlags

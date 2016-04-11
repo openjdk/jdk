@@ -26,7 +26,7 @@
  * @bug 8026844
  * @summary Test constant negExact
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile NegExactIConstantTest.java Verify.java
  * @run main NegExactIConstantTest

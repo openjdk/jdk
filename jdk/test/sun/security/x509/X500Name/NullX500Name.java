@@ -24,8 +24,7 @@
 /* @test
  * @bug 4118818
  * @summary allow null X.500 Names
- * @modules java.base/sun.misc
- *          java.base/sun.security.util
+ * @modules java.base/sun.security.util
  *          java.base/sun.security.x509
  */
 

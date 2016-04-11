@@ -29,7 +29,7 @@ import sun.hotspot.WhiteBox;
  * @bug 8015774
  * @library /testlibrary /test/lib
  * @summary "Checks VM options related to the segmented code cache"
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build CheckSegmentedCodeCache
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

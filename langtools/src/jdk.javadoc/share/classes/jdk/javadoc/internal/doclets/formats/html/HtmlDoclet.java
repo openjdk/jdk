@@ -230,7 +230,8 @@ public class HtmlDoclet extends AbstractDoclet {
             klass = iterator.next();
             TypeElement next = iterator.nextIndex() == list.size()
                     ? null : list.get(iterator.nextIndex());
-            if (!(configuration.isGeneratedDoc(klass) && utils.isIncluded(klass))) {
+            if (utils.isHidden(klass) ||
+                    !(configuration.isGeneratedDoc(klass) && utils.isIncluded(klass))) {
                 continue;
             }
             try {

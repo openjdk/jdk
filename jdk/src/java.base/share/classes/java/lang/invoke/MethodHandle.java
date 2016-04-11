@@ -26,8 +26,10 @@
 package java.lang.invoke;
 
 
-import java.util.*;
 import jdk.internal.HotSpotIntrinsicCandidate;
+
+import java.util.Arrays;
+import java.util.Objects;
 
 import static java.lang.invoke.MethodHandleStatics.*;
 
@@ -92,14 +94,16 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * and {@code invoke} compile to an {@code invokevirtual} instruction.
  * More unusually, the compiler must record the actual argument types,
  * and may not perform method invocation conversions on the arguments.
- * Instead, it must push them on the stack according to their own unconverted types.
- * The method handle object itself is pushed on the stack before the arguments.
- * The compiler then calls the method handle with a symbolic type descriptor which
- * describes the argument and return types.
+ * Instead, it must generate instructions that push them on the stack according
+ * to their own unconverted types.  The method handle object itself is pushed on
+ * the stack before the arguments.
+ * The compiler then generates an {@code invokevirtual} instruction that invokes
+ * the method handle with a symbolic type descriptor which describes the argument
+ * and return types.
  * <p>
  * To issue a complete symbolic type descriptor, the compiler must also determine
  * the return type.  This is based on a cast on the method invocation expression,
- * if there is one, or else {@code Object} if the invocation is an expression
+ * if there is one, or else {@code Object} if the invocation is an expression,
  * or else {@code void} if the invocation is a statement.
  * The cast may be to a primitive type (but not {@code void}).
  * <p>
@@ -109,12 +113,12 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * {@code Void} except the null reference.
  *
  * <h1>Method handle invocation</h1>
- * The first time a {@code invokevirtual} instruction is executed
- * it is linked, by symbolically resolving the names in the instruction
+ * The first time an {@code invokevirtual} instruction is executed
+ * it is linked by symbolically resolving the names in the instruction
  * and verifying that the method call is statically legal.
- * This is true of calls to {@code invokeExact} and {@code invoke}.
+ * This also holds for calls to {@code invokeExact} and {@code invoke}.
  * In this case, the symbolic type descriptor emitted by the compiler is checked for
- * correct syntax and names it contains are resolved.
+ * correct syntax, and names it contains are resolved.
  * Thus, an {@code invokevirtual} instruction which invokes
  * a method handle will always link, as long
  * as the symbolic type descriptor is syntactically well-formed
@@ -163,7 +167,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * in a program which uses method handles.
  * <p>
  * Because method types contain "live" {@code Class} objects,
- * method type matching takes into account both types names and class loaders.
+ * method type matching takes into account both type names and class loaders.
  * Thus, even if a method handle {@code M} is created in one
  * class loader {@code L1} and used in another {@code L2},
  * method handle calls are type-safe, because the caller's symbolic type
@@ -174,7 +178,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * and its type is assigned, while the resolution in {@code L2} happens
  * when the {@code invokevirtual} instruction is linked.
  * <p>
- * Apart from the checking of type descriptors,
+ * Apart from type descriptor checks,
  * a method handle's capability to call its underlying method is unrestricted.
  * If a method handle is formed on a non-public method by a class
  * that has access to that method, the resulting handle can be used
@@ -196,7 +200,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * Java code can create a method handle that directly accesses
  * any method, constructor, or field that is accessible to that code.
  * This is done via a reflective, capability-based API called
- * {@link java.lang.invoke.MethodHandles.Lookup MethodHandles.Lookup}
+ * {@link java.lang.invoke.MethodHandles.Lookup MethodHandles.Lookup}.
  * For example, a static method handle can be obtained
  * from {@link java.lang.invoke.MethodHandles.Lookup#findStatic Lookup.findStatic}.
  * There are also conversion methods from Core Reflection API objects,

@@ -36,7 +36,6 @@ import java.io.FileDescriptor;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
 import java.util.*;
-import sun.misc.*;
 
 class KQueueSelectorImpl
     extends SelectorImpl

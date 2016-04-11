@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify that rtm locking is used for stack locks.
  * @library /testlibrary /test/lib /compiler/testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestUseRTMForStackLocks
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

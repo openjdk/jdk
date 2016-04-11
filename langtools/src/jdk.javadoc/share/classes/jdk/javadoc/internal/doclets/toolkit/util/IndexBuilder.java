@@ -185,10 +185,8 @@ public class IndexBuilder {
      * Should this element be added to the index map?
      */
     protected boolean shouldAddToIndexMap(Element element) {
-        if (javafx) {
-            if (!utils.getBlockTags(element, "treatAsPrivate").isEmpty()) {
-                return false;
-            }
+        if (utils.isHidden(element)) {
+            return false;
         }
 
         if (utils.isPackage(element))

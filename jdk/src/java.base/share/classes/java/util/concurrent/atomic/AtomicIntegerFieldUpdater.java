@@ -475,7 +475,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
 
         public final void lazySet(T obj, int newValue) {
             accessCheck(obj);
-            U.putOrderedInt(obj, offset, newValue);
+            U.putIntRelease(obj, offset, newValue);
         }
 
         public final int get(T obj) {

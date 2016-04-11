@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,14 @@
  * @summary Check that InetAddress doesn't continue to throw UHE
  *          after the name service has recovered and the negative ttl
  *          on the initial lookup has expired.
- * @modules java.base/sun.net.spi.nameservice
- * @compile -XDignore.symbol.file=true SimpleNameService.java
- *                                     SimpleNameServiceDescriptor.java
- * @run main/othervm/timeout=200 -Dsun.net.spi.nameservice.provider.1=simple,sun CacheTest
+ * @run main/othervm/timeout=200 CacheTest
  */
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.Security;
+import java.io.PrintWriter;
+import java.io.FileWriter;
+import java.io.BufferedWriter;
 
 public class CacheTest {
 
@@ -59,6 +59,8 @@ public class CacheTest {
             return;
 
         }
+        String hostsFileName = System.getProperty("test.src", ".") + "/CacheTestHosts";
+        System.setProperty("jdk.net.hosts.file", hostsFileName);
 
         /*
          * The following outlines how the test works :-
@@ -78,7 +80,7 @@ public class CacheTest {
          */
 
         // name service needs to resolve this.
-        SimpleNameService.put("theclub", "129.156.220.219");
+        addMappingToHostsFile("theclub", "129.156.220.219", hostsFileName, false);
 
         // this lookup will succeed
         InetAddress.getByName("theclub");
@@ -89,17 +91,29 @@ public class CacheTest {
         try {
             InetAddress.getByName("luster");
             throw new RuntimeException("Test internal error " +
-                " - luster is bring resolved by name service");
+                " - luster is being resolved by name service");
         } catch (UnknownHostException x) {
         }
 
         // name service now needs to know about luster
-        SimpleNameService.put("luster", "10.5.18.21");
+        addMappingToHostsFile("luster", "10.5.18.21", hostsFileName, true);
 
         // wait for the cache entry to expire and lookup should
         // succeed.
         Thread.currentThread().sleep(ttl*1000 + 1000);
         InetAddress.getByName("luster");
+    }
+
+    private static void addMappingToHostsFile ( String host,
+                                                String addr,
+                                                String hostsFileName,
+                                                boolean append)
+                                                throws Exception {
+        String mapping = addr + " " + host;
+        try (PrintWriter hfPWriter = new PrintWriter(new BufferedWriter(
+                new FileWriter(hostsFileName, append)))) {
+            hfPWriter.println(mapping);
+}
     }
 
 }

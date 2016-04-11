@@ -44,6 +44,8 @@ import sun.misc.SignalHandler;
 /*
  * @test
  * @library /test/lib/share/classes
+ * @modules jdk.unsupported
+ *          java.base/jdk.internal.misc
  * @build jdk.test.lib.Platform jdk.test.lib.Utils
  * @run testng/othervm -Xrs -DXrs=true SunMiscSignalTest
  * @run testng/othervm SunMiscSignalTest

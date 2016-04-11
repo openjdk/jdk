@@ -26,7 +26,7 @@
  * @summary Release uncommitted memory and make sure NMT handles it correctly
  * @key nmt regression
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build ReleaseNoCommit
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

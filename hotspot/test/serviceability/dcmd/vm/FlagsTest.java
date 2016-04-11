@@ -30,7 +30,7 @@ import org.testng.annotations.Test;
  * @test
  * @summary Test of diagnostic command VM.flags
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor

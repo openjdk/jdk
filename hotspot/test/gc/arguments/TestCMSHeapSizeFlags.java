@@ -28,7 +28,7 @@
  * @requires vm.gc=="ConcMarkSweep" | vm.gc=="null"
  * @summary Tests argument processing for initial and maximum heap size for the CMS collector
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestCMSHeapSizeFlags TestMaxHeapSizeTools
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

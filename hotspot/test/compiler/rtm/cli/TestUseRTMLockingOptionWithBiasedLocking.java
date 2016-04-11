@@ -28,7 +28,7 @@
  * @summary Verify processing of UseRTMLocking and UseBiasedLocking
  *          options combination on CPU and VM with rtm support.
  * @library /testlibrary /test/lib /compiler/testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestUseRTMLockingOptionWithBiasedLocking
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

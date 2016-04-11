@@ -382,7 +382,7 @@ public class VisibleMemberMap {
                 if (!found(members, element)) {
                     if (memberIsVisible(element)) {
                         if (!isOverridden(element, level)) {
-                            if (!isTreatedAsPrivate(element)) {
+                            if (!utils.isHidden(element)) {
                                 incllist.add(element);
                             }
                         }
@@ -394,16 +394,6 @@ public class VisibleMemberMap {
             }
             members.addAll(incllist);
             fillMemberLevelMap(getClassMembers(fromClass, false), level);
-        }
-
-        private boolean isTreatedAsPrivate(Element pgmelem) {
-            if (!configuration.javafx) {
-                return false;
-            }
-
-            List<? extends DocTree> aspTags = utils.getBlockTags(pgmelem, "@treatAsPrivate");
-            boolean result = (aspTags != null) && (!aspTags.isEmpty());
-            return result;
         }
 
         /**

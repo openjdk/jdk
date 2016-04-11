@@ -27,7 +27,7 @@
  * @summary Verify that objects promoted from survivor space to tenured space
  *          during full GC are not aligned to SurvivorAlignmentInBytes value.
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestPromotionFromSurvivorToTenuredAfterFullGC
  *        SurvivorAlignmentTestMain AlignmentHelper

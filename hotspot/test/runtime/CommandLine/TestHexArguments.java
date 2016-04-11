@@ -27,7 +27,7 @@
  * @summary Make sure there is no error using hexadecimal format in vm options
  * @author Yumin Qi
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 

@@ -26,7 +26,7 @@
  * @bug 8049632
  * @summary Test ClassFileParser::copy_localvariable_table cases
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile -g -XDignore.symbol.file TestLVT.java
  * @run main TestLVT
