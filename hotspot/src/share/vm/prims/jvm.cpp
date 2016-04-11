@@ -1790,9 +1790,6 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
   // Ensure class is linked
   k->link_class(CHECK_NULL);
 
-  // 4496456 We need to filter out java.lang.Throwable.backtrace
-  bool skip_backtrace = false;
-
   // Allocate result
   int num_fields;
 
@@ -1803,11 +1800,6 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
     }
   } else {
     num_fields = k->java_fields_count();
-
-    if (k() == SystemDictionary::Throwable_klass()) {
-      num_fields--;
-      skip_backtrace = true;
-    }
   }
 
   objArrayOop r = oopFactory::new_objArray(SystemDictionary::reflect_Field_klass(), num_fields, CHECK_NULL);
@@ -1816,12 +1808,6 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
   int out_idx = 0;
   fieldDescriptor fd;
   for (JavaFieldStream fs(k); !fs.done(); fs.next()) {
-    if (skip_backtrace) {
-      // 4496456 skip java.lang.Throwable.backtrace
-      int offset = fs.offset();
-      if (offset == java_lang_Throwable::get_backtrace_offset()) continue;
-    }
-
     if (!publicOnly || fs.access_flags().is_public()) {
       fd.reinitialize(k(), fs.index());
       oop field = Reflection::new_field(&fd, CHECK_NULL);
