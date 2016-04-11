@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,6 @@ import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.concurrent.*;
 
-import sun.net.spi.nameservice.NameService;
-import sun.net.spi.nameservice.NameServiceDescriptor;
 import sun.security.krb5.*;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.ccache.CredentialsCache;
@@ -129,6 +127,8 @@ public class KDC {
     public static final int DEFAULT_LIFETIME = 39600;
     public static final int DEFAULT_RENEWTIME = 86400;
 
+    public static String NOT_EXISTING_HOST = "not.existing.host";
+
     // Under the hood.
 
     // The random generator to generate random keys (including session keys)
@@ -219,7 +219,8 @@ public class KDC {
     };
 
     static {
-        System.setProperty("sun.net.spi.nameservice.provider.1", "ns,mock");
+        String hostsFileName = System.getProperty("test.src", ".") + "/TestHosts";
+        System.setProperty("jdk.net.hosts.file", hostsFileName);
     }
 
     /**
@@ -1448,45 +1449,6 @@ public class KDC {
         }
     }
 
-    public static class KDCNameService implements NameServiceDescriptor {
-
-        public static String NOT_EXISTING_HOST = "not.existing.host";
-
-        @Override
-        public NameService createNameService() throws Exception {
-            NameService ns = new NameService() {
-                @Override
-                public InetAddress[] lookupAllHostAddr(String host)
-                        throws UnknownHostException {
-                    // Everything is localhost except NOT_EXISTING_HOST
-                    if (NOT_EXISTING_HOST.equals(host)) {
-                        throw new UnknownHostException("Unknown host name: "
-                                + NOT_EXISTING_HOST);
-                    }
-                    return new InetAddress[]{
-                        InetAddress.getByAddress(host, new byte[]{127,0,0,1})
-                    };
-                }
-                @Override
-                public String getHostByAddr(byte[] addr)
-                        throws UnknownHostException {
-                    // No reverse lookup, PrincipalName use original string
-                    throw new UnknownHostException();
-                }
-            };
-            return ns;
-        }
-
-        @Override
-        public String getProviderName() {
-            return "mock";
-        }
-
-        @Override
-        public String getType() {
-            return "ns";
-        }
-    }
 
     // Calling private methods thru reflections
     private static final Field getPADataField;

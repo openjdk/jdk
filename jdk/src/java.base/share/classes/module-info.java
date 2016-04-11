@@ -192,8 +192,6 @@ module java.base {
     exports sun.net.dns to
         java.security.jgss,
         jdk.naming.dns;
-    exports sun.net.spi.nameservice to
-        jdk.naming.dns;
     exports sun.net.util to
         java.desktop,
         jdk.jconsole,
@@ -286,7 +284,6 @@ module java.base {
 
     // JDK-internal service types
     uses jdk.internal.logger.DefaultLoggerFinder;
-    uses sun.net.spi.nameservice.NameServiceDescriptor;
     uses sun.security.ssl.ClientKeyExchangeService;
     uses sun.util.spi.CalendarProvider;
     uses sun.util.locale.provider.LocaleDataMetaInfo;

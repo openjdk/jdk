@@ -159,8 +159,6 @@ sun/management/jmxremote/bootstrap/JMXInterfaceBindingTest.java 8147985 generic-
 
 # jdk_net
 
-sun/net/InetAddress/nameservice/simple/CacheTest.java           7148829 generic-all
-sun/net/InetAddress/nameservice/simple/DefaultCaching.java      7148829 generic-all
 
 java/net/MulticastSocket/NoLoopbackPackets.java                 7122846 macosx-all
 java/net/MulticastSocket/SetLoopbackMode.java                   7122846 macosx-all
@@ -284,6 +282,8 @@ sun/security/tools/keytool/autotest.sh                          8130302 generic-
 
 sun/security/provider/NSASuiteB/TestDSAGenParameterSpec.java    8137255 generic-all
 
+sun/security/x509/URICertStore/ExtensionsWithLDAP.java          8134577 generic-all
+
 ############################################################################
 
 # jdk_sound
@@ -309,6 +309,7 @@ javax/imageio/plugins/tiff/WriteToSequenceAfterAbort.java       8148454 generic-
 ############################################################################
 
 # jdk_time
+
 
 ############################################################################
 
