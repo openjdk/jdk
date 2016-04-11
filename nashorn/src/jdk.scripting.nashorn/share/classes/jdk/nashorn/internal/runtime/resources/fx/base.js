@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,135 +23,92 @@
  * questions.
  */
 
-var JFX_BASE_CLASSES     = [];
-var JFX_GRAPHICS_CLASSES = [];
-var JFX_CONTROLS_CLASSES = [];
-var JFX_FXML_CLASSES     = [];
-var JFX_WEB_CLASSES      = [];
-var JFX_MEDIA_CLASSES    = [];
-var JFX_SWING_CLASSES    = [];
-var JFX_SWT_CLASSES      = [];
+var JFX_CLASSES = {
+    "javafx.base": [],
+    "javafx.controls": [],
+    "javafx.deploy": [],
+    "javafx.fxml": [],
+    "javafx.graphics": [],
+    "javafx.media": [],
+    "javafx.swing": [],
+    "javafx.web": []
+};
 
-function LOAD_FX_CLASSES(clsList) {
-    for each (var cls in clsList) {
-        // Ex. Stage = Java.type("javafx.stage.Stage");
-        this[cls[cls.length - 1]] = Java.type(cls.join("."));
+function LOAD_FX_CLASSES(global, module) {
+    if (JFX_CLASSES[module]) {
+        for each (var cls in JFX_CLASSES[module]) {
+            // Ex. Stage = Java.type("javafx.stage.Stage");
+            var name = cls.join(".");
+            var type = Java.type(name);
+            global[cls[cls.length - 1]] = type;
+        }
+
+        JFX_CLASSES[module] = undefined;
     }
 }
 
 (function() {
-    var System           = Java.type("java.lang.System");
-    var ZipFile          = Java.type("java.util.zip.ZipFile");
+    var Files = Java.type("java.nio.file.Files");
+    var FileSystems = Java.type("java.nio.file.FileSystems");
+    var FileVisitor = Java.type("java.nio.file.FileVisitor");
+    var FileVisitResult = Java.type("java.nio.file.FileVisitResult");
+    var CONTINUE = FileVisitResult.CONTINUE;
+    var SKIP_SUBTREE = FileVisitResult.SKIP_SUBTREE;
 
-    var SUFFIX_LENGTH    = ".class".length;
+    var URI = Java.type("java.net.URI");
+    var uri = new URI("jrt:/");
+    var jrtfs = FileSystems.getFileSystem(uri);
+    var rootDirectories = jrtfs.getRootDirectories();
 
-    // TODO - temporary patch until fx is moved to module system.
-    // <patch>
-    var jfxrtJar;
-    try {
-        jfxrtJar = new ZipFile(System.getProperty("java.home") + "/lib/jfxrt.jar");
-    } catch (ex1) {
-        try {
-            jfxrtJar = new ZipFile(System.getProperty("java.home") + "/lib/ext/jfxrt.jar");
-        } catch (ex2) {
-            throw new Error("JavaFX runtime not found");
-        }
-    }
-    // </patch>
+    var JRTFSWalker = Java.extend(FileVisitor, {
+        preVisitDirectory: function(path, attrs) {
+            var name = path.toString();
 
-    var entries = jfxrtJar.entries();
-
-    while (entries.hasMoreElements()) {
-        var entry = entries.nextElement();
-
-        if (entry.isDirectory()) {
-            continue;
-        }
-
-        var name = entry.name;
-
-        if (!name.endsWith(".class")) {
-            continue;
-        }
-
-        name = name.substring(0, name.length - SUFFIX_LENGTH);
-        cls = name.split("/");
-
-        if (cls[0] != "javafx") {
-            continue;
-        }
-
-        var last = cls[cls.length - 1];
-        var nested = last.lastIndexOf("$");
-
-        // If class name ends with $nnn
-        if (nested != -1 && !(last.substring(nested) - 0)) {
-            continue;
-        }
-
-        switch (cls[1]) {
-        case "stage":
-            if (cls[2] == "Stage") {
-                JFX_BASE_CLASSES.push(cls);
-            } else {
-                JFX_GRAPHICS_CLASSES.push(cls);
+            if (name.startsWith("/packages")) {
+                 return SKIP_SUBTREE;
             }
-            break;
 
-        case "scene":
-            switch (cls[2]) {
-            case "Scene":
-            case "Group":
-                JFX_BASE_CLASSES.push(cls);
-                break;
-
-            case "chart":
-            case "control":
-                JFX_CONTROLS_CLASSES.push(cls);
-                break;
-
-            case "web":
-                JFX_WEB_CLASSES.push(cls);
-                break;
-
-            case "media":
-                JFX_MEDIA_CLASSES.push(cls);
-                break;
-
-            default:
-                JFX_GRAPHICS_CLASSES.push(cls);
-                break;
+            if (name.startsWith("/modules") && !name.equals("/modules") && !name.startsWith("/modules/javafx")) {
+                return SKIP_SUBTREE;
             }
-            break;
 
-        case "beans":
-        case "collections":
-        case "events":
-        case "util":
-            JFX_BASE_CLASSES.push(cls);
-            break;
+            return CONTINUE;
+        },
 
-        case "animation":
-        case "application":
-        case "concurrent":
-        case "css":
-        case "geometry":
-            JFX_GRAPHICS_CLASSES.push(cls);
-            break;
+        postVisitDirectory: function(path, attrs) {
+            return CONTINUE;
+        },
 
-        case "fxml":
-            JFX_FXML_CLASSES.push(cls);
-            break;
+        visitFile: function(file, attrs) {
+            var name = file.toString();
 
-        case "embed":
-            if (cls[2] == "swing") {
-                JFX_SWING_CLASSES.push(cls);
-            } else {
-                JFX_SWT_CLASSES.push(cls);
+            if (!name.endsWith(".class") || name.endsWith("module-info.class")) {
+                return CONTINUE;
             }
-            break;
+
+            var parts = name.split("/");
+            parts = parts.slice(2);
+            var module = parts.shift();
+            var path = parts;
+            var cls = path.pop();
+            cls = cls.substring(0, cls.length() - 6);
+            path.push(cls);
+
+            if (path[0] !== "javafx" || /\$\d+$/.test(cls)) {
+                return CONTINUE;
+            }
+
+            JFX_CLASSES[module].push(path);
+
+            return CONTINUE;
+        },
+
+        visitFileFailed: function(file, ex) {
+            return CONTINUE;
         }
-    }
+    });
+
+    Files.walkFileTree(rootDirectories[0], new JRTFSWalker());
 })();
 
-LOAD_FX_CLASSES(JFX_BASE_CLASSES);
+LOAD_FX_CLASSES(this, "javafx.base");
