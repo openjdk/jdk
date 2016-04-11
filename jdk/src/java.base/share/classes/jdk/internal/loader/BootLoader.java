@@ -39,6 +39,7 @@ import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
 import java.util.stream.Stream;
@@ -68,6 +69,10 @@ public class BootLoader {
     // ServiceCatalog for the boot class loader
     private static final ServicesCatalog SERVICES_CATALOG = new ServicesCatalog();
 
+    // ClassLoaderValue map for boot class loader
+    private static final ConcurrentHashMap<?, ?> CLASS_LOADER_VALUE_MAP =
+        new ConcurrentHashMap<>();
+
     /**
      * Returns the unnamed module for the boot loader.
      */
@@ -80,6 +85,13 @@ public class BootLoader {
      */
     public static ServicesCatalog getServicesCatalog() {
         return SERVICES_CATALOG;
+    }
+
+    /**
+     * Returns the ClassLoaderValue map for the boot class loader.
+     */
+    public static ConcurrentHashMap<?, ?> getClassLoaderValueMap() {
+        return CLASS_LOADER_VALUE_MAP;
     }
 
     /**
