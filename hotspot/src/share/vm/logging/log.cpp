@@ -361,11 +361,32 @@ static void Test_logstream_no_rm() {
   Test_logstream_helper(stream);
 }
 
+static void Test_logstreamcheap_log() {
+  Log(gc) log;
+  LogStreamCHeap stream(log.debug());
+
+  Test_logstream_helper(&stream);
+}
+
+static void Test_logstreamcheap_logtarget() {
+  LogTarget(Debug, gc) log;
+  LogStreamCHeap stream(log);
+
+  Test_logstream_helper(&stream);
+}
+
 void Test_logstream() {
+  // Test LogStreams with embedded ResourceMark.
   Test_logstream_log();
   Test_logstream_logtarget();
   Test_logstream_logstreamhandle();
+
+  // Test LogStreams without embedded ResourceMark.
   Test_logstream_no_rm();
+
+  // Test LogStreams backed by CHeap memory.
+  Test_logstreamcheap_log();
+  Test_logstreamcheap_logtarget();
 }
 
 void Test_loghandle_on() {

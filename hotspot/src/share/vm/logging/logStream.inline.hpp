@@ -30,66 +30,17 @@
 #include "memory/resourceArea.hpp"
 #include "utilities/ostream.hpp"
 
-inline void LogStreamNoResourceMark::write(const char* s, size_t len) {
+template <class streamClass>
+inline void LogStreamBase<streamClass>::write(const char* s, size_t len) {
   if (len > 0 && s[len - 1] == '\n') {
     _current_line.write(s, len - 1);
     _current_line.write("\0", 1);
-    _tagset->write(_level, "%s", _current_line.base());
+    _log_handle.print("%s", _current_line.base());
     _current_line.reset();
   } else {
     _current_line.write(s, len);
   }
   update_position(s, len);
 }
-
-// An output stream that logs to the logging framework, and embeds a ResourceMark.
-//
-//  The class is intended to be stack allocated.
-//  Care needs to be taken when nested ResourceMarks are used.
-class LogStream : public outputStream {
-private:
-  ResourceMark            _embedded_resource_mark;
-  LogStreamNoResourceMark _stream;
-
-public:
-  // Constructor to support creation from a LogTarget instance.
-  //
-  // LogTarget(Debug, gc) log;
-  // LogStream(log) stream;
-  template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
-  LogStream(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>& type_carrier) :
-      _embedded_resource_mark(),
-      _stream(level, &LogTagSetMapping<T0, T1, T2, T3, T4>::tagset()) {}
-
-  // Constructor to support creation from typed (likely NULL) pointer. Mostly used by the logging framework.
-  //
-  // LogStream stream(log.debug());
-  // LogStream stream((LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>*)NULL);
-  template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
-  LogStream(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>* type_carrier) :
-      _embedded_resource_mark(),
-      _stream(level, &LogTagSetMapping<T0, T1, T2, T3, T4>::tagset()) {}
-
-  // Constructor to support creation from a LogTargetHandle.
-  //
-  // LogTarget(Debug, gc) log;
-  // LogTargetHandle(log) handle;
-  // LogStream stream(handle);
-  LogStream(LogTargetHandle handle) :
-      _embedded_resource_mark(),
-      _stream(handle._level, handle._tagset) {}
-
-  // Override of outputStream::write.
-  void write(const char* s, size_t len) { _stream.write(s, len); }
-};
-
-// Support creation of a LogStream without having to provide a LogTarget pointer.
-#define LogStreamHandle(level, ...) LogStreamTemplate<LogLevel::level, LOG_TAGS(__VA_ARGS__)>
-
-template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
-class LogStreamTemplate : public LogStream {
-public:
-  LogStreamTemplate() : LogStream((LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>*)NULL) {}
-};
 
 #endif // SHARE_VM_LOGGING_LOGSTREAM_INLINE_HPP
