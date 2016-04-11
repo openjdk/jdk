@@ -1594,6 +1594,19 @@ int os::log_vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
   return ret;
 }
 
+static inline time_t get_mtime(const char* filename) {
+  struct stat st;
+  int ret = os::stat(filename, &st);
+  assert(ret == 0, "failed to stat() file '%s': %s", filename, strerror(errno));
+  return st.st_mtime;
+}
+
+int os::compare_file_modified_times(const char* file1, const char* file2) {
+  time_t t1 = get_mtime(file1);
+  time_t t2 = get_mtime(file2);
+  return t1 - t2;
+}
+
 void os::print_os_info_brief(outputStream* st) {
   os::print_os_info(st);
 }
@@ -4589,6 +4602,9 @@ int os::ftruncate(int fd, jlong length) {
   return 0;
 }
 
+int os::fileno(FILE* fp) {
+  return _fileno(fp);
+}
 
 // This code is a copy of JDK's sysSync
 // from src/windows/hpi/src/sys_api_md.c
