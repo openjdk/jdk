@@ -1216,7 +1216,10 @@ public:
   void vpxor(XMMRegister dst, Address src) { Assembler::vpxor(dst, dst, src, true); }
 
   void vinserti128(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8) {
-    if (UseAVX > 1) { // vinserti128 is available only in AVX2
+    if (UseAVX > 2) {
+      Assembler::vinserti32x4(dst, dst, src, imm8);
+    } else if (UseAVX > 1) {
+      // vinserti128 is available only in AVX2
       Assembler::vinserti128(dst, nds, src, imm8);
     } else {
       Assembler::vinsertf128(dst, nds, src, imm8);
@@ -1224,7 +1227,10 @@ public:
   }
 
   void vinserti128(XMMRegister dst, XMMRegister nds, Address src, uint8_t imm8) {
-    if (UseAVX > 1) { // vinserti128 is available only in AVX2
+    if (UseAVX > 2) {
+      Assembler::vinserti32x4(dst, dst, src, imm8);
+    } else if (UseAVX > 1) {
+      // vinserti128 is available only in AVX2
       Assembler::vinserti128(dst, nds, src, imm8);
     } else {
       Assembler::vinsertf128(dst, nds, src, imm8);
@@ -1232,7 +1238,10 @@ public:
   }
 
   void vextracti128(XMMRegister dst, XMMRegister src, uint8_t imm8) {
-    if (UseAVX > 1) { // vextracti128 is available only in AVX2
+    if (UseAVX > 2) {
+      Assembler::vextracti32x4(dst, src, imm8);
+    } else if (UseAVX > 1) {
+      // vextracti128 is available only in AVX2
       Assembler::vextracti128(dst, src, imm8);
     } else {
       Assembler::vextractf128(dst, src, imm8);
@@ -1240,7 +1249,10 @@ public:
   }
 
   void vextracti128(Address dst, XMMRegister src, uint8_t imm8) {
-    if (UseAVX > 1) { // vextracti128 is available only in AVX2
+    if (UseAVX > 2) {
+      Assembler::vextracti32x4(dst, src, imm8);
+    } else if (UseAVX > 1) {
+      // vextracti128 is available only in AVX2
       Assembler::vextracti128(dst, src, imm8);
     } else {
       Assembler::vextractf128(dst, src, imm8);
@@ -1260,37 +1272,57 @@ public:
   void vextracti128_high(Address dst, XMMRegister src) {
     vextracti128(dst, src, 1);
   }
+
   void vinsertf128_high(XMMRegister dst, XMMRegister src) {
-    vinsertf128(dst, dst, src, 1);
+    if (UseAVX > 2) {
+      Assembler::vinsertf32x4(dst, dst, src, 1);
+    } else {
+      Assembler::vinsertf128(dst, dst, src, 1);
+    }
   }
+
   void vinsertf128_high(XMMRegister dst, Address src) {
-    vinsertf128(dst, dst, src, 1);
+    if (UseAVX > 2) {
+      Assembler::vinsertf32x4(dst, dst, src, 1);
+    } else {
+      Assembler::vinsertf128(dst, dst, src, 1);
+    }
   }
+
   void vextractf128_high(XMMRegister dst, XMMRegister src) {
-    vextractf128(dst, src, 1);
+    if (UseAVX > 2) {
+      Assembler::vextractf32x4(dst, src, 1);
+    } else {
+      Assembler::vextractf128(dst, src, 1);
+    }
   }
+
   void vextractf128_high(Address dst, XMMRegister src) {
-    vextractf128(dst, src, 1);
+    if (UseAVX > 2) {
+      Assembler::vextractf32x4(dst, src, 1);
+    } else {
+      Assembler::vextractf128(dst, src, 1);
+    }
   }
 
   // 256bit copy to/from high 256 bits of 512bit (ZMM) vector registers
   void vinserti64x4_high(XMMRegister dst, XMMRegister src) {
-    vinserti64x4(dst, dst, src, 1);
+    Assembler::vinserti64x4(dst, dst, src, 1);
   }
   void vinsertf64x4_high(XMMRegister dst, XMMRegister src) {
-    vinsertf64x4(dst, dst, src, 1);
+    Assembler::vinsertf64x4(dst, dst, src, 1);
   }
   void vextracti64x4_high(XMMRegister dst, XMMRegister src) {
-    vextracti64x4(dst, src, 1);
+    Assembler::vextracti64x4(dst, src, 1);
   }
   void vextractf64x4_high(XMMRegister dst, XMMRegister src) {
-    vextractf64x4(dst, src, 1);
+    Assembler::vextractf64x4(dst, src, 1);
   }
   void vextractf64x4_high(Address dst, XMMRegister src) {
-    vextractf64x4(dst, src, 1);
+    Assembler::vextractf64x4(dst, src, 1);
   }
   void vinsertf64x4_high(XMMRegister dst, Address src) {
-    vinsertf64x4(dst, dst, src, 1);
+    Assembler::vinsertf64x4(dst, dst, src, 1);
   }
 
   // 128bit copy to/from low 128 bits of 256bit (YMM) vector registers
@@ -1306,39 +1338,58 @@ public:
   void vextracti128_low(Address dst, XMMRegister src) {
     vextracti128(dst, src, 0);
   }
+
   void vinsertf128_low(XMMRegister dst, XMMRegister src) {
-    vinsertf128(dst, dst, src, 0);
+    if (UseAVX > 2) {
+      Assembler::vinsertf32x4(dst, dst, src, 0);
+    } else {
+      Assembler::vinsertf128(dst, dst, src, 0);
+    }
   }
+
   void vinsertf128_low(XMMRegister dst, Address src) {
-    vinsertf128(dst, dst, src, 0);
+    if (UseAVX > 2) {
+      Assembler::vinsertf32x4(dst, dst, src, 0);
+    } else {
+      Assembler::vinsertf128(dst, dst, src, 0);
+    }
   }
+
   void vextractf128_low(XMMRegister dst, XMMRegister src) {
-    vextractf128(dst, src, 0);
+    if (UseAVX > 2) {
+      Assembler::vextractf32x4(dst, src, 0);
+    } else {
+      Assembler::vextractf128(dst, src, 0);
+    }
   }
+
   void vextractf128_low(Address dst, XMMRegister src) {
-    vextractf128(dst, src, 0);
+    if (UseAVX > 2) {
+      Assembler::vextractf32x4(dst, src, 0);
+    } else {
+      Assembler::vextractf128(dst, src, 0);
+    }
   }
 
   // 256bit copy to/from low 256 bits of 512bit (ZMM) vector registers
   void vinserti64x4_low(XMMRegister dst, XMMRegister src) {
-    vinserti64x4(dst, dst, src, 0);
+    Assembler::vinserti64x4(dst, dst, src, 0);
   }
   void vinsertf64x4_low(XMMRegister dst, XMMRegister src) {
-    vinsertf64x4(dst, dst, src, 0);
+    Assembler::vinsertf64x4(dst, dst, src, 0);
   }
   void vextracti64x4_low(XMMRegister dst, XMMRegister src) {
-    vextracti64x4(dst, src, 0);
+    Assembler::vextracti64x4(dst, src, 0);
   }
   void vextractf64x4_low(XMMRegister dst, XMMRegister src) {
-    vextractf64x4(dst, src, 0);
+    Assembler::vextractf64x4(dst, src, 0);
   }
   void vextractf64x4_low(Address dst, XMMRegister src) {
-    vextractf64x4(dst, src, 0);
+    Assembler::vextractf64x4(dst, src, 0);
   }
   void vinsertf64x4_low(XMMRegister dst, Address src) {
-    vinsertf64x4(dst, dst, src, 0);
+    Assembler::vinsertf64x4(dst, dst, src, 0);
   }
-
 
   // Carry-Less Multiplication Quadword
   void vpclmulldq(XMMRegister dst, XMMRegister nds, XMMRegister src) {

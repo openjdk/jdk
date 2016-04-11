@@ -47,6 +47,7 @@ define_pd_global(intx, ConditionalMoveLimit,         3);
 define_pd_global(intx, FreqInlineSize,               325);
 define_pd_global(intx, MinJumpTableSize,             10);
 define_pd_global(intx, LoopPercentProfileLimit,      30);
+define_pd_global(intx, PostLoopMultiversioning,      true);
 #ifdef AMD64
 define_pd_global(intx, INTPRESSURE,                  13);
 define_pd_global(intx, FLOATPRESSURE,                14);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,10 @@
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionTracer.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
-#include "gc/shared/liveRange.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
@@ -695,7 +695,7 @@ public:
   template <class T>
   void verify_liveness(T* p) {
     T heap_oop = oopDesc::load_heap_oop(p);
-    LogHandle(gc, verify) log;
+    Log(gc, verify) log;
     if (!oopDesc::is_null(heap_oop)) {
       oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
       bool failed = false;
@@ -749,7 +749,7 @@ public:
   template <class T>
   void verify_remembered_set(T* p) {
     T heap_oop = oopDesc::load_heap_oop(p);
-    LogHandle(gc, verify) log;
+    Log(gc, verify) log;
     if (!oopDesc::is_null(heap_oop)) {
       oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
       bool failed = false;

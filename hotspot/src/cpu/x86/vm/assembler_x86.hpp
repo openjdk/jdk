@@ -1977,39 +1977,43 @@ private:
   void vpxor(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpxor(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
 
-  // 128bit copy from/to 256bit (YMM) vector registers
-  void vinsertf128(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
+  // vinserti forms
   void vinserti128(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
-  void vextractf128(XMMRegister dst, XMMRegister src, uint8_t imm8);
-  void vextracti128(XMMRegister dst, XMMRegister src, uint8_t imm8);
-  void vinsertf128(XMMRegister dst, XMMRegister nds, Address src, uint8_t imm8);
   void vinserti128(XMMRegister dst, XMMRegister nds, Address src, uint8_t imm8);
-  void vextractf128(Address dst, XMMRegister src, uint8_t imm8);
-  void vextracti128(Address dst, XMMRegister src, uint8_t imm8);
-
-  // 256bit copy from/to 512bit (ZMM) vector registers
+  void vinserti32x4(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
+  void vinserti32x4(XMMRegister dst, XMMRegister nds, Address src, uint8_t imm8);
   void vinserti64x4(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
-  void vinsertf64x4(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
-  void vextracti64x4(XMMRegister dst, XMMRegister src, uint8_t imm8);
-  void vextractf64x4(XMMRegister dst, XMMRegister src, uint8_t imm8);
-  void vextractf64x4(Address dst, XMMRegister src, uint8_t imm8);
-  void vinsertf64x4(XMMRegister dst, XMMRegister nds, Address src, uint8_t imm8);
 
-  // 128bit copy from/to 256bit (YMM) or 512bit (ZMM) vector registers
-  void vextracti64x2(XMMRegister dst, XMMRegister src, uint8_t imm8);
-  void vextractf64x2(XMMRegister dst, XMMRegister src, uint8_t imm8);
-  void vextractf32x4(XMMRegister dst, XMMRegister src, uint8_t imm8);
-  void vextractf32x4(Address dst, XMMRegister src, uint8_t imm8);
+  // vinsertf forms
+  void vinsertf128(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
+  void vinsertf128(XMMRegister dst, XMMRegister nds, Address src, uint8_t imm8);
   void vinsertf32x4(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
   void vinsertf32x4(XMMRegister dst, XMMRegister nds, Address src, uint8_t imm8);
+  void vinsertf64x4(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
+  void vinsertf64x4(XMMRegister dst, XMMRegister nds, Address src, uint8_t imm8);
 
-  // duplicate 4-bytes integer data from src into 8 locations in dest
+  // vextracti forms
+  void vextracti128(XMMRegister dst, XMMRegister src, uint8_t imm8);
+  void vextracti128(Address dst, XMMRegister src, uint8_t imm8);
+  void vextracti32x4(XMMRegister dst, XMMRegister src, uint8_t imm8);
+  void vextracti32x4(Address dst, XMMRegister src, uint8_t imm8);
+  void vextracti64x2(XMMRegister dst, XMMRegister src, uint8_t imm8);
+  void vextracti64x4(XMMRegister dst, XMMRegister src, uint8_t imm8);
+
+  // vextractf forms
+  void vextractf128(XMMRegister dst, XMMRegister src, uint8_t imm8);
+  void vextractf128(Address dst, XMMRegister src, uint8_t imm8);
+  void vextractf32x4(XMMRegister dst, XMMRegister src, uint8_t imm8);
+  void vextractf32x4(Address dst, XMMRegister src, uint8_t imm8);
+  void vextractf64x2(XMMRegister dst, XMMRegister src, uint8_t imm8);
+  void vextractf64x4(XMMRegister dst, XMMRegister src, uint8_t imm8);
+  void vextractf64x4(Address dst, XMMRegister src, uint8_t imm8);
+
+  // legacy xmm sourced word/dword replicate
+  void vpbroadcastw(XMMRegister dst, XMMRegister src);
   void vpbroadcastd(XMMRegister dst, XMMRegister src);
 
-  // duplicate 2-bytes integer data from src into 16 locations in dest
-  void vpbroadcastw(XMMRegister dst, XMMRegister src);
-
-  // duplicate n-bytes integer data from src into vector_len locations in dest
+  // xmm/mem sourced byte/word/dword/qword replicate
   void evpbroadcastb(XMMRegister dst, XMMRegister src, int vector_len);
   void evpbroadcastb(XMMRegister dst, Address src, int vector_len);
   void evpbroadcastw(XMMRegister dst, XMMRegister src, int vector_len);
@@ -2019,11 +2023,13 @@ private:
   void evpbroadcastq(XMMRegister dst, XMMRegister src, int vector_len);
   void evpbroadcastq(XMMRegister dst, Address src, int vector_len);
 
+  // scalar single/double precision replicate
   void evpbroadcastss(XMMRegister dst, XMMRegister src, int vector_len);
   void evpbroadcastss(XMMRegister dst, Address src, int vector_len);
   void evpbroadcastsd(XMMRegister dst, XMMRegister src, int vector_len);
   void evpbroadcastsd(XMMRegister dst, Address src, int vector_len);
 
+  // gpr sourced byte/word/dword/qword replicate
   void evpbroadcastb(XMMRegister dst, Register src, int vector_len);
   void evpbroadcastw(XMMRegister dst, Register src, int vector_len);
   void evpbroadcastd(XMMRegister dst, Register src, int vector_len);
