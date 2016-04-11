@@ -283,8 +283,9 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
   this_key->record_dependency(k(), CHECK_NULL); // Can throw OOM
 
   // logging for classresolve tag.
-  trace_class_resolution(this_cp, k);
-
+  if (log_is_enabled(Debug, classresolve)){
+    trace_class_resolution(this_cp, k);
+  }
   this_cp->klass_at_put(which, k());
   entry = this_cp->resolved_klass_at(which);
   assert(entry.is_resolved() && entry.get_klass()->is_klass(), "must be resolved at this point");
@@ -340,9 +341,7 @@ Method* ConstantPool::method_at_if_loaded(const constantPoolHandle& cpool,
   int cache_index = decode_cpcache_index(which, true);
   if (!(cache_index >= 0 && cache_index < cpool->cache()->length())) {
     // FIXME: should be an assert
-    if (PrintMiscellaneous && (Verbose||WizardMode)) {
-      tty->print_cr("bad operand %d in:", which); cpool->print();
-    }
+    log_debug(classresolve)("bad operand %d in:", which); cpool->print();
     return NULL;
   }
   ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
@@ -672,10 +671,11 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp, in
       int callee_index             = this_cp->method_handle_klass_index_at(index);
       Symbol*  name =      this_cp->method_handle_name_ref_at(index);
       Symbol*  signature = this_cp->method_handle_signature_ref_at(index);
-      if (PrintMiscellaneous)
-        tty->print_cr("resolve JVM_CONSTANT_MethodHandle:%d [%d/%d/%d] %s.%s",
-                      ref_kind, index, this_cp->method_handle_index_at(index),
-                      callee_index, name->as_C_string(), signature->as_C_string());
+      { ResourceMark rm(THREAD);
+        log_debug(classresolve)("resolve JVM_CONSTANT_MethodHandle:%d [%d/%d/%d] %s.%s",
+                              ref_kind, index, this_cp->method_handle_index_at(index),
+                              callee_index, name->as_C_string(), signature->as_C_string());
+      }
       KlassHandle callee;
       { Klass* k = klass_at_impl(this_cp, callee_index, true, CHECK_NULL);
         callee = KlassHandle(THREAD, k);
@@ -694,10 +694,11 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp, in
   case JVM_CONSTANT_MethodType:
     {
       Symbol*  signature = this_cp->method_type_signature_at(index);
-      if (PrintMiscellaneous)
-        tty->print_cr("resolve JVM_CONSTANT_MethodType [%d/%d] %s",
-                      index, this_cp->method_type_index_at(index),
-                      signature->as_C_string());
+      { ResourceMark rm(THREAD);
+        log_debug(classresolve)("resolve JVM_CONSTANT_MethodType [%d/%d] %s",
+                              index, this_cp->method_type_index_at(index),
+                              signature->as_C_string());
+      }
       KlassHandle klass(THREAD, this_cp->pool_holder());
       Handle value = SystemDictionary::find_method_handle_type(signature, klass, THREAD);
       result_oop = value();
