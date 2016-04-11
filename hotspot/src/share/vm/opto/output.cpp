@@ -1483,8 +1483,6 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
   // Compute the size of the first block
   _first_block_size = blk_labels[1].loc_pos() - blk_labels[0].loc_pos();
 
-  assert(cb->insts_size() < 500000, "method is unreasonably large");
-
 #ifdef ASSERT
   for (uint i = 0; i < nblocks; i++) { // For all blocks
     if (jmp_target[i] != 0) {
