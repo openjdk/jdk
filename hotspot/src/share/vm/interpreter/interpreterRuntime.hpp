@@ -31,7 +31,7 @@
 #include "oops/method.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/top.hpp"
 
 // The InterpreterRuntime is called by the interpreter for everything

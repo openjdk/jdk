@@ -28,7 +28,7 @@
 #include "asm/macroAssembler.hpp"
 #include "code/stubs.hpp"
 #include "interpreter/bytecodes.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/top.hpp"
 
