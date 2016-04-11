@@ -113,21 +113,36 @@ if [ "$OPENJDK_TARGET_OS" = "linux" ]; then
       ./bin/xjc
       "
 
-  # Issue with __FILE__ usage in generated header files prevent clean fulldump diff of
-  # server jvm with old hotspot build.
-  KNOWN_FULLDUMP_DIFF="
-      ./lib$OPENJDK_TARGET_CPU_LIBDIR/client/libjvm.so
-      ./lib$OPENJDK_TARGET_CPU_LIBDIR/server/libjvm.so
-      ./lib$OPENJDK_TARGET_CPU_LIBDIR/minimal/libjvm.so
-      "
-
-  if [ "$OPENJDK_TARGET_CPU" = "x86" ]; then
-    KNOWN_DIS_DIFF="
-        ./lib$OPENJDK_TARGET_CPU_LIBDIR/server/libjvm.so
+  if [ "$OPENJDK_TARGET_CPU" = "arm" ]; then
+    # NOTE: When comparing the old and new hotspot builds, the link time
+    # optimization makes good comparisons impossible. Fulldump compare always
+    # fails and disassembly can end up with some functions in different order.
+    # So for now, accept the difference but put a limit on the size. The
+    # different order of functions shouldn't result in a very big diff.
+    KNOWN_FULLDUMP_DIFF="
+        ./lib$OPENJDK_TARGET_CPU_LIBDIR/minimal/libjvm.so
         "
-    DIS_DIFF_FILTER="$SED \
-        -e 's/\(:\t\)\([0-9a-z]\{2,2\} \)\{1,7\}/\1<hex>/g' \
-        -e 's/0x[0-9a-z]\{2,9\}/<hex>/g'"
+
+    # Link time optimization adds random numbers to symbol names
+    NEED_DIS_DIFF_FILTER="
+        ./lib$OPENJDK_TARGET_CPU_LIBDIR/minimal/libjvm.so
+        "
+    DIS_DIFF_FILTER="$SED -r \
+        -e 's/\.[0-9]+/.X/g' \
+        -e 's/\t[0-9a-f]{4} [0-9a-f]{4} /\tXXXX XXXX /' \
+        -e 's/\t[0-9a-f]{5,} /\t<HEX> /' \
+        "
+    KNOWN_DIS_DIFF="
+        ./lib$OPENJDK_TARGET_CPU_LIBDIR/minimal/libjvm.so
+        "
+    MAX_KNOWN_DIS_DIFF_SIZE="3000"
+
+    NEED_SYMBOLS_DIFF_FILTER="
+        ./lib$OPENJDK_TARGET_CPU_LIBDIR/minimal/libjvm.so
+        "
+    SYMBOLS_DIFF_FILTER="$SED -r \
+        -e 's/\.[0-9]+/.X/g'
+        "
   fi
 fi
 
@@ -250,15 +265,10 @@ if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "x86_64" ];
 
   SKIP_FULLDUMP_DIFF="true"
 
-  # Filter random C++ symbol strings.
-  # Some numbers differ randomly.
+  # Random strings looking like this differ: <.XAKoKoPIac2W0OA.
   DIS_DIFF_FILTER="$SED \
-      -e 's/\.[a-zA-Z0-9_\$]\{15\}/<SYM>/g' \
-      -e 's/\(\# \)[0-9a-f]*\( <\)/\1<HEX>\2/g' \
-      -e 's/0x[0-9a-f]*$/<HEX>/g' \
-      -e 's/0x[0-9a-f]*\([,(>]\)/<HEX>\1/g' \
-      -e 's/:	[0-9a-f][0-9a-f]\( [0-9a-f][0-9a-f]\)\{2,10\}/:	<NUMS>/g' \
-      -e 's/     [\.A-Za-z0-9%@]\{16\}$/     <BIN>/g'"
+      -e 's/<\.[A-Za-z0-9]\{\15}\./<.SYM./' \
+      "
 
 fi
 
@@ -380,23 +390,18 @@ if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "sparcv9" ]
       ./bin/xjc
       "
 
-  # Some numbers differ randomly.
   DIS_DIFF_FILTER="$SED \
-      -e 's/\$[a-zA-Z0-9_\$]\{15\}/<SYM>/g' \
-      -e 's/:	[0-9a-f][0-9a-f]\( [0-9a-f][0-9a-f]\)\{2,10\}/:	<NUMS>/g' \
-      -e 's/, [0-9a-fx\-]\{1,8\}/, <CONST>/g' \
-      -e 's/call  [0-9a-f]\{7\}/call  <ADDR>/g' \
+      -e 's/^[0-9a-f]\{16\}/<ADDR>:/' \
+      -e 's/^ *[0-9a-f]\{3,8\}:/  <ADDR>:/' \
+      -e 's/:	[0-9a-f][0-9a-f]\( [0-9a-f][0-9a-f]\)\{2,10\}/:	<NUMS>/' \
+      -e 's/\$[a-zA-Z0-9_\$]\{15\}\./<SYM>./' \
       -e 's/0x[0-9a-f]\{1,8\}/<HEX>/g' \
-      -e 's/\! [0-9a-f]\{1,8\} /! <ADDR> /g'"
+      -e 's/\! [0-9a-f]\{1,8\} /! <ADDR> /' \
+      -e 's/, [0-9a-fx\-]\{1,8\}/, <ADDR>/g' \
+      -e 's/call  [0-9a-f]\{4,7\}/call  <ADDR>/' \
+      "
 
-  # libjvm.so
-  # __FILE__ macro usage in debug.hpp causes differences between old and new
-  # hotspot builds in ad_sparc.o and ad_sparc_clone.o. The .o files compare
-  # equal when stripped, but at link time differences appear. Removing
-  # __FILE__ from ShouldNotCallThis() and ShouldNotReachHere() removes
-  # the differences.
   KNOWN_DIS_DIFF="
-      ./lib/sparcv9/server/libjvm.so
       ./lib/sparcv9/libsaproc.so
   "
 
@@ -419,6 +424,7 @@ if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
       ./demo/jvmti/minst/lib/minst.dll
       ./bin/attach.dll
       ./bin/jsoundds.dll
+      ./bin/client/jvm.dll
       ./bin/server/jvm.dll
       ./bin/appletviewer.exe
       ./bin/idlj.exe
@@ -469,22 +475,39 @@ if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
       ./bin/jabswitch.exe
       "
 
-  # On windows, there are unavoidable allignment issues making
-  # a perfect disasm diff impossible. Filter out the following:
-  # * Random parts of C++ symbols (this is a bit greedy, but does the trick)
-  #   @XXXXX
-  # * Hexadecimal addresses that are sometimes alligned differently.
-  # * Dates in version strings XXXX_XX_XX.
-  DIS_DIFF_FILTER="$SED \
-      -e 's/^  [0-9A-F]\{16\}: //g' \
-      -e 's/[@?][A-Za-z0-9_]\{1,25\}/<SYM>/g' \
-      -e 's/\([\[+]\)[0-9A-F]\{4,16\}h\]/\1<HEXSTR>]/g' \
-      -e 's/_[0-9]\{4\}_[0-9]\{2\}_[0-9]\{2\}/_<DATE>/g'"
-  #DIS_DIFF_FILTER="$CAT"
+  if [ "$OPENJDK_TARGET_CPU" = "x86" ]; then
+    DIS_DIFF_FILTER="$SED -r \
+        -e 's/^  [0-9A-F]{16}: //' \
+        -e 's/^  [0-9A-F]{8}: /  <ADDR>: /' \
+        -e 's/(offset \?\?)_C@_.*/\1<SYM>/' \
+        -e 's/[@?][A-Za-z0-9_]{1,25}/<SYM>/' \
+        -e 's/([-,+])[0-9A-F]{2,16}/\1<HEXSTR>/g' \
+        -e 's/\[[0-9A-F]{4,16}h\]/[<HEXSTR>]/' \
+        -e 's/: ([a-z]{2}[a-z ]{2})        [0-9A-F]{2,16}h?$/: \1        <HEXSTR>/' \
+        -e 's/_20[0-9]{2}_[0-1][0-9]_[0-9]{2}/_<DATE>/' \
+        "
+  elif [ "$OPENJDK_TARGET_CPU" = "x86_64" ]; then
+    DIS_DIFF_FILTER="$SED -r \
+        -e 's/^  [0-9A-F]{16}: //' \
+        -e 's/\[[0-9A-F]{4,16}h\]/[<HEXSTR>]/' \
+        -e 's/([,+])[0-9A-F]{2,16}h/\1<HEXSTR>/' \
+        -e 's/([a-z]{2}[a-z ]{2})        [0-9A-F]{4,16}$/\1        <HEXSTR>/' \
+        -e 's/\[\?\?_C@_.*/[<SYM>]/' \
+        "
+  fi
 
   SKIP_BIN_DIFF="true"
   SKIP_FULLDUMP_DIFF="true"
 
+  # NOTE: When comparing the old and new hotspot builds, the server jvm.dll
+  # cannot be made equal in disassembly. Some functions just always end up
+  # in different order. So for now, accept the difference but put a limit
+  # on the size. The different order of functions shouldn't result in a very
+  # big diff.
+  KNOWN_DIS_DIFF="
+      ./bin/server/jvm.dll
+      "
+  MAX_KNOWN_DIS_DIFF_SIZE="2000000"
 fi
 
 
@@ -565,6 +588,7 @@ if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
       ./Contents/Home/lib/libverify.dylib
       ./Contents/Home/lib/libsaproc.dylib
       ./Contents/Home/lib/libsplashscreen.dylib
+      ./Contents/Home/lib/server/libjsig.dylib
       ./Contents/Home/lib/server/libjvm.dylib
       ./Contents/Home/lib/deploy/JavaControlPanel.prefPane/Contents/MacOS/JavaControlPanel
       ./Contents/Resources/JavaControlPanelHelper
@@ -590,6 +614,7 @@ if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
       ./lib/libverify.dylib
       ./lib/libsaproc.dylib
       ./lib/libsplashscreen.dylib
+      ./lib/server/libjsig.dylib
       ./lib/server/libjvm.dylib
       ./lib/deploy/JavaControlPanel.prefPane/Contents/MacOS/JavaControlPanel
       ./Versions/A/Resources/finish_installation.app/Contents/MacOS/finish_installation
@@ -606,7 +631,8 @@ if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
 
   DIS_DIFF_FILTER="LANG=C $SED \
       -e 's/0x[0-9a-f]\{3,16\}/<HEXSTR>/g' -e 's/^[0-9a-f]\{12,20\}/<ADDR>/' \
-      -e 's/## literal pool for: .Java HotSpot(TM) 64-Bit Server VM.*/<COMMENT>/g'
+      -e 's/-20[0-9][0-9]-[0-1][0-9]-[0-3][0-9]-[0-2][0-9]\{5\}/<DATE>/g' \
+      -e 's/), built on .*/), <DATE>/' \
       "
 
 fi

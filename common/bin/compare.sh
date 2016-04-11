@@ -732,6 +732,13 @@ compare_bin_file() {
         SYM_SORT_CMD="cat"
     fi
 
+    if [ -n "$SYMBOLS_DIFF_FILTER" ] && [ -z "$NEED_SYMBOLS_DIFF_FILTER" ] \
+            || [[ "$NEED_SYMBOLS_DIFF_FILTER" = *"$BIN_FILE"* ]]; then
+        this_SYMBOLS_DIFF_FILTER="$SYMBOLS_DIFF_FILTER"
+    else
+        this_SYMBOLS_DIFF_FILTER="$CAT"
+    fi
+
     # Check symbols
     if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
         # The output from dumpbin on windows differs depending on if the debug symbol
@@ -750,8 +757,16 @@ compare_bin_file() {
         $NM -j $ORIG_OTHER_FILE 2> /dev/null | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.other
         $NM -j $ORIG_THIS_FILE  2> /dev/null | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.this
     else
-        $NM -a $ORIG_OTHER_FILE 2> /dev/null | $GREP -v $NAME | $AWK '{print $2, $3, $4, $5}' | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.other
-        $NM -a $ORIG_THIS_FILE  2> /dev/null | $GREP -v $NAME | $AWK '{print $2, $3, $4, $5}' | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.this
+        $NM -a $ORIG_OTHER_FILE 2> /dev/null | $GREP -v $NAME \
+            | $AWK '{print $2, $3, $4, $5}' \
+            | eval "$this_SYMBOLS_DIFF_FILTER" \
+            | $SYM_SORT_CMD \
+            > $WORK_FILE_BASE.symbols.other
+        $NM -a $ORIG_THIS_FILE  2> /dev/null | $GREP -v $NAME \
+            | $AWK '{print $2, $3, $4, $5}' \
+            | eval "$this_SYMBOLS_DIFF_FILTER" \
+            | $SYM_SORT_CMD \
+            > $WORK_FILE_BASE.symbols.this
     fi
 
     LC_ALL=C $DIFF $WORK_FILE_BASE.symbols.other $WORK_FILE_BASE.symbols.this > $WORK_FILE_BASE.symbols.diff
@@ -828,9 +843,10 @@ compare_bin_file() {
             FULLDUMP_DIFF_FILTER="$CAT"
         fi
         $FULLDUMP_CMD $OTHER_FILE | eval "$BUILD_ID_FILTER" | eval "$FULLDUMP_DIFF_FILTER" \
-            > $WORK_FILE_BASE.fulldump.other 2>&1
+            > $WORK_FILE_BASE.fulldump.other 2>&1 &
         $FULLDUMP_CMD $THIS_FILE  | eval "$BUILD_ID_FILTER" | eval "$FULLDUMP_DIFF_FILTER" \
-            > $WORK_FILE_BASE.fulldump.this  2>&1
+            > $WORK_FILE_BASE.fulldump.this  2>&1 &
+        wait
 
         LC_ALL=C $DIFF $WORK_FILE_BASE.fulldump.other $WORK_FILE_BASE.fulldump.this \
             > $WORK_FILE_BASE.fulldump.diff
@@ -854,18 +870,19 @@ compare_bin_file() {
             FULLDUMP_MSG="          "
             DIFF_FULLDUMP=
             if [[ "$KNOWN_FULLDUMP_DIFF $ACCEPTED_FULLDUMP_DIFF" = *"$BIN_FILE"* ]]; then
-                FULLDUMP_MSG="    !    "
+                FULLDUMP_MSG="    !     "
             fi
         fi
     fi
 
     # Compare disassemble output
     if [ -n "$DIS_CMD" ] && [ -z "$SKIP_DIS_DIFF" ]; then
-        # By default we filter out differences that include references to symbols.
-        # To get a raw diff with the complete disassembly, set
-        # DIS_DIFF_FILTER="$CAT"
-        if [ -z "$DIS_DIFF_FILTER" ]; then
-            DIS_DIFF_FILTER="$GREP -v ' # .* <.*>$' | $SED -r -e 's/(\b|x)([0-9a-fA-F]+)(\b|:|>)/X/g'"
+        this_DIS_DIFF_FILTER="$CAT"
+        if [ -n "$DIS_DIFF_FILTER" ]; then
+            if [ -z "$NEED_DIS_DIFF_FILTER" ] \
+                || [[ "$NEED_DIS_DIFF_FILTER" = *"$BIN_FILE"* ]]; then
+                this_DIS_DIFF_FILTER="$DIS_DIFF_FILTER"
+            fi
         fi
         if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
             DIS_GREP_ARG=-a
@@ -873,9 +890,10 @@ compare_bin_file() {
             DIS_GREP_ARG=
         fi
         $DIS_CMD $OTHER_FILE | $GREP $DIS_GREP_ARG -v $NAME \
-            | eval "$DIS_DIFF_FILTER" > $WORK_FILE_BASE.dis.other 2>&1
+            | eval "$this_DIS_DIFF_FILTER" > $WORK_FILE_BASE.dis.other 2>&1 &
         $DIS_CMD $THIS_FILE  | $GREP $DIS_GREP_ARG -v $NAME \
-            | eval "$DIS_DIFF_FILTER" > $WORK_FILE_BASE.dis.this  2>&1
+            | eval "$this_DIS_DIFF_FILTER" > $WORK_FILE_BASE.dis.this  2>&1 &
+        wait
 
         LC_ALL=C $DIFF $WORK_FILE_BASE.dis.other $WORK_FILE_BASE.dis.this > $WORK_FILE_BASE.dis.diff
 
@@ -884,11 +902,15 @@ compare_bin_file() {
             DIS_MSG=$($PRINTF "%8d" $DIS_DIFF_SIZE)
             if [[ "$ACCEPTED_DIS_DIFF" != *"$BIN_FILE"* ]]; then
                 DIFF_DIS=true
-                if [[ "$KNOWN_DIS_DIFF" != *"$BIN_FILE"* ]]; then
+                if [ "$MAX_KNOWN_DIS_DIFF_SIZE" = "" ]; then
+                    MAX_KNOWN_DIS_DIFF_SIZE="0"
+                fi
+                if [[ "$KNOWN_DIS_DIFF" = *"$BIN_FILE"* ]] \
+                    && [ "$DIS_DIFF_SIZE" -lt "$MAX_KNOWN_DIS_DIFF_SIZE" ]; then
+                    DIS_MSG=" $DIS_MSG "
+                else
                     DIS_MSG="*$DIS_MSG*"
                     REGRESSIONS=true
-                else
-                    DIS_MSG=" $DIS_MSG "
                 fi
             else
                 DIS_MSG="($DIS_MSG)"

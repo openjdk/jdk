@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -729,6 +729,16 @@ endif
 # The surrounding strip is needed to keep additional whitespace out
 PathList = \
   "$(subst $(SPACE),$(PATH_SEP),$(strip $1))"
+
+################################################################################
+# Check if a specified hotspot variant is being built, or at least one of a
+# list of variants. Will return 'true' or 'false'.
+# $1 - the variant to test for
+check-jvm-variant = \
+  $(strip \
+    $(if $(filter-out $(VALID_JVM_VARIANTS), $1), \
+      $(error Internal error: Invalid variant tested: $1)) \
+    $(if $(filter $1, $(JVM_VARIANTS)), true, false))
 
 ################################################################################
 
