@@ -27,7 +27,7 @@
  * @bug 8059527 8081382
  * @summary Tests argument processing for ParallelGCThreads
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver TestParallelGCThreads
  */

@@ -26,7 +26,7 @@
  * @bug 8059510
  * @summary Test jcmd VM.symboltable and VM.stringtable options
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions DumpSymbolAndStringTable
  */

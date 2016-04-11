@@ -28,7 +28,7 @@
  * @summary Verify UseRTMLocking option processing on CPU with rtm support and
  *          on VM with rtm-locking support.
  * @library /testlibrary /test/lib /compiler/testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestUseRTMLockingOptionOnSupportedConfig
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

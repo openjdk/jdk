@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify processing of RTMLockingThreshold option.
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestRTMLockingThresholdOption
  * @run main/othervm TestRTMLockingThresholdOption

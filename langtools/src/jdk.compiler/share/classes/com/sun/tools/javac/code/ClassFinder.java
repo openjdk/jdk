@@ -731,4 +731,13 @@ public class ClassFinder {
             return diagFactory.fragment(key, file, diag);
         }
     }
+
+    public static class BadEnclosingMethodAttr extends BadClassFile {
+        private static final long serialVersionUID = 0;
+
+        public BadEnclosingMethodAttr(TypeSymbol sym, JavaFileObject file, JCDiagnostic diag,
+                JCDiagnostic.Factory diagFactory) {
+            super(sym, file, diag, diagFactory);
+        }
+    }
 }

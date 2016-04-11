@@ -29,7 +29,7 @@
  * parallel collectors.
  * @requires vm.gc=="null"
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestParallelHeapSizeFlags TestMaxHeapSizeTools
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

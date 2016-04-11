@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -433,6 +433,16 @@ public class DocCommentTester {
                 indent(+1);
                 print("code", ((DCErroneous) node).diag.getCode());
                 print("body", compress(node.getBody()));
+                indent(-1);
+                indent();
+                out.println("]");
+                return null;
+            }
+
+            public Void visitHidden(HiddenTree node, Void p) {
+                header(node);
+                indent(+1);
+                print("body", node.getBody());
                 indent(-1);
                 indent();
                 out.println("]");

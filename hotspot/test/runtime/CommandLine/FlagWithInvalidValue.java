@@ -26,7 +26,7 @@
  * @bug 8006298
  * @summary Setting a flag to an invalid value should print a useful error message
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 

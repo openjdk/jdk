@@ -4666,7 +4666,108 @@ void MacroAssembler::array_equals(bool is_array_equ, Register ary1, Register ary
   bind(Ldone);
 }
 
+void MacroAssembler::has_negatives(Register inp, Register size, Register result, Register t2, Register t3, Register t4, Register t5) {
+
+  // test for negative bytes in input string of a given size
+  // result 1 if found, 0 otherwise.
+
+  Label Lcore, Ltail, Lreturn, Lcore_rpt;
+
+  assert_different_registers(inp, size, t2, t3, t4, t5, result);
+
+  Register i     = result;  // result used as integer index i until very end
+  Register lmask = t2;      // t2 is aliased to lmask
+
+  // INITIALIZATION
+  // ===========================================================
+  // initialize highbits mask -> lmask = 0x8080808080808080  (8B/64b)
+  // compute unaligned offset -> i
+  // compute core end index   -> t5
+  Assembler::sethi(0x80808000, t2);   //! sethi macro fails to emit optimal
+  add(t2, 0x80, t2);
+  sllx(t2, 32, t3);
+  or3(t3, t2, lmask);                 // 0x8080808080808080 -> lmask
+  sra(size,0,size);
+  andcc(inp, 0x7, i);                 // unaligned offset -> i
+  br(Assembler::zero, true, Assembler::pn, Lcore); // starts 8B aligned?
+  delayed()->add(size, -8, t5);       // (annuled) core end index -> t5
+
+  // ===========================================================
+
+  // UNALIGNED HEAD
+  // ===========================================================
+  // * unaligned head handling: grab aligned 8B containing unaligned inp(ut)
+  // * obliterate (ignore) bytes outside string by shifting off reg ends
+  // * compare with bitmask, short circuit return true if one or more high
+  //   bits set.
+  cmp(size, 0);
+  br(Assembler::zero, true, Assembler::pn, Lreturn); // short-circuit?
+  delayed()->mov(0,result);      // annuled so i not clobbered for following
+  neg(i, t4);
+  add(i, size, t5);
+  ldx(inp, t4, t3);  // raw aligned 8B containing unaligned head -> t3
+  mov(8, t4);
+  sub(t4, t5, t4);
+  sra(t4, 31, t5);
+  andn(t4, t5, t5);
+  add(i, t5, t4);
+  sll(t5, 3, t5);
+  sll(t4, 3, t4);   // # bits to shift right, left -> t5,t4
+  srlx(t3, t5, t3);
+  sllx(t3, t4, t3); // bytes outside string in 8B header obliterated -> t3
+  andcc(lmask, t3, G0);
+  brx(Assembler::notZero, true, Assembler::pn, Lreturn); // short circuit?
+  delayed()->mov(1,result);      // annuled so i not clobbered for following
+  add(size, -8, t5);             // core end index -> t5
+  mov(8, t4);
+  sub(t4, i, i);                 // # bytes examined in unalgn head (<8) -> i
+  // ===========================================================
+
+  // ALIGNED CORE
+  // ===========================================================
+  // * iterate index i over aligned 8B sections of core, comparing with
+  //   bitmask, short circuit return true if one or more high bits set
+  // t5 contains core end index/loop limit which is the index
+  //     of the MSB of last (unaligned) 8B fully contained in the string.
+  // inp   contains address of first byte in string/array
+  // lmask contains 8B high bit mask for comparison
+  // i     contains next index to be processed (adr. inp+i is on 8B boundary)
+  bind(Lcore);
+  cmp_and_br_short(i, t5, Assembler::greater, Assembler::pn, Ltail);
+  bind(Lcore_rpt);
+  ldx(inp, i, t3);
+  andcc(t3, lmask, G0);
+  brx(Assembler::notZero, true, Assembler::pn, Lreturn);
+  delayed()->mov(1, result);    // annuled so i not clobbered for following
+  add(i, 8, i);
+  cmp_and_br_short(i, t5, Assembler::lessEqual, Assembler::pn, Lcore_rpt);
+  // ===========================================================
+
+  // ALIGNED TAIL (<8B)
+  // ===========================================================
+  // handle aligned tail of 7B or less as complete 8B, obliterating end of
+  // string bytes by shifting them off end, compare what's left with bitmask
+  // inp   contains address of first byte in string/array
+  // lmask contains 8B high bit mask for comparison
+  // i     contains next index to be processed (adr. inp+i is on 8B boundary)
+  bind(Ltail);
+  subcc(size, i, t4);   // # of remaining bytes in string -> t4
+  // return 0 if no more remaining bytes
+  br(Assembler::lessEqual, true, Assembler::pn, Lreturn);
+  delayed()->mov(0, result); // annuled so i not clobbered for following
+  ldx(inp, i, t3);       // load final 8B (aligned) containing tail -> t3
+  mov(8, t5);
+  sub(t5, t4, t4);
+  mov(0, result);        // ** i clobbered at this point
+  sll(t4, 3, t4);        // bits beyond end of string          -> t4
+  srlx(t3, t4, t3);      // bytes beyond end now obliterated   -> t3
+  andcc(lmask, t3, G0);
+  movcc(Assembler::notZero, false, xcc,  1, result);
+  bind(Lreturn);
+}
+
 #endif
+
 
 // Use BIS for zeroing (count is in bytes).
 void MacroAssembler::bis_zeroing(Register to, Register count, Register temp, Label& Ldone) {

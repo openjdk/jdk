@@ -30,7 +30,7 @@
  *          should fail when loading.
  * @library /testlibrary
  * @bug 8025642
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 

@@ -46,6 +46,7 @@ import javax.lang.model.element.VariableElement;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.code.ClassFinder.BadEnclosingMethodAttr;
 import com.sun.tools.javac.code.Kinds.Kind;
 import com.sun.tools.javac.comp.Annotate.AnnotationTypeMetadata;
 import com.sun.tools.javac.code.Scope.WriteableScope;
@@ -764,8 +765,13 @@ public abstract class Symbol extends AnnoConstruct implements Element {
                 return list;
             }
             for (Symbol sym : members().getSymbols(NON_RECURSIVE)) {
-                if (sym != null && (sym.flags() & SYNTHETIC) == 0 && sym.owner == this)
-                    list = list.prepend(sym);
+                try {
+                    if (sym != null && (sym.flags() & SYNTHETIC) == 0 && sym.owner == this) {
+                        list = list.prepend(sym);
+                    }
+                } catch (BadEnclosingMethodAttr badEnclosingMethod) {
+                    // ignore the exception
+                }
             }
             return list;
         }

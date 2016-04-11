@@ -26,7 +26,7 @@
  * @key nmt
  * @summary Test for deprecated message if -XX:-AutoShutdownNMT is specified
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 

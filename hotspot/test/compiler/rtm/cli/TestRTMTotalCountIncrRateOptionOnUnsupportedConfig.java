@@ -33,7 +33,7 @@ import rtm.predicate.SupportedVM;
  * @summary Verify RTMTotalCountIncrRate option processing on CPU without
  *          rtm support and/or on VM without rtm locking support.
  * @library /testlibrary /test/lib /compiler/testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestRTMTotalCountIncrRateOptionOnUnsupportedConfig
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

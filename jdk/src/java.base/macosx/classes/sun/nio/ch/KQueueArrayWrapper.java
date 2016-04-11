@@ -31,7 +31,6 @@
 
 package sun.nio.ch;
 
-import sun.misc.*;
 import java.io.IOException;
 import java.io.FileDescriptor;
 import java.util.Iterator;

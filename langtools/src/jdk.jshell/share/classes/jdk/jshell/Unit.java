@@ -140,12 +140,6 @@ final class Unit {
         return isNew;
     }
 
-    boolean isRedundant() {
-        return !isNew && !isDependency() && !si.isExecutable() &&
-                prevStatus.isDefined &&
-                siOld.source().equals(si.source());
-    }
-
     void initialize(Collection<Unit> working) {
         isAttemptingCorral = false;
         dependenciesNeeded = false;

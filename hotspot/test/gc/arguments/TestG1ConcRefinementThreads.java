@@ -28,7 +28,7 @@
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @summary Tests argument processing for G1ConcRefinementThreads
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 

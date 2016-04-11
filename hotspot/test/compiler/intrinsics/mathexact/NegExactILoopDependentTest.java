@@ -26,7 +26,7 @@
  * @bug 8026844
  * @summary Test negExact loop dependent
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile NegExactILoopDependentTest.java Verify.java
  * @run main NegExactILoopDependentTest

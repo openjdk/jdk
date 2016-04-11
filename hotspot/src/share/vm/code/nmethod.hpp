@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,8 +188,6 @@ class nmethod : public CodeBlob {
   // protected by CodeCache_lock
   bool _has_flushed_dependencies;            // Used for maintenance of dependencies (CodeCache_lock)
 
-  bool _marked_for_reclamation;              // Used by NMethodSweeper (set only by sweeper)
-
   enum MarkForDeoptimizationStatus {
     not_marked,
     deoptimize,
@@ -207,7 +205,7 @@ class nmethod : public CodeBlob {
   unsigned int _has_wide_vectors:1;          // Preserve wide vectors at safepoints
 
   // Protected by Patching_lock
-  volatile unsigned char _state;             // {alive, not_entrant, zombie, unloaded}
+  volatile unsigned char _state;             // {in_use, not_entrant, zombie, unloaded}
 
   volatile unsigned char _unloading_clock;   // Incremented after GC unloaded/cleaned the nmethod
 
@@ -438,7 +436,20 @@ class nmethod : public CodeBlob {
   bool  is_alive() const                          { return _state == in_use || _state == not_entrant; }
   bool  is_not_entrant() const                    { return _state == not_entrant; }
   bool  is_zombie() const                         { return _state == zombie; }
-  bool  is_unloaded() const                       { return _state == unloaded;   }
+  bool  is_unloaded() const                       { return _state == unloaded; }
+
+  // returns a string version of the nmethod state
+  const char* state() const {
+    switch(_state) {
+      case in_use:      return "in use";
+      case not_entrant: return "not_entrant";
+      case zombie:      return "zombie";
+      case unloaded:    return "unloaded";
+      default:
+        fatal("unexpected nmethod state: %d", _state);
+        return NULL;
+    }
+  }
 
 #if INCLUDE_RTM_OPT
   // rtm state accessing and manipulating
@@ -489,9 +500,6 @@ class nmethod : public CodeBlob {
     assert(!has_flushed_dependencies(), "should only happen once");
     _has_flushed_dependencies = 1;
   }
-
-  bool  is_marked_for_reclamation() const         { return _marked_for_reclamation; }
-  void  mark_for_reclamation()                    { _marked_for_reclamation = 1; }
 
   bool  has_unsafe_access() const                 { return _has_unsafe_access; }
   void  set_has_unsafe_access(bool z)             { _has_unsafe_access = z; }

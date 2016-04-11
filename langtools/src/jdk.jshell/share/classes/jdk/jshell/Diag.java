@@ -55,8 +55,7 @@ public abstract class Diag {
      * <p>{@code getPosition() <= getEndPosition()}
      *
      * @return character offset from beginning of source; {@link
-     * #NOPOS} if {@link #getSource()} would return {@code null} or if
-     * no location is suitable
+     * #NOPOS} if the position is not available.
      */
     public abstract long getPosition();
 

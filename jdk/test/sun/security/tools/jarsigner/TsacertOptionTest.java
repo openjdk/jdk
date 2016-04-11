@@ -30,8 +30,7 @@ import jdk.testlibrary.JarUtils;
  * @bug 8024302 8026037
  * @summary The test signs and verifies a jar file with -tsacert option
  * @library /lib/testlibrary
- * @modules java.base/sun.misc
- *          java.base/sun.security.pkcs
+ * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.timestamp
  *          java.base/sun.security.util
  *          java.base/sun.security.x509

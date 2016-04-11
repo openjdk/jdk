@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,7 @@
  * @test
  * @bug 4749938 8087190
  * @summary Bug in the parsing IPv4 literal addresses
- * @modules java.base/sun.net.spi.nameservice
- * @compile -XDignore.symbol.file=true DummyNameService.java DummyNameServiceDescriptor.java
- * @run main/othervm -Dsun.net.spi.nameservice.provider.1=dummy,oracle textToNumericFormat
+ * @run main/othervm  textToNumericFormat
 */
 
 /**
@@ -68,6 +66,8 @@ public class textToNumericFormat {
                            "1..1.1",
                            "1.1.1.",
                            "..." };
+        String hostsFileName = System.getProperty("test.src", ".") + "/TestToNumericFormatHosts";
+        System.setProperty("jdk.net.hosts.file", hostsFileName);
 
         for (int i=0; i<goodAddrs.length; i++) {
             try {

@@ -27,7 +27,7 @@
  * @bug 8025661
  * @summary Test parsing of -Xminf and -Xmaxf
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm TestHeapFreeRatio
  */

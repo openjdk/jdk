@@ -25,7 +25,7 @@
  * @test
  * @bug 8143628
  * @summary Test unsafe access for $type$
- * @modules java.base/$package$
+ * @modules $module$/$package$
  * @run testng/othervm -Diters=100   -Xint                   $Qualifier$UnsafeAccessTest$Type$
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 $Qualifier$UnsafeAccessTest$Type$
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  $Qualifier$UnsafeAccessTest$Type$
@@ -160,6 +160,7 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
             assertEquals(x, $value2$, "putVolatile $type$ value");
         }
 
+#if[!JdkInternalMisc]
 #if[Ordered]
         // Lazy
         {
@@ -168,6 +169,7 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
             assertEquals(x, $value1$, "putRelease $type$ value");
         }
 #end[Ordered]
+#end[!JdkInternalMisc]
 
 #if[JdkInternalMisc]
         // Lazy

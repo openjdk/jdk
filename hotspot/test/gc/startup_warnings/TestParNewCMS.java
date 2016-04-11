@@ -27,7 +27,7 @@
 * @bug 8065972
 * @summary Test that specifying -XX:+UseParNewGC on the command line logs a warning message
 * @library /testlibrary
-* @modules java.base/sun.misc
+* @modules java.base/jdk.internal.misc
 *          java.management
 */
 

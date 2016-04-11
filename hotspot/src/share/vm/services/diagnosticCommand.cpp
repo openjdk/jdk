@@ -316,8 +316,8 @@ int JVMTIAgentLoadDCmd::num_arguments() {
 }
 
 void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
-  // load sun.misc.VMSupport
-  Symbol* klass = vmSymbols::sun_misc_VMSupport();
+  // load VMSupport
+  Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
   Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK);
   instanceKlassHandle ik (THREAD, k);
   if (ik->should_be_initialized()) {

@@ -43,6 +43,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Scanner;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -60,34 +61,6 @@ import static org.testng.Assert.fail;
 
 @Test
 public class ToolBasicTest extends ReplToolTesting {
-
-    public void defineVar() {
-        test(
-                (a) -> assertCommand(a, "int x = 72", "|  Added variable x of type int with initial value 72\n"),
-                (a) -> assertCommand(a, "x", "|  Variable x of type int has value 72\n"),
-                (a) -> assertCommand(a, "/vars", "|    int x = 72\n")
-        );
-    }
-
-    public void defineUnresolvedVar() {
-        test(
-                (a) -> assertCommand(a, "undefined x",
-                        "|  Added variable x, however, it cannot be referenced until class undefined is declared\n"),
-                (a) -> assertCommand(a, "/vars", "|    undefined x = (not-active)\n")
-        );
-    }
-
-    public void testUnresolved() {
-        test(
-                (a) -> assertCommand(a, "int f() { return g() + x + new A().a; }",
-                        "|  Added method f(), however, it cannot be invoked until method g(), variable x, and class A are declared\n"),
-                (a) -> assertCommand(a, "f()",
-                        "|  Attempted to call f which cannot be invoked until method g(), variable x, and class A are declared\n"),
-                (a) -> assertCommand(a, "int g() { return x; }",
-                        "|  Added method g(), however, it cannot be invoked until variable x is declared\n"),
-                (a) -> assertCommand(a, "g()", "|  Attempted to call g which cannot be invoked until variable x is declared\n")
-        );
-    }
 
     public void elideStartUpFromList() {
         test(
@@ -296,47 +269,6 @@ public class ToolBasicTest extends ReplToolTesting {
         );
     }
 
-    public void testDebug() {
-        test(
-                (a) -> assertCommand(a, "/deb", "|  Debugging on\n"),
-                (a) -> assertCommand(a, "/debug", "|  Debugging off\n"),
-                (a) -> assertCommand(a, "/debug", "|  Debugging on\n"),
-                (a) -> assertCommand(a, "/deb", "|  Debugging off\n")
-        );
-    }
-
-    public void testHelpLength() {
-        Consumer<String> testOutput = (s) -> {
-            List<String> ss = Stream.of(s.split("\n"))
-                    .filter(l -> !l.isEmpty())
-                    .collect(Collectors.toList());
-            assertTrue(ss.size() >= 10, "Help does not print enough lines:\n" + s);
-        };
-        test(
-                (a) -> assertCommandCheckOutput(a, "/?", testOutput),
-                (a) -> assertCommandCheckOutput(a, "/help", testOutput),
-                (a) -> assertCommandCheckOutput(a, "/help /list", testOutput)
-        );
-    }
-
-    public void testHelp() {
-        test(
-                (a) -> assertHelp(a, "/?", "/list", "/help", "/exit", "intro"),
-                (a) -> assertHelp(a, "/help", "/list", "/help", "/exit", "intro"),
-                (a) -> assertHelp(a, "/help short", "shortcuts", "<tab>"),
-                (a) -> assertHelp(a, "/? /li", "/list all", "snippets"),
-                (a) -> assertHelp(a, "/help /help", "/help <command>")
-        );
-    }
-
-    private void assertHelp(boolean a, String command, String... find) {
-        assertCommandCheckOutput(a, command, s -> {
-            for (String f : find) {
-                assertTrue(s.contains(f), "Expected output of " + command + " to contain: " + f);
-            }
-        });
-    }
-
     public void oneLineOfError() {
         test(
                 (a) -> assertCommand(a, "12+", null),
@@ -463,7 +395,7 @@ public class ToolBasicTest extends ReplToolTesting {
                     (a) -> assertCommandCheckOutput(a, "printf(\"\")", assertStartsWith("|  Error:\n|  cannot find symbol"))
             );
             test((a) -> assertCommand(a, "printf(\"A\")", "", "", null, "A", ""));
-            test(false, new String[]{"-startup", "UNKNOWN"}, "|  File 'UNKNOWN' for start-up is not found.");
+            test(Locale.ROOT, false, new String[]{"-startup", "UNKNOWN"}, "|  File 'UNKNOWN' for start-up is not found.");
         } finally {
             removeStartup();
         }
@@ -478,9 +410,9 @@ public class ToolBasicTest extends ReplToolTesting {
                 (a) -> assertCommand(a, "a", "|  Variable a of type double has value 10.0\n")
         );
         Path unknown = compiler.getPath("UNKNOWN.jar");
-        test(true, new String[]{unknown.toString()},
-                "|  File '" + unknown
-                + "' is not found: " + unresolvableMessage(unknown) + "\n");
+        test(Locale.ROOT, true, new String[]{unknown.toString()},
+                "|  File " + unknown
+                + " is not found: " + unresolvableMessage(unknown) + "\n");
     }
 
     public void testReset() {
@@ -674,39 +606,6 @@ public class ToolBasicTest extends ReplToolTesting {
                         assertTrue(s.trim().isEmpty(), s)),
                 a -> assertMethod(a, "void f() { }", "()void", "f"),
                 a -> assertCommandCheckOutput(a, "/methods", assertMethods())
-        );
-    }
-
-    // Check that each line of output contains the corresponding string from the list
-    private void checkLineToList(String in, List<String> match) {
-        String[] res = in.trim().split("\n");
-        assertEquals(res.length, match.size(), "Got: " + Arrays.asList(res));
-        for (int i = 0; i < match.size(); ++i) {
-            assertTrue(res[i].contains(match.get(i)));
-        }
-    }
-
-    public void testListArgs() {
-        String arg = "qqqq";
-        List<String> startVarList = new ArrayList<>(START_UP);
-        startVarList.add("int aardvark");
-        test(
-                a -> assertCommandCheckOutput(a, "/list all",
-                        s -> checkLineToList(s, START_UP)),
-                a -> assertCommandCheckOutput(a, "/list " + arg,
-                        s -> assertEquals(s, "|  No definition or id named " + arg +
-                                " found.  There are no active definitions.\n")),
-                a -> assertVariable(a, "int", "aardvark"),
-                a -> assertCommandOutputContains(a, "/list aardvark", "aardvark"),
-                a -> assertCommandCheckOutput(a, "/list start",
-                        s -> checkLineToList(s, START_UP)),
-                a -> assertCommandCheckOutput(a, "/list all",
-                        s -> checkLineToList(s, startVarList)),
-                a -> assertCommandCheckOutput(a, "/list printf",
-                        s -> assertTrue(s.contains("void printf"))),
-                a -> assertCommandCheckOutput(a, "/list " + arg,
-                        s -> assertEquals(s, "|  No definition or id named " + arg +
-                                " found.  Try /list without arguments.\n"))
         );
     }
 

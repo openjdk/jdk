@@ -30,7 +30,7 @@
  *          different types. Test also verify that VM output does not
  *          contain rtm locking statistics when it should not.
  * @library /testlibrary /test/lib /compiler/testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestPrintPreciseRTMLockingStatistics
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

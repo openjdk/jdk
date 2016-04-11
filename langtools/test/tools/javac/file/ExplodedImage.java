@@ -30,7 +30,6 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.ToolBox ExplodedImage
  * @run main/othervm ExplodedImage modules/* testDirectoryStreamClosed
  * @run main/othervm ExplodedImage modules/* testCanCompileAgainstExplodedImage

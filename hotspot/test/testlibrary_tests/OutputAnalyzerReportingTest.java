@@ -28,7 +28,7 @@
  *     such as printing additional diagnostic info
  *     (exit code, stdout, stderr, command line, etc.)
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 

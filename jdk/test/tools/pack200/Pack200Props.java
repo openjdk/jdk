@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,13 @@
  */
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.jar.Pack200;
 import java.util.jar.Pack200.Packer;
+import java.util.logging.Logger;
 
 /*
  * Run this against a large jar file, by default the packer should generate only
@@ -46,20 +46,22 @@ import java.util.jar.Pack200.Packer;
 
 public class Pack200Props {
 
-    public static void main(String... args) throws IOException {
+    final static Logger log = Logger.getLogger("Pack200Props");
+
+    public static void main(String... args) throws Exception {
         verifyDefaults();
         File out = new File("test" + Utils.PACK_FILE_EXT);
         out.delete();
         verifySegmentLimit(out);
+        log.info("cleanup");
         Utils.cleanup();
     }
 
-    static void verifySegmentLimit(File outFile) throws IOException {
-        File sdkHome = Utils.JavaSDK;
+    static void verifySegmentLimit(File outFile) throws Exception {
+        log.info("creating jar");
         File testJar = Utils.createRtJar();
 
-        System.out.println("using pack200: " + Utils.getPack200Cmd());
-
+        log.info("using pack200: " + Utils.getPack200Cmd());
         List<String> cmdsList = new ArrayList<>();
         cmdsList.add(Utils.getPack200Cmd());
         cmdsList.add("-J-Xshare:off");
@@ -71,6 +73,7 @@ public class Pack200Props {
         cmdsList.add(testJar.getAbsolutePath());
         List<String> outList = Utils.runExec(cmdsList);
 
+        log.info("verifying");
         int count = 0;
         for (String line : outList) {
             System.out.println(line);
@@ -78,6 +81,7 @@ public class Pack200Props {
                 count++;
             }
         }
+        log.info("fini");
         if (count == 0) {
             throw new RuntimeException("no segments or no output ????");
         } else if (count > 1) {
@@ -86,6 +90,7 @@ public class Pack200Props {
     }
 
     private static void verifyDefaults() {
+        log.info("start");
         Map<String, String> expectedDefaults = new HashMap<>();
         Packer p = Pack200.newPacker();
         expectedDefaults.put("com.sun.java.util.jar.pack.disable.native",
@@ -121,6 +126,7 @@ public class Pack200Props {
                 }
             }
         }
+        log.info("fini");
         if (errors > 0) {
             throw new RuntimeException(errors +
                     " error(s) encountered in default properties verification");

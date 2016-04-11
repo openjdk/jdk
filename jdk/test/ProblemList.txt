@@ -159,8 +159,6 @@ sun/management/jmxremote/bootstrap/JMXInterfaceBindingTest.java 8147985 generic-
 
 # jdk_net
 
-sun/net/InetAddress/nameservice/simple/CacheTest.java           7148829 generic-all
-sun/net/InetAddress/nameservice/simple/DefaultCaching.java      7148829 generic-all
 
 java/net/MulticastSocket/NoLoopbackPackets.java                 7122846 macosx-all
 java/net/MulticastSocket/SetLoopbackMode.java                   7122846 macosx-all
@@ -238,7 +236,7 @@ sun/security/pkcs11/MessageDigest/DigestKAT.java                8077138,8023434 
 sun/security/pkcs11/MessageDigest/ReinitDigest.java             8077138,8023434 windows-all
 sun/security/pkcs11/MessageDigest/TestCloning.java              8077138,8023434 windows-all
 sun/security/pkcs11/Provider/ConfigQuotedString.sh              8077138,8023434 windows-all
-sun/security/pkcs11/Provider/Login.sh                           8077138,8023434 windows-all
+sun/security/pkcs11/Provider/Login.sh                           8077138,8023434,8153545 windows-all,linux-all
 sun/security/pkcs11/SampleTest.java                             8077138,8023434 windows-all
 sun/security/pkcs11/Secmod/AddPrivateKey.java                   8077138,8023434 windows-all
 sun/security/pkcs11/Secmod/AddTrustedCert.java                  8077138,8023434 windows-all
@@ -282,11 +280,16 @@ sun/security/krb5/auto/HttpNegotiateServer.java                 8038079 generic-
 
 sun/security/tools/keytool/autotest.sh                          8130302 generic-all
 
+sun/security/provider/NSASuiteB/TestDSAGenParameterSpec.java    8137255 generic-all
+
+sun/security/x509/URICertStore/ExtensionsWithLDAP.java          8134577 generic-all
+
 ############################################################################
 
 # jdk_sound
 
 javax/sound/midi/Gervill/SoftProvider/GetDevice.java            8059743 generic-all
+javax/sound/sampled/DirectAudio/bug6400879.java                 8148915 linux-all
 
 ############################################################################
 
@@ -307,6 +310,7 @@ javax/imageio/plugins/tiff/WriteToSequenceAfterAbort.java       8148454 generic-
 
 # jdk_time
 
+
 ############################################################################
 
 # jdk_tools
@@ -314,8 +318,6 @@ javax/imageio/plugins/tiff/WriteToSequenceAfterAbort.java       8148454 generic-
 tools/pack200/CommandLineTests.java                             7143279,8059906 generic-all
 
 tools/pack200/Pack200Test.java                                  8059906,8151901 generic-all
-
-tools/pack200/Pack200Props.java                                 8152622 macosx-all
 
 tools/launcher/FXLauncherTest.java                              8068049 linux-all,macosx-all
 

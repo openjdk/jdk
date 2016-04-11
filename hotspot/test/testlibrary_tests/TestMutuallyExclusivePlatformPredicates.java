@@ -39,7 +39,7 @@ import java.util.Set;
  *          in jdk.test.lib.Platform one and only one predicate
  *          evaluates to true.
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main TestMutuallyExclusivePlatformPredicates
  */

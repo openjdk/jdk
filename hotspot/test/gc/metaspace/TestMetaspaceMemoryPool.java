@@ -31,7 +31,7 @@ import static jdk.test.lib.Asserts.*;
  * @summary Tests that a MemoryPoolMXBeans is created for metaspace and that a
  *          MemoryManagerMXBean is created.
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops TestMetaspaceMemoryPool
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:MaxMetaspaceSize=60m TestMetaspaceMemoryPool

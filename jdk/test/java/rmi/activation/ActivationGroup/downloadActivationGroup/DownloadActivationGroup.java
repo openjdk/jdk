@@ -138,9 +138,11 @@ public class DownloadActivationGroup
             p.put("java.security.policy", TestParams.defaultGroupPolicy);
             CommandEnvironment cmd = new ActivationGroupDesc.CommandEnvironment(
                     null,
-                    new String[] { "-XaddExports:java.rmi/sun.rmi.registry=ALL-UNNAMED,"
-                            + "java.rmi/sun.rmi.server=ALL-UNNAMED,java.rmi/sun.rmi.transport=ALL-UNNAMED,"
-                            + "java.rmi/sun.rmi.transport.tcp=ALL-UNNAMED" });
+                    new String[] {
+                        "-XaddExports:java.rmi/sun.rmi.registry=ALL-UNNAMED",
+                        "-XaddExports:java.rmi/sun.rmi.server=ALL-UNNAMED",
+                        "-XaddExports:java.rmi/sun.rmi.transport=ALL-UNNAMED",
+                        "-XaddExports:java.rmi/sun.rmi.transport.tcp=ALL-UNNAMED" });
 
             ActivationGroupDesc groupDesc =
                 new ActivationGroupDesc("MyActivationGroupImpl",

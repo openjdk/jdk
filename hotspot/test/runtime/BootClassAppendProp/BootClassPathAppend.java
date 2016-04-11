@@ -26,7 +26,7 @@
  * @bug 8087154
  * @summary Uninitialized system property jdk.boot.class.path.append causes SIGSEGV
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  */
 
 import jdk.test.lib.*;

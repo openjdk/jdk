@@ -33,9 +33,10 @@ import static jdk.test.lib.Asserts.*;
  * @requires vm.gc=="Serial" | vm.gc=="null"
  * @summary Tests that a MemoryPoolMXBeans and PerfCounters for metaspace
  *          report the same data.
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
+ * @ignore 8151460
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedKlassPointers -XX:+UseSerialGC -XX:+UsePerfData -Xint TestPerfCountersAndMemoryPools
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UseCompressedKlassPointers -XX:+UseSerialGC -XX:+UsePerfData -Xint TestPerfCountersAndMemoryPools
  */

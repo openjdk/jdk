@@ -85,6 +85,7 @@ import static javax.lang.model.element.Modifier.*;
 import static javax.lang.model.type.TypeKind.*;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
+import com.sun.source.util.SimpleDocTreeVisitor;
 import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuilder.MAX_CONSTANT_VALUE_INDEX_LENGTH;
 
 
@@ -1231,8 +1232,9 @@ public class Utils {
             superType = getObjectType();
         }
         TypeElement superClass = asTypeElement(superType);
-
-        while (superClass != null && !isPublic(superClass) && !isLinkable(superClass)) {
+        // skip "hidden" classes
+        while ((superClass != null && isHidden(superClass))
+                || (superClass != null &&  !isPublic(superClass) && !isLinkable(superClass))) {
             TypeMirror supersuperType = superClass.getSuperclass();
             TypeElement supersuperClass = asTypeElement(supersuperType);
             if (supersuperClass == null
@@ -1448,9 +1450,28 @@ public class Utils {
     }
 
     /**
+     * Returns true if the element is included, contains &#64;hidden tag,
+     * or if javafx flag is present and element contains &#64;treatAsPrivate
+     * tag.
+     * @param e the queried element
+     * @return true if it exists, false otherwise
+     */
+    public boolean isHidden(Element e) {
+        // prevent needless tests on elements which are not included
+        if (!isIncluded(e)) {
+            return false;
+        }
+        if (configuration.javafx &&
+                hasBlockTag(e, DocTree.Kind.UNKNOWN_BLOCK_TAG, "treatAsPrivate")) {
+            return true;
+        }
+        return hasBlockTag(e, DocTree.Kind.HIDDEN);
+    }
+
+    /**
      * In case of JavaFX mode on, filters out classes that are private,
-     * package private or having the @treatAsPrivate annotation. Those are not
-     * documented in JavaFX mode.
+     * package private, these are not documented in JavaFX mode, also
+     * remove those classes that have &#64;hidden or &#64;treatAsPrivate comment tag.
      *
      * @param classlist a collection of TypeElements
      * @param javafx set to true if in JavaFX mode.
@@ -1462,16 +1483,14 @@ public class Utils {
                 new TreeSet<>(makeGeneralPurposeComparator());
         if (!javafx) {
             for (Element te : classlist) {
-                filteredOutClasses.add((TypeElement)te);
+                if (!isHidden(te)) {
+                    filteredOutClasses.add((TypeElement)te);
+                }
             }
             return filteredOutClasses;
         }
         for (Element e : classlist) {
-            if (isPrivate(e) || isPackagePrivate(e)) {
-                continue;
-            }
-            List<? extends DocTree> aspTags = getBlockTags(e, "treatAsPrivate");
-            if (aspTags != null && !aspTags.isEmpty()) {
+            if (isPrivate(e) || isPackagePrivate(e) || isHidden(e)) {
                 continue;
             }
             filteredOutClasses.add((TypeElement)e);
@@ -2711,6 +2730,7 @@ public class Utils {
         switch (tagName) {
             case "author":
             case "deprecated":
+            case "hidden":
             case "param":
             case "return":
             case "see":
@@ -2734,13 +2754,32 @@ public class Utils {
         List<? extends DocTree> blockTags = getBlockTags(element, kind);
         List<DocTree> out = new ArrayList<>();
         String tname = tagName.startsWith("@") ? tagName.substring(1) : tagName;
-        CommentHelper ch = wksMap.get(element);
+        CommentHelper ch = getCommentHelper(element);
         for (DocTree dt : blockTags) {
             if (ch.getTagName(dt).equals(tname)) {
                 out.add(dt);
             }
         }
         return out;
+    }
+
+    public boolean hasBlockTag(Element element, DocTree.Kind kind) {
+        return hasBlockTag(element, kind, null);
+    }
+
+    public boolean hasBlockTag(Element element, DocTree.Kind kind, final String tagName) {
+        CommentHelper ch = getCommentHelper(element);
+        String tname = tagName != null && tagName.startsWith("@")
+                ? tagName.substring(1)
+                : tagName;
+        for (DocTree dt : getBlockTags(element, kind)) {
+            if (dt.getKind() == kind) {
+                if (tname == null || ch.getTagName(dt).equals(tname)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**

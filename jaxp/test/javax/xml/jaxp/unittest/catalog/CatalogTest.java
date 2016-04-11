@@ -24,6 +24,7 @@ package catalog;
 
 import java.io.IOException;
 import javax.xml.catalog.Catalog;
+import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogFeatures.Feature;
 import javax.xml.catalog.CatalogManager;
@@ -42,10 +43,28 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.ext.DefaultHandler2;
 
 /*
- * @bug 8081248, 8144966, 8146606, 8146237, 8151154
+ * @bug 8081248, 8144966, 8146606, 8146237, 8151154, 8150969
  * @summary Tests basic Catalog functions.
  */
 public class CatalogTest {
+    /**
+     * @bug 8150969
+     * Verifies that the defer attribute set in the catalog file takes precedence
+     * over other settings, in which case, whether next and delegate Catalogs will
+     * be loaded is determined by the defer attribute.
+     */
+    @Test(dataProvider = "invalidAltCatalogs", expectedExceptions = CatalogException.class)
+    public void testDeferAltCatalogs(String file) {
+        String catalogFile = getClass().getResource(file).getFile();
+        CatalogFeatures features = CatalogFeatures.builder().with(CatalogFeatures.Feature.DEFER, "true").build();
+        /*
+          Since the defer attribute is set to false in the specified catalog file,
+          the parent catalog will try to load the alt catalog, which will fail
+          since it points to an invalid catalog.
+        */
+        Catalog catalog = CatalogManager.catalog(features, catalogFile);
+    }
+
     /**
      * @bug 8151154
      * Verifies that the CatalogFeatures' builder throws IllegalArgumentException
@@ -211,6 +230,18 @@ public class CatalogTest {
         } catch (Exception e) {
             Assert.fail(e.getMessage());
         }
+    }
+
+    /*
+       DataProvider: catalogs that contain invalid next or delegate catalogs.
+                     The defer attribute is set to false.
+     */
+    @DataProvider(name = "invalidAltCatalogs")
+    Object[][] getCatalogs() {
+        return new Object[][]{
+            {"defer_false_2.xml"},
+            {"defer_del_false.xml"}
+        };
     }
 
     /*

@@ -26,7 +26,7 @@
  * @bug 8025657
  * @summary Test repeating addExact
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile AddExactIRepeatTest.java Verify.java
  * @run main AddExactIRepeatTest

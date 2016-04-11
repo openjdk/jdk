@@ -66,8 +66,8 @@ echo "};" >> ${POLICY}
 np="-Dsun.net.spi.nameservice.provider.1=dns,sun"
 sm="-Djava.security.manager -Djava.security.policy=${POLICY}"
 
-go "$np" "$HOST"
-go "$np $sm" "$HOST"
+go "" "$HOST"
+go "$sm" "$HOST"
 
 
 #

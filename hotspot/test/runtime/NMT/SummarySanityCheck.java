@@ -26,7 +26,7 @@
  * @key nmt jcmd
  * @summary Sanity check the output of NMT
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build SummarySanityCheck
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

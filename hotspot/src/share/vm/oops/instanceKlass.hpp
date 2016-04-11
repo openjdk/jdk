@@ -878,7 +878,7 @@ public:
   nmethod* osr_nmethods_head() const         { return _osr_nmethods_head; };
   void set_osr_nmethods_head(nmethod* h)     { _osr_nmethods_head = h; };
   void add_osr_nmethod(nmethod* n);
-  void remove_osr_nmethod(nmethod* n);
+  bool remove_osr_nmethod(nmethod* n);
   int mark_osr_nmethods(const Method* m);
   nmethod* lookup_osr_nmethod(const Method* m, int bci, int level, bool match_level) const;
 

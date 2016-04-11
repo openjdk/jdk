@@ -26,7 +26,7 @@
  * @bug 8140348
  * @summary safepoint=trace should have output from each log statement in the code
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
  * @run driver SafepointTest

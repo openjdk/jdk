@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,13 +61,6 @@
 int main(int argc, char **argv) {
     return unpacker::run(argc, argv);
 }
-
-// Dealing with big-endian arch
-#ifdef _BIG_ENDIAN
-#define SWAP_INT(a) (((a>>24)&0xff) | ((a<<8)&0xff0000) | ((a>>8)&0xff00) | ((a<<24)&0xff000000))
-#else
-#define SWAP_INT(a) (a)
-#endif
 
 // Single-threaded, implementation, not reentrant.
 // Includes a weak error check against MT access.
@@ -366,6 +359,7 @@ int unpacker::run(int argc, char **argv) {
 
   if (strcmp(destination_file, "-") == 0) {
     jarout.jarfp = stdout;
+    jarout.jarname = null;
     if (u.errstrm == stdout) // do not mix output
       u.set_option(UNPACK_LOG_FILE, LOGFILE_STDERR);
   } else {
@@ -385,11 +379,12 @@ int unpacker::run(int argc, char **argv) {
     // Oops; must slap an input filter on this data.
     setup_gzin(&u);
     u.gzin->start(magic);
+    u.gzin->gzcrc = 0;
+    u.gzin->gzlen = 0;
     if (!u.aborting()) {
       u.start();
     }
   } else {
-    u.gzcrc = 0;
     u.start(peek, sizeof(peek));
   }
 
@@ -422,31 +417,13 @@ int unpacker::run(int argc, char **argv) {
     u.start(peek, sizeof(peek));
   }
 
-
-
   int status = 0;
   if (u.aborting()) {
     fprintf(u.errstrm, "Error: %s\n", u.get_abort_message());
     status = 1;
   }
 
-  if (!u.aborting() && u.infileptr != null) {
-    if (u.gzcrc != 0) {
-      // Read the CRC information from the gzip container
-      fseek(u.infileptr, -8, SEEK_END);
-      uint filecrc;
-      fread(&filecrc, sizeof(filecrc), 1, u.infileptr);
-      if (u.gzcrc != SWAP_INT(filecrc)) { // CRC error
-        if (strcmp(destination_file, "-") != 0) {
-          // Output is not stdout, remove it, it's broken
-          if (u.jarout != null)
-            u.jarout->closeJarFile(false);
-          remove(destination_file);
-        }
-        // Print out the error and exit with return code != 0
-        u.abort("CRC error, invalid compressed data.");
-      }
-    }
+  if (u.infileptr != null) {
     fclose(u.infileptr);
     u.infileptr = null;
   }

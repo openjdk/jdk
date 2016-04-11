@@ -37,6 +37,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Locale;
 import java.util.function.Consumer;
 
 import jdk.internal.jshell.tool.JShellTool;
@@ -55,7 +56,8 @@ public class StartOptionTest {
 
     private JShellTool getShellTool() {
         return new JShellTool(null, new PrintStream(out), new PrintStream(err), null, null, null,
-                              null, new ReplToolTesting.MemoryPreferences());
+                              null, new ReplToolTesting.MemoryPreferences(),
+                              Locale.ROOT);
     }
 
     private String getOutput() {
@@ -86,7 +88,7 @@ public class StartOptionTest {
     }
 
     private void start(String expectedOutput, String expectedError, String... args) throws Exception {
-        start(s -> assertEquals(s, expectedOutput, "Output: "), s -> assertEquals(s, expectedError, "Error: "), args);
+        start(s -> assertEquals(s.trim(), expectedOutput, "Output: "), s -> assertEquals(s.trim(), expectedError, "Error: "), args);
     }
 
     @BeforeMethod
@@ -108,7 +110,7 @@ public class StartOptionTest {
         start(s -> {
             assertTrue(s.split("\n").length >= 7, s);
             assertTrue(s.startsWith("Usage:   jshell <options>"), s);
-        }, s -> assertEquals(s, "Unknown option: -unknown\n"), "-unknown");
+        }, s -> assertEquals(s.trim(), "Unknown option: -unknown"), "-unknown");
     }
 
     @Test(enabled = false) // TODO 8080883
@@ -116,17 +118,17 @@ public class StartOptionTest {
         Compiler compiler = new Compiler();
         Path p = compiler.getPath("file.txt");
         compiler.writeToFile(p);
-        start("", "Argument to -startup missing.\n", "-startup");
-        start("", "Conflicting -startup or -nostartup option.\n", "-startup", p.toString(), "-startup", p.toString());
-        start("", "Conflicting -startup or -nostartup option.\n", "-nostartup", "-startup", p.toString());
-        start("", "Conflicting -startup option.\n", "-startup", p.toString(), "-nostartup");
+        start("", "'-startup' requires a filename argument.", "-startup");
+        start("", "Conflicting -startup or -nostartup option.", "-startup", p.toString(), "-startup", p.toString());
+        start("", "Conflicting -startup or -nostartup option.", "-nostartup", "-startup", p.toString());
+        start("", "Conflicting -startup or -nostartup option.", "-startup", p.toString(), "-nostartup");
     }
 
     @Test
     public void testClasspath() throws Exception {
         for (String cp : new String[] {"-cp", "-classpath"}) {
-            start("", "Conflicting -classpath option.\n", cp, ".", "-classpath", ".");
-            start("", "Argument to -classpath missing.\n", cp);
+            start("", "Conflicting -classpath option.", cp, ".", "-classpath", ".");
+            start("", "Argument to -classpath missing.", cp);
         }
     }
 

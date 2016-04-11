@@ -442,7 +442,9 @@ public class FtpCommandHandler extends Thread {
             // cmd.setSoTimeout(2000);
             in = new BufferedReader(new InputStreamReader(cmd.getInputStream()));
             out = new PrintStream(cmd.getOutputStream(), true, "ISO8859_1");
-            out.println("220 Java FTP test server (j2se 6.0) ready.");
+            out.println("---------------------------------\n220 Java FTP test server"
+                    + " (j2se 6.0) ready.\n \n                Please send commands\n"
+                    + "-----------------------------\n\n\n");
             out.flush();
             if (auth.authType() == 0) // No auth needed
                 logged = true;

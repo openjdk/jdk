@@ -26,7 +26,7 @@
  * @bug 8035968
  * @summary Verify UseSHA option processing on supported CPU,
  * @library /testlibrary /test/lib /compiler/testlibrary testcases
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestUseSHAOptionOnSupportedCPU
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
