@@ -123,6 +123,13 @@ void CompileTask::initialize(int compile_id,
   _next = NULL;
 }
 
+/**
+ * Returns the compiler for this task.
+ */
+AbstractCompiler* CompileTask::compiler() {
+  return CompileBroker::compiler(_comp_level);
+}
+
 // ------------------------------------------------------------------
 // CompileTask::code/set_code
 //

@@ -47,14 +47,20 @@
  *     compiler.jvmci.common.CTVMUtilities
  *     compiler.jvmci.common.testcases.SimpleClass
  *     jdk.test.lib.Asserts
+ *     jdk.test.lib.Utils
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *     -Djvmci.compiler=EmptyCompiler -Xbootclasspath/a:. -Xmixed
  *     -XX:+UseJVMCICompiler -XX:-BootstrapJVMCI
- *     -Dcompiler.jvmci.events.JvmciNotifyInstallEventTest.noevent=false
+ *     -Dcompiler.jvmci.events.JvmciNotifyInstallEventTest.failoninit=false
+ *     compiler.jvmci.events.JvmciNotifyInstallEventTest
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *     -Djvmci.compiler=EmptyCompiler -Xbootclasspath/a:. -Xmixed
+ *     -XX:+UseJVMCICompiler -XX:-BootstrapJVMCI -XX:JVMCINMethodSizeLimit=0
+ *     -Dcompiler.jvmci.events.JvmciNotifyInstallEventTest.failoninit=false
  *     compiler.jvmci.events.JvmciNotifyInstallEventTest
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-EnableJVMCI
  *     -Djvmci.compiler=EmptyCompiler -Xbootclasspath/a:. -Xmixed
- *     -Dcompiler.jvmci.events.JvmciNotifyInstallEventTest.noevent=true
+ *     -Dcompiler.jvmci.events.JvmciNotifyInstallEventTest.failoninit=true
  *     compiler.jvmci.events.JvmciNotifyInstallEventTest
  */
 
@@ -64,6 +70,7 @@ import compiler.jvmci.common.CTVMUtilities;
 import compiler.jvmci.common.testcases.SimpleClass;
 import jdk.test.lib.Asserts;
 import java.lang.reflect.Method;
+import jdk.test.lib.Utils;
 import jdk.vm.ci.hotspot.HotSpotVMEventListener;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
@@ -79,8 +86,8 @@ import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 
 public class JvmciNotifyInstallEventTest implements HotSpotVMEventListener {
     private static final String METHOD_NAME = "testMethod";
-    private static final boolean IS_POSITIVE = !Boolean.getBoolean(
-            "compiler.jvmci.events.JvmciNotifyInstallEventTest.noevent");
+    private static final boolean FAIL_ON_INIT = !Boolean.getBoolean(
+            "compiler.jvmci.events.JvmciNotifyInstallEventTest.failoninit");
     private static volatile int gotInstallNotification = 0;
 
     public static void main(String args[]) {
@@ -91,12 +98,12 @@ public class JvmciNotifyInstallEventTest implements HotSpotVMEventListener {
         if (gotInstallNotification != 0) {
             throw new Error("Got install notification before test actions");
         }
-        HotSpotCodeCacheProvider codeCache = null;
+        HotSpotCodeCacheProvider codeCache;
         try {
             codeCache = (HotSpotCodeCacheProvider) HotSpotJVMCIRuntime.runtime()
                     .getHostJVMCIBackend().getCodeCache();
         } catch (InternalError ie) {
-            if (IS_POSITIVE) {
+            if (FAIL_ON_INIT) {
                 throw new AssertionError(
                         "Got unexpected InternalError trying to get code cache",
                         ie);
@@ -104,7 +111,7 @@ public class JvmciNotifyInstallEventTest implements HotSpotVMEventListener {
             // passed
             return;
         }
-        Asserts.assertTrue(IS_POSITIVE,
+        Asserts.assertTrue(FAIL_ON_INIT,
                     "Haven't caught InternalError in negative case");
         Method testMethod;
         try {
@@ -114,18 +121,30 @@ public class JvmciNotifyInstallEventTest implements HotSpotVMEventListener {
         }
         HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(SimpleClass.class, testMethod);
-        HotSpotCompiledCode compiledCode = new HotSpotCompiledCode(METHOD_NAME, new byte[0], 0, new Site[0],
-                new Assumption[0], new ResolvedJavaMethod[]{method}, new Comment[0], new byte[0], 16,
-                new DataPatch[0], false, 0, null);
-        codeCache.installCode(method, compiledCode, /* installedCode = */ null, /* speculationLog = */ null,
-                /* isDefault = */ false);
+        HotSpotCompiledCode compiledCode = new HotSpotCompiledCode(METHOD_NAME,
+                new byte[0], 0, new Site[0], new Assumption[0],
+                new ResolvedJavaMethod[]{method}, new Comment[0], new byte[0],
+                16, new DataPatch[0], false, 0, null);
+        codeCache.installCode(method, compiledCode, /* installedCode = */ null,
+                /* speculationLog = */ null, /* isDefault = */ false);
         Asserts.assertEQ(gotInstallNotification, 1,
                 "Got unexpected event count after 1st install attempt");
         // since "empty" compilation result is ok, a second attempt should be ok
-        codeCache.installCode(method, compiledCode, /* installedCode = */ null, /* speculationLog = */ null,
-                /* isDefault = */ false);
+        codeCache.installCode(method, compiledCode, /* installedCode = */ null,
+                /* speculationLog = */ null, /* isDefault = */ false);
         Asserts.assertEQ(gotInstallNotification, 2,
                 "Got unexpected event count after 2nd install attempt");
+        // and an incorrect cases
+        Utils.runAndCheckException(() -> {
+            codeCache.installCode(method, null, null, null, true);
+        }, NullPointerException.class);
+        Asserts.assertEQ(gotInstallNotification, 2,
+                "Got unexpected event count after 3rd install attempt");
+        Utils.runAndCheckException(() -> {
+            codeCache.installCode(null, null, null, null, true);
+        }, NullPointerException.class);
+        Asserts.assertEQ(gotInstallNotification, 2,
+                "Got unexpected event count after 4th install attempt");
     }
 
     @Override

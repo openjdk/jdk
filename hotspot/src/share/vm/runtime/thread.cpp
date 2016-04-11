@@ -792,10 +792,6 @@ void Thread::oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
   handle_area()->oops_do(f);
 }
 
-void Thread::nmethods_do(CodeBlobClosure* cf) {
-  // no nmethods in a generic thread...
-}
-
 void Thread::metadata_handles_do(void f(Metadata*)) {
   // Only walk the Handles in Thread.
   if (metadata_handles() != NULL) {
@@ -2828,8 +2824,6 @@ void JavaThread::oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) 
 }
 
 void JavaThread::nmethods_do(CodeBlobClosure* cf) {
-  Thread::nmethods_do(cf);  // (super method is a no-op)
-
   assert((!has_last_Java_frame() && java_call_counter() == 0) ||
          (has_last_Java_frame() && java_call_counter() > 0), "wrong java_sp info!");
 
@@ -3304,8 +3298,19 @@ CodeCacheSweeperThread::CodeCacheSweeperThread()
 : JavaThread(&sweeper_thread_entry) {
   _scanned_nmethod = NULL;
 }
+
 void CodeCacheSweeperThread::oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
   JavaThread::oops_do(f, cld_f, cf);
+  if (_scanned_nmethod != NULL && cf != NULL) {
+    // Safepoints can occur when the sweeper is scanning an nmethod so
+    // process it here to make sure it isn't unloaded in the middle of
+    // a scan.
+    cf->do_code_blob(_scanned_nmethod);
+  }
+}
+
+void CodeCacheSweeperThread::nmethods_do(CodeBlobClosure* cf) {
+  JavaThread::nmethods_do(cf);
   if (_scanned_nmethod != NULL && cf != NULL) {
     // Safepoints can occur when the sweeper is scanning an nmethod so
     // process it here to make sure it isn't unloaded in the middle of
@@ -4342,9 +4347,13 @@ void Threads::create_thread_roots_marking_tasks(GCTaskQueue* q) {
 
 void Threads::nmethods_do(CodeBlobClosure* cf) {
   ALL_JAVA_THREADS(p) {
-    p->nmethods_do(cf);
+    // This is used by the code cache sweeper to mark nmethods that are active
+    // on the stack of a Java thread. Ignore the sweeper thread itself to avoid
+    // marking CodeCacheSweeperThread::_scanned_nmethod as active.
+    if(!p->is_Code_cache_sweeper_thread()) {
+      p->nmethods_do(cf);
+    }
   }
-  VMThread::vm_thread()->nmethods_do(cf);
 }
 
 void Threads::metadata_do(void f(Metadata*)) {
