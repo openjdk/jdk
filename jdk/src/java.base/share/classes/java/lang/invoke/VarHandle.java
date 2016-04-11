@@ -1168,63 +1168,7 @@ public abstract class VarHandle {
 
         @ForceInline
         static MemberName getMemberName(int ordinal, VarForm vform) {
-            if (ordinal == 0) {
-                return vform.mbGet;
-            }
-            else if (ordinal == 1) {
-                return vform.mbSet;
-            }
-            else if (ordinal == 2) {
-                return vform.mbGetVolatile;
-            }
-            else if (ordinal == 3) {
-                return vform.mbSetVolatile;
-            }
-            else if (ordinal == 4) {
-                return vform.mbGetAcquire;
-            }
-            else if (ordinal == 5) {
-                return vform.mbSetRelease;
-            }
-            else if (ordinal == 6) {
-                return vform.mbGetOpaque;
-            }
-            else if (ordinal == 7) {
-                return vform.mbSetOpaque;
-            }
-            else if (ordinal == 8) {
-                return vform.mbCompareAndSet;
-            }
-            else if (ordinal == 9) {
-                return vform.mbCompareAndExchangeVolatile;
-            }
-            else if (ordinal == 10) {
-                return vform.mbCompareAndExchangeAcquire;
-            }
-            else if (ordinal == 11) {
-                return vform.mbCompareAndExchangeRelease;
-            }
-            else if (ordinal == 12) {
-                return vform.mbWeakCompareAndSet;
-            }
-            else if (ordinal == 13) {
-                return vform.mbWeakCompareAndSetAcquire;
-            }
-            else if (ordinal == 14) {
-                return vform.mbWeakCompareAndSetRelease;
-            }
-            else if (ordinal == 15) {
-                return vform.mbGetAndSet;
-            }
-            else if (ordinal == 16) {
-                return vform.mbGetAndAdd;
-            }
-            else if (ordinal == 17) {
-                return vform.mbAddAndGet;
-            }
-            else {
-                throw new IllegalStateException("Illegal access mode: " + ordinal);
-            }
+            return vform.table[ordinal];
         }
     }
 
