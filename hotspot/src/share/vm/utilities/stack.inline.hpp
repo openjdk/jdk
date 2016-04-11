@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,6 @@
 #define SHARE_VM_UTILITIES_STACK_INLINE_HPP
 
 #include "utilities/stack.hpp"
-
-// Stack is used by the GC code and in some hot paths a lot of the Stack
-// code gets inlined. This is generally good, but when too much code has
-// been inlined, no further inlining is allowed by GCC. Therefore we need
-// to prevent parts of the slow path in Stack to be inlined to allow other
-// code to be.
-#if defined(TARGET_COMPILER_gcc)
-#define NOINLINE __attribute__((noinline))
-#else
-#define NOINLINE
-#endif
 
 template <MEMFLAGS F> StackBase<F>::StackBase(size_t segment_size, size_t max_cache_size,
                      size_t max_size):
@@ -151,6 +140,11 @@ void Stack<E, F>::free(E* addr, size_t bytes)
   FREE_C_HEAP_ARRAY(char, (char*) addr);
 }
 
+// Stack is used by the GC code and in some hot paths a lot of the Stack
+// code gets inlined. This is generally good, but when too much code has
+// been inlined, no further inlining is allowed by GCC. Therefore we need
+// to prevent parts of the slow path in Stack to be inlined to allow other
+// code to be.
 template <class E, MEMFLAGS F>
 NOINLINE void Stack<E, F>::push_segment()
 {
@@ -279,7 +273,5 @@ E* StackIterator<E, F>::next_addr()
   }
   return _cur_seg + --_cur_seg_size;
 }
-
-#undef NOINLINE
 
 #endif // SHARE_VM_UTILITIES_STACK_INLINE_HPP
