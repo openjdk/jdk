@@ -2625,6 +2625,25 @@ public abstract class ClassLoader {
     // the ServiceCatalog for modules associated with this class loader.
     private volatile ServicesCatalog servicesCatalog;
 
+    /**
+     * Returns the ConcurrentHashMap used as a storage for ClassLoaderValue(s)
+     * associated with this ClassLoader, creating it if it doesn't already exist.
+     */
+    ConcurrentHashMap<?, ?> createOrGetClassLoaderValueMap() {
+        ConcurrentHashMap<?, ?> map = classLoaderValueMap;
+        if (map == null) {
+            map = new ConcurrentHashMap<>();
+            boolean set = trySetObjectField("classLoaderValueMap", map);
+            if (!set) {
+                // beaten by someone else
+                map = classLoaderValueMap;
+            }
+        }
+        return map;
+    }
+
+    // the storage for ClassLoaderValue(s) associated with this ClassLoader
+    private volatile ConcurrentHashMap<?, ?> classLoaderValueMap;
 
     /**
      * Attempts to atomically set a volatile field in this object. Returns
