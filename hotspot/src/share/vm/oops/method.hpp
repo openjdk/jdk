@@ -263,6 +263,7 @@ class Method : public Metadata {
   int highest_osr_comp_level() const;
   void set_highest_osr_comp_level(int level);
 
+#if defined(COMPILER2) || INCLUDE_JVMCI
   // Count of times method was exited via exception while interpreting
   void interpreter_throwout_increment(TRAPS) {
     MethodCounters* mcs = get_method_counters(CHECK);
@@ -270,6 +271,7 @@ class Method : public Metadata {
       mcs->interpreter_throwout_increment();
     }
   }
+#endif
 
   int  interpreter_throwout_count() const        {
     MethodCounters* mcs = method_counters();
@@ -406,11 +408,13 @@ class Method : public Metadata {
       return (mcs == NULL) ? 0 : mcs->interpreter_invocation_count();
     }
   }
+#if defined(COMPILER2) || INCLUDE_JVMCI
   int increment_interpreter_invocation_count(TRAPS) {
     if (TieredCompilation) ShouldNotReachHere();
     MethodCounters* mcs = get_method_counters(CHECK_0);
     return (mcs == NULL) ? 0 : mcs->increment_interpreter_invocation_count();
   }
+#endif
 
 #ifndef PRODUCT
   int  compiled_invocation_count() const         { return _compiled_invocation_count;  }
