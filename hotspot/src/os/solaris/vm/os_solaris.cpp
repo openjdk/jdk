@@ -161,6 +161,7 @@ address os::Solaris::handler_end;    // end pc of thr_sighndlrinfo
 
 address os::Solaris::_main_stack_base = NULL;  // 4352906 workaround
 
+os::Solaris::pthread_setname_np_func_t os::Solaris::_pthread_setname_np = NULL;
 
 // "default" initializers for missing libc APIs
 extern "C" {
@@ -441,8 +442,15 @@ static bool assign_distribution(processorid_t* id_array,
 }
 
 void os::set_native_thread_name(const char *name) {
-  // Not yet implemented.
-  return;
+  if (Solaris::_pthread_setname_np != NULL) {
+    // Only the first 31 bytes of 'name' are processed by pthread_setname_np
+    // but we explicitly copy into a size-limited buffer to avoid any
+    // possible overflow.
+    char buf[32];
+    snprintf(buf, sizeof(buf), "%s", name);
+    buf[sizeof(buf) - 1] = '\0';
+    Solaris::_pthread_setname_np(pthread_self(), buf);
+  }
 }
 
 bool os::distribute_processes(uint length, uint* distribution) {
@@ -4410,6 +4418,13 @@ void os::init(void) {
   // the minimum of what the OS supports (thr_min_stack()), and
   // enough to allow the thread to get to user bytecode execution.
   Solaris::min_stack_allowed = MAX2(thr_min_stack(), Solaris::min_stack_allowed);
+
+  // retrieve entry point for pthread_setname_np
+  void * handle = dlopen("libc.so.1", RTLD_LAZY);
+  if (handle != NULL) {
+    Solaris::_pthread_setname_np =
+        (Solaris::pthread_setname_np_func_t)dlsym(handle, "pthread_setname_np");
+  }
 }
 
 // To install functions for atexit system call
