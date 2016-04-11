@@ -1520,6 +1520,8 @@ void GraphBuilder::method_return(Value x) {
 }
 
 Value GraphBuilder::make_constant(ciConstant field_value, ciField* field) {
+  if (!field_value.is_valid())  return NULL;
+
   BasicType field_type = field_value.basic_type();
   ValueType* value = as_ValueType(field_value);
 
@@ -1587,9 +1589,8 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
     case Bytecodes::_getstatic: {
       // check for compile-time constants, i.e., initialized static final fields
       Value constant = NULL;
-      if (field->is_constant() && !PatchALot) {
+      if (field->is_static_constant() && !PatchALot) {
         ciConstant field_value = field->constant_value();
-        // Stable static fields are checked for non-default values in ciField::initialize_from().
         assert(!field->is_stable() || !field_value.is_null_or_zero(),
                "stable static w/ default value shouldn't be a constant");
         constant = make_constant(field_value, field);
@@ -1618,31 +1619,18 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
       Value constant = NULL;
       obj = apop();
       ObjectType* obj_type = obj->type()->as_ObjectType();
-      if (obj_type->is_constant() && !PatchALot) {
+      if (field->is_constant() && obj_type->is_constant() && !PatchALot) {
         ciObject* const_oop = obj_type->constant_value();
         if (!const_oop->is_null_object() && const_oop->is_loaded()) {
-          if (field->is_constant()) {
-            ciConstant field_value = field->constant_value_of(const_oop);
-            if (FoldStableValues && field->is_stable() && field_value.is_null_or_zero()) {
-              // Stable field with default value can't be constant.
-              constant = NULL;
-            } else {
-              constant = make_constant(field_value, field);
-            }
-          } else {
-            // For CallSite objects treat the target field as a compile time constant.
-            if (const_oop->is_call_site()) {
+          ciConstant field_value = field->constant_value_of(const_oop);
+          if (field_value.is_valid()) {
+            constant = make_constant(field_value, field);
+            // For CallSite objects add a dependency for invalidation of the optimization.
+            if (field->is_call_site_target()) {
               ciCallSite* call_site = const_oop->as_call_site();
-              if (field->is_call_site_target()) {
-                ciMethodHandle* target = call_site->get_target();
-                if (target != NULL) {  // just in case
-                  ciConstant field_val(T_OBJECT, target);
-                  constant = new Constant(as_ValueType(field_val));
-                  // Add a dependence for invalidation of the optimization.
-                  if (!call_site->is_constant_call_site()) {
-                    dependency_recorder()->assert_call_site_target_value(call_site, target);
-                  }
-                }
+              if (!call_site->is_constant_call_site()) {
+                ciMethodHandle* target = field_value.as_object()->as_method_handle();
+                dependency_recorder()->assert_call_site_target_value(call_site, target);
               }
             }
           }

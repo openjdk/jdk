@@ -58,9 +58,7 @@ ciSymbol::ciSymbol(Symbol* s)
 //
 // The text of the symbol as a null-terminated C string.
 const char* ciSymbol::as_utf8() {
-  VM_QUICK_ENTRY_MARK;
-  Symbol* s = get_symbol();
-  return s->as_utf8();
+  GUARDED_VM_QUICK_ENTRY(return get_symbol()->as_utf8();)
 }
 
 // The text of the symbol as a null-terminated C string.
