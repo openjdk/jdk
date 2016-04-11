@@ -33,7 +33,8 @@
 inline void LogStreamNoResourceMark::write(const char* s, size_t len) {
   if (len > 0 && s[len - 1] == '\n') {
     _current_line.write(s, len - 1);
-    _tagset->write(_level, "%s", _current_line.as_string());
+    _current_line.write("\0", 1);
+    _tagset->write(_level, "%s", _current_line.base());
     _current_line.reset();
   } else {
     _current_line.write(s, len);
