@@ -1827,6 +1827,19 @@ int os::stat(const char *path, struct stat *sbuf) {
   return ::stat(pathbuf, sbuf);
 }
 
+static inline time_t get_mtime(const char* filename) {
+  struct stat st;
+  int ret = os::stat(filename, &st);
+  assert(ret == 0, "failed to stat() file '%s': %s", filename, strerror(errno));
+  return st.st_mtime;
+}
+
+int os::compare_file_modified_times(const char* file1, const char* file2) {
+  time_t t1 = get_mtime(file1);
+  time_t t2 = get_mtime(file2);
+  return t1 - t2;
+}
+
 static bool _print_ascii_file(const char* filename, outputStream* st) {
   int fd = ::open(filename, O_RDONLY);
   if (fd == -1) {

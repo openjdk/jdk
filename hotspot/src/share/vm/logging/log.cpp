@@ -31,6 +31,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
+#include "logging/logFileOutput.hpp"
 #include "logging/logOutput.hpp"
 #include "logging/logTagLevelExpression.hpp"
 #include "logging/logTagSet.hpp"
@@ -136,6 +137,131 @@ void Test_configure_stdout() {
   LogConfiguration::configure_stdout(LogLevel::Off, false, LOG_TAGS(gc));
   LogConfiguration::configure_stdout(LogLevel::Off, true, LOG_TAGS(logging));
   assert_str_eq("all=off", stdoutput->config_string());
+}
+
+static size_t number_of_lines_with_substring_in_file(const char* filename,
+                                                     const char* substr) {
+  ResourceMark rm;
+  size_t ret = 0;
+  FILE* fp = fopen(filename, "r");
+  assert(fp != NULL, "error opening file %s: %s", filename, strerror(errno));
+
+  int buflen = 512;
+  char* buf = NEW_RESOURCE_ARRAY(char, buflen);
+  long pos = 0;
+
+  while (fgets(buf, buflen, fp) != NULL) {
+    if (buf[strlen(buf) - 1] != '\n' && !feof(fp)) {
+      // retry with a larger buffer
+      buf = REALLOC_RESOURCE_ARRAY(char, buf, buflen, buflen * 2);
+      buflen *= 2;
+      // rewind to beginning of line
+      fseek(fp, pos, SEEK_SET);
+      continue;
+    }
+    pos = ftell(fp);
+    if (strstr(buf, substr) != NULL) {
+      ret++;
+    }
+  }
+
+  fclose(fp);
+  return ret;
+}
+
+static bool file_exists(const char* filename) {
+  struct stat st;
+  return os::stat(filename, &st) == 0;
+}
+
+static void delete_file(const char* filename) {
+  if (!file_exists(filename)) {
+    return;
+  }
+  int ret = remove(filename);
+  assert(ret == 0, "failed to remove file '%s': %s", filename, strerror(errno));
+}
+
+static void create_directory(const char* name) {
+  assert(!file_exists(name), "can't create directory: %s already exists", name);
+  bool failed;
+#ifdef _WINDOWS
+  failed = !CreateDirectory(name, NULL);
+#else
+  failed = mkdir(name, 0777);
+#endif
+  assert(!failed, "failed to create directory %s", name);
+}
+
+static const char* ExpectedLine = "a (hopefully) unique log line for testing";
+
+static void init_file(const char* filename, const char* options = "") {
+  LogConfiguration::parse_log_arguments(filename, "logging=trace", "", options,
+                                        Log(logging)::error_stream());
+  log_debug(logging)("%s", ExpectedLine);
+  LogConfiguration::parse_log_arguments(filename, "all=off", "", "",
+                                        Log(logging)::error_stream());
+}
+
+void Test_log_file_startup_rotation() {
+  ResourceMark rm;
+  const size_t rotations = 5;
+  const char* filename = "start-rotate-test";
+  char* rotated_file[rotations];
+  for (size_t i = 0; i < rotations; i++) {
+    size_t len = strlen(filename) + 3;
+    rotated_file[i] = NEW_RESOURCE_ARRAY(char, len);
+    jio_snprintf(rotated_file[i], len, "%s." SIZE_FORMAT, filename, i);
+    delete_file(rotated_file[i]);
+  };
+
+  delete_file(filename);
+  init_file(filename);
+  assert(file_exists(filename),
+         "configured logging to file '%s' but file was not found", filename);
+
+  // Initialize the same file a bunch more times to trigger rotations
+  for (size_t i = 0; i < rotations; i++) {
+    init_file(filename);
+    assert(file_exists(rotated_file[i]), "existing file was not rotated");
+  }
+
+  // Remove a file and expect its slot to be re-used
+  delete_file(rotated_file[1]);
+  init_file(filename);
+  assert(file_exists(rotated_file[1]), "log file not properly rotated");
+
+  // Clean up after test
+  delete_file(filename);
+  for (size_t i = 0; i < rotations; i++) {
+    delete_file(rotated_file[i]);
+  }
+}
+
+void Test_log_file_startup_truncation() {
+  ResourceMark rm;
+  const char* filename = "start-truncate-test";
+  const char* archived_filename = "start-truncate-test.0";
+
+  delete_file(filename);
+  delete_file(archived_filename);
+
+  // Use the same log file twice and expect it to be overwritten/truncated
+  init_file(filename, "filecount=0");
+  assert(file_exists(filename), "couldn't find log file: %s", filename);
+
+  init_file(filename, "filecount=0");
+  assert(file_exists(filename), "couldn't find log file: %s", filename);
+  assert(!file_exists(archived_filename),
+         "existing log file %s was not properly truncated when filecount was 0",
+         filename);
+
+  // Verify that the file was really truncated and not just appended
+  assert(number_of_lines_with_substring_in_file(filename, ExpectedLine) == 1,
+         "log file %s appended rather than truncated", filename);
+
+  delete_file(filename);
+  delete_file(archived_filename);
 }
 
 static int Test_logconfiguration_subscribe_triggered = 0;
@@ -739,6 +865,22 @@ void Test_log_gctracetime() {
   Test_log_gctracetime_no_heap();
   Test_log_gctracetime_no_cause();
   Test_log_gctracetime_no_heap_no_cause();
+}
+
+void Test_invalid_log_file() {
+  ResourceMark rm;
+  stringStream ss;
+  const char* target_name = "tmplogdir";
+
+  // Attempt to log to a directory (existing log not a regular file)
+  create_directory(target_name);
+  LogFileOutput bad_file("tmplogdir");
+  assert(bad_file.initialize("", &ss) == false, "file was initialized "
+         "when there was an existing directory with the same name");
+  assert(strstr(ss.as_string(), "tmplogdir is not a regular file") != NULL,
+         "missing expected error message, received msg: %s", ss.as_string());
+  ss.reset();
+  remove(target_name);
 }
 
 #endif // PRODUCT
