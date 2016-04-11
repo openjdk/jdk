@@ -796,7 +796,7 @@ Node *LoadNode::make(PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const TypeP
 #endif
     {
       assert(!adr->bottom_type()->is_ptr_to_narrowoop() && !adr->bottom_type()->is_ptr_to_narrowklass(), "should have got back a narrow oop");
-      load = new LoadPNode(ctl, mem, adr, adr_type, rt->is_oopptr(), mo, control_dependency);
+      load = new LoadPNode(ctl, mem, adr, adr_type, rt->is_ptr(), mo, control_dependency);
     }
     break;
   }
@@ -1620,72 +1620,6 @@ LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
   return NULL;
 }
 
-static ciConstant check_mismatched_access(ciConstant con, BasicType loadbt, bool is_unsigned) {
-  BasicType conbt = con.basic_type();
-  switch (conbt) {
-    case T_BOOLEAN: conbt = T_BYTE;   break;
-    case T_ARRAY:   conbt = T_OBJECT; break;
-  }
-  switch (loadbt) {
-    case T_BOOLEAN:   loadbt = T_BYTE;   break;
-    case T_NARROWOOP: loadbt = T_OBJECT; break;
-    case T_ARRAY:     loadbt = T_OBJECT; break;
-    case T_ADDRESS:   loadbt = T_OBJECT; break;
-  }
-  if (conbt == loadbt) {
-    if (is_unsigned && conbt == T_BYTE) {
-      // LoadB (T_BYTE) with a small mask (<=8-bit) is converted to LoadUB (T_BYTE).
-      return ciConstant(T_INT, con.as_int() & 0xFF);
-    } else {
-      return con;
-    }
-  }
-  if (conbt == T_SHORT && loadbt == T_CHAR) {
-    // LoadS (T_SHORT) with a small mask (<=16-bit) is converted to LoadUS (T_CHAR).
-    return ciConstant(T_INT, con.as_int() & 0xFFFF);
-  }
-  return ciConstant(); // T_ILLEGAL
-}
-
-// Try to constant-fold a stable array element.
-static const Type* fold_stable_ary_elem(const TypeAryPtr* ary, int off, bool is_unsigned_load, BasicType loadbt) {
-  assert(ary->const_oop(), "array should be constant");
-  assert(ary->is_stable(), "array should be stable");
-
-  // Decode the results of GraphKit::array_element_address.
-  ciArray* aobj = ary->const_oop()->as_array();
-  ciConstant element_value = aobj->element_value_by_offset(off);
-  if (element_value.basic_type() == T_ILLEGAL) {
-    return NULL; // wrong offset
-  }
-  ciConstant con = check_mismatched_access(element_value, loadbt, is_unsigned_load);
-  assert(con.basic_type() != T_ILLEGAL, "elembt=%s; loadbt=%s; unsigned=%d",
-         type2name(element_value.basic_type()), type2name(loadbt), is_unsigned_load);
-
-  if (con.basic_type() != T_ILLEGAL && // not a mismatched access
-      !con.is_null_or_zero()) {        // not a default value
-    const Type* con_type = Type::make_from_constant(con);
-    if (con_type != NULL) {
-      if (con_type->isa_aryptr()) {
-        // Join with the array element type, in case it is also stable.
-        int dim = ary->stable_dimension();
-        con_type = con_type->is_aryptr()->cast_to_stable(true, dim-1);
-      }
-      if (loadbt == T_NARROWOOP && con_type->isa_oopptr()) {
-        con_type = con_type->make_narrowoop();
-      }
-#ifndef PRODUCT
-      if (TraceIterativeGVN) {
-        tty->print("FoldStableValues: array element [off=%d]: con_type=", off);
-        con_type->dump(); tty->cr();
-      }
-#endif //PRODUCT
-      return con_type;
-    }
-  }
-  return NULL;
-}
-
 //------------------------------Value-----------------------------------------
 const Type* LoadNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
@@ -1714,10 +1648,14 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     const bool off_beyond_header = ((uint)off >= (uint)min_base_off);
 
     // Try to constant-fold a stable array element.
-    if (FoldStableValues && !is_mismatched_access() && ary->is_stable() && ary->const_oop() != NULL) {
+    if (FoldStableValues && !is_mismatched_access() && ary->is_stable()) {
       // Make sure the reference is not into the header and the offset is constant
-      if (off_beyond_header && adr->is_AddP() && off != Type::OffsetBot) {
-        const Type* con_type = fold_stable_ary_elem(ary, off, is_unsigned(), memory_type());
+      ciObject* aobj = ary->const_oop();
+      if (aobj != NULL && off_beyond_header && adr->is_AddP() && off != Type::OffsetBot) {
+        int stable_dimension = (ary->stable_dimension() > 0 ? ary->stable_dimension() - 1 : 0);
+        const Type* con_type = Type::make_constant_from_array_element(aobj->as_array(), off,
+                                                                      stable_dimension,
+                                                                      memory_type(), is_unsigned());
         if (con_type != NULL) {
           return con_type;
         }
@@ -1784,28 +1722,10 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     // For oop loads, we expect the _type to be precise.
     // Optimizations for constant objects
     ciObject* const_oop = tinst->const_oop();
-    if (const_oop != NULL) {
-      // For constant CallSites treat the target field as a compile time constant.
-      if (const_oop->is_call_site()) {
-        ciCallSite* call_site = const_oop->as_call_site();
-        ciField* field = call_site->klass()->as_instance_klass()->get_field_by_offset(off, /*is_static=*/ false);
-        if (field != NULL && field->is_call_site_target()) {
-          ciMethodHandle* target = call_site->get_target();
-          if (target != NULL) {  // just in case
-            ciConstant constant(T_OBJECT, target);
-            const Type* t;
-            if (adr->bottom_type()->is_ptr_to_narrowoop()) {
-              t = TypeNarrowOop::make_from_constant(constant.as_object(), true);
-            } else {
-              t = TypeOopPtr::make_from_constant(constant.as_object(), true);
-            }
-            // Add a dependence for invalidation of the optimization.
-            if (!call_site->is_constant_call_site()) {
-              C->dependencies()->assert_call_site_target_value(call_site, target);
-            }
-            return t;
-          }
-        }
+    if (const_oop != NULL && const_oop->is_instance()) {
+      const Type* con_type = Type::make_constant_from_field(const_oop->as_instance(), off, is_unsigned(), memory_type());
+      if (con_type != NULL) {
+        return con_type;
       }
     }
   } else if (tp->base() == Type::KlassPtr) {

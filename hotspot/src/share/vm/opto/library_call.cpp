@@ -2550,13 +2550,9 @@ bool LibraryCallKit::inline_unsafe_access(const bool is_native_ptr, bool is_stor
     Node* p = NULL;
     // Try to constant fold a load from a constant field
     ciField* field = alias_type->field();
-    if (heap_base_oop != top() &&
-        field != NULL && field->is_constant() && !mismatched) {
+    if (heap_base_oop != top() && field != NULL && field->is_constant() && !mismatched) {
       // final or stable field
-      const Type* con_type = Type::make_constant(alias_type->field(), heap_base_oop);
-      if (con_type != NULL) {
-        p = makecon(con_type);
-      }
+      p = make_constant_from_field(field, heap_base_oop);
     }
     if (p == NULL) {
       // To be valid, unsafe loads may depend on other conditions than

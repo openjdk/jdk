@@ -4466,6 +4466,25 @@ void GraphKit::inflate_string_slow(Node* src, Node* dst, Node* start, Node* coun
   set_memory(st, TypeAryPtr::BYTES);
 }
 
+Node* GraphKit::make_constant_from_field(ciField* field, Node* obj) {
+  if (!field->is_constant()) {
+    return NULL; // Field not marked as constant.
+  }
+  ciInstance* holder = NULL;
+  if (!field->is_static()) {
+    ciObject* const_oop = obj->bottom_type()->is_oopptr()->const_oop();
+    if (const_oop != NULL && const_oop->is_instance()) {
+      holder = const_oop->as_instance();
+    }
+  }
+  const Type* con_type = Type::make_constant_from_field(field, holder, field->layout_type(),
+                                                        /*is_unsigned_load=*/false);
+  if (con_type != NULL) {
+    return makecon(con_type);
+  }
+  return NULL;
+}
+
 Node* GraphKit::cast_array_to_stable(Node* ary, const TypeAryPtr* ary_type) {
   // Reify the property as a CastPP node in Ideal graph to comply with monotonicity
   // assumption of CCP analysis.
