@@ -1,0 +1,106 @@
+#
+# Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# Create the libjsig.so shared library
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+include NativeCompilation.gmk
+
+ifneq ($(OPENJDK_TARGET_OS), windows)
+  ifeq ($(STATIC_BUILD), false)
+    LIBJSIG_STRIP_SYMBOLS := true
+    ifeq ($(OPENJDK_TARGET_OS), linux)
+      LIBJSIG_CFLAGS := -fPIC -D_GNU_SOURCE -D_REENTRANT $(EXTRA_CFLAGS)
+      LIBJSIG_LDFLAGS := $(LDFLAGS_HASH_STYLE) $(EXTRA_CFLAGS)
+      LIBJSIG_LIBS := $(LIBDL)
+
+      # NOTE: The old build compiled this library without -soname.
+      # To emulate this, we need to clear out SET_SHARED_LIBRARY_NAME.
+      SET_SHARED_LIBRARY_NAME :=
+
+      # Flags for other CPUs can be provided in EXTRA_CFLAGS
+      ifeq ($(OPENJDK_TARGET_CPU), x86_64)
+        LIBJSIG_CPU_FLAGS := -m64
+      else ifeq ($(OPENJDK_TARGET_CPU), x86)
+        LIBJSIG_CPU_FLAGS := -m32 -march=i586
+      endif
+
+    else ifeq ($(OPENJDK_TARGET_OS), solaris)
+      LIBJSIG_CFLAGS := -m64 -KPIC -mt
+      LIBJSIG_LDFLAGS := -m64 -mt -xnolib
+      LIBJSIG_LIBS := $(LIBDL)
+
+      # NOTE: The old build compiled this library without -soname.
+      # To emulate this, we need to clear out SET_SHARED_LIBRARY_NAME.
+      SET_SHARED_LIBRARY_NAME :=
+
+    else ifeq ($(OPENJDK_TARGET_OS), aix)
+      LIBJSIG_CFLAGS := -q64 -D_GNU_SOURCE -D_REENTRANT -qpic=large
+      LIBJSIG_LDFLAGS := -b64 -bexpall -G -bnoentry -qmkshrobj -brtl -bnolibpath -bernotok
+      LIBJSIG_LIBS := $(LIBDL)
+
+      # NOTE: The old build compiled this library without -soname.
+      # To emulate this, we need to clear out SET_SHARED_LIBRARY_NAME.
+      SET_SHARED_LIBRARY_NAME :=
+
+    else ifeq ($(OPENJDK_TARGET_OS), macosx)
+      LIBJSIG_CFLAGS := -m64 -D_GNU_SOURCE -pthread -mno-omit-leaf-frame-pointer -mstack-alignment=16 -fPIC
+      LIBJSIG_LDFLAGS := $(LDFLAGS_HASH_STYLE)
+      # NOTE: This lib is not stripped on macosx in old build. Looks like a mistake.
+      LIBJSIG_STRIP_SYMBOLS := false
+    else
+      $(error Unknown target OS $(OPENJDK_TARGET_OS) in CompileLibjsig.gmk)
+    endif
+
+    LIBJSIG_SRC_FILE := $(HOTSPOT_TOPDIR)/src/os/$(HOTSPOT_TARGET_OS)/vm/jsig.c
+    LIBJSIG_MAPFILE := $(wildcard $(HOTSPOT_TOPDIR)/makefiles/mapfiles/libjsig/mapfile-vers-$(OPENJDK_TARGET_OS))
+    LIBJSIG_OUTPUTDIR := $(HOTSPOT_OUTPUTDIR)/libjsig
+
+    LIBJSIG_LDFLAGS += $(SHARED_LIBRARY_FLAGS)
+
+    $(eval $(call SetupNativeCompilation, BUILD_LIBJSIG, \
+        LIBRARY := jsig, \
+        EXTRA_FILES := $(LIBJSIG_SRC_FILE), \
+        OUTPUT_DIR := $(LIBJSIG_OUTPUTDIR), \
+        LANG := C, \
+        CFLAGS := $(LIBJSIG_CFLAGS) $(LIBJSIG_CPU_FLAGS), \
+        LDFLAGS := $(LIBJSIG_LDFLAGS) $(LIBJSIG_CPU_FLAGS), \
+        LIBS := $(LIBJSIG_LIBS), \
+        MAPFILE := $(LIBJSIG_MAPFILE), \
+        OBJECT_DIR := $(LIBJSIG_OUTPUTDIR)/objs, \
+        STRIP_SYMBOLS := $(LIBJSIG_STRIP_SYMBOLS), \
+    ))
+
+    TARGETS += $(BUILD_LIBJSIG)
+  endif
+endif
+
+all: $(TARGETS)
+
+.PHONY: all

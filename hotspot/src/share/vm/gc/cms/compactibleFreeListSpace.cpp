@@ -2836,6 +2836,11 @@ void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n
   par_get_chunk_of_blocks_dictionary(word_sz, n, fl);
 }
 
+const size_t CompactibleFreeListSpace::max_flag_size_for_task_size() const {
+  const size_t ergo_max = _old_gen->reserved().word_size() / (CardTableModRefBS::card_size_in_words * BitsPerWord);
+  return ergo_max;
+}
+
 // Set up the space's par_seq_tasks structure for work claiming
 // for parallel rescan. See CMSParRemarkTask where this is currently used.
 // XXX Need to suitably abstract and generalize this and the next

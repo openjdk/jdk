@@ -221,7 +221,7 @@ ifeq ($(USE_CLANG),)
   ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 3 \) \))" "0"
     # GCC < 4.3
     WARNING_FLAGS += -Wconversion
-  endif  
+  endif
   ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 8 \) \))" "1"
     # GCC >= 4.8
     # This flag is only known since GCC 4.3. Gcc 4.8 contains a fix so that with templates no
@@ -260,7 +260,7 @@ endif
 
 OPT_CFLAGS = $(OPT_CFLAGS/$(OPT_CFLAGS_DEFAULT)) $(OPT_EXTRAS)
 
-# Variable tracking size limit exceeded for VMStructs::init() 
+# Variable tracking size limit exceeded for VMStructs::init()
 ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 3 \) \))" "1"
   # GCC >= 4.3
   # Gcc 4.1.2 does not support this flag, nor does it have problems compiling the file.

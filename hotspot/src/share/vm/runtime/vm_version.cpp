@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "code/codeCacheExtensions.hpp"
+#include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
@@ -274,12 +275,12 @@ unsigned int Abstract_VM_Version::jvm_version() {
 void VM_Version_init() {
   VM_Version::initialize();
 
-#ifndef PRODUCT
-  if (PrintMiscellaneous && Verbose) {
-    char buf[512];
-    os::print_cpu_info(tty, buf, sizeof(buf));
+  if (log_is_enabled(Info, os, cpu)) {
+    char buf[1024];
+    ResourceMark rm;
+    outputStream* log = Log(os, cpu)::info_stream();
+    os::print_cpu_info(log, buf, sizeof(buf));
   }
-#endif
 }
 
 unsigned int Abstract_VM_Version::nof_parallel_worker_threads(
