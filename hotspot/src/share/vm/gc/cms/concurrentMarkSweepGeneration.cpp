@@ -3598,7 +3598,7 @@ void CMSCollector::preclean() {
     size_t capacity = get_eden_capacity();
     // Don't start sampling unless we will get sufficiently
     // many samples.
-    if (used < (capacity/(CMSScheduleRemarkSamplingRatio * 100)
+    if (used < (((capacity / CMSScheduleRemarkSamplingRatio) / 100)
                 * CMSScheduleRemarkEdenPenetration)) {
       _start_sampling = true;
     } else {

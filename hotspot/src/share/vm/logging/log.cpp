@@ -377,7 +377,7 @@ void Test_loghandle_on() {
 
   assert(log_handle.is_debug(), "assert");
 
-  // Try to log trough a LogHandle.
+  // Try to log through a LogHandle.
   log_handle.debug("%d workers", 3);
 
   FILE* fp = fopen(log_file.name(), "r");
@@ -408,7 +408,7 @@ void Test_loghandle_off() {
     return;
   }
 
-  // Try to log trough a LogHandle. Should fail, since only info is turned on.
+  // Try to log through a LogHandle. Should fail, since only info is turned on.
   log_handle.debug("%d workers", 3);
 
   // Log a dummy line so that fgets doesn't return NULL because the file is empty.
@@ -440,7 +440,7 @@ static void Test_logtargethandle_on() {
 
   assert(log_handle.is_enabled(), "assert");
 
-  // Try to log trough a LogHandle.
+  // Try to log through a LogHandle.
   log_handle.print("%d workers", 3);
 
   FILE* fp = fopen(log_file.name(), "r");
@@ -471,7 +471,7 @@ static void Test_logtargethandle_off() {
     return;
   }
 
-  // Try to log trough a LogHandle. Should fail, since only info is turned on.
+  // Try to log through a LogHandle. Should fail, since only info is turned on.
   log_handle.print("%d workers", 3);
 
   // Log a dummy line so that fgets doesn't return NULL because the file is empty.

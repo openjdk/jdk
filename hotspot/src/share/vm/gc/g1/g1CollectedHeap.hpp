@@ -992,7 +992,8 @@ public:
   // The rem set and barrier set.
   G1RemSet* g1_rem_set() const { return _g1_rem_set; }
 
-  void scrub_rem_set(BitMap* region_bm, BitMap* card_bm);
+  // Try to minimize the remembered set.
+  void scrub_rem_set();
 
   unsigned get_gc_time_stamp() {
     return _gc_time_stamp;

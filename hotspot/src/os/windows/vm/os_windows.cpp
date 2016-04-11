@@ -2436,14 +2436,10 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
           bool res = os::protect_memory((char*) page_start, page_size,
                                         os::MEM_PROT_RWX);
 
-          if (PrintMiscellaneous && Verbose) {
-            char buf[256];
-            jio_snprintf(buf, sizeof(buf), "Execution protection violation "
-                         "at " INTPTR_FORMAT
-                         ", unguarding " INTPTR_FORMAT ": %s", addr,
-                         page_start, (res ? "success" : os::strerror(errno)));
-            tty->print_raw_cr(buf);
-          }
+          log_debug(os)("Execution protection violation "
+                        "at " INTPTR_FORMAT
+                        ", unguarding " INTPTR_FORMAT ": %s", p2i(addr),
+                        p2i(page_start), (res ? "success" : os::strerror(errno)));
 
           // Set last_addr so if we fault again at the same address, we don't
           // end up in an endless loop.
@@ -2896,12 +2892,12 @@ static bool numa_interleaving_init() {
   NUMAInterleaveGranularity = align_size_up(NUMAInterleaveGranularity, min_interleave_granularity);
 
   if (numa_node_list_holder.build()) {
-    if (PrintMiscellaneous && Verbose) {
-      tty->print("NUMA UsedNodeCount=%d, namely ", numa_node_list_holder.get_count());
+    if (log_is_enabled(Debug, os, cpu)) {
+      Log(os, cpu) log;
+      log.debug("NUMA UsedNodeCount=%d, namely ", numa_node_list_holder.get_count());
       for (int i = 0; i < numa_node_list_holder.get_count(); i++) {
-        tty->print("%d ", numa_node_list_holder.get_node_list_entry(i));
+        log.debug("  %d ", numa_node_list_holder.get_node_list_entry(i));
       }
-      tty->print("\n");
     }
     success = true;
   } else {
@@ -4119,13 +4115,7 @@ jint os::init_2(void) {
   guarantee(return_page != NULL, "Commit Failed for polling page");
 
   os::set_polling_page(polling_page);
-
-#ifndef PRODUCT
-  if (Verbose && PrintMiscellaneous) {
-    tty->print("[SafePoint Polling address: " INTPTR_FORMAT "]\n",
-               (intptr_t)polling_page);
-  }
-#endif
+  log_info(os)("SafePoint Polling address: " INTPTR_FORMAT, p2i(polling_page));
 
   if (!UseMembar) {
     address mem_serialize_page = (address)VirtualAlloc(NULL, os::vm_page_size(), MEM_RESERVE, PAGE_READWRITE);
@@ -4135,13 +4125,7 @@ jint os::init_2(void) {
     guarantee(return_page != NULL, "Commit Failed for memory serialize page");
 
     os::set_memory_serialize_page(mem_serialize_page);
-
-#ifndef PRODUCT
-    if (Verbose && PrintMiscellaneous) {
-      tty->print("[Memory Serialize  Page address: " INTPTR_FORMAT "]\n",
-                 (intptr_t)mem_serialize_page);
-    }
-#endif
+    log_info(os)("Memory Serialize Page address: " INTPTR_FORMAT, p2i(mem_serialize_page));
   }
 
   // Setup Windows Exceptions
@@ -4769,10 +4753,7 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
   hFile = CreateFile(file_name, GENERIC_READ, FILE_SHARE_READ, NULL,
                      OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
   if (hFile == NULL) {
-    if (PrintMiscellaneous && Verbose) {
-      DWORD err = GetLastError();
-      tty->print_cr("CreateFile() failed: GetLastError->%ld.", err);
-    }
+    log_info(os)("CreateFile() failed: GetLastError->%ld.", GetLastError());
     return NULL;
   }
 
@@ -4790,10 +4771,7 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
     base = (char*) VirtualAlloc(addr, bytes, MEM_COMMIT | MEM_RESERVE,
                                 PAGE_READWRITE);
     if (base == NULL) {
-      if (PrintMiscellaneous && Verbose) {
-        DWORD err = GetLastError();
-        tty->print_cr("VirtualAlloc() failed: GetLastError->%ld.", err);
-      }
+      log_info(os)("VirtualAlloc() failed: GetLastError->%ld.", GetLastError());
       CloseHandle(hFile);
       return NULL;
     }
@@ -4807,10 +4785,7 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
     // number of bytes were read before returning.
     bool res = ReadFile(hFile, base, (DWORD)bytes, &bytes_read, &overlapped) != 0;
     if (!res) {
-      if (PrintMiscellaneous && Verbose) {
-        DWORD err = GetLastError();
-        tty->print_cr("ReadFile() failed: GetLastError->%ld.", err);
-      }
+      log_info(os)("ReadFile() failed: GetLastError->%ld.", GetLastError());
       release_memory(base, bytes);
       CloseHandle(hFile);
       return NULL;
@@ -4819,10 +4794,7 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
     HANDLE hMap = CreateFileMapping(hFile, NULL, PAGE_WRITECOPY, 0, 0,
                                     NULL /* file_name */);
     if (hMap == NULL) {
-      if (PrintMiscellaneous && Verbose) {
-        DWORD err = GetLastError();
-        tty->print_cr("CreateFileMapping() failed: GetLastError->%ld.", err);
-      }
+      log_info(os)("CreateFileMapping() failed: GetLastError->%ld.", GetLastError());
       CloseHandle(hFile);
       return NULL;
     }
@@ -4831,20 +4803,14 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
     base = (char*)MapViewOfFileEx(hMap, access, 0, (DWORD)file_offset,
                                   (DWORD)bytes, addr);
     if (base == NULL) {
-      if (PrintMiscellaneous && Verbose) {
-        DWORD err = GetLastError();
-        tty->print_cr("MapViewOfFileEx() failed: GetLastError->%ld.", err);
-      }
+      log_info(os)("MapViewOfFileEx() failed: GetLastError->%ld.", GetLastError());
       CloseHandle(hMap);
       CloseHandle(hFile);
       return NULL;
     }
 
     if (CloseHandle(hMap) == 0) {
-      if (PrintMiscellaneous && Verbose) {
-        DWORD err = GetLastError();
-        tty->print_cr("CloseHandle(hMap) failed: GetLastError->%ld.", err);
-      }
+      log_info(os)("CloseHandle(hMap) failed: GetLastError->%ld.", GetLastError());
       CloseHandle(hFile);
       return base;
     }
@@ -4856,10 +4822,7 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
     bool res = VirtualProtect(base, bytes, exec_access, &old_protect) != 0;
 
     if (!res) {
-      if (PrintMiscellaneous && Verbose) {
-        DWORD err = GetLastError();
-        tty->print_cr("VirtualProtect() failed: GetLastError->%ld.", err);
-      }
+      log_info(os)("VirtualProtect() failed: GetLastError->%ld.", GetLastError());
       // Don't consider this a hard error, on IA32 even if the
       // VirtualProtect fails, we should still be able to execute
       CloseHandle(hFile);
@@ -4868,10 +4831,7 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
   }
 
   if (CloseHandle(hFile) == 0) {
-    if (PrintMiscellaneous && Verbose) {
-      DWORD err = GetLastError();
-      tty->print_cr("CloseHandle(hFile) failed: GetLastError->%ld.", err);
-    }
+    log_info(os)("CloseHandle(hFile) failed: GetLastError->%ld.", GetLastError());
     return base;
   }
 
@@ -4904,10 +4864,7 @@ char* os::pd_remap_memory(int fd, const char* file_name, size_t file_offset,
 bool os::pd_unmap_memory(char* addr, size_t bytes) {
   MEMORY_BASIC_INFORMATION mem_info;
   if (VirtualQuery(addr, &mem_info, sizeof(mem_info)) == 0) {
-    if (PrintMiscellaneous && Verbose) {
-      DWORD err = GetLastError();
-      tty->print_cr("VirtualQuery() failed: GetLastError->%ld.", err);
-    }
+    log_info(os)("VirtualQuery() failed: GetLastError->%ld.", GetLastError());
     return false;
   }
 
@@ -4924,10 +4881,7 @@ bool os::pd_unmap_memory(char* addr, size_t bytes) {
 
   BOOL result = UnmapViewOfFile(addr);
   if (result == 0) {
-    if (PrintMiscellaneous && Verbose) {
-      DWORD err = GetLastError();
-      tty->print_cr("UnmapViewOfFile() failed: GetLastError->%ld.", err);
-    }
+    log_info(os)("UnmapViewOfFile() failed: GetLastError->%ld.", GetLastError());
     return false;
   }
   return true;

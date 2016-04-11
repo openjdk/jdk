@@ -93,8 +93,6 @@ class Method : public Metadata {
 #endif
   // Entry point for calling both from and to the interpreter.
   address _i2i_entry;           // All-args-on-stack calling convention
-  // Adapter blob (i2c/c2i) for this Method*. Set once when method is linked.
-  AdapterHandlerEntry* _adapter;
   // Entry point for calling from compiled code, to compiled code if it exists
   // or else the interpreter.
   volatile address _from_compiled_entry;        // Cache of: _code ? _code->entry_point() : _adapter->c2i_entry()
@@ -137,6 +135,7 @@ class Method : public Metadata {
 
   static address make_adapters(methodHandle mh, TRAPS);
   volatile address from_compiled_entry() const   { return (address)OrderAccess::load_ptr_acquire(&_from_compiled_entry); }
+  volatile address from_compiled_entry_no_trampoline() const;
   volatile address from_interpreted_entry() const{ return (address)OrderAccess::load_ptr_acquire(&_from_interpreted_entry); }
 
   // access flag
@@ -435,15 +434,23 @@ class Method : public Metadata {
   nmethod* volatile code() const                 { assert( check_code(), "" ); return (nmethod *)OrderAccess::load_ptr_acquire(&_code); }
   void clear_code();            // Clear out any compiled code
   static void set_code(methodHandle mh, nmethod* code);
-  void set_adapter_entry(AdapterHandlerEntry* adapter) {  _adapter = adapter; }
+  void set_adapter_entry(AdapterHandlerEntry* adapter) {
+    constMethod()->set_adapter_entry(adapter);
+  }
+  void update_adapter_trampoline(AdapterHandlerEntry* adapter) {
+    constMethod()->update_adapter_trampoline(adapter);
+  }
+
   address get_i2c_entry();
   address get_c2i_entry();
   address get_c2i_unverified_entry();
-  AdapterHandlerEntry* adapter() {  return _adapter; }
+  AdapterHandlerEntry* adapter() const {
+    return constMethod()->adapter();
+  }
   // setup entry points
   void link_method(const methodHandle& method, TRAPS);
-  // clear entry points. Used by sharing code
-  void unlink_method();
+  // clear entry points. Used by sharing code during dump time
+  void unlink_method() NOT_CDS_RETURN;
 
   // vtable index
   enum VtableIndexFlag {
@@ -469,7 +476,15 @@ class Method : public Metadata {
   // interpreter entry
   address interpreter_entry() const              { return _i2i_entry; }
   // Only used when first initialize so we can set _i2i_entry and _from_interpreted_entry
-  void set_interpreter_entry(address entry)      { _i2i_entry = entry;  _from_interpreted_entry = entry; }
+  void set_interpreter_entry(address entry) {
+    assert(!is_shared(), "shared method's interpreter entry should not be changed at run time");
+    if (_i2i_entry != entry) {
+      _i2i_entry = entry;
+    }
+    if (_from_interpreted_entry != entry) {
+      _from_interpreted_entry = entry;
+    }
+  }
 
   // native function (used for native methods only)
   enum {

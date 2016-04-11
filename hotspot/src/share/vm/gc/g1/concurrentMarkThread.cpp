@@ -28,6 +28,7 @@
 #include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
+#include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
 #include "gc/g1/suspendibleThreadSet.hpp"
 #include "gc/g1/vm_operations_g1.hpp"
@@ -182,6 +183,11 @@ void ConcurrentMarkThread::run_service() {
           log_info(gc, marking)("Concurrent Mark Restart due to overflow");
         }
       } while (cm()->restart_for_overflow());
+
+      if (!cm()->has_aborted()) {
+        G1ConcPhaseTimer t(_cm, "Concurrent Create Live Data");
+        cm()->create_live_data();
+      }
 
       double end_time = os::elapsedVTime();
       // Update the total virtual time before doing this, since it will try
