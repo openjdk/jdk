@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
  * questions.
  */
 
-if (!this.JFX_BASE_CLASSES) {
+if (!this.JFX_CLASSES) {
     load("fx:base.js")
 }
 
-LOAD_FX_CLASSES(JFX_GRAPHICS_CLASSES);
+LOAD_FX_CLASSES(this, "javafx.graphics");
 
 
