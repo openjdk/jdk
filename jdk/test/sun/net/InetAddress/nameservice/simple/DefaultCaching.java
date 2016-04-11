@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,35 +25,40 @@
  * @bug 6442088
  * @summary Change default DNS caching behavior for code not running under
  *          security manager.
- * @modules java.base/sun.net.spi.nameservice
- * @compile -XDignore.symbol.file=true SimpleNameService.java
- *                                     SimpleNameServiceDescriptor.java
- * @run main/othervm/timeout=200 -Dsun.net.inetaddr.ttl=20 -Dsun.net.spi.nameservice.provider.1=simple,sun DefaultCaching
+ * @run main/othervm/timeout=200 -Dsun.net.inetaddr.ttl=20  DefaultCaching
  */
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.Security;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.io.BufferedWriter;
 
 public class DefaultCaching {
 
     public static void main(String args[]) throws Exception {
 
+        String hostsFileName = System.getProperty("test.src", ".") + "/DefaultCachingHosts";
+        System.setProperty("jdk.net.hosts.file", hostsFileName);
+        // initial mapping
         // name service needs to resolve this.
-        SimpleNameService.put("theclub", "129.156.220.219");
+        addMappingToHostsFile("theclub", "129.156.220.219", hostsFileName, false);
 
         test ("theclub", "129.156.220.219", true);      // lk: 1
         test ("luster", "1.16.20.2", false);            // lk: 2
 
         // name service now needs to know about luster
-        SimpleNameService.put("luster", "10.5.18.21");
+        addMappingToHostsFile("luster", "10.5.18.21", hostsFileName, true);
 
         test ("luster", "1.16.20.2", false);            // lk: 2
         sleep (10+1);
         test("luster", "10.5.18.21", true, 3);          // lk: 3
         sleep (5);
 
-        SimpleNameService.put("foo", "10.5.18.22");
-        SimpleNameService.put("theclub", "129.156.220.1");
+        // new mapping for theclub and rewrite existing foo and luster mappings
+        addMappingToHostsFile("theclub", "129.156.220.1", hostsFileName, false);
+        addMappingToHostsFile("foo", "10.5.18.22", hostsFileName, true);
+        addMappingToHostsFile("luster", "10.5.18.21", hostsFileName, true);
 
         test ("theclub", "129.156.220.219", true, 3);
         test ("luster", "10.5.18.21", true, 3);
@@ -84,10 +89,6 @@ public class DefaultCaching {
     static void test (String host, String address,
                         boolean shouldSucceed, int count) {
         test (host, address, shouldSucceed);
-        int got = SimpleNameService.lookupCalls();
-        if (got != count) {
-            throw new RuntimeException ("lookups exp/got: " + count+"/"+got);
-        }
     }
 
     static void sleep (int seconds) {
@@ -114,4 +115,16 @@ public class DefaultCaching {
         }
     }
 
+
+    private static void addMappingToHostsFile (String host,
+                                               String addr,
+                                               String hostsFileName,
+                                               boolean append)
+                                             throws Exception {
+        String mapping = addr + " " + host;
+        try (PrintWriter hfPWriter = new PrintWriter(new BufferedWriter(
+                new FileWriter(hostsFileName, append)))) {
+            hfPWriter.println(mapping);
+}
+    }
 }

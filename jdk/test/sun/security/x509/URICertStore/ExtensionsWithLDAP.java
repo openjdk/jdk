@@ -44,14 +44,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import sun.net.spi.nameservice.NameService;
-import sun.net.spi.nameservice.NameServiceDescriptor;
 
 /*
  * @test
  * @bug 8134708
  * @summary Check if LDAP resources from CRLDP and AIA extensions can be loaded
- * @modules java.base/sun.net.spi.nameservice
  * @run main/othervm ExtensionsWithLDAP
  */
 public class ExtensionsWithLDAP {
@@ -149,7 +146,8 @@ public class ExtensionsWithLDAP {
         System.setProperty("com.sun.security.enableAIAcaIssuers", "true");
 
         // register a local name service
-        System.setProperty("sun.net.spi.nameservice.provider.1", "ns,localdns");
+        String hostsFileName = System.getProperty("test.src", ".") + "/ExtensionsWithLDAPHosts";
+        System.setProperty("jdk.net.hosts.file", hostsFileName);
 
         X509Certificate trustedCert = loadCertificate(CA_CERT);
         X509Certificate eeCert = loadCertificate(EE_CERT);
@@ -201,48 +199,8 @@ public class ExtensionsWithLDAP {
     }
 
     // a local name service which log requested host names
-    public static class LocalNameService implements NameServiceDescriptor {
+    public static class LocalNameService {
 
         static final List<String> requestedHosts = new ArrayList<>();
-
-        @Override
-        public NameService createNameService() throws Exception {
-            System.out.println("LocalNameService: createNameService() called");
-            NameService ns = new NameService() {
-
-                @Override
-                public InetAddress[] lookupAllHostAddr(String host)
-                        throws UnknownHostException {
-
-                    System.out.println("LocalNameService: "
-                            + "NameService.lookupAllHostAddr(): " + host);
-
-                    requestedHosts.add(host);
-
-                    throw new UnknownHostException();
                 }
-
-                @Override
-                public String getHostByAddr(byte[] addr)
-                        throws UnknownHostException {
-                    System.out.println("LocalNameService: "
-                            + "NameService.getHostByAddr(): "
-                            + Arrays.toString(addr));
-                    throw new UnknownHostException("No reverse lookup");
                 }
-            };
-            return ns;
-        }
-
-        @Override
-        public String getProviderName() {
-            return "localdns";
-        }
-
-        @Override
-        public String getType() {
-            return "ns";
-        }
-    }
-
-}

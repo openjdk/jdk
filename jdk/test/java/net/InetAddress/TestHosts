@@ -1,0 +1,4 @@
+# test hosts file for internal NameService 
+10.2.3.4 testHost.testDomain
+10.5.6.7 testHost.testDomain
+10.8.9.10 

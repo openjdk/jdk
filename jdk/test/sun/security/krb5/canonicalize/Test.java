@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,19 @@
  * @test
  * @bug 6682516
  * @summary SPNEGO_HTTP_AUTH/WWW_KRB and SPNEGO_HTTP_AUTH/WWW_SPNEGO failed on all non-windows platforms
- * @modules java.base/sun.net.spi.nameservice
- *          java.security.jgss/sun.security.krb5
- * @run main/othervm -Dsun.net.spi.nameservice.provider.1=ns,mock -Djava.security.krb5.conf=krb5.conf Test
+ * @modules java.security.jgss/sun.security.krb5
+ * @run main/othervm  -Djava.security.krb5.conf=krb5.conf Test
  */
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import sun.net.spi.nameservice.NameService;
-import sun.net.spi.nameservice.NameServiceDescriptor;
 import sun.security.krb5.PrincipalName;
 
-public class Test implements NameServiceDescriptor {
+public class Test {
     public static void main(String[] args) throws Exception {
         // This config file is generated using Kerberos.app on a Mac
+        String hostsFileName = System.getProperty("test.src", ".") + "/TestHosts";
+        System.setProperty("jdk.net.hosts.file", hostsFileName);
         System.setProperty("java.security.krb5.realm", "THIS.REALM");
         System.setProperty("java.security.krb5.kdc", "localhost");
 
@@ -64,42 +63,4 @@ public class Test implements NameServiceDescriptor {
             throw new Exception("Output is " + pn);
         }
     }
-
-    @Override
-    public NameService createNameService() throws Exception {
-        NameService ns = new NameService() {
-            @Override
-            public InetAddress[] lookupAllHostAddr(String host)
-                    throws UnknownHostException {
-                // All c<n>.* goes to 127.0.0.n
-                int i = Integer.valueOf(host.split("\\.")[0].substring(1));
-                return new InetAddress[]{
-                    InetAddress.getByAddress(host, new byte[]{127,0,0,(byte)i})
-                };
             }
-            @Override
-            public String getHostByAddr(byte[] addr)
-                    throws UnknownHostException {
-                int i = addr[3];
-                switch (i) {
-                    case 1: return "c1.this.domain";        // Good
-                    case 2: return "127.0.0.2";             // Only IP
-                    case 3: return "d3.this.domain";        // name change
-                    default:
-                        throw new UnknownHostException();
-                }
-            }
-        };
-        return ns;
-    }
-
-    @Override
-    public String getProviderName() {
-        return "mock";
-    }
-
-    @Override
-    public String getType() {
-        return "ns";
-    }
-}

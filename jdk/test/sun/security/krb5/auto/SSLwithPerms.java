@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,19 +84,21 @@ public class SSLwithPerms {
             ).getBytes());
             fos.close();
 
+            String hostsFileName = System.getProperty("test.src", ".") + "/TestHosts";
+
             Proc pc = Proc.create("SSLwithPerms")
                     .args("client")
                     .inheritIO()
                     .prop("java.security.manager", "")
                     .prop("java.security.krb5.conf", KRB5_CONF)
-                    .prop("sun.net.spi.nameservice.provider.1", "ns,mock")
+                    .prop("jdk.net.hosts.file", hostsFileName)
                     .prop("javax.net.ssl", "handshake")
                     .prop("sun.security.krb5.debug", "true")
                     .perm(new SecurityPermission("setProperty.jdk.tls.disabledAlgorithms"))
                     .perm(new PropertyPermission("sun.security.krb5.principal", "read"))
                     .perm(new FilePermission("port", "read"))
+                    .perm(new FilePermission(hostsFileName, "read"))
                     .perm(new FilePermission(KTAB, "read"))
-                    .perm(new RuntimePermission("accessClassInPackage.sun.net.spi.nameservice"))
                     .perm(new AuthPermission("modifyPrincipals"))
                     .perm(new AuthPermission("modifyPrivateCredentials"))
                     .perm(new AuthPermission("doAs"))
@@ -110,11 +112,13 @@ public class SSLwithPerms {
                     .prop("java.security.manager", "")
                     .prop("java.security.krb5.conf", KRB5_CONF)
                     .prop("java.security.auth.login.config", JAAS_CONF)
+                    .prop("jdk.net.hosts.file", hostsFileName)
                     .prop("javax.net.ssl", "handshake")
                     .prop("sun.security.krb5.debug", "true")
                     .perm(new SecurityPermission("setProperty.jdk.tls.disabledAlgorithms"))
                     .perm(new AuthPermission("createLoginContext.ssl"))
                     .perm(new AuthPermission("doAs"))
+                    .perm(new FilePermission(hostsFileName, "read"))
                     .perm(new FilePermission("port", "write"))
                     .perm(new SocketPermission("127.0.0.1", "accept"))
                     .perm(new ServicePermission("host/host.realm@REALM", "accept"))
