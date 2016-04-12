@@ -243,6 +243,36 @@ inline T byte_size_in_proper_unit(T s) {
   }
 }
 
+inline const char* exact_unit_for_byte_size(size_t s) {
+#ifdef _LP64
+  if (s >= G && (s % G) == 0) {
+    return "G";
+  }
+#endif
+  if (s >= M && (s % M) == 0) {
+    return "M";
+  }
+  if (s >= K && (s % K) == 0) {
+    return "K";
+  }
+  return "B";
+}
+
+inline size_t byte_size_in_exact_unit(size_t s) {
+#ifdef _LP64
+  if (s >= G && (s % G) == 0) {
+    return s / G;
+  }
+#endif
+  if (s >= M && (s % M) == 0) {
+    return s / M;
+  }
+  if (s >= K && (s % K) == 0) {
+    return s / K;
+  }
+  return s;
+}
+
 //----------------------------------------------------------------------------------------------------
 // VM type definitions
 

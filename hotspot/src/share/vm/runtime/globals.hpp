@@ -685,9 +685,6 @@ public:
           "Use large page memory in metaspace. "                            \
           "Only used if UseLargePages is enabled.")                         \
                                                                             \
-  develop(bool, TracePageSizes, false,                                      \
-          "Trace page size selection and usage")                            \
-                                                                            \
   product(bool, UseNUMA, false,                                             \
           "Use NUMA if available")                                          \
                                                                             \
