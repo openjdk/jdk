@@ -50,7 +50,7 @@ void InternalVMTests::run() {
   run_unit_test(TestMetaspaceAux_test);
   run_unit_test(TestMetachunk_test);
   run_unit_test(TestVirtualSpaceNode_test);
-  run_unit_test(GlobalDefinitions_test);
+  run_unit_test(TestGlobalDefinitions_test);
   run_unit_test(GCTimer_test);
   run_unit_test(arrayOopDesc_test);
   run_unit_test(CollectedHeap_test);

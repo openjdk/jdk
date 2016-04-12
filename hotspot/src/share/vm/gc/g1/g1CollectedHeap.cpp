@@ -1829,10 +1829,14 @@ G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* des
                                          HeapRegion::GrainBytes,
                                          translation_factor,
                                          mtGC);
-  if (TracePageSizes) {
-    tty->print_cr("G1 '%s': pg_sz=" SIZE_FORMAT " base=" PTR_FORMAT " size=" SIZE_FORMAT " alignment=" SIZE_FORMAT " reqsize=" SIZE_FORMAT,
-                  description, preferred_page_size, p2i(rs.base()), rs.size(), rs.alignment(), size);
-  }
+
+  os::trace_page_sizes_for_requested_size(description,
+                                          size,
+                                          preferred_page_size,
+                                          rs.alignment(),
+                                          rs.base(),
+                                          rs.size());
+
   return result;
 }
 
@@ -1906,26 +1910,28 @@ jint G1CollectedHeap::initialize() {
                                          HeapRegion::GrainBytes,
                                          1,
                                          mtJavaHeap);
-  os::trace_page_sizes("G1 Heap", collector_policy()->min_heap_byte_size(),
-                       max_byte_size, page_size,
+  os::trace_page_sizes("Heap",
+                       collector_policy()->min_heap_byte_size(),
+                       max_byte_size,
+                       page_size,
                        heap_rs.base(),
                        heap_rs.size());
   heap_storage->set_mapping_changed_listener(&_listener);
 
   // Create storage for the BOT, card table, card counts table (hot card cache) and the bitmaps.
   G1RegionToSpaceMapper* bot_storage =
-    create_aux_memory_mapper("Block offset table",
+    create_aux_memory_mapper("Block Offset Table",
                              G1BlockOffsetTable::compute_size(g1_rs.size() / HeapWordSize),
                              G1BlockOffsetTable::heap_map_factor());
 
   ReservedSpace cardtable_rs(G1SATBCardTableLoggingModRefBS::compute_size(g1_rs.size() / HeapWordSize));
   G1RegionToSpaceMapper* cardtable_storage =
-    create_aux_memory_mapper("Card table",
+    create_aux_memory_mapper("Card Table",
                              G1SATBCardTableLoggingModRefBS::compute_size(g1_rs.size() / HeapWordSize),
                              G1SATBCardTableLoggingModRefBS::heap_map_factor());
 
   G1RegionToSpaceMapper* card_counts_storage =
-    create_aux_memory_mapper("Card counts table",
+    create_aux_memory_mapper("Card Counts Table",
                              G1CardCounts::compute_size(g1_rs.size() / HeapWordSize),
                              G1CardCounts::heap_map_factor());
 

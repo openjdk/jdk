@@ -3006,9 +3006,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
       }
 #ifdef ASSERT
       if (should_inject_error) {
-        if (TracePageSizes && Verbose) {
-          tty->print_cr("Reserving pages individually failed.");
-        }
+        log_develop_debug(pagesize)("Reserving pages individually failed.");
       }
 #endif
       return NULL;
@@ -3192,9 +3190,8 @@ char* os::reserve_memory_special(size_t bytes, size_t alignment, char* addr,
   // 1) the UseLargePagesIndividualAllocation flag is set (set by default on WS2003)
   // 2) NUMA Interleaving is enabled, in which case we use a different node for each page
   if (UseLargePagesIndividualAllocation || UseNUMAInterleaving) {
-    if (TracePageSizes && Verbose) {
-      tty->print_cr("Reserving large pages individually.");
-    }
+    log_debug(pagesize)("Reserving large pages individually.");
+
     char * p_buf = allocate_pages_individually(bytes, addr, flags, prot, LargePagesIndividualAllocationInjectError);
     if (p_buf == NULL) {
       // give an appropriate warning message
@@ -3211,9 +3208,8 @@ char* os::reserve_memory_special(size_t bytes, size_t alignment, char* addr,
     return p_buf;
 
   } else {
-    if (TracePageSizes && Verbose) {
-      tty->print_cr("Reserving large pages in a single large chunk.");
-    }
+    log_debug(pagesize)("Reserving large pages in a single large chunk.");
+
     // normal policy just allocate it all at once
     DWORD flag = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
     char * res = (char *)VirtualAlloc(addr, bytes, flag, prot);

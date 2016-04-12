@@ -70,6 +70,7 @@
   LOG_TAG(monitorinflation) \
   LOG_TAG(monitormismatch) \
   LOG_TAG(os) \
+  LOG_TAG(pagesize) \
   LOG_TAG(phases) \
   LOG_TAG(plab) \
   LOG_TAG(promotion) \
