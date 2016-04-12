@@ -4677,6 +4677,39 @@ void MacroAssembler::zero_words(Register base, Register cnt)
   fill_words(base, cnt, zr);
 }
 
+// base:   Address of a buffer to be zeroed, 8 bytes aligned.
+// cnt:    Immediate count in 8-byte unit.
+#define ShortArraySize (18 * BytesPerLong)
+void MacroAssembler::zero_words(Register base, u_int64_t cnt)
+{
+  int i = cnt & 1;  // store any odd word to start
+  if (i) str(zr, Address(base));
+
+  if (cnt <= ShortArraySize / BytesPerLong) {
+    for (; i < (int)cnt; i += 2)
+      stp(zr, zr, Address(base, i * wordSize));
+  } else {
+    const int unroll = 4; // Number of stp(zr, zr) instructions we'll unroll
+    int remainder = cnt % (2 * unroll);
+    for (; i < remainder; i += 2)
+      stp(zr, zr, Address(base, i * wordSize));
+
+    Label loop;
+    Register cnt_reg = rscratch1;
+    Register loop_base = rscratch2;
+    cnt = cnt - remainder;
+    mov(cnt_reg, cnt);
+    // adjust base and prebias by -2 * wordSize so we can pre-increment
+    add(loop_base, base, (remainder - 2) * wordSize);
+    bind(loop);
+    sub(cnt_reg, cnt_reg, 2 * unroll);
+    for (i = 1; i < unroll; i++)
+      stp(zr, zr, Address(loop_base, 2 * i * wordSize));
+    stp(zr, zr, Address(pre(loop_base, 2 * unroll * wordSize)));
+    cbnz(cnt_reg, loop);
+  }
+}
+
 // base:   Address of a buffer to be filled, 8 bytes aligned.
 // cnt:    Count in 8-byte unit.
 // value:  Value to be filled with.
