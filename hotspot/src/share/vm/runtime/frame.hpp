@@ -29,7 +29,6 @@
 #include "runtime/basicLock.hpp"
 #include "runtime/monitorChunk.hpp"
 #include "runtime/registerMap.hpp"
-#include "utilities/top.hpp"
 #ifdef TARGET_ARCH_zero
 # include "stack_zero.hpp"
 #endif
