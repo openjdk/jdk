@@ -35,7 +35,6 @@
 #include "trace/tracing.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/top.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1_globals.hpp"
 #endif // INCLUDE_ALL_GCS

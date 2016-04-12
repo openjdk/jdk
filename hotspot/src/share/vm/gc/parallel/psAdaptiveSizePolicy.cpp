@@ -32,7 +32,6 @@
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "logging/log.hpp"
 #include "runtime/timer.hpp"
-#include "utilities/top.hpp"
 
 #include <math.h>
 

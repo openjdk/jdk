@@ -30,7 +30,6 @@
 #include "interpreter/bytecodes.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
-#include "utilities/top.hpp"
 
 // This file contains the platform-independent parts
 // of the abstract interpreter and the abstract interpreter generator.

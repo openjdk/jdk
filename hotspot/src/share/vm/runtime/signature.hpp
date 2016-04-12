@@ -27,7 +27,6 @@
 
 #include "memory/allocation.hpp"
 #include "oops/method.hpp"
-#include "utilities/top.hpp"
 
 // SignatureIterators iterate over a Java signature (or parts of it).
 // (Syntax according to: "The Java Virtual Machine Specification" by

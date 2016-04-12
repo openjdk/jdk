@@ -29,7 +29,6 @@
 #include "memory/allocation.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
-#include "utilities/top.hpp"
 
 // We have interfaces for the following instructions:
 // - NativeInstruction
