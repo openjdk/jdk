@@ -38,7 +38,7 @@ public class HotSpotSpeculationLog implements SpeculationLog {
     /** All speculations that have been a deoptimization reason. */
     private Set<SpeculationReason> failedSpeculations;
 
-    /** Strong references to all reasons embededded in the current nmethod. */
+    /** Strong references to all reasons embedded in the current nmethod. */
     private volatile Collection<SpeculationReason> speculations;
 
     @Override
@@ -80,5 +80,10 @@ public class HotSpotSpeculationLog implements SpeculationLog {
         speculations.add(reason);
 
         return HotSpotObjectConstantImpl.forObject(reason);
+    }
+
+    @Override
+    public synchronized boolean hasSpeculations() {
+        return speculations != null && !speculations.isEmpty();
     }
 }

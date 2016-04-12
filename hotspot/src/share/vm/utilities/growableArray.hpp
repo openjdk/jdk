@@ -250,6 +250,10 @@ template<class E> class GrowableArray : public GenericGrowableArray {
     return _data[_len-1];
   }
 
+  E last() const {
+    return top();
+  }
+
   GrowableArrayIterator<E> begin() const {
     return GrowableArrayIterator<E>(this, 0);
   }
@@ -361,6 +365,24 @@ template<class E> class GrowableArray : public GenericGrowableArray {
     }
     _len++;
     _data[idx] = elem;
+  }
+
+  void insert_before(const int idx, const GrowableArray<E>* array) {
+    assert(0 <= idx && idx <= _len, "illegal index");
+    check_nesting();
+    int array_len = array->length();
+    int new_len = _len + array_len;
+    if (new_len >= _max) grow(new_len);
+
+    for (int j = _len - 1; j >= idx; j--) {
+      _data[j + array_len] = _data[j];
+    }
+
+    for (int j = 0; j < array_len; j++) {
+      _data[idx + j] = array->_data[j];
+    }
+
+    _len += array_len;
   }
 
   void appendAll(const GrowableArray<E>* l) {
