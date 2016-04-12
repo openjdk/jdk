@@ -26,7 +26,7 @@
  * @bug 8149991
  * @summary safepointcleanup=info should have output from the code
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
  * @run driver SafepointCleanupTest

@@ -28,7 +28,7 @@
  * @summary Make sure that G1 does not assert when printing region liveness data on a humongous continues region.
  * @key gc
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  * @build TestRegionLivenessPrint
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
