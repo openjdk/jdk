@@ -438,6 +438,7 @@ public:
     static void InitDynamicKeyMapTable();
     static void BuildDynamicKeyMapTable();
     static jint GetJavaModifiers();
+    static jint GetActionModifiers();
     static jint GetButton(int mouseButton);
     static UINT GetButtonMK(int mouseButton);
     static UINT WindowsKeyToJavaKey(UINT windowsKey, UINT modifiers, UINT character, BOOL isDeadKey);
