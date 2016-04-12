@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/top.hpp"
 
 // Basic error support
 

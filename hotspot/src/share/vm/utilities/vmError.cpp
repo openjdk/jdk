@@ -43,7 +43,6 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/errorReporter.hpp"
 #include "utilities/events.hpp"
-#include "utilities/top.hpp"
 #include "utilities/vmError.hpp"
 
 // List of environment variables that should be reported in error log file.

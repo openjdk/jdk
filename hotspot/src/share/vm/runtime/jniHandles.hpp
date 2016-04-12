@@ -25,8 +25,8 @@
 #ifndef SHARE_VM_RUNTIME_JNIHANDLES_HPP
 #define SHARE_VM_RUNTIME_JNIHANDLES_HPP
 
+#include "memory/allocation.hpp"
 #include "runtime/handles.hpp"
-#include "utilities/top.hpp"
 
 class JNIHandleBlock;
 
