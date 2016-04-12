@@ -4824,6 +4824,9 @@ void G1CollectedHeap::cleanUpCardTable() {
 
     workers()->run_task(&cleanup_task);
 #ifndef PRODUCT
+    // Need to synchronize with concurrent cleanup since it needs to
+    // finish its card table clearing before we can verify.
+    wait_while_free_regions_coming();
     _verifier->verify_card_table_cleanup();
 #endif
   }
