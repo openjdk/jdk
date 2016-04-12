@@ -361,6 +361,9 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_getCallerClass:
     if (SystemDictionary::reflect_CallerSensitive_klass() == NULL) return false;
     break;
+  case vmIntrinsics::_onSpinWait:
+    if (!Matcher::match_rule_supported(Op_OnSpinWait)) return false;
+    break;
   case vmIntrinsics::_hashCode:
   case vmIntrinsics::_identityHashCode:
   case vmIntrinsics::_getClass:

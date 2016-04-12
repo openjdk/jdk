@@ -9897,34 +9897,6 @@ instruct cmpD_imm(rRegI dst, regD src, immD con, rFlagsReg cr) %{
   ins_pipe(pipe_slow);
 %}
 
-// -----------Trig and Trancendental Instructions------------------------------
-instruct tanD_reg(regD dst) %{
-  match(Set dst (TanD dst));
-
-  format %{ "dtan   $dst\n\t" %}
-  ins_encode( Push_SrcXD(dst),
-              Opcode(0xD9), Opcode(0xF2),   //fptan
-              Opcode(0xDD), Opcode(0xD8),   //fstp st
-              Push_ResultXD(dst) );
-  ins_pipe( pipe_slow );
-%}
-
-instruct log10D_reg(regD dst) %{
-  // The source and result Double operands in XMM registers
-  match(Set dst (Log10D dst));
-  // fldlg2       ; push log_10(2) on the FPU stack; full 80-bit number
-  // fyl2x        ; compute log_10(2) * log_2(x)
-  format %{ "fldlg2\t\t\t#Log10\n\t"
-            "fyl2x\t\t\t# Q=Log10*Log_2(x)\n\t"
-         %}
-   ins_encode(Opcode(0xD9), Opcode(0xEC),   // fldlg2
-              Push_SrcXD(dst),
-              Opcode(0xD9), Opcode(0xF1),   // fyl2x
-              Push_ResultXD(dst));
-
-  ins_pipe( pipe_slow );
-%}
-
 //----------Arithmetic Conversion Instructions---------------------------------
 
 instruct roundFloat_nop(regF dst)

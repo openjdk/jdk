@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.jvmci.code.sparc;
+package jdk.vm.ci.code.test.sparc;
 
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.DebugInfo;
@@ -29,6 +29,7 @@ import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.site.ConstantReference;
 import jdk.vm.ci.code.site.DataSectionReference;
+import jdk.vm.ci.code.test.TestAssembler;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 import jdk.vm.ci.hotspot.HotSpotConstant;
@@ -40,8 +41,6 @@ import jdk.vm.ci.meta.LIRKind;
 import jdk.vm.ci.meta.VMConstant;
 import jdk.vm.ci.sparc.SPARC;
 import jdk.vm.ci.sparc.SPARCKind;
-
-import compiler.jvmci.code.TestAssembler;
 
 public class SPARCTestAssembler extends TestAssembler {
 
@@ -69,7 +68,8 @@ public class SPARCTestAssembler extends TestAssembler {
 
     @Override
     public void emitPrologue() {
-        emitOp3(0b10, SPARC.sp, 0b111100, SPARC.sp, -SPARC.REGISTER_SAFE_AREA_SIZE); // SAVE sp, -128, sp
+        // SAVE sp, -128, sp
+        emitOp3(0b10, SPARC.sp, 0b111100, SPARC.sp, -SPARC.REGISTER_SAFE_AREA_SIZE);
         setDeoptRescueSlot(newStackSlot(LIRKind.value(SPARCKind.XWORD)));
     }
 
@@ -195,35 +195,40 @@ public class SPARCTestAssembler extends TestAssembler {
     @Override
     public StackSlot emitIntToStack(Register a) {
         StackSlot ret = newStackSlot(LIRKind.value(SPARCKind.WORD));
-        emitOp3(0b11, a, 0b000100, SPARC.fp, ret.getRawOffset() + SPARC.STACK_BIAS); // STW a, [fp+offset]
+        // STW a, [fp+offset]
+        emitOp3(0b11, a, 0b000100, SPARC.fp, ret.getRawOffset() + SPARC.STACK_BIAS);
         return ret;
     }
 
     @Override
     public StackSlot emitLongToStack(Register a) {
         StackSlot ret = newStackSlot(LIRKind.value(SPARCKind.XWORD));
-        emitOp3(0b11, a, 0b001110, SPARC.fp, ret.getRawOffset() + SPARC.STACK_BIAS); // STX a, [fp+offset]
+        // STX a, [fp+offset]
+        emitOp3(0b11, a, 0b001110, SPARC.fp, ret.getRawOffset() + SPARC.STACK_BIAS);
         return ret;
     }
 
     @Override
     public StackSlot emitFloatToStack(Register a) {
         StackSlot ret = newStackSlot(LIRKind.value(SPARCKind.SINGLE));
-        emitOp3(0b11, a, 0b100100, SPARC.fp, ret.getRawOffset() + SPARC.STACK_BIAS); // STF a, [fp+offset]
+        // STF a, [fp+offset]
+        emitOp3(0b11, a, 0b100100, SPARC.fp, ret.getRawOffset() + SPARC.STACK_BIAS);
         return ret;
     }
 
     @Override
     public StackSlot emitPointerToStack(Register a) {
         StackSlot ret = newStackSlot(LIRKind.reference(SPARCKind.XWORD));
-        emitOp3(0b11, a, 0b001110, SPARC.fp, ret.getRawOffset() + SPARC.STACK_BIAS); // STX a, [fp+offset]
+        // STX a, [fp+offset]
+        emitOp3(0b11, a, 0b001110, SPARC.fp, ret.getRawOffset() + SPARC.STACK_BIAS);
         return ret;
     }
 
     @Override
     public StackSlot emitNarrowPointerToStack(Register a) {
         StackSlot ret = newStackSlot(LIRKind.reference(SPARCKind.WORD));
-        emitOp3(0b11, a, 0b000100, SPARC.fp, ret.getRawOffset() + SPARC.STACK_BIAS); // STW a, [fp+offset]
+        // STW a, [fp+offset]
+        emitOp3(0b11, a, 0b000100, SPARC.fp, ret.getRawOffset() + SPARC.STACK_BIAS);
         return ret;
     }
 

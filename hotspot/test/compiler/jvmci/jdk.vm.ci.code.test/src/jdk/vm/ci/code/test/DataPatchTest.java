@@ -32,10 +32,11 @@
  *          jdk.vm.ci/jdk.vm.ci.runtime
  *          jdk.vm.ci/jdk.vm.ci.amd64
  *          jdk.vm.ci/jdk.vm.ci.sparc
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI compiler.jvmci.code.DataPatchTest
+ * @compile CodeInstallationTest.java DebugInfoTest.java TestAssembler.java amd64/AMD64TestAssembler.java sparc/SPARCTestAssembler.java
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI jdk.vm.ci.code.test.DataPatchTest
  */
 
-package compiler.jvmci.code;
+package jdk.vm.ci.code.test;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.site.DataSectionReference;
@@ -157,7 +158,6 @@ public class DataPatchTest extends CodeInstallationTest {
             asm.emitPointerRet(ret);
         });
     }
-
 
     public static long getConstSymbol(HotSpotMetaAccessProvider meta) {
         HotSpotSymbol symbol = meta.lookupSymbol("java/lang/Object");

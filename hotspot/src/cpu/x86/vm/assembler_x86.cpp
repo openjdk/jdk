@@ -1827,6 +1827,15 @@ void Assembler::cvttss2sil(Register dst, XMMRegister src) {
   emit_int8((unsigned char)(0xC0 | encode));
 }
 
+void Assembler::cvttpd2dq(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  int vector_len = VM_Version::supports_avx512novl() ? AVX_512bit : AVX_128bit;
+  InstructionAttr attributes(vector_len, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
+  int encode = simd_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
+  emit_int8((unsigned char)0xE6);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
 void Assembler::decl(Address dst) {
   // Don't use it directly. Use MacroAssembler::decrement() instead.
   InstructionMark im(this);
@@ -4993,7 +5002,7 @@ void Assembler::paddq(XMMRegister dst, XMMRegister src) {
 }
 
 void Assembler::phaddw(XMMRegister dst, XMMRegister src) {
-  NOT_LP64(assert(VM_Version::supports_sse3(), ""));
+  assert(VM_Version::supports_sse3(), "");
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
   int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int8(0x01);
@@ -5001,7 +5010,7 @@ void Assembler::phaddw(XMMRegister dst, XMMRegister src) {
 }
 
 void Assembler::phaddd(XMMRegister dst, XMMRegister src) {
-  NOT_LP64(assert(VM_Version::supports_sse3(), ""));
+  assert(VM_Version::supports_sse3(), "");
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
   int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int8(0x02);

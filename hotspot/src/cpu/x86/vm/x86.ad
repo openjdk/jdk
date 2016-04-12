@@ -1719,6 +1719,10 @@ const bool Matcher::match_rule_supported(int opcode) {
       if (!(UseSSE > 4))
         ret_value = false;
       break;
+    case Op_OnSpinWait:
+      if (VM_Version::supports_on_spin_wait() == false)
+        ret_value = false;
+      break;
   }
 
   return ret_value;  // Per default match rules are supported.
@@ -2992,6 +2996,24 @@ instruct sqrtD_imm(regD dst, immD con) %{
   ins_cost(150);
   ins_encode %{
     __ sqrtsd($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct onspinwait() %{
+  match(OnSpinWait);
+  ins_cost(200);
+
+  format %{
+    $$template
+    if (os::is_MP()) {
+      $$emit$$"pause\t! membar_onspinwait"
+    } else {
+      $$emit$$"MEMBAR-onspinwait ! (empty encoding)"
+    }
+  %}
+  ins_encode %{
+    __ pause();
   %}
   ins_pipe(pipe_slow);
 %}
