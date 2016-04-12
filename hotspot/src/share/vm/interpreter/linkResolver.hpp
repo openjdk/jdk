@@ -192,7 +192,7 @@ class LinkResolver: AllStatic {
                                              KlassHandle current_klass,
                                              KlassHandle sel_klass, TRAPS);
 
-  static methodHandle resolve_interface_method(const LinkInfo& link_info, bool nostatics, TRAPS);
+  static methodHandle resolve_interface_method(const LinkInfo& link_info, Bytecodes::Code code, TRAPS);
   static methodHandle resolve_method          (const LinkInfo& link_info, bool require_methodref, TRAPS);
 
   static methodHandle linktime_resolve_static_method    (const LinkInfo& link_info, TRAPS);
