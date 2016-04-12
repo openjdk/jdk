@@ -26,7 +26,7 @@
  * @key gc
  * @summary Verify that -XX:-ShrinkHeapInSteps works properly.
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestMaxMinHeapFreeRatioFlags TestShrinkHeapInSteps
  * @run driver/timeout=240 TestShrinkHeapInSteps

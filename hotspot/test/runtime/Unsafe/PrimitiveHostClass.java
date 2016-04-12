@@ -33,7 +33,7 @@ import sun.misc.Unsafe;
  * @summary Throws IllegalArgumentException if host class is a primitive class.
  * @library /testlibrary
  * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/sun.misc
+ *          java.base/jdk.internal.misc
  * @compile -XDignore.symbol.file PrimitiveHostClass.java
  * @run main/othervm PrimitiveHostClass
  */
