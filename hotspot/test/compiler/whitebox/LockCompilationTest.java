@@ -47,7 +47,7 @@ public class LockCompilationTest extends CompilerWhiteBoxTest {
         // This case waits for 5 seconds and verifies that the method hasn't been
         // compiled during that time. Only do that for one of the test cases.
 
-        // Only compile SimpleTestCase$Helper.method and exclude all other to ensure no
+        // Only compile SimpleTestCaseHelper.method and exclude all other to ensure no
         // contention on the compile queue causes problems.
         String directive =
                 "[{ match:\"*SimpleTestCaseHelper.method\", Exclude:false}, " +
