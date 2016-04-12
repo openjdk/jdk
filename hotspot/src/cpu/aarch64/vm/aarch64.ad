@@ -13321,6 +13321,20 @@ instruct clearArray_reg_reg(iRegL_R11 cnt, iRegP_R10 base, Universe dummy, rFlag
   ins_pipe(pipe_class_memory);
 %}
 
+instruct clearArray_imm_reg(immL cnt, iRegP base, Universe dummy, rFlagsReg cr)
+%{
+  match(Set dummy (ClearArray cnt base));
+
+  ins_cost(4 * INSN_COST);
+  format %{ "ClearArray $cnt, $base" %}
+
+  ins_encode %{
+    __ zero_words($base$$Register, (u_int64_t)$cnt$$constant);
+  %}
+
+  ins_pipe(pipe_class_memory);
+%}
+
 // ============================================================================
 // Overflow Math Instructions
 
