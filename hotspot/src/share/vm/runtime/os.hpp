@@ -28,7 +28,6 @@
 #include "jvmtifiles/jvmti.h"
 #include "runtime/extendedPC.hpp"
 #include "runtime/handles.hpp"
-#include "utilities/top.hpp"
 #ifdef TARGET_OS_FAMILY_linux
 # include "jvm_linux.h"
 # include <setjmp.h>
