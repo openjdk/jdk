@@ -154,7 +154,9 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * supported, which may also include documenting restrictions based on the
  * variable type and whether a variable is read-only.  If an access mode is not
  * supported then the corresponding signature-polymorphic method will on
- * invocation throw an {@code UnsupportedOperationException}.
+ * invocation throw an {@code UnsupportedOperationException}.  Factory methods
+ * should document any additional undeclared exceptions that may be thrown by
+ * access mode methods.
  * The {@link #get get} access mode is supported for all
  * VarHandle instances and the corresponding method never throws
  * {@code UnsupportedOperationException}.
@@ -168,7 +170,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * Unless stated otherwise in the documentation of a factory method, the access
  * modes {@code get} and {@code set} (if supported) provide atomic access for
  * reference types and all primitives types, with the exception of {@code long}
- * and {@code double} on 32-bit platforms
+ * and {@code double} on 32-bit platforms.
  *
  * <p>Access modes will override any memory ordering effects specified at
  * the declaration site of a variable.  For example, a VarHandle accessing a
@@ -467,6 +469,8 @@ public abstract class VarHandle {
      * , statically represented using {@code Object}.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -491,6 +495,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -520,6 +526,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -536,6 +544,10 @@ public abstract class VarHandle {
      * must match the access mode type that is the result of calling
      * {@code accessModeType(VarHandle.AccessMode.setVolatile)} on this VarHandle.
      *
+     * @apiNote
+     * Ignoring the many semantic differences from C and C++, this method has
+     * memory ordering effects compatible with {@code memory_order_seq_cst}.
+     *
      * @param args the signature-polymorphic parameter list of the form
      * {@code (CT, T newValue)}
      * , statically represented using varargs.
@@ -543,9 +555,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
-     * @apiNote Ignoring the many semantic differences from C and C++, this
-     * method has memory ordering effects compatible with
-     * {@code memory_order_seq_cst}.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -573,6 +584,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -597,6 +610,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -616,6 +631,11 @@ public abstract class VarHandle {
      * must match the access mode type that is the result of calling
      * {@code accessModeType(VarHandle.AccessMode.getAcquire)} on this VarHandle.
      *
+     * @apiNote
+     * Ignoring the many semantic differences from C and C++, this method has
+     * memory ordering effects compatible with {@code memory_order_acquire}
+     * ordering.
+     *
      * @param args the signature-polymorphic parameter list of the form
      * {@code (CT)}
      * , statically represented using varargs.
@@ -626,9 +646,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
-     * @apiNote Ignoring the many semantic differences from C and C++, this
-     * method has memory ordering effects compatible with
-     * {@code memory_order_acquire} ordering.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -645,6 +664,11 @@ public abstract class VarHandle {
      * must match the access mode type that is the result of calling
      * {@code accessModeType(VarHandle.AccessMode.setRelease)} on this VarHandle.
      *
+     * @apiNote
+     * Ignoring the many semantic differences from C and C++, this method has
+     * memory ordering effects compatible with {@code memory_order_release}
+     * ordering.
+     *
      * @param args the signature-polymorphic parameter list of the form
      * {@code (CT, T newValue)}
      * , statically represented using varargs.
@@ -652,9 +676,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
-     * @apiNote Ignoring the many semantic differences from C and C++, this
-     * method has memory ordering effects compatible with
-     * {@code memory_order_release} ordering.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -687,6 +710,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      * @see #setVolatile(Object...)
      * @see #getVolatile(Object...)
      */
@@ -720,6 +745,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      * @see #setVolatile(Object...)
      * @see #getVolatile(Object...)
      */
@@ -753,6 +780,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      * @see #set(Object...)
      * @see #getAcquire(Object...)
      */
@@ -785,6 +814,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      * @see #setRelease(Object...)
      * @see #get(Object...)
      */
@@ -822,6 +853,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      * @see #set(Object...)
      * @see #get(Object...)
      */
@@ -857,6 +890,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      * @see #set(Object...)
      * @see #getAcquire(Object...)
      */
@@ -892,6 +927,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      * @see #setRelease(Object...)
      * @see #get(Object...)
      */
@@ -922,6 +959,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      * @see #setVolatile(Object...)
      * @see #getVolatile(Object...)
      */
@@ -956,6 +995,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      * @see #setVolatile(Object...)
      * @see #getVolatile(Object...)
      */
@@ -986,6 +1027,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      * @see #setVolatile(Object...)
      * @see #getVolatile(Object...)
      */
