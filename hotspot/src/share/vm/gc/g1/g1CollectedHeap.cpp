@@ -2946,12 +2946,16 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
       : rset->is_empty();
   }
 
-  bool is_typeArray_region(HeapRegion* region) const {
-    return oop(region->bottom())->is_typeArray();
-  }
-
   bool humongous_region_is_candidate(G1CollectedHeap* heap, HeapRegion* region) const {
     assert(region->is_starts_humongous(), "Must start a humongous object");
+
+    oop obj = oop(region->bottom());
+
+    // Dead objects cannot be eager reclaim candidates. Due to class
+    // unloading it is unsafe to query their classes so we return early.
+    if (heap->is_obj_dead(obj, region)) {
+      return false;
+    }
 
     // Candidate selection must satisfy the following constraints
     // while concurrent marking is in progress:
@@ -2989,7 +2993,7 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
     // important use case for eager reclaim, and this special handling
     // may reduce needed headroom.
 
-    return is_typeArray_region(region) && is_remset_small(region);
+    return obj->is_typeArray() && is_remset_small(region);
   }
 
  public:
