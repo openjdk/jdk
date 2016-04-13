@@ -54,6 +54,7 @@ public class MultiReleaseJarAPI {
     static final int MAJOR_VERSION = Version.current().major();
 
     String userdir = System.getProperty("user.dir",".");
+    CreateMultiReleaseTestJars creator =  new CreateMultiReleaseTestJars();
     File unversioned = new File(userdir, "unversioned.jar");
     File multirelease = new File(userdir, "multi-release.jar");
     File signedmultirelease = new File(userdir, "signed-multi-release.jar");
@@ -62,7 +63,6 @@ public class MultiReleaseJarAPI {
 
     @BeforeClass
     public void initialize() throws Exception {
-        CreateMultiReleaseTestJars creator =  new CreateMultiReleaseTestJars();
         creator.compileEntries();
         creator.buildUnversionedJar();
         creator.buildMultiReleaseJar();
@@ -82,6 +82,10 @@ public class MultiReleaseJarAPI {
             Assert.assertFalse(jf.isMultiRelease());
         }
 
+        try (JarFile jf = new JarFile(unversioned, true, ZipFile.OPEN_READ, Release.RUNTIME)) {
+            Assert.assertFalse(jf.isMultiRelease());
+        }
+
         try (JarFile jf = new JarFile(multirelease)) {
             Assert.assertFalse(jf.isMultiRelease());
         }
@@ -89,6 +93,28 @@ public class MultiReleaseJarAPI {
         try (JarFile jf = new JarFile(multirelease, true, ZipFile.OPEN_READ, Release.RUNTIME)) {
             Assert.assertTrue(jf.isMultiRelease());
         }
+
+        testCustomMultiReleaseValue("true", true);
+        testCustomMultiReleaseValue("true\r\nOther: value", true);
+        testCustomMultiReleaseValue("true\nOther: value", true);
+        testCustomMultiReleaseValue("true\rOther: value", true);
+
+        testCustomMultiReleaseValue("false", false);
+        testCustomMultiReleaseValue(" true", false);
+        testCustomMultiReleaseValue("true ", false);
+        testCustomMultiReleaseValue("true\n ", false);
+        testCustomMultiReleaseValue("true\r ", false);
+        testCustomMultiReleaseValue("true\n true", false);
+        testCustomMultiReleaseValue("true\r\n true", false);
+    }
+
+    private void testCustomMultiReleaseValue(String value, boolean expected) throws Exception {
+        creator.buildCustomMultiReleaseJar("custom-mr.jar", value);
+        File custom = new File(userdir, "custom-mr.jar");
+        try (JarFile jf = new JarFile(custom, true, ZipFile.OPEN_READ, Release.RUNTIME)) {
+            Assert.assertEquals(jf.isMultiRelease(), expected);
+        }
+        Files.delete(custom.toPath());
     }
 
     @Test
