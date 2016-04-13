@@ -1754,6 +1754,18 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     }
 
     /**
+     * This method is bound as a filter in {@linkplain MethodHandles#countedLoop(MethodHandle, MethodHandle, MethodHandle,
+     * MethodHandle) counting loops} to pass the correct counter value to the body.
+     *
+     * @param counter the loop counter.
+     *
+     * @return the loop counter decremented by 1.
+     */
+    static int decrementCounter(int counter) {
+        return counter - 1;
+    }
+
+    /**
      * This is bound to initialize the loop-local iterator in {@linkplain MethodHandles#iteratedLoop iterating loops}.
      *
      * @param it the {@link Iterable} over which the loop iterates.
@@ -1879,7 +1891,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             MH_iterateNext           = 11,
             MH_tryFinallyExec        = 12,
             MH_tryFinallyVoidExec    = 13,
-            MH_LIMIT                 = 14;
+            MH_decrementCounter      = 14,
+            MH_LIMIT                 = 15;
 
     static MethodHandle getConstantHandle(int idx) {
         MethodHandle handle = HANDLES[idx];
@@ -1949,6 +1962,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 case MH_tryFinallyVoidExec:
                     return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "tryFinallyVoidExecutor",
                             MethodType.methodType(void.class, MethodHandle.class, MethodHandle.class, Object[].class));
+                case MH_decrementCounter:
+                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "decrementCounter",
+                            MethodType.methodType(int.class, int.class));
             }
         } catch (ReflectiveOperationException ex) {
             throw newInternalError(ex);
