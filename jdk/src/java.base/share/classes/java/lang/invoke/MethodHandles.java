@@ -43,7 +43,6 @@ import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
 import java.lang.invoke.LambdaForm.BasicType;
 
-import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandleImpl.Intrinsic;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -53,8 +52,6 @@ import java.util.stream.Stream;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
 
-import static java.lang.invoke.MethodHandleImpl.Intrinsic;
-import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
 
 /**
@@ -952,7 +949,7 @@ assertEquals("", (String) MH_newString.invokeExact());
         }
         private MethodHandle findVirtualForVH(String name, MethodType type) {
             try {
-                return varHandleInvoker(VarHandle.AccessMode.valueOf(name), type);
+                return varHandleInvoker(VarHandle.AccessMode.valueFromMethodName(name), type);
             } catch (IllegalArgumentException e) {
                 return null;
             }
