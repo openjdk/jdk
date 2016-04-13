@@ -405,6 +405,8 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
     HOTSPOT_$1_CPU=sparc
   elif test "x$OPENJDK_$1_CPU" = xppc64; then
     HOTSPOT_$1_CPU=ppc_64
+  elif test "x$OPENJDK_$1_CPU" = xppc64le; then
+    HOTSPOT_$1_CPU=ppc_64
   fi
   AC_SUBST(HOTSPOT_$1_CPU)
 
@@ -422,6 +424,8 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
   elif test "x$OPENJDK_$1_CPU" = xaarch64; then
     HOTSPOT_$1_CPU_DEFINE=AARCH64
   elif test "x$OPENJDK_$1_CPU" = xppc64; then
+    HOTSPOT_$1_CPU_DEFINE=PPC64
+  elif test "x$OPENJDK_$1_CPU" = xppc64le; then
     HOTSPOT_$1_CPU_DEFINE=PPC64
 
   # The cpu defines below are for zero, we don't support them directly.

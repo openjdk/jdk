@@ -929,20 +929,21 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
   elif test "x$OPENJDK_$1_CPU" = xppc64; then
     if test "x$OPENJDK_$1_OS" = xlinux; then
       $2JVM_CFLAGS="[$]$2JVM_CFLAGS -minsert-sched-nops=regroup_exact -mno-multiple -mno-string"
-      if test "x$OPENJDK_$1_CPU_ENDIAN" = xbig; then
-        # fixes `relocation truncated to fit' error for gcc 4.1.
-        $2JVM_CFLAGS="[$]$2JVM_CFLAGS -mminimal-toc"
-        # Use ppc64 instructions, but schedule for power5
-        $2JVM_CFLAGS="[$]$2JVM_CFLAGS -mcpu=powerpc64 -mtune=power5"
-      else
-        # Little endian machine uses ELFv2 ABI.
-        $2JVM_CFLAGS="[$]$2JVM_CFLAGS -DABI_ELFv2"
-        # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
-        $2JVM_CFLAGS="[$]$2JVM_CFLAGS -mcpu=power7 -mtune=power8"
-  fi
+      # fixes `relocation truncated to fit' error for gcc 4.1.
+      $2JVM_CFLAGS="[$]$2JVM_CFLAGS -mminimal-toc"
+      # Use ppc64 instructions, but schedule for power5
+      $2JVM_CFLAGS="[$]$2JVM_CFLAGS -mcpu=powerpc64 -mtune=power5"
     elif test "x$OPENJDK_$1_OS" = xaix; then
       $2JVM_CFLAGS="[$]$2JVM_CFLAGS -qarch=ppc64"
-  fi
+    fi
+  elif test "x$OPENJDK_$1_CPU" = xppc64le; then
+    if test "x$OPENJDK_$1_OS" = xlinux; then
+      $2JVM_CFLAGS="[$]$2JVM_CFLAGS -minsert-sched-nops=regroup_exact -mno-multiple -mno-string"
+      # Little endian machine uses ELFv2 ABI.
+      $2JVM_CFLAGS="[$]$2JVM_CFLAGS -DABI_ELFv2"
+      # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
+      $2JVM_CFLAGS="[$]$2JVM_CFLAGS -mcpu=power7 -mtune=power8"
+    fi
   fi
 
   if test "x$OPENJDK_$1_CPU_ENDIAN" = xlittle; then

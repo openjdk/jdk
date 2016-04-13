@@ -5056,7 +5056,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1460103573
+DATE_WHEN_GENERATED=1460538705
 
 ###############################################################################
 #
@@ -15448,6 +15448,8 @@ $as_echo "$COMPILE_TYPE" >&6; }
     HOTSPOT_TARGET_CPU=sparc
   elif test "x$OPENJDK_TARGET_CPU" = xppc64; then
     HOTSPOT_TARGET_CPU=ppc_64
+  elif test "x$OPENJDK_TARGET_CPU" = xppc64le; then
+    HOTSPOT_TARGET_CPU=ppc_64
   fi
 
 
@@ -15465,6 +15467,8 @@ $as_echo "$COMPILE_TYPE" >&6; }
   elif test "x$OPENJDK_TARGET_CPU" = xaarch64; then
     HOTSPOT_TARGET_CPU_DEFINE=AARCH64
   elif test "x$OPENJDK_TARGET_CPU" = xppc64; then
+    HOTSPOT_TARGET_CPU_DEFINE=PPC64
+  elif test "x$OPENJDK_TARGET_CPU" = xppc64le; then
     HOTSPOT_TARGET_CPU_DEFINE=PPC64
 
   # The cpu defines below are for zero, we don't support them directly.
@@ -15600,6 +15604,8 @@ $as_echo "$COMPILE_TYPE" >&6; }
     HOTSPOT_BUILD_CPU=sparc
   elif test "x$OPENJDK_BUILD_CPU" = xppc64; then
     HOTSPOT_BUILD_CPU=ppc_64
+  elif test "x$OPENJDK_BUILD_CPU" = xppc64le; then
+    HOTSPOT_BUILD_CPU=ppc_64
   fi
 
 
@@ -15617,6 +15623,8 @@ $as_echo "$COMPILE_TYPE" >&6; }
   elif test "x$OPENJDK_BUILD_CPU" = xaarch64; then
     HOTSPOT_BUILD_CPU_DEFINE=AARCH64
   elif test "x$OPENJDK_BUILD_CPU" = xppc64; then
+    HOTSPOT_BUILD_CPU_DEFINE=PPC64
+  elif test "x$OPENJDK_BUILD_CPU" = xppc64le; then
     HOTSPOT_BUILD_CPU_DEFINE=PPC64
 
   # The cpu defines below are for zero, we don't support them directly.
@@ -49834,20 +49842,21 @@ $as_echo "$supports" >&6; }
   elif test "x$OPENJDK_TARGET_CPU" = xppc64; then
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
       JVM_CFLAGS="$JVM_CFLAGS -minsert-sched-nops=regroup_exact -mno-multiple -mno-string"
-      if test "x$OPENJDK_TARGET_CPU_ENDIAN" = xbig; then
-        # fixes `relocation truncated to fit' error for gcc 4.1.
-        JVM_CFLAGS="$JVM_CFLAGS -mminimal-toc"
-        # Use ppc64 instructions, but schedule for power5
-        JVM_CFLAGS="$JVM_CFLAGS -mcpu=powerpc64 -mtune=power5"
-      else
-        # Little endian machine uses ELFv2 ABI.
-        JVM_CFLAGS="$JVM_CFLAGS -DABI_ELFv2"
-        # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
-        JVM_CFLAGS="$JVM_CFLAGS -mcpu=power7 -mtune=power8"
-  fi
+      # fixes `relocation truncated to fit' error for gcc 4.1.
+      JVM_CFLAGS="$JVM_CFLAGS -mminimal-toc"
+      # Use ppc64 instructions, but schedule for power5
+      JVM_CFLAGS="$JVM_CFLAGS -mcpu=powerpc64 -mtune=power5"
     elif test "x$OPENJDK_TARGET_OS" = xaix; then
       JVM_CFLAGS="$JVM_CFLAGS -qarch=ppc64"
-  fi
+    fi
+  elif test "x$OPENJDK_TARGET_CPU" = xppc64le; then
+    if test "x$OPENJDK_TARGET_OS" = xlinux; then
+      JVM_CFLAGS="$JVM_CFLAGS -minsert-sched-nops=regroup_exact -mno-multiple -mno-string"
+      # Little endian machine uses ELFv2 ABI.
+      JVM_CFLAGS="$JVM_CFLAGS -DABI_ELFv2"
+      # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
+      JVM_CFLAGS="$JVM_CFLAGS -mcpu=power7 -mtune=power8"
+    fi
   fi
 
   if test "x$OPENJDK_TARGET_CPU_ENDIAN" = xlittle; then
@@ -50610,20 +50619,21 @@ $as_echo "$supports" >&6; }
   elif test "x$OPENJDK_BUILD_CPU" = xppc64; then
     if test "x$OPENJDK_BUILD_OS" = xlinux; then
       OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -minsert-sched-nops=regroup_exact -mno-multiple -mno-string"
-      if test "x$OPENJDK_BUILD_CPU_ENDIAN" = xbig; then
-        # fixes `relocation truncated to fit' error for gcc 4.1.
-        OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -mminimal-toc"
-        # Use ppc64 instructions, but schedule for power5
-        OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -mcpu=powerpc64 -mtune=power5"
-      else
-        # Little endian machine uses ELFv2 ABI.
-        OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -DABI_ELFv2"
-        # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
-        OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -mcpu=power7 -mtune=power8"
-  fi
+      # fixes `relocation truncated to fit' error for gcc 4.1.
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -mminimal-toc"
+      # Use ppc64 instructions, but schedule for power5
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -mcpu=powerpc64 -mtune=power5"
     elif test "x$OPENJDK_BUILD_OS" = xaix; then
       OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -qarch=ppc64"
-  fi
+    fi
+  elif test "x$OPENJDK_BUILD_CPU" = xppc64le; then
+    if test "x$OPENJDK_BUILD_OS" = xlinux; then
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -minsert-sched-nops=regroup_exact -mno-multiple -mno-string"
+      # Little endian machine uses ELFv2 ABI.
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -DABI_ELFv2"
+      # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -mcpu=power7 -mtune=power8"
+    fi
   fi
 
   if test "x$OPENJDK_BUILD_CPU_ENDIAN" = xlittle; then
