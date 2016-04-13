@@ -1642,7 +1642,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
               }
               // Force compilation
               CompileBroker::compile_method(m, InvocationEntryBci, comp_level,
-                                            methodHandle(), 0, "CTW", THREAD);
+                                            methodHandle(), 0, CompileTask::Reason_CTW, THREAD);
               if (HAS_PENDING_EXCEPTION) {
                 clear_pending_exception_if_not_oom(CHECK);
                 tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_class_counter, m->name_and_sig_as_C_string());
@@ -1658,7 +1658,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
                   m->clear_code();
                 }
                 CompileBroker::compile_method(m, InvocationEntryBci, CompLevel_full_optimization,
-                                              methodHandle(), 0, "CTW", THREAD);
+                                              methodHandle(), 0, CompileTask::Reason_CTW, THREAD);
                 if (HAS_PENDING_EXCEPTION) {
                   clear_pending_exception_if_not_oom(CHECK);
                   tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_class_counter, m->name_and_sig_as_C_string());

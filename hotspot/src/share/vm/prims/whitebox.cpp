@@ -646,7 +646,7 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, Thread* T
     return false;
   }
   methodHandle mh(THREAD, method);
-  nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh, mh->invocation_count(), "WhiteBox", THREAD);
+  nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh, mh->invocation_count(), CompileTask::Reason_Whitebox, THREAD);
   MutexLockerEx mu(Compile_lock);
   return (mh->queued_for_compilation() || nm != NULL);
 }

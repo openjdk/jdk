@@ -23,14 +23,13 @@
 
 /*
  * @test
- * @bug 8150646
+ * @bug 8150646 8153013
  * @summary Add support for blocking compiles through whitebox API
  * @library /testlibrary /test/lib /
  * @build sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- *
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm/timeout=60
  *        -Xbootclasspath/a:.
  *        -Xmixed
@@ -40,11 +39,10 @@
  *        BlockingCompilation
  */
 
+import compiler.testlibrary.CompilerUtils;
 import java.lang.reflect.Method;
 import java.util.Random;
-
 import sun.hotspot.WhiteBox;
-import compiler.testlibrary.CompilerUtils;
 
 public class BlockingCompilation {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
@@ -77,7 +75,13 @@ public class BlockingCompilation {
         // If the compiles are blocking, this call will block until the test time out,
         // Progress == success
         // (Don't run with -Xcomp since that can cause long timeouts due to many compiles)
-        WB.enqueueMethodForCompilation(m, highest_level);
+        if (!WB.enqueueMethodForCompilation(m, highest_level)) {
+            throw new Exception("Failed to enqueue method on level: " + highest_level);
+        }
+
+        if (!WB.isMethodQueuedForCompilation(m)) {
+            throw new Exception("Must be enqueued because of locked compilation");
+        }
 
         // restore state
         WB.unlockCompilation();

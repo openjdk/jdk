@@ -169,6 +169,8 @@ long CompileBroker::_peak_compilation_time       = 0;
 CompileQueue* CompileBroker::_c2_compile_queue   = NULL;
 CompileQueue* CompileBroker::_c1_compile_queue   = NULL;
 
+
+
 class CompilationLog : public StringEventLog {
  public:
   CompilationLog() : StringEventLog("Compilation events") {
@@ -844,7 +846,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
                                         int comp_level,
                                         const methodHandle& hot_method,
                                         int hot_count,
-                                        const char* comment,
+                                        CompileTask::CompileReason compile_reason,
                                         bool blocking,
                                         Thread* thread) {
   guarantee(!method->is_abstract(), "cannot compile abstract methods");
@@ -860,7 +862,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     if (osr_bci != InvocationEntryBci) {
       tty->print(" osr_bci: %d", osr_bci);
     }
-    tty->print(" level: %d comment: %s count: %d", comp_level, comment, hot_count);
+    tty->print(" level: %d comment: %s count: %d", comp_level, CompileTask::reason_name(compile_reason), hot_count);
     if (!hot_method.is_null()) {
       tty->print(" hot: ");
       if (hot_method() != method()) {
@@ -1024,7 +1026,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     task = create_compile_task(queue,
                                compile_id, method,
                                osr_bci, comp_level,
-                               hot_method, hot_count, comment,
+                               hot_method, hot_count, compile_reason,
                                blocking);
   }
 
@@ -1036,7 +1038,8 @@ void CompileBroker::compile_method_base(const methodHandle& method,
 nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                        int comp_level,
                                        const methodHandle& hot_method, int hot_count,
-                                       const char* comment, Thread* THREAD) {
+                                       CompileTask::CompileReason compile_reason,
+                                       Thread* THREAD) {
   // Do nothing if compilebroker is not initalized or compiles are submitted on level none
   if (!_initialized || comp_level == CompLevel_none) {
     return NULL;
@@ -1046,7 +1049,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   assert(comp != NULL, "Ensure we have a compiler");
 
   DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
-  nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, comment, directive, THREAD);
+  nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, directive, THREAD);
   DirectivesStack::release(directive);
   return nm;
 }
@@ -1054,7 +1057,8 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
 nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                          int comp_level,
                                          const methodHandle& hot_method, int hot_count,
-                                         const char* comment, DirectiveSet* directive,
+                                         CompileTask::CompileReason compile_reason,
+                                         DirectiveSet* directive,
                                          Thread* THREAD) {
 
   // make sure arguments make sense
@@ -1180,7 +1184,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
       return NULL;
     }
     bool is_blocking = !directive->BackgroundCompilationOption || CompileTheWorld || ReplayCompiles;
-    compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, comment, is_blocking, THREAD);
+    compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, is_blocking, THREAD);
   }
 
   // return requested nmethod
@@ -1344,11 +1348,11 @@ CompileTask* CompileBroker::create_compile_task(CompileQueue*       queue,
                                                 int                 comp_level,
                                                 const methodHandle& hot_method,
                                                 int                 hot_count,
-                                                const char*         comment,
+                                                CompileTask::CompileReason compile_reason,
                                                 bool                blocking) {
   CompileTask* new_task = CompileTask::allocate();
   new_task->initialize(compile_id, method, osr_bci, comp_level,
-                       hot_method, hot_count, comment,
+                       hot_method, hot_count, compile_reason,
                        blocking);
   queue->add(new_task);
   return new_task;
