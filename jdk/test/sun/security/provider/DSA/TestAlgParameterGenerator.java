@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,58 +21,61 @@
  * questions.
  */
 
-/*
+ /*
  * @test
- * @bug 7044060
+ * @bug 7044060 8055351
  * @summary verify that DSA parameter generation works
- * @run main/othervm/timeout=300 TestAlgParameterGenerator
+ * @run main/timeout=600 TestAlgParameterGenerator
  */
-import java.security.*;
-import java.security.spec.*;
-import java.security.interfaces.*;
+
+import java.security.AlgorithmParameterGenerator;
+import java.security.AlgorithmParameters;
+import java.security.spec.DSAGenParameterSpec;
+import java.security.spec.DSAParameterSpec;
 
 public class TestAlgParameterGenerator {
 
     private static void checkParamStrength(AlgorithmParameters param,
-                                           int strength) throws Exception {
+            int strength) throws Exception {
         String algo = param.getAlgorithm();
         if (!algo.equalsIgnoreCase("DSA")) {
-            throw new Exception("Unexpected type of parameters: " + algo);
+            throw new RuntimeException("Unexpected type of parameters: " + algo);
         }
         DSAParameterSpec spec = param.getParameterSpec(DSAParameterSpec.class);
         int valueL = spec.getP().bitLength();
         if (strength != valueL) {
             System.out.println("Expected " + strength + " but actual " + valueL);
-            throw new Exception("Wrong P strength");
+            throw new RuntimeException("Wrong P strength");
         }
     }
+
     private static void checkParamStrength(AlgorithmParameters param,
-                                           DSAGenParameterSpec genParam)
-        throws Exception {
+            DSAGenParameterSpec genParam)
+            throws Exception {
         String algo = param.getAlgorithm();
         if (!algo.equalsIgnoreCase("DSA")) {
-            throw new Exception("Unexpected type of parameters: " + algo);
+            throw new RuntimeException("Unexpected type of parameters: " + algo);
         }
         DSAParameterSpec spec = param.getParameterSpec(DSAParameterSpec.class);
         int valueL = spec.getP().bitLength();
         int strength = genParam.getPrimePLength();
         if (strength != valueL) {
             System.out.println("P: Expected " + strength + " but actual " + valueL);
-            throw new Exception("Wrong P strength");
+            throw new RuntimeException("Wrong P strength");
         }
         int valueN = spec.getQ().bitLength();
         strength = genParam.getSubprimeQLength();
         if (strength != valueN) {
             System.out.println("Q: Expected " + strength + " but actual " + valueN);
-            throw new Exception("Wrong Q strength");
+            throw new RuntimeException("Wrong Q strength");
         }
     }
 
     public static void main(String[] args) throws Exception {
-        AlgorithmParameterGenerator apg =
-            AlgorithmParameterGenerator.getInstance("DSA", "SUN");
-
+        AlgorithmParameterGenerator apg
+                = AlgorithmParameterGenerator.getInstance("DSA", "SUN");
         long start, stop;
+
         // make sure no-init still works
         start = System.currentTimeMillis();
         AlgorithmParameters param = apg.generateParameters();
@@ -81,9 +84,8 @@ public class TestAlgParameterGenerator {
         checkParamStrength(param, 1024);
 
         // make sure the old model works
-        int[] strengths = { 512, 768, 1024 };
-        for (int i = 0; i < strengths.length; i++) {
-            int sizeP = strengths[i];
+        int[] strengths = {512, 768, 1024};
+        for (int sizeP : strengths) {
             System.out.println("Generating " + sizeP + "-bit DSA Parameters");
             start = System.currentTimeMillis();
             apg.init(sizeP);
@@ -94,18 +96,17 @@ public class TestAlgParameterGenerator {
         }
 
         // now the newer model
-        DSAGenParameterSpec spec1 = new DSAGenParameterSpec(1024, 160);
-        DSAGenParameterSpec spec2 = new DSAGenParameterSpec(2048, 224);
-        DSAGenParameterSpec spec3 = new DSAGenParameterSpec(2048, 256);
-        //DSAGenParameterSpec spec4 = new DSAGenParameterSpec(3072, 256);
         DSAGenParameterSpec[] specSet = {
-            spec1, spec2, spec3//, spec4
+            new DSAGenParameterSpec(1024, 160),
+            new DSAGenParameterSpec(2048, 224),
+            new DSAGenParameterSpec(2048, 256)
+            // no support for prime size 3072
+            // ,new DSAGenParameterSpec(3072, 256)
         };
-        for (int i = 0; i < specSet.length; i++) {
-            DSAGenParameterSpec genParam = specSet[i];
-            System.out.println("Generating (" + genParam.getPrimePLength() +
-                               ", " + genParam.getSubprimeQLength() +
-                               ") DSA Parameters");
+
+        for (DSAGenParameterSpec genParam : specSet) {
+            System.out.println("Generating (" + genParam.getPrimePLength()
+                    + ", " + genParam.getSubprimeQLength() + ") DSA Parameters");
             start = System.currentTimeMillis();
             apg.init(genParam, null);
             param = apg.generateParameters();
