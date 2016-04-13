@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1055,7 +1055,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         if (!method.getInvocationType().equals(mh.type()))
             throw new InternalError(method.toString());
         mh = mh.withInternalMemberName(method, false);
-        mh = mh.asVarargsCollector(Object[].class);
+        mh = mh.withVarargs(true);
         assert(method.isVarargs());
         FAKE_METHOD_HANDLE_INVOKE[idx] = mh;
         return mh;
