@@ -28,7 +28,7 @@ import java.lang.management.ManagementFactory;
 /*
  * @test
  * @summary Suicide test
- * @run main/othervm Crash
+ * @run main/othervm Suicide
  */
 public class Suicide {
     public static void main(String[] args) {
