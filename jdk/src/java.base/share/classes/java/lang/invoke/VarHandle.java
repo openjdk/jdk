@@ -34,7 +34,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.newInternalError;
@@ -1377,12 +1379,14 @@ public abstract class VarHandle {
         UNSAFE.fullFence();
     }
 
-    static final BiFunction<Integer, Integer, ArrayIndexOutOfBoundsException> AIOOBE_SUPPLIER = new BiFunction<>() {
-        @Override
-        public ArrayIndexOutOfBoundsException apply(Integer a, Integer b) {
-            return new ArrayIndexOutOfBoundsException(a, b);
-        }
-    };
+    static final BiFunction<String, List<Integer>, ArrayIndexOutOfBoundsException>
+            AIOOBE_SUPPLIER = Objects.outOfBoundsExceptionFormatter(
+            new Function<String, ArrayIndexOutOfBoundsException>() {
+                @Override
+                public ArrayIndexOutOfBoundsException apply(String s) {
+                    return new ArrayIndexOutOfBoundsException(s);
+                }
+            });
 
     private static final long VFORM_OFFSET;
 
