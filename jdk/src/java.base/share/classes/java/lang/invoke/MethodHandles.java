@@ -1352,9 +1352,7 @@ import static java.lang.invoke.MethodType.*;
 ...
 MethodHandle mh0 = lookup().findVirtual(defc, name, type);
 MethodHandle mh1 = mh0.bindTo(receiver);
-MethodType mt1 = mh1.type();
-if (mh0.isVarargsCollector())
-  mh1 = mh1.asVarargsCollector(mt1.parameterType(mt1.parameterCount()-1));
+mh1 = mh1.withVarargs(mh0.isVarargsCollector());
 return mh1;
          * }</pre></blockquote>
          * where {@code defc} is either {@code receiver.getClass()} or a super
@@ -2951,9 +2949,55 @@ assert((int)twice.invokeExact(21) == 42);
         if (ident.type().returnType() == type)
             return ident;
         // something like identity(Foo.class); do not bother to intern these
-        assert(btw == Wrapper.OBJECT);
+        assert (btw == Wrapper.OBJECT);
         return makeIdentity(type);
     }
+
+    /**
+     * Produces a constant method handle of the requested return type which
+     * returns the default value for that type every time it is invoked.
+     * The resulting constant method handle will have no side effects.
+     * <p>The returned method handle is equivalent to {@code empty(methodType(type))}.
+     * It is also equivalent to {@code explicitCastArguments(constant(Object.class, null), methodType(type))},
+     * since {@code explicitCastArguments} converts {@code null} to default values.
+     * @param type the expected return type of the desired method handle
+     * @return a constant method handle that takes no arguments
+     *         and returns the default value of the given type (or void, if the type is void)
+     * @throws NullPointerException if the argument is null
+     * @see MethodHandles#constant
+     * @see MethodHandles#empty
+     * @since 9
+     */
+    public static  MethodHandle zero(Class<?> type) {
+        Objects.requireNonNull(type);
+        return type.isPrimitive() ?  zero(Wrapper.forPrimitiveType(type), type) : zero(Wrapper.OBJECT, type);
+    }
+
+    private static MethodHandle identityOrVoid(Class<?> type) {
+        return type == void.class ? zero(type) : identity(type);
+    }
+
+    /**
+     * Produces a method handle of the requested type which ignores any arguments, does nothing,
+     * and returns a suitable default depending on the return type.
+     * That is, it returns a zero primitive value, a {@code null}, or {@code void}.
+     * <p>The returned method handle is equivalent to
+     * {@code dropArguments(zero(type.returnType()), 0, type.parameterList())}.
+     * <p>
+     * @apiNote Given a predicate and target, a useful "if-then" construct can be produced as
+     * {@code guardWithTest(pred, target, empty(target.type())}.
+     * @param type the type of the desired method handle
+     * @return a constant method handle of the given type, which returns a default value of the given return type
+     * @throws NullPointerException if the argument is null
+     * @see MethodHandles#zero
+     * @see MethodHandles#constant
+     * @since 9
+     */
+    public static  MethodHandle empty(MethodType type) {
+        Objects.requireNonNull(type);
+        return dropArguments(zero(type.returnType()), 0, type.parameterList());
+    }
+
     private static final MethodHandle[] IDENTITY_MHS = new MethodHandle[Wrapper.values().length];
     private static MethodHandle makeIdentity(Class<?> ptype) {
         MethodType mtype = MethodType.methodType(ptype, ptype);
@@ -3145,8 +3189,7 @@ assertEquals("yz", (String) d0.invokeExact(123, "x", "y", "z"));
      * If {@code pos} is zero, the dummy arguments will precede
      * the target's real arguments; if {@code pos} is <i>N</i>
      * they will come after.
-     * <p>
-     * <b>Example:</b>
+     * @apiNote
      * <blockquote><pre>{@code
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
@@ -3183,6 +3226,99 @@ assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
     public static
     MethodHandle dropArguments(MethodHandle target, int pos, Class<?>... valueTypes) {
         return dropArguments(target, pos, Arrays.asList(valueTypes));
+    }
+
+    // private version which allows caller some freedom with error handling
+    private static MethodHandle dropArgumentsToMatch(MethodHandle target, int skip, List<Class<?>> newTypes, int pos,
+                                      boolean nullOnFailure) {
+        List<Class<?>> oldTypes = target.type().parameterList();
+        int match = oldTypes.size();
+        if (skip != 0) {
+            if (skip < 0 || skip > match) {
+                throw newIllegalArgumentException("illegal skip", skip, target);
+            }
+            oldTypes = oldTypes.subList(skip, match);
+            match -= skip;
+        }
+        List<Class<?>> addTypes = newTypes;
+        int add = addTypes.size();
+        if (pos != 0) {
+            if (pos < 0 || pos > add) {
+                throw newIllegalArgumentException("illegal pos", pos, newTypes);
+            }
+            addTypes = addTypes.subList(pos, add);
+            add -= pos; assert(addTypes.size() == add);
+        }
+        // Do not add types which already match the existing arguments.
+        if (match > add || !oldTypes.equals(addTypes.subList(0, match))) {
+            if (nullOnFailure) {
+                return null;
+            }
+            throw newIllegalArgumentException("argument lists do not match", oldTypes, newTypes);
+        }
+        addTypes = addTypes.subList(match, add);
+        add -= match; assert(addTypes.size() == add);
+        // newTypes:     (   P*[pos], M*[match], A*[add] )
+        // target: ( S*[skip],        M*[match]  )
+        MethodHandle adapter = target;
+        if (add > 0) {
+            adapter = dropArguments(adapter, skip+ match, addTypes);
+        }
+        // adapter: (S*[skip],        M*[match], A*[add] )
+        if (pos > 0) {
+            adapter = dropArguments(adapter, skip, newTypes.subList(0, pos));
+       }
+        // adapter: (S*[skip], P*[pos], M*[match], A*[add] )
+        return adapter;
+    }
+
+    /**
+     * Adapts a target method handle to match the given parameter type list, if necessary, by adding dummy arguments.
+     * Some leading parameters are first skipped; they will be left unchanged and are otherwise ignored.
+     * The remaining types in the target's parameter type list must be contained as a sub-list of the given type list,
+     * at the given position.
+     * Any non-matching parameter types (before or after the matching sub-list) are inserted in corresponding
+     * positions of the target method handle's parameters, as if by {@link #dropArguments}.
+     * (More precisely, elements in the new list before {@code pos} are inserted into the target list at {@code skip},
+     * while elements in the new list after the match beginning at {@code pos} are inserted at the end of the
+     * target list.)
+     * The target's return type will be unchanged.
+     * @apiNote
+     * Two method handles whose argument lists are "effectively identical" (i.e., identical
+     * in a common prefix) may be mutually converted to a common type
+     * by two calls to {@code dropArgumentsToMatch}, as follows:
+     * <blockquote><pre>{@code
+import static java.lang.invoke.MethodHandles.*;
+import static java.lang.invoke.MethodType.*;
+...
+...
+MethodHandle h0 = constant(boolean.class, true);
+MethodHandle h1 = lookup().findVirtual(String.class, "concat", methodType(String.class, String.class));
+MethodType bigType = h1.type().insertParameterTypes(1, String.class, int.class);
+MethodHandle h2 = dropArguments(h1, 0, bigType.parameterList());
+if (h1.type().parameterCount() < h2.type().parameterCount())
+    h1 = dropArgumentsToMatch(h1, 0, h2.type().parameterList(), 0);  // lengthen h1
+else
+    h2 = dropArgumentsToMatch(h2, 0, h1.type().parameterList(), 0);    // lengthen h2
+MethodHandle h3 = guardWithTest(h0, h1, h2);
+assertEquals("xy", h3.invoke("x", "y", 1, "a", "b", "c"));
+     * }</pre></blockquote>
+     * @param target the method handle to adapt
+     * @param skip number of targets parameters to disregard (they will be unchanged)
+     * @param newTypes the desired argument list of the method handle
+     * @param pos place in {@code newTypes} where the non-skipped target parameters must occur
+     * @return a possibly adapted method handle
+     * @throws NullPointerException if either argument is null
+     * @throws IllegalArgumentException
+     *         if either index is out of range in its corresponding list, or
+     *         if the non-skipped target parameter types match the new types at {@code pos}
+     * @since 9
+     */
+    public static
+    MethodHandle dropArgumentsToMatch(MethodHandle target, int skip, List<Class<?>> newTypes, int pos) {
+        Objects.requireNonNull(target);
+        Objects.requireNonNull(newTypes);
+        return dropArgumentsToMatch(target, skip, newTypes, pos, false);
     }
 
     /**
@@ -3696,13 +3832,9 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         if (gtype.returnType() != boolean.class)
             throw newIllegalArgumentException("guard type is not a predicate "+gtype);
         List<Class<?>> targs = ttype.parameterList();
-        List<Class<?>> gargs = gtype.parameterList();
-        if (!targs.equals(gargs)) {
-            int gpc = gargs.size(), tpc = targs.size();
-            if (gpc >= tpc || !targs.subList(0, gpc).equals(gargs))
-                throw misMatchedTypes("target and test types", ttype, gtype);
-            test = dropArguments(test, gpc, targs.subList(gpc, tpc));
-            gtype = test.type();
+        test = dropArgumentsToMatch(test, 0, targs, 0, true);
+        if (test == null) {
+            throw misMatchedTypes("target and test types", ttype, gtype);
         }
         return MethodHandleImpl.makeGuardWithTest(test, target, fallback);
     }
@@ -3774,15 +3906,9 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
             throw newIllegalArgumentException("handler does not accept exception type "+exType);
         if (htype.returnType() != ttype.returnType())
             throw misMatchedTypes("target and handler return types", ttype, htype);
-        List<Class<?>> targs = ttype.parameterList();
-        List<Class<?>> hargs = htype.parameterList();
-        hargs = hargs.subList(1, hargs.size());  // omit leading parameter from handler
-        if (!targs.equals(hargs)) {
-            int hpc = hargs.size(), tpc = targs.size();
-            if (hpc >= tpc || !targs.subList(0, hpc).equals(hargs))
-                throw misMatchedTypes("target and handler types", ttype, htype);
-            handler = dropArguments(handler, 1+hpc, targs.subList(hpc, tpc));
-            htype = handler.type();
+        handler = dropArgumentsToMatch(handler, 1, ttype.parameterList(), 0, true);
+        if (handler == null) {
+            throw misMatchedTypes("target and handler types", ttype, htype);
         }
         return MethodHandleImpl.makeGuardWithCatch(target, exType, handler);
     }
@@ -4040,16 +4166,16 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         for (int i = 0; i < nclauses; ++i) {
             Class<?> t = iterationVariableTypes.get(i);
             if (init.get(i) == null) {
-                init.set(i, zeroHandle(t));
+                init.set(i, empty(MethodType.methodType(t, commonSuffix)));
             }
             if (step.get(i) == null) {
-                step.set(i, dropArguments(t == void.class ? zeroHandle(t) : identity(t), 0, commonPrefix.subList(0, i)));
+                step.set(i, dropArgumentsToMatch(identityOrVoid(t), 0, commonParameterSequence, i));
             }
             if (pred.get(i) == null) {
-                pred.set(i, constant(boolean.class, true));
+                pred.set(i, dropArguments(constant(boolean.class, true), 0, commonParameterSequence));
             }
             if (fini.get(i) == null) {
-                fini.set(i, zeroHandle(t));
+                fini.set(i, empty(MethodType.methodType(t, commonParameterSequence)));
             }
         }
 
@@ -4143,7 +4269,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * @since 9
      */
     public static MethodHandle whileLoop(MethodHandle init, MethodHandle pred, MethodHandle body) {
-        MethodHandle fin = init == null ? zeroHandle(void.class) : identity(init.type().returnType());
+        MethodHandle fin = init == null ? zero(void.class) : identity(init.type().returnType());
         MethodHandle[] checkExit = {null, null, pred, fin};
         MethodHandle[] varBody = {init, body};
         return loop(checkExit, varBody);
@@ -4209,7 +4335,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * @since 9
      */
     public static MethodHandle doWhileLoop(MethodHandle init, MethodHandle body, MethodHandle pred) {
-        MethodHandle fin = init == null ? zeroHandle(void.class) : identity(init.type().returnType());
+        MethodHandle fin = init == null ? zero(void.class) : identity(init.type().returnType());
         MethodHandle[] clause = {init, body, pred, fin};
         return loop(clause);
     }
@@ -4346,7 +4472,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * @since 9
      */
     public static MethodHandle countedLoop(MethodHandle start, MethodHandle end, MethodHandle init, MethodHandle body) {
-        MethodHandle returnVar = dropArguments(init == null ? zeroHandle(void.class) : identity(init.type().returnType()),
+        MethodHandle returnVar = dropArguments(init == null ? zero(void.class) : identity(init.type().returnType()),
                 0, int.class, int.class);
         MethodHandle[] indexVar = {start, MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_countedLoopStep)};
         MethodHandle[] loopLimit = {end, null, MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_countedLoopPred), returnVar};
@@ -4449,7 +4575,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         Class<?> ttype = body.type().parameterType(0);
 
         MethodHandle returnVar =
-                dropArguments(init == null ? zeroHandle(void.class) : identity(init.type().returnType()), 0, itype);
+                dropArguments(init == null ? zero(void.class) : identity(init.type().returnType()), 0, itype);
         MethodHandle initnx = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_iterateNext);
         MethodHandle nextVal = initnx.asType(initnx.type().changeReturnType(ttype));
 
@@ -4543,15 +4669,11 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         checkTryFinally(target, cleanup);
 
         // Match parameter lists: if the cleanup has a shorter parameter list than the target, add ignored arguments.
-        int tpSize = targetParamTypes.size();
-        int cpPrefixLength = rtype == void.class ? 1 : 2;
-        int cpSize = cleanupParamTypes.size();
-        MethodHandle aCleanup = cpSize - cpPrefixLength < tpSize ?
-                dropArguments(cleanup, cpSize, targetParamTypes.subList(tpSize - (cpSize - cpPrefixLength), tpSize)) :
-                cleanup;
-
+        // The cleanup parameter list (minus the leading Throwable and result parameters) must be a sublist of the
+        // target parameter list.
+        cleanup = dropArgumentsToMatch(cleanup, (rtype == void.class ? 1 : 2), targetParamTypes, 0);
         MethodHandle aTarget = target.asSpreader(Object[].class, target.type().parameterCount());
-        aCleanup = aCleanup.asSpreader(Object[].class, tpSize);
+        MethodHandle aCleanup = cleanup.asSpreader(Object[].class, targetParamTypes.size());
 
         return MethodHandleImpl.makeTryFinally(aTarget, aCleanup, rtype, targetParamTypes);
     }
@@ -4642,16 +4764,6 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         return result;
     }
 
-    /**
-     * Wrap creation of a proper zero handle for a given type.
-     *
-     * @param type the type.
-     *
-     * @return a zero value for the given type.
-     */
-    static MethodHandle zeroHandle(Class<?> type) {
-        return type.isPrimitive() ?  zero(Wrapper.forPrimitiveType(type), type) : zero(Wrapper.OBJECT, type);
-    }
 
     private static void checkLoop0(MethodHandle[][] clauses) {
         if (clauses == null || clauses.length == 0) {
