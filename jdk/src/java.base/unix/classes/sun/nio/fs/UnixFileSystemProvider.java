@@ -499,6 +499,29 @@ public abstract class UnixFileSystemProvider
         }
     }
 
+    @Override
+    public final boolean isDirectory(Path obj) {
+        UnixPath file = UnixPath.toUnixPath(obj);
+        file.checkRead();
+        int mode = UnixNativeDispatcher.stat(file);
+        return ((mode & UnixConstants.S_IFMT) == UnixConstants.S_IFDIR);
+    }
+
+    @Override
+    public final boolean isRegularFile(Path obj) {
+        UnixPath file = UnixPath.toUnixPath(obj);
+        file.checkRead();
+        int mode = UnixNativeDispatcher.stat(file);
+        return ((mode & UnixConstants.S_IFMT) == UnixConstants.S_IFREG);
+    }
+
+    @Override
+    public final boolean exists(Path obj) {
+        UnixPath file = UnixPath.toUnixPath(obj);
+        file.checkRead();
+        return UnixNativeDispatcher.exists(file);
+    }
+
     /**
      * Returns a {@code FileTypeDetector} for this platform.
      */
