@@ -370,6 +370,7 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
         OPTIMIZATION := LOW, \
         CFLAGS := $(CFLAGS_JDKLIB) $(LIBAWT_XAWT_CFLAGS) \
             $(X_CFLAGS), \
+        WARNINGS_AS_ERRORS_xlc := false, \
         DISABLED_WARNINGS_gcc := type-limits pointer-to-int-cast \
             deprecated-declarations unused-result maybe-uninitialized format \
             format-security int-to-pointer-cast parentheses, \
@@ -582,6 +583,7 @@ ifeq ($(BUILD_HEADLESS), true)
             $(CUPS_CFLAGS) \
             $(X_CFLAGS) \
             $(LIBAWT_HEADLESS_CFLAGS), \
+        DISABLED_WARNINGS_xlc := 1506-356, \
         DISABLED_WARNINGS_gcc := maybe-uninitialized int-to-pointer-cast, \
         DISABLED_WARNINGS_solstudio := E_DECLARATION_IN_CODE \
             E_EMPTY_TRANSLATION_UNIT, \
@@ -597,6 +599,10 @@ ifeq ($(BUILD_HEADLESS), true)
         LIBS_solaris := $(LIBM) $(LIBDL) $(LIBCXX) -lc, \
         OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libawt_headless, \
     ))
+
+    # AIX warning explanation:
+    # 1506-356 : (W) Compilation unit is empty.
+    #            This happens during the headless build
 
     $(BUILD_LIBAWT_HEADLESS): $(BUILD_LIBAWT)
 
@@ -695,6 +701,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
     CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBFONTMANAGER_CFLAGS), \
     OPTIMIZATION := $(LIBFONTMANAGER_OPTIMIZATION), \
     CFLAGS_windows = -DCC_NOEX, \
+    WARNINGS_AS_ERRORS_xlc := false, \
     DISABLED_WARNINGS_gcc := sign-compare int-to-pointer-cast \
         type-limits missing-field-initializers, \
     DISABLED_WARNINGS_CXX_gcc := reorder delete-non-virtual-dtor strict-overflow \
