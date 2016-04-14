@@ -776,6 +776,15 @@ class GTKStyle extends SynthStyle implements GTKConstants {
         }
         else if (key == "Separator.thickness") {
             JSeparator sep = (JSeparator)context.getComponent();
+            if (getClassSpecificBoolValue(context, "wide-separators", false)) {
+                if (sep.getOrientation() == JSeparator.HORIZONTAL) {
+                    return getClassSpecificIntValue(context,
+                            "separator-height", 0);
+                } else {
+                    return getClassSpecificIntValue(context,
+                            "separator-width", 0);
+                }
+            }
             if (sep.getOrientation() == JSeparator.HORIZONTAL) {
                 return getYThickness();
             } else {
@@ -783,6 +792,12 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             }
         }
         else if (key == "ToolBar.separatorSize") {
+            if (getClassSpecificBoolValue(context, "wide-separators", false)) {
+                return new DimensionUIResource(
+                    getClassSpecificIntValue(context, "separator-width", 2),
+                    getClassSpecificIntValue(context, "separator-height", 2)
+                );
+            }
             int size = getClassSpecificIntValue(WidgetType.TOOL_BAR,
                                                 "space-size", 12);
             return new DimensionUIResource(size, size);

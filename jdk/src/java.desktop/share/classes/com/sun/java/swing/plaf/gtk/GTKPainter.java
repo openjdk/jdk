@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -576,12 +576,11 @@ class GTKPainter extends SynthPainter {
                     ShadowType.OUT, "menu", x, y, w, h);
 
             GTKStyle style = (GTKStyle)context.getStyle();
-            int xThickness = style.getXThickness();
-            int yThickness = style.getYThickness();
+            Insets insets = style.getInsets(context, null);
             ENGINE.paintBackground(g, context, id, gtkState,
-                    style.getGTKColor(context, gtkState, GTKColorType.BACKGROUND),
-                    x + xThickness, y + yThickness,
-                    w - xThickness - xThickness, h - yThickness - yThickness);
+                style.getGTKColor(context, gtkState, GTKColorType.BACKGROUND),
+                x + insets.left, y + insets.top, w - insets.left - insets.right,
+                h - insets.top - insets.bottom);
             ENGINE.finishPainting();
         }
     }
@@ -640,6 +639,34 @@ class GTKPainter extends SynthPainter {
         int state = context.getComponentState();
         JComponent c = context.getComponent();
 
+        GTKStyle style = (GTKStyle) context.getStyle();
+        String detail;
+        // wide-separators are painted using box not line
+        if (style.getClassSpecificBoolValue(context,
+                                          "wide-separators", false)) {
+            Insets insets = c.getInsets();
+            x += insets.left;
+            y += insets.top;
+            if (orientation == JSeparator.HORIZONTAL) {
+                w -= (insets.left + insets.right);
+                detail = "hseparator";
+            } else {
+                h -= (insets.top + insets.bottom);
+                detail = "vseparator";
+            }
+            synchronized (UNIXToolkit.GTK_LOCK) {
+                if (! ENGINE.paintCachedImage(g, x, y, w, h, id, state,
+                            detail, orientation)) {
+                    ENGINE.startPainting(g, x, y, w, h, id, state,
+                            detail, orientation);
+                    ENGINE.paintBox(g, context, id, state,
+                            ShadowType.ETCHED_OUT, detail, x, y, w, h);
+                    ENGINE.finishPainting();
+                }
+            }
+            return;
+        }
+
         /*
          * Note: In theory, the style's x/y thickness values would determine
          * the width of the separator content.  In practice, however, some
@@ -650,7 +677,6 @@ class GTKPainter extends SynthPainter {
          * the w/h values below too much, so that the full thickness of the
          * rendered line will be captured by our image caching code.
          */
-        String detail;
         if (c instanceof JToolBar.Separator) {
             /*
              * GTK renders toolbar separators differently in that an
@@ -678,7 +704,6 @@ class GTKPainter extends SynthPainter {
             float pct = 0.2f;
             JToolBar.Separator sep = (JToolBar.Separator)c;
             Dimension size = sep.getSeparatorSize();
-            GTKStyle style = (GTKStyle)context.getStyle();
             if (orientation == JSeparator.HORIZONTAL) {
                 x += (int)(w * pct);
                 w -= (int)(w * pct * 2);
