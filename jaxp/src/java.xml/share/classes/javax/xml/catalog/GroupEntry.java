@@ -249,8 +249,10 @@ class GroupEntry extends BaseEntry {
                         //use it if there is a match of the system type
                         return match;
                     } else if (grpEntry.longestRewriteMatch > longestRewriteMatch) {
+                        longestRewriteMatch = grpEntry.longestRewriteMatch;
                         rewriteMatch = match;
                     } else if (grpEntry.longestSuffixMatch > longestSuffixMatch) {
+                        longestSuffixMatch = grpEntry.longestSuffixMatch;
                         suffixMatch = match;
                     }
                     break;
