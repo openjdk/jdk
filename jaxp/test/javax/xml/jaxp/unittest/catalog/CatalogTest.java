@@ -38,15 +38,33 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.ext.DefaultHandler2;
 
 /*
- * @bug 8081248, 8144966, 8146606, 8146237, 8151154, 8150969, 8151162
+ * @bug 8081248, 8144966, 8146606, 8146237, 8151154, 8150969, 8151162, 8152527
  * @summary Tests basic Catalog functions.
  */
 public class CatalogTest {
+    /*
+     * @bug 8152527
+     * This test is the same as the JDK test ResolveEntityTests:testMatch1.
+     * Verifies that the CatalogResolver resolves a publicId and/or systemId as
+     * expected.
+     */
+    @Test(dataProvider = "resolveEntity")
+    public void testMatch1(String cfile, String prefer, String sysId, String pubId, String expectedUri, String expectedFile, String msg) {
+        String catalogFile = getClass().getResource(cfile).getFile();
+        CatalogFeatures features = CatalogFeatures.builder().with(CatalogFeatures.Feature.PREFER, prefer).build();
+        CatalogResolver catalogResolver = CatalogManager.catalogResolver(features, catalogFile);
+        InputSource is = catalogResolver.resolveEntity(pubId, sysId);
+        Assert.assertNotNull(is, msg);
+        String expected = (expectedUri == null) ? expectedFile : expectedUri;
+        Assert.assertEquals(expected, is.getSystemId(), msg);
+    }
+
     /*
      * @bug 8151162
      * Verifies that the Catalog matches specified publicId or systemId and returns
@@ -270,6 +288,18 @@ public class CatalogTest {
         }
     }
 
+    /*
+        DataProvider: used to verify CatalogResolver's resolveEntity function.
+        Data columns:
+        catalog, prefer, systemId, publicId, expectedUri, expectedFile, msg
+     */
+    @DataProvider(name = "resolveEntity")
+    Object[][] getDataForMatchingBothIds() {
+        String expected = "http://www.groupxmlbase.com/dtds/rewrite.dtd";
+        return new Object[][]{
+            {"rewriteSystem_id.xml", "system", "http://www.sys00test.com/rewrite.dtd", "PUB-404", expected, expected, "Relative rewriteSystem with xml:base at group level failed"},
+        };
+    }
     static String id = "http://openjdk.java.net/xml/catalog/dtd/system.dtd";
     /*
        DataProvider: used to verify how prefer settings affect the result of the
