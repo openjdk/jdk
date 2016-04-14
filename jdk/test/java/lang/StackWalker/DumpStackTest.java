@@ -28,9 +28,6 @@
  *          This test should also been run against jdk9 successfully except of
  *          VM option MemberNameInStackFrame.
  * @run main/othervm DumpStackTest
- * @run main/othervm -Dstackwalk.newThrowable=false DumpStackTest
- * @run main/othervm -Dstackwalk.newThrowable=true -XX:-MemberNameInStackFrame DumpStackTest
- * @run main/othervm -Dstackwalk.newThrowable=true -XX:+MemberNameInStackFrame DumpStackTest
  */
 
 import java.lang.invoke.MethodHandle;
