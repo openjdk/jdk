@@ -72,6 +72,7 @@ public class TestArrayCopyNoInitDeopt {
     }
 
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+    private static final int TIERED_STOP_AT_LEVEL = WHITE_BOX.getIntxVMFlag("TieredStopAtLevel").intValue();
 
     static boolean deoptimize(Method method, Object src_obj) throws Exception {
         for (int i = 0; i < 10; i++) {
@@ -84,7 +85,9 @@ public class TestArrayCopyNoInitDeopt {
     }
 
     static public void main(String[] args) throws Exception {
-        if (Platform.isServer()) {
+        // Only execute if C2 is available
+        if (Platform.isServer() &&
+            TIERED_STOP_AT_LEVEL == CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
             int[] src = new int[10];
             Object src_obj = new Object();
             Method method_m1 = TestArrayCopyNoInitDeopt.class.getMethod("m1", Object.class);
