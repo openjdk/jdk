@@ -45,6 +45,7 @@ import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.Arguments;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.file.BaseFileManager;
+import com.sun.tools.javac.file.CacheFSInfo;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
@@ -95,6 +96,7 @@ public final class JavacTool implements JavaCompiler {
                 ? new PrintWriter(System.err, true)
                 : new PrintWriter(new OutputStreamWriter(System.err, charset), true);
         context.put(Log.outKey, pw);
+        CacheFSInfo.preRegister(context);
         return new JavacFileManager(context, true, charset);
     }
 
