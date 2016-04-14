@@ -651,7 +651,21 @@ JOBS
 MEMORY_SIZE
 NUM_CORES
 ENABLE_INTREE_EC
+JVM_VARIANT_CORE
+JVM_VARIANT_ZEROSHARK
+JVM_VARIANT_ZERO
+JVM_VARIANT_HOTSPOT
+JVM_VARIANT_MINIMAL1
+JVM_VARIANT_CLIENT
+JVM_VARIANT_SERVER
+JVM_VARIANTS_COMMA
+TEST_IN_BUILD
 HOTSPOT_MAKE_ARGS
+MACOSX_UNIVERSAL
+DEBUG_CLASSFILES
+FASTDEBUG
+VARIANT
+USE_NEW_HOTSPOT_BUILD
 LIBZIP_CAN_USE_MMAP
 LIBDL
 LIBM
@@ -687,6 +701,15 @@ LIBCXX
 STATIC_CXX_SETTING
 FIXPATH_DETACH_FLAG
 FIXPATH
+VALID_JVM_FEATURES
+JVM_FEATURES_custom
+JVM_FEATURES_zeroshark
+JVM_FEATURES_zero
+JVM_FEATURES_minimal
+JVM_FEATURES_core
+JVM_FEATURES_client
+JVM_FEATURES_server
+INCLUDE_DTRACE
 GCOV_ENABLED
 STRIP_POLICY
 DEBUG_BINARIES
@@ -702,22 +725,35 @@ COMPILER_SUPPORTS_TARGET_BITS_FLAG
 ZERO_ARCHFLAG
 LDFLAGS_TESTEXE
 LDFLAGS_TESTLIB
-LDFLAGS_HASH_STYLE
-LDFLAGS_CXX_JDK
-JDKEXE_LIBS
-JDKLIB_LIBS
-OPENJDK_BUILD_LDFLAGS_JDKEXE
-OPENJDK_BUILD_LDFLAGS_JDKLIB
-LDFLAGS_JDKEXE
-LDFLAGS_JDKLIB
 CXXFLAGS_TESTEXE
 CXXFLAGS_TESTLIB
 CFLAGS_TESTEXE
 CFLAGS_TESTLIB
+OPENJDK_BUILD_JVM_LIBS
+OPENJDK_BUILD_JVM_ASFLAGS
+OPENJDK_BUILD_JVM_LDFLAGS
+OPENJDK_BUILD_JVM_CFLAGS
+OPENJDK_BUILD_LDFLAGS_HASH_STYLE
+OPENJDK_BUILD_LDFLAGS_CXX_JDK
+OPENJDK_BUILD_JDKEXE_LIBS
+OPENJDK_BUILD_JDKLIB_LIBS
+OPENJDK_BUILD_LDFLAGS_JDKEXE
+OPENJDK_BUILD_LDFLAGS_JDKLIB
 OPENJDK_BUILD_CXXFLAGS_JDKEXE
 OPENJDK_BUILD_CXXFLAGS_JDKLIB
 OPENJDK_BUILD_CFLAGS_JDKEXE
 OPENJDK_BUILD_CFLAGS_JDKLIB
+OPENJDK_BUILD_CXXSTD_CXXFLAG
+JVM_LIBS
+JVM_ASFLAGS
+JVM_LDFLAGS
+JVM_CFLAGS
+LDFLAGS_HASH_STYLE
+LDFLAGS_CXX_JDK
+JDKEXE_LIBS
+JDKLIB_LIBS
+LDFLAGS_JDKEXE
+LDFLAGS_JDKLIB
 CXXFLAGS_JDKEXE
 CXXFLAGS_JDKLIB
 CFLAGS_JDKEXE
@@ -726,16 +762,21 @@ MACOSX_VERSION_MIN
 NO_LIFETIME_DSE_CFLAG
 NO_NULL_POINTER_CHECK_CFLAG
 CXXSTD_CXXFLAG
+CXX_O_FLAG_SIZE
 CXX_O_FLAG_NONE
 CXX_O_FLAG_DEBUG
 CXX_O_FLAG_NORM
 CXX_O_FLAG_HI
 CXX_O_FLAG_HIGHEST
+CXX_O_FLAG_HIGHEST_JVM
+C_O_FLAG_SIZE
 C_O_FLAG_NONE
 C_O_FLAG_DEBUG
 C_O_FLAG_NORM
 C_O_FLAG_HI
 C_O_FLAG_HIGHEST
+C_O_FLAG_HIGHEST_JVM
+JVM_CFLAGS_SYMBOLS
 CXXFLAGS_DEBUG_SYMBOLS
 CFLAGS_DEBUG_SYMBOLS
 CXX_FLAG_DEPS
@@ -747,6 +788,7 @@ SET_SHARED_LIBRARY_ORIGIN
 SET_EXECUTABLE_ORIGIN
 CXX_FLAG_REORDER
 C_FLAG_REORDER
+JVM_RCFLAGS
 RC_FLAGS
 AR_OUT_OPTION
 LD_OUT_OPTION
@@ -759,6 +801,7 @@ COMPILER_COMMAND_FILE_FLAG
 COMPILER_TARGET_BITS_FLAG
 JT_HOME
 JTREGEXE
+HOTSPOT_TOOLCHAIN_TYPE
 USING_BROKEN_SUSE_LD
 PACKAGE_PATH
 USE_CLANG
@@ -821,6 +864,9 @@ VS_PATH
 CYGWIN_LINK
 SYSROOT_LDFLAGS
 SYSROOT_CFLAGS
+EXTRA_LDFLAGS
+EXTRA_CXXFLAGS
+EXTRA_CFLAGS
 LEGACY_EXTRA_LDFLAGS
 LEGACY_EXTRA_CXXFLAGS
 LEGACY_EXTRA_CFLAGS
@@ -877,12 +923,12 @@ VERSION_MINOR
 VERSION_MAJOR
 MACOSX_BUNDLE_ID_BASE
 MACOSX_BUNDLE_NAME_BASE
+HOTSPOT_VM_DISTRO
 COMPANY_NAME
 JDK_RC_PLATFORM_NAME
 PRODUCT_SUFFIX
 PRODUCT_NAME
 LAUNCHER_NAME
-TEST_IN_BUILD
 JLINK_KEEP_PACKAGED_MODULES
 COPYRIGHT_YEAR
 COMPRESS_JARS
@@ -904,6 +950,7 @@ XATTR
 DSYMUTIL
 IS_GNU_TIME
 PATCH
+DTRACE
 TIME
 STAT
 HG
@@ -927,20 +974,10 @@ CONF_NAME
 SPEC
 SDKROOT
 XCODEBUILD
-BUILD_VARIANT_RELEASE
-DEBUG_CLASSFILES
-FASTDEBUG
-VARIANT
-DEBUG_LEVEL
-MACOSX_UNIVERSAL
-JVM_VARIANT_CORE
-JVM_VARIANT_ZEROSHARK
-JVM_VARIANT_ZERO
-JVM_VARIANT_MINIMAL1
-JVM_VARIANT_CLIENT
-JVM_VARIANT_SERVER
+VALID_JVM_VARIANTS
 JVM_VARIANTS
-JVM_INTERPRETER
+DEBUG_LEVEL
+HOTSPOT_DEBUG_LEVEL
 JDK_VARIANT
 SET_OPENJDK
 USERNAME
@@ -949,16 +986,29 @@ ORIGINAL_TOPDIR
 TOPDIR
 PATH_SEP
 ZERO_ARCHDEF
-DEFINE_CROSS_COMPILE_ARCH
-LP64
-OPENJDK_TARGET_OS_EXPORT_DIR
+HOTSPOT_BUILD_CPU_DEFINE
+HOTSPOT_BUILD_CPU_ARCH
+HOTSPOT_BUILD_CPU
+HOTSPOT_BUILD_OS_TYPE
+HOTSPOT_BUILD_OS
+OPENJDK_BUILD_OS_EXPORT_DIR
 OPENJDK_BUILD_CPU_JLI_CFLAGS
-OPENJDK_TARGET_CPU_JLI_CFLAGS
-OPENJDK_TARGET_CPU_OSARCH
-OPENJDK_TARGET_CPU_ISADIR
+OPENJDK_BUILD_CPU_OSARCH
+OPENJDK_BUILD_CPU_ISADIR
 OPENJDK_BUILD_CPU_LIBDIR
 OPENJDK_BUILD_CPU_LEGACY_LIB
 OPENJDK_BUILD_CPU_LEGACY
+HOTSPOT_TARGET_CPU_DEFINE
+HOTSPOT_TARGET_CPU_ARCH
+HOTSPOT_TARGET_CPU
+HOTSPOT_TARGET_OS_TYPE
+HOTSPOT_TARGET_OS
+DEFINE_CROSS_COMPILE_ARCH
+LP64
+OPENJDK_TARGET_OS_EXPORT_DIR
+OPENJDK_TARGET_CPU_JLI_CFLAGS
+OPENJDK_TARGET_CPU_OSARCH
+OPENJDK_TARGET_CPU_ISADIR
 OPENJDK_TARGET_CPU_LIBDIR
 OPENJDK_TARGET_CPU_LEGACY_LIB
 OPENJDK_TARGET_CPU_LEGACY
@@ -1088,10 +1138,9 @@ with_target_bits
 enable_openjdk_only
 with_custom_make_dir
 with_jdk_variant
-with_jvm_interpreter
-with_jvm_variants
 enable_debug
 with_debug_level
+with_jvm_variants
 with_devkit
 with_sys_root
 with_sysroot
@@ -1107,7 +1156,6 @@ with_cacerts_file
 enable_unlimited_crypto
 with_copyright_year
 enable_keep_packaged_modules
-enable_hotspot_test_in_build
 with_milestone
 with_update_version
 with_user_release_suffix
@@ -1147,6 +1195,9 @@ with_native_debug_symbols
 enable_debug_symbols
 enable_zip_debug_info
 enable_native_coverage
+enable_dtrace
+with_jvm_features
+with_jvm_interpreter
 with_stdc__lib
 with_msvcr_dll
 with_msvcp_dll
@@ -1172,6 +1223,8 @@ with_lcms
 with_dxsdk
 with_dxsdk_lib
 with_dxsdk_include
+enable_new_hotspot_build
+enable_hotspot_test_in_build
 with_num_cores
 with_memory_size
 with_jobs
@@ -1244,6 +1297,7 @@ READELF
 HG
 STAT
 TIME
+DTRACE
 PATCH
 DSYMUTIL
 XATTR
@@ -1923,8 +1977,6 @@ Optional Features:
                           Enable unlimited crypto policy [disabled]
   --disable-keep-packaged-modules
                           Do not keep packaged modules in jdk image [enable]
-  --enable-hotspot-test-in-build
-                          run the Queens test after Hotspot build [disabled]
   --enable-static-build   enable static library build [disabled]
   --disable-warnings-as-errors
                           do not consider native warnings to be an error
@@ -1936,10 +1988,18 @@ Optional Features:
   --enable-native-coverage
                           enable native compilation with code coverage
                           data[disabled]
+  --enable-dtrace[=yes/no/auto]
+                          enable dtrace. Default is auto, where dtrace is
+                          enabled if all dependencies are present.
   --disable-freetype-bundling
                           disable bundling of the freetype library with the
                           build result [enabled on Windows or when using
                           --with-freetype, disabled otherwise]
+  --disable-new-hotspot-build
+                          disable the new hotspot build system (use the old)
+                          [enabled]
+  --enable-hotspot-test-in-build
+                          run the Queens test after Hotspot build [disabled]
   --enable-sjavac         use sjavac to do fast incremental compiles
                           [disabled]
   --disable-javac-server  disable javac server [enabled]
@@ -1959,11 +2019,11 @@ Optional Packages:
   --with-custom-make-dir  Deprecated. Option is kept for backwards
                           compatibility and is ignored
   --with-jdk-variant      JDK variant to build (normal) [normal]
-  --with-jvm-interpreter  JVM interpreter to build (template, cpp) [template]
-  --with-jvm-variants     JVM variants (separated by commas) to build (server,
-                          client, minimal1, zero, zeroshark, core) [server]
   --with-debug-level      set the debug level (release, fastdebug, slowdebug,
                           optimized) [release]
+  --with-jvm-variants     JVM variants (separated by commas) to build
+                          (server,client,minimal,core,zero,zeroshark,custom)
+                          [server]
   --with-devkit           use this devkit for compilers, tools and resources
   --with-sys-root         alias for --with-sysroot for backwards compatability
   --with-sysroot          use this directory as sysroot
@@ -2050,6 +2110,10 @@ Optional Packages:
   --with-native-debug-symbols
                           set the native debug symbol configuration (none,
                           internal, external, zipped) [varying]
+  --with-jvm-features     additional JVM features to enable (separated by
+                          comma), use '--help' to show possible values [none]
+  --with-jvm-interpreter  Deprecated. Option is kept for backwards
+                          compatibility and is ignored
   --with-stdc++lib=<static>,<dynamic>,<default>
                           force linking of the C++ runtime on Linux to either
                           static or dynamic, default is static with dynamic as
@@ -2170,6 +2234,7 @@ Some influential environment variables:
   HG          Override default value for HG
   STAT        Override default value for STAT
   TIME        Override default value for TIME
+  DTRACE      Override default value for DTRACE
   PATCH       Override default value for PATCH
   DSYMUTIL    Override default value for DSYMUTIL
   XATTR       Override default value for XATTR
@@ -3969,6 +4034,13 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
+
+################################################################################
+# $1 - Either BUILD or TARGET to pick the correct OS/CPU variables to check
+#      conditionals against.
+# $2 - Optional prefix for each variable defined.
+
+
 # FLAGS_C_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [ARGUMENT], IF_TRUE: [RUN-IF-TRUE],
 #                                  IF_FALSE: [RUN-IF-FALSE])
 # ------------------------------------------------------------
@@ -4093,6 +4165,8 @@ apt_help() {
       PKGHANDLER_COMMAND="sudo apt-get install libX11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev" ;;
     ccache)
       PKGHANDLER_COMMAND="sudo apt-get install ccache" ;;
+    dtrace)
+      PKGHANDLER_COMMAND="sudo apt-get install systemtap-sdt-dev" ;;
   esac
 }
 
@@ -4162,37 +4236,66 @@ pkgadd_help() {
 # questions.
 #
 
-###############################################################################
-# Check which interpreter of the JVM we want to build.
-# Currently we have:
-#    template: Template interpreter (the default)
-#    cpp     : C++ interpreter
+# All valid JVM features, regardless of platform
+VALID_JVM_FEATURES="compiler1 compiler2 zero shark minimal dtrace jvmti jvmci \
+    fprof vm-structs jni-check services management all-gcs nmt cds static-build"
 
-
-###############################################################################
-# Check which variants of the JVM that we want to build.
-# Currently we have:
-#    server: normal interpreter and a C2 or tiered C1/C2 compiler
-#    client: normal interpreter and C1 (no C2 compiler) (only 32-bit platforms)
-#    minimal1: reduced form of client with optional VM services and features stripped out
-#    zero: no machine code interpreter, no compiler
-#    zeroshark: zero interpreter and shark/llvm compiler backend
-#    core: interpreter only, no compiler (only works on some platforms)
-
-
+# All valid JVM variants
+VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 
 ###############################################################################
-# Setup legacy vars/targets and new vars to deal with different debug levels.
+# Check if the specified JVM variant should be built. To be used in shell if
+# constructs, like this:
+# if HOTSPOT_CHECK_JVM_VARIANT(server); then
 #
-#    release: no debug information, all optimizations, no asserts.
-#    optimized: no debug information, all optimizations, no asserts, HotSpot target is 'optimized'.
-#    fastdebug: debug information (-g), all optimizations, all asserts
-#    slowdebug: debug information (-g), no optimizations, all asserts
+# Only valid to use after HOTSPOT_SETUP_JVM_VARIANTS has setup variants.
+
+# Definition kept in one line to allow inlining in if statements.
+# Additional [] needed to keep m4 from mangling shell constructs.
+
+
+###############################################################################
+# Check if the specified JVM features are explicitly enabled. To be used in
+# shell if constructs, like this:
+# if HOTSPOT_CHECK_JVM_FEATURE(jvmti); then
+#
+# Only valid to use after HOTSPOT_SETUP_JVM_FEATURES has setup features.
+
+# Definition kept in one line to allow inlining in if statements.
+# Additional [] needed to keep m4 from mangling shell constructs.
+
+
+###############################################################################
+# Check which variants of the JVM that we want to build. Available variants are:
+#   server: normal interpreter, and a tiered C1/C2 compiler
+#   client: normal interpreter, and C1 (no C2 compiler)
+#   minimal: reduced form of client with optional features stripped out
+#   core: normal interpreter only, no compiler
+#   zero: C++ based interpreter only, no compiler
+#   zeroshark: C++ based interpreter, and a llvm-based compiler
+#   custom: baseline JVM with no default features
 #
 
 
+###############################################################################
+# Check if dtrace should be enabled and has all prerequisites present.
+#
 
 
+###############################################################################
+# Set up all JVM features for each JVM variant.
+#
+
+
+###############################################################################
+# Validate JVM features once all setup is complete, including custom setup.
+#
+
+
+###############################################################################
+# Support for old hotspot build. Remove once new hotspot build has proven
+# to work satisfactory.
+#
 
 
 #
@@ -4529,7 +4632,7 @@ pkgadd_help() {
 
 
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4613,7 +4716,7 @@ pkgadd_help() {
 
 
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4662,6 +4765,9 @@ pkgadd_help() {
 
 # Setup the legacy variables, for controlling the old makefiles.
 #
+
+
+# $1 - Either TARGET or BUILD to setup the variables for.
 
 
 
@@ -4950,7 +5056,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1458755892
+DATE_WHEN_GENERATED=1460538705
 
 ###############################################################################
 #
@@ -4975,6 +5081,13 @@ DATE_WHEN_GENERATED=1458755892
       TOOLCHAIN_DESCRIPTION=${!toolchain_var_name}
       $PRINTF "  %-10s  %s\n" $toolchain "$TOOLCHAIN_DESCRIPTION"
     done
+    $PRINTF "\n"
+
+    # Print available jvm features
+    $PRINTF "The following JVM features are available as arguments to --with-jvm-features.\n"
+    $PRINTF "Which are valid to use depends on the target platform.\n  "
+    $PRINTF "%s " $VALID_JVM_FEATURES
+    $PRINTF "\n"
 
     # And now exit directly
     exit 0
@@ -15215,6 +15328,7 @@ $as_echo "$COMPILE_TYPE" >&6; }
 
 
 
+
   # Also store the legacy naming of the cpu.
   # Ie i586 and amd64 instead of x86 and x86_64
   OPENJDK_TARGET_CPU_LEGACY="$OPENJDK_TARGET_CPU"
@@ -15242,37 +15356,6 @@ $as_echo "$COMPILE_TYPE" >&6; }
   OPENJDK_TARGET_CPU_LIBDIR="/$OPENJDK_TARGET_CPU_LEGACY_LIB"
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     OPENJDK_TARGET_CPU_LIBDIR=""
-  fi
-
-
-  # Now do the same for OPENJDK_BUILD_CPU...
-  # Also store the legacy naming of the cpu.
-  # Ie i586 and amd64 instead of x86 and x86_64
-  OPENJDK_BUILD_CPU_LEGACY="$OPENJDK_BUILD_CPU"
-  if test "x$OPENJDK_BUILD_CPU" = xx86; then
-    OPENJDK_BUILD_CPU_LEGACY="i586"
-  elif test "x$OPENJDK_BUILD_OS" != xmacosx && test "x$OPENJDK_BUILD_CPU" = xx86_64; then
-    # On all platforms except MacOSX replace x86_64 with amd64.
-    OPENJDK_BUILD_CPU_LEGACY="amd64"
-  fi
-
-
-  # And the second legacy naming of the cpu.
-  # Ie i386 and amd64 instead of x86 and x86_64.
-  OPENJDK_BUILD_CPU_LEGACY_LIB="$OPENJDK_BUILD_CPU"
-  if test "x$OPENJDK_BUILD_CPU" = xx86; then
-    OPENJDK_BUILD_CPU_LEGACY_LIB="i386"
-  elif test "x$OPENJDK_BUILD_CPU" = xx86_64; then
-    OPENJDK_BUILD_CPU_LEGACY_LIB="amd64"
-  fi
-
-
-  # This is the name of the cpu (but using i386 and amd64 instead of
-  # x86 and x86_64, respectively), preceeded by a /, to be used when
-  # locating libraries. On macosx, it's empty, though.
-  OPENJDK_BUILD_CPU_LIBDIR="/$OPENJDK_BUILD_CPU_LEGACY_LIB"
-  if test "x$OPENJDK_BUILD_OS" = xmacosx; then
-    OPENJDK_BUILD_CPU_LIBDIR=""
   fi
 
 
@@ -15318,6 +15401,144 @@ $as_echo "$COMPILE_TYPE" >&6; }
   fi
 
 
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+      OPENJDK_TARGET_OS_EXPORT_DIR=macosx
+  else
+      OPENJDK_TARGET_OS_EXPORT_DIR=${OPENJDK_TARGET_OS_TYPE}
+  fi
+
+
+  if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+    A_LP64="LP64:="
+    # -D_LP64=1 is only set on linux and mac. Setting on windows causes diff in
+    # unpack200.exe
+    if test "x$OPENJDK_TARGET_OS" = xlinux || test "x$OPENJDK_TARGET_OS" = xmacosx; then
+      OPENJDK_TARGET_ADD_LP64="-D_LP64=1"
+    fi
+  fi
+  LP64=$A_LP64
+
+
+  if test "x$COMPILE_TYPE" = "xcross"; then
+    # FIXME: ... or should this include reduced builds..?
+    DEFINE_CROSS_COMPILE_ARCH="CROSS_COMPILE_ARCH:=$OPENJDK_TARGET_CPU_LEGACY"
+  else
+    DEFINE_CROSS_COMPILE_ARCH=""
+  fi
+
+
+  # Convert openjdk platform names to hotspot names
+
+  HOTSPOT_TARGET_OS=${OPENJDK_TARGET_OS}
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    HOTSPOT_TARGET_OS=bsd
+  fi
+
+
+  HOTSPOT_TARGET_OS_TYPE=${OPENJDK_TARGET_OS_TYPE}
+  if test "x$OPENJDK_TARGET_OS_TYPE" = xunix; then
+    HOTSPOT_TARGET_OS_TYPE=posix
+  fi
+
+
+  HOTSPOT_TARGET_CPU=${OPENJDK_TARGET_CPU}
+  if test "x$OPENJDK_TARGET_CPU" = xx86; then
+    HOTSPOT_TARGET_CPU=x86_32
+  elif test "x$OPENJDK_TARGET_CPU" = xsparcv9; then
+    HOTSPOT_TARGET_CPU=sparc
+  elif test "x$OPENJDK_TARGET_CPU" = xppc64; then
+    HOTSPOT_TARGET_CPU=ppc_64
+  elif test "x$OPENJDK_TARGET_CPU" = xppc64le; then
+    HOTSPOT_TARGET_CPU=ppc_64
+  fi
+
+
+  # This is identical with OPENJDK_*, but define anyway for consistency.
+  HOTSPOT_TARGET_CPU_ARCH=${OPENJDK_TARGET_CPU_ARCH}
+
+
+  # Setup HOTSPOT_TARGET_CPU_DEFINE
+  if test "x$OPENJDK_TARGET_CPU" = xx86; then
+    HOTSPOT_TARGET_CPU_DEFINE=IA32
+  elif test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+    HOTSPOT_TARGET_CPU_DEFINE=AMD64
+  elif test "x$OPENJDK_TARGET_CPU" = xsparcv9; then
+    HOTSPOT_TARGET_CPU_DEFINE=SPARC
+  elif test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+    HOTSPOT_TARGET_CPU_DEFINE=AARCH64
+  elif test "x$OPENJDK_TARGET_CPU" = xppc64; then
+    HOTSPOT_TARGET_CPU_DEFINE=PPC64
+  elif test "x$OPENJDK_TARGET_CPU" = xppc64le; then
+    HOTSPOT_TARGET_CPU_DEFINE=PPC64
+
+  # The cpu defines below are for zero, we don't support them directly.
+  elif test "x$OPENJDK_TARGET_CPU" = xsparc; then
+    HOTSPOT_TARGET_CPU_DEFINE=SPARC
+  elif test "x$OPENJDK_TARGET_CPU" = xppc; then
+    HOTSPOT_TARGET_CPU_DEFINE=PPC32
+  elif test "x$OPENJDK_TARGET_CPU" = xs390; then
+    HOTSPOT_TARGET_CPU_DEFINE=S390
+  elif test "x$OPENJDK_TARGET_CPU" = ss390x; then
+    HOTSPOT_TARGET_CPU_DEFINE=S390
+  fi
+
+
+
+
+  # Also store the legacy naming of the cpu.
+  # Ie i586 and amd64 instead of x86 and x86_64
+  OPENJDK_BUILD_CPU_LEGACY="$OPENJDK_BUILD_CPU"
+  if test "x$OPENJDK_BUILD_CPU" = xx86; then
+    OPENJDK_BUILD_CPU_LEGACY="i586"
+  elif test "x$OPENJDK_BUILD_OS" != xmacosx && test "x$OPENJDK_BUILD_CPU" = xx86_64; then
+    # On all platforms except MacOSX replace x86_64 with amd64.
+    OPENJDK_BUILD_CPU_LEGACY="amd64"
+  fi
+
+
+  # And the second legacy naming of the cpu.
+  # Ie i386 and amd64 instead of x86 and x86_64.
+  OPENJDK_BUILD_CPU_LEGACY_LIB="$OPENJDK_BUILD_CPU"
+  if test "x$OPENJDK_BUILD_CPU" = xx86; then
+    OPENJDK_BUILD_CPU_LEGACY_LIB="i386"
+  elif test "x$OPENJDK_BUILD_CPU" = xx86_64; then
+    OPENJDK_BUILD_CPU_LEGACY_LIB="amd64"
+  fi
+
+
+  # This is the name of the cpu (but using i386 and amd64 instead of
+  # x86 and x86_64, respectively), preceeded by a /, to be used when
+  # locating libraries. On macosx, it's empty, though.
+  OPENJDK_BUILD_CPU_LIBDIR="/$OPENJDK_BUILD_CPU_LEGACY_LIB"
+  if test "x$OPENJDK_BUILD_OS" = xmacosx; then
+    OPENJDK_BUILD_CPU_LIBDIR=""
+  fi
+
+
+  # OPENJDK_BUILD_CPU_ISADIR is normally empty. On 64-bit Solaris systems, it is set to
+  # /amd64 or /sparcv9. This string is appended to some library paths, like this:
+  # /usr/lib${OPENJDK_BUILD_CPU_ISADIR}/libexample.so
+  OPENJDK_BUILD_CPU_ISADIR=""
+  if test "x$OPENJDK_BUILD_OS" = xsolaris; then
+    if test "x$OPENJDK_BUILD_CPU" = xx86_64; then
+      OPENJDK_BUILD_CPU_ISADIR="/amd64"
+    elif test "x$OPENJDK_BUILD_CPU" = xsparcv9; then
+      OPENJDK_BUILD_CPU_ISADIR="/sparcv9"
+    fi
+  fi
+
+
+  # Setup OPENJDK_BUILD_CPU_OSARCH, which is used to set the os.arch Java system property
+  OPENJDK_BUILD_CPU_OSARCH="$OPENJDK_BUILD_CPU"
+  if test "x$OPENJDK_BUILD_OS" = xlinux && test "x$OPENJDK_BUILD_CPU" = xx86; then
+    # On linux only, we replace x86 with i386.
+    OPENJDK_BUILD_CPU_OSARCH="i386"
+  elif test "x$OPENJDK_BUILD_OS" != xmacosx && test "x$OPENJDK_BUILD_CPU" = xx86_64; then
+    # On all platforms except macosx, we replace x86_64 with amd64.
+    OPENJDK_BUILD_CPU_OSARCH="amd64"
+  fi
+
+
   OPENJDK_BUILD_CPU_JLI="$OPENJDK_BUILD_CPU"
   if test "x$OPENJDK_BUILD_CPU" = xx86; then
     OPENJDK_BUILD_CPU_JLI="i386"
@@ -15336,47 +15557,94 @@ $as_echo "$COMPILE_TYPE" >&6; }
   fi
 
 
-  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      OPENJDK_TARGET_OS_EXPORT_DIR=macosx
+  if test "x$OPENJDK_BUILD_OS" = xmacosx; then
+      OPENJDK_BUILD_OS_EXPORT_DIR=macosx
   else
-      OPENJDK_TARGET_OS_EXPORT_DIR=${OPENJDK_TARGET_OS_TYPE}
+      OPENJDK_BUILD_OS_EXPORT_DIR=${OPENJDK_BUILD_OS_TYPE}
   fi
 
 
-  if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+  if test "x$OPENJDK_BUILD_CPU_BITS" = x64; then
     A_LP64="LP64:="
     # -D_LP64=1 is only set on linux and mac. Setting on windows causes diff in
     # unpack200.exe
-    if test "x$OPENJDK_TARGET_OS" = xlinux || test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      ADD_LP64="-D_LP64=1"
-    fi
-  fi
-  LP64=$A_LP64
-
-  if test "x$OPENJDK_BUILD_CPU_BITS" = x64; then
     if test "x$OPENJDK_BUILD_OS" = xlinux || test "x$OPENJDK_BUILD_OS" = xmacosx; then
       OPENJDK_BUILD_ADD_LP64="-D_LP64=1"
     fi
   fi
+  LP64=$A_LP64
+
 
   if test "x$COMPILE_TYPE" = "xcross"; then
     # FIXME: ... or should this include reduced builds..?
-    DEFINE_CROSS_COMPILE_ARCH="CROSS_COMPILE_ARCH:=$OPENJDK_TARGET_CPU_LEGACY"
+    DEFINE_CROSS_COMPILE_ARCH="CROSS_COMPILE_ARCH:=$OPENJDK_BUILD_CPU_LEGACY"
   else
     DEFINE_CROSS_COMPILE_ARCH=""
   fi
 
 
-  # ZERO_ARCHDEF is used to enable architecture-specific code
-  case "${OPENJDK_TARGET_CPU}" in
-    ppc)     ZERO_ARCHDEF=PPC32 ;;
-    ppc64)   ZERO_ARCHDEF=PPC64 ;;
-    s390*)   ZERO_ARCHDEF=S390  ;;
-    sparc*)  ZERO_ARCHDEF=SPARC ;;
-    x86_64*) ZERO_ARCHDEF=AMD64 ;;
-    x86)     ZERO_ARCHDEF=IA32  ;;
-    *)      ZERO_ARCHDEF=$(echo "${OPENJDK_TARGET_CPU_LEGACY_LIB}" | tr a-z A-Z)
-  esac
+  # Convert openjdk platform names to hotspot names
+
+  HOTSPOT_BUILD_OS=${OPENJDK_BUILD_OS}
+  if test "x$OPENJDK_BUILD_OS" = xmacosx; then
+    HOTSPOT_BUILD_OS=bsd
+  fi
+
+
+  HOTSPOT_BUILD_OS_TYPE=${OPENJDK_BUILD_OS_TYPE}
+  if test "x$OPENJDK_BUILD_OS_TYPE" = xunix; then
+    HOTSPOT_BUILD_OS_TYPE=posix
+  fi
+
+
+  HOTSPOT_BUILD_CPU=${OPENJDK_BUILD_CPU}
+  if test "x$OPENJDK_BUILD_CPU" = xx86; then
+    HOTSPOT_BUILD_CPU=x86_32
+  elif test "x$OPENJDK_BUILD_CPU" = xsparcv9; then
+    HOTSPOT_BUILD_CPU=sparc
+  elif test "x$OPENJDK_BUILD_CPU" = xppc64; then
+    HOTSPOT_BUILD_CPU=ppc_64
+  elif test "x$OPENJDK_BUILD_CPU" = xppc64le; then
+    HOTSPOT_BUILD_CPU=ppc_64
+  fi
+
+
+  # This is identical with OPENJDK_*, but define anyway for consistency.
+  HOTSPOT_BUILD_CPU_ARCH=${OPENJDK_BUILD_CPU_ARCH}
+
+
+  # Setup HOTSPOT_BUILD_CPU_DEFINE
+  if test "x$OPENJDK_BUILD_CPU" = xx86; then
+    HOTSPOT_BUILD_CPU_DEFINE=IA32
+  elif test "x$OPENJDK_BUILD_CPU" = xx86_64; then
+    HOTSPOT_BUILD_CPU_DEFINE=AMD64
+  elif test "x$OPENJDK_BUILD_CPU" = xsparcv9; then
+    HOTSPOT_BUILD_CPU_DEFINE=SPARC
+  elif test "x$OPENJDK_BUILD_CPU" = xaarch64; then
+    HOTSPOT_BUILD_CPU_DEFINE=AARCH64
+  elif test "x$OPENJDK_BUILD_CPU" = xppc64; then
+    HOTSPOT_BUILD_CPU_DEFINE=PPC64
+  elif test "x$OPENJDK_BUILD_CPU" = xppc64le; then
+    HOTSPOT_BUILD_CPU_DEFINE=PPC64
+
+  # The cpu defines below are for zero, we don't support them directly.
+  elif test "x$OPENJDK_BUILD_CPU" = xsparc; then
+    HOTSPOT_BUILD_CPU_DEFINE=SPARC
+  elif test "x$OPENJDK_BUILD_CPU" = xppc; then
+    HOTSPOT_BUILD_CPU_DEFINE=PPC32
+  elif test "x$OPENJDK_BUILD_CPU" = xs390; then
+    HOTSPOT_BUILD_CPU_DEFINE=S390
+  elif test "x$OPENJDK_BUILD_CPU" = ss390x; then
+    HOTSPOT_BUILD_CPU_DEFINE=S390
+  fi
+
+
+
+
+  # ZERO_ARCHDEF is used to enable architecture-specific code.
+  # This is used in legacy hotspot build.
+  ZERO_ARCHDEF="$HOTSPOT_TARGET_CPU_DEFINE"
+
 
 
 
@@ -15915,98 +16183,6 @@ fi
 $as_echo "$JDK_VARIANT" >&6; }
 
 
-
-# Check whether --with-jvm-interpreter was given.
-if test "${with_jvm_interpreter+set}" = set; then :
-  withval=$with_jvm_interpreter;
-fi
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking which interpreter of the JVM to build" >&5
-$as_echo_n "checking which interpreter of the JVM to build... " >&6; }
-  if test "x$with_jvm_interpreter" = x; then
-    JVM_INTERPRETER="template"
-  else
-    JVM_INTERPRETER="$with_jvm_interpreter"
-  fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JVM_INTERPRETER" >&5
-$as_echo "$JVM_INTERPRETER" >&6; }
-
-  if test "x$JVM_INTERPRETER" != xtemplate && test "x$JVM_INTERPRETER" != xcpp; then
-    as_fn_error $? "The available JVM interpreters are: template, cpp" "$LINENO" 5
-  fi
-
-
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking which variants of the JVM to build" >&5
-$as_echo_n "checking which variants of the JVM to build... " >&6; }
-
-# Check whether --with-jvm-variants was given.
-if test "${with_jvm_variants+set}" = set; then :
-  withval=$with_jvm_variants;
-fi
-
-
-  if test "x$with_jvm_variants" = x; then
-    with_jvm_variants="server"
-  fi
-
-  JVM_VARIANTS=",$with_jvm_variants,"
-  TEST_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,//' -e 's/client,//'  -e 's/minimal1,//' -e 's/zero,//' -e 's/zeroshark,//' -e 's/core,//'`
-
-  if test "x$TEST_VARIANTS" != "x,"; then
-    as_fn_error $? "The available JVM variants are: server, client, minimal1, zero, zeroshark, core" "$LINENO" 5
-  fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_jvm_variants" >&5
-$as_echo "$with_jvm_variants" >&6; }
-
-  JVM_VARIANT_SERVER=`$ECHO "$JVM_VARIANTS" | $SED -e '/,server,/!s/.*/false/g' -e '/,server,/s/.*/true/g'`
-  JVM_VARIANT_CLIENT=`$ECHO "$JVM_VARIANTS" | $SED -e '/,client,/!s/.*/false/g' -e '/,client,/s/.*/true/g'`
-  JVM_VARIANT_MINIMAL1=`$ECHO "$JVM_VARIANTS" | $SED -e '/,minimal1,/!s/.*/false/g' -e '/,minimal1,/s/.*/true/g'`
-  JVM_VARIANT_ZERO=`$ECHO "$JVM_VARIANTS" | $SED -e '/,zero,/!s/.*/false/g' -e '/,zero,/s/.*/true/g'`
-  JVM_VARIANT_ZEROSHARK=`$ECHO "$JVM_VARIANTS" | $SED -e '/,zeroshark,/!s/.*/false/g' -e '/,zeroshark,/s/.*/true/g'`
-  JVM_VARIANT_CORE=`$ECHO "$JVM_VARIANTS" | $SED -e '/,core,/!s/.*/false/g' -e '/,core,/s/.*/true/g'`
-
-  if test "x$JVM_VARIANT_CLIENT" = xtrue; then
-    if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-      as_fn_error $? "You cannot build a client JVM for a 64-bit machine." "$LINENO" 5
-    fi
-  fi
-  if test "x$JVM_VARIANT_MINIMAL1" = xtrue; then
-    if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-      as_fn_error $? "You cannot build a minimal JVM for a 64-bit machine." "$LINENO" 5
-    fi
-  fi
-
-  # Replace the commas with AND for use in the build directory name.
-  ANDED_JVM_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/^,//' -e 's/,$//' -e 's/,/AND/g'`
-  COUNT_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,/1/' -e 's/client,/1/' -e 's/minimal1,/1/' -e 's/zero,/1/' -e 's/zeroshark,/1/' -e 's/core,/1/'`
-  if test "x$COUNT_VARIANTS" != "x,1"; then
-    BUILDING_MULTIPLE_JVM_VARIANTS=yes
-  else
-    BUILDING_MULTIPLE_JVM_VARIANTS=no
-  fi
-
-  if test "x$JVM_VARIANT_ZERO" = xtrue && test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = xyes; then
-    as_fn_error $? "You cannot build multiple variants with zero." "$LINENO" 5
-  fi
-
-
-
-
-
-
-
-
-
-  if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
-    MACOSX_UNIVERSAL="true"
-  fi
-
-
-
-
   DEBUG_LEVEL="release"
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking which debug level to use" >&5
 $as_echo_n "checking which debug level to use... " >&6; }
@@ -16042,105 +16218,88 @@ $as_echo "$DEBUG_LEVEL" >&6; }
     as_fn_error $? "Allowed debug levels are: release, fastdebug, slowdebug and optimized" "$LINENO" 5
   fi
 
+  # Translate DEBUG_LEVEL to debug level used by Hotspot
+  HOTSPOT_DEBUG_LEVEL="$DEBUG_LEVEL"
+  if test "x$DEBUG_LEVEL" = xrelease; then
+    HOTSPOT_DEBUG_LEVEL="product"
+  elif test "x$DEBUG_LEVEL" = xslowdebug; then
+    HOTSPOT_DEBUG_LEVEL="debug"
+  fi
 
-  case $DEBUG_LEVEL in
-    release )
-      VARIANT="OPT"
-      FASTDEBUG="false"
-      DEBUG_CLASSFILES="false"
-      BUILD_VARIANT_RELEASE=""
-      HOTSPOT_DEBUG_LEVEL="product"
-      HOTSPOT_EXPORT="product"
-      ;;
-    fastdebug )
-      VARIANT="DBG"
-      FASTDEBUG="true"
-      DEBUG_CLASSFILES="true"
-      BUILD_VARIANT_RELEASE="-fastdebug"
-      HOTSPOT_DEBUG_LEVEL="fastdebug"
-      HOTSPOT_EXPORT="fastdebug"
-      ;;
-    slowdebug )
-      VARIANT="DBG"
-      FASTDEBUG="false"
-      DEBUG_CLASSFILES="true"
-      BUILD_VARIANT_RELEASE="-debug"
-      HOTSPOT_DEBUG_LEVEL="debug"
-      HOTSPOT_EXPORT="debug"
-      ;;
-    optimized )
-      VARIANT="OPT"
-      FASTDEBUG="false"
-      DEBUG_CLASSFILES="false"
-      BUILD_VARIANT_RELEASE="-optimized"
-      HOTSPOT_DEBUG_LEVEL="optimized"
-      HOTSPOT_EXPORT="optimized"
-      ;;
-  esac
-
-  # The debug level 'optimized' is a little special because it is currently only
-  # applicable to the HotSpot build where it means to build a completely
-  # optimized version of the VM without any debugging code (like for the
-  # 'release' debug level which is called 'product' in the HotSpot build) but
-  # with the exception that it can contain additional code which is otherwise
-  # protected by '#ifndef PRODUCT' macros. These 'optimized' builds are used to
-  # test new and/or experimental features which are not intended for customer
-  # shipment. Because these new features need to be tested and benchmarked in
-  # real world scenarios, we want to build the containing JDK at the 'release'
-  # debug level.
   if test "x$DEBUG_LEVEL" = xoptimized; then
+    # The debug level 'optimized' is a little special because it is currently only
+    # applicable to the HotSpot build where it means to build a completely
+    # optimized version of the VM without any debugging code (like for the
+    # 'release' debug level which is called 'product' in the HotSpot build) but
+    # with the exception that it can contain additional code which is otherwise
+    # protected by '#ifndef PRODUCT' macros. These 'optimized' builds are used to
+    # test new and/or experimental features which are not intended for customer
+    # shipment. Because these new features need to be tested and benchmarked in
+    # real world scenarios, we want to build the containing JDK at the 'release'
+    # debug level.
     DEBUG_LEVEL="release"
   fi
 
-  #####
-  # Generate the legacy makefile targets for hotspot.
-  # The hotspot api for selecting the build artifacts, really, needs to be improved.
-  # JDK-7195896 will fix this on the hotspot side by using the JVM_VARIANT_* variables to
-  # determine what needs to be built. All we will need to set here is all_product, all_fastdebug etc
-  # But until then ...
-  HOTSPOT_TARGET=""
 
-  if test "x$JVM_VARIANT_SERVER" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL} "
+
+
+
+
+# Check whether --with-jvm-variants was given.
+if test "${with_jvm_variants+set}" = set; then :
+  withval=$with_jvm_variants;
+fi
+
+
+  if test "x$with_jvm_variants" = x; then
+    with_jvm_variants="server"
+  fi
+  JVM_VARIANTS_OPT="$with_jvm_variants"
+
+  # Has the user listed more than one variant?
+  # Additional [] needed to keep m4 from mangling shell constructs.
+  if  [[ "$JVM_VARIANTS_OPT" =~ "," ]] ; then
+    BUILDING_MULTIPLE_JVM_VARIANTS=true
+  else
+    BUILDING_MULTIPLE_JVM_VARIANTS=false
+  fi
+  # Replace the commas with AND for use in the build directory name.
+  JVM_VARIANTS_WITH_AND=`$ECHO "$JVM_VARIANTS_OPT" | $SED -e 's/,/AND/g'`
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking which variants of the JVM to build" >&5
+$as_echo_n "checking which variants of the JVM to build... " >&6; }
+  # JVM_VARIANTS is a space-separated list.
+  # Also use minimal, not minimal1 (which is kept for backwards compatibility).
+  JVM_VARIANTS=`$ECHO $JVM_VARIANTS_OPT | $SED -e 's/,/ /g' -e 's/minimal1/minimal/'`
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JVM_VARIANTS" >&5
+$as_echo "$JVM_VARIANTS" >&6; }
+
+  # Check that the selected variants are valid
+
+  # grep filter function inspired by a comment to http://stackoverflow.com/a/1617326
+  INVALID_VARIANTS=`$GREP -Fvx "${VALID_JVM_VARIANTS// /$'\n'}" <<< "${JVM_VARIANTS// /$'\n'}"`
+  if test "x$INVALID_VARIANTS" != x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Unknown variant(s) specified: $INVALID_VARIANTS" >&5
+$as_echo "$as_me: Unknown variant(s) specified: $INVALID_VARIANTS" >&6;}
+    as_fn_error $? "The available JVM variants are: $VALID_JVM_VARIANTS" "$LINENO" 5
   fi
 
-  if test "x$JVM_VARIANT_CLIENT" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}1 "
+  # All "special" variants share the same output directory ("server")
+  VALID_MULTIPLE_JVM_VARIANTS="server client minimal"
+  INVALID_MULTIPLE_VARIANTS=`$GREP -Fvx "${VALID_MULTIPLE_JVM_VARIANTS// /$'\n'}" <<< "${JVM_VARIANTS// /$'\n'}"`
+  if  test "x$INVALID_MULTIPLE_VARIANTS" != x && test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = xtrue; then
+    as_fn_error $? "You cannot build multiple variants with anything else than $VALID_MULTIPLE_JVM_VARIANTS." "$LINENO" 5
   fi
 
-  if test "x$JVM_VARIANT_MINIMAL1" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}minimal1 "
+
+
+
+  if   [[ " $JVM_VARIANTS " =~ " zero " ]]   ||   [[ " $JVM_VARIANTS " =~ " zeroshark " ]]  ; then
+    # zero behaves as a platform and rewrites these values. This is really weird. :(
+    # We are guaranteed that we do not build any other variants when building zero.
+    HOTSPOT_TARGET_CPU=zero
+    HOTSPOT_TARGET_CPU_ARCH=zero
   fi
-
-  if test "x$JVM_VARIANT_ZERO" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}zero "
-  fi
-
-  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}shark "
-  fi
-
-  if test "x$JVM_VARIANT_CORE" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}core "
-  fi
-
-  HOTSPOT_TARGET="$HOTSPOT_TARGET docs export_$HOTSPOT_EXPORT"
-
-  # On Macosx universal binaries are produced, but they only contain
-  # 64 bit intel. This invalidates control of which jvms are built
-  # from configure, but only server is valid anyway. Fix this
-  # when hotspot makefiles are rewritten.
-  if test "x$MACOSX_UNIVERSAL" = xtrue; then
-    HOTSPOT_TARGET=universal_${HOTSPOT_EXPORT}
-  fi
-
-  #####
-
-
-
-
-
-
 
 
 # With basic setup done, call the custom early hook.
@@ -16589,8 +16748,8 @@ $as_echo "$as_me: WARNING: Both SYSROOT and --with-sdk-name are set, only SYSROO
 
 
   if test "x$OPENJDK_BUILD_OS" = "xsolaris"; then
-    # Add extra search paths on solaris for utilities like ar and as etc...
-    PATH="$PATH:/usr/ccs/bin:/usr/sfw/bin:/opt/csw/bin"
+    # Add extra search paths on solaris for utilities like ar, as, dtrace etc...
+    PATH="$PATH:/usr/ccs/bin:/usr/sfw/bin:/opt/csw/bin:/usr/sbin"
   fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sysroot" >&5
@@ -16629,7 +16788,7 @@ $as_echo_n "checking where to store configuration... " >&6; }
     if test "x${CONF_NAME}" = x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: in default location" >&5
 $as_echo "in default location" >&6; }
-      CONF_NAME="${OPENJDK_TARGET_OS}-${OPENJDK_TARGET_CPU}-${JDK_VARIANT}-${ANDED_JVM_VARIANTS}-${DEBUG_LEVEL}"
+      CONF_NAME="${OPENJDK_TARGET_OS}-${OPENJDK_TARGET_CPU}-${JDK_VARIANT}-${JVM_VARIANTS_WITH_AND}-${DEBUG_LEVEL}"
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: in build directory with custom name" >&5
 $as_echo "in build directory with custom name" >&6; }
@@ -22129,6 +22288,203 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
+  if [ -z "${DTRACE+x}" ]; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in dtrace
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DTRACE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DTRACE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DTRACE="$DTRACE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DTRACE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DTRACE=$ac_cv_path_DTRACE
+if test -n "$DTRACE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DTRACE" >&5
+$as_echo "$DTRACE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$DTRACE" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !DTRACE! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!DTRACE!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xDTRACE" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of DTRACE from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of DTRACE from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in dtrace
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DTRACE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DTRACE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DTRACE="$DTRACE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DTRACE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DTRACE=$ac_cv_path_DTRACE
+if test -n "$DTRACE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DTRACE" >&5
+$as_echo "$DTRACE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$DTRACE" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if we try to supply an empty value
+      if test "x$DTRACE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool DTRACE= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool DTRACE= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DTRACE" >&5
+$as_echo_n "checking for DTRACE... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$DTRACE"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DTRACE=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool DTRACE=$tool_basename" >&6;}
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DTRACE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DTRACE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DTRACE="$DTRACE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DTRACE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DTRACE=$ac_cv_path_DTRACE
+if test -n "$DTRACE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DTRACE" >&5
+$as_echo "$DTRACE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+          if test "x$DTRACE" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DTRACE=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool DTRACE=$tool_specified" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DTRACE" >&5
+$as_echo_n "checking for DTRACE... " >&6; }
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+            as_fn_error $? "User supplied tool DTRACE=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+        fi
+      fi
+    fi
+
+  fi
+
+
+
+
+  # Publish this variable in the help.
+
+
   if [ -z "${PATCH+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in gpatch patch
@@ -23408,10 +23764,7 @@ fi
 
   # Should we build the serviceability agent (SA)?
   INCLUDE_SA=true
-  if test "x$JVM_VARIANT_ZERO" = xtrue ; then
-    INCLUDE_SA=false
-  fi
-  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue ; then
+  if   [[ " $JVM_VARIANTS " =~ " zero " ]]   ||   [[ " $JVM_VARIANTS " =~ " zeroshark " ]]  ; then
     INCLUDE_SA=false
   fi
   if test "x$OPENJDK_TARGET_OS" = xaix ; then
@@ -23473,22 +23826,6 @@ $as_echo "yes (default)" >&6; }
 
 
 
-  # Control wether Hotspot runs Queens test after build.
-  # Check whether --enable-hotspot-test-in-build was given.
-if test "${enable_hotspot_test_in_build+set}" = set; then :
-  enableval=$enable_hotspot_test_in_build;
-else
-  enable_hotspot_test_in_build=no
-fi
-
-  if test "x$enable_hotspot_test_in_build" = "xyes"; then
-    TEST_IN_BUILD=true
-  else
-    TEST_IN_BUILD=false
-  fi
-
-
-
   # Warn user that old version arguments are deprecated.
 
 
@@ -23531,6 +23868,7 @@ fi
   . $AUTOCONF_DIR/version-numbers
 
   # Some non-version number information is set in that file
+
 
 
 
@@ -30606,6 +30944,10 @@ fi
   LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $EXTRA_CFLAGS"
   LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $EXTRA_CXXFLAGS"
   LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $EXTRA_LDFLAGS"
+
+
+
+
 
 
 
@@ -46738,6 +47080,17 @@ $as_echo "yes" >&6; }
   fi
 
 
+  # Setup hotspot lecagy names for toolchains
+  HOTSPOT_TOOLCHAIN_TYPE=$TOOLCHAIN_TYPE
+  if test "x$TOOLCHAIN_TYPE" = xclang; then
+    HOTSPOT_TOOLCHAIN_TYPE=gcc
+  elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+    HOTSPOT_TOOLCHAIN_TYPE=sparcWorks
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    HOTSPOT_TOOLCHAIN_TYPE=visCPP
+  fi
+
+
 
 # Setup the JTReg Regression Test Harness.
 
@@ -47217,8 +47570,10 @@ $as_echo "no" >&6; }
   # On Windows, we need to set RC flags.
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     RC_FLAGS="-nologo -l0x409"
+    JVM_RCFLAGS="-nologo"
     if test "x$DEBUG_LEVEL" = xrelease; then
       RC_FLAGS="$RC_FLAGS -DNDEBUG"
+      JVM_RCFLAGS="$JVM_RCFLAGS -DNDEBUG"
     fi
 
     # The version variables used to create RC_FLAGS may be overridden
@@ -47234,7 +47589,18 @@ $as_echo "no" >&6; }
         -D\"JDK_COPYRIGHT=Copyright \xA9 $COPYRIGHT_YEAR\" \
         -D\"JDK_NAME=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) \$(VERSION_MAJOR)\" \
         -D\"JDK_FVER=\$(subst .,\$(COMMA),\$(VERSION_NUMBER_FOUR_POSITIONS))\""
+
+    JVM_RCFLAGS="$JVM_RCFLAGS \
+        -D\"HS_BUILD_ID=\$(VERSION_STRING)\" \
+        -D\"HS_COMPANY=\$(COMPANY_NAME)\" \
+        -D\"JDK_DOTVER=\$(VERSION_NUMBER_FOUR_POSITIONS)\" \
+        -D\"HS_COPYRIGHT=Copyright $COPYRIGHT_YEAR\" \
+        -D\"HS_NAME=\$(PRODUCT_NAME) \$(VERSION_SHORT)\" \
+        -D\"JDK_VER=\$(subst .,\$(COMMA),\$(VERSION_NUMBER_FOUR_POSITIONS))\" \
+        -D\"HS_FNAME=jvm.dll\" \
+        -D\"HS_INTERNAL_NAME=jvm\""
   fi
+
 
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
@@ -47402,6 +47768,10 @@ done
   CXXFLAGS_JDK="${CXXFLAGS_JDK}${ADDED_CXXFLAGS}"
   LDFLAGS_JDK="${LDFLAGS_JDK}${ADDED_LDFLAGS}"
 
+  JVM_CFLAGS="$JVM_CFLAGS $ADDED_CFLAGS"
+  JVM_LDFLAGS="$JVM_LDFLAGS $ADDED_LDFLAGS"
+  JVM_ASFLAGS="$JVM_ASFLAGS $ADDED_CFLAGS"
+
   elif test "x$COMPILE_TYPE" = xreduced; then
     if test "x$OPENJDK_TARGET_OS_TYPE" = xunix; then
       # Specify -m if running reduced on unix platforms
@@ -47422,7 +47792,16 @@ done
   CXXFLAGS_JDK="${CXXFLAGS_JDK}${ADDED_CXXFLAGS}"
   LDFLAGS_JDK="${LDFLAGS_JDK}${ADDED_LDFLAGS}"
 
+  JVM_CFLAGS="$JVM_CFLAGS $ADDED_CFLAGS"
+  JVM_LDFLAGS="$JVM_LDFLAGS $ADDED_LDFLAGS"
+  JVM_ASFLAGS="$JVM_ASFLAGS $ADDED_CFLAGS"
+
     fi
+  fi
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    JVM_CFLAGS="$JVM_CFLAGS ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
+    JVM_LDFLAGS="$JVM_LDFLAGS ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
+    JVM_ASFLAGS="$JVM_ASFLAGS ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
   fi
 
   # Make compilation sanity check
@@ -47547,6 +47926,10 @@ $as_echo "$as_me: Retrying with platforms compiler target bits flag to ${COMPILE
   CFLAGS_JDK="${CFLAGS_JDK}${ADDED_CFLAGS}"
   CXXFLAGS_JDK="${CXXFLAGS_JDK}${ADDED_CXXFLAGS}"
   LDFLAGS_JDK="${LDFLAGS_JDK}${ADDED_LDFLAGS}"
+
+  JVM_CFLAGS="$JVM_CFLAGS $ADDED_CFLAGS"
+  JVM_LDFLAGS="$JVM_LDFLAGS $ADDED_LDFLAGS"
+  JVM_ASFLAGS="$JVM_ASFLAGS $ADDED_CFLAGS"
 
 
       # We have to unset 'ac_cv_sizeof_int_p' first, otherwise AC_CHECK_SIZEOF will use the previously cached value!
@@ -47894,6 +48277,7 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
         SHARED_LIBRARY_FLAGS ='-undefined dynamic_lookup'
       else
         SHARED_LIBRARY_FLAGS="-dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0 $PICFLAG"
+        JVM_CFLAGS="$JVM_CFLAGS $PICFLAG"
       fi
       SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path/.'
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
@@ -47919,6 +48303,10 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Wl,-install_name,@rpath/$1'
       SET_SHARED_LIBRARY_MAPFILE='-Wl,-exported_symbols_list,$1'
+
+      if test "x$STATIC_BUILD" = xfalse; then
+        JVM_CFLAGS="$JVM_CFLAGS -fPIC"
+      fi
     else
       # Default works for linux, might work on other platforms as well.
       PICFLAG='-fPIC'
@@ -47978,11 +48366,6 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
 
 
 
-  if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    CFLAGS_JDK="${CFLAGS_JDK} -D__solaris__"
-    CXXFLAGS_JDK="${CXXFLAGS_JDK} -D__solaris__"
-    CFLAGS_JDKLIB_EXTRA='-xstrconst'
-  fi
   # The (cross) compiler is now configured, we can now test capabilities
   # of the target platform.
 
@@ -48040,6 +48423,22 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
 
 
 
+  # Debug symbols for JVM_CFLAGS
+  if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+    JVM_CFLAGS_SYMBOLS="$JVM_CFLAGS_SYMBOLS -xs"
+    if test "x$DEBUG_LEVEL" = xslowdebug; then
+      JVM_CFLAGS_SYMBOLS="$JVM_CFLAGS_SYMBOLS -g"
+    else
+      # -g0 does not disable inlining, which -g does.
+      JVM_CFLAGS_SYMBOLS="$JVM_CFLAGS_SYMBOLS -g0"
+    fi
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    JVM_CFLAGS_SYMBOLS="$JVM_CFLAGS_SYMBOLS -Z7 -d2Zi+"
+  else
+    JVM_CFLAGS_SYMBOLS="$JVM_CFLAGS_SYMBOLS -g"
+  fi
+
+
   # bounds, memory and behavior checking options
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     case $DEBUG_LEVEL in
@@ -48050,7 +48449,7 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       # no adjustment
       ;;
     slowdebug )
-      # FIXME: By adding this to C(XX)FLAGS_DEBUG_OPTIONS it
+      # FIXME: By adding this to C(XX)FLAGS_DEBUG_OPTIONS/JVM_CFLAGS_SYMBOLS it
       # get's added conditionally on whether we produce debug symbols or not.
       # This is most likely not really correct.
 
@@ -48325,8 +48724,19 @@ $as_echo "$supports" >&6; }
 
       CFLAGS_DEBUG_OPTIONS="$STACK_PROTECTOR_CFLAG --param ssp-buffer-size=1"
       CXXFLAGS_DEBUG_OPTIONS="$STACK_PROTECTOR_CFLAG --param ssp-buffer-size=1"
+      if test "x$STACK_PROTECTOR_CFLAG" != x; then
+        JVM_CFLAGS_SYMBOLS="$JVM_CFLAGS_SYMBOLS $STACK_PROTECTOR_CFLAG --param ssp-buffer-size=1"
+      fi
       ;;
     esac
+  fi
+
+  if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    if test "x$DEBUG_LEVEL" != xrelease; then
+      if test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+        JVM_CFLAGS="$JVM_CFLAGS -homeparams"
+      fi
+    fi
   fi
 
   # Optimization levels
@@ -48335,30 +48745,38 @@ $as_echo "$supports" >&6; }
 
     if test "x$OPENJDK_TARGET_CPU_ARCH" = "xx86"; then
       # FIXME: seems we always set -xregs=no%frameptr; put it elsewhere more global?
+      C_O_FLAG_HIGHEST_JVM="-xO4"
       C_O_FLAG_HIGHEST="-xO4 -Wu,-O4~yz $CC_HIGHEST -xalias_level=basic -xregs=no%frameptr"
       C_O_FLAG_HI="-xO4 -Wu,-O4~yz -xregs=no%frameptr"
       C_O_FLAG_NORM="-xO2 -Wu,-O2~yz -xregs=no%frameptr"
       C_O_FLAG_DEBUG="-xregs=no%frameptr"
+      C_O_FLAG_DEBUG_JVM=""
       C_O_FLAG_NONE="-xregs=no%frameptr"
+      CXX_O_FLAG_HIGHEST_JVM="-xO4"
       CXX_O_FLAG_HIGHEST="-xO4 -Qoption ube -O4~yz $CC_HIGHEST -xregs=no%frameptr"
       CXX_O_FLAG_HI="-xO4 -Qoption ube -O4~yz -xregs=no%frameptr"
       CXX_O_FLAG_NORM="-xO2 -Qoption ube -O2~yz -xregs=no%frameptr"
       CXX_O_FLAG_DEBUG="-xregs=no%frameptr"
+      CXX_O_FLAG_DEBUG_JVM=""
       CXX_O_FLAG_NONE="-xregs=no%frameptr"
       if test "x$OPENJDK_TARGET_CPU_BITS" = "x32"; then
         C_O_FLAG_HIGHEST="$C_O_FLAG_HIGHEST -xchip=pentium"
         CXX_O_FLAG_HIGHEST="$CXX_O_FLAG_HIGHEST -xchip=pentium"
       fi
     elif test "x$OPENJDK_TARGET_CPU_ARCH" = "xsparc"; then
+      C_O_FLAG_HIGHEST_JVM="-xO4"
       C_O_FLAG_HIGHEST="-xO4 -Wc,-Qrm-s -Wc,-Qiselect-T0 $CC_HIGHEST -xalias_level=basic -xprefetch=auto,explicit -xchip=ultra"
       C_O_FLAG_HI="-xO4 -Wc,-Qrm-s -Wc,-Qiselect-T0"
       C_O_FLAG_NORM="-xO2 -Wc,-Qrm-s -Wc,-Qiselect-T0"
       C_O_FLAG_DEBUG=""
+      C_O_FLAG_DEBUG_JVM=""
       C_O_FLAG_NONE=""
+      CXX_O_FLAG_HIGHEST_JVM="-xO4"
       CXX_O_FLAG_HIGHEST="-xO4 -Qoption cg -Qrm-s -Qoption cg -Qiselect-T0 $CC_HIGHEST -xprefetch=auto,explicit -xchip=ultra"
       CXX_O_FLAG_HI="-xO4 -Qoption cg -Qrm-s -Qoption cg -Qiselect-T0"
       CXX_O_FLAG_NORM="-xO2 -Qoption cg -Qrm-s -Qoption cg -Qiselect-T0"
       CXX_O_FLAG_DEBUG=""
+      CXX_O_FLAG_DEBUG_JVM=""
       CXX_O_FLAG_NONE=""
     fi
   else
@@ -48368,48 +48786,75 @@ $as_echo "$supports" >&6; }
       if test "x$OPENJDK_TARGET_OS" = xmacosx; then
         # On MacOSX we optimize for size, something
         # we should do for all platforms?
+        C_O_FLAG_HIGHEST_JVM="-Os"
         C_O_FLAG_HIGHEST="-Os"
         C_O_FLAG_HI="-Os"
         C_O_FLAG_NORM="-Os"
+        C_O_FLAG_SIZE="-Os"
       else
+        C_O_FLAG_HIGHEST_JVM="-O3"
         C_O_FLAG_HIGHEST="-O3"
         C_O_FLAG_HI="-O3"
         C_O_FLAG_NORM="-O2"
+        C_O_FLAG_SIZE="-Os"
       fi
       C_O_FLAG_DEBUG="-O0"
+      if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+        C_O_FLAG_DEBUG_JVM=""
+      elif test "x$OPENJDK_TARGET_OS" = xlinux; then
+        C_O_FLAG_DEBUG_JVM="-O0"
+      fi
       C_O_FLAG_NONE="-O0"
     elif test "x$TOOLCHAIN_TYPE" = xclang; then
       if test "x$OPENJDK_TARGET_OS" = xmacosx; then
         # On MacOSX we optimize for size, something
         # we should do for all platforms?
+        C_O_FLAG_HIGHEST_JVM="-Os"
         C_O_FLAG_HIGHEST="-Os"
         C_O_FLAG_HI="-Os"
         C_O_FLAG_NORM="-Os"
+        C_O_FLAG_SIZE="-Os"
       else
+        C_O_FLAG_HIGHEST_JVM="-O3"
         C_O_FLAG_HIGHEST="-O3"
         C_O_FLAG_HI="-O3"
         C_O_FLAG_NORM="-O2"
+        C_O_FLAG_SIZE="-Os"
       fi
       C_O_FLAG_DEBUG="-O0"
+      if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+        C_O_FLAG_DEBUG_JVM=""
+      elif test "x$OPENJDK_TARGET_OS" = xlinux; then
+        C_O_FLAG_DEBUG_JVM="-O0"
+      fi
       C_O_FLAG_NONE="-O0"
     elif test "x$TOOLCHAIN_TYPE" = xxlc; then
+      C_O_FLAG_HIGHEST_JVM="-O3"
       C_O_FLAG_HIGHEST="-O3"
       C_O_FLAG_HI="-O3 -qstrict"
       C_O_FLAG_NORM="-O2"
       C_O_FLAG_DEBUG="-qnoopt"
+      # FIXME: Value below not verified.
+      C_O_FLAG_DEBUG_JVM=""
       C_O_FLAG_NONE="-qnoopt"
     elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+      C_O_FLAG_HIGHEST_JVM="-O2 -Oy-"
       C_O_FLAG_HIGHEST="-O2"
       C_O_FLAG_HI="-O1"
       C_O_FLAG_NORM="-O1"
       C_O_FLAG_DEBUG="-Od"
+      C_O_FLAG_DEBUG_JVM=""
       C_O_FLAG_NONE="-Od"
+      C_O_FLAG_SIZE="-Os"
     fi
+    CXX_O_FLAG_HIGHEST_JVM="$C_O_FLAG_HIGHEST_JVM"
     CXX_O_FLAG_HIGHEST="$C_O_FLAG_HIGHEST"
     CXX_O_FLAG_HI="$C_O_FLAG_HI"
     CXX_O_FLAG_NORM="$C_O_FLAG_NORM"
     CXX_O_FLAG_DEBUG="$C_O_FLAG_DEBUG"
+    CXX_O_FLAG_DEBUG_JVM="$C_O_FLAG_DEBUG_JVM"
     CXX_O_FLAG_NONE="$C_O_FLAG_NONE"
+    CXX_O_FLAG_SIZE="$C_O_FLAG_SIZE"
   fi
 
   # Adjust optimization flags according to debug level.
@@ -48424,14 +48869,24 @@ $as_echo "$supports" >&6; }
       ;;
     slowdebug )
       # Disable optimization
+      C_O_FLAG_HIGHEST_JVM="$C_O_FLAG_DEBUG_JVM"
       C_O_FLAG_HIGHEST="$C_O_FLAG_DEBUG"
       C_O_FLAG_HI="$C_O_FLAG_DEBUG"
       C_O_FLAG_NORM="$C_O_FLAG_DEBUG"
+      C_O_FLAG_SIZE="$C_O_FLAG_DEBUG"
+      CXX_O_FLAG_HIGHEST_JVM="$CXX_O_FLAG_DEBUG_JVM"
       CXX_O_FLAG_HIGHEST="$CXX_O_FLAG_DEBUG"
       CXX_O_FLAG_HI="$CXX_O_FLAG_DEBUG"
       CXX_O_FLAG_NORM="$CXX_O_FLAG_DEBUG"
+      CXX_O_FLAG_SIZE="$CXX_O_FLAG_DEBUG"
       ;;
   esac
+
+
+
+
+
+
 
 
 
@@ -48556,10 +49011,23 @@ $as_echo "$supports" >&6; }
     CXXFLAGS_JDK="${CXXFLAGS_JDK} ${CXXSTD_CXXFLAG}"
 
   fi
+  if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+    CFLAGS_JDK="${CFLAGS_JDK} -D__solaris__"
+    CXXFLAGS_JDK="${CXXFLAGS_JDK} -D__solaris__"
+    CFLAGS_JDKLIB_EXTRA='-xstrconst'
+    CFLAGS_JDK="${CFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
+    CXXFLAGS_JDK="${CXXFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
+  fi
 
-  CFLAGS_JDK="${CFLAGS_JDK} $EXTRA_CFLAGS"
-  CXXFLAGS_JDK="${CXXFLAGS_JDK} $EXTRA_CXXFLAGS"
-  LDFLAGS_JDK="${LDFLAGS_JDK} $EXTRA_LDFLAGS"
+  if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+    CFLAGS_JDK="${CFLAGS_JDK} -D__solaris__"
+    CXXFLAGS_JDK="${CXXFLAGS_JDK} -D__solaris__"
+    CFLAGS_JDKLIB_EXTRA='-xstrconst'
+  fi
+
+  CFLAGS_JDK="${CFLAGS_JDK} ${EXTRA_CFLAGS}"
+  CXXFLAGS_JDK="${CXXFLAGS_JDK} ${EXTRA_CXXFLAGS}"
+  LDFLAGS_JDK="${LDFLAGS_JDK} ${EXTRA_LDFLAGS}"
 
   ###############################################################################
   #
@@ -48572,9 +49040,13 @@ $as_echo "$supports" >&6; }
   #    CXXFLAGS_JDK  - C++ Compiler flags
   #    COMMON_CCXXFLAGS_JDK - common to C and C++
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
+    JVM_CFLAGS="$JVM_CFLAGS -D_GNU_SOURCE"
+    JVM_CFLAGS="$JVM_CFLAGS -D_REENTRANT"
+    JVM_CFLAGS="$JVM_CFLAGS -fcheck-new"
     if test "x$OPENJDK_TARGET_CPU" = xx86; then
       # Force compatibility with i586 on 32 bit intel platforms.
       COMMON_CCXXFLAGS="${COMMON_CCXXFLAGS} -march=i586"
+      JVM_CFLAGS="$JVM_CFLAGS -march=i586"
     fi
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
         -pipe -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
@@ -49211,11 +49683,19 @@ $as_echo "$supports" >&6; }
 
 
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
+    JVM_CFLAGS="$JVM_CFLAGS -D_GNU_SOURCE"
+
+    # Restrict the debug information created by Clang to avoid
+    # too big object files and speed the build up a little bit
+    # (see http://llvm.org/bugs/show_bug.cgi?id=7554)
+    JVM_CFLAGS="$JVM_CFLAGS -flimit-debug-info"
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
       if test "x$OPENJDK_TARGET_CPU" = xx86; then
         # Force compatibility with i586 on 32 bit intel platforms.
         COMMON_CCXXFLAGS="${COMMON_CCXXFLAGS} -march=i586"
+        JVM_CFLAGS="$JVM_CFLAGS -march=i586"
       fi
+      JVM_CFLAGS="$JVM_CFLAGS -Wno-sometimes-uninitialized"
       COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
           -pipe -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
       case $OPENJDK_TARGET_CPU_ARCH in
@@ -49230,6 +49710,7 @@ $as_echo "$supports" >&6; }
       esac
     fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+    JVM_CFLAGS="$JVM_CFLAGS -DSPARC_WORKS"
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -DTRACING -DMACRO_MEMSYS_OPS -DBREAKPTS"
     if test "x$OPENJDK_TARGET_CPU_ARCH" = xx86; then
       COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DcpuIntel -Di586 -D$OPENJDK_TARGET_CPU_LEGACY_LIB"
@@ -49238,6 +49719,7 @@ $as_echo "$supports" >&6; }
     CFLAGS_JDK="$CFLAGS_JDK -xc99=%none -xCC -errshort=tags -Xa -v -mt -W0,-noglobal"
     CXXFLAGS_JDK="$CXXFLAGS_JDK -errtags=yes +w -mt -features=no%except -DCC_NOEX -norunpath -xnolib"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
+    JVM_CFLAGS="$JVM_CFLAGS -D_REENTRANT -D__STDC_FORMAT_MACROS"
     CFLAGS_JDK="$CFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
     CXXFLAGS_JDK="$CXXFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
@@ -49258,6 +49740,7 @@ $as_echo "$supports" >&6; }
     if test "x$TOOLCHAIN_VERSION" = "x2010"; then
       STATIC_CPPLIB_FLAGS="-D_STATIC_CPPLIB -D_DISABLE_DEPRECATE_STATIC_CPPLIB"
       COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK $STATIC_CPPLIB_FLAGS"
+      JVM_CFLAGS="$JVM_CFLAGS $STATIC_CPPLIB_FLAGS"
     fi
   fi
 
@@ -49307,12 +49790,9 @@ $as_echo "$supports" >&6; }
   COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D$OPENJDK_TARGET_OS_UPPERCASE"
 
   # Setup target CPU
-  OPENJDK_TARGET_CCXXFLAGS_JDK="$OPENJDK_TARGET_CCXXFLAGS_JDK \
-      $ADD_LP64 \
+  COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK \
+      $OPENJDK_TARGET_ADD_LP64 \
       -DARCH='\"$OPENJDK_TARGET_CPU_LEGACY\"' -D$OPENJDK_TARGET_CPU_LEGACY"
-  OPENJDK_BUILD_CCXXFLAGS_JDK="$OPENJDK_BUILD_CCXXFLAGS_JDK \
-      $OPENJDK_BUILD_ADD_LP64 \
-      -DARCH='\"$OPENJDK_BUILD_CPU_LEGACY\"' -D$OPENJDK_BUILD_CPU_LEGACY"
 
   # Setup debug/release defines
   if test "x$DEBUG_LEVEL" = xrelease; then
@@ -49325,10 +49805,172 @@ $as_echo "$supports" >&6; }
   fi
 
   # Set some additional per-OS defines.
-  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+  if test "x$OPENJDK_TARGET_OS" = xlinux; then
+    JVM_CFLAGS="$JVM_CFLAGS -DLINUX"
+    JVM_CFLAGS="$JVM_CFLAGS -pipe -fPIC -fno-rtti -fno-exceptions \
+        -fvisibility=hidden -fno-strict-aliasing -fno-omit-frame-pointer"
+  elif test "x$OPENJDK_TARGET_OS" = xsolaris; then
+    JVM_CFLAGS="$JVM_CFLAGS -DSOLARIS"
+    JVM_CFLAGS="$JVM_CFLAGS -template=no%extdef -features=no%split_init \
+        -D_Crun_inline_placement -library=%none -KPIC -mt -xwe -features=no%except"
+  elif test "x$OPENJDK_TARGET_OS" = xmacosx; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
+    JVM_CFLAGS="$JVM_CFLAGS -D_ALLBSD_SOURCE"
+    JVM_CFLAGS="$JVM_CFLAGS -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE"
+    JVM_CFLAGS="$JVM_CFLAGS -fno-rtti -fno-exceptions -fvisibility=hidden \
+        -mno-omit-leaf-frame-pointer -mstack-alignment=16 -pipe -fno-strict-aliasing \
+        -DMAC_OS_X_VERSION_MAX_ALLOWED=1070 -mmacosx-version-min=10.7.0 \
+        -fno-omit-frame-pointer"
+  elif test "x$OPENJDK_TARGET_OS" = xaix; then
+    JVM_CFLAGS="$JVM_CFLAGS -DAIX"
+    # We may need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
+    JVM_CFLAGS="$JVM_CFLAGS -qtune=balanced -qhot=level=1 -qinline \
+        -qinlglue -qalias=noansi -qstrict -qtls=default -qlanglvl=c99vla \
+        -qlanglvl=noredefmac -qnortti -qnoeh -qignerrno"
   elif test "x$OPENJDK_TARGET_OS" = xbsd; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE"
+  elif test "x$OPENJDK_TARGET_OS" = xwindows; then
+    JVM_CFLAGS="$JVM_CFLAGS -D_WINDOWS -DWIN32 -D_JNI_IMPLEMENTATION_"
+    JVM_CFLAGS="$JVM_CFLAGS -nologo -W3 -MD -MP"
+  fi
+
+  # Set some additional per-CPU defines.
+  if test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = xwindows-x86; then
+    JVM_CFLAGS="$JVM_CFLAGS -arch:IA32"
+  elif test "x$OPENJDK_TARGET_CPU" = xsparcv9; then
+    JVM_CFLAGS="$JVM_CFLAGS -xarch=sparc"
+  elif test "x$OPENJDK_TARGET_CPU" = xppc64; then
+    if test "x$OPENJDK_TARGET_OS" = xlinux; then
+      JVM_CFLAGS="$JVM_CFLAGS -minsert-sched-nops=regroup_exact -mno-multiple -mno-string"
+      # fixes `relocation truncated to fit' error for gcc 4.1.
+      JVM_CFLAGS="$JVM_CFLAGS -mminimal-toc"
+      # Use ppc64 instructions, but schedule for power5
+      JVM_CFLAGS="$JVM_CFLAGS -mcpu=powerpc64 -mtune=power5"
+    elif test "x$OPENJDK_TARGET_OS" = xaix; then
+      JVM_CFLAGS="$JVM_CFLAGS -qarch=ppc64"
+    fi
+  elif test "x$OPENJDK_TARGET_CPU" = xppc64le; then
+    if test "x$OPENJDK_TARGET_OS" = xlinux; then
+      JVM_CFLAGS="$JVM_CFLAGS -minsert-sched-nops=regroup_exact -mno-multiple -mno-string"
+      # Little endian machine uses ELFv2 ABI.
+      JVM_CFLAGS="$JVM_CFLAGS -DABI_ELFv2"
+      # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
+      JVM_CFLAGS="$JVM_CFLAGS -mcpu=power7 -mtune=power8"
+    fi
+  fi
+
+  if test "x$OPENJDK_TARGET_CPU_ENDIAN" = xlittle; then
+    JVM_CFLAGS="$JVM_CFLAGS -DVM_LITTLE_ENDIAN"
+  fi
+
+  if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+    if test "x$OPENJDK_TARGET_OS" != xsolaris && test "x$OPENJDK_TARGET_OS" != xaix; then
+      # Solaris does not have _LP64=1 in the old build.
+      # xlc on AIX defines _LP64=1 by default and issues a warning if we redefine it.
+      JVM_CFLAGS="$JVM_CFLAGS -D_LP64=1"
+    fi
+  fi
+
+  # Set JVM_CFLAGS warning handling
+  if test "x$OPENJDK_TARGET_OS" = xlinux; then
+    JVM_CFLAGS="$JVM_CFLAGS -Wpointer-arith -Wsign-compare -Wunused-function \
+        -Wunused-value -Woverloaded-virtual"
+
+    if test "x$TOOLCHAIN_TYPE" = xgcc; then
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  # Need to assign to a variable since m4 is blocked from modifying parts in [].
+  REFERENCE_VERSION=4.8
+
+  if  [[ "$REFERENCE_VERSION" =~ (.*\.){3} ]] ; then
+    as_fn_error $? "Internal error: Cannot compare to 4.8, only three parts (X.Y.Z) is supported" "$LINENO" 5
+  fi
+
+  if  [[ "$REFERENCE_VERSION" =~ [0-9]{6} ]] ; then
+    as_fn_error $? "Internal error: Cannot compare to 4.8, only parts < 99999 is supported" "$LINENO" 5
+  fi
+
+  # Version comparison method inspired by http://stackoverflow.com/a/24067243
+  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$REFERENCE_VERSION"`
+
+  if test $COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
+    :
+
+            # These flags either do not work or give spurious warnings prior to gcc 4.8.
+            JVM_CFLAGS="$JVM_CFLAGS -Wno-format-zero-length -Wtype-limits -Wuninitialized"
+
+
+  else
+    :
+
+  fi
+
+
+
+
+
+
+
+
+
+
+
+
+    fi
+    if !   [[ " $JVM_VARIANTS " =~ " zero " ]]   && !   [[ " $JVM_VARIANTS " =~ " zeroshark " ]]  ; then
+      # Non-zero builds have stricter warnings
+      JVM_CFLAGS="$JVM_CFLAGS -Wreturn-type -Wundef -Wformat=2"
+    else
+      if test "x$TOOLCHAIN_TYPE" = xclang; then
+        # Some versions of llvm do not like -Wundef
+        JVM_CFLAGS="$JVM_CFLAGS -Wno-undef"
+      fi
+    fi
+  elif test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    JVM_CFLAGS="$JVM_CFLAGS -Wno-deprecated -Wpointer-arith \
+        -Wsign-compare -Wundef -Wunused-function -Wformat=2"
   fi
 
   # Additional macosx handling
@@ -49356,43 +49998,14 @@ $as_echo "$supports" >&6; }
       -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/libjava"
 
   # The shared libraries are compiled using the picflag.
-  CFLAGS_JDKLIB="$COMMON_CCXXFLAGS_JDK $OPENJDK_TARGET_CCXXFLAGS_JDK \
+  CFLAGS_JDKLIB="$COMMON_CCXXFLAGS_JDK \
       $CFLAGS_JDK $EXTRA_CFLAGS_JDK $PICFLAG $CFLAGS_JDKLIB_EXTRA"
-  CXXFLAGS_JDKLIB="$COMMON_CCXXFLAGS_JDK $OPENJDK_TARGET_CCXXFLAGS_JDK \
+  CXXFLAGS_JDKLIB="$COMMON_CCXXFLAGS_JDK \
       $CXXFLAGS_JDK $EXTRA_CXXFLAGS_JDK $PICFLAG $CXXFLAGS_JDKLIB_EXTRA"
 
   # Executable flags
-  CFLAGS_JDKEXE="$COMMON_CCXXFLAGS_JDK $OPENJDK_TARGET_CCXXFLAGS_JDK \
-      $CFLAGS_JDK $EXTRA_CFLAGS_JDK"
-  CXXFLAGS_JDKEXE="$COMMON_CCXXFLAGS_JDK $OPENJDK_TARGET_CCXXFLAGS_JDK \
-      $CXXFLAGS_JDK $EXTRA_CXXFLAGS_JDK"
-
-  # The corresponding flags for building for the build platform. This is still an
-  # approximation, we only need something that runs on this machine when cross
-  # compiling the product.
-  OPENJDK_BUILD_CFLAGS_JDKLIB="$COMMON_CCXXFLAGS_JDK $OPENJDK_BUILD_CCXXFLAGS_JDK \
-      $PICFLAG $CFLAGS_JDKLIB_EXTRA"
-  OPENJDK_BUILD_CXXFLAGS_JDKLIB="$COMMON_CCXXFLAGS_JDK $OPENJDK_BUILD_CCXXFLAGS_JDK \
-      $PICFLAG $CXXFLAGS_JDKLIB_EXTRA"
-  OPENJDK_BUILD_CFLAGS_JDKEXE="$COMMON_CCXXFLAGS_JDK $OPENJDK_BUILD_CCXXFLAGS_JDK"
-  OPENJDK_BUILD_CXXFLAGS_JDKEXE="$COMMON_CCXXFLAGS_JDK $OPENJDK_BUILD_CCXXFLAGS_JDK"
-
-
-
-
-
-
-
-
-
-
-  # Flags for compiling test libraries
-  CFLAGS_TESTLIB="$COMMON_CCXXFLAGS_JDK $CFLAGS_JDK $PICFLAG $CFLAGS_JDKLIB_EXTRA"
-  CXXFLAGS_TESTLIB="$COMMON_CCXXFLAGS_JDK $CXXFLAGS_JDK $PICFLAG $CXXFLAGS_JDKLIB_EXTRA"
-
-  # Flags for compiling test executables
-  CFLAGS_TESTEXE="$COMMON_CCXXFLAGS_JDK $CFLAGS_JDK"
-  CXXFLAGS_TESTEXE="$COMMON_CCXXFLAGS_JDK $CXXFLAGS_JDK"
+  CFLAGS_JDKEXE="$COMMON_CCXXFLAGS_JDK $CFLAGS_JDK $EXTRA_CFLAGS_JDK"
+  CXXFLAGS_JDKEXE="$COMMON_CCXXFLAGS_JDK $CXXFLAGS_JDK $EXTRA_CXXFLAGS_JDK"
 
 
 
@@ -49405,9 +50018,21 @@ $as_echo "$supports" >&6; }
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     LDFLAGS_MICROSOFT="-nologo -opt:ref"
     LDFLAGS_JDK="$LDFLAGS_JDK $LDFLAGS_MICROSOFT -incremental:no"
+    JVM_LDFLAGS="$JVM_LDFLAGS $LDFLAGS_MICROSOFT -opt:icf,8 -subsystem:windows -base:0x8000000"
     if test "x$OPENJDK_TARGET_CPU_BITS" = "x32"; then
       LDFLAGS_SAFESH="-safeseh"
       LDFLAGS_JDK="$LDFLAGS_JDK $LDFLAGS_SAFESH"
+      JVM_LDFLAGS="$JVM_LDFLAGS $LDFLAGS_SAFESH"
+      # NOTE: Old build added -machine. Probably not needed.
+      JVM_LDFLAGS="$JVM_LDFLAGS -machine:I386"
+    else
+      JVM_LDFLAGS="$JVM_LDFLAGS -machine:AMD64"
+    fi
+  elif test "x$TOOLCHAIN_TYPE" = xclang; then
+      JVM_LDFLAGS="$JVM_LDFLAGS -mno-omit-leaf-frame-pointer -mstack-alignment=16 -stdlib=libstdc++ -fPIC"
+      if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+        # FIXME: We should really generalize SET_SHARED_LIBRARY_ORIGIN instead.
+        JVM_LDFLAGS="$JVM_LDFLAGS -Wl,-rpath,@loader_path/. -Wl,-rpath,@loader_path/.."
     fi
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
     # If this is a --hash-style=gnu system, use --hash-style=both, why?
@@ -49415,36 +50040,57 @@ $as_echo "$supports" >&6; }
     if test -n "$HAS_GNU_HASH"; then
       LDFLAGS_HASH_STYLE="-Wl,--hash-style=both"
       LDFLAGS_JDK="${LDFLAGS_JDK} $LDFLAGS_HASH_STYLE"
+      JVM_LDFLAGS="$JVM_LDFLAGS $LDFLAGS_HASH_STYLE"
+    fi
+      if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+        JVM_LDFLAGS="$JVM_LDFLAGS -Wl,-rpath,@loader_path/. -Wl,-rpath,@loader_path/.."
     fi
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
       # And since we now know that the linker is gnu, then add -z defs, to forbid
       # undefined symbols in object files.
       LDFLAGS_NO_UNDEF_SYM="-Wl,-z,defs"
       LDFLAGS_JDK="${LDFLAGS_JDK} $LDFLAGS_NO_UNDEF_SYM"
+      JVM_LDFLAGS="$JVM_LDFLAGS  $LDFLAGS_NO_UNDEF_SYM"
+      LDFLAGS_NO_EXEC_STACK="-Wl,-z,noexecstack"
+      JVM_LDFLAGS="$JVM_LDFLAGS $LDFLAGS_NO_EXEC_STACK"
+      if test "x$OPENJDK_TARGET_CPU" = xx86; then
+        JVM_LDFLAGS="$JVM_LDFLAGS -march=i586"
+      fi
       case $DEBUG_LEVEL in
         release )
           # tell linker to optimize libraries.
           # Should this be supplied to the OSS linker as well?
           LDFLAGS_DEBUGLEVEL_release="-Wl,-O1"
           LDFLAGS_JDK="${LDFLAGS_JDK} $LDFLAGS_DEBUGLEVEL_release"
+          JVM_LDFLAGS="$JVM_LDFLAGS $LDFLAGS_DEBUGLEVEL_release"
+          if test "x$HAS_LINKER_RELRO" = "xtrue"; then
+            JVM_LDFLAGS="$JVM_LDFLAGS $LINKER_RELRO_FLAG"
+          fi
           ;;
         slowdebug )
+          # Hotspot always let the linker optimize
+          JVM_LDFLAGS="$JVM_LDFLAGS -Wl,-O1"
           if test "x$HAS_LINKER_NOW" = "xtrue"; then
             # do relocations at load
             LDFLAGS_JDK="$LDFLAGS_JDK $LINKER_NOW_FLAG"
             LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK $LINKER_NOW_FLAG"
+            JVM_LDFLAGS="$JVM_LDFLAGS $LINKER_NOW_FLAG"
           fi
           if test "x$HAS_LINKER_RELRO" = "xtrue"; then
             # mark relocations read only
             LDFLAGS_JDK="$LDFLAGS_JDK $LINKER_RELRO_FLAG"
             LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK $LINKER_RELRO_FLAG"
+            JVM_LDFLAGS="$JVM_LDFLAGS $LINKER_RELRO_FLAG"
           fi
           ;;
         fastdebug )
+          # Hotspot always let the linker optimize
+          JVM_LDFLAGS="$JVM_LDFLAGS -Wl,-O1"
           if test "x$HAS_LINKER_RELRO" = "xtrue"; then
             # mark relocations read only
             LDFLAGS_JDK="$LDFLAGS_JDK $LINKER_RELRO_FLAG"
             LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK $LINKER_RELRO_FLAG"
+            JVM_LDFLAGS="$JVM_LDFLAGS $LINKER_RELRO_FLAG"
           fi
           ;;
         * )
@@ -49457,9 +50103,14 @@ $as_echo "$supports" >&6; }
     LDFLAGS_JDK="$LDFLAGS_JDK $LDFLAGS_SOLSTUDIO -xildoff -ztext"
     LDFLAGS_CXX_SOLSTUDIO="-norunpath"
     LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK $LDFLAGS_CXX_SOLSTUDIO -xnolib"
+    JVM_LDFLAGS="$JVM_LDFLAGS $LDFLAGS_SOLSTUDIO -library=%none -mt $LDFLAGS_CXX_SOLSTUDIO -z noversion"
+    if test "x$OPENJDK_TARGET_CPU_ARCH" = "xsparc"; then
+      JVM_LDFLAGS="$JVM_LDFLAGS -xarch=sparc"
+    fi
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     LDFLAGS_XLC="-b64 -brtl -bnolibpath -bexpall -bernotok"
     LDFLAGS_JDK="${LDFLAGS_JDK} $LDFLAGS_XLC"
+    JVM_LDFLAGS="$JVM_LDFLAGS $LDFLAGS_XLC"
   fi
 
   # Customize LDFLAGS for executables
@@ -49477,7 +50128,6 @@ $as_echo "$supports" >&6; }
     LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE -Wl,--allow-shlib-undefined"
   fi
 
-  OPENJDK_BUILD_LDFLAGS_JDKEXE="${LDFLAGS_JDKEXE}"
   LDFLAGS_JDKEXE="${LDFLAGS_JDKEXE} ${EXTRA_LDFLAGS_JDK}"
 
   # Customize LDFLAGS for libs
@@ -49492,18 +50142,24 @@ $as_echo "$supports" >&6; }
     LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} \
         -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)"
 
+    if test "xTARGET" = "xTARGET"; then
     # On some platforms (mac) the linker warns about non existing -L dirs.
     # Add server first if available. Linking aginst client does not always produce the same results.
-    # Only add client dir if client is being built. Add minimal (note not minimal1) if only building minimal1.
+      # Only add client/minimal dir if client/minimal is being built.
     # Default to server for other variants.
-    if test "x$JVM_VARIANT_SERVER" = xtrue; then
-      LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)/server"
-    elif test "x$JVM_VARIANT_CLIENT" = xtrue; then
-      LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)/client"
-    elif test "x$JVM_VARIANT_MINIMAL1" = xtrue; then
-      LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)/minimal"
+      if   [[ " $JVM_VARIANTS " =~ " server " ]]  ; then
+        LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)/server"
+      elif   [[ " $JVM_VARIANTS " =~ " client " ]]  ; then
+        LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)/client"
+      elif   [[ " $JVM_VARIANTS " =~ " minimal " ]]  ; then
+        LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)/minimal"
     else
-      LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)/server"
+        LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)/server"
+    fi
+    elif test "xTARGET" = "xBUILD"; then
+      # When building a buildjdk, it's always only the server variant
+      LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} \
+          -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)/server"
     fi
 
     JDKLIB_LIBS="-ljava -ljvm"
@@ -49511,12 +50167,41 @@ $as_echo "$supports" >&6; }
       JDKLIB_LIBS="$JDKLIB_LIBS -lc"
     fi
 
-    # When building a buildjdk, it's always only the server variant
-    OPENJDK_BUILD_LDFLAGS_JDKLIB="${OPENJDK_BUILD_LDFLAGS_JDKLIB} \
-        -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_TARGET_CPU_LIBDIR)/server"
   fi
 
-  OPENJDK_BUILD_LDFLAGS_JDKLIB="${OPENJDK_BUILD_LDFLAGS_JDKLIB} ${LDFLAGS_JDKLIB}"
+  # Set JVM_LIBS (per os)
+  if test "x$OPENJDK_TARGET_OS" = xlinux; then
+    JVM_LIBS="$JVM_LIBS -lm -ldl -lpthread"
+  elif test "x$OPENJDK_TARGET_OS" = xsolaris; then
+    # FIXME: This hard-coded path is not really proper.
+    if test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+      SOLARIS_LIBM_LIBS="/usr/lib/amd64/libm.so.1"
+    elif test "x$OPENJDK_TARGET_CPU" = xsparcv9; then
+      SOLARIS_LIBM_LIBS="/usr/lib/sparcv9/libm.so.1"
+    fi
+    JVM_LIBS="$JVM_LIBS -lsocket -lsched -ldl $SOLARIS_LIBM_LIBS -lCrun \
+        -lthread -ldoor -lc -ldemangle -lnsl -lkstat -lrt"
+  elif test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    JVM_LIBS="$JVM_LIBS -lm"
+  elif test "x$OPENJDK_TARGET_OS" = xaix; then
+    JVM_LIBS="$JVM_LIBS -Wl,-lC_r -lm -ldl -lpthread"
+  elif test "x$OPENJDK_TARGET_OS" = xbsd; then
+    JVM_LIBS="$JVM_LIBS -lm"
+  elif test "x$OPENJDK_TARGET_OS" = xwindows; then
+    JVM_LIBS="$JVM_LIBS kernel32.lib user32.lib gdi32.lib winspool.lib \
+        comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib \
+        wsock32.lib winmm.lib version.lib psapi.lib"
+    fi
+
+  # Set JVM_ASFLAGS
+  if test "x$OPENJDK_TARGET_OS" = xlinux; then
+    if test "x$OPENJDK_TARGET_CPU" = xx86; then
+      JVM_ASFLAGS="$JVM_ASFLAGS -march=i586"
+    fi
+  elif test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    JVM_ASFLAGS="$JVM_ASFLAGS -x assembler-with-cpp -mno-omit-leaf-frame-pointer -mstack-alignment=16"
+  fi
+
   LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} ${EXTRA_LDFLAGS_JDK}"
 
 
@@ -49528,8 +50213,805 @@ $as_echo "$supports" >&6; }
 
 
 
+
+
+
+
+
+  # Special extras...
+  if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+    if test "x$OPENJDK_BUILD_CPU_ARCH" = "xsparc"; then
+      OPENJDK_BUILD_CFLAGS_JDKLIB_EXTRA="${OPENJDK_BUILD_CFLAGS_JDKLIB_EXTRA} -xregs=no%appl"
+      OPENJDK_BUILD_CXXFLAGS_JDKLIB_EXTRA="${OPENJDK_BUILD_CXXFLAGS_JDKLIB_EXTRA} -xregs=no%appl"
+    fi
+    OPENJDK_BUILD_CFLAGS_JDKLIB_EXTRA="${OPENJDK_BUILD_CFLAGS_JDKLIB_EXTRA} -errtags=yes -errfmt"
+    OPENJDK_BUILD_CXXFLAGS_JDKLIB_EXTRA="${OPENJDK_BUILD_CXXFLAGS_JDKLIB_EXTRA} -errtags=yes -errfmt"
+  elif test "x$TOOLCHAIN_TYPE" = xxlc; then
+    OPENJDK_BUILD_CFLAGS_JDK="${OPENJDK_BUILD_CFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
+    OPENJDK_BUILD_CXXFLAGS_JDK="${OPENJDK_BUILD_CXXFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
+  elif test "x$TOOLCHAIN_TYPE" = xgcc; then
+    OPENJDK_BUILD_CXXSTD_CXXFLAG="-std=gnu++98"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the C++ compiler supports \"$OPENJDK_BUILD_CXXSTD_CXXFLAG -Werror\"" >&5
+$as_echo_n "checking if the C++ compiler supports \"$OPENJDK_BUILD_CXXSTD_CXXFLAG -Werror\"... " >&6; }
+  supports=yes
+
+  saved_cxxflags="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAG $OPENJDK_BUILD_CXXSTD_CXXFLAG -Werror"
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+int i;
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+
+else
+  supports=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  CXXFLAGS="$saved_cxxflags"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+
+  else
+    :
+    OPENJDK_BUILD_CXXSTD_CXXFLAG=""
+  fi
+
+
+
+
+
+
+
+
+
+
+
+
+    OPENJDK_BUILD_CXXFLAGS_JDK="${OPENJDK_BUILD_CXXFLAGS_JDK} ${OPENJDK_BUILD_CXXSTD_CXXFLAG}"
+
+  fi
+  if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+    OPENJDK_BUILD_CFLAGS_JDK="${OPENJDK_BUILD_CFLAGS_JDK} -D__solaris__"
+    OPENJDK_BUILD_CXXFLAGS_JDK="${OPENJDK_BUILD_CXXFLAGS_JDK} -D__solaris__"
+    OPENJDK_BUILD_CFLAGS_JDKLIB_EXTRA='-xstrconst'
+    CFLAGS_JDK="${CFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
+    CXXFLAGS_JDK="${CXXFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
+  fi
+
+  if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+    OPENJDK_BUILD_CFLAGS_JDK="${OPENJDK_BUILD_CFLAGS_JDK} -D__solaris__"
+    OPENJDK_BUILD_CXXFLAGS_JDK="${OPENJDK_BUILD_CXXFLAGS_JDK} -D__solaris__"
+    OPENJDK_BUILD_CFLAGS_JDKLIB_EXTRA='-xstrconst'
+  fi
+
+  OPENJDK_BUILD_CFLAGS_JDK="${OPENJDK_BUILD_CFLAGS_JDK} ${OPENJDK_BUILD_EXTRA_CFLAGS}"
+  OPENJDK_BUILD_CXXFLAGS_JDK="${OPENJDK_BUILD_CXXFLAGS_JDK} ${OPENJDK_BUILD_EXTRA_CXXFLAGS}"
+  OPENJDK_BUILD_LDFLAGS_JDK="${OPENJDK_BUILD_LDFLAGS_JDK} ${OPENJDK_BUILD_EXTRA_LDFLAGS}"
+
+  ###############################################################################
+  #
+  # Now setup the CFLAGS and LDFLAGS for the JDK build.
+  # Later we will also have CFLAGS and LDFLAGS for the hotspot subrepo build.
+  #
+
+  # Setup compiler/platform specific flags into
+  #    OPENJDK_BUILD_CFLAGS_JDK    - C Compiler flags
+  #    OPENJDK_BUILD_CXXFLAGS_JDK  - C++ Compiler flags
+  #    OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK - common to C and C++
+  if test "x$TOOLCHAIN_TYPE" = xgcc; then
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -D_GNU_SOURCE"
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -D_REENTRANT"
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -fcheck-new"
+    if test "x$OPENJDK_BUILD_CPU" = xx86; then
+      # Force compatibility with i586 on 32 bit intel platforms.
+      OPENJDK_BUILD_COMMON_CCXXFLAGS="${OPENJDK_BUILD_COMMON_CCXXFLAGS} -march=i586"
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -march=i586"
+    fi
+    OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS $OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
+        -pipe -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
+    case $OPENJDK_BUILD_CPU_ARCH in
+      arm )
+        # on arm we don't prevent gcc to omit frame pointer but do prevent strict aliasing
+        OPENJDK_BUILD_CFLAGS_JDK="${OPENJDK_BUILD_CFLAGS_JDK} -fno-strict-aliasing"
+        ;;
+      ppc )
+        # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
+        OPENJDK_BUILD_CFLAGS_JDK="${OPENJDK_BUILD_CFLAGS_JDK} -fno-strict-aliasing"
+        ;;
+      * )
+        OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -fno-omit-frame-pointer"
+        OPENJDK_BUILD_CFLAGS_JDK="${OPENJDK_BUILD_CFLAGS_JDK} -fno-strict-aliasing"
+        ;;
+    esac
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  # Need to assign to a variable since m4 is blocked from modifying parts in [].
+  REFERENCE_VERSION=6
+
+  if  [[ "$REFERENCE_VERSION" =~ (.*\.){3} ]] ; then
+    as_fn_error $? "Internal error: Cannot compare to 6, only three parts (X.Y.Z) is supported" "$LINENO" 5
+  fi
+
+  if  [[ "$REFERENCE_VERSION" =~ [0-9]{6} ]] ; then
+    as_fn_error $? "Internal error: Cannot compare to 6, only parts < 99999 is supported" "$LINENO" 5
+  fi
+
+  # Version comparison method inspired by http://stackoverflow.com/a/24067243
+  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$REFERENCE_VERSION"`
+
+  if test $COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
+    :
+
+  else
+    :
+
+  fi
+
+
+
+
+
+
+
+
+
+
+
+
+  elif test "x$TOOLCHAIN_TYPE" = xclang; then
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -D_GNU_SOURCE"
+
+    # Restrict the debug information created by Clang to avoid
+    # too big object files and speed the build up a little bit
+    # (see http://llvm.org/bugs/show_bug.cgi?id=7554)
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -flimit-debug-info"
+    if test "x$OPENJDK_BUILD_OS" = xlinux; then
+      if test "x$OPENJDK_BUILD_CPU" = xx86; then
+        # Force compatibility with i586 on 32 bit intel platforms.
+        OPENJDK_BUILD_COMMON_CCXXFLAGS="${OPENJDK_BUILD_COMMON_CCXXFLAGS} -march=i586"
+        OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -march=i586"
+      fi
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -Wno-sometimes-uninitialized"
+      OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS $OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
+          -pipe -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
+      case $OPENJDK_BUILD_CPU_ARCH in
+        ppc )
+          # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
+          OPENJDK_BUILD_CFLAGS_JDK="${OPENJDK_BUILD_CFLAGS_JDK} -fno-strict-aliasing"
+          ;;
+        * )
+          OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -fno-omit-frame-pointer"
+          OPENJDK_BUILD_CFLAGS_JDK="${OPENJDK_BUILD_CFLAGS_JDK} -fno-strict-aliasing"
+          ;;
+      esac
+    fi
+  elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -DSPARC_WORKS"
+    OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS $OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -DTRACING -DMACRO_MEMSYS_OPS -DBREAKPTS"
+    if test "x$OPENJDK_BUILD_CPU_ARCH" = xx86; then
+      OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -DcpuIntel -Di586 -D$OPENJDK_BUILD_CPU_LEGACY_LIB"
+    fi
+
+    OPENJDK_BUILD_CFLAGS_JDK="$OPENJDK_BUILD_CFLAGS_JDK -xc99=%none -xCC -errshort=tags -Xa -v -mt -W0,-noglobal"
+    OPENJDK_BUILD_CXXFLAGS_JDK="$OPENJDK_BUILD_CXXFLAGS_JDK -errtags=yes +w -mt -features=no%except -DCC_NOEX -norunpath -xnolib"
+  elif test "x$TOOLCHAIN_TYPE" = xxlc; then
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -D_REENTRANT -D__STDC_FORMAT_MACROS"
+    OPENJDK_BUILD_CFLAGS_JDK="$OPENJDK_BUILD_CFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
+    OPENJDK_BUILD_CXXFLAGS_JDK="$OPENJDK_BUILD_CXXFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS $OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK \
+        -MD -Zc:wchar_t- -W3 -wd4800 \
+        -DWIN32_LEAN_AND_MEAN \
+        -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE \
+        -D_WINSOCK_DEPRECATED_NO_WARNINGS \
+        -DWIN32 -DIAL"
+    if test "x$OPENJDK_BUILD_CPU" = xx86_64; then
+      OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -D_AMD64_ -Damd64"
+    else
+      OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -D_X86_ -Dx86"
+    fi
+    # If building with Visual Studio 2010, we can still use _STATIC_CPPLIB to
+    # avoid bundling msvcpNNN.dll. Doesn't work with newer versions of visual
+    # studio.
+    if test "x$TOOLCHAIN_VERSION" = "x2010"; then
+      STATIC_CPPLIB_FLAGS="-D_STATIC_CPPLIB -D_DISABLE_DEPRECATE_STATIC_CPPLIB"
+      OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK $STATIC_CPPLIB_FLAGS"
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS $STATIC_CPPLIB_FLAGS"
+    fi
+  fi
+
+  ###############################################################################
+
+  # Adjust flags according to debug level.
+  case $DEBUG_LEVEL in
+    fastdebug | slowdebug )
+      OPENJDK_BUILD_CFLAGS_JDK="$OPENJDK_BUILD_CFLAGS_JDK $CFLAGS_DEBUG_SYMBOLS $CFLAGS_DEBUG_OPTIONS"
+      OPENJDK_BUILD_CXXFLAGS_JDK="$OPENJDK_BUILD_CXXFLAGS_JDK $CXXFLAGS_DEBUG_SYMBOLS $CXXFLAGS_DEBUG_OPTIONS"
+      JAVAC_FLAGS="$JAVAC_FLAGS -g"
+      ;;
+    release )
+      ;;
+    * )
+      as_fn_error $? "Unrecognized \$DEBUG_LEVEL: $DEBUG_LEVEL" "$LINENO" 5
+      ;;
+  esac
+
+  # Set some common defines. These works for all compilers, but assume
+  # -D is universally accepted.
+
+  # Setup endianness
+  if test "x$OPENJDK_BUILD_CPU_ENDIAN" = xlittle; then
+    # The macro _LITTLE_ENDIAN needs to be defined the same to avoid the
+    #   Sun C compiler warning message: warning: macro redefined: _LITTLE_ENDIAN
+    #   (The Solaris X86 system defines this in file /usr/include/sys/isa_defs.h).
+    #   Note: -Dmacro         is the same as    #define macro 1
+    #         -Dmacro=        is the same as    #define macro
+    if test "x$OPENJDK_BUILD_OS" = xsolaris; then
+      OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -D_LITTLE_ENDIAN="
+    else
+      OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -D_LITTLE_ENDIAN"
+    fi
+  else
+    # Same goes for _BIG_ENDIAN. Do we really need to set *ENDIAN on Solaris if they
+    # are defined in the system?
+    if test "x$OPENJDK_BUILD_OS" = xsolaris; then
+      OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -D_BIG_ENDIAN="
+    else
+      OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -D_BIG_ENDIAN"
+    fi
+  fi
+
+  # Setup target OS define. Use OS target name but in upper case.
+  OPENJDK_BUILD_OS_UPPERCASE=`$ECHO $OPENJDK_BUILD_OS | $TR 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
+  OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -D$OPENJDK_BUILD_OS_UPPERCASE"
+
+  # Setup target CPU
+  OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK \
+      $OPENJDK_BUILD_ADD_LP64 \
+      -DARCH='\"$OPENJDK_BUILD_CPU_LEGACY\"' -D$OPENJDK_BUILD_CPU_LEGACY"
+
+  # Setup debug/release defines
+  if test "x$DEBUG_LEVEL" = xrelease; then
+    OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -DNDEBUG"
+    if test "x$OPENJDK_BUILD_OS" = xsolaris; then
+      OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -DTRIMMED"
+    fi
+  else
+    OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -DDEBUG"
+  fi
+
+  # Set some additional per-OS defines.
+  if test "x$OPENJDK_BUILD_OS" = xlinux; then
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -DLINUX"
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -pipe -fPIC -fno-rtti -fno-exceptions \
+        -fvisibility=hidden -fno-strict-aliasing -fno-omit-frame-pointer"
+  elif test "x$OPENJDK_BUILD_OS" = xsolaris; then
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -DSOLARIS"
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -template=no%extdef -features=no%split_init \
+        -D_Crun_inline_placement -library=%none -KPIC -mt -xwe -features=no%except"
+  elif test "x$OPENJDK_BUILD_OS" = xmacosx; then
+    OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -D_ALLBSD_SOURCE"
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE"
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -fno-rtti -fno-exceptions -fvisibility=hidden \
+        -mno-omit-leaf-frame-pointer -mstack-alignment=16 -pipe -fno-strict-aliasing \
+        -DMAC_OS_X_VERSION_MAX_ALLOWED=1070 -mmacosx-version-min=10.7.0 \
+        -fno-omit-frame-pointer"
+  elif test "x$OPENJDK_BUILD_OS" = xaix; then
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -DAIX"
+    # We may need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -qtune=balanced -qhot=level=1 -qinline \
+        -qinlglue -qalias=noansi -qstrict -qtls=default -qlanglvl=c99vla \
+        -qlanglvl=noredefmac -qnortti -qnoeh -qignerrno"
+  elif test "x$OPENJDK_BUILD_OS" = xbsd; then
+    OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE"
+  elif test "x$OPENJDK_BUILD_OS" = xwindows; then
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -D_WINDOWS -DWIN32 -D_JNI_IMPLEMENTATION_"
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -nologo -W3 -MD -MP"
+  fi
+
+  # Set some additional per-CPU defines.
+  if test "x$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" = xwindows-x86; then
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -arch:IA32"
+  elif test "x$OPENJDK_BUILD_CPU" = xsparcv9; then
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -xarch=sparc"
+  elif test "x$OPENJDK_BUILD_CPU" = xppc64; then
+    if test "x$OPENJDK_BUILD_OS" = xlinux; then
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -minsert-sched-nops=regroup_exact -mno-multiple -mno-string"
+      # fixes `relocation truncated to fit' error for gcc 4.1.
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -mminimal-toc"
+      # Use ppc64 instructions, but schedule for power5
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -mcpu=powerpc64 -mtune=power5"
+    elif test "x$OPENJDK_BUILD_OS" = xaix; then
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -qarch=ppc64"
+    fi
+  elif test "x$OPENJDK_BUILD_CPU" = xppc64le; then
+    if test "x$OPENJDK_BUILD_OS" = xlinux; then
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -minsert-sched-nops=regroup_exact -mno-multiple -mno-string"
+      # Little endian machine uses ELFv2 ABI.
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -DABI_ELFv2"
+      # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -mcpu=power7 -mtune=power8"
+    fi
+  fi
+
+  if test "x$OPENJDK_BUILD_CPU_ENDIAN" = xlittle; then
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -DVM_LITTLE_ENDIAN"
+  fi
+
+  if test "x$OPENJDK_BUILD_CPU_BITS" = x64; then
+    if test "x$OPENJDK_BUILD_OS" != xsolaris && test "x$OPENJDK_BUILD_OS" != xaix; then
+      # Solaris does not have _LP64=1 in the old build.
+      # xlc on AIX defines _LP64=1 by default and issues a warning if we redefine it.
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -D_LP64=1"
+    fi
+  fi
+
+  # Set OPENJDK_BUILD_JVM_CFLAGS warning handling
+  if test "x$OPENJDK_BUILD_OS" = xlinux; then
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -Wpointer-arith -Wsign-compare -Wunused-function \
+        -Wunused-value -Woverloaded-virtual"
+
+    if test "x$TOOLCHAIN_TYPE" = xgcc; then
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  # Need to assign to a variable since m4 is blocked from modifying parts in [].
+  REFERENCE_VERSION=4.8
+
+  if  [[ "$REFERENCE_VERSION" =~ (.*\.){3} ]] ; then
+    as_fn_error $? "Internal error: Cannot compare to 4.8, only three parts (X.Y.Z) is supported" "$LINENO" 5
+  fi
+
+  if  [[ "$REFERENCE_VERSION" =~ [0-9]{6} ]] ; then
+    as_fn_error $? "Internal error: Cannot compare to 4.8, only parts < 99999 is supported" "$LINENO" 5
+  fi
+
+  # Version comparison method inspired by http://stackoverflow.com/a/24067243
+  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$REFERENCE_VERSION"`
+
+  if test $COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
+    :
+
+            # These flags either do not work or give spurious warnings prior to gcc 4.8.
+            OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -Wno-format-zero-length -Wtype-limits -Wuninitialized"
+
+
+  else
+    :
+
+  fi
+
+
+
+
+
+
+
+
+
+
+
+
+    fi
+    if !   [[ " $JVM_VARIANTS " =~ " zero " ]]   && !   [[ " $JVM_VARIANTS " =~ " zeroshark " ]]  ; then
+      # Non-zero builds have stricter warnings
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -Wreturn-type -Wundef -Wformat=2"
+    else
+      if test "x$TOOLCHAIN_TYPE" = xclang; then
+        # Some versions of llvm do not like -Wundef
+        OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -Wno-undef"
+      fi
+    fi
+  elif test "x$OPENJDK_BUILD_OS" = xmacosx; then
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -Wno-deprecated -Wpointer-arith \
+        -Wsign-compare -Wundef -Wunused-function -Wformat=2"
+  fi
+
+  # Additional macosx handling
+  if test "x$OPENJDK_BUILD_OS" = xmacosx; then
+    # Setting these parameters makes it an error to link to macosx APIs that are
+    # newer than the given OS version and makes the linked binaries compatible
+    # even if built on a newer version of the OS.
+    # The expected format is X.Y.Z
+    MACOSX_VERSION_MIN=10.7.0
+
+
+    # The macro takes the version with no dots, ex: 1070
+    # Let the flags variables get resolved in make for easier override on make
+    # command line.
+    OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MIN)) -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+    OPENJDK_BUILD_LDFLAGS_JDK="$OPENJDK_BUILD_LDFLAGS_JDK -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+  fi
+
+  # Setup some hard coded includes
+  OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK \
+      -I${JDK_TOPDIR}/src/java.base/share/native/include \
+      -I${JDK_TOPDIR}/src/java.base/$OPENJDK_BUILD_OS/native/include \
+      -I${JDK_TOPDIR}/src/java.base/$OPENJDK_BUILD_OS_TYPE/native/include \
+      -I${JDK_TOPDIR}/src/java.base/share/native/libjava \
+      -I${JDK_TOPDIR}/src/java.base/$OPENJDK_BUILD_OS_TYPE/native/libjava"
+
+  # The shared libraries are compiled using the picflag.
+  OPENJDK_BUILD_CFLAGS_JDKLIB="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK \
+      $OPENJDK_BUILD_CFLAGS_JDK $OPENJDK_BUILD_EXTRA_CFLAGS_JDK $PICFLAG $OPENJDK_BUILD_CFLAGS_JDKLIB_EXTRA"
+  OPENJDK_BUILD_CXXFLAGS_JDKLIB="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK \
+      $OPENJDK_BUILD_CXXFLAGS_JDK $OPENJDK_BUILD_EXTRA_CXXFLAGS_JDK $PICFLAG $OPENJDK_BUILD_CXXFLAGS_JDKLIB_EXTRA"
+
+  # Executable flags
+  OPENJDK_BUILD_CFLAGS_JDKEXE="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK $OPENJDK_BUILD_CFLAGS_JDK $OPENJDK_BUILD_EXTRA_CFLAGS_JDK"
+  OPENJDK_BUILD_CXXFLAGS_JDKEXE="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK $OPENJDK_BUILD_CXXFLAGS_JDK $OPENJDK_BUILD_EXTRA_CXXFLAGS_JDK"
+
+
+
+
+
+
+  # Setup LDFLAGS et al.
+  #
+
+  if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    LDFLAGS_MICROSOFT="-nologo -opt:ref"
+    OPENJDK_BUILD_LDFLAGS_JDK="$OPENJDK_BUILD_LDFLAGS_JDK $LDFLAGS_MICROSOFT -incremental:no"
+    OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS $LDFLAGS_MICROSOFT -opt:icf,8 -subsystem:windows -base:0x8000000"
+    if test "x$OPENJDK_BUILD_CPU_BITS" = "x32"; then
+      LDFLAGS_SAFESH="-safeseh"
+      OPENJDK_BUILD_LDFLAGS_JDK="$OPENJDK_BUILD_LDFLAGS_JDK $LDFLAGS_SAFESH"
+      OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS $LDFLAGS_SAFESH"
+      # NOTE: Old build added -machine. Probably not needed.
+      OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS -machine:I386"
+    else
+      OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS -machine:AMD64"
+    fi
+  elif test "x$TOOLCHAIN_TYPE" = xclang; then
+      OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS -mno-omit-leaf-frame-pointer -mstack-alignment=16 -stdlib=libstdc++ -fPIC"
+      if test "x$OPENJDK_BUILD_OS" = xmacosx; then
+        # FIXME: We should really generalize SET_SHARED_LIBRARY_ORIGIN instead.
+        OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS -Wl,-rpath,@loader_path/. -Wl,-rpath,@loader_path/.."
+    fi
+  elif test "x$TOOLCHAIN_TYPE" = xgcc; then
+    # If this is a --hash-style=gnu system, use --hash-style=both, why?
+    # We have previously set HAS_GNU_HASH if this is the case
+    if test -n "$HAS_GNU_HASH"; then
+      OPENJDK_BUILD_LDFLAGS_HASH_STYLE="-Wl,--hash-style=both"
+      OPENJDK_BUILD_LDFLAGS_JDK="${OPENJDK_BUILD_LDFLAGS_JDK} $OPENJDK_BUILD_LDFLAGS_HASH_STYLE"
+      OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS $OPENJDK_BUILD_LDFLAGS_HASH_STYLE"
+    fi
+      if test "x$OPENJDK_BUILD_OS" = xmacosx; then
+        OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS -Wl,-rpath,@loader_path/. -Wl,-rpath,@loader_path/.."
+    fi
+    if test "x$OPENJDK_BUILD_OS" = xlinux; then
+      # And since we now know that the linker is gnu, then add -z defs, to forbid
+      # undefined symbols in object files.
+      LDFLAGS_NO_UNDEF_SYM="-Wl,-z,defs"
+      OPENJDK_BUILD_LDFLAGS_JDK="${OPENJDK_BUILD_LDFLAGS_JDK} $LDFLAGS_NO_UNDEF_SYM"
+      OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS  $LDFLAGS_NO_UNDEF_SYM"
+      LDFLAGS_NO_EXEC_STACK="-Wl,-z,noexecstack"
+      OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS $LDFLAGS_NO_EXEC_STACK"
+      if test "x$OPENJDK_BUILD_CPU" = xx86; then
+        OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS -march=i586"
+      fi
+      case $DEBUG_LEVEL in
+        release )
+          # tell linker to optimize libraries.
+          # Should this be supplied to the OSS linker as well?
+          LDFLAGS_DEBUGLEVEL_release="-Wl,-O1"
+          OPENJDK_BUILD_LDFLAGS_JDK="${OPENJDK_BUILD_LDFLAGS_JDK} $LDFLAGS_DEBUGLEVEL_release"
+          OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS $LDFLAGS_DEBUGLEVEL_release"
+          if test "x$HAS_LINKER_RELRO" = "xtrue"; then
+            OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS $LINKER_RELRO_FLAG"
+          fi
+          ;;
+        slowdebug )
+          # Hotspot always let the linker optimize
+          OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS -Wl,-O1"
+          if test "x$HAS_LINKER_NOW" = "xtrue"; then
+            # do relocations at load
+            OPENJDK_BUILD_LDFLAGS_JDK="$OPENJDK_BUILD_LDFLAGS_JDK $LINKER_NOW_FLAG"
+            OPENJDK_BUILD_LDFLAGS_CXX_JDK="$OPENJDK_BUILD_LDFLAGS_CXX_JDK $LINKER_NOW_FLAG"
+            OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS $LINKER_NOW_FLAG"
+          fi
+          if test "x$HAS_LINKER_RELRO" = "xtrue"; then
+            # mark relocations read only
+            OPENJDK_BUILD_LDFLAGS_JDK="$OPENJDK_BUILD_LDFLAGS_JDK $LINKER_RELRO_FLAG"
+            OPENJDK_BUILD_LDFLAGS_CXX_JDK="$OPENJDK_BUILD_LDFLAGS_CXX_JDK $LINKER_RELRO_FLAG"
+            OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS $LINKER_RELRO_FLAG"
+          fi
+          ;;
+        fastdebug )
+          # Hotspot always let the linker optimize
+          OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS -Wl,-O1"
+          if test "x$HAS_LINKER_RELRO" = "xtrue"; then
+            # mark relocations read only
+            OPENJDK_BUILD_LDFLAGS_JDK="$OPENJDK_BUILD_LDFLAGS_JDK $LINKER_RELRO_FLAG"
+            OPENJDK_BUILD_LDFLAGS_CXX_JDK="$OPENJDK_BUILD_LDFLAGS_CXX_JDK $LINKER_RELRO_FLAG"
+            OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS $LINKER_RELRO_FLAG"
+          fi
+          ;;
+        * )
+          as_fn_error $? "Unrecognized \$DEBUG_LEVEL: $DEBUG_LEVEL" "$LINENO" 5
+          ;;
+        esac
+    fi
+  elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+    LDFLAGS_SOLSTUDIO="-Wl,-z,defs"
+    OPENJDK_BUILD_LDFLAGS_JDK="$OPENJDK_BUILD_LDFLAGS_JDK $LDFLAGS_SOLSTUDIO -xildoff -ztext"
+    LDFLAGS_CXX_SOLSTUDIO="-norunpath"
+    OPENJDK_BUILD_LDFLAGS_CXX_JDK="$OPENJDK_BUILD_LDFLAGS_CXX_JDK $LDFLAGS_CXX_SOLSTUDIO -xnolib"
+    OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS $LDFLAGS_SOLSTUDIO -library=%none -mt $LDFLAGS_CXX_SOLSTUDIO -z noversion"
+    if test "x$OPENJDK_BUILD_CPU_ARCH" = "xsparc"; then
+      OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS -xarch=sparc"
+    fi
+  elif test "x$TOOLCHAIN_TYPE" = xxlc; then
+    LDFLAGS_XLC="-b64 -brtl -bnolibpath -bexpall -bernotok"
+    OPENJDK_BUILD_LDFLAGS_JDK="${OPENJDK_BUILD_LDFLAGS_JDK} $LDFLAGS_XLC"
+    OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS $LDFLAGS_XLC"
+  fi
+
+  # Customize LDFLAGS for executables
+
+  OPENJDK_BUILD_LDFLAGS_JDKEXE="${OPENJDK_BUILD_LDFLAGS_JDK}"
+
+  if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    if test "x$OPENJDK_BUILD_CPU_BITS" = "x64"; then
+      LDFLAGS_STACK_SIZE=1048576
+    else
+      LDFLAGS_STACK_SIZE=327680
+    fi
+    OPENJDK_BUILD_LDFLAGS_JDKEXE="${OPENJDK_BUILD_LDFLAGS_JDKEXE} /STACK:$LDFLAGS_STACK_SIZE"
+  elif test "x$OPENJDK_BUILD_OS" = xlinux; then
+    OPENJDK_BUILD_LDFLAGS_JDKEXE="$OPENJDK_BUILD_LDFLAGS_JDKEXE -Wl,--allow-shlib-undefined"
+  fi
+
+  OPENJDK_BUILD_LDFLAGS_JDKEXE="${OPENJDK_BUILD_LDFLAGS_JDKEXE} ${OPENJDK_BUILD_EXTRA_LDFLAGS_JDK}"
+
+  # Customize LDFLAGS for libs
+  OPENJDK_BUILD_LDFLAGS_JDKLIB="${OPENJDK_BUILD_LDFLAGS_JDK}"
+
+  OPENJDK_BUILD_LDFLAGS_JDKLIB="${OPENJDK_BUILD_LDFLAGS_JDKLIB} ${SHARED_LIBRARY_FLAGS}"
+  if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    OPENJDK_BUILD_LDFLAGS_JDKLIB="${OPENJDK_BUILD_LDFLAGS_JDKLIB} \
+        -libpath:${OUTPUT_ROOT}/support/modules_libs/java.base"
+    OPENJDK_BUILD_JDKLIB_LIBS=""
+  else
+    OPENJDK_BUILD_LDFLAGS_JDKLIB="${OPENJDK_BUILD_LDFLAGS_JDKLIB} \
+        -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_BUILD_CPU_LIBDIR)"
+
+    if test "xBUILD" = "xTARGET"; then
+    # On some platforms (mac) the linker warns about non existing -L dirs.
+    # Add server first if available. Linking aginst client does not always produce the same results.
+      # Only add client/minimal dir if client/minimal is being built.
+    # Default to server for other variants.
+      if   [[ " $JVM_VARIANTS " =~ " server " ]]  ; then
+        OPENJDK_BUILD_LDFLAGS_JDKLIB="${OPENJDK_BUILD_LDFLAGS_JDKLIB} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_BUILD_CPU_LIBDIR)/server"
+      elif   [[ " $JVM_VARIANTS " =~ " client " ]]  ; then
+        OPENJDK_BUILD_LDFLAGS_JDKLIB="${OPENJDK_BUILD_LDFLAGS_JDKLIB} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_BUILD_CPU_LIBDIR)/client"
+      elif   [[ " $JVM_VARIANTS " =~ " minimal " ]]  ; then
+        OPENJDK_BUILD_LDFLAGS_JDKLIB="${OPENJDK_BUILD_LDFLAGS_JDKLIB} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_BUILD_CPU_LIBDIR)/minimal"
+    else
+        OPENJDK_BUILD_LDFLAGS_JDKLIB="${OPENJDK_BUILD_LDFLAGS_JDKLIB} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_BUILD_CPU_LIBDIR)/server"
+    fi
+    elif test "xBUILD" = "xBUILD"; then
+      # When building a buildjdk, it's always only the server variant
+      OPENJDK_BUILD_LDFLAGS_JDKLIB="${OPENJDK_BUILD_LDFLAGS_JDKLIB} \
+          -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_BUILD_CPU_LIBDIR)/server"
+    fi
+
+    OPENJDK_BUILD_JDKLIB_LIBS="-ljava -ljvm"
+    if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+      OPENJDK_BUILD_JDKLIB_LIBS="$OPENJDK_BUILD_JDKLIB_LIBS -lc"
+    fi
+
+  fi
+
+  # Set OPENJDK_BUILD_JVM_LIBS (per os)
+  if test "x$OPENJDK_BUILD_OS" = xlinux; then
+    OPENJDK_BUILD_JVM_LIBS="$OPENJDK_BUILD_JVM_LIBS -lm -ldl -lpthread"
+  elif test "x$OPENJDK_BUILD_OS" = xsolaris; then
+    # FIXME: This hard-coded path is not really proper.
+    if test "x$OPENJDK_BUILD_CPU" = xx86_64; then
+      OPENJDK_BUILD_SOLARIS_LIBM_LIBS="/usr/lib/amd64/libm.so.1"
+    elif test "x$OPENJDK_BUILD_CPU" = xsparcv9; then
+      OPENJDK_BUILD_SOLARIS_LIBM_LIBS="/usr/lib/sparcv9/libm.so.1"
+    fi
+    OPENJDK_BUILD_JVM_LIBS="$OPENJDK_BUILD_JVM_LIBS -lsocket -lsched -ldl $SOLARIS_LIBM_LIBS -lCrun \
+        -lthread -ldoor -lc -ldemangle -lnsl -lkstat -lrt"
+  elif test "x$OPENJDK_BUILD_OS" = xmacosx; then
+    OPENJDK_BUILD_JVM_LIBS="$OPENJDK_BUILD_JVM_LIBS -lm"
+  elif test "x$OPENJDK_BUILD_OS" = xaix; then
+    OPENJDK_BUILD_JVM_LIBS="$OPENJDK_BUILD_JVM_LIBS -Wl,-lC_r -lm -ldl -lpthread"
+  elif test "x$OPENJDK_BUILD_OS" = xbsd; then
+    OPENJDK_BUILD_JVM_LIBS="$OPENJDK_BUILD_JVM_LIBS -lm"
+  elif test "x$OPENJDK_BUILD_OS" = xwindows; then
+    OPENJDK_BUILD_JVM_LIBS="$OPENJDK_BUILD_JVM_LIBS kernel32.lib user32.lib gdi32.lib winspool.lib \
+        comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib \
+        wsock32.lib winmm.lib version.lib psapi.lib"
+    fi
+
+  # Set OPENJDK_BUILD_JVM_ASFLAGS
+  if test "x$OPENJDK_BUILD_OS" = xlinux; then
+    if test "x$OPENJDK_BUILD_CPU" = xx86; then
+      OPENJDK_BUILD_JVM_ASFLAGS="$OPENJDK_BUILD_JVM_ASFLAGS -march=i586"
+    fi
+  elif test "x$OPENJDK_BUILD_OS" = xmacosx; then
+    OPENJDK_BUILD_JVM_ASFLAGS="$OPENJDK_BUILD_JVM_ASFLAGS -x assembler-with-cpp -mno-omit-leaf-frame-pointer -mstack-alignment=16"
+  fi
+
+  OPENJDK_BUILD_LDFLAGS_JDKLIB="${OPENJDK_BUILD_LDFLAGS_JDKLIB} ${OPENJDK_BUILD_EXTRA_LDFLAGS_JDK}"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  # Tests are only ever compiled for TARGET
+  # Flags for compiling test libraries
+  CFLAGS_TESTLIB="$COMMON_CCXXFLAGS_JDK $CFLAGS_JDK $PICFLAG $CFLAGS_JDKLIB_EXTRA"
+  CXXFLAGS_TESTLIB="$COMMON_CCXXFLAGS_JDK $CXXFLAGS_JDK $PICFLAG $CXXFLAGS_JDKLIB_EXTRA"
+
+  # Flags for compiling test executables
+  CFLAGS_TESTEXE="$COMMON_CCXXFLAGS_JDK $CFLAGS_JDK"
+  CXXFLAGS_TESTEXE="$COMMON_CCXXFLAGS_JDK $CXXFLAGS_JDK"
+
+
+
+
+
+
   LDFLAGS_TESTLIB="$LDFLAGS_JDKLIB"
   LDFLAGS_TESTEXE="$LDFLAGS_JDKEXE"
+
 
 
 
@@ -50883,6 +52365,222 @@ $as_echo "no" >&6; }
 
 
 
+# Need toolchain to setup dtrace
+
+  # Test for dtrace dependencies
+  # Check whether --enable-dtrace was given.
+if test "${enable_dtrace+set}" = set; then :
+  enableval=$enable_dtrace;
+fi
+
+
+  DTRACE_DEP_MISSING=false
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dtrace tool" >&5
+$as_echo_n "checking for dtrace tool... " >&6; }
+  if test "x$DTRACE" != "x" && test -x "$DTRACE"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DTRACE" >&5
+$as_echo "$DTRACE" >&6; }
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found, cannot build dtrace" >&5
+$as_echo "not found, cannot build dtrace" >&6; }
+    DTRACE_DEP_MISSING=true
+  fi
+
+  for ac_header in sys/sdt.h
+do :
+  ac_fn_cxx_check_header_mongrel "$LINENO" "sys/sdt.h" "ac_cv_header_sys_sdt_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_sdt_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_SYS_SDT_H 1
+_ACEOF
+ DTRACE_HEADERS_OK=yes
+else
+  DTRACE_HEADERS_OK=no
+fi
+
+done
+
+  if test "x$DTRACE_HEADERS_OK" != "xyes"; then
+    DTRACE_DEP_MISSING=true
+  fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if dtrace should be built" >&5
+$as_echo_n "checking if dtrace should be built... " >&6; }
+  if test "x$enable_dtrace" = "xyes"; then
+    if test "x$DTRACE_DEP_MISSING" = "xtrue"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, missing dependencies" >&5
+$as_echo "no, missing dependencies" >&6; }
+
+  # Print a helpful message on how to acquire the necessary build dependency.
+  # dtrace is the help tag: freetype, cups, alsa etc
+  MISSING_DEPENDENCY=dtrace
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
+
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
+  fi
+
+      as_fn_error $? "Cannot enable dtrace with missing dependencies. See above. $HELP_MSG" "$LINENO" 5
+    else
+      INCLUDE_DTRACE=true
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, forced" >&5
+$as_echo "yes, forced" >&6; }
+    fi
+  elif test "x$enable_dtrace" = "xno"; then
+    INCLUDE_DTRACE=false
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, forced" >&5
+$as_echo "no, forced" >&6; }
+  elif test "x$enable_dtrace" = "xauto" || test "x$enable_dtrace" = "x"; then
+    if test "x$OPENJDK_TARGET_OS" = "xlinux" && test "x$OPENJDK" != "xtrue"; then
+      INCLUDE_DTRACE=false
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, non-open linux build" >&5
+$as_echo "no, non-open linux build" >&6; }
+    elif test "x$DTRACE_DEP_MISSING" = "xtrue"; then
+      INCLUDE_DTRACE=false
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, missing dependencies" >&5
+$as_echo "no, missing dependencies" >&6; }
+    else
+      INCLUDE_DTRACE=true
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, dependencies present" >&5
+$as_echo "yes, dependencies present" >&6; }
+    fi
+  else
+    as_fn_error $? "Invalid value for --enable-dtrace: $enable_dtrace" "$LINENO" 5
+  fi
+
+
+
+  # The user can in some cases supply additional jvm features. For the custom
+  # variant, this defines the entire variant.
+
+# Check whether --with-jvm-features was given.
+if test "${with_jvm_features+set}" = set; then :
+  withval=$with_jvm_features;
+fi
+
+  if test "x$with_jvm_features" != x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking additional JVM features" >&5
+$as_echo_n "checking additional JVM features... " >&6; }
+    JVM_FEATURES=`$ECHO $with_jvm_features | $SED -e 's/,/ /g'`
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JVM_FEATURES" >&5
+$as_echo "$JVM_FEATURES" >&6; }
+  fi
+
+  # Verify that dependencies are met for explicitly set features.
+  if   [[ " $JVM_FEATURES " =~ " jvmti " ]]   && !   [[ " $JVM_FEATURES " =~ " services " ]]  ; then
+    as_fn_error $? "Specified JVM feature 'jvmti' requires feature 'services'" "$LINENO" 5
+  fi
+
+  if   [[ " $JVM_FEATURES " =~ " management " ]]   && !   [[ " $JVM_FEATURES " =~ " nmt " ]]  ; then
+    as_fn_error $? "Specified JVM feature 'management' requires feature 'nmt'" "$LINENO" 5
+  fi
+
+  if   [[ " $JVM_FEATURES " =~ " jvmci " ]]   && !   [[ " $JVM_FEATURES " =~ " compiler2 " ]]  ; then
+    as_fn_error $? "Specified JVM feature 'jvmci' requires feature 'compiler2'" "$LINENO" 5
+  fi
+
+  if   [[ " $JVM_FEATURES " =~ " compiler2 " ]]   && !   [[ " $JVM_FEATURES " =~ " all-gcs " ]]  ; then
+    as_fn_error $? "Specified JVM feature 'compiler2' requires feature 'all-gcs'" "$LINENO" 5
+  fi
+
+  if   [[ " $JVM_FEATURES " =~ " vm-structs " ]]   && !   [[ " $JVM_FEATURES " =~ " all-gcs " ]]  ; then
+    as_fn_error $? "Specified JVM feature 'vm-structs' requires feature 'all-gcs'" "$LINENO" 5
+  fi
+
+  # Turn on additional features based on other parts of configure
+  if test "x$INCLUDE_DTRACE" = "xtrue"; then
+    JVM_FEATURES="$JVM_FEATURES dtrace"
+  else
+    if   [[ " $JVM_FEATURES " =~ " dtrace " ]]  ; then
+      as_fn_error $? "To enable dtrace, you must use --enable-dtrace" "$LINENO" 5
+    fi
+  fi
+
+  if test "x$STATIC_BUILD" = "xtrue"; then
+    JVM_FEATURES="$JVM_FEATURES static-build"
+  else
+    if   [[ " $JVM_FEATURES " =~ " static-build " ]]  ; then
+      as_fn_error $? "To enable static-build, you must use --enable-static-build" "$LINENO" 5
+    fi
+  fi
+
+  if !   [[ " $JVM_VARIANTS " =~ " zero " ]]   && !   [[ " $JVM_VARIANTS " =~ " zeroshark " ]]  ; then
+    if   [[ " $JVM_FEATURES " =~ " zero " ]]  ; then
+      as_fn_error $? "To enable zero/zeroshark, you must use --with-jvm-variants=zero/zeroshark" "$LINENO" 5
+    fi
+  fi
+
+  if !   [[ " $JVM_VARIANTS " =~ " zeroshark " ]]  ; then
+    if   [[ " $JVM_FEATURES " =~ " shark " ]]  ; then
+      as_fn_error $? "To enable shark, you must use --with-jvm-variants=zeroshark" "$LINENO" 5
+    fi
+  fi
+
+  # Only enable jvmci on x86_64, sparcv9 and aarch64, and only on server.
+  if test "x$OPENJDK_TARGET_CPU" = "xx86_64" || \
+      test "x$OPENJDK_TARGET_CPU" = "xsparcv9" || \
+      test "x$OPENJDK_TARGET_CPU" = "xaarch64" ; then
+    JVM_FEATURES_jvmci="jvmci"
+  else
+    JVM_FEATURES_jvmci=""
+  fi
+
+  # All variants but minimal (and custom) get these features
+  NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jvmti fprof vm-structs jni-check services management all-gcs nmt cds"
+
+  # Enable features depending on variant.
+  JVM_FEATURES_server="compiler1 compiler2 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci"
+  JVM_FEATURES_client="compiler1 $NON_MINIMAL_FEATURES $JVM_FEATURES"
+  JVM_FEATURES_core="$NON_MINIMAL_FEATURES $JVM_FEATURES"
+  JVM_FEATURES_minimal="compiler1 minimal $JVM_FEATURES"
+  JVM_FEATURES_zero="zero $NON_MINIMAL_FEATURES $JVM_FEATURES"
+  JVM_FEATURES_zeroshark="zero shark $NON_MINIMAL_FEATURES $JVM_FEATURES"
+  JVM_FEATURES_custom="$JVM_FEATURES"
+
+
+
+
+
+
+
+
+
+  # Used for verification of Makefiles by check-jvm-feature
+
+
+  # We don't support --with-jvm-interpreter anymore, use zero instead.
+
+
+# Check whether --with-jvm-interpreter was given.
+if test "${with_jvm_interpreter+set}" = set; then :
+  withval=$with_jvm_interpreter; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-jvm-interpreter is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-jvm-interpreter is deprecated and will be ignored." >&2;}
+fi
+
+
+
+
 ###############################################################################
 #
 # Check dependencies for external and internal libraries.
@@ -51009,7 +52707,7 @@ $as_echo "yes" >&6; }
   fi
 
   # Check if ffi is needed
-  if test "x$JVM_VARIANT_ZERO" = xtrue || test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
+  if   [[ " $JVM_VARIANTS " =~ " zero " ]]   ||   [[ " $JVM_VARIANTS " =~ " zeroshark " ]]  ; then
     NEEDS_LIB_FFI=true
   else
     NEEDS_LIB_FFI=false
@@ -51132,14 +52830,26 @@ $as_echo "$has_static_libstdcxx" >&6; }
     # If dynamic wasn't requested, go with static unless it isn't available.
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking how to link with libstdc++" >&5
 $as_echo_n "checking how to link with libstdc++... " >&6; }
-    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno || test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
+    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno ||   [[ " $JVM_VARIANTS " =~ " zeroshark " ]]  ; then
       LIBCXX="$LIBCXX -lstdc++"
+      # To help comparisons with old build, put stdc++ first in JVM_LIBS
+      JVM_LIBS="-lstdc++ $JVM_LIBS"
+      # Ideally, we should test stdc++ for the BUILD toolchain separately. For now
+      # just use the same setting as for the TARGET toolchain.
+      OPENJDK_BUILD_JVM_LIBS="-lstdc++ $OPENJDK_BUILD_JVM_LIBS"
       LDCXX="$CXX"
       STATIC_CXX_SETTING="STATIC_CXX=false"
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: dynamic" >&5
 $as_echo "dynamic" >&6; }
     else
       LIBCXX="$LIBCXX $STATIC_STDCXX_FLAGS"
+      JVM_LDFLAGS="$JVM_LDFLAGS -static-libgcc"
+      # To help comparisons with old build, put stdc++ first in JVM_LIBS
+      JVM_LIBS="-Wl,-Bstatic -lstdc++ -Wl,-Bdynamic $JVM_LIBS"
+      # Ideally, we should test stdc++ for the BUILD toolchain separately. For now
+      # just use the same setting as for the TARGET toolchain.
+      OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS -static-libgcc"
+      OPENJDK_BUILD_JVM_LIBS="-Wl,-Bstatic -lstdc++ -Wl,-Bdynamic $OPENJDK_BUILD_JVM_LIBS"
       LDCXX="$CC"
       STATIC_CXX_SETTING="STATIC_CXX=true"
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: static" >&5
@@ -61291,7 +63001,7 @@ $as_echo "$LIBFFI_WORKS" >&6; }
 
 
 
-  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
+  if   [[ " $JVM_VARIANTS " =~ " zeroshark " ]]  ; then
     # Extract the first word of "llvm-config", so it can be a program name with args.
 set dummy llvm-config; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -62017,7 +63727,141 @@ fi
 ###############################################################################
 
 
+  # Check whether --enable-new-hotspot-build was given.
+if test "${enable_new_hotspot_build+set}" = set; then :
+  enableval=$enable_new_hotspot_build;
+fi
+
+
+   if test "x$enable_new_hotspot_build" = "x" || test "x$enable_new_hotspot_build" = "xyes"; then
+     USE_NEW_HOTSPOT_BUILD=true
+   else
+     USE_NEW_HOTSPOT_BUILD=false
+   fi
+
+
+  case $HOTSPOT_DEBUG_LEVEL in
+    product )
+      VARIANT="OPT"
+      FASTDEBUG="false"
+      DEBUG_CLASSFILES="false"
+      ;;
+    fastdebug )
+      VARIANT="DBG"
+      FASTDEBUG="true"
+      DEBUG_CLASSFILES="true"
+      ;;
+    debug )
+      VARIANT="DBG"
+      FASTDEBUG="false"
+      DEBUG_CLASSFILES="true"
+      ;;
+    optimized )
+      VARIANT="OPT"
+      FASTDEBUG="false"
+      DEBUG_CLASSFILES="false"
+      ;;
+  esac
+
+
+
+
+  if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
+    MACOSX_UNIVERSAL="true"
+  fi
+
+
+
+  # Make sure JVM_VARIANTS_COMMA use minimal1 for backwards compatibility
+  JVM_VARIANTS_COMMA=`$ECHO ,$JVM_VARIANTS_OPT, | $SED -e 's/,minimal,/,minimal1,/'`
+
+  JVM_VARIANT_SERVER=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,server,/!s/.*/false/g' -e '/,server,/s/.*/true/g'`
+  JVM_VARIANT_CLIENT=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,client,/!s/.*/false/g' -e '/,client,/s/.*/true/g'`
+  JVM_VARIANT_MINIMAL1=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,minimal1\?,/!s/.*/false/g' -e '/,minimal1\?,/s/.*/true/g'`
+  JVM_VARIANT_CORE=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,core,/!s/.*/false/g' -e '/,core,/s/.*/true/g'`
+  JVM_VARIANT_ZERO=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,zero,/!s/.*/false/g' -e '/,zero,/s/.*/true/g'`
+  JVM_VARIANT_ZEROSHARK=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,zeroshark,/!s/.*/false/g' -e '/,zeroshark,/s/.*/true/g'`
+  JVM_VARIANT_CUSTOM=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,custom,/!s/.*/false/g' -e '/,custom,/s/.*/true/g'`
+
+  #####
+  # Generate the legacy makefile targets for hotspot.
+  HOTSPOT_TARGET=""
+
+  if test "x$JVM_VARIANT_SERVER" = xtrue; then
+    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL} "
+  fi
+
+  if test "x$JVM_VARIANT_CLIENT" = xtrue; then
+    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}1 "
+  fi
+
+  if test "x$JVM_VARIANT_MINIMAL1" = xtrue; then
+    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}minimal1 "
+  fi
+
+  if test "x$JVM_VARIANT_ZERO" = xtrue; then
+    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}zero "
+  fi
+
+  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
+    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}shark "
+  fi
+
+  if test "x$JVM_VARIANT_CORE" = xtrue; then
+    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}core "
+  fi
+
+  HOTSPOT_TARGET="$HOTSPOT_TARGET docs export_$HOTSPOT_DEBUG_LEVEL"
+
+  # On Macosx universal binaries are produced, but they only contain
+  # 64 bit intel. This invalidates control of which jvms are built
+  # from configure, but only server is valid anyway. Fix this
+  # when hotspot makefiles are rewritten.
+  if test "x$MACOSX_UNIVERSAL" = xtrue; then
+    HOTSPOT_TARGET=universal_${HOTSPOT_DEBUG_LEVEL}
+  fi
+
   HOTSPOT_MAKE_ARGS="$HOTSPOT_TARGET"
+
+
+  # Control wether Hotspot runs Queens test after build.
+  # Check whether --enable-hotspot-test-in-build was given.
+if test "${enable_hotspot_test_in_build+set}" = set; then :
+  enableval=$enable_hotspot_test_in_build;
+else
+  enable_hotspot_test_in_build=no
+fi
+
+  if test "x$enable_hotspot_test_in_build" = "xyes"; then
+    TEST_IN_BUILD=true
+  else
+    TEST_IN_BUILD=false
+  fi
+
+
+  if test "x$USE_NEW_HOTSPOT_BUILD" = xfalse; then
+    if test "x$JVM_VARIANT_CLIENT" = xtrue; then
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        as_fn_error $? "You cannot build a client JVM for a 64-bit machine." "$LINENO" 5
+      fi
+    fi
+    if test "x$JVM_VARIANT_MINIMAL1" = xtrue; then
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        as_fn_error $? "You cannot build a minimal JVM for a 64-bit machine." "$LINENO" 5
+      fi
+    fi
+    if test "x$JVM_VARIANT_CUSTOM" = xtrue; then
+        as_fn_error $? "You cannot build a custom JVM using the old hotspot build system." "$LINENO" 5
+    fi
+  fi
+
+
+
+
+
+
+
+
 
 
 
@@ -63269,6 +65113,10 @@ $as_echo "no, forced" >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, does not work effectively with icecc" >&5
 $as_echo "no, does not work effectively with icecc" >&6; }
     USE_PRECOMPILED_HEADER=0
+  elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, does not work with Solaris Studio" >&5
+$as_echo "no, does not work with Solaris Studio" >&6; }
+    USE_PRECOMPILED_HEADER=0
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -63687,6 +65535,32 @@ $as_echo "$OUTPUT_DIR_IS_LOCAL" >&6; }
 
 
 # At the end, call the custom hook. (Dummy macro if no custom sources available)
+
+
+# This needs to be done after CUSTOM_LATE_HOOK since we can setup custom features.
+
+  # Keep feature lists sorted and free of duplicates
+  JVM_FEATURES_server="$($ECHO $($PRINTF '%s\n' $JVM_FEATURES_server | $SORT -u))"
+  JVM_FEATURES_client="$($ECHO $($PRINTF '%s\n' $JVM_FEATURES_client | $SORT -u))"
+  JVM_FEATURES_core="$($ECHO $($PRINTF '%s\n' $JVM_FEATURES_core | $SORT -u))"
+  JVM_FEATURES_minimal="$($ECHO $($PRINTF '%s\n' $JVM_FEATURES_minimal | $SORT -u))"
+  JVM_FEATURES_zero="$($ECHO $($PRINTF '%s\n' $JVM_FEATURES_zero | $SORT -u))"
+  JVM_FEATURES_zeroshark="$($ECHO $($PRINTF '%s\n' $JVM_FEATURES_zeroshark | $SORT -u))"
+  JVM_FEATURES_custom="$($ECHO $($PRINTF '%s\n' $JVM_FEATURES_custom | $SORT -u))"
+
+  # Validate features
+  for variant in $JVM_VARIANTS; do
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking JVM features for JVM variant '$variant'" >&5
+$as_echo_n "checking JVM features for JVM variant '$variant'... " >&6; }
+    features_var_name=JVM_FEATURES_$variant
+    JVM_FEATURES_TO_TEST=${!features_var_name}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JVM_FEATURES_TO_TEST" >&5
+$as_echo "$JVM_FEATURES_TO_TEST" >&6; }
+    INVALID_FEATURES=`$GREP -Fvx "${VALID_JVM_FEATURES// /$'\n'}" <<< "${JVM_FEATURES_TO_TEST// /$'\n'}"`
+    if test "x$INVALID_FEATURES" != x; then
+      as_fn_error $? "Invalid JVM feature(s): $INVALID_FEATURES" "$LINENO" 5
+    fi
+  done
 
 
 # We're messing a bit with internal autoconf variables to put the config.status
@@ -64912,7 +66786,7 @@ fi
   printf "* Debug level:    $DEBUG_LEVEL\n"
   printf "* HS debug level: $HOTSPOT_DEBUG_LEVEL\n"
   printf "* JDK variant:    $JDK_VARIANT\n"
-  printf "* JVM variants:   $with_jvm_variants\n"
+  printf "* JVM variants:   $JVM_VARIANTS\n"
   printf "* OpenJDK target: OS: $OPENJDK_TARGET_OS, CPU architecture: $OPENJDK_TARGET_CPU_ARCH, address length: $OPENJDK_TARGET_CPU_BITS\n"
   printf "* Version string: $VERSION_STRING ($VERSION_SHORT)\n"
 
@@ -64938,7 +66812,7 @@ fi
   fi
   printf "\n"
 
-  if test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = "xyes"; then
+  if test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = "xtrue"; then
     printf "NOTE: You have requested to build more than one version of the JVM, which\n"
     printf "will result in longer build times.\n"
     printf "\n"
