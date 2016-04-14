@@ -138,11 +138,11 @@
     BytecodeHistogram::_counters[(Bytecodes::Code)opcode]++;                                         \
     if (StopInterpreterAt && StopInterpreterAt == BytecodeCounter::_counter_value) os::breakpoint(); \
     if (TraceBytecodes) {                                                                            \
-      CALL_VM((void)SharedRuntime::trace_bytecode(THREAD, 0,               \
-                                   topOfStack[Interpreter::expr_index_at(1)],   \
-                                   topOfStack[Interpreter::expr_index_at(2)]),  \
-                                   handle_exception);                      \
-    }                                                                      \
+      CALL_VM((void)InterpreterRuntime::trace_bytecode(THREAD, 0,                    \
+                                        topOfStack[Interpreter::expr_index_at(1)],   \
+                                        topOfStack[Interpreter::expr_index_at(2)]),  \
+                                        handle_exception);                           \
+    }                                                                                \
 }
 #endif
 
@@ -632,9 +632,11 @@ BytecodeInterpreter::run(interpreterState istate) {
       if (_compiling) {
         MethodCounters* mcs;
         GET_METHOD_COUNTERS(mcs);
+#if COMPILER2_OR_JVMCI
         if (ProfileInterpreter) {
           METHOD->increment_interpreter_invocation_count(THREAD);
         }
+#endif
         mcs->invocation_counter()->increment();
         if (mcs->invocation_counter()->reached_InvocationLimit(mcs->backedge_counter())) {
           CALL_VM((void)InterpreterRuntime::frequency_counter_overflow(THREAD, NULL), handle_exception);

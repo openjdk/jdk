@@ -174,6 +174,8 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+#if INCLUDE_SERVICES
+#if INCLUDE_JVMTI
 class JVMTIAgentLoadDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<char*> _libpath;
@@ -193,6 +195,8 @@ public:
   static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
+#endif // INCLUDE_JVMTI
+#endif // INCLUDE_SERVICES
 
 class VMDynamicLibrariesDCmd : public DCmd {
 public:

@@ -41,6 +41,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/fieldStreams.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceKlass.inline.hpp"
@@ -1089,7 +1090,7 @@ void InstanceKlass::call_class_initializer_impl(instanceKlassHandle this_k, TRAP
   assert(!this_k->is_initialized(), "we cannot initialize twice");
   if (log_is_enabled(Info, classinit)) {
     ResourceMark rm;
-    outputStream* log = LogHandle(classinit)::info_stream();
+    outputStream* log = Log(classinit)::info_stream();
     log->print("%d Initializing ", call_class_initializer_impl_counter++);
     this_k->name()->print_value_on(log);
     log->print_cr("%s (" INTPTR_FORMAT ")", h_method() == NULL ? "(no method)" : "", p2i(this_k()));
@@ -3010,11 +3011,11 @@ void InstanceKlass::print_loading_log(LogLevel::type type,
   assert(type == LogLevel::Info || type == LogLevel::Debug, "sanity");
 
   if (type == LogLevel::Info) {
-    log = LogHandle(classload)::info_stream();
+    log = Log(classload)::info_stream();
   } else {
     assert(type == LogLevel::Debug,
            "print_loading_log supports only Debug and Info levels");
-    log = LogHandle(classload)::debug_stream();
+    log = Log(classload)::debug_stream();
   }
 
   // Name and class hierarchy info
