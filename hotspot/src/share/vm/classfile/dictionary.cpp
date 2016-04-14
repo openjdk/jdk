@@ -29,6 +29,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "memory/iterator.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "runtime/orderAccess.inline.hpp"
@@ -137,7 +138,7 @@ void DictionaryEntry::add_protection_domain(Dictionary* dict, oop protection_dom
   }
   if (log_is_enabled(Trace, protectiondomain)) {
     ResourceMark rm;
-    outputStream* log = LogHandle(protectiondomain)::trace_stream();
+    outputStream* log = Log(protectiondomain)::trace_stream();
     print_count(log);
   }
 }

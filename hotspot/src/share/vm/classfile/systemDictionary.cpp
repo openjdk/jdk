@@ -45,6 +45,7 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/filemap.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/klass.inline.hpp"
@@ -67,6 +68,7 @@
 #include "runtime/signature.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/threadService.hpp"
+#include "trace/traceMacros.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
 #if INCLUDE_CDS
@@ -435,7 +437,7 @@ void SystemDictionary::validate_protection_domain(instanceKlassHandle klass,
   if (log_is_enabled(Debug, protectiondomain)) {
     ResourceMark rm;
     // Print out trace information
-    outputStream* log = LogHandle(protectiondomain)::debug_stream();
+    outputStream* log = Log(protectiondomain)::debug_stream();
     log->print_cr("Checking package access");
     log->print("class loader: "); class_loader()->print_value_on(log);
     log->print(" protection domain: "); protection_domain()->print_value_on(log);
@@ -1650,6 +1652,8 @@ void SystemDictionary::define_instance_class(instanceKlassHandle k, TRAPS) {
 
   }
 
+  TRACE_KLASS_DEFINITION(k, THREAD);
+
 }
 
 // Support parallel classloading
@@ -2063,7 +2067,18 @@ bool SystemDictionary::initialize_wk_klass(WKID id, int init_opt, TRAPS) {
   int  sid  = (info >> CEIL_LG_OPTION_LIMIT);
   Symbol* symbol = vmSymbols::symbol_at((vmSymbols::SID)sid);
   InstanceKlass** klassp = &_well_known_klasses[id];
-  bool must_load = (init_opt < SystemDictionary::Opt);
+
+  bool must_load;
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    // If JVMCI is enabled we require its classes to be found.
+    must_load = (init_opt < SystemDictionary::Opt) || (init_opt == SystemDictionary::Jvmci);
+  } else
+#endif
+  {
+    must_load = (init_opt < SystemDictionary::Opt);
+  }
+
   if ((*klassp) == NULL) {
     Klass* k;
     if (must_load) {

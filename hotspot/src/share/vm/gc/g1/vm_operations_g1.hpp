@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1AllocationContext.hpp"
 #include "gc/shared/gcId.hpp"
+#include "gc/shared/referencePendingListLocker.hpp"
 #include "gc/shared/vmGCOperations.hpp"
 
 // VM_operations for the G1 collector.
@@ -102,10 +103,11 @@ public:
 // Concurrent GC stop-the-world operations such as remark and cleanup;
 // consider sharing these with CMS's counterparts.
 class VM_CGC_Operation: public VM_Operation {
-  VoidClosure* _cl;
-  const char* _printGCMessage;
-  bool _needs_pll;
-  uint _gc_id;
+  VoidClosure*               _cl;
+  const char*                _printGCMessage;
+  bool                       _needs_pending_list_lock;
+  ReferencePendingListLocker _pending_list_locker;
+  uint                       _gc_id;
 
 protected:
   // java.lang.ref.Reference support
@@ -113,8 +115,8 @@ protected:
   void release_and_notify_pending_list_lock();
 
 public:
-  VM_CGC_Operation(VoidClosure* cl, const char *printGCMsg, bool needs_pll)
-    : _cl(cl), _printGCMessage(printGCMsg), _needs_pll(needs_pll), _gc_id(GCId::current()) { }
+  VM_CGC_Operation(VoidClosure* cl, const char *printGCMsg, bool needs_pending_list_lock)
+    : _cl(cl), _printGCMessage(printGCMsg), _needs_pending_list_lock(needs_pending_list_lock), _gc_id(GCId::current()) {}
   virtual VMOp_Type type() const { return VMOp_CGC_Operation; }
   virtual void doit();
   virtual bool doit_prologue();

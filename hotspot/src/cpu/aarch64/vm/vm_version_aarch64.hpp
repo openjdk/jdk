@@ -73,6 +73,7 @@ public:
     CPU_SHA1         = (1<<5),
     CPU_SHA2         = (1<<6),
     CPU_CRC32        = (1<<7),
+    CPU_LSE          = (1<<8),
     CPU_A53MAC       = (1 << 30),
     CPU_DMB_ATOMICS  = (1 << 31),
   };

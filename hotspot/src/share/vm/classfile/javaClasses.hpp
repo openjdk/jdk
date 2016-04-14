@@ -155,11 +155,6 @@ class java_lang_String : AllStatic {
   }
 
   static unsigned int hash_code(oop java_string);
-  static unsigned int latin1_hash_code(typeArrayOop value, int len);
-
-  // This is the string hash code used by the StringTable, which may be
-  // the same as String.hashCode or an alternate hash code.
-  static unsigned int hash_string(oop java_string);
 
   static bool equals(oop java_string, jchar* chars, int len);
   static bool equals(oop str1, oop str2);
@@ -456,6 +451,7 @@ class java_lang_ThreadGroup : AllStatic {
 
 class java_lang_Throwable: AllStatic {
   friend class BacktraceBuilder;
+  friend class BacktraceIterator;
 
  private:
   // Offsets
@@ -481,16 +477,12 @@ class java_lang_Throwable: AllStatic {
 
   static int backtrace_offset;
   static int detailMessage_offset;
-  static int cause_offset;
   static int stackTrace_offset;
+  static int depth_offset;
   static int static_unassigned_stacktrace_offset;
 
-  // Printing
-  static char* print_stack_element_to_buffer(Handle mirror, int method, int version, int bci, int cpref);
   // StackTrace (programmatic access, new since 1.4)
   static void clear_stacktrace(oop throwable);
-  // No stack trace available
-  static const char* no_stack_trace_message();
   // Stacktrace (post JDK 1.7.0 to allow immutability protocol to be followed)
   static void set_stacktrace(oop throwable, oop st_element_array);
   static oop unassigned_stacktrace();
@@ -499,18 +491,19 @@ class java_lang_Throwable: AllStatic {
   // Backtrace
   static oop backtrace(oop throwable);
   static void set_backtrace(oop throwable, oop value);
+  static int depth(oop throwable);
+  static void set_depth(oop throwable, int value);
   // Needed by JVMTI to filter out this internal field.
   static int get_backtrace_offset() { return backtrace_offset;}
   static int get_detailMessage_offset() { return detailMessage_offset;}
   // Message
-  static oop message(oop throwable);
   static oop message(Handle throwable);
   static void set_message(oop throwable, oop value);
   static Symbol* detail_message(oop throwable);
-  static void print_stack_element(outputStream *st, Handle mirror, int method,
-                                  int version, int bci, int cpref);
   static void print_stack_element(outputStream *st, const methodHandle& method, int bci);
   static void print_stack_usage(Handle stream);
+
+  static void compute_offsets();
 
   // Allocate space for backtrace (created but stack trace not filled in)
   static void allocate_backtrace(Handle throwable, TRAPS);
@@ -520,8 +513,7 @@ class java_lang_Throwable: AllStatic {
   static void fill_in_stack_trace(Handle throwable, const methodHandle& method, TRAPS);
   static void fill_in_stack_trace(Handle throwable, const methodHandle& method = methodHandle());
   // Programmatic access to stack trace
-  static oop  get_stack_trace_element(oop throwable, int index, TRAPS);
-  static int  get_stack_trace_depth(oop throwable, TRAPS);
+  static void get_stack_trace_elements(Handle throwable, objArrayHandle stack_trace, TRAPS);
   // Printing
   static void print(Handle throwable, outputStream* st);
   static void print_stack_trace(Handle throwable, outputStream* st);
@@ -1333,7 +1325,6 @@ class java_lang_StackTraceElement: AllStatic {
   static int fileName_offset;
   static int lineNumber_offset;
 
- public:
   // Setters
   static void set_moduleName(oop element, oop value);
   static void set_moduleVersion(oop element, oop value);
@@ -1342,9 +1333,12 @@ class java_lang_StackTraceElement: AllStatic {
   static void set_fileName(oop element, oop value);
   static void set_lineNumber(oop element, int value);
 
+ public:
   // Create an instance of StackTraceElement
-  static oop create(Handle mirror, int method, int version, int bci, int cpref, TRAPS);
   static oop create(const methodHandle& method, int bci, TRAPS);
+
+  static void fill_in(Handle element, InstanceKlass* holder, const methodHandle& method,
+                      int version, int bci, int cpref, TRAPS);
 
   // Debugging
   friend class JavaClasses;
