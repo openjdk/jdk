@@ -226,7 +226,7 @@ CommandLineFlagConstraint::ConstraintType CommandLineFlagConstraintList::_valida
 
 // Check the ranges of all flags that have them or print them out and exit if requested
 void CommandLineFlagConstraintList::init(void) {
-  _constraints = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<CommandLineFlagConstraint*>(INITIAL_CONSTRAINTS_SIZE, true);
+  _constraints = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<CommandLineFlagConstraint*>(INITIAL_CONSTRAINTS_SIZE, true);
 
   emit_constraint_no(NULL RUNTIME_FLAGS(EMIT_CONSTRAINT_DEVELOPER_FLAG,
                                         EMIT_CONSTRAINT_PD_DEVELOPER_FLAG,
