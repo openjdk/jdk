@@ -82,6 +82,8 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   template <typename SpaceType>
   friend void CompactibleSpace::scan_and_compact(SpaceType* space);
   template <typename SpaceType>
+  friend void CompactibleSpace::verify_up_to_first_dead(SpaceType* space);
+  template <typename SpaceType>
   friend void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* cp);
 
   // "Size" of chunks of work (executed during parallel remark phases
