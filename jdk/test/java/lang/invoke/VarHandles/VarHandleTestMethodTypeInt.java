@@ -615,7 +615,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
     }
 
     static void testInstanceFieldWrongMethodType(VarHandleTestMethodTypeInt recv, Handles hs) throws Throwable {
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.get)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET)) {
             // Incorrect argument types
             checkNPE(() -> { // null receiver
                 int x = (int) hs.get(am, methodType(int.class, Void.class)).
@@ -649,7 +649,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.set)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.SET)) {
             // Incorrect argument types
             checkNPE(() -> { // null receiver
                 hs.get(am, methodType(void.class, Void.class, int.class)).
@@ -678,7 +678,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
             // Incorrect argument types
             checkNPE(() -> { // null receiver
                 boolean r = (boolean) hs.get(am, methodType(boolean.class, Void.class, int.class, int.class)).
@@ -711,7 +711,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndExchange)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
             checkNPE(() -> { // null receiver
                 int x = (int) hs.get(am, methodType(int.class, Void.class, int.class, int.class)).
                     invoke(null, 1, 1);
@@ -752,7 +752,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
             checkNPE(() -> { // null receiver
                 int x = (int) hs.get(am, methodType(int.class, Void.class, int.class)).
                     invoke(null, 1);
@@ -789,7 +789,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndAdd)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
             checkNPE(() -> { // null receiver
                 int x = (int) hs.get(am, methodType(int.class, Void.class, int.class)).
                     invoke(null, 1);
@@ -1143,7 +1143,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
     static void testStaticFieldWrongMethodType(Handles hs) throws Throwable {
         int i = 0;
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.get)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET)) {
             // Incorrect return type
             checkWMTE(() -> { // reference class
                 Void x = (Void) hs.get(am, methodType(Void.class)).
@@ -1160,7 +1160,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.set)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.SET)) {
             checkWMTE(() -> { // value reference class
                 hs.get(am, methodType(void.class, Class.class)).
                     invoke(Void.class);
@@ -1175,7 +1175,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
                     invoke(1, Void.class);
             });
         }
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
             // Incorrect argument types
             checkWMTE(() -> { // expected reference class
                 boolean r = (boolean) hs.get(am, methodType(boolean.class, Class.class, int.class)).
@@ -1196,7 +1196,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndExchange)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
             // Incorrect argument types
             checkWMTE(() -> { // expected reference class
                 int x = (int) hs.get(am, methodType(int.class, Class.class, int.class)).
@@ -1226,7 +1226,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
             // Incorrect argument types
             checkWMTE(() -> { // value reference class
                 int x = (int) hs.get(am, methodType(int.class, Class.class)).
@@ -1252,7 +1252,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndAdd)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
             // Incorrect argument types
             checkWMTE(() -> { // value reference class
                 int x = (int) hs.get(am, methodType(int.class, Class.class)).
@@ -1834,7 +1834,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         int[] array = new int[10];
         Arrays.fill(array, 1);
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.get)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET)) {
             // Incorrect argument types
             checkNPE(() -> { // null array
                 int x = (int) hs.get(am, methodType(int.class, Void.class, int.class)).
@@ -1872,7 +1872,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.set)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.SET)) {
             // Incorrect argument types
             checkNPE(() -> { // null array
                 hs.get(am, methodType(void.class, Void.class, int.class, int.class)).
@@ -1904,7 +1904,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
                     invoke(array, 0, 1, Void.class);
             });
         }
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
             // Incorrect argument types
             checkNPE(() -> { // null receiver
                 boolean r = (boolean) hs.get(am, methodType(boolean.class, Void.class, int.class, int.class, int.class)).
@@ -1941,7 +1941,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndExchange)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
             // Incorrect argument types
             checkNPE(() -> { // null receiver
                 int x = (int) hs.get(am, methodType(int.class, Void.class, int.class, int.class, int.class)).
@@ -1987,7 +1987,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
             // Incorrect argument types
             checkNPE(() -> { // null array
                 int x = (int) hs.get(am, methodType(int.class, Void.class, int.class, int.class)).
@@ -2029,7 +2029,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndAdd)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
             // Incorrect argument types
             checkNPE(() -> { // null array
                 int x = (int) hs.get(am, methodType(int.class, Void.class, int.class, int.class)).

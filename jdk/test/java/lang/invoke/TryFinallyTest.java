@@ -25,6 +25,7 @@
 
 /* @test
  * @bug 8139885
+ * @bug 8150824
  * @bug 8150825
  * @run testng/othervm -ea -esa test.java.lang.invoke.TryFinallyTest
  */
@@ -71,12 +72,32 @@ public class TryFinallyTest {
     }
 
     @DataProvider
+    static Object[][] omitTrailingArguments() {
+        MethodHandle c = TryFinally.MH_voidCleanup;
+        return new Object[][]{
+                {c},
+                {MethodHandles.dropArguments(c, 1, int.class)},
+                {MethodHandles.dropArguments(c, 1, int.class, long.class)},
+                {MethodHandles.dropArguments(c, 1, int.class, long.class, Object.class, int.class)},
+                {MethodHandles.dropArguments(c, 1, int.class, long.class, Object.class, int.class, long.class)}
+        };
+    }
+
+    @Test(dataProvider = "omitTrailingArguments")
+    public static void testTryFinallyOmitTrailingArguments(MethodHandle cleanup) throws Throwable {
+        MethodHandle tf = MethodHandles.tryFinally(TryFinally.MH_dummyTarget, cleanup);
+        tf.invoke(1, 2L, "a", 23, 42L, "b");
+    }
+
+    @DataProvider
     static Object[][] negativeTestData() {
         MethodHandle intid = MethodHandles.identity(int.class);
         MethodHandle intco = MethodHandles.constant(int.class, 0);
         MethodHandle errTarget = MethodHandles.dropArguments(intco, 0, int.class, double.class, String.class, int.class);
         MethodHandle errCleanup = MethodHandles.dropArguments(MethodHandles.constant(int.class, 0), 0, Throwable.class,
                 int.class, double.class, Object.class);
+        MethodHandle voidTarget = TryFinally.MH_voidTarget;
+        MethodHandle voidICleanup = MethodHandles.dropArguments(TryFinally.MH_voidCleanup, 1, int.class);
         return new Object[][]{
                 {intid, MethodHandles.identity(double.class),
                         "target and return types must match: double != int"},
@@ -87,9 +108,9 @@ public class TryFinallyTest {
                 {errTarget, errCleanup,
                         "cleanup parameters after (Throwable,result) and target parameter list prefix must match: " +
                                 errCleanup.type() + " != " + errTarget.type()},
-                {TryFinally.MH_voidTarget, TryFinally.MH_voidCleanup,
+                {voidTarget, voidICleanup,
                         "cleanup parameters after (Throwable,result) and target parameter list prefix must match: " +
-                                TryFinally.MH_voidCleanup.type() + " != " + TryFinally.MH_voidTarget.type()}
+                                voidICleanup.type() + " != " + voidTarget.type()}
         };
     }
 
@@ -133,7 +154,7 @@ public class TryFinallyTest {
 
         static void voidTarget() {}
 
-        static void voidCleanup(Throwable t, int a) {}
+        static void voidCleanup(Throwable t) {}
 
         static final Class<TryFinally> TRY_FINALLY = TryFinally.class;
 
@@ -144,7 +165,7 @@ public class TryFinallyTest {
         static final MethodType MT_greetMore = methodType(String.class, String.class, String.class);
         static final MethodType MT_exclaimMore = methodType(String.class, Throwable.class, String.class, String.class);
         static final MethodType MT_voidTarget = methodType(void.class);
-        static final MethodType MT_voidCleanup = methodType(void.class, Throwable.class, int.class);
+        static final MethodType MT_voidCleanup = methodType(void.class, Throwable.class);
 
         static final MethodHandle MH_greet;
         static final MethodHandle MH_exclaim;
@@ -154,6 +175,8 @@ public class TryFinallyTest {
         static final MethodHandle MH_exclaimMore;
         static final MethodHandle MH_voidTarget;
         static final MethodHandle MH_voidCleanup;
+
+        static final MethodHandle MH_dummyTarget;
 
         static final MethodType MT_hello = methodType(String.class, String.class);
         static final MethodType MT_printHello = methodType(void.class, String.class);
@@ -169,6 +192,8 @@ public class TryFinallyTest {
                 MH_exclaimMore = LOOKUP.findStatic(TRY_FINALLY, "exclaimMore", MT_exclaimMore);
                 MH_voidTarget = LOOKUP.findStatic(TRY_FINALLY, "voidTarget", MT_voidTarget);
                 MH_voidCleanup = LOOKUP.findStatic(TRY_FINALLY, "voidCleanup", MT_voidCleanup);
+                MH_dummyTarget = MethodHandles.dropArguments(MH_voidTarget, 0, int.class, long.class, Object.class,
+                        int.class, long.class, Object.class);
             } catch (Exception e) {
                 throw new ExceptionInInitializerError(e);
             }

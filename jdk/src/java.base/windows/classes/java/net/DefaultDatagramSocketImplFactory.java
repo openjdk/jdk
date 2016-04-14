@@ -26,6 +26,7 @@ package java.net;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import sun.security.action.GetPropertyAction;
 
 /**
  * This class defines a factory for creating DatagramSocketImpls. It defaults
@@ -47,64 +48,30 @@ class DefaultDatagramSocketImplFactory
 {
     private static final Class<?> prefixImplClass;
 
-    /* the windows version. */
-    private static float version;
-
     /* java.net.preferIPv4Stack */
-    private static boolean preferIPv4Stack = false;
-
-    /* If the version supports a dual stack TCP implementation */
-    private static final boolean useDualStackImpl;
-
-    /* sun.net.useExclusiveBind */
-    private static String exclBindProp;
+    private static final boolean preferIPv4Stack;
 
     /* True if exclusive binding is on for Windows */
     private static final boolean exclusiveBind;
 
     static {
         Class<?> prefixImplClassLocal = null;
-        boolean useDualStackImplLocal = false;
-        boolean exclusiveBindLocal = true;
 
-        // Determine Windows Version.
-        java.security.AccessController.doPrivileged(
-                new PrivilegedAction<Object>() {
-                    public Object run() {
-                        version = 0;
-                        try {
-                            version = Float.parseFloat(System.getProperties()
-                                    .getProperty("os.version"));
-                            preferIPv4Stack = Boolean.parseBoolean(
-                                              System.getProperties()
-                                              .getProperty(
-                                                   "java.net.preferIPv4Stack"));
-                            exclBindProp = System.getProperty(
-                                    "sun.net.useExclusiveBind");
-                        } catch (NumberFormatException e) {
-                            assert false : e;
-                        }
-                        return null; // nothing to return
-                    }
-                });
+        preferIPv4Stack = Boolean.parseBoolean(
+                AccessController.doPrivileged(
+                        new GetPropertyAction("java.net.preferIPv4Stack")));
 
-        // (version >= 6.0) implies Vista or greater.
-        if (version >= 6.0 && !preferIPv4Stack) {
-            useDualStackImplLocal = true;
-        }
-        if (exclBindProp != null) {
-            // sun.net.useExclusiveBind is true
-            exclusiveBindLocal = exclBindProp.length() == 0 ? true
-                    : Boolean.parseBoolean(exclBindProp);
-        } else if (version < 6.0) {
-            exclusiveBindLocal = false;
-        }
+        String exclBindProp = AccessController.doPrivileged(
+                new GetPropertyAction("sun.net.useExclusiveBind", ""));
+        exclusiveBind = (exclBindProp.isEmpty())
+                ? true
+                : Boolean.parseBoolean(exclBindProp);
 
         // impl.prefix
         String prefix = null;
         try {
             prefix = AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction("impl.prefix", null));
+                new GetPropertyAction("impl.prefix", null));
             if (prefix != null)
                 prefixImplClassLocal = Class.forName("java.net."+prefix+"DatagramSocketImpl");
         } catch (Exception e) {
@@ -114,8 +81,6 @@ class DefaultDatagramSocketImplFactory
         }
 
         prefixImplClass = prefixImplClassLocal;
-        useDualStackImpl = useDualStackImplLocal;
-        exclusiveBind = exclusiveBindLocal;
     }
 
     /**
@@ -133,7 +98,7 @@ class DefaultDatagramSocketImplFactory
                 throw new SocketException("can't instantiate DatagramSocketImpl");
             }
         } else {
-            if (useDualStackImpl && !isMulticast)
+            if (!preferIPv4Stack && !isMulticast)
                 return new DualStackPlainDatagramSocketImpl(exclusiveBind);
             else
                 return new TwoStacksPlainDatagramSocketImpl(exclusiveBind && !isMulticast);
