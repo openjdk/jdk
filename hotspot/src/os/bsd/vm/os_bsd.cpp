@@ -3732,6 +3732,28 @@ int os::stat(const char *path, struct stat *sbuf) {
   return ::stat(pathbuf, sbuf);
 }
 
+static inline struct timespec get_mtime(const char* filename) {
+  struct stat st;
+  int ret = os::stat(filename, &st);
+  assert(ret == 0, "failed to stat() file '%s': %s", filename, strerror(errno));
+#ifdef __APPLE__
+  return st.st_mtimespec;
+#else
+  return st.st_mtim;
+#endif
+}
+
+int os::compare_file_modified_times(const char* file1, const char* file2) {
+  struct timespec filetime1 = get_mtime(file1);
+  struct timespec filetime2 = get_mtime(file2);
+  int diff = filetime1.tv_sec - filetime2.tv_sec;
+  if (diff == 0) {
+    return filetime1.tv_nsec - filetime2.tv_nsec;
+  }
+  return diff;
+}
+
+
 bool os::check_heap(bool force) {
   return true;
 }

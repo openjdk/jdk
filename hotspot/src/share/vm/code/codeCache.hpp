@@ -201,6 +201,7 @@ class CodeCache : AllStatic {
   static bool needs_cache_clean()                     { return _needs_cache_clean; }
   static void set_needs_cache_clean(bool v)           { _needs_cache_clean = v;    }
   static void clear_inline_caches();                  // clear all inline caches
+  static void cleanup_inline_caches();
 
   // Returns true if an own CodeHeap for the given CodeBlobType is available
   static bool heap_available(int code_blob_type);

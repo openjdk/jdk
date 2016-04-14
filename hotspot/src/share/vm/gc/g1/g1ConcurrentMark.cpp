@@ -2112,6 +2112,10 @@ void G1ConcurrentMark::print_worker_threads_on(outputStream* st) const {
   _parallel_workers->print_worker_threads_on(st);
 }
 
+void G1ConcurrentMark::threads_do(ThreadClosure* tc) const {
+  _parallel_workers->threads_do(tc);
+}
+
 void G1ConcurrentMark::print_on_error(outputStream* st) const {
   st->print_cr("Marking Bits (Prev, Next): (CMBitMap*) " PTR_FORMAT ", (CMBitMap*) " PTR_FORMAT,
       p2i(_prevMarkBitMap), p2i(_nextMarkBitMap));

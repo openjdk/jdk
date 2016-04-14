@@ -1042,6 +1042,14 @@ void CodeCache::clear_inline_caches() {
   }
 }
 
+void CodeCache::cleanup_inline_caches() {
+  assert_locked_or_safepoint(CodeCache_lock);
+  NMethodIterator iter;
+  while(iter.next_alive()) {
+    iter.method()->cleanup_inline_caches(/*clean_all=*/true);
+  }
+}
+
 // Keeps track of time spent for checking dependencies
 NOT_PRODUCT(static elapsedTimer dependentCheckTime;)
 

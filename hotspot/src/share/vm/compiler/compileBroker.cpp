@@ -389,13 +389,16 @@ CompileTask* CompileQueue::get() {
     task = CompilationPolicy::policy()->select_task(this);
   }
 
-  // Save method pointers across unlock safepoint.  The task is removed from
-  // the compilation queue, which is walked during RedefineClasses.
-  save_method = methodHandle(task->method());
-  save_hot_method = methodHandle(task->hot_method());
+  if (task != NULL) {
+    // Save method pointers across unlock safepoint.  The task is removed from
+    // the compilation queue, which is walked during RedefineClasses.
+    save_method = methodHandle(task->method());
+    save_hot_method = methodHandle(task->hot_method());
 
-  remove(task);
-  purge_stale_tasks(); // may temporarily release MCQ lock
+    remove(task);
+    purge_stale_tasks(); // may temporarily release MCQ lock
+  }
+
   return task;
 }
 
@@ -1784,7 +1787,8 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   bool is_osr = (osr_bci != standard_entry_bci);
   bool should_log = (thread->log() != NULL);
   bool should_break = false;
-  int task_level = task->comp_level();
+  const int task_level = task->comp_level();
+  AbstractCompiler* comp = task->compiler();
 
   DirectiveSet* directive;
   {
@@ -1796,7 +1800,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     assert(!method->is_native(), "no longer compile natives");
 
     // Look up matching directives
-    directive = DirectivesStack::getMatchingDirective(method, compiler(task_level));
+    directive = DirectivesStack::getMatchingDirective(method, comp);
 
     // Save information about this method in case of failure.
     set_last_compile(thread, method, is_osr, task_level);
@@ -1815,13 +1819,13 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   int compilable = ciEnv::MethodCompilable;
   const char* failure_reason = NULL;
   const char* retry_message = NULL;
-  AbstractCompiler *comp = compiler(task_level);
 
   int system_dictionary_modification_counter;
   {
     MutexLocker locker(Compile_lock, thread);
     system_dictionary_modification_counter = SystemDictionary::number_of_modifications();
   }
+
 #if INCLUDE_JVMCI
   if (UseJVMCICompiler && comp != NULL && comp->is_jvmci()) {
     JVMCICompiler* jvmci = (JVMCICompiler*) comp;

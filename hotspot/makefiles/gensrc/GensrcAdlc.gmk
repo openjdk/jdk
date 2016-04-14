@@ -41,9 +41,8 @@ ifeq ($(call check-jvm-feature, compiler2), true)
     ADLC_CFLAGS := -m64
     ADLC_CFLAGS_WARNINGS := +w
   else ifeq ($(OPENJDK_BUILD_OS), aix)
-    # FIXME: Not implemented. These flags are likely, however
-    # ADLC_LDFLAGS := -q64
-    # ADLC_CFLAGS := -qnortti -qnoeh -q64
+    ADLC_LDFLAGS := -q64
+    ADLC_CFLAGS := -qnortti -qeh -q64 -DAIX
   else ifeq ($(OPENJDK_BUILD_OS), windows)
     ADLC_LDFLAGS := -nologo
     ADLC_CFLAGS := -nologo -EHsc
@@ -89,7 +88,7 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   else ifeq ($(OPENJDK_TARGET_OS), solaris)
     ADLCFLAGS += -DSOLARIS=1 -DSPARC_WORKS=1
   else ifeq ($(OPENJDK_TARGET_OS), aix)
-    # FIXME: Not implemented
+    ADLCFLAGS += -DAIX=1
   else ifeq ($(OPENJDK_TARGET_OS), macosx)
     ADLCFLAGS += -D_ALLBSD_SOURCE=1 -D_GNU_SOURCE=1
   endif

@@ -206,8 +206,14 @@ public:
       return 0;
     }
     if (hr->is_humongous()) {
-      mark_card_bitmap_range(start, hr->top());
-      return pointer_delta(hr->top(), start, 1);
+      HeapRegion* start_region = hr->humongous_start_region();
+      if (mark_bitmap->isMarked(start_region->bottom())) {
+        mark_card_bitmap_range(start, hr->top());
+        return pointer_delta(hr->top(), start, 1);
+      } else {
+        // Humongous start object was actually dead.
+        return 0;
+      }
     }
 
     assert(start <= hr->end() && start <= ntams && ntams <= hr->end(),
