@@ -82,6 +82,13 @@ OPENJDK_TARGET_CPU_OSARCH:=@OPENJDK_TARGET_CPU_OSARCH@
 OPENJDK_TARGET_CPU_JLI_CFLAGS:=@OPENJDK_TARGET_CPU_JLI_CFLAGS@
 OPENJDK_TARGET_OS_EXPORT_DIR:=@OPENJDK_TARGET_OS_EXPORT_DIR@
 
+HOTSPOT_TARGET_OS := @HOTSPOT_TARGET_OS@
+HOTSPOT_TARGET_OS_TYPE := @HOTSPOT_TARGET_OS_TYPE@
+
+HOTSPOT_TARGET_CPU := @HOTSPOT_TARGET_CPU@
+HOTSPOT_TARGET_CPU_ARCH := @HOTSPOT_TARGET_CPU_ARCH@
+HOTSPOT_TARGET_CPU_DEFINE := @HOTSPOT_TARGET_CPU_DEFINE@
+
 # We are building on this build system.
 # When not cross-compiling, it is the same as the target.
 OPENJDK_BUILD_OS:=@OPENJDK_BUILD_OS@
@@ -192,6 +199,7 @@ PRODUCT_NAME:=@PRODUCT_NAME@
 PRODUCT_SUFFIX:=@PRODUCT_SUFFIX@
 JDK_RC_PLATFORM_NAME:=@JDK_RC_PLATFORM_NAME@
 COMPANY_NAME:=@COMPANY_NAME@
+HOTSPOT_VM_DISTRO:=@HOTSPOT_VM_DISTRO@
 MACOSX_BUNDLE_NAME_BASE=@MACOSX_BUNDLE_NAME_BASE@
 MACOSX_BUNDLE_ID_BASE=@MACOSX_BUNDLE_ID_BASE@
 USERNAME:=@USERNAME@
@@ -201,10 +209,31 @@ RUNTIME_NAME=$(PRODUCT_NAME) $(PRODUCT_SUFFIX)
 
 # How to compile the code: release, fastdebug or slowdebug
 DEBUG_LEVEL:=@DEBUG_LEVEL@
+HOTSPOT_DEBUG_LEVEL:=@HOTSPOT_DEBUG_LEVEL@
 
 # This is the JDK variant to build.
 # The JDK variant is a name for a specific set of modules to be compiled for the JDK.
 JDK_VARIANT:=@JDK_VARIANT@
+
+# Which JVM variants to build (space-separated list)
+JVM_VARIANTS := @JVM_VARIANTS@
+
+# Lists of features per variant. Only relevant for the variants listed in
+# JVM_VARIANTS.
+JVM_FEATURES_server := @JVM_FEATURES_server@
+JVM_FEATURES_client := @JVM_FEATURES_client@
+JVM_FEATURES_core := @JVM_FEATURES_core@
+JVM_FEATURES_minimal := @JVM_FEATURES_minimal@
+JVM_FEATURES_zero := @JVM_FEATURES_zero@
+JVM_FEATURES_zeroshark := @JVM_FEATURES_zeroshark@
+JVM_FEATURES_custom := @JVM_FEATURES_custom@
+
+# Used for make-time verifications
+VALID_JVM_FEATURES := @VALID_JVM_FEATURES@
+VALID_JVM_VARIANTS := @VALID_JVM_VARIANTS@
+
+# Control use of precompiled header in hotspot libjvm build
+USE_PRECOMPILED_HEADER := @USE_PRECOMPILED_HEADER@
 
 # Should we compile support for running with a graphical UI? (ie headful)
 # Should we compile support for running without? (ie headless)
@@ -213,24 +242,10 @@ SUPPORT_HEADLESS:=@SUPPORT_HEADLESS@
 # Legacy defines controlled by the SUPPORT_HEADLESS and SUPPORT_HEADFUL options.
 @BUILD_HEADLESS@
 
-# These are the libjvms that we want to build.
-# The java launcher uses the default.
-# The others can be selected by specifying -client -server -minimal1 -zero or -zeroshark
-# on the java launcher command line.
-JVM_VARIANTS:=@JVM_VARIANTS@
-JVM_VARIANT_SERVER:=@JVM_VARIANT_SERVER@
-JVM_VARIANT_CLIENT:=@JVM_VARIANT_CLIENT@
-JVM_VARIANT_MINIMAL1:=@JVM_VARIANT_MINIMAL1@
-JVM_VARIANT_ZERO:=@JVM_VARIANT_ZERO@
-JVM_VARIANT_ZEROSHARK:=@JVM_VARIANT_ZEROSHARK@
-JVM_VARIANT_CORE:=@JVM_VARIANT_CORE@
+# Legacy support
+USE_NEW_HOTSPOT_BUILD:=@USE_NEW_HOTSPOT_BUILD@
 
-# Universal binaries on macosx
 MACOSX_UNIVERSAL=@MACOSX_UNIVERSAL@
-
-# Legacy setting: -debug or -fastdebug
-# Still used in version string...
-BUILD_VARIANT_RELEASE:=@BUILD_VARIANT_RELEASE@
 
 # JDK_OUTPUTDIR specifies where a working jvm is built.
 # You can run $(JDK_OUTPUTDIR)/bin/java
@@ -318,6 +333,11 @@ MACOSX_VERSION_MIN=@MACOSX_VERSION_MIN@
 # Toolchain type: gcc, clang, solstudio, lxc, microsoft...
 TOOLCHAIN_TYPE:=@TOOLCHAIN_TYPE@
 TOOLCHAIN_VERSION := @TOOLCHAIN_VERSION@
+CC_VERSION_NUMBER := @CC_VERSION_NUMBER@
+CXX_VERSION_NUMBER := @CXX_VERSION_NUMBER@
+
+# Legacy support
+HOTSPOT_TOOLCHAIN_TYPE := @HOTSPOT_TOOLCHAIN_TYPE@
 
 # Option used to tell the compiler whether to create 32- or 64-bit executables
 COMPILER_TARGET_BITS_FLAG:=@COMPILER_TARGET_BITS_FLAG@
@@ -336,14 +356,18 @@ LD_OUT_OPTION:=@LD_OUT_OPTION@
 AR_OUT_OPTION:=@AR_OUT_OPTION@
 
 # Flags used for overriding the default opt setting for a C/C++ source file.
+C_O_FLAG_HIGHEST_JVM:=@C_O_FLAG_HIGHEST_JVM@
 C_O_FLAG_HIGHEST:=@C_O_FLAG_HIGHEST@
 C_O_FLAG_HI:=@C_O_FLAG_HI@
 C_O_FLAG_NORM:=@C_O_FLAG_NORM@
 C_O_FLAG_NONE:=@C_O_FLAG_NONE@
+C_O_FLAG_SIZE:=@C_O_FLAG_SIZE@
+CXX_O_FLAG_HIGHEST_JVM:=@CXX_O_FLAG_HIGHEST_JVM@
 CXX_O_FLAG_HIGHEST:=@CXX_O_FLAG_HIGHEST@
 CXX_O_FLAG_HI:=@CXX_O_FLAG_HI@
 CXX_O_FLAG_NORM:=@CXX_O_FLAG_NORM@
 CXX_O_FLAG_NONE:=@CXX_O_FLAG_NONE@
+CXX_O_FLAG_SIZE:=@CXX_O_FLAG_SIZE@
 
 C_FLAG_DEPS:=@C_FLAG_DEPS@
 CXX_FLAG_DEPS:=@CXX_FLAG_DEPS@
@@ -371,6 +395,23 @@ CFLAGS_JDKEXE:=@CFLAGS_JDKEXE@
 CXXFLAGS_JDKEXE:=@CXXFLAGS_JDKEXE@
 
 LDFLAGS_HASH_STYLE := @LDFLAGS_HASH_STYLE@
+
+JVM_CFLAGS := @JVM_CFLAGS@
+JVM_CFLAGS_SYMBOLS := @JVM_CFLAGS_SYMBOLS@
+JVM_LDFLAGS := @JVM_LDFLAGS@
+JVM_ASFLAGS := @JVM_ASFLAGS@
+JVM_LIBS := @JVM_LIBS@
+JVM_RCFLAGS := @JVM_RCFLAGS@
+
+# Flags for zeroshark
+LLVM_CFLAGS := @LLVM_CFLAGS@
+LLVM_LIBS := @LLVM_LIBS@
+LLVM_LDFLAGS := @LLVM_LDFLAGS@
+
+# These flags might contain variables set by a custom extension that is included later.
+EXTRA_CFLAGS = @EXTRA_CFLAGS@
+EXTRA_CXXFLAGS = @EXTRA_CXXFLAGS@
+EXTRA_LDFLAGS = @EXTRA_LDFLAGS@
 
 CXX:=@FIXPATH@ @CCACHE@ @ICECC@ @CXX@
 
@@ -628,6 +669,7 @@ XATTR:=@XATTR@
 JT_HOME:=@JT_HOME@
 JTREGEXE:=@JTREGEXE@
 XCODEBUILD=@XCODEBUILD@
+DTRACE := @DTRACE@
 FIXPATH:=@FIXPATH@
 
 # Build setup
