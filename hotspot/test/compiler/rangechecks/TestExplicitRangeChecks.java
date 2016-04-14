@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8073480
  * @summary explicit range checks should be recognized by C2
  * @library /testlibrary /test/lib /compiler/whitebox /
- * @build  TestExplicitRangeChecks
+ * @build TestExplicitRangeChecks
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main ClassFileInstaller jdk.test.lib.Platform
  * @run main/othervm -ea -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -44,8 +44,10 @@ import sun.misc.Unsafe;
 import compiler.whitebox.CompilerWhiteBoxTest;
 
 public class TestExplicitRangeChecks {
-
-    static int[] array = new int[10];
+    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+    private static final int TIERED_STOP_AT_LEVEL = WHITE_BOX.getIntxVMFlag("TieredStopAtLevel").intValue();
+    private static int[] array = new int[10];
+    private static boolean success = true;
 
     @Retention(RetentionPolicy.RUNTIME)
     @interface Args {
@@ -366,10 +368,6 @@ public class TestExplicitRangeChecks {
         return true;
     }
 
-    static boolean success = true;
-
-    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
-
     final HashMap<String,Method> tests = new HashMap<>();
     {
         for (Method m : this.getClass().getDeclaredMethods()) {
@@ -439,7 +437,9 @@ public class TestExplicitRangeChecks {
                 System.out.println(name + " bad result for bad input " + bad[i]);
                 success = false;
             }
-            if (Platform.isServer()) {
+            // Only perform these additional checks if C2 is available
+            if (Platform.isServer() &&
+                TIERED_STOP_AT_LEVEL == CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
                 if (deoptimize && WHITE_BOX.isMethodCompiled(m)) {
                     System.out.println(name + " not deoptimized on invalid access");
                     success = false;
