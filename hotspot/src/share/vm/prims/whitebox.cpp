@@ -641,7 +641,8 @@ WB_END
 
 bool WhiteBox::compile_method(Method* method, int comp_level, int bci, Thread* THREAD) {
   // Screen for unavailable/bad comp level or null method
-  if (method == NULL || CompileBroker::compiler(comp_level) == NULL) {
+  if (method == NULL || comp_level > TieredStopAtLevel ||
+      CompileBroker::compiler(comp_level) == NULL) {
     return false;
   }
   methodHandle mh(THREAD, method);
