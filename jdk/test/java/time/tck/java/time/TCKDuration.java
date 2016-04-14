@@ -65,9 +65,11 @@ import static java.time.temporal.ChronoUnit.HOURS;
 import static java.time.temporal.ChronoUnit.MICROS;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.time.temporal.ChronoUnit.MINUTES;
+import static java.time.temporal.ChronoUnit.MONTHS;
 import static java.time.temporal.ChronoUnit.NANOS;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.time.temporal.ChronoUnit.WEEKS;
+import static java.time.temporal.ChronoUnit.YEARS;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
@@ -2284,6 +2286,133 @@ public class TCKDuration extends AbstractTCKTest {
     public void multipliedBy_tooBig_negative() {
         Duration test = Duration.ofSeconds(1, 1);
         test.multipliedBy(Long.MIN_VALUE);
+    }
+
+    //-----------------------------------------------------------------------
+    //  truncated(TemporalUnit)
+    //-----------------------------------------------------------------------
+    TemporalUnit NINETY_MINS = new TemporalUnit() {
+        @Override
+        public Duration getDuration() {
+            return Duration.ofMinutes(90);
+        }
+        @Override
+        public boolean isDurationEstimated() {
+            return false;
+        }
+        @Override
+        public boolean isDateBased() {
+            return false;
+        }
+        @Override
+        public boolean isTimeBased() {
+            return true;
+        }
+        @Override
+        public boolean isSupportedBy(Temporal temporal) {
+            return false;
+        }
+        @Override
+        public <R extends Temporal> R addTo(R temporal, long amount) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public long between(Temporal temporal1, Temporal temporal2) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public String toString() {
+            return "NinetyMins";
+        }
+    };
+
+    TemporalUnit NINETY_FIVE_MINS = new TemporalUnit() {
+        @Override
+        public Duration getDuration() {
+            return Duration.ofMinutes(95);
+        }
+        @Override
+        public boolean isDurationEstimated() {
+            return false;
+        }
+        @Override
+        public boolean isDateBased() {
+            return false;
+        }
+        @Override
+        public boolean isTimeBased() {
+            return false;
+        }
+        @Override
+        public boolean isSupportedBy(Temporal temporal) {
+            return false;
+        }
+        @Override
+        public <R extends Temporal> R addTo(R temporal, long amount) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public long between(Temporal temporal1, Temporal temporal2) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public String toString() {
+            return "NinetyFiveMins";
+        }
+    };
+
+    @DataProvider(name="truncatedToValid")
+    Object[][] data_truncatedToValid() {
+        return new Object[][] {
+                {Duration.ofSeconds(86400 + 3600 + 60 + 1, 123_456_789), NANOS, Duration.ofSeconds(86400 + 3600 + 60 + 1, 123_456_789)},
+                {Duration.ofSeconds(86400 + 3600 + 60 + 1, 123_456_789), MICROS, Duration.ofSeconds(86400 + 3600 + 60 + 1, 123_456_000)},
+                {Duration.ofSeconds(86400 + 3600 + 60 + 1, 123_456_789), MILLIS, Duration.ofSeconds(86400 + 3600 + 60 + 1, 1230_00_000)},
+                {Duration.ofSeconds(86400 + 3600 + 60 + 1, 123_456_789), SECONDS, Duration.ofSeconds(86400 + 3600 + 60 + 1, 0)},
+                {Duration.ofSeconds(86400 + 3600 + 60 + 1, 123_456_789), MINUTES, Duration.ofSeconds(86400 + 3600 + 60, 0)},
+                {Duration.ofSeconds(86400 + 3600 + 60 + 1, 123_456_789), HOURS, Duration.ofSeconds(86400 + 3600, 0)},
+                {Duration.ofSeconds(86400 + 3600 + 60 + 1, 123_456_789), DAYS, Duration.ofSeconds(86400, 0)},
+
+                {Duration.ofSeconds(86400 + 3600 + 60 + 1, 123_456_789), NINETY_MINS, Duration.ofSeconds(86400 + 0, 0)},
+                {Duration.ofSeconds(86400 + 7200 + 60 + 1, 123_456_789), NINETY_MINS, Duration.ofSeconds(86400 + 5400, 0)},
+                {Duration.ofSeconds(86400 + 10800 + 60 + 1, 123_456_789), NINETY_MINS, Duration.ofSeconds(86400 + 10800, 0)},
+
+                {Duration.ofSeconds(-86400 - 3600 - 60 - 1, 123_456_789), MINUTES, Duration.ofSeconds(-86400 - 3600 - 60, 0 )},
+                {Duration.ofSeconds(-86400 - 3600 - 60 - 1, 123_456_789), MICROS, Duration.ofSeconds(-86400 - 3600 - 60 - 1, 123_457_000)},
+
+                {Duration.ofSeconds(86400 + 3600 + 60 + 1, 0), SECONDS, Duration.ofSeconds(86400 + 3600 + 60 + 1, 0)},
+                {Duration.ofSeconds(-86400 - 3600 - 120, 0), MINUTES, Duration.ofSeconds(-86400 - 3600 - 120, 0)},
+
+                {Duration.ofSeconds(-1, 0), SECONDS, Duration.ofSeconds(-1, 0)},
+                {Duration.ofSeconds(-1, 123_456_789), SECONDS, Duration.ofSeconds(0, 0)},
+                {Duration.ofSeconds(-1, 123_456_789), NANOS, Duration.ofSeconds(0, -876_543_211)},
+                {Duration.ofSeconds(0, 123_456_789), SECONDS, Duration.ofSeconds(0, 0)},
+                {Duration.ofSeconds(0, 123_456_789), NANOS, Duration.ofSeconds(0, 123_456_789)},
+        };
+    }
+
+    @Test(dataProvider="truncatedToValid")
+    public void test_truncatedTo_valid(Duration input, TemporalUnit unit, Duration expected) {
+        assertEquals(input.truncatedTo(unit), expected);
+    }
+
+    @DataProvider(name="truncatedToInvalid")
+    Object[][] data_truncatedToInvalid() {
+        return new Object[][] {
+                {Duration.ofSeconds(1, 123_456_789), NINETY_FIVE_MINS},
+                {Duration.ofSeconds(1, 123_456_789), WEEKS},
+                {Duration.ofSeconds(1, 123_456_789), MONTHS},
+                {Duration.ofSeconds(1, 123_456_789), YEARS},
+        };
+    }
+
+    @Test(dataProvider="truncatedToInvalid", expectedExceptions=DateTimeException.class)
+    public void test_truncatedTo_invalid(Duration input, TemporalUnit unit) {
+        input.truncatedTo(unit);
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void test_truncatedTo_null() {
+        Duration.ofSeconds(1234).truncatedTo(null);
     }
 
     //-----------------------------------------------------------------------
