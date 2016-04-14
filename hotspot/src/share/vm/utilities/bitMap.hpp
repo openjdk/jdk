@@ -26,7 +26,6 @@
 #define SHARE_VM_UTILITIES_BITMAP_HPP
 
 #include "memory/allocation.hpp"
-#include "utilities/top.hpp"
 
 // Forward decl;
 class BitMapClosure;

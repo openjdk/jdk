@@ -27,7 +27,6 @@
 #define CPU_ZERO_VM_FRAME_ZERO_HPP
 
 #include "runtime/synchronizer.hpp"
-#include "utilities/top.hpp"
 
 // A frame represents a physical stack frame on the Zero stack.
 

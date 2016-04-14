@@ -32,6 +32,7 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.hpp"
+#include "logging/logStream.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
@@ -505,10 +506,13 @@ void CompactibleFreeListSpace::reportFreeListStatistics(const char* title) const
     return;
   }
   log.debug("%s", title);
-  _dictionary->report_statistics(log.debug_stream());
+
+  LogStream out(log.debug());
+  _dictionary->report_statistics(&out);
+
   if (log.is_trace()) {
-    ResourceMark rm;
-    reportIndexedFreeListStatistics(log.trace_stream());
+    LogStream trace_out(log.trace());
+    reportIndexedFreeListStatistics(&trace_out);
     size_t total_size = totalSizeInIndexedFreeLists() +
                        _dictionary->total_chunk_size(DEBUG_ONLY(freelistLock()));
     log.trace(" free=" SIZE_FORMAT " frag=%1.4f", total_size, flsFrag());

@@ -46,7 +46,6 @@
 #include "trace/traceMacros.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/top.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/satbMarkQueue.hpp"
@@ -508,9 +507,6 @@ class Thread: public ThreadShadow {
       return claim_oops_do_par_case(collection_parity);
     }
   }
-
-  // Sweeper support
-  void nmethods_do(CodeBlobClosure* cf);
 
   // jvmtiRedefineClasses support
   void metadata_handles_do(void f(Metadata*));
@@ -1649,7 +1645,7 @@ class JavaThread: public Thread {
   void oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf);
 
   // Sweeper operations
-  void nmethods_do(CodeBlobClosure* cf);
+  virtual void nmethods_do(CodeBlobClosure* cf);
 
   // RedefineClasses Support
   void metadata_do(void f(Metadata*));
@@ -1997,10 +1993,10 @@ class CodeCacheSweeperThread : public JavaThread {
   bool is_hidden_from_external_view() const { return true; }
 
   bool is_Code_cache_sweeper_thread() const { return true; }
-  // GC support
-  // Apply "f->do_oop" to all root oops in "this".
-  // Apply "cf->do_code_blob" (if !NULL) to all code blobs active in frames
+
+  // Prevent GC from unloading _scanned_nmethod
   void oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf);
+  void nmethods_do(CodeBlobClosure* cf);
 };
 
 // A thread used for Compilation.
@@ -2160,6 +2156,8 @@ class Threads: AllStatic {
     print_on(tty, print_stacks, internal_format, false /* no concurrent lock printed */);
   }
   static void print_on_error(outputStream* st, Thread* current, char* buf, int buflen);
+  static void print_on_error(Thread* this_thread, outputStream* st, Thread* current, char* buf,
+                             int buflen, bool* found_current);
   static void print_threads_compiling(outputStream* st, char* buf, int buflen);
 
   // Get Java threads that are waiting to enter a monitor. If doLock

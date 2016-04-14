@@ -37,7 +37,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "utilities/top.hpp"
 #include "runtime/thread.inline.hpp"
 
 #define __ _masm->
@@ -2417,6 +2416,433 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Arguments for generated stub (little endian only):
+  //   R3_ARG1   - source byte array address
+  //   R4_ARG2   - destination byte array address
+  //   R5_ARG3   - round key array
+  address generate_aescrypt_encryptBlock() {
+    assert(UseAES, "need AES instructions and misaligned SSE support");
+    StubCodeMark mark(this, "StubRoutines", "aescrypt_encryptBlock");
+
+    address start = __ function_entry();
+
+    Label L_doLast;
+
+    Register from           = R3_ARG1;  // source array address
+    Register to             = R4_ARG2;  // destination array address
+    Register key            = R5_ARG3;  // round key array
+
+    Register keylen         = R8;
+    Register temp           = R9;
+    Register keypos         = R10;
+    Register hex            = R11;
+    Register fifteen        = R12;
+
+    VectorRegister vRet     = VR0;
+
+    VectorRegister vKey1    = VR1;
+    VectorRegister vKey2    = VR2;
+    VectorRegister vKey3    = VR3;
+    VectorRegister vKey4    = VR4;
+
+    VectorRegister fromPerm = VR5;
+    VectorRegister keyPerm  = VR6;
+    VectorRegister toPerm   = VR7;
+    VectorRegister fSplt    = VR8;
+
+    VectorRegister vTmp1    = VR9;
+    VectorRegister vTmp2    = VR10;
+    VectorRegister vTmp3    = VR11;
+    VectorRegister vTmp4    = VR12;
+
+    VectorRegister vLow     = VR13;
+    VectorRegister vHigh    = VR14;
+
+    __ li              (hex, 16);
+    __ li              (fifteen, 15);
+    __ vspltisb        (fSplt, 0x0f);
+
+    // load unaligned from[0-15] to vsRet
+    __ lvx             (vRet, from);
+    __ lvx             (vTmp1, fifteen, from);
+    __ lvsl            (fromPerm, from);
+    __ vxor            (fromPerm, fromPerm, fSplt);
+    __ vperm           (vRet, vRet, vTmp1, fromPerm);
+
+    // load keylen (44 or 52 or 60)
+    __ lwz             (keylen, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT), key);
+
+    // to load keys
+    __ lvsr            (keyPerm, key);
+    __ vxor            (vTmp2, vTmp2, vTmp2);
+    __ vspltisb        (vTmp2, -16);
+    __ vrld            (keyPerm, keyPerm, vTmp2);
+    __ vrld            (keyPerm, keyPerm, vTmp2);
+    __ vsldoi          (keyPerm, keyPerm, keyPerm, -8);
+
+    // load the 1st round key to vKey1
+    __ li              (keypos, 0);
+    __ lvx             (vKey1, keypos, key);
+    __ addi            (keypos, keypos, 16);
+    __ lvx             (vTmp1, keypos, key);
+    __ vperm           (vKey1, vTmp1, vKey1, keyPerm);
+
+    // 1st round
+    __ vxor (vRet, vRet, vKey1);
+
+    // load the 2nd round key to vKey1
+    __ addi            (keypos, keypos, 16);
+    __ lvx             (vTmp2, keypos, key);
+    __ vperm           (vKey1, vTmp2, vTmp1, keyPerm);
+
+    // load the 3rd round key to vKey2
+    __ addi            (keypos, keypos, 16);
+    __ lvx             (vTmp1, keypos, key);
+    __ vperm           (vKey2, vTmp1, vTmp2, keyPerm);
+
+    // load the 4th round key to vKey3
+    __ addi            (keypos, keypos, 16);
+    __ lvx             (vTmp2, keypos, key);
+    __ vperm           (vKey3, vTmp2, vTmp1, keyPerm);
+
+    // load the 5th round key to vKey4
+    __ addi            (keypos, keypos, 16);
+    __ lvx             (vTmp1, keypos, key);
+    __ vperm           (vKey4, vTmp1, vTmp2, keyPerm);
+
+    // 2nd - 5th rounds
+    __ vcipher (vRet, vRet, vKey1);
+    __ vcipher (vRet, vRet, vKey2);
+    __ vcipher (vRet, vRet, vKey3);
+    __ vcipher (vRet, vRet, vKey4);
+
+    // load the 6th round key to vKey1
+    __ addi            (keypos, keypos, 16);
+    __ lvx             (vTmp2, keypos, key);
+    __ vperm           (vKey1, vTmp2, vTmp1, keyPerm);
+
+    // load the 7th round key to vKey2
+    __ addi            (keypos, keypos, 16);
+    __ lvx             (vTmp1, keypos, key);
+    __ vperm           (vKey2, vTmp1, vTmp2, keyPerm);
+
+    // load the 8th round key to vKey3
+    __ addi            (keypos, keypos, 16);
+    __ lvx             (vTmp2, keypos, key);
+    __ vperm           (vKey3, vTmp2, vTmp1, keyPerm);
+
+    // load the 9th round key to vKey4
+    __ addi            (keypos, keypos, 16);
+    __ lvx             (vTmp1, keypos, key);
+    __ vperm           (vKey4, vTmp1, vTmp2, keyPerm);
+
+    // 6th - 9th rounds
+    __ vcipher (vRet, vRet, vKey1);
+    __ vcipher (vRet, vRet, vKey2);
+    __ vcipher (vRet, vRet, vKey3);
+    __ vcipher (vRet, vRet, vKey4);
+
+    // load the 10th round key to vKey1
+    __ addi            (keypos, keypos, 16);
+    __ lvx             (vTmp2, keypos, key);
+    __ vperm           (vKey1, vTmp2, vTmp1, keyPerm);
+
+    // load the 11th round key to vKey2
+    __ addi            (keypos, keypos, 16);
+    __ lvx             (vTmp1, keypos, key);
+    __ vperm           (vKey2, vTmp1, vTmp2, keyPerm);
+
+    // if all round keys are loaded, skip next 4 rounds
+    __ cmpwi           (CCR0, keylen, 44);
+    __ beq             (CCR0, L_doLast);
+
+    // 10th - 11th rounds
+    __ vcipher (vRet, vRet, vKey1);
+    __ vcipher (vRet, vRet, vKey2);
+
+    // load the 12th round key to vKey1
+    __ addi            (keypos, keypos, 16);
+    __ lvx             (vTmp2, keypos, key);
+    __ vperm           (vKey1, vTmp2, vTmp1, keyPerm);
+
+    // load the 13th round key to vKey2
+    __ addi            (keypos, keypos, 16);
+    __ lvx             (vTmp1, keypos, key);
+    __ vperm           (vKey2, vTmp1, vTmp2, keyPerm);
+
+    // if all round keys are loaded, skip next 2 rounds
+    __ cmpwi           (CCR0, keylen, 52);
+    __ beq             (CCR0, L_doLast);
+
+    // 12th - 13th rounds
+    __ vcipher (vRet, vRet, vKey1);
+    __ vcipher (vRet, vRet, vKey2);
+
+    // load the 14th round key to vKey1
+    __ addi            (keypos, keypos, 16);
+    __ lvx             (vTmp2, keypos, key);
+    __ vperm           (vKey1, vTmp2, vTmp1, keyPerm);
+
+    // load the 15th round key to vKey2
+    __ addi            (keypos, keypos, 16);
+    __ lvx             (vTmp1, keypos, key);
+    __ vperm           (vKey2, vTmp1, vTmp2, keyPerm);
+
+    __ bind(L_doLast);
+
+    // last two rounds
+    __ vcipher (vRet, vRet, vKey1);
+    __ vcipherlast (vRet, vRet, vKey2);
+
+    __ neg             (temp, to);
+    __ lvsr            (toPerm, temp);
+    __ vspltisb        (vTmp2, -1);
+    __ vxor            (vTmp1, vTmp1, vTmp1);
+    __ vperm           (vTmp2, vTmp2, vTmp1, toPerm);
+    __ vxor            (toPerm, toPerm, fSplt);
+    __ lvx             (vTmp1, to);
+    __ vperm           (vRet, vRet, vRet, toPerm);
+    __ vsel            (vTmp1, vTmp1, vRet, vTmp2);
+    __ lvx             (vTmp4, fifteen, to);
+    __ stvx            (vTmp1, to);
+    __ vsel            (vRet, vRet, vTmp4, vTmp2);
+    __ stvx            (vRet, fifteen, to);
+
+    __ blr();
+     return start;
+  }
+
+  // Arguments for generated stub (little endian only):
+  //   R3_ARG1   - source byte array address
+  //   R4_ARG2   - destination byte array address
+  //   R5_ARG3   - K (key) in little endian int array
+  address generate_aescrypt_decryptBlock() {
+    assert(UseAES, "need AES instructions and misaligned SSE support");
+    StubCodeMark mark(this, "StubRoutines", "aescrypt_decryptBlock");
+
+    address start = __ function_entry();
+
+    Label L_doLast;
+    Label L_do44;
+    Label L_do52;
+    Label L_do60;
+
+    Register from           = R3_ARG1;  // source array address
+    Register to             = R4_ARG2;  // destination array address
+    Register key            = R5_ARG3;  // round key array
+
+    Register keylen         = R8;
+    Register temp           = R9;
+    Register keypos         = R10;
+    Register hex            = R11;
+    Register fifteen        = R12;
+
+    VectorRegister vRet     = VR0;
+
+    VectorRegister vKey1    = VR1;
+    VectorRegister vKey2    = VR2;
+    VectorRegister vKey3    = VR3;
+    VectorRegister vKey4    = VR4;
+    VectorRegister vKey5    = VR5;
+
+    VectorRegister fromPerm = VR6;
+    VectorRegister keyPerm  = VR7;
+    VectorRegister toPerm   = VR8;
+    VectorRegister fSplt    = VR9;
+
+    VectorRegister vTmp1    = VR10;
+    VectorRegister vTmp2    = VR11;
+    VectorRegister vTmp3    = VR12;
+    VectorRegister vTmp4    = VR13;
+
+    VectorRegister vLow     = VR14;
+    VectorRegister vHigh    = VR15;
+
+    __ li              (hex, 16);
+    __ li              (fifteen, 15);
+    __ vspltisb        (fSplt, 0x0f);
+
+    // load unaligned from[0-15] to vsRet
+    __ lvx             (vRet, from);
+    __ lvx             (vTmp1, fifteen, from);
+    __ lvsl            (fromPerm, from);
+    __ vxor            (fromPerm, fromPerm, fSplt);
+    __ vperm           (vRet, vRet, vTmp1, fromPerm); // align [and byte swap in LE]
+
+    // load keylen (44 or 52 or 60)
+    __ lwz             (keylen, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT), key);
+
+    // to load keys
+    __ lvsr            (keyPerm, key);
+    __ vxor            (vTmp2, vTmp2, vTmp2);
+    __ vspltisb        (vTmp2, -16);
+    __ vrld            (keyPerm, keyPerm, vTmp2);
+    __ vrld            (keyPerm, keyPerm, vTmp2);
+    __ vsldoi          (keyPerm, keyPerm, keyPerm, -8);
+
+    __ cmpwi           (CCR0, keylen, 44);
+    __ beq             (CCR0, L_do44);
+
+    __ cmpwi           (CCR0, keylen, 52);
+    __ beq             (CCR0, L_do52);
+
+    // load the 15th round key to vKey11
+    __ li              (keypos, 240);
+    __ lvx             (vTmp1, keypos, key);
+    __ addi            (keypos, keypos, -16);
+    __ lvx             (vTmp2, keypos, key);
+    __ vperm           (vKey1, vTmp1, vTmp2, keyPerm);
+
+    // load the 14th round key to vKey10
+    __ addi            (keypos, keypos, -16);
+    __ lvx             (vTmp1, keypos, key);
+    __ vperm           (vKey2, vTmp2, vTmp1, keyPerm);
+
+    // load the 13th round key to vKey10
+    __ addi            (keypos, keypos, -16);
+    __ lvx             (vTmp2, keypos, key);
+    __ vperm           (vKey3, vTmp1, vTmp2, keyPerm);
+
+    // load the 12th round key to vKey10
+    __ addi            (keypos, keypos, -16);
+    __ lvx             (vTmp1, keypos, key);
+    __ vperm           (vKey4, vTmp2, vTmp1, keyPerm);
+
+    // load the 11th round key to vKey10
+    __ addi            (keypos, keypos, -16);
+    __ lvx             (vTmp2, keypos, key);
+    __ vperm           (vKey5, vTmp1, vTmp2, keyPerm);
+
+    // 1st - 5th rounds
+    __ vxor            (vRet, vRet, vKey1);
+    __ vncipher        (vRet, vRet, vKey2);
+    __ vncipher        (vRet, vRet, vKey3);
+    __ vncipher        (vRet, vRet, vKey4);
+    __ vncipher        (vRet, vRet, vKey5);
+
+    __ b               (L_doLast);
+
+    __ bind            (L_do52);
+
+    // load the 13th round key to vKey11
+    __ li              (keypos, 208);
+    __ lvx             (vTmp1, keypos, key);
+    __ addi            (keypos, keypos, -16);
+    __ lvx             (vTmp2, keypos, key);
+    __ vperm           (vKey1, vTmp1, vTmp2, keyPerm);
+
+    // load the 12th round key to vKey10
+    __ addi            (keypos, keypos, -16);
+    __ lvx             (vTmp1, keypos, key);
+    __ vperm           (vKey2, vTmp2, vTmp1, keyPerm);
+
+    // load the 11th round key to vKey10
+    __ addi            (keypos, keypos, -16);
+    __ lvx             (vTmp2, keypos, key);
+    __ vperm           (vKey3, vTmp1, vTmp2, keyPerm);
+
+    // 1st - 3rd rounds
+    __ vxor            (vRet, vRet, vKey1);
+    __ vncipher        (vRet, vRet, vKey2);
+    __ vncipher        (vRet, vRet, vKey3);
+
+    __ b               (L_doLast);
+
+    __ bind            (L_do44);
+
+    // load the 11th round key to vKey11
+    __ li              (keypos, 176);
+    __ lvx             (vTmp1, keypos, key);
+    __ addi            (keypos, keypos, -16);
+    __ lvx             (vTmp2, keypos, key);
+    __ vperm           (vKey1, vTmp1, vTmp2, keyPerm);
+
+    // 1st round
+    __ vxor            (vRet, vRet, vKey1);
+
+    __ bind            (L_doLast);
+
+    // load the 10th round key to vKey10
+    __ addi            (keypos, keypos, -16);
+    __ lvx             (vTmp1, keypos, key);
+    __ vperm           (vKey1, vTmp2, vTmp1, keyPerm);
+
+    // load the 9th round key to vKey10
+    __ addi            (keypos, keypos, -16);
+    __ lvx             (vTmp2, keypos, key);
+    __ vperm           (vKey2, vTmp1, vTmp2, keyPerm);
+
+    // load the 8th round key to vKey10
+    __ addi            (keypos, keypos, -16);
+    __ lvx             (vTmp1, keypos, key);
+    __ vperm           (vKey3, vTmp2, vTmp1, keyPerm);
+
+    // load the 7th round key to vKey10
+    __ addi            (keypos, keypos, -16);
+    __ lvx             (vTmp2, keypos, key);
+    __ vperm           (vKey4, vTmp1, vTmp2, keyPerm);
+
+    // load the 6th round key to vKey10
+    __ addi            (keypos, keypos, -16);
+    __ lvx             (vTmp1, keypos, key);
+    __ vperm           (vKey5, vTmp2, vTmp1, keyPerm);
+
+    // last 10th - 6th rounds
+    __ vncipher        (vRet, vRet, vKey1);
+    __ vncipher        (vRet, vRet, vKey2);
+    __ vncipher        (vRet, vRet, vKey3);
+    __ vncipher        (vRet, vRet, vKey4);
+    __ vncipher        (vRet, vRet, vKey5);
+
+    // load the 5th round key to vKey10
+    __ addi            (keypos, keypos, -16);
+    __ lvx             (vTmp2, keypos, key);
+    __ vperm           (vKey1, vTmp1, vTmp2, keyPerm);
+
+    // load the 4th round key to vKey10
+    __ addi            (keypos, keypos, -16);
+    __ lvx             (vTmp1, keypos, key);
+    __ vperm           (vKey2, vTmp2, vTmp1, keyPerm);
+
+    // load the 3rd round key to vKey10
+    __ addi            (keypos, keypos, -16);
+    __ lvx             (vTmp2, keypos, key);
+    __ vperm           (vKey3, vTmp1, vTmp2, keyPerm);
+
+    // load the 2nd round key to vKey10
+    __ addi            (keypos, keypos, -16);
+    __ lvx             (vTmp1, keypos, key);
+    __ vperm           (vKey4, vTmp2, vTmp1, keyPerm);
+
+    // load the 1st round key to vKey10
+    __ addi            (keypos, keypos, -16);
+    __ lvx             (vTmp2, keypos, key);
+    __ vperm           (vKey5, vTmp1, vTmp2, keyPerm);
+
+    // last 5th - 1th rounds
+    __ vncipher        (vRet, vRet, vKey1);
+    __ vncipher        (vRet, vRet, vKey2);
+    __ vncipher        (vRet, vRet, vKey3);
+    __ vncipher        (vRet, vRet, vKey4);
+    __ vncipherlast    (vRet, vRet, vKey5);
+
+    __ neg             (temp, to);
+    __ lvsr            (toPerm, temp);
+    __ vspltisb        (vTmp2, -1);
+    __ vxor            (vTmp1, vTmp1, vTmp1);
+    __ vperm           (vTmp2, vTmp2, vTmp1, toPerm);
+    __ vxor            (toPerm, toPerm, fSplt);
+    __ lvx             (vTmp1, to);
+    __ vperm           (vRet, vRet, vRet, toPerm);
+    __ vsel            (vTmp1, vTmp1, vRet, vTmp2);
+    __ lvx             (vTmp4, fifteen, to);
+    __ stvx            (vTmp1, to);
+    __ vsel            (vRet, vRet, vTmp4, vTmp2);
+    __ stvx            (vRet, fifteen, to);
+
+    __ blr();
+     return start;
+  }
 
   void generate_arraycopy_stubs() {
     // Note: the disjoint stubs must be generated first, some of
@@ -2693,10 +3119,6 @@ class StubGenerator: public StubCodeGenerator {
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
-    if (UseAESIntrinsics) {
-      guarantee(!UseAESIntrinsics, "not yet implemented.");
-    }
-
     // Safefetch stubs.
     generate_safefetch("SafeFetch32", sizeof(int),     &StubRoutines::_safefetch32_entry,
                                                        &StubRoutines::_safefetch32_fault_pc,
@@ -2719,6 +3141,12 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_montgomerySquare
         = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
     }
+
+    if (UseAESIntrinsics) {
+      StubRoutines::_aescrypt_encryptBlock = generate_aescrypt_encryptBlock();
+      StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
+    }
+
   }
 
  public:

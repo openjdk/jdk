@@ -101,7 +101,7 @@ public class TestQuotedLogOutputs {
             output.shouldHaveExitValue(1);
             // Ensure error message was logged
             output.shouldMatch("([Mm]issing terminating quote)"
-                + "|(Could not open log file '')"
+                + "|(Error opening log file '')"
                 + "|(Output name can not be partially quoted)");
         }
     }

@@ -25,9 +25,10 @@
 #ifndef SHARE_VM_OOPS_SYMBOL_HPP
 #define SHARE_VM_OOPS_SYMBOL_HPP
 
-#include "utilities/utf8.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/exceptions.hpp"
+#include "utilities/utf8.hpp"
 
 // A Symbol is a canonicalized string.
 // All Symbols reside in global SymbolTable and are reference counted.

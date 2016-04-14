@@ -58,7 +58,6 @@ JVM_DoPrivileged
 JVM_DumpAllStacks
 JVM_DumpThreads
 JVM_FillInStackTrace
-JVM_FillStackFrames
 JVM_FindClassFromCaller
 JVM_FindClassFromClass
 JVM_FindLibraryEntry
@@ -169,7 +168,6 @@ JVM_ReleaseUTF
 JVM_ResumeThread
 JVM_SetArrayElement
 JVM_SetClassSigners
-JVM_SetMethodInfo
 JVM_SetNativeThreadName
 JVM_SetPrimitiveArrayElement
 JVM_SetThreadPriority
@@ -178,6 +176,7 @@ JVM_StartThread
 JVM_StopThread
 JVM_SupportsCX8
 JVM_SuspendThread
+JVM_ToStackTraceElement
 JVM_TotalMemory
 JVM_UnloadLibrary
 JVM_Yield

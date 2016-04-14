@@ -1594,6 +1594,19 @@ int os::log_vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
   return ret;
 }
 
+static inline time_t get_mtime(const char* filename) {
+  struct stat st;
+  int ret = os::stat(filename, &st);
+  assert(ret == 0, "failed to stat() file '%s': %s", filename, strerror(errno));
+  return st.st_mtime;
+}
+
+int os::compare_file_modified_times(const char* file1, const char* file2) {
+  time_t t1 = get_mtime(file1);
+  time_t t2 = get_mtime(file2);
+  return t1 - t2;
+}
+
 void os::print_os_info_brief(outputStream* st) {
   os::print_os_info(st);
 }
@@ -3006,9 +3019,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
       }
 #ifdef ASSERT
       if (should_inject_error) {
-        if (TracePageSizes && Verbose) {
-          tty->print_cr("Reserving pages individually failed.");
-        }
+        log_develop_debug(pagesize)("Reserving pages individually failed.");
       }
 #endif
       return NULL;
@@ -3192,9 +3203,8 @@ char* os::reserve_memory_special(size_t bytes, size_t alignment, char* addr,
   // 1) the UseLargePagesIndividualAllocation flag is set (set by default on WS2003)
   // 2) NUMA Interleaving is enabled, in which case we use a different node for each page
   if (UseLargePagesIndividualAllocation || UseNUMAInterleaving) {
-    if (TracePageSizes && Verbose) {
-      tty->print_cr("Reserving large pages individually.");
-    }
+    log_debug(pagesize)("Reserving large pages individually.");
+
     char * p_buf = allocate_pages_individually(bytes, addr, flags, prot, LargePagesIndividualAllocationInjectError);
     if (p_buf == NULL) {
       // give an appropriate warning message
@@ -3211,9 +3221,8 @@ char* os::reserve_memory_special(size_t bytes, size_t alignment, char* addr,
     return p_buf;
 
   } else {
-    if (TracePageSizes && Verbose) {
-      tty->print_cr("Reserving large pages in a single large chunk.");
-    }
+    log_debug(pagesize)("Reserving large pages in a single large chunk.");
+
     // normal policy just allocate it all at once
     DWORD flag = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
     char * res = (char *)VirtualAlloc(addr, bytes, flag, prot);
@@ -4593,6 +4602,9 @@ int os::ftruncate(int fd, jlong length) {
   return 0;
 }
 
+int os::fileno(FILE* fp) {
+  return _fileno(fp);
+}
 
 // This code is a copy of JDK's sysSync
 // from src/windows/hpi/src/sys_api_md.c

@@ -385,8 +385,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(MethodCounters,              _interpreter_profile_limit,                    int)                                   \
   nonstatic_field(MethodCounters,              _invoke_mask,                                  int)                                   \
   nonstatic_field(MethodCounters,              _backedge_mask,                                int)                                   \
-  nonstatic_field(MethodCounters,              _interpreter_invocation_count,                 int)                                   \
-  nonstatic_field(MethodCounters,              _interpreter_throwout_count,                   u2)                                    \
+  COMPILER2_OR_JVMCI_PRESENT(nonstatic_field(MethodCounters, _interpreter_invocation_count,   int))                                  \
+  COMPILER2_OR_JVMCI_PRESENT(nonstatic_field(MethodCounters, _interpreter_throwout_count,     u2))                                   \
   nonstatic_field(MethodCounters,              _number_of_breakpoints,                        u2)                                    \
   nonstatic_field(MethodCounters,              _invocation_counter,                           InvocationCounter)                     \
   nonstatic_field(MethodCounters,              _backedge_counter,                             InvocationCounter)                     \
@@ -400,7 +400,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonproduct_nonstatic_field(Method,           _compiled_invocation_count,                    int)                                   \
   volatile_nonstatic_field(Method,             _code,                                         nmethod*)                              \
   nonstatic_field(Method,                      _i2i_entry,                                    address)                               \
-  nonstatic_field(Method,                      _adapter,                                      AdapterHandlerEntry*)                  \
   volatile_nonstatic_field(Method,             _from_compiled_entry,                          address)                               \
   volatile_nonstatic_field(Method,             _from_interpreted_entry,                       address)                               \
   volatile_nonstatic_field(ConstMethod,        _fingerprint,                                  uint64_t)                              \
