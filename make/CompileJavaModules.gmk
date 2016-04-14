@@ -469,32 +469,7 @@ jdk.localedata_EXCLUDE_FILES += sun/text/resources/th/BreakIteratorRules_th.java
 ################################################################################
 # Setup the compilation for the module
 #
-# Order src dirs in order of override with the most important first. Generated
-# source before static source and platform specific source before shared.
-#
-GENERATED_SRC_DIRS += \
-    $(SUPPORT_OUTPUTDIR)/gensrc \
-    #
-
-TOP_SRC_DIRS += \
-    $(HOTSPOT_TOPDIR)/src \
-    $(CORBA_TOPDIR)/src \
-    $(JDK_TOPDIR)/src \
-    $(LANGTOOLS_TOPDIR)/src \
-    $(JAXP_TOPDIR)/src \
-    $(JAXWS_TOPDIR)/src \
-    $(NASHORN_TOPDIR)/src \
-    #
-
-SRC_SUBDIRS += $(OPENJDK_TARGET_OS)/classes
-ifneq ($(OPENJDK_TARGET_OS), $(OPENJDK_TARGET_OS_TYPE))
-  SRC_SUBDIRS += $(OPENJDK_TARGET_OS_TYPE)/classes
-endif
-SRC_SUBDIRS += share/classes
-
-MODULE_SRC_DIRS := $(strip \
-    $(addsuffix /$(MODULE), $(GENERATED_SRC_DIRS) $(IMPORT_MODULES_SRC)) \
-    $(foreach sub, $(SRC_SUBDIRS), $(addsuffix /$(MODULE)/$(sub), $(TOP_SRC_DIRS))))
+MODULE_SRC_DIRS := $(call FindModuleSrcDirs, $(MODULE))
 
 # The JDK_USER_DEFINED_FILTER is a poor man's incremental build: by specifying
 # JDK_FILTER at the make command line, only a subset of the JDK java files will
@@ -502,26 +477,19 @@ MODULE_SRC_DIRS := $(strip \
 # space separated list.
 JDK_USER_DEFINED_FILTER := $(strip $(subst $(COMMA),$(SPACE), $(JDK_FILTER)))
 
-# Rewrite the MODULE_SRC_DIRS with a wildcard for the module so that all module
-# source dirs are available on the path.
-MODULESOURCEPATH := $(subst $(SPACE),$(PATH_SEP),$(subst $(MODULE),*,$(MODULE_SRC_DIRS)))
+# Get the complete module source path.
+MODULESOURCEPATH := $(call GetModuleSrcPath)
 
-# Add imported modules to the moduleclasspath
-MODULECLASSPATH := $(subst $(SPACE),$(PATH_SEP), $(IMPORT_MODULES_CLASSES))
+# Add imported modules to the modulepath
+MODULEPATH := $(call PathList, $(IMPORT_MODULES_CLASSES))
 
 ifeq ($(MODULE), jdk.vm.ci)
   ## WORKAROUND jdk.vm.ci source structure issue
   JVMCI_MODULESOURCEPATH := $(MODULESOURCEPATH) \
       $(subst /$(MODULE)/,/*/, $(filter-out %processor/src, \
           $(wildcard $(HOTSPOT_TOPDIR)/src/jdk.vm.ci/share/classes/*/src)))
-  MODULESOURCEPATH := $(subst $(SPACE),$(PATH_SEP), $(JVMCI_MODULESOURCEPATH))
+  MODULESOURCEPATH := $(call PathList, $(JVMCI_MODULESOURCEPATH))
 endif
-
-# Make sure the generated source base dirs exist. Not all modules have generated
-# source in all of these directories and because of timing, all of them might not
-# exist at the time this makefile gets called. Javac will complain if there are
-# missing directories in the moduleclasspath.
-$(call MakeDir, $(GENERATED_SRC_DIRS))
 
 $(eval $(call SetupJavaCompilation, $(MODULE), \
     SETUP := $(if $($(MODULE)_SETUP), $($(MODULE)_SETUP), GENERATE_JDKBYTECODE), \
@@ -532,8 +500,8 @@ $(eval $(call SetupJavaCompilation, $(MODULE), \
     HEADERS := $(SUPPORT_OUTPUTDIR)/headers, \
     ADD_JAVAC_FLAGS := \
         $($(MODULE)_ADD_JAVAC_FLAGS) \
-        -modulesourcepath "$(MODULESOURCEPATH)" \
-        $(if $(MODULECLASSPATH), -modulepath "$(MODULECLASSPATH)") \
+        -modulesourcepath $(MODULESOURCEPATH) \
+        -modulepath $(MODULEPATH) \
         -system none, \
 ))
 

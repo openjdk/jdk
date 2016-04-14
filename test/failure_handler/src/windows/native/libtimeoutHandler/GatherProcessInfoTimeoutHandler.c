@@ -30,7 +30,7 @@ extern "C" {
 
 JNIEXPORT jlong JNICALL Java_jdk_test_failurehandler_jtreg_GatherProcessInfoTimeoutHandler_getWin32Pid
         (JNIEnv* env, jobject o, jlong handle) {
-    return GetProcessId(handle);
+    return GetProcessId((HANDLE) handle);
 }
 #ifdef __cplusplus
 }
