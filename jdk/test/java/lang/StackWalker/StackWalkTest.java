@@ -44,10 +44,6 @@ import jdk.testlibrary.RandomFactory;
  * @run main/othervm/java.security.policy=stackwalktest.policy StackWalkTest
  * @run main/othervm StackWalkTest -random:50
  * @run main/othervm/java.security.policy=stackwalktest.policy StackWalkTest -random:50
- * @run main/othervm -XX:-MemberNameInStackFrame -Dstackwalk.newThrowable=false StackWalkTest -random:50
- * @run main/othervm -XX:-MemberNameInStackFrame -Dstackwalk.newThrowable=true  StackWalkTest -random:50
- * @run main/othervm -XX:+MemberNameInStackFrame -Dstackwalk.newThrowable=false StackWalkTest -random:50
- * @run main/othervm -XX:+MemberNameInStackFrame -Dstackwalk.newThrowable=true  StackWalkTest -random:50
  * @author danielfuchs, bchristi
  * @key randomness
  */

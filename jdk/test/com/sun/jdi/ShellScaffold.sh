@@ -924,7 +924,7 @@ dojstack()
         # If jstack exists, so will jps
         # Show stack traces of jdb and debuggee as a possible debugging aid.
         jdbCmd=`$jdk/bin/jps -v | $grep $jdbKeyword`
-        realJdbPid=`echo "$jdbCmd" | sed -e 's@ TTY.*@@'`
+        realJdbPid=`echo "$jdbCmd" | sed -e 's@ .*@@'`
         if [ ! -z "$realJdbPid" ] ; then
             echo "-- jdb process info ----------------------" >&2
             echo "      $jdbCmd"                              >&2
