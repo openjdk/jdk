@@ -270,7 +270,6 @@ Java_sun_java2d_x11_XSurfaceData_initOps(JNIEnv *env, jobject xsd,
     xsdo->sdOps.Dispose = X11SD_Dispose;
     xsdo->GetPixmapWithBg = X11SD_GetPixmapWithBg;
     xsdo->ReleasePixmapWithBg = X11SD_ReleasePixmapWithBg;
-    xsdo->widget = NULL;
     if (peer != NULL) {
         xsdo->drawable = JNU_CallMethodByName(env, &hasException, peer, "getWindow", "()J").j;
         if (hasException) {
@@ -1087,7 +1086,7 @@ static int
 X11SD_ClipToRoot(SurfaceDataBounds *b, SurfaceDataBounds *bounds,
                  X11SDOps *xsdo)
 {
-    Position x1=0, y1=0, x2=0, y2=0;
+    short x1=0, y1=0, x2=0, y2=0;
     int tmpx, tmpy;
     Window tmpchild;
 

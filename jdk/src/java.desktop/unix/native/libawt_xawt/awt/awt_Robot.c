@@ -31,7 +31,6 @@
 #include "awt_GraphicsEnv.h"
 #define XK_MISCELLANY
 #include <X11/keysymdef.h>
-#include <X11/Intrinsic.h>
 #include <X11/Xutil.h>
 #include <X11/Xmd.h>
 #include <X11/extensions/xtestext1.h>
