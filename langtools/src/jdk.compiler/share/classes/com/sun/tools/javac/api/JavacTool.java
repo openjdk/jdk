@@ -46,10 +46,12 @@ import com.sun.tools.javac.main.Arguments;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.file.CacheFSInfo;
+import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
+import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.PropagatedException;
 
@@ -175,6 +177,14 @@ public final class JavacTool implements JavaCompiler {
 
             Arguments args = Arguments.instance(context);
             args.init("javac", options, classes, compilationUnits);
+
+            // init multi-release jar handling
+            if (fileManager.isSupportedOption(Option.MULTIRELEASE.text) == 1) {
+                Target target = Target.instance(context);
+                List<String> list = List.of(target.multiReleaseValue());
+                fileManager.handleOption(Option.MULTIRELEASE.text, list.iterator());
+            }
+
             return new JavacTaskImpl(context);
         } catch (PropagatedException ex) {
             throw ex.getCause();
