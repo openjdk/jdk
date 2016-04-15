@@ -83,7 +83,6 @@ public class SynthScrollPaneUI extends BasicScrollPaneUI
         context.getPainter().paintScrollPaneBackground(context,
                           g, 0, 0, c.getWidth(), c.getHeight());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -100,7 +99,6 @@ public class SynthScrollPaneUI extends BasicScrollPaneUI
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -150,7 +148,6 @@ public class SynthScrollPaneUI extends BasicScrollPaneUI
                 installKeyboardActions(c);
             }
         }
-        context.dispose();
     }
 
     /**
@@ -178,7 +175,6 @@ public class SynthScrollPaneUI extends BasicScrollPaneUI
         SynthContext context = getContext(c, ENABLED);
 
         style.uninstallDefaults(context);
-        context.dispose();
 
         if (scrollpane.getViewportBorder() instanceof UIResource) {
             scrollpane.setViewportBorder(null);
@@ -254,7 +250,6 @@ public class SynthScrollPaneUI extends BasicScrollPaneUI
             }
             context.getPainter().paintViewportBorder(context, g, x, y, width,
                                                      height);
-            context.dispose();
         }
 
         @Override

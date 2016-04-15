@@ -106,7 +106,6 @@ public class SynthSeparatorUI extends SeparatorUI
             }
         }
 
-        context.dispose();
     }
 
     /**
@@ -120,7 +119,6 @@ public class SynthSeparatorUI extends SeparatorUI
         SynthContext context = getContext(c, ENABLED);
 
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
     }
 
@@ -168,7 +166,6 @@ public class SynthSeparatorUI extends SeparatorUI
                           g, 0, 0, c.getWidth(), c.getHeight(),
                           separator.getOrientation());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -185,7 +182,6 @@ public class SynthSeparatorUI extends SeparatorUI
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -231,7 +227,6 @@ public class SynthSeparatorUI extends SeparatorUI
             size = new Dimension(insets.left + insets.right,
                                  insets.top + insets.bottom + thickness);
         }
-        context.dispose();
         return size;
     }
 

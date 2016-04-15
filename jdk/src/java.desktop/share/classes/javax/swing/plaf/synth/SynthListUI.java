@@ -75,7 +75,6 @@ public class SynthListUI extends BasicListUI
         SynthLookAndFeel.update(context, g);
         context.getPainter().paintListBackground(context,
                           g, 0, 0, c.getWidth(), c.getHeight());
-        context.dispose();
         paint(g, c);
     }
 
@@ -162,7 +161,6 @@ public class SynthListUI extends BasicListUI
                 installKeyboardActions();
             }
         }
-        context.dispose();
     }
 
     /**
@@ -175,7 +173,6 @@ public class SynthListUI extends BasicListUI
         SynthContext context = getContext(list, ENABLED);
 
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
     }
 
