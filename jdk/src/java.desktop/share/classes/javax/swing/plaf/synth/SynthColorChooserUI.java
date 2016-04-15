@@ -65,7 +65,6 @@ public class SynthColorChooserUI extends BasicColorChooserUI implements
         SynthContext context = getContext(chooser, ENABLED);
         AbstractColorChooserPanel[] panels = (AbstractColorChooserPanel[])
                      context.getStyle().get(context, "ColorChooser.panels");
-        context.dispose();
 
         if (panels == null) {
             panels = ColorChooserComponentFactory.getDefaultChooserPanels();
@@ -85,7 +84,6 @@ public class SynthColorChooserUI extends BasicColorChooserUI implements
     private void updateStyle(JComponent c) {
         SynthContext context = getContext(c, ENABLED);
         style = SynthLookAndFeel.updateStyle(context, this);
-        context.dispose();
     }
 
     /**
@@ -96,7 +94,6 @@ public class SynthColorChooserUI extends BasicColorChooserUI implements
         SynthContext context = getContext(chooser, ENABLED);
 
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
         super.uninstallDefaults();
     }
@@ -155,7 +152,6 @@ public class SynthColorChooserUI extends BasicColorChooserUI implements
         context.getPainter().paintColorChooserBackground(context, g, 0, 0,
                                                   c.getWidth(), c.getHeight());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -172,7 +168,6 @@ public class SynthColorChooserUI extends BasicColorChooserUI implements
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**
