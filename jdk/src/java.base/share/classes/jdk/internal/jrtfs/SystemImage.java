@@ -24,16 +24,21 @@
  */
 package jdk.internal.jrtfs;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
+import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
+
+import jdk.internal.jimage.ImageReader;
+import jdk.internal.jimage.ImageReader.Node;
 
 /**
  * @implNote This class needs to maintain JDK 8 source compatibility.
@@ -42,20 +47,47 @@ import java.security.PrivilegedAction;
  * but also compiled and delivered as part of the jrtfs.jar to support access
  * to the jimage file provided by the shipped JDK by tools running on JDK 8.
  */
-final class SystemImages {
-    private SystemImages() {}
+abstract class SystemImage {
 
+    abstract Node findNode(String path);
+    abstract byte[] getResource(Node node) throws IOException;
+    abstract void close() throws IOException;
+
+    static SystemImage open() throws IOException {
+        if (modulesImageExists) {
+            // open a .jimage and build directory structure
+            final ImageReader image = ImageReader.open(moduleImageFile);
+            image.getRootDirectory();
+            return new SystemImage() {
+                @Override
+                Node findNode(String path) {
+                    return image.findNode(path);
+                }
+                @Override
+                byte[] getResource(Node node) throws IOException {
+                    return image.getResource(node);
+                }
+                @Override
+                void close() throws IOException {
+                    image.close();
+                }
+            };
+        }
+        if (Files.notExists(explodedModulesDir))
+            throw new FileSystemNotFoundException(explodedModulesDir.toString());
+        return new ExplodedImage(explodedModulesDir);
+    }
 
     static final String RUNTIME_HOME;
     // "modules" jimage file Path
-    private static final Path moduleImageFile;
+    final static Path moduleImageFile;
     // "modules" jimage exists or not?
-    private static final boolean modulesImageExists;
+    final static boolean modulesImageExists;
     // <JAVA_HOME>/modules directory Path
-    private static final Path explodedModulesDir;
+    static final Path explodedModulesDir;
 
     static {
-        PrivilegedAction<String> pa = SystemImages::findHome;
+        PrivilegedAction<String> pa = SystemImage::findHome;
         RUNTIME_HOME = AccessController.doPrivileged(pa);
 
         FileSystem fs = FileSystems.getDefault();
@@ -71,25 +103,13 @@ final class SystemImages {
             });
     }
 
-    static boolean hasModulesImage() {
-        return modulesImageExists;
-    }
-
-    static Path moduleImageFile() {
-        return moduleImageFile;
-    }
-
-    static Path explodedModulesDir() {
-        return explodedModulesDir;
-    }
-
     /**
      * Returns the appropriate JDK home for this usage of the FileSystemProvider.
      * When the CodeSource is null (null loader) then jrt:/ is the current runtime,
      * otherwise the JDK home is located relative to jrt-fs.jar.
      */
     private static String findHome() {
-        CodeSource cs = SystemImages.class.getProtectionDomain().getCodeSource();
+        CodeSource cs = SystemImage.class.getProtectionDomain().getCodeSource();
         if (cs == null)
             return System.getProperty("java.home");
 
