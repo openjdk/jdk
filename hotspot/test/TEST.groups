@@ -338,6 +338,7 @@ hotspot_fast_gc_2 = \
   sanity/ExecuteInternalVMTests.java \
   gc/ \
   -gc/g1/ \
+  -gc/stress \
   -gc/survivorAlignment/TestPromotionFromSurvivorToTenuredAfterMinorGC.java \
   -gc/cms/TestMBeanCMS.java \
   -gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java
@@ -346,7 +347,7 @@ hotspot_fast_gc_closed = \
   sanity/ExecuteInternalVMTests.java
 
 hotspot_fast_gc_gcold = \
-  stress/gc/TestGCOld.java
+  gc/stress/TestGCOld.java
 
 hotspot_fast_runtime = \
   runtime/ \

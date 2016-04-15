@@ -2260,7 +2260,7 @@ void JvmtiExport::post_vm_object_alloc(JavaThread *thread,  oop object) {
     if (env->is_enabled(JVMTI_EVENT_VM_OBJECT_ALLOC)) {
       EVT_TRACE(JVMTI_EVENT_VM_OBJECT_ALLOC, ("JVMTI [%s] Evt vmobject alloc sent %s",
                                          JvmtiTrace::safe_get_thread_name(thread),
-                                         object==NULL? "NULL" : java_lang_Class::as_Klass(object)->external_name()));
+                                         object==NULL? "NULL" : object->klass()->external_name()));
 
       JvmtiVMObjectAllocEventMark jem(thread, h());
       JvmtiJavaThreadEventTransition jet(thread);
