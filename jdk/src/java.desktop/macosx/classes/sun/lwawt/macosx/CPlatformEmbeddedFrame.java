@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
 package sun.lwawt.macosx;
 
 import java.awt.*;
-import sun.awt.CausedFocusEvent;
+import java.awt.event.FocusEvent;
+
 import sun.java2d.SurfaceData;
 import sun.java2d.opengl.CGLLayer;
 import sun.lwawt.LWWindowPeer;
@@ -133,9 +134,9 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
     public void updateFocusableWindowState() {}
 
     @Override
-    public boolean rejectFocusRequest(CausedFocusEvent.Cause cause) {
+    public boolean rejectFocusRequest(FocusEvent.Cause cause) {
         // Cross-app activation requests are not allowed.
-        if (cause != CausedFocusEvent.Cause.MOUSE_EVENT &&
+        if (cause != FocusEvent.Cause.MOUSE_EVENT &&
             !target.isParentWindowActive())
         {
             focusLogger.fine("the embedder is inactive, so the request is rejected");
