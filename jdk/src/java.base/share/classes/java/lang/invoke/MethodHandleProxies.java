@@ -30,8 +30,8 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.invoke.WrapperInstance;
 import java.util.ArrayList;
-import sun.reflect.CallerSensitive;
-import sun.reflect.Reflection;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 import sun.reflect.misc.ReflectUtil;
 import static java.lang.invoke.MethodHandleStatics.*;
 

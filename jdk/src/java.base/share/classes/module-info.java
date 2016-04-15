@@ -86,9 +86,6 @@ module java.base {
     // see JDK-8044773
     exports jdk.net;
 
-    // This will move to a jdk.internal module via JEP-260
-    exports sun.reflect;
-
 
     // the service types defined by the APIs in this module
 
@@ -180,6 +177,14 @@ module java.base {
         jdk.jvmstat;
     exports jdk.internal.ref to
         java.desktop;
+    exports jdk.internal.reflect to
+        java.corba,
+        java.logging,
+        java.sql,
+        java.sql.rowset,
+        jdk.dynalink,
+        jdk.scripting.nashorn,
+        jdk.unsupported;
     exports jdk.internal.vm.annotation to
         jdk.unsupported;
     exports jdk.internal.util.jar to
