@@ -93,7 +93,7 @@ void CardTableModRefBS::initialize() {
 
   MemTracker::record_virtual_memory_type((address)heap_rs.base(), mtGC);
 
-  os::trace_page_sizes("card table", _guard_index + 1, _guard_index + 1,
+  os::trace_page_sizes("Card Table", _guard_index + 1, _guard_index + 1,
                        _page_size, heap_rs.base(), heap_rs.size());
   if (!heap_rs.is_reserved()) {
     vm_exit_during_initialization("Could not reserve enough space for the "
