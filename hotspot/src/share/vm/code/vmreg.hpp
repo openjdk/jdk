@@ -28,10 +28,9 @@
 #include "asm/register.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
-
+#include "utilities/ostream.hpp"
 #ifdef COMPILER2
 #include "opto/adlcVMDeps.hpp"
-#include "utilities/ostream.hpp"
 #endif
 
 //------------------------------VMReg------------------------------------------

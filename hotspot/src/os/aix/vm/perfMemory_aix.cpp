@@ -956,7 +956,7 @@ static int open_sharedmem_file(const char* filename, int oflags, TRAPS) {
 #ifdef O_NOFOLLOW
   RESTARTABLE(::open(filename, oflags), result);
 #else
-  open_o_nofollow(filename, oflags);
+  result = open_o_nofollow(filename, oflags);
 #endif
 
   if (result == OS_ERR) {

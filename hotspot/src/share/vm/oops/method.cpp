@@ -38,6 +38,7 @@
 #include "interpreter/oopMapCache.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constMethod.hpp"
@@ -123,18 +124,18 @@ void Method::deallocate_contents(ClassLoaderData* loader_data) {
 }
 
 address Method::get_i2c_entry() {
-  assert(_adapter != NULL, "must have");
-  return _adapter->get_i2c_entry();
+  assert(adapter() != NULL, "must have");
+  return adapter()->get_i2c_entry();
 }
 
 address Method::get_c2i_entry() {
-  assert(_adapter != NULL, "must have");
-  return _adapter->get_c2i_entry();
+  assert(adapter() != NULL, "must have");
+  return adapter()->get_c2i_entry();
 }
 
 address Method::get_c2i_unverified_entry() {
-  assert(_adapter != NULL, "must have");
-  return _adapter->get_c2i_unverified_entry();
+  assert(adapter() != NULL, "must have");
+  return adapter()->get_c2i_unverified_entry();
 }
 
 char* Method::name_and_sig_as_C_string() const {
@@ -892,10 +893,10 @@ void Method::clear_code() {
 
   // this may be NULL if c2i adapters have not been made yet
   // Only should happen at allocate time.
-  if (_adapter == NULL) {
+  if (adapter() == NULL) {
     _from_compiled_entry    = NULL;
   } else {
-    _from_compiled_entry    = _adapter->get_c2i_entry();
+    _from_compiled_entry    = adapter()->get_c2i_entry();
   }
   OrderAccess::storestore();
   _from_interpreted_entry = _i2i_entry;
@@ -903,47 +904,68 @@ void Method::clear_code() {
   _code = NULL;
 }
 
+#if INCLUDE_CDS
 // Called by class data sharing to remove any entry points (which are not shared)
 void Method::unlink_method() {
   _code = NULL;
-  _i2i_entry = NULL;
-  _from_interpreted_entry = NULL;
+
+  assert(DumpSharedSpaces, "dump time only");
+  // Set the values to what they should be at run time. Note that
+  // this Method can no longer be executed during dump time.
+  _i2i_entry = Interpreter::entry_for_cds_method(this);
+  _from_interpreted_entry = _i2i_entry;
+
   if (is_native()) {
     *native_function_addr() = NULL;
     set_signature_handler(NULL);
   }
   NOT_PRODUCT(set_compiled_invocation_count(0);)
-  _adapter = NULL;
-  _from_compiled_entry = NULL;
+
+  CDSAdapterHandlerEntry* cds_adapter = (CDSAdapterHandlerEntry*)adapter();
+  constMethod()->set_adapter_trampoline(cds_adapter->get_adapter_trampoline());
+  _from_compiled_entry = cds_adapter->get_c2i_entry_trampoline();
+  assert(*((int*)_from_compiled_entry) == 0, "must be NULL during dump time, to be initialized at run time");
+
 
   // In case of DumpSharedSpaces, _method_data should always be NULL.
-  //
-  // During runtime (!DumpSharedSpaces), when we are cleaning a
-  // shared class that failed to load, this->link_method() may
-  // have already been called (before an exception happened), so
-  // this->_method_data may not be NULL.
-  assert(!DumpSharedSpaces || _method_data == NULL, "unexpected method data?");
+  assert(_method_data == NULL, "unexpected method data?");
 
   set_method_data(NULL);
   clear_method_counters();
 }
+#endif
 
 // Called when the method_holder is getting linked. Setup entrypoints so the method
 // is ready to be called from interpreter, compiler, and vtables.
 void Method::link_method(const methodHandle& h_method, TRAPS) {
   // If the code cache is full, we may reenter this function for the
   // leftover methods that weren't linked.
-  if (_i2i_entry != NULL) return;
+  if (is_shared()) {
+    if (adapter() != NULL) return;
+  } else {
+    if (_i2i_entry != NULL) return;
 
-  assert(_adapter == NULL, "init'd to NULL" );
+    assert(adapter() == NULL, "init'd to NULL" );
+  }
   assert( _code == NULL, "nothing compiled yet" );
 
   // Setup interpreter entrypoint
   assert(this == h_method(), "wrong h_method()" );
-  address entry = Interpreter::entry_for_method(h_method);
+  address entry;
+
+  if (this->is_shared()) {
+    entry = Interpreter::entry_for_cds_method(h_method);
+  } else {
+    entry = Interpreter::entry_for_method(h_method);
+  }
   assert(entry != NULL, "interpreter entry must be non-null");
-  // Sets both _i2i_entry and _from_interpreted_entry
-  set_interpreter_entry(entry);
+  if (is_shared()) {
+    assert(entry == _i2i_entry && entry == _from_interpreted_entry,
+           "should be correctly set during dump time");
+  } else {
+    // Sets both _i2i_entry and _from_interpreted_entry
+    set_interpreter_entry(entry);
+  }
 
   // Don't overwrite already registered native entries.
   if (is_native() && !has_native_function()) {
@@ -975,8 +997,13 @@ address Method::make_adapters(methodHandle mh, TRAPS) {
     THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(), "Out of space in CodeCache for adapters");
   }
 
-  mh->set_adapter_entry(adapter);
-  mh->_from_compiled_entry = adapter->get_c2i_entry();
+  if (mh->is_shared()) {
+    assert(mh->adapter() == adapter, "must be");
+    assert(mh->_from_compiled_entry != NULL, "must be"); // FIXME, the instructions also not NULL
+  } else {
+    mh->set_adapter_entry(adapter);
+    mh->_from_compiled_entry = adapter->get_c2i_entry();
+  }
   return adapter->get_c2i_entry();
 }
 
@@ -992,6 +1019,14 @@ void Method::restore_unshareable_info(TRAPS) {
   }
 }
 
+volatile address Method::from_compiled_entry_no_trampoline() const {
+  nmethod *code = (nmethod *)OrderAccess::load_ptr_acquire(&_code);
+  if (code) {
+    return code->verified_entry_point();
+  } else {
+    return adapter()->get_c2i_entry();
+  }
+}
 
 // The verified_code_entry() must be called when a invoke is resolved
 // on this method.

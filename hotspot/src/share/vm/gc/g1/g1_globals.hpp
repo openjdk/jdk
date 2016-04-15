@@ -260,6 +260,9 @@
           "The target number of mixed GCs after a marking cycle.")          \
           range(0, max_uintx)                                               \
                                                                             \
+  experimental(bool, G1PretouchAuxiliaryMemory, false,                      \
+          "Pre-touch large auxiliary data structures used by the GC.")      \
+                                                                            \
   experimental(bool, G1EagerReclaimHumongousObjects, true,                  \
           "Try to reclaim dead large objects at every young GC.")           \
                                                                             \

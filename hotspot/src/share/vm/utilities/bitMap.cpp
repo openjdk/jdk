@@ -68,6 +68,10 @@ void BitMap::resize(idx_t size_in_bits, bool in_resource_area) {
   }
 }
 
+void BitMap::pretouch() {
+  os::pretouch_memory(word_addr(0), word_addr(size()));
+}
+
 void BitMap::set_range_within_word(idx_t beg, idx_t end) {
   // With a valid range (beg <= end), this test ensures that end != 0, as
   // required by inverted_bit_mask_for_range.  Also avoids an unnecessary write.

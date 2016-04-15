@@ -1,0 +1,172 @@
+#
+# Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+$(eval $(call IncludeCustomExtension, hotspot, lib/JvmMapfile.gmk))
+
+################################################################################
+# Combine a list of static symbols
+
+ifneq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU), windows-x86_64)
+  # On Windows x86_64, we should not have any symbols at all, since that
+  # results in duplicate warnings from the linker (JDK-8043491).
+  SYMBOLS_SRC += $(HOTSPOT_TOPDIR)/makefiles/symbols/symbols-shared
+endif
+
+ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
+  SYMBOLS_SRC += $(HOTSPOT_TOPDIR)/makefiles/symbols/symbols-unix
+endif
+
+ifneq ($(wildcard $(HOTSPOT_TOPDIR)/makefiles/symbols/symbols-$(OPENJDK_TARGET_OS)), )
+  SYMBOLS_SRC += $(HOTSPOT_TOPDIR)/makefiles/symbols/symbols-$(OPENJDK_TARGET_OS)
+endif
+
+ifneq ($(findstring debug, $(DEBUG_LEVEL)), )
+  ifneq ($(wildcard $(HOTSPOT_TOPDIR)/makefiles/symbols/symbols-$(OPENJDK_TARGET_OS)-debug), )
+    SYMBOLS_SRC += $(HOTSPOT_TOPDIR)/makefiles/symbols/symbols-$(OPENJDK_TARGET_OS)-debug
+  endif
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), solaris)
+  ifeq ($(call check-jvm-feature, dtrace), true)
+    # Additional mapfiles that are only used when dtrace is enabled
+    ifeq ($(call check-jvm-feature, compiler2), true)
+      # This also covers the case of compiler1+compiler2.
+      SYMBOLS_SRC += $(HOTSPOT_TOPDIR)/makefiles/symbols/symbols-solaris-dtrace-compiler2
+    else ifeq ($(call check-jvm-feature, compiler1), true)
+      SYMBOLS_SRC += $(HOTSPOT_TOPDIR)/makefiles/symbols/symbols-solaris-dtrace-compiler1
+    endif
+  endif
+endif
+
+################################################################################
+# Create a dynamic list of symbols from the built object files. This is highly
+# platform dependent.
+
+ifeq ($(OPENJDK_TARGET_OS), linux)
+  DUMP_SYMBOLS_CMD := $(NM) --defined-only *.o
+  ifneq ($(FILTER_SYMBOLS_PATTERN), )
+    FILTER_SYMBOLS_PATTERN := $(FILTER_SYMBOLS_PATTERN)|
+  endif
+  FILTER_SYMBOLS_PATTERN := $(FILTER_SYMBOLS_PATTERN)^_ZTV|^gHotSpotVM|^UseSharedSpaces$$
+  FILTER_SYMBOLS_PATTERN := $(FILTER_SYMBOLS_PATTERN)|^_ZN9Arguments17SharedArchivePathE$$
+  FILTER_SYMBOLS_AWK_SCRIPT := \
+      '{ \
+        if ($$3 ~ /$(FILTER_SYMBOLS_PATTERN)/) print $$3; \
+      }'
+
+else ifeq ($(OPENJDK_TARGET_OS), solaris)
+  DUMP_SYMBOLS_CMD := $(NM) -p *.o
+  ifneq ($(FILTER_SYMBOLS_PATTERN), )
+    FILTER_SYMBOLS_PATTERN := $(FILTER_SYMBOLS_PATTERN)|
+  endif
+  FILTER_SYMBOLS_PATTERN := $(FILTER_SYMBOLS_PATTERN)^__1c.*__vtbl_$$|^gHotSpotVM
+  FILTER_SYMBOLS_PATTERN := $(FILTER_SYMBOLS_PATTERN)|^UseSharedSpaces$$
+  FILTER_SYMBOLS_PATTERN := $(FILTER_SYMBOLS_PATTERN)|^__1cJArgumentsRSharedArchivePath_$$
+  FILTER_SYMBOLS_AWK_SCRIPT := \
+      '{ \
+        if ($$2 == "U") next; \
+        if ($$3 ~ /$(FILTER_SYMBOLS_PATTERN)/) print $$3; \
+      }'
+
+else ifeq ($(OPENJDK_TARGET_OS), macosx)
+  # nm on macosx prints out "warning: nm: no name list" to stderr for
+  # files without symbols. Hide this, even at the expense of hiding real errors.
+  DUMP_SYMBOLS_CMD := $(NM) -Uj *.o 2> /dev/null
+  ifneq ($(FILTER_SYMBOLS_PATTERN), )
+    FILTER_SYMBOLS_PATTERN := $(FILTER_SYMBOLS_PATTERN)|
+  endif
+  FILTER_SYMBOLS_PATTERN := $(FILTER_SYMBOLS_PATTERN)^_ZTV|^gHotSpotVM
+  FILTER_SYMBOLS_AWK_SCRIPT := \
+      '{ \
+        if ($$3 ~ /$(FILTER_SYMBOLS_PATTERN)/) print $$3; \
+      }'
+
+# NOTE: The script is from the old build. It is broken and finds no symbols.
+# The script below might be what was intended, but it failes to link with tons
+# of 'cannot export hidden symbol vtable for X'.
+#  '{ if ($$1 ~ /^__ZTV/ || $$1 ~ /^_gHotSpotVM/) print substr($$1, 2) }'
+else ifeq ($(OPENJDK_TARGET_OS), aix)
+  # NOTE: The old build had the solution below. This should to be fixed in
+  # configure instead.
+
+  # On AIX we have to prevent that we pick up the 'nm' version from the GNU binutils
+  # which may be installed under /opt/freeware/bin. So better use an absolute path here!
+  # NM=/usr/bin/nm
+
+  DUMP_SYMBOLS_CMD := $(NM) -X64 -B -C *.o
+  FILTER_SYMBOLS_AWK_SCRIPT := \
+      '{ \
+        if (($$2="d" || $$2="D") && ($$3 ~ /^__vft/ || $$3 ~ /^gHotSpotVM/)) print $$3; \
+        if ($$3 ~ /^UseSharedSpaces$$/) print $$3; \
+        if ($$3 ~ /^SharedArchivePath__9Arguments$$/) print $$3; \
+       }'
+
+else ifeq ($(OPENJDK_TARGET_OS), windows)
+  DUMP_SYMBOLS_CMD := $(DUMPBIN) -symbols *.obj
+  FILTER_SYMBOLS_AWK_SCRIPT := \
+      '{ \
+        if ($$7 ~ /??_7.*@@6B@/ && $$7 !~ /type_info/) print $$7; \
+      }'
+
+else
+  $(error Unknown target OS $(OPENJDK_TARGET_OS) in JvmMapfile.gmk)
+endif
+
+# A more correct solution would be to send BUILD_LIBJVM_ALL_OBJS instead of
+# cd && *.o, but this will result in very long command lines, which is
+# problematic on some platforms.
+$(JVM_OUTPUTDIR)/symbols-objects: $(BUILD_LIBJVM_ALL_OBJS)
+	$(call LogInfo, Generating symbol list from object files)
+	$(CD) $(JVM_OUTPUTDIR)/objs && \
+	  $(DUMP_SYMBOLS_CMD) | $(NAWK) $(FILTER_SYMBOLS_AWK_SCRIPT) | $(SORT) -u > $@
+
+SYMBOLS_SRC += $(JVM_OUTPUTDIR)/symbols-objects
+
+################################################################################
+# Now concatenate all symbol lists into a single file and remove comments.
+
+$(JVM_OUTPUTDIR)/symbols: $(SYMBOLS_SRC)
+	$(SED) -e '/^#/d' $^ > $@
+
+################################################################################
+# Finally convert the symbol list into a platform-specific mapfile
+
+$(JVM_MAPFILE): $(JVM_OUTPUTDIR)/symbols
+	$(call LogInfo, Creating mapfile)
+	$(RM) $@
+        ifeq ($(OPENJDK_TARGET_OS), macosx)
+          # On macosx, we need to add a leading underscore
+	  $(AWK) '{ if ($$0 ~ ".") { print "  _" $$0 } }'  < $^ > $@.tmp
+        else ifeq ($(OPENJDK_TARGET_OS), windows)
+          # On windows, add an 'EXPORTS' header
+	  $(ECHO) "EXPORTS" > $@.tmp
+	  $(AWK) '{ if ($$0 ~ ".") { print "  " $$0 } }'  < $^ >> $@.tmp
+        else
+          # Assume standard linker script
+	  $(PRINTF) "SUNWprivate_1.1 { \n  global: \n" > $@.tmp
+	  $(AWK) '{ if ($$0 ~ ".") { print "    " $$0 ";" } }' < $^ >> $@.tmp
+	  $(PRINTF) "  local: \n    *; \n }; \n" >> $@.tmp
+        endif
+	$(MV) $@.tmp $@
