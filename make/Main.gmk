@@ -333,6 +333,9 @@ docs-javadoc:
 docs-jvmtidoc:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk jvmtidocs)
 
+zip-docs: docs-javadoc docs-jvmtidoc
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk zip-docs)
+
 ALL_TARGETS += docs-javadoc docs-jvmtidoc
 
 ################################################################################
@@ -689,7 +692,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 endif
 
 # This target builds the documentation image
-docs-image: docs-javadoc docs-jvmtidoc
+docs-image: zip-docs
 
 # This target builds the test image
 test-image: prepare-test-image test-image-hotspot-jtreg-native \
@@ -713,7 +716,7 @@ images: product-images
 docs: docs-image
 all: all-images
 
-ALL_TARGETS += default jdk images docs all
+ALL_TARGETS += default jdk images docs all zip-docs
 
 ################################################################################
 ################################################################################
