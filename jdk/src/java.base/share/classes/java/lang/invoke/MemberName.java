@@ -1132,6 +1132,10 @@ import java.util.Objects;
             public Object newMemberName() {
                 return new MemberName();
             }
+            public String getName(Object mname) {
+                MemberName memberName = (MemberName)mname;
+                return memberName.getName();
+            }
         });
     }
 }
