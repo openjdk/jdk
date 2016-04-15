@@ -283,7 +283,7 @@ Additional (non-autoconf) OpenJDK Options:
 
 EOT
 
-    # Print additional help, e.g. a list of toolchains.
+    # Print additional help, e.g. a list of toolchains and JVM features.
     # This must be done by the autoconf script.
     ( CONFIGURE_PRINT_ADDITIONAL_HELP=true . $conf_script_to_run PRINTF=printf )
 
