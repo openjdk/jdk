@@ -388,20 +388,22 @@ test-image-jdk-jtreg-native:
 build-test-lib:
 	+($(CD) $(TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f BuildTestLib.gmk)
 
-# Builds the failure handler jtreg extension
-build-test-failure-handler:
+ifeq ($(BUILD_FAILURE_HANDLER), true)
+  # Builds the failure handler jtreg extension
+  build-test-failure-handler:
 	+($(CD) $(TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) \
 	    -f BuildFailureHandler.gmk build)
 
-# Runs the tests for the failure handler jtreg extension
-test-failure-handler:
+  # Runs the tests for the failure handler jtreg extension
+  test-failure-handler:
 	+($(CD) $(TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) \
 	    -f BuildFailureHandler.gmk test)
 
-# Copies the failure handler jtreg extension into the test image
-test-image-failure-handler:
+  # Copies the failure handler jtreg extension into the test image
+  test-image-failure-handler:
 	+($(CD) $(TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) \
 	     -f BuildFailureHandler.gmk images)
+endif
 
 ALL_TARGETS += prepare-test-image build-test-hotspot-jtreg-native \
     test-image-hotspot-jtreg-native build-test-jdk-jtreg-native \
