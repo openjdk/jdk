@@ -4452,7 +4452,6 @@ void G1CollectedHeap::process_weak_jni_handles() {
 }
 
 void G1CollectedHeap::preserve_cm_referents(G1ParScanThreadStateSet* per_thread_states) {
-  double preserve_cm_referents_start = os::elapsedTime();
   // Any reference objects, in the collection set, that were 'discovered'
   // by the CM ref processor should have already been copied (either by
   // applying the external root copy closure to the discovered lists, or
@@ -4473,16 +4472,24 @@ void G1CollectedHeap::preserve_cm_referents(G1ParScanThreadStateSet* per_thread_
   // objects discovered by the STW ref processor in case one of these
   // referents points to another object which is also referenced by an
   // object discovered by the STW ref processor.
+  double preserve_cm_referents_time = 0.0;
 
-  uint no_of_gc_workers = workers()->active_workers();
+  // To avoid spawning task when there is no work to do, check that
+  // a concurrent cycle is active and that some references have been
+  // discovered.
+  if (concurrent_mark()->cmThread()->during_cycle() &&
+      ref_processor_cm()->has_discovered_references()) {
+    double preserve_cm_referents_start = os::elapsedTime();
+    uint no_of_gc_workers = workers()->active_workers();
+    G1ParPreserveCMReferentsTask keep_cm_referents(this,
+                                                   per_thread_states,
+                                                   no_of_gc_workers,
+                                                   _task_queues);
+    workers()->run_task(&keep_cm_referents);
+    preserve_cm_referents_time = os::elapsedTime() - preserve_cm_referents_start;
+  }
 
-  G1ParPreserveCMReferentsTask keep_cm_referents(this,
-                                                 per_thread_states,
-                                                 no_of_gc_workers,
-                                                 _task_queues);
-  workers()->run_task(&keep_cm_referents);
-
-  g1_policy()->phase_times()->record_preserve_cm_referents_time_ms((os::elapsedTime() - preserve_cm_referents_start) * 1000.0);
+  g1_policy()->phase_times()->record_preserve_cm_referents_time_ms(preserve_cm_referents_time * 1000.0);
 }
 
 // Weak Reference processing during an evacuation pause (part 1).
