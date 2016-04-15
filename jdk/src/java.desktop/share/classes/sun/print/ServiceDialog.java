@@ -1422,13 +1422,13 @@ public class ServiceDialog extends JDialog implements ActionListener {
             topMargin.addActionListener(this);
             topMargin.getAccessibleContext().setAccessibleName(
                                               getMsg("label.topmargin"));
-            topMargin = new JFormattedTextField(nf);
+
             bottomMargin = new JFormattedTextField(nf);
             bottomMargin.addFocusListener(this);
             bottomMargin.addActionListener(this);
             bottomMargin.getAccessibleContext().setAccessibleName(
                                               getMsg("label.bottommargin"));
-            topMargin = new JFormattedTextField(nf);
+
             c.gridwidth = GridBagConstraints.RELATIVE;
             lblLeft = new JLabel(getMsg("label.leftmargin") + " " + unitsMsg,
                                  JLabel.LEADING);
