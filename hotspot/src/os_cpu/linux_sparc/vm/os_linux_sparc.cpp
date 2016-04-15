@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -561,11 +561,7 @@ JVM_handle_linux_signal(int sig,
     if (os::Linux::chained_handler(sig, info, ucVoid)) {
       return true;
     } else {
-      if (PrintMiscellaneous && (WizardMode || Verbose)) {
-        char buf[64];
-        warning("Ignoring %s - see bugs 4229104 or 646499219",
-                os::exception_name(sig, buf, sizeof(buf)));
-      }
+      // Ignoring SIGPIPE/SIGXFSZ - see bugs 4229104 or 6499219
       return true;
     }
   }

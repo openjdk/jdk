@@ -36,9 +36,12 @@ class LogTagSet;
 // Class used to temporary encode a 'what'-expression during log configuration.
 // Consists of a combination of tags and levels, e.g. "tag1+tag2=level1,tag3*=level2".
 class LogTagLevelExpression : public StackObj {
-  friend void LogConfiguration::configure_stdout(LogLevelType, bool, ...);
+ public:
+  static const size_t MaxCombinations = 256;
+
  private:
-  static const size_t MaxCombinations = 32;
+  friend void LogConfiguration::configure_stdout(LogLevelType, bool, ...);
+
   static const char* DefaultExpressionString;
 
   size_t        _ntags, _ncombinations;

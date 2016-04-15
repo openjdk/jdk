@@ -47,7 +47,6 @@
 
 
 // Forward declarations to be independent of the include structure.
-// This allows us to have exceptions.hpp included in top.hpp.
 
 class Thread;
 class Handle;

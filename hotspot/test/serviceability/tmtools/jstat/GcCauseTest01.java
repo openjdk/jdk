@@ -34,7 +34,7 @@
  * @build common.*
  * @build utils.*
  *
- * @run main/othervm -XX:+UsePerfData GcCauseTest01
+ * @run main/othervm -XX:+UsePerfData -Xmx128M GcCauseTest01
  */
 import utils.*;
 

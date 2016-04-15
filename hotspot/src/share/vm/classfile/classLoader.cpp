@@ -233,6 +233,7 @@ ClassPathZipEntry::ClassPathZipEntry(jzfile* zip, const char* zip_name, bool is_
   strcpy(copy, zip_name);
   _zip_name = copy;
   _is_boot_append = is_boot_append;
+  _multi_versioned = _unknown;
 }
 
 ClassPathZipEntry::~ClassPathZipEntry() {
@@ -330,13 +331,20 @@ u1* ClassPathZipEntry::open_versioned_entry(const char* name, jint* filesize, TR
 
 bool ClassPathZipEntry::is_multiple_versioned(TRAPS) {
   assert(DumpSharedSpaces, "called only at dump time");
+  if (_multi_versioned != _unknown) {
+    return (_multi_versioned == _yes) ? true : false;
+  }
   jint size;
-  char* buffer = (char*)open_entry("META-INF/MANIFEST.MF", &size, false, CHECK_false);
+  char* buffer = (char*)open_entry("META-INF/MANIFEST.MF", &size, true, CHECK_false);
   if (buffer != NULL) {
-    if (strstr(buffer, "Multi-Release: true") != NULL) {
+    char* p = buffer;
+    for ( ; *p; ++p) *p = tolower(*p);
+    if (strstr(buffer, "multi-release: true") != NULL) {
+      _multi_versioned = _yes;
       return true;
     }
   }
+  _multi_versioned = _no;
   return false;
 }
 #endif // INCLUDE_CDS

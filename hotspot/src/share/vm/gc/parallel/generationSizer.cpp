@@ -26,18 +26,6 @@
 #include "gc/parallel/generationSizer.hpp"
 #include "gc/shared/collectorPolicy.hpp"
 
-void GenerationSizer::trace_gen_sizes(const char* const str) {
-  if (TracePageSizes) {
-    tty->print_cr("%s:  " SIZE_FORMAT "," SIZE_FORMAT " "
-                  SIZE_FORMAT "," SIZE_FORMAT " "
-                  SIZE_FORMAT,
-                  str,
-                  _min_old_size / K, _max_old_size / K,
-                  _min_young_size / K, _max_young_size / K,
-                  _max_heap_byte_size / K);
-  }
-}
-
 void GenerationSizer::initialize_alignments() {
   _space_alignment = _gen_alignment = default_gen_alignment();
   _heap_alignment = compute_heap_alignment();
@@ -60,7 +48,6 @@ void GenerationSizer::initialize_flags() {
 }
 
 void GenerationSizer::initialize_size_info() {
-  trace_gen_sizes("ps heap raw");
   const size_t max_page_sz = os::page_size_for_region_aligned(_max_heap_byte_size, 8);
   const size_t min_pages = 4; // 1 for eden + 1 for each survivor + 1 for old
   const size_t min_page_sz = os::page_size_for_region_aligned(_min_heap_byte_size, min_pages);
@@ -76,6 +63,4 @@ void GenerationSizer::initialize_size_info() {
     initialize_flags();
   }
   GenCollectorPolicy::initialize_size_info();
-
-  trace_gen_sizes("ps heap rnd");
 }
