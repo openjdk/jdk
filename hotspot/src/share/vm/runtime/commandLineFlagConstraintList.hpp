@@ -48,7 +48,7 @@ typedef Flag::Error (*CommandLineFlagConstraintFunc_uint64_t)(uint64_t value, bo
 typedef Flag::Error (*CommandLineFlagConstraintFunc_size_t)(size_t value, bool verbose);
 typedef Flag::Error (*CommandLineFlagConstraintFunc_double)(double value, bool verbose);
 
-class CommandLineFlagConstraint : public CHeapObj<mtInternal> {
+class CommandLineFlagConstraint : public CHeapObj<mtArguments> {
 public:
   // During VM initialization, constraint validation will be done order of ConstraintType.
   enum ConstraintType {
