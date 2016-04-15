@@ -45,6 +45,7 @@ import java.nio.file.Paths;
 import java.nio.file.ProviderNotFoundException;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -494,7 +495,12 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
         public ArchiveContainer(Path archivePath) throws IOException, ProviderNotFoundException, SecurityException {
             this.archivePath = archivePath;
-            this.fileSystem = FileSystems.newFileSystem(archivePath, null);
+            if (multiReleaseValue != null && archivePath.toString().endsWith(".jar")) {
+                Map<String,String> env = Collections.singletonMap("multi-release", multiReleaseValue);
+                this.fileSystem = getJarFSProvider().newFileSystem(archivePath, env);
+            } else {
+                this.fileSystem = FileSystems.newFileSystem(archivePath, null);
+            }
         }
 
         /**
@@ -578,8 +584,23 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             fileSystem.close();
         }
     }
+
+    private FileSystemProvider jarFSProvider;
+
+    private FileSystemProvider getJarFSProvider() throws IOException {
+        if (jarFSProvider != null) {
+            return jarFSProvider;
+        }
+        for (FileSystemProvider provider: FileSystemProvider.installedProviders()) {
+            if (provider.getScheme().equals("jar")) {
+                return (jarFSProvider = provider);
+            }
+        }
+        throw new ProviderNotFoundException("no provider found for .jar files");
+    }
+
     /**
-     * container is a directory, a zip file, or a non-existant path.
+     * container is a directory, a zip file, or a non-existent path.
      */
     private boolean isValidFile(String s, Set<JavaFileObject.Kind> fileKinds) {
         JavaFileObject.Kind kind = getKind(s);
