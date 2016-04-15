@@ -40,7 +40,6 @@
 
 #define THROW_OUT_OF_MEMORY_ERROR() \
         JNU_ThrowOutOfMemoryError((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2), NULL)
-#define SETARG(name, value)     XtSetArg(args[argc], name, value); argc++
 
 struct X11InputMethodIDs {
   jfieldID pData;
@@ -590,7 +589,7 @@ static StatusWindow *createStatusWindow(
     char **mclr;
     int  mccr = 0;
     char *dsr;
-    Pixel bg, fg, light, dim;
+    unsigned long bg, fg, light, dim;
     int x, y, off_x, off_y, xx, yy;
     unsigned int w, h, bw, depth;
     XGCValues values;
