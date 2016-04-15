@@ -80,6 +80,12 @@ public class DeadlockDetectionTest {
             return;
         }
 
+        if (Platform.isOSX()) {
+            // Coredump stackwalking is not implemented for Darwin
+            System.out.println("This test is not expected to work on OS X. Skipping");
+            return;
+        }
+
 
         if (!LingeredApp.isLastModifiedWorking()) {
             // Exact behaviour of the test depends on operating system and the test nature,

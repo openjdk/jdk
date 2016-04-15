@@ -29,7 +29,6 @@
 #include "runtime/init.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/top.hpp"
 
 #ifndef PRODUCT
 

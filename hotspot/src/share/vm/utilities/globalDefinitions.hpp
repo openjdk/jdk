@@ -243,6 +243,36 @@ inline T byte_size_in_proper_unit(T s) {
   }
 }
 
+inline const char* exact_unit_for_byte_size(size_t s) {
+#ifdef _LP64
+  if (s >= G && (s % G) == 0) {
+    return "G";
+  }
+#endif
+  if (s >= M && (s % M) == 0) {
+    return "M";
+  }
+  if (s >= K && (s % K) == 0) {
+    return "K";
+  }
+  return "B";
+}
+
+inline size_t byte_size_in_exact_unit(size_t s) {
+#ifdef _LP64
+  if (s >= G && (s % G) == 0) {
+    return s / G;
+  }
+#endif
+  if (s >= M && (s % M) == 0) {
+    return s / M;
+  }
+  if (s >= K && (s % K) == 0) {
+    return s / K;
+  }
+  return s;
+}
+
 //----------------------------------------------------------------------------------------------------
 // VM type definitions
 
@@ -328,7 +358,7 @@ inline size_t pointer_delta(const MetaWord* left, const MetaWord* right) {
 // so far from the middle of the road that it is likely to be problematic in
 // many C++ compilers.
 //
-#define CAST_TO_FN_PTR(func_type, value) ((func_type)(castable_address(value)))
+#define CAST_TO_FN_PTR(func_type, value) (reinterpret_cast<func_type>(value))
 #define CAST_FROM_FN_PTR(new_type, func_ptr) ((new_type)((address_word)(func_ptr)))
 
 // Unsigned byte types for os and stream.hpp
