@@ -36,7 +36,6 @@ import java.util.Set;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.peer.LightweightPeer;
 
 import java.applet.Applet;
 
@@ -57,7 +56,6 @@ import javax.accessibility.*;
 import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
 import sun.swing.SwingUtilities2;
-import sun.swing.UIClientPropertyKey;
 
 /**
  * The base class for all Swing components except top-level containers.
