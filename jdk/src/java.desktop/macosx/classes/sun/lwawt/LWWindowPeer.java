@@ -295,7 +295,7 @@ public class LWWindowPeer
         if (f == null) {
             f = DEFAULT_FONT;
         }
-        return platformWindow.transformGraphics(new SunGraphics2D(getSurfaceData(), fg, bg, f));
+        return new SunGraphics2D(getSurfaceData(), fg, bg, f);
     }
 
     @Override

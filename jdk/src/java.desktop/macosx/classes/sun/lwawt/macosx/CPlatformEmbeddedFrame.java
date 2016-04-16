@@ -31,7 +31,6 @@ import java.awt.event.FocusEvent;
 import sun.java2d.SurfaceData;
 import sun.java2d.opengl.CGLLayer;
 import sun.lwawt.LWWindowPeer;
-import sun.lwawt.LWWindowPeer.PeerType;
 import sun.lwawt.PlatformWindow;
 import sun.util.logging.PlatformLogger;
 
@@ -40,7 +39,8 @@ import sun.util.logging.PlatformLogger;
  */
 public class CPlatformEmbeddedFrame implements PlatformWindow {
 
-    private static final PlatformLogger focusLogger = PlatformLogger.getLogger("sun.lwawt.macosx.focus.CPlatformEmbeddedFrame");
+    private static final PlatformLogger focusLogger = PlatformLogger.getLogger(
+            "sun.lwawt.macosx.focus.CPlatformEmbeddedFrame");
 
     private CGLLayer windowLayer;
     private LWWindowPeer peer;
@@ -160,11 +160,6 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
 
     @Override
     public void setSizeConstraints(int minW, int minH, int maxW, int maxH) {}
-
-    @Override
-    public Graphics transformGraphics(Graphics g) {
-        return g;
-    }
 
     @Override
     public void updateIconImages() {}

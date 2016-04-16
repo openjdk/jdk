@@ -27,7 +27,6 @@ package sun.lwawt.macosx;
 
 import java.awt.Font;
 import java.awt.FontMetrics;
-import java.awt.Graphics;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
@@ -150,11 +149,6 @@ public class CPlatformLWWindow extends CPlatformWindow {
 
     @Override
     public void updateFocusableWindowState() {
-    }
-
-    @Override
-    public Graphics transformGraphics(Graphics g) {
-        return null;
     }
 
     @Override
