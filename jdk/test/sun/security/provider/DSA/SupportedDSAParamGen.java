@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8072452
- * @key intermittent
  * @summary Support DHE sizes up to 8192-bits and DSA sizes up to 3072-bits
  * @run main/timeout=300 SupportedDSAParamGen 1024 160
  * @run main/timeout=300 SupportedDSAParamGen 2048 224
