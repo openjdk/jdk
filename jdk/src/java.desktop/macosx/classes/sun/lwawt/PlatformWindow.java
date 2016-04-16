@@ -130,12 +130,6 @@ public interface PlatformWindow {
      */
     public void setSizeConstraints(int minW, int minH, int maxW, int maxH);
 
-    /**
-     * Transforms the given Graphics object according to the native
-     * implementation traits (insets, etc.).
-     */
-    public Graphics transformGraphics(Graphics g);
-
     /*
      * Installs the images for particular window.
      */

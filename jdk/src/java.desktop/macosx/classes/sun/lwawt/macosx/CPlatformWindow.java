@@ -741,12 +741,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     @Override
-    public Graphics transformGraphics(Graphics g) {
-        // is this where we can inject a transform for HiDPI?
-        return g;
-    }
-
-    @Override
     public void setAlwaysOnTop(boolean isAlwaysOnTop) {
         setStyleBits(ALWAYS_ON_TOP, isAlwaysOnTop);
     }

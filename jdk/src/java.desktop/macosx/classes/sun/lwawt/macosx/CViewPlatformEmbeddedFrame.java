@@ -27,7 +27,6 @@ package sun.lwawt.macosx;
 
 import java.awt.Font;
 import java.awt.FontMetrics;
-import java.awt.Graphics;
 import java.awt.GraphicsDevice;
 import java.awt.Insets;
 import java.awt.MenuBar;
@@ -168,11 +167,6 @@ public class CViewPlatformEmbeddedFrame implements PlatformWindow {
 
     @Override
     public void setSizeConstraints(int minW, int minH, int maxW, int maxH) {
-    }
-
-    @Override
-    public Graphics transformGraphics(Graphics g) {
-        return g;
     }
 
     @Override
