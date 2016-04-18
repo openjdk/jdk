@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -383,6 +383,38 @@ public class Tests {
             System.err.println("Failure for "  + testName + ":\n" +
                                "\tFor inputs " + input1   + "\t(" + toHexString(input1) + ") and "
                                                + input2   + "\n"  +
+                               "\texpected  "  + expected + "\t(" + toHexString(expected) + ")\n" +
+                               "\tgot       "  + result   + "\t(" + toHexString(result) + ").");
+            return 1;
+        }
+        else
+            return 0;
+    }
+
+    public static int test(String testName,
+                           float input1, float input2, float input3,
+                           float result, float expected) {
+        if (Float.compare(expected, result ) != 0) {
+            System.err.println("Failure for "  + testName + ":\n" +
+                               "\tFor inputs " + input1   + "\t(" + toHexString(input1) + ") and "
+                                               + input2   + "\t(" + toHexString(input2) + ") and"
+                                               + input3   + "\t(" + toHexString(input3) + ")\n"  +
+                               "\texpected  "  + expected + "\t(" + toHexString(expected) + ")\n" +
+                               "\tgot       "  + result   + "\t(" + toHexString(result) + ").");
+            return 1;
+        }
+        else
+            return 0;
+    }
+
+    public static int test(String testName,
+                           double input1, double input2, double input3,
+                           double result, double expected) {
+        if (Double.compare(expected, result ) != 0) {
+            System.err.println("Failure for "  + testName + ":\n" +
+                               "\tFor inputs " + input1   + "\t(" + toHexString(input1) + ") and "
+                                               + input2   + "\t(" + toHexString(input2) + ") and"
+                                               + input3   + "\t(" + toHexString(input3) + ")\n"  +
                                "\texpected  "  + expected + "\t(" + toHexString(expected) + ")\n" +
                                "\tgot       "  + result   + "\t(" + toHexString(result) + ").");
             return 1;

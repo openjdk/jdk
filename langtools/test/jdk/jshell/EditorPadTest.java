@@ -25,6 +25,7 @@
  * @test
  * @summary Testing built-in editor.
  * @ignore 8139872
+ * @modules jdk.jshell/jdk.internal.jshell.tool
  * @build ReplToolTesting EditorTestBase
  * @run testng EditorPadTest
  */
@@ -67,7 +68,7 @@ public class EditorPadTest extends EditorTestBase {
     private static JButton exit = null;
 
     @BeforeClass
-    public static void setUp() {
+    public static void setUpEditorPadTest() {
         try {
             robot = new Robot();
             robot.setAutoWaitForIdle(true);

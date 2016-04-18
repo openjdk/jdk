@@ -799,8 +799,8 @@ class java_lang_reflect_Module {
   friend class JavaClasses;
 };
 
-// Interface to sun.reflect.ConstantPool objects
-class sun_reflect_ConstantPool {
+// Interface to jdk.internal.reflect.ConstantPool objects
+class reflect_ConstantPool {
  private:
   // Note that to reduce dependencies on the JDK we compute these
   // offsets at run-time.
@@ -824,8 +824,8 @@ class sun_reflect_ConstantPool {
   friend class JavaClasses;
 };
 
-// Interface to sun.reflect.UnsafeStaticFieldAccessorImpl objects
-class sun_reflect_UnsafeStaticFieldAccessorImpl {
+// Interface to jdk.internal.reflect.UnsafeStaticFieldAccessorImpl objects
+class reflect_UnsafeStaticFieldAccessorImpl {
  private:
   static int _base_offset;
   static void compute_offsets();

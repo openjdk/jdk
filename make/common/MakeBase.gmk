@@ -723,12 +723,13 @@ else
 endif
 
 ################################################################################
-# Return a string suitable for use after a -classpath option. It will correct and safe to use
-# on all platforms. Arguments are given as space separate classpath entries.
+# Return a string suitable for use after a -classpath or -modulepath option. It
+# will be correct and safe to use on all platforms. Arguments are given as space
+# separate classpath entries. Safe for multiple nested calls.
 # param 1 : A space separated list of classpath entries
 # The surrounding strip is needed to keep additional whitespace out
 PathList = \
-  "$(subst $(SPACE),$(PATH_SEP),$(strip $1))"
+  "$(subst $(SPACE),$(PATH_SEP),$(strip $(subst $(DQUOTE),,$1)))"
 
 ################################################################################
 

@@ -34,8 +34,8 @@ import java.util.Map;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import sun.hotspot.WhiteBox;
-import sun.reflect.ConstantPool;
-import sun.reflect.ConstantPool.Tag;
+import jdk.internal.reflect.ConstantPool;
+import jdk.internal.reflect.ConstantPool.Tag;
 
 /**
  * Class contains hard-coded constant pool tables for dummy classes used for

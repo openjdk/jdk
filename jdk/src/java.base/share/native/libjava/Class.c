@@ -43,7 +43,7 @@ extern jboolean VerifyFixClassname(char *utf_name);
 
 #define OBJ "Ljava/lang/Object;"
 #define CLS "Ljava/lang/Class;"
-#define CPL "Lsun/reflect/ConstantPool;"
+#define CPL "Ljdk/internal/reflect/ConstantPool;"
 #define STR "Ljava/lang/String;"
 #define FLD "Ljava/lang/reflect/Field;"
 #define MHD "Ljava/lang/reflect/Method;"

@@ -28,7 +28,7 @@ package sun.invoke.util;
 import java.lang.reflect.Modifier;
 import static java.lang.reflect.Modifier.*;
 import java.lang.reflect.Module;
-import sun.reflect.Reflection;
+import jdk.internal.reflect.Reflection;
 
 /**
  * This class centralizes information about the JVM's linkage access control.

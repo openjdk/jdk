@@ -423,7 +423,7 @@ class MethodHandleNatives {
         // Get the access kind from the method name
         VarHandle.AccessMode ak;
         try {
-            ak = VarHandle.AccessMode.valueOf(name);
+            ak = VarHandle.AccessMode.valueFromMethodName(name);
         } catch (IllegalArgumentException e) {
             throw MethodHandleStatics.newInternalError(e);
         }

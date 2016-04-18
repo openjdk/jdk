@@ -57,7 +57,7 @@ public class VarHandleTestReflection extends VarHandleBaseTest {
 
         // Try a reflective invoke using a Method
 
-        Method vhm = VarHandle.class.getMethod(accessMode.name(), Object[].class);
+        Method vhm = VarHandle.class.getMethod(accessMode.methodName(), Object[].class);
         vhm.invoke(v, new Object[]{});
     }
 
@@ -68,7 +68,7 @@ public class VarHandleTestReflection extends VarHandleBaseTest {
         // Try a reflective invoke using a MethodHandle
 
         MethodHandle mh = MethodHandles.lookup().unreflect(
-                VarHandle.class.getMethod(accessMode.name(), Object[].class));
+                VarHandle.class.getMethod(accessMode.methodName(), Object[].class));
         // Use invoke to avoid WrongMethodTypeException for
         // non-signature-polymorphic return types
         Object o = (Object) mh.invoke(v, new Object[]{});
@@ -82,7 +82,7 @@ public class VarHandleTestReflection extends VarHandleBaseTest {
         // a MethodHandle
 
         MethodHandle mh = MethodHandles.lookup().unreflect(
-                VarHandle.class.getMethod(accessMode.name(), Object[].class));
+                VarHandle.class.getMethod(accessMode.methodName(), Object[].class));
         MethodHandleInfo info = MethodHandles.lookup().revealDirect(mh);
         Method im = info.reflectAs(Method.class, MethodHandles.lookup());
         im.invoke(v, new Object[]{});
@@ -105,7 +105,7 @@ public class VarHandleTestReflection extends VarHandleBaseTest {
         VarHandle v = handle();
 
         MethodHandle mh = MethodHandles.publicLookup().findVirtual(
-                VarHandle.class, accessMode.name(), v.accessModeType(accessMode));
+                VarHandle.class, accessMode.methodName(), v.accessModeType(accessMode));
 
         MethodHandleInfo info = MethodHandles.lookup().revealDirect(mh);
 

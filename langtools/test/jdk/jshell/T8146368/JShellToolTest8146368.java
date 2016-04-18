@@ -37,8 +37,8 @@ import org.testng.annotations.Test;
 public class JShellToolTest8146368 extends ReplToolTesting {
     public void test() {
         test(
-                a -> assertCommand(a, "class A extends B {}", "|  Added class A, however, it cannot be referenced until class B is declared\n"),
-                a -> assertCommand(a, "und m() { return new und(); }", "|  Added method m(), however, it cannot be referenced until class und is declared\n")
+                a -> assertCommand(a, "class A extends B {}", "|  created class A, however, it cannot be referenced until class B is declared\n"),
+                a -> assertCommand(a, "und m() { return new und(); }", "|  created method m(), however, it cannot be referenced until class und is declared\n")
         );
     }
 }

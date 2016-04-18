@@ -42,8 +42,10 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.ProviderNotFoundException;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -266,29 +268,136 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         System.out.println(message);
     }
 
-    /**
-     * Insert all files in a subdirectory of the platform image
-     * which match fileKinds into resultList.
-     */
-    private void listJRTImage(RelativeDirectory subdirectory,
-                               Set<JavaFileObject.Kind> fileKinds,
-                               boolean recurse,
-                               ListBuffer<JavaFileObject> resultList) throws IOException {
-        JRTIndex.Entry e = getJRTIndex().getEntry(subdirectory);
-        if (symbolFileEnabled && e.ctSym.hidden)
-            return;
-        for (Path file: e.files.values()) {
-            if (fileKinds.contains(getKind(file))) {
-                JavaFileObject fe
-                        = PathFileObject.forJRTPath(JavacFileManager.this, file);
-                resultList.append(fe);
+    private final Map<Path, Container> containers = new HashMap<>();
+
+    synchronized Container getContainer(Path path) throws IOException {
+        Container fs = containers.get(path);
+
+        if (fs != null) {
+            return fs;
+        }
+
+        if (fsInfo.isFile(path) && path.equals(Locations.thisSystemModules)) {
+            containers.put(path, fs = new JRTImageContainer());
+            return fs;
+        }
+
+        Path realPath = fsInfo.getCanonicalFile(path);
+
+        fs = containers.get(realPath);
+
+        if (fs != null) {
+            containers.put(path, fs);
+            return fs;
+        }
+
+        BasicFileAttributes attr = null;
+
+        try {
+            attr = Files.readAttributes(realPath, BasicFileAttributes.class);
+        } catch (IOException ex) {
+            //non-existing
+            fs = MISSING_CONTAINER;
+        }
+
+        if (attr != null) {
+            if (attr.isDirectory()) {
+                fs = new DirectoryContainer(realPath);
+            } else {
+                try {
+                    fs = new ArchiveContainer(realPath);
+                } catch (ProviderNotFoundException | SecurityException ex) {
+                    throw new IOException(ex);
+                }
             }
         }
 
-        if (recurse) {
-            for (RelativeDirectory rd: e.subdirs) {
-                listJRTImage(rd, fileKinds, recurse, resultList);
+        containers.put(realPath, fs);
+        containers.put(path, fs);
+
+        return fs;
+    }
+
+    private interface Container {
+        /**
+         * Insert all files in subdirectory subdirectory of container which
+         * match fileKinds into resultList
+         */
+        public abstract void list(Path userPath,
+                                  RelativeDirectory subdirectory,
+                                  Set<JavaFileObject.Kind> fileKinds,
+                                  boolean recurse,
+                                  ListBuffer<JavaFileObject> resultList) throws IOException;
+        public abstract JavaFileObject getFileObject(Path userPath, RelativeFile name) throws IOException;
+        public abstract void close() throws IOException;
+    }
+
+    private static final Container MISSING_CONTAINER =  new Container() {
+        @Override
+        public void list(Path userPath,
+                         RelativeDirectory subdirectory,
+                         Set<JavaFileObject.Kind> fileKinds,
+                         boolean recurse,
+                         ListBuffer<JavaFileObject> resultList) throws IOException {
+        }
+        @Override
+        public JavaFileObject getFileObject(Path userPath, RelativeFile name) throws IOException {
+            return null;
+        }
+        @Override
+        public void close() throws IOException {}
+    };
+
+    private final class JRTImageContainer implements Container {
+
+        /**
+         * Insert all files in a subdirectory of the platform image
+         * which match fileKinds into resultList.
+         */
+        @Override
+        public void list(Path userPath,
+                         RelativeDirectory subdirectory,
+                         Set<JavaFileObject.Kind> fileKinds,
+                         boolean recurse,
+                         ListBuffer<JavaFileObject> resultList) throws IOException {
+            try {
+                JRTIndex.Entry e = getJRTIndex().getEntry(subdirectory);
+                if (symbolFileEnabled && e.ctSym.hidden)
+                    return;
+                for (Path file: e.files.values()) {
+                    if (fileKinds.contains(getKind(file))) {
+                        JavaFileObject fe
+                                = PathFileObject.forJRTPath(JavacFileManager.this, file);
+                        resultList.append(fe);
+                    }
+                }
+
+                if (recurse) {
+                    for (RelativeDirectory rd: e.subdirs) {
+                        list(userPath, rd, fileKinds, recurse, resultList);
+                    }
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace(System.err);
+                log.error("error.reading.file", userPath, getMessage(ex));
             }
+        }
+
+        @Override
+        public JavaFileObject getFileObject(Path userPath, RelativeFile name) throws IOException {
+            JRTIndex.Entry e = getJRTIndex().getEntry(name.dirname());
+            if (symbolFileEnabled && e.ctSym.hidden)
+                return null;
+            Path p = e.files.get(name.basename());
+            if (p != null) {
+                return PathFileObject.forJRTPath(JavacFileManager.this, p);
+            } else {
+                return null;
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
         }
     }
 
@@ -300,164 +409,199 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     private JRTIndex jrtIndex;
 
+    private final class DirectoryContainer implements Container {
+        private final Path directory;
 
-    /**
-     * Insert all files in subdirectory subdirectory of directory directory
-     * which match fileKinds into resultList
-     */
-    private void listDirectory(Path directory, Path realDirectory,
-                               RelativeDirectory subdirectory,
-                               Set<JavaFileObject.Kind> fileKinds,
-                               boolean recurse,
-                               ListBuffer<JavaFileObject> resultList) {
-        Path d;
-        try {
-            d = subdirectory.resolveAgainst(directory);
-        } catch (InvalidPathException ignore) {
-            return;
+        public DirectoryContainer(Path directory) {
+            this.directory = directory;
         }
 
-        if (!Files.exists(d)) {
-           return;
-        }
-
-        if (!caseMapCheck(d, subdirectory)) {
-            return;
-        }
-
-        java.util.List<Path> files;
-        try (Stream<Path> s = Files.list(d)) {
-            files = (sortFiles == null ? s : s.sorted(sortFiles)).collect(Collectors.toList());
-        } catch (IOException ignore) {
-            return;
-        }
-
-        if (realDirectory == null)
-            realDirectory = fsInfo.getCanonicalFile(directory);
-
-        for (Path f: files) {
-            String fname = f.getFileName().toString();
-            if (fname.endsWith("/"))
-                fname = fname.substring(0, fname.length() - 1);
-            if (Files.isDirectory(f)) {
-                if (recurse && SourceVersion.isIdentifier(fname)) {
-                    listDirectory(directory, realDirectory,
-                                  new RelativeDirectory(subdirectory, fname),
-                                  fileKinds,
-                                  recurse,
-                                  resultList);
-                }
-            } else {
-                if (isValidFile(fname, fileKinds)) {
-                    RelativeFile file = new RelativeFile(subdirectory, fname);
-                    JavaFileObject fe = PathFileObject.forDirectoryPath(this,
-                            file.resolveAgainst(realDirectory), directory, file);
-                    resultList.append(fe);
-                }
-            }
-        }
-    }
-
-    /**
-     * Insert all files in subdirectory subdirectory of archive archivePath
-     * which match fileKinds into resultList
-     */
-    private void listArchive(Path archivePath,
-            RelativeDirectory subdirectory,
-            Set<JavaFileObject.Kind> fileKinds,
-            boolean recurse,
-            ListBuffer<JavaFileObject> resultList)
-                throws IOException {
-        FileSystem fs = getFileSystem(archivePath);
-        if (fs == null) {
-            return;
-        }
-
-        Path containerSubdir = subdirectory.resolveAgainst(fs);
-        if (!Files.exists(containerSubdir)) {
-            return;
-        }
-
-        int maxDepth = (recurse ? Integer.MAX_VALUE : 1);
-        Set<FileVisitOption> opts = EnumSet.of(FOLLOW_LINKS);
-        Files.walkFileTree(containerSubdir, opts, maxDepth,
-                new SimpleFileVisitor<Path>() {
-                    @Override
-                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
-                        if (isValid(dir.getFileName())) {
-                            return FileVisitResult.CONTINUE;
-                        } else {
-                            return FileVisitResult.SKIP_SUBTREE;
-                        }
-                    }
-
-                    boolean isValid(Path fileName) {
-                        if (fileName == null) {
-                            return true;
-                        } else {
-                            String name = fileName.toString();
-                            if (name.endsWith("/")) {
-                                name = name.substring(0, name.length() - 1);
-                            }
-                            return SourceVersion.isIdentifier(name);
-                        }
-                    }
-
-                    @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                        if (attrs.isRegularFile() && fileKinds.contains(getKind(file.getFileName().toString()))) {
-                            JavaFileObject fe = PathFileObject.forJarPath(
-                                    JavacFileManager.this, file, archivePath);
-                            resultList.append(fe);
-                        }
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
-
-    }
-
-    /**
-     * container is a directory, a zip file, or a non-existant path.
-     * Insert all files in subdirectory subdirectory of container which
-     * match fileKinds into resultList
-     */
-    private void listContainer(Path container,
-                               RelativeDirectory subdirectory,
-                               Set<JavaFileObject.Kind> fileKinds,
-                               boolean recurse,
-                               ListBuffer<JavaFileObject> resultList)
-            throws IOException {
-        if (Files.isRegularFile(container) && container.equals(Locations.thisSystemModules)) {
+        /**
+         * Insert all files in subdirectory subdirectory of directory userPath
+         * which match fileKinds into resultList
+         */
+        @Override
+        public void list(Path userPath,
+                         RelativeDirectory subdirectory,
+                         Set<JavaFileObject.Kind> fileKinds,
+                         boolean recurse,
+                         ListBuffer<JavaFileObject> resultList) throws IOException {
+            Path d;
             try {
-                listJRTImage(subdirectory,
-                        fileKinds,
-                        recurse,
-                        resultList);
-            } catch (IOException ex) {
-                ex.printStackTrace(System.err);
-                log.error("error.reading.file", container, getMessage(ex));
+                d = subdirectory.resolveAgainst(userPath);
+            } catch (InvalidPathException ignore) {
+                return ;
             }
-            return;
+
+            if (!Files.exists(d)) {
+               return;
+            }
+
+            if (!caseMapCheck(d, subdirectory)) {
+                return;
+            }
+
+            java.util.List<Path> files;
+            try (Stream<Path> s = Files.list(d)) {
+                files = (sortFiles == null ? s : s.sorted(sortFiles)).collect(Collectors.toList());
+            } catch (IOException ignore) {
+                return;
+            }
+
+            for (Path f: files) {
+                String fname = f.getFileName().toString();
+                if (fname.endsWith("/"))
+                    fname = fname.substring(0, fname.length() - 1);
+                if (Files.isDirectory(f)) {
+                    if (recurse && SourceVersion.isIdentifier(fname)) {
+                        list(userPath,
+                             new RelativeDirectory(subdirectory, fname),
+                             fileKinds,
+                             recurse,
+                             resultList);
+                    }
+                } else {
+                    if (isValidFile(fname, fileKinds)) {
+                        RelativeFile file = new RelativeFile(subdirectory, fname);
+                        JavaFileObject fe = PathFileObject.forDirectoryPath(JavacFileManager.this,
+                                file.resolveAgainst(directory), userPath, file);
+                        resultList.append(fe);
+                    }
+                }
+            }
         }
 
-        if  (Files.isDirectory(container)) {
-            listDirectory(container, null,
-                          subdirectory,
-                          fileKinds,
-                          recurse,
-                          resultList);
-            return;
+        @Override
+        public JavaFileObject getFileObject(Path userPath, RelativeFile name) throws IOException {
+            try {
+                Path f = name.resolveAgainst(userPath);
+                if (Files.exists(f))
+                    return PathFileObject.forSimplePath(JavacFileManager.this,
+                            fsInfo.getCanonicalFile(f), f);
+            } catch (InvalidPathException ignore) {
+            }
+            return null;
         }
 
-        if (Files.isRegularFile(container)) {
-            listArchive(container,
-                    subdirectory,
-                    fileKinds,
-                    recurse,
-                    resultList);
+        @Override
+        public void close() throws IOException {
         }
     }
 
+    private final class ArchiveContainer implements Container {
+        private final Path archivePath;
+        private final FileSystem fileSystem;
+        private final Map<RelativePath, Path> pathCache = new HashMap<>();
+
+        public ArchiveContainer(Path archivePath) throws IOException, ProviderNotFoundException, SecurityException {
+            this.archivePath = archivePath;
+            if (multiReleaseValue != null && archivePath.toString().endsWith(".jar")) {
+                Map<String,String> env = Collections.singletonMap("multi-release", multiReleaseValue);
+                this.fileSystem = getJarFSProvider().newFileSystem(archivePath, env);
+            } else {
+                this.fileSystem = FileSystems.newFileSystem(archivePath, null);
+            }
+        }
+
+        /**
+         * Insert all files in subdirectory subdirectory of this archive
+         * which match fileKinds into resultList
+         */
+        @Override
+        public void list(Path userPath,
+                         RelativeDirectory subdirectory,
+                         Set<JavaFileObject.Kind> fileKinds,
+                         boolean recurse,
+                         ListBuffer<JavaFileObject> resultList) throws IOException {
+            Path resolvedSubdirectory = resolvePath(subdirectory);
+
+            if (resolvedSubdirectory == null)
+                return ;
+
+            int maxDepth = (recurse ? Integer.MAX_VALUE : 1);
+            Set<FileVisitOption> opts = EnumSet.of(FOLLOW_LINKS);
+            Files.walkFileTree(resolvedSubdirectory, opts, maxDepth,
+                    new SimpleFileVisitor<Path>() {
+                        @Override
+                        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                            if (isValid(dir.getFileName())) {
+                                return FileVisitResult.CONTINUE;
+                            } else {
+                                return FileVisitResult.SKIP_SUBTREE;
+                            }
+                        }
+
+                        boolean isValid(Path fileName) {
+                            if (fileName == null) {
+                                return true;
+                            } else {
+                                String name = fileName.toString();
+                                if (name.endsWith("/")) {
+                                    name = name.substring(0, name.length() - 1);
+                                }
+                                return SourceVersion.isIdentifier(name);
+                            }
+                        }
+
+                        @Override
+                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                            if (attrs.isRegularFile() && fileKinds.contains(getKind(file.getFileName().toString()))) {
+                                JavaFileObject fe = PathFileObject.forJarPath(
+                                        JavacFileManager.this, file, archivePath);
+                                resultList.append(fe);
+                            }
+                            return FileVisitResult.CONTINUE;
+                        }
+                    });
+
+        }
+
+        @Override
+        public JavaFileObject getFileObject(Path userPath, RelativeFile name) throws IOException {
+            Path p = resolvePath(name);
+            if (p != null)
+                return PathFileObject.forJarPath(JavacFileManager.this, p, userPath);
+
+            return null;
+        }
+
+        private synchronized Path resolvePath(RelativePath path) {
+            if (!pathCache.containsKey(path)) {
+                Path relativePath = path.resolveAgainst(fileSystem);
+
+                if (!Files.exists(relativePath)) {
+                    relativePath = null;
+                }
+
+                pathCache.put(path, relativePath);
+                return relativePath;
+            }
+            return pathCache.get(path);
+        }
+
+        @Override
+        public void close() throws IOException {
+            fileSystem.close();
+        }
+    }
+
+    private FileSystemProvider jarFSProvider;
+
+    private FileSystemProvider getJarFSProvider() throws IOException {
+        if (jarFSProvider != null) {
+            return jarFSProvider;
+        }
+        for (FileSystemProvider provider: FileSystemProvider.installedProviders()) {
+            if (provider.getScheme().equals("jar")) {
+                return (jarFSProvider = provider);
+            }
+        }
+        throw new ProviderNotFoundException("no provider found for .jar files");
+    }
+
+    /**
+     * container is a directory, a zip file, or a non-existent path.
+     */
     private boolean isValidFile(String s, Set<JavaFileObject.Kind> fileKinds) {
         JavaFileObject.Kind kind = getKind(s);
         return fileKinds.contains(kind);
@@ -498,18 +642,6 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         return j < 0;
     }
 
-    private FileSystem getFileSystem(Path path) throws IOException {
-        Path realPath = fsInfo.getCanonicalFile(path);
-        FileSystem fs = fileSystems.get(realPath);
-        if (fs == null) {
-            fileSystems.put(realPath, fs = FileSystems.newFileSystem(realPath, null));
-        }
-        return fs;
-    }
-
-    private final Map<Path,FileSystem> fileSystems = new HashMap<>();
-
-
     /** Flush any output resources.
      */
     @Override @DefinedBy(Api.COMPILER)
@@ -528,10 +660,10 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         }
 
         locations.close();
-        for (FileSystem fs: fileSystems.values()) {
-            fs.close();
+        for (Container container: containers.values()) {
+            container.close();
         }
-        fileSystems.clear();
+        containers.clear();
         contentCache.clear();
     }
 
@@ -570,8 +702,12 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         RelativeDirectory subdirectory = RelativeDirectory.forPackage(packageName);
         ListBuffer<JavaFileObject> results = new ListBuffer<>();
 
-        for (Path directory : path)
-            listContainer(directory, subdirectory, kinds, recurse, results);
+        for (Path directory : path) {
+            Container container = getContainer(directory);
+
+            container.list(directory, subdirectory, kinds, recurse, results);
+        }
+
         return results.toList();
     }
 
@@ -644,29 +780,10 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             return null;
 
         for (Path file: path) {
-            if (file.equals(Locations.thisSystemModules)) {
-                JRTIndex.Entry e = getJRTIndex().getEntry(name.dirname());
-                if (symbolFileEnabled && e.ctSym.hidden)
-                    continue;
-                Path p = e.files.get(name.basename());
-                if (p != null)
-                    return PathFileObject.forJRTPath(this, p);
-            } else if (Files.isDirectory(file)) {
-                try {
-                    Path f = name.resolveAgainst(file);
-                    if (Files.exists(f))
-                        return PathFileObject.forSimplePath(this,
-                                fsInfo.getCanonicalFile(f), f);
-                } catch (InvalidPathException ignore) {
-                }
-            } else if (Files.isRegularFile(file)) {
-                FileSystem fs = getFileSystem(file);
-                if (fs != null) {
-                    Path fsRoot = fs.getRootDirectories().iterator().next();
-                    Path f = name.resolveAgainst(fsRoot);
-                    if (Files.exists(f))
-                        return PathFileObject.forJarPath(this, f, file);
-                }
+            JavaFileObject fo = getContainer(file).getFileObject(file, name);
+
+            if (fo != null) {
+                return fo;
             }
         }
         return null;

@@ -30,6 +30,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.FileStoreAttributeView;
+import java.util.Objects;
 
 /**
  * File store implementation for jrt file systems.
@@ -44,7 +45,7 @@ final class JrtFileStore extends FileStore {
 
     protected final FileSystem jrtfs;
 
-    JrtFileStore(AbstractJrtPath jrtPath) {
+    JrtFileStore(JrtPath jrtPath) {
         this.jrtfs = jrtPath.getFileSystem();
     }
 
@@ -71,9 +72,7 @@ final class JrtFileStore extends FileStore {
     @Override
     @SuppressWarnings("unchecked")
     public <V extends FileStoreAttributeView> V getFileStoreAttributeView(Class<V> type) {
-        if (type == null) {
-            throw new NullPointerException();
-        }
+        Objects.requireNonNull(type, "type");
         return (V) null;
     }
 
@@ -99,7 +98,7 @@ final class JrtFileStore extends FileStore {
 
     @Override
     public boolean supportsFileAttributeView(Class<? extends FileAttributeView> type) {
-        return (type == BasicFileAttributeView.class
-                || type == JrtFileAttributeView.class);
+        return type == BasicFileAttributeView.class ||
+               type == JrtFileAttributeView.class;
     }
 }

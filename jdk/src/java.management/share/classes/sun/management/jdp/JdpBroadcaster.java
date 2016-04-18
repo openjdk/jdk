@@ -99,30 +99,7 @@ public final class JdpBroadcaster {
                 throw new JdpException("Unable to bind to source address");
             }
             channel.setOption(StandardSocketOptions.IP_MULTICAST_IF, interf);
-        } else {
-            Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
-            boolean succeed = false;
-
-            while (nics.hasMoreElements()) {
-                NetworkInterface nic = nics.nextElement();
-
-                if (nic.isUp() && nic.supportsMulticast()) {
-                    try {
-                        channel.setOption(StandardSocketOptions.IP_MULTICAST_IF, nic);
-                        succeed = true;
-                    } catch (IOException ex) {
-                        // pass
-                    }
-                }
-
-            }
-
-            if (!succeed) {
-                throw new JdpException("Unable to bind to any interfaces.");
-            }
-
         }
-
     }
 
     /**

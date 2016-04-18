@@ -1077,12 +1077,12 @@ public class JShellTool {
                         ed.add(n);
                     }
                     editor = ed.toArray(new String[ed.size()]);
-                    fluffmsg("jshell.msg.set.editor.set", arg);
+                    fluffmsg("jshell.msg.set.editor.set", prog);
                     return true;
                 }
             }
             case "start": {
-                String init = readFile(at.next(), "'/set start'");
+                String init = readFile(at.next(), "/set start");
                 if (init == null) {
                     return false;
                 } else {
@@ -1351,7 +1351,7 @@ public class JShellTool {
                 .filter(sn -> state.status(sn).isActive && sn instanceof PersistentSnippet)
                 .collect(toList());
         if (snippets.isEmpty()) {
-            errormsg("jshell.err.drop.active");
+            errormsg("jshell.err.drop.not.active");
             return false;
         }
         if (snippets.size() > 1) {
@@ -1499,7 +1499,7 @@ public class JShellTool {
     }
 
     private boolean cmdOpen(String filename) {
-        return runFile(filename, "'/open'");
+        return runFile(filename, "/open");
     }
 
     private boolean runFile(String filename, String context) {
@@ -1533,7 +1533,7 @@ public class JShellTool {
             } catch (AccessDeniedException e) {
                 errormsg("jshell.err.file.not.accessible", context, filename, e.getMessage());
             } catch (NoSuchFileException e) {
-                errormsg("jshell.err.file.not.found", context, filename, e.getMessage());
+                errormsg("jshell.err.file.not.found", context, filename);
             } catch (Exception e) {
                 errormsg("jshell.err.file.exception", context, filename, e);
             }

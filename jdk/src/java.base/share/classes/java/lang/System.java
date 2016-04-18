@@ -56,8 +56,8 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.function.Supplier;
 import sun.nio.ch.Interruptible;
-import sun.reflect.CallerSensitive;
-import sun.reflect.Reflection;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 import sun.security.util.SecurityConstants;
 import sun.reflect.annotation.AnnotationType;
 import jdk.internal.HotSpotIntrinsicCandidate;
@@ -1978,7 +1978,7 @@ public final class System {
     private static void setJavaLangAccess() {
         // Allow privileged classes outside of java.lang
         SharedSecrets.setJavaLangAccess(new JavaLangAccess(){
-            public sun.reflect.ConstantPool getConstantPool(Class<?> klass) {
+            public jdk.internal.reflect.ConstantPool getConstantPool(Class<?> klass) {
                 return klass.getConstantPool();
             }
             public boolean casAnnotationType(Class<?> klass, AnnotationType oldType, AnnotationType newType) {

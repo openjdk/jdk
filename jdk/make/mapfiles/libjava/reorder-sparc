@@ -78,8 +78,7 @@ text: .text%Java_java_security_AccessController_doPrivileged__Ljava_security_Pri
 text: .text%JNU_GetEnv;
 text: .text%Java_java_io_UnixFileSystem_checkAccess;
 text: .text%Java_java_lang_reflect_Array_newArray;
-text: .text%Java_java_lang_Throwable_getStackTraceDepth;
-text: .text%Java_java_lang_Throwable_getStackTraceElement;
+text: .text%Java_java_lang_Throwable_getStackTraceElements;
 text: .text%throwFileNotFoundException;
 text: .text%JNU_NotifyAll;
 # Test LoadFrame

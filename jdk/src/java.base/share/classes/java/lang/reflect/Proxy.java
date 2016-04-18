@@ -47,8 +47,8 @@ import jdk.internal.loader.BootLoader;
 import jdk.internal.module.Modules;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
-import sun.reflect.CallerSensitive;
-import sun.reflect.Reflection;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
 
@@ -689,13 +689,14 @@ public class Proxy implements java.io.Serializable {
         }
 
         /*
-         * Returns all types referenced by all public method signatures of
+         * Returns all types referenced by all public non-static method signatures of
          * the proxy interfaces
          */
         private static Set<Class<?>> referencedTypes(ClassLoader loader,
                                                      List<Class<?>> interfaces) {
             return interfaces.stream()
                  .flatMap(intf -> Stream.of(intf.getMethods())
+                                        .filter(m -> !Modifier.isStatic(m.getModifiers()))
                                         .flatMap(ProxyBuilder::methodRefTypes)
                                         .map(ProxyBuilder::getElementType)
                                         .filter(t -> !t.isPrimitive()))
@@ -795,26 +796,13 @@ public class Proxy implements java.io.Serializable {
             // map to dynamic proxy module and add reads edge and qualified exports, if necessary
             Module target = getDynamicModule(loader);
 
-            // set up proxy class access to proxy interfaces and superinterfaces
-            Deque<Class<?>> deque = new LinkedList<>(interfaces);
-            Set<Class<?>> visited = new HashSet<>();
-            while (!deque.isEmpty()) {
-                Class<?> c = deque.poll();
-                if (!visited.add(c)) {
-                    continue;
-                }
+            // set up proxy class access to proxy interfaces and types
+            // referenced in the method signature
+            Set<Class<?>> types = new HashSet<>(interfaces);
+            types.addAll(refTypes);
+            for (Class<?> c : types) {
                 ensureAccess(target, c);
-
-                // add all superinterfaces
-                for (Class<?> intf : c.getInterfaces()) {
-                    deque.add(intf);
-                }
             }
-
-            // set up proxy class access to types referenced in the method signature
-            refTypes.stream()
-                    .filter(t -> !visited.contains(t))
-                    .forEach(t -> ensureAccess(target, t));
             return target;
         }
 

@@ -153,14 +153,17 @@ public class InterruptHangTest extends TestScaffold {
         timerThread = new Thread("test timer") {
                 public void run() {
                     int mySteps = 0;
+                    float timeoutFactor = Float.parseFloat(System.getProperty("test.timeout.factor", "1.0"));
+                    long sleepSeconds = (long)(20 * timeoutFactor);
+                    println("Timer watching for steps every " + sleepSeconds + " seconds");
                     while (true) {
                         try {
-                            Thread.sleep(20000);
+                            Thread.sleep(sleepSeconds * 1000);
                             synchronized(sync) {
-                                System.out.println("steps = " + nSteps);
+                                println("steps = " + nSteps);
                                 if (mySteps == nSteps) {
-                                    // no step for 10 secs
-                                    failure("failure: Debuggee appears to be hung");
+                                    // no step for a long time
+                                    failure("failure: Debuggee appears to be hung (no steps for " + sleepSeconds + "s)");
                                     vm().exit(-1);
                                     break;
                                 }

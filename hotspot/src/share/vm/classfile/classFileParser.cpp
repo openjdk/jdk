@@ -1967,7 +1967,7 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
                           loader_data->is_platform_class_loader_data() ||
                           loader_data->is_anonymous();
   switch (sid) {
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(sun_reflect_CallerSensitive_signature): {
+    case vmSymbols::VM_SYMBOL_ENUM_NAME(reflect_CallerSensitive_signature): {
       if (_location != _in_method)  break;  // only allow for methods
       if (!privileged)              break;  // only allow in privileged code
       return _method_CallerSensitive;

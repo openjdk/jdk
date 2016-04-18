@@ -126,33 +126,33 @@ abstract class VarHandleBaseTest {
 
 
     enum TestAccessType {
-        get,
-        set,
-        compareAndSet,
-        compareAndExchange,
-        getAndSet,
-        getAndAdd;
+        GET,
+        SET,
+        COMPARE_AND_SET,
+        COMPARE_AND_EXCHANGE,
+        GET_AND_SET,
+        GET_AND_ADD;
     }
 
     enum TestAccessMode {
-        get(TestAccessType.get),
-        set(TestAccessType.set),
-        getVolatile(TestAccessType.get),
-        setVolatile(TestAccessType.set),
-        getAcquire(TestAccessType.get),
-        setRelease(TestAccessType.set),
-        getOpaque(TestAccessType.get),
-        setOpaque(TestAccessType.set),
-        compareAndSet(TestAccessType.compareAndSet),
-        compareAndExchangeVolatile(TestAccessType.compareAndExchange),
-        compareAndExchangeAcquire(TestAccessType.compareAndExchange),
-        compareAndExchangeRelease(TestAccessType.compareAndExchange),
-        weakCompareAndSet(TestAccessType.compareAndSet),
-        weakCompareAndSetAcquire(TestAccessType.compareAndSet),
-        weakCompareAndSetRelease(TestAccessType.compareAndSet),
-        getAndSet(TestAccessType.getAndSet),
-        getAndAdd(TestAccessType.getAndAdd),
-        addAndGet(TestAccessType.getAndAdd),;
+        GET(TestAccessType.GET),
+        SET(TestAccessType.SET),
+        GET_VOLATILE(TestAccessType.GET),
+        SET_VOLATILE(TestAccessType.SET),
+        GET_ACQUIRE(TestAccessType.GET),
+        SET_RELEASE(TestAccessType.SET),
+        GET_OPAQUE(TestAccessType.GET),
+        SET_OPAQUE(TestAccessType.SET),
+        COMPARE_AND_SET(TestAccessType.COMPARE_AND_SET),
+        COMPARE_AND_EXCHANGE_VOLATILE(TestAccessType.COMPARE_AND_EXCHANGE),
+        COMPARE_AND_EXCHANGE_ACQUIRE(TestAccessType.COMPARE_AND_EXCHANGE),
+        COMPARE_AND_EXCHANGE_RELEASE(TestAccessType.COMPARE_AND_EXCHANGE),
+        WEAK_COMPARE_AND_SET(TestAccessType.COMPARE_AND_SET),
+        WEAK_COMPARE_AND_SET_ACQUIRE(TestAccessType.COMPARE_AND_SET),
+        WEAK_COMPARE_AND_SET_RELEASE(TestAccessType.COMPARE_AND_SET),
+        GET_AND_SET(TestAccessType.GET_AND_SET),
+        GET_AND_ADD(TestAccessType.GET_AND_ADD),
+        ADD_AND_GET(TestAccessType.GET_AND_ADD),;
 
         final TestAccessType at;
         final boolean isPolyMorphicInReturnType;
@@ -162,7 +162,8 @@ abstract class VarHandleBaseTest {
             this.at = at;
 
             try {
-                Method m = VarHandle.class.getMethod(name(), Object[].class);
+                VarHandle.AccessMode vh_am = toAccessMode();
+                Method m = VarHandle.class.getMethod(vh_am.methodName(), Object[].class);
                 this.returnType = m.getReturnType();
                 isPolyMorphicInReturnType = returnType != Object.class;
             }
@@ -214,7 +215,7 @@ abstract class VarHandleBaseTest {
         try {
             mh = MethodHandles.publicLookup().
                     findVirtual(VarHandle.class,
-                                tam.name(),
+                                tam.toAccessMode().methodName(),
                                 mt);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -441,33 +442,33 @@ abstract class VarHandleBaseTest {
             assertEquals(amt.parameterList().subList(0, pts.size()), pts);
         }
 
-        for (TestAccessMode testAccessMode : testAccessModesOfType(TestAccessType.get)) {
+        for (TestAccessMode testAccessMode : testAccessModesOfType(TestAccessType.GET)) {
             MethodType mt = vh.accessModeType(testAccessMode.toAccessMode());
             assertEquals(mt.returnType(), vh.varType());
             assertEquals(mt.parameterList(), pts);
         }
 
-        for (TestAccessMode testAccessMode : testAccessModesOfType(TestAccessType.set)) {
+        for (TestAccessMode testAccessMode : testAccessModesOfType(TestAccessType.SET)) {
             MethodType mt = vh.accessModeType(testAccessMode.toAccessMode());
             assertEquals(mt.returnType(), void.class);
             assertEquals(mt.parameterType(mt.parameterCount() - 1), vh.varType());
         }
 
-        for (TestAccessMode testAccessMode : testAccessModesOfType(TestAccessType.compareAndSet)) {
+        for (TestAccessMode testAccessMode : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
             MethodType mt = vh.accessModeType(testAccessMode.toAccessMode());
             assertEquals(mt.returnType(), boolean.class);
             assertEquals(mt.parameterType(mt.parameterCount() - 1), vh.varType());
             assertEquals(mt.parameterType(mt.parameterCount() - 2), vh.varType());
         }
 
-        for (TestAccessMode testAccessMode : testAccessModesOfType(TestAccessType.compareAndExchange)) {
+        for (TestAccessMode testAccessMode : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
             MethodType mt = vh.accessModeType(testAccessMode.toAccessMode());
             assertEquals(mt.returnType(), vh.varType());
             assertEquals(mt.parameterType(mt.parameterCount() - 1), vh.varType());
             assertEquals(mt.parameterType(mt.parameterCount() - 2), vh.varType());
         }
 
-        for (TestAccessMode testAccessMode : testAccessModesOfType(TestAccessType.getAndSet, TestAccessType.getAndAdd)) {
+        for (TestAccessMode testAccessMode : testAccessModesOfType(TestAccessType.GET_AND_SET, TestAccessType.GET_AND_ADD)) {
             MethodType mt = vh.accessModeType(testAccessMode.toAccessMode());
             assertEquals(mt.returnType(), vh.varType());
             assertEquals(mt.parameterType(mt.parameterCount() - 1), vh.varType());

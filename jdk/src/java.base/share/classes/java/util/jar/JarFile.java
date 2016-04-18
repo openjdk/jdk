@@ -894,7 +894,8 @@ class JarFile extends ZipFile {
     private static final byte[] CLASSPATH_LASTOCC;
 
     private static final byte[] MULTIRELEASE_CHARS =
-            {'M','U','L','T','I','-','R','E','L','E', 'A', 'S', 'E', ':', ' '};
+            {'M','U','L','T','I','-','R','E','L','E', 'A', 'S', 'E', ':',
+                    ' ', 'T', 'R', 'U', 'E'};
 
     // The bad character shift for "multi-release: "
     private static final byte[] MULTIRELEASE_LASTOCC;
@@ -914,17 +915,17 @@ class JarFile extends ZipFile {
 
         MULTIRELEASE_LASTOCC = new byte[64];
         MULTIRELEASE_LASTOCC[(int)'M' - 32] = 1;
-        MULTIRELEASE_LASTOCC[(int)'U' - 32] = 2;
-        MULTIRELEASE_LASTOCC[(int)'T' - 32] = 4;
         MULTIRELEASE_LASTOCC[(int)'I' - 32] = 5;
         MULTIRELEASE_LASTOCC[(int)'-' - 32] = 6;
-        MULTIRELEASE_LASTOCC[(int)'R' - 32] = 7;
         MULTIRELEASE_LASTOCC[(int)'L' - 32] = 9;
         MULTIRELEASE_LASTOCC[(int)'A' - 32] = 11;
         MULTIRELEASE_LASTOCC[(int)'S' - 32] = 12;
-        MULTIRELEASE_LASTOCC[(int)'E' - 32] = 13;
         MULTIRELEASE_LASTOCC[(int)':' - 32] = 14;
         MULTIRELEASE_LASTOCC[(int)' ' - 32] = 15;
+        MULTIRELEASE_LASTOCC[(int)'T' - 32] = 16;
+        MULTIRELEASE_LASTOCC[(int)'R' - 32] = 17;
+        MULTIRELEASE_LASTOCC[(int)'U' - 32] = 18;
+        MULTIRELEASE_LASTOCC[(int)'E' - 32] = 19;
     }
 
     private JarEntry getManEntry() {
@@ -966,7 +967,7 @@ class JarFile extends ZipFile {
      * Since there are no repeated substring in our search strings,
      * the good suffix shifts can be replaced with a comparison.
      */
-    private boolean match(byte[] src, byte[] b, byte[] lastOcc) {
+    private int match(byte[] src, byte[] b, byte[] lastOcc) {
         int len = src.length;
         int last = b.length - len;
         int i = 0;
@@ -990,9 +991,9 @@ class JarFile extends ZipFile {
                     continue next;
                 }
             }
-            return true;
+            return i;
         }
-        return false;
+        return -1;
     }
 
     /**
@@ -1011,11 +1012,35 @@ class JarFile extends ZipFile {
             if (manEntry != null) {
                 byte[] b = getBytes(manEntry);
                 hasClassPathAttribute = match(CLASSPATH_CHARS, b,
-                        CLASSPATH_LASTOCC);
+                        CLASSPATH_LASTOCC) != -1;
                 // is this a multi-release jar file
                 if (MULTI_RELEASE_ENABLED && version != BASE_VERSION) {
-                    isMultiRelease = match(MULTIRELEASE_CHARS, b,
-                            MULTIRELEASE_LASTOCC);
+                    int i = match(MULTIRELEASE_CHARS, b, MULTIRELEASE_LASTOCC);
+                    if (i != -1) {
+                        i += MULTIRELEASE_CHARS.length;
+                        if (i < b.length) {
+                            byte c = b[i++];
+                            // Check that the value is followed by a newline
+                            // and does not have a continuation
+                            if (c == '\n' &&
+                                    (i == b.length || b[i] != ' ')) {
+                                isMultiRelease = true;
+                            } else if (c == '\r') {
+                                if (i == b.length) {
+                                    isMultiRelease = true;
+                                } else {
+                                    c = b[i++];
+                                    if (c == '\n') {
+                                        if (i == b.length || b[i] != ' ') {
+                                            isMultiRelease = true;
+                                        }
+                                    } else if (c != ' ') {
+                                        isMultiRelease = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
             hasCheckedSpecialAttributes = true;

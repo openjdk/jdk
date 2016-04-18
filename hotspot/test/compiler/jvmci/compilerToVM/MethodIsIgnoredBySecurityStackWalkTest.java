@@ -28,7 +28,8 @@
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @library /testlibrary /test/lib /
  * @library ../common/patches
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @modules java.base/jdk.internal.reflect
+ *          java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.org.objectweb.asm.tree
  *          jdk.vm.ci/jdk.vm.ci.hotspot
  *          jdk.vm.ci/jdk.vm.ci.code
@@ -76,7 +77,7 @@ public class MethodIsIgnoredBySecurityStackWalkTest {
             testCases.put(aClass.getMethod("invoke", Object.class,
                     Object[].class), true);
 
-            aClass = Class.forName("sun.reflect.NativeMethodAccessorImpl");
+            aClass = Class.forName("jdk.internal.reflect.NativeMethodAccessorImpl");
             testCases.put(aClass.getMethod("invoke", Object.class,
                     Object[].class), true);
             testCases.put(aClass.getDeclaredMethod("invoke0", Method.class,

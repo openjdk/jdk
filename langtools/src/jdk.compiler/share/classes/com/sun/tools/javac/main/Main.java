@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.file.CacheFSInfo;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.processing.AnnotationProcessingError;
 import com.sun.tools.javac.util.*;
@@ -230,7 +231,7 @@ public class Main {
         if (args.isEmpty())
             return Result.OK;
 
-        // init Depeendencies
+        // init Dependencies
         if (options.isSet("completionDeps")) {
             Dependencies.GraphDependencies.preRegister(context);
         }
@@ -240,6 +241,13 @@ public class Main {
         if (!pluginOpts.isEmpty() || context.get(PlatformDescription.class) != null) {
             BasicJavacTask t = (BasicJavacTask) BasicJavacTask.instance(context);
             t.initPlugins(pluginOpts);
+        }
+
+        // init multi-release jar handling
+        if (fileManager.isSupportedOption(Option.MULTIRELEASE.text) == 1) {
+            Target target = Target.instance(context);
+            List<String> list = List.of(target.multiReleaseValue());
+            fileManager.handleOption(Option.MULTIRELEASE.text, list.iterator());
         }
 
         // init JavaCompiler

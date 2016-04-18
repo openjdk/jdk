@@ -49,7 +49,6 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 include Modules.gmk
-#include TextFileProcessing.gmk
 
 ################################################################################
 # Define this here since jdk/make/Tools.gmk cannot be included from the top
@@ -64,25 +63,8 @@ TOOL_GENMODULEINFOSOURCE = $(JAVA_SMALL) \
 # Name of data file. Keep module-info.java.ext until javafx has changed.
 MOD_FILENAME := module-info.java.extra module-info.java.ext
 
-# List all the possible sub directories inside a module source directory where
-# data might be stored.
-CLASSES_SUBDIRS += $(OPENJDK_TARGET_OS)/classes
-ifneq ($(OPENJDK_TARGET_OS), $(OPENJDK_TARGET_OS_TYPE))
-  CLASSES_SUBDIRS += $(OPENJDK_TARGET_OS_TYPE)/classes
-endif
-CLASSES_SUBDIRS += share/classes
-
-# TODO: When the deploy build is better integrated, this will get added globally
-# but for now need to add it here.
-ifeq ($(BUILD_DEPLOY), true)
-  ALL_TOP_SRC_DIRS += $(DEPLOY_TOPDIR)/src
-endif
-
 # Construct all possible src directories for the module.
-MODULE_CLASSES_DIRS := $(strip \
-    $(foreach sub, $(CLASSES_SUBDIRS), \
-        $(addsuffix /$(MODULE)/$(sub), $(ALL_TOP_SRC_DIRS))) \
-    $(addsuffix /$(MODULE), $(IMPORT_MODULES_SRC)))
+MODULE_CLASSES_DIRS := $(call FindModuleSrcDirs, $(MODULE))
 
 # Find all the .extra files in the src dirs.
 MOD_FILES := $(wildcard $(foreach f, $(MOD_FILENAME), $(addsuffix /$(f), \
@@ -125,20 +107,6 @@ ifneq ($(MOD_FILES), )
     TARGETS += $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/module-info.java
   endif
 
-# This doesn't work because javac only accepts one single exports line per
-# exported package.
-  # Restore the modifications to separate lines with spaces
-#  MODIFICATIONS := $(subst /,$(SPACE),$(MODIFICATIONS))
-
-#  ifneq ($(MODIFICATIONS), )
-#    $(eval $(call SetupTextFileProcessing, PROCESS_MODULE_INFO, \
-#        SOURCE_FILES := $(firstword $(call FindAllModuleInfos, $(MODULE))), \
-#        OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/module-info.java, \
-#        REPLACEMENTS := } => $(MODIFICATIONS) }, \
-#    ))
-
-#    TARGETS += $(PROCESS_MODULE_INFO)
-#  endif
 endif
 
 # If no modifications are found for this module, remove any module-info.java

@@ -76,6 +76,7 @@ jdk_lang = \
     sun/invoke \
     sun/misc \
     sun/reflect \
+    jdk/internal/reflect \
     jdk/lambda \
     jdk/internal/misc \
     jdk/internal/ref \
@@ -495,8 +496,8 @@ needs_jdk = \
   sun/management/jmxremote/bootstrap/CustomLauncherTest.java \
   sun/misc/JarIndex/metaInfFilenames/Basic.java \
   sun/misc/JarIndex/JarIndexMergeForClassLoaderTest.java \
-  sun/reflect/CallerSensitive/CallerSensitiveFinder.java \
-  sun/reflect/CallerSensitive/MissingCallerSensitive.java \
+  jdk/internal/reflect/CallerSensitive/CallerSensitiveFinder.java \
+  jdk/internal/reflect/CallerSensitive/MissingCallerSensitive.java \
   sun/security/util/Resources/NewNamesFormat.java \
   vm/verifier/defaultMethods/DefaultMethodRegressionTestsRun.java \
   javax/xml/ws/clientjar/TestWsImport.java \

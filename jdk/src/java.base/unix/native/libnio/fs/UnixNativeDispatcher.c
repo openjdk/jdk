@@ -483,6 +483,20 @@ Java_sun_nio_fs_UnixNativeDispatcher_stat0(JNIEnv* env, jclass this,
     }
 }
 
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_stat1(JNIEnv* env, jclass this, jlong pathAddress) {
+    int err;
+    struct stat64 buf;
+    const char* path = (const char*)jlong_to_ptr(pathAddress);
+
+    RESTARTABLE(stat64(path, &buf), err);
+    if (err == -1) {
+        return 0;
+    } else {
+        return (jint)buf.st_mode;
+    }
+}
+
 JNIEXPORT void JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_lstat0(JNIEnv* env, jclass this,
     jlong pathAddress, jobject attrs)
@@ -895,6 +909,14 @@ Java_sun_nio_fs_UnixNativeDispatcher_access0(JNIEnv* env, jclass this,
     if (err == -1) {
         throwUnixException(env, errno);
     }
+}
+
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_exists0(JNIEnv* env, jclass this, jlong pathAddress) {
+    int err;
+    const char* path = (const char*)jlong_to_ptr(pathAddress);
+    RESTARTABLE(access(path, F_OK), err);
+    return (err == 0) ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT void JNICALL

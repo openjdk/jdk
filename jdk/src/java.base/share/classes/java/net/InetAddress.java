@@ -894,19 +894,17 @@ class InetAddress implements java.io.Serializable {
      */
     private static final class PlatformNameService implements NameService {
 
-                public InetAddress[] lookupAllHostAddr(String host)
-                    throws UnknownHostException {
-
-                    return impl.lookupAllHostAddr(host);
-
-                            }
-
-        public String getHostByAddr(byte[] addr) throws UnknownHostException {
-
-            return impl.getHostByAddr(addr);
-
+        public InetAddress[] lookupAllHostAddr(String host)
+            throws UnknownHostException
+        {
+            return impl.lookupAllHostAddr(host);
         }
 
+        public String getHostByAddr(byte[] addr)
+            throws UnknownHostException
+        {
+            return impl.getHostByAddr(addr);
+        }
     }
 
     /**
@@ -991,7 +989,6 @@ class InetAddress implements java.io.Serializable {
             return host;
         }
 
-
         /**
          * <p>Lookup a host mapping by name. Retrieve the IP addresses
          * associated with a host.
@@ -1004,7 +1001,6 @@ class InetAddress implements java.io.Serializable {
          * @throws UnknownHostException
          *             if no IP address for the {@code host} could be found
          */
-
         public InetAddress[] lookupAllHostAddr(String host)
                 throws UnknownHostException {
             String hostEntry;

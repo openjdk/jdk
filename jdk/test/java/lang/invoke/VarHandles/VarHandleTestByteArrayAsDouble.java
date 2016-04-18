@@ -76,28 +76,28 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
     public void testIsAccessModeSupported(VarHandleSource vhs) {
         VarHandle vh = vhs.s;
 
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.get));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.set));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET));
 
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getVolatile));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.setVolatile));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getAcquire));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.setRelease));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getOpaque));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.setOpaque));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_OPAQUE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
 
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndSet));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndExchangeVolatile));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndExchangeAcquire));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndExchangeRelease));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSet));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSetAcquire));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSetRelease));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSetRelease));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getAndSet));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
 
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.getAndAdd));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.addAndGet));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
     }
 
     @Test(dataProvider = "typesProvider")

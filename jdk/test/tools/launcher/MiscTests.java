@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6856415
+ * @bug 6856415 8154212
  * @summary Miscellaneous tests, Exceptions
  * @compile -XDignore.symbol.file MiscTests.java
  * @run main MiscTests
@@ -33,7 +33,9 @@
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MiscTests extends TestHelper {
 
@@ -103,11 +105,22 @@ public class MiscTests extends TestHelper {
         }
     }
 
+    static void testJLDEnvWithTool() {
+        final Map<String, String> envMap = new HashMap<>();
+        envMap.put("_JAVA_LAUNCHER_DEBUG", "true");
+        TestResult tr = doExec(envMap, javacCmd, "-version");
+        tr.checkPositive();
+        if (!tr.isOK()) {
+           System.out.println(tr);
+        }
+    }
+
     public static void main(String... args) throws IOException {
         testWithClassPathSetViaProperty();
         test6856415();
+        testJLDEnvWithTool();
         if (testExitValue != 0) {
             throw new Error(testExitValue + " tests failed");
+        }
     }
-}
 }

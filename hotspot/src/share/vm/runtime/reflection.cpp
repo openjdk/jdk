@@ -487,7 +487,7 @@ Reflection::VerifyClassAccessResults Reflection::verify_class_access(
       is_same_class_package(current_class, new_class)) {
     return ACCESS_OK;
   }
-  // Allow all accesses from sun/reflect/MagicAccessorImpl subclasses to
+  // Allow all accesses from jdk/internal/reflect/MagicAccessorImpl subclasses to
   // succeed trivially.
   if (current_class->is_subclass_of(SystemDictionary::reflect_MagicAccessorImpl_klass())) {
     return ACCESS_OK;
@@ -698,7 +698,7 @@ bool Reflection::verify_field_access(const Klass* current_class,
     return true;
   }
 
-  // Allow all accesses from sun/reflect/MagicAccessorImpl subclasses to
+  // Allow all accesses from jdk/internal/reflect/MagicAccessorImpl subclasses to
   // succeed trivially.
   if (current_class->is_subclass_of(SystemDictionary::reflect_MagicAccessorImpl_klass())) {
     return true;
