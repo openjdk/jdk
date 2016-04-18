@@ -1037,12 +1037,14 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                        int comp_level,
                                        const methodHandle& hot_method, int hot_count,
                                        const char* comment, Thread* THREAD) {
-  // do nothing if compilebroker is not available
-  if (!_initialized) {
+  // Do nothing if compilebroker is not initalized or compiles are submitted on level none
+  if (!_initialized || comp_level == CompLevel_none) {
     return NULL;
   }
+
   AbstractCompiler *comp = CompileBroker::compiler(comp_level);
-  assert(comp != NULL, "Ensure we don't compile before compilebroker init");
+  assert(comp != NULL, "Ensure we have a compiler");
+
   DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
   nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, comment, directive, THREAD);
   DirectivesStack::release(directive);
