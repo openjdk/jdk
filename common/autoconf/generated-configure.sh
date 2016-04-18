@@ -4964,7 +4964,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1460713327
+DATE_WHEN_GENERATED=1460963400
 
 ###############################################################################
 #
@@ -62563,7 +62563,7 @@ $as_echo_n "checking whether to use javac server... " >&6; }
 $as_echo "$ENABLE_JAVAC_SERVER" >&6; }
 
 
-  if test "x$ENABLE_JAVAC_SERVER" = "xyes" || "x$ENABLE_SJAVAC" = "xyes"; then
+  if test "x$ENABLE_JAVAC_SERVER" = "xyes" || test "x$ENABLE_SJAVAC" = "xyes"; then
     # When using a server javac, the small client instances do not need much
     # resources.
     JAVA_FLAGS_JAVAC="$JAVA_FLAGS_SMALL"
