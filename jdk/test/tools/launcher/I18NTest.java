@@ -60,7 +60,7 @@ public class I18NTest extends TestHelper {
 
         // compile the generate code using the javac compiler vs. the api, to
         // as a bonus point to see if the argument is passed correctly
-        TestResult tr = null;
+        TestResult tr;
         tr = doExec(javacCmd, fileName + JAVA_FILE_EXT);
         if (!tr.isOK()) {
             System.out.println(tr);
