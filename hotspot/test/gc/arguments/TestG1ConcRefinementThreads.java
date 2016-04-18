@@ -38,7 +38,7 @@ import java.util.regex.*;
 
 public class TestG1ConcRefinementThreads {
 
-  static final int AUTO_SELECT_THREADS_COUNT = 0;
+  static final int AUTO_SELECT_THREADS_COUNT = -1;
   static final int PASSED_THREADS_COUNT = 11;
 
   public static void main(String args[]) throws Exception {
@@ -49,8 +49,8 @@ public class TestG1ConcRefinementThreads {
 
     // zero setting case
     runG1ConcRefinementThreadsTest(
-        new String[]{"-XX:G1ConcRefinementThreads=0"}, // automatically selected
-        AUTO_SELECT_THREADS_COUNT /* set to zero */);
+        new String[]{"-XX:G1ConcRefinementThreads=0"},
+        0);
 
     // non-zero sestting case
     runG1ConcRefinementThreadsTest(
@@ -77,7 +77,7 @@ public class TestG1ConcRefinementThreads {
   private static void checkG1ConcRefinementThreadsConsistency(String output, int expectedValue) {
     int actualValue = getIntValue("G1ConcRefinementThreads", output);
 
-    if (expectedValue == 0) {
+    if (expectedValue == AUTO_SELECT_THREADS_COUNT) {
       // If expectedValue is automatically selected, set it same as ParallelGCThreads.
       expectedValue = getIntValue("ParallelGCThreads", output);
     }
