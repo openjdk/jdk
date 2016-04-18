@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ static void save_memory_to_file(char* addr, size_t size) {
   if (result == OS_ERR) {
     if (PrintMiscellaneous && Verbose) {
       warning("Could not create Perfdata save file: %s: %s\n",
-              destfile, strerror(errno));
+              destfile, os::strerror(errno));
     }
   } else {
 
@@ -114,7 +114,7 @@ static void save_memory_to_file(char* addr, size_t size) {
       if (result == OS_ERR) {
         if (PrintMiscellaneous && Verbose) {
           warning("Could not write Perfdata save file: %s: %s\n",
-                  destfile, strerror(errno));
+                  destfile, os::strerror(errno));
         }
         break;
       }
@@ -125,7 +125,7 @@ static void save_memory_to_file(char* addr, size_t size) {
     result = ::close(fd);
     if (PrintMiscellaneous && Verbose) {
       if (result == OS_ERR) {
-        warning("Could not close %s: %s\n", destfile, strerror(errno));
+        warning("Could not close %s: %s\n", destfile, os::strerror(errno));
       }
     }
   }
@@ -311,7 +311,7 @@ static DIR *open_directory_secure(const char* dirname) {
       if (errno == ELOOP) {
         warning("directory %s is a symlink and is not secure\n", dirname);
       } else {
-        warning("could not open directory %s: %s\n", dirname, strerror(errno));
+        warning("could not open directory %s: %s\n", dirname, os::strerror(errno));
       }
     }
     return dirp;
@@ -422,7 +422,7 @@ static bool is_file_secure(int fd, const char *filename) {
   RESTARTABLE(::fstat(fd, &statbuf), result);
   if (result == OS_ERR) {
     if (PrintMiscellaneous && Verbose) {
-      warning("fstat failed on %s: %s\n", filename, strerror(errno));
+      warning("fstat failed on %s: %s\n", filename, os::strerror(errno));
     }
     return false;
   }
@@ -464,7 +464,7 @@ static char* get_user_name(uid_t uid) {
     if (PrintMiscellaneous && Verbose) {
       if (p == NULL) {
         warning("Could not retrieve passwd entry: %s\n",
-                strerror(errno));
+                os::strerror(errno));
       }
       else {
         warning("Could not determine user name: %s\n",
@@ -500,7 +500,7 @@ static char* get_user_name_slow(int vmid, TRAPS) {
                   "Process not found");
     }
     else /* EPERM */ {
-      THROW_MSG_0(vmSymbols::java_io_IOException(), strerror(errno));
+      THROW_MSG_0(vmSymbols::java_io_IOException(), os::strerror(errno));
     }
   }
 
@@ -657,7 +657,7 @@ static char* get_user_name(int vmid, TRAPS) {
     // In this case, the psinfo file for the process id existed,
     // but we didn't have permission to access it.
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
-                strerror(errno));
+                os::strerror(errno));
   }
 
   // at this point, we don't know if the process id itself doesn't
@@ -703,7 +703,7 @@ static void remove_file(const char* path) {
   if (PrintMiscellaneous && Verbose && result == OS_ERR) {
     if (errno != ENOENT) {
       warning("Could not unlink shared memory backing"
-              " store file %s : %s\n", path, strerror(errno));
+              " store file %s : %s\n", path, os::strerror(errno));
     }
   }
 }
@@ -813,7 +813,7 @@ static bool make_user_tmp_dir(const char* dirname) {
       //
       if (PrintMiscellaneous && Verbose) {
         warning("could not create directory %s: %s\n",
-                dirname, strerror(errno));
+                dirname, os::strerror(errno));
       }
       return false;
     }
@@ -855,7 +855,7 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
       if (errno == ELOOP) {
         warning("file %s is a symlink and is not secure\n", filename);
       } else {
-        warning("could not create file %s: %s\n", filename, strerror(errno));
+        warning("could not create file %s: %s\n", filename, os::strerror(errno));
       }
     }
     // close the directory and reset the current working directory
@@ -879,7 +879,7 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
   RESTARTABLE(::ftruncate(fd, (off_t)0), result);
   if (result == OS_ERR) {
     if (PrintMiscellaneous && Verbose) {
-      warning("could not truncate shared memory file: %s\n", strerror(errno));
+      warning("could not truncate shared memory file: %s\n", os::strerror(errno));
     }
     ::close(fd);
     return -1;
@@ -888,7 +888,7 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
   RESTARTABLE(::ftruncate(fd, (off_t)size), result);
   if (result == OS_ERR) {
     if (PrintMiscellaneous && Verbose) {
-      warning("could not set shared memory file size: %s\n", strerror(errno));
+      warning("could not set shared memory file size: %s\n", os::strerror(errno));
     }
     ::close(fd);
     return -1;
@@ -916,7 +916,7 @@ static int open_sharedmem_file(const char* filename, int oflags, TRAPS) {
                   "Permission denied", OS_ERR);
     }
     else {
-      THROW_MSG_(vmSymbols::java_io_IOException(), strerror(errno), OS_ERR);
+      THROW_MSG_(vmSymbols::java_io_IOException(), os::strerror(errno), OS_ERR);
     }
   }
   int fd = result;
@@ -990,7 +990,7 @@ static char* mmap_create_shared(size_t size) {
 
   if (mapAddress == MAP_FAILED) {
     if (PrintMiscellaneous && Verbose) {
-      warning("mmap failed -  %s\n", strerror(errno));
+      warning("mmap failed -  %s\n", os::strerror(errno));
     }
     remove_file(filename);
     FREE_C_HEAP_ARRAY(char, filename);
@@ -1055,7 +1055,7 @@ static size_t sharedmem_filesize(int fd, TRAPS) {
   RESTARTABLE(::fstat(fd, &statbuf), result);
   if (result == OS_ERR) {
     if (PrintMiscellaneous && Verbose) {
-      warning("fstat failed: %s\n", strerror(errno));
+      warning("fstat failed: %s\n", os::strerror(errno));
     }
     THROW_MSG_0(vmSymbols::java_io_IOException(),
                 "Could not determine PerfMemory size");
@@ -1172,7 +1172,7 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
 
   if (mapAddress == MAP_FAILED) {
     if (PrintMiscellaneous && Verbose) {
-      warning("mmap failed: %s\n", strerror(errno));
+      warning("mmap failed: %s\n", os::strerror(errno));
     }
     THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(),
               "Could not map PerfMemory");

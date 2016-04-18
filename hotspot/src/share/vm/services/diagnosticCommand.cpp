@@ -28,6 +28,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/directivesParser.hpp"
 #include "gc/shared/vmGCOperations.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaCalls.hpp"
@@ -61,17 +62,19 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapInfoDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<FinalizerInfoDCmd>(full_export, true, false));
-#if INCLUDE_SERVICES // Heap dumping/inspection supported
+#if INCLUDE_SERVICES
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(DCmd_Source_Internal | DCmd_Source_AttachAPI, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassStatsDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHierarchyDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SymboltableDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<StringtableDCmd>(full_export, true, false));
+#if INCLUDE_JVMTI // Both JVMTI and SERVICES have to be enabled to have this dcmd
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIAgentLoadDCmd>(full_export, true, false));
+#endif // INCLUDE_JVMTI
 #endif // INCLUDE_SERVICES
 #if INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIDataDumpDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIAgentLoadDCmd>(full_export, true, false));
 #endif // INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export, true, false));
@@ -255,6 +258,7 @@ void JVMTIDataDumpDCmd::execute(DCmdSource source, TRAPS) {
   }
 }
 
+#if INCLUDE_SERVICES
 JVMTIAgentLoadDCmd::JVMTIAgentLoadDCmd(outputStream* output, bool heap) :
                                        DCmdWithParser(output, heap),
   _libpath("library path", "Absolute path of the JVMTI agent to load.",
@@ -314,6 +318,7 @@ int JVMTIAgentLoadDCmd::num_arguments() {
     return 0;
   }
 }
+#endif // INCLUDE_SERVICES
 
 void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
   // load VMSupport

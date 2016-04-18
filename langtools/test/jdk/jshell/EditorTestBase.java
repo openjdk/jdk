@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,19 +65,19 @@ public abstract class EditorTestBase extends ReplToolTesting {
     }
 
     public void assertEditOutput(boolean after, String cmd, String output, Action action) {
-        assertEditOutput(after, cmd, s -> assertEquals(s, output, "command"), action);
+        assertEditOutput(after, cmd, s -> assertEquals(s.trim(), output.trim(), "command"), action);
     }
 
     @Test
     public void testEditNegative() {
-        for (String edit : new String[] {"/e", "/edit"}) {
+        for (String edit : new String[] {"/ed", "/edit"}) {
             test(new String[]{"-nostartup"},
-                    a -> assertCommand(a, edit + " 1",
-                            "|  No definition or id named 1 found.  See /classes, /methods, /vars, or /list\n"),
-                    a -> assertCommand(a, edit + " -1",
-                            "|  No definition or id named -1 found.  See /classes, /methods, /vars, or /list\n"),
-                    a -> assertCommand(a, edit + " unknown",
-                            "|  No definition or id named unknown found.  See /classes, /methods, /vars, or /list\n")
+                    a -> assertCommandOutputStartsWith(a, edit + " 1",
+                            "|  No definition or id found named: 1"),
+                    a -> assertCommandOutputStartsWith(a, edit + " -1",
+                            "|  No definition or id found named: -1"),
+                    a -> assertCommandOutputStartsWith(a, edit + " unknown",
+                            "|  No definition or id found named: unknown")
             );
         }
     }
@@ -86,7 +86,7 @@ public abstract class EditorTestBase extends ReplToolTesting {
     public void testDoNothing() {
         testEditor(
                 a -> assertVariable(a, "int", "a", "0", "0"),
-                a -> assertEditOutput(a, "/e 1", "", this::exit),
+                a -> assertEditOutput(a, "/ed 1", "", this::exit),
                 a -> assertCommandCheckOutput(a, "/v", assertVariables())
         );
     }
@@ -95,12 +95,12 @@ public abstract class EditorTestBase extends ReplToolTesting {
     public void testEditVariable1() {
         testEditor(
                 a -> assertVariable(a, "int", "a", "0", "0"),
-                a -> assertEditOutput(a, "/e 1", "|  Modified variable a of type int with initial value 10\n", () -> {
+                a -> assertEditOutput(a, "/ed 1", "a ==> 10", () -> {
                     writeSource("\n\n\nint a = 10;\n\n\n");
                     exit();
                     loadVariable(true, "int", "a", "10", "10");
                 }),
-                a -> assertEditOutput(a, "/e 1", "|  Modified variable a of type int with initial value 15\n", () -> {
+                a -> assertEditOutput(a, "/ed 1", "a ==> 15", () -> {
                     writeSource("int a = 15;");
                     exit();
                     loadVariable(true, "int", "a", "15", "15");
@@ -113,12 +113,12 @@ public abstract class EditorTestBase extends ReplToolTesting {
     public void testEditVariable2() {
         testEditor(
                 a -> assertVariable(a, "int", "a", "0", "0"),
-                a -> assertEditOutput(a, "/e 1", "|  Added variable b of type int with initial value 10\n", () -> {
+                a -> assertEditOutput(a, "/ed 1", "b ==> 10", () -> {
                     writeSource("int b = 10;");
                     exit();
                     loadVariable(true, "int", "b", "10", "10");
                 }),
-                a -> assertEditOutput(a, "/e 1", "|  Modified variable a of type int with initial value 15\n", () -> {
+                a -> assertEditOutput(a, "/ed 1", "a ==> 15", () -> {
                     writeSource("int a = 15;");
                     exit();
                     loadVariable(true, "int", "a", "15", "15");
@@ -131,19 +131,18 @@ public abstract class EditorTestBase extends ReplToolTesting {
     public void testEditClass1() {
         testEditor(
                 a -> assertClass(a, "class A {}", "class", "A"),
-                a -> assertEditOutput(a, "/e 1", "", () -> {
+                a -> assertEditOutput(a, "/ed 1", "", () -> {
                     writeSource("\n\n\nclass A {}\n\n\n");
                     exit();
                     loadClass(true, "class A {}", "class", "A");
                 }),
-                a -> assertEditOutput(a, "/e 1",
-                        "|  Replaced enum A\n" +
-                        "|    Update overwrote class A\n", () -> {
+                a -> assertEditOutput(a, "/ed 1",
+                        "|  replaced enum A", () -> {
                     writeSource("enum A {}");
                     exit();
                     loadClass(true, "enum A {}", "enum", "A");
                 }),
-                a -> assertCommandCheckOutput(a, "/c", assertClasses())
+                a -> assertCommandCheckOutput(a, "/classes", assertClasses())
         );
     }
 
@@ -151,19 +150,18 @@ public abstract class EditorTestBase extends ReplToolTesting {
     public void testEditClass2() {
         testEditor(
                 a -> assertClass(a, "class A {}", "class", "A"),
-                a -> assertEditOutput(a, "/e 1", "|  Added class B\n", () -> {
+                a -> assertEditOutput(a, "/ed 1", "|  created class B", () -> {
                     writeSource("class B { }");
                     exit();
                     loadClass(true, "class B {}", "class", "B");
                 }),
-                a -> assertEditOutput(a, "/e 1",
-                        "|  Replaced enum A\n" +
-                        "|    Update overwrote class A\n", () -> {
+                a -> assertEditOutput(a, "/ed 1",
+                        "|  replaced enum A", () -> {
                     writeSource("enum A {}");
                     exit();
                     loadClass(true, "enum A {}", "enum", "A");
                 }),
-                a -> assertCommandCheckOutput(a, "/c", assertClasses())
+                a -> assertCommandCheckOutput(a, "/classes", assertClasses())
         );
     }
 
@@ -171,14 +169,13 @@ public abstract class EditorTestBase extends ReplToolTesting {
     public void testEditMethod1() {
         testEditor(
                 a -> assertMethod(a, "void f() {}", "()void", "f"),
-                a -> assertEditOutput(a, "/e 1", "", () -> {
+                a -> assertEditOutput(a, "/ed 1", "", () -> {
                     writeSource("\n\n\nvoid f() {}\n\n\n");
                     exit();
                     loadMethod(true, "void f() {}", "()void", "f");
                 }),
-                a -> assertEditOutput(a, "/e 1",
-                        "|  Replaced method f()\n" +
-                        "|    Update overwrote method f()\n", () -> {
+                a -> assertEditOutput(a, "/ed 1",
+                        "|  replaced method f()", () -> {
                     writeSource("double f() { return 0; }");
                     exit();
                     loadMethod(true, "double f() { return 0; }", "()double", "f");
@@ -191,14 +188,13 @@ public abstract class EditorTestBase extends ReplToolTesting {
     public void testEditMethod2() {
         testEditor(
                 a -> assertMethod(a, "void f() {}", "()void", "f"),
-                a -> assertEditOutput(a, "/e 1", "|  Added method g()\n", () -> {
+                a -> assertEditOutput(a, "/ed 1", "|  created method g()", () -> {
                     writeSource("void g() {}");
                     exit();
                     loadMethod(true, "void g() {}", "()void", "g");
                 }),
-                a -> assertEditOutput(a, "/e 1",
-                        "|  Replaced method f()\n" +
-                        "|    Update overwrote method f()\n", () -> {
+                a -> assertEditOutput(a, "/ed 1",
+                        "|  replaced method f()", () -> {
                     writeSource("double f() { return 0; }");
                     exit();
                     loadMethod(true, "double f() { return 0; }", "()double", "f");
@@ -213,7 +209,7 @@ public abstract class EditorTestBase extends ReplToolTesting {
                 a -> assertVariable(a, "int", "a"),
                 a -> assertMethod(a, "void f() {}", "()void", "f"),
                 a -> assertClass(a, "class A {}", "class", "A"),
-                a -> assertEditInput(a, "/e", s -> {
+                a -> assertEditInput(a, "/ed", s -> {
                     String[] ss = s.split("\n");
                     assertEquals(ss.length, 3, "Expected 3 lines: " + s);
                     assertEquals(ss[0], "int a;");
@@ -226,15 +222,15 @@ public abstract class EditorTestBase extends ReplToolTesting {
     @Test
     public void testStartup() {
         testEditor(true, new String[0],
-                a -> assertEditInput(a, "/e", s -> assertTrue(s.isEmpty(), "Checking of startup: " + s), this::cancel),
-                a -> assertEditInput(a, "/e printf", assertStartsWith("void printf"), this::cancel));
+                a -> assertEditInput(a, "/ed", s -> assertTrue(s.isEmpty(), "Checking of startup: " + s), this::cancel),
+                a -> assertEditInput(a, "/ed printf", assertStartsWith("void printf"), this::cancel));
     }
 
     @Test
     public void testCancel() {
         testEditor(
                 a -> assertVariable(a, "int", "a"),
-                a -> assertEditOutput(a, "/e a", "", () -> {
+                a -> assertEditOutput(a, "/ed a", "", () -> {
                     writeSource("int b = 10");
                     cancel();
                 })
@@ -245,7 +241,7 @@ public abstract class EditorTestBase extends ReplToolTesting {
     public void testAccept() {
         testEditor(
                 a -> assertVariable(a, "int", "a"),
-                a -> assertEditOutput(a, "/e a", "|  Added variable b of type int with initial value 10\n", () -> {
+                a -> assertEditOutput(a, "/ed a", "b ==> 10", () -> {
                     writeSource("int b = 10");
                     accept();
                     exit();

@@ -29,6 +29,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"

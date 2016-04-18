@@ -286,6 +286,8 @@ public abstract class BaseFileManager implements JavaFileManager {
         return -1;
     }
 
+    protected String multiReleaseValue;
+
     /**
      * Common back end for OptionHelper handleFileManagerOption.
      * @param option the option whose value to be set
@@ -296,6 +298,10 @@ public abstract class BaseFileManager implements JavaFileManager {
         switch (option) {
             case ENCODING:
                 encodingName = value;
+                return true;
+
+            case MULTIRELEASE:
+                multiReleaseValue = value;
                 return true;
 
             default:

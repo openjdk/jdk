@@ -650,6 +650,7 @@ TEST_JOBS
 JOBS
 MEMORY_SIZE
 NUM_CORES
+BUILD_FAILURE_HANDLER
 ENABLE_INTREE_EC
 JVM_VARIANT_CORE
 JVM_VARIANT_ZEROSHARK
@@ -1223,6 +1224,7 @@ with_lcms
 with_dxsdk
 with_dxsdk_lib
 with_dxsdk_include
+enable_jtreg_failure_handler
 enable_new_hotspot_build
 enable_hotspot_test_in_build
 with_num_cores
@@ -2000,6 +2002,12 @@ Optional Features:
                           [enabled]
   --enable-hotspot-test-in-build
                           run the Queens test after Hotspot build [disabled]
+  --enable-jtreg-failure-handler
+                          forces build of the jtreg failure handler to be
+                          enabled, missing dependencies become fatal errors.
+                          Default is auto, where the failure handler is built
+                          if all dependencies are present and otherwise just
+                          disabled.
   --enable-sjavac         use sjavac to do fast incremental compiles
                           [disabled]
   --disable-javac-server  disable javac server [enabled]
@@ -4377,6 +4385,12 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 #
 
 
+################################################################################
+#
+# Check if building of the jtreg failure handler should be enabled.
+#
+
+
 #
 # Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -5056,7 +5070,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1460538705
+DATE_WHEN_GENERATED=1460963400
 
 ###############################################################################
 #
@@ -63881,6 +63895,45 @@ $as_echo "no" >&6; }
 
 
 
+  # Check whether --enable-jtreg-failure-handler was given.
+if test "${enable_jtreg_failure_handler+set}" = set; then :
+  enableval=$enable_jtreg_failure_handler;
+fi
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if jtreg failure handler should be built" >&5
+$as_echo_n "checking if jtreg failure handler should be built... " >&6; }
+
+  if test "x$enable_jtreg_failure_handler" = "xyes"; then
+    if test "x$JT_HOME" = "x"; then
+      as_fn_error $? "Cannot enable jtreg failure handler without jtreg." "$LINENO" 5
+    else
+      BUILD_FAILURE_HANDLER=true
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, forced" >&5
+$as_echo "yes, forced" >&6; }
+    fi
+  elif test "x$enable_jtreg_failure_handler" = "xno"; then
+    BUILD_FAILURE_HANDLER=false
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, forced" >&5
+$as_echo "no, forced" >&6; }
+  elif test "x$enable_jtreg_failure_handler" = "xauto" \
+      || test "x$enable_jtreg_failure_handler" = "x"; then
+    if test "x$JT_HOME" = "x"; then
+      BUILD_FAILURE_HANDLER=false
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, missing jtreg" >&5
+$as_echo "no, missing jtreg" >&6; }
+    else
+      BUILD_FAILURE_HANDLER=true
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, jtreg present" >&5
+$as_echo "yes, jtreg present" >&6; }
+    fi
+  else
+    as_fn_error $? "Invalid value for --enable-jtreg-failure-handler: $enable_jtreg_failure_handler" "$LINENO" 5
+  fi
+
+
+
+
 ###############################################################################
 #
 # Configure parts of the build that only affect the build performance,
@@ -64354,7 +64407,7 @@ $as_echo_n "checking whether to use javac server... " >&6; }
 $as_echo "$ENABLE_JAVAC_SERVER" >&6; }
 
 
-  if test "x$ENABLE_JAVAC_SERVER" = "xyes" || "x$ENABLE_SJAVAC" = "xyes"; then
+  if test "x$ENABLE_JAVAC_SERVER" = "xyes" || test "x$ENABLE_SJAVAC" = "xyes"; then
     # When using a server javac, the small client instances do not need much
     # resources.
     JAVA_FLAGS_JAVAC="$JAVA_FLAGS_SMALL"

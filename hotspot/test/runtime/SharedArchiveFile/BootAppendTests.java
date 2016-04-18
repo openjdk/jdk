@@ -27,14 +27,12 @@
  * @library /testlibrary
  * @modules java.base/jdk.internal.misc
  *          java.management
- *          jdk.jartool/sun.tools.jar
  *          jdk.jvmstat/sun.jvmstat.monitor
  * @ignore 8150683
  * @compile javax/sound/sampled/MyClass.jasm
  * @compile org/omg/CORBA/Context.jasm
  * @compile nonjdk/myPackage/MyClass.java
- * @build jdk.test.lib.* LoadClass
- * @run main ClassFileInstaller LoadClass
+ * @build jdk.test.lib.* LoadClass ClassFileInstaller
  * @run main/othervm BootAppendTests
  */
 
@@ -90,11 +88,9 @@ public class BootAppendTests {
         fos.close();
 
         // build jar files
-        BasicJarBuilder.build(true, "app", APP_CLASS);
-        appJar = BasicJarBuilder.getTestJar("app.jar");
-        BasicJarBuilder.build("bootAppend",
+        appJar = ClassFileInstaller.writeJar("app.jar", APP_CLASS);
+        bootAppendJar = ClassFileInstaller.writeJar("bootAppend.jar",
             BOOT_APPEND_MODULE_CLASS, BOOT_APPEND_DUPLICATE_MODULE_CLASS, BOOT_APPEND_CLASS);
-        bootAppendJar = BasicJarBuilder.getTestJar("bootAppend.jar");
 
         // dump
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(

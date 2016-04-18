@@ -1556,54 +1556,14 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
 }
 
 void LIR_Assembler::casw(Register addr, Register newval, Register cmpval) {
-  if (UseLSE) {
-    __ mov(rscratch1, cmpval);
-    __ casal(Assembler::word, rscratch1, newval, addr);
-    __ cmpw(rscratch1, cmpval);
-    __ cset(rscratch1, Assembler::NE);
-  } else {
-    Label retry_load, nope;
-    // flush and load exclusive from the memory location
-    // and fail if it is not what we expect
-    __ prfm(Address(addr), PSTL1STRM);
-    __ bind(retry_load);
-    __ ldaxrw(rscratch1, addr);
-    __ cmpw(rscratch1, cmpval);
-    __ cset(rscratch1, Assembler::NE);
-    __ br(Assembler::NE, nope);
-    // if we store+flush with no intervening write rscratch1 wil be zero
-    __ stlxrw(rscratch1, newval, addr);
-    // retry so we only ever return after a load fails to compare
-    // ensures we don't return a stale value after a failed write.
-    __ cbnzw(rscratch1, retry_load);
-    __ bind(nope);
-  }
+  __ cmpxchg(addr, cmpval, newval, Assembler::word, /* acquire*/ true, /* release*/ true, rscratch1);
+  __ cset(rscratch1, Assembler::NE);
   __ membar(__ AnyAny);
 }
 
 void LIR_Assembler::casl(Register addr, Register newval, Register cmpval) {
-  if (UseLSE) {
-    __ mov(rscratch1, cmpval);
-    __ casal(Assembler::xword, rscratch1, newval, addr);
-    __ cmp(rscratch1, cmpval);
-    __ cset(rscratch1, Assembler::NE);
-  } else {
-    Label retry_load, nope;
-    // flush and load exclusive from the memory location
-    // and fail if it is not what we expect
-    __ prfm(Address(addr), PSTL1STRM);
-    __ bind(retry_load);
-    __ ldaxr(rscratch1, addr);
-    __ cmp(rscratch1, cmpval);
-    __ cset(rscratch1, Assembler::NE);
-    __ br(Assembler::NE, nope);
-    // if we store+flush with no intervening write rscratch1 wil be zero
-    __ stlxr(rscratch1, newval, addr);
-    // retry so we only ever return after a load fails to compare
-    // ensures we don't return a stale value after a failed write.
-    __ cbnz(rscratch1, retry_load);
-    __ bind(nope);
-  }
+  __ cmpxchg(addr, cmpval, newval, Assembler::xword, /* acquire*/ true, /* release*/ true, rscratch1);
+  __ cset(rscratch1, Assembler::NE);
   __ membar(__ AnyAny);
 }
 
@@ -3121,38 +3081,32 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
   BasicType type = src->type();
   bool is_oop = type == T_OBJECT || type == T_ARRAY;
 
-  void (MacroAssembler::* lda)(Register Rd, Register Ra);
-  void (MacroAssembler::* add)(Register Rd, Register Rn, RegisterOrConstant increment);
-  void (MacroAssembler::* stl)(Register Rs, Register Rt, Register Rn);
+  void (MacroAssembler::* add)(Register prev, RegisterOrConstant incr, Register addr);
+  void (MacroAssembler::* xchg)(Register prev, Register newv, Register addr);
 
   switch(type) {
   case T_INT:
-    lda = &MacroAssembler::ldaxrw;
-    add = &MacroAssembler::addw;
-    stl = &MacroAssembler::stlxrw;
+    xchg = &MacroAssembler::atomic_xchgalw;
+    add = &MacroAssembler::atomic_addalw;
     break;
   case T_LONG:
-    lda = &MacroAssembler::ldaxr;
-    add = &MacroAssembler::add;
-    stl = &MacroAssembler::stlxr;
+    xchg = &MacroAssembler::atomic_xchgal;
+    add = &MacroAssembler::atomic_addal;
     break;
   case T_OBJECT:
   case T_ARRAY:
     if (UseCompressedOops) {
-      lda = &MacroAssembler::ldaxrw;
-      add = &MacroAssembler::addw;
-      stl = &MacroAssembler::stlxrw;
+      xchg = &MacroAssembler::atomic_xchgalw;
+      add = &MacroAssembler::atomic_addalw;
     } else {
-      lda = &MacroAssembler::ldaxr;
-      add = &MacroAssembler::add;
-      stl = &MacroAssembler::stlxr;
+      xchg = &MacroAssembler::atomic_xchgal;
+      add = &MacroAssembler::atomic_addal;
     }
     break;
   default:
     ShouldNotReachHere();
-    lda = &MacroAssembler::ldaxr;
-    add = &MacroAssembler::add;
-    stl = &MacroAssembler::stlxr;  // unreachable
+    xchg = &MacroAssembler::atomic_xchgal;
+    add = &MacroAssembler::atomic_addal; // unreachable
   }
 
   switch (code) {
@@ -3170,14 +3124,8 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
         assert_different_registers(inc.as_register(), dst, addr.base(), tmp,
                                    rscratch1, rscratch2);
       }
-      Label again;
       __ lea(tmp, addr);
-      __ prfm(Address(tmp), PSTL1STRM);
-      __ bind(again);
-      (_masm->*lda)(dst, tmp);
-      (_masm->*add)(rscratch1, dst, inc);
-      (_masm->*stl)(rscratch2, rscratch1, tmp);
-      __ cbnzw(rscratch2, again);
+      (_masm->*add)(dst, inc, tmp);
       break;
     }
   case lir_xchg:
@@ -3186,17 +3134,12 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
       Register obj = as_reg(data);
       Register dst = as_reg(dest);
       if (is_oop && UseCompressedOops) {
-        __ encode_heap_oop(rscratch1, obj);
-        obj = rscratch1;
+        __ encode_heap_oop(rscratch2, obj);
+        obj = rscratch2;
       }
-      assert_different_registers(obj, addr.base(), tmp, rscratch2, dst);
-      Label again;
+      assert_different_registers(obj, addr.base(), tmp, rscratch1, dst);
       __ lea(tmp, addr);
-      __ prfm(Address(tmp), PSTL1STRM);
-      __ bind(again);
-      (_masm->*lda)(dst, tmp);
-      (_masm->*stl)(rscratch2, obj, tmp);
-      __ cbnzw(rscratch2, again);
+      (_masm->*xchg)(dst, obj, tmp);
       if (is_oop && UseCompressedOops) {
         __ decode_heap_oop(dst);
       }

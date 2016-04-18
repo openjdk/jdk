@@ -131,11 +131,11 @@ class Invokers {
         MethodType mtype = targetType;
         MethodType invokerType = mtype.insertParameterTypes(0, VarHandle.class);
 
-        LambdaForm lform = varHandleMethodGenericInvokerHandleForm(ak.name(), mtype);
+        LambdaForm lform = varHandleMethodGenericInvokerHandleForm(ak.methodName(), mtype);
         VarHandle.AccessDescriptor ad = new VarHandle.AccessDescriptor(mtype, ak.at.ordinal(), ak.ordinal());
         MethodHandle invoker = BoundMethodHandle.bindSingle(invokerType, lform, ad);
 
-        invoker = invoker.withInternalMemberName(MemberName.makeVarHandleMethodInvoke(ak.name(), mtype), false);
+        invoker = invoker.withInternalMemberName(MemberName.makeVarHandleMethodInvoke(ak.methodName(), mtype), false);
         assert(checkVarHandleInvoker(invoker));
 
         maybeCompileToBytecode(invoker);
@@ -146,11 +146,11 @@ class Invokers {
         MethodType mtype = targetType;
         MethodType invokerType = mtype.insertParameterTypes(0, VarHandle.class);
 
-        LambdaForm lform = varHandleMethodExactInvokerHandleForm(ak.name(), mtype);
+        LambdaForm lform = varHandleMethodExactInvokerHandleForm(ak.methodName(), mtype);
         VarHandle.AccessDescriptor ad = new VarHandle.AccessDescriptor(mtype, ak.at.ordinal(), ak.ordinal());
         MethodHandle invoker = BoundMethodHandle.bindSingle(invokerType, lform, ad);
 
-        invoker = invoker.withInternalMemberName(MemberName.makeVarHandleMethodInvoke(ak.name(), mtype), false);
+        invoker = invoker.withInternalMemberName(MemberName.makeVarHandleMethodInvoke(ak.methodName(), mtype), false);
         assert(checkVarHandleInvoker(invoker));
 
         maybeCompileToBytecode(invoker);
