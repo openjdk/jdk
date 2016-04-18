@@ -31,9 +31,6 @@
 
 class G1CollectedHeap;
 
-// 0 -> no tracing, 1 -> basic tracing, 2 -> basic + allocation tracing
-#define G1_ALLOC_REGION_TRACING 0
-
 // A class that holds a region that is active in satisfying allocation
 // requests, potentially issued in parallel. When the active region is
 // full it will be retired and replaced with a new one. The
@@ -213,19 +210,11 @@ public:
   // is returned after it's been retired.
   virtual HeapRegion* release();
 
-#if G1_ALLOC_REGION_TRACING
   void trace(const char* str,
              size_t min_word_size = 0,
              size_t desired_word_size = 0,
              size_t actual_word_size = 0,
-             HeapWord* result = NULL);
-#else // G1_ALLOC_REGION_TRACING
-  void trace(const char* str,
-             size_t min_word_size = 0,
-             size_t desired_word_size = 0,
-             size_t actual_word_size = 0,
-             HeapWord* result = NULL) { }
-#endif // G1_ALLOC_REGION_TRACING
+             HeapWord* result = NULL) PRODUCT_RETURN;
 };
 
 class MutatorAllocRegion : public G1AllocRegion {

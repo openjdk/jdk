@@ -1830,7 +1830,7 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
   __ push(state);       // save tosca
 
   // pass tosca registers as arguments & call tracer
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address, SharedRuntime::trace_bytecode), rcx, rax, rdx);
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::trace_bytecode), rcx, rax, rdx);
   __ mov(rcx, rax);     // make sure return address is not destroyed by pop(state)
   __ pop(state);        // restore tosca
 
@@ -1847,7 +1847,7 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
   __ movflt(xmm3, xmm0); // Pass ftos
 #endif
   __ call_VM(noreg,
-             CAST_FROM_FN_PTR(address, SharedRuntime::trace_bytecode),
+             CAST_FROM_FN_PTR(address, InterpreterRuntime::trace_bytecode),
              c_rarg1, c_rarg2, c_rarg3);
   __ pop(c_rarg3);
   __ pop(c_rarg2);

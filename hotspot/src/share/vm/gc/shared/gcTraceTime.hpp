@@ -26,6 +26,8 @@
 #define SHARE_VM_GC_SHARED_GCTRACETIME_HPP
 
 #include "logging/log.hpp"
+#include "logging/logHandle.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/ticks.hpp"
 
@@ -41,10 +43,10 @@ class GCTraceCPUTime : public StackObj {
 
 class GCTimer;
 
-template <LogLevelType Level, LogTagType T0, LogTagType T1 = LogTag::__NO_TAG, LogTagType T2 = LogTag::__NO_TAG, LogTagType T3 = LogTag::__NO_TAG,
-    LogTagType T4 = LogTag::__NO_TAG, LogTagType GuardTag = LogTag::__NO_TAG>
 class GCTraceTimeImpl : public StackObj {
  private:
+  LogTargetHandle _out_start;
+  LogTargetHandle _out_stop;
   bool _enabled;
   Ticks _start_ticks;
   const char* _title;
@@ -57,8 +59,16 @@ class GCTraceTimeImpl : public StackObj {
   void time_stamp(Ticks& ticks);
 
  public:
-  GCTraceTimeImpl(const char* title, GCTimer* timer = NULL, GCCause::Cause gc_cause = GCCause::_no_gc, bool log_heap_usage = false);
+  GCTraceTimeImpl(LogTargetHandle out_start, LogTargetHandle out_end, const char* title, GCTimer* timer = NULL, GCCause::Cause gc_cause = GCCause::_no_gc, bool log_heap_usage = false);
   ~GCTraceTimeImpl();
+};
+
+template <LogLevelType Level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
+class GCTraceTimeImplWrapper : public StackObj {
+  GCTraceTimeImpl _impl;
+public:
+  GCTraceTimeImplWrapper(const char* title, GCTimer* timer = NULL, GCCause::Cause gc_cause = GCCause::_no_gc, bool log_heap_usage = false);
+  ~GCTraceTimeImplWrapper();
 };
 
 // Similar to GCTraceTimeImpl but is intended for concurrent phase logging,

@@ -274,7 +274,7 @@ InstanceKlass* klassVtable::find_transitive_override(InstanceKlass* initialsuper
       if (supersuperklass->is_override(super_method, target_loader, target_classname, THREAD)) {
         if (log_develop_is_enabled(Trace, vtables)) {
           ResourceMark rm(THREAD);
-          outputStream* logst = LogHandle(vtables)::trace_stream();
+          outputStream* logst = Log(vtables)::trace_stream();
           char* sig = target_method()->name_and_sig_as_C_string();
           logst->print("transitive overriding superclass %s with %s::%s index %d, original flags: ",
                        supersuperklass->internal_name(),
@@ -305,7 +305,7 @@ static void log_vtables(int i, bool overrides, methodHandle target_method,
 #ifndef PRODUCT
   if (log_develop_is_enabled(Trace, vtables)) {
     ResourceMark rm(thread);
-    outputStream* logst = LogHandle(vtables)::trace_stream();
+    outputStream* logst = Log(vtables)::trace_stream();
     char* sig = target_method()->name_and_sig_as_C_string();
     if (overrides) {
       logst->print("overriding with %s::%s index %d, original flags: ",
@@ -493,7 +493,7 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, methodHandle tar
 void klassVtable::put_method_at(Method* m, int index) {
   if (log_develop_is_enabled(Trace, vtables)) {
     ResourceMark rm;
-    outputStream* logst = LogHandle(vtables)::trace_stream();
+    outputStream* logst = Log(vtables)::trace_stream();
     const char* sig = (m != NULL) ? m->name_and_sig_as_C_string() : "<NULL>";
     logst->print("adding %s at index %d, flags: ", sig, index);
     if (m != NULL) {
@@ -821,7 +821,7 @@ int klassVtable::fill_in_mirandas(int initialized) {
     if (log_develop_is_enabled(Trace, vtables)) {
       Method* meth = mirandas.at(i);
       ResourceMark rm(Thread::current());
-      outputStream* logst = LogHandle(vtables)::trace_stream();
+      outputStream* logst = Log(vtables)::trace_stream();
       if (meth != NULL) {
         char* sig = meth->name_and_sig_as_C_string();
         logst->print("fill in mirandas with %s index %d, flags: ",
@@ -1045,7 +1045,7 @@ int klassItable::assign_itable_indices_for_interface(Klass* klass) {
       // If m is already assigned a vtable index, do not disturb it.
       if (log_develop_is_enabled(Trace, itables)) {
         ResourceMark rm;
-        outputStream* logst = LogHandle(itables)::trace_stream();
+        outputStream* logst = Log(itables)::trace_stream();
         assert(m != NULL, "methods can never be null");
         const char* sig = m->name_and_sig_as_C_string();
         if (m->has_vtable_index()) {
@@ -1161,7 +1161,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
       if (log_develop_is_enabled(Trace, itables)) {
         ResourceMark rm(THREAD);
         if (target() != NULL) {
-          outputStream* logst = LogHandle(itables)::trace_stream();
+          outputStream* logst = Log(itables)::trace_stream();
           char* sig = target()->name_and_sig_as_C_string();
           logst->print("interface: %s, ime_num: %d, target: %s, method_holder: %s ",
                        interf_h()->internal_name(), ime_num, sig,

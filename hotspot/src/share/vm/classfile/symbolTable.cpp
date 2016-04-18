@@ -32,6 +32,7 @@
 #include "gc/shared/gcLocker.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -160,6 +161,11 @@ void SymbolTable::possibly_parallel_unlink(int* processed, int* removed) {
 // Create a new table and using alternate hash code, populate the new table
 // with the existing strings.   Set flag to use the alternate hash code afterwards.
 void SymbolTable::rehash_table() {
+  if (DumpSharedSpaces) {
+    tty->print_cr("Warning: rehash_table should not be called while dumping archive");
+    return;
+  }
+
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
   // This should never happen with -Xshare:dump but it might in testing mode.
   if (DumpSharedSpaces) return;
@@ -201,6 +207,11 @@ Symbol* SymbolTable::lookup_dynamic(int index, const char* name,
 
 Symbol* SymbolTable::lookup_shared(const char* name,
                                    int len, unsigned int hash) {
+  if (use_alternate_hashcode()) {
+    // hash_code parameter may use alternate hashing algorithm but the shared table
+    // always uses the same original hash code.
+    hash = hash_shared_symbol(name, len);
+  }
   return _shared_table.lookup(name, hash, len);
 }
 
@@ -232,6 +243,10 @@ unsigned int SymbolTable::hash_symbol(const char* s, int len) {
   return use_alternate_hashcode() ?
            AltHashing::murmur3_32(seed(), (const jbyte*)s, len) :
            java_lang_String::hash_code((const jbyte*)s, len);
+}
+
+unsigned int SymbolTable::hash_shared_symbol(const char* s, int len) {
+  return java_lang_String::hash_code((const jbyte*)s, len);
 }
 
 
@@ -536,7 +551,7 @@ bool SymbolTable::copy_compact_table(char** top, char*end) {
     HashtableEntry<Symbol*, mtSymbol>* p = the_table()->bucket(i);
     for ( ; p != NULL; p = p->next()) {
       Symbol* s = (Symbol*)(p->literal());
-      unsigned int fixed_hash = hash_symbol((char*)s->bytes(), s->utf8_length());
+      unsigned int fixed_hash =  hash_shared_symbol((char*)s->bytes(), s->utf8_length());
       assert(fixed_hash == p->hash(), "must not rehash during dumping");
       ch_table.add(fixed_hash, s);
     }

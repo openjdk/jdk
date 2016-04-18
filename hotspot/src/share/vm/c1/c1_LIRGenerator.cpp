@@ -2041,8 +2041,7 @@ void LIRGenerator::do_Throw(Throw* x) {
   // to avoid a fixed interval with an oop during the null check.
   // Use a copy of the CodeEmitInfo because debug information is
   // different for null_check and throw.
-  if (GenerateCompilerNullChecks &&
-      (x->exception()->as_NewInstance() == NULL && x->exception()->as_ExceptionObject() == NULL)) {
+  if (x->exception()->as_NewInstance() == NULL && x->exception()->as_ExceptionObject() == NULL) {
     // if the exception object wasn't created using new then it might be null.
     __ null_check(exception_opr, new CodeEmitInfo(info, x->state()->copy(ValueStack::ExceptionState, x->state()->bci())));
   }

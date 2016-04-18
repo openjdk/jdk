@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -325,17 +325,17 @@ void CardTableRS::younger_refs_in_space_iterate(Space* sp,
   // In the case of CMS+ParNew, issue a warning
   if (!ur.contains(urasm)) {
     assert(UseConcMarkSweepGC, "Tautology: see assert above");
-    warning("CMS+ParNew: Did you forget to call save_marks()? "
-            "[" PTR_FORMAT ", " PTR_FORMAT ") is not contained in "
-            "[" PTR_FORMAT ", " PTR_FORMAT ")",
-             p2i(urasm.start()), p2i(urasm.end()), p2i(ur.start()), p2i(ur.end()));
+    log_warning(gc)("CMS+ParNew: Did you forget to call save_marks()? "
+                    "[" PTR_FORMAT ", " PTR_FORMAT ") is not contained in "
+                    "[" PTR_FORMAT ", " PTR_FORMAT ")",
+                    p2i(urasm.start()), p2i(urasm.end()), p2i(ur.start()), p2i(ur.end()));
     MemRegion ur2 = sp->used_region();
     MemRegion urasm2 = sp->used_region_at_save_marks();
     if (!ur.equals(ur2)) {
-      warning("CMS+ParNew: Flickering used_region()!!");
+      log_warning(gc)("CMS+ParNew: Flickering used_region()!!");
     }
     if (!urasm.equals(urasm2)) {
-      warning("CMS+ParNew: Flickering used_region_at_save_marks()!!");
+      log_warning(gc)("CMS+ParNew: Flickering used_region_at_save_marks()!!");
     }
     ShouldNotReachHere();
   }

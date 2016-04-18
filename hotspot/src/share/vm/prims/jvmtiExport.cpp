@@ -2315,6 +2315,8 @@ void JvmtiExport::transition_pending_onload_raw_monitors() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
+#if INCLUDE_SERVICES
+// Attach is disabled if SERVICES is not included
 
 // type for the Agent_OnAttach entry point
 extern "C" {
@@ -2416,6 +2418,7 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
   return result;
 }
 
+#endif // INCLUDE_SERVICES
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Setup current current thread for event collection.
