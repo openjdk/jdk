@@ -374,10 +374,17 @@ bool CountedLoopReserveKit::create_reserve() {
     return false; // skip malformed counted loop
   }
   if (!cl->is_main_loop()) {
-    if (TraceLoopOpts) {
-      tty->print_cr("CountedLoopReserveKit::create_reserve: %d not main loop", cl->_idx);
+    bool loop_not_canonical = true;
+    if (cl->is_post_loop() && (cl->slp_max_unroll() > 0)) {
+      loop_not_canonical = false;
     }
-    return false; // skip normal, pre, and post loops
+    // only reject some loop forms
+    if (loop_not_canonical) {
+      if (TraceLoopOpts) {
+        tty->print_cr("CountedLoopReserveKit::create_reserve: %d not canonical loop", cl->_idx);
+      }
+      return false; // skip normal, pre, and post (conditionally) loops
+    }
   }
 
   _lp = _lpt->_head->as_Loop();

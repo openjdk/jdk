@@ -2047,6 +2047,10 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen) {
   return ret_value;  // Per default match rules are supported.
 }
 
+const bool Matcher::has_predicated_vectors(void) {
+  return false;
+}
+
 const int Matcher::float_pressure(int default_pressure_threshold) {
   return default_pressure_threshold;
 }

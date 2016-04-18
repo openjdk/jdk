@@ -722,8 +722,9 @@ public:
     Flag_avoid_back_to_back_after    = Flag_avoid_back_to_back_before << 1,
     Flag_has_call                    = Flag_avoid_back_to_back_after << 1,
     Flag_is_reduction                = Flag_has_call << 1,
-    Flag_is_scheduled                = Flag_is_reduction,
-    Flag_is_expensive                = Flag_is_scheduled << 1,
+    Flag_is_scheduled                = Flag_is_reduction << 1,
+    Flag_has_vector_mask_set         = Flag_is_scheduled << 1,
+    Flag_is_expensive                = Flag_has_vector_mask_set << 1,
     _max_flags = (Flag_is_expensive << 1) - 1 // allow flags combination
   };
 
@@ -911,6 +912,9 @@ public:
   // An arithmetic node which accumulates a data in a loop.
   // It must have the loop's phi as input and provide a def to the phi.
   bool is_reduction() const { return (_flags & Flag_is_reduction) != 0; }
+
+  // The node is a CountedLoopEnd with a mask annotation so as to emit a restore context
+  bool has_vector_mask_set() const { return (_flags & Flag_has_vector_mask_set) != 0; }
 
   // Used in lcm to mark nodes that have scheduled
   bool is_scheduled() const { return (_flags & Flag_is_scheduled) != 0; }

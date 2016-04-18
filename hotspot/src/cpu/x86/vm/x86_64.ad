@@ -1081,10 +1081,10 @@ static void vec_stack_to_stack_helper(CodeBuffer *cbuf, int src_offset,
       __ vmovdqu(xmm0, Address(rsp, -32));
       break;
     case Op_VecZ:
-      __ evmovdqul(Address(rsp, -64), xmm0, 2);
-      __ evmovdqul(xmm0, Address(rsp, src_offset), 2);
-      __ evmovdqul(Address(rsp, dst_offset), xmm0, 2);
-      __ evmovdqul(xmm0, Address(rsp, -64), 2);
+      __ evmovdquq(Address(rsp, -64), xmm0, 2);
+      __ evmovdquq(xmm0, Address(rsp, src_offset), 2);
+      __ evmovdquq(Address(rsp, dst_offset), xmm0, 2);
+      __ evmovdquq(xmm0, Address(rsp, -64), 2);
       break;
     default:
       ShouldNotReachHere();
@@ -11443,6 +11443,7 @@ instruct jmpCon(cmpOp cop, rFlagsReg cr, label labl)
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
 instruct jmpLoopEnd(cmpOp cop, rFlagsReg cr, label labl)
 %{
+  predicate(!n->has_vector_mask_set());
   match(CountedLoopEnd cop cr);
   effect(USE labl);
 
@@ -11458,6 +11459,7 @@ instruct jmpLoopEnd(cmpOp cop, rFlagsReg cr, label labl)
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
 instruct jmpLoopEndU(cmpOpU cop, rFlagsRegU cmp, label labl) %{
+  predicate(!n->has_vector_mask_set());
   match(CountedLoopEnd cop cmp);
   effect(USE labl);
 
@@ -11472,6 +11474,7 @@ instruct jmpLoopEndU(cmpOpU cop, rFlagsRegU cmp, label labl) %{
 %}
 
 instruct jmpLoopEndUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
+  predicate(!n->has_vector_mask_set());
   match(CountedLoopEnd cop cmp);
   effect(USE labl);
 
@@ -11481,6 +11484,61 @@ instruct jmpLoopEndUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
   ins_encode %{
     Label* L = $labl$$label;
     __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
+  %}
+  ins_pipe(pipe_jcc);
+%}
+
+// mask version
+// Jump Direct Conditional - Label defines a relative address from Jcc+1
+instruct jmpLoopEnd_and_restoreMask(cmpOp cop, rFlagsReg cr, label labl)
+%{
+  predicate(n->has_vector_mask_set());
+  match(CountedLoopEnd cop cr);
+  effect(USE labl);
+
+  ins_cost(400);
+  format %{ "j$cop     $labl\t# loop end\n\t"
+            "restorevectmask \t# vector mask restore for loops" %}
+  size(10);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
+    __ restorevectmask();
+  %}
+  ins_pipe(pipe_jcc);
+%}
+
+// Jump Direct Conditional - Label defines a relative address from Jcc+1
+instruct jmpLoopEndU_and_restoreMask(cmpOpU cop, rFlagsRegU cmp, label labl) %{
+  predicate(n->has_vector_mask_set());
+  match(CountedLoopEnd cop cmp);
+  effect(USE labl);
+
+  ins_cost(400);
+  format %{ "j$cop,u   $labl\t# loop end\n\t"
+            "restorevectmask \t# vector mask restore for loops" %}
+  size(10);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
+    __ restorevectmask();
+  %}
+  ins_pipe(pipe_jcc);
+%}
+
+instruct jmpLoopEndUCF_and_restoreMask(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
+  predicate(n->has_vector_mask_set());
+  match(CountedLoopEnd cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop,u   $labl\t# loop end\n\t"
+            "restorevectmask \t# vector mask restore for loops" %}
+  size(10);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
+    __ restorevectmask();
   %}
   ins_pipe(pipe_jcc);
 %}
