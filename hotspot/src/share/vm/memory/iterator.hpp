@@ -213,6 +213,16 @@ class BoolObjectClosure : public Closure {
   virtual bool do_object_b(oop obj) = 0;
 };
 
+class AlwaysTrueClosure: public BoolObjectClosure {
+ public:
+  bool do_object_b(oop p) { return true; }
+};
+
+class AlwaysFalseClosure : public BoolObjectClosure {
+ public:
+  bool do_object_b(oop p) { return false; }
+};
+
 // Applies an oop closure to all ref fields in objects iterated over in an
 // object iteration.
 class ObjectToOopClosure: public ObjectClosure {

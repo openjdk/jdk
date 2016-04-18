@@ -60,7 +60,7 @@ public:
     if (!oopDesc::is_null(heap_oop)) {
       oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
       if (_g1h->is_obj_dead_cond(obj, _vo)) {
-        LogHandle(gc, verify) log;
+        Log(gc, verify) log;
         log.info("Root location " PTR_FORMAT " points to dead obj " PTR_FORMAT, p2i(p), p2i(obj));
         if (_vo == VerifyOption_G1UseMarkWord) {
           log.error("  Mark word: " PTR_FORMAT, p2i(obj->mark()));
@@ -406,7 +406,7 @@ void G1HeapVerifier::verify(VerifyOption vo) {
     // It helps to have the per-region information in the output to
     // help us track down what went wrong. This is why we call
     // print_extended_on() instead of print_on().
-    LogHandle(gc, verify) log;
+    Log(gc, verify) log;
     ResourceMark rm;
     _g1h->print_extended_on(log.error_stream());
   }

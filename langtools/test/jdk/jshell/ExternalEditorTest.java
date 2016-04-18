@@ -24,8 +24,9 @@
 /*
  * @test
  * @summary Testing external editor.
- * @bug 8080843
+ * @bug 8080843 8143955
  * @ignore 8080843
+ * @modules jdk.jshell/jdk.internal.jshell.tool
  * @build ReplToolTesting CustomEditor EditorTestBase
  * @run testng ExternalEditorTest
  */
@@ -124,7 +125,7 @@ public class ExternalEditorTest extends EditorTestBase {
     }
 
     @BeforeClass
-    public static void setUp() throws IOException {
+    public static void setUpExternalEditorTest() throws IOException {
         listener = new ServerSocket(0);
         listener.setSoTimeout(30000);
         int localPort = listener.getLocalPort();
@@ -193,11 +194,11 @@ public class ExternalEditorTest extends EditorTestBase {
     @Test
     public void setUnknownEditor() {
         test(
-                a -> assertCommand(a, "/set editor", "|  /set editor requires a path argument\n"),
-                a -> assertCommand(a, "/set editor UNKNOWN", "|  Editor set to: UNKNOWN\n"),
+                a -> assertCommand(a, "/set editor", "|  The '/set editor' command requires a path argument"),
+                a -> assertCommand(a, "/set editor UNKNOWN", "|  Editor set to: UNKNOWN"),
                 a -> assertCommand(a, "int a;", null),
-                a -> assertCommand(a, "/e 1",
-                        "|  Edit Error: process IO failure: Cannot run program \"UNKNOWN\": error=2, No such file or directory\n")
+                a -> assertCommand(a, "/ed 1",
+                        "|  Edit Error: process IO failure: Cannot run program \"UNKNOWN\": error=2, No such file or directory")
         );
     }
 

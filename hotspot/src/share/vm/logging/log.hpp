@@ -29,10 +29,8 @@
 #include "logging/logTagSet.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.hpp"
-#include "memory/allocation.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/ostream.hpp"
 
 //
 // Logging macros
@@ -44,19 +42,19 @@
 //
 // Note that these macros will not evaluate the arguments unless the logging is enabled.
 //
-#define log_error(...)   (!log_is_enabled(Error, __VA_ARGS__))   ? (void)0 : Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Error>
-#define log_warning(...) (!log_is_enabled(Warning, __VA_ARGS__)) ? (void)0 : Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Warning>
-#define log_info(...)    (!log_is_enabled(Info, __VA_ARGS__))    ? (void)0 : Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Info>
-#define log_debug(...)   (!log_is_enabled(Debug, __VA_ARGS__))   ? (void)0 : Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Debug>
-#define log_trace(...)   (!log_is_enabled(Trace, __VA_ARGS__))   ? (void)0 : Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Trace>
+#define log_error(...)   (!log_is_enabled(Error, __VA_ARGS__))   ? (void)0 : LogImpl<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Error>
+#define log_warning(...) (!log_is_enabled(Warning, __VA_ARGS__)) ? (void)0 : LogImpl<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Warning>
+#define log_info(...)    (!log_is_enabled(Info, __VA_ARGS__))    ? (void)0 : LogImpl<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Info>
+#define log_debug(...)   (!log_is_enabled(Debug, __VA_ARGS__))   ? (void)0 : LogImpl<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Debug>
+#define log_trace(...)   (!log_is_enabled(Trace, __VA_ARGS__))   ? (void)0 : LogImpl<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Trace>
 
 // Macros for logging that should be excluded in product builds.
 // Available for levels Info, Debug and Trace. Includes test macro that
 // evaluates to false in product builds.
 #ifndef PRODUCT
-#define log_develop_info(...)  (!log_is_enabled(Info, __VA_ARGS__))   ? (void)0 : Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Info>
-#define log_develop_debug(...) (!log_is_enabled(Debug, __VA_ARGS__)) ? (void)0 : Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Debug>
-#define log_develop_trace(...) (!log_is_enabled(Trace, __VA_ARGS__))  ? (void)0 : Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Trace>
+#define log_develop_info(...)  (!log_is_enabled(Info, __VA_ARGS__))   ? (void)0 : LogImpl<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Info>
+#define log_develop_debug(...) (!log_is_enabled(Debug, __VA_ARGS__)) ? (void)0 : LogImpl<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Debug>
+#define log_develop_trace(...) (!log_is_enabled(Trace, __VA_ARGS__))  ? (void)0 : LogImpl<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Trace>
 #define log_develop_is_enabled(level, ...)  log_is_enabled(level, __VA_ARGS__)
 #else
 #define DUMMY_ARGUMENT_CONSUMER(...)
@@ -67,7 +65,7 @@
 #endif
 
 // Convenience macro to test if the logging is enabled on the specified level for given tags.
-#define log_is_enabled(level, ...) (Log<LOG_TAGS(__VA_ARGS__)>::is_level(LogLevel::level))
+#define log_is_enabled(level, ...) (LogImpl<LOG_TAGS(__VA_ARGS__)>::is_level(LogLevel::level))
 
 //
 // Log class for more advanced logging scenarios.
@@ -78,18 +76,43 @@
 // calls to <level>_stream() functions (trace_stream(), debug_stream(), etc).
 //
 // Example usage:
-//   LogHandle(logging) log;
+//   Log(logging) log;
 //   if (log.is_debug()) {
 //     ...
 //     log.debug("result = %d", result).trace(" tracing info");
 //     obj->print_on(log.debug_stream());
 //   }
 //
-#define LogHandle(...)  Log<LOG_TAGS(__VA_ARGS__)>
+#define Log(...)  LogImpl<LOG_TAGS(__VA_ARGS__)>
+
+//
+// Log class that embeds both log tags and a log level.
+//
+// The class provides a way to write the tags and log level once,
+// so that redundant specification of tags or levels can be avoided.
+//
+// Example usage:
+//   LogTarget(Debug, gc) out;
+//   if (out.is_enabled()) {
+//     ...
+//     out.print("Worker: %u", i);
+//     out.print(" data: %d", x);
+//     ...
+//     print_stats(out.stream());
+//   }
+//
+#define LogTarget(level, ...) LogTargetImpl<LogLevel::level, LOG_TAGS(__VA_ARGS__)>
+
+// Forward declaration to decouple this file from the outputStream API.
+class outputStream;
+outputStream* create_log_stream(LogLevelType level, LogTagSet* tagset);
+
+template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
+class LogTargetImpl;
 
 template <LogTagType T0, LogTagType T1 = LogTag::__NO_TAG, LogTagType T2 = LogTag::__NO_TAG, LogTagType T3 = LogTag::__NO_TAG,
           LogTagType T4 = LogTag::__NO_TAG, LogTagType GuardTag = LogTag::__NO_TAG>
-class Log VALUE_OBJ_CLASS_SPEC {
+class LogImpl VALUE_OBJ_CLASS_SPEC {
  private:
   static const size_t LogBufferSize = 512;
  public:
@@ -100,7 +123,7 @@ class Log VALUE_OBJ_CLASS_SPEC {
 
   // Empty constructor to avoid warnings on MSVC about unused variables
   // when the log instance is only used for static functions.
-  Log() {
+  LogImpl() {
   }
 
   static bool is_level(LogLevelType level) {
@@ -113,7 +136,7 @@ class Log VALUE_OBJ_CLASS_SPEC {
     va_start(args, fmt);
     vwrite(level, fmt, args);
     va_end(args);
-  };
+  }
 
   template <LogLevelType Level>
   ATTRIBUTE_PRINTF(1, 2)
@@ -122,40 +145,19 @@ class Log VALUE_OBJ_CLASS_SPEC {
     va_start(args, fmt);
     vwrite(Level, fmt, args);
     va_end(args);
-  };
+  }
 
   ATTRIBUTE_PRINTF(2, 0)
   static void vwrite(LogLevelType level, const char* fmt, va_list args) {
-    char buf[LogBufferSize];
-    va_list saved_args;         // For re-format on buf overflow.
-    va_copy(saved_args, args);
-    size_t prefix_len = LogPrefix<T0, T1, T2, T3, T4>::prefix(buf, sizeof(buf));
-    // Check that string fits in buffer; resize buffer if necessary
-    int ret = os::log_vsnprintf(buf + prefix_len, sizeof(buf) - prefix_len, fmt, args);
-    assert(ret >= 0, "Log message buffer issue");
-    if ((size_t)ret >= sizeof(buf)) {
-      size_t newbuf_len = prefix_len + ret + 1;
-      char* newbuf = NEW_C_HEAP_ARRAY(char, newbuf_len, mtLogging);
-      prefix_len = LogPrefix<T0, T1, T2, T3, T4>::prefix(newbuf, newbuf_len);
-      ret = os::log_vsnprintf(newbuf + prefix_len, newbuf_len - prefix_len, fmt, saved_args);
-      assert(ret >= 0, "Log message buffer issue");
-      puts(level, newbuf);
-      FREE_C_HEAP_ARRAY(char, newbuf);
-    } else {
-      puts(level, buf);
-    }
-  }
-
-  static void puts(LogLevelType level, const char* string) {
-    LogTagSetMapping<T0, T1, T2, T3, T4>::tagset().log(level, string);
+    LogTagSetMapping<T0, T1, T2, T3, T4>::tagset().vwrite(level, fmt, args);
   }
 
 #define LOG_LEVEL(level, name) ATTRIBUTE_PRINTF(2, 0) \
-  Log& v##name(const char* fmt, va_list args) { \
+  LogImpl& v##name(const char* fmt, va_list args) { \
     vwrite(LogLevel::level, fmt, args); \
     return *this; \
   } \
-  Log& name(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3) { \
+  LogImpl& name(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3) { \
     va_list args; \
     va_start(args, fmt); \
     vwrite(LogLevel::level, fmt, args); \
@@ -166,10 +168,39 @@ class Log VALUE_OBJ_CLASS_SPEC {
     return is_level(LogLevel::level); \
   } \
   static outputStream* name##_stream() { \
-    return new logStream(write<LogLevel::level>); \
+    return create_log_stream(LogLevel::level, &LogTagSetMapping<T0, T1, T2, T3, T4>::tagset()); \
+  } \
+  static LogTargetImpl<LogLevel::level, T0, T1, T2, T3, T4, GuardTag>* name() { \
+    return (LogTargetImpl<LogLevel::level, T0, T1, T2, T3, T4, GuardTag>*)NULL; \
   }
   LOG_LEVEL_LIST
 #undef LOG_LEVEL
+};
+
+// Combines logging tags and a logging level.
+template <LogLevelType level, LogTagType T0, LogTagType T1 = LogTag::__NO_TAG, LogTagType T2 = LogTag::__NO_TAG,
+          LogTagType T3 = LogTag::__NO_TAG, LogTagType T4 = LogTag::__NO_TAG, LogTagType GuardTag = LogTag::__NO_TAG>
+class LogTargetImpl {
+public:
+  // Empty constructor to avoid warnings on MSVC about unused variables
+  // when the log instance is only used for static functions.
+  LogTargetImpl() {
+  }
+
+  static bool is_enabled() {
+    return LogImpl<T0, T1, T2, T3, T4, GuardTag>::is_level(level);
+  }
+
+  static void print(const char* fmt, ...) ATTRIBUTE_PRINTF(1, 2) {
+    va_list args;
+    va_start(args, fmt);
+    LogImpl<T0, T1, T2, T3, T4, GuardTag>::vwrite(level, fmt, args);
+    va_end(args);
+  }
+
+  static outputStream* stream() {
+    return create_log_stream(level, &LogTagSetMapping<T0, T1, T2, T3, T4>::tagset());
+  }
 };
 
 #endif // SHARE_VM_LOGGING_LOG_HPP

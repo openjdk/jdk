@@ -42,7 +42,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.misc.JavaAWTAccess;
 import jdk.internal.misc.SharedSecrets;
-import sun.misc.ManagedLocalsThread;
 import sun.util.logging.internal.LoggingProviderImpl;
 
 /**
@@ -254,9 +253,10 @@ public class LogManager {
 
     // This private class is used as a shutdown hook.
     // It does a "reset" to close all open handlers.
-    private class Cleaner extends ManagedLocalsThread {
+    private class Cleaner extends Thread {
 
         private Cleaner() {
+            super(null, null, "Logging-Cleaner", 0, false);
             /* Set context class loader to null in order to avoid
              * keeping a strong reference to an application classloader.
              */
