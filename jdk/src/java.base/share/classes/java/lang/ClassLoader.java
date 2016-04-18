@@ -727,7 +727,7 @@ public abstract class ClassLoader {
      * @deprecated  Replaced by {@link #defineClass(String, byte[], int, int)
      * defineClass(String, byte[], int, int)}
      */
-    @Deprecated
+    @Deprecated(since="1.1")
     protected final Class<?> defineClass(byte[] b, int off, int len)
         throws ClassFormatError
     {
@@ -2012,7 +2012,7 @@ public abstract class ClassLoader {
      *
      * @since  1.2
      */
-    @Deprecated
+    @Deprecated(since="9")
     protected Package getPackage(String name) {
         Package pkg = getDefinedPackage(name);
         if (pkg == null) {

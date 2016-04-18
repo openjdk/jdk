@@ -478,7 +478,7 @@ class Commands {
             ThreadGroupReference tg = it.nextThreadGroup();
             ++cnt;
             MessageOutput.println("thread group number description name",
-                                  new Object [] { new Integer (cnt),
+                                  new Object [] { Integer.valueOf(cnt),
                                                   Env.description(tg),
                                                   tg.name()});
         }
@@ -1014,7 +1014,7 @@ class Commands {
         return MessageOutput.format("locationString",
                                     new Object [] {loc.declaringType().name(),
                                                    loc.method().name(),
-                                                   new Integer (loc.lineNumber()),
+                                                   Integer.valueOf(loc.lineNumber()),
                                                    Long.valueOf(loc.codeIndex())});
     }
 
@@ -1467,7 +1467,7 @@ class Commands {
                 MessageOutput.println("Line number information not available for");
             } else if (Env.sourceLine(loc, lineno) == null) {
                 MessageOutput.println("is an invalid line number for",
-                                      new Object [] {new Integer (lineno),
+                                      new Object [] {Integer.valueOf(lineno),
                                                      refType.name()});
             } else {
                 for (int i = startLine; i <= endLine; i++) {
@@ -1477,11 +1477,11 @@ class Commands {
                     }
                     if (i == lineno) {
                         MessageOutput.println("source line number current line and line",
-                                              new Object [] {new Integer (i),
+                                              new Object [] {Integer.valueOf(i),
                                                              sourceLine});
                     } else {
                         MessageOutput.println("source line number and line",
-                                              new Object [] {new Integer (i),
+                                              new Object [] {Integer.valueOf(i),
                                                              sourceLine});
                     }
                 }
@@ -1725,7 +1725,7 @@ class Commands {
                 } else {
                     MessageOutput.println("Owned by:",
                                           new Object [] {owner.name(),
-                                                         new Integer (object.entryCount())});
+                                                         Integer.valueOf(object.entryCount())});
                 }
                 List<ThreadReference> waiters = object.waitingThreads();
                 if (waiters.size() == 0) {

@@ -198,7 +198,7 @@ public class MessageOutput {
                 (MessageOutput.format("jdb prompt thread name and current stack frame",
                                       new Object [] {
                                           threadInfo.getThread().name(),
-                                          new Integer (threadInfo.getCurrentFrameIndex() + 1)}));
+                                          Integer.valueOf(threadInfo.getCurrentFrameIndex() + 1)}));
         }
         System.out.flush();
     }
