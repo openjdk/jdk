@@ -122,4 +122,25 @@ class Util {
         }
         return null;
     }
+
+    /**
+     * Checks whether the specified string is null or empty, returns the original
+     * string with leading and trailing spaces removed if not.
+     * @param test the string to be tested
+     * @return the original string with leading and trailing spaces removed,
+     * or null if it is null or empty
+     *
+     */
+    static String getNotNullOrEmpty(String test) {
+        if (test == null) {
+            return test;
+        } else {
+            String temp = test.trim();
+            if (temp.length() == 0) {
+                return null;
+            } else {
+                return temp;
+            }
+        }
+    }
 }

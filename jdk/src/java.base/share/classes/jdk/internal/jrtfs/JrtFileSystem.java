@@ -24,23 +24,47 @@
  */
 package jdk.internal.jrtfs;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.file.LinkOption;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.NonWritableChannelException;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.file.ClosedFileSystemException;
+import java.nio.file.CopyOption;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileStore;
+import java.nio.file.FileSystem;
 import java.nio.file.FileSystemException;
 import java.nio.file.InvalidPathException;
+import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.NotDirectoryException;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.nio.file.ReadOnlyFileSystemException;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.WatchService;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.UserPrincipalLookupService;
+import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import static java.util.stream.Collectors.toList;
-import jdk.internal.jimage.ImageReader;
+import java.util.Objects;
+import java.util.Set;
+import java.util.regex.Pattern;
 import jdk.internal.jimage.ImageReader.Node;
-
+import static java.util.stream.Collectors.toList;
 
 /**
  * jrt file system implementation built on System jimage files.
@@ -51,33 +75,21 @@ import jdk.internal.jimage.ImageReader.Node;
  * but also compiled and delivered as part of the jrtfs.jar to support access
  * to the jimage file provided by the shipped JDK by tools running on JDK 8.
  */
-class JrtFileSystem extends AbstractJrtFileSystem {
+class JrtFileSystem extends FileSystem {
 
-    // System image reader
-    private ImageReader bootImage;
-    // root path
-    private final JrtPath rootPath;
+    private final JrtFileSystemProvider provider;
+    private final JrtPath rootPath = new JrtPath(this, "/");
     private volatile boolean isOpen;
+    private volatile boolean isClosable;
+    private SystemImage image;
 
-    // open a .jimage and build directory structure
-    private static ImageReader openImage(Path path) throws IOException {
-        ImageReader image = ImageReader.open(path);
-        image.getRootDirectory();
-        return image;
-    }
-
-    JrtFileSystem(JrtFileSystemProvider provider,
-            Map<String, ?> env)
-            throws IOException {
-        super(provider, env);
-        checkExists(SystemImages.moduleImageFile());
-
-        // open image file
-        this.bootImage = openImage(SystemImages.moduleImageFile());
-
-        byte[] root = new byte[]{'/'};
-        rootPath = new JrtPath(this, root);
-        isOpen = true;
+    JrtFileSystem(JrtFileSystemProvider provider, Map<String, ?> env)
+            throws IOException
+    {
+        this.provider = provider;
+        this.image = SystemImage.open();  // open image file
+        this.isOpen = true;
+        this.isClosable = env != null;
     }
 
     // FileSystem method implementations
@@ -88,6 +100,8 @@ class JrtFileSystem extends AbstractJrtFileSystem {
 
     @Override
     public void close() throws IOException {
+        if (!isClosable)
+            throw new UnsupportedOperationException();
         cleanup();
     }
 
@@ -95,237 +109,397 @@ class JrtFileSystem extends AbstractJrtFileSystem {
     protected void finalize() throws Throwable {
         try {
             cleanup();
-        } catch (IOException ignored) {
+        } catch (IOException ignored) {}
+    }
+
+    @Override
+    public FileSystemProvider provider() {
+        return provider;
+    }
+
+    @Override
+    public Iterable<Path> getRootDirectories() {
+        ArrayList<Path> dirs = new ArrayList<>();
+        dirs.add(getRootPath());
+        return dirs;
+    }
+
+    @Override
+    public JrtPath getPath(String first, String... more) {
+        if (more.length == 0) {
+            return new JrtPath(this, first);
         }
-        super.finalize();
-    }
-
-    // AbstractJrtFileSystem method implementations
-    @Override
-    JrtPath getRootPath() {
-        return rootPath;
-    }
-
-    @Override
-    boolean isSameFile(AbstractJrtPath p1, AbstractJrtPath p2) throws IOException {
-        ensureOpen();
-        Node node1 = findNode(p1);
-        Node node2 = findNode(p2);
-        return node1.equals(node2);
+        StringBuilder sb = new StringBuilder();
+        sb.append(first);
+        for (String path : more) {
+            if (path.length() > 0) {
+                if (sb.length() > 0) {
+                    sb.append('/');
+                }
+                sb.append(path);
+            }
+        }
+        return new JrtPath(this, sb.toString());
     }
 
     @Override
-    boolean isLink(AbstractJrtPath jrtPath) throws IOException {
-        return checkNode(jrtPath).isLink();
+    public final boolean isReadOnly() {
+        return true;
     }
 
     @Override
-    AbstractJrtPath resolveLink(AbstractJrtPath jrtPath) throws IOException {
-        Node node = checkNode(jrtPath);
+    public final UserPrincipalLookupService getUserPrincipalLookupService() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final WatchService newWatchService() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final Iterable<FileStore> getFileStores() {
+        ArrayList<FileStore> list = new ArrayList<>(1);
+        list.add(getFileStore(getRootPath()));
+        return list;
+    }
+
+    private static final Set<String> supportedFileAttributeViews
+            = Collections.unmodifiableSet(
+                    new HashSet<String>(Arrays.asList("basic", "jrt")));
+
+    @Override
+    public final Set<String> supportedFileAttributeViews() {
+        return supportedFileAttributeViews;
+    }
+
+    @Override
+    public final String toString() {
+        return "jrt:/";
+    }
+
+    @Override
+    public final String getSeparator() {
+        return "/";
+    }
+
+    @Override
+    public PathMatcher getPathMatcher(String syntaxAndInput) {
+        int pos = syntaxAndInput.indexOf(':');
+        if (pos <= 0 || pos == syntaxAndInput.length()) {
+            throw new IllegalArgumentException();
+        }
+        String syntax = syntaxAndInput.substring(0, pos);
+        String input = syntaxAndInput.substring(pos + 1);
+        String expr;
+        if (syntax.equalsIgnoreCase("glob")) {
+            expr = JrtUtils.toRegexPattern(input);
+        } else if (syntax.equalsIgnoreCase("regex")) {
+            expr = input;
+        } else {
+                throw new UnsupportedOperationException("Syntax '" + syntax
+                        + "' not recognized");
+        }
+        // return matcher
+        final Pattern pattern = Pattern.compile(expr);
+        return (Path path) -> pattern.matcher(path.toString()).matches();
+    }
+
+    JrtPath resolveLink(JrtPath path) throws IOException {
+        Node node = checkNode(path);
         if (node.isLink()) {
             node = node.resolveLink();
-            return toJrtPath(getBytes(node.getName()));
+            return new JrtPath(this, node.getName());  // TBD, normalized?
         }
-
-        return jrtPath;
+        return path;
     }
 
-    @Override
-    JrtFileAttributes getFileAttributes(AbstractJrtPath jrtPath, LinkOption... options)
+    JrtFileAttributes getFileAttributes(JrtPath path, LinkOption... options)
             throws IOException {
-        Node node = checkNode(jrtPath);
+        Node node = checkNode(path);
         if (node.isLink() && followLinks(options)) {
             return new JrtFileAttributes(node.resolveLink(true));
         }
         return new JrtFileAttributes(node);
     }
 
-    @Override
-    boolean exists(AbstractJrtPath jrtPath) throws IOException {
+    /**
+     * returns the list of child paths of the given directory "path"
+     *
+     * @param path name of the directory whose content is listed
+     * @return iterator for child paths of the given directory path
+     */
+    Iterator<Path> iteratorOf(JrtPath path, DirectoryStream.Filter<? super Path> filter)
+            throws IOException {
+        Node node = checkNode(path).resolveLink(true);
+        if (!node.isDirectory()) {
+            throw new NotDirectoryException(path.getName());
+        }
+        if (filter == null) {
+            return node.getChildren()
+                       .stream()
+                       .map(child -> (Path)(path.resolve(new JrtPath(this, child.getNameString()).getFileName())))
+                       .iterator();
+        }
+        return node.getChildren()
+                   .stream()
+                   .map(child -> (Path)(path.resolve(new JrtPath(this, child.getNameString()).getFileName())))
+                   .filter(p ->  { try { return filter.accept(p);
+                                   } catch (IOException x) {}
+                                   return false;
+                                  })
+                   .iterator();
+    }
+
+    // returns the content of the file resource specified by the path
+    byte[] getFileContent(JrtPath path) throws IOException {
+        Node node = checkNode(path);
+        if (node.isDirectory()) {
+            throw new FileSystemException(path + " is a directory");
+        }
+        //assert node.isResource() : "resource node expected here";
+        return image.getResource(node);
+    }
+
+    /////////////// Implementation details below this point //////////
+
+    // static utility methods
+    static ReadOnlyFileSystemException readOnly() {
+        return new ReadOnlyFileSystemException();
+    }
+
+    // do the supplied options imply that we have to chase symlinks?
+    static boolean followLinks(LinkOption... options) {
+        if (options != null) {
+            for (LinkOption lo : options) {
+                Objects.requireNonNull(lo);
+                if (lo == LinkOption.NOFOLLOW_LINKS) {
+                    return false;
+                } else {
+                    throw new AssertionError("should not reach here");
+                }
+            }
+        }
+        return true;
+    }
+
+    // check that the options passed are supported by (read-only) jrt file system
+    static void checkOptions(Set<? extends OpenOption> options) {
+        // check for options of null type and option is an intance of StandardOpenOption
+        for (OpenOption option : options) {
+            Objects.requireNonNull(option);
+            if (!(option instanceof StandardOpenOption)) {
+                throw new IllegalArgumentException();
+            }
+        }
+        if (options.contains(StandardOpenOption.WRITE) ||
+            options.contains(StandardOpenOption.APPEND)) {
+            throw readOnly();
+        }
+    }
+
+    // clean up this file system - called from finalize and close
+    void cleanup() throws IOException {
+        if (!isOpen) {
+            return;
+        }
+        synchronized (this) {
+            isOpen = false;
+            // close image reader and null out
+            image.close();
+            image = null;
+        }
+    }
+
+    // These methods throw read only file system exception
+    final void setTimes(JrtPath jrtPath, FileTime mtime, FileTime atime, FileTime ctime)
+            throws IOException {
+        throw readOnly();
+    }
+
+    // These methods throw read only file system exception
+    final void createDirectory(JrtPath jrtPath, FileAttribute<?>... attrs) throws IOException {
+        throw readOnly();
+    }
+
+    final void deleteFile(JrtPath jrtPath, boolean failIfNotExists)
+            throws IOException {
+        throw readOnly();
+    }
+
+    final OutputStream newOutputStream(JrtPath jrtPath, OpenOption... options)
+            throws IOException {
+        throw readOnly();
+    }
+
+    final void copyFile(boolean deletesrc, JrtPath srcPath, JrtPath dstPath, CopyOption... options)
+            throws IOException {
+        throw readOnly();
+    }
+
+    final FileChannel newFileChannel(JrtPath path,
+            Set<? extends OpenOption> options,
+            FileAttribute<?>... attrs)
+            throws IOException {
+        throw new UnsupportedOperationException("newFileChannel");
+    }
+
+    final InputStream newInputStream(JrtPath path) throws IOException {
+        return new ByteArrayInputStream(getFileContent(path));
+    }
+
+    final SeekableByteChannel newByteChannel(JrtPath path,
+            Set<? extends OpenOption> options,
+            FileAttribute<?>... attrs)
+            throws IOException {
+        checkOptions(options);
+
+        byte[] buf = getFileContent(path);
+        final ReadableByteChannel rbc
+                = Channels.newChannel(new ByteArrayInputStream(buf));
+        final long size = buf.length;
+        return new SeekableByteChannel() {
+            long read = 0;
+
+            @Override
+            public boolean isOpen() {
+                return rbc.isOpen();
+            }
+
+            @Override
+            public long position() throws IOException {
+                return read;
+            }
+
+            @Override
+            public SeekableByteChannel position(long pos)
+                    throws IOException {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public int read(ByteBuffer dst) throws IOException {
+                int n = rbc.read(dst);
+                if (n > 0) {
+                    read += n;
+                }
+                return n;
+            }
+
+            @Override
+            public SeekableByteChannel truncate(long size)
+                    throws IOException {
+                throw new NonWritableChannelException();
+            }
+
+            @Override
+            public int write(ByteBuffer src) throws IOException {
+                throw new NonWritableChannelException();
+            }
+
+            @Override
+            public long size() throws IOException {
+                return size;
+            }
+
+            @Override
+            public void close() throws IOException {
+                rbc.close();
+            }
+        };
+    }
+
+    final JrtFileStore getFileStore(JrtPath path) {
+        return new JrtFileStore(path);
+    }
+
+    final void ensureOpen() throws IOException {
+        if (!isOpen()) {
+            throw new ClosedFileSystemException();
+        }
+    }
+
+    final JrtPath getRootPath() {
+        return rootPath;
+    }
+
+    boolean isSameFile(JrtPath path1, JrtPath path2) throws IOException {
+        return checkNode(path1) == checkNode(path2);
+    }
+
+    boolean isLink(JrtPath path) throws IOException {
+        return checkNode(path).isLink();
+    }
+
+    boolean exists(JrtPath path) throws IOException {
         try {
-            checkNode(jrtPath);
+            checkNode(path);
         } catch (NoSuchFileException exp) {
             return false;
         }
         return true;
     }
 
-    @Override
-    boolean isDirectory(AbstractJrtPath jrtPath, boolean resolveLinks)
+    boolean isDirectory(JrtPath path, boolean resolveLinks)
             throws IOException {
-        Node node = checkNode(jrtPath);
+        Node node = checkNode(path);
         return resolveLinks && node.isLink()
                 ? node.resolveLink(true).isDirectory()
                 : node.isDirectory();
     }
 
-    @Override
-    Iterator<Path> iteratorOf(AbstractJrtPath jrtPath) throws IOException {
-        Node node = checkNode(jrtPath).resolveLink(true);
-        if (!node.isDirectory()) {
-            throw new NotDirectoryException(getString(jrtPath.getName()));
+    JrtPath toRealPath(JrtPath path, LinkOption... options)
+            throws IOException {
+        Node node = checkNode(path);
+        if (followLinks(options) && node.isLink()) {
+            node = node.resolveLink();
         }
-
-        if (node.isRootDir()) {
-            return rootDirIterator(jrtPath);
-        } else if (node.isModulesDir()) {
-            return modulesDirIterator(jrtPath);
-        } else if (node.isPackagesDir()) {
-            return packagesDirIterator(jrtPath);
-        }
-
-        return nodesToIterator(jrtPath, node.getChildren());
+        // image node holds the real/absolute path name
+        return new JrtPath(this, node.getName(), true);
     }
 
-    @Override
-    byte[] getFileContent(AbstractJrtPath jrtPath) throws IOException {
-        final Node node = checkResource(jrtPath);
-        return bootImage.getResource(node);
-    }
-
-    // Implementation details below this point
-    // clean up this file system - called from finalize and close
-    private void cleanup() throws IOException {
-        if (!isOpen) {
-            return;
-        }
-
-        synchronized (this) {
-            isOpen = false;
-
-            // close all image reader and null out
-            bootImage.close();
-            bootImage = null;
-        }
-    }
-
-    private Node lookup(byte[] path) {
-        Node node = null;
+    private Node lookup(String path) {
         try {
-            node = bootImage.findNode(getString(path));
+            return image.findNode(path);
         } catch (RuntimeException re) {
-            throw new InvalidPathException(getString(path), re.toString());
+            throw new InvalidPathException(path, re.toString());
         }
-        return node;
     }
 
-    private Node lookupSymbolic(byte[] path) {
-        for (int i = 1; i < path.length; i++) {
-            if (path[i] == (byte) '/') {
-                byte[] prefix = Arrays.copyOfRange(path, 0, i);
-                Node node = lookup(prefix);
-                if (node == null) {
-                    break;
-                }
-
-                if (node.isLink()) {
-                    Node link = node.resolveLink(true);
-                    // resolved symbolic path concatenated to the rest of the path
-                    String resPath = link.getName() + getString(path).substring(i);
-                    byte[] resPathBytes = getBytes(resPath);
-                    node = lookup(resPathBytes);
-                    return node != null ? node : lookupSymbolic(resPathBytes);
-                }
+    private Node lookupSymbolic(String path) {
+        int i = 1;
+        while (i < path.length()) {
+            i = path.indexOf('/', i);
+            if (i == -1) {
+                break;
             }
+            String prefix = path.substring(0, i);
+            Node node = lookup(prefix);
+            if (node == null) {
+                break;
+            }
+            if (node.isLink()) {
+                Node link = node.resolveLink(true);
+                // resolved symbolic path concatenated to the rest of the path
+                String resPath = link.getName() + path.substring(i);
+                node = lookup(resPath);
+                return node != null ? node : lookupSymbolic(resPath);
+            }
+            i++;
         }
-
         return null;
     }
 
-    private Node findNode(AbstractJrtPath jrtPath) throws IOException {
-        return findNode(jrtPath.getResolvedPath());
-    }
-
-    private Node findNode(byte[] path) throws IOException {
-        Node node = lookup(path);
+    Node checkNode(JrtPath path) throws IOException {
+        ensureOpen();
+        String p = path.getResolvedPath();
+        Node node = lookup(p);
         if (node == null) {
-            node = lookupSymbolic(path);
+            node = lookupSymbolic(p);
             if (node == null) {
-                throw new NoSuchFileException(getString(path));
+                throw new NoSuchFileException(p);
             }
         }
         return node;
-    }
-
-    private Node checkNode(AbstractJrtPath jrtPath) throws IOException {
-        return checkNode(jrtPath.getResolvedPath());
-    }
-
-    private Node checkNode(byte[] path) throws IOException {
-        ensureOpen();
-        return findNode(path);
-    }
-
-    private Node checkResource(AbstractJrtPath jrtPath) throws IOException {
-        return checkResource(jrtPath.getResolvedPath());
-    }
-
-    private Node checkResource(byte[] path) throws IOException {
-        Node node = checkNode(path);
-        if (node.isDirectory()) {
-            throw new FileSystemException(getString(path) + " is a directory");
-        }
-
-        assert node.isResource() : "resource node expected here";
-        return node;
-    }
-
-    private JrtPath toJrtPath(String path) {
-        return toJrtPath(getBytes(path));
-    }
-
-    private JrtPath toJrtPath(byte[] path) {
-        return new JrtPath(this, path);
-    }
-
-    private Iterator<Path> nodesToIterator(AbstractJrtPath dir, List<Node> childNodes) {
-        Function<Node, Path> nodeToPath =
-            child -> dir.resolve(
-                toJrtPath(child.getNameString()).getFileName());
-        return childNodes.stream().
-                map(nodeToPath).collect(toList()).
-                iterator();
-    }
-
-    private List<Node> rootChildren;
-
-    private synchronized void initRootChildren(AbstractJrtPath jrtPath) throws IOException {
-        if (rootChildren == null) {
-            rootChildren = new ArrayList<>();
-            rootChildren.addAll(findNode(jrtPath).getChildren());
-        }
-    }
-
-    private Iterator<Path> rootDirIterator(AbstractJrtPath jrtPath) throws IOException {
-        initRootChildren(jrtPath);
-        return nodesToIterator(jrtPath, rootChildren);
-    }
-
-    private List<Node> modulesChildren;
-
-    private synchronized void initModulesChildren(AbstractJrtPath jrtPath) throws IOException {
-        if (modulesChildren == null) {
-            modulesChildren = new ArrayList<>();
-            modulesChildren.addAll(findNode(jrtPath).getChildren());
-        }
-    }
-
-    private Iterator<Path> modulesDirIterator(AbstractJrtPath jrtPath) throws IOException {
-        initModulesChildren(jrtPath);
-        return nodesToIterator(jrtPath, modulesChildren);
-    }
-
-    private List<Node> packagesChildren;
-
-    private synchronized void initPackagesChildren(AbstractJrtPath jrtPath) throws IOException {
-        if (packagesChildren == null) {
-            packagesChildren = new ArrayList<>();
-            packagesChildren.addAll(findNode(jrtPath).getChildren());
-        }
-    }
-
-    private Iterator<Path> packagesDirIterator(AbstractJrtPath jrtPath) throws IOException {
-        initPackagesChildren(jrtPath);
-        return nodesToIterator(jrtPath, packagesChildren);
     }
 }

@@ -526,11 +526,6 @@ public class WindowsFileSystemProvider
         WindowsPath link = WindowsPath.toWindowsPath(obj1);
         WindowsPath target = WindowsPath.toWindowsPath(obj2);
 
-        if (!link.getFileSystem().supportsLinks()) {
-            throw new UnsupportedOperationException("Symbolic links not supported "
-                + "on this operating system");
-        }
-
         // no attributes allowed
         if (attrs.length > 0) {
             WindowsSecurityDescriptor.fromAttribute(attrs);  // may throw NPE or UOE
@@ -614,9 +609,6 @@ public class WindowsFileSystemProvider
     public Path readSymbolicLink(Path obj1) throws IOException {
         WindowsPath link = WindowsPath.toWindowsPath(obj1);
         WindowsFileSystem fs = link.getFileSystem();
-        if (!fs.supportsLinks()) {
-            throw new UnsupportedOperationException("symbolic links not supported");
-        }
 
         // permission check
         SecurityManager sm = System.getSecurityManager();

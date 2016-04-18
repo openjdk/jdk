@@ -78,14 +78,7 @@ class WindowsFileStore
             // if the file is a link then GetVolumePathName returns the
             // volume that the link is on so we need to call it with the
             // final target
-            String target;
-            if (file.getFileSystem().supportsLinks()) {
-                target = WindowsLinkSupport.getFinalPath(file, true);
-            } else {
-                // file must exist
-                WindowsFileAttributes.get(file, true);
-                target = file.getPathForWin32Calls();
-            }
+            String target = WindowsLinkSupport.getFinalPath(file, true);
             try {
                 return createFromPath(target);
             } catch (WindowsException e) {

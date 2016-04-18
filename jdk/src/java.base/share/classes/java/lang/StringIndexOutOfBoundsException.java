@@ -67,20 +67,4 @@ public class StringIndexOutOfBoundsException extends IndexOutOfBoundsException {
     public StringIndexOutOfBoundsException(int index) {
         super("String index out of range: " + index);
     }
-
-    /**
-     * Constructs a new {@code StringIndexOutOfBoundsException} class with
-     * arguments indicating two out of bound values.
-     *
-     * <p>The out of bound values are included in this exception's detail
-     * message.  The exact presentation format of the detail message is
-     * unspecified.
-     *
-     * @param a the first out of bound value.
-     * @param b the second out of bound value.
-     * @since 9
-     */
-    public StringIndexOutOfBoundsException(int a, int b) {
-        super("String indexed access out of bounds: " + a + ", " + b);
-    }
 }

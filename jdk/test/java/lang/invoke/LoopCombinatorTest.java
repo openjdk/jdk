@@ -26,6 +26,8 @@
 /* @test
  * @bug 8139885
  * @bug 8150635
+ * @bug 8150957
+ * @bug 8153637
  * @run testng/othervm -ea -esa test.java.lang.invoke.LoopCombinatorTest
  */
 
@@ -299,6 +301,18 @@ public class LoopCombinatorTest {
         MethodHandle loop = MethodHandles.countedLoop(fitm5, fit8, Counted.MH_start, Counted.MH_step);
         assertEquals(Counted.MT_counted, loop.type());
         assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke("Lambdaman!"));
+    }
+
+    @Test
+    public static void testCountedLoopCounterInit() throws Throwable {
+        // int x = 0; for (int i = 0; i < 5; ++i) { x += i; } return x; => 10
+        // (only if counter's first value in body is 0)
+        MethodHandle iter = MethodHandles.constant(int.class, 5);
+        MethodHandle init = MethodHandles.constant(int.class, 0);
+        MethodHandle body = Counted.MH_addCounter;
+        MethodHandle loop = MethodHandles.countedLoop(iter, init, body);
+        assertEquals(Counted.MT_counterInit, loop.type());
+        assertEquals(10, loop.invoke());
     }
 
     @Test
@@ -667,12 +681,17 @@ public class LoopCombinatorTest {
             System.out.print("hello");
         }
 
+        static int addCounter(int counter, int x) {
+            return x + counter;
+        }
+
         static final Class<Counted> COUNTED = Counted.class;
 
         static final MethodType MT_start = methodType(String.class, String.class);
         static final MethodType MT_step = methodType(String.class, int.class, String.class, String.class);
         static final MethodType MT_stepUpdateArray = methodType(void.class, int.class, int[].class);
         static final MethodType MT_printHello = methodType(void.class, int.class);
+        static final MethodType MT_addCounter = methodType(int.class, int.class, int.class);
 
         static final MethodHandle MH_13;
         static final MethodHandle MH_m5;
@@ -681,10 +700,12 @@ public class LoopCombinatorTest {
         static final MethodHandle MH_step;
         static final MethodHandle MH_stepUpdateArray;
         static final MethodHandle MH_printHello;
+        static final MethodHandle MH_addCounter;
 
         static final MethodType MT_counted = methodType(String.class, String.class);
         static final MethodType MT_arrayCounted = methodType(void.class, int[].class);
         static final MethodType MT_countedPrinting = methodType(void.class);
+        static final MethodType MT_counterInit = methodType(int.class);
 
         static {
             try {
@@ -695,6 +716,7 @@ public class LoopCombinatorTest {
                 MH_step = LOOKUP.findStatic(COUNTED, "step", MT_step);
                 MH_stepUpdateArray = LOOKUP.findStatic(COUNTED, "stepUpdateArray", MT_stepUpdateArray);
                 MH_printHello = LOOKUP.findStatic(COUNTED, "printHello", MT_printHello);
+                MH_addCounter = LOOKUP.findStatic(COUNTED, "addCounter", MT_addCounter);
             } catch (Exception e) {
                 throw new ExceptionInInitializerError(e);
             }

@@ -38,7 +38,7 @@ import java.net.InetAddress;
 import java.lang.reflect.*;
 import java.net.URL;
 
-import sun.reflect.CallerSensitive;
+import jdk.internal.reflect.CallerSensitive;
 import sun.security.util.SecurityConstants;
 
 /**

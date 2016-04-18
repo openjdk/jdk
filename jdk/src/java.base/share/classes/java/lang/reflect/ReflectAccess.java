@@ -25,14 +25,14 @@
 
 package java.lang.reflect;
 
-import sun.reflect.MethodAccessor;
-import sun.reflect.ConstructorAccessor;
+import jdk.internal.reflect.MethodAccessor;
+import jdk.internal.reflect.ConstructorAccessor;
 
 /** Package-private class implementing the
     sun.reflect.LangReflectAccess interface, allowing the java.lang
     package to instantiate objects in this package. */
 
-class ReflectAccess implements sun.reflect.LangReflectAccess {
+class ReflectAccess implements jdk.internal.reflect.LangReflectAccess {
     public Field newField(Class<?> declaringClass,
                           String name,
                           Class<?> type,

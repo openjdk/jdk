@@ -96,7 +96,7 @@ class WindowsLinkSupport {
         WindowsFileSystem fs = input.getFileSystem();
         try {
             // if not following links then don't need final path
-            if (!followLinks || !fs.supportsLinks())
+            if (!followLinks)
                 return input.getPathForWin32Calls();
 
             // if file is not a sym link then don't need final path
@@ -157,8 +157,6 @@ class WindowsLinkSupport {
         throws IOException
     {
         WindowsFileSystem fs = input.getFileSystem();
-        if (resolveLinks && !fs.supportsLinks())
-            resolveLinks = false;
 
         // Start with absolute path
         String path = null;

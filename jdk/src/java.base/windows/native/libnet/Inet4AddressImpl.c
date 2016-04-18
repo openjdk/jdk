@@ -275,6 +275,151 @@ Java_java_net_Inet4AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
     return JNU_NewStringPlatform(env, hp->h_name);
 }
 
+static jboolean
+tcp_ping4(JNIEnv *env,
+          jbyteArray addrArray,
+          jint timeout,
+          jbyteArray ifArray,
+          jint ttl)
+{
+    jint addr;
+    jbyte caddr[4];
+    jint fd;
+    struct sockaddr_in him;
+    struct sockaddr_in* netif = NULL;
+    struct sockaddr_in inf;
+    int len = 0;
+    WSAEVENT hEvent;
+    int connect_rv = -1;
+    int sz;
+
+    /**
+     * Convert IP address from byte array to integer
+     */
+    sz = (*env)->GetArrayLength(env, addrArray);
+    if (sz != 4) {
+        return JNI_FALSE;
+    }
+    memset((char *) &him, 0, sizeof(him));
+    memset((char *) caddr, 0, sizeof(caddr));
+    (*env)->GetByteArrayRegion(env, addrArray, 0, 4, caddr);
+    addr = ((caddr[0]<<24) & 0xff000000);
+    addr |= ((caddr[1] <<16) & 0xff0000);
+    addr |= ((caddr[2] <<8) & 0xff00);
+    addr |= (caddr[3] & 0xff);
+    addr = htonl(addr);
+    /**
+     * Socket address
+     */
+    him.sin_addr.s_addr = addr;
+    him.sin_family = AF_INET;
+    len = sizeof(him);
+
+    /**
+     * If a network interface was specified, let's convert its address
+     * as well.
+     */
+    if (!(IS_NULL(ifArray))) {
+        memset((char *) caddr, 0, sizeof(caddr));
+        (*env)->GetByteArrayRegion(env, ifArray, 0, 4, caddr);
+        addr = ((caddr[0]<<24) & 0xff000000);
+        addr |= ((caddr[1] <<16) & 0xff0000);
+        addr |= ((caddr[2] <<8) & 0xff00);
+        addr |= (caddr[3] & 0xff);
+        addr = htonl(addr);
+        inf.sin_addr.s_addr = addr;
+        inf.sin_family = AF_INET;
+        inf.sin_port = 0;
+        netif = &inf;
+    }
+
+    /*
+     * Can't create a raw socket, so let's try a TCP socket
+     */
+    fd = NET_Socket(AF_INET, SOCK_STREAM, 0);
+    if (fd == -1) {
+        /* note: if you run out of fds, you may not be able to load
+         * the exception class, and get a NoClassDefFoundError
+         * instead.
+         */
+        NET_ThrowNew(env, WSAGetLastError(), "Can't create socket");
+        return JNI_FALSE;
+    }
+    if (ttl > 0) {
+        setsockopt(fd, IPPROTO_IP, IP_TTL, (const char *)&ttl, sizeof(ttl));
+    }
+    /*
+     * A network interface was specified, so let's bind to it.
+     */
+    if (netif != NULL) {
+        if (bind(fd, (struct sockaddr*)netif, sizeof(struct sockaddr_in)) < 0) {
+            NET_ThrowNew(env, WSAGetLastError(), "Can't bind socket");
+            closesocket(fd);
+            return JNI_FALSE;
+        }
+    }
+
+    /*
+     * Make the socket non blocking so we can use select/poll.
+     */
+    hEvent = WSACreateEvent();
+    WSAEventSelect(fd, hEvent, FD_READ|FD_CONNECT|FD_CLOSE);
+
+    /* no need to use NET_Connect as non-blocking */
+    him.sin_port = htons(7);    /* Echo */
+    connect_rv = connect(fd, (struct sockaddr *)&him, len);
+
+    /**
+     * connection established or refused immediately, either way it means
+     * we were able to reach the host!
+     */
+    if (connect_rv == 0 || WSAGetLastError() == WSAECONNREFUSED) {
+        WSACloseEvent(hEvent);
+        closesocket(fd);
+        return JNI_TRUE;
+    } else {
+        int optlen;
+
+        switch (WSAGetLastError()) {
+        case WSAEHOSTUNREACH:   /* Host Unreachable */
+        case WSAENETUNREACH:    /* Network Unreachable */
+        case WSAENETDOWN:       /* Network is down */
+        case WSAEPFNOSUPPORT:   /* Protocol Family unsupported */
+            WSACloseEvent(hEvent);
+            closesocket(fd);
+            return JNI_FALSE;
+        }
+
+        if (WSAGetLastError() != WSAEWOULDBLOCK) {
+            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "ConnectException",
+                                         "connect failed");
+            WSACloseEvent(hEvent);
+            closesocket(fd);
+            return JNI_FALSE;
+        }
+
+        timeout = NET_Wait(env, fd, NET_WAIT_CONNECT, timeout);
+
+        /* has connection been established */
+
+        if (timeout >= 0) {
+            optlen = sizeof(connect_rv);
+            if (getsockopt(fd, SOL_SOCKET, SO_ERROR, (void*)&connect_rv,
+                           &optlen) <0) {
+                connect_rv = WSAGetLastError();
+            }
+
+            if (connect_rv == 0 || connect_rv == WSAECONNREFUSED) {
+                WSACloseEvent(hEvent);
+                closesocket(fd);
+                return JNI_TRUE;
+            }
+        }
+    }
+    WSACloseEvent(hEvent);
+    closesocket(fd);
+    return JNI_FALSE;
+}
 
 /**
  * ping implementation.
@@ -286,22 +431,16 @@ static jboolean
 ping4(JNIEnv *env,
       unsigned long src_addr,
       unsigned long dest_addr,
-      jint timeout)
+      jint timeout,
+      HANDLE hIcmpFile)
 {
     // See https://msdn.microsoft.com/en-us/library/aa366050%28VS.85%29.aspx
 
-    HANDLE hIcmpFile;
     DWORD dwRetVal = 0;
     char SendData[32] = {0};
     LPVOID ReplyBuffer = NULL;
     DWORD ReplySize = 0;
     jboolean ret = JNI_FALSE;
-
-    hIcmpFile = IcmpCreateFile();
-    if (hIcmpFile == INVALID_HANDLE_VALUE) {
-        NET_ThrowNew(env, WSAGetLastError(), "Unable to open handle");
-        return JNI_FALSE;
-    }
 
     ReplySize = sizeof(ICMP_ECHO_REPLY) + sizeof(SendData);
     ReplyBuffer = (VOID*) malloc(ReplySize);
@@ -366,6 +505,7 @@ Java_java_net_Inet4AddressImpl_isReachable0(JNIEnv *env, jobject this,
     jint dest_addr = 0;
     jbyte caddr[4];
     int sz;
+    HANDLE hIcmpFile;
 
     /**
      * Convert IP address from byte array to integer
@@ -396,6 +536,18 @@ Java_java_net_Inet4AddressImpl_isReachable0(JNIEnv *env, jobject this,
         src_addr = htonl(src_addr);
     }
 
-    return ping4(env, src_addr, dest_addr, timeout);
+    hIcmpFile = IcmpCreateFile();
+    if (hIcmpFile == INVALID_HANDLE_VALUE) {
+        int err = WSAGetLastError();
+        if (err == ERROR_ACCESS_DENIED) {
+            // fall back to TCP echo if access is denied to ICMP
+            return tcp_ping4(env, addrArray, timeout, ifArray, ttl);
+        } else {
+            NET_ThrowNew(env, err, "Unable to create ICMP file handle");
+            return JNI_FALSE;
+        }
+    } else {
+        return ping4(env, src_addr, dest_addr, timeout, hIcmpFile);
+    }
 }
 

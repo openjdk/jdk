@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 import com.sun.tools.javac.main.Option;
+import com.sun.tools.javac.main.OptionHelper;
 import com.sun.tools.javac.util.Options;
 
 /**
@@ -118,14 +119,14 @@ public enum ToolOption {
     ADDMODS("-addmods", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setCompilerOpt(opt, arg);
+            Option.ADDMODS.process(helper.getOptionHelper(), opt, arg);
         }
     },
 
     LIMITMODS("-limitmods", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setCompilerOpt(opt, arg);
+            Option.LIMITMODS.process(helper.getOptionHelper(), opt, arg);
         }
     },
 
@@ -133,35 +134,63 @@ public enum ToolOption {
         @Override
         public void process(Helper helper, String arg) {
             helper.encoding = arg;
-            helper.setCompilerOpt(opt, arg);
+            helper.setFileManagerOpt(Option.ENCODING, arg);
         }
     },
 
     RELEASE("-release", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setCompilerOpt(opt, arg);
+            Option.RELEASE.process(helper.getOptionHelper(), opt, arg);
         }
     },
 
     SOURCE("-source", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setCompilerOpt(opt, arg);
+            Option.SOURCE.process(helper.getOptionHelper(), opt, arg);
         }
     },
 
     XMAXERRS("-Xmaxerrs", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setCompilerOpt(opt, arg);
+            Option.XMAXERRS.process(helper.getOptionHelper(), opt, arg);
         }
     },
 
     XMAXWARNS("-Xmaxwarns", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setCompilerOpt(opt, arg);
+            Option.XMAXWARNS.process(helper.getOptionHelper(), opt, arg);
+        }
+    },
+
+    XADDREADS("-XaddReads:", false) {
+        @Override
+        public void process(Helper helper, String arg) {
+            Option.XADDREADS.process(helper.getOptionHelper(), arg);
+        }
+    },
+
+    XADDEXPORTS("-XaddExports:", false) {
+        @Override
+        public void process(Helper helper, String arg) {
+            Option.XADDEXPORTS.process(helper.getOptionHelper(), arg);
+        }
+    },
+
+    XMODULE("-Xmodule:", false) {
+        @Override
+        public void process(Helper helper, String arg) {
+            Option.XMODULE.process(helper.getOptionHelper(), arg);
+        }
+    },
+
+    XPATCH("-Xpatch:", false) {
+        @Override
+        public void process(Helper helper, String arg) {
+            Option.XMODULE.process(helper.getOptionHelper(), arg);
         }
     },
 
@@ -299,6 +328,7 @@ public enum ToolOption {
 
     public final String opt;
     public final boolean hasArg;
+    public final boolean hasSuffix; // ex: foo:bar or -foo=bar
 
     ToolOption(String opt) {
         this(opt, false);
@@ -307,6 +337,8 @@ public enum ToolOption {
     ToolOption(String opt, boolean hasArg) {
         this.opt = opt;
         this.hasArg = hasArg;
+        char lastChar = opt.charAt(opt.length() - 1);
+        this.hasSuffix = lastChar == ':' || lastChar == '=';
     }
 
     void process(Helper helper, String arg) { }
@@ -314,9 +346,16 @@ public enum ToolOption {
     void process(Helper helper) { }
 
     static ToolOption get(String name) {
-        for (ToolOption o: values()) {
-            if (name.equals(o.opt))
+        String oname = name;
+        if (name.contains(":")) {
+            oname = name.substring(0, name.indexOf(':') + 1);
+        } else if (name.contains("=")) {
+            oname = name.substring(0, name.indexOf('=') + 1);
+        }
+        for (ToolOption o : values()) {
+            if (oname.equals(o.opt)) {
                 return o;
+            }
         }
         return null;
     }
@@ -366,6 +405,7 @@ public enum ToolOption {
         abstract void Xusage();
 
         abstract void usageError(String msg, Object... args);
+        abstract OptionHelper getOptionHelper();
 
         void addToList(List<String> list, String str){
             StringTokenizer st = new StringTokenizer(str, ":");
@@ -386,13 +426,6 @@ public enum ToolOption {
                 }
                 this.showAccess = showAccess;
             }
-        }
-
-        void setCompilerOpt(String opt, String arg) {
-            if (compOpts.get(opt) != null) {
-                usageError("main.option.already.seen", opt);
-            }
-            compOpts.put(opt, arg);
         }
 
         void setFileManagerOpt(Option opt, String arg) {

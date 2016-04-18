@@ -36,7 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.JavaLangAccess;
-import sun.reflect.ConstantPool;
+import jdk.internal.reflect.ConstantPool;
 import static sun.reflect.annotation.TypeAnnotation.*;
 
 /**

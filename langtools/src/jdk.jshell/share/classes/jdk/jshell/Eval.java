@@ -465,16 +465,40 @@ class Eval {
         // If appropriate, execute the snippet
         String value = null;
         Exception exception = null;
-        if (si.isExecutable() && si.status().isDefined) {
-            try {
-                value = state.executionControl().commandInvoke(state.maps.classFullName(si));
-                value = si.subKind().hasValue()
-                        ? expunge(value)
-                        : "";
-            } catch (EvalException ex) {
-                exception = translateExecutionException(ex);
-            } catch (UnresolvedReferenceException ex) {
-                exception = ex;
+        if (si.status().isDefined) {
+            if (si.isExecutable()) {
+                try {
+                    value = state.executionControl().commandInvoke(state.maps.classFullName(si));
+                    value = si.subKind().hasValue()
+                            ? expunge(value)
+                            : "";
+                } catch (EvalException ex) {
+                    exception = translateExecutionException(ex);
+                } catch (UnresolvedReferenceException ex) {
+                    exception = ex;
+                }
+            } else if (si.subKind() == SubKind.VAR_DECLARATION_SUBKIND) {
+                switch (((VarSnippet) si).typeName()) {
+                    case "byte":
+                    case "short":
+                    case "int":
+                    case "long":
+                        value = "0";
+                        break;
+                    case "float":
+                    case "double":
+                        value = "0.0";
+                        break;
+                    case "boolean":
+                        value = "false";
+                        break;
+                    case "char":
+                        value = "''";
+                        break;
+                    default:
+                        value = "null";
+                        break;
+                }
             }
         }
         return events(c, outs, value, exception);

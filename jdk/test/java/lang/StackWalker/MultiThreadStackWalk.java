@@ -46,8 +46,8 @@ import static java.lang.StackWalker.Option.*;
 public class MultiThreadStackWalk {
 
     static Set<String> infrastructureClasses = new TreeSet<>(Arrays.asList(
-            "sun.reflect.NativeMethodAccessorImpl",
-            "sun.reflect.DelegatingMethodAccessorImpl",
+            "jdk.internal.reflect.NativeMethodAccessorImpl",
+            "jdk.internal.reflect.DelegatingMethodAccessorImpl",
             "java.lang.reflect.Method",
             "com.sun.javatest.regtest.MainWrapper$MainThread",
             "java.lang.Thread"

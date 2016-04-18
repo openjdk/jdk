@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
 /*
  * @test
- * @bug 8046321
+ * @bug 8046321 8153829
  * @summary OCSP Stapling for TLS
  * @library ../../../../java/security/testlibrary
  * @build CertificateBuilder SimpleOCSPServer
@@ -298,11 +298,12 @@ public class HttpsUrlConnClient {
      */
     void doClientSide(ClientParameters cliParams) throws Exception {
 
-        /*
-         * Wait for server to get started.
-         */
-        while (!serverReady) {
+        // Wait 5 seconds for server ready
+        for (int i = 0; (i < 100 && !serverReady); i++) {
             Thread.sleep(50);
+        }
+        if (!serverReady) {
+            throw new RuntimeException("Server not ready yet");
         }
 
         // Selectively enable or disable the feature
@@ -532,7 +533,15 @@ public class HttpsUrlConnClient {
         rootOcsp.enableLog(debug);
         rootOcsp.setNextUpdateInterval(3600);
         rootOcsp.start();
-        Thread.sleep(1000);         // Give the server a second to start up
+
+        // Wait 5 seconds for server ready
+        for (int i = 0; (i < 100 && !rootOcsp.isServerReady()); i++) {
+            Thread.sleep(50);
+        }
+        if (!rootOcsp.isServerReady()) {
+            throw new RuntimeException("Server not ready yet");
+        }
+
         rootOcspPort = rootOcsp.getPort();
         String rootRespURI = "http://localhost:" + rootOcspPort;
         log("Root OCSP Responder URI is " + rootRespURI);
@@ -577,7 +586,15 @@ public class HttpsUrlConnClient {
         intOcsp.enableLog(debug);
         intOcsp.setNextUpdateInterval(3600);
         intOcsp.start();
-        Thread.sleep(1000);
+
+        // Wait 5 seconds for server ready
+        for (int i = 0; (i < 100 && !intOcsp.isServerReady()); i++) {
+            Thread.sleep(50);
+        }
+        if (!intOcsp.isServerReady()) {
+            throw new RuntimeException("Server not ready yet");
+        }
+
         intOcspPort = intOcsp.getPort();
         String intCaRespURI = "http://localhost:" + intOcspPort;
         log("Intermediate CA OCSP Responder URI is " + intCaRespURI);

@@ -28,8 +28,8 @@ package jdk.internal.misc;
 import java.lang.reflect.Field;
 import java.security.ProtectionDomain;
 
-import sun.reflect.CallerSensitive;
-import sun.reflect.Reflection;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 import jdk.internal.misc.VM;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
@@ -58,7 +58,7 @@ public final class Unsafe {
     private static native void registerNatives();
     static {
         registerNatives();
-        sun.reflect.Reflection.registerMethodsToFilter(Unsafe.class, "getUnsafe");
+        Reflection.registerMethodsToFilter(Unsafe.class, "getUnsafe");
     }
 
     private Unsafe() {}

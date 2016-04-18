@@ -38,15 +38,71 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.ext.DefaultHandler2;
 
 /*
- * @bug 8081248, 8144966, 8146606, 8146237, 8151154, 8150969
+ * @bug 8081248, 8144966, 8146606, 8146237, 8151154, 8150969, 8151162, 8152527
  * @summary Tests basic Catalog functions.
  */
 public class CatalogTest {
+    /*
+     * @bug 8152527
+     * This test is the same as the JDK test ResolveEntityTests:testMatch1.
+     * Verifies that the CatalogResolver resolves a publicId and/or systemId as
+     * expected.
+     */
+    @Test(dataProvider = "resolveEntity")
+    public void testMatch1(String cfile, String prefer, String sysId, String pubId, String expectedUri, String expectedFile, String msg) {
+        String catalogFile = getClass().getResource(cfile).getFile();
+        CatalogFeatures features = CatalogFeatures.builder().with(CatalogFeatures.Feature.PREFER, prefer).build();
+        CatalogResolver catalogResolver = CatalogManager.catalogResolver(features, catalogFile);
+        InputSource is = catalogResolver.resolveEntity(pubId, sysId);
+        Assert.assertNotNull(is, msg);
+        String expected = (expectedUri == null) ? expectedFile : expectedUri;
+        Assert.assertEquals(expected, is.getSystemId(), msg);
+    }
+
+    /*
+     * @bug 8151162
+     * Verifies that the Catalog matches specified publicId or systemId and returns
+     * results as expected.
+     */
+    @Test(dataProvider = "matchWithPrefer")
+    public void matchWithPrefer(String prefer, String cfile, String publicId, String systemId, String expected) {
+        String catalogFile = getClass().getResource(cfile).getFile();
+        Catalog c = CatalogManager.catalog(CatalogFeatures.builder().with(CatalogFeatures.Feature.PREFER, prefer).build(), catalogFile);
+        String result;
+        if (publicId != null && publicId.length() > 0) {
+            result = c.matchPublic(publicId);
+        } else {
+            result = c.matchSystem(systemId);
+        }
+        Assert.assertEquals(expected, result);
+    }
+
+    /*
+     * @bug 8151162
+     * Verifies that the CatalogResolver resolves specified publicId or systemId
+     * in accordance with the prefer setting.
+     * prefer "system": resolves with a system entry.
+     *                  Exception: use the public entry when the catalog contains
+     *                  only public entry and only publicId is specified.
+     * prefer "public": attempts to resolve with a system entry;
+     *                  attempts to resolve with a public entry if no matching
+     *                  system entry is found.
+     */
+    @Test(dataProvider = "resolveWithPrefer")
+    public void resolveWithPrefer(String prefer, String cfile, String publicId, String systemId, String expected) {
+        String catalogFile = getClass().getResource(cfile).getFile();
+        CatalogFeatures f = CatalogFeatures.builder().with(CatalogFeatures.Feature.PREFER, prefer).with(CatalogFeatures.Feature.RESOLVE, "ignore").build();
+        CatalogResolver catalogResolver = CatalogManager.catalogResolver(f, catalogFile);
+        String result = catalogResolver.resolveEntity(publicId, systemId).getSystemId();
+        Assert.assertEquals(expected, result);
+    }
+
     /**
      * @bug 8150969
      * Verifies that the defer attribute set in the catalog file takes precedence
@@ -232,6 +288,72 @@ public class CatalogTest {
         }
     }
 
+    /*
+        DataProvider: used to verify CatalogResolver's resolveEntity function.
+        Data columns:
+        catalog, prefer, systemId, publicId, expectedUri, expectedFile, msg
+     */
+    @DataProvider(name = "resolveEntity")
+    Object[][] getDataForMatchingBothIds() {
+        String expected = "http://www.groupxmlbase.com/dtds/rewrite.dtd";
+        return new Object[][]{
+            {"rewriteSystem_id.xml", "system", "http://www.sys00test.com/rewrite.dtd", "PUB-404", expected, expected, "Relative rewriteSystem with xml:base at group level failed"},
+        };
+    }
+    static String id = "http://openjdk.java.net/xml/catalog/dtd/system.dtd";
+    /*
+       DataProvider: used to verify how prefer settings affect the result of the
+        Catalog's matching operation.
+        Data columns:
+        prefer, catalog, publicId, systemId, expected result
+     */
+    @DataProvider(name = "matchWithPrefer")
+    Object[][] getDataForMatch() {
+        return new Object[][]{
+            {"public", "pubOnly.xml", id, "", "http://local/base/dtd/public.dtd"},
+            {"public", "sysOnly.xml", id, "", null},
+            {"public", "sysAndPub.xml", id, "", "http://local/base/dtd/public.dtd"},
+            {"system", "pubOnly.xml", id, "", "http://local/base/dtd/public.dtd"},
+            {"system", "sysOnly.xml", id, "", null},
+            {"system", "sysAndPub.xml", id, "", "http://local/base/dtd/public.dtd"},
+            {"public", "pubOnly.xml", "", id, null},
+            {"public", "sysOnly.xml", "", id, "http://local/base/dtd/system.dtd"},
+            {"public", "sysAndPub.xml", "", id, "http://local/base/dtd/system.dtd"},
+            {"system", "pubOnly.xml", "", id, null},
+            {"system", "sysOnly.xml", "", id, "http://local/base/dtd/system.dtd"},
+            {"system", "sysAndPub.xml", "", id, "http://local/base/dtd/system.dtd"},
+        };
+    }
+
+    /*
+       DataProvider: used to verify how prefer settings affect the result of the
+        CatalogResolver's resolution operation.
+        Data columns:
+        prefer, catalog, publicId, systemId, expected result
+     */
+    @DataProvider(name = "resolveWithPrefer")
+    Object[][] getDataForResolve() {
+        return new Object[][]{
+            {"system", "pubOnly.xml", id, "", "http://local/base/dtd/public.dtd"},
+            {"system", "pubOnly.xml", "", id, null},
+            {"system", "pubOnly.xml", id, id, null},
+            {"public", "pubOnly.xml", id, "", "http://local/base/dtd/public.dtd"},
+            {"public", "pubOnly.xml", "", id, null},
+            {"public", "pubOnly.xml", id, id, "http://local/base/dtd/public.dtd"},
+            {"system", "sysOnly.xml", id, "", null},
+            {"system", "sysOnly.xml", "", id, "http://local/base/dtd/system.dtd"},
+            {"system", "sysOnly.xml", id, id, "http://local/base/dtd/system.dtd"},
+            {"public", "sysOnly.xml", id, "", null},
+            {"public", "sysOnly.xml", "", id, "http://local/base/dtd/system.dtd"},
+            {"public", "sysOnly.xml", id, id, "http://local/base/dtd/system.dtd"},
+            {"system", "sysAndPub.xml", id, "", "http://local/base/dtd/public.dtd"},
+            {"system", "sysAndPub.xml", "", id, "http://local/base/dtd/system.dtd"},
+            {"system", "sysAndPub.xml", id, id, "http://local/base/dtd/system.dtd"},
+            {"public", "sysAndPub.xml", id, "", "http://local/base/dtd/public.dtd"},
+            {"public", "sysAndPub.xml", "", id, "http://local/base/dtd/system.dtd"},
+            {"public", "sysAndPub.xml", id, id, "http://local/base/dtd/system.dtd"},
+        };
+    }
     /*
        DataProvider: catalogs that contain invalid next or delegate catalogs.
                      The defer attribute is set to false.

@@ -121,118 +121,118 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
     static void testInstanceField(VarHandleTestMethodHandleAccessString recv, Handles hs) throws Throwable {
         // Plain
         {
-            hs.get(TestAccessMode.set).invokeExact(recv, "foo");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact(recv);
+            hs.get(TestAccessMode.SET).invokeExact(recv, "foo");
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, "foo", "set String value");
         }
 
 
         // Volatile
         {
-            hs.get(TestAccessMode.setVolatile).invokeExact(recv, "bar");
-            String x = (String) hs.get(TestAccessMode.getVolatile).invokeExact(recv);
+            hs.get(TestAccessMode.SET_VOLATILE).invokeExact(recv, "bar");
+            String x = (String) hs.get(TestAccessMode.GET_VOLATILE).invokeExact(recv);
             assertEquals(x, "bar", "setVolatile String value");
         }
 
         // Lazy
         {
-            hs.get(TestAccessMode.setRelease).invokeExact(recv, "foo");
-            String x = (String) hs.get(TestAccessMode.getAcquire).invokeExact(recv);
+            hs.get(TestAccessMode.SET_RELEASE).invokeExact(recv, "foo");
+            String x = (String) hs.get(TestAccessMode.GET_ACQUIRE).invokeExact(recv);
             assertEquals(x, "foo", "setRelease String value");
         }
 
         // Opaque
         {
-            hs.get(TestAccessMode.setOpaque).invokeExact(recv, "bar");
-            String x = (String) hs.get(TestAccessMode.getOpaque).invokeExact(recv);
+            hs.get(TestAccessMode.SET_OPAQUE).invokeExact(recv, "bar");
+            String x = (String) hs.get(TestAccessMode.GET_OPAQUE).invokeExact(recv);
             assertEquals(x, "bar", "setOpaque String value");
         }
 
-        hs.get(TestAccessMode.set).invokeExact(recv, "foo");
+        hs.get(TestAccessMode.SET).invokeExact(recv, "foo");
 
         // Compare
         {
-            boolean r = (boolean) hs.get(TestAccessMode.compareAndSet).invokeExact(recv, "foo", "bar");
+            boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(recv, "foo", "bar");
             assertEquals(r, true, "success compareAndSet String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact(recv);
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, "bar", "success compareAndSet String value");
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.compareAndSet).invokeExact(recv, "foo", "baz");
+            boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(recv, "foo", "baz");
             assertEquals(r, false, "failing compareAndSet String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact(recv);
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, "bar", "failing compareAndSet String value");
         }
 
         {
-            String r = (String) hs.get(TestAccessMode.compareAndExchangeVolatile).invokeExact(recv, "bar", "foo");
+            String r = (String) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(recv, "bar", "foo");
             assertEquals(r, "bar", "success compareAndExchangeVolatile String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact(recv);
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, "foo", "success compareAndExchangeVolatile String value");
         }
 
         {
-            String r = (String) hs.get(TestAccessMode.compareAndExchangeVolatile).invokeExact(recv, "bar", "baz");
+            String r = (String) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(recv, "bar", "baz");
             assertEquals(r, "foo", "failing compareAndExchangeVolatile String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact(recv);
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, "foo", "failing compareAndExchangeVolatile String value");
         }
 
         {
-            String r = (String) hs.get(TestAccessMode.compareAndExchangeAcquire).invokeExact(recv, "foo", "bar");
+            String r = (String) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(recv, "foo", "bar");
             assertEquals(r, "foo", "success compareAndExchangeAcquire String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact(recv);
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, "bar", "success compareAndExchangeAcquire String value");
         }
 
         {
-            String r = (String) hs.get(TestAccessMode.compareAndExchangeAcquire).invokeExact(recv, "foo", "baz");
+            String r = (String) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(recv, "foo", "baz");
             assertEquals(r, "bar", "failing compareAndExchangeAcquire String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact(recv);
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, "bar", "failing compareAndExchangeAcquire String value");
         }
 
         {
-            String r = (String) hs.get(TestAccessMode.compareAndExchangeRelease).invokeExact(recv, "bar", "foo");
+            String r = (String) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(recv, "bar", "foo");
             assertEquals(r, "bar", "success compareAndExchangeRelease String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact(recv);
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, "foo", "success compareAndExchangeRelease String value");
         }
 
         {
-            String r = (String) hs.get(TestAccessMode.compareAndExchangeRelease).invokeExact(recv, "bar", "baz");
+            String r = (String) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(recv, "bar", "baz");
             assertEquals(r, "foo", "failing compareAndExchangeRelease String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact(recv);
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, "foo", "failing compareAndExchangeRelease String value");
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.weakCompareAndSet).invokeExact(recv, "foo", "bar");
+            boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(recv, "foo", "bar");
             assertEquals(r, true, "weakCompareAndSet String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact(recv);
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, "bar", "weakCompareAndSet String value");
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.weakCompareAndSetAcquire).invokeExact(recv, "bar", "foo");
+            boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(recv, "bar", "foo");
             assertEquals(r, true, "weakCompareAndSetAcquire String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact(recv);
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, "foo", "weakCompareAndSetAcquire String");
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.weakCompareAndSetRelease).invokeExact(recv, "foo", "bar");
+            boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(recv, "foo", "bar");
             assertEquals(r, true, "weakCompareAndSetRelease String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact(recv);
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, "bar", "weakCompareAndSetRelease String");
         }
 
         // Compare set and get
         {
-            String o = (String) hs.get(TestAccessMode.getAndSet).invokeExact(recv, "foo");
+            String o = (String) hs.get(TestAccessMode.GET_AND_SET).invokeExact(recv, "foo");
             assertEquals(o, "bar", "getAndSet String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact(recv);
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, "foo", "getAndSet String value");
         }
 
@@ -240,7 +240,7 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
 
     static void testInstanceFieldUnsupported(VarHandleTestMethodHandleAccessString recv, Handles hs) throws Throwable {
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndAdd)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
             checkUOE(am, () -> {
                 String r = (String) hs.get(am).invokeExact(recv, "foo");
             });
@@ -251,118 +251,118 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
     static void testStaticField(Handles hs) throws Throwable {
         // Plain
         {
-            hs.get(TestAccessMode.set).invokeExact("foo");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact();
+            hs.get(TestAccessMode.SET).invokeExact("foo");
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, "foo", "set String value");
         }
 
 
         // Volatile
         {
-            hs.get(TestAccessMode.setVolatile).invokeExact("bar");
-            String x = (String) hs.get(TestAccessMode.getVolatile).invokeExact();
+            hs.get(TestAccessMode.SET_VOLATILE).invokeExact("bar");
+            String x = (String) hs.get(TestAccessMode.GET_VOLATILE).invokeExact();
             assertEquals(x, "bar", "setVolatile String value");
         }
 
         // Lazy
         {
-            hs.get(TestAccessMode.setRelease).invokeExact("foo");
-            String x = (String) hs.get(TestAccessMode.getAcquire).invokeExact();
+            hs.get(TestAccessMode.SET_RELEASE).invokeExact("foo");
+            String x = (String) hs.get(TestAccessMode.GET_ACQUIRE).invokeExact();
             assertEquals(x, "foo", "setRelease String value");
         }
 
         // Opaque
         {
-            hs.get(TestAccessMode.setOpaque).invokeExact("bar");
-            String x = (String) hs.get(TestAccessMode.getOpaque).invokeExact();
+            hs.get(TestAccessMode.SET_OPAQUE).invokeExact("bar");
+            String x = (String) hs.get(TestAccessMode.GET_OPAQUE).invokeExact();
             assertEquals(x, "bar", "setOpaque String value");
         }
 
-        hs.get(TestAccessMode.set).invokeExact("foo");
+        hs.get(TestAccessMode.SET).invokeExact("foo");
 
         // Compare
         {
-            boolean r = (boolean) hs.get(TestAccessMode.compareAndSet).invokeExact("foo", "bar");
+            boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact("foo", "bar");
             assertEquals(r, true, "success compareAndSet String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact();
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, "bar", "success compareAndSet String value");
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.compareAndSet).invokeExact("foo", "baz");
+            boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact("foo", "baz");
             assertEquals(r, false, "failing compareAndSet String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact();
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, "bar", "failing compareAndSet String value");
         }
 
         {
-            String r = (String) hs.get(TestAccessMode.compareAndExchangeVolatile).invokeExact("bar", "foo");
+            String r = (String) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact("bar", "foo");
             assertEquals(r, "bar", "success compareAndExchangeVolatile String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact();
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, "foo", "success compareAndExchangeVolatile String value");
         }
 
         {
-            String r = (String) hs.get(TestAccessMode.compareAndExchangeVolatile).invokeExact("bar", "baz");
+            String r = (String) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact("bar", "baz");
             assertEquals(r, "foo", "failing compareAndExchangeVolatile String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact();
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, "foo", "failing compareAndExchangeVolatile String value");
         }
 
         {
-            String r = (String) hs.get(TestAccessMode.compareAndExchangeAcquire).invokeExact("foo", "bar");
+            String r = (String) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact("foo", "bar");
             assertEquals(r, "foo", "success compareAndExchangeAcquire String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact();
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, "bar", "success compareAndExchangeAcquire String value");
         }
 
         {
-            String r = (String) hs.get(TestAccessMode.compareAndExchangeAcquire).invokeExact("foo", "baz");
+            String r = (String) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact("foo", "baz");
             assertEquals(r, "bar", "failing compareAndExchangeAcquire String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact();
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, "bar", "failing compareAndExchangeAcquire String value");
         }
 
         {
-            String r = (String) hs.get(TestAccessMode.compareAndExchangeRelease).invokeExact("bar", "foo");
+            String r = (String) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact("bar", "foo");
             assertEquals(r, "bar", "success compareAndExchangeRelease String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact();
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, "foo", "success compareAndExchangeRelease String value");
         }
 
         {
-            String r = (String) hs.get(TestAccessMode.compareAndExchangeRelease).invokeExact("bar", "baz");
+            String r = (String) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact("bar", "baz");
             assertEquals(r, "foo", "failing compareAndExchangeRelease String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact();
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, "foo", "failing compareAndExchangeRelease String value");
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.weakCompareAndSet).invokeExact("foo", "bar");
+            boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact("foo", "bar");
             assertEquals(r, true, "weakCompareAndSet String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact();
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, "bar", "weakCompareAndSet String value");
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.weakCompareAndSetAcquire).invokeExact("bar", "foo");
+            boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact("bar", "foo");
             assertEquals(r, true, "weakCompareAndSetAcquire String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact();
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, "foo", "weakCompareAndSetAcquire String");
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.weakCompareAndSetRelease).invokeExact( "foo", "bar");
+            boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact( "foo", "bar");
             assertEquals(r, true, "weakCompareAndSetRelease String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact();
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, "bar", "weakCompareAndSetRelease String");
         }
 
         // Compare set and get
         {
-            String o = (String) hs.get(TestAccessMode.getAndSet).invokeExact( "foo");
+            String o = (String) hs.get(TestAccessMode.GET_AND_SET).invokeExact( "foo");
             assertEquals(o, "bar", "getAndSet String");
-            String x = (String) hs.get(TestAccessMode.get).invokeExact();
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, "foo", "getAndSet String value");
         }
 
@@ -370,7 +370,7 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
 
     static void testStaticFieldUnsupported(Handles hs) throws Throwable {
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndAdd)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
             checkUOE(am, () -> {
                 String r = (String) hs.get(am).invokeExact("foo");
             });
@@ -384,118 +384,118 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
         for (int i = 0; i < array.length; i++) {
             // Plain
             {
-                hs.get(TestAccessMode.set).invokeExact(array, i, "foo");
-                String x = (String) hs.get(TestAccessMode.get).invokeExact(array, i);
+                hs.get(TestAccessMode.SET).invokeExact(array, i, "foo");
+                String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, "foo", "get String value");
             }
 
 
             // Volatile
             {
-                hs.get(TestAccessMode.setVolatile).invokeExact(array, i, "bar");
-                String x = (String) hs.get(TestAccessMode.getVolatile).invokeExact(array, i);
+                hs.get(TestAccessMode.SET_VOLATILE).invokeExact(array, i, "bar");
+                String x = (String) hs.get(TestAccessMode.GET_VOLATILE).invokeExact(array, i);
                 assertEquals(x, "bar", "setVolatile String value");
             }
 
             // Lazy
             {
-                hs.get(TestAccessMode.setRelease).invokeExact(array, i, "foo");
-                String x = (String) hs.get(TestAccessMode.getAcquire).invokeExact(array, i);
+                hs.get(TestAccessMode.SET_RELEASE).invokeExact(array, i, "foo");
+                String x = (String) hs.get(TestAccessMode.GET_ACQUIRE).invokeExact(array, i);
                 assertEquals(x, "foo", "setRelease String value");
             }
 
             // Opaque
             {
-                hs.get(TestAccessMode.setOpaque).invokeExact(array, i, "bar");
-                String x = (String) hs.get(TestAccessMode.getOpaque).invokeExact(array, i);
+                hs.get(TestAccessMode.SET_OPAQUE).invokeExact(array, i, "bar");
+                String x = (String) hs.get(TestAccessMode.GET_OPAQUE).invokeExact(array, i);
                 assertEquals(x, "bar", "setOpaque String value");
             }
 
-            hs.get(TestAccessMode.set).invokeExact(array, i, "foo");
+            hs.get(TestAccessMode.SET).invokeExact(array, i, "foo");
 
             // Compare
             {
-                boolean r = (boolean) hs.get(TestAccessMode.compareAndSet).invokeExact(array, i, "foo", "bar");
+                boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(array, i, "foo", "bar");
                 assertEquals(r, true, "success compareAndSet String");
-                String x = (String) hs.get(TestAccessMode.get).invokeExact(array, i);
+                String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, "bar", "success compareAndSet String value");
             }
 
             {
-                boolean r = (boolean) hs.get(TestAccessMode.compareAndSet).invokeExact(array, i, "foo", "baz");
+                boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(array, i, "foo", "baz");
                 assertEquals(r, false, "failing compareAndSet String");
-                String x = (String) hs.get(TestAccessMode.get).invokeExact(array, i);
+                String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, "bar", "failing compareAndSet String value");
             }
 
             {
-                String r = (String) hs.get(TestAccessMode.compareAndExchangeVolatile).invokeExact(array, i, "bar", "foo");
+                String r = (String) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(array, i, "bar", "foo");
                 assertEquals(r, "bar", "success compareAndExchangeVolatile String");
-                String x = (String) hs.get(TestAccessMode.get).invokeExact(array, i);
+                String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, "foo", "success compareAndExchangeVolatile String value");
             }
 
             {
-                String r = (String) hs.get(TestAccessMode.compareAndExchangeVolatile).invokeExact(array, i, "bar", "baz");
+                String r = (String) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(array, i, "bar", "baz");
                 assertEquals(r, "foo", "failing compareAndExchangeVolatile String");
-                String x = (String) hs.get(TestAccessMode.get).invokeExact(array, i);
+                String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, "foo", "failing compareAndExchangeVolatile String value");
             }
 
             {
-                String r = (String) hs.get(TestAccessMode.compareAndExchangeAcquire).invokeExact(array, i, "foo", "bar");
+                String r = (String) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(array, i, "foo", "bar");
                 assertEquals(r, "foo", "success compareAndExchangeAcquire String");
-                String x = (String) hs.get(TestAccessMode.get).invokeExact(array, i);
+                String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, "bar", "success compareAndExchangeAcquire String value");
             }
 
             {
-                String r = (String) hs.get(TestAccessMode.compareAndExchangeAcquire).invokeExact(array, i, "foo", "baz");
+                String r = (String) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(array, i, "foo", "baz");
                 assertEquals(r, "bar", "failing compareAndExchangeAcquire String");
-                String x = (String) hs.get(TestAccessMode.get).invokeExact(array, i);
+                String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, "bar", "failing compareAndExchangeAcquire String value");
             }
 
             {
-                String r = (String) hs.get(TestAccessMode.compareAndExchangeRelease).invokeExact(array, i, "bar", "foo");
+                String r = (String) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(array, i, "bar", "foo");
                 assertEquals(r, "bar", "success compareAndExchangeRelease String");
-                String x = (String) hs.get(TestAccessMode.get).invokeExact(array, i);
+                String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, "foo", "success compareAndExchangeRelease String value");
             }
 
             {
-                String r = (String) hs.get(TestAccessMode.compareAndExchangeRelease).invokeExact(array, i, "bar", "baz");
+                String r = (String) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(array, i, "bar", "baz");
                 assertEquals(r, "foo", "failing compareAndExchangeRelease String");
-                String x = (String) hs.get(TestAccessMode.get).invokeExact(array, i);
+                String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, "foo", "failing compareAndExchangeRelease String value");
             }
 
             {
-                boolean r = (boolean) hs.get(TestAccessMode.weakCompareAndSet).invokeExact(array, i, "foo", "bar");
+                boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(array, i, "foo", "bar");
                 assertEquals(r, true, "weakCompareAndSet String");
-                String x = (String) hs.get(TestAccessMode.get).invokeExact(array, i);
+                String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, "bar", "weakCompareAndSet String value");
             }
 
             {
-                boolean r = (boolean) hs.get(TestAccessMode.weakCompareAndSetAcquire).invokeExact(array, i, "bar", "foo");
+                boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, "bar", "foo");
                 assertEquals(r, true, "weakCompareAndSetAcquire String");
-                String x = (String) hs.get(TestAccessMode.get).invokeExact(array, i);
+                String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, "foo", "weakCompareAndSetAcquire String");
             }
 
             {
-                boolean r = (boolean) hs.get(TestAccessMode.weakCompareAndSetRelease).invokeExact(array, i, "foo", "bar");
+                boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(array, i, "foo", "bar");
                 assertEquals(r, true, "weakCompareAndSetRelease String");
-                String x = (String) hs.get(TestAccessMode.get).invokeExact(array, i);
+                String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, "bar", "weakCompareAndSetRelease String");
             }
 
             // Compare set and get
             {
-                String o = (String) hs.get(TestAccessMode.getAndSet).invokeExact(array, i, "foo");
+                String o = (String) hs.get(TestAccessMode.GET_AND_SET).invokeExact(array, i, "foo");
                 assertEquals(o, "bar", "getAndSet String");
-                String x = (String) hs.get(TestAccessMode.get).invokeExact(array, i);
+                String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, "foo", "getAndSet String value");
             }
 
@@ -507,7 +507,7 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
 
         final int i = 0;
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndAdd)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
             checkUOE(am, () -> {
                 String o = (String) hs.get(am).invokeExact(array, i, "foo");
             });
@@ -520,31 +520,31 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
         for (int i : new int[]{-1, Integer.MIN_VALUE, 10, 11, Integer.MAX_VALUE}) {
             final int ci = i;
 
-            for (TestAccessMode am : testAccessModesOfType(TestAccessType.get)) {
+            for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET)) {
                 checkIOOBE(am, () -> {
                     String x = (String) hs.get(am).invokeExact(array, ci);
                 });
             }
 
-            for (TestAccessMode am : testAccessModesOfType(TestAccessType.set)) {
+            for (TestAccessMode am : testAccessModesOfType(TestAccessType.SET)) {
                 checkIOOBE(am, () -> {
                     hs.get(am).invokeExact(array, ci, "foo");
                 });
             }
 
-            for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndSet)) {
+            for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
                 checkIOOBE(am, () -> {
                     boolean r = (boolean) hs.get(am).invokeExact(array, ci, "foo", "bar");
                 });
             }
 
-            for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndExchange)) {
+            for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
                 checkIOOBE(am, () -> {
                     String r = (String) hs.get(am).invokeExact(array, ci, "bar", "foo");
                 });
             }
 
-            for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndSet)) {
+            for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
                 checkIOOBE(am, () -> {
                     String o = (String) hs.get(am).invokeExact(array, ci, "foo");
                 });

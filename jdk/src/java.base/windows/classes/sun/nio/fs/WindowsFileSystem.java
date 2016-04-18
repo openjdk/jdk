@@ -31,9 +31,6 @@ import java.nio.file.spi.*;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import sun.security.action.GetPropertyAction;
 
 class WindowsFileSystem
     extends FileSystem
@@ -43,9 +40,6 @@ class WindowsFileSystem
     // default directory (is absolute), and default root
     private final String defaultDirectory;
     private final String defaultRoot;
-
-    private final boolean supportsLinks;
-    private final boolean supportsStreamEnumeration;
 
     // package-private
     WindowsFileSystem(WindowsFileSystemProvider provider,
@@ -61,18 +55,6 @@ class WindowsFileSystem
             throw new AssertionError("Default directory is not an absolute path");
         this.defaultDirectory = result.path();
         this.defaultRoot = result.root();
-
-        PrivilegedAction<String> pa = new GetPropertyAction("os.version");
-        String osversion = AccessController.doPrivileged(pa);
-        String[] vers = Util.split(osversion, '.');
-        int major = Integer.parseInt(vers[0]);
-        int minor = Integer.parseInt(vers[1]);
-
-        // symbolic links available on Vista and newer
-        supportsLinks = (major >= 6);
-
-        // enumeration of data streams available on Windows Server 2003 and newer
-        supportsStreamEnumeration = (major >= 6) || (major == 5 && minor >= 2);
     }
 
     // package-private
@@ -82,14 +64,6 @@ class WindowsFileSystem
 
     String defaultRoot() {
         return defaultRoot;
-    }
-
-    boolean supportsLinks() {
-        return supportsLinks;
-    }
-
-    boolean supportsStreamEnumeration() {
-        return supportsStreamEnumeration;
     }
 
     @Override

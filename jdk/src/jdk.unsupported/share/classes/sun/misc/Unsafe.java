@@ -27,8 +27,8 @@ package sun.misc;
 
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.misc.VM;
-import sun.reflect.CallerSensitive;
-import sun.reflect.Reflection;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 
 import java.lang.reflect.Field;
 import java.security.ProtectionDomain;
@@ -55,7 +55,7 @@ import java.security.ProtectionDomain;
 public final class Unsafe {
 
     static {
-        sun.reflect.Reflection.registerMethodsToFilter(Unsafe.class, "getUnsafe");
+        Reflection.registerMethodsToFilter(Unsafe.class, "getUnsafe");
     }
 
     private Unsafe() {}

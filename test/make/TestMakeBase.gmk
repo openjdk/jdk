@@ -254,4 +254,14 @@ ifneq ($(call sequence, 5, 15), 5 6 7 8 9 10 11 12 13 14 15)
       but was $(call sequence, 5, 15))
 endif
 
+################################################################################
+# Test that PathList is safe when called multiple nested times.
+
+PATHLIST_INPUT := foo bar baz
+
+$(eval $(call assert-equals, \
+    $(call PathList, $(call PathList, $(PATHLIST_INPUT))), \
+    $(call PathList, $(PATHLIST_INPUT)), \
+    PathList call not safe for calling twice))
+
 all: $(TEST_TARGETS)

@@ -29,6 +29,7 @@ import java.nio.file.attribute.*;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * File attribute view for jrt file system.
@@ -42,7 +43,6 @@ import java.util.Map;
 final class JrtFileAttributeView implements BasicFileAttributeView {
 
     private static enum AttrID {
-
         size,
         creationTime,
         lastAccessTime,
@@ -56,21 +56,19 @@ final class JrtFileAttributeView implements BasicFileAttributeView {
         extension
     };
 
-    private final AbstractJrtPath path;
+    private final JrtPath path;
     private final boolean isJrtView;
     private final LinkOption[] options;
 
-    private JrtFileAttributeView(AbstractJrtPath path, boolean isJrtView, LinkOption... options) {
+    private JrtFileAttributeView(JrtPath path, boolean isJrtView, LinkOption... options) {
         this.path = path;
         this.isJrtView = isJrtView;
         this.options = options;
     }
 
     @SuppressWarnings("unchecked") // Cast to V
-    static <V extends FileAttributeView> V get(AbstractJrtPath path, Class<V> type, LinkOption... options) {
-        if (type == null) {
-            throw new NullPointerException();
-        }
+    static <V extends FileAttributeView> V get(JrtPath path, Class<V> type, LinkOption... options) {
+        Objects.requireNonNull(type);
         if (type == BasicFileAttributeView.class) {
             return (V) new JrtFileAttributeView(path, false, options);
         }
@@ -80,10 +78,8 @@ final class JrtFileAttributeView implements BasicFileAttributeView {
         return null;
     }
 
-    static JrtFileAttributeView get(AbstractJrtPath path, String type, LinkOption... options) {
-        if (type == null) {
-            throw new NullPointerException();
-        }
+    static JrtFileAttributeView get(JrtPath path, String type, LinkOption... options) {
+        Objects.requireNonNull(type);
         if (type.equals("basic")) {
             return new JrtFileAttributeView(path, false, options);
         }
@@ -99,61 +95,74 @@ final class JrtFileAttributeView implements BasicFileAttributeView {
     }
 
     @Override
-    public AbstractJrtFileAttributes readAttributes() throws IOException {
+    public JrtFileAttributes readAttributes() throws IOException {
         return path.getAttributes(options);
     }
 
     @Override
     public void setTimes(FileTime lastModifiedTime,
-            FileTime lastAccessTime,
-            FileTime createTime)
-            throws IOException {
+                         FileTime lastAccessTime,
+                         FileTime createTime) throws IOException {
         path.setTimes(lastModifiedTime, lastAccessTime, createTime);
     }
 
-    void setAttribute(String attribute, Object value)
+    static void setAttribute(JrtPath path, String attribute, Object value)
             throws IOException {
+        int colonPos = attribute.indexOf(':');
+        if (colonPos != -1) {    // type = "basic", if no ":"
+            String type = attribute.substring(0, colonPos++);
+            if (!type.equals("basic") && !type.equals("jrt")) {
+                throw new UnsupportedOperationException(
+                    "view <" + type + "> is not supported");
+            }
+            attribute = attribute.substring(colonPos);
+        }
         try {
-            if (AttrID.valueOf(attribute) == AttrID.lastModifiedTime) {
-                setTimes((FileTime) value, null, null);
-            }
-            if (AttrID.valueOf(attribute) == AttrID.lastAccessTime) {
-                setTimes(null, (FileTime) value, null);
-            }
-            if (AttrID.valueOf(attribute) == AttrID.creationTime) {
-                setTimes(null, null, (FileTime) value);
+            AttrID id = AttrID.valueOf(attribute);
+            if (id == AttrID.lastModifiedTime) {
+                path.setTimes((FileTime) value, null, null);
+            } else if (id == AttrID.lastAccessTime) {
+                path.setTimes(null, (FileTime) value, null);
+            } else if (id == AttrID.creationTime) {
+                path.setTimes(null, null, (FileTime) value);
             }
             return;
-        } catch (IllegalArgumentException x) {
-        }
+        } catch (IllegalArgumentException x) {}
         throw new UnsupportedOperationException("'" + attribute
                 + "' is unknown or read-only attribute");
     }
 
-    Map<String, Object> readAttributes(String attributes)
+    static Map<String, Object> readAttributes(JrtPath path, String attributes,
+                                              LinkOption... options)
             throws IOException {
-        AbstractJrtFileAttributes jrtfas = readAttributes();
+        int colonPos = attributes.indexOf(':');
+        boolean isJrtView = false;
+        if (colonPos != -1) {    // type = "basic", if no ":"
+            String type = attributes.substring(0, colonPos++);
+            if (!type.equals("basic") && !type.equals("jrt")) {
+                throw new UnsupportedOperationException("view <" + type +
+                                                        "> is not supported");
+            }
+            isJrtView = true;
+            attributes = attributes.substring(colonPos);
+        }
+        JrtFileAttributes jrtfas = path.getAttributes();
         LinkedHashMap<String, Object> map = new LinkedHashMap<>();
         if ("*".equals(attributes)) {
             for (AttrID id : AttrID.values()) {
-                try {
-                    map.put(id.name(), attribute(id, jrtfas));
-                } catch (IllegalArgumentException x) {
-                }
+                map.put(id.name(), attribute(id, jrtfas, isJrtView));
             }
         } else {
             String[] as = attributes.split(",");
             for (String a : as) {
-                try {
-                    map.put(a, attribute(AttrID.valueOf(a), jrtfas));
-                } catch (IllegalArgumentException x) {
-                }
+                //throw IllegalArgumentException
+                map.put(a, attribute(AttrID.valueOf(a), jrtfas, isJrtView));
             }
         }
         return map;
     }
 
-    Object attribute(AttrID id, AbstractJrtFileAttributes jrtfas) {
+    static Object attribute(AttrID id, JrtFileAttributes jrtfas, boolean isJrtView) {
         switch (id) {
             case size:
                 return jrtfas.size();

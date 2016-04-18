@@ -273,8 +273,7 @@ public class ReplToolTesting {
     }
 
     public void evaluateExpression(boolean after, String type, String expr, String value) {
-        String output = String.format("\\| *Expression values is: %s\n|" +
-                " *.*temporary variable (\\$\\d+) of type %s", value, type);
+        String output = String.format("(\\$\\d+) ==> %s", value);
         Pattern outputPattern = Pattern.compile(output);
         assertCommandCheckOutput(after, expr, s -> {
             Matcher matcher = outputPattern.matcher(s);
@@ -558,14 +557,19 @@ public class ReplToolTesting {
 
         @Override
         public Consumer<String> checkOutput() {
-            String pattern = String.format("\\| *\\w+ variable %s of type %s", name, type);
-            if (initialValue != null) {
-                pattern += " with initial value " + initialValue;
-            }
-            Predicate<String> checkOutput = Pattern.compile(pattern).asPredicate();
-            final String finalPattern = pattern;
-            return output -> assertTrue(checkOutput.test(output),
-                    "Output: " + output + " does not fit pattern: " + finalPattern);
+            String arrowPattern = String.format("%s ==> %s", name, value);
+            Predicate<String> arrowCheckOutput = Pattern.compile(arrowPattern).asPredicate();
+            String howeverPattern = String.format("\\| *\\w+ variable %s, however*.", name);
+            Predicate<String> howeverCheckOutput = Pattern.compile(howeverPattern).asPredicate();
+            return output -> {
+                if (output.startsWith("|  ")) {
+                    assertTrue(howeverCheckOutput.test(output),
+                    "Output: " + output + " does not fit pattern: " + howeverPattern);
+                } else {
+                    assertTrue(arrowCheckOutput.test(output),
+                    "Output: " + output + " does not fit pattern: " + arrowPattern);
+                }
+            };
         }
 
         @Override

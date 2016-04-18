@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -619,8 +619,7 @@ class ObjectIdentifier implements Serializable
         }
     }
     private static void checkFirstComponent(BigInteger first) throws IOException {
-        if (first.signum() == -1 ||
-                first.compareTo(BigInteger.valueOf(2)) == 1) {
+        if (first.signum() == -1 || first.compareTo(BigInteger.TWO) > 0) {
             throw new IOException("ObjectIdentifier() -- " +
                     "First oid component is invalid ");
         }

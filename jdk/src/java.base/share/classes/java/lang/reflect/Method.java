@@ -27,9 +27,9 @@ package java.lang.reflect;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.misc.SharedSecrets;
-import sun.reflect.CallerSensitive;
-import sun.reflect.MethodAccessor;
-import sun.reflect.Reflection;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.MethodAccessor;
+import jdk.internal.reflect.Reflection;
 import sun.reflect.generics.repository.MethodRepository;
 import sun.reflect.generics.factory.CoreReflectionFactory;
 import sun.reflect.generics.factory.GenericsFactory;

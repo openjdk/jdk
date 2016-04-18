@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
     private void checkPermission() {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            String home = SystemImages.RUNTIME_HOME;
+            String home = SystemImage.RUNTIME_HOME;
             FilePermission perm
                     = new FilePermission(home + File.separator + "-", "read");
             sm.checkPermission(perm);
@@ -107,9 +107,7 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
         if (env != null && env.containsKey("java.home")) {
             return newFileSystem((String)env.get("java.home"), uri, env);
         } else {
-            return SystemImages.hasModulesImage()
-                    ? new JrtFileSystem(this, env)
-                    : new JrtExplodedFileSystem(this, env);
+            return new JrtFileSystem(this, env);
         }
     }
 
@@ -121,7 +119,6 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
         if (Files.notExists(jrtfs)) {
             throw new IOException(jrtfs.toString() + " not exist");
         }
-
         Map<String,?> newEnv = new HashMap<>(env);
         newEnv.remove("java.home");
         ClassLoader cl = newJrtFsLoader(jrtfs);
@@ -139,7 +136,6 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
         JrtFsLoader(URL[] urls) {
             super(urls);
         }
-
         @Override
         protected Class<?> loadClass(String cn, boolean resolve)
                 throws ClassNotFoundException
@@ -208,21 +204,7 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
                 fs = this.theFileSystem;
                 if (fs == null) {
                     try {
-                        if (SystemImages.hasModulesImage()) {
-                            this.theFileSystem = fs = new JrtFileSystem(this, null) {
-                                @Override
-                                public void close() {
-                                    throw new UnsupportedOperationException();
-                                }
-                            };
-                        } else {
-                            this.theFileSystem = fs = new JrtExplodedFileSystem(this, null) {
-                                @Override
-                                public void close() {
-                                    throw new UnsupportedOperationException();
-                                }
-                            };
-                        }
+                        this.theFileSystem = fs = new JrtFileSystem(this, null);
                     } catch (IOException ioe) {
                         throw new InternalError(ioe);
                     }
@@ -240,69 +222,67 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
     }
 
     // Checks that the given file is a JrtPath
-    static final AbstractJrtPath toAbstractJrtPath(Path path) {
-        if (path == null) {
-            throw new NullPointerException();
-        }
-        if (!(path instanceof AbstractJrtPath)) {
+    static final JrtPath toJrtPath(Path path) {
+        Objects.requireNonNull(path, "path");
+        if (!(path instanceof JrtPath)) {
             throw new ProviderMismatchException();
         }
-        return (AbstractJrtPath) path;
+        return (JrtPath) path;
     }
 
     @Override
     public void checkAccess(Path path, AccessMode... modes) throws IOException {
-        toAbstractJrtPath(path).checkAccess(modes);
+        toJrtPath(path).checkAccess(modes);
     }
 
     @Override
     public Path readSymbolicLink(Path link) throws IOException {
-        return toAbstractJrtPath(link).readSymbolicLink();
+        return toJrtPath(link).readSymbolicLink();
     }
 
     @Override
     public void copy(Path src, Path target, CopyOption... options)
             throws IOException {
-        toAbstractJrtPath(src).copy(toAbstractJrtPath(target), options);
+        toJrtPath(src).copy(toJrtPath(target), options);
     }
 
     @Override
     public void createDirectory(Path path, FileAttribute<?>... attrs)
             throws IOException {
-        toAbstractJrtPath(path).createDirectory(attrs);
+        toJrtPath(path).createDirectory(attrs);
     }
 
     @Override
     public final void delete(Path path) throws IOException {
-        toAbstractJrtPath(path).delete();
+        toJrtPath(path).delete();
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <V extends FileAttributeView> V
             getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
-        return JrtFileAttributeView.get(toAbstractJrtPath(path), type, options);
+        return JrtFileAttributeView.get(toJrtPath(path), type, options);
     }
 
     @Override
     public FileStore getFileStore(Path path) throws IOException {
-        return toAbstractJrtPath(path).getFileStore();
+        return toJrtPath(path).getFileStore();
     }
 
     @Override
     public boolean isHidden(Path path) {
-        return toAbstractJrtPath(path).isHidden();
+        return toJrtPath(path).isHidden();
     }
 
     @Override
     public boolean isSameFile(Path path, Path other) throws IOException {
-        return toAbstractJrtPath(path).isSameFile(other);
+        return toJrtPath(path).isSameFile(other);
     }
 
     @Override
     public void move(Path src, Path target, CopyOption... options)
             throws IOException {
-        toAbstractJrtPath(src).move(toAbstractJrtPath(target), options);
+        toJrtPath(src).move(toJrtPath(target), options);
     }
 
     @Override
@@ -319,13 +299,13 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
             Set<? extends OpenOption> options,
             FileAttribute<?>... attrs)
             throws IOException {
-        return toAbstractJrtPath(path).newByteChannel(options, attrs);
+        return toJrtPath(path).newByteChannel(options, attrs);
     }
 
     @Override
     public DirectoryStream<Path> newDirectoryStream(
             Path path, Filter<? super Path> filter) throws IOException {
-        return toAbstractJrtPath(path).newDirectoryStream(filter);
+        return toJrtPath(path).newDirectoryStream(filter);
     }
 
     @Override
@@ -333,19 +313,19 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
             Set<? extends OpenOption> options,
             FileAttribute<?>... attrs)
             throws IOException {
-        return toAbstractJrtPath(path).newFileChannel(options, attrs);
+        return toJrtPath(path).newFileChannel(options, attrs);
     }
 
     @Override
     public InputStream newInputStream(Path path, OpenOption... options)
             throws IOException {
-        return toAbstractJrtPath(path).newInputStream(options);
+        return toJrtPath(path).newInputStream(options);
     }
 
     @Override
     public OutputStream newOutputStream(Path path, OpenOption... options)
             throws IOException {
-        return toAbstractJrtPath(path).newOutputStream(options);
+        return toJrtPath(path).newOutputStream(options);
     }
 
     @Override
@@ -354,7 +334,7 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
             readAttributes(Path path, Class<A> type, LinkOption... options)
             throws IOException {
         if (type == BasicFileAttributes.class || type == JrtFileAttributes.class) {
-            return (A) toAbstractJrtPath(path).getAttributes(options);
+            return (A) toJrtPath(path).getAttributes(options);
         }
         return null;
     }
@@ -363,13 +343,13 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
     public Map<String, Object>
             readAttributes(Path path, String attribute, LinkOption... options)
             throws IOException {
-        return toAbstractJrtPath(path).readAttributes(attribute, options);
+        return toJrtPath(path).readAttributes(attribute, options);
     }
 
     @Override
     public void setAttribute(Path path, String attribute,
             Object value, LinkOption... options)
             throws IOException {
-        toAbstractJrtPath(path).setAttribute(attribute, value, options);
+        toJrtPath(path).setAttribute(attribute, value, options);
     }
 }

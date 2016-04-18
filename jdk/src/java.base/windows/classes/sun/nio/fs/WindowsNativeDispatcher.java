@@ -1071,54 +1071,6 @@ class WindowsNativeDispatcher {
     static native int GetOverlappedResult(long hFile, long lpOverlapped)
         throws WindowsException;
 
-    /**
-     * BackupRead(
-     *   HANDLE hFile,
-     *   LPBYTE lpBuffer,
-     *   DWORD nNumberOfBytesToRead,
-     *   LPDWORD lpNumberOfBytesRead,
-     *   BOOL bAbort,
-     *   BOOL bProcessSecurity,
-     *   LPVOID* lpContext
-     * )
-     */
-    static BackupResult BackupRead(long hFile,
-                                   long bufferAddress,
-                                   int bufferSize,
-                                   boolean abort,
-                                   long context)
-        throws WindowsException
-    {
-        BackupResult result = new BackupResult();
-        BackupRead0(hFile, bufferAddress, bufferSize, abort, context, result);
-        return result;
-    }
-    static class BackupResult {
-        private int bytesTransferred;
-        private long context;
-        private BackupResult() { }
-
-        int bytesTransferred() { return bytesTransferred; }
-        long context() { return context; }
-    }
-    private static native void BackupRead0(long hFile, long bufferAddress,
-        int bufferSize, boolean abort, long context, BackupResult result)
-        throws WindowsException;
-
-    /**
-     * BackupSeek(
-     *   HANDLE hFile,
-     *   DWORD dwLowBytesToSeek,
-     *   DWORD dwHighBytesToSeek,
-     *   LPDWORD lpdwLowByteSeeked,
-     *   LPDWORD lpdwHighByteSeeked,
-     *   LPVOID* lpContext
-     * )
-     */
-    static native void BackupSeek(long hFile, long bytesToSeek, long context)
-        throws WindowsException;
-
-
     // -- support for copying String with a NativeBuffer --
 
     private static final Unsafe unsafe = Unsafe.getUnsafe();

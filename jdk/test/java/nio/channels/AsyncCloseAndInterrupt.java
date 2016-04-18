@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 4460583 4470470 4840199 6419424 6710579 6596323 6824135 6395224 7142919
- *      8151582
+ *      8151582 8068693 8153209
  * @run main/othervm AsyncCloseAndInterrupt
  * @summary Comprehensive test of asynchronous closing and interruption
  * @author Mark Reinhold
@@ -557,7 +557,11 @@ public class AsyncCloseAndInterrupt {
     }
 
     // Test
-    static void test(ChannelFactory cf, Op op, int test)
+    static void test(ChannelFactory cf, Op op, int test) throws Exception {
+        test(cf, op, test, true);
+    }
+
+    static void test(ChannelFactory cf, Op op, int test, boolean extraSleep)
         throws Exception
     {
         log.println();
@@ -570,6 +574,10 @@ public class AsyncCloseAndInterrupt {
         do {
             sleep(50);
         } while (!t.ready);
+
+        if (extraSleep) {
+            sleep(100);
+        }
 
         switch (test) {
 
@@ -603,15 +611,18 @@ public class AsyncCloseAndInterrupt {
             break;
         }
 
-        t.finishAndThrow(500);
+        t.finishAndThrow(10000);
     }
 
-
     static void test(ChannelFactory cf, Op op) throws Exception {
+        test(cf, op, true);
+    }
+
+    static void test(ChannelFactory cf, Op op, boolean extraSleep) throws Exception {
         // Test INTR cases before PREINTER cases since sometimes
         // interrupted threads can't load classes
-        test(cf, op, TEST_INTR);
-        test(cf, op, TEST_PREINTR);
+        test(cf, op, TEST_INTR, extraSleep);
+        test(cf, op, TEST_PREINTR, extraSleep);
 
         // Bugs, see FileChannelImpl for details
         if (op == TRANSFER_FROM) {
@@ -623,7 +634,7 @@ public class AsyncCloseAndInterrupt {
             return;
         }
 
-        test(cf, op, TEST_CLOSE);
+        test(cf, op, TEST_CLOSE, extraSleep);
     }
 
     static void test(ChannelFactory cf)
@@ -720,8 +731,8 @@ public class AsyncCloseAndInterrupt {
                 Future<Integer> pumpFuture = pumpRefuser(pumperExecutor);
                 waitPump("\nWait for initial Pump");
 
-                test(socketChannelFactory, CONNECT);
-                test(socketChannelFactory, FINISH_CONNECT);
+                test(socketChannelFactory, CONNECT, false);
+                test(socketChannelFactory, FINISH_CONNECT, false);
 
                 pumpDone = true;
                 Integer newConn = pumpFuture.get(30, TimeUnit.SECONDS);

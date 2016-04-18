@@ -52,6 +52,11 @@ import static java.security.AccessController.doPrivileged;
  */
 final class ProcessHandleImpl implements ProcessHandle {
     /**
+     * Default size of stack for reaper processes.
+     */
+    private static long REAPER_DEFAULT_STACKSIZE = 128 * 1024;
+
+    /**
      * Cache the ProcessHandle of this process.
      */
     private static final ProcessHandleImpl current;
@@ -79,10 +84,12 @@ final class ProcessHandleImpl implements ProcessHandle {
                 ThreadGroup tg = Thread.currentThread().getThreadGroup();
                 while (tg.getParent() != null) tg = tg.getParent();
                 ThreadGroup systemThreadGroup = tg;
+                final long stackSize = Boolean.getBoolean("jdk.lang.processReaperUseDefaultStackSize")
+                        ? 0 : REAPER_DEFAULT_STACKSIZE;
 
                 ThreadFactory threadFactory = grimReaper -> {
-                    long stackSize = Boolean.getBoolean("jdk.lang.processReaperUseDefaultStackSize") ? 0 : 32768;
-                    Thread t = new Thread(systemThreadGroup, grimReaper, "process reaper", stackSize);
+                    Thread t = new Thread(systemThreadGroup, grimReaper,
+                            "process reaper", stackSize, false);
                     t.setDaemon(true);
                     // A small attempt (probably futile) to avoid priority inversion
                     t.setPriority(Thread.MAX_PRIORITY);

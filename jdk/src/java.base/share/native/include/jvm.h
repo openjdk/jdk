@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,11 +171,8 @@ JVM_IsSupportedJNIVersion(jint version);
 JNIEXPORT void JNICALL
 JVM_FillInStackTrace(JNIEnv *env, jobject throwable);
 
-JNIEXPORT jint JNICALL
-JVM_GetStackTraceDepth(JNIEnv *env, jobject throwable);
-
-JNIEXPORT jobject JNICALL
-JVM_GetStackTraceElement(JNIEnv *env, jobject throwable, jint index);
+JNIEXPORT void JNICALL
+JVM_GetStackTraceElements(JNIEnv *env, jobject throwable, jobjectArray elements);
 
 /*
  * java.lang.StackWalker

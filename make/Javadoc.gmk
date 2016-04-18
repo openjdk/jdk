@@ -235,6 +235,11 @@ JDK_API_DOCSDIR = $(DOCSDIR)/jdk/api
 JRE_API_DOCSDIR = $(DOCSDIR)/jre/api
 PLATFORM_DOCSDIR = $(DOCSDIR)/platform
 
+JAVADOC_ARCHIVE_NAME := jdk-$(VERSION_STRING)-docs.zip
+JAVADOC_ARCHIVE_ASSEMBLY_DIR :=  $(DOCSTMPDIR)/zip-docs
+JAVADOC_ARCHIVE_DIR := $(OUTPUT_ROOT)/bundles
+JAVADOC_ARCHIVE := $(JAVADOC_ARCHIVE_DIR)/$(JAVADOC_ARCHIVE_NAME)
+
 # The core api index file is the target for the core api javadocs rule
 # and needs to be defined early so that all other javadoc rules may
 # depend on it.
@@ -377,6 +382,13 @@ $(eval $(call IncludeCustomExtension, , Javadoc.gmk))
 
 all: docs
 docs: coredocs otherdocs
+
+#
+# Optional target which bundles all generated javadocs into a zip archive.
+# The dependency on docs is handled in Main.gmk.
+#
+
+zip-docs: $(JAVADOC_ARCHIVE)
 
 #############################################################
 #
@@ -1671,6 +1683,28 @@ $(JLINK_PLUGIN_PACKAGES_FILE): $(call PackageDependencies,$(JLINK_PLUGIN_PKGS))
 
 otherdocs: $(ALL_OTHER_TARGETS)
 
+#
+# Add the core docs as prerequisite to the archive to trigger a rebuild
+# if the core docs were rebuilt. Ideally any doc rebuild should trigger
+# this, but the way prerequisites are currently setup in this file, that
+# is hard to achieve.
+#
+
+$(JAVADOC_ARCHIVE): $(COREAPI_INDEX_FILE)
+	$(call LogInfo, Compressing javadoc to single $(JAVADOC_ARCHIVE_NAME))
+	$(MKDIR) -p $(JAVADOC_ARCHIVE_DIR)
+	$(RM) -r $(JAVADOC_ARCHIVE_ASSEMBLY_DIR)
+	$(MKDIR) -p $(JAVADOC_ARCHIVE_ASSEMBLY_DIR)
+	all_roots=`$(FIND) $(DOCSDIR) | $(GREP) index.html | grep -v old/doclet`; \
+	pushd $(JAVADOC_ARCHIVE_ASSEMBLY_DIR); \
+	for index_file in $${all_roots} ; do \
+	  target_dir=`dirname $${index_file}`; \
+	  name=`$(ECHO) $${target_dir} | $(SED) "s;/spec;;" | $(SED) "s;.*/;;"`; \
+	  $(LN) -s $${target_dir}  $${name}; \
+	done; \
+	$(ZIP) -q -r $(JAVADOC_ARCHIVE) * ; \
+	popd ;
+
 #############################################################
 .PHONY: all docs coredocs otherdocs \
-     $(ALL_OTHER_TARGETS)
+     $(ALL_OTHER_TARGETS) zip-docs

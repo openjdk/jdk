@@ -138,26 +138,35 @@ endif
 ################################################################################
 # Module list macros
 
-# Use append so that the custom extension may add to this variable
+# Use append so that the custom extension may add to these variables
 
-ALL_TOP_SRC_DIRS += \
+GENERATED_SRC_DIRS += \
+    $(SUPPORT_OUTPUTDIR)/gensrc \
+    #
+
+TOP_SRC_DIRS += \
+    $(CORBA_TOPDIR)/src \
     $(HOTSPOT_TOPDIR)/src \
     $(JDK_TOPDIR)/src \
     $(LANGTOOLS_TOPDIR)/src \
-    $(CORBA_TOPDIR)/src \
     $(JAXP_TOPDIR)/src \
     $(JAXWS_TOPDIR)/src \
     $(NASHORN_TOPDIR)/src \
     #
+
+SRC_SUBDIRS += $(OPENJDK_TARGET_OS)/classes
+ifneq ($(OPENJDK_TARGET_OS), $(OPENJDK_TARGET_OS_TYPE))
+  SRC_SUBDIRS += $(OPENJDK_TARGET_OS_TYPE)/classes
+endif
+SRC_SUBDIRS += share/classes
 
 # Find all module-info.java files for the current build target platform and
 # configuration.
 # Param 1 - Module to find for, set to * for finding all
 FindAllModuleInfos = \
     $(wildcard \
-        $(patsubst %,%/$(strip $1)/$(OPENJDK_TARGET_OS)/classes/module-info.java, $(ALL_TOP_SRC_DIRS)) \
-        $(patsubst %,%/$(strip $1)/$(OPENJDK_TARGET_OS_TYPE)/classes/module-info.java, $(ALL_TOP_SRC_DIRS)) \
-        $(patsubst %,%/$(strip $1)/share/classes/module-info.java, $(ALL_TOP_SRC_DIRS)) \
+        $(foreach sub, $(SRC_SUBDIRS), \
+          $(patsubst %,%/$(strip $1)/$(sub)/module-info.java, $(TOP_SRC_DIRS))) \
         $(patsubst %,%/$(strip $1)/module-info.java, $(IMPORT_MODULES_SRC)))
 
 # Extract the module names from the paths of module-info.java files. The
@@ -177,6 +186,19 @@ FindAllModules = \
 
 FindImportedModules = \
     $(if $(IMPORT_MODULES_CLASSES), $(notdir $(wildcard $(IMPORT_MODULES_CLASSES)/*)))
+
+# Find all source dirs for a particular module
+# $1 - Module to find source dirs for
+FindModuleSrcDirs = \
+    $(strip $(wildcard \
+        $(addsuffix /$(strip $1), $(GENERATED_SRC_DIRS) $(IMPORT_MODULES_SRC)) \
+        $(foreach sub, $(SRC_SUBDIRS), $(addsuffix /$(strip $1)/$(sub), $(TOP_SRC_DIRS)))))
+
+# Construct the complete module source path
+GetModuleSrcPath = \
+    $(call PathList, \
+        $(addsuffix /*, $(GENERATED_SRC_DIRS) $(IMPORT_MODULES_SRC)) \
+        $(foreach sub, $(SRC_SUBDIRS), $(addsuffix /*/$(sub), $(TOP_SRC_DIRS))))
 
 ################################################################################
 # Extract module dependencies from module-info.java files.

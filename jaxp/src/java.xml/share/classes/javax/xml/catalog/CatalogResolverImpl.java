@@ -52,8 +52,8 @@ final class CatalogResolverImpl implements CatalogResolver {
     @Override
     public InputSource resolveEntity(String publicId, String systemId) {
         //Normalize publicId and systemId
-        systemId = Normalizer.normalizeURI(systemId);
-        publicId = Normalizer.normalizePublicId(Normalizer.decodeURN(publicId));
+        systemId = Normalizer.normalizeURI(Util.getNotNullOrEmpty(systemId));
+        publicId = Normalizer.normalizePublicId(Normalizer.decodeURN(Util.getNotNullOrEmpty(publicId)));
 
         //check whether systemId is an urn
         if (systemId != null && systemId.startsWith("urn:publicid:")) {
@@ -87,7 +87,17 @@ final class CatalogResolverImpl implements CatalogResolver {
     }
 
     /**
-     * Resolves the publicId or systemId to one specified in the catalog.
+     * Resolves the publicId or systemId using public or system entries in the catalog.
+     *
+     * The resolution follows the following rules determined by the prefer setting:
+     *
+     * prefer "system": attempts to resolve with a system entry;
+     *                  attempts to resolve with a public entry when only
+     *                  publicId is specified.
+     *
+     * prefer "public": attempts to resolve with a system entry;
+     *                  attempts to resolve with a public entry if no matching
+     *                  system entry is found.
      * @param catalog the catalog
      * @param publicId the publicId
      * @param systemId the systemId
@@ -99,9 +109,14 @@ final class CatalogResolverImpl implements CatalogResolver {
         //search the current catalog
         catalog.reset();
         if (systemId != null) {
+            /*
+               If a system identifier is specified, it is used no matter how
+            prefer is set.
+            */
             resolvedSystemId = catalog.matchSystem(systemId);
         }
-        if (resolvedSystemId == null) {
+
+        if (resolvedSystemId == null && publicId != null) {
             resolvedSystemId = catalog.matchPublic(publicId);
         }
 

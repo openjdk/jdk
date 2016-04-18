@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import sun.security.jca.JCAUtil;
  *
  */
 public class DSAKeyPairGenerator extends KeyPairGenerator
-implements java.security.interfaces.DSAKeyPairGenerator {
+        implements java.security.interfaces.DSAKeyPairGenerator {
 
     /* Length for prime P and subPrime Q in bits */
     private int plen;
@@ -74,6 +74,8 @@ implements java.security.interfaces.DSAKeyPairGenerator {
             // N=160
         } else if (sizeP == 2048 && (sizeQ == 224 || sizeQ == 256)) {
             // L=2048, N=224 or 256
+        } else if (sizeP == 3072 && sizeQ == 256) {
+            // L=3072, N=256
         } else {
             throw new InvalidParameterException
                 ("Unsupported prime and subprime size combination: " +
@@ -91,12 +93,17 @@ implements java.security.interfaces.DSAKeyPairGenerator {
      * Initializes the DSA key pair generator. If <code>genParams</code>
      * is false, a set of pre-computed parameters is used.
      */
-    public void initialize(int modlen, boolean genParams, SecureRandom random) {
+    @Override
+    public void initialize(int modlen, boolean genParams, SecureRandom random)
+            throws InvalidParameterException {
+
         int subPrimeLen = -1;
         if (modlen <= 1024) {
             subPrimeLen = 160;
         } else if (modlen == 2048) {
             subPrimeLen = 224;
+        } else if (modlen == 3072) {
+            subPrimeLen = 256;
         }
         checkStrength(modlen, subPrimeLen);
         if (genParams) {
@@ -122,7 +129,10 @@ implements java.security.interfaces.DSAKeyPairGenerator {
      *
      * @param params a fully initialized DSA parameter object.
      */
-    public void initialize(DSAParams params, SecureRandom random) {
+    @Override
+    public void initialize(DSAParams params, SecureRandom random)
+            throws InvalidParameterException {
+
         if (params == null) {
             throw new InvalidParameterException("Params must not be null");
         }
