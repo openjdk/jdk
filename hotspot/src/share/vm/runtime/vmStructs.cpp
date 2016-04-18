@@ -662,11 +662,11 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /* CompactHashTable */                                                                                                             \
   /********************/                                                                                                             \
                                                                                                                                      \
-  nonstatic_field(SymbolCompactHashTable,      _base_address,                                 uintx)                                 \
-  nonstatic_field(SymbolCompactHashTable,      _entry_count,                                  juint)                                 \
-  nonstatic_field(SymbolCompactHashTable,      _bucket_count,                                 juint)                                 \
-  nonstatic_field(SymbolCompactHashTable,      _table_end_offset,                             juint)                                 \
-  nonstatic_field(SymbolCompactHashTable,      _buckets,                                      juint*)                                \
+  nonstatic_field(SymbolCompactHashTable,      _base_address,                                 address)                               \
+  nonstatic_field(SymbolCompactHashTable,      _entry_count,                                  u4)                                    \
+  nonstatic_field(SymbolCompactHashTable,      _bucket_count,                                 u4)                                    \
+  nonstatic_field(SymbolCompactHashTable,      _buckets,                                      u4*)                                   \
+  nonstatic_field(SymbolCompactHashTable,      _entries,                                      u4*)                                   \
                                                                                                                                      \
   /********************/                                                                                                             \
   /* SystemDictionary */                                                                                                             \
