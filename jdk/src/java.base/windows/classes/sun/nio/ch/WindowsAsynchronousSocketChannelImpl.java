@@ -378,11 +378,7 @@ class WindowsAsynchronousSocketChannelImpl
         result.setContext(task);
 
         // initiate I/O
-        if (Iocp.supportsThreadAgnosticIo()) {
-            task.run();
-        } else {
-            Invoker.invokeOnThreadInThreadPool(this, task);
-        }
+        task.run();
         return result;
     }
 
