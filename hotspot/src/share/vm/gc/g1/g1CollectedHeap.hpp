@@ -245,7 +245,7 @@ private:
   // If not, we can skip a few steps.
   bool _has_humongous_reclaim_candidates;
 
-  volatile unsigned _gc_time_stamp;
+  volatile uint _gc_time_stamp;
 
   G1HRPrinter _hr_printer;
 
@@ -999,7 +999,7 @@ public:
   // Try to minimize the remembered set.
   void scrub_rem_set();
 
-  unsigned get_gc_time_stamp() {
+  uint get_gc_time_stamp() {
     return _gc_time_stamp;
   }
 

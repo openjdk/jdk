@@ -1144,8 +1144,6 @@ public:
     if (hr->is_archive()) {
       return false;
     }
-    // We use a claim value of zero here because all regions
-    // were claimed with value 1 in the FinalCount task.
     _g1->reset_gc_time_stamps(hr);
     hr->note_end_of_marking();
 
