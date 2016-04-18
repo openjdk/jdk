@@ -2095,8 +2095,8 @@ void Arguments::set_g1_gc_flags() {
   }
 
 #if INCLUDE_ALL_GCS
-  if (G1ConcRefinementThreads == 0) {
-    FLAG_SET_DEFAULT(G1ConcRefinementThreads, ParallelGCThreads);
+  if (FLAG_IS_DEFAULT(G1ConcRefinementThreads)) {
+    FLAG_SET_ERGO(uint, G1ConcRefinementThreads, ParallelGCThreads);
   }
 #endif
 
