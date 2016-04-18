@@ -662,7 +662,7 @@ int StringtableDCmd::num_arguments() {
 
 // Sharing
 bool StringTable::copy_shared_string(GrowableArray<MemRegion> *string_space,
-                                     CompactHashtableWriter* ch_table) {
+                                     CompactStringTableWriter* writer) {
 #if INCLUDE_CDS && INCLUDE_ALL_GCS && defined(_LP64) && !defined(_WINDOWS)
   assert(UseG1GC, "Only support G1 GC");
   assert(UseCompressedOops && UseCompressedClassPointers,
@@ -713,7 +713,7 @@ bool StringTable::copy_shared_string(GrowableArray<MemRegion> *string_space,
       }
 
       // add to the compact table
-      ch_table->add(hash, new_s);
+      writer->add(hash, new_s);
     }
   }
 
@@ -723,40 +723,41 @@ bool StringTable::copy_shared_string(GrowableArray<MemRegion> *string_space,
   return true;
 }
 
-bool StringTable::copy_compact_table(char** top, char *end, GrowableArray<MemRegion> *string_space,
-                                     size_t* space_size) {
+void StringTable::serialize(SerializeClosure* soc, GrowableArray<MemRegion> *string_space,
+                            size_t* space_size) {
 #if INCLUDE_CDS && defined(_LP64) && !defined(_WINDOWS)
-  if (!(UseG1GC && UseCompressedOops && UseCompressedClassPointers)) {
-    if (PrintSharedSpaces) {
-      tty->print_cr("Shared strings are excluded from the archive as UseG1GC, "
-                    "UseCompressedOops and UseCompressedClassPointers are required.");
+  _shared_table.reset();
+  if (soc->writing()) {
+    if (!(UseG1GC && UseCompressedOops && UseCompressedClassPointers)) {
+      if (PrintSharedSpaces) {
+        tty->print_cr("Shared strings are excluded from the archive as UseG1GC, "
+                      "UseCompressedOops and UseCompressedClassPointers are required.");
+      }
+    } else {
+      int num_buckets = the_table()->number_of_entries() /
+                             SharedSymbolTableBucketSize;
+      CompactStringTableWriter writer(num_buckets,
+                                      &MetaspaceShared::stats()->string);
+
+      // Copy the interned strings into the "string space" within the java heap
+      if (copy_shared_string(string_space, &writer)) {
+        for (int i = 0; i < string_space->length(); i++) {
+          *space_size += string_space->at(i).byte_size();
+        }
+        writer.dump(&_shared_table);
+      }
     }
-    return true;
   }
 
-  CompactHashtableWriter ch_table(CompactHashtable<oop, char>::_string_table,
-                                  the_table()->number_of_entries(),
-                                  &MetaspaceShared::stats()->string);
+  _shared_table.set_type(CompactHashtable<oop, char>::_string_table);
+  _shared_table.serialize(soc);
 
-  // Copy the interned strings into the "string space" within the java heap
-  if (!copy_shared_string(string_space, &ch_table)) {
-    return false;
+  if (soc->writing()) {
+    _shared_table.reset(); // Sanity. Make sure we don't use the shared table at dump time
+  } else if (_ignore_shared_strings) {
+    _shared_table.reset();
   }
-
-  for (int i = 0; i < string_space->length(); i++) {
-    *space_size += string_space->at(i).byte_size();
-  }
-
-  // Now dump the compact table
-  if (*top + ch_table.get_required_bytes() > end) {
-    // not enough space left
-    return false;
-  }
-  ch_table.dump(top, end);
-  *top = (char*)align_ptr_up(*top, sizeof(void*));
-
 #endif
-  return true;
 }
 
 void StringTable::shared_oops_do(OopClosure* f) {
@@ -765,25 +766,3 @@ void StringTable::shared_oops_do(OopClosure* f) {
 #endif
 }
 
-const char* StringTable::init_shared_table(FileMapInfo *mapinfo, char *buffer) {
-#if INCLUDE_CDS && defined(_LP64) && !defined(_WINDOWS)
-  if (mapinfo->space_capacity(MetaspaceShared::first_string) == 0) {
-    // no shared string data
-    return buffer;
-  }
-
-  // initialize the shared table
-  juint *p = (juint*)buffer;
-  const char* end = _shared_table.init(
-          CompactHashtable<oop, char>::_string_table, (char*)p);
-  const char* aligned_end = (const char*)align_ptr_up(end, sizeof(void*));
-
-  if (_ignore_shared_strings) {
-    _shared_table.reset();
-  }
-
-  return aligned_end;
-#endif
-
-  return buffer;
-}
