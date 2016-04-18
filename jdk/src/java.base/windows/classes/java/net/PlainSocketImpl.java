@@ -80,7 +80,7 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
      * Constructs an instance with the given file descriptor.
      */
     PlainSocketImpl(FileDescriptor fd) {
-        if (useDualStackImpl) {
+        if (!preferIPv4Stack) {
             impl = new DualStackPlainSocketImpl(fd, exclusiveBind);
         } else {
             impl = new TwoStacksPlainSocketImpl(fd, exclusiveBind);
