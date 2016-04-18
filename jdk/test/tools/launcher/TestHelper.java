@@ -603,23 +603,23 @@ public class TestHelper {
             return true;
         }
 
-        boolean matches(String stringToMatch) {
+        boolean matches(String regexToMatch) {
             for (String x : testOutput) {
-                if (x.matches(stringToMatch)) {
+                if (x.matches(regexToMatch)) {
                     return true;
                 }
             }
-            appendError("string <" + stringToMatch + "> not found");
+            appendError("regex <" + regexToMatch + "> not matched");
             return false;
         }
 
-        boolean notMatches(String stringToMatch) {
+        boolean notMatches(String regexToMatch) {
             for (String x : testOutput) {
-                if (!x.matches(stringToMatch)) {
+                if (!x.matches(regexToMatch)) {
                     return true;
                 }
             }
-            appendError("string <" + stringToMatch + "> found");
+            appendError("regex <" + regexToMatch + "> matched");
             return false;
         }
     }
