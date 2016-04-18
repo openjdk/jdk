@@ -4585,7 +4585,16 @@ void MacroAssembler::arrays_equals(Register a1, Register a2,
   assert(elem_size == 1 || elem_size == 2, "must be char or byte");
   assert_different_registers(a1, a2, result, cnt1, rscratch1, rscratch2);
 
-  BLOCK_COMMENT(is_string ? "string_equals {" : "array_equals {");
+#ifndef PRODUCT
+  {
+    const char kind = (elem_size == 2) ? 'U' : 'L';
+    char comment[64];
+    snprintf(comment, sizeof comment, "%s%c%s {",
+             is_string ? "string_equals" : "array_equals",
+             kind, "{");
+    BLOCK_COMMENT(comment);
+  }
+#endif
 
   mov(result, false);
 
