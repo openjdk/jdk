@@ -890,7 +890,7 @@ class Thread implements Runnable {
      *       <a href="{@docRoot}/../technotes/guides/concurrency/threadPrimitiveDeprecation.html">Why
      *       are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
      */
-    @Deprecated
+    @Deprecated(since="1.2")
     public final void stop() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
@@ -922,8 +922,9 @@ class Thread implements Runnable {
      *        For more information, see
      *        <a href="{@docRoot}/../technotes/guides/concurrency/threadPrimitiveDeprecation.html">Why
      *        are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
+     *        This method is subject to removal in a future version of Java SE.
      */
-    @Deprecated
+    @Deprecated(since="1.2", forRemoval=true)
     public final synchronized void stop(Throwable obj) {
         throw new UnsupportedOperationException();
     }
@@ -1043,9 +1044,10 @@ class Thread implements Runnable {
      *     "frozen" processes. For more information, see
      *     <a href="{@docRoot}/../technotes/guides/concurrency/threadPrimitiveDeprecation.html">
      *     Why are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
+     *     This method is subject to removal in a future version of Java SE.
      * @throws NoSuchMethodError always
      */
-    @Deprecated
+    @Deprecated(since="1.5", forRemoval=true)
     public void destroy() {
         throw new NoSuchMethodError();
     }
@@ -1083,7 +1085,7 @@ class Thread implements Runnable {
      *   <a href="{@docRoot}/../technotes/guides/concurrency/threadPrimitiveDeprecation.html">Why
      *   are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
      */
-    @Deprecated
+    @Deprecated(since="1.2")
     public final void suspend() {
         checkAccess();
         suspend0();
@@ -1109,7 +1111,7 @@ class Thread implements Runnable {
      *     <a href="{@docRoot}/../technotes/guides/concurrency/threadPrimitiveDeprecation.html">Why
      *     are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
      */
-    @Deprecated
+    @Deprecated(since="1.2")
     public final void resume() {
         checkAccess();
         resume0();
@@ -1270,8 +1272,10 @@ class Thread implements Runnable {
      * @deprecated The definition of this call depends on {@link #suspend},
      *             which is deprecated.  Further, the results of this call
      *             were never well-defined.
+     *             This method is subject to removal in a future version of Java SE.
+     * @see        StackWalker
      */
-    @Deprecated
+    @Deprecated(since="1.2", forRemoval=true)
     public native int countStackFrames();
 
     /**
