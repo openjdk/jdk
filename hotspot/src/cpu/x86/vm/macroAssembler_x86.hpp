@@ -156,6 +156,10 @@ class MacroAssembler: public Assembler {
   void incrementq(Register reg, int value = 1);
   void incrementq(Address dst, int value = 1);
 
+  // special instructions for EVEX
+  void setvectmask(Register dst, Register src);
+  void restorevectmask();
+
   // Support optimal SSE move instructions.
   void movflt(XMMRegister dst, XMMRegister src) {
     if (UseXmmRegToRegMoveAll) { movaps(dst, src); return; }
