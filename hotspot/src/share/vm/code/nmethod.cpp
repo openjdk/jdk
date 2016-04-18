@@ -36,6 +36,7 @@
 #include "compiler/directivesParser.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/bytecode.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
@@ -1138,8 +1139,7 @@ void nmethod::clear_ic_stubs() {
   }
 }
 
-
-void nmethod::cleanup_inline_caches() {
+void nmethod::cleanup_inline_caches(bool clean_all/*=false*/) {
   assert_locked_or_safepoint(CompiledIC_lock);
 
   // If the method is not entrant or zombie then a JMP is plastered over the
@@ -1169,7 +1169,7 @@ void nmethod::cleanup_inline_caches() {
         if( cb != NULL && cb->is_nmethod() ) {
           nmethod* nm = (nmethod*)cb;
           // Clean inline caches pointing to zombie, non-entrant and unloaded methods
-          if (!nm->is_in_use() || (nm->method()->code() != nm)) ic->set_to_clean(is_alive());
+          if (clean_all || !nm->is_in_use() || (nm->method()->code() != nm)) ic->set_to_clean(is_alive());
         }
         break;
       }
@@ -1179,7 +1179,7 @@ void nmethod::cleanup_inline_caches() {
         if( cb != NULL && cb->is_nmethod() ) {
           nmethod* nm = (nmethod*)cb;
           // Clean inline caches pointing to zombie, non-entrant and unloaded methods
-          if (!nm->is_in_use() || (nm->method()->code() != nm)) csc->set_to_clean();
+          if (clean_all || !nm->is_in_use() || (nm->method()->code() != nm)) csc->set_to_clean();
         }
         break;
       }
@@ -1321,7 +1321,7 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
 
   // Break cycle between nmethod & method
   if (log_is_enabled(Trace, classunload)) {
-    outputStream* log = LogHandle(classunload)::trace_stream();
+    outputStream* log = Log(classunload)::trace_stream();
     log->print_cr("making nmethod " INTPTR_FORMAT
                   " unloadable, Method*(" INTPTR_FORMAT
                   "), cause(" INTPTR_FORMAT ")",

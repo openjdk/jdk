@@ -33,6 +33,7 @@
 #include "gc/shared/referenceProcessor.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/jniHandles.hpp"
@@ -134,7 +135,7 @@ void ReferenceProcessor::verify_no_references_recorded() {
   guarantee(!_discovering_refs, "Discovering refs?");
   for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
     guarantee(_discovered_refs[i].is_empty(),
-              "Found non-empty discovered list");
+              "Found non-empty discovered list at %u", i);
   }
 }
 #endif
@@ -161,8 +162,8 @@ void ReferenceProcessor::update_soft_ref_master_clock() {
 
   NOT_PRODUCT(
   if (now < _soft_ref_timestamp_clock) {
-    warning("time warp: " JLONG_FORMAT " to " JLONG_FORMAT,
-            _soft_ref_timestamp_clock, now);
+    log_warning(gc)("time warp: " JLONG_FORMAT " to " JLONG_FORMAT,
+                    _soft_ref_timestamp_clock, now);
   }
   )
   // The values of now and _soft_ref_timestamp_clock are set using
@@ -266,11 +267,6 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
 #ifndef PRODUCT
 // Calculate the number of jni handles.
 size_t ReferenceProcessor::count_jni_refs() {
-  class AlwaysAliveClosure: public BoolObjectClosure {
-  public:
-    virtual bool do_object_b(oop obj) { return true; }
-  };
-
   class CountHandleClosure: public OopClosure {
   private:
     size_t _count;
@@ -281,8 +277,7 @@ size_t ReferenceProcessor::count_jni_refs() {
     size_t count() { return _count; }
   };
   CountHandleClosure global_handle_count;
-  AlwaysAliveClosure always_alive;
-  JNIHandles::weak_oops_do(&always_alive, &global_handle_count);
+  JNIHandles::weak_oops_do(&global_handle_count);
   return global_handle_count.count();
 }
 #endif
@@ -645,9 +640,7 @@ public:
                     OopClosure& keep_alive,
                     VoidClosure& complete_gc)
   {
-    Thread* thr = Thread::current();
-    int refs_list_index = ((WorkerThread*)thr)->id();
-    _ref_processor.process_phase1(_refs_lists[refs_list_index], _policy,
+    _ref_processor.process_phase1(_refs_lists[i], _policy,
                                   &is_alive, &keep_alive, &complete_gc);
   }
 private:
@@ -683,11 +676,6 @@ public:
                     OopClosure& keep_alive,
                     VoidClosure& complete_gc)
   {
-    // Don't use "refs_list_index" calculated in this way because
-    // balance_queues() has moved the Ref's into the first n queues.
-    // Thread* thr = Thread::current();
-    // int refs_list_index = ((WorkerThread*)thr)->id();
-    // _ref_processor.process_phase3(_refs_lists[refs_list_index], _clear_referent,
     _ref_processor.process_phase3(_refs_lists[i], _clear_referent,
                                   &is_alive, &keep_alive, &complete_gc);
   }
@@ -696,18 +684,29 @@ private:
 };
 
 #ifndef PRODUCT
-void ReferenceProcessor::log_reflist_counts(DiscoveredList ref_lists[], size_t total_refs) {
+void ReferenceProcessor::log_reflist_counts(DiscoveredList ref_lists[], uint active_length, size_t total_refs) {
   if (!log_is_enabled(Trace, gc, ref)) {
     return;
   }
 
   stringStream st;
-  for (uint i = 0; i < _max_num_q; ++i) {
+  for (uint i = 0; i < active_length; ++i) {
     st.print(SIZE_FORMAT " ", ref_lists[i].length());
   }
   log_develop_trace(gc, ref)("%s= " SIZE_FORMAT, st.as_string(), total_refs);
+#ifdef ASSERT
+  for (uint i = active_length; i < _max_num_q; i++) {
+    assert(ref_lists[i].length() == 0, SIZE_FORMAT " unexpected References in %u",
+           ref_lists[i].length(), i);
+  }
+#endif
 }
 #endif
+
+void ReferenceProcessor::set_active_mt_degree(uint v) {
+  _num_q = v;
+  _next_id = 0;
+}
 
 // Balances reference queues.
 // Move entries from all queues[0, 1, ..., _max_num_q-1] to
@@ -721,8 +720,8 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
 
   for (uint i = 0; i < _max_num_q; ++i) {
     total_refs += ref_lists[i].length();
-    }
-  log_reflist_counts(ref_lists, total_refs);
+  }
+  log_reflist_counts(ref_lists, _max_num_q, total_refs);
   size_t avg_refs = total_refs / _num_q + 1;
   uint to_idx = 0;
   for (uint from_idx = 0; from_idx < _max_num_q; from_idx++) {
@@ -784,10 +783,10 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
   }
 #ifdef ASSERT
   size_t balanced_total_refs = 0;
-  for (uint i = 0; i < _max_num_q; ++i) {
+  for (uint i = 0; i < _num_q; ++i) {
     balanced_total_refs += ref_lists[i].length();
-    }
-  log_reflist_counts(ref_lists, balanced_total_refs);
+  }
+  log_reflist_counts(ref_lists, _num_q, balanced_total_refs);
   assert(total_refs == balanced_total_refs, "Balancing was incomplete");
 #endif
 }
@@ -881,7 +880,7 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
       id = next_id();
     }
   }
-  assert(id < _max_num_q, "Id is out-of-bounds (call Freud?)");
+  assert(id < _max_num_q, "Id is out-of-bounds id %u and max id %u)", id, _max_num_q);
 
   // Get the discovered queue to which we will add
   DiscoveredList* list = NULL;

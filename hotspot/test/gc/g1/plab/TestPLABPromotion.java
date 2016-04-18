@@ -41,17 +41,16 @@
 package gc.g1.plab;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Arrays;
 import java.io.PrintStream;
 
 import gc.g1.plab.lib.AppPLABPromotion;
 import gc.g1.plab.lib.LogParser;
 import gc.g1.plab.lib.PLABUtils;
+import gc.g1.plab.lib.PlabInfo;
 
 import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.ProcessTools;
-import jdk.test.lib.Platform;
 
 /**
  * Test checks PLAB promotion of different size objects.
@@ -62,6 +61,12 @@ public class TestPLABPromotion {
     private final static long GC_ID_SURVIVOR_STATS = 1l;
     // GC ID with old PLAB statistics
     private final static long GC_ID_OLD_STATS = 2l;
+
+    private final static String PLAB_USED_FIELD_NAME = "used";
+    private final static String PLAB_DIRECT_ALLOCATED_FIELD_NAME = "direct allocated";
+    private final static List<String> FIELDS_TO_EXTRACT = Arrays.asList(PLAB_USED_FIELD_NAME, PLAB_DIRECT_ALLOCATED_FIELD_NAME);
+
+    private static String output;
 
     // Allowable difference for memory consumption (percentage)
     private final static long MEM_DIFFERENCE_PCT = 5;
@@ -120,11 +125,12 @@ public class TestPLABPromotion {
                 System.out.println(out.getOutput());
                 throw new RuntimeException("Expect exit code 0.");
             }
-            checkResults(out.getOutput(), testCase);
+            output = out.getOutput();
+            checkResults(testCase);
         }
     }
 
-    private static void checkResults(String output, TestCase testCase) {
+    private static void checkResults(TestCase testCase) {
         long plabAllocatedSurvivor;
         long directAllocatedSurvivor;
         long plabAllocatedOld;
@@ -132,63 +138,87 @@ public class TestPLABPromotion {
         long memAllocated = testCase.getMemToFill();
         LogParser logParser = new LogParser(output);
 
-        Map<String, Long> survivorStats = getPlabStats(logParser, LogParser.ReportType.SURVIVOR_STATS, GC_ID_SURVIVOR_STATS);
-        Map<String, Long> oldStats = getPlabStats(logParser, LogParser.ReportType.OLD_STATS, GC_ID_OLD_STATS);
+        PlabInfo survivorPlabInfo = logParser.getSpecifiedStats(GC_ID_SURVIVOR_STATS, LogParser.ReportType.SURVIVOR_STATS, FIELDS_TO_EXTRACT);
+        PlabInfo oldPlabInfo = logParser.getSpecifiedStats(GC_ID_OLD_STATS, LogParser.ReportType.OLD_STATS, FIELDS_TO_EXTRACT);
 
-        plabAllocatedSurvivor = survivorStats.get("used");
-        directAllocatedSurvivor = survivorStats.get("direct allocated");
-        plabAllocatedOld = oldStats.get("used");
-        directAllocatedOld = oldStats.get("direct allocated");
+        checkFields(survivorPlabInfo);
+        checkFields(oldPlabInfo);
+
+        plabAllocatedSurvivor = survivorPlabInfo.get(PLAB_USED_FIELD_NAME);
+        directAllocatedSurvivor = survivorPlabInfo.get(PLAB_DIRECT_ALLOCATED_FIELD_NAME);
+        plabAllocatedOld = oldPlabInfo.get(PLAB_USED_FIELD_NAME);
+        directAllocatedOld = oldPlabInfo.get(PLAB_DIRECT_ALLOCATED_FIELD_NAME);
 
         System.out.printf("Survivor PLAB allocated:%17d Direct allocated: %17d Mem consumed:%17d%n", plabAllocatedSurvivor, directAllocatedSurvivor, memAllocated);
         System.out.printf("Old      PLAB allocated:%17d Direct allocated: %17d Mem consumed:%17d%n", plabAllocatedOld, directAllocatedOld, memAllocated);
 
         // Unreachable objects case
         if (testCase.isDeadObjectCase()) {
-            // No dead objects should be promoted
-            if (!(checkRatio(plabAllocatedSurvivor, memAllocated) && checkRatio(directAllocatedSurvivor, memAllocated))) {
-                System.out.println(output);
-                throw new RuntimeException("Unreachable objects should not be allocated using PLAB or direct allocated to Survivor");
-            }
-            if (!(checkRatio(plabAllocatedOld, memAllocated) && checkRatio(directAllocatedOld, memAllocated))) {
-                System.out.println(output);
-                throw new RuntimeException("Unreachable objects should not be allocated using PLAB or direct allocated to Old");
-            }
+            checkDeadObjectsPromotion(plabAllocatedSurvivor, directAllocatedSurvivor, memAllocated);
+            checkDeadObjectsPromotion(plabAllocatedOld, directAllocatedOld, memAllocated);
+
         } else {
             // Live objects case
             if (testCase.isPromotedByPLAB()) {
-                // All live small objects should be promoted using PLAB
-                if (!checkDifferenceRatio(plabAllocatedSurvivor, memAllocated)) {
-                    System.out.println(output);
-                    throw new RuntimeException("Expect that Survivor PLAB allocation are similar to all mem consumed");
-                }
-                if (!checkDifferenceRatio(plabAllocatedOld, memAllocated)) {
-                    System.out.println(output);
-                    throw new RuntimeException("Expect that Old PLAB allocation are similar to all mem consumed");
-                }
+                checkLiveObjectsPromotion(plabAllocatedSurvivor, memAllocated, "Expect that Survivor PLAB allocation are similar to all mem consumed");
+                checkLiveObjectsPromotion(plabAllocatedOld, memAllocated, "Expect that Old PLAB allocation are similar to all mem consumed");
             } else {
                 // All big objects should be directly allocated
-                if (!checkDifferenceRatio(directAllocatedSurvivor, memAllocated)) {
-                    System.out.println(output);
-                    throw new RuntimeException("Test fails. Expect that Survivor direct allocation are similar to all mem consumed");
-                }
-                if (!checkDifferenceRatio(directAllocatedOld, memAllocated)) {
-                    System.out.println(output);
-                    throw new RuntimeException("Test fails. Expect that Old direct allocation are similar to all mem consumed");
-                }
+                checkLiveObjectsPromotion(directAllocatedSurvivor, memAllocated, "Expect that Survivor direct allocation are similar to all mem consumed");
+                checkLiveObjectsPromotion(directAllocatedOld, memAllocated, "Expect that Old direct allocation are similar to all mem consumed");
             }
 
-            // All promoted objects size should be similar to all consumed memory
-            if (!checkDifferenceRatio(plabAllocatedSurvivor + directAllocatedSurvivor, memAllocated)) {
-                System.out.println(output);
-                throw new RuntimeException("Test fails. Expect that Survivor gen total allocation are similar to all mem consumed");
-            }
-            if (!checkDifferenceRatio(plabAllocatedOld + directAllocatedOld, memAllocated)) {
-                System.out.println(output);
-                throw new RuntimeException("Test fails. Expect that Old gen total allocation are similar to all mem consumed");
-            }
+            checkTotalPromotion(plabAllocatedSurvivor, directAllocatedSurvivor, memAllocated, "Expect that Survivor gen total allocation are similar to all mem consumed");
+            checkTotalPromotion(plabAllocatedOld, directAllocatedOld, memAllocated, "Expect that Old gen total allocation are similar to all mem consumed");
         }
         System.out.println("Test passed!");
+    }
+
+    private static void checkTotalPromotion(long plabAllocatedSurvivor, long directAllocatedSurvivor, long memAllocated, String exceptionMessage) {
+        // All promoted objects size should be similar to all consumed memory
+        if (!checkDifferenceRatio(plabAllocatedSurvivor + directAllocatedSurvivor, memAllocated)) {
+            System.out.println(output);
+            throw new RuntimeException(exceptionMessage);
+        }
+    }
+
+    /**
+     * Checks that live objects were promoted as expected.
+     * @param plabAllocated
+     * @param totalMemAllocated
+     * @param exceptionMessage
+     */
+    private static void checkLiveObjectsPromotion(long plabAllocated, long totalMemAllocated, String exceptionMessage) {
+        // All live small objects should be promoted using PLAB
+        if (!checkDifferenceRatio(plabAllocated, totalMemAllocated)) {
+            System.out.println(output);
+            throw new RuntimeException(exceptionMessage);
+        }
+    }
+
+    /**
+     * Checks that dead objects are not promoted.
+     * @param plabPromoted promoted by PLAB
+     * @param directlyPromoted
+     * @param memoryAllocated total memory allocated
+     */
+    private static void checkDeadObjectsPromotion(long plabPromoted, long directlyPromoted, long memoryAllocated) {
+        // No dead objects should be promoted
+        if (!(checkRatio(plabPromoted, memoryAllocated) && checkRatio(directlyPromoted, memoryAllocated))) {
+            System.out.println(output);
+            throw new RuntimeException("Unreachable objects should not be allocated using PLAB or directly allocated to Survivor/Old");
+        }
+    }
+
+    /**
+     * Checks that PLAB statistics contains expected fields.
+     * @param info
+     */
+    private static void checkFields(PlabInfo info) {
+        if (!info.checkFields(FIELDS_TO_EXTRACT)) {
+            System.out.println(output);
+            throw new RuntimeException("PLAB log does not contain expected fields");
+        }
     }
 
     /**
@@ -213,14 +243,6 @@ public class TestPLABPromotion {
      */
     private static boolean checkDifferenceRatio(long checkedValue, long controlValue) {
         return (Math.abs(checkedValue - controlValue) / controlValue) * 100L < MEM_DIFFERENCE_PCT;
-    }
-
-    private static Map<String, Long> getPlabStats(LogParser logParser, LogParser.ReportType type, long gc_id) {
-
-        Map<String, Long> survivorStats = logParser.getEntries()
-                .get(gc_id)
-                .get(type);
-        return survivorStats;
     }
 
     /**

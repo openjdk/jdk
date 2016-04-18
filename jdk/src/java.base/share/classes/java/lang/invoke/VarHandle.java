@@ -31,8 +31,12 @@ import jdk.internal.vm.annotation.ForceInline;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.newInternalError;
@@ -152,7 +156,9 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * supported, which may also include documenting restrictions based on the
  * variable type and whether a variable is read-only.  If an access mode is not
  * supported then the corresponding signature-polymorphic method will on
- * invocation throw an {@code UnsupportedOperationException}.
+ * invocation throw an {@code UnsupportedOperationException}.  Factory methods
+ * should document any additional undeclared exceptions that may be thrown by
+ * access mode methods.
  * The {@link #get get} access mode is supported for all
  * VarHandle instances and the corresponding method never throws
  * {@code UnsupportedOperationException}.
@@ -166,7 +172,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * Unless stated otherwise in the documentation of a factory method, the access
  * modes {@code get} and {@code set} (if supported) provide atomic access for
  * reference types and all primitives types, with the exception of {@code long}
- * and {@code double} on 32-bit platforms
+ * and {@code double} on 32-bit platforms.
  *
  * <p>Access modes will override any memory ordering effects specified at
  * the declaration site of a variable.  For example, a VarHandle accessing a
@@ -272,7 +278,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * <pre> {@code
  * MethodHandle mh = MethodHandles.lookup().findVirtual(
  *                       VarHandle.class,
- *                       VarHandle.AccessMode.{access-mode}.name(),
+ *                       VarHandle.AccessMode.{access-mode}.methodName(),
  *                       MethodType.methodType(R, p1, p2, ..., pN));
  *
  * R r = (R) mh.invokeExact(vh, p1, p2, ..., pN)
@@ -465,6 +471,8 @@ public abstract class VarHandle {
      * , statically represented using {@code Object}.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -489,6 +497,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -518,6 +528,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -534,6 +546,10 @@ public abstract class VarHandle {
      * must match the access mode type that is the result of calling
      * {@code accessModeType(VarHandle.AccessMode.setVolatile)} on this VarHandle.
      *
+     * @apiNote
+     * Ignoring the many semantic differences from C and C++, this method has
+     * memory ordering effects compatible with {@code memory_order_seq_cst}.
+     *
      * @param args the signature-polymorphic parameter list of the form
      * {@code (CT, T newValue)}
      * , statically represented using varargs.
@@ -541,9 +557,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
-     * @apiNote Ignoring the many semantic differences from C and C++, this
-     * method has memory ordering effects compatible with
-     * {@code memory_order_seq_cst}.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -571,6 +586,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -595,6 +612,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -614,6 +633,11 @@ public abstract class VarHandle {
      * must match the access mode type that is the result of calling
      * {@code accessModeType(VarHandle.AccessMode.getAcquire)} on this VarHandle.
      *
+     * @apiNote
+     * Ignoring the many semantic differences from C and C++, this method has
+     * memory ordering effects compatible with {@code memory_order_acquire}
+     * ordering.
+     *
      * @param args the signature-polymorphic parameter list of the form
      * {@code (CT)}
      * , statically represented using varargs.
@@ -624,9 +648,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
-     * @apiNote Ignoring the many semantic differences from C and C++, this
-     * method has memory ordering effects compatible with
-     * {@code memory_order_acquire} ordering.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -643,6 +666,11 @@ public abstract class VarHandle {
      * must match the access mode type that is the result of calling
      * {@code accessModeType(VarHandle.AccessMode.setRelease)} on this VarHandle.
      *
+     * @apiNote
+     * Ignoring the many semantic differences from C and C++, this method has
+     * memory ordering effects compatible with {@code memory_order_release}
+     * ordering.
+     *
      * @param args the signature-polymorphic parameter list of the form
      * {@code (CT, T newValue)}
      * , statically represented using varargs.
@@ -650,9 +678,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
-     * @apiNote Ignoring the many semantic differences from C and C++, this
-     * method has memory ordering effects compatible with
-     * {@code memory_order_release} ordering.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -685,6 +712,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      * @see #setVolatile(Object...)
      * @see #getVolatile(Object...)
      */
@@ -718,6 +747,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      * @see #setVolatile(Object...)
      * @see #getVolatile(Object...)
      */
@@ -751,6 +782,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      * @see #set(Object...)
      * @see #getAcquire(Object...)
      */
@@ -783,6 +816,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      * @see #setRelease(Object...)
      * @see #get(Object...)
      */
@@ -820,6 +855,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      * @see #set(Object...)
      * @see #get(Object...)
      */
@@ -855,6 +892,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      * @see #set(Object...)
      * @see #getAcquire(Object...)
      */
@@ -890,6 +929,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      * @see #setRelease(Object...)
      * @see #get(Object...)
      */
@@ -920,6 +961,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      * @see #setVolatile(Object...)
      * @see #getVolatile(Object...)
      */
@@ -954,6 +997,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      * @see #setVolatile(Object...)
      * @see #getVolatile(Object...)
      */
@@ -984,6 +1029,8 @@ public abstract class VarHandle {
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type is not
      * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
      * @see #setVolatile(Object...)
      * @see #getVolatile(Object...)
      */
@@ -993,11 +1040,11 @@ public abstract class VarHandle {
     Object addAndGet(Object... args);
 
     enum AccessType {
-        get,                  // 0
-        set,                  // 1
-        compareAndSwap,       // 2
-        compareAndExchange,   // 3
-        getAndUpdate;         // 4
+        GET,                    // 0
+        SET,                    // 1
+        COMPARE_AND_SWAP,       // 2
+        COMPARE_AND_EXCHANGE,   // 3
+        GET_AND_UPDATE;         // 4
 
         MethodType getMethodType(VarHandle vh) {
             return getMethodType(this.ordinal(), vh);
@@ -1036,124 +1083,177 @@ public abstract class VarHandle {
          * method
          * {@link VarHandle#get VarHandle.get}
          */
-        get(AccessType.get, Object.class),   // 0
+        GET("get", AccessType.GET, Object.class),   // 0
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#set VarHandle.set}
          */
-        set(AccessType.set, void.class),     // 1
+        SET("set", AccessType.SET, void.class),     // 1
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#getVolatile VarHandle.getVolatile}
          */
-        getVolatile(AccessType.get, Object.class),  // 2
+        GET_VOLATILE("getVolatile", AccessType.GET, Object.class),  // 2
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#setVolatile VarHandle.setVolatile}
          */
-        setVolatile(AccessType.set, void.class),    // 3
+        SET_VOLATILE("setVolatile", AccessType.SET, void.class),    // 3
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#getAcquire VarHandle.getAcquire}
          */
-        getAcquire(AccessType.get, Object.class),   // 4
+        GET_ACQUIRE("getAcquire", AccessType.GET, Object.class),   // 4
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#setRelease VarHandle.setRelease}
          */
-        setRelease(AccessType.set, void.class),     // 5
+        SET_RELEASE("setRelease", AccessType.SET, void.class),     // 5
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#getOpaque VarHandle.getOpaque}
          */
-        getOpaque(AccessType.get, Object.class),    // 6
+        GET_OPAQUE("getOpaque", AccessType.GET, Object.class),    // 6
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#setOpaque VarHandle.setOpaque}
          */
-        setOpaque(AccessType.set, void.class),      // 7
+        SET_OPAQUE("setOpaque", AccessType.SET, void.class),      // 7
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#compareAndSet VarHandle.compareAndSet}
          */
-        compareAndSet(AccessType.compareAndSwap, boolean.class),    // 8
+        COMPARE_AND_SET("compareAndSet", AccessType.COMPARE_AND_SWAP, boolean.class),    // 8
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#compareAndExchangeVolatile VarHandle.compareAndExchangeVolatile}
          */
-        compareAndExchangeVolatile(AccessType.compareAndExchange, Object.class), // 9
+        COMPARE_AND_EXCHANGE_VOLATILE("compareAndExchangeVolatile", AccessType.COMPARE_AND_EXCHANGE, Object.class), // 9
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#compareAndExchangeAcquire VarHandle.compareAndExchangeAcquire}
          */
-        compareAndExchangeAcquire(AccessType.compareAndExchange, Object.class),  // 10
+        COMPARE_AND_EXCHANGE_ACQUIRE("compareAndExchangeAcquire", AccessType.COMPARE_AND_EXCHANGE, Object.class),  // 10
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#compareAndExchangeRelease VarHandle.compareAndExchangeRelease}
          */
-        compareAndExchangeRelease(AccessType.compareAndExchange, Object.class),  // 11
+        COMPARE_AND_EXCHANGE_RELEASE("compareAndExchangeRelease", AccessType.COMPARE_AND_EXCHANGE, Object.class),  // 11
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#weakCompareAndSet VarHandle.weakCompareAndSet}
          */
-        weakCompareAndSet(AccessType.compareAndSwap, boolean.class),        // 12
+        WEAK_COMPARE_AND_SET("weakCompareAndSet", AccessType.COMPARE_AND_SWAP, boolean.class),        // 12
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#weakCompareAndSetAcquire VarHandle.weakCompareAndSetAcquire}
          */
-        weakCompareAndSetAcquire(AccessType.compareAndSwap, boolean.class), // 13
+        WEAK_COMPARE_AND_SET_ACQUIRE("weakCompareAndSetAcquire", AccessType.COMPARE_AND_SWAP, boolean.class), // 13
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#weakCompareAndSetRelease VarHandle.weakCompareAndSetRelease}
          */
-        weakCompareAndSetRelease(AccessType.compareAndSwap, boolean.class), // 14
+        WEAK_COMPARE_AND_SET_RELEASE("weakCompareAndSetRelease", AccessType.COMPARE_AND_SWAP, boolean.class), // 14
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#getAndSet VarHandle.getAndSet}
          */
-        getAndSet(AccessType.getAndUpdate, Object.class),   // 15
+        GET_AND_SET("getAndSet", AccessType.GET_AND_UPDATE, Object.class),   // 15
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#getAndAdd VarHandle.getAndAdd}
          */
-        getAndAdd(AccessType.getAndUpdate, Object.class),   // 16
+        GET_AND_ADD("getAndAdd", AccessType.GET_AND_UPDATE, Object.class),   // 16
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#addAndGet VarHandle.addAndGet}
          */
-        addAndGet(AccessType.getAndUpdate, Object.class),   // 17
+        ADD_AND_GET("addAndGet", AccessType.GET_AND_UPDATE, Object.class),   // 17
         ;
 
+        static final Map<String, AccessMode> methodNameToAccessMode;
+        static {
+            // Initial capacity of # values is sufficient to avoid resizes
+            // for the smallest table size (32)
+            methodNameToAccessMode = new HashMap<>(AccessMode.values().length);
+            for (AccessMode am : AccessMode.values()) {
+                methodNameToAccessMode.put(am.methodName, am);
+            }
+        }
+
+        final String methodName;
         final AccessType at;
         final boolean isPolyMorphicInReturnType;
         final Class<?> returnType;
 
-        AccessMode(AccessType at, Class<?> returnType) {
+        AccessMode(final String methodName, AccessType at, Class<?> returnType) {
+            this.methodName = methodName;
             this.at = at;
 
+            // Assert method name is correctly derived from value name
+            assert methodName.equals(toMethodName(name()));
             // Assert that return type is correct
             // Otherwise, when disabled avoid using reflection
-            assert returnType == getReturnType(name());
+            assert returnType == getReturnType(methodName);
 
             this.returnType = returnType;
             isPolyMorphicInReturnType = returnType != Object.class;
+        }
+
+        /**
+         * Returns the {@code VarHandle} signature-polymorphic method name
+         * associated with this {@code AccessMode} value
+         *
+         * @return the signature-polymorphic method name
+         * @see #valueFromMethodName
+         */
+        public String methodName() {
+            return methodName;
+        }
+
+        /**
+         * Returns the {@code AccessMode} value associated with the specified
+         * {@code VarHandle} signature-polymorphic method name.
+         *
+         * @param methodName the signature-polymorphic method name
+         * @return the {@code AccessMode} value
+         * @throws IllegalArgumentException if there is no {@code AccessMode}
+         *         value associated with method name (indicating the method
+         *         name does not correspond to a {@code VarHandle}
+         *         signature-polymorphic method name).
+         * @see #methodName
+         */
+        public static AccessMode valueFromMethodName(String methodName) {
+            AccessMode am = methodNameToAccessMode.get(methodName);
+            if (am != null) return am;
+            throw new IllegalArgumentException("No AccessMode value for method name " + methodName);
+        }
+
+        private static String toMethodName(String name) {
+            StringBuilder s = new StringBuilder(name.toLowerCase());
+            int i;
+            while ((i = s.indexOf("_")) !=  -1) {
+                s.deleteCharAt(i);
+                s.setCharAt(i, Character.toUpperCase(s.charAt(i)));
+            }
+            return s.toString();
         }
 
         private static Class<?> getReturnType(String name) {
@@ -1279,12 +1379,14 @@ public abstract class VarHandle {
         UNSAFE.fullFence();
     }
 
-    static final BiFunction<Integer, Integer, ArrayIndexOutOfBoundsException> AIOOBE_SUPPLIER = new BiFunction<>() {
-        @Override
-        public ArrayIndexOutOfBoundsException apply(Integer a, Integer b) {
-            return new ArrayIndexOutOfBoundsException(a, b);
-        }
-    };
+    static final BiFunction<String, List<Integer>, ArrayIndexOutOfBoundsException>
+            AIOOBE_SUPPLIER = Objects.outOfBoundsExceptionFormatter(
+            new Function<String, ArrayIndexOutOfBoundsException>() {
+                @Override
+                public ArrayIndexOutOfBoundsException apply(String s) {
+                    return new ArrayIndexOutOfBoundsException(s);
+                }
+            });
 
     private static final long VFORM_OFFSET;
 

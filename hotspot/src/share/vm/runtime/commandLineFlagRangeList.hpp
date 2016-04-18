@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public:
   static CommandLineFlagRange* at(int i) { return (_ranges != NULL) ? _ranges->at(i) : NULL; }
   static CommandLineFlagRange* find(const char* name);
   static void add(CommandLineFlagRange* range) { _ranges->append(range); }
-  static void print(const char* name, outputStream* st, bool unspecified = false);
+  static void print(outputStream* st, const char* name, RangeStrFunc default_range_str_func);
   // Check the final values of all flags for ranges.
   static bool check_ranges();
 };
