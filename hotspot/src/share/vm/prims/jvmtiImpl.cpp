@@ -27,6 +27,8 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -321,12 +323,12 @@ void JvmtiBreakpoint::clear() {
   each_method_version_do(&Method::clear_breakpoint);
 }
 
-void JvmtiBreakpoint::print() {
+void JvmtiBreakpoint::print(outputStream* out) {
 #ifndef PRODUCT
+  ResourceMark rm;
   const char *class_name  = (_method == NULL) ? "NULL" : _method->klass_name()->as_C_string();
   const char *method_name = (_method == NULL) ? "NULL" : _method->name()->as_C_string();
-
-  tty->print("Breakpoint(%s,%s,%d,%p)",class_name, method_name, _bci, getBcp());
+  out->print("Breakpoint(%s,%s,%d,%p)", class_name, method_name, _bci, getBcp());
 #endif
 }
 
@@ -389,16 +391,17 @@ void JvmtiBreakpoints::gc_epilogue() {
   _bps.gc_epilogue();
 }
 
-void  JvmtiBreakpoints::print() {
+void JvmtiBreakpoints::print() {
 #ifndef PRODUCT
-  ResourceMark rm;
+  LogTarget(Trace, jvmti) log;
+  LogStreamCHeap log_stream(log);
 
   int n = _bps.length();
   for (int i=0; i<n; i++) {
     JvmtiBreakpoint& bp = _bps.at(i);
-    tty->print("%d: ", i);
-    bp.print();
-    tty->cr();
+    log_stream.print("%d: ", i);
+    bp.print(&log_stream);
+    log_stream.cr();
   }
 #endif
 }
@@ -875,22 +878,21 @@ bool JvmtiSuspendControl::resume(JavaThread *java_thread) {
 void JvmtiSuspendControl::print() {
 #ifndef PRODUCT
   MutexLocker mu(Threads_lock);
-  ResourceMark rm;
-
-  tty->print("Suspended Threads: [");
+  LogStreamHandle(Trace, jvmti) log_stream;
+  log_stream.print("Suspended Threads: [");
   for (JavaThread *thread = Threads::first(); thread != NULL; thread = thread->next()) {
 #ifdef JVMTI_TRACE
     const char *name   = JvmtiTrace::safe_get_thread_name(thread);
 #else
     const char *name   = "";
 #endif /*JVMTI_TRACE */
-    tty->print("%s(%c ", name, thread->is_being_ext_suspended() ? 'S' : '_');
+    log_stream.print("%s(%c ", name, thread->is_being_ext_suspended() ? 'S' : '_');
     if (!thread->has_last_Java_frame()) {
-      tty->print("no stack");
+      log_stream.print("no stack");
     }
-    tty->print(") ");
+    log_stream.print(") ");
   }
-  tty->print_cr("]");
+  log_stream.print_cr("]");
 #endif
 }
 
