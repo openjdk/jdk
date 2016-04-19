@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
-#include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.hpp"
@@ -49,9 +49,9 @@ double G1CollectionSet::predict_region_elapsed_time_ms(HeapRegion* hr) {
 }
 
 
-G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h) :
+G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _g1(g1h),
-  _policy(NULL),
+  _policy(policy),
   _cset_chooser(new CollectionSetChooser()),
   _eden_region_length(0),
   _survivor_region_length(0),

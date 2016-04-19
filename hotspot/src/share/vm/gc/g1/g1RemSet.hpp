@@ -41,8 +41,8 @@ class G1BlockOffsetTable;
 class ConcurrentG1Refine;
 class CodeBlobClosure;
 class G1CollectedHeap;
-class G1CollectorPolicy;
 class G1ParPushHeapRSClosure;
+class G1Policy;
 class G1SATBCardTableModRefBS;
 class HeapRegionClaimer;
 
@@ -68,7 +68,7 @@ protected:
 
 protected:
   CardTableModRefBS*     _ct_bs;
-  G1CollectorPolicy*     _g1p;
+  G1Policy*              _g1p;
 
   ConcurrentG1Refine*    _cg1r;
 

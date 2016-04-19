@@ -45,6 +45,7 @@
 #include "gc/g1/g1MarkSweep.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
+#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/g1/g1RemSet.inline.hpp"
 #include "gc/g1/g1RootClosures.hpp"
@@ -1744,10 +1745,11 @@ void G1CollectedHeap::shrink(size_t shrink_bytes) {
 
 // Public methods.
 
-G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
+G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   CollectedHeap(),
-  _g1_policy(policy_),
-  _collection_set(this),
+  _collector_policy(collector_policy),
+  _g1_policy(create_g1_policy()),
+  _collection_set(this, _g1_policy),
   _dirty_card_queue_set(false),
   _is_alive_closure_cm(this),
   _is_alive_closure_stw(this),
@@ -2134,7 +2136,7 @@ void G1CollectedHeap::ref_processing_init() {
 }
 
 CollectorPolicy* G1CollectedHeap::collector_policy() const {
-  return g1_policy();
+  return _collector_policy;
 }
 
 size_t G1CollectedHeap::capacity() const {
@@ -4859,7 +4861,7 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head, EvacuationInfo& e
   // head and length, and unlink any young regions in the code below
   _young_list->clear();
 
-  G1CollectorPolicy* policy = g1_policy();
+  G1Policy* policy = g1_policy();
 
   double start_sec = os::elapsedTime();
   bool non_young = true;

@@ -29,6 +29,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1MarkSweep.hpp"
+#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/heapRegion.hpp"

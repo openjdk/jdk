@@ -28,7 +28,6 @@
 #include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1FromCardCache.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HotCardCache.hpp"

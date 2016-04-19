@@ -204,7 +204,7 @@ void HeapRegion::calc_gc_efficiency() {
   // GC efficiency is the ratio of how much space would be
   // reclaimed over how long we predict it would take to reclaim it.
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  G1CollectorPolicy* g1p = g1h->g1_policy();
+  G1Policy* g1p = g1h->g1_policy();
 
   // Retrieve a prediction of the elapsed time for this region for
   // a mixed gc because the region will only be evacuated during a
