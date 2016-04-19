@@ -612,14 +612,13 @@ methodHandle LinkResolver::resolve_method_statically(Bytecodes::Code code,
   }
 
   if (code == Bytecodes::_invokeinterface) {
-    return resolve_interface_method(link_info, true, THREAD);
+    return resolve_interface_method(link_info, code, THREAD);
   } else if (code == Bytecodes::_invokevirtual) {
     return resolve_method(link_info, /*require_methodref*/true, THREAD);
   } else if (!resolved_klass->is_interface()) {
     return resolve_method(link_info, /*require_methodref*/false, THREAD);
   } else {
-    bool nostatics = (code == Bytecodes::_invokestatic) ? false : true;
-    return resolve_interface_method(link_info, nostatics, THREAD);
+    return resolve_interface_method(link_info, code, THREAD);
   }
 }
 
@@ -777,8 +776,8 @@ static void trace_method_resolution(const char* prefix,
 #endif // PRODUCT
 }
 
-methodHandle LinkResolver::resolve_interface_method(const LinkInfo& link_info,
-                                                    bool nostatics, TRAPS) {
+// Do linktime resolution of a method in the interface within the context of the specied bytecode.
+methodHandle LinkResolver::resolve_interface_method(const LinkInfo& link_info, Bytecodes::Code code, TRAPS) {
 
   KlassHandle resolved_klass = link_info.resolved_klass();
 
@@ -824,13 +823,26 @@ methodHandle LinkResolver::resolve_interface_method(const LinkInfo& link_info,
     check_method_loader_constraints(link_info, resolved_method, "interface method", CHECK_NULL);
   }
 
-  if (nostatics && resolved_method->is_static()) {
+  if (code != Bytecodes::_invokestatic && resolved_method->is_static()) {
     ResourceMark rm(THREAD);
     char buf[200];
     jio_snprintf(buf, sizeof(buf), "Expected instance not static method %s",
                  Method::name_and_sig_as_C_string(resolved_klass(),
                  resolved_method->name(), resolved_method->signature()));
     THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
+  }
+
+  if (code == Bytecodes::_invokeinterface && resolved_method->is_private()) {
+    ResourceMark rm(THREAD);
+    char buf[200];
+
+    KlassHandle current_klass = link_info.current_klass();
+    jio_snprintf(buf, sizeof(buf), "private interface method requires invokespecial, not invokeinterface: method %s, caller-class:%s",
+                 Method::name_and_sig_as_C_string(resolved_klass(),
+                                                  resolved_method->name(),
+                                                  resolved_method->signature()),
+                                                  (current_klass.is_null() ? "<NULL>" : current_klass->internal_name()));
+     THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
   if (log_develop_is_enabled(Trace, itables)) {
@@ -984,7 +996,7 @@ methodHandle LinkResolver::linktime_resolve_static_method(const LinkInfo& link_i
   if (!resolved_klass->is_interface()) {
     resolved_method = resolve_method(link_info, /*require_methodref*/false, CHECK_NULL);
   } else {
-    resolved_method = resolve_interface_method(link_info, /*nostatics*/false, CHECK_NULL);
+    resolved_method = resolve_interface_method(link_info, Bytecodes::_invokestatic, CHECK_NULL);
   }
   assert(resolved_method->name() != vmSymbols::class_initializer_name(), "should have been checked in verifier");
 
@@ -1027,7 +1039,7 @@ methodHandle LinkResolver::linktime_resolve_special_method(const LinkInfo& link_
   if (!resolved_klass->is_interface()) {
     resolved_method = resolve_method(link_info, /*require_methodref*/false, CHECK_NULL);
   } else {
-    resolved_method = resolve_interface_method(link_info, /*nostatics*/true, CHECK_NULL);
+    resolved_method = resolve_interface_method(link_info, Bytecodes::_invokespecial, CHECK_NULL);
   }
 
   // check if method name is <init>, that it is found in same klass as static type
@@ -1302,7 +1314,7 @@ void LinkResolver::resolve_interface_call(CallInfo& result, Handle recv, KlassHa
 methodHandle LinkResolver::linktime_resolve_interface_method(const LinkInfo& link_info,
                                                              TRAPS) {
   // normal interface method resolution
-  methodHandle resolved_method = resolve_interface_method(link_info, true, CHECK_NULL);
+  methodHandle resolved_method = resolve_interface_method(link_info, Bytecodes::_invokeinterface, CHECK_NULL);
   assert(resolved_method->name() != vmSymbols::object_initializer_name(), "should have been checked in verifier");
   assert(resolved_method->name() != vmSymbols::class_initializer_name (), "should have been checked in verifier");
 
@@ -1319,17 +1331,6 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result,
   // check if receiver exists
   if (check_null_and_abstract && recv.is_null()) {
     THROW(vmSymbols::java_lang_NullPointerException());
-  }
-
-  // check if private interface method
-  if (resolved_klass->is_interface() && resolved_method->is_private()) {
-    ResourceMark rm(THREAD);
-    char buf[200];
-    jio_snprintf(buf, sizeof(buf), "private interface method requires invokespecial, not invokeinterface: method %s",
-                 Method::name_and_sig_as_C_string(resolved_klass(),
-                                                  resolved_method->name(),
-                                                  resolved_method->signature()));
-    THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
   // check if receiver klass implements the resolved interface

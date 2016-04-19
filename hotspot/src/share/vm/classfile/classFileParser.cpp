@@ -2927,7 +2927,7 @@ static const intArray* sort_methods(Array<Method*>* methods) {
   // If JVMTI original method ordering or sharing is enabled construct int
   // array remembering the original ordering
   if (JvmtiExport::can_maintain_original_method_order() || DumpSharedSpaces) {
-    method_ordering = new intArray(length);
+    method_ordering = new intArray(length, length, -1);
     for (int index = 0; index < length; index++) {
       Method* const m = methods->at(index);
       const int old_index = m->vtable_index();

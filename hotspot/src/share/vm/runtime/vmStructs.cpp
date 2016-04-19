@@ -859,9 +859,11 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
      static_field(StubRoutines,                _mulAdd,                                       address)                               \
      static_field(StubRoutines,                _dexp,                                         address)                               \
      static_field(StubRoutines,                _dlog,                                         address)                               \
+     static_field(StubRoutines,                _dlog10,                                       address)                               \
      static_field(StubRoutines,                _dpow,                                         address)                               \
      static_field(StubRoutines,                _dsin,                                         address)                               \
      static_field(StubRoutines,                _dcos,                                         address)                               \
+     static_field(StubRoutines,                _dtan,                                         address)                               \
      static_field(StubRoutines,                _vectorizedMismatch,                           address)                               \
      static_field(StubRoutines,                _jbyte_arraycopy,                              address)                               \
      static_field(StubRoutines,                _jshort_arraycopy,                             address)                               \
@@ -959,7 +961,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(nmethod,                     _stack_traversal_mark,                         long)                                  \
   nonstatic_field(nmethod,                     _compile_id,                                   int)                                   \
   nonstatic_field(nmethod,                     _comp_level,                                   int)                                   \
-  nonstatic_field(nmethod,                     _exception_cache,                              ExceptionCache*)                       \
+  volatile_nonstatic_field(nmethod,            _exception_cache,                              ExceptionCache*)                       \
                                                                                                                                      \
   unchecked_c2_static_field(Deoptimization,    _trap_reason_name,                             void*)                                 \
                                                                                                                                      \
@@ -1920,6 +1922,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_c2_type(ConvL2INode, Node)                                      \
   declare_c2_type(CastX2PNode, Node)                                      \
   declare_c2_type(CastP2XNode, Node)                                      \
+  declare_c2_type(SetVectMaskINode, Node)                                 \
   declare_c2_type(MemBarNode, MultiNode)                                  \
   declare_c2_type(MemBarAcquireNode, MemBarNode)                          \
   declare_c2_type(MemBarReleaseNode, MemBarNode)                          \
@@ -1927,6 +1930,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_c2_type(StoreFenceNode, MemBarNode)                             \
   declare_c2_type(MemBarVolatileNode, MemBarNode)                         \
   declare_c2_type(MemBarCPUOrderNode, MemBarNode)                         \
+  declare_c2_type(OnSpinWaitNode, MemBarNode)                             \
   declare_c2_type(InitializeNode, MemBarNode)                             \
   declare_c2_type(ThreadLocalNode, Node)                                  \
   declare_c2_type(Opaque1Node, Node)                                      \
@@ -2066,10 +2070,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_c2_type(NegNode, Node)                                          \
   declare_c2_type(NegFNode, NegNode)                                      \
   declare_c2_type(NegDNode, NegNode)                                      \
-  declare_c2_type(TanDNode, Node)                                         \
   declare_c2_type(AtanDNode, Node)                                        \
   declare_c2_type(SqrtDNode, Node)                                        \
-  declare_c2_type(Log10DNode, Node)                                       \
   declare_c2_type(ReverseBytesINode, Node)                                \
   declare_c2_type(ReverseBytesLNode, Node)                                \
   declare_c2_type(ReductionNode, Node)                                    \

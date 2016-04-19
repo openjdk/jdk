@@ -3257,12 +3257,12 @@ void MacroAssembler::eden_allocate(
     if (var_size_in_bytes->is_valid()) {
       // size is unknown at compile time
       cmp(free, var_size_in_bytes);
-      br(Assembler::lessUnsigned, false, Assembler::pn, slow_case); // if there is not enough space go the slow case
+      brx(Assembler::lessUnsigned, false, Assembler::pn, slow_case); // if there is not enough space go the slow case
       delayed()->add(obj, var_size_in_bytes, end);
     } else {
       // size is known at compile time
       cmp(free, con_size_in_bytes);
-      br(Assembler::lessUnsigned, false, Assembler::pn, slow_case); // if there is not enough space go the slow case
+      brx(Assembler::lessUnsigned, false, Assembler::pn, slow_case); // if there is not enough space go the slow case
       delayed()->add(obj, con_size_in_bytes, end);
     }
     // Compare obj with the value at top_addr; if still equal, swap the value of

@@ -2369,11 +2369,13 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts) 
                   if (multi_version_post_loops(lpt, lpt_next) == false) {
                     // Cause the rce loop to be optimized away if we fail
                     cl->mark_is_multiversioned();
+                    cl->set_slp_max_unroll(0);
                     poison_rce_post_loop(lpt);
                   }
                 }
               }
             }
+            sw.transform_loop(lpt, true);
           }
         } else if (cl->is_main_loop()) {
           sw.transform_loop(lpt, true);

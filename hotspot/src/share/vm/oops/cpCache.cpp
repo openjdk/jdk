@@ -569,7 +569,7 @@ void ConstantPoolCache::initialize(const intArray& inverse_index_map,
                                    const intArray& invokedynamic_references_map) {
   for (int i = 0; i < inverse_index_map.length(); i++) {
     ConstantPoolCacheEntry* e = entry_at(i);
-    int original_index = inverse_index_map[i];
+    int original_index = inverse_index_map.at(i);
     e->initialize_entry(original_index);
     assert(entry_at(i) == e, "sanity");
   }
@@ -579,19 +579,19 @@ void ConstantPoolCache::initialize(const intArray& inverse_index_map,
   for (int i = 0; i < invokedynamic_inverse_index_map.length(); i++) {
     int offset = i + invokedynamic_offset;
     ConstantPoolCacheEntry* e = entry_at(offset);
-    int original_index = invokedynamic_inverse_index_map[i];
+    int original_index = invokedynamic_inverse_index_map.at(i);
     e->initialize_entry(original_index);
     assert(entry_at(offset) == e, "sanity");
   }
 
   for (int ref = 0; ref < invokedynamic_references_map.length(); ref++) {
-    const int cpci = invokedynamic_references_map[ref];
+    const int cpci = invokedynamic_references_map.at(ref);
     if (cpci >= 0) {
 #ifdef ASSERT
       // invokedynamic and invokehandle have more entries; check if they
       // all point to the same constant pool cache entry.
       for (int entry = 1; entry < ConstantPoolCacheEntry::_indy_resolved_references_entries; entry++) {
-        const int cpci_next = invokedynamic_references_map[ref + entry];
+        const int cpci_next = invokedynamic_references_map.at(ref + entry);
         assert(cpci == cpci_next, "%d == %d", cpci, cpci_next);
       }
 #endif
