@@ -45,40 +45,23 @@
 G1Policy::G1Policy() :
   _predictor(G1ConfidencePercent / 100.0),
   _analytics(new G1Analytics(&_predictor)),
-  _pause_time_target_ms((double) MaxGCPauseMillis),
-  _rs_lengths_prediction(0),
-  _max_survivor_regions(0),
-  _survivors_age_table(true),
-
-  _bytes_allocated_in_old_since_last_gc(0),
-  _ihop_control(NULL),
+  _mmu_tracker(new G1MMUTrackerQueue(GCPauseIntervalMillis / 1000.0, MaxGCPauseMillis / 1000.0)),
+  _ihop_control(create_ihop_control(&_predictor)),
   _policy_counters(new GCPolicyCounters("GarbageFirst", 1, 3)),
-  _initial_mark_to_mixed() {
-
-  // SurvRateGroups below must be initialized after the predictor because they
-  // indirectly use it through this object passed to their constructor.
-  _short_lived_surv_rate_group =
-    new SurvRateGroup(&_predictor, "Short Lived", G1YoungSurvRateNumRegionsSummary);
-  _survivor_surv_rate_group =
-    new SurvRateGroup(&_predictor, "Survivor", G1YoungSurvRateNumRegionsSummary);
-
-  _phase_times = new G1GCPhaseTimes(ParallelGCThreads);
-
-  double max_gc_time = (double) MaxGCPauseMillis / 1000.0;
-  double time_slice  = (double) GCPauseIntervalMillis / 1000.0;
-  _mmu_tracker = new G1MMUTrackerQueue(time_slice, max_gc_time);
-
-  _tenuring_threshold = MaxTenuringThreshold;
-
-
-  guarantee(G1ReservePercent <= 50, "Range checking should not allow values over 50.");
-  _reserve_factor = (double) G1ReservePercent / 100.0;
-  // This will be set when the heap is expanded
-  // for the first time during initialization.
-  _reserve_regions = 0;
-
-  _ihop_control = create_ihop_control();
-}
+  _young_list_fixed_length(0),
+  _short_lived_surv_rate_group(new SurvRateGroup(&_predictor, "Short Lived", G1YoungSurvRateNumRegionsSummary)),
+  _survivor_surv_rate_group(new SurvRateGroup(&_predictor, "Survivor", G1YoungSurvRateNumRegionsSummary)),
+  _reserve_factor((double) G1ReservePercent / 100.0),
+  _reserve_regions(0),
+  _rs_lengths_prediction(0),
+  _bytes_allocated_in_old_since_last_gc(0),
+  _initial_mark_to_mixed(),
+  _collection_set(NULL),
+  _g1(NULL),
+  _phase_times(new G1GCPhaseTimes(ParallelGCThreads)),
+  _tenuring_threshold(MaxTenuringThreshold),
+  _max_survivor_regions(0),
+  _survivors_age_table(true) { }
 
 G1Policy::~G1Policy() {
   delete _ihop_control;
@@ -86,16 +69,13 @@ G1Policy::~G1Policy() {
 
 G1CollectorState* G1Policy::collector_state() const { return _g1->collector_state(); }
 
-void G1Policy::init() {
-  // Set aside an initial future to_space.
-  _g1 = G1CollectedHeap::heap();
-  _collection_set = _g1->collection_set();
+void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
+  _g1 = g1h;
+  _collection_set = collection_set;
 
   assert(Heap_lock->owned_by_self(), "Locking discipline.");
 
-  if (adaptive_young_list_length()) {
-    _young_list_fixed_length = 0;
-  } else {
+  if (!adaptive_young_list_length()) {
     _young_list_fixed_length = _young_gen_sizer.min_desired_young_length();
   }
   _young_gen_sizer.adjust_max_new_size(_g1->max_regions());
@@ -798,10 +778,10 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t cards_sc
   cset_chooser()->verify();
 }
 
-G1IHOPControl* G1Policy::create_ihop_control() const {
+G1IHOPControl* G1Policy::create_ihop_control(const G1Predictions* predictor){
   if (G1UseAdaptiveIHOP) {
     return new G1AdaptiveIHOPControl(InitiatingHeapOccupancyPercent,
-                                     &_predictor,
+                                     predictor,
                                      G1ReservePercent,
                                      G1HeapWastePercent);
   } else {
