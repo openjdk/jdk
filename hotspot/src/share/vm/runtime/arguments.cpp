@@ -420,6 +420,7 @@ static AliasedLoggingFlag const aliased_logging_flags[] = {
   { "TraceLoaderConstraints",    LogLevel::Info,  true,  LOG_TAGS(classload, constraints) },
   { "TraceMonitorInflation",     LogLevel::Debug, true,  LOG_TAGS(monitorinflation) },
   { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LOG_TAGS(safepointcleanup) },
+  { "TraceJVMTIObjectTagging",   LogLevel::Debug, true,  LOG_TAGS(jvmti, objecttagging) },
   { NULL,                        LogLevel::Off,   false, LOG_TAGS(_NO_TAG) }
 };
 

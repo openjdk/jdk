@@ -70,6 +70,7 @@
   LOG_TAG(modules) \
   LOG_TAG(monitorinflation) \
   LOG_TAG(monitormismatch) \
+  LOG_TAG(objecttagging) \
   LOG_TAG(os) \
   LOG_TAG(pagesize) \
   LOG_TAG(phases) \
