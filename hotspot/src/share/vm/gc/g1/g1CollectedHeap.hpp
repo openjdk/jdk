@@ -68,6 +68,7 @@ class CompactibleSpaceClosure;
 class Space;
 class G1CollectionSet;
 class G1CollectorPolicy;
+class G1Policy;
 class G1RemSet;
 class HeapRegionRemSetIterator;
 class G1ConcurrentMark;
@@ -137,6 +138,7 @@ class G1CollectedHeap : public CollectedHeap {
 
 private:
   WorkGang* _workers;
+  G1CollectorPolicy* _collector_policy;
 
   static size_t _humongous_object_threshold_in_words;
 
@@ -290,6 +292,8 @@ private:
                                                          size_t size,
                                                          size_t translation_factor);
 
+  static G1Policy* create_g1_policy();
+
   void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
   void process_weak_jni_handles();
@@ -360,7 +364,7 @@ protected:
   YoungList*  _young_list;
 
   // The current policy object for the collector.
-  G1CollectorPolicy* _g1_policy;
+  G1Policy* _g1_policy;
   G1HeapSizingPolicy* _heap_sizing_policy;
 
   G1CollectionSet _collection_set;
@@ -979,7 +983,7 @@ public:
   G1CollectorState* collector_state() { return &_collector_state; }
 
   // The current policy object for the collector.
-  G1CollectorPolicy* g1_policy() const { return _g1_policy; }
+  G1Policy* g1_policy() const { return _g1_policy; }
 
   const G1CollectionSet* collection_set() const { return &_collection_set; }
   G1CollectionSet* collection_set() { return &_collection_set; }
