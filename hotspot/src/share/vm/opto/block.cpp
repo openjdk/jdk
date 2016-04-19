@@ -73,7 +73,7 @@ void Block_List::print() {
 }
 #endif
 
-uint Block::code_alignment() {
+uint Block::code_alignment() const {
   // Check for Root block
   if (_pre_order == 0) return CodeEntryAlignment;
   // Check for Start block
@@ -1727,8 +1727,14 @@ bool Trace::backedge(CFGEdge *e) {
     first_block()->set_loop_alignment(targ_block);
 
   } else {
-    // Backbranch into the middle of a trace
-    targ_block->set_loop_alignment(targ_block);
+    // That loop may already have a loop top (we're reaching it again
+    // through the backedge of an outer loop)
+    Block* b = prev(targ_block);
+    bool has_top = targ_block->head()->is_Loop() && b->has_loop_alignment() && !b->head()->is_Loop();
+    if (!has_top) {
+      // Backbranch into the middle of a trace
+      targ_block->set_loop_alignment(targ_block);
+    }
   }
 
   return loop_rotated;

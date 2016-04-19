@@ -30,7 +30,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.runtime.JVMCIRuntime;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 //JaCoCo Exclude
 

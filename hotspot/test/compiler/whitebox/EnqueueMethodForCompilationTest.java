@@ -29,9 +29,9 @@ import compiler.whitebox.CompilerWhiteBoxTest;
  * @library /testlibrary /test/lib /
  * @modules java.management
  * @build EnqueueMethodForCompilationTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI EnqueueMethodForCompilationTest
+ * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+PrintCompilation -XX:-UseCounterDecay EnqueueMethodForCompilationTest
  * @summary testing of WB::enqueueMethodForCompilation()
  * @author igor.ignatyev@oracle.com
  */
@@ -39,8 +39,8 @@ public class EnqueueMethodForCompilationTest extends CompilerWhiteBoxTest {
 
     public static void main(String[] args) throws Exception {
         String directive =
-                "[{ match:\"*SimpleTestCase$Helper.*\", BackgroundCompilation: false }, " +
-                " { match:\"*.*\", inline:\"-*SimpleTestCase$Helper.*\"}]";
+                "[{ match:\"*SimpleTestCaseHelper.*\", BackgroundCompilation: false }, " +
+                " { match:\"*.*\", inline:\"-*SimpleTestCaseHelper.*\"}]";
         if (WHITE_BOX.addCompilerDirective(directive) != 2) {
             throw new RuntimeException("Could not add directive");
         }
@@ -86,7 +86,10 @@ public class EnqueueMethodForCompilationTest extends CompilerWhiteBoxTest {
         checkNotCompiled();
         WHITE_BOX.clearMethodState(method);
 
-        WHITE_BOX.enqueueMethodForCompilation(method, compLevel, bci);
+        if (!WHITE_BOX.enqueueMethodForCompilation(method, compLevel, bci)) {
+           throw new RuntimeException(method
+                    + " could not be enqueued for compilation");
+        }
         checkCompiled();
         deoptimize();
         checkNotCompiled();

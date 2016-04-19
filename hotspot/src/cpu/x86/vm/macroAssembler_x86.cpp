@@ -3399,6 +3399,18 @@ void MacroAssembler::movq(XMMRegister dst, AddressLiteral src) {
   }
 }
 
+void MacroAssembler::setvectmask(Register dst, Register src) {
+  Assembler::movl(dst, 1);
+  Assembler::shlxl(dst, dst, src);
+  Assembler::decl(dst);
+  Assembler::kmovdl(k1, dst);
+  Assembler::movl(dst, src);
+}
+
+void MacroAssembler::restorevectmask() {
+  Assembler::knotwl(k1, k0);
+}
+
 void MacroAssembler::movdbl(XMMRegister dst, AddressLiteral src) {
   if (reachable(src)) {
     if (UseXmmLoadAndClearUpper) {

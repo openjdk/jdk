@@ -1184,6 +1184,10 @@ public:
                      Register result, Register cnt1,
                      int elem_size, bool is_string);
 
+  void fill_words(Register base, Register cnt, Register value);
+  void zero_words(Register base, Register cnt);
+  void zero_words(Register base, u_int64_t cnt);
+
   void encode_iso_array(Register src, Register dst,
                         Register len, Register result,
                         FloatRegister Vtmp1, FloatRegister Vtmp2,

@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.jvmci.code;
+package jdk.vm.ci.code.test;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
