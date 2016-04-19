@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @summary Check that a mixed GC is reflected in the gc logs
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @library /testlibrary /test/lib
- * @ignore 8138607
  * @modules java.management
  * @build sun.hotspot.WhiteBox gc.g1.mixedgc.TestLogging
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
@@ -57,8 +56,8 @@ public class TestLogging {
             "-XX:SurvivorRatio=1", // Survivor-to-eden ratio is 1:1
             "-Xms10M", "-Xmx10M",
             "-XX:MaxTenuringThreshold=1", // promote objects after first gc
-            "-XX:InitiatingHeapOccupancyPercent=0", // marking cycle happens
-            // each time
+            "-XX:InitiatingHeapOccupancyPercent=100", // set initial CMC threshold and disable adaptive IHOP
+            "-XX:-G1UseAdaptiveIHOP",                 // to avoid additional concurrent cycles caused by ergonomics
             "-XX:G1MixedGCCountTarget=4",
             "-XX:MaxGCPauseMillis=30000", // to have enough time
             "-XX:G1HeapRegionSize=1m", "-XX:G1HeapWastePercent=0",
@@ -120,8 +119,8 @@ class MixedGCProvoker {
         // Allocates buffer and promotes it to the old gen. Mix live and dead old
         // objects
         for (int i = 0; i < TestLogging.ALLOCATION_COUNT; ++i) {
-            liveOldObjects.add(new byte[TestLogging.ALLOCATION_SIZE * 10]);
-            deadOldObjects.add(new byte[TestLogging.ALLOCATION_SIZE * 10]);
+            liveOldObjects.add(new byte[TestLogging.ALLOCATION_SIZE * 5]);
+            deadOldObjects.add(new byte[TestLogging.ALLOCATION_SIZE * 5]);
         }
 
         // need only 2 promotions to promote objects to the old gen
