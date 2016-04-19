@@ -5056,7 +5056,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1460538705
+DATE_WHEN_GENERATED=1461064700
 
 ###############################################################################
 #
@@ -16277,7 +16277,10 @@ $as_echo "$JVM_VARIANTS" >&6; }
   # Check that the selected variants are valid
 
   # grep filter function inspired by a comment to http://stackoverflow.com/a/1617326
-  INVALID_VARIANTS=`$GREP -Fvx "${VALID_JVM_VARIANTS// /$'\n'}" <<< "${JVM_VARIANTS// /$'\n'}"`
+  # Notice that the original variant failes on SLES 10 and 11
+  NEEDLE=${VALID_JVM_VARIANTS// /$'\n'}
+  STACK=${JVM_VARIANTS// /$'\n'}
+  INVALID_VARIANTS=`$GREP -Fvx "${NEEDLE}" <<< "${STACK}"`
   if test "x$INVALID_VARIANTS" != x; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: Unknown variant(s) specified: $INVALID_VARIANTS" >&5
 $as_echo "$as_me: Unknown variant(s) specified: $INVALID_VARIANTS" >&6;}
@@ -16286,7 +16289,9 @@ $as_echo "$as_me: Unknown variant(s) specified: $INVALID_VARIANTS" >&6;}
 
   # All "special" variants share the same output directory ("server")
   VALID_MULTIPLE_JVM_VARIANTS="server client minimal"
-  INVALID_MULTIPLE_VARIANTS=`$GREP -Fvx "${VALID_MULTIPLE_JVM_VARIANTS// /$'\n'}" <<< "${JVM_VARIANTS// /$'\n'}"`
+  NEEDLE=${VALID_MULTIPLE_JVM_VARIANTS// /$'\n'}
+  STACK=${JVM_VARIANTS// /$'\n'}
+  INVALID_MULTIPLE_VARIANTS=`$GREP -Fvx "${NEEDLE}" <<< "${STACK}"`
   if  test "x$INVALID_MULTIPLE_VARIANTS" != x && test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = xtrue; then
     as_fn_error $? "You cannot build multiple variants with anything else than $VALID_MULTIPLE_JVM_VARIANTS." "$LINENO" 5
   fi
@@ -65556,7 +65561,9 @@ $as_echo_n "checking JVM features for JVM variant '$variant'... " >&6; }
     JVM_FEATURES_TO_TEST=${!features_var_name}
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JVM_FEATURES_TO_TEST" >&5
 $as_echo "$JVM_FEATURES_TO_TEST" >&6; }
-    INVALID_FEATURES=`$GREP -Fvx "${VALID_JVM_FEATURES// /$'\n'}" <<< "${JVM_FEATURES_TO_TEST// /$'\n'}"`
+    NEEDLE=${VALID_JVM_FEATURES// /$'\n'}
+    STACK=${JVM_FEATURES_TO_TEST// /$'\n'}
+    INVALID_FEATURES=`$GREP -Fvx "${NEEDLE}" <<< "${STACK}"`
     if test "x$INVALID_FEATURES" != x; then
       as_fn_error $? "Invalid JVM feature(s): $INVALID_FEATURES" "$LINENO" 5
     fi
