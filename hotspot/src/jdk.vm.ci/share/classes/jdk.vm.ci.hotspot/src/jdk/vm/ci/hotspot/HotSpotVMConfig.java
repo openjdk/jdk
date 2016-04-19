@@ -38,7 +38,7 @@ import jdk.vm.ci.hotspotvmconfig.HotSpotVMData;
 import jdk.vm.ci.hotspotvmconfig.HotSpotVMField;
 import jdk.vm.ci.hotspotvmconfig.HotSpotVMFlag;
 import jdk.vm.ci.hotspotvmconfig.HotSpotVMType;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 //JaCoCo Exclude
 
