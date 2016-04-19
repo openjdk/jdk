@@ -2221,11 +2221,11 @@ public:
           "Adaptive size policy maximum GC pause time goal in millisecond, "\
           "or (G1 Only) the maximum GC time per MMU time slice")            \
           range(1, max_uintx - 1)                                           \
-          constraint(MaxGCPauseMillisConstraintFunc,AfterMemoryInit)        \
+          constraint(MaxGCPauseMillisConstraintFunc,AfterErgo)              \
                                                                             \
   product(uintx, GCPauseIntervalMillis, 0,                                  \
           "Time slice for MMU specification")                               \
-          constraint(GCPauseIntervalMillisConstraintFunc,AfterMemoryInit)   \
+          constraint(GCPauseIntervalMillisConstraintFunc,AfterErgo)         \
                                                                             \
   product(uintx, MaxGCMinorPauseMillis, max_uintx,                          \
           "Adaptive size policy maximum GC minor pause time goal "          \
