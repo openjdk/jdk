@@ -56,6 +56,7 @@ public:
     }
     INLINE void Deselect(int pos) {
         if (isMultiSelect) {
+            SendListMessage(LB_SETCARETINDEX, pos, FALSE);
             SendListMessage(LB_SETSEL, FALSE, pos);
         }
         else {

@@ -46,7 +46,6 @@ import java.lang.ref.SoftReference;
 
 import jdk.internal.misc.JavaAWTAccess;
 import jdk.internal.misc.SharedSecrets;
-import sun.misc.ManagedLocalsThread;
 import sun.util.logging.PlatformLogger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -598,8 +597,8 @@ public final class AppContext {
         }
 
         public Thread run() {
-            Thread t = new ManagedLocalsThread(appContext.getThreadGroup(),
-                                               runnable, "AppContext Disposer");
+            Thread t = new Thread(appContext.getThreadGroup(),
+                                  runnable, "AppContext Disposer", 0, false);
             t.setContextClassLoader(appContext.getContextClassLoader());
             t.setPriority(Thread.NORM_PRIORITY + 1);
             t.setDaemon(true);

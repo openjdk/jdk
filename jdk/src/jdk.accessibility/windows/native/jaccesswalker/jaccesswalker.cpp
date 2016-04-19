@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -543,7 +543,7 @@ void Jaccesswalker::addComponentNodes(long vmID, AccessibleContext context,
     } else {
         char s[LINE_BUFSIZE];
         sprintf( s,
-            "ERROR calling GetAccessibleContextInfo; vmID = %X, context = %X",
+            "ERROR calling GetAccessibleContextInfo; vmID = %X, context = %p",
             vmID, context );
 
         TVITEM tvi;
