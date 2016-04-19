@@ -302,7 +302,7 @@ public class POAPolicyMediatorImpl_R_USM extends POAPolicyMediatorBase_R {
         throw new WrongPolicy();
     }
 
-    class Etherealizer extends sun.misc.ManagedLocalsThread {
+    class Etherealizer extends Thread {
         private POAPolicyMediatorImpl_R_USM mediator ;
         private ActiveObjectMap.Key key ;
         private AOMEntry entry ;
@@ -314,6 +314,7 @@ public class POAPolicyMediatorImpl_R_USM extends POAPolicyMediatorBase_R {
             ActiveObjectMap.Key key, AOMEntry entry, Servant servant,
             boolean debug )
         {
+            super(null, null, "PAO-Etherealizer-Thread", 0, false);
             this.mediator = mediator ;
             this.key = key ;
             this.entry = entry;
