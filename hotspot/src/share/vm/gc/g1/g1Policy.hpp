@@ -50,9 +50,8 @@ class GCPolicyCounters;
 
 class G1Policy: public CHeapObj<mtGC> {
  private:
-  G1IHOPControl* _ihop_control;
 
-  G1IHOPControl* create_ihop_control() const;
+  static G1IHOPControl* create_ihop_control(const G1Predictions* predictor);
   // Update the IHOP control with necessary statistics.
   void update_ihop_prediction(double mutator_time_s,
                               size_t mutator_alloc_bytes,
@@ -62,6 +61,7 @@ class G1Policy: public CHeapObj<mtGC> {
   G1Predictions _predictor;
   G1Analytics* _analytics;
   G1MMUTracker* _mmu_tracker;
+  G1IHOPControl* _ihop_control;
 
   GCPolicyCounters* _policy_counters;
 
@@ -74,10 +74,14 @@ class G1Policy: public CHeapObj<mtGC> {
   // locker is active. This should be >= _young_list_target_length;
   uint _young_list_max_length;
 
+  // SurvRateGroups below must be initialized after the predictor because they
+  // indirectly use it through this object passed to their constructor.
   SurvRateGroup* _short_lived_surv_rate_group;
   SurvRateGroup* _survivor_surv_rate_group;
 
   double _reserve_factor;
+  // This will be set when the heap is expanded
+  // for the first time during initialization.
   uint   _reserve_regions;
 
   G1YoungGenSizer _young_gen_sizer;
@@ -91,8 +95,6 @@ class G1Policy: public CHeapObj<mtGC> {
 #ifndef PRODUCT
   bool verify_young_ages(HeapRegion* head, SurvRateGroup *surv_rate_group);
 #endif // PRODUCT
-
-  double _pause_time_target_ms;
 
   size_t _pending_cards;
 
@@ -299,7 +301,7 @@ public:
   // This should be called after the heap is resized.
   void record_new_heap_size(uint new_number_of_regions);
 
-  void init();
+  void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
 
   virtual void note_gc_start();
 
