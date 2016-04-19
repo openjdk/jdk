@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6856415
+ * @bug 6856415 8154212 8154470
  * @summary Miscellaneous tests, Exceptions
  * @compile -XDignore.symbol.file MiscTests.java
  * @run main MiscTests
@@ -33,7 +33,9 @@
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MiscTests extends TestHelper {
 
@@ -93,21 +95,36 @@ public class MiscTests extends TestHelper {
 
         TestResult tr = doExec(javaCmd,
                 "-Djava.security.manager", "-jar", testJar.getName(), "foo.bak");
-        for (String s : tr.testOutput) {
-            System.out.println(s);
-        }
         if (!tr.contains("java.security.AccessControlException:" +
                 " access denied (\"java.lang.RuntimePermission\"" +
                 " \"accessClassInPackage.sun.security.pkcs11\")")) {
-            System.out.println(tr.status);
+            System.out.println(tr);
+        }
+    }
+
+    static void testJLDEnv() {
+        final Map<String, String> envToSet = new HashMap<>();
+        envToSet.put("_JAVA_LAUNCHER_DEBUG", "true");
+        for (String cmd : new String[] { javaCmd, javacCmd }) {
+            TestResult tr = doExec(envToSet, cmd, "-version");
+            tr.checkPositive();
+            String javargs = cmd.equals(javacCmd) ? "on" : "off";
+            String progname = cmd.equals(javacCmd) ? "javac" : "java";
+            if (!tr.isOK()
+                || !tr.matches("\\s*debug:on$")
+                || !tr.matches("\\s*javargs:" + javargs + "$")
+                || !tr.matches("\\s*program name:" + progname + "$")) {
+                System.out.println(tr);
+            }
         }
     }
 
     public static void main(String... args) throws IOException {
         testWithClassPathSetViaProperty();
         test6856415();
+        testJLDEnv();
         if (testExitValue != 0) {
             throw new Error(testExitValue + " tests failed");
+        }
     }
-}
 }

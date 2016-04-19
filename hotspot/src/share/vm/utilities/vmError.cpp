@@ -1260,8 +1260,9 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
           out.print_raw("#\n# Compiler replay data is saved as:\n# ");
           out.print_raw_cr(buffer);
         } else {
+          int e = errno;
           out.print_raw("#\n# Can't open file to dump replay data. Error: ");
-          out.print_raw_cr(strerror(os::get_last_error()));
+          out.print_raw_cr(os::strerror(e));
         }
       }
     }
@@ -1301,7 +1302,8 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       out.print_raw_cr("\" ...");
 
       if (os::fork_and_exec(cmd) < 0) {
-        out.print_cr("os::fork_and_exec failed: %s (%d)", strerror(errno), errno);
+        out.print_cr("os::fork_and_exec failed: %s (%s=%d)",
+                     os::strerror(errno), os::errno_name(errno), errno);
       }
     }
 
@@ -1359,7 +1361,8 @@ void VM_ReportJavaOutOfMemory::doit() {
     tty->print_cr("\"%s\"...", cmd);
 
     if (os::fork_and_exec(cmd) < 0) {
-      tty->print_cr("os::fork_and_exec failed: %s (%d)", strerror(errno), errno);
+      tty->print_cr("os::fork_and_exec failed: %s (%s=%d)",
+                     os::strerror(errno), os::errno_name(errno), errno);
     }
   }
 }

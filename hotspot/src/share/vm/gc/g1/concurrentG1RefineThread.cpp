@@ -76,9 +76,8 @@ void ConcurrentG1RefineThread::initialize() {
 }
 
 void ConcurrentG1RefineThread::wait_for_completed_buffers() {
-  DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
-  while (!_should_terminate && !is_active()) {
+  while (!should_terminate() && !is_active()) {
     _monitor->wait(Mutex::_no_safepoint_check_flag);
   }
 }
@@ -109,22 +108,13 @@ void ConcurrentG1RefineThread::deactivate() {
   }
 }
 
-void ConcurrentG1RefineThread::run() {
-  initialize_in_thread();
-  wait_for_universe_init();
-
-  run_service();
-
-  terminate();
-}
-
 void ConcurrentG1RefineThread::run_service() {
   _vtime_start = os::elapsedVTime();
 
-  while (!_should_terminate) {
+  while (!should_terminate()) {
     // Wait for work
     wait_for_completed_buffers();
-    if (_should_terminate) {
+    if (should_terminate()) {
       break;
     }
 
@@ -135,7 +125,12 @@ void ConcurrentG1RefineThread::run_service() {
     {
       SuspendibleThreadSetJoiner sts_join;
 
-      do {
+      while (!should_terminate()) {
+        if (sts_join.should_yield()) {
+          sts_join.yield();
+          continue;             // Re-check for termination after yield delay.
+        }
+
         size_t curr_buffer_num = dcqs.completed_buffers_num();
         // If the number of the buffers falls down into the yellow zone,
         // that means that the transition period after the evacuation pause has ended.
@@ -147,16 +142,22 @@ void ConcurrentG1RefineThread::run_service() {
         if (_next != NULL && !_next->is_active() && curr_buffer_num > _next->_threshold) {
           _next->activate();
         }
-      } while (dcqs.apply_closure_to_completed_buffer(_refine_closure,
-                                                      _worker_id + _worker_id_offset,
-                                                      _deactivation_threshold,
-                                                      false /* during_pause */));
 
-      deactivate();
-      log_debug(gc, refine)("Deactivated %d, off threshold: " SIZE_FORMAT ", current: " SIZE_FORMAT,
-                            _worker_id, _deactivation_threshold,
-                            dcqs.completed_buffers_num());
+        // Process the next buffer, if there are enough left.
+        if (!dcqs.apply_closure_to_completed_buffer(_refine_closure,
+                                                    _worker_id + _worker_id_offset,
+                                                    _deactivation_threshold,
+                                                    false /* during_pause */)) {
+          break; // Deactivate, number of buffers fell below threshold.
+        }
+      }
     }
+
+    deactivate();
+    log_debug(gc, refine)("Deactivated %d, off threshold: " SIZE_FORMAT
+                          ", current: " SIZE_FORMAT,
+                          _worker_id, _deactivation_threshold,
+                          dcqs.completed_buffers_num());
 
     if (os::supports_vtime()) {
       _vtime_accum = (os::elapsedVTime() - _vtime_start);
@@ -166,23 +167,6 @@ void ConcurrentG1RefineThread::run_service() {
   }
 
   log_debug(gc, refine)("Stopping %d", _worker_id);
-}
-
-void ConcurrentG1RefineThread::stop() {
-  // it is ok to take late safepoints here, if needed
-  {
-    MutexLockerEx mu(Terminator_lock);
-    _should_terminate = true;
-  }
-
-  stop_service();
-
-  {
-    MutexLockerEx mu(Terminator_lock);
-    while (!_has_terminated) {
-      Terminator_lock->wait();
-    }
-  }
 }
 
 void ConcurrentG1RefineThread::stop_service() {

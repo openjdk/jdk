@@ -153,8 +153,6 @@ javax/management/MBeanServer/OldMBeanServerTest.java            8030957 aix-all
 
 javax/management/remote/mandatory/notif/NotifReconnectDeadlockTest.java 8042215 generic-all
 
-sun/management/jmxremote/bootstrap/JMXInterfaceBindingTest.java 8147985 generic-all
-
 ############################################################################
 
 # jdk_net
@@ -236,7 +234,7 @@ sun/security/pkcs11/MessageDigest/DigestKAT.java                8077138,8023434 
 sun/security/pkcs11/MessageDigest/ReinitDigest.java             8077138,8023434 windows-all
 sun/security/pkcs11/MessageDigest/TestCloning.java              8077138,8023434 windows-all
 sun/security/pkcs11/Provider/ConfigQuotedString.sh              8077138,8023434 windows-all
-sun/security/pkcs11/Provider/Login.sh                           8077138,8023434,8153545 windows-all,linux-all
+sun/security/pkcs11/Provider/Login.sh                           8077138,8023434 windows-all
 sun/security/pkcs11/SampleTest.java                             8077138,8023434 windows-all
 sun/security/pkcs11/Secmod/AddPrivateKey.java                   8077138,8023434 windows-all
 sun/security/pkcs11/Secmod/AddTrustedCert.java                  8077138,8023434 windows-all

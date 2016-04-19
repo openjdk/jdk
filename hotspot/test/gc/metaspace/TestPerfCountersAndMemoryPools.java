@@ -36,15 +36,14 @@ import static jdk.test.lib.Asserts.*;
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @ignore 8151460
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedKlassPointers -XX:+UseSerialGC -XX:+UsePerfData -Xint TestPerfCountersAndMemoryPools
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UseCompressedKlassPointers -XX:+UseSerialGC -XX:+UsePerfData -Xint TestPerfCountersAndMemoryPools
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UseSerialGC -XX:+UsePerfData -Xint TestPerfCountersAndMemoryPools
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UseSerialGC -XX:+UsePerfData -Xint TestPerfCountersAndMemoryPools
  */
 public class TestPerfCountersAndMemoryPools {
     public static void main(String[] args) throws Exception {
         checkMemoryUsage("Metaspace", "sun.gc.metaspace");
 
-        if (InputArguments.contains("-XX:+UseCompressedKlassPointers") && Platform.is64bit()) {
+        if (InputArguments.contains("-XX:+UseCompressedClassPointers") && Platform.is64bit()) {
             checkMemoryUsage("Compressed Class Space", "sun.gc.compressedclassspace");
         }
     }
@@ -72,13 +71,17 @@ public class TestPerfCountersAndMemoryPools {
         pool.getUsage().getInit();
         pool.getUsage().getUsed();
         pool.getUsage().getCommitted();
-        assertEQ(1L, 1L);
+        assertEQ(1L, 1L, "Make assert load");
 
         // Must do a GC to update performance counters
         System.gc();
-        assertEQ(getMinCapacity(perfNS), pool.getUsage().getInit());
-        assertEQ(getUsed(perfNS), pool.getUsage().getUsed());
-        assertEQ(getCapacity(perfNS), pool.getUsage().getCommitted());
+        assertEQ(getMinCapacity(perfNS), pool.getUsage().getInit(), "MinCapacity out of sync");
+
+        // Adding a second GC due to metadata allocations caused by getting the
+        // initial size from the pool. This is needed when running with -Xcomp.
+        System.gc();
+        assertEQ(getUsed(perfNS), pool.getUsage().getUsed(), "Used out of sync");
+        assertEQ(getCapacity(perfNS), pool.getUsage().getCommitted(), "Committed out of sync");
     }
 
     private static long getMinCapacity(String ns) throws Exception {

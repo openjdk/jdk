@@ -44,14 +44,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 
-#if defined(__GNUC__) && !defined(IA64) && !defined(PPC64)
-// Need to inhibit inlining for older versions of GCC to avoid build-time failures
-  #define NOINLINE __attribute__((noinline))
-#else
-  #define NOINLINE
-#endif
-
-
 #ifdef DTRACE_ENABLED
 
 // Only bother with this argument setup if dtrace is available
@@ -254,7 +246,7 @@ static volatile int InitDone        = 0;
 // -----------------------------------------------------------------------------
 // Enter support
 
-void NOINLINE ObjectMonitor::enter(TRAPS) {
+void ObjectMonitor::enter(TRAPS) {
   // The following code is ordered to check the most common cases first
   // and to reduce RTS->RTO cache line upgrades on SPARC and IA32 processors.
   Thread * const Self = THREAD;
@@ -431,7 +423,7 @@ int ObjectMonitor::TryLock(Thread * Self) {
 
 #define MAX_RECHECK_INTERVAL 1000
 
-void NOINLINE ObjectMonitor::EnterI(TRAPS) {
+void ObjectMonitor::EnterI(TRAPS) {
   Thread * const Self = THREAD;
   assert(Self->is_Java_thread(), "invariant");
   assert(((JavaThread *) Self)->thread_state() == _thread_blocked, "invariant");
@@ -681,7 +673,7 @@ void NOINLINE ObjectMonitor::EnterI(TRAPS) {
 // Knob_Reset and Knob_SpinAfterFutile support and restructuring the
 // loop accordingly.
 
-void NOINLINE ObjectMonitor::ReenterI(Thread * Self, ObjectWaiter * SelfNode) {
+void ObjectMonitor::ReenterI(Thread * Self, ObjectWaiter * SelfNode) {
   assert(Self != NULL, "invariant");
   assert(SelfNode != NULL, "invariant");
   assert(SelfNode->_thread == Self, "invariant");
@@ -858,7 +850,7 @@ void ObjectMonitor::UnlinkAfterAcquire(Thread *Self, ObjectWaiter *SelfNode) {
 // ~~~~~~~~
 // ::exit() uses a canonical 1-1 idiom with a MEMBAR although some of
 // the fast-path operators have been optimized so the common ::exit()
-// operation is 1-0.  See i486.ad fast_unlock(), for instance.
+// operation is 1-0, e.g., see macroAssembler_x86.cpp: fast_unlock().
 // The code emitted by fast_unlock() elides the usual MEMBAR.  This
 // greatly improves latency -- MEMBAR and CAS having considerable local
 // latency on modern processors -- but at the cost of "stranding".  Absent the
@@ -871,7 +863,7 @@ void ObjectMonitor::UnlinkAfterAcquire(Thread *Self, ObjectWaiter *SelfNode) {
 //
 // The CAS() in enter provides for safety and exclusion, while the CAS or
 // MEMBAR in exit provides for progress and avoids stranding.  1-0 locking
-// eliminates the CAS/MEMBAR from the exist path, but it admits stranding.
+// eliminates the CAS/MEMBAR from the exit path, but it admits stranding.
 // We detect and recover from stranding with timers.
 //
 // If a thread transiently strands it'll park until (a) another
@@ -894,7 +886,7 @@ void ObjectMonitor::UnlinkAfterAcquire(Thread *Self, ObjectWaiter *SelfNode) {
 // structured the code so the windows are short and the frequency
 // of such futile wakups is low.
 
-void NOINLINE ObjectMonitor::exit(bool not_suspended, TRAPS) {
+void ObjectMonitor::exit(bool not_suspended, TRAPS) {
   Thread * const Self = THREAD;
   if (THREAD != _owner) {
     if (THREAD->is_lock_owned((address) _owner)) {
@@ -943,7 +935,6 @@ void NOINLINE ObjectMonitor::exit(bool not_suspended, TRAPS) {
 
   for (;;) {
     assert(THREAD == _owner, "invariant");
-
 
     if (Knob_ExitPolicy == 0) {
       // release semantics: prior loads and stores from within the critical section

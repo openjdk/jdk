@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ public class Threads {
             virtualConstructor.addMapping("CodeCacheSweeperThread", CodeCacheSweeperThread.class);
         }
         // for now, use JavaThread itself. fix it later with appropriate class if needed
-        virtualConstructor.addMapping("SurrogateLockerThread", JavaThread.class);
+        virtualConstructor.addMapping("ReferencePendingListLockerThread", JavaThread.class);
         virtualConstructor.addMapping("JvmtiAgentThread", JvmtiAgentThread.class);
         virtualConstructor.addMapping("ServiceThread", ServiceThread.class);
     }
@@ -172,7 +172,7 @@ public class Threads {
             return thread;
         } catch (Exception e) {
             throw new RuntimeException("Unable to deduce type of thread from address " + threadAddr +
-            " (expected type JavaThread, CompilerThread, ServiceThread, JvmtiAgentThread, SurrogateLockerThread, or CodeCacheSweeperThread)", e);
+            " (expected type JavaThread, CompilerThread, ServiceThread, JvmtiAgentThread, ReferencePendingListLockerThread, or CodeCacheSweeperThread)", e);
         }
     }
 

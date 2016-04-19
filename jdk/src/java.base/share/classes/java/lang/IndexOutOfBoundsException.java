@@ -67,21 +67,4 @@ public class IndexOutOfBoundsException extends RuntimeException {
     public IndexOutOfBoundsException(int index) {
         super("Index out of range: " + index);
     }
-
-    /**
-     * Constructs an {@code IndexOutOfBoundsException} with arguments indicating
-     * two out of bound values.
-     *
-     * <p>The out of bound values are included in this exception's detail
-     * message.  The exact presentation format of the detail message is
-     * unspecified.
-     *
-     * @param a the first out of bound value
-     * @param b the second out of bound value
-     * @since 9
-     */
-    public IndexOutOfBoundsException(int a, int b) {
-        super("Indexed access out of bounds: " + a + ", " + b);
-    }
-
 }

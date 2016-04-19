@@ -363,7 +363,7 @@ public final class String
      * @see  #String(byte[], java.nio.charset.Charset)
      * @see  #String(byte[])
      */
-    @Deprecated
+    @Deprecated(since="1.1")
     public String(byte ascii[], int hibyte, int offset, int count) {
         checkBoundsOffCount(offset, count, ascii.length);
         if (count == 0) {
@@ -415,7 +415,7 @@ public final class String
      * @see  #String(byte[], java.nio.charset.Charset)
      * @see  #String(byte[])
      */
-    @Deprecated
+    @Deprecated(since="1.1")
     public String(byte ascii[], int hibyte) {
         this(ascii, hibyte, 0, ascii.length);
     }
@@ -911,7 +911,7 @@ public final class String
      *                 dst.length}
      *          </ul>
      */
-    @Deprecated
+    @Deprecated(since="1.1")
     public void getBytes(int srcBegin, int srcEnd, byte dst[], int dstBegin) {
         checkBoundsBeginEnd(srcBegin, srcEnd, length());
         Objects.requireNonNull(dst);
