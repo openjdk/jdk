@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1125,7 +1125,7 @@ WinAccessBridge::getAccessibleContextWithFocus(HWND window, long *vmID, JOBJECT6
 
     PrintDebugString("WinAccessBridge::getAccessibleContextWithFocus(%p, %X, )", window, vmID);
     // find vmID, etc. from HWND; ask that VM for the AC w/Focus
-        HWND pkgVMID = (HWND)ABLongToHandle( pkg->rVMID ) ;
+    HWND pkgVMID;
     if (getAccessibleContextFromHWND(window, (long *)&(pkgVMID), &(pkg->rAccessibleContext)) == TRUE) {
         HWND destABWindow = javaVMs->findAccessBridgeWindow((long)pkgVMID);     // ineffecient [[[FIXME]]]
         if (sendMemoryPackage(buffer, sizeof(buffer), destABWindow) == TRUE) {

@@ -25,7 +25,7 @@
 
 /*
   @test
-  @bug 6383903
+  @bug 6383903 8144166
   @summary REGRESSION: componentMoved is now getting called for some hidden components
   @author andrei.dmitriev: area=awt.component
   @run main CompEventOnHiddenComponent
