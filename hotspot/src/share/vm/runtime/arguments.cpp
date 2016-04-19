@@ -998,7 +998,7 @@ void log_deprecated_flag(const char* name, bool on, AliasedLoggingFlag alf) {
   int max_tags = sizeof(tagSet)/sizeof(tagSet[0]);
   for (int i = 0; i < max_tags && tagSet[i] != LogTag::__NO_TAG; i++) {
     if (i > 0) {
-      strncat(tagset_buffer, ",", max_tagset_len - strlen(tagset_buffer));
+      strncat(tagset_buffer, "+", max_tagset_len - strlen(tagset_buffer));
     }
     strncat(tagset_buffer, LogTag::name(tagSet[i]), max_tagset_len - strlen(tagset_buffer));
   }
