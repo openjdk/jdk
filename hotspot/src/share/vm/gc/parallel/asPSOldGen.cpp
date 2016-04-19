@@ -126,7 +126,7 @@ size_t ASPSOldGen::available_for_contraction() {
   // Also adjust for inter-generational alignment
   size_t result_aligned = align_size_down(result, gen_alignment);
 
-  LogHandle(gc, ergo) log;
+  Log(gc, ergo) log;
   if (log.is_trace()) {
     size_t working_promoted = (size_t) policy->avg_promoted()->padded_average();
     size_t promo_increment = policy->promo_increment(max_contraction);

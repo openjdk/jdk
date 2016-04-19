@@ -28,6 +28,7 @@
 #include "gc/parallel/psPromotionLAB.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
@@ -55,6 +56,7 @@ class PSPromotionManager VALUE_OBJ_CLASS_SPEC {
  private:
   static PaddedEnd<PSPromotionManager>* _manager_array;
   static OopStarTaskQueueSet*           _stack_array_depth;
+  static PreservedMarksSet*             _preserved_marks_set;
   static PSOldGen*                      _old_gen;
   static MutableSpace*                  _young_space;
 
@@ -84,6 +86,7 @@ class PSPromotionManager VALUE_OBJ_CLASS_SPEC {
   uint                                _array_chunk_size;
   uint                                _min_array_size_for_chunking;
 
+  PreservedMarks*                     _preserved_marks;
   PromotionFailedInfo                 _promotion_failed_info;
 
   // Accessors
@@ -176,6 +179,8 @@ class PSPromotionManager VALUE_OBJ_CLASS_SPEC {
   oop oop_promotion_failed(oop obj, markOop obj_mark);
 
   void reset();
+  void register_preserved_marks(PreservedMarks* preserved_marks);
+  static void restore_preserved_marks() { _preserved_marks_set->restore(); }
 
   void flush_labs();
   void drain_stacks(bool totally_drain) {

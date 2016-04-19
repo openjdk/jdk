@@ -33,6 +33,7 @@
 // the addresses of modified old-generation objects.  This type supports
 // this operation.
 
+class BufferNode;
 class PtrQueueSet;
 class PtrQueue VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
@@ -104,7 +105,7 @@ public:
   // get into an infinite loop).
   virtual bool should_enqueue_buffer() { return true; }
   void handle_zero_index();
-  void locking_enqueue_completed_buffer(void** buf);
+  void locking_enqueue_completed_buffer(BufferNode* node);
 
   void enqueue_known_active(void* ptr);
 
@@ -134,6 +135,10 @@ public:
   static size_t byte_index_to_index(size_t ind) {
     assert((ind % sizeof(void*)) == 0, "Invariant.");
     return ind / sizeof(void*);
+  }
+
+  static size_t index_to_byte_index(size_t ind) {
+    return ind * sizeof(void*);
   }
 
   // To support compiler.
@@ -186,10 +191,13 @@ public:
   // Free a BufferNode.
   static void deallocate(BufferNode* node);
 
-  // Return the BufferNode containing the buffer.
-  static BufferNode* make_node_from_buffer(void** buffer) {
-    return reinterpret_cast<BufferNode*>(
-      reinterpret_cast<char*>(buffer) - buffer_offset());
+  // Return the BufferNode containing the buffer, after setting its index.
+  static BufferNode* make_node_from_buffer(void** buffer, size_t index) {
+    BufferNode* node =
+      reinterpret_cast<BufferNode*>(
+        reinterpret_cast<char*>(buffer) - buffer_offset());
+    node->set_index(index);
+    return node;
   }
 
   // Return the buffer for node.
@@ -243,7 +251,7 @@ protected:
   // A mutator thread does the the work of processing a buffer.
   // Returns "true" iff the work is complete (and the buffer may be
   // deallocated).
-  virtual bool mut_process_buffer(void** buf) {
+  virtual bool mut_process_buffer(BufferNode* node) {
     ShouldNotReachHere();
     return false;
   }
@@ -267,13 +275,13 @@ public:
 
   // Return an empty buffer to the free list.  The "buf" argument is
   // required to be a pointer to the head of an array of length "_sz".
-  void deallocate_buffer(void** buf);
+  void deallocate_buffer(BufferNode* node);
 
   // Declares that "buf" is a complete buffer.
-  void enqueue_complete_buffer(void** buf, size_t index = 0);
+  void enqueue_complete_buffer(BufferNode* node);
 
   // To be invoked by the mutator.
-  bool process_or_enqueue_complete_buffer(void** buf);
+  bool process_or_enqueue_complete_buffer(BufferNode* node);
 
   bool completed_buffers_exist_dirty() {
     return _n_completed_buffers > 0;

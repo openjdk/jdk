@@ -77,6 +77,8 @@ import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import sun.nio.fs.AbstractFileSystemProvider;
+
 /**
  * This class consists exclusively of static methods that operate on files,
  * directories, or other types of files.
@@ -2193,6 +2195,12 @@ public final class Files {
      *          method denies read access to the file.
      */
     public static boolean isDirectory(Path path, LinkOption... options) {
+        if (options.length == 0) {
+            FileSystemProvider provider = provider(path);
+            if (provider instanceof AbstractFileSystemProvider)
+                return ((AbstractFileSystemProvider)provider).isDirectory(path);
+        }
+
         try {
             return readAttributes(path, BasicFileAttributes.class, options).isDirectory();
         } catch (IOException ioe) {
@@ -2230,6 +2238,12 @@ public final class Files {
      *          method denies read access to the file.
      */
     public static boolean isRegularFile(Path path, LinkOption... options) {
+        if (options.length == 0) {
+            FileSystemProvider provider = provider(path);
+            if (provider instanceof AbstractFileSystemProvider)
+                return ((AbstractFileSystemProvider)provider).isRegularFile(path);
+        }
+
         try {
             return readAttributes(path, BasicFileAttributes.class, options).isRegularFile();
         } catch (IOException ioe) {
@@ -2385,6 +2399,12 @@ public final class Files {
      * @see #notExists
      */
     public static boolean exists(Path path, LinkOption... options) {
+        if (options.length == 0) {
+            FileSystemProvider provider = provider(path);
+            if (provider instanceof AbstractFileSystemProvider)
+                return ((AbstractFileSystemProvider)provider).exists(path);
+        }
+
         try {
             if (followLinks(options)) {
                 provider(path).checkAccess(path);

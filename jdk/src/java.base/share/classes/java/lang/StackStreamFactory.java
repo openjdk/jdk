@@ -24,9 +24,7 @@
  */
 package java.lang;
 
-import jdk.internal.misc.VM;
-
-import java.io.PrintStream;
+import jdk.internal.reflect.MethodAccessor;
 import java.lang.StackWalker.Option;
 import java.lang.StackWalker.StackFrame;
 
@@ -34,12 +32,9 @@ import java.lang.annotation.Native;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.Consumer;
@@ -60,8 +55,7 @@ import static java.lang.StackStreamFactory.WalkerState.*;
  * to avoid overhead of Stream/Lambda
  * 1. Support traversing Stream<StackFrame>
  * 2. StackWalker::getCallerClass
- * 3. Throwable::init and Throwable::getStackTrace
- * 4. AccessControlContext getting ProtectionDomain
+ * 3. AccessControlContext getting ProtectionDomain
  */
 final class StackStreamFactory {
     private StackStreamFactory() {}
@@ -78,25 +72,22 @@ final class StackStreamFactory {
     // These flags must match the values maintained in the VM
     @Native private static final int DEFAULT_MODE              = 0x0;
     @Native private static final int FILL_CLASS_REFS_ONLY      = 0x2;
-    @Native private static final int FILTER_FILL_IN_STACKTRACE = 0x10;
     @Native private static final int SHOW_HIDDEN_FRAMES        = 0x20;  // LambdaForms are hidden by the VM
     @Native private static final int FILL_LIVE_STACK_FRAMES    = 0x100;
-
     /*
      * For Throwable to use StackWalker, set useNewThrowable to true.
      * Performance work and extensive testing is needed to replace the
      * VM built-in backtrace filled in Throwable with the StackWalker.
      */
-    final static boolean useNewThrowable = getProperty("stackwalk.newThrowable", false);
     final static boolean isDebug = getProperty("stackwalk.debug", false);
 
     static <T> StackFrameTraverser<T>
         makeStackTraverser(StackWalker walker, Function<? super Stream<StackFrame>, ? extends T> function)
     {
         if (walker.hasLocalsOperandsOption())
-            return new LiveStackInfoTraverser<T>(walker, function);
+            return new LiveStackInfoTraverser<>(walker, function);
         else
-            return new StackFrameTraverser<T>(walker, function);
+            return new StackFrameTraverser<>(walker, function);
     }
 
     /**
@@ -106,40 +97,31 @@ final class StackStreamFactory {
         return new CallerClassFinder(walker);
     }
 
-    static boolean useStackTrace(Throwable t) {
-        if (t instanceof VirtualMachineError)
-            return false;
-
-        return VM.isBooted() && StackStreamFactory.useNewThrowable;
-    }
-
-    /*
-     * This should only be used by Throwable::<init>.
-     */
-    static StackTrace makeStackTrace(Throwable ex) {
-        return StackTrace.dump(ex);
-    }
-
-    /*
-     * This creates StackTrace for Thread::dumpThread to use.
-     */
-    static StackTrace makeStackTrace() {
-        return StackTrace.dump();
-    }
-
     enum WalkerState {
         NEW,     // the stream is new and stack walking has not started
         OPEN,    // the stream is open when it is being traversed.
         CLOSED;  // the stream is closed when the stack walking is done
     }
 
-    static abstract class AbstractStackWalker<T> {
+    /**
+     * Subclass of AbstractStackWalker implements a specific stack walking logic.
+     * It needs to set up the frame buffer and stack walking mode.
+     *
+     * It initiates the VM stack walking via the callStackWalk method that serves
+     * as the anchored frame and VM will call up to AbstractStackWalker::doStackWalk.
+     *
+     * @param <R> the type of the result returned from stack walking
+     * @param <T> the type of the data gathered for each frame.
+     *            For example, StackFrameInfo for StackWalker::walk or
+     *            Class<?> for StackWalker::getCallerClass
+     */
+    static abstract class AbstractStackWalker<R, T> {
         protected final StackWalker walker;
         protected final Thread thread;
         protected final int maxDepth;
         protected final long mode;
-        protected int depth;                 // traversed stack depth
-        protected FrameBuffer frameBuffer;   // buffer for VM to fill in
+        protected int depth;    // traversed stack depth
+        protected FrameBuffer<? extends T> frameBuffer;
         protected long anchor;
 
         // buffers to fill in stack frame information
@@ -157,16 +139,13 @@ final class StackStreamFactory {
         private int toStackWalkMode(StackWalker walker, int mode) {
             int newMode = mode;
             if (walker.hasOption(Option.SHOW_HIDDEN_FRAMES) &&
-                    !fillCallerClassOnly(newMode) /* don't show hidden frames for getCallerClass */)
+                    (mode & FILL_CLASS_REFS_ONLY) != FILL_CLASS_REFS_ONLY)
                 newMode |= SHOW_HIDDEN_FRAMES;
             if (walker.hasLocalsOperandsOption())
                 newMode |= FILL_LIVE_STACK_FRAMES;
             return newMode;
         }
 
-        private boolean fillCallerClassOnly(int mode) {
-            return (mode|FILL_CLASS_REFS_ONLY) != FILL_CLASS_REFS_ONLY;
-        }
         /**
          * A callback method to consume the stack frames.  This method is invoked
          * once stack walking begins (i.e. it is only invoked when walkFrames is called).
@@ -179,7 +158,7 @@ final class StackStreamFactory {
          *
          * @return the number of consumed frames
          */
-         protected abstract T consumeFrames();
+         protected abstract R consumeFrames();
 
         /**
          * Initialize FrameBuffer.  Subclass should implement this method to
@@ -252,7 +231,7 @@ final class StackStreamFactory {
          * Walks stack frames until {@link #consumeFrames} is done consuming
          * the frames it is interested in.
          */
-        final T walk() {
+        final R walk() {
             checkState(NEW);
             try {
                 // VM will need to stablize the stack before walking.  It will invoke
@@ -318,7 +297,7 @@ final class StackStreamFactory {
             }
 
             this.anchor = anchor;  // set anchor for this bulk stack frame traversal
-            frameBuffer.setBatch(bufStartIndex, bufEndIndex);
+            frameBuffer.setBatch(depth, bufStartIndex, bufEndIndex);
 
             // traverse all frames and perform the action on the stack frames, if specified
             return consumeFrames();
@@ -381,15 +360,14 @@ final class StackStreamFactory {
          * If all fetched stack frames are traversed, AbstractStackWalker::fetchStackFrames will
          * fetch the next batch of stack frames to continue.
          */
-        private T beginStackWalk() {
+        private R beginStackWalk() {
             // initialize buffers for VM to fill the stack frame info
             initFrameBuffer();
 
             return callStackWalk(mode, 0,
                                  frameBuffer.curBatchFrameCount(),
                                  frameBuffer.startIndex(),
-                                 frameBuffer.classes,
-                                 frameBuffer.stackFrames);
+                                 frameBuffer.frames());
         }
 
         /*
@@ -404,8 +382,7 @@ final class StackStreamFactory {
 
             int endIndex = fetchStackFrames(mode, anchor, batchSize,
                                             startIndex,
-                                            frameBuffer.classes,
-                                            frameBuffer.stackFrames);
+                                            frameBuffer.frames());
             if (isDebug) {
                 System.out.format("  more stack walk requesting %d got %d to %d frames%n",
                                   batchSize, frameBuffer.startIndex(), endIndex);
@@ -414,27 +391,26 @@ final class StackStreamFactory {
             if (numFrames == 0) {
                 frameBuffer.freeze(); // done stack walking
             } else {
-                frameBuffer.setBatch(startIndex, endIndex);
+                frameBuffer.setBatch(depth, startIndex, endIndex);
             }
             return numFrames;
         }
 
         /**
          * Begins stack walking.  This method anchors this frame and invokes
-         * AbstractStackWalker::doStackWalk after fetching the firt batch of stack frames.
+         * AbstractStackWalker::doStackWalk after fetching the first batch of stack frames.
          *
          * @param mode        mode of stack walking
          * @param skipframes  number of frames to be skipped before filling the frame buffer.
          * @param batchSize   the batch size, max. number of elements to be filled in the frame buffers.
          * @param startIndex  start index of the frame buffers to be filled.
-         * @param classes     Classes buffer of the stack frames
-         * @param frames      StackFrame buffer, or null
+         * @param frames      Either a Class<?> array, if mode is {@link #FILL_CLASS_REFS_ONLY}
+         *                    or a {@link StackFrameInfo} (or derivative) array otherwise.
          * @return            Result of AbstractStackWalker::doStackWalk
          */
-        private native T callStackWalk(long mode, int skipframes,
+        private native R callStackWalk(long mode, int skipframes,
                                        int batchSize, int startIndex,
-                                       Class<?>[] classes,
-                                       StackFrame[] frames);
+                                       T[] frames);
 
         /**
          * Fetch the next batch of stack frames.
@@ -443,185 +419,14 @@ final class StackStreamFactory {
          * @param anchor
          * @param batchSize   the batch size, max. number of elements to be filled in the frame buffers.
          * @param startIndex  start index of the frame buffers to be filled.
-         * @param classes     Classes buffer of the stack frames
-         * @param frames      StackFrame buffer, or null
+         * @param frames      Either a Class<?> array, if mode is {@link #FILL_CLASS_REFS_ONLY}
+         *                    or a {@link StackFrameInfo} (or derivative) array otherwise.
          *
          * @return the end index to the frame buffers
          */
         private native int fetchStackFrames(long mode, long anchor,
                                             int batchSize, int startIndex,
-                                            Class<?>[] classes,
-                                            StackFrame[] frames);
-
-
-        /*
-         * Frame buffer
-         *
-         * Each specialized AbstractStackWalker subclass may subclass the FrameBuffer.
-         */
-        class FrameBuffer {
-            static final int START_POS = 2;     // 0th and 1st elements are reserved
-
-            // buffers for VM to fill stack frame info
-            int currentBatchSize;    // current batch size
-            Class<?>[] classes;      // caller class for fast path
-
-            StackFrame[] stackFrames;
-
-            int origin;         // index to the current traversed stack frame
-            int fence;          // index to the last frame in the current batch
-
-            FrameBuffer(int initialBatchSize) {
-                if (initialBatchSize < MIN_BATCH_SIZE) {
-                    throw new IllegalArgumentException(initialBatchSize + " < minimum batch size: " + MIN_BATCH_SIZE);
-                }
-                this.origin = START_POS;
-                this.fence = 0;
-                this.currentBatchSize = initialBatchSize;
-                this.classes = new Class<?>[currentBatchSize];
-            }
-
-            int curBatchFrameCount() {
-                return currentBatchSize-START_POS;
-            }
-
-            /*
-             * Tests if this frame buffer is empty.  All frames are fetched.
-             */
-            final boolean isEmpty() {
-                return origin >= fence || (origin == START_POS && fence == 0);
-            }
-
-            /*
-             * Freezes this frame buffer.  The stack stream source is done fetching.
-             */
-            final void freeze() {
-                origin = 0;
-                fence = 0;
-            }
-
-            /*
-             * Tests if this frame buffer is active.  It is inactive when
-             * it is done for traversal.  All stack frames have been traversed.
-             */
-            final boolean isActive() {
-                return origin > 0 && (fence == 0 || origin < fence || fence == currentBatchSize);
-            }
-
-            /**
-             * Gets the class at the current frame and move to the next frame.
-             */
-            final Class<?> next() {
-                if (isEmpty()) {
-                    throw new NoSuchElementException("origin=" + origin + " fence=" + fence);
-                }
-                Class<?> c = classes[origin++];
-                if (isDebug) {
-                    int index = origin-1;
-                    System.out.format("  next frame at %d: %s (origin %d fence %d)%n", index,
-                                      Objects.toString(c), index, fence);
-                }
-                return c;
-            }
-
-            /**
-             * Gets the class at the current frame.
-             */
-            final Class<?> get() {
-                if (isEmpty()) {
-                    throw new NoSuchElementException("origin=" + origin + " fence=" + fence);
-                }
-                return classes[origin];
-            }
-
-            /*
-             * Returns the index of the current frame.
-             */
-            final int getIndex() {
-                return origin;
-            }
-
-            /*
-             * Set the start and end index of a new batch of stack frames that have
-             * been filled in this frame buffer.
-             */
-            final void setBatch(int startIndex, int endIndex) {
-                if (startIndex <= 0 || endIndex <= 0)
-                    throw new IllegalArgumentException("startIndex=" + startIndex + " endIndex=" + endIndex);
-
-                this.origin = startIndex;
-                this.fence = endIndex;
-                if (depth == 0 && fence > 0) {
-                    // filter the frames due to the stack stream implementation
-                    for (int i = START_POS; i < fence; i++) {
-                        Class<?> c = classes[i];
-                        if (isDebug) System.err.format("  frame %d: %s%n", i, c);
-                        if (filterStackWalkImpl(c)) {
-                            origin++;
-                        } else {
-                            break;
-                        }
-                    }
-                }
-            }
-
-            /*
-             * Checks if the origin is the expected start index.
-             */
-            final void check(int skipFrames) {
-                int index = skipFrames + START_POS;
-                if (origin != index) {
-                    // stack walk must continue with the previous frame depth
-                    throw new IllegalStateException("origin " + origin + " != " + index);
-                }
-            }
-
-            // ------ subclass may override the following methods -------
-            /**
-             * Resizes the buffers for VM to fill in the next batch of stack frames.
-             * The next batch will start at the given startIndex with the maximum number
-             * of elements.
-             *
-             * <p> Subclass may override this method to manage the allocated buffers.
-             *
-             * @param startIndex the start index for the first frame of the next batch to fill in.
-             * @param elements the number of elements for the next batch to fill in.
-             *
-             */
-            void resize(int startIndex, int elements) {
-                if (!isActive())
-                    throw new IllegalStateException("inactive frame buffer can't be resized");
-
-                int size = startIndex+elements;
-                if (classes.length < size) {
-                    // copy the elements in classes array to the newly allocated one.
-                    // classes[0] is a Thread object
-                    Class<?>[] prev = classes;
-                    classes = new Class<?>[size];
-                    System.arraycopy(prev, 0, classes, 0, START_POS);
-                }
-                currentBatchSize = size;
-            }
-
-            /*
-             * Returns the start index for this frame buffer is refilled.
-             *
-             * This implementation reuses the allocated buffer for the next batch
-             * of stack frames.  For subclass to retain the fetched stack frames,
-             * it should override this method to return the index at which the frame
-             * should be filled in for the next batch.
-             */
-            int startIndex() {
-                return START_POS;
-            }
-
-            /**
-             * Returns next StackFrame object in the current batch of stack frames
-             */
-            StackFrame nextStackFrame() {
-                throw new InternalError("should not reach here");
-            }
-        }
+                                            T[] frames);
     }
 
     /*
@@ -629,45 +434,65 @@ final class StackStreamFactory {
      *
      * This class implements Spliterator::forEachRemaining and Spliterator::tryAdvance.
      */
-    static class StackFrameTraverser<T> extends AbstractStackWalker<T>
+    static class StackFrameTraverser<T> extends AbstractStackWalker<T, StackFrameInfo>
             implements Spliterator<StackFrame>
     {
         static {
             stackWalkImplClasses.add(StackFrameTraverser.class);
         }
         private static final int CHARACTERISTICS = Spliterator.ORDERED | Spliterator.IMMUTABLE;
-        class Buffer extends FrameBuffer {
-            Buffer(int initialBatchSize) {
+
+        final class StackFrameBuffer extends FrameBuffer<StackFrameInfo> {
+            private StackFrameInfo[] stackFrames;
+            StackFrameBuffer(int initialBatchSize) {
                 super(initialBatchSize);
 
-                this.stackFrames = new StackFrame[initialBatchSize];
+                this.stackFrames = new StackFrameInfo[initialBatchSize];
                 for (int i = START_POS; i < initialBatchSize; i++) {
                     stackFrames[i] = new StackFrameInfo(walker);
                 }
             }
 
             @Override
-            void resize(int startIndex, int elements) {
-                super.resize(startIndex, elements);
-
-                int size = startIndex+elements;
-                if (stackFrames.length < size) {
-                    stackFrames = new StackFrame[size];
-                }
-                for (int i = startIndex(); i < size; i++) {
-                    stackFrames[i] = new StackFrameInfo(walker);
-                }
+            StackFrameInfo[] frames() {
+                return stackFrames;
             }
 
             @Override
-            StackFrame nextStackFrame() {
+            void resize(int startIndex, int elements) {
+                if (!isActive())
+                    throw new IllegalStateException("inactive frame buffer can't be resized");
+
+                assert startIndex == START_POS :
+                       "bad start index " + startIndex + " expected " + START_POS;
+
+                int size = startIndex+elements;
+                if (stackFrames.length < size) {
+                    StackFrameInfo[] newFrames = new StackFrameInfo[size];
+                    // copy initial magic...
+                    System.arraycopy(stackFrames, 0, newFrames, 0, startIndex);
+                    stackFrames = newFrames;
+                }
+                for (int i = startIndex; i < size; i++) {
+                    stackFrames[i] = new StackFrameInfo(walker);
+                }
+                currentBatchSize = size;
+            }
+
+            @Override
+            StackFrameInfo nextStackFrame() {
                 if (isEmpty()) {
                     throw new NoSuchElementException("origin=" + origin + " fence=" + fence);
                 }
 
-                StackFrame frame = stackFrames[origin];
+                StackFrameInfo frame = stackFrames[origin];
                 origin++;
                 return frame;
+            }
+
+            @Override
+            final Class<?> at(int index) {
+                return stackFrames[index].declaringClass;
             }
         }
 
@@ -693,7 +518,7 @@ final class StackStreamFactory {
                 return null;
             }
 
-            StackFrame frame = frameBuffer.nextStackFrame();
+            StackFrameInfo frame = frameBuffer.nextStackFrame();
             depth++;
             return frame;
         }
@@ -710,7 +535,7 @@ final class StackStreamFactory {
 
         @Override
         protected void initFrameBuffer() {
-            this.frameBuffer = new Buffer(getNextBatchSize());
+            this.frameBuffer = new StackFrameBuffer(getNextBatchSize());
         }
 
         @Override
@@ -781,7 +606,7 @@ final class StackStreamFactory {
      * CallerClassFinder is specialized to return Class<?> for each stack frame.
      * StackFrame is not requested.
      */
-    static class CallerClassFinder extends AbstractStackWalker<Integer> {
+    static final class CallerClassFinder extends AbstractStackWalker<Integer, Class<?>> {
         static {
             stackWalkImplClasses.add(CallerClassFinder.class);
         }
@@ -790,6 +615,54 @@ final class StackStreamFactory {
 
         CallerClassFinder(StackWalker walker) {
             super(walker, FILL_CLASS_REFS_ONLY);
+            assert (mode & FILL_CLASS_REFS_ONLY) == FILL_CLASS_REFS_ONLY
+                   : "mode should contain FILL_CLASS_REFS_ONLY";
+        }
+
+        final class ClassBuffer extends FrameBuffer<Class<?>> {
+            Class<?>[] classes;      // caller class for fast path
+            ClassBuffer(int batchSize) {
+                super(batchSize);
+                classes = new Class<?>[batchSize];
+            }
+
+            @Override
+            Class<?>[] frames() { return classes;}
+
+            @Override
+            final Class<?> at(int index) { return classes[index];}
+
+
+            // ------ subclass may override the following methods -------
+            /**
+             * Resizes the buffers for VM to fill in the next batch of stack frames.
+             * The next batch will start at the given startIndex with the maximum number
+             * of elements.
+             *
+             * <p> Subclass may override this method to manage the allocated buffers.
+             *
+             * @param startIndex the start index for the first frame of the next batch to fill in.
+             * @param elements the number of elements for the next batch to fill in.
+             *
+             */
+            @Override
+            void resize(int startIndex, int elements) {
+                if (!isActive())
+                    throw new IllegalStateException("inactive frame buffer can't be resized");
+
+                assert startIndex == START_POS :
+                       "bad start index " + startIndex + " expected " + START_POS;
+
+                int size = startIndex+elements;
+                if (classes.length < size) {
+                    // copy the elements in classes array to the newly allocated one.
+                    // classes[0] is a Thread object
+                    Class<?>[] prev = classes;
+                    classes = new Class<?>[size];
+                    System.arraycopy(prev, 0, classes, 0, startIndex);
+                }
+                currentBatchSize = size;
+            }
         }
 
         Class<?> findCaller() {
@@ -810,15 +683,15 @@ final class StackStreamFactory {
                 if (isMethodHandleFrame(caller)) continue;
                 frames[n++] = caller;
             }
-
-            if (frames[1] == null)
+            if (frames[1] == null) {
                 throw new IllegalStateException("no caller frame");
+            }
             return n;
         }
 
         @Override
         protected void initFrameBuffer() {
-            this.frameBuffer = new FrameBuffer(getNextBatchSize());
+            this.frameBuffer = new ClassBuffer(getNextBatchSize());
         }
 
         @Override
@@ -832,214 +705,63 @@ final class StackStreamFactory {
         }
     }
 
-    /*
-     * StackTrace caches all frames in the buffer.  StackTraceElements are
-     * created lazily when Throwable::getStackTrace is called.
-     */
-    static class StackTrace extends AbstractStackWalker<Integer> {
-        static {
-            stackWalkImplClasses.add(StackTrace.class);
-        }
-
-        class GrowableBuffer extends FrameBuffer {
-            GrowableBuffer(int initialBatchSize) {
-                super(initialBatchSize);
-
-                this.stackFrames = new StackFrame[initialBatchSize];
-                for (int i = START_POS; i < initialBatchSize; i++) {
-                    stackFrames[i] = new StackFrameInfo(walker);
-                }
-            }
-
-            /*
-             * Returns the next index to fill
-             */
-            @Override
-            int startIndex() {
-                return origin;
-            }
-
-            /**
-             * Initialize the buffers for VM to fill in the stack frame information.
-             * The next batch will start at the given startIndex to
-             * the length of the buffer.
-             */
-            @Override
-            void resize(int startIndex, int elements) {
-                // Expand the frame buffer.
-                // Do not call super.resize that will reuse the filled elements
-                // in this frame buffer
-                int size = startIndex+elements;
-                if (classes.length < size) {
-                    // resize the frame buffer
-                    classes = Arrays.copyOf(classes, size);
-                    stackFrames = Arrays.copyOf(stackFrames, size);
-                }
-                for (int i = startIndex; i < size; i++) {
-                    stackFrames[i] = new StackFrameInfo(walker);
-                }
-                currentBatchSize = size;
-            }
-
-            StackTraceElement get(int index) {
-                return new StackTraceElement(classes[index].getName(), "unknown", null, -1);
-            }
-
-            /**
-             * Returns an array of StackTraceElement for all stack frames cached in
-             * this StackTrace object.
-             * <p>
-             * This method is intended for Throwable::getOurStackTrace use only.
-             */
-            StackTraceElement[] toStackTraceElements() {
-                int startIndex = START_POS;
-                for (int i = startIndex; i < classes.length; i++) {
-                    if (classes[i] != null && filterStackWalkImpl(classes[i])) {
-                        startIndex++;
-                    } else {
-                        break;
-                    }
-                }
-
-                // VM fills in the method name, filename, line number info
-                StackFrameInfo.fillInStackFrames(0, stackFrames, startIndex, startIndex + depth);
-
-                StackTraceElement[] stes = new StackTraceElement[depth];
-                for (int i = startIndex, j = 0; i < classes.length && j < depth; i++, j++) {
-                    if (isDebug) {
-                        System.err.println("StackFrame: " + i + " " + stackFrames[i]);
-                    }
-                    stes[j] = stackFrames[i].toStackTraceElement();
-                }
-                return stes;
-            }
-        }
-
-        private static final int MAX_STACK_FRAMES = 1024;
-        private static final StackWalker STACKTRACE_WALKER =
-            StackWalker.newInstanceNoCheck(EnumSet.of(Option.SHOW_REFLECT_FRAMES));
-
-        private StackTraceElement[] stes;
-        static StackTrace dump() {
-            return new StackTrace();
-        }
-
-        static StackTrace dump(Throwable ex) {
-            return new StackTrace(ex);
-        }
-
-        private StackTrace() {
-            this(STACKTRACE_WALKER, DEFAULT_MODE);
-        }
-
-        /*
-         * Throwable::fillInStackTrace and <init> of Throwable and subclasses
-         * are filtered in the VM.
-         */
-        private StackTrace(Throwable ex) {
-            this(STACKTRACE_WALKER, FILTER_FILL_IN_STACKTRACE);  // skip Throwable::init frames
-            if (isDebug) {
-                System.err.println("dump stack for " + ex.getClass().getName());
-            }
-        }
-
-        StackTrace(StackWalker walker, int mode) {
-            super(walker, mode, MAX_STACK_FRAMES);
-
-            // snapshot the stack trace
-            walk();
-        }
-
-        @Override
-        protected Integer consumeFrames() {
-            // traverse all frames and perform the action on the stack frames, if specified
-            int n = 0;
-            while (n < maxDepth && nextFrame() != null) {
-                n++;
-            }
-            return n;
-        }
-
-        @Override
-        protected void initFrameBuffer() {
-            this.frameBuffer = new GrowableBuffer(getNextBatchSize());
-        }
-
-        // TODO: implement better heuristic
-        @Override
-        protected int batchSize(int lastBatchFrameCount) {
-            // chunk size of VM backtrace is 32
-            return lastBatchFrameCount == 0 ? 32 : 32;
-        }
-
-        /**
-         * Returns an array of StackTraceElement for all stack frames cached in
-         * this StackTrace object.
-         * <p>
-         * This method is intended for Throwable::getOurStackTrace use only.
-         */
-        synchronized StackTraceElement[] getStackTraceElements() {
-            if (stes == null) {
-                stes = ((GrowableBuffer) frameBuffer).toStackTraceElements();
-                // release the frameBuffer memory
-                frameBuffer = null;
-            }
-            return stes;
-        }
-
-        /*
-         * Prints stack trace to the given PrintStream.
-         *
-         * Further implementation could skip creating StackTraceElement objects
-         * print directly to the PrintStream.
-         */
-        void printStackTrace(PrintStream s) {
-            StackTraceElement[] stes = getStackTraceElements();
-            synchronized (s) {
-                s.println("Stack trace");
-                for (StackTraceElement traceElement : stes)
-                    s.println("\tat " + traceElement);
-            }
-        }
-    }
-
-    static class LiveStackInfoTraverser<T> extends StackFrameTraverser<T> {
+    static final class LiveStackInfoTraverser<T> extends StackFrameTraverser<T> {
         static {
             stackWalkImplClasses.add(LiveStackInfoTraverser.class);
         }
         // VM will fill in all method info and live stack info directly in StackFrameInfo
-        class Buffer extends FrameBuffer {
-            Buffer(int initialBatchSize) {
+        final class LiveStackFrameBuffer extends FrameBuffer<LiveStackFrameInfo> {
+            private LiveStackFrameInfo[] stackFrames;
+            LiveStackFrameBuffer(int initialBatchSize) {
                 super(initialBatchSize);
-                this.stackFrames = new StackFrame[initialBatchSize];
+                this.stackFrames = new LiveStackFrameInfo[initialBatchSize];
                 for (int i = START_POS; i < initialBatchSize; i++) {
                     stackFrames[i] = new LiveStackFrameInfo(walker);
                 }
             }
 
             @Override
-            void resize(int startIndex, int elements) {
-                super.resize(startIndex, elements);
-                int size = startIndex + elements;
+            LiveStackFrameInfo[] frames() {
+                return stackFrames;
+            }
 
+            @Override
+            void resize(int startIndex, int elements) {
+                if (!isActive()) {
+                    throw new IllegalStateException("inactive frame buffer can't be resized");
+                }
+                assert startIndex == START_POS :
+                       "bad start index " + startIndex + " expected " + START_POS;
+
+                int size = startIndex + elements;
                 if (stackFrames.length < size) {
-                    this.stackFrames = new StackFrame[size];
+                    LiveStackFrameInfo[] newFrames = new LiveStackFrameInfo[size];
+                    // copy initial magic...
+                    System.arraycopy(stackFrames, 0, newFrames, 0, startIndex);
+                    stackFrames = newFrames;
                 }
 
                 for (int i = startIndex(); i < size; i++) {
                     stackFrames[i] = new LiveStackFrameInfo(walker);
                 }
+
+                currentBatchSize = size;
             }
 
             @Override
-            StackFrame nextStackFrame() {
+            LiveStackFrameInfo nextStackFrame() {
                 if (isEmpty()) {
                     throw new NoSuchElementException("origin=" + origin + " fence=" + fence);
                 }
 
-                StackFrame frame = stackFrames[origin];
+                LiveStackFrameInfo frame = stackFrames[origin];
                 origin++;
                 return frame;
+            }
+
+            @Override
+            final Class<?> at(int index) {
+                return stackFrames[index].declaringClass;
             }
         }
 
@@ -1050,7 +772,183 @@ final class StackStreamFactory {
 
         @Override
         protected void initFrameBuffer() {
-            this.frameBuffer = new Buffer(getNextBatchSize());
+            this.frameBuffer = new LiveStackFrameBuffer(getNextBatchSize());
+        }
+    }
+
+    /*
+     * Frame buffer
+     *
+     * Each specialized AbstractStackWalker subclass may subclass the FrameBuffer.
+     */
+    static abstract class FrameBuffer<F> {
+        static final int START_POS = 2;     // 0th and 1st elements are reserved
+
+        // buffers for VM to fill stack frame info
+        int currentBatchSize;    // current batch size
+        int origin;         // index to the current traversed stack frame
+        int fence;          // index to the last frame in the current batch
+
+        FrameBuffer(int initialBatchSize) {
+            if (initialBatchSize < MIN_BATCH_SIZE) {
+                throw new IllegalArgumentException(initialBatchSize +
+                        " < minimum batch size: " + MIN_BATCH_SIZE);
+            }
+            this.origin = START_POS;
+            this.fence = 0;
+            this.currentBatchSize = initialBatchSize;
+        }
+
+        /**
+         * Returns an array of frames that may be used to store frame objects
+         * when walking the stack.
+         *
+         * May be an array of {@code Class<?>} if the {@code AbstractStackWalker}
+         * mode is {@link #FILL_CLASS_REFS_ONLY}, or an array of
+         * {@link StackFrameInfo} (or derivative) array otherwise.
+         *
+         * @return An array of frames that may be used to store frame objects
+         * when walking the stack. Must not be null.
+         */
+        abstract F[] frames(); // must not return null
+
+        /**
+         * Resizes the buffers for VM to fill in the next batch of stack frames.
+         * The next batch will start at the given startIndex with the maximum number
+         * of elements.
+         *
+         * <p> Subclass may override this method to manage the allocated buffers.
+         *
+         * @param startIndex the start index for the first frame of the next batch to fill in.
+         * @param elements the number of elements for the next batch to fill in.
+         *
+         */
+        abstract void resize(int startIndex, int elements);
+
+        /**
+         * Return the class at the given position in the current batch.
+         * @param index the position of the frame.
+         * @return the class at the given position in the current batch.
+         */
+        abstract Class<?> at(int index);
+
+        // ------ subclass may override the following methods -------
+
+        /*
+         * Returns the start index for this frame buffer is refilled.
+         *
+         * This implementation reuses the allocated buffer for the next batch
+         * of stack frames.  For subclass to retain the fetched stack frames,
+         * it should override this method to return the index at which the frame
+         * should be filled in for the next batch.
+         */
+        int startIndex() {
+            return START_POS;
+        }
+
+        /**
+         * Returns next StackFrame object in the current batch of stack frames
+         */
+        F nextStackFrame() {
+            throw new InternalError("should not reach here");
+        }
+
+        // ------ FrameBuffer implementation ------
+
+        final int curBatchFrameCount() {
+            return currentBatchSize-START_POS;
+        }
+
+        /*
+         * Tests if this frame buffer is empty.  All frames are fetched.
+         */
+        final boolean isEmpty() {
+            return origin >= fence || (origin == START_POS && fence == 0);
+        }
+
+        /*
+         * Freezes this frame buffer.  The stack stream source is done fetching.
+         */
+        final void freeze() {
+            origin = 0;
+            fence = 0;
+        }
+
+        /*
+         * Tests if this frame buffer is active.  It is inactive when
+         * it is done for traversal.  All stack frames have been traversed.
+         */
+        final boolean isActive() {
+            return origin > 0 && (fence == 0 || origin < fence || fence == currentBatchSize);
+        }
+
+        /**
+         * Gets the class at the current frame and move to the next frame.
+         */
+        final Class<?> next() {
+            if (isEmpty()) {
+                throw new NoSuchElementException("origin=" + origin + " fence=" + fence);
+            }
+            Class<?> c = at(origin);
+            origin++;
+            if (isDebug) {
+                int index = origin-1;
+                System.out.format("  next frame at %d: %s (origin %d fence %d)%n", index,
+                        Objects.toString(c), index, fence);
+            }
+            return c;
+        }
+
+        /**
+         * Gets the class at the current frame.
+         */
+        final Class<?> get() {
+            if (isEmpty()) {
+                throw new NoSuchElementException("origin=" + origin + " fence=" + fence);
+            }
+            return at(origin);
+        }
+
+        /*
+         * Returns the index of the current frame.
+         */
+        final int getIndex() {
+            return origin;
+        }
+
+        /*
+         * Set the start and end index of a new batch of stack frames that have
+         * been filled in this frame buffer.
+         */
+        final void setBatch(int depth, int startIndex, int endIndex) {
+            if (startIndex <= 0 || endIndex <= 0)
+                throw new IllegalArgumentException("startIndex=" + startIndex + " endIndex=" + endIndex);
+
+            this.origin = startIndex;
+            this.fence = endIndex;
+            if (depth == 0 && fence > 0) {
+                // filter the frames due to the stack stream implementation
+                for (int i = START_POS; i < fence; i++) {
+                    Class<?> c = at(i);
+                    if (isDebug) System.err.format("  frame %d: %s%n", i, c);
+                    if (filterStackWalkImpl(c)) {
+                        origin++;
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+
+        /*
+         * Checks if the origin is the expected start index.
+         */
+        final void check(int skipFrames) {
+            int index = skipFrames + START_POS;
+            if (origin != index) {
+                // stack walk must continue with the previous frame depth
+                throw new IllegalStateException("origin " + origin + " != " + index);
+            }
         }
     }
 
@@ -1081,13 +979,13 @@ final class StackStreamFactory {
     }
 
     private static boolean isReflectionFrame(Class<?> c) {
-        if (c.getName().startsWith("sun.reflect") &&
-                !sun.reflect.MethodAccessor.class.isAssignableFrom(c)) {
-            throw new InternalError("Not sun.reflect.MethodAccessor: " + c.toString());
+        if (c.getName().startsWith("jdk.internal.reflect") &&
+                !MethodAccessor.class.isAssignableFrom(c)) {
+            throw new InternalError("Not jdk.internal.reflect.MethodAccessor: " + c.toString());
         }
         // ## should filter all @Hidden frames?
         return c == Method.class ||
-                sun.reflect.MethodAccessor.class.isAssignableFrom(c) ||
+                MethodAccessor.class.isAssignableFrom(c) ||
                 c.getName().startsWith("java.lang.invoke.LambdaForm");
     }
 

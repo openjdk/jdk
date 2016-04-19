@@ -131,6 +131,9 @@ killcmd=kill
 
 # This can be increased if timing seems to be an issue.
 sleep_seconds=1
+if [ -n "$TIMEOUT_FACTOR" ] ; then
+  sleep_seconds=$(echo $TIMEOUT_FACTOR $sleep_seconds | awk '{printf "%d\n", int($1 * $2)}')
+fi
 
 echo "ShellScaffold.sh: Version" >& 2
 topPid=$$
@@ -921,7 +924,7 @@ dojstack()
         # If jstack exists, so will jps
         # Show stack traces of jdb and debuggee as a possible debugging aid.
         jdbCmd=`$jdk/bin/jps -v | $grep $jdbKeyword`
-        realJdbPid=`echo "$jdbCmd" | sed -e 's@ TTY.*@@'`
+        realJdbPid=`echo "$jdbCmd" | sed -e 's@ .*@@'`
         if [ ! -z "$realJdbPid" ] ; then
             echo "-- jdb process info ----------------------" >&2
             echo "      $jdbCmd"                              >&2

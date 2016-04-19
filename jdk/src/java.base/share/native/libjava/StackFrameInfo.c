@@ -38,22 +38,10 @@
 
 /*
  * Class:     java_lang_StackFrameInfo
- * Method:    fillInStackFrames
- * Signature: (I[Ljava/lang/Object;[Ljava/lang/Object;II)V
+ * Method:    toStackTraceElement0
+ * Signature: (Ljava/lang/StackTraceElement;)V
  */
-JNIEXPORT void JNICALL Java_java_lang_StackFrameInfo_fillInStackFrames
-  (JNIEnv *env, jclass dummy, jint startIndex,
-   jobjectArray stackFrames, jint fromIndex, jint toIndex) {
-    JVM_FillStackFrames(env, dummy, startIndex,
-                        stackFrames, fromIndex, toIndex);
-}
-
-/*
- * Class:     java_lang_StackFrameInfo
- * Method:    setMethodInfo
- * Signature: (Ljava/lang/Class;)V
- */
-JNIEXPORT void JNICALL Java_java_lang_StackFrameInfo_setMethodInfo
-  (JNIEnv *env, jobject stackframeinfo) {
-     JVM_SetMethodInfo(env, stackframeinfo);
+JNIEXPORT void JNICALL Java_java_lang_StackFrameInfo_toStackTraceElement0
+  (JNIEnv *env, jobject stackframeinfo, jobject stacktraceinfo) {
+     JVM_ToStackTraceElement(env, stackframeinfo, stacktraceinfo);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,10 @@ public class MethodCounters extends Metadata {
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type      = db.lookupType("MethodCounters");
 
-    interpreterInvocationCountField = new CIntField(type.getCIntegerField("_interpreter_invocation_count"), 0);
-    interpreterThrowoutCountField = new CIntField(type.getCIntegerField("_interpreter_throwout_count"), 0);
+    if (VM.getVM().isServerCompiler()) {
+      interpreterInvocationCountField = new CIntField(type.getCIntegerField("_interpreter_invocation_count"), 0);
+      interpreterThrowoutCountField = new CIntField(type.getCIntegerField("_interpreter_throwout_count"), 0);
+    }
     if (!VM.getVM().isCore()) {
       invocationCounter        = new CIntField(type.getCIntegerField("_invocation_counter"), 0);
       backedgeCounter          = new CIntField(type.getCIntegerField("_backedge_counter"), 0);
@@ -61,11 +63,19 @@ public class MethodCounters extends Metadata {
   private static CIntField backedgeCounter;
 
   public int interpreterInvocationCount() {
-    return (int) interpreterInvocationCountField.getValue(this);
+      if (interpreterInvocationCountField != null) {
+        return (int) interpreterInvocationCountField.getValue(this);
+      } else {
+        return 0;
+      }
   }
 
   public int interpreterThrowoutCount() {
-    return (int) interpreterThrowoutCountField.getValue(this);
+      if (interpreterThrowoutCountField != null) {
+        return (int) interpreterThrowoutCountField.getValue(this);
+      } else {
+        return 0;
+      }
   }
   public long getInvocationCounter() {
     if (Assert.ASSERTS_ENABLED) {

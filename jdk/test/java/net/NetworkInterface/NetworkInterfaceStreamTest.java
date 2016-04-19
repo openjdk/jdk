@@ -28,7 +28,6 @@
  * @build java.base/java.util.stream.OpTestCase
  * @run testng/othervm NetworkInterfaceStreamTest
  * @run testng/othervm -Djava.net.preferIPv4Stack=true NetworkInterfaceStreamTest
- * @key intermittent
  */
 
 import org.testng.annotations.Test;
@@ -52,20 +51,25 @@ public class NetworkInterfaceStreamTest extends OpTestCase {
     public void testNetworkInterfaces() throws SocketException {
         Supplier<Stream<NetworkInterface>> ss = () -> {
             try {
-                return NetworkInterface.networkInterfaces();
+                return allNetworkInterfaces();
             }
             catch (SocketException e) {
                 throw new RuntimeException(e);
             }
         };
 
-        Collection<NetworkInterface> expected = Collections.list(NetworkInterface.getNetworkInterfaces());
+        Collection<NetworkInterface> enums = Collections.list(NetworkInterface.getNetworkInterfaces());
+        Collection<NetworkInterface> expected = new ArrayList<>();
+        enums.forEach(ni -> {
+            if (isIncluded(ni)) {
+                expected.add(ni);
+            }
+        });
         withData(TestData.Factory.ofSupplier("Top-level network interfaces", ss))
                 .stream(s -> s)
                 .expectedResult(expected)
                 .exercise();
     }
-
 
     private Collection<NetworkInterface> getAllNetworkInterfaces() throws SocketException {
         Collection<NetworkInterface> anis = new ArrayList<>();

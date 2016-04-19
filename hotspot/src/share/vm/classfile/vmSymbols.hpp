@@ -102,7 +102,6 @@
   template(java_security_SecureClassLoader,           "java/security/SecureClassLoader")          \
   template(java_net_URL,                              "java/net/URL")                             \
   template(java_util_jar_Manifest,                    "java/util/jar/Manifest")                   \
-  template(impliesCreateAccessControlContext_name,    "impliesCreateAccessControlContext")        \
   template(java_io_OutputStream,                      "java/io/OutputStream")                     \
   template(java_io_Reader,                            "java/io/Reader")                           \
   template(java_io_BufferedReader,                    "java/io/BufferedReader")                   \
@@ -228,26 +227,20 @@
                                                                                                   \
   /* Support for reflection based on dynamic bytecode generation (JDK 1.4 and above) */           \
                                                                                                   \
-  template(sun_reflect_FieldInfo,                     "sun/reflect/FieldInfo")                    \
-  template(sun_reflect_MethodInfo,                    "sun/reflect/MethodInfo")                   \
-  template(sun_reflect_MagicAccessorImpl,             "sun/reflect/MagicAccessorImpl")            \
-  template(sun_reflect_MethodAccessorImpl,            "sun/reflect/MethodAccessorImpl")           \
-  template(sun_reflect_ConstructorAccessorImpl,       "sun/reflect/ConstructorAccessorImpl")      \
-  template(sun_reflect_SerializationConstructorAccessorImpl, "sun/reflect/SerializationConstructorAccessorImpl") \
-  template(sun_reflect_DelegatingClassLoader,         "sun/reflect/DelegatingClassLoader")        \
-  template(sun_reflect_Reflection,                    "sun/reflect/Reflection")                   \
-  template(sun_reflect_CallerSensitive,               "sun/reflect/CallerSensitive")              \
-  template(sun_reflect_CallerSensitive_signature,     "Lsun/reflect/CallerSensitive;")            \
+  template(reflect_MagicAccessorImpl,                 "jdk/internal/reflect/MagicAccessorImpl")       \
+  template(reflect_MethodAccessorImpl,                "jdk/internal/reflect/MethodAccessorImpl")      \
+  template(reflect_ConstructorAccessorImpl,           "jdk/internal/reflect/ConstructorAccessorImpl") \
+  template(reflect_DelegatingClassLoader,             "jdk/internal/reflect/DelegatingClassLoader")   \
+  template(reflect_Reflection,                        "jdk/internal/reflect/Reflection")              \
+  template(reflect_CallerSensitive,                   "jdk/internal/reflect/CallerSensitive")         \
+  template(reflect_CallerSensitive_signature,         "Ljdk/internal/reflect/CallerSensitive;")       \
   template(checkedExceptions_name,                    "checkedExceptions")                        \
   template(clazz_name,                                "clazz")                                    \
   template(exceptionTypes_name,                       "exceptionTypes")                           \
   template(modifiers_name,                            "modifiers")                                \
   template(newConstructor_name,                       "newConstructor")                           \
-  template(newConstructor_signature,                  "(Lsun/reflect/MethodInfo;)Ljava/lang/reflect/Constructor;") \
   template(newField_name,                             "newField")                                 \
-  template(newField_signature,                        "(Lsun/reflect/FieldInfo;)Ljava/lang/reflect/Field;") \
   template(newMethod_name,                            "newMethod")                                \
-  template(newMethod_signature,                       "(Lsun/reflect/MethodInfo;)Ljava/lang/reflect/Method;") \
   template(invokeBasic_name,                          "invokeBasic")                              \
   template(linkToVirtual_name,                        "linkToVirtual")                            \
   template(linkToStatic_name,                         "linkToStatic")                             \
@@ -269,9 +262,9 @@
   template(executable_name,                           "executable")                               \
   template(parameter_annotations_name,                "parameterAnnotations")                     \
   template(annotation_default_name,                   "annotationDefault")                        \
-  template(sun_reflect_ConstantPool,                  "sun/reflect/ConstantPool")                 \
+  template(reflect_ConstantPool,                      "jdk/internal/reflect/ConstantPool")        \
   template(ConstantPool_name,                         "constantPoolOop")                          \
-  template(sun_reflect_UnsafeStaticFieldAccessorImpl, "sun/reflect/UnsafeStaticFieldAccessorImpl")\
+  template(reflect_UnsafeStaticFieldAccessorImpl,     "jdk/internal/reflect/UnsafeStaticFieldAccessorImpl")\
   template(base_name,                                 "base")                                     \
   /* Type Annotations (JDK 8 and above) */                                                        \
   template(type_annotations_name,                     "typeAnnotations")                          \
@@ -327,7 +320,6 @@
   template(java_lang_StackFrameInfo,                  "java/lang/StackFrameInfo")                 \
   template(java_lang_LiveStackFrameInfo,              "java/lang/LiveStackFrameInfo")             \
   template(java_lang_StackStreamFactory_AbstractStackWalker, "java/lang/StackStreamFactory$AbstractStackWalker") \
-  template(doStackWalk_name,                          "doStackWalk")                              \
   template(doStackWalk_signature,                     "(JIIII)Ljava/lang/Object;")                \
   template(asPrimitive_name,                          "asPrimitive")                              \
   template(asPrimitive_int_signature,                 "(I)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
@@ -378,14 +370,13 @@
   template(type_name,                                 "type")                                     \
   template(findNative_name,                           "findNative")                               \
   template(deadChild_name,                            "deadChild")                                \
-  template(addClass_name,                             "addClass")                                 \
-  template(throwIllegalAccessError_name,              "throwIllegalAccessError")                  \
   template(getFromClass_name,                         "getFromClass")                             \
   template(dispatch_name,                             "dispatch")                                 \
   template(getSystemClassLoader_name,                 "getSystemClassLoader")                     \
   template(fillInStackTrace_name,                     "fillInStackTrace")                         \
   template(getCause_name,                             "getCause")                                 \
   template(initCause_name,                            "initCause")                                \
+  template(depth_name,                                "depth")                                    \
   template(setProperty_name,                          "setProperty")                              \
   template(getProperty_name,                          "getProperty")                              \
   template(context_name,                              "context")                                  \
@@ -472,10 +463,6 @@
   template(getProtectionDomain_signature,             "(Ljava/security/CodeSource;)Ljava/security/ProtectionDomain;") \
   template(url_code_signer_array_void_signature,      "(Ljava/net/URL;[Ljava/security/CodeSigner;)V") \
   template(module_entry_name,                         "module_entry")                             \
-                                                                                                  \
-  /* non-intrinsic name/signature pairs: */                                                       \
-  template(register_method_name,                      "register")                                 \
-  do_alias(register_method_signature,         object_void_signature)                              \
                                                                                                   \
   /* name symbols needed by intrinsics */                                                         \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, VM_SYMBOL_IGNORE, template, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE) \
@@ -877,12 +864,12 @@
   do_intrinsic(_Class_cast,               java_lang_Class,        Class_cast_name, object_object_signature,      F_R)   \
    do_name(     Class_cast_name,                                 "cast")                                                \
                                                                                                                         \
-  do_intrinsic(_getClassAccessFlags,      sun_reflect_Reflection, getClassAccessFlags_name, class_int_signature, F_SN)  \
+  do_intrinsic(_getClassAccessFlags,      reflect_Reflection,     getClassAccessFlags_name, class_int_signature, F_SN)  \
    do_name(     getClassAccessFlags_name,                        "getClassAccessFlags")                                 \
   do_intrinsic(_getLength,                java_lang_reflect_Array, getLength_name, object_int_signature,         F_SN)  \
    do_name(     getLength_name,                                   "getLength")                                          \
                                                                                                                         \
-  do_intrinsic(_getCallerClass,           sun_reflect_Reflection, getCallerClass_name, void_class_signature,     F_SN)  \
+  do_intrinsic(_getCallerClass,           reflect_Reflection,     getCallerClass_name, void_class_signature,     F_SN)  \
    do_name(     getCallerClass_name,                             "getCallerClass")                                      \
                                                                                                                         \
   do_intrinsic(_newArray,                 java_lang_reflect_Array, newArray_name, newArray_signature,            F_SN)  \

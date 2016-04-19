@@ -44,10 +44,6 @@ import jdk.testlibrary.RandomFactory;
  * @run main/othervm/java.security.policy=stackwalktest.policy StackWalkTest
  * @run main/othervm StackWalkTest -random:50
  * @run main/othervm/java.security.policy=stackwalktest.policy StackWalkTest -random:50
- * @run main/othervm -XX:-MemberNameInStackFrame -Dstackwalk.newThrowable=false StackWalkTest -random:50
- * @run main/othervm -XX:-MemberNameInStackFrame -Dstackwalk.newThrowable=true  StackWalkTest -random:50
- * @run main/othervm -XX:+MemberNameInStackFrame -Dstackwalk.newThrowable=false StackWalkTest -random:50
- * @run main/othervm -XX:+MemberNameInStackFrame -Dstackwalk.newThrowable=true  StackWalkTest -random:50
  * @author danielfuchs, bchristi
  * @key randomness
  */
@@ -59,8 +55,8 @@ public class StackWalkTest {
     private static final int MAX_RANDOM_DEPTH = 1000;
 
     static final Set<String> infrastructureClasses = new TreeSet<>(Arrays.asList(
-            "sun.reflect.NativeMethodAccessorImpl",
-            "sun.reflect.DelegatingMethodAccessorImpl",
+            "jdk.internal.reflect.NativeMethodAccessorImpl",
+            "jdk.internal.reflect.DelegatingMethodAccessorImpl",
             "java.lang.reflect.Method",
             "com.sun.javatest.regtest.MainWrapper$MainThread",
             "com.sun.javatest.regtest.agent.MainWrapper$MainThread",

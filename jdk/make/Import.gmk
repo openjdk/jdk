@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -83,20 +83,20 @@ ifneq ($(STATIC_BUILD), true)
   endif
 
   ifneq ($(OPENJDK_TARGET_OS), windows)
-    ifeq ($(JVM_VARIANT_SERVER), true)
+    ifeq ($(call check-jvm-variant, server), true)
       BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/server/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
       ifneq (, $(JSIG_DEBUGINFO))
         BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/server/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
       endif
     endif
-    ifeq ($(JVM_VARIANT_CLIENT), true)
+    ifeq ($(call check-jvm-variant, client), true)
       BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/client/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
       ifneq (, $(JSIG_DEBUGINFO))
         BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/client/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
       endif
     endif
     ifneq ($(OPENJDK_TARGET_OS), macosx)
-      ifeq ($(JVM_VARIANT_MINIMAL1), true)
+      ifeq ($(call check-jvm-variant, minimal), true)
         BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/minimal/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
         ifneq (,$(JSIG_DEBUGINFO))
           BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/minimal/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
