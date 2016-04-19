@@ -357,7 +357,7 @@ public class POAManagerImpl extends org.omg.CORBA.LocalObject implements
             if (wait_for_completion)
                 deactivator.run() ;
             else {
-                Thread thr = new sun.misc.ManagedLocalsThread(deactivator) ;
+                Thread thr = new Thread(null, deactivator, "POA-Deactivator-Thread", 0, false) ;
                 thr.start() ;
             }
         } finally {
