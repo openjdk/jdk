@@ -24,8 +24,10 @@
 
 #include "precompiled.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "logging/log.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiManageCapabilities.hpp"
+
 static const jint CAPA_SIZE = (JVMTI_INTERNAL_CAPABILITY_COUNT + 7) / 8;
 
   // capabilities which are always potentially available
@@ -373,87 +375,87 @@ void JvmtiManageCapabilities::update() {
 #ifndef PRODUCT
 
 void JvmtiManageCapabilities:: print(const jvmtiCapabilities* cap) {
-  tty->print_cr("----- capabilities -----");
+  log_trace(jvmti)("----- capabilities -----");
   if (cap->can_tag_objects)
-    tty->print_cr("can_tag_objects");
+    log_trace(jvmti)("can_tag_objects");
   if (cap->can_generate_field_modification_events)
-    tty->print_cr("can_generate_field_modification_events");
+    log_trace(jvmti)("can_generate_field_modification_events");
   if (cap->can_generate_field_access_events)
-    tty->print_cr("can_generate_field_access_events");
+    log_trace(jvmti)("can_generate_field_access_events");
   if (cap->can_get_bytecodes)
-    tty->print_cr("can_get_bytecodes");
+    log_trace(jvmti)("can_get_bytecodes");
   if (cap->can_get_synthetic_attribute)
-    tty->print_cr("can_get_synthetic_attribute");
+    log_trace(jvmti)("can_get_synthetic_attribute");
   if (cap->can_get_owned_monitor_info)
-    tty->print_cr("can_get_owned_monitor_info");
+    log_trace(jvmti)("can_get_owned_monitor_info");
   if (cap->can_get_current_contended_monitor)
-    tty->print_cr("can_get_current_contended_monitor");
+    log_trace(jvmti)("can_get_current_contended_monitor");
   if (cap->can_get_monitor_info)
-    tty->print_cr("can_get_monitor_info");
+    log_trace(jvmti)("can_get_monitor_info");
   if (cap->can_get_constant_pool)
-    tty->print_cr("can_get_constant_pool");
+    log_trace(jvmti)("can_get_constant_pool");
   if (cap->can_pop_frame)
-    tty->print_cr("can_pop_frame");
+    log_trace(jvmti)("can_pop_frame");
   if (cap->can_force_early_return)
-    tty->print_cr("can_force_early_return");
+    log_trace(jvmti)("can_force_early_return");
   if (cap->can_redefine_classes)
-    tty->print_cr("can_redefine_classes");
+    log_trace(jvmti)("can_redefine_classes");
   if (cap->can_retransform_classes)
-    tty->print_cr("can_retransform_classes");
+    log_trace(jvmti)("can_retransform_classes");
   if (cap->can_signal_thread)
-    tty->print_cr("can_signal_thread");
+    log_trace(jvmti)("can_signal_thread");
   if (cap->can_get_source_file_name)
-    tty->print_cr("can_get_source_file_name");
+    log_trace(jvmti)("can_get_source_file_name");
   if (cap->can_get_line_numbers)
-    tty->print_cr("can_get_line_numbers");
+    log_trace(jvmti)("can_get_line_numbers");
   if (cap->can_get_source_debug_extension)
-    tty->print_cr("can_get_source_debug_extension");
+    log_trace(jvmti)("can_get_source_debug_extension");
   if (cap->can_access_local_variables)
-    tty->print_cr("can_access_local_variables");
+    log_trace(jvmti)("can_access_local_variables");
   if (cap->can_maintain_original_method_order)
-    tty->print_cr("can_maintain_original_method_order");
+    log_trace(jvmti)("can_maintain_original_method_order");
   if (cap->can_generate_single_step_events)
-    tty->print_cr("can_generate_single_step_events");
+    log_trace(jvmti)("can_generate_single_step_events");
   if (cap->can_generate_exception_events)
-    tty->print_cr("can_generate_exception_events");
+    log_trace(jvmti)("can_generate_exception_events");
   if (cap->can_generate_frame_pop_events)
-    tty->print_cr("can_generate_frame_pop_events");
+    log_trace(jvmti)("can_generate_frame_pop_events");
   if (cap->can_generate_breakpoint_events)
-    tty->print_cr("can_generate_breakpoint_events");
+    log_trace(jvmti)("can_generate_breakpoint_events");
   if (cap->can_suspend)
-    tty->print_cr("can_suspend");
+    log_trace(jvmti)("can_suspend");
   if (cap->can_redefine_any_class )
-    tty->print_cr("can_redefine_any_class");
+    log_trace(jvmti)("can_redefine_any_class");
   if (cap->can_retransform_any_class )
-    tty->print_cr("can_retransform_any_class");
+    log_trace(jvmti)("can_retransform_any_class");
   if (cap->can_get_current_thread_cpu_time)
-    tty->print_cr("can_get_current_thread_cpu_time");
+    log_trace(jvmti)("can_get_current_thread_cpu_time");
   if (cap->can_get_thread_cpu_time)
-    tty->print_cr("can_get_thread_cpu_time");
+    log_trace(jvmti)("can_get_thread_cpu_time");
   if (cap->can_generate_method_entry_events)
-    tty->print_cr("can_generate_method_entry_events");
+    log_trace(jvmti)("can_generate_method_entry_events");
   if (cap->can_generate_method_exit_events)
-    tty->print_cr("can_generate_method_exit_events");
+    log_trace(jvmti)("can_generate_method_exit_events");
   if (cap->can_generate_all_class_hook_events)
-    tty->print_cr("can_generate_all_class_hook_events");
+    log_trace(jvmti)("can_generate_all_class_hook_events");
   if (cap->can_generate_compiled_method_load_events)
-    tty->print_cr("can_generate_compiled_method_load_events");
+    log_trace(jvmti)("can_generate_compiled_method_load_events");
   if (cap->can_generate_monitor_events)
-    tty->print_cr("can_generate_monitor_events");
+    log_trace(jvmti)("can_generate_monitor_events");
   if (cap->can_generate_vm_object_alloc_events)
-    tty->print_cr("can_generate_vm_object_alloc_events");
+    log_trace(jvmti)("can_generate_vm_object_alloc_events");
   if (cap->can_generate_native_method_bind_events)
-    tty->print_cr("can_generate_native_method_bind_events");
+    log_trace(jvmti)("can_generate_native_method_bind_events");
   if (cap->can_generate_garbage_collection_events)
-    tty->print_cr("can_generate_garbage_collection_events");
+    log_trace(jvmti)("can_generate_garbage_collection_events");
   if (cap->can_generate_object_free_events)
-    tty->print_cr("can_generate_object_free_events");
+    log_trace(jvmti)("can_generate_object_free_events");
   if (cap->can_generate_resource_exhaustion_heap_events)
-    tty->print_cr("can_generate_resource_exhaustion_heap_events");
+    log_trace(jvmti)("can_generate_resource_exhaustion_heap_events");
   if (cap->can_generate_resource_exhaustion_threads_events)
-    tty->print_cr("can_generate_resource_exhaustion_threads_events");
+    log_trace(jvmti)("can_generate_resource_exhaustion_threads_events");
   if (cap->can_generate_early_vmstart)
-    tty->print_cr("can_generate_early_vmstart");
+    log_trace(jvmti)("can_generate_early_vmstart");
 }
 
 #endif

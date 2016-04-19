@@ -62,6 +62,7 @@
   LOG_TAG(ihop) \
   LOG_TAG(itables) \
   LOG_TAG(jni) \
+  LOG_TAG(jvmti) \
   LOG_TAG(liveness) \
   LOG_TAG(logging) \
   LOG_TAG(marking) \
