@@ -2982,7 +2982,7 @@ void TemplateTable::fast_xaccess(TosState state)
   __ null_check(r0);
   switch (state) {
   case itos:
-    __ ldr(r0, Address(r0, r1, Address::lsl(0)));
+    __ ldrw(r0, Address(r0, r1, Address::lsl(0)));
     break;
   case atos:
     __ load_heap_oop(r0, Address(r0, r1, Address::lsl(0)));
@@ -3000,7 +3000,7 @@ void TemplateTable::fast_xaccess(TosState state)
     __ ldrw(r3, Address(r2, in_bytes(ConstantPoolCache::base_offset() +
                                      ConstantPoolCacheEntry::flags_offset())));
     __ tbz(r3, ConstantPoolCacheEntry::is_volatile_shift, notVolatile);
-    __ membar(MacroAssembler::LoadLoad);
+    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
     __ bind(notVolatile);
   }
 
