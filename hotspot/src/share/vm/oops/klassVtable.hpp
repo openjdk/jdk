@@ -153,6 +153,19 @@ class klassVtable : public ResourceObj {
       Array<Klass*>* local_interfaces);
   void verify_against(outputStream* st, klassVtable* vt, int index);
   inline InstanceKlass* ik() const;
+  // When loading a class from CDS archive at run time, and no class redefintion
+  // has happened, it is expected that the class's itable/vtables are
+  // laid out exactly the same way as they had been during dump time.
+  // Therefore, in klassVtable::initialize_[iv]table, we do not layout the
+  // tables again. Instead, we only rerun the process to create/check
+  // the class loader constraints. In non-product builds, we add asserts to
+  // guarantee that the table's layout would be the same as at dump time.
+  //
+  // If JVMTI redefines any class, the read-only shared memory are remapped
+  // as read-write. A shared class' vtable/itable are re-initialized and
+  // might have different layout due to class redefinition of the shared class
+  // or its super types.
+  bool is_preinitialized_vtable();
 };
 
 
