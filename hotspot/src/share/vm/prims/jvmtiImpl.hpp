@@ -34,6 +34,7 @@
 #include "prims/jvmtiUtil.hpp"
 #include "runtime/stackValueCollection.hpp"
 #include "runtime/vm_operations.hpp"
+#include "utilities/ostream.hpp"
 
 //
 // Forward Declarations
@@ -186,7 +187,7 @@ public:
   void each_method_version_do(method_action meth_act);
   void set();
   void clear();
-  void print();
+  void print(outputStream* out);
 
   Method* method() { return _method; }
 

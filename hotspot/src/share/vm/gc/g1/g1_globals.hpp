@@ -112,8 +112,7 @@
   product(size_t, G1ConcRefinementRedZone, 0,                               \
           "Maximum number of enqueued update buffers before mutator "       \
           "threads start processing new ones instead of enqueueing them. "  \
-          "Will be selected ergonomically by default. Zero will disable "   \
-          "concurrent processing.")                                         \
+          "Will be selected ergonomically by default.")                     \
           range(0, max_intx)                                                \
                                                                             \
   product(size_t, G1ConcRefinementGreenZone, 0,                             \
@@ -127,11 +126,12 @@
           "specified number of milliseconds to do miscellaneous work.")     \
           range(0, max_jint)                                                \
                                                                             \
-  product(size_t, G1ConcRefinementThresholdStep, 0,                         \
+  product(size_t, G1ConcRefinementThresholdStep, 2,                         \
           "Each time the rset update queue increases by this amount "       \
           "activate the next refinement thread if available. "              \
-          "Will be selected ergonomically by default.")                     \
-          range(0, SIZE_MAX)                                                \
+          "The actual step size will be selected ergonomically by "         \
+          "default, with this value used to determine a lower bound.")      \
+          range(1, SIZE_MAX)                                                \
                                                                             \
   product(intx, G1RSetUpdatingPauseTimePercent, 10,                         \
           "A target percentage of time that is allowed to be spend on "     \
@@ -201,9 +201,9 @@
           range(0, 32*M)                                                    \
           constraint(G1HeapRegionSizeConstraintFunc,AfterMemoryInit)        \
                                                                             \
-  product(uintx, G1ConcRefinementThreads, 0,                                \
-          "If non-0 is the number of parallel rem set update threads, "     \
-          "otherwise the value is determined ergonomically.")               \
+  product(uint, G1ConcRefinementThreads, 0,                                 \
+          "The number of parallel rem set update threads. "                 \
+          "Will be set ergonomically by default.")                          \
           range(0, (max_jint-1)/wordSize)                                   \
                                                                             \
   develop(bool, G1VerifyCTCleanup, false,                                   \

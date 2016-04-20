@@ -46,6 +46,17 @@ private:
   size_t _max_capacity;
   size_t _cards_per_region;
 
+  // Regions may be reclaimed while concurrently creating live data (e.g. due to humongous
+  // eager reclaim). This results in wrong live data for these regions at the end.
+  // So we need to somehow detect these regions, and during live data finalization completely
+  // recreate their information.
+  // This _gc_timestamp_at_create tracks the global timestamp when live data creation
+  // has started. Any regions with a higher time stamp have been cleared after that
+  // point in time, and need re-finalization.
+  // Unsynchronized access to this variable is okay, since this value is only set during a
+  // concurrent phase, and read only at the Cleanup safepoint. I.e. there is always
+  // full memory synchronization inbetween.
+  uint _gc_timestamp_at_create;
   // The per-card liveness bitmap.
   bm_word_t* _live_cards;
   size_t _live_cards_size_in_bits;
@@ -69,6 +80,8 @@ private:
   size_t live_region_bitmap_size_in_bits() const;
   size_t live_card_bitmap_size_in_bits() const;
 public:
+  uint gc_timestamp_at_create() const { return _gc_timestamp_at_create; }
+
   inline bool is_region_live(uint region) const;
 
   inline void remove_nonlive_cards(uint region, BitMap* bm);

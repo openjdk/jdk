@@ -2769,10 +2769,10 @@ class CMSParMarkTask : public AbstractGangTask {
       _collector(collector),
       _n_workers(n_workers) {}
   // Work method in support of parallel rescan ... of young gen spaces
-  void do_young_space_rescan(uint worker_id, OopsInGenClosure* cl,
+  void do_young_space_rescan(OopsInGenClosure* cl,
                              ContiguousSpace* space,
                              HeapWord** chunk_array, size_t chunk_top);
-  void work_on_young_gen_roots(uint worker_id, OopsInGenClosure* cl);
+  void work_on_young_gen_roots(OopsInGenClosure* cl);
 };
 
 // Parallel initial mark task
@@ -4255,7 +4255,7 @@ void CMSParInitialMarkTask::work(uint worker_id) {
 
   // ---------- young gen roots --------------
   {
-    work_on_young_gen_roots(worker_id, &par_mri_cl);
+    work_on_young_gen_roots(&par_mri_cl);
     _timer.stop();
     log_trace(gc, task)("Finished young gen initial mark scan work in %dth thread: %3.3f sec", worker_id, _timer.seconds());
   }
@@ -4346,7 +4346,7 @@ class RemarkKlassClosure : public KlassClosure {
   }
 };
 
-void CMSParMarkTask::work_on_young_gen_roots(uint worker_id, OopsInGenClosure* cl) {
+void CMSParMarkTask::work_on_young_gen_roots(OopsInGenClosure* cl) {
   ParNewGeneration* young_gen = _collector->_young_gen;
   ContiguousSpace* eden_space = young_gen->eden();
   ContiguousSpace* from_space = young_gen->from();
@@ -4360,9 +4360,9 @@ void CMSParMarkTask::work_on_young_gen_roots(uint worker_id, OopsInGenClosure* c
   assert(ect <= _collector->_eden_chunk_capacity, "out of bounds");
   assert(sct <= _collector->_survivor_chunk_capacity, "out of bounds");
 
-  do_young_space_rescan(worker_id, cl, to_space, NULL, 0);
-  do_young_space_rescan(worker_id, cl, from_space, sca, sct);
-  do_young_space_rescan(worker_id, cl, eden_space, eca, ect);
+  do_young_space_rescan(cl, to_space, NULL, 0);
+  do_young_space_rescan(cl, from_space, sca, sct);
+  do_young_space_rescan(cl, eden_space, eca, ect);
 }
 
 // work_queue(i) is passed to the closure
@@ -4389,7 +4389,7 @@ void CMSParRemarkTask::work(uint worker_id) {
   // work first.
   // ---------- young gen roots --------------
   {
-    work_on_young_gen_roots(worker_id, &par_mrias_cl);
+    work_on_young_gen_roots(&par_mrias_cl);
     _timer.stop();
     log_trace(gc, task)("Finished young gen rescan work in %dth thread: %3.3f sec", worker_id, _timer.seconds());
   }
@@ -4471,9 +4471,8 @@ void CMSParRemarkTask::work(uint worker_id) {
   log_trace(gc, task)("Finished work stealing in %dth thread: %3.3f sec", worker_id, _timer.seconds());
 }
 
-// Note that parameter "i" is not used.
 void
-CMSParMarkTask::do_young_space_rescan(uint worker_id,
+CMSParMarkTask::do_young_space_rescan(
   OopsInGenClosure* cl, ContiguousSpace* space,
   HeapWord** chunk_array, size_t chunk_top) {
   // Until all tasks completed:
