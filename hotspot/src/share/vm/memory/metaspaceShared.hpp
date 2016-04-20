@@ -125,6 +125,7 @@ class MetaspaceShared : AllStatic {
   static bool _check_classes_made_progress;
   static bool _has_error_classes;
   static bool _archive_loading_failed;
+  static bool _remapped_readwrite;
   static address _cds_i2i_entry_code_buffers;
   static size_t  _cds_i2i_entry_code_buffers_size;
 
@@ -205,6 +206,10 @@ class MetaspaceShared : AllStatic {
   // sharing is enabled. Simply returns true if sharing is not enabled
   // or if the remapping has already been done by a prior call.
   static bool remap_shared_readonly_as_readwrite() NOT_CDS_RETURN_(true);
+  static bool remapped_readwrite() {
+    CDS_ONLY(return _remapped_readwrite);
+    NOT_CDS(return false);
+  }
 
   static void print_shared_spaces();
 
