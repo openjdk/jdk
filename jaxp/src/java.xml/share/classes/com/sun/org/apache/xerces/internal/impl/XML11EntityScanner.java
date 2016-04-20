@@ -1,15 +1,16 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
- * Copyright 2005 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +25,6 @@ import com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
 import com.sun.org.apache.xerces.internal.util.XML11Char;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager.Limit;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xni.XMLString;
@@ -815,7 +815,7 @@ public class XML11EntityScanner
             load(0, true, true);
         }
         else if (fCurrentEntity.position == fCurrentEntity.count - 1) {
-            invokeListeners(0);
+            invokeListeners(1);
             fCurrentEntity.ch[0] = fCurrentEntity.ch[fCurrentEntity.count - 1];
             load(1, false, false);
             fCurrentEntity.position = 0;
@@ -960,7 +960,7 @@ public class XML11EntityScanner
             load(0, true, true);
         }
         else if (fCurrentEntity.position == fCurrentEntity.count - 1) {
-            invokeListeners(0);
+            invokeListeners(1);
             fCurrentEntity.ch[0] = fCurrentEntity.ch[fCurrentEntity.count - 1];
             load(1, false, false);
             fCurrentEntity.startPosition = 0;
@@ -1397,7 +1397,7 @@ public class XML11EntityScanner
                         fCurrentEntity.lineNumber++;
                         fCurrentEntity.columnNumber = 1;
                         if (fCurrentEntity.position == fCurrentEntity.count - 1) {
-                            invokeListeners(0);
+                            invokeListeners(1);
                             fCurrentEntity.ch[0] = (char)c;
                             entityChanged = load(1, true, false);
                             if (!entityChanged) {
@@ -1446,8 +1446,9 @@ public class XML11EntityScanner
                     fCurrentEntity.lineNumber++;
                     fCurrentEntity.columnNumber = 1;
                     if (fCurrentEntity.position == fCurrentEntity.count - 1) {
+                        invokeListeners(1);
                         fCurrentEntity.ch[0] = (char)c;
-                        entityChanged = load(1, true, true);
+                        entityChanged = load(1, true, false);
                         if (!entityChanged) {
                             // the load change the position to be 1,
                             // need to restore it when entity not changed
