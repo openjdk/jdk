@@ -38,6 +38,7 @@
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "memory/oopFactory.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/wbtestmethods/parserTests.hpp"
@@ -374,6 +375,68 @@ WB_ENTRY(jobject, WB_G1AuxiliaryMemoryUsage(JNIEnv* env))
   Handle h = MemoryService::create_MemoryUsage_obj(usage, CHECK_NULL);
   return JNIHandles::make_local(env, h());
 WB_END
+
+class OldRegionsLivenessClosure: public HeapRegionClosure {
+
+ private:
+  const int _liveness;
+  size_t _total_count;
+  size_t _total_memory;
+  size_t _total_memory_to_free;
+
+ public:
+  OldRegionsLivenessClosure(int liveness) :
+    _liveness(liveness),
+    _total_count(0),
+    _total_memory(0),
+    _total_memory_to_free(0) { }
+
+    size_t total_count() { return _total_count; }
+    size_t total_memory() { return _total_memory; }
+    size_t total_memory_to_free() { return _total_memory_to_free; }
+
+  bool doHeapRegion(HeapRegion* r) {
+    if (r->is_old()) {
+      size_t prev_live = r->marked_bytes();
+      size_t live = r->live_bytes();
+      size_t size = r->used();
+      size_t reg_size = HeapRegion::GrainBytes;
+      if (size > 0 && ((int)(live * 100 / size) < _liveness)) {
+        _total_memory += size;
+        ++_total_count;
+        if (size == reg_size) {
+        // we don't include non-full regions since they are unlikely included in mixed gc
+        // for testing purposes it's enough to have lowest estimation of total memory that is expected to be freed
+          _total_memory_to_free += size - prev_live;
+        }
+      }
+    }
+    return false;
+  }
+};
+
+
+WB_ENTRY(jlongArray, WB_G1GetMixedGCInfo(JNIEnv* env, jobject o, jint liveness))
+  if (!UseG1GC) {
+    THROW_MSG_NULL(vmSymbols::java_lang_RuntimeException(), "WB_G1GetMixedGCInfo: G1 is not enabled");
+  }
+  if (liveness < 0) {
+    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "liveness value should be non-negative");
+  }
+
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  OldRegionsLivenessClosure rli(liveness);
+  g1h->heap_region_iterate(&rli);
+
+  typeArrayOop result = oopFactory::new_longArray(3, CHECK_NULL);
+  result->long_at_put(0, rli.total_count());
+  result->long_at_put(1, rli.total_memory());
+  result->long_at_put(2, rli.total_memory_to_free());
+  return (jlongArray) JNIHandles::make_local(env, result);
+WB_END
+
+
+
 #endif // INCLUDE_ALL_GCS
 
 #if INCLUDE_NMT
@@ -1601,6 +1664,7 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_G1AuxiliaryMemoryUsage  },
   {CC"psVirtualSpaceAlignment",CC"()J",               (void*)&WB_PSVirtualSpaceAlignment},
   {CC"psHeapGenerationAlignment",CC"()J",             (void*)&WB_PSHeapGenerationAlignment},
+  {CC"g1GetMixedGCInfo",   CC"(I)[J",                 (void*)&WB_G1GetMixedGCInfo },
 #endif // INCLUDE_ALL_GCS
 #if INCLUDE_NMT
   {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },
