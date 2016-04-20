@@ -428,6 +428,7 @@ JvmtiExport::add_default_read_edges(Handle h_module, TRAPS) {
     LogTarget(Trace, jvmti) log;
     LogStreamCHeap log_stream(log);
     java_lang_Throwable::print(PENDING_EXCEPTION, &log_stream);
+    log_stream.cr();
     CLEAR_PENDING_EXCEPTION;
     return;
   }
