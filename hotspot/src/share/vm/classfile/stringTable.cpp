@@ -730,8 +730,12 @@ void StringTable::serialize(SerializeClosure* soc, GrowableArray<MemRegion> *str
   if (soc->writing()) {
     if (!(UseG1GC && UseCompressedOops && UseCompressedClassPointers)) {
       if (PrintSharedSpaces) {
-        tty->print_cr("Shared strings are excluded from the archive as UseG1GC, "
-                      "UseCompressedOops and UseCompressedClassPointers are required.");
+        tty->print_cr(
+          "Shared strings are excluded from the archive as UseG1GC, "
+          "UseCompressedOops and UseCompressedClassPointers are required."
+          "Current settings: UseG1GC=%s, UseCompressedOops=%s, UseCompressedClassPointers=%s.",
+          BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedOops),
+          BOOL_TO_STR(UseCompressedClassPointers));
       }
     } else {
       int num_buckets = the_table()->number_of_entries() /
