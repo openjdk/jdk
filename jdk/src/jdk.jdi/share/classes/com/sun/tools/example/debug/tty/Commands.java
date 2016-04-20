@@ -1534,7 +1534,6 @@ class Commands {
             PathSearchingVirtualMachine vm = (PathSearchingVirtualMachine)Env.vm();
             MessageOutput.println("base directory:", vm.baseDirectory());
             MessageOutput.println("classpath:", vm.classPath().toString());
-            MessageOutput.println("bootclasspath:", vm.bootClassPath().toString());
         } else {
             MessageOutput.println("The VM does not use paths");
         }
