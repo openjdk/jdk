@@ -4680,7 +4680,8 @@ void MacroAssembler::arrays_equals(Register a1, Register a2,
 }
 
 
-// encode char[] to byte[] in ISO_8859_1
+// Intrinsic for sun/nio/cs/ISO_8859_1$Encoder.implEncodeISOArray and
+// java/lang/StringUTF16.compress.
 void MacroAssembler::encode_iso_array(Register src, Register dst,
                       Register len, Register result,
                       FloatRegister Vtmp1, FloatRegister Vtmp2,
@@ -4743,6 +4744,90 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
 
     BIND(DONE);
       sub(result, result, len); // Return index where we stopped
+                                // Return len == 0 if we processed all
+                                // characters
+}
+
+
+// Inflate byte[] array to char[].
+void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len,
+                                        FloatRegister vtmp1, FloatRegister vtmp2, FloatRegister vtmp3,
+                                        Register tmp4) {
+  Label big, done;
+
+  assert_different_registers(src, dst, len, tmp4, rscratch1);
+
+  fmovd(vtmp1 , zr);
+  lsrw(rscratch1, len, 3);
+
+  cbnzw(rscratch1, big);
+
+  // Short string: less than 8 bytes.
+  {
+    Label loop, around, tiny;
+
+    subsw(len, len, 4);
+    andw(len, len, 3);
+    br(LO, tiny);
+
+    // Use SIMD to do 4 bytes.
+    ldrs(vtmp2, post(src, 4));
+    zip1(vtmp3, T8B, vtmp2, vtmp1);
+    strd(vtmp3, post(dst, 8));
+
+    cbzw(len, done);
+
+    // Do the remaining bytes by steam.
+    bind(loop);
+    ldrb(tmp4, post(src, 1));
+    strh(tmp4, post(dst, 2));
+    subw(len, len, 1);
+
+    bind(tiny);
+    cbnz(len, loop);
+
+    bind(around);
+    b(done);
+  }
+
+  // Unpack the bytes 8 at a time.
+  bind(big);
+  andw(len, len, 7);
+
+  {
+    Label loop, around;
+
+    bind(loop);
+    ldrd(vtmp2, post(src, 8));
+    sub(rscratch1, rscratch1, 1);
+    zip1(vtmp3, T16B, vtmp2, vtmp1);
+    st1(vtmp3, T8H, post(dst, 16));
+    cbnz(rscratch1, loop);
+
+    bind(around);
+  }
+
+  // Do the tail of up to 8 bytes.
+  sub(src, src, 8);
+  add(src, src, len, ext::uxtw, 0);
+  ldrd(vtmp2, Address(src));
+  sub(dst, dst, 16);
+  add(dst, dst, len, ext::uxtw, 1);
+  zip1(vtmp3, T16B, vtmp2, vtmp1);
+  st1(vtmp3, T8H, Address(dst));
+
+  bind(done);
+}
+
+// Compress char[] array to byte[].
+void MacroAssembler::char_array_compress(Register src, Register dst, Register len,
+                                         FloatRegister tmp1Reg, FloatRegister tmp2Reg,
+                                         FloatRegister tmp3Reg, FloatRegister tmp4Reg,
+                                         Register result) {
+  encode_iso_array(src, dst, len, result,
+                   tmp1Reg, tmp2Reg, tmp3Reg, tmp4Reg);
+  cmp(len, zr);
+  csel(result, result, zr, EQ);
 }
 
 // get_thread() can be called anywhere inside generated code so we

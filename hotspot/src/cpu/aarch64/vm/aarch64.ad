@@ -14930,6 +14930,40 @@ instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
 %}
 
 
+// fast char[] to byte[] compression
+instruct string_compress(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
+                         vRegD_V0 tmp1, vRegD_V1 tmp2,
+                         vRegD_V2 tmp3, vRegD_V3 tmp4,
+                         iRegI_R0 result, rFlagsReg cr)
+%{
+  match(Set result (StrCompressedCopy src (Binary dst len)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
+
+  format %{ "String Compress $src,$dst -> $result    // KILL R1, R2, R3, R4" %}
+  ins_encode %{
+    __ char_array_compress($src$$Register, $dst$$Register, $len$$Register,
+                           $tmp1$$FloatRegister, $tmp2$$FloatRegister,
+                           $tmp3$$FloatRegister, $tmp4$$FloatRegister,
+                           $result$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// fast byte[] to char[] inflation
+instruct string_inflate(Universe dummy, iRegP_R0 src, iRegP_R1 dst, iRegI_R2 len,
+                        vRegD tmp1, vRegD tmp2, vRegD tmp3, iRegP_R3 tmp4, rFlagsReg cr)
+%{
+  match(Set dummy (StrInflatedCopy src (Binary dst len)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
+
+  format %{ "String Inflate $src,$dst    // KILL $tmp1, $tmp2" %}
+  ins_encode %{
+    __ byte_array_inflate($src$$Register, $dst$$Register, $len$$Register,
+                          $tmp1$$FloatRegister, $tmp2$$FloatRegister, $tmp3$$FloatRegister, $tmp4$$Register);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
 // encode char[] to byte[] in ISO_8859_1
 instruct encode_iso_array(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
                           vRegD_V0 Vtmp1, vRegD_V1 Vtmp2,
