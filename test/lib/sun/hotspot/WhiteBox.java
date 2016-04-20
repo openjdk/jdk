@@ -192,6 +192,16 @@ public class WhiteBox {
   public native long psVirtualSpaceAlignment();
   public native long psHeapGenerationAlignment();
 
+  /**
+   * Enumerates old regions with liveness less than specified and produces some statistics
+   * @param liveness percent of region's liveness (live_objects / total_region_size * 100).
+   * @return long[3] array where long[0] - total count of old regions
+   *                             long[1] - total memory of old regions
+   *                             long[2] - lowest estimation of total memory of old regions to be freed (non-full
+   *                             regions are not included)
+   */
+  public native long[] g1GetMixedGCInfo(int liveness);
+
   // NMT
   public native long NMTMalloc(long size);
   public native void NMTFree(long mem);
