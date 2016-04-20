@@ -62,6 +62,7 @@
   LOG_TAG(ihop) \
   LOG_TAG(itables) \
   LOG_TAG(jni) \
+  LOG_TAG(jvmti) \
   LOG_TAG(liveness) \
   LOG_TAG(logging) \
   LOG_TAG(marking) \
@@ -69,6 +70,7 @@
   LOG_TAG(modules) \
   LOG_TAG(monitorinflation) \
   LOG_TAG(monitormismatch) \
+  LOG_TAG(objecttagging) \
   LOG_TAG(os) \
   LOG_TAG(pagesize) \
   LOG_TAG(phases) \

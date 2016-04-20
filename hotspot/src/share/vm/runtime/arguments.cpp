@@ -420,6 +420,7 @@ static AliasedLoggingFlag const aliased_logging_flags[] = {
   { "TraceLoaderConstraints",    LogLevel::Info,  true,  LOG_TAGS(classload, constraints) },
   { "TraceMonitorInflation",     LogLevel::Debug, true,  LOG_TAGS(monitorinflation) },
   { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LOG_TAGS(safepointcleanup) },
+  { "TraceJVMTIObjectTagging",   LogLevel::Debug, true,  LOG_TAGS(jvmti, objecttagging) },
   { NULL,                        LogLevel::Off,   false, LOG_TAGS(_NO_TAG) }
 };
 
@@ -998,7 +999,7 @@ void log_deprecated_flag(const char* name, bool on, AliasedLoggingFlag alf) {
   int max_tags = sizeof(tagSet)/sizeof(tagSet[0]);
   for (int i = 0; i < max_tags && tagSet[i] != LogTag::__NO_TAG; i++) {
     if (i > 0) {
-      strncat(tagset_buffer, ",", max_tagset_len - strlen(tagset_buffer));
+      strncat(tagset_buffer, "+", max_tagset_len - strlen(tagset_buffer));
     }
     strncat(tagset_buffer, LogTag::name(tagSet[i]), max_tagset_len - strlen(tagset_buffer));
   }
@@ -2095,8 +2096,8 @@ void Arguments::set_g1_gc_flags() {
   }
 
 #if INCLUDE_ALL_GCS
-  if (G1ConcRefinementThreads == 0) {
-    FLAG_SET_DEFAULT(G1ConcRefinementThreads, ParallelGCThreads);
+  if (FLAG_IS_DEFAULT(G1ConcRefinementThreads)) {
+    FLAG_SET_ERGO(uint, G1ConcRefinementThreads, ParallelGCThreads);
   }
 #endif
 

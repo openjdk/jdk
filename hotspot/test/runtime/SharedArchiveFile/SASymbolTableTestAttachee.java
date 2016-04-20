@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +19,20 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_GC_G1_G1COLLECTORPOLICY_HPP
-#define SHARE_VM_GC_G1_G1COLLECTORPOLICY_HPP
-
-#include "gc/shared/collectorPolicy.hpp"
-
-// G1CollectorPolicy is primarily used during initialization and to expose the
-// functionality of the CollectorPolicy interface to the rest of the VM.
-
-class G1YoungGenSizer;
-
-class G1CollectorPolicy: public CollectorPolicy {
-protected:
-  void initialize_alignments();
-  void initialize_flags();
-
-public:
-  G1CollectorPolicy();
-
-  G1CollectorPolicy* as_g1_policy() { return this; }
-
-  void post_heap_initialize() {} // Nothing needed.
-
-  // Create jstat counters for the policy.
-  virtual void initialize_gc_policy_counters();
-};
-
-#endif // SHARE_VM_GC_G1_G1COLLECTORPOLICY_HPP
+/**
+ * This class is launched in a sub-process by the main test,
+ * SASymbolTableTest.java.
+ *
+ * This class does nothing in particular. It just sleeps for 120
+ * seconds so SASymbolTableTestAgent can have a chance to examine its
+ * SymbolTable. This process should be killed by the parent process
+ * after SASymbolTableTestAgent has completed testing.
+ */
+public class SASymbolTableTestAttachee {
+    public static void main(String args[]) throws Throwable {
+        System.out.println("SASymbolTableTestAttachee: sleeping to wait for SA tool to attach ...");
+        Thread.sleep(120 * 1000);
+    }
+}

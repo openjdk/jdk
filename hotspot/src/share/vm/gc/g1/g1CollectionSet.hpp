@@ -31,14 +31,14 @@
 #include "utilities/globalDefinitions.hpp"
 
 class G1CollectedHeap;
-class G1CollectorPolicy;
 class G1CollectorState;
 class G1GCPhaseTimes;
+class G1Policy;
 class HeapRegion;
 
 class G1CollectionSet VALUE_OBJ_CLASS_SPEC {
   G1CollectedHeap* _g1;
-  G1CollectorPolicy* _policy;
+  G1Policy* _policy;
 
   CollectionSetChooser* _cset_chooser;
 
@@ -110,13 +110,8 @@ class G1CollectionSet VALUE_OBJ_CLASS_SPEC {
   double predict_region_elapsed_time_ms(HeapRegion* hr);
 
 public:
-  G1CollectionSet(G1CollectedHeap* g1h);
+  G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy);
   ~G1CollectionSet();
-
-  void set_policy(G1CollectorPolicy* g1p) {
-    assert(_policy == NULL, "should only initialize once");
-    _policy = g1p;
-  }
 
   CollectionSetChooser* cset_chooser();
 

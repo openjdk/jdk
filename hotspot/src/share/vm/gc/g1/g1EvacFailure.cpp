@@ -227,15 +227,6 @@ public:
                                                during_conc_mark);
         _g1h->verifier()->check_bitmaps("Self-Forwarding Ptr Removal", hr);
 
-        // In the common case (i.e. when there is no evacuation
-        // failure) we make sure that the following is done when
-        // the region is freed so that it is "ready-to-go" when it's
-        // re-allocated. However, when evacuation failure happens, a
-        // region will remain in the heap and might ultimately be added
-        // to a CSet in the future. So we have to be careful here and
-        // make sure the region's RSet is ready for parallel iteration
-        // whenever this might be required in the future.
-        hr->rem_set()->reset_for_par_iteration();
         hr->reset_bot();
 
         size_t live_bytes = remove_self_forward_ptr_by_walking_hr(hr, during_initial_mark);

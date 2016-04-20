@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,10 +185,6 @@ private:
 
   OtherRegionsTable _other_regions;
 
-  enum ParIterState { Unclaimed, Claimed, Complete };
-  volatile ParIterState _iter_state;
-  volatile size_t _iter_claimed;
-
 public:
   HeapRegionRemSet(G1BlockOffsetTable* bot, HeapRegion* hr);
 
@@ -239,27 +235,6 @@ public:
   // entries for this region in other remsets.
   void clear();
   void clear_locked();
-
-  // Attempt to claim the region.  Returns true iff this call caused an
-  // atomic transition from Unclaimed to Claimed.
-  bool claim_iter();
-  // Sets the iteration state to "complete".
-  void set_iter_complete();
-  // Returns "true" iff the region's iteration is complete.
-  bool iter_is_complete();
-
-  // Support for claiming blocks of cards during iteration
-  size_t iter_claimed() const { return _iter_claimed; }
-  // Claim the next block of cards
-  size_t iter_claimed_next(size_t step) {
-    return Atomic::add(step, &_iter_claimed) - step;
-  }
-
-  void reset_for_par_iteration();
-
-  bool verify_ready_for_par_iteration() {
-    return (_iter_state == Unclaimed) && (_iter_claimed == 0);
-  }
 
   // The actual # of bytes this hr_remset takes up.
   // Note also includes the strong code root set.

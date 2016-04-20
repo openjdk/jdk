@@ -28,12 +28,12 @@
 #include "code/codeCache.hpp"
 #include "gc/g1/concurrentMarkThread.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1CardLiveData.inline.hpp"
+#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
@@ -739,8 +739,8 @@ public:
 };
 
 void G1ConcurrentMark::checkpointRootsInitialPre() {
-  G1CollectedHeap*   g1h = G1CollectedHeap::heap();
-  G1CollectorPolicy* g1p = g1h->g1_policy();
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  G1Policy* g1p = g1h->g1_policy();
 
   _has_aborted = false;
 
@@ -1056,7 +1056,7 @@ void G1ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
   }
   g1h->verifier()->check_bitmaps("Remark Start");
 
-  G1CollectorPolicy* g1p = g1h->g1_policy();
+  G1Policy* g1p = g1h->g1_policy();
   g1p->record_concurrent_mark_remark_start();
 
   double start = os::elapsedTime();
@@ -1144,8 +1144,6 @@ public:
     if (hr->is_archive()) {
       return false;
     }
-    // We use a claim value of zero here because all regions
-    // were claimed with value 1 in the FinalCount task.
     _g1->reset_gc_time_stamps(hr);
     hr->note_end_of_marking();
 
@@ -1240,7 +1238,7 @@ void G1ConcurrentMark::cleanup() {
   }
   g1h->verifier()->check_bitmaps("Cleanup Start");
 
-  G1CollectorPolicy* g1p = g1h->g1_policy();
+  G1Policy* g1p = g1h->g1_policy();
   g1p->record_concurrent_mark_cleanup_start();
 
   double start = os::elapsedTime();
@@ -2609,7 +2607,7 @@ void G1CMTask::do_marking_step(double time_target_ms,
   assert(time_target_ms >= 1.0, "minimum granularity is 1ms");
   assert(concurrent() == _cm->concurrent(), "they should be the same");
 
-  G1CollectorPolicy* g1_policy = _g1h->g1_policy();
+  G1Policy* g1_policy = _g1h->g1_policy();
   assert(_task_queues != NULL, "invariant");
   assert(_task_queue != NULL, "invariant");
   assert(_task_queues->queue(_worker_id) == _task_queue, "invariant");
