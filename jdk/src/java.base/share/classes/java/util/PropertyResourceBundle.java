@@ -43,7 +43,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnmappableCharacterException;
@@ -142,8 +141,8 @@ public class PropertyResourceBundle extends ResourceBundle {
     // Check whether the strict encoding is specified.
     // The possible encoding is either "ISO-8859-1" or "UTF-8".
     private static final String encoding =
-        AccessController.doPrivileged(
-            new GetPropertyAction("java.util.PropertyResourceBundle.encoding", ""))
+        GetPropertyAction
+                .getProperty("java.util.PropertyResourceBundle.encoding", "")
         .toUpperCase(Locale.ROOT);
 
     /**

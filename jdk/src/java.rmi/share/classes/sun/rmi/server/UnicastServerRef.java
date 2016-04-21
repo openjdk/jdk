@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package sun.rmi.server;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.io.PrintStream;
+import java.io.ObjectStreamClass;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.rmi.MarshalException;
@@ -52,6 +52,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import sun.rmi.runtime.Log;
 import sun.rmi.transport.LiveRef;
 import sun.rmi.transport.Target;
@@ -115,6 +116,8 @@ public class UnicastServerRef extends UnicastRef
     /** cache of impl classes that have no corresponding skeleton class */
     private static final Map<Class<?>,?> withoutSkeletons =
         Collections.synchronizedMap(new WeakHashMap<Class<?>,Void>());
+
+    private final AtomicInteger methodCallIDCount = new AtomicInteger(0);
 
     /**
      * Create a new (empty) Unicast server remote reference.
@@ -297,14 +300,11 @@ public class UnicastServerRef extends UnicastRef
             logCall(obj, method);
 
             // unmarshal parameters
-            Class<?>[] types = method.getParameterTypes();
-            Object[] params = new Object[types.length];
+            Object[] params = null;
 
             try {
                 unmarshalCustomCallData(in);
-                for (int i = 0; i < types.length; i++) {
-                    params[i] = unmarshalValue(types[i], in);
-                }
+                params = unmarshalParameters(obj, method, marshalStream);
             } catch (java.io.IOException e) {
                 throw new UnmarshalException(
                     "error unmarshalling arguments", e);
@@ -563,6 +563,87 @@ public class UnicastServerRef extends UnicastRef
                 }
             }
             return map;
+        }
+    }
+
+    /**
+     * Unmarshal parameters for the given method of the given instance over
+     * the given marshalinputstream. Perform any necessary checks.
+     */
+    private Object[] unmarshalParameters(Object obj, Method method, MarshalInputStream in)
+    throws IOException, ClassNotFoundException {
+        return (obj instanceof DeserializationChecker) ?
+            unmarshalParametersChecked((DeserializationChecker)obj, method, in) :
+            unmarshalParametersUnchecked(method, in);
+    }
+
+    /**
+     * Unmarshal parameters for the given method of the given instance over
+     * the given marshalinputstream. Do not perform any additional checks.
+     */
+    private Object[] unmarshalParametersUnchecked(Method method, ObjectInput in)
+    throws IOException, ClassNotFoundException {
+        Class<?>[] types = method.getParameterTypes();
+        Object[] params = new Object[types.length];
+        for (int i = 0; i < types.length; i++) {
+            params[i] = unmarshalValue(types[i], in);
+        }
+        return params;
+    }
+
+    /**
+     * Unmarshal parameters for the given method of the given instance over
+     * the given marshalinputstream. Do perform all additional checks.
+     */
+    private Object[] unmarshalParametersChecked(
+        DeserializationChecker checker,
+        Method method, MarshalInputStream in)
+    throws IOException, ClassNotFoundException {
+        int callID = methodCallIDCount.getAndIncrement();
+        MyChecker myChecker = new MyChecker(checker, method, callID);
+        in.setStreamChecker(myChecker);
+        try {
+            Class<?>[] types = method.getParameterTypes();
+            Object[] values = new Object[types.length];
+            for (int i = 0; i < types.length; i++) {
+                myChecker.setIndex(i);
+                values[i] = unmarshalValue(types[i], in);
+            }
+            myChecker.end(callID);
+            return values;
+        } finally {
+            in.setStreamChecker(null);
+        }
+    }
+
+    private static class MyChecker implements MarshalInputStream.StreamChecker {
+        private final DeserializationChecker descriptorCheck;
+        private final Method method;
+        private final int callID;
+        private int parameterIndex;
+
+        MyChecker(DeserializationChecker descriptorCheck, Method method, int callID) {
+            this.descriptorCheck = descriptorCheck;
+            this.method = method;
+            this.callID = callID;
+        }
+
+        @Override
+        public void validateDescriptor(ObjectStreamClass descriptor) {
+            descriptorCheck.check(method, descriptor, parameterIndex, callID);
+        }
+
+        @Override
+        public void checkProxyInterfaceNames(String[] ifaces) {
+            descriptorCheck.checkProxyClass(method, ifaces, parameterIndex, callID);
+        }
+
+        void setIndex(int parameterIndex) {
+            this.parameterIndex = parameterIndex;
+        }
+
+        void end(int callId) {
+            descriptorCheck.end(callId);
         }
     }
 }

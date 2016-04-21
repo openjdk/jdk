@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.misc;
 
-module jdk.crypto.pkcs11 {
-    // Depends on SunEC provider for EC related functionality
-    requires jdk.crypto.ec;
-    provides java.security.Provider with sun.security.pkcs11.SunPKCS11;
+import java.io.ObjectStreamClass;
+
+/**
+ * A callback used by {@code ObjectInputStream} to do descriptor validation.
+ *
+ * @author sjiang
+ */
+public interface ObjectStreamClassValidator {
+    /**
+     * This method will be called by ObjectInputStream to
+     * check a descriptor just before creating an object described by this descriptor.
+     * The object will not be created if this method throws a {@code RuntimeException}.
+     * @param descriptor descriptor to be checked.
+     */
+    public void validateDescriptor(ObjectStreamClass descriptor);
 }
-
