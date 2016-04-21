@@ -341,6 +341,45 @@ class Thread implements Runnable {
     }
 
     /**
+     * Indicates that the caller is momentarily unable to progress, until the
+     * occurrence of one or more actions on the part of other activities. By
+     * invoking this method within each iteration of a spin-wait loop construct,
+     * the calling thread indicates to the runtime that it is busy-waiting.
+     * The runtime may take action to improve the performance of invoking
+     * spin-wait loop constructions.
+     * <p>
+     * @apiNote
+     * As an example consider a method in a class that spins in a loop until
+     * some flag is set outside of that method. A call to the {@code onSpinWait}
+     * method should be placed inside the spin loop.
+     * <pre>{@code
+     *     class EventHandler {
+     *         volatile boolean eventNotificationNotReceived;
+     *         void waitForEventAndHandleIt() {
+     *             while ( eventNotificationNotReceived ) {
+     *                 java.lang.Thread.onSpinWait();
+     *             }
+     *             readAndProcessEvent();
+     *         }
+     *
+     *         void readAndProcessEvent() {
+     *             // Read event from some source and process it
+     *              . . .
+     *         }
+     *     }
+     * }</pre>
+     * <p>
+     * The code above would remain correct even if the {@code onSpinWait}
+     * method was not called at all. However on some architectures the Java
+     * Virtual Machine may issue the processor instructions to address such
+     * code patterns in a more beneficial way.
+     * <p>
+     * @since 9
+     */
+    @HotSpotIntrinsicCandidate
+    public static void onSpinWait() {}
+
+    /**
      * Initializes a Thread with the current AccessControlContext.
      * @see #init(ThreadGroup,Runnable,String,long,AccessControlContext,boolean)
      */
