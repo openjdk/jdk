@@ -44,8 +44,6 @@ public:
 
   void post_heap_initialize() {} // Nothing needed.
 
-  // Create jstat counters for the policy.
-  virtual void initialize_gc_policy_counters();
 };
 
 #endif // SHARE_VM_GC_G1_G1COLLECTORPOLICY_HPP
