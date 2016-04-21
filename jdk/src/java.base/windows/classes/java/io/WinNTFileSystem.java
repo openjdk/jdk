@@ -25,8 +25,8 @@
 
 package java.io;
 
-import java.security.AccessController;
 import java.util.Locale;
+import java.util.Properties;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -42,10 +42,9 @@ class WinNTFileSystem extends FileSystem {
     private final char semicolon;
 
     public WinNTFileSystem() {
-        slash = AccessController.doPrivileged(
-            new GetPropertyAction("file.separator")).charAt(0);
-        semicolon = AccessController.doPrivileged(
-            new GetPropertyAction("path.separator")).charAt(0);
+        Properties props = GetPropertyAction.getProperties();
+        slash = props.getProperty("file.separator").charAt(0);
+        semicolon = props.getProperty("path.separator").charAt(0);
         altSlash = (this.slash == '\\') ? '/' : '\\';
     }
 
