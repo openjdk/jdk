@@ -28,7 +28,6 @@
 #include "c1/c1_CodeStubs.hpp"
 #include "ci/ciMethodData.hpp"
 #include "oops/methodData.hpp"
-#include "utilities/top.hpp"
 
 class Compilation;
 class ScopeValue;

@@ -41,6 +41,12 @@ HAS_ALT_SRC = true
 !endif
 !endif
 
+!ifndef OPENJDK
+!if EXISTS($(TraceAltSrcDir))
+HAS_ALT_SRC = true
+!endif
+!endif
+
 TraceGeneratedNames =     \
     traceEventClasses.hpp \
     traceEventIds.hpp     \

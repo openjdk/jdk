@@ -243,6 +243,36 @@ inline T byte_size_in_proper_unit(T s) {
   }
 }
 
+inline const char* exact_unit_for_byte_size(size_t s) {
+#ifdef _LP64
+  if (s >= G && (s % G) == 0) {
+    return "G";
+  }
+#endif
+  if (s >= M && (s % M) == 0) {
+    return "M";
+  }
+  if (s >= K && (s % K) == 0) {
+    return "K";
+  }
+  return "B";
+}
+
+inline size_t byte_size_in_exact_unit(size_t s) {
+#ifdef _LP64
+  if (s >= G && (s % G) == 0) {
+    return s / G;
+  }
+#endif
+  if (s >= M && (s % M) == 0) {
+    return s / M;
+  }
+  if (s >= K && (s % K) == 0) {
+    return s / K;
+  }
+  return s;
+}
+
 //----------------------------------------------------------------------------------------------------
 // VM type definitions
 
@@ -328,7 +358,7 @@ inline size_t pointer_delta(const MetaWord* left, const MetaWord* right) {
 // so far from the middle of the road that it is likely to be problematic in
 // many C++ compilers.
 //
-#define CAST_TO_FN_PTR(func_type, value) ((func_type)(castable_address(value)))
+#define CAST_TO_FN_PTR(func_type, value) (reinterpret_cast<func_type>(value))
 #define CAST_FROM_FN_PTR(new_type, func_ptr) ((new_type)((address_word)(func_ptr)))
 
 // Unsigned byte types for os and stream.hpp
@@ -816,14 +846,15 @@ class JavaValue {
 
 enum TosState {         // describes the tos cache contents
   btos = 0,             // byte, bool tos cached
-  ctos = 1,             // char tos cached
-  stos = 2,             // short tos cached
-  itos = 3,             // int tos cached
-  ltos = 4,             // long tos cached
-  ftos = 5,             // float tos cached
-  dtos = 6,             // double tos cached
-  atos = 7,             // object cached
-  vtos = 8,             // tos not cached
+  ztos = 1,             // byte, bool tos cached
+  ctos = 2,             // char tos cached
+  stos = 3,             // short tos cached
+  itos = 4,             // int tos cached
+  ltos = 5,             // long tos cached
+  ftos = 6,             // float tos cached
+  dtos = 7,             // double tos cached
+  atos = 8,             // object cached
+  vtos = 9,             // tos not cached
   number_of_states,
   ilgl                  // illegal state: should not occur
 };
@@ -832,7 +863,7 @@ enum TosState {         // describes the tos cache contents
 inline TosState as_TosState(BasicType type) {
   switch (type) {
     case T_BYTE   : return btos;
-    case T_BOOLEAN: return btos; // FIXME: Add ztos
+    case T_BOOLEAN: return ztos;
     case T_CHAR   : return ctos;
     case T_SHORT  : return stos;
     case T_INT    : return itos;
@@ -848,8 +879,8 @@ inline TosState as_TosState(BasicType type) {
 
 inline BasicType as_BasicType(TosState state) {
   switch (state) {
-    //case ztos: return T_BOOLEAN;//FIXME
     case btos : return T_BYTE;
+    case ztos : return T_BOOLEAN;
     case ctos : return T_CHAR;
     case stos : return T_SHORT;
     case itos : return T_INT;

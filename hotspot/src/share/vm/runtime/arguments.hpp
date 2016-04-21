@@ -31,7 +31,6 @@
 #include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/top.hpp"
 
 // Arguments parses the command line and recognizes options
 
