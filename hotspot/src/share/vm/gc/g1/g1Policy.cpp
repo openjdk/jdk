@@ -52,6 +52,7 @@ G1Policy::G1Policy() :
 
   _bytes_allocated_in_old_since_last_gc(0),
   _ihop_control(NULL),
+  _policy_counters(new GCPolicyCounters("GarbageFirst", 1, 3)),
   _initial_mark_to_mixed() {
 
   // SurvRateGroups below must be initialized after the predictor because they
@@ -91,8 +92,6 @@ void G1Policy::init() {
   _collection_set = _g1->collection_set();
 
   assert(Heap_lock->owned_by_self(), "Locking discipline.");
-
-  _g1->collector_policy()->initialize_gc_policy_counters();
 
   if (adaptive_young_list_length()) {
     _young_list_fixed_length = 0;
@@ -970,9 +969,8 @@ void G1Policy::update_survivors_policy() {
   // smaller than 1.0) we'll get 1.
   _max_survivor_regions = (uint) ceil(max_survivor_regions_d);
 
-  GCPolicyCounters* counters = _g1->collector_policy()->counters();
   _tenuring_threshold = _survivors_age_table.compute_tenuring_threshold(
-        HeapRegion::GrainWords * _max_survivor_regions, counters);
+      HeapRegion::GrainWords * _max_survivor_regions, _policy_counters);
 }
 
 bool G1Policy::force_initial_mark_if_outside_cycle(GCCause::Cause gc_cause) {

@@ -46,6 +46,7 @@ class CollectionSetChooser;
 class G1IHOPControl;
 class G1Analytics;
 class G1YoungGenSizer;
+class GCPolicyCounters;
 
 class G1Policy: public CHeapObj<mtGC> {
  private:
@@ -61,6 +62,8 @@ class G1Policy: public CHeapObj<mtGC> {
   G1Predictions _predictor;
   G1Analytics* _analytics;
   G1MMUTracker* _mmu_tracker;
+
+  GCPolicyCounters* _policy_counters;
 
   double _full_collection_start_sec;
 

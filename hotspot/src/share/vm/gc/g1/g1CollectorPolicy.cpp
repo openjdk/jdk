@@ -103,7 +103,3 @@ void G1CollectorPolicy::initialize_flags() {
   CollectorPolicy::initialize_flags();
 }
 
-// Create the jstat counters for the policy.
-void G1CollectorPolicy::initialize_gc_policy_counters() {
-  _gc_policy_counters = new GCPolicyCounters("GarbageFirst", 1, 3);
-}
