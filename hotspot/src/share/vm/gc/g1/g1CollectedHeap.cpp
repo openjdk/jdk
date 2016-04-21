@@ -2058,7 +2058,6 @@ size_t G1CollectedHeap::conservative_max_heap_alignment() {
 }
 
 void G1CollectedHeap::post_initialize() {
-  CollectedHeap::post_initialize();
   ref_processing_init();
 }
 

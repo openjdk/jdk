@@ -179,7 +179,6 @@ char* GenCollectedHeap::allocate(size_t alignment,
 }
 
 void GenCollectedHeap::post_initialize() {
-  CollectedHeap::post_initialize();
   ref_processing_init();
   assert((_young_gen->kind() == Generation::DefNew) ||
          (_young_gen->kind() == Generation::ParNew),

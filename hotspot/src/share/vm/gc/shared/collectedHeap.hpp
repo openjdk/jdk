@@ -209,7 +209,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // In many heaps, there will be a need to perform some initialization activities
   // after the Universe is fully formed, but before general heap allocation is allowed.
   // This is the correct place to place such initialization methods.
-  virtual void post_initialize();
+  virtual void post_initialize() = 0;
 
   // Stop any onging concurrent work and prepare for exit.
   virtual void stop() {}
