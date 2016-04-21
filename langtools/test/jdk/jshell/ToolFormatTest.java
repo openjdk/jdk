@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8148316 8148317 8151755 8152246
+ * @bug 8148316 8148317 8151755 8152246 8153551
  * @summary Tests for output customization
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -153,6 +153,12 @@ public class ToolFormatTest extends ReplToolTesting {
             assertCommandCheckOutput(false, "/set feedback normal", s -> {
             });
         }
+    }
+
+    public void testShowFeedbackModes() {
+        test(
+                (a) -> assertCommandOutputContains(a, "/set feedback", "normal")
+        );
     }
 
     public void testSetNewModeQuiet() {

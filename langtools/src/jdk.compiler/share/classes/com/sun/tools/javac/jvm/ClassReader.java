@@ -457,13 +457,13 @@ public class ClassReader {
             poolObj[i] = getInt(index + 1);
             break;
         case CONSTANT_Float:
-            poolObj[i] = new Float(getFloat(index + 1));
+            poolObj[i] = Float.valueOf(getFloat(index + 1));
             break;
         case CONSTANT_Long:
-            poolObj[i] = new Long(getLong(index + 1));
+            poolObj[i] = Long.valueOf(getLong(index + 1));
             break;
         case CONSTANT_Double:
-            poolObj[i] = new Double(getDouble(index + 1));
+            poolObj[i] = Double.valueOf(getDouble(index + 1));
             break;
         case CONSTANT_MethodHandle:
             skipBytes(4);

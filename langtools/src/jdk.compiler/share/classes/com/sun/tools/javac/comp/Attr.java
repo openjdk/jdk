@@ -4491,10 +4491,11 @@ public class Attr extends JCTree.Visitor {
         chk.checkNonCyclicElements(tree);
 
         // Check for proper use of serialVersionUID
-        if (env.info.lint.isEnabled(LintCategory.SERIAL) &&
-            isSerializable(c.type) &&
-            (c.flags() & Flags.ENUM) == 0 &&
-            checkForSerial(c)) {
+        if (env.info.lint.isEnabled(LintCategory.SERIAL)
+                && isSerializable(c.type)
+                && (c.flags() & Flags.ENUM) == 0
+                && !c.isAnonymous()
+                && checkForSerial(c)) {
             checkSerialVersionUID(tree, c);
         }
         if (allowTypeAnnos) {
