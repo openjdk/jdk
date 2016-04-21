@@ -317,6 +317,11 @@ public class WhiteBox {
     Objects.requireNonNull(method);
     return enqueueMethodForCompilation0(method, compLevel, entry_bci);
   }
+  private native boolean enqueueInitializerForCompilation0(Class<?> aClass, int compLevel);
+  public  boolean enqueueInitializerForCompilation(Class<?> aClass, int compLevel) {
+    Objects.requireNonNull(aClass);
+    return enqueueInitializerForCompilation0(aClass, compLevel);
+  }
   private native void    clearMethodState0(Executable method);
   public         void    clearMethodState(Executable method) {
     Objects.requireNonNull(method);
