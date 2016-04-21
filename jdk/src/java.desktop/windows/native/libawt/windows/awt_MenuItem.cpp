@@ -667,7 +667,7 @@ void AwtMenuItem::DoCommand()
         DoCallback("handleAction", "(Z)V", ((nState & MF_CHECKED) == 0));
     } else {
         DoCallback("handleAction", "(JI)V", ::JVM_CurrentTimeMillis(NULL, 0),
-                   (jint)AwtComponent::GetJavaModifiers());
+                   (jint)AwtComponent::GetActionModifiers());
     }
 }
 

@@ -26,7 +26,6 @@ package javax.swing.text;
 
 import java.util.Vector;
 import sun.awt.AppContext;
-import sun.misc.ManagedLocalsThread;
 
 /**
  * A queue of text layout tasks.
@@ -92,7 +91,7 @@ public class LayoutQueue {
                     }
                 } while (work != null);
             };
-            worker = new ManagedLocalsThread(workerRunnable, "text-layout");
+            worker = new Thread(null, workerRunnable, "text-layout", 0, false);
             worker.setPriority(Thread.MIN_PRIORITY);
             worker.start();
         }

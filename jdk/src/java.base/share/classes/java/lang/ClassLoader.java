@@ -727,7 +727,7 @@ public abstract class ClassLoader {
      * @deprecated  Replaced by {@link #defineClass(String, byte[], int, int)
      * defineClass(String, byte[], int, int)}
      */
-    @Deprecated
+    @Deprecated(since="1.1")
     protected final Class<?> defineClass(byte[] b, int off, int len)
         throws ClassFormatError
     {
@@ -817,6 +817,9 @@ public abstract class ClassLoader {
         if (!checkName(name))
             throw new NoClassDefFoundError("IllegalName: " + name);
 
+        // Note:  Checking logic in java.lang.invoke.MemberName.checkForTypeAlias
+        // relies on the fact that spoofing is impossible if a class has a name
+        // of the form "java.*"
         if ((name != null) && name.startsWith("java.")
                 && this != getBuiltinPlatformClassLoader()) {
             throw new SecurityException
@@ -2012,7 +2015,7 @@ public abstract class ClassLoader {
      *
      * @since  1.2
      */
-    @Deprecated
+    @Deprecated(since="9")
     protected Package getPackage(String name) {
         Package pkg = getDefinedPackage(name);
         if (pkg == null) {

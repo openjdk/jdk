@@ -289,6 +289,7 @@ public class Runtime {
      *      finalizers being called on live objects while other threads are
      *      concurrently manipulating those objects, resulting in erratic
      *      behavior or deadlock.
+     *      This method is subject to removal in a future version of Java SE.
      *
      * @throws  SecurityException
      *        if a security manager exists and its {@code checkExit}
@@ -299,7 +300,7 @@ public class Runtime {
      * @see     java.lang.SecurityManager#checkExit(int)
      * @since   1.1
      */
-    @Deprecated
+    @Deprecated(since="1.2", forRemoval=true)
     public static void runFinalizersOnExit(boolean value) {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
@@ -894,8 +895,9 @@ public class Runtime {
      * stream in the local encoding into a character stream in Unicode is via
      * the {@code InputStreamReader} and {@code BufferedReader}
      * classes.
+     * This method is subject to removal in a future version of Java SE.
      */
-    @Deprecated
+    @Deprecated(since="1.1", forRemoval=true)
     public InputStream getLocalizedInputStream(InputStream in) {
         return in;
     }
@@ -915,6 +917,7 @@ public class Runtime {
      * Unicode character stream into a byte stream in the local encoding is via
      * the {@code OutputStreamWriter}, {@code BufferedWriter}, and
      * {@code PrintWriter} classes.
+     * This method is subject to removal in a future version of Java SE.
      *
      * @param      out OutputStream to localize
      * @return     a localized output stream
@@ -923,7 +926,7 @@ public class Runtime {
      * @see        java.io.OutputStreamWriter#OutputStreamWriter(java.io.OutputStream)
      * @see        java.io.PrintWriter#PrintWriter(java.io.OutputStream)
      */
-    @Deprecated
+    @Deprecated(since="1.1", forRemoval=true)
     public OutputStream getLocalizedOutputStream(OutputStream out) {
         return out;
     }

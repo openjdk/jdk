@@ -33,6 +33,7 @@ import java.util.Locale;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import sun.security.util.SecurityConstants;
+import sun.security.action.GetPropertyAction;
 
 /**
  * Helper class used to load the {@link java.lang.System.LoggerFinder}.
@@ -79,9 +80,8 @@ public final class LoggerFinderLoader {
 
     // Get configuration error policy
     private static ErrorPolicy configurationErrorPolicy() {
-        final PrivilegedAction<String> getConfigurationErrorPolicy =
-                () -> System.getProperty("jdk.logger.finder.error");
-        String errorPolicy = AccessController.doPrivileged(getConfigurationErrorPolicy);
+        String errorPolicy =
+                GetPropertyAction.getProperty("jdk.logger.finder.error");
         if (errorPolicy == null || errorPolicy.isEmpty()) {
             return ErrorPolicy.WARNING;
         }
@@ -95,9 +95,8 @@ public final class LoggerFinderLoader {
     // Whether multiple provider should be considered as an error.
     // This is further submitted to the configuration error policy.
     private static boolean ensureSingletonProvider() {
-        final PrivilegedAction<Boolean> ensureSingletonProvider =
-                () -> Boolean.getBoolean("jdk.logger.finder.singleton");
-        return AccessController.doPrivileged(ensureSingletonProvider);
+        return Boolean.parseBoolean(
+                GetPropertyAction.getProperty("jdk.logger.finder.singleton"));
     }
 
     private static Iterator<System.LoggerFinder> findLoggerFinderProviders() {

@@ -28,6 +28,7 @@ package java.lang.invoke;
 import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Arrays;
 import java.util.Objects;
@@ -53,6 +54,7 @@ import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
 
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
+import static java.lang.invoke.MethodType.methodType;
 
 /**
  * This class consists exclusively of static methods that operate on or return
@@ -3000,7 +3002,7 @@ assert((int)twice.invokeExact(21) == 42);
 
     private static final MethodHandle[] IDENTITY_MHS = new MethodHandle[Wrapper.values().length];
     private static MethodHandle makeIdentity(Class<?> ptype) {
-        MethodType mtype = MethodType.methodType(ptype, ptype);
+        MethodType mtype = methodType(ptype, ptype);
         LambdaForm lform = LambdaForm.identityForm(BasicType.basicType(ptype));
         return MethodHandleImpl.makeIntrinsic(mtype, lform, Intrinsic.IDENTITY);
     }
@@ -3018,7 +3020,7 @@ assert((int)twice.invokeExact(21) == 42);
     }
     private static final MethodHandle[] ZERO_MHS = new MethodHandle[Wrapper.values().length];
     private static MethodHandle makeZero(Class<?> rtype) {
-        MethodType mtype = MethodType.methodType(rtype);
+        MethodType mtype = methodType(rtype);
         LambdaForm lform = LambdaForm.zeroForm(BasicType.basicType(rtype));
         return MethodHandleImpl.makeIntrinsic(mtype, lform, Intrinsic.ZERO);
     }
@@ -3929,7 +3931,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
     MethodHandle throwException(Class<?> returnType, Class<? extends Throwable> exType) {
         if (!Throwable.class.isAssignableFrom(exType))
             throw new ClassCastException(exType.getName());
-        return MethodHandleImpl.throwException(MethodType.methodType(returnType, exType));
+        return MethodHandleImpl.throwException(methodType(returnType, exType));
     }
 
     /**
@@ -4166,7 +4168,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         for (int i = 0; i < nclauses; ++i) {
             Class<?> t = iterationVariableTypes.get(i);
             if (init.get(i) == null) {
-                init.set(i, empty(MethodType.methodType(t, commonSuffix)));
+                init.set(i, empty(methodType(t, commonSuffix)));
             }
             if (step.get(i) == null) {
                 step.set(i, dropArgumentsToMatch(identityOrVoid(t), 0, commonParameterSequence, i));
@@ -4175,7 +4177,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
                 pred.set(i, dropArguments(constant(boolean.class, true), 0, commonParameterSequence));
             }
             if (fini.get(i) == null) {
-                fini.set(i, empty(MethodType.methodType(t, commonParameterSequence)));
+                fini.set(i, empty(methodType(t, commonParameterSequence)));
             }
         }
 
@@ -4269,7 +4271,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * @since 9
      */
     public static MethodHandle whileLoop(MethodHandle init, MethodHandle pred, MethodHandle body) {
-        MethodHandle fin = init == null ? zero(void.class) : identity(init.type().returnType());
+        MethodHandle fin = init == null || init.type().returnType() == void.class ? zero(void.class) :
+                identity(init.type().returnType());
         MethodHandle[] checkExit = {null, null, pred, fin};
         MethodHandle[] varBody = {init, body};
         return loop(checkExit, varBody);
@@ -4335,7 +4338,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * @since 9
      */
     public static MethodHandle doWhileLoop(MethodHandle init, MethodHandle body, MethodHandle pred) {
-        MethodHandle fin = init == null ? zero(void.class) : identity(init.type().returnType());
+        MethodHandle fin = init == null || init.type().returnType() == void.class ? zero(void.class) :
+                identity(init.type().returnType());
         MethodHandle[] clause = {init, body, pred, fin};
         return loop(clause);
     }
@@ -4472,8 +4476,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * @since 9
      */
     public static MethodHandle countedLoop(MethodHandle start, MethodHandle end, MethodHandle init, MethodHandle body) {
-        MethodHandle returnVar = dropArguments(init == null ? zero(void.class) : identity(init.type().returnType()),
-                0, int.class, int.class);
+        MethodHandle returnVar = dropArguments(init == null || init.type().returnType() == void.class ?
+                zero(void.class) : identity(init.type().returnType()), 0, int.class, int.class);
         MethodHandle[] indexVar = {start, MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_countedLoopStep)};
         MethodHandle[] loopLimit = {end, null, MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_countedLoopPred), returnVar};
         MethodHandle[] bodyClause = {init,
@@ -4485,6 +4489,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
     /**
      * Constructs a loop that ranges over the elements produced by an {@code Iterator<T>}.
      * The iterator will be produced by the evaluation of the {@code iterator} handle.
+     * This handle must have {@link java.util.Iterator} as its return type.
      * If this handle is passed as {@code null} the method {@link Iterable#iterator} will be used instead,
      * and will be applied to a leading argument of the loop handle.
      * Each value produced by the iterator is passed to the {@code body}, which must accept an initial {@code T} parameter.
@@ -4534,7 +4539,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * assertEquals(reversedList, (List<String>) loop.invoke(list));
      * }</pre></blockquote>
      * <p>
-     * @implSpec The implementation of this method is equivalent to:
+     * @implSpec The implementation of this method is equivalent to (excluding error handling):
      * <blockquote><pre>{@code
      * MethodHandle iteratedLoop(MethodHandle iterator, MethodHandle init, MethodHandle body) {
      *     // assume MH_next and MH_hasNext are handles to methods of Iterator
@@ -4550,6 +4555,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * }</pre></blockquote>
      *
      * @param iterator a handle to return the iterator to start the loop.
+     *             The handle must have {@link java.util.Iterator} as its return type.
      *             Passing {@code null} will make the loop call {@link Iterable#iterator()} on the first
      *             incoming value.
      * @param init initializer for additional loop state. This determines the loop's result type.
@@ -4565,21 +4571,23 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * @since 9
      */
     public static MethodHandle iteratedLoop(MethodHandle iterator, MethodHandle init, MethodHandle body) {
-        checkIteratedLoop(body);
+        checkIteratedLoop(iterator, body);
+        final boolean voidInit = init == null || init.type().returnType() == void.class;
 
         MethodHandle initit = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_initIterator);
         MethodHandle initIterator = iterator == null ?
-                initit.asType(initit.type().changeParameterType(0, body.type().parameterType(init == null ? 1 : 2))) :
+                initit.asType(initit.type().changeParameterType(0, body.type().parameterType(voidInit ? 1 : 2))) :
                 iterator;
         Class<?> itype = initIterator.type().returnType();
         Class<?> ttype = body.type().parameterType(0);
 
         MethodHandle returnVar =
-                dropArguments(init == null ? zero(void.class) : identity(init.type().returnType()), 0, itype);
+                dropArguments(voidInit ? zero(void.class) : identity(init.type().returnType()), 0, itype);
         MethodHandle initnx = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_iterateNext);
         MethodHandle nextVal = initnx.asType(initnx.type().changeReturnType(ttype));
 
-        MethodHandle[] iterVar = {initIterator, null, MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_iteratePred), returnVar};
+        MethodHandle[] iterVar = {initIterator, null, MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_iteratePred),
+                returnVar};
         MethodHandle[] bodyClause = {init, filterArgument(body, 0, nextVal)};
 
         return loop(iterVar, bodyClause);
@@ -4833,7 +4841,10 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         }
     }
 
-    private static void checkIteratedLoop(MethodHandle body) {
+    private static void checkIteratedLoop(MethodHandle iterator, MethodHandle body) {
+        if (null != iterator && !Iterator.class.isAssignableFrom(iterator.type().returnType())) {
+            throw newIllegalArgumentException("iteratedLoop first argument must have Iterator return type");
+        }
         if (null == body) {
             throw newIllegalArgumentException("iterated loop body must not be null");
         }
