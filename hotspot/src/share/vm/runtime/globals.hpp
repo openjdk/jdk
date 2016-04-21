@@ -641,9 +641,6 @@ public:
           "region.")                                                        \
           range(1, max_uintx)                                               \
                                                                             \
-  diagnostic(bool, PrintCompressedOopsMode, false,                          \
-          "Print compressed oops base address and encoding mode")           \
-                                                                            \
   lp64_product(intx, ObjectAlignmentInBytes, 8,                             \
           "Default object alignment in bytes, 8 is minimum")                \
           range(8, 256)                                                     \
@@ -687,9 +684,6 @@ public:
   product(bool, UseLargePagesInMetaspace, false,                            \
           "Use large page memory in metaspace. "                            \
           "Only used if UseLargePages is enabled.")                         \
-                                                                            \
-  develop(bool, TracePageSizes, false,                                      \
-          "Trace page size selection and usage")                            \
                                                                             \
   product(bool, UseNUMA, false,                                             \
           "Use NUMA if available")                                          \
@@ -1809,13 +1803,17 @@ public:
           "enough work per iteration")                                      \
           range(0, max_intx)                                                \
                                                                             \
+  /* 4096 = CardTableModRefBS::card_size_in_words * BitsPerWord */          \
   product(size_t, CMSRescanMultiple, 32,                                    \
           "Size (in cards) of CMS parallel rescan task")                    \
-          range(1, max_uintx)                                               \
+          range(1, SIZE_MAX / 4096)                                         \
+          constraint(CMSRescanMultipleConstraintFunc,AfterMemoryInit)       \
                                                                             \
+  /* 4096 = CardTableModRefBS::card_size_in_words * BitsPerWord */          \
   product(size_t, CMSConcMarkMultiple, 32,                                  \
           "Size (in cards) of CMS concurrent MT marking task")              \
-          range(1, max_uintx)                                               \
+          range(1, SIZE_MAX / 4096)                                         \
+          constraint(CMSConcMarkMultipleConstraintFunc,AfterMemoryInit)     \
                                                                             \
   product(bool, CMSAbortSemantics, false,                                   \
           "Whether abort-on-overflow semantics is implemented")             \
@@ -2953,9 +2951,6 @@ public:
                                                                             \
   develop(bool, TraceStackWalk, false,                                      \
           "Trace stack walking")                                            \
-                                                                            \
-  product(bool, MemberNameInStackFrame, true,                               \
-          "Use MemberName in StackFrame")                                   \
                                                                             \
   /* notice: the max range value here is max_jint, not max_intx  */         \
   /* because of overflow issue                                   */         \

@@ -27,26 +27,26 @@ import jdk.internal.vm.annotation.Contended;
  * @test
  * @summary Test that verifies that iteration over large, plain Java objects, that potentially cross region boundaries on G1, with references in them works.
  * @requires vm.gc == "null"
- * @bug 8151499
+ * @bug 8151499 8153734
  * @modules java.base/jdk.internal.vm.annotation
- * @run main/othervm -XX:+EnableContended -XX:-RestrictContended -Xmx1g -XX:+UseParallelGC -XX:ContendedPaddingWidth=8192 TestHumongousReferenceObject
- * @run main/othervm -XX:+EnableContended -XX:-RestrictContended -Xmx1g -XX:+UseG1GC -XX:G1HeapRegionSize=1M -XX:ContendedPaddingWidth=8192 TestHumongousReferenceObject
- * @run main/othervm -XX:+EnableContended -XX:-RestrictContended -Xmx1g -XX:+UseG1GC -XX:G1HeapRegionSize=2M -XX:ContendedPaddingWidth=8192 TestHumongousReferenceObject
- * @run main/othervm -XX:+EnableContended -XX:-RestrictContended -Xmx1g -XX:+UseG1GC -XX:G1HeapRegionSize=4M -XX:ContendedPaddingWidth=8192 TestHumongousReferenceObject
- * @run main/othervm -XX:+EnableContended -XX:-RestrictContended -Xmx1g -XX:+UseG1GC -XX:G1HeapRegionSize=8M -XX:ContendedPaddingWidth=8192 TestHumongousReferenceObject
+ * @run main/othervm -XX:+EnableContended -XX:-RestrictContended -Xmx128m -XX:+UseParallelGC -XX:ContendedPaddingWidth=8192 TestHumongousReferenceObject
+ * @run main/othervm -XX:+EnableContended -XX:-RestrictContended -Xmx128m -XX:+UseG1GC -XX:G1HeapRegionSize=1M -XX:ContendedPaddingWidth=8192 TestHumongousReferenceObject
+ * @run main/othervm -XX:+EnableContended -XX:-RestrictContended -Xmx128m -XX:+UseG1GC -XX:G1HeapRegionSize=2M -XX:ContendedPaddingWidth=8192 TestHumongousReferenceObject
+ * @run main/othervm -XX:+EnableContended -XX:-RestrictContended -Xmx128m -XX:+UseG1GC -XX:G1HeapRegionSize=4M -XX:ContendedPaddingWidth=8192 TestHumongousReferenceObject
+ * @run main/othervm -XX:+EnableContended -XX:-RestrictContended -Xmx128m -XX:+UseG1GC -XX:G1HeapRegionSize=8M -XX:ContendedPaddingWidth=8192 TestHumongousReferenceObject
  */
 public class TestHumongousReferenceObject {
 
     /*
       Due to 300 fields with 8K @Contended padding around each field, it takes 2.4M bytes per instance.
       With small G1 regions, it is bound to cross regions. G1 should properly (card) mark the object nevertheless.
-      With 1G heap, it is enough to allocate ~400 of these objects to provoke at least one GC.
+      With 128M heap, it is enough to allocate ~100 of these objects to provoke at least one GC.
      */
 
     static volatile Object instance;
 
     public static void main(String[] args) {
-        for (int c = 0; c < 400; c++) {
+        for (int c = 0; c < 100; c++) {
             instance = new TestHumongousReferenceObject();
         }
     }

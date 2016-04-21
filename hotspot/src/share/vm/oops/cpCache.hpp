@@ -77,18 +77,19 @@ class PSPromotionManager;
 // f2 flag true if f2 contains an oop (e.g., virtual final method)
 // fv flag true if invokeinterface used for method in class Object
 //
-// The flags 31, 30, 29, 28 together build a 4 bit number 0 to 8 with the
+// The flags 31, 30, 29, 28 together build a 4 bit number 0 to 16 with the
 // following mapping to the TosState states:
 //
 // btos: 0
-// ctos: 1
-// stos: 2
-// itos: 3
-// ltos: 4
-// ftos: 5
-// dtos: 6
-// atos: 7
-// vtos: 8
+// ztos: 1
+// ctos: 2
+// stos: 3
+// itos: 4
+// ltos: 5
+// ftos: 6
+// dtos: 7
+// atos: 8
+// vtos: 9
 //
 // Entry specific: field entries:
 // _indices = get (b1 section) and put (b2 section) bytecodes, original constant pool index
@@ -352,14 +353,8 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   bool has_method_type() const                   { return (!is_f1_null()) && (_flags & (1 << has_method_type_shift))   != 0; }
   bool is_method_entry() const                   { return (_flags & (1 << is_field_entry_shift))    == 0; }
   bool is_field_entry() const                    { return (_flags & (1 << is_field_entry_shift))    != 0; }
-  bool is_byte() const                           { return flag_state() == btos; }
-  bool is_char() const                           { return flag_state() == ctos; }
-  bool is_short() const                          { return flag_state() == stos; }
-  bool is_int() const                            { return flag_state() == itos; }
   bool is_long() const                           { return flag_state() == ltos; }
-  bool is_float() const                          { return flag_state() == ftos; }
   bool is_double() const                         { return flag_state() == dtos; }
-  bool is_object() const                         { return flag_state() == atos; }
   TosState flag_state() const                    { assert((uint)number_of_states <= (uint)tos_state_mask+1, "");
                                                    return (TosState)((_flags >> tos_state_shift) & tos_state_mask); }
 

@@ -1443,8 +1443,9 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
     return JVMTI_ERROR_INTERNAL;
   }
 
-  // Update the version number of the constant pool
+  // Update the version number of the constant pools (may keep scratch_cp)
   merge_cp->increment_and_save_version(old_cp->version());
+  scratch_cp->increment_and_save_version(old_cp->version());
 
   ResourceMark rm(THREAD);
   _index_map_count = 0;
@@ -3910,6 +3911,11 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
     Method* method = _old_methods->at(i);
     method->set_constants(scratch_class->constants());
   }
+
+  // NOTE: this doesn't work because you can redefine the same class in two
+  // threads, each getting their own constant pool data appended to the
+  // original constant pool.  In order for the new methods to work when they
+  // become old methods, they need to keep their updated copy of the constant pool.
 
   {
     // walk all previous versions of the klass

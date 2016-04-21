@@ -44,6 +44,8 @@ public:
 };
 typedef Stack<OopAndMarkOop, mtGC> OopAndMarkOopStack;
 
+class WorkGang;
+
 class PreservedMarks VALUE_OBJ_CLASS_SPEC {
 private:
   OopAndMarkOopStack _stack;
@@ -52,13 +54,19 @@ private:
   inline void push(oop obj, markOop m);
 
 public:
-  bool is_empty() const { return _stack.is_empty(); }
   size_t size() const { return _stack.size(); }
   inline void push_if_necessary(oop obj, markOop m);
-  // Iterate over the stack, restore the preserved marks, then reclaim
-  // the memory taken up by stack chunks.
+  // Iterate over the stack, restore all preserved marks, and
+  // reclaim the memory taken up by the stack segments.
   void restore();
-  ~PreservedMarks() { assert(is_empty(), "should have been cleared"); }
+
+  inline static void init_forwarded_mark(oop obj);
+
+  // Assert the stack is empty and has no cached segments.
+  void assert_empty() PRODUCT_RETURN;
+
+  inline PreservedMarks();
+  ~PreservedMarks() { assert_empty(); }
 };
 
 class RemoveForwardedPointerClosure: public ObjectClosure {
@@ -82,7 +90,12 @@ private:
   // or == NULL if they have not.
   Padded<PreservedMarks>* _stacks;
 
+  // Internal version of restore() that uses a WorkGang for parallelism.
+  void restore_internal(WorkGang* workers, volatile size_t* total_size_addr);
+
 public:
+  uint num() const { return _num; }
+
   // Return the i'th stack.
   PreservedMarks* get(uint i = 0) const {
     assert(_num > 0 && _stacks != NULL, "stacks should have been initialized");
@@ -92,13 +105,23 @@ public:
 
   // Allocate stack array.
   void init(uint num);
-  // Iterate over all stacks, restore all preserved marks, then
-  // reclaim the memory taken up by stack chunks.
+
+  // Itrerate over all stacks, restore all presered marks, and reclaim
+  // the memory taken up by the stack segments. If the executor is
+  // NULL, restoration will be done serially. If the executor is not
+  // NULL, restoration could be done in parallel (when it makes
+  // sense). Supported executors: WorkGang (Serial, CMS, G1)
+  template <class E>
+  inline void restore(E* executor);
+
+  // Do the restoration serially. Temporary, to be used by PS until we
+  // can support GCTaskManager in restore(E*).
   void restore();
+
   // Reclaim stack array.
   void reclaim();
 
-  // Assert all the stacks are empty.
+  // Assert all the stacks are empty and have no cached segments.
   void assert_empty() PRODUCT_RETURN;
 
   PreservedMarksSet(bool in_c_heap)
