@@ -127,17 +127,14 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   virtual MarkSweepPolicy*              as_mark_sweep_policy()            { return NULL; }
 #if INCLUDE_ALL_GCS
   virtual ConcurrentMarkSweepPolicy*    as_concurrent_mark_sweep_policy() { return NULL; }
-  virtual G1CollectorPolicy*            as_g1_policy()                    { return NULL; }
 #endif // INCLUDE_ALL_GCS
   // Note that these are not virtual.
   bool is_generation_policy()            { return as_generation_policy() != NULL; }
   bool is_mark_sweep_policy()            { return as_mark_sweep_policy() != NULL; }
 #if INCLUDE_ALL_GCS
   bool is_concurrent_mark_sweep_policy() { return as_concurrent_mark_sweep_policy() != NULL; }
-  bool is_g1_policy()                    { return as_g1_policy() != NULL; }
 #else  // INCLUDE_ALL_GCS
   bool is_concurrent_mark_sweep_policy() { return false; }
-  bool is_g1_policy()                    { return false; }
 #endif // INCLUDE_ALL_GCS
 
 
@@ -146,10 +143,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                size_t size,
                                                Metaspace::MetadataType mdtype);
-
-  // Do any updates required to global flags that are due to heap initialization
-  // changes
-  virtual void post_heap_initialize() = 0;
 };
 
 class ClearedAllSoftRefs : public StackObj {
@@ -263,10 +256,6 @@ class GenCollectorPolicy : public CollectorPolicy {
   virtual void initialize_size_policy(size_t init_eden_size,
                                       size_t init_promo_size,
                                       size_t init_survivor_size);
-
-  virtual void post_heap_initialize() {
-    assert(_max_young_size == MaxNewSize, "Should be taken care of by initialize_size_info");
-  }
 };
 
 class MarkSweepPolicy : public GenCollectorPolicy {

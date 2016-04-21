@@ -153,6 +153,10 @@ void HeapRegion::setup_heap_region_size(size_t initial_heap_size, size_t max_hea
 
   guarantee(CardsPerRegion == 0, "we should only set it once");
   CardsPerRegion = GrainBytes >> CardTableModRefBS::card_shift;
+
+  if (G1HeapRegionSize != GrainBytes) {
+    FLAG_SET_ERGO(size_t, G1HeapRegionSize, GrainBytes);
+  }
 }
 
 void HeapRegion::reset_after_compaction() {

@@ -92,14 +92,3 @@ void G1CollectorPolicy::initialize_alignments() {
   size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
   _heap_alignment = MAX3(card_table_alignment, _space_alignment, page_size);
 }
-
-void G1CollectorPolicy::initialize_flags() {
-  if (G1HeapRegionSize != HeapRegion::GrainBytes) {
-    FLAG_SET_ERGO(size_t, G1HeapRegionSize, HeapRegion::GrainBytes);
-  }
-
-  guarantee(SurvivorRatio >= 1, "Range checking for SurvivorRatio should guarantee that value is >= 1");
-
-  CollectorPolicy::initialize_flags();
-}
-
