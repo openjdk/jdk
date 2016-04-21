@@ -606,6 +606,7 @@ class Feedback {
                 fluffmsg("jshell.msg.feedback.mode", mode.name);
             } else {
                 fluffmsg("jshell.msg.see", "/help /set feedback");
+                printFeedbackModes();
             }
             return valid;
         }
@@ -671,11 +672,15 @@ class Feedback {
                 } else {
                     errorat("jshell.err.feedback.ambiguous.mode", umode);
                 }
-                fluffmsg("jshell.msg.feedback.mode.following");
-                modeMap.keySet().stream()
-                        .forEach(mk -> fluff("   %s", mk));
+                printFeedbackModes();
                 return null;
             }
+        }
+
+        void printFeedbackModes() {
+            fluffmsg("jshell.msg.feedback.mode.following");
+            modeMap.keySet().stream()
+                    .forEach(mk -> fluff("   %s", mk));
         }
 
         // Test if the format string is correctly

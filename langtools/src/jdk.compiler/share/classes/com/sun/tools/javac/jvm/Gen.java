@@ -203,7 +203,7 @@ public class Gen extends JCTree.Visitor {
      */
     void emitMinusOne(int tc) {
         if (tc == LONGcode) {
-            items.makeImmediateItem(syms.longType, new Long(-1)).load();
+            items.makeImmediateItem(syms.longType, Long.valueOf(-1)).load();
         } else {
             code.emitop0(iconst_m1);
         }

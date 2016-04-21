@@ -125,15 +125,15 @@ strictfp class ConstFold {
                 return syms.booleanType.constType(b2i(intValue(od) >= 0));
 
             case lneg: // unary -
-                return syms.longType.constType(new Long(-longValue(od)));
+                return syms.longType.constType(Long.valueOf(-longValue(od)));
             case lxor: // ~
-                return syms.longType.constType(new Long(~longValue(od)));
+                return syms.longType.constType(Long.valueOf(~longValue(od)));
 
             case fneg: // unary -
-                return syms.floatType.constType(new Float(-floatValue(od)));
+                return syms.floatType.constType(Float.valueOf(-floatValue(od)));
 
             case dneg: // ~
-                return syms.doubleType.constType(new Double(-doubleValue(od)));
+                return syms.doubleType.constType(Double.valueOf(-doubleValue(od)));
 
             default:
                 return null;
@@ -216,37 +216,37 @@ strictfp class ConstFold {
 
                 case ladd:
                     return syms.longType.constType(
-                        new Long(longValue(l) + longValue(r)));
+                        Long.valueOf(longValue(l) + longValue(r)));
                 case lsub:
                     return syms.longType.constType(
-                        new Long(longValue(l) - longValue(r)));
+                        Long.valueOf(longValue(l) - longValue(r)));
                 case lmul:
                     return syms.longType.constType(
-                        new Long(longValue(l) * longValue(r)));
+                        Long.valueOf(longValue(l) * longValue(r)));
                 case ldiv:
                     return syms.longType.constType(
-                        new Long(longValue(l) / longValue(r)));
+                        Long.valueOf(longValue(l) / longValue(r)));
                 case lmod:
                     return syms.longType.constType(
-                        new Long(longValue(l) % longValue(r)));
+                        Long.valueOf(longValue(l) % longValue(r)));
                 case land:
                     return syms.longType.constType(
-                        new Long(longValue(l) & longValue(r)));
+                        Long.valueOf(longValue(l) & longValue(r)));
                 case lor:
                     return syms.longType.constType(
-                        new Long(longValue(l) | longValue(r)));
+                        Long.valueOf(longValue(l) | longValue(r)));
                 case lxor:
                     return syms.longType.constType(
-                        new Long(longValue(l) ^ longValue(r)));
+                        Long.valueOf(longValue(l) ^ longValue(r)));
                 case lshl: case lshll:
                     return syms.longType.constType(
-                        new Long(longValue(l) << intValue(r)));
+                        Long.valueOf(longValue(l) << intValue(r)));
                 case lshr: case lshrl:
                     return syms.longType.constType(
-                        new Long(longValue(l) >> intValue(r)));
+                        Long.valueOf(longValue(l) >> intValue(r)));
                 case lushr:
                     return syms.longType.constType(
-                        new Long(longValue(l) >>> intValue(r)));
+                        Long.valueOf(longValue(l) >>> intValue(r)));
                 case lcmp:
                     if (longValue(l) < longValue(r))
                         return syms.intType.constType(minusOne);
@@ -256,19 +256,19 @@ strictfp class ConstFold {
                         return syms.intType.constType(zero);
                 case fadd:
                     return syms.floatType.constType(
-                        new Float(floatValue(l) + floatValue(r)));
+                        Float.valueOf(floatValue(l) + floatValue(r)));
                 case fsub:
                     return syms.floatType.constType(
-                        new Float(floatValue(l) - floatValue(r)));
+                        Float.valueOf(floatValue(l) - floatValue(r)));
                 case fmul:
                     return syms.floatType.constType(
-                        new Float(floatValue(l) * floatValue(r)));
+                        Float.valueOf(floatValue(l) * floatValue(r)));
                 case fdiv:
                     return syms.floatType.constType(
-                        new Float(floatValue(l) / floatValue(r)));
+                        Float.valueOf(floatValue(l) / floatValue(r)));
                 case fmod:
                     return syms.floatType.constType(
-                        new Float(floatValue(l) % floatValue(r)));
+                        Float.valueOf(floatValue(l) % floatValue(r)));
                 case fcmpg: case fcmpl:
                     if (floatValue(l) < floatValue(r))
                         return syms.intType.constType(minusOne);
@@ -282,19 +282,19 @@ strictfp class ConstFold {
                         return syms.intType.constType(minusOne);
                 case dadd:
                     return syms.doubleType.constType(
-                        new Double(doubleValue(l) + doubleValue(r)));
+                        Double.valueOf(doubleValue(l) + doubleValue(r)));
                 case dsub:
                     return syms.doubleType.constType(
-                        new Double(doubleValue(l) - doubleValue(r)));
+                        Double.valueOf(doubleValue(l) - doubleValue(r)));
                 case dmul:
                     return syms.doubleType.constType(
-                        new Double(doubleValue(l) * doubleValue(r)));
+                        Double.valueOf(doubleValue(l) * doubleValue(r)));
                 case ddiv:
                     return syms.doubleType.constType(
-                        new Double(doubleValue(l) / doubleValue(r)));
+                        Double.valueOf(doubleValue(l) / doubleValue(r)));
                 case dmod:
                     return syms.doubleType.constType(
-                        new Double(doubleValue(l) % doubleValue(r)));
+                        Double.valueOf(doubleValue(l) % doubleValue(r)));
                 case dcmpg: case dcmpl:
                     if (doubleValue(l) < doubleValue(r))
                         return syms.intType.constType(minusOne);

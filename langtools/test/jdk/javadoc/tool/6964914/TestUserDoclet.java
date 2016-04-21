@@ -30,7 +30,10 @@
 
 import java.io.*;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -63,12 +66,20 @@ public class TestUserDoclet implements Doclet {
         // run javadoc in separate process to ensure doclet executed under
         // normal user conditions w.r.t. classloader
         String thisClassName = TestUserDoclet.class.getName();
-        Process p = new ProcessBuilder()
-            .command(javadoc.getPath(),
-                "-J-Xpatch:" + System.getProperty("jdk.launcher.patch.0", ""),
+        List<String> cmdArgs = new ArrayList<>();
+        cmdArgs.add(javadoc.getPath());
+        int i = 0;
+        String prop;
+        while ((prop = System.getProperty("jdk.launcher.patch." + (i++))) != null) {
+            cmdArgs.add("-J-Xpatch:" + prop);
+        }
+        cmdArgs.addAll(Arrays.asList(
                 "-doclet", thisClassName,
                 "-docletpath", testClasses.getPath(),
-                new File(testSrc, thisClassName + ".java").getPath())
+                new File(testSrc, thisClassName + ".java").getPath()
+        ));
+        Process p = new ProcessBuilder()
+            .command(cmdArgs)
             .redirectErrorStream(true)
             .start();
 

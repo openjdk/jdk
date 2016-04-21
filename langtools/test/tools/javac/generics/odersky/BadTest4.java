@@ -30,7 +30,7 @@ class BadTest4 {
         static <A> Cell<A> makeCell(A x) { return new Cell<A>(x); }
         static <A> A id(A x) { return x; }
 
-        static Integer i = new Integer(1);
+        static Integer i = Integer.valueOf(1);
         static Number n = i;
 
         public static void main(String[] args) {
