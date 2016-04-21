@@ -88,8 +88,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
     static {
         final String key = "jdk.internal.lambda.dumpProxyClasses";
-        String path = AccessController.doPrivileged(
-                new GetPropertyAction(key));
+        String path = GetPropertyAction.getProperty(key);
         dumper = (null == path) ? null : ProxyClassesDumper.getInstance(path);
     }
 

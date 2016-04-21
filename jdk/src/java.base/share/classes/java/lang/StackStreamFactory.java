@@ -30,8 +30,6 @@ import java.lang.StackWalker.StackFrame;
 
 import java.lang.annotation.Native;
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -41,6 +39,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import sun.security.action.GetPropertyAction;
 
 import static java.lang.StackStreamFactory.WalkerState.*;
 
@@ -990,14 +989,9 @@ final class StackStreamFactory {
     }
 
     private static boolean getProperty(String key, boolean value) {
-        String s = AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override
-            public String run() {
-                return System.getProperty(key);
-            }
-        });
+        String s = GetPropertyAction.getProperty(key);
         if (s != null) {
-            return Boolean.valueOf(s);
+            return Boolean.parseBoolean(s);
         }
         return value;
     }

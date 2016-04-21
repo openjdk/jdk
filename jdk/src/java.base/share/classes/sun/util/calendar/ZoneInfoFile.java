@@ -245,11 +245,8 @@ public final class ZoneInfoFile {
     };
 
     static {
-        String oldmapping = AccessController.doPrivileged(
-            new GetPropertyAction("sun.timezone.ids.oldmapping", "false")).toLowerCase(Locale.ROOT);
-        USE_OLDMAPPING = (oldmapping.equals("yes") || oldmapping.equals("true"));
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
-            public Object run() {
+        USE_OLDMAPPING = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+            public Boolean run() {
                 try {
                     String libDir = System.getProperty("java.home") + File.separator + "lib";
                     try (DataInputStream dis = new DataInputStream(
@@ -260,7 +257,9 @@ public final class ZoneInfoFile {
                 } catch (Exception x) {
                     throw new Error(x);
                 }
-                return null;
+                String oldmapping = System.getProperty("sun.timezone.ids.oldmapping", "false")
+                    .toLowerCase(Locale.ROOT);
+                return (oldmapping.equals("yes") || oldmapping.equals("true"));
             }
         });
     }
