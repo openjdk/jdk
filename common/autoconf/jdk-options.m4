@@ -81,6 +81,31 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_LEVEL],
       test "x$DEBUG_LEVEL" != xslowdebug; then
     AC_MSG_ERROR([Allowed debug levels are: release, fastdebug, slowdebug and optimized])
   fi
+
+  # Translate DEBUG_LEVEL to debug level used by Hotspot
+  HOTSPOT_DEBUG_LEVEL="$DEBUG_LEVEL"
+  if test "x$DEBUG_LEVEL" = xrelease; then
+    HOTSPOT_DEBUG_LEVEL="product"
+  elif test "x$DEBUG_LEVEL" = xslowdebug; then
+    HOTSPOT_DEBUG_LEVEL="debug"
+  fi
+
+  if test "x$DEBUG_LEVEL" = xoptimized; then
+    # The debug level 'optimized' is a little special because it is currently only
+    # applicable to the HotSpot build where it means to build a completely
+    # optimized version of the VM without any debugging code (like for the
+    # 'release' debug level which is called 'product' in the HotSpot build) but
+    # with the exception that it can contain additional code which is otherwise
+    # protected by '#ifndef PRODUCT' macros. These 'optimized' builds are used to
+    # test new and/or experimental features which are not intended for customer
+    # shipment. Because these new features need to be tested and benchmarked in
+    # real world scenarios, we want to build the containing JDK at the 'release'
+    # debug level.
+    DEBUG_LEVEL="release"
+  fi
+
+  AC_SUBST(HOTSPOT_DEBUG_LEVEL)
+  AC_SUBST(DEBUG_LEVEL)
 ])
 
 ###############################################################################
@@ -178,10 +203,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 
   # Should we build the serviceability agent (SA)?
   INCLUDE_SA=true
-  if test "x$JVM_VARIANT_ZERO" = xtrue ; then
-    INCLUDE_SA=false
-  fi
-  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue ; then
+  if HOTSPOT_CHECK_JVM_VARIANT(zero) || HOTSPOT_CHECK_JVM_VARIANT(zeroshark); then
     INCLUDE_SA=false
   fi
   if test "x$OPENJDK_TARGET_OS" = xaix ; then

@@ -930,6 +930,17 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
     rm -rf version-script.map main.c a.out
   fi
   AC_SUBST(USING_BROKEN_SUSE_LD)
+
+  # Setup hotspot lecagy names for toolchains
+  HOTSPOT_TOOLCHAIN_TYPE=$TOOLCHAIN_TYPE
+  if test "x$TOOLCHAIN_TYPE" = xclang; then
+    HOTSPOT_TOOLCHAIN_TYPE=gcc
+  elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+    HOTSPOT_TOOLCHAIN_TYPE=sparcWorks
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    HOTSPOT_TOOLCHAIN_TYPE=visCPP
+  fi
+  AC_SUBST(HOTSPOT_TOOLCHAIN_TYPE)
 ])
 
 # Setup the JTReg Regression Test Harness.
