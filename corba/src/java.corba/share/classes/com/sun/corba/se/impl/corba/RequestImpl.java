@@ -255,7 +255,7 @@ public class RequestImpl
     public synchronized void send_deferred()
     {
         AsynchInvoke invokeObject = new AsynchInvoke(_orb, this, false);
-        new sun.misc.ManagedLocalsThread(invokeObject).start();
+        new Thread(null, invokeObject, "Async-Request-Invoker-Thread", 0, false).start();
     }
 
     public synchronized boolean poll_response()
