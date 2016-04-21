@@ -51,7 +51,8 @@ public class NetworkInterfaceStreamTest extends OpTestCase {
     public void testNetworkInterfaces() throws SocketException {
         Supplier<Stream<NetworkInterface>> ss = () -> {
             try {
-                return allNetworkInterfaces();
+                return NetworkInterface.networkInterfaces()
+                        .filter(ni -> isIncluded(ni));
             }
             catch (SocketException e) {
                 throw new RuntimeException(e);

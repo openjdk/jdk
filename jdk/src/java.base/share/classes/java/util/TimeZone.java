@@ -660,14 +660,12 @@ public abstract class TimeZone implements Serializable, Cloneable {
     private static synchronized TimeZone setDefaultZone() {
         TimeZone tz;
         // get the time zone ID from the system properties
-        String zoneID = AccessController.doPrivileged(
-                new GetPropertyAction("user.timezone"));
+        String zoneID = GetPropertyAction.getProperty("user.timezone");
 
         // if the time zone ID is not set (yet), perform the
         // platform to Java time zone ID mapping.
         if (zoneID == null || zoneID.isEmpty()) {
-            String javaHome = AccessController.doPrivileged(
-                    new GetPropertyAction("java.home"));
+            String javaHome = GetPropertyAction.getProperty("java.home");
             try {
                 zoneID = getSystemTimeZoneID(javaHome);
                 if (zoneID == null) {
