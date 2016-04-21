@@ -1719,6 +1719,10 @@ const bool Matcher::match_rule_supported(int opcode) {
       if (!(UseSSE > 4))
         ret_value = false;
       break;
+    case Op_OnSpinWait:
+      if (VM_Version::supports_on_spin_wait() == false)
+        ret_value = false;
+      break;
   }
 
   return ret_value;  // Per default match rules are supported.
@@ -1752,6 +1756,15 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen) {
   }
 
   return ret_value;  // Per default match rules are supported.
+}
+
+const bool Matcher::has_predicated_vectors(void) {
+  bool ret_value = false;
+  if (UseAVX > 2) {
+    ret_value = VM_Version::supports_avx512vl();
+  }
+
+  return ret_value;
 }
 
 const int Matcher::float_pressure(int default_pressure_threshold) {
@@ -1871,7 +1884,7 @@ static int vec_mov_helper(CodeBuffer *cbuf, bool do_size, int src_lo, int dst_lo
       __ vmovdqu(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]));
       break;
     case Op_VecZ:
-      __ evmovdqul(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]), 2);
+      __ evmovdquq(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]), 2);
       break;
     default:
       ShouldNotReachHere();
@@ -1926,7 +1939,7 @@ static int vec_spill_helper(CodeBuffer *cbuf, bool do_size, bool is_load,
         __ vmovdqu(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset));
         break;
       case Op_VecZ:
-        __ evmovdqul(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset), 2);
+        __ evmovdquq(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset), 2);
         break;
       default:
         ShouldNotReachHere();
@@ -1946,7 +1959,7 @@ static int vec_spill_helper(CodeBuffer *cbuf, bool do_size, bool is_load,
         __ vmovdqu(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]));
         break;
       case Op_VecZ:
-        __ evmovdqul(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]), 2);
+        __ evmovdquq(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]), 2);
         break;
       default:
         ShouldNotReachHere();
@@ -2168,6 +2181,19 @@ instruct ShouldNotReachHere() %{
   format %{ "int3\t# ShouldNotReachHere" %}
   ins_encode %{
     __ int3();
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// =================================EVEX special===============================
+
+instruct setMask(rRegI dst, rRegI src) %{
+  predicate(Matcher::has_predicated_vectors());
+  match(Set dst (SetVectMaskI  src));
+  effect(TEMP dst);
+  format %{ "setvectmask   $dst, $src" %}
+  ins_encode %{
+    __ setvectmask($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2996,6 +3022,24 @@ instruct sqrtD_imm(regD dst, immD con) %{
   ins_pipe(pipe_slow);
 %}
 
+instruct onspinwait() %{
+  match(OnSpinWait);
+  ins_cost(200);
+
+  format %{
+    $$template
+    if (os::is_MP()) {
+      $$emit$$"pause\t! membar_onspinwait"
+    } else {
+      $$emit$$"MEMBAR-onspinwait ! (empty encoding)"
+    }
+  %}
+  ins_encode %{
+    __ pause();
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // ====================VECTOR INSTRUCTIONS=====================================
 
 // Load vectors (4 bytes long)
@@ -3047,14 +3091,27 @@ instruct loadV32(vecY dst, memory mem) %{
 %}
 
 // Load vectors (64 bytes long)
-instruct loadV64(vecZ dst, memory mem) %{
-  predicate(n->as_LoadVector()->memory_size() == 64);
+instruct loadV64_dword(vecZ dst, memory mem) %{
+  predicate(n->as_LoadVector()->memory_size() == 64 && n->as_LoadVector()->element_size() <= 4);
   match(Set dst (LoadVector mem));
   ins_cost(125);
-  format %{ "vmovdqu $dst k0,$mem\t! load vector (64 bytes)" %}
+  format %{ "vmovdqul $dst k0,$mem\t! load vector (64 bytes)" %}
   ins_encode %{
     int vector_len = 2;
     __ evmovdqul($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Load vectors (64 bytes long)
+instruct loadV64_qword(vecZ dst, memory mem) %{
+  predicate(n->as_LoadVector()->memory_size() == 64 && n->as_LoadVector()->element_size() > 4);
+  match(Set dst (LoadVector mem));
+  ins_cost(125);
+  format %{ "vmovdquq $dst k0,$mem\t! load vector (64 bytes)" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ evmovdquq($dst$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3104,14 +3161,26 @@ instruct storeV32(memory mem, vecY src) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct storeV64(memory mem, vecZ src) %{
-  predicate(n->as_StoreVector()->memory_size() == 64);
+instruct storeV64_dword(memory mem, vecZ src) %{
+  predicate(n->as_StoreVector()->memory_size() == 64 && n->as_StoreVector()->element_size() <= 4);
   match(Set mem (StoreVector mem src));
   ins_cost(145);
-  format %{ "vmovdqu $mem k0,$src\t! store vector (64 bytes)" %}
+  format %{ "vmovdqul $mem k0,$src\t! store vector (64 bytes)" %}
   ins_encode %{
     int vector_len = 2;
     __ evmovdqul($mem$$Address, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct storeV64_qword(memory mem, vecZ src) %{
+  predicate(n->as_StoreVector()->memory_size() == 64 && n->as_StoreVector()->element_size() > 4);
+  match(Set mem (StoreVector mem src));
+  ins_cost(145);
+  format %{ "vmovdquq $mem k0,$src\t! store vector (64 bytes)" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ evmovdquq($mem$$Address, $src$$XMMRegister, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}

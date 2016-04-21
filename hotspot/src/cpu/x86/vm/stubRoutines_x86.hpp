@@ -57,6 +57,48 @@
   // byte flip mask for sha256
   static address _pshuffle_byte_flip_mask_addr;
 
+  //tables common for LIBM sin and cos
+  static juint _ONEHALF[];
+  static address _ONEHALF_adr;
+  static juint _P_2[];
+  static address _P_2_adr;
+  static juint _SC_4[];
+  static address _SC_4_adr;
+  static juint _Ctable[];
+  static address _Ctable_adr;
+  static juint _SC_2[];
+  static address _SC_2_adr;
+  static juint _SC_3[];
+  static address _SC_3_adr;
+  static juint _SC_1[];
+  static address _SC_1_adr;
+  static juint _PI_INV_TABLE[];
+  static address _PI_INV_TABLE_adr;
+  static juint _PI_4[];
+  static address _PI_4_adr;
+  static juint _PI32INV[];
+  static address _PI32INV_adr;
+  static juint _SIGN_MASK[];
+  static address _SIGN_MASK_adr;
+  static juint _P_1[];
+  static address _P_1_adr;
+  static juint _P_3[];
+  static address _P_3_adr;
+  static juint _NEG_ZERO[];
+  static address _NEG_ZERO_adr;
+
+  //tables common for LIBM sincos and tancot
+  static juint _L_2il0floatpacket_0[];
+  static address _L_2il0floatpacket_0_adr;
+  static juint _Pi4Inv[];
+  static address _Pi4Inv_adr;
+  static juint _Pi4x3[];
+  static address _Pi4x3_adr;
+  static juint _Pi4x4[];
+  static address _Pi4x4_adr;
+  static juint _ones[];
+  static address _ones_adr;
+
  public:
   static address verify_mxcsr_entry()    { return _verify_mxcsr_entry; }
   static address key_shuffle_mask_addr() { return _key_shuffle_mask_addr; }
@@ -69,4 +111,24 @@
   static address k256_addr()      { return _k256_adr; }
   static address pshuffle_byte_flip_mask_addr() { return _pshuffle_byte_flip_mask_addr; }
   static void generate_CRC32C_table(bool is_pclmulqdq_supported);
+  static address _ONEHALF_addr()      { return _ONEHALF_adr; }
+  static address _P_2_addr()      { return _P_2_adr; }
+  static address _SC_4_addr()      { return _SC_4_adr; }
+  static address _Ctable_addr()      { return _Ctable_adr; }
+  static address _SC_2_addr()      { return _SC_2_adr; }
+  static address _SC_3_addr()      { return _SC_3_adr; }
+  static address _SC_1_addr()      { return _SC_1_adr; }
+  static address _PI_INV_TABLE_addr()      { return _PI_INV_TABLE_adr; }
+  static address _PI_4_addr()      { return _PI_4_adr; }
+  static address _PI32INV_addr()      { return _PI32INV_adr; }
+  static address _SIGN_MASK_addr()      { return _SIGN_MASK_adr; }
+  static address _P_1_addr()      { return _P_1_adr; }
+  static address _P_3_addr()      { return _P_3_adr; }
+  static address _NEG_ZERO_addr()      { return _NEG_ZERO_adr; }
+  static address _L_2il0floatpacket_0_addr()      { return _L_2il0floatpacket_0_adr; }
+  static address _Pi4Inv_addr()      { return _Pi4Inv_adr; }
+  static address _Pi4x3_addr()      { return _Pi4x3_adr; }
+  static address _Pi4x4_addr()      { return _Pi4x4_adr; }
+  static address _ones_addr()      { return _ones_adr; }
+
 #endif // CPU_X86_VM_STUBROUTINES_X86_32_HPP

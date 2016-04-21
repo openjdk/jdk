@@ -2642,6 +2642,12 @@ bool Arguments::check_vm_args_consistency() {
     }
     FLAG_SET_CMDLINE(bool, BackgroundCompilation, false);
   }
+  if (UseCompiler && is_interpreter_only()) {
+    if (!FLAG_IS_DEFAULT(UseCompiler)) {
+      warning("UseCompiler disabled due to -Xint.");
+    }
+    FLAG_SET_CMDLINE(bool, UseCompiler, false);
+  }
   return status;
 }
 
@@ -4533,6 +4539,11 @@ jint Arguments::apply_ergo() {
 
   if (FLAG_IS_CMDLINE(CompressedClassSpaceSize) && !UseCompressedClassPointers) {
     warning("Setting CompressedClassSpaceSize has no effect when compressed class pointers are not used");
+  }
+
+  if (UseOnStackReplacement && !UseLoopCounter) {
+    warning("On-stack-replacement requires loop counters; enabling loop counters");
+    FLAG_SET_DEFAULT(UseLoopCounter, true);
   }
 
 #ifndef PRODUCT

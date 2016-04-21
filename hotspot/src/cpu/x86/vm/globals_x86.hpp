@@ -194,9 +194,6 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
   product(bool, UseBMI2Instructions, false,                                 \
           "Use BMI2 instructions")                                          \
                                                                             \
-  diagnostic(bool, UseLibmSinIntrinsic, true,                               \
-          "Use Libm Sin Intrinsic")                                         \
-                                                                            \
-  diagnostic(bool, UseLibmCosIntrinsic, true,                               \
-          "Use Libm Cos Intrinsic")
+  diagnostic(bool, UseLibmIntrinsic, true,                                  \
+          "Use Libm Intrinsics")
 #endif // CPU_X86_VM_GLOBALS_X86_HPP

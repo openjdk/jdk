@@ -131,6 +131,9 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
     if (!VM_Version::supports_atomic_getset4()) return false;
 #endif
     break;
+  case vmIntrinsics::_onSpinWait:
+    if (!VM_Version::supports_on_spin_wait()) return false;
+    break;
   case vmIntrinsics::_arraycopy:
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:

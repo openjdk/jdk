@@ -3352,6 +3352,10 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen) {
   return ret_value;  // Per default match rules are supported.
 }
 
+const bool Matcher::has_predicated_vectors(void) {
+  return false;
+}
+
 const int Matcher::float_pressure(int default_pressure_threshold) {
   return default_pressure_threshold;
 }
@@ -4194,55 +4198,6 @@ encode %{
 	__ prfm(Address(rscratch1, index_reg, Address::lsl(scale)), PSTL1KEEP);
       }
     }
-  %}
-
-  enc_class aarch64_enc_clear_array_reg_reg(iRegL_R11 cnt, iRegP_R10 base) %{
-    MacroAssembler _masm(&cbuf);
-    Register cnt_reg = as_Register($cnt$$reg);
-    Register base_reg = as_Register($base$$reg);
-    // base is word aligned
-    // cnt is count of words
-
-    Label loop;
-    Label entry;
-
-//  Algorithm:
-//
-//    scratch1 = cnt & 7;
-//    cnt -= scratch1;
-//    p += scratch1;
-//    switch (scratch1) {
-//      do {
-//        cnt -= 8;
-//          p[-8] = 0;
-//        case 7:
-//          p[-7] = 0;
-//        case 6:
-//          p[-6] = 0;
-//          // ...
-//        case 1:
-//          p[-1] = 0;
-//        case 0:
-//          p += 8;
-//      } while (cnt);
-//    }
-
-    const int unroll = 8; // Number of str(zr) instructions we'll unroll
-
-    __ andr(rscratch1, cnt_reg, unroll - 1);  // tmp1 = cnt % unroll
-    __ sub(cnt_reg, cnt_reg, rscratch1);      // cnt -= unroll
-    // base_reg always points to the end of the region we're about to zero
-    __ add(base_reg, base_reg, rscratch1, Assembler::LSL, exact_log2(wordSize));
-    __ adr(rscratch2, entry);
-    __ sub(rscratch2, rscratch2, rscratch1, Assembler::LSL, 2);
-    __ br(rscratch2);
-    __ bind(loop);
-    __ sub(cnt_reg, cnt_reg, unroll);
-    for (int i = -unroll; i < 0; i++)
-      __ str(zr, Address(base_reg, i * wordSize));
-    __ bind(entry);
-    __ add(base_reg, base_reg, unroll * wordSize);
-    __ cbnz(cnt_reg, loop);
   %}
 
   /// mov envcodings
@@ -12129,21 +12084,21 @@ instruct rorL_rReg_Var_C0(iRegLNoSp dst, iRegL src, iRegI shift, immI0 c0, rFlag
   %}
 %}
 
-instruct rorI_rReg_Var_C_32(iRegLNoSp dst, iRegL src, iRegI shift, immI_32 c_32, rFlagsReg cr)
+instruct rorI_rReg_Var_C_32(iRegINoSp dst, iRegI src, iRegI shift, immI_32 c_32, rFlagsReg cr)
 %{
   match(Set dst (OrI (URShiftI src shift) (LShiftI src (SubI c_32 shift))));
 
   expand %{
-    rorL_rReg(dst, src, shift, cr);
+    rorI_rReg(dst, src, shift, cr);
   %}
 %}
 
-instruct rorI_rReg_Var_C0(iRegLNoSp dst, iRegL src, iRegI shift, immI0 c0, rFlagsReg cr)
+instruct rorI_rReg_Var_C0(iRegINoSp dst, iRegI src, iRegI shift, immI0 c0, rFlagsReg cr)
 %{
   match(Set dst (OrI (URShiftI src shift) (LShiftI src (SubI c0 shift))));
 
   expand %{
-    rorL_rReg(dst, src, shift, cr);
+    rorI_rReg(dst, src, shift, cr);
   %}
 %}
 
@@ -13369,7 +13324,23 @@ instruct clearArray_reg_reg(iRegL_R11 cnt, iRegP_R10 base, Universe dummy, rFlag
   ins_cost(4 * INSN_COST);
   format %{ "ClearArray $cnt, $base" %}
 
-  ins_encode(aarch64_enc_clear_array_reg_reg(cnt, base));
+  ins_encode %{
+    __ zero_words($base$$Register, $cnt$$Register);
+  %}
+
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct clearArray_imm_reg(immL cnt, iRegP base, Universe dummy, rFlagsReg cr)
+%{
+  match(Set dummy (ClearArray cnt base));
+
+  ins_cost(4 * INSN_COST);
+  format %{ "ClearArray $cnt, $base" %}
+
+  ins_encode %{
+    __ zero_words($base$$Register, (u_int64_t)$cnt$$constant);
+  %}
 
   ins_pipe(pipe_class_memory);
 %}

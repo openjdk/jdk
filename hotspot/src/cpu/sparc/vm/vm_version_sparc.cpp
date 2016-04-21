@@ -112,11 +112,14 @@ void VM_Version::initialize() {
         FLAG_SET_DEFAULT(AllocatePrefetchDistance, 256);
       }
       if (AllocatePrefetchInstr == 1) {
-        // Need a space at the end of TLAB for BIS since it
-        // will fault when accessing memory outside of heap.
+        // Need extra space at the end of TLAB for BIS, otherwise prefetching
+        // instructions will fault (due to accessing memory outside of heap).
+        // The amount of space is the max of the number of lines to
+        // prefetch for array and for instance allocations. (Extra space must be
+        // reserved to accomodate both types of allocations.)
 
         // +1 for rounding up to next cache line, +1 to be safe
-        int lines = AllocatePrefetchLines + 2;
+        int lines = MAX2(AllocatePrefetchLines, AllocateInstancePrefetchLines) + 2;
         int step_size = AllocatePrefetchStepSize;
         int distance = AllocatePrefetchDistance;
         _reserve_for_allocation_prefetch = (distance + step_size*lines)/(int)HeapWordSize;

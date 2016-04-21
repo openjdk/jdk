@@ -665,10 +665,12 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
       nmethod* nm = (nmethod*)_cb;
       Method* m = nm->method();
       if (m != NULL) {
+        st->print("J %d%s", nm->compile_id(), (nm->is_osr_method() ? "%" : ""));
+        if (nm->compiler() != NULL) {
+          st->print(" %s", nm->compiler()->name());
+        }
         m->name_and_sig_as_C_string(buf, buflen);
-        st->print("J %d%s %s ",
-                  nm->compile_id(), (nm->is_osr_method() ? "%" : ""),
-                  ((nm->compiler() != NULL) ? nm->compiler()->name() : ""));
+        st->print(" %s", buf);
         ModuleEntry* module = m->method_holder()->module();
         if (module->is_named()) {
           module->name()->as_C_string(buf, buflen);
@@ -676,8 +678,8 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
           module->version()->as_C_string(buf, buflen);
           st->print("@%s", buf);
         }
-        st->print("%s (%d bytes) @ " PTR_FORMAT " [" PTR_FORMAT "+" INTPTR_FORMAT "]",
-                  buf, m->code_size(), p2i(_pc), p2i(_cb->code_begin()), _pc - _cb->code_begin());
+        st->print(" (%d bytes) @ " PTR_FORMAT " [" PTR_FORMAT "+" INTPTR_FORMAT "]",
+                  m->code_size(), p2i(_pc), p2i(_cb->code_begin()), _pc - _cb->code_begin());
 #if INCLUDE_JVMCI
         char* jvmciName = nm->jvmci_installed_code_name(buf, buflen);
         if (jvmciName != NULL) {
