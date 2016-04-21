@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -693,7 +693,7 @@ void JvmtiClassFileReconstituter::write_method_infos() {
   if (JvmtiExport::can_maintain_original_method_order()) {
     int index;
     int original_index;
-    intArray method_order(num_methods, 0);
+    intArray method_order(num_methods, num_methods, 0);
 
     // invert the method order mapping
     for (index = 0; index < num_methods; index++) {

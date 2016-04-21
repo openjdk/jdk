@@ -39,7 +39,7 @@ import jdk.vm.ci.inittimer.InitTimer;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * Calls from Java into HotSpot. The behavior of all the methods in this class that take a native

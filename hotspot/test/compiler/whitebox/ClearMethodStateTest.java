@@ -31,9 +31,9 @@ import compiler.whitebox.CompilerWhiteBoxTest;
  * @library /testlibrary /test/lib /
  * @modules java.management
  * @build ClearMethodStateTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI ClearMethodStateTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+PrintCompilation -XX:-UseCounterDecay ClearMethodStateTest
  * @summary testing of WB::clearMethodState()
  * @author igor.ignatyev@oracle.com
  */
@@ -41,8 +41,8 @@ public class ClearMethodStateTest extends CompilerWhiteBoxTest {
 
     public static void main(String[] args) throws Exception {
         String directive =
-                "[{ match:\"*SimpleTestCase$Helper.*\", BackgroundCompilation: false }, " +
-                " { match:\"*.*\", inline:\"-*SimpleTestCase$Helper.*\"}]";
+                "[{ match:\"*SimpleTestCaseHelper.*\", BackgroundCompilation: false }, " +
+                " { match:\"*.*\", inline:\"-*SimpleTestCaseHelper.*\"}]";
         if (WHITE_BOX.addCompilerDirective(directive) != 2) {
             throw new RuntimeException("Could not add directive");
         }

@@ -52,6 +52,7 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _packset(arena(), 8,  0, NULL),         // packs for the current block
   _bb_idx(arena(), (int)(1.10 * phase->C->unique()), 0, 0), // node idx to index in bb
   _block(arena(), 8,  0, NULL),           // nodes in current block
+  _post_block(arena(), 8, 0, NULL),       // nodes common to current block which are marked as post loop vectorizable
   _data_entry(arena(), 8,  0, NULL),      // nodes with all inputs from outside
   _mem_slice_head(arena(), 8,  0, NULL),  // memory slice heads
   _mem_slice_tail(arena(), 8,  0, NULL),  // memory slice tails
@@ -100,10 +101,30 @@ void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
 
   if (!cl->is_valid_counted_loop()) return; // skip malformed counted loop
 
-  if (!cl->is_main_loop() ) return; // skip normal, pre, and post loops
+  bool post_loop_allowed = (PostLoopMultiversioning && Matcher::has_predicated_vectors() && cl->is_post_loop());
+  if (post_loop_allowed) {
+    if (cl->is_reduction_loop()) return; // no predication mapping
+    Node *limit = cl->limit();
+    if (limit->is_Con()) return; // non constant limits only
+    // Now check the limit for expressions we do not handle
+    if (limit->is_Add()) {
+      Node *in2 = limit->in(2);
+      if (in2->is_Con()) {
+        int val = in2->get_int();
+        // should not try to program these cases
+        if (val < 0) return;
+      }
+    }
+  }
+
+  // skip any loop that has not been assigned max unroll by analysis
+  if (do_optimization) {
+    if (cl->slp_max_unroll() == 0) return;
+  }
+
   // Check for no control flow in body (other than exit)
   Node *cl_exit = cl->loopexit();
-  if (cl_exit->in(0) != lpt->_head) {
+  if (cl->is_main_loop() && (cl_exit->in(0) != lpt->_head)) {
     #ifndef PRODUCT
       if (TraceSuperWord) {
         tty->print_cr("SuperWord::transform_loop: loop too complicated, cl_exit->in(0) != lpt->_head");
@@ -121,15 +142,16 @@ void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
     return;
   }
 
-  // We only re-enter slp when we vector mapped a queried loop and we want to
-  // continue unrolling, in this case, slp is not subsequently done.
-  if (cl->do_unroll_only()) return;
+  // Skip any loops already optimized by slp
+  if (cl->is_vectorized_loop()) return;
 
-  // Check for pre-loop ending with CountedLoopEnd(Bool(Cmp(x,Opaque1(limit))))
-  CountedLoopEndNode* pre_end = get_pre_loop_end(cl);
-  if (pre_end == NULL) return;
-  Node *pre_opaq1 = pre_end->limit();
-  if (pre_opaq1->Opcode() != Op_Opaque1) return;
+  if (cl->is_main_loop()) {
+    // Check for pre-loop ending with CountedLoopEnd(Bool(Cmp(x,Opaque1(limit))))
+    CountedLoopEndNode* pre_end = get_pre_loop_end(cl);
+    if (pre_end == NULL) return;
+    Node *pre_opaq1 = pre_end->limit();
+    if (pre_opaq1->Opcode() != Op_Opaque1) return;
+  }
 
   init(); // initialize data structures
 
@@ -142,6 +164,19 @@ void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   if (do_optimization) {
     assert(_packset.length() == 0, "packset must be empty");
     SLP_extract();
+    if (PostLoopMultiversioning && Matcher::has_predicated_vectors()) {
+      if (cl->is_vectorized_loop() && cl->is_main_loop() && !cl->is_reduction_loop()) {
+        IdealLoopTree *lpt_next = lpt->_next;
+        CountedLoopNode *cl_next = lpt_next->_head->as_CountedLoop();
+        _phase->has_range_checks(lpt_next);
+        if (cl_next->is_post_loop() && !cl_next->range_checks_present()) {
+          if (!cl_next->is_vectorized_loop()) {
+            int slp_max_unroll_factor = cl->slp_max_unroll();
+            cl_next->set_slp_max_unroll(slp_max_unroll_factor);
+          }
+        }
+      }
+    }
   }
 }
 
@@ -154,6 +189,9 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   Node_Stack nstack((int)ignored_size);
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   Node *cl_exit = cl->loopexit();
+  int rpo_idx = _post_block.length();
+
+  assert(rpo_idx == 0, "post loop block is empty");
 
   // First clear the entries
   for (uint i = 0; i < lpt()->_body.size(); i++) {
@@ -161,6 +199,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   }
 
   int max_vector = Matcher::max_vector_size(T_INT);
+  bool post_loop_allowed = (PostLoopMultiversioning && Matcher::has_predicated_vectors() && cl->is_post_loop());
 
   // Process the loop, some/all of the stack entries will not be in order, ergo
   // need to preprocess the ignored initial state before we process the loop
@@ -259,6 +298,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   if (is_slp) {
     // Now we try to find the maximum supported consistent vector which the machine
     // description can use
+    bool small_basic_type = false;
     for (uint i = 0; i < lpt()->_body.size(); i++) {
       if (ignored_loop_nodes[i] != -1) continue;
 
@@ -269,6 +309,26 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
       } else {
         bt = n->bottom_type()->basic_type();
       }
+
+      if (post_loop_allowed) {
+        if (!small_basic_type) {
+          switch (bt) {
+          case T_CHAR:
+          case T_BYTE:
+          case T_SHORT:
+            small_basic_type = true;
+            break;
+
+          case T_LONG:
+            // TODO: Remove when support completed for mask context with LONG.
+            //       Support needs to be augmented for logical qword operations, currently we map to dword
+            //       buckets for vectors on logicals as these were legacy.
+            small_basic_type = true;
+            break;
+          }
+        }
+      }
+
       if (is_java_primitive(bt) == false) continue;
 
       int cur_max_vector = Matcher::max_vector_size(bt);
@@ -288,6 +348,12 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
         if (cur_max_vector < max_vector) {
           max_vector = cur_max_vector;
         }
+
+        // We only process post loops on predicated targets where we want to
+        // mask map the loop to a single iteration
+        if (post_loop_allowed) {
+          _post_block.at_put_grow(rpo_idx++, n);
+        }
       }
     }
     if (is_slp) {
@@ -295,7 +361,14 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
       cl->mark_passed_slp();
     }
     cl->mark_was_slp();
-    cl->set_slp_max_unroll(local_loop_unroll_factor);
+    if (cl->is_main_loop()) {
+      cl->set_slp_max_unroll(local_loop_unroll_factor);
+    } else if (post_loop_allowed) {
+      if (!small_basic_type) {
+        // avoid replication context for small basic types in programmable masked loops
+        cl->set_slp_max_unroll(local_loop_unroll_factor);
+      }
+    }
   }
 }
 
@@ -350,66 +423,103 @@ void SuperWord::SLP_extract() {
   if (!construct_bb()) {
     return; // Exit if no interesting nodes or complex graph.
   }
+
   // build    _dg, _disjoint_ptrs
   dependence_graph();
 
   // compute function depth(Node*)
   compute_max_depth();
 
-  if (_do_vector_loop) {
-    if (mark_generations() != -1) {
-      hoist_loads_in_graph(); // this only rebuild the graph; all basic structs need rebuild explicitly
+  CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
+  bool post_loop_allowed = (PostLoopMultiversioning && Matcher::has_predicated_vectors() && cl->is_post_loop());
+  if (cl->is_main_loop()) {
+    if (_do_vector_loop) {
+      if (mark_generations() != -1) {
+        hoist_loads_in_graph(); // this only rebuild the graph; all basic structs need rebuild explicitly
 
-      if (!construct_bb()) {
-        return; // Exit if no interesting nodes or complex graph.
+        if (!construct_bb()) {
+          return; // Exit if no interesting nodes or complex graph.
+        }
+        dependence_graph();
+        compute_max_depth();
       }
-      dependence_graph();
-      compute_max_depth();
-    }
 
 #ifndef PRODUCT
-    if (TraceSuperWord) {
-      tty->print_cr("\nSuperWord::_do_vector_loop: graph after hoist_loads_in_graph");
-      _lpt->dump_head();
-      for (int j = 0; j < _block.length(); j++) {
-        Node* n = _block.at(j);
-        int d = depth(n);
-        for (int i = 0;  i < d; i++) tty->print("%s", "  ");
-        tty->print("%d :", d);
-        n->dump();
-      }
-    }
-#endif
-  }
-
-  compute_vector_element_type();
-
-  // Attempt vectorization
-
-  find_adjacent_refs();
-
-  extend_packlist();
-
-  if (_do_vector_loop) {
-    if (_packset.length() == 0) {
       if (TraceSuperWord) {
-        tty->print_cr("\nSuperWord::_do_vector_loop DFA could not build packset, now trying to build anyway");
+        tty->print_cr("\nSuperWord::_do_vector_loop: graph after hoist_loads_in_graph");
+        _lpt->dump_head();
+        for (int j = 0; j < _block.length(); j++) {
+          Node* n = _block.at(j);
+          int d = depth(n);
+          for (int i = 0; i < d; i++) tty->print("%s", "  ");
+          tty->print("%d :", d);
+          n->dump();
+        }
       }
-      pack_parallel();
+#endif
+    }
+
+    compute_vector_element_type();
+
+    // Attempt vectorization
+
+    find_adjacent_refs();
+
+    extend_packlist();
+
+    if (_do_vector_loop) {
+      if (_packset.length() == 0) {
+        if (TraceSuperWord) {
+          tty->print_cr("\nSuperWord::_do_vector_loop DFA could not build packset, now trying to build anyway");
+        }
+        pack_parallel();
+      }
+    }
+
+    combine_packs();
+
+    construct_my_pack_map();
+
+    if (_do_vector_loop) {
+      merge_packs_to_cmovd();
+    }
+
+    filter_packs();
+
+    schedule();
+  } else if (post_loop_allowed) {
+    int saved_mapped_unroll_factor = cl->slp_max_unroll();
+    if (saved_mapped_unroll_factor) {
+      int vector_mapped_unroll_factor = saved_mapped_unroll_factor;
+
+      // now reset the slp_unroll_factor so that we can check the analysis mapped
+      // what the vector loop was mapped to
+      cl->set_slp_max_unroll(0);
+
+      // do the analysis on the post loop
+      unrolling_analysis(vector_mapped_unroll_factor);
+
+      // if our analyzed loop is a canonical fit, start processing it
+      if (vector_mapped_unroll_factor == saved_mapped_unroll_factor) {
+        // now add the vector nodes to packsets
+        for (int i = 0; i < _post_block.length(); i++) {
+          Node* n = _post_block.at(i);
+          Node_List* singleton = new Node_List();
+          singleton->push(n);
+          _packset.append(singleton);
+          set_my_pack(n, singleton);
+        }
+
+        // map base types for vector usage
+        compute_vector_element_type();
+      } else {
+        return;
+      }
+    } else {
+      // for some reason we could not map the slp analysis state of the vectorized loop
+      return;
     }
   }
-
-  combine_packs();
-
-  construct_my_pack_map();
-
-  if (_do_vector_loop) {
-    merge_packs_to_cmovd();
-  }
-
-  filter_packs();
-
-  schedule();
 
   output();
 }
@@ -811,6 +921,7 @@ int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
 // Add dependence edges to load/store nodes for memory dependence
 //    A.out()->DependNode.in(1) and DependNode.out()->B.prec(x)
 void SuperWord::dependence_graph() {
+  CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   // First, assign a dependence node to each memory node
   for (int i = 0; i < _block.length(); i++ ) {
     Node *n = _block.at(i);
@@ -825,7 +936,9 @@ void SuperWord::dependence_graph() {
     Node* n_tail = _mem_slice_tail.at(i);
 
     // Get slice in predecessor order (last is first)
-    mem_slice_preds(n_tail, n, _nlist);
+    if (cl->is_main_loop()) {
+      mem_slice_preds(n_tail, n, _nlist);
+    }
 
 #ifndef PRODUCT
     if(TraceSuperWord && Verbose) {
@@ -2029,20 +2142,23 @@ void SuperWord::output() {
   }
 #endif
 
-  // MUST ENSURE main loop's initial value is properly aligned:
-  //  (iv_initial_value + min_iv_offset) % vector_width_in_bytes() == 0
+  CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
+  if (cl->is_main_loop()) {
+    // MUST ENSURE main loop's initial value is properly aligned:
+    //  (iv_initial_value + min_iv_offset) % vector_width_in_bytes() == 0
 
-  align_initial_loop_index(align_to_ref());
+    align_initial_loop_index(align_to_ref());
 
-  // Insert extract (unpack) operations for scalar uses
-  for (int i = 0; i < _packset.length(); i++) {
-    insert_extracts(_packset.at(i));
+    // Insert extract (unpack) operations for scalar uses
+    for (int i = 0; i < _packset.length(); i++) {
+      insert_extracts(_packset.at(i));
+    }
   }
 
   Compile* C = _phase->C;
-  CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   uint max_vlen_in_bytes = 0;
   uint max_vlen = 0;
+  bool can_process_post_loop = (PostLoopMultiversioning && Matcher::has_predicated_vectors() && cl->is_post_loop());
 
   NOT_PRODUCT(if(is_trace_loop_reverse()) {tty->print_cr("SWPointer::output: print loop before create_reserve_version_of_loop"); print_loop(true);})
 
@@ -2064,6 +2180,10 @@ void SuperWord::output() {
       Node* vn = NULL;
       Node* low_adr = p->at(0);
       Node* first   = executed_first(p);
+      if (can_process_post_loop) {
+        // override vlen with the main loops vector length
+        vlen = cl->slp_max_unroll();
+      }
       NOT_PRODUCT(if(is_trace_cmov()) {tty->print_cr("SWPointer::output: %d executed first, %d executed last in pack", first->_idx, n->_idx); print_pack(p);})
       int   opc = n->Opcode();
       if (n->is_Load()) {
@@ -2153,6 +2273,10 @@ void SuperWord::output() {
         vn = VectorNode::make(opc, in, NULL, vlen, velt_basic_type(n));
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (is_cmov_pack(p)) {
+        if (can_process_post_loop) {
+          // do not refactor of flow in post loop context
+          return;
+        }
         if (!n->is_CMove()) {
           continue;
         }
@@ -2217,6 +2341,7 @@ void SuperWord::output() {
         ShouldNotReachHere();
       }
 
+      _block.at_put(i, vn);
       _igvn.register_new_node_with_optimizer(vn);
       _phase->set_ctrl(vn, _phase->get_ctrl(p->at(0)));
       for (uint j = 0; j < p->size(); j++) {
@@ -2224,6 +2349,14 @@ void SuperWord::output() {
         _igvn.replace_node(pm, vn);
       }
       _igvn._worklist.push(vn);
+
+      if (can_process_post_loop) {
+        // first check if the vector size if the maximum vector which we can use on the machine,
+        // other vector size have reduced values for predicated data mapping.
+        if (vlen_in_bytes != (uint)MaxVectorSize) {
+          return;
+        }
+      }
 
       if (vlen_in_bytes > max_vlen_in_bytes) {
         max_vlen = vlen;
@@ -2247,15 +2380,38 @@ void SuperWord::output() {
         if (TraceSuperWordLoopUnrollAnalysis) {
           tty->print_cr("vector loop(unroll=%d, len=%d)\n", max_vlen, max_vlen_in_bytes*BitsPerByte);
         }
-        // For atomic unrolled loops which are vector mapped, instigate more unrolling.
+
+        // For atomic unrolled loops which are vector mapped, instigate more unrolling
         cl->set_notpassed_slp();
-        // if vector resources are limited, do not allow additional unrolling
-        if (FLOATPRESSURE > 8) {
-          C->set_major_progress();
+        if (cl->is_main_loop()) {
+          // if vector resources are limited, do not allow additional unrolling, also
+          // do not unroll more on pure vector loops which were not reduced so that we can
+          // program the post loop to single iteration execution.
+          if (FLOATPRESSURE > 8) {
+            C->set_major_progress();
+            cl->mark_do_unroll_only();
+          }
         }
-        cl->mark_do_unroll_only();
+
         if (do_reserve_copy()) {
           cl->mark_loop_vectorized();
+          if (can_process_post_loop) {
+            // Now create the difference of trip and limit and use it as our mask index.
+            // Note: We limited the unroll of the vectorized loop so that
+            //       only vlen-1 size iterations can remain to be mask programmed.
+            Node *incr = cl->incr();
+            SubINode *index = new SubINode(cl->limit(), cl->init_trip());
+            _igvn.register_new_node_with_optimizer(index);
+            SetVectMaskINode  *mask = new SetVectMaskINode(_phase->get_ctrl(cl->init_trip()), index);
+            _igvn.register_new_node_with_optimizer(mask);
+            // make this a single iteration loop
+            AddINode *new_incr = new AddINode(incr->in(1), mask);
+            _igvn.register_new_node_with_optimizer(new_incr);
+            _phase->set_ctrl(new_incr, _phase->get_ctrl(incr));
+            _igvn.replace_node(incr, new_incr);
+            cl->mark_is_multiversioned();
+            cl->loopexit()->add_flag(Node::Flag_has_vector_mask_set);
+          }
         }
       }
     }
@@ -2274,6 +2430,12 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   Node* p0 = p->at(0);
   uint vlen = p->size();
   Node* opd = p0->in(opd_idx);
+  CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
+
+  if (PostLoopMultiversioning && Matcher::has_predicated_vectors() && cl->is_post_loop()) {
+    // override vlen with the main loops vector length
+    vlen = cl->slp_max_unroll();
+  }
 
   if (same_inputs(p, opd_idx)) {
     if (opd->is_Vector() || opd->is_LoadVector()) {
@@ -3090,13 +3252,13 @@ CountedLoopEndNode* SuperWord::get_pre_loop_end(CountedLoopNode* cl) {
   return pre_end;
 }
 
-
 //------------------------------init---------------------------
 void SuperWord::init() {
   _dg.init();
   _packset.clear();
   _disjoint_ptrs.clear();
   _block.clear();
+  _post_block.clear();
   _data_entry.clear();
   _mem_slice_head.clear();
   _mem_slice_tail.clear();
@@ -3120,6 +3282,7 @@ void SuperWord::restart() {
   _packset.clear();
   _disjoint_ptrs.clear();
   _block.clear();
+  _post_block.clear();
   _data_entry.clear();
   _mem_slice_head.clear();
   _mem_slice_tail.clear();

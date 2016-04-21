@@ -26,24 +26,28 @@
 /*
  * @test
  * @summary tests on constant folding of unsafe get operations from stable arrays
- * @library /testlibrary /test/lib
- * @ignore 8151137
+ * @library /testlibrary
  *
  * @requires vm.flavor != "client"
  *
+ * @modules java.base/jdk.internal.vm.annotation
+ *          java.base/jdk.internal.misc
+
  * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions
  *                   -Xbatch -XX:-TieredCompilation
  *                   -XX:+FoldStableValues
  *                   -XX:CompileCommand=dontinline,*Test::test*
- *                   UnsafeGetStableArrayElement
+ *                   compiler.unsafe.UnsafeGetStableArrayElement
  */
+package compiler.unsafe;
+
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
 import java.util.concurrent.Callable;
+import jdk.test.lib.Platform;
 
 import static jdk.internal.misc.Unsafe.*;
 import static jdk.test.lib.Asserts.*;
-import static jdk.test.lib.Platform;
 
 public class UnsafeGetStableArrayElement {
     @Stable static final boolean[] STABLE_BOOLEAN_ARRAY = new boolean[16];
@@ -219,13 +223,7 @@ public class UnsafeGetStableArrayElement {
         Setter.reset();
     }
 
-    public static void main(String[] args) throws Exception {
-        if (Platform.isServer()) {
-            test();
-        }
-    }
-
-    static void test() throws Exception {
+    static void testUnsafeAccess() throws Exception {
         // boolean[], aligned accesses
         testMatched(   Test::testZ_Z, Test::changeZ);
         testMismatched(Test::testZ_B, Test::changeZ);
@@ -328,5 +326,12 @@ public class UnsafeGetStableArrayElement {
         run(Test::testL_C);
         run(Test::testL_I);
         run(Test::testL_F);
+    }
+
+    public static void main(String[] args) throws Exception {
+        if (Platform.isServer()) {
+            testUnsafeAccess();
+        }
+        System.out.println("TEST PASSED");
     }
 }
