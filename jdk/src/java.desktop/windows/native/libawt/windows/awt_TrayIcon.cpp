@@ -409,7 +409,7 @@ MsgRouting AwtTrayIcon::WmBalloonUserClick(UINT flags, int x, int y)
         MSG msg;
         AwtComponent::InitMessage(&msg, lastMessage, flags, MAKELPARAM(x, y), x, y);
         SendActionEvent(java_awt_event_ActionEvent_ACTION_PERFORMED, ::JVM_CurrentTimeMillis(NULL, 0),
-                        AwtComponent::GetJavaModifiers(), &msg);
+                        AwtComponent::GetActionModifiers(), &msg);
     }
     return mrConsume;
 }
@@ -425,7 +425,7 @@ MsgRouting AwtTrayIcon::WmKeySelect(UINT flags, int x, int y)
         MSG msg;
         AwtComponent::InitMessage(&msg, lastMessage, flags, MAKELPARAM(x, y), x, y);
         SendActionEvent(java_awt_event_ActionEvent_ACTION_PERFORMED, ::JVM_CurrentTimeMillis(NULL, 0),
-                        AwtComponent::GetJavaModifiers(), &msg);
+                        AwtComponent::GetActionModifiers(), &msg);
     }
     lastKeySelectTime = now;
 
@@ -442,7 +442,7 @@ MsgRouting AwtTrayIcon::WmSelect(UINT flags, int x, int y)
         MSG msg;
         AwtComponent::InitMessage(&msg, lastMessage, flags, MAKELPARAM(x, y), x, y);
         SendActionEvent(java_awt_event_ActionEvent_ACTION_PERFORMED, ::JVM_CurrentTimeMillis(NULL, 0),
-                        AwtComponent::GetJavaModifiers(), &msg);
+                        AwtComponent::GetActionModifiers(), &msg);
     }
     return mrConsume;
 }

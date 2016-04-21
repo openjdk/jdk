@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,106 +37,88 @@
  * @run main/othervm MD2InTrustAnchor PKIX TLSv1.2
  * @run main/othervm MD2InTrustAnchor SunX509 TLSv1.2
  */
-
-import java.net.*;
-import java.util.*;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import javax.net.ssl.*;
 import java.security.Security;
 import java.security.KeyStore;
 import java.security.KeyFactory;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
-import java.security.spec.*;
-import java.security.interfaces.*;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
+import java.util.concurrent.CountDownLatch;
 
 public class MD2InTrustAnchor {
 
     /*
-     * =============================================================
-     * Set the various variables needed for the tests, then
-     * specify what tests to run on each side.
-     */
-
-    /*
-     * Should we run the client or server in a separate thread?
-     * Both sides can throw exceptions, but do you have a preference
-     * as to which side should be the main thread.
-     */
-    static boolean separateServerThread = false;
-
-    /*
      * Certificates and key used in the test.
      */
-
     // It's a trust anchor signed with MD2 hash function.
-    static String trustedCertStr =
-        "-----BEGIN CERTIFICATE-----\n" +
-        "MIICkjCCAfugAwIBAgIBADANBgkqhkiG9w0BAQIFADA7MQswCQYDVQQGEwJVUzEN\n" +
-        "MAsGA1UEChMESmF2YTEdMBsGA1UECxMUU3VuSlNTRSBUZXN0IFNlcml2Y2UwHhcN\n" +
-        "MTExMTE4MTExNDA0WhcNMzIxMDI4MTExNDA0WjA7MQswCQYDVQQGEwJVUzENMAsG\n" +
-        "A1UEChMESmF2YTEdMBsGA1UECxMUU3VuSlNTRSBUZXN0IFNlcml2Y2UwgZ8wDQYJ\n" +
-        "KoZIhvcNAQEBBQADgY0AMIGJAoGBAPGyB9tugUGgxtdeqe0qJEwf9x1Gy4BOi1yR\n" +
-        "wzDZY4H5LquvIfQ2V3J9X1MQENVsFvkvp65ZcFcy+ObOucXUUPFcd/iw2DVb5QXA\n" +
-        "ffyeVqWD56GPi8Qe37wrJO3L6fBhN9oxp/BbdRLgjU81zx8qLEyPODhPMxV4OkcA\n" +
-        "SDwZTSxxAgMBAAGjgaUwgaIwHQYDVR0OBBYEFLOAtr/YrYj9H04EDLA0fd14jisF\n" +
-        "MGMGA1UdIwRcMFqAFLOAtr/YrYj9H04EDLA0fd14jisFoT+kPTA7MQswCQYDVQQG\n" +
-        "EwJVUzENMAsGA1UEChMESmF2YTEdMBsGA1UECxMUU3VuSlNTRSBUZXN0IFNlcml2\n" +
-        "Y2WCAQAwDwYDVR0TAQH/BAUwAwEB/zALBgNVHQ8EBAMCAQYwDQYJKoZIhvcNAQEC\n" +
-        "BQADgYEAr8ExpXu/FTIRiMzPm0ubqwME4lniilwQUiEOD/4DbksNjEIcUyS2hIk1\n" +
-        "qsmjJz3SHBnwhxl9dhJVwk2tZLkPGW86Zn0TPVRsttK4inTgCC9GFGeqQBdrU/uf\n" +
-        "lipBzXWljrfbg4N/kK8m2LabtKUMMnGysM8rN0Fx2PYm5xxGvtM=\n" +
-        "-----END CERTIFICATE-----";
+    private static final String TRUSTED_CERT_STR = "-----BEGIN CERTIFICATE-----\n"
+            + "MIICkjCCAfugAwIBAgIBADANBgkqhkiG9w0BAQIFADA7MQswCQYDVQQGEwJVUzEN\n"
+            + "MAsGA1UEChMESmF2YTEdMBsGA1UECxMUU3VuSlNTRSBUZXN0IFNlcml2Y2UwHhcN\n"
+            + "MTExMTE4MTExNDA0WhcNMzIxMDI4MTExNDA0WjA7MQswCQYDVQQGEwJVUzENMAsG\n"
+            + "A1UEChMESmF2YTEdMBsGA1UECxMUU3VuSlNTRSBUZXN0IFNlcml2Y2UwgZ8wDQYJ\n"
+            + "KoZIhvcNAQEBBQADgY0AMIGJAoGBAPGyB9tugUGgxtdeqe0qJEwf9x1Gy4BOi1yR\n"
+            + "wzDZY4H5LquvIfQ2V3J9X1MQENVsFvkvp65ZcFcy+ObOucXUUPFcd/iw2DVb5QXA\n"
+            + "ffyeVqWD56GPi8Qe37wrJO3L6fBhN9oxp/BbdRLgjU81zx8qLEyPODhPMxV4OkcA\n"
+            + "SDwZTSxxAgMBAAGjgaUwgaIwHQYDVR0OBBYEFLOAtr/YrYj9H04EDLA0fd14jisF\n"
+            + "MGMGA1UdIwRcMFqAFLOAtr/YrYj9H04EDLA0fd14jisFoT+kPTA7MQswCQYDVQQG\n"
+            + "EwJVUzENMAsGA1UEChMESmF2YTEdMBsGA1UECxMUU3VuSlNTRSBUZXN0IFNlcml2\n"
+            + "Y2WCAQAwDwYDVR0TAQH/BAUwAwEB/zALBgNVHQ8EBAMCAQYwDQYJKoZIhvcNAQEC\n"
+            + "BQADgYEAr8ExpXu/FTIRiMzPm0ubqwME4lniilwQUiEOD/4DbksNjEIcUyS2hIk1\n"
+            + "qsmjJz3SHBnwhxl9dhJVwk2tZLkPGW86Zn0TPVRsttK4inTgCC9GFGeqQBdrU/uf\n"
+            + "lipBzXWljrfbg4N/kK8m2LabtKUMMnGysM8rN0Fx2PYm5xxGvtM=\n"
+            + "-----END CERTIFICATE-----";
 
     // The certificate issued by above trust anchor, signed with MD5
-    static String targetCertStr =
-        "-----BEGIN CERTIFICATE-----\n" +
-        "MIICeDCCAeGgAwIBAgIBAjANBgkqhkiG9w0BAQQFADA7MQswCQYDVQQGEwJVUzEN\n" +
-        "MAsGA1UEChMESmF2YTEdMBsGA1UECxMUU3VuSlNTRSBUZXN0IFNlcml2Y2UwHhcN\n" +
-        "MTExMTE4MTExNDA2WhcNMzEwODA1MTExNDA2WjBPMQswCQYDVQQGEwJVUzENMAsG\n" +
-        "A1UEChMESmF2YTEdMBsGA1UECxMUU3VuSlNTRSBUZXN0IFNlcml2Y2UxEjAQBgNV\n" +
-        "BAMTCWxvY2FsaG9zdDCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAwDnm96mw\n" +
-        "fXCH4bgXk1US0VcJsQVxUtGMyncAveMuzBzNzOmKZPeqyYX1Fuh4q+cuza03WTJd\n" +
-        "G9nOkNr364e3Rn1aaHjCMcBmFflObnGnhhufNmIGYogJ9dJPmhUVPEVAXrMG+Ces\n" +
-        "NKy2E8woGnLMrqu6yiuTClbLBPK8fWzTXrECAwEAAaN4MHYwCwYDVR0PBAQDAgPo\n" +
-        "MB0GA1UdDgQWBBSdRrpocLPJXyGfDmMWJrcEf29WGDAfBgNVHSMEGDAWgBSzgLa/\n" +
-        "2K2I/R9OBAywNH3deI4rBTAnBgNVHSUEIDAeBggrBgEFBQcDAQYIKwYBBQUHAwIG\n" +
-        "CCsGAQUFBwMDMA0GCSqGSIb3DQEBBAUAA4GBAKJ71ZiCUykkJrCLYUxlFlhvUcr9\n" +
-        "sTcOc67QdroW5f412NI15SXWDiley/JOasIiuIFPjaJBjOKoHOvTjG/snVu9wEgq\n" +
-        "YNR8dPsO+NM8r79C6jO+Jx5fYAC7os2XxS75h3NX0ElJcbwIXGBJ6xRrsFh/BGYH\n" +
-        "yvudOlX4BkVR0l1K\n" +
-        "-----END CERTIFICATE-----";
+    private static final String TARGET_CERT_STR = "-----BEGIN CERTIFICATE-----\n"
+            + "MIICeDCCAeGgAwIBAgIBAjANBgkqhkiG9w0BAQQFADA7MQswCQYDVQQGEwJVUzEN\n"
+            + "MAsGA1UEChMESmF2YTEdMBsGA1UECxMUU3VuSlNTRSBUZXN0IFNlcml2Y2UwHhcN\n"
+            + "MTExMTE4MTExNDA2WhcNMzEwODA1MTExNDA2WjBPMQswCQYDVQQGEwJVUzENMAsG\n"
+            + "A1UEChMESmF2YTEdMBsGA1UECxMUU3VuSlNTRSBUZXN0IFNlcml2Y2UxEjAQBgNV\n"
+            + "BAMTCWxvY2FsaG9zdDCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAwDnm96mw\n"
+            + "fXCH4bgXk1US0VcJsQVxUtGMyncAveMuzBzNzOmKZPeqyYX1Fuh4q+cuza03WTJd\n"
+            + "G9nOkNr364e3Rn1aaHjCMcBmFflObnGnhhufNmIGYogJ9dJPmhUVPEVAXrMG+Ces\n"
+            + "NKy2E8woGnLMrqu6yiuTClbLBPK8fWzTXrECAwEAAaN4MHYwCwYDVR0PBAQDAgPo\n"
+            + "MB0GA1UdDgQWBBSdRrpocLPJXyGfDmMWJrcEf29WGDAfBgNVHSMEGDAWgBSzgLa/\n"
+            + "2K2I/R9OBAywNH3deI4rBTAnBgNVHSUEIDAeBggrBgEFBQcDAQYIKwYBBQUHAwIG\n"
+            + "CCsGAQUFBwMDMA0GCSqGSIb3DQEBBAUAA4GBAKJ71ZiCUykkJrCLYUxlFlhvUcr9\n"
+            + "sTcOc67QdroW5f412NI15SXWDiley/JOasIiuIFPjaJBjOKoHOvTjG/snVu9wEgq\n"
+            + "YNR8dPsO+NM8r79C6jO+Jx5fYAC7os2XxS75h3NX0ElJcbwIXGBJ6xRrsFh/BGYH\n"
+            + "yvudOlX4BkVR0l1K\n"
+            + "-----END CERTIFICATE-----";
 
     // Private key in the format of PKCS#8.
-    static String targetPrivateKey =
-        "MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAMA55vepsH1wh+G4\n" +
-        "F5NVEtFXCbEFcVLRjMp3AL3jLswczczpimT3qsmF9RboeKvnLs2tN1kyXRvZzpDa\n" +
-        "9+uHt0Z9Wmh4wjHAZhX5Tm5xp4YbnzZiBmKICfXST5oVFTxFQF6zBvgnrDSsthPM\n" +
-        "KBpyzK6rusorkwpWywTyvH1s016xAgMBAAECgYEAn9bF3oRkdDoBU0i/mcww5I+K\n" +
-        "SH9tFt+WQbiojjz9ac49trkvUfu7MO1Jui2+QbrvaSkyj+HYGFOJd1wMsPXeB7ck\n" +
-        "5mOIYV4uZK8jfNMSQ8v0tFEeIPp5lKdw1XnrQfSe+abo2eL5Lwso437Y4s3w37+H\n" +
-        "aY3d76hR5qly+Ys+Ww0CQQDjeOoX89d/xhRqGXKjCx8ImE/dPmsI8O27cwtKrDYJ\n" +
-        "6t0v/xryVIdvOYcRBvKnqEogOH7T1kI+LnWKUTJ2ehJ7AkEA2FVloPVqCehXcc7e\n" +
-        "z3TDpU9w1B0JXklcV5HddYsRqp9RukN/VK4szKE7F1yoarIUtfE9Lr9082Jwyp3M\n" +
-        "L11xwwJBAKsZ+Hur3x0tUY29No2Nf/pnFyvEF57SGwA0uPmiL8Ol9lpz+UDudDEl\n" +
-        "hIM6Rqv12kwCMuQE9i7vo1o3WU3k5KECQEqhg1L49yD935TqiiFFpe0Ur9btQXse\n" +
-        "kdXAA4d2d5zGI7q/aGD9SYU6phkUJSHR16VA2RuUfzMrpb+wmm1IrmMCQFtLoKRT\n" +
-        "A5kokFb+E3Gplu29tJvCUpfwgBFRS+wmkvtiaU/tiyDcVgDO+An5DwedxxdVzqiE\n" +
-        "njWHoKY3axDQ8OU=\n";
+    private static final String TARGET_PRIV_KEY_STR = "MIICdwIBADANBgkqhkiG9w0B\n"
+            + "AQEFAASCAmEwggJdAgEAAoGBAMA55vepsH1wh+G4F5NVEtFXCbEFcVLRjMp3AL3j\n"
+            + "LswczczpimT3qsmF9RboeKvnLs2tN1kyXRvZzpDa9+uHt0Z9Wmh4wjHAZhX5Tm5x\n"
+            + "p4YbnzZiBmKICfXST5oVFTxFQF6zBvgnrDSsthPMKBpyzK6rusorkwpWywTyvH1s\n"
+            + "016xAgMBAAECgYEAn9bF3oRkdDoBU0i/mcww5I+KSH9tFt+WQbiojjz9ac49trkv\n"
+            + "Ufu7MO1Jui2+QbrvaSkyj+HYGFOJd1wMsPXeB7ck5mOIYV4uZK8jfNMSQ8v0tFEe\n"
+            + "IPp5lKdw1XnrQfSe+abo2eL5Lwso437Y4s3w37+HaY3d76hR5qly+Ys+Ww0CQQDj\n"
+            + "eOoX89d/xhRqGXKjCx8ImE/dPmsI8O27cwtKrDYJ6t0v/xryVIdvOYcRBvKnqEog\n"
+            + "OH7T1kI+LnWKUTJ2ehJ7AkEA2FVloPVqCehXcc7ez3TDpU9w1B0JXklcV5HddYsR\n"
+            + "qp9RukN/VK4szKE7F1yoarIUtfE9Lr9082Jwyp3ML11xwwJBAKsZ+Hur3x0tUY29\n"
+            + "No2Nf/pnFyvEF57SGwA0uPmiL8Ol9lpz+UDudDElhIM6Rqv12kwCMuQE9i7vo1o3\n"
+            + "WU3k5KECQEqhg1L49yD935TqiiFFpe0Ur9btQXsekdXAA4d2d5zGI7q/aGD9SYU6\n"
+            + "phkUJSHR16VA2RuUfzMrpb+wmm1IrmMCQFtLoKRTA5kokFb+E3Gplu29tJvCUpfw\n"
+            + "gBFRS+wmkvtiaU/tiyDcVgDO+An5DwedxxdVzqiEnjWHoKY3axDQ8OU=";
 
-
-    static char passphrase[] = "passphrase".toCharArray();
+    private static final char PASSPHRASE[] = "passphrase".toCharArray();
 
     /*
      * Is the server ready to serve?
      */
-    volatile static boolean serverReady = false;
+    private static volatile CountDownLatch sync = new CountDownLatch(1);
 
     /*
      * Turn on SSL debugging?
      */
-    static boolean debug = false;
+    private static final boolean DEBUG = false;
 
     /*
      * Define the server side of the test.
@@ -144,29 +126,30 @@ public class MD2InTrustAnchor {
      * If the server prematurely exits, serverReady will be set to true
      * to avoid infinite hangs.
      */
-    void doServerSide() throws Exception {
-        SSLContext context = generateSSLContext(trustedCertStr, targetCertStr,
-                                            targetPrivateKey);
+    private void doServerSide() throws Exception {
+        SSLContext context = generateSSLContext(TRUSTED_CERT_STR, TARGET_CERT_STR,
+                TARGET_PRIV_KEY_STR);
         SSLServerSocketFactory sslssf = context.getServerSocketFactory();
-        SSLServerSocket sslServerSocket =
-            (SSLServerSocket)sslssf.createServerSocket(serverPort);
-        sslServerSocket.setNeedClientAuth(true);
-        serverPort = sslServerSocket.getLocalPort();
+        try (SSLServerSocket sslServerSocket
+                = (SSLServerSocket) sslssf.createServerSocket(serverPort)) {
+            sslServerSocket.setNeedClientAuth(true);
+            serverPort = sslServerSocket.getLocalPort();
+            /*
+            * Signal Client, we're ready for his connect.
+             */
+            System.out.println("Signal server ready");
+            sync.countDown();
 
-        /*
-         * Signal Client, we're ready for his connect.
-         */
-        serverReady = true;
+            System.out.println("Waiting for client connection");
+            try (SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept()) {
+                InputStream sslIS = sslSocket.getInputStream();
+                OutputStream sslOS = sslSocket.getOutputStream();
 
-        SSLSocket sslSocket = (SSLSocket)sslServerSocket.accept();
-        InputStream sslIS = sslSocket.getInputStream();
-        OutputStream sslOS = sslSocket.getOutputStream();
-
-        sslIS.read();
-        sslOS.write('A');
-        sslOS.flush();
-
-        sslSocket.close();
+                sslIS.read();
+                sslOS.write('A');
+                sslOS.flush();
+            }
+        }
     }
 
     /*
@@ -175,33 +158,31 @@ public class MD2InTrustAnchor {
      * If the server prematurely exits, serverReady will be set to true
      * to avoid infinite hangs.
      */
-    void doClientSide() throws Exception {
+    private void doClientSide() throws Exception {
 
         /*
          * Wait for server to get started.
          */
-        while (!serverReady) {
-            Thread.sleep(50);
-        }
+        System.out.println("Waiting for server ready");
+        sync.await();
 
-        SSLContext context = generateSSLContext(trustedCertStr, targetCertStr,
-                                            targetPrivateKey);
+        SSLContext context = generateSSLContext(TRUSTED_CERT_STR, TARGET_CERT_STR,
+                TARGET_PRIV_KEY_STR);
         SSLSocketFactory sslsf = context.getSocketFactory();
 
-        SSLSocket sslSocket =
-            (SSLSocket)sslsf.createSocket("localhost", serverPort);
+        System.out.println("Connect to server on port: " + serverPort);
+        try (SSLSocket sslSocket
+                = (SSLSocket) sslsf.createSocket("localhost", serverPort)) {
+            // enable the specified TLS protocol
+            sslSocket.setEnabledProtocols(new String[]{tlsProtocol});
 
-        // enable the specified TLS protocol
-        sslSocket.setEnabledProtocols(new String[] {tlsProtocol});
+            InputStream sslIS = sslSocket.getInputStream();
+            OutputStream sslOS = sslSocket.getOutputStream();
 
-        InputStream sslIS = sslSocket.getInputStream();
-        OutputStream sslOS = sslSocket.getOutputStream();
-
-        sslOS.write('B');
-        sslOS.flush();
-        sslIS.read();
-
-        sslSocket.close();
+            sslOS.write('B');
+            sslOS.flush();
+            sslIS.read();
+        }
     }
 
     /*
@@ -240,10 +221,10 @@ public class MD2InTrustAnchor {
         if (keyCertStr != null) {
             // generate the private key.
             PKCS8EncodedKeySpec priKeySpec = new PKCS8EncodedKeySpec(
-                                Base64.getMimeDecoder().decode(keySpecStr));
+                    Base64.getMimeDecoder().decode(keySpecStr));
             KeyFactory kf = KeyFactory.getInstance("RSA");
-            RSAPrivateKey priKey =
-                    (RSAPrivateKey)kf.generatePrivate(priKeySpec);
+            RSAPrivateKey priKey
+                    = (RSAPrivateKey) kf.generatePrivate(priKeySpec);
 
             // generate certificate chain
             is = new ByteArrayInputStream(keyCertStr.getBytes());
@@ -257,7 +238,7 @@ public class MD2InTrustAnchor {
             chain[0] = keyCert;
 
             // import the key entry.
-            ks.setKeyEntry("Whatever", priKey, passphrase, chain);
+            ks.setKeyEntry("Whatever", priKey, PASSPHRASE, chain);
         }
 
         // create SSL context
@@ -267,7 +248,7 @@ public class MD2InTrustAnchor {
         SSLContext ctx = SSLContext.getInstance(tlsProtocol);
         if (keyCertStr != null && !keyCertStr.isEmpty()) {
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("NewSunX509");
-            kmf.init(ks, passphrase);
+            kmf.init(ks, PASSPHRASE);
 
             ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
             ks = null;
@@ -278,12 +259,10 @@ public class MD2InTrustAnchor {
         return ctx;
     }
 
-
     // use any free port by default
-    volatile int serverPort = 0;
+    private volatile int serverPort = 0;
 
-    volatile Exception serverException = null;
-    volatile Exception clientException = null;
+    private volatile Exception serverException = null;
 
     public static void main(String[] args) throws Exception {
         // MD5 is used in this test case, don't disable MD5 algorithm.
@@ -292,140 +271,61 @@ public class MD2InTrustAnchor {
         Security.setProperty("jdk.tls.disabledAlgorithms",
                 "SSLv3, RC4, DH keySize < 768");
 
-        if (debug)
+        if (DEBUG) {
             System.setProperty("javax.net.debug", "all");
+        }
 
         /*
          * Get the customized arguments.
          */
         parseArguments(args);
-
         /*
          * Start the tests.
          */
-        new MD2InTrustAnchor();
+        new MD2InTrustAnchor().runTest();
     }
 
-    Thread clientThread = null;
-    Thread serverThread = null;
+    private Thread serverThread = null;
 
     /*
-     * Primary constructor, used to drive remainder of the test.
+     * Used to drive remainder of the test.
      *
      * Fork off the other side, then do your work.
      */
-    MD2InTrustAnchor() throws Exception {
-        try {
-            if (separateServerThread) {
-                startServer(true);
-                startClient(false);
-            } else {
-                startClient(true);
-                startServer(false);
-            }
-        } catch (Exception e) {
-            // swallow for now.  Show later
-        }
+    public void runTest() throws Exception {
+        startServerThread();
+        doClientSide();
 
         /*
          * Wait for other side to close down.
          */
-        if (separateServerThread) {
-            serverThread.join();
-        } else {
-            clientThread.join();
-        }
+        serverThread.join();
 
-        /*
-         * When we get here, the test is pretty much over.
-         * Which side threw the error?
-         */
-        Exception local;
-        Exception remote;
-        String whichRemote;
-
-        if (separateServerThread) {
-            remote = serverException;
-            local = clientException;
-            whichRemote = "server";
-        } else {
-            remote = clientException;
-            local = serverException;
-            whichRemote = "client";
-        }
-
-        /*
-         * If both failed, return the curthread's exception, but also
-         * print the remote side Exception
-         */
-        if ((local != null) && (remote != null)) {
-            System.out.println(whichRemote + " also threw:");
-            remote.printStackTrace();
-            System.out.println();
-            throw local;
-        }
-
-        if (remote != null) {
-            throw remote;
-        }
-
-        if (local != null) {
-            throw local;
+        if (serverException != null) {
+            throw serverException;
         }
     }
 
-    void startServer(boolean newThread) throws Exception {
-        if (newThread) {
-            serverThread = new Thread() {
-                public void run() {
-                    try {
-                        doServerSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our server thread just died.
-                         *
-                         * Release the client, if not active already...
-                         */
-                        System.err.println("Server died...");
-                        serverReady = true;
-                        serverException = e;
-                    }
+    private void startServerThread() {
+        serverThread = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    doServerSide();
+                } catch (Exception e) {
+                    /*
+                     * Our server thread just died.
+                     *
+                     * Release the client, if not active already...
+                     */
+                    System.err.println("Server died...");
+                    e.printStackTrace(System.out);
+                    serverException = e;
+                    sync.countDown();
                 }
-            };
-            serverThread.start();
-        } else {
-            try {
-                doServerSide();
-            } catch (Exception e) {
-                serverException = e;
-            } finally {
-                serverReady = true;
             }
-        }
-    }
+        };
 
-    void startClient(boolean newThread) throws Exception {
-        if (newThread) {
-            clientThread = new Thread() {
-                public void run() {
-                    try {
-                        doClientSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our client thread just died.
-                         */
-                        System.err.println("Client died...");
-                        clientException = e;
-                    }
-                }
-            };
-            clientThread.start();
-        } else {
-            try {
-                doClientSide();
-            } catch (Exception e) {
-                clientException = e;
-            }
-        }
+        serverThread.start();
     }
 }

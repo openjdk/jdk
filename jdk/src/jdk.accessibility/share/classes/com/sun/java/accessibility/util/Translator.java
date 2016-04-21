@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,11 @@
 
 package com.sun.java.accessibility.util;
 
-import java.lang.*;
+import com.sun.java.accessibility.util.internal.*;
 import java.beans.*;
 import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.image.*;
-import java.security.AccessControlException;
 // Do not import Swing classes.  This module is intended to work
 // with both Swing and AWT.
 // import javax.swing.*;
@@ -77,12 +75,26 @@ public class Translator extends AccessibleContext
         if (c == null) {
             return null;
         }
-        try {
-            t = Class.forName("com.sun.java.accessibility.util.internal."
-                              + c.getSimpleName()
-                              + "Translator");
+        switch (c.getSimpleName()) {
+            case "Button":
+                t = ButtonTranslator.class;
+                break;
+            case "Checkbox":
+                t = CheckboxTranslator.class;
+                break;
+            case "Label":
+                t = LabelTranslator.class;
+                break;
+            case "List":
+                t = ListTranslator.class;
+                break;
+            case "TextComponent":
+                t = TextComponentTranslator.class;
+                break;
+        }
+        if (t != null) {
             return t;
-        } catch (Exception e) {
+        } else {
             return getTranslatorClass(c.getSuperclass());
         }
     }
@@ -106,10 +118,6 @@ public class Translator extends AccessibleContext
         if (o instanceof Accessible) {
             a = (Accessible)o;
         } else {
-            // About to "newInstance" an object of a class of a restricted package
-            // so ensure the caller is allowed access to that package.
-            String pkg = "com.sun.java.accessibility.util.internal";
-            System.getSecurityManager().checkPackageAccess(pkg);
             Class<?> translatorClass = getTranslatorClass(o.getClass());
             if (translatorClass != null) {
                 try {

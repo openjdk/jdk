@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1539,8 +1539,8 @@ public final class DateTimeFormatterBuilder {
      * <pre>
      *  Pattern  Count  Equivalent builder methods
      *  -------  -----  --------------------------
-     *    O       1      appendLocalizedOffsetPrefixed(TextStyle.SHORT);
-     *    OOOO    4      appendLocalizedOffsetPrefixed(TextStyle.FULL);
+     *    O       1      appendLocalizedOffset(TextStyle.SHORT);
+     *    OOOO    4      appendLocalizedOffset(TextStyle.FULL);
      *    X       1      appendOffset("+HHmm","Z")
      *    XX      2      appendOffset("+HHMM","Z")
      *    XXX     3      appendOffset("+HH:MM","Z")
@@ -3519,9 +3519,7 @@ public final class DateTimeFormatterBuilder {
                 return false;
             }
             String gmtText = "GMT";  // TODO: get localized version of 'GMT'
-            if (gmtText != null) {
-                buf.append(gmtText);
-            }
+            buf.append(gmtText);
             int totalSecs = Math.toIntExact(offsetSecs);
             if (totalSecs != 0) {
                 int absHours = Math.abs((totalSecs / 3600) % 100);  // anything larger than 99 silently dropped
@@ -3565,14 +3563,12 @@ public final class DateTimeFormatterBuilder {
         @Override
         public int parse(DateTimeParseContext context, CharSequence text, int position) {
             int pos = position;
-            int end = pos + text.length();
+            int end = text.length();
             String gmtText = "GMT";  // TODO: get localized version of 'GMT'
-            if (gmtText != null) {
-                if (!context.subSequenceEquals(text, pos, gmtText, 0, gmtText.length())) {
+            if (!context.subSequenceEquals(text, pos, gmtText, 0, gmtText.length())) {
                     return ~position;
                 }
-                pos += gmtText.length();
-            }
+            pos += gmtText.length();
             // parse normal plus/minus offset
             int negative = 0;
             if (pos == end) {

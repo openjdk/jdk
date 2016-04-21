@@ -55,9 +55,9 @@ public class Settings extends TestHelper {
         }
     }
 
-    static void checkNoContains(TestResult tr, String str) {
-        if (tr.contains(str)) {
-            System.out.println(tr.status);
+    static void checkNotContains(TestResult tr, String str) {
+        if (!tr.notContains(str)) {
+            System.out.println(tr);
             throw new RuntimeException(str + " found");
         }
     }
@@ -77,84 +77,77 @@ public class Settings extends TestHelper {
         if (getArch().equals("ppc64") || getArch().equals("ppc64le")) {
             stackSize = "800";
         }
-        TestResult tr = null;
+        TestResult tr;
         tr = doExec(javaCmd, "-Xms64m", "-Xmx512m",
                 "-Xss" + stackSize + "k", "-XshowSettings", "-jar", testJar.getAbsolutePath());
         containsAllOptions(tr);
         if (!tr.isOK()) {
-            System.out.println(tr.status);
+            System.out.println(tr);
             throw new RuntimeException("test fails");
         }
         tr = doExec(javaCmd, "-Xms65536k", "-Xmx712m",
                 "-Xss" + stackSize + "000", "-XshowSettings", "-jar", testJar.getAbsolutePath());
         containsAllOptions(tr);
         if (!tr.isOK()) {
-            System.out.println(tr.status);
+            System.out.println(tr);
             throw new RuntimeException("test fails");
         }
     }
 
     static void runTestOptionAll() throws IOException {
         init();
-        TestResult tr = null;
-        tr = doExec(javaCmd, "-XshowSettings:all");
+        TestResult tr = doExec(javaCmd, "-XshowSettings:all");
         containsAllOptions(tr);
     }
 
     static void runTestOptionVM() throws IOException {
-        TestResult tr = null;
-        tr = doExec(javaCmd, "-XshowSettings:vm");
+        TestResult tr = doExec(javaCmd, "-XshowSettings:vm");
         checkContains(tr, VM_SETTINGS);
-        checkNoContains(tr, PROP_SETTINGS);
-        checkNoContains(tr, LOCALE_SETTINGS);
+        checkNotContains(tr, PROP_SETTINGS);
+        checkNotContains(tr, LOCALE_SETTINGS);
     }
 
     static void runTestOptionProperty() throws IOException {
-        TestResult tr = null;
-        tr = doExec(javaCmd, "-XshowSettings:properties");
-        checkNoContains(tr, VM_SETTINGS);
+        TestResult tr = doExec(javaCmd, "-XshowSettings:properties");
+        checkNotContains(tr, VM_SETTINGS);
         checkContains(tr, PROP_SETTINGS);
-        checkNoContains(tr, LOCALE_SETTINGS);
+        checkNotContains(tr, LOCALE_SETTINGS);
     }
 
     static void runTestOptionLocale() throws IOException {
-        TestResult tr = null;
-        tr = doExec(javaCmd, "-XshowSettings:locale");
-        checkNoContains(tr, VM_SETTINGS);
-        checkNoContains(tr, PROP_SETTINGS);
+        TestResult tr = doExec(javaCmd, "-XshowSettings:locale");
+        checkNotContains(tr, VM_SETTINGS);
+        checkNotContains(tr, PROP_SETTINGS);
         checkContains(tr, LOCALE_SETTINGS);
     }
 
     static void runTestBadOptions() throws IOException {
-        TestResult tr = null;
-        tr = doExec(javaCmd, "-XshowSettingsBadOption");
-        checkNoContains(tr, VM_SETTINGS);
-        checkNoContains(tr, PROP_SETTINGS);
-        checkNoContains(tr, LOCALE_SETTINGS);
+        TestResult tr = doExec(javaCmd, "-XshowSettingsBadOption");
+        checkNotContains(tr, VM_SETTINGS);
+        checkNotContains(tr, PROP_SETTINGS);
+        checkNotContains(tr, LOCALE_SETTINGS);
         checkContains(tr, "Unrecognized option: -XshowSettingsBadOption");
     }
 
     static void runTest7123582() throws IOException {
-        TestResult tr = null;
-        tr = doExec(javaCmd, "-XshowSettings", "-version");
+        TestResult tr = doExec(javaCmd, "-XshowSettings", "-version");
         if (!tr.isOK()) {
-            System.out.println(tr.status);
+            System.out.println(tr);
             throw new RuntimeException("test fails");
         }
         containsAllOptions(tr);
     }
 
-    public static void main(String... args) {
-        try {
-            runTestOptionAll();
-            runTestOptionDefault();
-            runTestOptionVM();
-            runTestOptionProperty();
-            runTestOptionLocale();
-            runTestBadOptions();
-            runTest7123582();
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
+    public static void main(String... args) throws IOException {
+        runTestOptionAll();
+        runTestOptionDefault();
+        runTestOptionVM();
+        runTestOptionProperty();
+        runTestOptionLocale();
+        runTestBadOptions();
+        runTest7123582();
+        if (testExitValue != 0) {
+            throw new Error(testExitValue + " tests failed");
         }
     }
 }

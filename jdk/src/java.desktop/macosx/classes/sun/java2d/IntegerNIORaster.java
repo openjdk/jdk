@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class IntegerNIORaster extends SunWritableRaster {
                                                ") cannot be <= 0");
         }
         // This is cribbed from java.awt.image.Raster.
-        DataBuffer db = new DataBufferNIOInt(w * h);
+        DataBufferNIOInt db = new DataBufferNIOInt(w * h);
         if (location == null) {
             location = new Point(0, 0);
         }
@@ -48,13 +48,11 @@ public class IntegerNIORaster extends SunWritableRaster {
         return new IntegerNIORaster(sppsm, db, location);
     }
 
-    public IntegerNIORaster(SampleModel sampleModel, DataBuffer dataBuffer, Point origin) {
+    public IntegerNIORaster(SampleModel sampleModel, DataBufferNIOInt dataBuffer, Point origin) {
         // This is all cribbed from sun.awt.image.IntegerInterleavedRaster & sun.awt.image.IntegerComponentRaster
         super(sampleModel, dataBuffer, new Rectangle(origin.x, origin.y, sampleModel.getWidth(), sampleModel.getHeight()), origin, null);
-        if (!(dataBuffer instanceof DataBufferNIOInt)) {
-           throw new RasterFormatException("IntegerNIORasters must have DataBufferNIOInt DataBuffers");
-        }
-        this.data = ((DataBufferNIOInt)dataBuffer).getBuffer();
+
+        this.data = dataBuffer.getBuffer();
     }
 
     public WritableRaster createCompatibleWritableRaster() {

@@ -24,8 +24,7 @@
  */
 package java.net;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.util.Properties;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -57,12 +56,11 @@ class DefaultDatagramSocketImplFactory
     static {
         Class<?> prefixImplClassLocal = null;
 
+        Properties props = GetPropertyAction.getProperties();
         preferIPv4Stack = Boolean.parseBoolean(
-                AccessController.doPrivileged(
-                        new GetPropertyAction("java.net.preferIPv4Stack")));
+                props.getProperty("java.net.preferIPv4Stack"));
 
-        String exclBindProp = AccessController.doPrivileged(
-                new GetPropertyAction("sun.net.useExclusiveBind", ""));
+        String exclBindProp = props.getProperty("sun.net.useExclusiveBind", "");
         exclusiveBind = (exclBindProp.isEmpty())
                 ? true
                 : Boolean.parseBoolean(exclBindProp);
@@ -70,8 +68,7 @@ class DefaultDatagramSocketImplFactory
         // impl.prefix
         String prefix = null;
         try {
-            prefix = AccessController.doPrivileged(
-                new GetPropertyAction("impl.prefix", null));
+            prefix = props.getProperty("impl.prefix");
             if (prefix != null)
                 prefixImplClassLocal = Class.forName("java.net."+prefix+"DatagramSocketImpl");
         } catch (Exception e) {

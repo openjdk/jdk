@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,12 @@ package javax.swing;
 
 import javax.swing.event.*;
 import javax.swing.filechooser.*;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.plaf.FileChooserUI;
 
 import javax.accessibility.*;
 
-import java.io.File;
-import java.io.ObjectOutputStream;
-import java.io.IOException;
+import java.io.*;
 
 import java.util.Vector;
 import java.awt.AWTEvent;
@@ -51,8 +50,6 @@ import java.beans.JavaBean;
 import java.beans.BeanProperty;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
-import java.io.InvalidObjectException;
-import java.io.ObjectInputStream;
 import java.lang.ref.WeakReference;
 
 /**
@@ -390,19 +387,7 @@ public class JFileChooser extends JComponent implements Accessible {
     }
 
     private void installHierarchyListener() {
-        addHierarchyListener(new HierarchyListener() {
-            @Override
-            public void hierarchyChanged(HierarchyEvent e) {
-                if ((e.getChangeFlags() & HierarchyEvent.PARENT_CHANGED)
-                        == HierarchyEvent.PARENT_CHANGED) {
-                    JFileChooser fc = JFileChooser.this;
-                    JRootPane rootPane = SwingUtilities.getRootPane(fc);
-                    if (rootPane != null) {
-                        rootPane.setDefaultButton(fc.getUI().getDefaultButton(fc));
-                    }
-                }
-            }
-        });
+        addHierarchyListener(new FCHierarchyListener());
     }
 
     private void installShowFilesListener() {
@@ -2055,4 +2040,18 @@ public class JFileChooser extends JComponent implements Accessible {
 
     } // inner class AccessibleJFileChooser
 
+    private class FCHierarchyListener implements HierarchyListener,
+            Serializable {
+        @Override
+        public void hierarchyChanged(HierarchyEvent e) {
+            if ((e.getChangeFlags() & HierarchyEvent.PARENT_CHANGED)
+                    == HierarchyEvent.PARENT_CHANGED) {
+                JFileChooser fc = JFileChooser.this;
+                JRootPane rootPane = SwingUtilities.getRootPane(fc);
+                if (rootPane != null) {
+                    rootPane.setDefaultButton(fc.getUI().getDefaultButton(fc));
+                }
+            }
+        }
+    }
 }
