@@ -2620,6 +2620,12 @@ bool Arguments::check_vm_args_consistency() {
     }
     FLAG_SET_CMDLINE(bool, BackgroundCompilation, false);
   }
+  if (UseCompiler && is_interpreter_only()) {
+    if (!FLAG_IS_DEFAULT(UseCompiler)) {
+      warning("UseCompiler disabled due to -Xint.");
+    }
+    FLAG_SET_CMDLINE(bool, UseCompiler, false);
+  }
   return status;
 }
 

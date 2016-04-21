@@ -336,7 +336,7 @@ bool CodeCache::heap_available(int code_blob_type) {
   if (!SegmentedCodeCache) {
     // No segmentation: use a single code heap
     return (code_blob_type == CodeBlobType::All);
-  } else if (Arguments::mode() == Arguments::_int) {
+  } else if (Arguments::is_interpreter_only()) {
     // Interpreter only: we don't need any method code heaps
     return (code_blob_type == CodeBlobType::NonNMethod);
   } else if (TieredCompilation && (TieredStopAtLevel > CompLevel_simple)) {
