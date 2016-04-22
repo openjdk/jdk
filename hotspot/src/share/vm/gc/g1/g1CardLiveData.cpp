@@ -60,7 +60,7 @@ G1CardLiveData::bm_word_t* G1CardLiveData::allocate_large_bitmap(size_t size_in_
 }
 
 void G1CardLiveData::free_large_bitmap(bm_word_t* bitmap, size_t size_in_bits) {
-  MmapArrayAllocator<bm_word_t, mtGC>::free(bitmap, size_in_bits / BitsPerWord);
+  MmapArrayAllocator<bm_word_t, mtGC>::free(bitmap, BitMap::calc_size_in_words(size_in_bits));
 }
 
 void G1CardLiveData::initialize(size_t max_capacity, uint num_max_regions) {
