@@ -30,7 +30,7 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import sun.reflect.Reflection;
+import jdk.internal.reflect.Reflection;
 import sun.security.util.SecurityConstants;
 
 public final class ReflectUtil {

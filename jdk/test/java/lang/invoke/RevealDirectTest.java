@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary verify Lookup.revealDirect on a variety of input handles
- * @modules java.base/sun.reflect
+ * @modules java.base/jdk.internal.reflect
  * @compile -XDignore.symbol.file RevealDirectTest.java
  * @run junit/othervm -ea -esa test.java.lang.invoke.RevealDirectTest
  *
@@ -311,7 +311,7 @@ public class RevealDirectTest {
         if (!(mem instanceof AnnotatedElement))  return false;
         AnnotatedElement ae = (AnnotatedElement) mem;
         if (CS_CLASS != null)
-            return ae.isAnnotationPresent(sun.reflect.CallerSensitive.class);
+            return ae.isAnnotationPresent(jdk.internal.reflect.CallerSensitive.class);
         for (java.lang.annotation.Annotation a : ae.getDeclaredAnnotations()) {
             if (a.toString().contains(".CallerSensitive"))
                 return true;
@@ -322,7 +322,7 @@ public class RevealDirectTest {
     static {
         Class<?> c = null;
         try {
-            c = sun.reflect.CallerSensitive.class;
+            c = jdk.internal.reflect.CallerSensitive.class;
         } catch (SecurityException | LinkageError ex) {
         }
         CS_CLASS = c;

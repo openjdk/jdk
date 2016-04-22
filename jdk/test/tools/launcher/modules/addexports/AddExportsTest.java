@@ -107,7 +107,7 @@ public class AddExportsTest {
     public void testSanity() throws Exception {
 
         int exitValue
-            =  executeTestJava("-XaddExports:java.base/sun.reflect=ALL-UNNAMED",
+            =  executeTestJava("-XaddExports:java.base/jdk.internal.reflect=ALL-UNNAMED",
                                "-version")
                 .outputTo(System.out)
                 .errorTo(System.out)
@@ -207,8 +207,8 @@ public class AddExportsTest {
     public void testWithDuplicateOption() throws Exception {
 
         int exitValue
-            =  executeTestJava("-XaddExports:java.base/sun.reflect=ALL-UNNAMED",
-                               "-XaddExports:java.base/sun.reflect=ALL-UNNAMED",
+            =  executeTestJava("-XaddExports:java.base/jdk.internal.reflect=ALL-UNNAMED",
+                               "-XaddExports:java.base/jdk.internal.reflect=ALL-UNNAMED",
                                "-version")
                 .outputTo(System.out)
                 .errorTo(System.out)
