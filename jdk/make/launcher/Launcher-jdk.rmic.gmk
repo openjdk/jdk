@@ -26,6 +26,6 @@
 include LauncherCommon.gmk
 
 $(eval $(call SetupBuildLauncher, rmic, \
-    MAIN_CLASS := jdk.rmi.rmic.Main, \
+    MAIN_CLASS := sun.rmi.rmic.Main, \
     CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS, \
 ))

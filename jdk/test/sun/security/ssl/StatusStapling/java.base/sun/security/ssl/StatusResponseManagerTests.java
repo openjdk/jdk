@@ -300,7 +300,15 @@ public class StatusResponseManagerTests {
         rootOcsp.enableLog(ocspDebug);
         rootOcsp.setNextUpdateInterval(3600);
         rootOcsp.start();
-        Thread.sleep(1000);         // Give the server a second to start up
+
+        // Wait 5 seconds for server ready
+        for (int i = 0; (i < 100 && !rootOcsp.isServerReady()); i++) {
+            Thread.sleep(50);
+        }
+        if (!rootOcsp.isServerReady()) {
+            throw new RuntimeException("Server not ready yet");
+        }
+
         rootOcspPort = rootOcsp.getPort();
         String rootRespURI = "http://localhost:" + rootOcspPort;
         log("Root OCSP Responder URI is " + rootRespURI);
@@ -345,7 +353,15 @@ public class StatusResponseManagerTests {
         intOcsp.enableLog(ocspDebug);
         intOcsp.setNextUpdateInterval(3600);
         intOcsp.start();
-        Thread.sleep(1000);
+
+        // Wait 5 seconds for server ready
+        for (int i = 0; (i < 100 && !intOcsp.isServerReady()); i++) {
+            Thread.sleep(50);
+        }
+        if (!intOcsp.isServerReady()) {
+            throw new RuntimeException("Server not ready yet");
+        }
+
         intOcspPort = intOcsp.getPort();
         String intCaRespURI = "http://localhost:" + intOcspPort;
         log("Intermediate CA OCSP Responder URI is " + intCaRespURI);

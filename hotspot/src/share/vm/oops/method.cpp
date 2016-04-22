@@ -84,9 +84,6 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags) {
   NoSafepointVerifier no_safepoint;
   set_constMethod(xconst);
   set_access_flags(access_flags);
-#ifdef CC_INTERP
-  set_result_index(T_VOID);
-#endif
   set_intrinsic_id(vmIntrinsics::_none);
   set_jfr_towrite(false);
   set_force_inline(false);
@@ -444,12 +441,6 @@ void Method::compute_size_of_parameters(Thread *thread) {
   ArgumentSizeComputer asc(signature());
   set_size_of_parameters(asc.size() + (is_static() ? 0 : 1));
 }
-
-#ifdef CC_INTERP
-void Method::set_result_index(BasicType type)          {
-  _result_index = Interpreter::BasicType_as_index(type);
-}
-#endif
 
 BasicType Method::result_type() const {
   ResultTypeFinder rtf(signature());
@@ -1220,10 +1211,8 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
   m->set_signature_index(_imcp_invoke_signature);
   assert(MethodHandles::is_signature_polymorphic_name(m->name()), "");
   assert(m->signature() == signature, "");
-#ifdef CC_INTERP
   ResultTypeFinder rtf(signature);
-  m->set_result_index(rtf.type());
-#endif
+  m->constMethod()->set_result_type(rtf.type());
   m->compute_size_of_parameters(THREAD);
   m->init_intrinsic_id();
   assert(m->is_method_handle_intrinsic(), "");
