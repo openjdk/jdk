@@ -4476,12 +4476,16 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * @since 9
      */
     public static MethodHandle countedLoop(MethodHandle start, MethodHandle end, MethodHandle init, MethodHandle body) {
-        MethodHandle returnVar = dropArguments(init == null || init.type().returnType() == void.class ?
-                zero(void.class) : identity(init.type().returnType()), 0, int.class, int.class);
+        MethodHandle defaultResultHandle = init == null || init.type().returnType() == void.class ?
+                zero(void.class) :
+                identity(init.type().returnType());
+        MethodHandle adaptedBody = body == null ? dropArguments(defaultResultHandle, 0, int.class) : body;
+        MethodHandle returnVar = dropArguments(defaultResultHandle, 0, int.class, int.class);
         MethodHandle[] indexVar = {start, MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_countedLoopStep)};
-        MethodHandle[] loopLimit = {end, null, MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_countedLoopPred), returnVar};
+        MethodHandle[] loopLimit = {end, null, MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_countedLoopPred),
+                returnVar};
         MethodHandle[] bodyClause = {init,
-                filterArgument(dropArguments(body, 1, int.class), 0,
+                filterArgument(dropArguments(adaptedBody, 1, int.class), 0,
                         MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_decrementCounter))};
         return loop(indexVar, loopLimit, bodyClause);
     }
