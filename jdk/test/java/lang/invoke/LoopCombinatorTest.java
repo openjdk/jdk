@@ -28,6 +28,7 @@
  * @bug 8150635
  * @bug 8150956
  * @bug 8150957
+ * @bug 8152667
  * @bug 8153637
  * @run testng/othervm -ea -esa test.java.lang.invoke.LoopCombinatorTest
  */
@@ -400,10 +401,15 @@ public class LoopCombinatorTest {
         assertTrue(caught);
     }
 
-    @Test
-    public static void testIterateVoidIterator() {
+    @DataProvider
+    static Object[][] wrongIteratorTypes() {
+        return new Object[][]{{void.class}, {Object.class}, {Iterable.class}};
+    }
+
+    @Test(dataProvider = "wrongIteratorTypes")
+    public static void testIterateVoidIterator(Class<?> it) {
         boolean caught = false;
-        MethodType v = methodType(void.class);
+        MethodType v = methodType(it);
         try {
             MethodHandles.iteratedLoop(MethodHandles.empty(v), null, MethodHandles.empty(v));
         } catch(IllegalArgumentException iae) {
@@ -418,6 +424,77 @@ public class LoopCombinatorTest {
         MethodHandle loop = MethodHandles.iteratedLoop(null, Iterate.MH_voidInit, Iterate.MH_printStep);
         assertEquals(Iterate.MT_print, loop.type());
         loop.invoke(Arrays.asList("hello", "world"));
+    }
+
+    @DataProvider
+    static Object[][] iterateParameters() {
+        MethodType i = methodType(int.class);
+        MethodType sil_i = methodType(int.class, String.class, int.class, List.class);
+        MethodType sl_v = methodType(void.class, String.class, List.class);
+        MethodType l_it = methodType(Iterator.class, List.class);
+        MethodType li_it = methodType(Iterator.class, List.class, int.class);
+        MethodType l_i = methodType(int.class, List.class);
+        MethodType _it = methodType(Iterator.class);
+        MethodType si_i = methodType(int.class, String.class, int.class);
+        MethodType s_i = methodType(int.class, String.class);
+        return new Object[][]{
+                {null, null, sl_v},
+                {null, i, sil_i},
+                {null, l_i, sil_i},
+                {l_it, null, sl_v},
+                {l_it, i, sil_i},
+                {li_it, l_i, sil_i},
+                {l_it, null, sil_i},
+                {li_it, null, sl_v},
+                {_it, l_i, si_i},
+                {_it, l_i, s_i}
+        };
+    }
+
+    @Test(dataProvider = "iterateParameters")
+    public static void testIterateParameters(MethodType it, MethodType in, MethodType bo) throws Throwable {
+        MethodHandle iterator = it == null ? null : MethodHandles.empty(it);
+        MethodHandle init = in == null ? null : MethodHandles.empty(in);
+        MethodHandle loop = MethodHandles.iteratedLoop(iterator, init, MethodHandles.empty(bo));
+        MethodType lt = loop.type();
+        if (it == null && in == null) {
+            assertEquals(bo.dropParameterTypes(0, 1), lt);
+        } else if (it == null) {
+            if (in.parameterCount() == 0) {
+                assertEquals(bo.dropParameterTypes(0, in.returnType() == void.class ? 1 : 2), lt);
+            } else {
+                assertEquals(methodType(bo.returnType(), in.parameterArray()), lt);
+            }
+        } else if (in == null) {
+            assertEquals(methodType(bo.returnType(), it.parameterArray()), lt);
+        } else if (it.parameterCount() > in.parameterCount()) {
+            assertEquals(methodType(bo.returnType(), it.parameterArray()), lt);
+        } else if (it.parameterCount() < in.parameterCount()) {
+            assertEquals(methodType(bo.returnType(), in.parameterArray()), lt);
+        } else {
+            // both it, in present; with equal parameter list lengths
+            assertEquals(it.parameterList(), lt.parameterList());
+            assertEquals(in.parameterList(), lt.parameterList());
+            assertEquals(bo.returnType(), lt.returnType());
+        }
+    }
+
+    @Test
+    public static void testIteratorSubclass() throws Throwable {
+        MethodHandle loop = MethodHandles.iteratedLoop(MethodHandles.empty(methodType(BogusIterator.class, List.class)),
+                null, MethodHandles.empty(methodType(void.class, String.class)));
+        assertEquals(methodType(void.class, List.class), loop.type());
+    }
+
+    static class BogusIterator implements Iterator {
+        @Override
+        public boolean hasNext() {
+            return false;
+        }
+        @Override
+        public Object next() {
+            return null;
+        }
     }
 
     static class Empty {
