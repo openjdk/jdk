@@ -56,8 +56,8 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.function.Supplier;
 import sun.nio.ch.Interruptible;
-import sun.reflect.CallerSensitive;
-import sun.reflect.Reflection;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 import sun.security.util.SecurityConstants;
 import sun.reflect.annotation.AnnotationType;
 import jdk.internal.HotSpotIntrinsicCandidate;
@@ -1715,6 +1715,7 @@ public final class System {
      *      finalizers being called on live objects while other threads are
      *      concurrently manipulating those objects, resulting in erratic
      *      behavior or deadlock.
+     *      This method is subject to removal in a future version of Java SE.
      * @param value indicating enabling or disabling of finalization
      * @throws  SecurityException
      *        if a security manager exists and its <code>checkExit</code>
@@ -1725,7 +1726,7 @@ public final class System {
      * @see     java.lang.SecurityManager#checkExit(int)
      * @since   1.1
      */
-    @Deprecated
+    @Deprecated(since="1.2", forRemoval=true)
     public static void runFinalizersOnExit(boolean value) {
         Runtime.runFinalizersOnExit(value);
     }
@@ -1978,7 +1979,7 @@ public final class System {
     private static void setJavaLangAccess() {
         // Allow privileged classes outside of java.lang
         SharedSecrets.setJavaLangAccess(new JavaLangAccess(){
-            public sun.reflect.ConstantPool getConstantPool(Class<?> klass) {
+            public jdk.internal.reflect.ConstantPool getConstantPool(Class<?> klass) {
                 return klass.getConstantPool();
             }
             public boolean casAnnotationType(Class<?> klass, AnnotationType oldType, AnnotationType newType) {

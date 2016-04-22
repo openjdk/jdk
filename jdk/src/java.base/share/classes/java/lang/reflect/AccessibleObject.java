@@ -27,9 +27,9 @@ package java.lang.reflect;
 
 import java.security.AccessController;
 
-import sun.reflect.CallerSensitive;
-import sun.reflect.Reflection;
-import sun.reflect.ReflectionFactory;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
+import jdk.internal.reflect.ReflectionFactory;
 import java.lang.annotation.Annotation;
 
 /**
@@ -230,7 +230,7 @@ public class AccessibleObject implements AnnotatedElement {
     // very early in the bootstrapping process.
     static final ReflectionFactory reflectionFactory =
         AccessController.doPrivileged(
-            new sun.reflect.ReflectionFactory.GetReflectionFactoryAction());
+            new ReflectionFactory.GetReflectionFactoryAction());
 
     /**
      * @throws NullPointerException {@inheritDoc}

@@ -1087,7 +1087,7 @@ public abstract class XBaseMenuWindow extends XWindow {
                       }
                   } else {
                       //Invoke action event
-                      item.action(mouseEvent.getWhen());
+                      item.action(mouseEvent.getWhen(), mouseEvent.getModifiers());
                       ungrabInput();
                   }
               } else {
@@ -1200,7 +1200,7 @@ public abstract class XBaseMenuWindow extends XWindow {
               if (citem instanceof XMenuPeer) {
                   cwnd.selectItem(citem, true);
               } else if (citem != null) {
-                  citem.action(event.getWhen());
+                  citem.action(event.getWhen(), event.getModifiers());
                   ungrabInput();
               }
               break;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,6 +278,10 @@ public:
   }
 
   virtual bool card_mark_must_follow_store() const {
+    return UseConcMarkSweepGC;
+  }
+
+  virtual bool needs_reference_pending_list_locker_thread() const {
     return UseConcMarkSweepGC;
   }
 

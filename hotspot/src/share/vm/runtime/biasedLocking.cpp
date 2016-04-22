@@ -149,9 +149,13 @@ static BiasedLocking::Condition revoke_bias(oop obj, bool allow_rebias, bool is_
   if (!mark->has_bias_pattern()) {
     if (log_is_enabled(Info, biasedlocking)) {
       ResourceMark rm;
-      log_info(biasedlocking)("  (Skipping revocation of object of type %s "
-                              "because it's no longer biased)",
-                              obj->klass()->external_name());
+      log_info(biasedlocking)("  (Skipping revocation of object " INTPTR_FORMAT
+                              ", mark " INTPTR_FORMAT ", type %s"
+                              ", requesting thread " INTPTR_FORMAT
+                              " because it's no longer biased)",
+                              p2i((void *)obj), (intptr_t) mark,
+                              obj->klass()->external_name(),
+                              (intptr_t) requesting_thread);
     }
     return BiasedLocking::NOT_BIASED;
   }
@@ -163,9 +167,9 @@ static BiasedLocking::Condition revoke_bias(oop obj, bool allow_rebias, bool is_
   // Log at "info" level if not bulk, else "trace" level
   if (!is_bulk) {
     ResourceMark rm;
-    log_info(biasedlocking)("Revoking bias of object " INTPTR_FORMAT " , mark "
-                            INTPTR_FORMAT " , type %s , prototype header " INTPTR_FORMAT
-                            " , allow rebias %d , requesting thread " INTPTR_FORMAT,
+    log_info(biasedlocking)("Revoking bias of object " INTPTR_FORMAT ", mark "
+                            INTPTR_FORMAT ", type %s, prototype header " INTPTR_FORMAT
+                            ", allow rebias %d, requesting thread " INTPTR_FORMAT,
                             p2i((void *)obj),
                             (intptr_t) mark,
                             obj->klass()->external_name(),
@@ -222,11 +226,22 @@ static BiasedLocking::Condition revoke_bias(oop obj, bool allow_rebias, bool is_
     }
     // Log at "info" level if not bulk, else "trace" level
     if (!is_bulk) {
-      log_info(biasedlocking)("  Revoked bias of object biased toward dead thread");
+      log_info(biasedlocking)("  Revoked bias of object biased toward dead thread ("
+                              PTR_FORMAT ")", p2i(biased_thread));
     } else {
-      log_trace(biasedlocking)("  Revoked bias of object biased toward dead thread");
+      log_trace(biasedlocking)("  Revoked bias of object biased toward dead thread ("
+                               PTR_FORMAT ")", p2i(biased_thread));
     }
     return BiasedLocking::BIAS_REVOKED;
+  }
+
+  // Log at "info" level if not bulk, else "trace" level
+  if (!is_bulk) {
+    log_info(biasedlocking)("  Revoked bias of object biased toward live thread ("
+                            PTR_FORMAT ")", p2i(biased_thread));
+  } else {
+    log_trace(biasedlocking)("  Revoked bias of object biased toward live thread ("
+                               PTR_FORMAT ")", p2i(biased_thread));
   }
 
   // Thread owning bias is alive.

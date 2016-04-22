@@ -733,6 +733,7 @@ import java.util.Objects;
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public int hashCode() {
         // Avoid autoboxing getReferenceKind(), since this is used early and will force
         // early initialization of Byte$ByteCache
@@ -826,7 +827,7 @@ import java.util.Objects;
         assert(isResolved() == isResolved);
     }
 
-    void checkForTypeAlias() {
+    void checkForTypeAlias(Class<?> refc) {
         if (isInvocable()) {
             MethodType type;
             if (this.type instanceof MethodType)
@@ -834,16 +835,16 @@ import java.util.Objects;
             else
                 this.type = type = getMethodType();
             if (type.erase() == type)  return;
-            if (VerifyAccess.isTypeVisible(type, clazz))  return;
-            throw new LinkageError("bad method type alias: "+type+" not visible from "+clazz);
+            if (VerifyAccess.isTypeVisible(type, refc))  return;
+            throw new LinkageError("bad method type alias: "+type+" not visible from "+refc);
         } else {
             Class<?> type;
             if (this.type instanceof Class<?>)
                 type = (Class<?>) this.type;
             else
                 this.type = type = getFieldType();
-            if (VerifyAccess.isTypeVisible(type, clazz))  return;
-            throw new LinkageError("bad field type alias: "+type+" not visible from "+clazz);
+            if (VerifyAccess.isTypeVisible(type, refc))  return;
+            throw new LinkageError("bad field type alias: "+type+" not visible from "+refc);
         }
     }
 
@@ -1015,10 +1016,25 @@ import java.util.Objects;
             MemberName m = ref.clone();  // JVM will side-effect the ref
             assert(refKind == m.getReferenceKind());
             try {
+                // There are 4 entities in play here:
+                //   * LC: lookupClass
+                //   * REFC: symbolic reference class (MN.clazz before resolution);
+                //   * DEFC: resolved method holder (MN.clazz after resolution);
+                //   * PTYPES: parameter types (MN.type)
+                //
+                // What we care about when resolving a MemberName is consistency between DEFC and PTYPES.
+                // We do type alias (TA) checks on DEFC to ensure that. DEFC is not known until the JVM
+                // finishes the resolution, so do TA checks right after MHN.resolve() is over.
+                //
+                // All parameters passed by a caller are checked against MH type (PTYPES) on every invocation,
+                // so it is safe to call a MH from any context.
+                //
+                // REFC view on PTYPES doesn't matter, since it is used only as a starting point for resolution and doesn't
+                // participate in method selection.
                 m = MethodHandleNatives.resolve(m, lookupClass);
-                m.checkForTypeAlias();
+                m.checkForTypeAlias(m.getDeclaringClass());
                 m.resolution = null;
-            } catch (LinkageError ex) {
+            } catch (ClassNotFoundException | LinkageError ex) {
                 // JVM reports that the "bytecode behavior" would get an error
                 assert(!m.isResolved());
                 m.resolution = ex;

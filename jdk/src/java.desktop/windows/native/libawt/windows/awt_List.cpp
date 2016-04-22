@@ -536,7 +536,7 @@ AwtList::WmNotify(UINT notifyCode)
             else if (notifyCode == LBN_DBLCLK) {
                 DoCallback("handleAction", "(IJI)V", nCurrentSelection,
                            ::JVM_CurrentTimeMillis(NULL, 0),
-                           (jint)AwtComponent::GetJavaModifiers());
+                           (jint)AwtComponent::GetActionModifiers());
             }
         }
     }

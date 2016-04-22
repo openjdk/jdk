@@ -1340,7 +1340,13 @@ public final class Long extends Number implements Comparable<Long> {
      *
      * @param   value   the value to be represented by the
      *          {@code Long} object.
+     *
+     * @deprecated
+     * It is rarely appropriate to use this constructor. The static factory
+     * {@link #valueOf(long)} is generally a better choice, as it is
+     * likely to yield significantly better space and time performance.
      */
+    @Deprecated(since="9")
     public Long(long value) {
         this.value = value;
     }
@@ -1356,8 +1362,14 @@ public final class Long extends Number implements Comparable<Long> {
      *             {@code Long}.
      * @throws     NumberFormatException  if the {@code String} does not
      *             contain a parsable {@code long}.
-     * @see        java.lang.Long#parseLong(java.lang.String, int)
+     *
+     * @deprecated
+     * It is rarely appropriate to use this constructor.
+     * Use {@link #parseLong(String)} to convert a string to a
+     * {@code long} primitive, or use {@link #valueOf(String)}
+     * to convert a string to a {@code Long} object.
      */
+    @Deprecated(since="9")
     public Long(String s) throws NumberFormatException {
         this.value = parseLong(s, 10);
     }

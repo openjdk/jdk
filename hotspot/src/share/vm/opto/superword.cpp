@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "compiler/compileLog.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
@@ -3076,7 +3077,7 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
 CountedLoopEndNode* SuperWord::get_pre_loop_end(CountedLoopNode* cl) {
   // The loop cannot be optimized if the graph shape at
   // the loop entry is inappropriate.
-  if (!PhaseIdealLoop::is_canonical_main_loop_entry(cl)) {
+  if (!PhaseIdealLoop::is_canonical_loop_entry(cl)) {
     return NULL;
   }
 

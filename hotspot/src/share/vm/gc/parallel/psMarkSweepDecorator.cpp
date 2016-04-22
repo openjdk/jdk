@@ -29,7 +29,6 @@
 #include "gc/parallel/psMarkSweep.hpp"
 #include "gc/parallel/psMarkSweepDecorator.hpp"
 #include "gc/serial/markSweep.inline.hpp"
-#include "gc/shared/liveRange.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
@@ -107,9 +106,6 @@ void PSMarkSweepDecorator::precompact() {
   HeapWord*  end_of_live= q;    /* One byte beyond the last byte of the last
                                    live object. */
   HeapWord*  first_dead = space()->end(); /* The first dead object. */
-  LiveRange* liveRange  = NULL; /* The current live range, recorded in the
-                                   first header of preceding free area. */
-  _first_dead = first_dead;
 
   const intx interval = PrefetchScanIntervalInBytes;
 
@@ -231,17 +227,8 @@ void PSMarkSweepDecorator::precompact() {
         }
       }
 
-      /* for the previous LiveRange, record the end of the live objects. */
-      if (liveRange) {
-        liveRange->set_end(q);
-      }
-
-      /* record the current LiveRange object.
-       * liveRange->start() is overlaid on the mark word.
-       */
-      liveRange = (LiveRange*)q;
-      liveRange->set_start(end);
-      liveRange->set_end(end);
+      // q is a pointer to a dead object. Use this dead memory to store a pointer to the next live object.
+      (*(HeapWord**)q) = end;
 
       /* see if this is the first dead region. */
       if (q < first_dead) {
@@ -254,9 +241,6 @@ void PSMarkSweepDecorator::precompact() {
   }
 
   assert(q == t, "just checking");
-  if (liveRange != NULL) {
-    liveRange->set_end(q);
-  }
   _end_of_live = end_of_live;
   if (end_of_live < first_dead) {
     first_dead = end_of_live;
@@ -307,9 +291,8 @@ void PSMarkSweepDecorator::adjust_pointers() {
     if (_first_dead == t) {
       q = t;
     } else {
-      // $$$ This is funky.  Using this to read the previously written
-      // LiveRange.  See also use below.
-      q = (HeapWord*)oop(_first_dead)->mark()->decode_pointer();
+      // The first dead object should contain a pointer to the first live object
+      q = *(HeapWord**)_first_dead;
     }
   }
   const intx interval = PrefetchScanIntervalInBytes;
@@ -325,11 +308,11 @@ void PSMarkSweepDecorator::adjust_pointers() {
       debug_only(prev_q = q);
       q += size;
     } else {
-      // q is not a live object, so its mark should point at the next
-      // live object
       debug_only(prev_q = q);
-      q = (HeapWord*) oop(q)->mark()->decode_pointer();
-      assert(q > prev_q, "we should be moving forward through memory");
+      // The first dead object is no longer an object. At that memory address,
+      // there is a pointer to the first live object that the previous phase found.
+      q = *(HeapWord**)q;
+      assert(q > prev_q, "we should be moving forward through memory, q: " PTR_FORMAT ", prev_q: " PTR_FORMAT, p2i(q), p2i(prev_q));
     }
   }
 

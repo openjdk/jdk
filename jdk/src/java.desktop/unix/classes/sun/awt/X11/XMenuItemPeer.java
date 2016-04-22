@@ -323,11 +323,11 @@ public class XMenuItemPeer implements MenuItemPeer {
      * on menu item.
      * @param when the timestamp of action event
      */
-    void action(long when) {
+    void action(long when, int modifiers) {
         if (!isSeparator() && isTargetItemEnabled()) {
             XWindow.postEventStatic(new ActionEvent(target, ActionEvent.ACTION_PERFORMED,
                                                     getTargetActionCommand(), when,
-                                                    0));
+                                                    modifiers));
         }
     }
     /************************************************

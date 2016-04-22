@@ -25,9 +25,9 @@
 
 package java.lang.invoke;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.util.Properties;
 import jdk.internal.misc.Unsafe;
+import sun.security.action.GetPropertyAction;
 
 /**
  * This class consists exclusively of static names internal to the
@@ -53,32 +53,27 @@ import jdk.internal.misc.Unsafe;
     static final boolean VAR_HANDLE_GUARDS;
 
     static {
-        final Object[] values = new Object[10];
-        AccessController.doPrivileged(new PrivilegedAction<>() {
-                public Void run() {
-                    values[0] = Boolean.getBoolean("java.lang.invoke.MethodHandle.DEBUG_NAMES");
-                    values[1] = Boolean.getBoolean("java.lang.invoke.MethodHandle.DUMP_CLASS_FILES");
-                    values[2] = Boolean.getBoolean("java.lang.invoke.MethodHandle.TRACE_INTERPRETER");
-                    values[3] = Boolean.getBoolean("java.lang.invoke.MethodHandle.TRACE_METHOD_LINKAGE");
-                    values[4] = Integer.getInteger("java.lang.invoke.MethodHandle.COMPILE_THRESHOLD", 0);
-                    values[5] = Integer.getInteger("java.lang.invoke.MethodHandle.DONT_INLINE_THRESHOLD", 30);
-                    values[6] = Integer.getInteger("java.lang.invoke.MethodHandle.PROFILE_LEVEL", 0);
-                    values[7] = Boolean.parseBoolean(System.getProperty("java.lang.invoke.MethodHandle.PROFILE_GWT", "true"));
-                    values[8] = Integer.getInteger("java.lang.invoke.MethodHandle.CUSTOMIZE_THRESHOLD", 127);
-                    values[9] = Boolean.parseBoolean(System.getProperty("java.lang.invoke.VarHandle.VAR_HANDLE_GUARDS", "true"));
-                    return null;
-                }
-            });
-        DEBUG_METHOD_HANDLE_NAMES = (Boolean) values[0];
-        DUMP_CLASS_FILES          = (Boolean) values[1];
-        TRACE_INTERPRETER         = (Boolean) values[2];
-        TRACE_METHOD_LINKAGE      = (Boolean) values[3];
-        COMPILE_THRESHOLD         = (Integer) values[4];
-        DONT_INLINE_THRESHOLD     = (Integer) values[5];
-        PROFILE_LEVEL             = (Integer) values[6];
-        PROFILE_GWT               = (Boolean) values[7];
-        CUSTOMIZE_THRESHOLD       = (Integer) values[8];
-        VAR_HANDLE_GUARDS         = (Boolean) values[9];
+        Properties props = GetPropertyAction.getProperties();
+        DEBUG_METHOD_HANDLE_NAMES = Boolean.parseBoolean(
+                props.getProperty("java.lang.invoke.MethodHandle.DEBUG_NAMES"));
+        DUMP_CLASS_FILES = Boolean.parseBoolean(
+                props.getProperty("java.lang.invoke.MethodHandle.DUMP_CLASS_FILES"));
+        TRACE_INTERPRETER = Boolean.parseBoolean(
+                props.getProperty("java.lang.invoke.MethodHandle.TRACE_INTERPRETER"));
+        TRACE_METHOD_LINKAGE = Boolean.parseBoolean(
+                props.getProperty("java.lang.invoke.MethodHandle.TRACE_METHOD_LINKAGE"));
+        COMPILE_THRESHOLD = Integer.parseInt(
+                props.getProperty("java.lang.invoke.MethodHandle.COMPILE_THRESHOLD", "0"));
+        DONT_INLINE_THRESHOLD = Integer.parseInt(
+                props.getProperty("java.lang.invoke.MethodHandle.DONT_INLINE_THRESHOLD", "30"));
+        PROFILE_LEVEL = Integer.parseInt(
+                props.getProperty("java.lang.invoke.MethodHandle.PROFILE_LEVEL", "0"));
+        PROFILE_GWT = Boolean.parseBoolean(
+                props.getProperty("java.lang.invoke.MethodHandle.PROFILE_GWT", "true"));
+        CUSTOMIZE_THRESHOLD = Integer.parseInt(
+                props.getProperty("java.lang.invoke.MethodHandle.CUSTOMIZE_THRESHOLD", "127"));
+        VAR_HANDLE_GUARDS = Boolean.parseBoolean(
+                props.getProperty("java.lang.invoke.VarHandle.VAR_HANDLE_GUARDS", "true"));
 
         if (CUSTOMIZE_THRESHOLD < -1 || CUSTOMIZE_THRESHOLD > 127) {
             throw newInternalError("CUSTOMIZE_THRESHOLD should be in [-1...127] range");

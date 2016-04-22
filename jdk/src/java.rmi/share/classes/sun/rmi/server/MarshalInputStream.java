@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,13 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
 import java.io.StreamCorruptedException;
-import java.net.URL;
 import java.util.*;
 import java.security.AccessControlException;
 import java.security.Permission;
-
 import java.rmi.server.RMIClassLoader;
 import java.security.PrivilegedAction;
+import jdk.internal.misc.ObjectStreamClassValidator;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * MarshalInputStream is an extension of ObjectInputStream.  When resolving
@@ -54,6 +54,11 @@ import java.security.PrivilegedAction;
  * @author      Peter Jones
  */
 public class MarshalInputStream extends ObjectInputStream {
+    interface StreamChecker extends ObjectStreamClassValidator {
+        void checkProxyInterfaceNames(String[] ifaces);
+    }
+
+    private volatile StreamChecker streamChecker = null;
 
     /**
      * Value of "java.rmi.server.useCodebaseOnly" property,
@@ -123,7 +128,7 @@ public class MarshalInputStream extends ObjectInputStream {
         throws IOException, StreamCorruptedException
     {
         super(in);
-    }
+                    }
 
     /**
      * Returns a callback previously registered via the setDoneCallback
@@ -240,6 +245,11 @@ public class MarshalInputStream extends ObjectInputStream {
     protected Class<?> resolveProxyClass(String[] interfaces)
         throws IOException, ClassNotFoundException
     {
+        StreamChecker checker = streamChecker;
+        if (checker != null) {
+            checker.checkProxyInterfaceNames(interfaces);
+        }
+
         /*
          * Always read annotation written by MarshalOutputStream.
          */
@@ -318,5 +328,29 @@ public class MarshalInputStream extends ObjectInputStream {
      */
     void useCodebaseOnly() {
         useCodebaseOnly = true;
+    }
+
+    synchronized void setStreamChecker(StreamChecker checker) {
+        streamChecker = checker;
+        SharedSecrets.getJavaObjectInputStreamAccess().setValidator(this, checker);
+    }
+    @Override
+    protected ObjectStreamClass readClassDescriptor() throws IOException,
+            ClassNotFoundException {
+        ObjectStreamClass descriptor = super.readClassDescriptor();
+
+        validateDesc(descriptor);
+
+        return descriptor;
+    }
+
+    private void validateDesc(ObjectStreamClass descriptor) {
+        StreamChecker checker;
+        synchronized (this) {
+            checker = streamChecker;
+        }
+        if (checker != null) {
+            checker.validateDescriptor(descriptor);
+        }
     }
 }

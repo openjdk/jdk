@@ -29,6 +29,7 @@ import java.math.BigInteger;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.Locale;
+import sun.security.action.GetPropertyAction;
 
 /**
  * A utility class for debuging.
@@ -42,13 +43,10 @@ public class Debug {
     private static String args;
 
     static {
-        args = java.security.AccessController.doPrivileged
-                (new sun.security.action.GetPropertyAction
-                ("java.security.debug"));
+        args = GetPropertyAction.getProperty("java.security.debug");
 
-        String args2 = java.security.AccessController.doPrivileged
-                (new sun.security.action.GetPropertyAction
-                ("java.security.auth.debug"));
+        String args2 =
+                GetPropertyAction.getProperty("java.security.auth.debug");
 
         if (args == null) {
             args = args2;

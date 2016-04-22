@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,8 @@ class CompileTask : public CHeapObj<mtCompiler> {
 
   int          comp_level()                      { return _comp_level;}
   void         set_comp_level(int comp_level)    { _comp_level = comp_level;}
+
+  AbstractCompiler* compiler();
 
   int          num_inlined_bytecodes() const     { return _num_inlined_bytecodes; }
   void         set_num_inlined_bytecodes(int n)  { _num_inlined_bytecodes = n; }
