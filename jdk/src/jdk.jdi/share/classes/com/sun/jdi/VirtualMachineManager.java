@@ -257,11 +257,11 @@ import java.io.IOException;
  * delegate to the {@link com.sun.jdi.connect.spi.TransportService#description()
  * description()} method of the underlying transport service. Both
  * the AttachingConnector and the ListeningConnector will have two
- * Connector {@link com.sun.jdi.connect.Connector$Argument Arguments}.
- * A {@link com.sun.jdi.connect.Connector$StringArgument StringArgument}
+ * Connector {@link com.sun.jdi.connect.Connector.Argument Arguments}.
+ * A {@link com.sun.jdi.connect.Connector.StringArgument StringArgument}
  * named {@code address} is the connector argument to specify the
  * address to attach too, or to listen on. A
- * {@link com.sun.jdi.connect.Connector$IntegerArgument IntegerArgument}
+ * {@link com.sun.jdi.connect.Connector.IntegerArgument IntegerArgument}
  * named {@code timeout} is the connector argument to specify the
  * timeout when attaching, or accepting. The timeout connector may be
  * ignored depending on if the transport service supports an attach
