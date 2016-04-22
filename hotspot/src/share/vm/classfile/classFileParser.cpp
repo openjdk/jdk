@@ -1967,7 +1967,7 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
                           loader_data->is_platform_class_loader_data() ||
                           loader_data->is_anonymous();
   switch (sid) {
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(sun_reflect_CallerSensitive_signature): {
+    case vmSymbols::VM_SYMBOL_ENUM_NAME(reflect_CallerSensitive_signature): {
       if (_location != _in_method)  break;  // only allow for methods
       if (!privileged)              break;  // only allow in privileged code
       return _method_CallerSensitive;
@@ -2713,11 +2713,9 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   m->set_constants(_cp);
   m->set_name_index(name_index);
   m->set_signature_index(signature_index);
-#ifdef CC_INTERP
-  // hmm is there a gc issue here??
+
   ResultTypeFinder rtf(cp->symbol_at(signature_index));
-  m->set_result_index(rtf.type());
-#endif
+  m->constMethod()->set_result_type(rtf.type());
 
   if (args_size >= 0) {
     m->set_size_of_parameters(args_size);
