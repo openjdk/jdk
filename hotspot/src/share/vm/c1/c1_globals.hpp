@@ -176,7 +176,7 @@
   product(bool, InlineSynchronizedMethods, true,                            \
           "Inline synchronized methods")                                    \
                                                                             \
-  diagnostic(bool, InlineNIOCheckIndex, true,                               \
+  develop(bool, InlineNIOCheckIndex, true,                                  \
           "Intrinsify java.nio.Buffer.checkIndex")                          \
                                                                             \
   develop(bool, CanonicalizeNodes, true,                                    \

@@ -66,16 +66,6 @@
 #define DEFAULT_VENDOR_URL_BUG "http://bugreport.java.com/bugreport/crash.jsp"
 #define DEFAULT_JAVA_LAUNCHER  "generic"
 
-#define UNSUPPORTED_GC_OPTION(gc)                                     \
-do {                                                                  \
-  if (gc) {                                                           \
-    if (FLAG_IS_CMDLINE(gc)) {                                        \
-      warning(#gc " is not supported in this VM.  Using Serial GC."); \
-    }                                                                 \
-    FLAG_SET_DEFAULT(gc, false);                                      \
-  }                                                                   \
-} while(0)
-
 char*  Arguments::_jvm_flags_file               = NULL;
 char** Arguments::_jvm_flags_array              = NULL;
 int    Arguments::_num_jvm_flags                = 0;
@@ -385,6 +375,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "JNIDetachReleasesMonitors",     JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "UseAltSigs",                    JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "SegmentedHeapDumpThreshold",    JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "PrintOopAddress",               JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   { "dep > obs",                    JDK_Version::jdk(9), JDK_Version::jdk(8), JDK_Version::undefined() },
@@ -417,15 +408,35 @@ static AliasedFlag const aliased_jvm_flags[] = {
 };
 
 static AliasedLoggingFlag const aliased_logging_flags[] = {
-  { "TraceClassLoading",         LogLevel::Info,  true,  LogTag::_classload },
-  { "TraceClassPaths",           LogLevel::Info,  true,  LogTag::_classpath },
-  { "TraceClassResolution",      LogLevel::Info,  true,  LogTag::_classresolve },
-  { "TraceClassUnloading",       LogLevel::Info,  true,  LogTag::_classunload },
-  { "TraceExceptions",           LogLevel::Info,  true,  LogTag::_exceptions },
-  { "TraceMonitorInflation",     LogLevel::Debug, true,  LogTag::_monitorinflation },
-  { "TraceBiasedLocking",        LogLevel::Info,  true,  LogTag::_biasedlocking },
-  { NULL,                        LogLevel::Off,   false, LogTag::__NO_TAG }
+  { "TraceBiasedLocking",        LogLevel::Info,  true,  LOG_TAGS(biasedlocking) },
+  { "TraceClassLoading",         LogLevel::Info,  true,  LOG_TAGS(classload) },
+  { "TraceClassLoadingPreorder", LogLevel::Debug, true,  LOG_TAGS(classload, preorder) },
+  { "TraceClassPaths",           LogLevel::Info,  true,  LOG_TAGS(classpath) },
+  { "TraceClassResolution",      LogLevel::Debug, true,  LOG_TAGS(classresolve) },
+  { "TraceClassUnloading",       LogLevel::Info,  true,  LOG_TAGS(classunload) },
+  { "TraceExceptions",           LogLevel::Info,  true,  LOG_TAGS(exceptions) },
+  { "TraceLoaderConstraints",    LogLevel::Info,  true,  LOG_TAGS(classload, constraints) },
+  { "TraceMonitorInflation",     LogLevel::Debug, true,  LOG_TAGS(monitorinflation) },
+  { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LOG_TAGS(safepointcleanup) },
+  { NULL,                        LogLevel::Off,   false, LOG_TAGS(_NO_TAG) }
 };
+
+#ifndef PRODUCT
+// These options are removed in jdk9. Remove this code for jdk10.
+static AliasedFlag const removed_develop_logging_flags[] = {
+  { "TraceClassInitialization",   "-Xlog:classinit" },
+  { "TraceClassLoaderData",       "-Xlog:classloaderdata" },
+  { "TraceDefaultMethods",        "-Xlog:defaultmethods=debug" },
+  { "TraceItables",               "-Xlog:itables=debug" },
+  { "TraceMonitorMismatch",       "-Xlog:monitormismatch=info" },
+  { "TraceSafepoint",             "-Xlog:safepoint=debug" },
+  { "TraceStartupTime",           "-Xlog:startuptime" },
+  { "TraceVMOperation",           "-Xlog:vmoperation=debug" },
+  { "PrintVtables",               "-Xlog:vtables=debug" },
+  { "VerboseVerification",        "-Xlog:verification" },
+  { NULL, NULL }
+};
+#endif //PRODUCT
 
 // Return true if "v" is less than "other", where "other" may be "undefined".
 static bool version_less_than(JDK_Version v, JDK_Version other) {
@@ -477,6 +488,18 @@ int Arguments::is_deprecated_flag(const char *flag_name, JDK_Version* version) {
   }
   return 0;
 }
+
+#ifndef PRODUCT
+const char* Arguments::removed_develop_logging_flag_name(const char* name){
+  for (size_t i = 0; removed_develop_logging_flags[i].alias_name != NULL; i++) {
+    const AliasedFlag& flag = removed_develop_logging_flags[i];
+    if (strcmp(flag.alias_name, name) == 0) {
+      return flag.real_name;
+    }
+  }
+  return NULL;
+}
+#endif // PRODUCT
 
 const char* Arguments::real_flag_name(const char *flag_name) {
   for (size_t i = 0; aliased_jvm_flags[i].alias_name != NULL; i++) {
@@ -961,14 +984,39 @@ const char* Arguments::handle_aliases_and_deprecation(const char* arg, bool warn
   return NULL;
 }
 
-AliasedLoggingFlag Arguments::catch_logging_aliases(const char* name){
+void log_deprecated_flag(const char* name, bool on, AliasedLoggingFlag alf) {
+  LogTagType tagSet[] = {alf.tag0, alf.tag1, alf.tag2, alf.tag3, alf.tag4, alf.tag5};
+  // Set tagset string buffer at max size of 256, large enough for any alias tagset
+  const int max_tagset_size = 256;
+  int max_tagset_len = max_tagset_size - 1;
+  char tagset_buffer[max_tagset_size];
+  tagset_buffer[0] = '\0';
+
+  // Write tag-set for aliased logging option, in string list form
+  int max_tags = sizeof(tagSet)/sizeof(tagSet[0]);
+  for (int i = 0; i < max_tags && tagSet[i] != LogTag::__NO_TAG; i++) {
+    if (i > 0) {
+      strncat(tagset_buffer, ",", max_tagset_len - strlen(tagset_buffer));
+    }
+    strncat(tagset_buffer, LogTag::name(tagSet[i]), max_tagset_len - strlen(tagset_buffer));
+  }
+
+  log_warning(arguments)("-XX:%s%s is deprecated. Will use -Xlog:%s=%s instead.",
+                         (on) ? "+" : "-",
+                         name,
+                         tagset_buffer,
+                         (on) ? LogLevel::name(alf.level) : "off");
+}
+
+AliasedLoggingFlag Arguments::catch_logging_aliases(const char* name, bool on){
   for (size_t i = 0; aliased_logging_flags[i].alias_name != NULL; i++) {
     const AliasedLoggingFlag& alf = aliased_logging_flags[i];
     if (strcmp(alf.alias_name, name) == 0) {
+      log_deprecated_flag(name, on, alf);
       return alf;
     }
   }
-  AliasedLoggingFlag a = {NULL, LogLevel::Off, false, LogTag::__NO_TAG};
+  AliasedLoggingFlag a = {NULL, LogLevel::Off, false, LOG_TAGS(_NO_TAG)};
   return a;
 }
 
@@ -981,12 +1029,11 @@ bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
   char dummy;
   const char* real_name;
   bool warn_if_deprecated = true;
-  AliasedLoggingFlag alf;
 
   if (sscanf(arg, "-%" XSTR(BUFLEN) NAME_RANGE "%c", name, &dummy) == 1) {
-    alf = catch_logging_aliases(name);
+    AliasedLoggingFlag alf = catch_logging_aliases(name, false);
     if (alf.alias_name != NULL){
-      LogConfiguration::configure_stdout(LogLevel::Off, alf.exactMatch, alf.tag, LogTag::__NO_TAG);
+      LogConfiguration::configure_stdout(LogLevel::Off, alf.exactMatch, alf.tag0, alf.tag1, alf.tag2, alf.tag3, alf.tag4, alf.tag5);
       return true;
     }
     real_name = handle_aliases_and_deprecation(name, warn_if_deprecated);
@@ -996,9 +1043,9 @@ bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
     return set_bool_flag(real_name, false, origin);
   }
   if (sscanf(arg, "+%" XSTR(BUFLEN) NAME_RANGE "%c", name, &dummy) == 1) {
-    alf = catch_logging_aliases(name);
+    AliasedLoggingFlag alf = catch_logging_aliases(name, true);
     if (alf.alias_name != NULL){
-      LogConfiguration::configure_stdout(alf.level, alf.exactMatch, alf.tag, LogTag::__NO_TAG);
+      LogConfiguration::configure_stdout(alf.level, alf.exactMatch, alf.tag0, alf.tag1, alf.tag2, alf.tag3, alf.tag4, alf.tag5);
       return true;
     }
     real_name = handle_aliases_and_deprecation(name, warn_if_deprecated);
@@ -1202,13 +1249,23 @@ bool Arguments::process_argument(const char* arg,
     char stripped_argname[BUFLEN+1];
     strncpy(stripped_argname, argname, arg_len);
     stripped_argname[arg_len] = '\0';  // strncpy may not null terminate.
-
     if (is_obsolete_flag(stripped_argname, &since)) {
       char version[256];
       since.to_string(version, sizeof(version));
       warning("Ignoring option %s; support was removed in %s", stripped_argname, version);
       return true;
     }
+#ifndef PRODUCT
+    else {
+      const char* replacement;
+      if ((replacement = removed_develop_logging_flag_name(stripped_argname)) != NULL){
+        log_warning(arguments)("%s has been removed. Please use %s instead.",
+                               stripped_argname,
+                               replacement);
+        return false;
+      }
+    }
+#endif //PRODUCT
   }
 
   // For locked flags, report a custom error message if available.
@@ -1897,26 +1954,45 @@ void Arguments::set_conservative_max_heap_alignment() {
                                           CollectorPolicy::compute_heap_alignment());
 }
 
+bool Arguments::gc_selected() {
+#if INCLUDE_ALL_GCS
+  return UseSerialGC || UseParallelGC || UseParallelOldGC || UseConcMarkSweepGC || UseG1GC;
+#else
+  return UseSerialGC;
+#endif // INCLUDE_ALL_GCS
+}
+
 void Arguments::select_gc_ergonomically() {
+#if INCLUDE_ALL_GCS
   if (os::is_server_class_machine()) {
     if (should_auto_select_low_pause_collector()) {
-      FLAG_SET_ERGO(bool, UseConcMarkSweepGC, true);
+      FLAG_SET_ERGO_IF_DEFAULT(bool, UseConcMarkSweepGC, true);
     } else {
 #if defined(JAVASE_EMBEDDED)
-      FLAG_SET_ERGO(bool, UseParallelGC, true);
+      FLAG_SET_ERGO_IF_DEFAULT(bool, UseParallelGC, true);
 #else
-      FLAG_SET_ERGO(bool, UseG1GC, true);
+      FLAG_SET_ERGO_IF_DEFAULT(bool, UseG1GC, true);
 #endif
     }
   } else {
-    FLAG_SET_ERGO(bool, UseSerialGC, true);
+    FLAG_SET_ERGO_IF_DEFAULT(bool, UseSerialGC, true);
   }
+#else
+  UNSUPPORTED_OPTION(UseG1GC);
+  UNSUPPORTED_OPTION(UseParallelGC);
+  UNSUPPORTED_OPTION(UseParallelOldGC);
+  UNSUPPORTED_OPTION(UseConcMarkSweepGC);
+  UNSUPPORTED_OPTION(UseParNewGC);
+  FLAG_SET_ERGO_IF_DEFAULT(bool, UseSerialGC, true);
+#endif // INCLUDE_ALL_GCS
 }
 
 void Arguments::select_gc() {
   if (!gc_selected()) {
     select_gc_ergonomically();
-    guarantee(gc_selected(), "No GC selected");
+    if (!gc_selected()) {
+      vm_exit_during_initialization("Garbage collector not selected (default collector explicitly disabled)", NULL);
+    }
   }
 }
 
@@ -2041,16 +2117,6 @@ void Arguments::set_g1_gc_flags() {
   log_trace(gc)("ConcGCThreads: %u", ConcGCThreads);
 }
 
-#if !INCLUDE_ALL_GCS
-#ifdef ASSERT
-static bool verify_serial_gc_flags() {
-  return (UseSerialGC &&
-        !(UseParNewGC || (UseConcMarkSweepGC) || UseG1GC ||
-          UseParallelGC || UseParallelOldGC));
-}
-#endif // ASSERT
-#endif // INCLUDE_ALL_GCS
-
 void Arguments::set_gc_specific_flags() {
 #if INCLUDE_ALL_GCS
   // Set per-collector flags
@@ -2072,8 +2138,6 @@ void Arguments::set_gc_specific_flags() {
     // Keeping the heap 100% free is hard ;-) so limit it to 99%.
     FLAG_SET_ERGO(uintx, MinHeapFreeRatio, 99);
   }
-#else // INCLUDE_ALL_GCS
-  assert(verify_serial_gc_flags(), "SerialGC unset");
 #endif // INCLUDE_ALL_GCS
 }
 
@@ -3595,9 +3659,14 @@ jint Arguments::finalize_vm_init_args(ArgumentBootClassPath* bcp_p, bool bcp_ass
   }
 #endif
 
+#if !defined(COMPILER2) && !INCLUDE_JVMCI
+  UNSUPPORTED_OPTION(ProfileInterpreter);
+  NOT_PRODUCT(UNSUPPORTED_OPTION(TraceProfileInterpreter));
+#endif
+
 #ifndef TIERED
   // Tiered compilation is undefined.
-  UNSUPPORTED_OPTION(TieredCompilation, "TieredCompilation");
+  UNSUPPORTED_OPTION(TieredCompilation);
 #endif
 
   // If we are running in a headless jre, force java.awt.headless property
@@ -3922,17 +3991,6 @@ void Arguments::set_shared_spaces_flags() {
 #endif
   }
 }
-
-#if !INCLUDE_ALL_GCS
-static void force_serial_gc() {
-  FLAG_SET_DEFAULT(UseSerialGC, true);
-  UNSUPPORTED_GC_OPTION(UseG1GC);
-  UNSUPPORTED_GC_OPTION(UseParallelGC);
-  UNSUPPORTED_GC_OPTION(UseParallelOldGC);
-  UNSUPPORTED_GC_OPTION(UseConcMarkSweepGC);
-  UNSUPPORTED_GC_OPTION(UseParNewGC);
-}
-#endif // INCLUDE_ALL_GCS
 
 // Sharing support
 // Construct the path to the archive
@@ -4297,7 +4355,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   }
 
 #if defined(_ALLBSD_SOURCE) || defined(AIX)  // UseLargePages is not yet supported on BSD and AIX.
-  UNSUPPORTED_OPTION(UseLargePages, "-XX:+UseLargePages");
+  UNSUPPORTED_OPTION(UseLargePages);
 #endif
 
   ArgumentsExt::report_unsupported_options();
@@ -4328,9 +4386,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   // Set object alignment values.
   set_object_alignment();
 
-#if !INCLUDE_ALL_GCS
-  force_serial_gc();
-#endif // INCLUDE_ALL_GCS
 #if !INCLUDE_CDS
   if (DumpSharedSpaces || RequireSharedSpaces) {
     jio_fprintf(defaultStream::error_stream(),

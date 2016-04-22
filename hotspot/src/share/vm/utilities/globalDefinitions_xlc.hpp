@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,5 +183,9 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 #ifndef USE_LIBRARY_BASED_TLS_ONLY
 #define THREAD_LOCAL_DECL __thread
 #endif
+
+// Inlining support
+#define NOINLINE
+#define ALWAYSINLINE __attribute__((always_inline))
 
 #endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_XLC_HPP

@@ -214,7 +214,7 @@ var getJibProfiles = function (input) {
 var getJibProfilesCommon = function (input) {
     var common = {
         dependencies: ["boot_jdk", "gnumake", "jtreg"],
-        configure_args: ["--with-default-make-target=all"],
+        configure_args: ["--with-default-make-target=all", "--enable-jtreg-failure-handler"],
         configure_args_32bit: ["--with-target-bits=32", "--with-jvm-variants=client,server"],
         configure_args_debug: ["--enable-debug"],
         configure_args_slowdebug: ["--with-debug-level=slowdebug"],

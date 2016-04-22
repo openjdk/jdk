@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,7 @@ public class SimpleOCSPServer {
     private boolean logEnabled = false;
     private ExecutorService threadPool;
     private volatile boolean started = false;
+    private volatile boolean serverReady = false;
     private volatile boolean receivedShutdown = false;
     private long delayMsec = 0;
 
@@ -217,6 +218,9 @@ public class SimpleOCSPServer {
                             listenPort), 128);
                     log("Listening on " + servSocket.getLocalSocketAddress());
 
+                    // Singal ready
+                    serverReady = true;
+
                     // Update the listenPort with the new port number.  If
                     // the server is restarted, it will bind to the same
                     // port rather than picking a new one.
@@ -242,11 +246,12 @@ public class SimpleOCSPServer {
                     threadPool.shutdown();
                 } catch (IOException ioe) {
                     err(ioe);
+                } finally {
+                    // Reset state variables so the server can be restarted
+                    receivedShutdown = false;
+                    started = false;
+                    serverReady = false;
                 }
-
-                // Reset state variables so the server can be restarted
-                receivedShutdown = false;
-                started = false;
             }
         });
     }
@@ -468,13 +473,22 @@ public class SimpleOCSPServer {
      * server has not yet been bound to a port.
      */
     public int getPort() {
-        if (servSocket != null && started) {
+        if (serverReady) {
             InetSocketAddress inetSock =
                     (InetSocketAddress)servSocket.getLocalSocketAddress();
             return inetSock.getPort();
         } else {
             return -1;
         }
+    }
+
+    /**
+     * Use to check if OCSP server is ready to accept connection.
+     *
+     * @return true if server ready, false otherwise
+     */
+    public boolean isServerReady() {
+        return serverReady;
     }
 
     /**

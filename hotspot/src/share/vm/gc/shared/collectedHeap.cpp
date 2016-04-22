@@ -35,6 +35,7 @@
 #include "gc/shared/vmGCOperations.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/init.hpp"
@@ -213,7 +214,7 @@ void CollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
       do_full_collection(false);        // don't clear all soft refs
       break;
     }
-    case GCCause::_last_ditch_collection: {
+    case GCCause::_metadata_GC_clear_soft_refs: {
       HandleMark hm;
       do_full_collection(true);         // do clear all soft refs
       break;
@@ -580,7 +581,7 @@ void CollectedHeap::full_gc_dump(GCTimer* timer, bool before) {
     HeapDumper::dump_heap();
   }
 
-  LogHandle(gc, classhisto) log;
+  Log(gc, classhisto) log;
   if (log.is_trace()) {
     GCTraceTime(Trace, gc, classhisto) tm(before ? "Class Histogram (before full gc)" : "Class Histogram (after full gc)", timer);
     ResourceMark rm;

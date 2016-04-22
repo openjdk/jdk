@@ -49,9 +49,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import jdk.internal.misc.Unsafe;
-import sun.reflect.CallerSensitive;
-import sun.reflect.Reflection;
-import sun.reflect.ReflectionFactory;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
+import jdk.internal.reflect.ReflectionFactory;
 import sun.reflect.misc.ReflectUtil;
 
 import static java.io.ObjectStreamField.*;

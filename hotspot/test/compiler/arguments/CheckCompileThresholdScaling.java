@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,7 +344,7 @@ public class CheckCompileThresholdScaling {
         } catch (RuntimeException e) {
             // Check if tiered compilation is available in this JVM
             // Version. Throw exception only if it is available.
-            if (!(tiered && out.getOutput().contains("TieredCompilation is disabled in this release."))) {
+            if (!(tiered && out.getOutput().contains("-XX:+TieredCompilation not supported in this VM"))) {
                 throw new RuntimeException(e);
             }
         }

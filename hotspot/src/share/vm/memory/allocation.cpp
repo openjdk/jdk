@@ -242,7 +242,7 @@ class ChunkPool: public CHeapObj<mtInternal> {
    ChunkPool(size_t size) : _size(size) { _first = NULL; _num_chunks = _num_used = 0; }
 
   // Allocate a new chunk from the pool (might expand the pool)
-  _NOINLINE_ void* allocate(size_t bytes, AllocFailType alloc_failmode) {
+  NOINLINE void* allocate(size_t bytes, AllocFailType alloc_failmode) {
     assert(bytes == _size, "bad size");
     void* p = NULL;
     // No VM lock can be taken inside ThreadCritical lock, so os::malloc

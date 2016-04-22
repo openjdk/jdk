@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,6 +32,7 @@
 #include "code/oopRecorder.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/oopMap.hpp"
+#include "memory/resourceArea.hpp"
 #include "shark/llvmHeaders.hpp"
 #include "shark/sharkBuilder.hpp"
 #include "shark/sharkCodeBuffer.hpp"
