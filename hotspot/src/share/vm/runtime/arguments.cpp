@@ -698,7 +698,7 @@ char* ArgumentBootClassPath::combined_path() {
   assert(total_len > 0, "empty sysclasspath not allowed");
 
   // Copy the _items to a single string.
-  char* cp = NEW_C_HEAP_ARRAY(char, total_len, mtInternal);
+  char* cp = NEW_C_HEAP_ARRAY(char, total_len, mtArguments);
   char* cp_tmp = cp;
   for (i = 0; i < _bcp_nitems; ++i) {
     if (_items[i] != NULL) {
@@ -719,7 +719,7 @@ ArgumentBootClassPath::add_to_path(const char* path, const char* str, bool prepe
   assert(str != NULL, "just checking");
   if (path == NULL) {
     size_t len = strlen(str) + 1;
-    cp = NEW_C_HEAP_ARRAY(char, len, mtInternal);
+    cp = NEW_C_HEAP_ARRAY(char, len, mtArguments);
     memcpy(cp, str, len);                       // copy the trailing null
   } else {
     const char separator = *os::path_separator();
@@ -728,7 +728,7 @@ ArgumentBootClassPath::add_to_path(const char* path, const char* str, bool prepe
     size_t len = old_len + str_len + 2;
 
     if (prepend) {
-      cp = NEW_C_HEAP_ARRAY(char, len, mtInternal);
+      cp = NEW_C_HEAP_ARRAY(char, len, mtArguments);
       char* cp_tmp = cp;
       memcpy(cp_tmp, str, str_len);
       cp_tmp += str_len;
@@ -736,7 +736,7 @@ ArgumentBootClassPath::add_to_path(const char* path, const char* str, bool prepe
       memcpy(++cp_tmp, path, old_len + 1);      // copy the trailing null
       FREE_C_HEAP_ARRAY(char, path);
     } else {
-      cp = REALLOC_C_HEAP_ARRAY(char, path, len, mtInternal);
+      cp = REALLOC_C_HEAP_ARRAY(char, path, len, mtArguments);
       char* cp_tmp = cp + old_len;
       *cp_tmp = separator;
       memcpy(++cp_tmp, str, str_len + 1);       // copy the trailing null
@@ -758,7 +758,7 @@ char* ArgumentBootClassPath::add_jars_to_path(char* path, const char* directory)
 
   /* Scan the directory for jars/zips, appending them to path. */
   struct dirent *entry;
-  char *dbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(directory), mtInternal);
+  char *dbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(directory), mtArguments);
   while ((entry = os::readdir(dir, (dirent *) dbuf)) != NULL) {
     const char* name = entry->d_name;
     const char* ext = name + strlen(name) - 4;
@@ -766,7 +766,7 @@ char* ArgumentBootClassPath::add_jars_to_path(char* path, const char* directory)
       (os::file_name_strcmp(ext, ".jar") == 0 ||
        os::file_name_strcmp(ext, ".zip") == 0);
     if (isJarOrZip) {
-      char* jarpath = NEW_C_HEAP_ARRAY(char, directory_len + 2 + strlen(name), mtInternal);
+      char* jarpath = NEW_C_HEAP_ARRAY(char, directory_len + 2 + strlen(name), mtArguments);
       sprintf(jarpath, "%s%s%s", directory, dir_sep, name);
       path = add_to_path(path, jarpath, false);
       FREE_C_HEAP_ARRAY(char, jarpath);
@@ -943,7 +943,7 @@ static bool append_to_string_flag(const char* name, const char* new_value, Flag:
   } else if (new_len == 0) {
     value = old_value;
   } else {
-    char* buf = NEW_C_HEAP_ARRAY(char, old_len + 1 + new_len + 1, mtInternal);
+    char* buf = NEW_C_HEAP_ARRAY(char, old_len + 1 + new_len + 1, mtArguments);
     // each new setting adds another LINE to the switch:
     sprintf(buf, "%s\n%s", old_value, new_value);
     value = buf;
@@ -1134,9 +1134,9 @@ void Arguments::add_string(char*** bldarray, int* count, const char* arg) {
 
   // expand the array and add arg to the last element
   if (*bldarray == NULL) {
-    *bldarray = NEW_C_HEAP_ARRAY(char*, new_count, mtInternal);
+    *bldarray = NEW_C_HEAP_ARRAY(char*, new_count, mtArguments);
   } else {
-    *bldarray = REALLOC_C_HEAP_ARRAY(char*, *bldarray, new_count, mtInternal);
+    *bldarray = REALLOC_C_HEAP_ARRAY(char*, *bldarray, new_count, mtArguments);
   }
   (*bldarray)[*count] = os::strdup_check_oom(arg);
   *count = new_count;
@@ -1400,7 +1400,7 @@ bool Arguments::add_property(const char* prop) {
     // property have a value, thus extract it and save to the
     // allocated string
     size_t key_len = eq - prop;
-    char* tmp_key = AllocateHeap(key_len + 1, mtInternal);
+    char* tmp_key = AllocateHeap(key_len + 1, mtArguments);
 
     strncpy(tmp_key, prop, key_len);
     tmp_key[key_len] = '\0';
@@ -1422,7 +1422,7 @@ bool Arguments::add_property(const char* prop) {
   } else {
     if (strcmp(key, "sun.java.command") == 0) {
       char *old_java_command = _java_command;
-      _java_command = os::strdup_check_oom(value, mtInternal);
+      _java_command = os::strdup_check_oom(value, mtArguments);
       if (old_java_command != NULL) {
         os::free(old_java_command);
       }
@@ -1430,7 +1430,7 @@ bool Arguments::add_property(const char* prop) {
       const char* old_java_vendor_url_bug = _java_vendor_url_bug;
       // save it in _java_vendor_url_bug, so JVM fatal error handler can access
       // its value without going through the property list or making a Java call.
-      _java_vendor_url_bug = os::strdup_check_oom(value, mtInternal);
+      _java_vendor_url_bug = os::strdup_check_oom(value, mtArguments);
       if (old_java_vendor_url_bug != DEFAULT_VENDOR_URL_BUG) {
         assert(old_java_vendor_url_bug != NULL, "_java_vendor_url_bug is NULL");
         os::free((void *)old_java_vendor_url_bug);
@@ -1458,7 +1458,7 @@ bool Arguments::append_to_addmods_property(const char* module_name) {
   if (old_value != NULL) {
     buf_len += strlen(old_value) + 1;
   }
-  char* new_value = AllocateHeap(buf_len, mtInternal);
+  char* new_value = AllocateHeap(buf_len, mtArguments);
   if (new_value == NULL) {
     return false;
   }
@@ -2095,8 +2095,8 @@ void Arguments::set_g1_gc_flags() {
   }
 
 #if INCLUDE_ALL_GCS
-  if (G1ConcRefinementThreads == 0) {
-    FLAG_SET_DEFAULT(G1ConcRefinementThreads, ParallelGCThreads);
+  if (FLAG_IS_DEFAULT(G1ConcRefinementThreads)) {
+    FLAG_SET_ERGO(uint, G1ConcRefinementThreads, ParallelGCThreads);
   }
 #endif
 
@@ -2852,13 +2852,13 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       if (tail != NULL) {
         const char* pos = strchr(tail, ':');
         size_t len = (pos == NULL) ? strlen(tail) : pos - tail;
-        char* name = (char*)memcpy(NEW_C_HEAP_ARRAY(char, len + 1, mtInternal), tail, len);
+        char* name = (char*)memcpy(NEW_C_HEAP_ARRAY(char, len + 1, mtArguments), tail, len);
         name[len] = '\0';
 
         char *options = NULL;
         if(pos != NULL) {
           size_t len2 = strlen(pos+1) + 1; // options start after ':'.  Final zero must be copied.
-          options = (char*)memcpy(NEW_C_HEAP_ARRAY(char, len2, mtInternal), pos+1, len2);
+          options = (char*)memcpy(NEW_C_HEAP_ARRAY(char, len2, mtArguments), pos+1, len2);
         }
 #if !INCLUDE_JVMTI
         if (strcmp(name, "jdwp") == 0) {
@@ -2875,12 +2875,12 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       if(tail != NULL) {
         const char* pos = strchr(tail, '=');
         size_t len = (pos == NULL) ? strlen(tail) : pos - tail;
-        char* name = strncpy(NEW_C_HEAP_ARRAY(char, len + 1, mtInternal), tail, len);
+        char* name = strncpy(NEW_C_HEAP_ARRAY(char, len + 1, mtArguments), tail, len);
         name[len] = '\0';
 
         char *options = NULL;
         if(pos != NULL) {
-          options = os::strdup_check_oom(pos + 1, mtInternal);
+          options = os::strdup_check_oom(pos + 1, mtArguments);
         }
 #if !INCLUDE_JVMTI
         if (valid_jdwp_agent(name, is_absolute_path)) {
@@ -2899,7 +2899,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       return JNI_ERR;
 #else
       if (tail != NULL) {
-        char *options = strcpy(NEW_C_HEAP_ARRAY(char, strlen(tail) + 1, mtInternal), tail);
+        char *options = strcpy(NEW_C_HEAP_ARRAY(char, strlen(tail) + 1, mtArguments), tail);
         add_init_agent("instrument", options, false);
         // java agents need module java.instrument. Also -addmods ALL-SYSTEM because
         // the java agent is in the unmamed module of the application class loader
@@ -3201,7 +3201,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
             size_t len = strlen(patch_dirs[x]);
             if (len != 0) { // Ignore empty strings.
               len += 11; // file_sep + "java.base" + null terminator.
-              char* dir = NEW_C_HEAP_ARRAY(char, len, mtInternal);
+              char* dir = NEW_C_HEAP_ARRAY(char, len, mtArguments);
               jio_snprintf(dir, len, "%s%cjava.base", patch_dirs[x], file_sep);
 
               // See if Xpatch module path exists.
@@ -3507,7 +3507,7 @@ void Arguments::fix_appclasspath() {
       src ++;
     }
 
-    char* copy = os::strdup_check_oom(src, mtInternal);
+    char* copy = os::strdup_check_oom(src, mtArguments);
 
     // trim all trailing empty paths
     for (char* tail = copy + strlen(copy) - 1; tail >= copy && *tail == separator; tail--) {
@@ -3531,7 +3531,7 @@ static bool has_jar_files(const char* directory) {
   if (dir == NULL) return false;
 
   struct dirent *entry;
-  char *dbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(directory), mtInternal);
+  char *dbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(directory), mtArguments);
   bool hasJarFile = false;
   while (!hasJarFile && (entry = os::readdir(dir, (dirent *) dbuf)) != NULL) {
     const char* name = entry->d_name;
@@ -3557,7 +3557,7 @@ static int check_non_empty_dirs(const char* path) {
       }
       path = end;
     } else {
-      char* dirpath = NEW_C_HEAP_ARRAY(char, tmp_end - path + 1, mtInternal);
+      char* dirpath = NEW_C_HEAP_ARRAY(char, tmp_end - path + 1, mtArguments);
       memcpy(dirpath, path, tmp_end - path);
       dirpath[tmp_end - path] = '\0';
       if (has_jar_files(dirpath)) {
@@ -3729,7 +3729,7 @@ class ScopedVMInitArgs : public StackObj {
   jint set_args(GrowableArray<JavaVMOption>* options) {
     _is_set = true;
     JavaVMOption* options_arr = NEW_C_HEAP_ARRAY_RETURN_NULL(
-        JavaVMOption, options->length(), mtInternal);
+        JavaVMOption, options->length(), mtArguments);
     if (options_arr == NULL) {
       return JNI_ENOMEM;
     }
@@ -3784,7 +3784,7 @@ class ScopedVMInitArgs : public StackObj {
     assert(vm_options_file_pos != -1, "vm_options_file_pos should be set");
 
     int length = args->nOptions + args_to_insert->nOptions - 1;
-    GrowableArray<JavaVMOption> *options = new (ResourceObj::C_HEAP, mtInternal)
+    GrowableArray<JavaVMOption> *options = new (ResourceObj::C_HEAP, mtArguments)
               GrowableArray<JavaVMOption>(length, true);    // Construct new option array
     for (int i = 0; i < args->nOptions; i++) {
       if (i == vm_options_file_pos) {
@@ -3861,7 +3861,7 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
   // '+ 1' for NULL termination even with max bytes
   size_t bytes_alloc = stbuf.st_size + 1;
 
-  char *buf = NEW_C_HEAP_ARRAY_RETURN_NULL(char, bytes_alloc, mtInternal);
+  char *buf = NEW_C_HEAP_ARRAY_RETURN_NULL(char, bytes_alloc, mtArguments);
   if (NULL == buf) {
     jio_fprintf(defaultStream::error_stream(),
                 "Could not allocate read buffer for options file parse\n");
@@ -3898,7 +3898,7 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
 }
 
 jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_t buf_len, ScopedVMInitArgs* vm_args) {
-  GrowableArray<JavaVMOption> *options = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<JavaVMOption>(2, true);    // Construct option array
+  GrowableArray<JavaVMOption> *options = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<JavaVMOption>(2, true);    // Construct option array
 
   // some pointers to help with parsing
   char *buffer_end = buffer + buf_len;
@@ -4002,13 +4002,13 @@ static char* get_shared_archive_path() {
     size_t jvm_path_len = strlen(jvm_path);
     size_t file_sep_len = strlen(os::file_separator());
     const size_t len = jvm_path_len + file_sep_len + 20;
-    shared_archive_path = NEW_C_HEAP_ARRAY(char, len, mtInternal);
+    shared_archive_path = NEW_C_HEAP_ARRAY(char, len, mtArguments);
     if (shared_archive_path != NULL) {
       jio_snprintf(shared_archive_path, len, "%s%sclasses.jsa",
         jvm_path, os::file_separator());
     }
   } else {
-    shared_archive_path = os::strdup_check_oom(SharedArchiveFile, mtInternal);
+    shared_archive_path = os::strdup_check_oom(SharedArchiveFile, mtArguments);
   }
   return shared_archive_path;
 }
