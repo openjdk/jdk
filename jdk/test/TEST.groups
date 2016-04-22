@@ -32,7 +32,6 @@ tier1 = \
     -java/util/WeakHashMap/GCDuringIteration.java \
     -java/util/concurrent/ThreadPoolExecutor/ConfigChanges.java \
     -java/util/concurrent/forkjoin/FJExceptionTableLeak.java \
-    -java/util/TimeZone/Bug6772689.java \
     sun/nio/cs/ISO8859x.java \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
@@ -43,7 +42,6 @@ tier2 = \
     java/util/WeakHashMap/GCDuringIteration.java \
     java/util/concurrent/ThreadPoolExecutor/ConfigChanges.java \
     java/util/concurrent/forkjoin/FJExceptionTableLeak.java \
-    java/util/TimeZone/Bug6772689.java \
     :jdk_io \
     :jdk_nio \
     -sun/nio/cs/ISO8859x.java \
