@@ -181,8 +181,8 @@ int os::log_vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
     return vsnprintf(buf, len, fmt, args);
 }
 
-int os::fileno(FILE* fp) {
-  return ::fileno(fp);
+int os::get_fileno(FILE* fp) {
+  return NOT_AIX(::)fileno(fp);
 }
 
 void os::Posix::print_load_average(outputStream* st) {
