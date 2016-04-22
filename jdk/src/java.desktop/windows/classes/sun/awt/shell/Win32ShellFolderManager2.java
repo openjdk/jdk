@@ -41,7 +41,6 @@ import java.util.stream.Stream;
 import static sun.awt.shell.Win32ShellFolder2.*;
 import sun.awt.OSInfo;
 import sun.awt.util.ThreadGroupUtils;
-import sun.misc.ManagedLocalsThread;
 // NOTE: This class supersedes Win32ShellFolderManager, which was removed
 //       from distribution after version 1.4.2.
 
@@ -524,8 +523,9 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                 return null;
             });
             AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                Thread t = new ManagedLocalsThread(
-                        ThreadGroupUtils.getRootThreadGroup(), shutdownHook);
+                Thread t = new Thread(
+                        ThreadGroupUtils.getRootThreadGroup(), shutdownHook,
+                        "ShellFolder", 0, false);
                 Runtime.getRuntime().addShutdownHook(t);
                 return null;
             });
@@ -548,8 +548,9 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                   * which will not get GCed before VM exit.
                   * Make its parent the top-level thread group.
                   */
-                Thread thread = new ManagedLocalsThread(
-                        ThreadGroupUtils.getRootThreadGroup(), comRun, name);
+                Thread thread = new Thread(
+                        ThreadGroupUtils.getRootThreadGroup(), comRun, name,
+                        0, false);
                 thread.setDaemon(true);
                 return thread;
             });

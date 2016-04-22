@@ -14242,6 +14242,48 @@ instruct cmpP_narrowOop_imm0_branch(cmpOp cmp, iRegN oop, immP0 zero, label labl
   ins_pipe(pipe_cmp_branch);
 %}
 
+instruct cmpUI_imm0_branch(cmpOpU cmp, iRegIorL2I op1, immI0 op2, label labl, rFlagsRegU cr) %{
+  match(If cmp (CmpU op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::ne
+            || n->in(1)->as_Bool()->_test._test == BoolTest::eq
+            || n->in(1)->as_Bool()->_test._test == BoolTest::gt
+            ||  n->in(1)->as_Bool()->_test._test == BoolTest::le);
+  effect(USE labl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "cbw$cmp   $op1, $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
+    if (cond == Assembler::EQ || cond == Assembler::LS)
+      __ cbzw($op1$$Register, *L);
+    else
+      __ cbnzw($op1$$Register, *L);
+  %}
+  ins_pipe(pipe_cmp_branch);
+%}
+
+instruct cmpUL_imm0_branch(cmpOpU cmp, iRegL op1, immL0 op2, label labl, rFlagsRegU cr) %{
+  match(If cmp (CmpU op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::ne
+            || n->in(1)->as_Bool()->_test._test == BoolTest::eq
+            || n->in(1)->as_Bool()->_test._test == BoolTest::gt
+            || n->in(1)->as_Bool()->_test._test == BoolTest::le);
+  effect(USE labl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "cb$cmp   $op1, $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
+    if (cond == Assembler::EQ || cond == Assembler::LS)
+      __ cbz($op1$$Register, *L);
+    else
+      __ cbnz($op1$$Register, *L);
+  %}
+  ins_pipe(pipe_cmp_branch);
+%}
+
 // Test bit and Branch
 
 // Patterns for short (< 32KiB) variants

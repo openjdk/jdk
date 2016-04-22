@@ -36,8 +36,8 @@ import java.security.PrivilegedAction;
 import java.util.Objects;
 
 import jdk.internal.loader.BootLoader;
-import sun.reflect.CallerSensitive;
-import sun.reflect.Reflection;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 
 
 /**
@@ -333,7 +333,7 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
      * @see ClassLoader#getDefinedPackage
      */
     @CallerSensitive
-    @Deprecated
+    @Deprecated(since="9")
     @SuppressWarnings("deprecation")
     public static Package getPackage(String name) {
         ClassLoader l = ClassLoader.getClassLoader(Reflection.getCallerClass());

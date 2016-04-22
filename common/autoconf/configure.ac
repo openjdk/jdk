@@ -227,6 +227,7 @@ LIB_SETUP_LIBRARIES
 
 HOTSPOT_SETUP_BUILD_TWEAKS
 JDKOPT_DETECT_INTREE_EC
+JDKOPT_ENABLE_DISABLE_FAILURE_HANDLER
 
 ###############################################################################
 #

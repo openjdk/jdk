@@ -76,9 +76,9 @@ void FilteredFieldsMap::initialize() {
   int offset;
   offset = java_lang_Throwable::get_backtrace_offset();
   _filtered_fields->append(new FilteredField(SystemDictionary::Throwable_klass(), offset));
-  offset = sun_reflect_ConstantPool::oop_offset();
+  offset = reflect_ConstantPool::oop_offset();
   _filtered_fields->append(new FilteredField(SystemDictionary::reflect_ConstantPool_klass(), offset));
-  offset = sun_reflect_UnsafeStaticFieldAccessorImpl::base_offset();
+  offset = reflect_UnsafeStaticFieldAccessorImpl::base_offset();
   _filtered_fields->append(new FilteredField(SystemDictionary::reflect_UnsafeStaticFieldAccessorImpl_klass(), offset));
 }
 

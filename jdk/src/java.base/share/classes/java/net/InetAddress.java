@@ -894,19 +894,17 @@ class InetAddress implements java.io.Serializable {
      */
     private static final class PlatformNameService implements NameService {
 
-                public InetAddress[] lookupAllHostAddr(String host)
-                    throws UnknownHostException {
-
-                    return impl.lookupAllHostAddr(host);
-
-                            }
-
-        public String getHostByAddr(byte[] addr) throws UnknownHostException {
-
-            return impl.getHostByAddr(addr);
-
+        public InetAddress[] lookupAllHostAddr(String host)
+            throws UnknownHostException
+        {
+            return impl.lookupAllHostAddr(host);
         }
 
+        public String getHostByAddr(byte[] addr)
+            throws UnknownHostException
+        {
+            return impl.getHostByAddr(addr);
+        }
     }
 
     /**
@@ -991,7 +989,6 @@ class InetAddress implements java.io.Serializable {
             return host;
         }
 
-
         /**
          * <p>Lookup a host mapping by name. Retrieve the IP addresses
          * associated with a host.
@@ -1004,7 +1001,6 @@ class InetAddress implements java.io.Serializable {
          * @throws UnknownHostException
          *             if no IP address for the {@code host} could be found
          */
-
         public InetAddress[] lookupAllHostAddr(String host)
                 throws UnknownHostException {
             String hostEntry;
@@ -1127,8 +1123,8 @@ class InetAddress implements java.io.Serializable {
      */
     private static NameService createNameService() {
 
-        String hostsFileName = AccessController
-                .doPrivileged(new GetPropertyAction("jdk.net.hosts.file"));
+        String hostsFileName =
+                GetPropertyAction.getProperty("jdk.net.hosts.file");
         NameService theNameService;
         if (hostsFileName != null) {
             theNameService = new HostsFileNameService(hostsFileName);
@@ -1647,8 +1643,7 @@ class InetAddress implements java.io.Serializable {
          * property can vary across implementations of the java.
          * classes.  The default is an empty String "".
          */
-        String prefix = AccessController.doPrivileged(
-                      new GetPropertyAction("impl.prefix", ""));
+        String prefix = GetPropertyAction.getProperty("impl.prefix", "");
         try {
             impl = Class.forName("java.net." + prefix + implName).newInstance();
         } catch (ClassNotFoundException e) {

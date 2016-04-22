@@ -215,7 +215,6 @@ public final class ButtonDemo extends JPanel {
 
         javax.swing.SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame(DEMO_TITLE);
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.add(buttonDemo);
             frame.pack();
             frame.setVisible(true);

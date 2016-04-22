@@ -35,6 +35,11 @@ public enum GCCause {
   _gc_locker ("GCLocker Initiated GC"),
   _heap_inspection ("Heap Inspection Initiated GC"),
   _heap_dump ("Heap Dump Initiated GC"),
+  _wb_young_gc ("WhiteBox Initiated Young GC"),
+  _wb_conc_mark ("WhiteBox Initiated Concurrent Mark"),
+  _wb_full_gc ("WhiteBox Initiated Full GC"),
+  _update_allocation_context_stats_inc ("Update Allocation Context Stats"),
+  _update_allocation_context_stats_full ("Update Allocation Context Stats"),
 
   _no_gc ("No GC"),
   _no_cause_specified ("Unknown GCCause"),
@@ -42,6 +47,7 @@ public enum GCCause {
 
   _tenured_generation_full ("Tenured Generation Full"),
   _metadata_GC_threshold ("Metadata GC Threshold"),
+  _metadata_GC_clear_soft_refs ("Metadata GC Clear Soft References"),
 
   _cms_generation_full ("CMS Generation Full"),
   _cms_initial_mark ("CMS Initial Mark"),
@@ -55,7 +61,8 @@ public enum GCCause {
   _g1_inc_collection_pause ("G1 Evacuation Pause"),
   _g1_humongous_allocation ("G1 Humongous Allocation"),
 
-  _last_ditch_collection ("Last ditch collection"),
+  _dcmd_gc_run ("Diagnostic Command"),
+
   _last_gc_cause ("ILLEGAL VALUE - last gc cause - ILLEGAL VALUE");
 
   private final String value;

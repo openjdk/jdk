@@ -24,13 +24,12 @@
  */
 package java.lang;
 
+import jdk.internal.reflect.MethodAccessor;
 import java.lang.StackWalker.Option;
 import java.lang.StackWalker.StackFrame;
 
 import java.lang.annotation.Native;
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -40,6 +39,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import sun.security.action.GetPropertyAction;
 
 import static java.lang.StackStreamFactory.WalkerState.*;
 
@@ -978,25 +978,20 @@ final class StackStreamFactory {
     }
 
     private static boolean isReflectionFrame(Class<?> c) {
-        if (c.getName().startsWith("sun.reflect") &&
-                !sun.reflect.MethodAccessor.class.isAssignableFrom(c)) {
-            throw new InternalError("Not sun.reflect.MethodAccessor: " + c.toString());
+        if (c.getName().startsWith("jdk.internal.reflect") &&
+                !MethodAccessor.class.isAssignableFrom(c)) {
+            throw new InternalError("Not jdk.internal.reflect.MethodAccessor: " + c.toString());
         }
         // ## should filter all @Hidden frames?
         return c == Method.class ||
-                sun.reflect.MethodAccessor.class.isAssignableFrom(c) ||
+                MethodAccessor.class.isAssignableFrom(c) ||
                 c.getName().startsWith("java.lang.invoke.LambdaForm");
     }
 
     private static boolean getProperty(String key, boolean value) {
-        String s = AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override
-            public String run() {
-                return System.getProperty(key);
-            }
-        });
+        String s = GetPropertyAction.getProperty(key);
         if (s != null) {
-            return Boolean.valueOf(s);
+            return Boolean.parseBoolean(s);
         }
         return value;
     }

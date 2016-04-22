@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,14 +89,6 @@ class CardTableModRefBS: public ModRefBarrierSet {
   MemRegion _guard_region;
 
  protected:
-  // Initialization utilities; covered_words is the size of the covered region
-  // in, um, words.
-  inline size_t cards_required(size_t covered_words) {
-    // Add one for a guard card, used to detect errors.
-    const size_t words = align_size_up(covered_words, card_size_in_words);
-    return words / card_size_in_words + 1;
-  }
-
   inline size_t compute_byte_map_size();
 
   // Finds and return the index of the region, if any, to which the given
@@ -171,6 +163,14 @@ public:
   // *** Barrier set functions.
 
   bool has_write_ref_pre_barrier() { return false; }
+
+  // Initialization utilities; covered_words is the size of the covered region
+  // in, um, words.
+  inline size_t cards_required(size_t covered_words) {
+    // Add one for a guard card, used to detect errors.
+    const size_t words = align_size_up(covered_words, card_size_in_words);
+    return words / card_size_in_words + 1;
+  }
 
 protected:
 

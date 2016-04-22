@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/klass.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -992,19 +993,6 @@ JNI_END
 address SharedRuntime::native_method_throw_unsatisfied_link_error_entry() {
   return CAST_FROM_FN_PTR(address, &throw_unsatisfied_link_error);
 }
-
-
-#ifndef PRODUCT
-JRT_ENTRY(intptr_t, SharedRuntime::trace_bytecode(JavaThread* thread, intptr_t preserve_this_value, intptr_t tos, intptr_t tos2))
-  const frame f = thread->last_frame();
-  assert(f.is_interpreted_frame(), "must be an interpreted frame");
-#ifndef PRODUCT
-  methodHandle mh(THREAD, f.interpreter_frame_method());
-  BytecodeTracer::trace(mh, f.interpreter_frame_bcp(), tos, tos2);
-#endif // !PRODUCT
-  return preserve_this_value;
-JRT_END
-#endif // !PRODUCT
 
 JRT_ENTRY_NO_ASYNC(void, SharedRuntime::register_finalizer(JavaThread* thread, oopDesc* obj))
   assert(obj->is_oop(), "must be a valid oop");
@@ -1981,8 +1969,8 @@ JRT_END
 // Handles the uncommon case in locking, i.e., contention or an inflated lock.
 JRT_BLOCK_ENTRY(void, SharedRuntime::complete_monitor_locking_C(oopDesc* _obj, BasicLock* lock, JavaThread* thread))
   // Disable ObjectSynchronizer::quick_enter() in default config
-  // until JDK-8077392 is resolved.
-  if ((SyncFlags & 256) != 0 && !SafepointSynchronize::is_synchronizing()) {
+  // on AARCH64 until JDK-8153107 is resolved.
+  if (AARCH64_ONLY((SyncFlags & 256) != 0 &&) !SafepointSynchronize::is_synchronizing()) {
     // Only try quick_enter() if we're not trying to reach a safepoint
     // so that the calling thread reaches the safepoint more quickly.
     if (ObjectSynchronizer::quick_enter(_obj, thread, lock)) return;
@@ -2966,7 +2954,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *thread) )
   Method* moop = fr.interpreter_frame_method();
   int max_locals = moop->max_locals();
   // Allocate temp buffer, 1 word per local & 2 per active monitor
-  int buf_size_words = max_locals + active_monitor_count*2;
+  int buf_size_words = max_locals + active_monitor_count * BasicObjectLock::size();
   intptr_t *buf = NEW_C_HEAP_ARRAY(intptr_t,buf_size_words, mtCode);
 
   // Copy the locals.  Order is preserved so that loading of longs works.

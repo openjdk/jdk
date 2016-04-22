@@ -36,11 +36,9 @@ The library requires jtreg 4b13+ and JDK 7+.
 
 BUILDING
 
-To build a library, one should simply run make with 'JTREG_HOME' and
-'JAVA_HOME' environment variables set. 'JAVA_HOME' should contain path to JDK,
-'JTREG_HOME' -- path to jtreg.
-
-'image/lib/jtregFailureHandler.jar' is created on successful build.
+The library is built using the top level build-test-failure-handler target and
+is automatically included in the test image and picked up by hotspot and jdk
+test makefiles.
 
 CONFIGURATION
 

@@ -26,7 +26,6 @@
 package sun.nio.fs;
 
 import java.nio.file.spi.FileSystemProvider;
-import java.security.AccessController;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -55,8 +54,7 @@ public class DefaultFileSystemProvider {
      * Returns the default FileSystemProvider.
      */
     public static FileSystemProvider create() {
-        String osname = AccessController
-            .doPrivileged(new GetPropertyAction("os.name"));
+        String osname = GetPropertyAction.getProperty("os.name");
         if (osname.equals("SunOS"))
             return createProvider("sun.nio.fs.SolarisFileSystemProvider");
         if (osname.equals("Linux"))

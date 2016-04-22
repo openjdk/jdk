@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,8 @@ private:
   static uint   _nthreads_stopped;
   static bool   _suspend_all;
   static double _suspend_all_start;
+
+  static bool is_synchronized();
 
   // Add the current thread to the set. May block if a suspension is in progress.
   static void join();
