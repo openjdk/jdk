@@ -30,6 +30,7 @@
  * @bug 8150957
  * @bug 8152667
  * @bug 8153637
+ * @bug 8154751
  * @run testng/othervm -ea -esa test.java.lang.invoke.LoopCombinatorTest
  */
 
@@ -345,6 +346,23 @@ public class LoopCombinatorTest {
         MethodHandle loop = MethodHandles.countedLoop(iter, init, body);
         assertEquals(Counted.MT_counterInit, loop.type());
         assertEquals(10, loop.invoke());
+    }
+
+    @Test
+    public static void testCountedLoopEmpty() throws Throwable {
+        // for (int i = 0; i < 5; ++i) { /* empty */ }
+        MethodHandle loop = MethodHandles.countedLoop(MethodHandles.constant(int.class, 5), null, null);
+        assertEquals(methodType(void.class), loop.type());
+        loop.invoke();
+    }
+
+    @Test
+    public static void testCountedRangeLoopEmpty() throws Throwable {
+        // for (int i = -5; i < 5; ++i) { /* empty */ }
+        MethodHandle loop = MethodHandles.countedLoop(MethodHandles.constant(int.class, -5),
+                MethodHandles.constant(int.class, 5), null, null);
+        assertEquals(methodType(void.class), loop.type());
+        loop.invoke();
     }
 
     @Test
