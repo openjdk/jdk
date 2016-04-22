@@ -104,16 +104,19 @@ class ClassPathZipEntry: public ClassPathEntry {
  private:
   jzfile* _zip;              // The zip archive
   const char*   _zip_name;   // Name of zip archive
+  bool _is_boot_append;      // entry coming from -Xbootclasspath/a
  public:
   bool is_jrt()            { return false; }
   bool is_jar_file() const { return true;  }
   const char* name() const { return _zip_name; }
   JImageFile* jimage() const { return NULL; }
-  ClassPathZipEntry(jzfile* zip, const char* zip_name);
+  ClassPathZipEntry(jzfile* zip, const char* zip_name, bool is_boot_append);
   ~ClassPathZipEntry();
   u1* open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS);
+  u1* open_versioned_entry(const char* name, jint* filesize, TRAPS) NOT_CDS_RETURN_(NULL);
   ClassFileStream* open_stream(const char* name, TRAPS);
   void contents_do(void f(const char* name, void* context), void* context);
+  bool is_multiple_versioned(TRAPS) NOT_CDS_RETURN_(false);
   // Debugging
   NOT_PRODUCT(void compile_the_world(Handle loader, TRAPS);)
 };
@@ -223,7 +226,8 @@ class ClassLoader: AllStatic {
   static void load_zip_library();
   static void load_jimage_library();
   static ClassPathEntry* create_class_path_entry(const char *path, const struct stat* st,
-                                                 bool throw_exception, TRAPS);
+                                                 bool throw_exception,
+                                                 bool is_boot_append, TRAPS);
 
  public:
 
@@ -249,6 +253,7 @@ class ClassLoader: AllStatic {
                                            bool check_for_duplicates,
                                            bool mark_append_entry,
                                            bool prepend_entry,
+                                           bool is_boot_append,
                                            bool throw_exception=true);
   static void print_bootclasspath();
 
@@ -394,7 +399,7 @@ class ClassLoader: AllStatic {
   static void prepend_to_list(ClassPathEntry* new_entry);
 
   // creates a class path zip entry (returns NULL if JAR file cannot be opened)
-  static ClassPathZipEntry* create_class_path_zip_entry(const char *apath);
+  static ClassPathZipEntry* create_class_path_zip_entry(const char *apath, bool is_boot_append);
 
   // add a path to class path list
   static void add_to_list(const char* apath);

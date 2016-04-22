@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,8 @@
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/vmGCOperations.hpp"
-#include "memory/oopFactory.hpp"
 #include "logging/log.hpp"
-#include "oops/instanceKlass.hpp"
-#include "oops/instanceRefKlass.hpp"
+#include "memory/oopFactory.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -64,14 +62,11 @@ void VM_GC_Operation::notify_gc_end() {
 }
 
 void VM_GC_Operation::acquire_pending_list_lock() {
-  // we may enter this with pending exception set
-  InstanceRefKlass::acquire_pending_list_lock(&_pending_list_basic_lock);
+  _pending_list_locker.lock();
 }
 
-
 void VM_GC_Operation::release_and_notify_pending_list_lock() {
-
-  InstanceRefKlass::release_and_notify_pending_list_lock(&_pending_list_basic_lock);
+  _pending_list_locker.unlock();
 }
 
 // Allocations may fail in several threads at about the same time,
@@ -160,7 +155,7 @@ void VM_GC_HeapInspection::doit() {
       // be about to attempt holds value for us only
       // if it happens now and not if it happens in the eventual
       // future.
-      warning("GC locker is held; pre-dump GC was skipped");
+      log_warning(gc)("GC locker is held; pre-dump GC was skipped");
     }
   }
   HeapInspection inspect(_csv_format, _print_help, _print_class_stats,
@@ -276,12 +271,8 @@ void VM_CollectForMetadataAllocation::doit() {
     return;
   }
 
-  // If expansion failed, do a last-ditch collection and try allocating
-  // again.  A last-ditch collection will clear softrefs.  This
-  // behavior is similar to the last-ditch collection done for perm
-  // gen when it was full and a collection for failed allocation
-  // did not free perm gen space.
-  heap->collect_as_vm_thread(GCCause::_last_ditch_collection);
+  // If expansion failed, do a collection clearing soft references.
+  heap->collect_as_vm_thread(GCCause::_metadata_GC_clear_soft_refs);
   _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
   if (_result != NULL) {
     return;

@@ -34,6 +34,7 @@
 #include "jvmci/jvmciEnv.hpp"
 #include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "prims/jvm.h"

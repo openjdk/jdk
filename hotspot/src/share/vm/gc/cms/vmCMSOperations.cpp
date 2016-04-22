@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,27 +38,17 @@
 // Methods in abstract class VM_CMS_Operation
 //////////////////////////////////////////////////////////
 void VM_CMS_Operation::acquire_pending_list_lock() {
-  // The caller may block while communicating
-  // with the SLT thread in order to acquire/release the PLL.
-  SurrogateLockerThread* slt = ConcurrentMarkSweepThread::slt();
-  if (slt != NULL) {
-    slt->manipulatePLL(SurrogateLockerThread::acquirePLL);
-  } else {
-    SurrogateLockerThread::report_missing_slt();
-  }
+  _pending_list_locker.lock();
 }
 
 void VM_CMS_Operation::release_and_notify_pending_list_lock() {
-  // The caller may block while communicating
-  // with the SLT thread in order to acquire/release the PLL.
-  ConcurrentMarkSweepThread::slt()->
-    manipulatePLL(SurrogateLockerThread::releaseAndNotifyPLL);
+  _pending_list_locker.unlock();
 }
 
 void VM_CMS_Operation::verify_before_gc() {
   if (VerifyBeforeGC &&
       GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-    GCTraceTime(Info, gc, verify) tm("Verify Before", _collector->_gc_timer_cm);
+    GCTraceTime(Info, gc, phases, verify) tm("Verify Before", _collector->_gc_timer_cm);
     HandleMark hm;
     FreelistLocker x(_collector);
     MutexLockerEx  y(_collector->bitMapLock(), Mutex::_no_safepoint_check_flag);
@@ -70,7 +60,7 @@ void VM_CMS_Operation::verify_before_gc() {
 void VM_CMS_Operation::verify_after_gc() {
   if (VerifyAfterGC &&
       GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-    GCTraceTime(Info, gc, verify) tm("Verify After", _collector->_gc_timer_cm);
+    GCTraceTime(Info, gc, phases, verify) tm("Verify After", _collector->_gc_timer_cm);
     HandleMark hm;
     FreelistLocker x(_collector);
     MutexLockerEx  y(_collector->bitMapLock(), Mutex::_no_safepoint_check_flag);
@@ -95,7 +85,7 @@ bool VM_CMS_Operation::doit_prologue() {
   assert(!ConcurrentMarkSweepThread::cms_thread_has_cms_token(),
          "Possible deadlock");
 
-  if (needs_pll()) {
+  if (needs_pending_list_lock()) {
     acquire_pending_list_lock();
   }
   // Get the Heap_lock after the pending_list_lock.
@@ -103,7 +93,7 @@ bool VM_CMS_Operation::doit_prologue() {
   if (lost_race()) {
     assert(_prologue_succeeded == false, "Initialized in c'tor");
     Heap_lock->unlock();
-    if (needs_pll()) {
+    if (needs_pending_list_lock()) {
       release_and_notify_pending_list_lock();
     }
   } else {
@@ -120,7 +110,7 @@ void VM_CMS_Operation::doit_epilogue() {
 
   // Release the Heap_lock first.
   Heap_lock->unlock();
-  if (needs_pll()) {
+  if (needs_pending_list_lock()) {
     release_and_notify_pending_list_lock();
   }
 }

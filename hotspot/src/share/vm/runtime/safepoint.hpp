@@ -145,6 +145,7 @@ public:
   // Query
   inline static bool is_at_safepoint()   { return _state == _synchronized;  }
   inline static bool is_synchronizing()  { return _state == _synchronizing;  }
+  inline static int safepoint_counter()  { return _safepoint_counter; }
 
   inline static bool do_call_back() {
     return (_state != _not_synchronized);

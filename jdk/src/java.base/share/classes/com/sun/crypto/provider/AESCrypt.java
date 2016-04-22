@@ -56,7 +56,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
     private boolean ROUNDS_14 = false;
 
     /** Session and Sub keys */
-    private Object[] sessionK = null;
+    private int[][] sessionK = null;
     private int[] K = null;
 
     /** Cipher encryption/decryption key */
@@ -99,7 +99,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
         }
 
         // set sub key to the corresponding session Key
-        this.K = (int[]) sessionK[(decrypting? 1:0)];
+        this.K = sessionK[(decrypting? 1:0)];
     }
 
     /**
@@ -680,7 +680,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
         limit = ROUNDS*4;
 
         // store the expanded sub keys into 'sessionK'
-        sessionK = new Object[] { expandedKe, expandedKd };
+        sessionK = new int[][] { expandedKe, expandedKd };
     }
 
 

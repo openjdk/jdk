@@ -549,11 +549,9 @@ public class CommandProcessor {
         },
         new Command("buildreplayjars", "buildreplayjars [ all | app | boot ]  | [ prefix ]", false) {
             // This is used to dump jar files of all the classes
-            // loaded in the core.  Everything on the bootclasspath
+            // loaded in the core.  Everything with null classloader
             // will go in boot.jar and everything else will go in
-            // app.jar.  Then the classes can be loaded by the replay
-            // jvm using -Xbootclasspath/p:boot.jar -cp app.jar. boot.jar usually
-            // not needed, unless changed by jvmti.
+            // app.jar. boot.jar usually not needed, unless changed by jvmti.
             public void doit(Tokens t) {
                 int tcount = t.countTokens();
                 if (tcount > 2) {

@@ -98,7 +98,8 @@ java.datatransfer_COPY := flavormap.properties
 
 ################################################################################
 
-java.desktop_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*'
+java.desktop_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference \
+    '-Xdoclint/package:java.*,javax.*' -Xlint:-deprecation
 java.desktop_COPY := .gif .png .wav .txt .xml .css .pf
 java.desktop_CLEAN := iio-plugin.properties cursors.properties
 
@@ -542,8 +543,9 @@ endif
 ifneq ($(wildcard $(IMPORT_MODULES_CLASSES)/$(MODULE)), )
   $(JDK_OUTPUTDIR)/modules/$(MODULE)/_imported.marker: \
       $(call CacheFind, $(IMPORT_MODULES_CLASSES)/$(MODULE))
-	$(RM) -r $(@D)
-	$(MKDIR) -p $(@D)
+	$(call MakeDir, $(@D))
+        # Do not delete marker and build meta data files
+	$(RM) -r $(filter-out $(@D)/_%, $(wildcard $(@D)/*))
 	$(CP) -R $(IMPORT_MODULES_CLASSES)/$(MODULE)/* $(@D)/
 	$(TOUCH) $@
 

@@ -28,6 +28,7 @@
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compilerOracle.hpp"
+#include "memory/resourceArea.hpp"
 
 CompilerDirectives::CompilerDirectives() :_match(NULL), _next(NULL), _ref_count(0) {
   _c1_store = new DirectiveSet(this);

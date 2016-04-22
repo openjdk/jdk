@@ -88,8 +88,12 @@ public class CreateMultiReleaseTestJars {
     }
 
     public void buildMultiReleaseJar() throws IOException {
-        JarBuilder jb = new JarBuilder("multi-release.jar");
-        jb.addAttribute("Multi-Release", "true");
+        buildCustomMultiReleaseJar("multi-release.jar", "true");
+    }
+
+    public void buildCustomMultiReleaseJar(String filename, String multiReleaseValue) throws IOException {
+        JarBuilder jb = new JarBuilder(filename);
+        jb.addAttribute("Multi-Release", multiReleaseValue);
         jb.addEntry("README", readme8.getBytes());
         jb.addEntry("version/Main.java", main.getBytes());
         jb.addEntry("version/Main.class", rootClasses.get("version.Main"));

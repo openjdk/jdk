@@ -60,6 +60,9 @@ final class CatalogUriResolverImpl implements CatalogUriResolver {
 
     @Override
     public Source resolve(String href, String base) {
+        href = Util.getNotNullOrEmpty(href);
+        base = Util.getNotNullOrEmpty(base);
+
         if (href == null) return null;
 
         CatalogImpl c = (CatalogImpl)catalog;

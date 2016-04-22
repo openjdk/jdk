@@ -957,9 +957,13 @@ public:
 
   void atomic_add(Register prev, RegisterOrConstant incr, Register addr);
   void atomic_addw(Register prev, RegisterOrConstant incr, Register addr);
+  void atomic_addal(Register prev, RegisterOrConstant incr, Register addr);
+  void atomic_addalw(Register prev, RegisterOrConstant incr, Register addr);
 
   void atomic_xchg(Register prev, Register newv, Register addr);
   void atomic_xchgw(Register prev, Register newv, Register addr);
+  void atomic_xchgal(Register prev, Register newv, Register addr);
+  void atomic_xchgalw(Register prev, Register newv, Register addr);
 
   void orptr(Address adr, RegisterOrConstant src) {
     ldr(rscratch2, adr);

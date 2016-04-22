@@ -457,7 +457,7 @@ AC_DEFUN_ONCE([BPERF_SETUP_SMART_JAVAC],
   AC_MSG_RESULT([$ENABLE_JAVAC_SERVER])
   AC_SUBST(ENABLE_JAVAC_SERVER)
 
-  if test "x$ENABLE_JAVAC_SERVER" = "xyes" || "x$ENABLE_SJAVAC" = "xyes"; then
+  if test "x$ENABLE_JAVAC_SERVER" = "xyes" || test "x$ENABLE_SJAVAC" = "xyes"; then
     # When using a server javac, the small client instances do not need much
     # resources.
     JAVA_FLAGS_JAVAC="$JAVA_FLAGS_SMALL"

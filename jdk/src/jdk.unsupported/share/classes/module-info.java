@@ -25,6 +25,6 @@
 
 module jdk.unsupported {
     exports sun.misc;
-    //exports sun.reflect;
+    exports sun.reflect;
 }
 
