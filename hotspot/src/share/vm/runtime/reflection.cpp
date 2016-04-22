@@ -487,7 +487,7 @@ Reflection::VerifyClassAccessResults Reflection::verify_class_access(
       is_same_class_package(current_class, new_class)) {
     return ACCESS_OK;
   }
-  // Allow all accesses from sun/reflect/MagicAccessorImpl subclasses to
+  // Allow all accesses from jdk/internal/reflect/MagicAccessorImpl subclasses to
   // succeed trivially.
   if (current_class->is_subclass_of(SystemDictionary::reflect_MagicAccessorImpl_klass())) {
     return ACCESS_OK;
@@ -698,7 +698,7 @@ bool Reflection::verify_field_access(const Klass* current_class,
     return true;
   }
 
-  // Allow all accesses from sun/reflect/MagicAccessorImpl subclasses to
+  // Allow all accesses from jdk/internal/reflect/MagicAccessorImpl subclasses to
   // succeed trivially.
   if (current_class->is_subclass_of(SystemDictionary::reflect_MagicAccessorImpl_klass())) {
     return true;
@@ -1025,7 +1025,7 @@ static BasicType basic_type_mirror_to_basic_type(oop basic_type_mirror, TRAPS) {
 static void narrow(jvalue* value, BasicType narrow_type, TRAPS) {
   switch (narrow_type) {
   case T_BOOLEAN:
-    value->z = (jboolean)value->i;
+    value->z = (jboolean) (value->i & 1);
     return;
   case T_BYTE:
     value->b = (jbyte)value->i;
