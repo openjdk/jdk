@@ -718,41 +718,27 @@ public class Runtime {
     }
 
     /**
-     * Enables/Disables tracing of instructions.
-     * If the {@code boolean} argument is {@code true}, this
-     * method suggests that the Java virtual machine emit debugging
-     * information for each instruction in the virtual machine as it
-     * is executed. The format of this information, and the file or other
-     * output stream to which it is emitted, depends on the host environment.
-     * The virtual machine may ignore this request if it does not support
-     * this feature. The destination of the trace output is system
-     * dependent.
-     * <p>
-     * If the {@code boolean} argument is {@code false}, this
-     * method causes the virtual machine to stop performing the
-     * detailed instruction trace it is performing.
+     * Not implemented, does nothing.
      *
-     * @param   on   {@code true} to enable instruction tracing;
-     *               {@code false} to disable this feature.
+     * @deprecated
+     * This method was intended to control instruction tracing.
+     * It has been superseded by JVM-specific tracing mechanisms.
+     *
+     * @param on ignored
      */
+    @Deprecated(since="9", forRemoval=true)
     public void traceInstructions(boolean on) { }
 
     /**
-     * Enables/Disables tracing of method calls.
-     * If the {@code boolean} argument is {@code true}, this
-     * method suggests that the Java virtual machine emit debugging
-     * information for each method in the virtual machine as it is
-     * called. The format of this information, and the file or other output
-     * stream to which it is emitted, depends on the host environment. The
-     * virtual machine may ignore this request if it does not support
-     * this feature.
-     * <p>
-     * Calling this method with argument false suggests that the
-     * virtual machine cease emitting per-call debugging information.
+     * Not implemented, does nothing.
      *
-     * @param   on   {@code true} to enable instruction tracing;
-     *               {@code false} to disable this feature.
+     * @deprecated
+     * This method was intended to control method call tracing.
+     * It has been superseded by JVM-specific tracing mechanisms.
+     *
+     * @param on ignored
      */
+    @Deprecated(since="9", forRemoval=true)
     public void traceMethodCalls(boolean on) { }
 
     /**
