@@ -57,7 +57,9 @@
 
 
 // forward declaration for class -- see below for definition
+#if INCLUDE_JVMTI
 class BreakpointInfo;
+#endif
 class ClassFileParser;
 class KlassDepChange;
 class DependencyContext;
@@ -230,12 +232,14 @@ class InstanceKlass: public Klass {
   jmethodID*      _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or NULL if none
   intptr_t        _dep_context;          // packed DependencyContext structure
   nmethod*        _osr_nmethods_head;    // Head of list of on-stack replacement nmethods for this class
+#if INCLUDE_JVMTI
   BreakpointInfo* _breakpoints;          // bpt lists, managed by Method*
   // Linked instanceKlasses of previous versions
   InstanceKlass* _previous_versions;
   // JVMTI fields can be moved to their own structure - see 6315920
   // JVMTI: cached class file, before retransformable agent modified it in CFLH
   JvmtiCachedClassFileData* _cached_class_file;
+#endif
 
   volatile u2     _idnum_allocated_count;         // JNI/JVMTI: increments with the addition of methods, old ids don't change
 
@@ -245,7 +249,9 @@ class InstanceKlass: public Klass {
   u1              _init_state;                    // state of class
   u1              _reference_type;                // reference type
 
+#if INCLUDE_JVMTI
   JvmtiCachedClassFieldMap* _jvmti_cached_class_field_map;  // JVMTI: used during heap iteration
+#endif
 
   NOT_PRODUCT(int _verify_count;)  // to avoid redundant verifies
 
@@ -687,10 +693,14 @@ class InstanceKlass: public Klass {
     _nonstatic_oop_map_size = words;
   }
 
+#if INCLUDE_JVMTI
   // RedefineClasses() support for previous versions:
   void add_previous_version(instanceKlassHandle ikh, int emcp_method_count);
 
   InstanceKlass* previous_versions() const { return _previous_versions; }
+#else
+  InstanceKlass* previous_versions() const { return NULL; }
+#endif
 
   InstanceKlass* get_klass_version(int version) {
     for (InstanceKlass* ik = this; ik != NULL; ik = ik->previous_versions()) {
@@ -738,6 +748,8 @@ public:
   bool is_mirror_instance_klass() const       { return is_kind(_misc_kind_mirror); }
   bool is_class_loader_instance_klass() const { return is_kind(_misc_kind_class_loader); }
 
+#if INCLUDE_JVMTI
+
   void init_previous_versions() {
     _previous_versions = NULL;
   }
@@ -763,6 +775,16 @@ public:
   JvmtiCachedClassFieldMap* jvmti_cached_class_field_map() const {
     return _jvmti_cached_class_field_map;
   }
+
+#else // INCLUDE_JVMTI
+
+  static void purge_previous_versions(InstanceKlass* ik) { return; };
+  static bool has_previous_versions() { return false; }
+
+  void set_cached_class_file(JvmtiCachedClassFileData *data) { ShouldNotReachHere(); }
+  JvmtiCachedClassFileData * get_cached_class_file() { return (JvmtiCachedClassFileData *)NULL; }
+
+#endif // INCLUDE_JVMTI
 
   bool has_default_methods() const {
     return (_misc_flags & _misc_has_default_methods) != 0;
@@ -882,9 +904,11 @@ public:
   int mark_osr_nmethods(const Method* m);
   nmethod* lookup_osr_nmethod(const Method* m, int bci, int level, bool match_level) const;
 
+#if INCLUDE_JVMTI
   // Breakpoint support (see methods on Method* for details)
   BreakpointInfo* breakpoints() const       { return _breakpoints; };
   void set_breakpoints(BreakpointInfo* bps) { _breakpoints = bps; };
+#endif
 
   // support for stub routines
   static ByteSize init_state_offset()  { return in_ByteSize(offset_of(InstanceKlass, _init_state)); }
@@ -1253,9 +1277,11 @@ private:
   // Free CHeap allocated fields.
   void release_C_heap_structures();
 
+#if INCLUDE_JVMTI
   // RedefineClasses support
   void link_previous_versions(InstanceKlass* pv) { _previous_versions = pv; }
   void mark_newly_obsolete_methods(Array<Method*>* old_methods, int emcp_method_count);
+#endif
 public:
   // CDS support - remove and restore oops from metadata. Oops are not shared.
   virtual void remove_unshareable_info();
