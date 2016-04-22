@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -661,6 +661,8 @@ public class TCKDateTimeFormatterBuilder {
             {"W"},
             {"W"},
 
+            {"g"},
+            {"ggggg"},
         };
     }
 
@@ -760,6 +762,37 @@ public class TCKDateTimeFormatterBuilder {
     private static Temporal date(int y, int m, int d) {
         return LocalDate.of(y, m, d);
     }
+
+    //-----------------------------------------------------------------------
+    @DataProvider(name="modJulianFieldPattern")
+    Object[][] data_modJuilanFieldPattern() {
+        return new Object[][] {
+            {"g", "1"},
+            {"g", "123456"},
+            {"gggggg", "123456"},
+        };
+    }
+
+    @Test(dataProvider="modJulianFieldPattern")
+    public void test_modJulianFieldPattern(String pattern, String input) throws Exception {
+        DateTimeFormatter.ofPattern(pattern).parse(input);
+    }
+
+    @DataProvider(name="modJulianFieldValues")
+    Object[][] data_modJuilanFieldValues() {
+        return new Object[][] {
+            {1970, 1, 1, "40587"},
+            {1858, 11, 17, "0"},
+            {1858, 11, 16, "-1"},
+        };
+    }
+
+    @Test(dataProvider="modJulianFieldValues")
+    public void test_modJulianFieldValues(int y, int m, int d, String expected) throws Exception {
+        DateTimeFormatter df = new DateTimeFormatterBuilder().appendPattern("g").toFormatter();
+         assertEquals(LocalDate.of(y, m, d).format(df), expected);
+    }
+
 
     //-----------------------------------------------------------------------
     @Test
