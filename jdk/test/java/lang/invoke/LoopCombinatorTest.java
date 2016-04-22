@@ -31,6 +31,7 @@
  * @bug 8152667
  * @bug 8153637
  * @bug 8154751
+ * @bug 8154754
  * @run testng/othervm -ea -esa test.java.lang.invoke.LoopCombinatorTest
  */
 
@@ -324,6 +325,74 @@ public class LoopCombinatorTest {
         MethodHandle loop = MethodHandles.countedLoop(fit5, null, Counted.MH_printHello);
         assertEquals(Counted.MT_countedPrinting, loop.type());
         loop.invoke();
+    }
+
+    @Test
+    public static void testCountedLoopNullBody() throws Throwable {
+        MethodHandle h5 = MethodHandles.constant(int.class, 5);
+        MethodHandle h13 = MethodHandles.constant(int.class, 13);
+        MethodHandle loop = MethodHandles.countedLoop(h5, h13, null);
+        assertEquals(methodType(int.class), loop.type());
+        assertEquals(13, loop.invoke());
+    }
+
+    @Test
+    public static void testCountedLoopNullIterations() throws Throwable {
+        MethodHandle loop = MethodHandles.countedLoop(null, null, null);
+        assertEquals(methodType(void.class), loop.type());
+        loop.invoke();
+    }
+
+    @Test
+    public static void testCountedLoopNullInitAndBody() throws Throwable {
+        MethodHandle loop = MethodHandles.countedLoop(MethodHandles.constant(int.class, 5), null, null);
+        assertEquals(methodType(void.class), loop.type());
+        loop.invoke();
+    }
+
+    @DataProvider
+    static Object[][] countedLoopBodyParameters() {
+        return new Object[][] {
+                {methodType(String.class), methodType(String.class, int.class)},
+                {methodType(String.class, List.class), methodType(String.class, int.class)},
+                {methodType(String.class, List.class), methodType(String.class, int.class, String.class)}
+        };
+    }
+
+    @Test(dataProvider = "countedLoopBodyParameters")
+    public static void testCountedLoopBodyParameters(MethodType initType, MethodType bodyType) throws Throwable {
+        MethodHandle loop = MethodHandles.countedLoop(MethodHandles.constant(int.class, 5),
+                MethodHandles.empty(initType), MethodHandles.empty(bodyType));
+        assertEquals(initType, loop.type());
+    }
+
+    @DataProvider
+    static Object[][] countedLoopTypes() {
+        return new Object[][]{{void.class}, {int.class}, {Object.class}, {String.class}, {List.class}};
+    }
+
+    @Test(dataProvider = "countedLoopTypes")
+    public static void testCountedLoopBodyParametersNullInit(Class<?> t) throws Throwable {
+        MethodHandle loop = MethodHandles.countedLoop(MethodHandles.constant(int.class, 5), null,
+                MethodHandles.empty(methodType(t, int.class)));
+        assertEquals(methodType(t), loop.type());
+        loop.invoke();
+    }
+
+    @Test
+    public static void testCountedLoopStateDefinedByBody() throws Throwable {
+        MethodHandle loop = MethodHandles.countedLoop(MethodHandles.constant(int.class, 5), null, Counted.MH_stateBody);
+        assertEquals(Counted.MT_bodyDeterminesState, loop.type());
+        assertEquals("sssssnull01234", loop.invoke());
+    }
+
+    @Test
+    public static void testCountedLoopArgsDefinedByIterations() throws Throwable {
+        MethodHandle loop = MethodHandles.countedLoop(
+                MethodHandles.dropArguments(MethodHandles.constant(int.class, 3), 0, String.class),
+                null, Counted.MH_append);
+        assertEquals(Counted.MT_iterationsDefineArgs, loop.type());
+        assertEquals("hello012", loop.invoke("hello"));
     }
 
     @Test
@@ -839,6 +908,17 @@ public class LoopCombinatorTest {
             return x + counter;
         }
 
+        static String stateBody(int counter, String s) {
+            return "s" + s + counter;
+        }
+
+        static String append(int counter, String localState, String loopArg) {
+            if (null == localState) {
+                return loopArg + counter;
+            }
+            return localState + counter;
+        }
+
         static final Class<Counted> COUNTED = Counted.class;
 
         static final MethodType MT_start = methodType(String.class, String.class);
@@ -846,6 +926,8 @@ public class LoopCombinatorTest {
         static final MethodType MT_stepUpdateArray = methodType(void.class, int.class, int[].class);
         static final MethodType MT_printHello = methodType(void.class, int.class);
         static final MethodType MT_addCounter = methodType(int.class, int.class, int.class);
+        static final MethodType MT_stateBody = methodType(String.class, int.class, String.class);
+        static final MethodType MT_append = methodType(String.class, int.class, String.class, String.class);
 
         static final MethodHandle MH_13;
         static final MethodHandle MH_m5;
@@ -855,11 +937,15 @@ public class LoopCombinatorTest {
         static final MethodHandle MH_stepUpdateArray;
         static final MethodHandle MH_printHello;
         static final MethodHandle MH_addCounter;
+        static final MethodHandle MH_stateBody;
+        static final MethodHandle MH_append;
 
         static final MethodType MT_counted = methodType(String.class, String.class);
         static final MethodType MT_arrayCounted = methodType(void.class, int[].class);
         static final MethodType MT_countedPrinting = methodType(void.class);
         static final MethodType MT_counterInit = methodType(int.class);
+        static final MethodType MT_bodyDeterminesState = methodType(String.class);
+        static final MethodType MT_iterationsDefineArgs = methodType(String.class, String.class);
 
         static {
             try {
@@ -871,6 +957,8 @@ public class LoopCombinatorTest {
                 MH_stepUpdateArray = LOOKUP.findStatic(COUNTED, "stepUpdateArray", MT_stepUpdateArray);
                 MH_printHello = LOOKUP.findStatic(COUNTED, "printHello", MT_printHello);
                 MH_addCounter = LOOKUP.findStatic(COUNTED, "addCounter", MT_addCounter);
+                MH_stateBody = LOOKUP.findStatic(COUNTED, "stateBody", MT_stateBody);
+                MH_append = LOOKUP.findStatic(COUNTED, "append", MT_append);
             } catch (Exception e) {
                 throw new ExceptionInInitializerError(e);
             }
