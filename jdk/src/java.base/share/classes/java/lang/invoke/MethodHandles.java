@@ -951,8 +951,6 @@ assertEquals("", (String) MH_newString.invokeExact());
                 return invoker(type);
             if ("invokeExact".equals(name))
                 return exactInvoker(type);
-            if ("invokeBasic".equals(name))
-                return basicInvoker(type);
             assert(!MemberName.isMethodHandleInvokeName(name));
             return null;
         }
