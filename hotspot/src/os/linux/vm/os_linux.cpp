@@ -2013,8 +2013,8 @@ void os::print_os_info(outputStream* st) {
 // their own specific XXX-release file as well as a redhat-release file.
 // Because of this the XXX-release file needs to be searched for before the
 // redhat-release file.
-// Since Red Hat has a lsb-release file that is not very descriptive the
-// search for redhat-release needs to be before lsb-release.
+// Since Red Hat and SuSE have an lsb-release file that is not very descriptive the
+// search for redhat-release / SuSE-release needs to be before lsb-release.
 // Since the lsb-release file is the new standard it needs to be searched
 // before the older style release files.
 // Searching system-release (Red Hat) and os-release (other Linuxes) are a
@@ -2031,8 +2031,8 @@ const char* distro_files[] = {
   "/etc/mandrake-release",
   "/etc/sun-release",
   "/etc/redhat-release",
-  "/etc/lsb-release",
   "/etc/SuSE-release",
+  "/etc/lsb-release",
   "/etc/turbolinux-release",
   "/etc/gentoo-release",
   "/etc/ltib-release",
@@ -2062,14 +2062,11 @@ void os::Linux::print_distro_info(outputStream* st) {
   st->cr();
 }
 
-static void parse_os_info(char* distro, size_t length, const char* file) {
-  FILE* fp = fopen(file, "r");
-  if (fp != NULL) {
-    char buf[256];
-    // get last line of the file.
-    while (fgets(buf, sizeof(buf), fp)) { }
-    // Edit out extra stuff in expected ubuntu format
-    if (strstr(buf, "DISTRIB_DESCRIPTION=") != NULL) {
+static void parse_os_info_helper(FILE* fp, char* distro, size_t length, bool get_first_line) {
+  char buf[256];
+  while (fgets(buf, sizeof(buf), fp)) {
+    // Edit out extra stuff in expected format
+    if (strstr(buf, "DISTRIB_DESCRIPTION=") != NULL || strstr(buf, "PRETTY_NAME=") != NULL) {
       char* ptr = strstr(buf, "\"");  // the name is in quotes
       if (ptr != NULL) {
         ptr++; // go beyond first quote
@@ -2083,13 +2080,26 @@ static void parse_os_info(char* distro, size_t length, const char* file) {
         if (nl != NULL) *nl = '\0';
         strncpy(distro, ptr, length);
       }
-    } else {
-      // if not in expected Ubuntu format, print out whole line minus \n
+      return;
+    } else if (get_first_line) {
       char* nl = strchr(buf, '\n');
       if (nl != NULL) *nl = '\0';
       strncpy(distro, buf, length);
+      return;
     }
-    // close distro file
+  }
+  // print last line and close
+  char* nl = strchr(buf, '\n');
+  if (nl != NULL) *nl = '\0';
+  strncpy(distro, buf, length);
+}
+
+static void parse_os_info(char* distro, size_t length, const char* file) {
+  FILE* fp = fopen(file, "r");
+  if (fp != NULL) {
+    // if suse format, print out first line
+    bool get_first_line = (strcmp(file, "/etc/SuSE-release") == 0);
+    parse_os_info_helper(fp, distro, length, get_first_line);
     fclose(fp);
   }
 }
