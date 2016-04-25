@@ -1623,6 +1623,17 @@ void Compile::AliasType::Init(int i, const TypePtr* at) {
   }
 }
 
+BasicType Compile::AliasType::basic_type() const {
+  if (element() != NULL) {
+    const Type* element = adr_type()->is_aryptr()->elem();
+    return element->isa_narrowoop() ? T_OBJECT : element->array_element_basic_type();
+  } if (field() != NULL) {
+    return field()->layout_type();
+  } else {
+    return T_ILLEGAL; // unknown
+  }
+}
+
 //---------------------------------print_on------------------------------------
 #ifndef PRODUCT
 void Compile::AliasType::print_on(outputStream* st) {
