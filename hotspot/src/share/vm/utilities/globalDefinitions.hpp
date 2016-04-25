@@ -199,9 +199,6 @@ const size_t M                  = K*K;
 const size_t G                  = M*K;
 const size_t HWperKB            = K / sizeof(HeapWord);
 
-const jint min_jint = (jint)1 << (sizeof(jint)*BitsPerByte-1); // 0x80000000 == smallest jint
-const jint max_jint = (juint)min_jint - 1;                     // 0x7FFFFFFF == largest jint
-
 // Constants for converting from a base unit to milli-base units.  For
 // example from seconds to milliseconds and microseconds
 
@@ -380,6 +377,14 @@ typedef jbyte  s1;
 typedef jshort s2;
 typedef jint   s4;
 typedef jlong  s8;
+
+const jbyte min_jbyte = -(1 << 7);       // smallest jbyte
+const jbyte max_jbyte = (1 << 7) - 1;    // largest jbyte
+const jshort min_jshort = -(1 << 15);    // smallest jshort
+const jshort max_jshort = (1 << 15) - 1; // largest jshort
+
+const jint min_jint = (jint)1 << (sizeof(jint)*BitsPerByte-1); // 0x80000000 == smallest jint
+const jint max_jint = (juint)min_jint - 1;                     // 0x7FFFFFFF == largest jint
 
 //----------------------------------------------------------------------------------------------------
 // JVM spec restrictions
