@@ -2341,6 +2341,7 @@ bool LibraryCallKit::inline_unsafe_access(const bool is_native_ptr, bool is_stor
   if (callee()->is_static())  return false;  // caller must have the capability!
   guarantee(!is_store || kind != Acquire, "Acquire accesses can be produced only for loads");
   guarantee( is_store || kind != Release, "Release accesses can be produced only for stores");
+  assert(type != T_OBJECT || !unaligned, "unaligned access not supported with object type");
 
 #ifndef PRODUCT
   {
@@ -2416,13 +2417,34 @@ bool LibraryCallKit::inline_unsafe_access(const bool is_native_ptr, bool is_stor
 
   const TypePtr *adr_type = _gvn.type(adr)->isa_ptr();
 
-  // First guess at the value type.
-  const Type *value_type = Type::get_const_basic_type(type);
-
   // Try to categorize the address.  If it comes up as TypeJavaPtr::BOTTOM,
   // there was not enough information to nail it down.
   Compile::AliasType* alias_type = C->alias_type(adr_type);
   assert(alias_type->index() != Compile::AliasIdxBot, "no bare pointers here");
+
+  assert(alias_type->adr_type() == TypeRawPtr::BOTTOM || alias_type->adr_type() == TypeOopPtr::BOTTOM ||
+         alias_type->basic_type() != T_ILLEGAL, "field, array element or unknown");
+  bool mismatched = false;
+  BasicType bt = alias_type->basic_type();
+  if (bt != T_ILLEGAL) {
+    if (bt == T_BYTE && adr_type->isa_aryptr()) {
+      // Alias type doesn't differentiate between byte[] and boolean[]).
+      // Use address type to get the element type.
+      bt = adr_type->is_aryptr()->elem()->array_element_basic_type();
+    }
+    if (bt == T_ARRAY || bt == T_NARROWOOP) {
+      // accessing an array field with getObject is not a mismatch
+      bt = T_OBJECT;
+    }
+    if ((bt == T_OBJECT) != (type == T_OBJECT)) {
+      // Don't intrinsify mismatched object accesses
+      return false;
+    }
+    mismatched = (bt != type);
+  }
+
+  // First guess at the value type.
+  const Type *value_type = Type::get_const_basic_type(type);
 
   // We will need memory barriers unless we can determine a unique
   // alias category for this reference.  (Note:  If for some reason
@@ -2523,29 +2545,6 @@ bool LibraryCallKit::inline_unsafe_access(const bool is_native_ptr, bool is_stor
   // so there's no problems making a strong assert about mixing users
   // of safe & unsafe memory.
   if (need_mem_bar) insert_mem_bar(Op_MemBarCPUOrder);
-
-  assert(alias_type->adr_type() == TypeRawPtr::BOTTOM || alias_type->adr_type() == TypeOopPtr::BOTTOM ||
-         alias_type->field() != NULL || alias_type->element() != NULL, "field, array element or unknown");
-  bool mismatched = false;
-  if (alias_type->element() != NULL || alias_type->field() != NULL) {
-    BasicType bt;
-    if (alias_type->element() != NULL) {
-      // Use address type to get the element type. Alias type doesn't provide
-      // enough information (e.g., doesn't differentiate between byte[] and boolean[]).
-      const Type* element = adr_type->is_aryptr()->elem();
-      bt = element->isa_narrowoop() ? T_OBJECT : element->array_element_basic_type();
-    } else {
-      bt = alias_type->field()->layout_type();
-    }
-    if (bt == T_ARRAY) {
-      // accessing an array field with getObject is not a mismatch
-      bt = T_OBJECT;
-    }
-    if (bt != type) {
-      mismatched = true;
-    }
-  }
-  assert(type != T_OBJECT || !unaligned, "unaligned access not supported with object type");
 
   if (!is_store) {
     Node* p = NULL;
@@ -2814,11 +2813,20 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   Node* adr = make_unsafe_address(base, offset);
   const TypePtr *adr_type = _gvn.type(adr)->isa_ptr();
 
+  Compile::AliasType* alias_type = C->alias_type(adr_type);
+  assert(alias_type->adr_type() == TypeRawPtr::BOTTOM || alias_type->adr_type() == TypeOopPtr::BOTTOM ||
+         alias_type->basic_type() != T_ILLEGAL, "field, array element or unknown");
+  BasicType bt = alias_type->basic_type();
+  if (bt != T_ILLEGAL &&
+      ((bt == T_OBJECT || bt == T_ARRAY) != (type == T_OBJECT))) {
+    // Don't intrinsify mismatched object accesses.
+    return false;
+  }
+
   // For CAS, unlike inline_unsafe_access, there seems no point in
   // trying to refine types. Just use the coarse types here.
-  const Type *value_type = Type::get_const_basic_type(type);
-  Compile::AliasType* alias_type = C->alias_type(adr_type);
   assert(alias_type->index() != Compile::AliasIdxBot, "no bare pointers here");
+  const Type *value_type = Type::get_const_basic_type(type);
 
   switch (kind) {
     case LS_get_set:
