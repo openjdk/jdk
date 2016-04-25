@@ -27,6 +27,7 @@ package jdk.jshell;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Objects;
 import com.sun.jdi.ReferenceType;
 
 /**
@@ -82,6 +83,17 @@ class ClassTracker {
             }
             return rt;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof ClassInfo &&
+                    ((ClassInfo) o).className.equals(className);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(this.className);
+        }
     }
 
     ClassInfo classInfo(String className, byte[] bytes) {
@@ -93,5 +105,4 @@ class ClassTracker {
     ClassInfo get(String className) {
         return map.get(className);
     }
-
 }

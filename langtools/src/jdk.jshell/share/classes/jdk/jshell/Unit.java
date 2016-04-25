@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ final class Unit {
     private final DiagList generatedDiagnostics;
 
     private int seq;
-    private int seqInitial;
+    private String classNameInitial;
     private Wrap activeGuts;
     private Status status;
     private Status prevStatus;
@@ -95,7 +95,7 @@ final class Unit {
         this.generatedDiagnostics = generatedDiagnostics;
 
         this.seq = isNew? 0 : siOld.sequenceNumber();
-        this.seqInitial = seq;
+        this.classNameInitial = isNew? "<none>" : siOld.className();
         this.prevStatus = (isNew || isDependency)
                 ? si.status()
                 : siOld.status();
@@ -136,28 +136,50 @@ final class Unit {
         return isDependency;
     }
 
-    boolean isNew() {
-        return isNew;
-    }
-
-    void initialize(Collection<Unit> working) {
+    void initialize() {
         isAttemptingCorral = false;
         dependenciesNeeded = false;
         toRedefine = null; // assure NPE if classToLoad not called
         activeGuts = si.guts();
         markOldDeclarationOverwritten();
-        setWrap(working, working);
     }
 
-    void setWrap(Collection<Unit> except, Collection<Unit> plus) {
-        si.setOuterWrap(isImport()
-                ? OuterWrap.wrapImport(si.source(), activeGuts)
-                : state.eval.wrapInClass(si,
-                        except.stream().map(u -> u.snippet().key()).collect(toSet()),
-                        activeGuts,
-                        plus.stream().map(u -> u.snippet())
-                                .filter(sn -> sn != si)
-                                .collect(toList())));
+    // Set the outer wrap of our Snippet
+    void setWrap(Collection<Unit> exceptUnit, Collection<Unit> plusUnfiltered) {
+        if (isImport()) {
+            si.setOuterWrap(state.outerMap.wrapImport(activeGuts, si));
+        } else {
+            // Collect Units for be wrapped together.  Just this except for overloaded methods
+            List<Unit> units;
+            if (snippet().kind() == Kind.METHOD) {
+                String name = ((MethodSnippet) snippet()).name();
+                units = plusUnfiltered.stream()
+                        .filter(u -> u.snippet().kind() == Kind.METHOD &&
+                                 ((MethodSnippet) u.snippet()).name().equals(name))
+                        .collect(toList());
+            } else {
+                units = Collections.singletonList(this);
+            }
+            // Keys to exclude from imports
+            Set<Key> except = exceptUnit.stream()
+                    .map(u -> u.snippet().key())
+                    .collect(toSet());
+            // Snippets to add to imports
+            Collection<Snippet> plus = plusUnfiltered.stream()
+                    .filter(u -> !units.contains(u))
+                    .map(u -> u.snippet())
+                    .collect(toList());
+            // Snippets to wrap in an outer
+            List<Snippet> snippets = units.stream()
+                    .map(u -> u.snippet())
+                    .collect(toList());
+            // Snippet wraps to wrap in an outer
+            List<Wrap> wraps = units.stream()
+                    .map(u -> u.activeGuts)
+                    .collect(toList());
+            // Set the outer wrap for this snippet
+            si.setOuterWrap(state.outerMap.wrapInClass(except, plus, snippets, wraps));
+        }
     }
 
     void setDiagnostics(AnalyzeTask ct) {
@@ -302,11 +324,13 @@ final class Unit {
 
     private boolean sigChanged() {
         return (status.isDefined != prevStatus.isDefined)
-                || (seq != seqInitial && status.isDefined)
+                || (status.isDefined && !si.className().equals(classNameInitial))
                 || signatureChanged;
     }
 
     Stream<Unit> effectedDependents() {
+        //System.err.printf("effectedDependents sigChanged=%b  dependenciesNeeded=%b   status=%s\n",
+        //       sigChanged(), dependenciesNeeded, status);
         return sigChanged() || dependenciesNeeded || status == RECOVERABLE_NOT_DEFINED
                 ? dependents()
                 : Stream.empty();
@@ -361,7 +385,7 @@ final class Unit {
         if (replaceOldEvent != null) secondaryEvents.add(replaceOldEvent);
 
         // Defined methods can overwrite methods of other (equivalent) snippets
-        if (si.kind() == Kind.METHOD && status.isDefined) {
+        if (isNew && si.kind() == Kind.METHOD && status.isDefined) {
             MethodSnippet msi = (MethodSnippet)si;
             String oqpt = msi.qualifiedParameterTypes();
             String nqpt = computeQualifiedParameterTypes(at, msi);
@@ -405,7 +429,7 @@ final class Unit {
     }
 
     private String computeQualifiedParameterTypes(AnalyzeTask at, MethodSnippet msi) {
-        String rawSig = TreeDissector.createBySnippet(at, msi).typeOfMethod();
+        String rawSig = TreeDissector.createBySnippet(at, msi).typeOfMethod(msi);
         String signature = expunge(rawSig);
         int paren = signature.lastIndexOf(')');
 
@@ -425,7 +449,9 @@ final class Unit {
     }
 
     List<SnippetEvent> secondaryEvents() {
-        return secondaryEvents;
+        return secondaryEvents==null
+                ? Collections.emptyList()
+                : secondaryEvents;
     }
 
     @Override

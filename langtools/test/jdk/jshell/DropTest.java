@@ -57,10 +57,10 @@ public class DropTest extends KullaTesting {
         assertActiveKeys();
 
         method = methodKey(assertEval("int mu() { return x * 4; }",
-                ste(MAIN_SNIPPET, DROPPED, RECOVERABLE_DEFINED, true, null),
+                added(RECOVERABLE_DEFINED),
                 ste(clazz, RECOVERABLE_DEFINED, VALID, false, MAIN_SNIPPET)));
         assertEval("int x = 10;", "10",
-                ste(MAIN_SNIPPET, DROPPED, VALID, true, null),
+                added(VALID),
                 ste(method, RECOVERABLE_DEFINED, VALID, false, MAIN_SNIPPET));
         PersistentSnippet c0 = varKey(assertEval("C c0 = new C();"));
         assertEval("c0.v();", "\"#40\"");
@@ -189,12 +189,11 @@ public class DropTest extends KullaTesting {
         assertDrop(c,
                 DiagCheck.DIAG_OK,
                 DiagCheck.DIAG_ERROR,
-                ste(c, RECOVERABLE_NOT_DEFINED, DROPPED, false, null),
-                ste(d, RECOVERABLE_NOT_DEFINED, RECOVERABLE_NOT_DEFINED, false, c));
+                ste(c, RECOVERABLE_NOT_DEFINED, DROPPED, false, null));
         assertEval("interface A {}", null, null,
-                DiagCheck.DIAG_OK, DiagCheck.DIAG_ERROR,
-                ste(a, DROPPED, VALID, true, null),
-                ste(b, RECOVERABLE_NOT_DEFINED, RECOVERABLE_NOT_DEFINED, false, MAIN_SNIPPET));
+                DiagCheck.DIAG_OK,
+                DiagCheck.DIAG_ERROR,
+                added(VALID));
         assertClasses();
         assertActiveKeys();
     }
