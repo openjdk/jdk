@@ -186,3 +186,20 @@ extern "C" void JIMAGE_ResourceIterator(JImageFile* jimage,
 
 typedef void (*JImageResourceIterator_t)(JImageFile* jimage,
         JImageResourceVisitor_t visitor, void* arg);
+
+/*
+ * JIMAGE_ResourcePath- Given an open image file, a location reference, a buffer
+ * and a maximum buffer size, copy the path of the resource into the buffer.
+ * Returns false if not a valid location reference.
+ *
+ * Ex.
+ *   JImageLocationRef location = ...
+ *   char path[JIMAGE_MAX_PATH];
+ *    (*JImageResourcePath)(image, location, path, JIMAGE_MAX_PATH);
+ */
+extern "C" bool JIMAGE_ResourcePath(JImageFile* image, JImageLocationRef locationRef,
+                                    char* path, size_t max);
+
+typedef bool (*JImage_ResourcePath_t)(JImageFile* jimage, JImageLocationRef location,
+        char* buffer, jlong size);
+
