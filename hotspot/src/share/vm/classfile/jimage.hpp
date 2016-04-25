@@ -30,7 +30,7 @@ class JImageFile;
 typedef jlong JImageLocationRef;
 
 // Max path length limit independent of platform.  Windows max path is 1024,
-// other platforms use 4096.  The JCK fails several tests when 1024 is used.
+// other platforms use 4096.
 #define JIMAGE_MAX_PATH 4096
 
 // JImage Error Codes
@@ -113,7 +113,8 @@ typedef const char* (*JImagePackageToModule_t)(JImageFile* jimage, const char* p
  *
  *  Ex.
  *   jlong size;
- *   JImageLocationRef location = (*JImageFindResource)(image, "java.base", "9.0", "java/lang/String.class", &size);
+ *   JImageLocationRef location = (*JImageFindResource)(image,
+ *                                "java.base", "9.0", "java/lang/String.class", &size);
  */
 extern "C" JImageLocationRef JIMAGE_FindResource(JImageFile* jimage,
         const char* module_name, const char* version, const char* name,
@@ -134,7 +135,8 @@ typedef JImageLocationRef(*JImageFindResource_t)(JImageFile* jimage,
  *
  * Ex.
  *  jlong size;
- *  JImageLocationRef location = (*JImageFindResource)(image, "java.base", "9.0", "java/lang/String.class", &size);
+ *  JImageLocationRef location = (*JImageFindResource)(image,
+ *                               "java.base", "9.0", "java/lang/String.class", &size);
  *  char* buffer = new char[size];
  *  (*JImageGetResource)(image, location, buffer, size);
  */
@@ -154,7 +156,8 @@ typedef jlong(*JImageGetResource_t)(JImageFile* jimage, JImageLocationRef locati
  * required. All strings are utf-8, zero byte terminated.file.
  *
  * Ex.
- *   bool ctw_visitor(JImageFile* jimage, const char* module_name, const char* version, const char* package, const char* name, const char* extension, void* arg) {
+ *   bool ctw_visitor(JImageFile* jimage, const char* module_name, const char* version,
+ *                  const char* package, const char* name, const char* extension, void* arg) {
  *     if (strcmp(extension, “class”) == 0) {
  *       char path[JIMAGE_MAX_PATH];
  *       Thread* THREAD = Thread::current();
