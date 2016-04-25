@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/os.hpp"
@@ -361,15 +362,10 @@ int VM_Version::platform_features(int features) {
   assert(avn <= 2, "should return two or less av's");
   uint_t av = avs[0];
 
-#ifndef PRODUCT
-  if (PrintMiscellaneous && Verbose) {
-    tty->print("getisax(2) returned: " PTR32_FORMAT, av);
-    if (avn > 1) {
-      tty->print(", " PTR32_FORMAT, avs[1]);
-    }
-    tty->cr();
+  log_info(os, cpu)("getisax(2) returned: " PTR32_FORMAT, av);
+  if (avn > 1) {
+    log_info(os, cpu)(" " PTR32_FORMAT, avs[1]);
   }
-#endif
 
   if (av & AV_SPARC_MUL32)  features |= hardware_mul32_m;
   if (av & AV_SPARC_DIV32)  features |= hardware_div32_m;
@@ -464,11 +460,7 @@ int VM_Version::platform_features(int features) {
           if (strcmp((const char*)&(knm[i].name),"implementation") == 0) {
             implementation = KSTAT_NAMED_STR_PTR(&knm[i]);
             has_implementation = true;
-#ifndef PRODUCT
-            if (PrintMiscellaneous && Verbose) {
-              tty->print_cr("cpu_info.implementation: %s", implementation);
-            }
-#endif
+            log_info(os, cpu)("cpu_info.implementation: %s", implementation);
             features |= parse_features(implementation);
             break;
           }

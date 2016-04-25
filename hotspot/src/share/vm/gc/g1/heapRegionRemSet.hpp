@@ -35,6 +35,7 @@
 
 class G1CollectedHeap;
 class G1BlockOffsetTable;
+class G1CardLiveData;
 class HeapRegion;
 class HeapRegionRemSetIterator;
 class PerRegionTable;
@@ -143,7 +144,7 @@ public:
   // Removes any entries shown by the given bitmaps to contain only dead
   // objects. Not thread safe.
   // Set bits in the bitmaps indicate that the given region or card is live.
-  void scrub(CardTableModRefBS* ctbs, BitMap* region_bm, BitMap* card_bm);
+  void scrub(G1CardLiveData* live_data);
 
   // Returns whether this remembered set (and all sub-sets) does not contain any entry.
   bool is_empty() const;
@@ -230,10 +231,9 @@ public:
     _other_regions.add_reference(from, tid);
   }
 
-  // Removes any entries in the remembered set shown by the given bitmaps to
+  // Removes any entries in the remembered set shown by the given card live data to
   // contain only dead objects. Not thread safe.
-  // One bits in the bitmaps indicate that the given region or card is live.
-  void scrub(CardTableModRefBS* ctbs, BitMap* region_bm, BitMap* card_bm);
+  void scrub(G1CardLiveData* live_data);
 
   // The region is being reclaimed; clear its remset, and any mention of
   // entries for this region in other remsets.

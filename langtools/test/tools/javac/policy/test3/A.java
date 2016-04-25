@@ -1,3 +1,5 @@
+/* /nodynamiccopyright/ */
+
 class A {
     void m1() {
         System.err.println("hello");

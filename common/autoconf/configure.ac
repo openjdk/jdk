@@ -95,10 +95,8 @@ JDKOPT_SETUP_OPEN_OR_CUSTOM
 
 # These are needed to be able to create a configuration name (and thus the output directory)
 JDKOPT_SETUP_JDK_VARIANT
-HOTSPOT_SETUP_JVM_INTERPRETER
-HOTSPOT_SETUP_JVM_VARIANTS
 JDKOPT_SETUP_DEBUG_LEVEL
-HOTSPOT_SETUP_DEBUG_LEVEL
+HOTSPOT_SETUP_JVM_VARIANTS
 
 # With basic setup done, call the custom early hook.
 CUSTOM_EARLY_HOOK
@@ -135,7 +133,6 @@ BASIC_SETUP_DEFAULT_MAKE_TARGET
 # We need build & target for this.
 JDKOPT_SETUP_JDK_OPTIONS
 JDKOPT_SETUP_JLINK_OPTIONS
-HOTSPOT_SETUP_HOTSPOT_OPTIONS
 JDKVER_SETUP_JDK_VERSION_NUMBERS
 
 ###############################################################################
@@ -207,6 +204,10 @@ FLAGS_SETUP_COMPILER_FLAGS_MISC
 JDKOPT_SETUP_DEBUG_SYMBOLS
 JDKOPT_SETUP_CODE_COVERAGE
 
+# Need toolchain to setup dtrace
+HOTSPOT_SETUP_DTRACE
+HOTSPOT_SETUP_JVM_FEATURES
+
 ###############################################################################
 #
 # Check dependencies for external and internal libraries.
@@ -225,7 +226,7 @@ LIB_SETUP_LIBRARIES
 #
 ###############################################################################
 
-HOTSPOT_SETUP_BUILD_TWEAKS
+HOTSPOT_SETUP_LEGACY_BUILD
 JDKOPT_DETECT_INTREE_EC
 JDKOPT_ENABLE_DISABLE_FAILURE_HANDLER
 
@@ -267,6 +268,9 @@ BASIC_TEST_USABILITY_ISSUES
 
 # At the end, call the custom hook. (Dummy macro if no custom sources available)
 CUSTOM_LATE_HOOK
+
+# This needs to be done after CUSTOM_LATE_HOOK since we can setup custom features.
+HOTSPOT_VALIDATE_JVM_FEATURES
 
 # We're messing a bit with internal autoconf variables to put the config.status
 # in the output directory instead of the current directory.

@@ -3,13 +3,14 @@
  */
 
 /*
- * Copyright 2005 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,17 +20,17 @@
  */
 
 package com.sun.org.apache.xerces.internal.impl;
-import com.sun.xml.internal.stream.dtd.nonvalidating.DTDGrammar;
-import java.io.EOFException;
-import java.io.IOException;
 
+import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
-
+import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
+import com.sun.org.apache.xerces.internal.impl.XMLEntityHandler;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.XMLAttributesImpl;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
-
+import com.sun.org.apache.xerces.internal.utils.XMLLimitAnalyzer;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDContentModelHandler;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDHandler;
 import com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier;
@@ -41,11 +42,9 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDTDScanner;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
-import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
-import com.sun.org.apache.xerces.internal.impl.XMLEntityHandler;
-import com.sun.org.apache.xerces.internal.impl.Constants;
-import com.sun.org.apache.xerces.internal.utils.XMLLimitAnalyzer;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
+import com.sun.xml.internal.stream.dtd.nonvalidating.DTDGrammar;
+import java.io.EOFException;
+import java.io.IOException;
 
 /**
  * This class is responsible for scanning the declarations found
@@ -387,15 +386,25 @@ implements XMLDTDScanner, XMLComponent, XMLEntityHandler {
      */
     @Override
     public boolean skipDTD(boolean supportDTD) throws IOException {
-        if (!supportDTD) {
-            fStringBuffer.clear();
-            if (!fEntityScanner.scanData("]", fStringBuffer)) {
-                fEntityScanner.fCurrentEntity.position--;
-            }
+        if (supportDTD)
+            return false;
 
-            return true;
+        fStringBuffer.clear();
+        while (fEntityScanner.scanData("]", fStringBuffer)) {
+            int c = fEntityScanner.peekChar();
+            if (c != -1) {
+                if (XMLChar.isHighSurrogate(c)) {
+                    scanSurrogates(fStringBuffer);
+                }
+                if (isInvalidLiteral(c)) {
+                    reportFatalError("InvalidCharInDTD",
+                        new Object[] { Integer.toHexString(c) });
+                    fEntityScanner.scanChar();
+                }
+            }
         }
-        return false;
+        fEntityScanner.fCurrentEntity.position--;
+        return true;
     }
 
     //

@@ -27,7 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
-#include "utilities/top.hpp"
+#include "oops/oopsHierarchy.hpp"
 
 class CodeBlob;
 class nmethod;
@@ -35,6 +35,7 @@ class ReferenceProcessor;
 class DataLayout;
 class KlassClosure;
 class ClassLoaderData;
+class Symbol;
 
 // The following classes are C++ `closures` for iterating over objects, roots and spaces
 

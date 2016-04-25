@@ -26,7 +26,7 @@
 #define SHARE_VM_UTILITIES_PRESERVEEXCEPTION_HPP
 
 #include "runtime/handles.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 
 // This file provides more support for exception handling; see also exceptions.hpp
 class PreserveExceptionMark {

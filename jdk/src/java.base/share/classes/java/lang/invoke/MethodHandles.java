@@ -4476,12 +4476,24 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * @since 9
      */
     public static MethodHandle countedLoop(MethodHandle start, MethodHandle end, MethodHandle init, MethodHandle body) {
-        MethodHandle returnVar = dropArguments(init == null || init.type().returnType() == void.class ?
-                zero(void.class) : identity(init.type().returnType()), 0, int.class, int.class);
+        Class<?> resultType;
+        MethodHandle actualInit;
+        if (init == null) {
+            resultType = body == null ? void.class : body.type().returnType();
+            actualInit = empty(methodType(resultType));
+        } else {
+            resultType = init.type().returnType();
+            actualInit = init;
+        }
+        MethodHandle defaultResultHandle = resultType == void.class ? zero(void.class) : identity(resultType);
+        MethodHandle actualBody = body == null ? dropArguments(defaultResultHandle, 0, int.class) : body;
+        MethodHandle returnVar = dropArguments(defaultResultHandle, 0, int.class, int.class);
+        MethodHandle actualEnd = end == null ? constant(int.class, 0) : end;
         MethodHandle[] indexVar = {start, MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_countedLoopStep)};
-        MethodHandle[] loopLimit = {end, null, MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_countedLoopPred), returnVar};
-        MethodHandle[] bodyClause = {init,
-                filterArgument(dropArguments(body, 1, int.class), 0,
+        MethodHandle[] loopLimit = {actualEnd, null,
+                MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_countedLoopPred), returnVar};
+        MethodHandle[] bodyClause = {actualInit,
+                filterArgument(dropArguments(actualBody, 1, int.class), 0,
                         MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_decrementCounter))};
         return loop(indexVar, loopLimit, bodyClause);
     }
@@ -4572,17 +4584,24 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      */
     public static MethodHandle iteratedLoop(MethodHandle iterator, MethodHandle init, MethodHandle body) {
         checkIteratedLoop(iterator, body);
-        final boolean voidInit = init == null || init.type().returnType() == void.class;
+        Class<?> resultType = init == null ?
+                body == null ? void.class : body.type().returnType() :
+                init.type().returnType();
+        boolean voidResult = resultType == void.class;
 
-        MethodHandle initit = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_initIterator);
-        MethodHandle initIterator = iterator == null ?
-                initit.asType(initit.type().changeParameterType(0, body.type().parameterType(voidInit ? 1 : 2))) :
-                iterator;
-        Class<?> itype = initIterator.type().returnType();
+        MethodHandle initIterator;
+        if (iterator == null) {
+            MethodHandle initit = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_initIterator);
+            initIterator = initit.asType(initit.type().changeParameterType(0,
+                    body.type().parameterType(voidResult ? 1 : 2)));
+        } else {
+            initIterator = iterator.asType(iterator.type().changeReturnType(Iterator.class));
+        }
+
         Class<?> ttype = body.type().parameterType(0);
 
         MethodHandle returnVar =
-                dropArguments(voidInit ? zero(void.class) : identity(init.type().returnType()), 0, itype);
+                dropArguments(voidResult ? zero(void.class) : identity(resultType), 0, Iterator.class);
         MethodHandle initnx = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_iterateNext);
         MethodHandle nextVal = initnx.asType(initnx.type().changeReturnType(ttype));
 
