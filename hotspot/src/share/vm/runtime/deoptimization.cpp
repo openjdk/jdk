@@ -762,7 +762,7 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
         guarantee(false, "wrong number of expression stack elements during deopt");
       }
       VerifyOopClosure verify;
-      iframe->oops_interpreted_do(&verify, NULL, &rm, false);
+      iframe->oops_interpreted_do(&verify, &rm, false);
       callee_size_of_parameters = mh->size_of_parameters();
       callee_max_locals = mh->max_locals();
       is_top_frame = false;
