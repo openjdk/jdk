@@ -152,6 +152,11 @@ class JImageTask {
             setLog(new PrintWriter(System.out));
         }
 
+        if (args.length == 0) {
+            log.println(taskHelper.getMessage("main.usage.summary", PROGNAME));
+            return EXIT_ABNORMAL;
+        }
+
         try {
             List<String> unhandled = optionsHelper.handleOptions(this, args);
             if(!unhandled.isEmpty()) {
