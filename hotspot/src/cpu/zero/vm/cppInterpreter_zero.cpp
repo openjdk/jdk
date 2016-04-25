@@ -755,6 +755,7 @@ InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
 
   istate->set_locals(locals);
   istate->set_method(method);
+  istate->set_mirror(method->method_holder()->java_mirror());
   istate->set_self_link(istate);
   istate->set_prev_link(NULL);
   istate->set_thread(thread);
