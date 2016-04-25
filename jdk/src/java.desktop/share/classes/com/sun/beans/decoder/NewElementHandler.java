@@ -42,7 +42,7 @@ import java.util.List;
  * &lt;new class="java.lang.Long"&gt;
  *     &lt;string&gt;10&lt;/string&gt;
  * &lt;/new&gt;</pre>
- * is equivalent to {@code new Long("10")} in Java code.
+ * is equivalent to {@code Long.valueOf("10")} in Java code.
  * <p>The following attributes are supported:
  * <dl>
  * <dt>class
