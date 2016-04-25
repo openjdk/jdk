@@ -3077,7 +3077,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
       assert((src_lo_rc != rc_int && dst_lo_rc != rc_int), "sanity");
       if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
         // stack->stack
-        assert((src_offset & 7) && (dst_offset & 7), "unaligned stack offset");
+        assert((src_offset & 7) == 0 && (dst_offset & 7) == 0, "unaligned stack offset");
         if (ireg == Op_VecD) {
           __ unspill(rscratch1, true, src_offset);
           __ spill(rscratch1, true, dst_offset);
