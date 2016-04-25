@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -261,6 +261,7 @@
     uint64_t ijava_reserved2; // Inserted for alignment.
 #endif
     uint64_t method;
+    uint64_t mirror;
     uint64_t locals;
     uint64_t monitors;
     uint64_t cpoolCache;
