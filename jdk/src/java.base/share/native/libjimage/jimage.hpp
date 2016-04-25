@@ -37,11 +37,13 @@ class JImageFile;
 typedef jlong JImageLocationRef;
 
 // Max path length limit independent of platform.  Windows max path is 1024,
-// other platforms use 4096.  The JCK fails several tests when 1024 is used.
+// other platforms use 4096.
 #define JIMAGE_MAX_PATH 4096
 
 // JImage Error Codes
 
+// Resource was not found
+#define JIMAGE_NOT_FOUND (0)
 // The image file is not prefixed with 0xCAFEDADA
 #define JIMAGE_BAD_MAGIC (-1)
 // The image file does not have a compatible (translatable) version
