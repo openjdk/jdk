@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,8 +158,8 @@ class GTKEngine {
             int widgetType, int state, int shadowType, String detail,
             int x, int y, int width, int height, int synthState, int dir);
     private native void native_paint_slider(
-            int widgetType, int state, int shadowType, String detail,
-            int x, int y, int width, int height, int orientation);
+            int widgetType, int state, int shadowType, String detail, int x,
+            int y, int width, int height, int orientation, boolean hasFocus);
     private native void native_paint_vline(
             int widgetType, int state, String detail,
             int x, int y, int width, int height);
@@ -491,6 +491,14 @@ class GTKEngine {
         int gtkState =
             GTKLookAndFeel.synthStateToGTKStateType(state).ordinal();
         int synthState = context.getComponentState();
+        Container parent = context.getComponent().getParent();
+        if(GTKLookAndFeel.is3()) {
+            if (parent != null && parent.getParent() instanceof JComboBox) {
+                if (parent.getParent().hasFocus()) {
+                    synthState |= SynthConstants.FOCUSED;
+                }
+            }
+        }
         int dir = getTextDirection(context);
         int widget = getWidgetType(context.getComponent(), id).ordinal();
         native_paint_shadow(widget, gtkState, shadowType.ordinal(), detail,
@@ -498,13 +506,13 @@ class GTKEngine {
     }
 
     public void paintSlider(Graphics g, SynthContext context,
-            Region id, int state, ShadowType shadowType, String detail,
-            int x, int y, int w, int h, Orientation orientation) {
+            Region id, int state, ShadowType shadowType, String detail, int x,
+            int y, int w, int h, Orientation orientation, boolean hasFocus) {
 
         state = GTKLookAndFeel.synthStateToGTKStateType(state).ordinal();
         int widget = getWidgetType(context.getComponent(), id).ordinal();
         native_paint_slider(widget, state, shadowType.ordinal(), detail,
-                            x - x0, y - y0, w, h, orientation.ordinal());
+                         x - x0, y - y0, w, h, orientation.ordinal(), hasFocus);
     }
 
     public void paintVline(Graphics g, SynthContext context,

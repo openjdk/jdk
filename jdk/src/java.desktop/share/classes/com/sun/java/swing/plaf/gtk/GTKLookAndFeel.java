@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,8 @@ import sun.swing.SwingUtilities2;
  */
 @SuppressWarnings("serial") // Superclass not serializable
 public class GTKLookAndFeel extends SynthLookAndFeel {
-    private static final boolean IS_22;
+    private static boolean IS_22;
+    private static boolean IS_3;
 
     /**
      * Whether or not text is drawn antialiased.  This keys off the
@@ -107,17 +108,6 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
     private static String gtkThemeName = "Default";
 
     static {
-        // Backup for specifying the version, this isn't currently documented.
-        // If you pass in anything but 2.2 you got the 2.0 colors/look.
-        String version = AccessController.doPrivileged(
-               new GetPropertyAction("swing.gtk.version"));
-        if (version != null) {
-            IS_22 = version.equals("2.2");
-        }
-        else {
-            IS_22 = true;
-        }
-
         String language = Locale.getDefault().getLanguage();
         boolean cjkLocale =
             (Locale.CHINESE.getLanguage().equals(language) ||
@@ -156,6 +146,10 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         // need to get the major/minor/micro version from the .so.
         // Refer to bug 4912613 for details.
         return IS_22;
+    }
+
+    static boolean is3() {
+        return IS_3;
     }
 
     /**
@@ -1458,6 +1452,19 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
             !((UNIXToolkit)toolkit).loadGTK())
         {
             throw new InternalError("Unable to load native GTK libraries");
+        }
+
+        if (UNIXToolkit.getGtkVersion() == UNIXToolkit.GtkVersions.GTK2) {
+            String version = AccessController.doPrivileged(
+                    new GetPropertyAction("jdk.gtk.version"));
+            if (version != null) {
+                IS_22 = version.equals("2.2");
+            } else {
+                IS_22 = true;
+            }
+        } else if (UNIXToolkit.getGtkVersion() ==
+                                UNIXToolkit.GtkVersions.GTK3) {
+            IS_3 = true;
         }
 
         super.initialize();
