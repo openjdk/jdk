@@ -297,11 +297,7 @@ public class BeanPropertyTest {
             required     = REQUIRED,
             visualUpdate = UPDATE,
             enumerationValues = {V_NAME})
-        public int getX(int i) throws IndexOutOfBoundsException {
-            if (i < 0 || i >= x.length) {
-                throw new IndexOutOfBoundsException(); }
-            return x[i];
-        }
+        public int getX(int i) { return x[i]; }
 
         public void addPropertyChangeListener(PropertyChangeListener l)    {}
         public void removePropertyChangeListener(PropertyChangeListener l) {}
@@ -322,11 +318,7 @@ public class BeanPropertyTest {
             required     = REQUIRED,
             visualUpdate = UPDATE,
             enumerationValues = {V_NAME})
-        public void setX(int i, int v) throws IndexOutOfBoundsException {
-            if (i < 0 || i >= x.length) {
-                throw new IndexOutOfBoundsException(); }
-            x[i] = v;
-        }
+        public void setX(int i, int v) { x[i] = v; }
 
         public void addPropertyChangeListener(PropertyChangeListener l)    {}
         public void removePropertyChangeListener(PropertyChangeListener l) {}
@@ -348,11 +340,7 @@ public class BeanPropertyTest {
             required     = REQUIRED,
             visualUpdate = UPDATE,
             enumerationValues = {V_NAME})
-        public int getX(int i) throws IndexOutOfBoundsException {
-            if (i < 0 || i >= x.length) {
-                throw new IndexOutOfBoundsException(); }
-            return x[i];
-        }
+        public int getX(int i) { return x[i]; }
 
         public int[] getX() { return x; }
 
@@ -376,11 +364,7 @@ public class BeanPropertyTest {
             required     = REQUIRED,
             visualUpdate = UPDATE,
             enumerationValues = {V_NAME})
-        public void setX(int i, int v) throws IndexOutOfBoundsException {
-            if (i < 0 || i >= x.length) {
-                throw new IndexOutOfBoundsException(); }
-            x[i] = v;
-        }
+        public void setX(int i, int v) { x[i] = v; }
 
         public void setX(int a[]) { x = Arrays.copyOf(a, a.length); }
 
@@ -407,11 +391,7 @@ public class BeanPropertyTest {
             enumerationValues = {V_NAME})
         public int[] getX() { return x; }
 
-        public int getX(int i) throws IndexOutOfBoundsException {
-            if (i < 0 || i >= x.length) {
-                throw new IndexOutOfBoundsException(); }
-            return x[i];
-        }
+        public int getX(int i) { return x[i]; }
 
         public void addPropertyChangeListener(PropertyChangeListener l)    {}
         public void removePropertyChangeListener(PropertyChangeListener l) {}
@@ -436,11 +416,7 @@ public class BeanPropertyTest {
             enumerationValues = {V_NAME})
         public void setX(int a[]) { x = Arrays.copyOf(a, a.length); }
 
-        public void setX(int i, int v) throws IndexOutOfBoundsException {
-            if (i < 0 || i >= x.length) {
-                throw new IndexOutOfBoundsException(); }
-            x[i] = v;
-        }
+        public void setX(int i, int v) { x[i] = v; }
 
         public void addPropertyChangeListener(PropertyChangeListener l)    {}
         public void removePropertyChangeListener(PropertyChangeListener l) {}
@@ -472,11 +448,7 @@ public class BeanPropertyTest {
             preferred    = !PREFERRED,
             required     = !REQUIRED,
             visualUpdate = !UPDATE)
-        public int getX(int i) throws IndexOutOfBoundsException {
-            if (i < 0 || i >= x.length) {
-                throw new IndexOutOfBoundsException(); }
-            return x[i];
-        }
+        public int getX(int i) { return x[i]; }
 
         public void addPropertyChangeListener(PropertyChangeListener l)    {}
         public void removePropertyChangeListener(PropertyChangeListener l) {}
@@ -508,11 +480,7 @@ public class BeanPropertyTest {
             preferred    = !PREFERRED,
             required     = !REQUIRED,
             visualUpdate = !UPDATE)
-        public void setX(int i, int v) throws IndexOutOfBoundsException {
-            if (i < 0 || i >= x.length) {
-                throw new IndexOutOfBoundsException(); }
-            x[i] = v;
-        }
+        public void setX(int i, int v) { x[i] = v; }
 
 
         public void addPropertyChangeListener(PropertyChangeListener l)    {}
@@ -837,7 +805,53 @@ public class BeanPropertyTest {
         public void removePropertyChangeListener(PropertyChangeListener l) {}
     }
 
+    public static class Self {
 
+        private final static String TESTCASE = "trivial singleton";
+
+        private static Self instance = null;
+        private Self() {}
+
+        @BeanProperty(
+            description  = DESCRIPTION,
+            bound        = BOUND,
+            expert       = EXPERT,
+            hidden       = HIDDEN,
+            preferred    = PREFERRED,
+            required     = REQUIRED,
+            visualUpdate = UPDATE)
+        public Self getSelf() {
+            if (instance == null) { instance = new Self(); }
+            return instance;
+        }
+
+        public void addPropertyChangeListener(PropertyChangeListener l)    {}
+        public void removePropertyChangeListener(PropertyChangeListener l) {}
+    }
+
+    public static class SelfArr {
+
+        private final static String TESTCASE = "trivial singleton + array";
+
+        private static SelfArr arr[] = null;
+        private SelfArr() {}
+
+        @BeanProperty(
+            description  = DESCRIPTION,
+            bound        = BOUND,
+            expert       = EXPERT,
+            hidden       = HIDDEN,
+            preferred    = PREFERRED,
+            required     = REQUIRED,
+            visualUpdate = UPDATE)
+        public SelfArr[] getSelfArr() {
+            if (arr == null) { arr = new SelfArr[]{new SelfArr(), new SelfArr()}; }
+            return arr;
+        }
+
+        public void addPropertyChangeListener(PropertyChangeListener l)    {}
+        public void removePropertyChangeListener(PropertyChangeListener l) {}
+    }
 
 
     // ---------- checks ----------
@@ -850,7 +864,7 @@ public class BeanPropertyTest {
         return ok;
     }
 
-    private static boolean checkInfo(BeanInfo i) {
+    private static boolean checkInfo(BeanInfo i, boolean checkVals) {
 
         System.out.println("checking info...");
 
@@ -875,6 +889,8 @@ public class BeanPropertyTest {
         ok &= check("required", (boolean) d.getValue("required"), REQUIRED);
         ok &= check("visualUpdate",
             (boolean) d.getValue("visualUpdate"), UPDATE);
+
+        if (!checkVals) { return ok; }
 
         Object vals[] = (Object[]) d.getValue("enumerationValues");
         if (vals == null) {
@@ -936,6 +952,10 @@ public class BeanPropertyTest {
             c.equals(GS.class));
     }
 
+    private static boolean ignoreVals(Class<?> c) {
+        return (c.equals(Self.class) || c.equals(SelfArr.class));
+    }
+
 
     // ---------- run test ----------
 
@@ -959,7 +979,8 @@ public class BeanPropertyTest {
             // G14.class, S14.class, // TODO: please update after 8132888 fix or
                                      // remove these cases if it is not an issue
             // GS.class, // TODO: please update after 8132973 fix
-            getX.class, setX.class
+            getX.class, setX.class,
+            Self.class, SelfArr.class
         };
 
         boolean passed = true;
@@ -974,7 +995,7 @@ public class BeanPropertyTest {
             BeanInfo i;
             try { i = Introspector.getBeanInfo(c, Object.class); }
             catch (IntrospectionException e) { throw new RuntimeException(e); }
-            boolean ok = checkInfo(i);
+            boolean ok = checkInfo(i, !ignoreVals(c));
             if (checkAlternative(c)) {
                 ok |= checkAlternativeInfo(i);
             }
