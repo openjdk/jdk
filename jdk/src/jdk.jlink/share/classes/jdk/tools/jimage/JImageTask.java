@@ -32,7 +32,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.WRITE;
 import java.util.LinkedList;
@@ -44,8 +43,6 @@ import static jdk.internal.jimage.ImageHeader.MAJOR_VERSION;
 import static jdk.internal.jimage.ImageHeader.MINOR_VERSION;
 import jdk.internal.jimage.ImageLocation;
 import jdk.tools.jlink.internal.ImageResourcesTree;
-import jdk.tools.jlink.internal.ImagePluginConfiguration;
-import jdk.tools.jlink.internal.ImagePluginStack;
 import jdk.tools.jlink.internal.TaskHelper;
 import jdk.tools.jlink.internal.TaskHelper.BadArgs;
 import static jdk.tools.jlink.internal.TaskHelper.JIMAGE_BUNDLE;
@@ -97,7 +94,6 @@ class JImageTask {
         EXTRACT,
         INFO,
         LIST,
-        RECREATE,
         SET,
         VERIFY
     };
@@ -160,17 +156,19 @@ class JImageTask {
         try {
             List<String> unhandled = optionsHelper.handleOptions(this, args);
             if(!unhandled.isEmpty()) {
-                options.task = Enum.valueOf(Task.class, unhandled.get(0).toUpperCase());
+                try {
+                    options.task = Enum.valueOf(Task.class, unhandled.get(0).toUpperCase());
+                } catch (IllegalArgumentException ex) {
+                    throw taskHelper.newBadArgs("err.not.a.task", unhandled.get(0));
+                }
                 for(int i = 1; i < unhandled.size(); i++) {
                     options.jimages.add(new File(unhandled.get(i)));
                 }
+            } else {
+                throw taskHelper.newBadArgs("err.not.a.task", "<unspecified>");
             }
             if (options.help) {
                 optionsHelper.showHelp(PROGNAME);
-            }
-            if(optionsHelper.listPlugins()) {
-                optionsHelper.listPlugins(true);
-                return EXIT_OK;
             }
             if (options.version || options.fullVersion) {
                 taskHelper.showVersion(options.fullVersion);
@@ -188,30 +186,6 @@ class JImageTask {
             return EXIT_ABNORMAL;
         } finally {
             log.flush();
-        }
-    }
-
-    private void recreate() throws Exception, BadArgs {
-        File directory = new File(options.directory);
-        if (!directory.isDirectory()) {
-            throw taskHelper.newBadArgs("err.not.a.dir", directory.getAbsolutePath());
-        }
-        Path dirPath = directory.toPath();
-        if (options.jimages.isEmpty()) {
-            throw taskHelper.newBadArgs("err.jimage.not.specified");
-        } else if (options.jimages.size() != 1) {
-            throw taskHelper.newBadArgs("err.only.one.jimage");
-        }
-
-        Path jimage = options.jimages.get(0).toPath();
-
-        if (jimage.toFile().createNewFile()) {
-            ImagePluginStack pc = ImagePluginConfiguration.parseConfiguration(taskHelper.
-                    getPluginsConfig(null, false));
-            ExtractedImage img = new ExtractedImage(dirPath, pc, log, options.verbose);
-            img.recreateJImage(jimage);
-        } else {
-            throw taskHelper.newBadArgs("err.jimage.already.exists", jimage.getFileName());
         }
     }
 
@@ -378,9 +352,6 @@ class JImageTask {
                 break;
             case LIST:
                 iterate(this::listTitle, this::list);
-                break;
-            case RECREATE:
-                recreate();
                 break;
             case SET:
                 iterate(this::set, null);
