@@ -1184,6 +1184,10 @@ public:
                      Register result, Register cnt1,
                      int elem_size, bool is_string);
 
+  void fill_words(Register base, Register cnt, Register value);
+  void zero_words(Register base, Register cnt);
+  void zero_words(Register base, u_int64_t cnt);
+
   void byte_array_inflate(Register src, Register dst, Register len,
                           FloatRegister vtmp1, FloatRegister vtmp2,
                           FloatRegister vtmp3, Register tmp4);
