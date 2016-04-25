@@ -106,7 +106,10 @@ final class DiagList extends ArrayList<Diag> {
 
     DiagList ofUnit(Unit u) {
         return this.stream()
-                .filter(d -> d.unitOrNull() == u)
+                .filter(d -> {
+                    Snippet snn = d.snippetOrNull();
+                    return snn == u.snippet();
+                })
                 .collect(Collectors.toCollection(() -> new DiagList()));
     }
 

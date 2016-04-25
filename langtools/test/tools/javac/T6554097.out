@@ -1,7 +1,19 @@
-T6554097.java:18:46: compiler.warn.missing.SVUID: compiler.misc.anonymous.class: T6554097$5
-T6554097.java:19:46: compiler.warn.missing.SVUID: compiler.misc.anonymous.class: T6554097$6
-T6554097.java:22:50: compiler.warn.missing.SVUID: compiler.misc.anonymous.class: T6554097$7
-T6554097.java:23:54: compiler.warn.missing.SVUID: compiler.misc.anonymous.class: T6554097$8
+T6554097.java:13:42: compiler.warn.raw.class.use: java.util.ArrayList, java.util.ArrayList<E>
+T6554097.java:13:65: compiler.warn.raw.class.use: java.util.ArrayList, java.util.ArrayList<E>
+T6554097.java:14:42: compiler.warn.raw.class.use: java.util.ArrayList, java.util.ArrayList<E>
+T6554097.java:14:65: compiler.warn.raw.class.use: java.util.ArrayList, java.util.ArrayList<E>
+T6554097.java:17:50: compiler.warn.raw.class.use: java.util.ArrayList, java.util.ArrayList<E>
+T6554097.java:17:73: compiler.warn.raw.class.use: java.util.ArrayList, java.util.ArrayList<E>
+T6554097.java:18:50: compiler.warn.raw.class.use: java.util.ArrayList, java.util.ArrayList<E>
+T6554097.java:18:73: compiler.warn.raw.class.use: java.util.ArrayList, java.util.ArrayList<E>
+T6554097.java:21:11: compiler.warn.raw.class.use: java.util.ArrayList, java.util.ArrayList<E>
+T6554097.java:21:34: compiler.warn.raw.class.use: java.util.ArrayList, java.util.ArrayList<E>
+T6554097.java:22:11: compiler.warn.raw.class.use: java.util.ArrayList, java.util.ArrayList<E>
+T6554097.java:22:34: compiler.warn.raw.class.use: java.util.ArrayList, java.util.ArrayList<E>
+T6554097.java:25:15: compiler.warn.raw.class.use: java.util.ArrayList, java.util.ArrayList<E>
+T6554097.java:25:38: compiler.warn.raw.class.use: java.util.ArrayList, java.util.ArrayList<E>
+T6554097.java:26:15: compiler.warn.raw.class.use: java.util.ArrayList, java.util.ArrayList<E>
+T6554097.java:26:38: compiler.warn.raw.class.use: java.util.ArrayList, java.util.ArrayList<E>
 - compiler.err.warnings.and.werror
 1 error
-4 warnings
+16 warnings

@@ -61,7 +61,7 @@ import com.sun.corba.se.impl.orbutil.ORBUtility;
  */
 class SelectorImpl
     extends
-        sun.misc.ManagedLocalsThread
+        Thread
     implements
         com.sun.corba.se.pept.transport.Selector
 {
@@ -79,6 +79,7 @@ class SelectorImpl
 
     public SelectorImpl(ORB orb)
     {
+        super(null, null, "ORB-Selector-Thread", 0, false);
         this.orb = orb;
         selector = null;
         selectorStarted = false;
@@ -277,7 +278,6 @@ class SelectorImpl
 
     public void run()
     {
-        setName("SelectorThread");
         while (!closed) {
             try {
                 int n = 0;

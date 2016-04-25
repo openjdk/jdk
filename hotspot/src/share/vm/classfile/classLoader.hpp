@@ -101,10 +101,17 @@ typedef struct {
 
 
 class ClassPathZipEntry: public ClassPathEntry {
+ enum {
+   _unknown = 0,
+   _yes     = 1,
+   _no      = 2
+ };
  private:
   jzfile* _zip;              // The zip archive
   const char*   _zip_name;   // Name of zip archive
   bool _is_boot_append;      // entry coming from -Xbootclasspath/a
+  u1 _multi_versioned;       // indicates if the jar file has multi-versioned entries.
+                             // It can have value of "_unknown", "_yes", or "_no"
  public:
   bool is_jrt()            { return false; }
   bool is_jar_file() const { return true;  }

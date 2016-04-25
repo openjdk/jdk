@@ -2713,11 +2713,9 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   m->set_constants(_cp);
   m->set_name_index(name_index);
   m->set_signature_index(signature_index);
-#ifdef CC_INTERP
-  // hmm is there a gc issue here??
+
   ResultTypeFinder rtf(cp->symbol_at(signature_index));
-  m->set_result_index(rtf.type());
-#endif
+  m->constMethod()->set_result_type(rtf.type());
 
   if (args_size >= 0) {
     m->set_size_of_parameters(args_size);

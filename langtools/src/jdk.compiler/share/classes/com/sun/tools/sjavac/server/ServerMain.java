@@ -32,6 +32,8 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.Thread.UncaughtExceptionHandler;
 
+import com.sun.tools.javac.main.Main;
+import com.sun.tools.javac.main.Main.Result;
 import com.sun.tools.sjavac.Log;
 import com.sun.tools.sjavac.Log.Level;
 import com.sun.tools.sjavac.server.log.LazyInitFileLog;
@@ -75,7 +77,7 @@ public class ServerMain {
         // Any options other than --startserver?
         if (args.length > 1) {
             Log.error("When spawning a background server, only a single --startserver argument is allowed.");
-            return 1;
+            return Result.CMDERR.exitCode;
         }
 
         int exitCode;
@@ -84,7 +86,7 @@ public class ServerMain {
             exitCode = server.startServer();
         } catch (IOException | InterruptedException ex) {
             ex.printStackTrace();
-            exitCode = -1;
+            exitCode = Result.ERROR.exitCode;
         }
 
         return exitCode;

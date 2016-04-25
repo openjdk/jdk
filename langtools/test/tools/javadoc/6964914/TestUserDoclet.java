@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
  */
 
 import java.io.*;
+import java.util.*;
+
 import com.sun.javadoc.Doclet;
 import com.sun.javadoc.RootDoc;
 
@@ -55,12 +57,20 @@ public class TestUserDoclet extends Doclet {
         // run javadoc in separate process to ensure doclet executed under
         // normal user conditions w.r.t. classloader
         String thisClassName = TestUserDoclet.class.getName();
-        Process p = new ProcessBuilder()
-            .command(javadoc.getPath(),
-                "-J-Xpatch:" + System.getProperty("jdk.launcher.patch.0", ""),
+        List<String> cmdArgs = new ArrayList<>();
+        cmdArgs.add(javadoc.getPath());
+        int i = 0;
+        String prop;
+        while ((prop = System.getProperty("jdk.launcher.patch." + (i++))) != null) {
+            cmdArgs.add("-J-Xpatch:" + prop);
+        }
+        cmdArgs.addAll(Arrays.asList(
                 "-doclet", thisClassName,
                 "-docletpath", testClasses.getPath(),
-                new File(testSrc, thisClassName + ".java").getPath())
+                new File(testSrc, thisClassName + ".java").getPath()
+        ));
+        Process p = new ProcessBuilder()
+            .command(cmdArgs)
             .redirectErrorStream(true)
             .start();
 

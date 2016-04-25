@@ -26,8 +26,9 @@
 #define SHARE_VM_CODE_RELOCINFO_HPP
 
 #include "memory/allocation.hpp"
-#include "utilities/top.hpp"
+#include "runtime/os.hpp"
 
+class Metadata;
 class NativeMovConstReg;
 
 // Types in this file:

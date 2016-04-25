@@ -29,9 +29,9 @@
  * @build Wrapper
  * @run main Wrapper IdleShutdown
  */
-import java.io.Writer;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.sun.tools.javac.main.Main.Result;
 import com.sun.tools.sjavac.server.IdleResetSjavac;
 import com.sun.tools.sjavac.server.Sjavac;
 import com.sun.tools.sjavac.server.Terminable;
@@ -103,13 +103,13 @@ public class IdleShutdown {
         public void shutdown() {
         }
         @Override
-        public int compile(String[] args) {
+        public Result compile(String[] args) {
             // Attempt to trigger idle timeout during a call by sleeping
             try {
                 Thread.sleep(TIMEOUT_MS + 1000);
             } catch (InterruptedException e) {
             }
-            return 0;
+            return Result.OK;
         }
     }
 }

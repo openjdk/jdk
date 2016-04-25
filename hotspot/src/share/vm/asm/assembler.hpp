@@ -33,7 +33,6 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/top.hpp"
 
 // This file contains platform-independent assembler declarations.
 

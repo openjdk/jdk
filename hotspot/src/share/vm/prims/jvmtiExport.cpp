@@ -1702,7 +1702,7 @@ void JvmtiExport::post_raw_field_modification(JavaThread *thread, Method* method
   address location, KlassHandle field_klass, Handle object, jfieldID field,
   char sig_type, jvalue *value) {
 
-  if (sig_type == 'I' || sig_type == 'Z' || sig_type == 'C' || sig_type == 'S') {
+  if (sig_type == 'I' || sig_type == 'Z' || sig_type == 'B' || sig_type == 'C' || sig_type == 'S') {
     // 'I' instructions are used for byte, char, short and int.
     // determine which it really is, and convert
     fieldDescriptor fd;
@@ -2260,7 +2260,7 @@ void JvmtiExport::post_vm_object_alloc(JavaThread *thread,  oop object) {
     if (env->is_enabled(JVMTI_EVENT_VM_OBJECT_ALLOC)) {
       EVT_TRACE(JVMTI_EVENT_VM_OBJECT_ALLOC, ("JVMTI [%s] Evt vmobject alloc sent %s",
                                          JvmtiTrace::safe_get_thread_name(thread),
-                                         object==NULL? "NULL" : java_lang_Class::as_Klass(object)->external_name()));
+                                         object==NULL? "NULL" : object->klass()->external_name()));
 
       JvmtiVMObjectAllocEventMark jem(thread, h());
       JvmtiJavaThreadEventTransition jet(thread);

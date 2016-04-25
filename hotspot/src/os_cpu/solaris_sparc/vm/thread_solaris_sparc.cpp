@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
@@ -76,6 +77,14 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr,
     // ucontext wasn't useful
     return false;
   }
+
+#if INCLUDE_CDS
+  if (UseSharedSpaces && MetaspaceShared::is_in_shared_region(addr.pc(), MetaspaceShared::md)) {
+    // In the middle of a trampoline call. Bail out for safety.
+    // This happens rarely so shouldn't affect profiling.
+    return false;
+  }
+#endif
 
   frame ret_frame(ret_sp, frame::unpatchable, addr.pc());
 
