@@ -667,8 +667,11 @@ public final class DateTimeFormatterBuilder {
      * No rounding occurs due to the maximum width - digits are simply dropped.
      * <p>
      * When parsing in strict mode, the number of parsed digits must be between
-     * the minimum and maximum width. When parsing in lenient mode, the minimum
-     * width is considered to be zero and the maximum is nine.
+     * the minimum and maximum width. In strict mode, if the minimum and maximum widths
+     * are equal and there is no decimal point then the parser will
+     * participate in adjacent value parsing, see
+     * {@link appendValue(java.time.temporal.TemporalField, int)}. When parsing in lenient mode,
+     * the minimum width is considered to be zero and the maximum is nine.
      * <p>
      * If the value cannot be obtained then an exception will be thrown.
      * If the value is negative an exception will be thrown.
@@ -687,7 +690,12 @@ public final class DateTimeFormatterBuilder {
      */
     public DateTimeFormatterBuilder appendFraction(
             TemporalField field, int minWidth, int maxWidth, boolean decimalPoint) {
-        appendInternal(new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint));
+        if (minWidth == maxWidth && decimalPoint == false) {
+            // adjacent parsing
+            appendValue(new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint));
+        } else {
+            appendInternal(new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint));
+        }
         return this;
     }
 
@@ -2925,11 +2933,8 @@ public final class DateTimeFormatterBuilder {
     /**
      * Prints and parses a numeric date-time field with optional padding.
      */
-    static final class FractionPrinterParser implements DateTimePrinterParser {
-        private final TemporalField field;
-        private final int minWidth;
-        private final int maxWidth;
-        private final boolean decimalPoint;
+    static final class FractionPrinterParser extends NumberPrinterParser {
+       private final boolean decimalPoint;
 
         /**
          * Constructor.
@@ -2940,6 +2945,7 @@ public final class DateTimeFormatterBuilder {
          * @param decimalPoint  whether to output the localized decimal point symbol
          */
         FractionPrinterParser(TemporalField field, int minWidth, int maxWidth, boolean decimalPoint) {
+            this(field, minWidth, maxWidth, decimalPoint, 0);
             Objects.requireNonNull(field, "field");
             if (field.range().isFixed() == false) {
                 throw new IllegalArgumentException("Field must have a fixed set of values: " + field);
@@ -2954,10 +2960,59 @@ public final class DateTimeFormatterBuilder {
                 throw new IllegalArgumentException("Maximum width must exceed or equal the minimum width but " +
                         maxWidth + " < " + minWidth);
             }
-            this.field = field;
-            this.minWidth = minWidth;
-            this.maxWidth = maxWidth;
+        }
+
+        /**
+         * Constructor.
+         *
+         * @param field  the field to output, not null
+         * @param minWidth  the minimum width to output, from 0 to 9
+         * @param maxWidth  the maximum width to output, from 0 to 9
+         * @param decimalPoint  whether to output the localized decimal point symbol
+         * @param subsequentWidth the subsequentWidth for this instance
+         */
+        FractionPrinterParser(TemporalField field, int minWidth, int maxWidth, boolean decimalPoint, int subsequentWidth) {
+            super(field, minWidth, maxWidth, SignStyle.NOT_NEGATIVE, subsequentWidth);
             this.decimalPoint = decimalPoint;
+        }
+
+        /**
+         * Returns a new instance with fixed width flag set.
+         *
+         * @return a new updated printer-parser, not null
+         */
+        @Override
+        FractionPrinterParser withFixedWidth() {
+            if (subsequentWidth == -1) {
+                return this;
+            }
+            return new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint, -1);
+        }
+
+        /**
+         * Returns a new instance with an updated subsequent width.
+         *
+         * @param subsequentWidth  the width of subsequent non-negative numbers, 0 or greater
+         * @return a new updated printer-parser, not null
+         */
+        @Override
+        FractionPrinterParser withSubsequentWidth(int subsequentWidth) {
+            return new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint, this.subsequentWidth + subsequentWidth);
+        }
+
+        /**
+         * For FractionPrinterPrinterParser, the width is fixed if context is sttrict,
+         * minWidth equal to maxWidth and decimalpoint is absent.
+         * @param context the context
+         * @return if the field is fixed width
+         * @see DateTimeFormatterBuilder#appendValueFraction(java.time.temporal.TemporalField, int, int, boolean)
+         */
+        @Override
+        boolean isFixedWidth(DateTimeParseContext context) {
+            if (context.isStrict() && minWidth == maxWidth && decimalPoint == false) {
+                return true;
+            }
+            return false;
         }
 
         @Override
@@ -2992,8 +3047,8 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public int parse(DateTimeParseContext context, CharSequence text, int position) {
-            int effectiveMin = (context.isStrict() ? minWidth : 0);
-            int effectiveMax = (context.isStrict() ? maxWidth : 9);
+            int effectiveMin = (context.isStrict() || isFixedWidth(context) ? minWidth : 0);
+            int effectiveMax = (context.isStrict() || isFixedWidth(context) ? maxWidth : 9);
             int length = text.length();
             if (position == length) {
                 // valid if whole field is optional, invalid if minimum width

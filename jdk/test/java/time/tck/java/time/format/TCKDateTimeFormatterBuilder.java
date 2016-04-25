@@ -71,6 +71,7 @@ import static org.testng.Assert.assertEquals;
 
 import java.text.ParsePosition;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -930,7 +931,7 @@ public class TCKDateTimeFormatterBuilder {
 
     @Test
     public void test_adjacent_lenient_fractionFollows_0digit() throws Exception {
-        // succeeds because hour/min are fixed width
+        // succeeds because hour, min and fraction of seconds are fixed width
         DateTimeFormatter f = builder.parseLenient().appendValue(HOUR_OF_DAY, 2).appendValue(MINUTE_OF_HOUR, 2).appendFraction(NANO_OF_SECOND, 3, 3, false).toFormatter(Locale.UK);
         ParsePosition pp = new ParsePosition(0);
         TemporalAccessor parsed = f.parseUnresolved("1230", pp);
@@ -938,6 +939,21 @@ public class TCKDateTimeFormatterBuilder {
         assertEquals(pp.getIndex(), 4);
         assertEquals(parsed.getLong(HOUR_OF_DAY), 12L);
         assertEquals(parsed.getLong(MINUTE_OF_HOUR), 30L);
+    }
+
+    @DataProvider(name="adjacentFractionParseData")
+    Object[][] data_adjacent_fraction_parse() {
+        return new Object[][] {
+            {"20130812214600025", "yyyyMMddHHmmssSSS", LocalDateTime.of(2013, 8, 12, 21, 46, 00, 25000000)},
+            {"201308122146000256", "yyyyMMddHHmmssSSSS", LocalDateTime.of(2013, 8, 12, 21, 46, 00, 25600000)},
+        };
+    }
+
+    @Test(dataProvider = "adjacentFractionParseData")
+    public void test_adjacent_fraction(String input, String pattern, LocalDateTime expected) {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern(pattern);
+        LocalDateTime actual = LocalDateTime.parse(input, dtf);
+        assertEquals(actual, expected);
     }
 
     @DataProvider(name="lenientOffsetParseData")
