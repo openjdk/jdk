@@ -608,7 +608,7 @@ public class StyleConstants {
      * @param i the value
      */
     public static void setFirstLineIndent(MutableAttributeSet a, float i) {
-        a.addAttribute(FirstLineIndent, new Float(i));
+        a.addAttribute(FirstLineIndent, Float.valueOf(i));
     }
 
     /**
@@ -632,7 +632,7 @@ public class StyleConstants {
      * @param i the value
      */
     public static void setRightIndent(MutableAttributeSet a, float i) {
-        a.addAttribute(RightIndent, new Float(i));
+        a.addAttribute(RightIndent, Float.valueOf(i));
     }
 
     /**
@@ -656,7 +656,7 @@ public class StyleConstants {
      * @param i the value
      */
     public static void setLeftIndent(MutableAttributeSet a, float i) {
-        a.addAttribute(LeftIndent, new Float(i));
+        a.addAttribute(LeftIndent, Float.valueOf(i));
     }
 
     /**
@@ -680,7 +680,7 @@ public class StyleConstants {
      * @param i the value
      */
     public static void setLineSpacing(MutableAttributeSet a, float i) {
-        a.addAttribute(LineSpacing, new Float(i));
+        a.addAttribute(LineSpacing, Float.valueOf(i));
     }
 
     /**
@@ -704,7 +704,7 @@ public class StyleConstants {
      * @param i the value
      */
     public static void setSpaceAbove(MutableAttributeSet a, float i) {
-        a.addAttribute(SpaceAbove, new Float(i));
+        a.addAttribute(SpaceAbove, Float.valueOf(i));
     }
 
     /**
@@ -728,7 +728,7 @@ public class StyleConstants {
      * @param i the value
      */
     public static void setSpaceBelow(MutableAttributeSet a, float i) {
-        a.addAttribute(SpaceBelow, new Float(i));
+        a.addAttribute(SpaceBelow, Float.valueOf(i));
     }
 
     /**

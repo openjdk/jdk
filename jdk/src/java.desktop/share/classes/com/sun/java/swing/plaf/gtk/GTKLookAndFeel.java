@@ -379,7 +379,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         }
         Insets zeroInsets = new InsetsUIResource(0, 0, 0, 0);
 
-        Double defaultCaretAspectRatio = new Double(0.025);
+        Double defaultCaretAspectRatio = Double.valueOf(0.025);
         Color caretColor = table.getColor("caretColor");
         Color controlText = table.getColor("controlText");
 

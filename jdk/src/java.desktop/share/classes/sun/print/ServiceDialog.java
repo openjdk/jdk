@@ -1402,8 +1402,8 @@ public class ServiceDialog extends JDialog implements ActionListener {
             format.setParseIntegerOnly(false);
             format.setDecimalSeparatorAlwaysShown(true);
             NumberFormatter nf = new NumberFormatter(format);
-            nf.setMinimum(new Float(0.0f));
-            nf.setMaximum(new Float(999.0f));
+            nf.setMinimum(Float.valueOf(0.0f));
+            nf.setMaximum(Float.valueOf(999.0f));
             nf.setAllowsInvalid(true);
             nf.setCommitsOnValidEdit(true);
 
@@ -1836,10 +1836,10 @@ public class ServiceDialog extends JDialog implements ActionListener {
             rmVal = mediaSize.getX(units) - pax - paw;
             bmVal = mediaSize.getY(units) - pay - pah;
 
-            lmObj = new Float(lmVal);
-            rmObj = new Float(rmVal);
-            tmObj = new Float(tmVal);
-            bmObj = new Float(bmVal);
+            lmObj = lmVal;
+            rmObj = rmVal;
+            tmObj = tmVal;
+            bmObj = bmVal;
 
             /* Now we know the values to use, we need to assign them
              * to the fields appropriate for the orientation.
