@@ -768,6 +768,15 @@ class GTKPainter extends SynthPainter {
         // The ubuntulooks engine paints slider troughs differently depending
         // on the current slider value and its component orientation.
         JSlider slider = (JSlider)context.getComponent();
+        if (GTKLookAndFeel.is3()) {
+            if (slider.getOrientation() == JSlider.VERTICAL) {
+                y += 1;
+                h -= 2;
+            } else {
+                x += 1;
+                w -= 2;
+            }
+        }
         double value = slider.getValue();
         double min = slider.getMinimum();
         double max = slider.getMaximum();
@@ -801,15 +810,19 @@ class GTKPainter extends SynthPainter {
         Region id = context.getRegion();
         int gtkState = GTKLookAndFeel.synthStateToGTKState(
                 id, context.getComponentState());
+        boolean hasFocus = GTKLookAndFeel.is3() &&
+                ((context.getComponentState() & SynthConstants.FOCUSED) != 0);
         synchronized (UNIXToolkit.GTK_LOCK) {
-            if (! ENGINE.paintCachedImage(g, x, y, w, h, id, gtkState, dir)) {
+            if (! ENGINE.paintCachedImage(g, x, y, w, h, id, gtkState, dir,
+                                                                    hasFocus)) {
                 Orientation orientation = (dir == JSlider.HORIZONTAL ?
                     Orientation.HORIZONTAL : Orientation.VERTICAL);
                 String detail = (dir == JSlider.HORIZONTAL ?
                     "hscale" : "vscale");
                 ENGINE.startPainting(g, x, y, w, h, id, gtkState, dir);
                 ENGINE.paintSlider(g, context, id, gtkState,
-                        ShadowType.OUT, detail, x, y, w, h, orientation);
+                        ShadowType.OUT, detail, x, y, w, h, orientation,
+                                                                     hasFocus);
                 ENGINE.finishPainting();
             }
         }
@@ -988,15 +1001,21 @@ class GTKPainter extends SynthPainter {
             int yThickness = style.getYThickness();
 
             ENGINE.startPainting(g, x, y, w, h, id, state);
+            if (GTKLookAndFeel.is3()) {
+                ENGINE.paintBackground(g, context, id, gtkState, null,
+                                                                    x, y, w, h);
+            }
             ENGINE.paintShadow(g, context, id, gtkState,
                                ShadowType.IN, "entry", x, y, w, h);
-            ENGINE.paintFlatBox(g, context, id,
-                                gtkState, ShadowType.NONE, "entry_bg",
-                                x + xThickness,
-                                y + yThickness,
-                                w - (2 * xThickness),
-                                h - (2 * yThickness),
-                                ColorType.TEXT_BACKGROUND);
+            if (!GTKLookAndFeel.is3()) {
+                ENGINE.paintFlatBox(g, context, id,
+                        gtkState, ShadowType.NONE, "entry_bg",
+                        x + xThickness,
+                        y + yThickness,
+                        w - (2 * xThickness),
+                        h - (2 * yThickness),
+                        ColorType.TEXT_BACKGROUND);
+            }
 
             if (focusSize > 0 && (state & SynthConstants.FOCUSED) != 0) {
                 if (!interiorFocus) {
@@ -1007,14 +1026,14 @@ class GTKPainter extends SynthPainter {
                 } else {
                     if (containerParent instanceof JComboBox) {
                         x += (focusSize + 2);
-                        y += (focusSize + 1);
-                        w -= (2 * focusSize + 1);
-                        h -= (2 * focusSize + 2);
+                        y += focusSize + (GTKLookAndFeel.is3() ? 3 : 1);
+                        w -= 2 * focusSize + (GTKLookAndFeel.is3() ? 4 : 1);
+                        h -= 2 * focusSize + (GTKLookAndFeel.is3() ? 6 : 2);
                     } else {
-                        x += focusSize;
-                        y += focusSize;
-                        w -= 2 * focusSize;
-                        h -= 2 * focusSize;
+                        x += focusSize + (GTKLookAndFeel.is3() ? 2 : 0);
+                        y += focusSize + (GTKLookAndFeel.is3() ? 2 :0 );
+                        w -= 2 * focusSize + (GTKLookAndFeel.is3() ? 4 : 0);
+                        h -= 2 * focusSize + (GTKLookAndFeel.is3() ? 4 : 0);
                     }
                 }
                 ENGINE.paintFocus(g, context, id, gtkState,
@@ -1163,8 +1182,8 @@ class GTKPainter extends SynthPainter {
                 Orientation orientation = (dir == JScrollBar.HORIZONTAL ?
                     Orientation.HORIZONTAL : Orientation.VERTICAL);
                 ENGINE.setRangeValue(context, id, value, min, max, visible);
-                ENGINE.paintSlider(g, context, id, gtkState,
-                        ShadowType.OUT, "slider", x, y, w, h, orientation);
+                ENGINE.paintSlider(g, context, id, gtkState, ShadowType.OUT,
+                                      "slider", x, y, w, h, orientation, false);
                 ENGINE.finishPainting();
             }
         }
