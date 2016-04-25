@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -177,4 +177,6 @@ void AbstractInterpreter::layout_activation(Method* method,
   }
   *interpreter_frame->interpreter_frame_cache_addr() =
     method->constants()->cache();
+  *interpreter_frame->interpreter_frame_mirror_addr() =
+    method->method_holder()->java_mirror();
 }
