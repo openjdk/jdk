@@ -262,9 +262,14 @@ class RemoteAgent {
         }
     }
 
+    /**
+     * Expunge internal info from string
+     * @param s string to process
+     * @return string the display, JShell package and wrapper class names removed
+     */
     static String expunge(String s) {
         StringBuilder sb = new StringBuilder();
-        for (String comp : prefixPattern.split(s)) {
+        for (String comp : PREFIX_PATTERN.split(s)) {
             sb.append(comp);
         }
         return sb.toString();

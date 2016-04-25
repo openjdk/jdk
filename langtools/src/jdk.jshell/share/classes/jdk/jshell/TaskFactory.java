@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,22 +148,11 @@ class TaskFactory {
                 public String getMessage(Locale locale) {
                     return expunge(d.getMessage(locale));
                 }
-
-                @Override
-                Unit unitOrNull() {
-                    return null;
-                }
             };
         }
     }
 
     private class WrapSourceHandler implements SourceHandler<OuterWrap> {
-
-        final OuterWrap wrap;
-
-        WrapSourceHandler(OuterWrap wrap) {
-            this.wrap = wrap;
-        }
 
         @Override
         public JavaFileObject sourceToFileObject(MemoryFileManager fm, OuterWrap w) {
@@ -172,24 +161,9 @@ class TaskFactory {
 
         @Override
         public Diag diag(Diagnostic<? extends JavaFileObject> d) {
-            return wrap.wrapDiag(d);
-        }
-    }
-
-    private class UnitSourceHandler implements SourceHandler<Unit> {
-
-        @Override
-        public JavaFileObject sourceToFileObject(MemoryFileManager fm, Unit u) {
-            return fm.createSourceFileObject(u,
-                    state.maps.classFullName(u.snippet()),
-                    u.snippet().outerWrap().wrapped());
-        }
-
-        @Override
-        public Diag diag(Diagnostic<? extends JavaFileObject> d) {
             SourceMemoryJavaFileObject smjfo = (SourceMemoryJavaFileObject) d.getSource();
-            Unit u = (Unit) smjfo.getOrigin();
-            return u.snippet().outerWrap().wrapDiag(d);
+            OuterWrap w = (OuterWrap) smjfo.getOrigin();
+            return w.wrapDiag(d);
         }
     }
 
@@ -242,13 +216,12 @@ class TaskFactory {
         private final Iterable<? extends CompilationUnitTree> cuts;
 
         AnalyzeTask(final OuterWrap wrap) {
-            this(Stream.of(wrap),
-                    new WrapSourceHandler(wrap),
-                    "-XDshouldStopPolicy=FLOW", "-proc:none");
+            this(Collections.singletonList(wrap));
         }
 
-        AnalyzeTask(final Collection<Unit> units) {
-            this(units.stream(), new UnitSourceHandler(),
+        AnalyzeTask(final Collection<OuterWrap> wraps) {
+            this(wraps.stream(),
+                    new WrapSourceHandler(),
                     "-XDshouldStopPolicy=FLOW", "-Xlint:unchecked", "-XaddExports:jdk.jshell/jdk.internal.jshell.remote=ALL-UNNAMED", "-proc:none");
         }
 
@@ -287,10 +260,10 @@ class TaskFactory {
      */
     class CompileTask extends BaseTask {
 
-        private final Map<Unit, List<OutputMemoryJavaFileObject>> classObjs = new HashMap<>();
+        private final Map<OuterWrap, List<OutputMemoryJavaFileObject>> classObjs = new HashMap<>();
 
-        CompileTask(Collection<Unit> units) {
-            super(units.stream(), new UnitSourceHandler(),
+        CompileTask(final Collection<OuterWrap> wraps) {
+            super(wraps.stream(), new WrapSourceHandler(),
                     "-Xlint:unchecked", "-XaddExports:jdk.jshell/jdk.internal.jshell.remote=ALL-UNNAMED", "-proc:none");
         }
 
@@ -302,8 +275,8 @@ class TaskFactory {
         }
 
 
-        List<ClassInfo> classInfoList(Unit u) {
-            List<OutputMemoryJavaFileObject> l = classObjs.get(u);
+        List<ClassInfo> classInfoList(OuterWrap w) {
+            List<OutputMemoryJavaFileObject> l = classObjs.get(w);
             if (l == null) return Collections.emptyList();
             return l.stream()
                     .map(fo -> state.classTracker.classInfo(fo.getName(), fo.getBytes()))
@@ -315,11 +288,11 @@ class TaskFactory {
             //debug("listenForNewClassFile %s loc=%s kind=%s\n", className, location, kind);
             if (location == CLASS_OUTPUT) {
                 state.debug(DBG_GEN, "Compiler generating class %s\n", className);
-                Unit u = ((sibling instanceof SourceMemoryJavaFileObject)
-                        && (((SourceMemoryJavaFileObject) sibling).getOrigin() instanceof Unit))
-                        ? (Unit) ((SourceMemoryJavaFileObject) sibling).getOrigin()
+                OuterWrap w = ((sibling instanceof SourceMemoryJavaFileObject)
+                        && (((SourceMemoryJavaFileObject) sibling).getOrigin() instanceof OuterWrap))
+                        ? (OuterWrap) ((SourceMemoryJavaFileObject) sibling).getOrigin()
                         : null;
-                classObjs.compute(u, (k, v) -> (v == null)? new ArrayList<>() : v)
+                classObjs.compute(w, (k, v) -> (v == null)? new ArrayList<>() : v)
                         .add(jfo);
             }
         }

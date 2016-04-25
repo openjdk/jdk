@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.jshell;
 
 import java.util.ArrayList;
@@ -50,7 +49,6 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import com.sun.tools.javac.util.Context;
 import jdk.jshell.ClassTracker.ClassInfo;
 import jdk.jshell.Key.ErroneousKey;
 import jdk.jshell.Key.MethodKey;
@@ -68,7 +66,7 @@ import static java.util.stream.Collectors.toSet;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
 import static jdk.jshell.Util.*;
 import static jdk.internal.jshell.remote.RemoteCodes.DOIT_METHOD_NAME;
-import static jdk.internal.jshell.remote.RemoteCodes.prefixPattern;
+import static jdk.internal.jshell.remote.RemoteCodes.PREFIX_PATTERN;
 import static jdk.jshell.Snippet.SubKind.SINGLE_TYPE_IMPORT_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.SINGLE_STATIC_IMPORT_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.TYPE_IMPORT_ON_DEMAND_SUBKIND;
@@ -339,18 +337,8 @@ class Eval {
         return declare(snip);
     }
 
-    private OuterWrap wrapInClass(String className, Set<Key> except, String userSource, Wrap guts, Collection<Snippet> plus) {
-        String imports = state.maps.packageAndImportsExcept(except, plus);
-        return OuterWrap.wrapInClass(state.maps.packageName(), className, imports, userSource, guts);
-    }
-
-    OuterWrap wrapInClass(Snippet snip, Set<Key> except, Wrap guts, Collection<Snippet> plus) {
-        return wrapInClass(snip.className(), except, snip.source(), guts, plus);
-    }
-
     private AnalyzeTask trialCompile(Wrap guts) {
-        OuterWrap outer = wrapInClass(REPL_DOESNOTMATTER_CLASS_NAME,
-                Collections.emptySet(), "", guts, null);
+        OuterWrap outer = state.outerMap.wrapInTrialClass(guts);
         return state.taskFactory.new AnalyzeTask(outer);
     }
 
@@ -468,7 +456,7 @@ class Eval {
         if (si.status().isDefined) {
             if (si.isExecutable()) {
                 try {
-                    value = state.executionControl().commandInvoke(state.maps.classFullName(si));
+                value = state.executionControl().commandInvoke(si.classFullName());
                     value = si.subKind().hasValue()
                             ? expunge(value)
                             : "";
@@ -504,18 +492,33 @@ class Eval {
         return events(c, outs, value, exception);
     }
 
+    private boolean interestingEvent(SnippetEvent e) {
+        return e.isSignatureChange()
+                    || e.causeSnippet() == null
+                    || e.status() != e.previousStatus()
+                    || e.exception() != null;
+    }
+
     private List<SnippetEvent> events(Unit c, Collection<Unit> outs, String value, Exception exception) {
         List<SnippetEvent> events = new ArrayList<>();
         events.add(c.event(value, exception));
         events.addAll(outs.stream()
                 .filter(u -> u != c)
                 .map(u -> u.event(null, null))
+                .filter(this::interestingEvent)
                 .collect(Collectors.toList()));
         events.addAll(outs.stream()
                 .flatMap(u -> u.secondaryEvents().stream())
+                .filter(this::interestingEvent)
                 .collect(Collectors.toList()));
         //System.err.printf("Events: %s\n", events);
         return events;
+    }
+
+    private Set<OuterWrap> outerWrapSet(Collection<Unit> units) {
+        return units.stream()
+                .map(u -> u.snippet().outerWrap())
+                .collect(toSet());
     }
 
     private Set<Unit> compileAndLoad(Set<Unit> ins) {
@@ -523,18 +526,20 @@ class Eval {
             return ins;
         }
         Set<Unit> replaced = new LinkedHashSet<>();
+        // Loop until dependencies and errors are stable
         while (true) {
             state.debug(DBG_GEN, "compileAndLoad  %s\n", ins);
 
-            ins.stream().forEach(u -> u.initialize(ins));
-            AnalyzeTask at = state.taskFactory.new AnalyzeTask(ins);
+            ins.stream().forEach(u -> u.initialize());
+            ins.stream().forEach(u -> u.setWrap(ins, ins));
+            AnalyzeTask at = state.taskFactory.new AnalyzeTask(outerWrapSet(ins));
             ins.stream().forEach(u -> u.setDiagnostics(at));
 
             // corral any Snippets that need it
             AnalyzeTask cat;
             if (ins.stream().anyMatch(u -> u.corralIfNeeded(ins))) {
                 // if any were corralled, re-analyze everything
-                cat = state.taskFactory.new AnalyzeTask(ins);
+                cat = state.taskFactory.new AnalyzeTask(outerWrapSet(ins));
                 ins.stream().forEach(u -> u.setCorralledDiagnostics(cat));
             } else {
                 cat = at;
@@ -556,7 +561,7 @@ class Eval {
                     legit.stream().forEach(u -> u.setWrap(ins, legit));
 
                     // generate class files for those capable
-                    CompileTask ct = state.taskFactory.new CompileTask(legit);
+                    CompileTask ct = state.taskFactory.new CompileTask(outerWrapSet(legit));
                     if (!ct.compile()) {
                         // oy! compile failed because of recursive new unresolved
                         if (legit.stream()
@@ -572,8 +577,8 @@ class Eval {
 
                     // load all new classes
                     load(legit.stream()
-                            .flatMap(u -> u.classesToLoad(ct.classInfoList(u)))
-                            .collect(toList()));
+                            .flatMap(u -> u.classesToLoad(ct.classInfoList(u.snippet().outerWrap())))
+                            .collect(toSet()));
                     // attempt to redefine the remaining classes
                     List<Unit> toReplace = legit.stream()
                             .filter(u -> !u.doRedefines())
@@ -607,7 +612,7 @@ class Eval {
         }
     }
 
-    private void load(List<ClassInfo> cil) {
+    private void load(Set<ClassInfo> cil) {
         if (!cil.isEmpty()) {
             state.executionControl().commandLoad(cil);
         }
@@ -625,20 +630,14 @@ class Eval {
         StackTraceElement[] elems = new StackTraceElement[last + 1];
         for (int i = 0; i <= last; ++i) {
             StackTraceElement r = raw[i];
-            String rawKlass = r.getClassName();
-            Matcher matcher = prefixPattern.matcher(rawKlass);
-            String num;
-            if (matcher.find() && (num = matcher.group("num")) != null) {
-                int end = matcher.end();
-                if (rawKlass.charAt(end - 1) == '$') {
-                    --end;
-                }
-                int id = Integer.parseInt(num);
-                Snippet si = state.maps.getSnippet(id);
-                String klass = expunge(rawKlass);
+            OuterSnippetsClassWrap outer = state.outerMap.getOuter(r.getClassName());
+            if (outer != null) {
+                String klass = expunge(r.getClassName());
                 String method = r.getMethodName().equals(DOIT_METHOD_NAME) ? "" : r.getMethodName();
-                String file = "#" + id;
-                int line = si.outerWrap().wrapLineToSnippetLine(r.getLineNumber() - 1) + 1;
+                int wln = r.getLineNumber() - 1;
+                int line = outer.wrapLineToSnippetLine(wln) + 1;
+                Snippet sn = outer.wrapLineToSnippet(wln);
+                String file = "#" + sn.id();
                 elems[i] = new StackTraceElement(klass, method, file, line);
             } else if (r.getFileName().equals("<none>")) {
                 elems[i] = new StackTraceElement(r.getClassName(), r.getMethodName(), null, r.getLineNumber());
@@ -654,7 +653,7 @@ class Eval {
     }
 
     private boolean isWrap(StackTraceElement ste) {
-        return prefixPattern.matcher(ste.getClassName()).find();
+        return PREFIX_PATTERN.matcher(ste.getClassName()).find();
     }
 
     private DiagList modifierDiagnostics(ModifiersTree modtree,
@@ -713,11 +712,6 @@ class Eval {
             @Override
             public String getMessage(Locale locale) {
                 return message;
-            }
-
-            @Override
-            Unit unitOrNull() {
-                return null;
             }
         }
 
