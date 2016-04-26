@@ -51,7 +51,7 @@ import java.nio.file.Paths;
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  *
- * @run main/othervm/timeout=240  -Xms256M -Xmx256M -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ * @run main/othervm/timeout=240  -Xms256M -Xmx256M -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                                gc.g1.humongousObjects.ClassLoaderGenerator 1
  *
  * @run main/othervm -Xms256M -Xmx256M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
