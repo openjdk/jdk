@@ -191,8 +191,6 @@ java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java 7146541 linux-al
 
 java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java       7191877 generic-all
 
-sun/rmi/transport/proxy/EagerHttpFallback.java                  7195095 generic-all
-
 java/rmi/activation/Activatable/extLoadedImpl/ext.sh            8062724 generic-all
 
 sun/rmi/rmic/newrmic/equivalence/run.sh                         8145980 generic-all
