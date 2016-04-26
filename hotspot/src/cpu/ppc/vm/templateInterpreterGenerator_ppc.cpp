@@ -1317,7 +1317,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ testbitdi(CCR0, R0, access_flags, JVM_ACC_STATIC_BIT);
     __ bfalse(CCR0, method_is_not_static);
 
-    __ load_mirror(R12_sratch2, R19_method);
+    __ load_mirror(R12_scratch2, R19_method);
     // state->_native_mirror = mirror;
 
     __ ld(R11_scratch1, 0, R1_SP);
