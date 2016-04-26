@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     // ok. adapter blobs never have a frame complete and are never ok.
 
     if (!_cb->is_frame_complete_at(_pc)) {
-      if (_cb->is_nmethod() || _cb->is_adapter_blob() || _cb->is_runtime_stub()) {
+      if (_cb->is_compiled() || _cb->is_adapter_blob() || _cb->is_runtime_stub()) {
         return false;
       }
     }
@@ -220,13 +220,11 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return jcw_safe;
     }
 
-    if (sender_blob->is_nmethod()) {
-        nmethod* nm = sender_blob->as_nmethod_or_null();
-        if (nm != NULL) {
-            if (nm->is_deopt_mh_entry(sender_pc) || nm->is_deopt_entry(sender_pc) ||
-                nm->method()->is_method_handle_intrinsic()) {
-                return false;
-            }
+    CompiledMethod* nm = sender_blob->as_compiled_method_or_null();
+    if (nm != NULL) {
+        if (nm->is_deopt_mh_entry(sender_pc) || nm->is_deopt_entry(sender_pc) ||
+            nm->method()->is_method_handle_intrinsic()) {
+            return false;
         }
     }
 
@@ -234,7 +232,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     // because the return address counts against the callee's frame.
 
     if (sender_blob->frame_size() <= 0) {
-      assert(!sender_blob->is_nmethod(), "should count return address at least");
+      assert(!sender_blob->is_compiled(), "should count return address at least");
       return false;
     }
 
@@ -243,7 +241,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     // should not be anything but the call stub (already covered), the interpreter (already covered)
     // or an nmethod.
 
-    if (!sender_blob->is_nmethod()) {
+    if (!sender_blob->is_compiled()) {
         return false;
     }
 
@@ -286,7 +284,7 @@ void frame::patch_pc(Thread* thread, address pc) {
   assert(_pc == *pc_addr || pc == *pc_addr, "must be");
   *pc_addr = pc;
   _cb = CodeCache::find_blob(pc);
-  address original_pc = nmethod::get_deopt_original_pc(this);
+  address original_pc = CompiledMethod::get_deopt_original_pc(this);
   if (original_pc != NULL) {
     assert(original_pc == _pc, "expected original PC to be stored before patching");
     _deopt_state = is_deoptimized;
@@ -372,7 +370,7 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
 // Verifies the calculated original PC of a deoptimization PC for the
 // given unextended SP.
 #ifdef ASSERT
-void frame::verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp) {
+void frame::verify_deopt_original_pc(CompiledMethod* nm, intptr_t* unextended_sp) {
   frame fr;
 
   // This is ugly but it's better than to change {get,set}_original_pc
@@ -381,7 +379,7 @@ void frame::verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp) {
   fr._unextended_sp = unextended_sp;
 
   address original_pc = nm->get_original_pc(&fr);
-  assert(nm->insts_contains(original_pc), "original PC must be in nmethod");
+  assert(nm->insts_contains(original_pc), "original PC must be in CompiledMethod");
 }
 #endif
 
@@ -392,12 +390,14 @@ void frame::adjust_unextended_sp() {
   // as any other call site. Therefore, no special action is needed when we are
   // returning to any of these call sites.
 
-  nmethod* sender_nm = (_cb == NULL) ? NULL : _cb->as_nmethod_or_null();
-  if (sender_nm != NULL) {
-    // If the sender PC is a deoptimization point, get the original PC.
-    if (sender_nm->is_deopt_entry(_pc) ||
-        sender_nm->is_deopt_mh_entry(_pc)) {
-      DEBUG_ONLY(verify_deopt_original_pc(sender_nm, _unextended_sp));
+  if (_cb != NULL) {
+    CompiledMethod* sender_cm = _cb->as_compiled_method_or_null();
+    if (sender_cm != NULL) {
+      // If the sender PC is a deoptimization point, get the original PC.
+      if (sender_cm->is_deopt_entry(_pc) ||
+          sender_cm->is_deopt_mh_entry(_pc)) {
+        DEBUG_ONLY(verify_deopt_original_pc(sender_cm, _unextended_sp));
+      }
     }
   }
 }

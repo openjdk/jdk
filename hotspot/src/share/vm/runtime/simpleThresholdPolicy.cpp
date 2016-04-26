@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,7 +192,7 @@ void SimpleThresholdPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
 }
 
 nmethod* SimpleThresholdPolicy::event(const methodHandle& method, const methodHandle& inlinee,
-                                      int branch_bci, int bci, CompLevel comp_level, nmethod* nm, JavaThread* thread) {
+                                      int branch_bci, int bci, CompLevel comp_level, CompiledMethod* nm, JavaThread* thread) {
   if (comp_level == CompLevel_none &&
       JvmtiExport::can_post_interpreter_events() &&
       thread->is_interp_only_mode()) {
@@ -392,7 +392,7 @@ CompLevel SimpleThresholdPolicy::loop_event(Method* method, CompLevel cur_level)
 
 // Handle the invocation event.
 void SimpleThresholdPolicy::method_invocation_event(const methodHandle& mh, const methodHandle& imh,
-                                              CompLevel level, nmethod* nm, JavaThread* thread) {
+                                              CompLevel level, CompiledMethod* nm, JavaThread* thread) {
   if (is_compilation_enabled() && !CompileBroker::compilation_is_in_queue(mh)) {
     CompLevel next_level = call_event(mh(), level);
     if (next_level != level) {
@@ -404,7 +404,7 @@ void SimpleThresholdPolicy::method_invocation_event(const methodHandle& mh, cons
 // Handle the back branch event. Notice that we can compile the method
 // with a regular entry from here.
 void SimpleThresholdPolicy::method_back_branch_event(const methodHandle& mh, const methodHandle& imh,
-                                                     int bci, CompLevel level, nmethod* nm, JavaThread* thread) {
+                                                     int bci, CompLevel level, CompiledMethod* nm, JavaThread* thread) {
   // If the method is already compiling, quickly bail out.
   if (is_compilation_enabled() && !CompileBroker::compilation_is_in_queue(mh)) {
     // Use loop event as an opportunity to also check there's been

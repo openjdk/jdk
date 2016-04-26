@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
-ScopeDesc::ScopeDesc(const nmethod* code, int decode_offset, int obj_decode_offset, bool reexecute, bool rethrow_exception, bool return_oop) {
+ScopeDesc::ScopeDesc(const CompiledMethod* code, int decode_offset, int obj_decode_offset, bool reexecute, bool rethrow_exception, bool return_oop) {
   _code          = code;
   _decode_offset = decode_offset;
   _objects       = decode_object_values(obj_decode_offset);
@@ -40,7 +40,7 @@ ScopeDesc::ScopeDesc(const nmethod* code, int decode_offset, int obj_decode_offs
   decode_body();
 }
 
-ScopeDesc::ScopeDesc(const nmethod* code, int decode_offset, bool reexecute, bool rethrow_exception, bool return_oop) {
+ScopeDesc::ScopeDesc(const CompiledMethod* code, int decode_offset, bool reexecute, bool rethrow_exception, bool return_oop) {
   _code          = code;
   _decode_offset = decode_offset;
   _objects       = decode_object_values(DebugInformationRecorder::serialized_null);

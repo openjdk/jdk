@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -59,7 +59,7 @@ inline frame::frame(ZeroFrame* zf, intptr_t* sp) {
   case ZeroFrame::SHARK_FRAME: {
     _pc = zero_sharkframe()->pc();
     _cb = CodeCache::find_blob_unsafe(pc());
-    address original_pc = nmethod::get_deopt_original_pc(this);
+    address original_pc = CompiledMethod::get_deopt_original_pc(this);
     if (original_pc != NULL) {
       _pc = original_pc;
       _deopt_state = is_deoptimized;

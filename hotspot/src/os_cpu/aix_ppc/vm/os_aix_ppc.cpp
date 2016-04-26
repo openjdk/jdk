@@ -390,7 +390,7 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
         // BugId 4454115: A read from a MappedByteBuffer can fault here if the
         // underlying file has been truncated. Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
-        nmethod* nm = cb->is_nmethod() ? (nmethod*)cb : NULL;
+        CompiledMethod* nm = cb->as_compiled_method_or_null();
         if (nm != NULL && nm->has_unsafe_access()) {
           // We don't really need a stub here! Just set the pending exeption and
           // continue at the next instruction after the faulting read. Returning

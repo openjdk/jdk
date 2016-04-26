@@ -746,7 +746,7 @@ void Method::set_native_function(address function, bool post_event_flag) {
   // This function can be called more than once. We must make sure that we always
   // use the latest registered method -> check if a stub already has been generated.
   // If so, we have to make it not_entrant.
-  nmethod* nm = code(); // Put it into local variable to guard against concurrent updates
+  CompiledMethod* nm = code(); // Put it into local variable to guard against concurrent updates
   if (nm != NULL) {
     nm->make_not_entrant();
   }
@@ -1046,12 +1046,12 @@ address Method::verified_code_entry() {
 // Not inline to avoid circular ref.
 bool Method::check_code() const {
   // cached in a register or local.  There's a race on the value of the field.
-  nmethod *code = (nmethod *)OrderAccess::load_ptr_acquire(&_code);
+  CompiledMethod *code = (CompiledMethod *)OrderAccess::load_ptr_acquire(&_code);
   return code == NULL || (code->method() == NULL) || (code->method() == (Method*)this && !code->is_osr_method());
 }
 
 // Install compiled code.  Instantly it can execute.
-void Method::set_code(methodHandle mh, nmethod *code) {
+void Method::set_code(methodHandle mh, CompiledMethod *code) {
   assert( code, "use clear_code to remove code" );
   assert( mh->check_code(), "" );
 

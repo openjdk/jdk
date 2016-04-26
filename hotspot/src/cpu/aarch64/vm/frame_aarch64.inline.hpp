@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -55,7 +55,7 @@ inline void frame::init(intptr_t* sp, intptr_t* fp, address pc) {
   _cb = CodeCache::find_blob(pc);
   adjust_unextended_sp();
 
-  address original_pc = nmethod::get_deopt_original_pc(this);
+  address original_pc = CompiledMethod::get_deopt_original_pc(this);
   if (original_pc != NULL) {
     _pc = original_pc;
     _deopt_state = is_deoptimized;
@@ -79,10 +79,10 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
   _cb = CodeCache::find_blob(pc);
   adjust_unextended_sp();
 
-  address original_pc = nmethod::get_deopt_original_pc(this);
+  address original_pc = CompiledMethod::get_deopt_original_pc(this);
   if (original_pc != NULL) {
     _pc = original_pc;
-    assert(((nmethod*)_cb)->insts_contains(_pc), "original PC must be in nmethod");
+    assert(((CompiledMethod*)_cb)->insts_contains(_pc), "original PC must be in CompiledMethod");
     _deopt_state = is_deoptimized;
   } else {
     _deopt_state = not_deoptimized;
@@ -111,7 +111,7 @@ inline frame::frame(intptr_t* sp, intptr_t* fp) {
   _cb = CodeCache::find_blob(_pc);
   adjust_unextended_sp();
 
-  address original_pc = nmethod::get_deopt_original_pc(this);
+  address original_pc = CompiledMethod::get_deopt_original_pc(this);
   if (original_pc != NULL) {
     _pc = original_pc;
     _deopt_state = is_deoptimized;

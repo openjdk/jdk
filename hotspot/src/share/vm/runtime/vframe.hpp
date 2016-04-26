@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,9 +66,9 @@ class vframe: public ResourceObj {
   // Accessors
   frame              fr()           const { return _fr;       }
   CodeBlob*          cb()         const { return _fr.cb();  }
-  nmethod*           nm()         const {
-      assert( cb() != NULL && cb()->is_nmethod(), "usage");
-      return (nmethod*) cb();
+  CompiledMethod*   nm()         const {
+      assert( cb() != NULL && cb()->is_compiled(), "usage");
+      return (CompiledMethod*) cb();
   }
 
 // ???? Does this need to be a copy?
@@ -326,9 +326,9 @@ class vframeStreamCommon : StackObj {
   }
 
   CodeBlob*          cb()         const { return _frame.cb();  }
-  nmethod*           nm()         const {
-    assert( cb() != NULL && cb()->is_nmethod(), "usage");
-    return (nmethod*) cb();
+  CompiledMethod*   nm()         const {
+      assert( cb() != NULL && cb()->is_compiled(), "usage");
+      return (CompiledMethod*) cb();
   }
 
   // Frame type
@@ -449,7 +449,7 @@ inline bool vframeStreamCommon::fill_from_frame() {
 
   // Compiled frame
 
-  if (cb() != NULL && cb()->is_nmethod()) {
+  if (cb() != NULL && cb()->is_compiled()) {
     if (nm()->is_native_method()) {
       // Do not rely on scopeDesc since the pc might be unprecise due to the _last_native_pc trick.
       fill_from_compiled_native_frame();

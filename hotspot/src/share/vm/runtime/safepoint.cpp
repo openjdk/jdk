@@ -1010,8 +1010,8 @@ void ThreadSafepointState::handle_polling_page_exception() {
   address real_return_addr = thread()->saved_exception_pc();
 
   CodeBlob *cb = CodeCache::find_blob(real_return_addr);
-  assert(cb != NULL && cb->is_nmethod(), "return address should be in nmethod");
-  nmethod* nm = (nmethod*)cb;
+  assert(cb != NULL && cb->is_compiled(), "return address should be in nmethod");
+  CompiledMethod* nm = (CompiledMethod*)cb;
 
   // Find frame of caller
   frame stub_fr = thread()->last_frame();
