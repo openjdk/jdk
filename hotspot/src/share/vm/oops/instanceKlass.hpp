@@ -27,9 +27,9 @@
 
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "gc/shared/specialized_oop_closures.hpp"
-#include "classfile/moduleEntry.hpp"
 #include "logging/logLevel.hpp"
 #include "memory/referenceType.hpp"
 #include "oops/annotations.hpp"

@@ -502,17 +502,16 @@ Reflection::VerifyClassAccessResults Reflection::verify_class_access(
     }
 
     // Find the module entry for current_class, the accessor
-    ModuleEntry* module_from = InstanceKlass::cast(current_class)->module();
+    ModuleEntry* module_from = current_class->module();
     // Find the module entry for new_class, the accessee
     if (new_class->is_objArray_klass()) {
       new_class = ObjArrayKlass::cast(new_class)->bottom_klass();
     }
-    if (!new_class->is_instance_klass()) {
-      // Everyone can read a typearray.
-      assert (new_class->is_typeArray_klass(), "Unexpected klass type");
+    if (new_class->is_typeArray_klass()) {
+      // A TypeArray's defining module is java.base, access to the TypeArray is allowed
       return ACCESS_OK;
     }
-    ModuleEntry* module_to = InstanceKlass::cast(new_class)->module();
+    ModuleEntry* module_to = new_class->module();
 
     // both in same (possibly unnamed) module
     if (module_from == module_to) {
@@ -532,7 +531,7 @@ Reflection::VerifyClassAccessResults Reflection::verify_class_access(
       return MODULE_NOT_READABLE;
     }
 
-    PackageEntry* package_to = InstanceKlass::cast(new_class)->package();
+    PackageEntry* package_to = new_class->package();
     assert(package_to != NULL, "can not obtain new_class' package");
 
     // Once readability is established, if module_to exports T unqualifiedly,
@@ -570,20 +569,13 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
   char * msg = NULL;
   if (result != OTHER_PROBLEM && new_class != NULL && current_class != NULL) {
     // Find the module entry for current_class, the accessor
-    ModuleEntry* module_from = InstanceKlass::cast(current_class)->module();
+    ModuleEntry* module_from = current_class->module();
     const char * module_from_name = module_from->is_named() ? module_from->name()->as_C_string() : UNNAMED_MODULE;
     const char * current_class_name = current_class->external_name();
 
     // Find the module entry for new_class, the accessee
     ModuleEntry* module_to = NULL;
-    if (new_class->is_objArray_klass()) {
-      new_class = ObjArrayKlass::cast(new_class)->bottom_klass();
-    }
-    if (new_class->is_instance_klass()) {
-      module_to = InstanceKlass::cast(new_class)->module();
-    } else {
-      module_to = ModuleEntryTable::javabase_module();
-    }
+    module_to = new_class->module();
     const char * module_to_name = module_to->is_named() ? module_to->name()->as_C_string() : UNNAMED_MODULE;
     const char * new_class_name = new_class->external_name();
 
@@ -611,10 +603,10 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
       }
 
     } else if (result == TYPE_NOT_EXPORTED) {
-      assert(InstanceKlass::cast(new_class)->package() != NULL,
+      assert(new_class->package() != NULL,
              "Unnamed packages are always exported");
       const char * package_name =
-        InstanceKlass::cast(new_class)->package()->name()->as_klass_external_name();
+        new_class->package()->name()->as_klass_external_name();
       assert(module_to->is_named(), "Unnamed modules export all packages");
       if (module_from->is_named()) {
         size_t len = 118 + strlen(current_class_name) + 2*strlen(module_from_name) +
