@@ -1651,7 +1651,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
               }
               if (TieredCompilation && TieredStopAtLevel >= CompLevel_full_optimization) {
                 // Clobber the first compile and force second tier compilation
-                nmethod* nm = m->code();
+                CompiledMethod* nm = m->code();
                 if (nm != NULL && !m->is_method_handle_intrinsic()) {
                   // Throw out the code so that the code cache doesn't fill up
                   nm->make_not_entrant();
@@ -1670,7 +1670,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
               tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_class_counter, m->name_and_sig_as_C_string());
             }
 
-            nmethod* nm = m->code();
+            CompiledMethod* nm = m->code();
             if (nm != NULL && !m->is_method_handle_intrinsic()) {
               // Throw out the code so that the code cache doesn't fill up
               nm->make_not_entrant();

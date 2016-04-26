@@ -1798,7 +1798,7 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
         // Neither sourcename nor linenumber
         sprintf(buf + (int)strlen(buf), "Unknown Source)");
       }
-      nmethod* nm = method->code();
+      CompiledMethod* nm = method->code();
       if (WizardMode && nm != NULL) {
         sprintf(buf + (int)strlen(buf), "(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
       }
@@ -1920,7 +1920,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
   int total_count = 0;
   RegisterMap map(thread, false);
   int decode_offset = 0;
-  nmethod* nm = NULL;
+  CompiledMethod* nm = NULL;
   bool skip_fillInStackTrace_check = false;
   bool skip_throwableInit_check = false;
   bool skip_hidden = !ShowHiddenFrames;
@@ -1948,10 +1948,10 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
         // HMMM QQQ might be nice to have frame return nm as NULL if cb is non-NULL
         // but non nmethod
         fr = fr.sender(&map);
-        if (cb == NULL || !cb->is_nmethod()) {
+        if (cb == NULL || !cb->is_compiled()) {
           continue;
         }
-        nm = (nmethod*)cb;
+        nm = cb->as_compiled_method();
         if (nm->method()->is_native()) {
           method = nm->method();
           bci = 0;

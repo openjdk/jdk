@@ -65,12 +65,67 @@ unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size) {
   return size;
 }
 
+CodeBlob::CodeBlob(const char* name, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments) :
+  _name(name),
+  _size(layout.size()),
+  _header_size(layout.header_size()),
+  _frame_complete_offset(frame_complete_offset),
+  _data_offset(layout.data_offset()),
+  _frame_size(frame_size),
+  _strings(CodeStrings()),
+  _oop_maps(oop_maps),
+  _caller_must_gc_arguments(caller_must_gc_arguments),
+  _code_begin(layout.code_begin()),
+  _code_end(layout.code_end()),
+  _data_end(layout.data_end()),
+  _relocation_begin(layout.relocation_begin()),
+  _relocation_end(layout.relocation_end()),
+  _content_begin(layout.content_begin())
+{
+  assert(layout.size()        == round_to(layout.size(),        oopSize), "unaligned size");
+  assert(layout.header_size() == round_to(layout.header_size(), oopSize), "unaligned size");
+  assert(layout.relocation_size() == round_to(layout.relocation_size(), oopSize), "unaligned size");
+  assert(layout.code_end() == layout.content_end(), "must be the same - see code_end()");
+#ifdef COMPILER1
+  // probably wrong for tiered
+  assert(_frame_size >= -1, "must use frame size or -1 for runtime stubs");
+#endif // COMPILER1
+}
+
+CodeBlob::CodeBlob(const char* name, const CodeBlobLayout& layout, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments) :
+  _name(name),
+  _size(layout.size()),
+  _header_size(layout.header_size()),
+  _frame_complete_offset(frame_complete_offset),
+  _data_offset(layout.data_offset()),
+  _frame_size(frame_size),
+  _strings(CodeStrings()),
+  _caller_must_gc_arguments(caller_must_gc_arguments),
+  _code_begin(layout.code_begin()),
+  _code_end(layout.code_end()),
+  _data_end(layout.data_end()),
+  _relocation_begin(layout.relocation_begin()),
+  _relocation_end(layout.relocation_end()),
+  _content_begin(layout.content_begin())
+{
+  assert(_size        == round_to(_size,        oopSize), "unaligned size");
+  assert(_header_size == round_to(_header_size, oopSize), "unaligned size");
+  assert(_data_offset <= _size, "codeBlob is too small");
+  assert(layout.code_end() == layout.content_end(), "must be the same - see code_end()");
+
+  set_oop_maps(oop_maps);
+#ifdef COMPILER1
+  // probably wrong for tiered
+  assert(_frame_size >= -1, "must use frame size or -1 for runtime stubs");
+#endif // COMPILER1
+}
+
 
 // Creates a simple CodeBlob. Sets up the size of the different regions.
-CodeBlob::CodeBlob(const char* name, int header_size, int size, int frame_complete, int locs_size) {
-  assert(size        == round_to(size,        oopSize), "unaligned size");
+RuntimeBlob::RuntimeBlob(const char* name, int header_size, int size, int frame_complete, int locs_size)
+  : CodeBlob(name, CodeBlobLayout((address) this, size, header_size, locs_size, size), frame_complete, 0, NULL, false /* caller_must_gc_arguments */)
+{
   assert(locs_size   == round_to(locs_size,   oopSize), "unaligned size");
-  assert(header_size == round_to(header_size, oopSize), "unaligned size");
   assert(!UseRelocIndex, "no space allocated for reloc index yet");
 
   // Note: If UseRelocIndex is enabled, there needs to be (at least) one
@@ -79,55 +134,31 @@ CodeBlob::CodeBlob(const char* name, int header_size, int size, int frame_comple
   //       mentation is not easily understandable and thus it is not clear
   //       what exactly the format is supposed to be. For now, we just turn
   //       off the use of this table (gri 7/6/2000).
-
-  _name                  = name;
-  _size                  = size;
-  _frame_complete_offset = frame_complete;
-  _header_size           = header_size;
-  _relocation_size       = locs_size;
-  _content_offset        = align_code_offset(header_size + _relocation_size);
-  _code_offset           = _content_offset;
-  _data_offset           = size;
-  _frame_size            =  0;
-  set_oop_maps(NULL);
-  _strings               = CodeStrings();
 }
 
 
-// Creates a CodeBlob from a CodeBuffer. Sets up the size of the different regions,
+// Creates a RuntimeBlob from a CodeBuffer
 // and copy code and relocation info.
-CodeBlob::CodeBlob(
+RuntimeBlob::RuntimeBlob(
   const char* name,
   CodeBuffer* cb,
   int         header_size,
   int         size,
   int         frame_complete,
   int         frame_size,
-  OopMapSet*  oop_maps
-) {
-  assert(size        == round_to(size,        oopSize), "unaligned size");
-  assert(header_size == round_to(header_size, oopSize), "unaligned size");
-
-  _name                  = name;
-  _size                  = size;
-  _frame_complete_offset = frame_complete;
-  _header_size           = header_size;
-  _relocation_size       = round_to(cb->total_relocation_size(), oopSize);
-  _content_offset        = align_code_offset(header_size + _relocation_size);
-  _code_offset           = _content_offset + cb->total_offset_of(cb->insts());
-  _data_offset           = _content_offset + round_to(cb->total_content_size(), oopSize);
-  assert(_data_offset <= size, "codeBlob is too small");
-  _strings               = CodeStrings();
-
+  OopMapSet*  oop_maps,
+  bool        caller_must_gc_arguments
+) : CodeBlob(name, CodeBlobLayout((address) this, size, header_size, cb), cb, frame_complete, frame_size, oop_maps, caller_must_gc_arguments) {
   cb->copy_code_and_locs_to(this);
-  set_oop_maps(oop_maps);
-  _frame_size = frame_size;
-#ifdef COMPILER1
-  // probably wrong for tiered
-  assert(_frame_size >= -1, "must use frame size or -1 for runtime stubs");
-#endif // COMPILER1
 }
 
+void CodeBlob::flush() {
+  if (_oop_maps) {
+    FREE_C_HEAP_ARRAY(unsigned char, _oop_maps);
+    _oop_maps = NULL;
+  }
+  _strings.free();
+}
 
 void CodeBlob::set_oop_maps(OopMapSet* p) {
   // Danger Will Robinson! This method allocates a big
@@ -140,7 +171,7 @@ void CodeBlob::set_oop_maps(OopMapSet* p) {
 }
 
 
-void CodeBlob::trace_new_stub(CodeBlob* stub, const char* name1, const char* name2) {
+void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const char* name2) {
   // Do not hold the CodeCache lock during name formatting.
   assert(!CodeCache_lock->owned_by_self(), "release CodeCache before registering the stub");
 
@@ -167,19 +198,9 @@ void CodeBlob::trace_new_stub(CodeBlob* stub, const char* name1, const char* nam
   MemoryService::track_code_cache_memory_usage();
 }
 
-
-void CodeBlob::flush() {
-  if (_oop_maps) {
-    FREE_C_HEAP_ARRAY(unsigned char, _oop_maps);
-    _oop_maps = NULL;
-  }
-  _strings.free();
-}
-
-
 const ImmutableOopMap* CodeBlob::oop_map_for_return_address(address return_address) {
-  assert(oop_maps() != NULL, "nope");
-  return oop_maps()->find_map_at_offset((intptr_t) return_address - (intptr_t) code_begin());
+  assert(_oop_maps != NULL, "nope");
+  return _oop_maps->find_map_at_offset((intptr_t) return_address - (intptr_t) code_begin());
 }
 
 void CodeBlob::print_code() {
@@ -193,7 +214,7 @@ void CodeBlob::print_code() {
 
 
 BufferBlob::BufferBlob(const char* name, int size)
-: CodeBlob(name, sizeof(BufferBlob), size, CodeOffsets::frame_never_safe, /*locs_size:*/ 0)
+: RuntimeBlob(name, sizeof(BufferBlob), size, CodeOffsets::frame_never_safe, /*locs_size:*/ 0)
 {}
 
 BufferBlob* BufferBlob::create(const char* name, int buffer_size) {
@@ -203,7 +224,7 @@ BufferBlob* BufferBlob::create(const char* name, int buffer_size) {
   unsigned int size = sizeof(BufferBlob);
   CodeCacheExtensions::size_blob(name, &buffer_size);
   // align the size to CodeEntryAlignment
-  size = align_code_offset(size);
+  size = CodeBlob::align_code_offset(size);
   size += round_to(buffer_size, oopSize);
   assert(name != NULL, "must provide a name");
   {
@@ -218,14 +239,14 @@ BufferBlob* BufferBlob::create(const char* name, int buffer_size) {
 
 
 BufferBlob::BufferBlob(const char* name, int size, CodeBuffer* cb)
-  : CodeBlob(name, cb, sizeof(BufferBlob), size, CodeOffsets::frame_never_safe, 0, NULL)
+  : RuntimeBlob(name, cb, sizeof(BufferBlob), size, CodeOffsets::frame_never_safe, 0, NULL)
 {}
 
 BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
   BufferBlob* blob = NULL;
-  unsigned int size = allocation_size(cb, sizeof(BufferBlob));
+  unsigned int size = CodeBlob::allocation_size(cb, sizeof(BufferBlob));
   assert(name != NULL, "must provide a name");
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -246,7 +267,7 @@ void BufferBlob::free(BufferBlob *blob) {
   blob->flush();
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    CodeCache::free((CodeBlob*)blob);
+    CodeCache::free((RuntimeBlob*)blob);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
@@ -265,7 +286,7 @@ AdapterBlob* AdapterBlob::create(CodeBuffer* cb) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
   AdapterBlob* blob = NULL;
-  unsigned int size = allocation_size(cb, sizeof(AdapterBlob));
+  unsigned int size = CodeBlob::allocation_size(cb, sizeof(AdapterBlob));
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = new (size) AdapterBlob(size, cb);
@@ -287,7 +308,7 @@ MethodHandlesAdapterBlob* MethodHandlesAdapterBlob::create(int buffer_size) {
   unsigned int size = sizeof(MethodHandlesAdapterBlob);
   CodeCacheExtensions::size_blob("MethodHandles adapters", &buffer_size);
   // align the size to CodeEntryAlignment
-  size = align_code_offset(size);
+  size = CodeBlob::align_code_offset(size);
   size += round_to(buffer_size, oopSize);
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -314,11 +335,9 @@ RuntimeStub::RuntimeStub(
   OopMapSet*  oop_maps,
   bool        caller_must_gc_arguments
 )
-: CodeBlob(name, cb, sizeof(RuntimeStub), size, frame_complete, frame_size, oop_maps)
+: RuntimeBlob(name, cb, sizeof(RuntimeStub), size, frame_complete, frame_size, oop_maps, caller_must_gc_arguments)
 {
-  _caller_must_gc_arguments = caller_must_gc_arguments;
 }
-
 
 RuntimeStub* RuntimeStub::new_runtime_stub(const char* stub_name,
                                            CodeBuffer* cb,
@@ -332,7 +351,7 @@ RuntimeStub* RuntimeStub::new_runtime_stub(const char* stub_name,
   if (!CodeCacheExtensions::skip_code_generation()) {
     // bypass useless code generation
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    unsigned int size = allocation_size(cb, sizeof(RuntimeStub));
+    unsigned int size = CodeBlob::allocation_size(cb, sizeof(RuntimeStub));
     stub = new (size) RuntimeStub(stub_name, cb, size, frame_complete, frame_size, oop_maps, caller_must_gc_arguments);
   }
   stub = (RuntimeStub*) CodeCacheExtensions::handle_generated_blob(stub, stub_name);
@@ -392,7 +411,7 @@ DeoptimizationBlob* DeoptimizationBlob::create(
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    unsigned int size = allocation_size(cb, sizeof(DeoptimizationBlob));
+    unsigned int size = CodeBlob::allocation_size(cb, sizeof(DeoptimizationBlob));
     blob = new (size) DeoptimizationBlob(cb,
                                          size,
                                          oop_maps,
@@ -431,7 +450,7 @@ UncommonTrapBlob* UncommonTrapBlob::create(
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    unsigned int size = allocation_size(cb, sizeof(UncommonTrapBlob));
+    unsigned int size = CodeBlob::allocation_size(cb, sizeof(UncommonTrapBlob));
     blob = new (size) UncommonTrapBlob(cb, size, oop_maps, frame_size);
   }
 
@@ -467,7 +486,7 @@ ExceptionBlob* ExceptionBlob::create(
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    unsigned int size = allocation_size(cb, sizeof(ExceptionBlob));
+    unsigned int size = CodeBlob::allocation_size(cb, sizeof(ExceptionBlob));
     blob = new (size) ExceptionBlob(cb, size, oop_maps, frame_size);
   }
 
@@ -502,7 +521,7 @@ SafepointBlob* SafepointBlob::create(
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    unsigned int size = allocation_size(cb, sizeof(SafepointBlob));
+    unsigned int size = CodeBlob::allocation_size(cb, sizeof(SafepointBlob));
     blob = new (size) SafepointBlob(cb, size, oop_maps, frame_size);
   }
 
@@ -515,10 +534,6 @@ SafepointBlob* SafepointBlob::create(
 //----------------------------------------------------------------------------------------------------
 // Verification and printing
 
-void CodeBlob::verify() {
-  ShouldNotReachHere();
-}
-
 void CodeBlob::print_on(outputStream* st) const {
   st->print_cr("[CodeBlob (" INTPTR_FORMAT ")]", p2i(this));
   st->print_cr("Framesize: %d", _frame_size);
@@ -528,12 +543,16 @@ void CodeBlob::print_value_on(outputStream* st) const {
   st->print_cr("[CodeBlob]");
 }
 
+void RuntimeBlob::verify() {
+  ShouldNotReachHere();
+}
+
 void BufferBlob::verify() {
   // unimplemented
 }
 
 void BufferBlob::print_on(outputStream* st) const {
-  CodeBlob::print_on(st);
+  RuntimeBlob::print_on(st);
   print_value_on(st);
 }
 
@@ -547,10 +566,10 @@ void RuntimeStub::verify() {
 
 void RuntimeStub::print_on(outputStream* st) const {
   ttyLocker ttyl;
-  CodeBlob::print_on(st);
+  RuntimeBlob::print_on(st);
   st->print("Runtime Stub (" INTPTR_FORMAT "): ", p2i(this));
   st->print_cr("%s", name());
-  Disassembler::decode((CodeBlob*)this, st);
+  Disassembler::decode((RuntimeBlob*)this, st);
 }
 
 void RuntimeStub::print_value_on(outputStream* st) const {
@@ -563,9 +582,9 @@ void SingletonBlob::verify() {
 
 void SingletonBlob::print_on(outputStream* st) const {
   ttyLocker ttyl;
-  CodeBlob::print_on(st);
+  RuntimeBlob::print_on(st);
   st->print_cr("%s", name());
-  Disassembler::decode((CodeBlob*)this, st);
+  Disassembler::decode((RuntimeBlob*)this, st);
 }
 
 void SingletonBlob::print_value_on(outputStream* st) const {

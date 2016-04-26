@@ -398,7 +398,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(Method,                      _intrinsic_id,                                 u2)                                    \
   nonstatic_field(Method,                      _flags,                                        u2)                                    \
   nonproduct_nonstatic_field(Method,           _compiled_invocation_count,                    int)                                   \
-  volatile_nonstatic_field(Method,             _code,                                         nmethod*)                              \
+  volatile_nonstatic_field(Method,             _code,                                         CompiledMethod*)                       \
   nonstatic_field(Method,                      _i2i_entry,                                    address)                               \
   volatile_nonstatic_field(Method,             _from_compiled_entry,                          address)                               \
   volatile_nonstatic_field(Method,             _from_interpreted_entry,                       address)                               \
@@ -915,40 +915,47 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /* CodeBlobs (NOTE: incomplete, but only a little) */                                                                              \
   /***************************************************/                                                                              \
                                                                                                                                      \
-  nonstatic_field(CodeBlob,                    _name,                                   const char*)                                 \
-  nonstatic_field(CodeBlob,                    _size,                                   int)                                         \
-  nonstatic_field(CodeBlob,                    _header_size,                            int)                                         \
-  nonstatic_field(CodeBlob,                    _relocation_size,                        int)                                         \
-  nonstatic_field(CodeBlob,                    _content_offset,                         int)                                         \
-  nonstatic_field(CodeBlob,                    _code_offset,                            int)                                         \
-  nonstatic_field(CodeBlob,                    _frame_complete_offset,                  int)                                         \
-  nonstatic_field(CodeBlob,                    _data_offset,                            int)                                         \
-  nonstatic_field(CodeBlob,                    _frame_size,                             int)                                         \
-  nonstatic_field(CodeBlob,                    _oop_maps,                               ImmutableOopMapSet*)                         \
+  nonstatic_field(CodeBlob,                 _name,                                   const char*)                                    \
+  nonstatic_field(CodeBlob,                 _size,                                   int)                                            \
+  nonstatic_field(CodeBlob,                 _header_size,                            int)                                            \
+  nonstatic_field(CodeBlob,                 _frame_complete_offset,                  int)                                            \
+  nonstatic_field(CodeBlob,                 _data_offset,                            int)                                            \
+  nonstatic_field(CodeBlob,                 _frame_size,                             int)                                            \
+  nonstatic_field(CodeBlob,                 _oop_maps,                               ImmutableOopMapSet*)                            \
+  nonstatic_field(CodeBlob,                 _code_begin,                             address)                                        \
+  nonstatic_field(CodeBlob,                 _code_end,                               address)                                        \
+  nonstatic_field(CodeBlob,                 _content_begin,                          address)                                        \
+  nonstatic_field(CodeBlob,                 _data_end,                               address)                                        \
                                                                                                                                      \
   nonstatic_field(DeoptimizationBlob,          _unpack_offset,                                int)                                   \
                                                                                                                                      \
   nonstatic_field(RuntimeStub,                 _caller_must_gc_arguments,                     bool)                                  \
                                                                                                                                      \
+  /********************************************************/                                                                         \
+  /* CompiledMethod (NOTE: incomplete, but only a little) */                                                                         \
+  /********************************************************/                                                                         \
+                                                                                                                                     \
+  nonstatic_field(CompiledMethod,                     _method,                                       Method*)                        \
+  volatile_nonstatic_field(CompiledMethod,            _exception_cache,                              ExceptionCache*)                \
+  nonstatic_field(CompiledMethod,                     _scopes_data_begin,                            address)                        \
+  nonstatic_field(CompiledMethod,                     _deopt_handler_begin,                          address)                        \
+  nonstatic_field(CompiledMethod,                     _deopt_mh_handler_begin,                       address)                        \
+                                                                                                                                     \
   /**************************************************/                                                                               \
   /* NMethods (NOTE: incomplete, but only a little) */                                                                               \
   /**************************************************/                                                                               \
                                                                                                                                      \
-  nonstatic_field(nmethod,                     _method,                                       Method*)                               \
   nonstatic_field(nmethod,                     _entry_bci,                                    int)                                   \
   nonstatic_field(nmethod,                     _osr_link,                                     nmethod*)                              \
   nonstatic_field(nmethod,                     _scavenge_root_link,                           nmethod*)                              \
   nonstatic_field(nmethod,                     _scavenge_root_state,                          jbyte)                                 \
   nonstatic_field(nmethod,                     _state,                                        volatile unsigned char)                \
   nonstatic_field(nmethod,                     _exception_offset,                             int)                                   \
-  nonstatic_field(nmethod,                     _deoptimize_offset,                            int)                                   \
-  nonstatic_field(nmethod,                     _deoptimize_mh_offset,                         int)                                   \
   nonstatic_field(nmethod,                     _orig_pc_offset,                               int)                                   \
   nonstatic_field(nmethod,                     _stub_offset,                                  int)                                   \
   nonstatic_field(nmethod,                     _consts_offset,                                int)                                   \
   nonstatic_field(nmethod,                     _oops_offset,                                  int)                                   \
   nonstatic_field(nmethod,                     _metadata_offset,                              int)                                   \
-  nonstatic_field(nmethod,                     _scopes_data_offset,                           int)                                   \
   nonstatic_field(nmethod,                     _scopes_pcs_offset,                            int)                                   \
   nonstatic_field(nmethod,                     _dependencies_offset,                          int)                                   \
   nonstatic_field(nmethod,                     _handler_table_offset,                         int)                                   \
@@ -961,7 +968,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(nmethod,                     _stack_traversal_mark,                         long)                                  \
   nonstatic_field(nmethod,                     _compile_id,                                   int)                                   \
   nonstatic_field(nmethod,                     _comp_level,                                   int)                                   \
-  volatile_nonstatic_field(nmethod,            _exception_cache,                              ExceptionCache*)                       \
                                                                                                                                      \
   unchecked_c2_static_field(Deoptimization,    _trap_reason_name,                             void*)                                 \
                                                                                                                                      \
@@ -1744,16 +1750,18 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_toplevel_type(SharedRuntime)                                    \
                                                                           \
   declare_toplevel_type(CodeBlob)                                         \
-  declare_type(BufferBlob,               CodeBlob)                        \
+  declare_type(RuntimeBlob,             CodeBlob)                        \
+  declare_type(BufferBlob,               RuntimeBlob)                    \
   declare_type(AdapterBlob,              BufferBlob)                      \
   declare_type(MethodHandlesAdapterBlob, BufferBlob)                      \
-  declare_type(nmethod,                  CodeBlob)                        \
-  declare_type(RuntimeStub,              CodeBlob)                        \
-  declare_type(SingletonBlob,            CodeBlob)                        \
+  declare_type(CompiledMethod,           CodeBlob)                        \
+  declare_type(nmethod,                  CompiledMethod)                  \
+  declare_type(RuntimeStub,              RuntimeBlob)                    \
+  declare_type(SingletonBlob,            RuntimeBlob)                    \
   declare_type(SafepointBlob,            SingletonBlob)                   \
   declare_type(DeoptimizationBlob,       SingletonBlob)                   \
   declare_c2_type(ExceptionBlob,         SingletonBlob)                   \
-  declare_c2_type(UncommonTrapBlob,      CodeBlob)                        \
+  declare_c2_type(UncommonTrapBlob,      RuntimeBlob)                        \
                                                                           \
   /***************************************/                               \
   /* PcDesc and other compiled code info */                               \
@@ -2236,6 +2244,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_toplevel_type(BreakpointInfo)                                   \
   declare_toplevel_type(BreakpointInfo*)                                  \
   declare_toplevel_type(CodeBlob*)                                        \
+  declare_toplevel_type(RuntimeBlob*)                                     \
   declare_toplevel_type(CompressedWriteStream*)                           \
   declare_toplevel_type(ConstantPoolCacheEntry)                           \
   declare_toplevel_type(elapsedTimer)                                     \

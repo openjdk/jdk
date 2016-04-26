@@ -379,7 +379,7 @@ bool NonTieredCompPolicy::is_mature(Method* method) {
 }
 
 nmethod* NonTieredCompPolicy::event(const methodHandle& method, const methodHandle& inlinee, int branch_bci,
-                                    int bci, CompLevel comp_level, nmethod* nm, JavaThread* thread) {
+                                    int bci, CompLevel comp_level, CompiledMethod* nm, JavaThread* thread) {
   assert(comp_level == CompLevel_none, "This should be only called from the interpreter");
   NOT_PRODUCT(trace_frequency_counter_overflow(method, branch_bci, bci));
   if (JvmtiExport::can_post_interpreter_events() && thread->is_interp_only_mode()) {
@@ -484,7 +484,7 @@ void SimpleCompPolicy::method_invocation_event(const methodHandle& m, JavaThread
   const char* comment = "count";
 
   if (is_compilation_enabled() && can_be_compiled(m, comp_level)) {
-    nmethod* nm = m->code();
+    CompiledMethod* nm = m->code();
     if (nm == NULL ) {
       CompileBroker::compile_method(m, InvocationEntryBci, comp_level, m, hot_count, comment, thread);
     }
@@ -713,7 +713,7 @@ const char* StackWalkCompPolicy::shouldNotInline(const methodHandle& m) {
   // note: we allow ik->is_abstract()
   if (!m->method_holder()->is_initialized()) return (_msg = "method holder not initialized");
   if (m->is_native()) return (_msg = "native method");
-  nmethod* m_code = m->code();
+  CompiledMethod* m_code = m->code();
   if (m_code != NULL && m_code->code_size() > InlineSmallCode)
     return (_msg = "already compiled into a big method");
 

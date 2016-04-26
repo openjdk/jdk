@@ -565,7 +565,7 @@ uint Compile::scratch_emit_size(const Node* n) {
   relocInfo* locs_buf = scratch_locs_memory();
   address blob_begin = blob->content_begin();
   address blob_end   = (address)locs_buf;
-  assert(blob->content_contains(blob_end), "sanity");
+  assert(blob->contains(blob_end), "sanity");
   CodeBuffer buf(blob_begin, blob_end - blob_begin);
   buf.initialize_consts_size(_scratch_const_size);
   buf.initialize_stubs_size(MAX_stubs_size);

@@ -168,9 +168,10 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // Now get the deoptee with a valid map
   frame deoptee = stub_frame.sender(&map);
   // Set the deoptee nmethod
-  assert(thread->deopt_nmethod() == NULL, "Pending deopt!");
-  thread->set_deopt_nmethod(deoptee.cb()->as_nmethod_or_null());
-  bool skip_internal = thread->deopt_nmethod() != NULL && !thread->deopt_nmethod()->compiler()->is_jvmci();
+  assert(thread->deopt_compiled_method() == NULL, "Pending deopt!");
+  CompiledMethod* cm = deoptee.cb()->as_compiled_method_or_null();
+  thread->set_deopt_compiled_method(cm);
+  bool skip_internal = (cm != NULL) && !cm->is_compiled_by_jvmci();
 
   if (VerifyStack) {
     thread->validate_frame_layout();
@@ -548,7 +549,7 @@ void Deoptimization::cleanup_deopt_info(JavaThread *thread,
 
   delete thread->deopt_mark();
   thread->set_deopt_mark(NULL);
-  thread->set_deopt_nmethod(NULL);
+  thread->set_deopt_compiled_method(NULL);
 
 
   if (JvmtiExport::can_pop_frame()) {
@@ -1292,14 +1293,14 @@ void Deoptimization::deoptimize_single_frame(JavaThread* thread, frame fr, Deopt
   gather_statistics(reason, Action_none, Bytecodes::_illegal);
 
   if (LogCompilation && xtty != NULL) {
-    nmethod* nm = fr.cb()->as_nmethod_or_null();
-    assert(nm != NULL, "only compiled methods can deopt");
+    CompiledMethod* cm = fr.cb()->as_compiled_method_or_null();
+    assert(cm != NULL, "only compiled methods can deopt");
 
     ttyLocker ttyl;
     xtty->begin_head("deoptimized thread='" UINTX_FORMAT "'", (uintx)thread->osthread()->thread_id());
-    nm->log_identity(xtty);
+    cm->log_identity(xtty);
     xtty->end_head();
-    for (ScopeDesc* sd = nm->scope_desc_at(fr.pc()); ; sd = sd->sender()) {
+    for (ScopeDesc* sd = cm->scope_desc_at(fr.pc()); ; sd = sd->sender()) {
       xtty->begin_elem("jvms bci='%d'", sd->bci());
       xtty->method(sd->method());
       xtty->end_elem();
@@ -1480,7 +1481,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
     vframe*  vf  = vframe::new_vframe(&fr, &reg_map, thread);
     compiledVFrame* cvf = compiledVFrame::cast(vf);
 
-    nmethod* nm = cvf->code();
+    CompiledMethod* nm = cvf->code();
 
     ScopeDesc*      trap_scope  = cvf->scope();
 
@@ -1499,7 +1500,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
     oop speculation = thread->pending_failed_speculation();
     if (nm->is_compiled_by_jvmci()) {
       if (speculation != NULL) {
-        oop speculation_log = nm->speculation_log();
+        oop speculation_log = nm->as_nmethod()->speculation_log();
         if (speculation_log != NULL) {
           if (TraceDeoptimization || TraceUncollectedSpeculations) {
             if (HotSpotSpeculationLog::lastFailed(speculation_log) != NULL) {
@@ -1615,19 +1616,21 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
         nm->method()->print_short_name(tty);
         tty->print(" compiler=%s compile_id=%d", nm->compiler() == NULL ? "" : nm->compiler()->name(), nm->compile_id());
 #if INCLUDE_JVMCI
-        oop installedCode = nm->jvmci_installed_code();
-        if (installedCode != NULL) {
-          oop installedCodeName = NULL;
-          if (installedCode->is_a(InstalledCode::klass())) {
-            installedCodeName = InstalledCode::name(installedCode);
+        if (nm->is_nmethod()) {
+          oop installedCode = nm->as_nmethod()->jvmci_installed_code();
+          if (installedCode != NULL) {
+            oop installedCodeName = NULL;
+            if (installedCode->is_a(InstalledCode::klass())) {
+              installedCodeName = InstalledCode::name(installedCode);
+            }
+            if (installedCodeName != NULL) {
+              tty->print(" (JVMCI: installedCodeName=%s) ", java_lang_String::as_utf8_string(installedCodeName));
+            } else {
+              tty->print(" (JVMCI: installed code has no name) ");
+            }
+          } else if (nm->is_compiled_by_jvmci()) {
+            tty->print(" (JVMCI: no installed code) ");
           }
-          if (installedCodeName != NULL) {
-            tty->print(" (JVMCI: installedCodeName=%s) ", java_lang_String::as_utf8_string(installedCodeName));
-          } else {
-            tty->print(" (JVMCI: installed code has no name) ");
-          }
-        } else if (nm->is_compiled_by_jvmci()) {
-          tty->print(" (JVMCI: no installed code) ");
         }
 #endif
         tty->print(" (@" INTPTR_FORMAT ") thread=" UINTX_FORMAT " reason=%s action=%s unloaded_class_index=%d" JVMCI_ONLY(" debug_id=%d"),
@@ -1867,7 +1870,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
       // Assume that in new recompiled code the statistic could be different,
       // for example, due to different inlining.
       if ((reason != Reason_rtm_state_change) && (trap_mdo != NULL) &&
-          UseRTMDeopt && (nm->rtm_state() != ProfileRTM)) {
+          UseRTMDeopt && (nm->as_nmethod()->rtm_state() != ProfileRTM)) {
         trap_mdo->atomic_set_rtm_state(ProfileRTM);
       }
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,11 +132,11 @@ void RegisterMap::print() const {
 
 address frame::raw_pc() const {
   if (is_deoptimized_frame()) {
-    nmethod* nm = cb()->as_nmethod_or_null();
-    if (nm->is_method_handle_return(pc()))
-      return nm->deopt_mh_handler_begin() - pc_return_offset;
+    CompiledMethod* cm = cb()->as_compiled_method_or_null();
+    if (cm->is_method_handle_return(pc()))
+      return cm->deopt_mh_handler_begin() - pc_return_offset;
     else
-      return nm->deopt_handler_begin() - pc_return_offset;
+      return cm->deopt_handler_begin() - pc_return_offset;
   } else {
     return (pc() - pc_return_offset);
   }
@@ -183,8 +183,8 @@ bool frame::is_java_frame() const {
 
 bool frame::is_compiled_frame() const {
   if (_cb != NULL &&
-      _cb->is_nmethod() &&
-      ((nmethod*)_cb)->is_java_method()) {
+      _cb->is_compiled() &&
+      ((CompiledMethod*)_cb)->is_java_method()) {
     return true;
   }
   return false;
@@ -228,8 +228,8 @@ JavaCallWrapper* frame::entry_frame_call_wrapper_if_safe(JavaThread* thread) con
 bool frame::should_be_deoptimized() const {
   if (_deopt_state == is_deoptimized ||
       !is_compiled_frame() ) return false;
-  assert(_cb != NULL && _cb->is_nmethod(), "must be an nmethod");
-  nmethod* nm = (nmethod *)_cb;
+  assert(_cb != NULL && _cb->is_compiled(), "must be an nmethod");
+  CompiledMethod* nm = (CompiledMethod *)_cb;
   if (TraceDependencies) {
     tty->print("checking (%s) ", nm->is_marked_for_deoptimization() ? "true" : "false");
     nm->print_value_on(tty);
@@ -246,7 +246,7 @@ bool frame::should_be_deoptimized() const {
 
 bool frame::can_be_deoptimized() const {
   if (!is_compiled_frame()) return false;
-  nmethod* nm = (nmethod*)_cb;
+  CompiledMethod* nm = (CompiledMethod*)_cb;
 
   if( !nm->can_be_deoptimized() )
     return false;
@@ -256,8 +256,7 @@ bool frame::can_be_deoptimized() const {
 
 void frame::deoptimize(JavaThread* thread) {
   // Schedule deoptimization of an nmethod activation with this frame.
-  assert(_cb != NULL && _cb->is_nmethod(), "must be");
-  nmethod* nm = (nmethod*)_cb;
+  assert(_cb != NULL && _cb->is_compiled(), "must be");
 
   // This is a fix for register window patching race
   if (NeedsDeoptSuspend && Thread::current() != thread) {
@@ -316,12 +315,13 @@ void frame::deoptimize(JavaThread* thread) {
 
   // If the call site is a MethodHandle call site use the MH deopt
   // handler.
-  address deopt = nm->is_method_handle_return(pc()) ?
-    nm->deopt_mh_handler_begin() :
-    nm->deopt_handler_begin();
+  CompiledMethod* cm = (CompiledMethod*) _cb;
+  address deopt = cm->is_method_handle_return(pc()) ?
+                        cm->deopt_mh_handler_begin() :
+                        cm->deopt_handler_begin();
 
   // Save the original pc before we patch in the new one
-  nm->set_original_pc(this, pc());
+  cm->set_original_pc(this, pc());
   patch_pc(thread, deopt);
 
 #ifdef ASSERT
@@ -661,13 +661,16 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
       }
     } else if (_cb->is_buffer_blob()) {
       st->print("v  ~BufferBlob::%s", ((BufferBlob *)_cb)->name());
-    } else if (_cb->is_nmethod()) {
-      nmethod* nm = (nmethod*)_cb;
-      Method* m = nm->method();
+    } else if (_cb->is_compiled()) {
+      CompiledMethod* cm = (CompiledMethod*)_cb;
+      Method* m = cm->method();
       if (m != NULL) {
-        st->print("J %d%s", nm->compile_id(), (nm->is_osr_method() ? "%" : ""));
-        if (nm->compiler() != NULL) {
-          st->print(" %s", nm->compiler()->name());
+        if (cm->is_nmethod()) {
+          nmethod* nm = cm->as_nmethod();
+          st->print("J %d%s", nm->compile_id(), (nm->is_osr_method() ? "%" : ""));
+          if (nm->compiler() != NULL) {
+            st->print(" %s", nm->compiler()->name());
+          }
         }
         m->name_and_sig_as_C_string(buf, buflen);
         st->print(" %s", buf);
@@ -681,9 +684,12 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
         st->print(" (%d bytes) @ " PTR_FORMAT " [" PTR_FORMAT "+" INTPTR_FORMAT "]",
                   m->code_size(), p2i(_pc), p2i(_cb->code_begin()), _pc - _cb->code_begin());
 #if INCLUDE_JVMCI
-        char* jvmciName = nm->jvmci_installed_code_name(buf, buflen);
-        if (jvmciName != NULL) {
-          st->print(" (%s)", jvmciName);
+        if (cm->is_nmethod()) {
+          nmethod* nm = cm->as_nmethod();
+          char* jvmciName = nm->jvmci_installed_code_name(buf, buflen);
+          if (jvmciName != NULL) {
+            st->print(" (%s)", jvmciName);
+          }
         }
 #endif
       } else {
@@ -1244,10 +1250,10 @@ void frame::describe(FrameValues& values, int frame_no) {
     values.describe(-1, info_address, err_msg("#%d entry frame", frame_no), 2);
   } else if (is_compiled_frame()) {
     // For now just label the frame
-    nmethod* nm = cb()->as_nmethod_or_null();
+    CompiledMethod* cm = (CompiledMethod*)cb();
     values.describe(-1, info_address,
                     FormatBuffer<1024>("#%d nmethod " INTPTR_FORMAT " for method %s%s", frame_no,
-                                       p2i(nm), nm->method()->name_and_sig_as_C_string(),
+                                       p2i(cm), cm->method()->name_and_sig_as_C_string(),
                                        (_deopt_state == is_deoptimized) ?
                                        " (deoptimized)" :
                                        ((_deopt_state == unknown) ? " (state unknown)" : "")),

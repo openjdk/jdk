@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -561,12 +561,12 @@ CodeBlob* CodeCache::find_blob(void* start) {
 // what you are doing)
 CodeBlob* CodeCache::find_blob_unsafe(void* start) {
   // NMT can walk the stack before code cache is created
-  if (_heaps == NULL || _heaps->is_empty()) return NULL;
-
-  FOR_ALL_HEAPS(heap) {
-    CodeBlob* result = (CodeBlob*) (*heap)->find_start(start);
-    if (result != NULL && result->blob_contains((address)start)) {
-      return result;
+  if (_heaps != NULL && !_heaps->is_empty()) {
+    FOR_ALL_HEAPS(heap) {
+      CodeBlob* result = (CodeBlob*) (*heap)->find_start(start);
+      if (result != NULL && result->blob_contains((address)start)) {
+        return result;
+      }
     }
   }
   return NULL;
@@ -595,11 +595,11 @@ void CodeCache::nmethods_do(void f(nmethod* nm)) {
   }
 }
 
-void CodeCache::alive_nmethods_do(void f(nmethod* nm)) {
+void CodeCache::metadata_do(void f(Metadata* m)) {
   assert_locked_or_safepoint(CodeCache_lock);
   NMethodIterator iter;
   while(iter.next_alive()) {
-    f(iter.method());
+    iter.method()->metadata_do(f);
   }
 }
 
@@ -614,7 +614,7 @@ int CodeCache::alignment_offset() {
 // Mark nmethods for unloading if they contain otherwise unreachable oops.
 void CodeCache::do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred) {
   assert_locked_or_safepoint(CodeCache_lock);
-  NMethodIterator iter;
+  CompiledMethodIterator iter;
   while(iter.next_alive()) {
     iter.method()->do_unloading(is_alive, unloading_occurred);
   }
@@ -841,17 +841,18 @@ void CodeCache::gc_prologue() {
 void CodeCache::gc_epilogue() {
   assert_locked_or_safepoint(CodeCache_lock);
   NOT_DEBUG(if (needs_cache_clean())) {
-    NMethodIterator iter;
+    CompiledMethodIterator iter;
     while(iter.next_alive()) {
-      nmethod* nm = iter.method();
-      assert(!nm->is_unloaded(), "Tautology");
+      CompiledMethod* cm = iter.method();
+      assert(!cm->is_unloaded(), "Tautology");
       DEBUG_ONLY(if (needs_cache_clean())) {
-        nm->cleanup_inline_caches();
+        cm->cleanup_inline_caches();
       }
-      DEBUG_ONLY(nm->verify());
-      DEBUG_ONLY(nm->verify_oop_relocations());
+      DEBUG_ONLY(cm->verify());
+      DEBUG_ONLY(cm->verify_oop_relocations());
     }
   }
+
   set_needs_cache_clean(false);
   prune_scavenge_root_nmethods();
 
@@ -1036,7 +1037,7 @@ int CodeCache::number_of_nmethods_with_dependencies() {
 
 void CodeCache::clear_inline_caches() {
   assert_locked_or_safepoint(CodeCache_lock);
-  NMethodIterator iter;
+  CompiledMethodIterator iter;
   while(iter.next_alive()) {
     iter.method()->clear_inline_caches();
   }
@@ -1083,6 +1084,11 @@ int CodeCache::mark_for_deoptimization(KlassDepChange& changes) {
   return number_of_marked_CodeBlobs;
 }
 
+CompiledMethod* CodeCache::find_compiled(void* start) {
+  CodeBlob *cb = find_blob(start);
+  assert(cb == NULL || cb->is_compiled(), "did not find an compiled_method");
+  return (CompiledMethod*)cb;
+}
 
 #ifdef HOTSWAP
 int CodeCache::mark_for_evol_deoptimization(instanceKlassHandle dependee) {
@@ -1094,16 +1100,16 @@ int CodeCache::mark_for_evol_deoptimization(instanceKlassHandle dependee) {
   for (int i = 0; i < old_methods->length(); i++) {
     ResourceMark rm;
     Method* old_method = old_methods->at(i);
-    nmethod *nm = old_method->code();
+    CompiledMethod* nm = old_method->code();
     if (nm != NULL) {
       nm->mark_for_deoptimization();
       number_of_marked_CodeBlobs++;
     }
   }
 
-  NMethodIterator iter;
+  CompiledMethodIterator iter;
   while(iter.next_alive()) {
-    nmethod* nm = iter.method();
+    CompiledMethod* nm = iter.method();
     if (nm->is_marked_for_deoptimization()) {
       // ...Already marked in the previous pass; don't count it again.
     } else if (nm->is_evol_dependent_on(dependee())) {
@@ -1124,9 +1130,9 @@ int CodeCache::mark_for_evol_deoptimization(instanceKlassHandle dependee) {
 // Deoptimize all methods
 void CodeCache::mark_all_nmethods_for_deoptimization() {
   MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  NMethodIterator iter;
+  CompiledMethodIterator iter;
   while(iter.next_alive()) {
-    nmethod* nm = iter.method();
+    CompiledMethod* nm = iter.method();
     if (!nm->method()->is_method_handle_intrinsic()) {
       nm->mark_for_deoptimization();
     }
@@ -1137,9 +1143,9 @@ int CodeCache::mark_for_deoptimization(Method* dependee) {
   MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   int number_of_marked_CodeBlobs = 0;
 
-  NMethodIterator iter;
+  CompiledMethodIterator iter;
   while(iter.next_alive()) {
-    nmethod* nm = iter.method();
+    CompiledMethod* nm = iter.method();
     if (nm->is_dependent_on_method(dependee)) {
       ResourceMark rm;
       nm->mark_for_deoptimization();
@@ -1152,9 +1158,9 @@ int CodeCache::mark_for_deoptimization(Method* dependee) {
 
 void CodeCache::make_marked_nmethods_not_entrant() {
   assert_locked_or_safepoint(CodeCache_lock);
-  NMethodIterator iter;
+  CompiledMethodIterator iter;
   while(iter.next_alive()) {
-    nmethod* nm = iter.method();
+    CompiledMethod* nm = iter.method();
     if (nm->is_marked_for_deoptimization()) {
       nm->make_not_entrant();
     }
@@ -1548,4 +1554,37 @@ void CodeCache::log_state(outputStream* st) {
             " adapters='" UINT32_FORMAT "' free_code_cache='" SIZE_FORMAT "'",
             blob_count(), nmethod_count(), adapter_count(),
             unallocated_capacity());
+}
+
+// Initialize iterator to given compiled method
+void CompiledMethodIterator::initialize(CompiledMethod* cm) {
+  _code_blob = (CodeBlob*)cm;
+  if (!SegmentedCodeCache) {
+    // Iterate over all CodeBlobs
+    _code_blob_type = CodeBlobType::All;
+  } else if (cm != NULL) {
+    _code_blob_type = CodeCache::get_code_blob_type(cm);
+  } else {
+    // Only iterate over method code heaps, starting with non-profiled
+    _code_blob_type = CodeBlobType::MethodNonProfiled;
+  }
+}
+
+// Advance iterator to the next compiled method in the current code heap
+bool CompiledMethodIterator::next_compiled_method() {
+  // Get first method CodeBlob
+  if (_code_blob == NULL) {
+    _code_blob = CodeCache::first_blob(_code_blob_type);
+    if (_code_blob == NULL) {
+      return false;
+    } else if (_code_blob->is_nmethod()) {
+      return true;
+    }
+  }
+  // Search for next method CodeBlob
+  _code_blob = CodeCache::next_blob(_code_blob);
+  while (_code_blob != NULL && !_code_blob->is_compiled()) {
+    _code_blob = CodeCache::next_blob(_code_blob);
+  }
+  return _code_blob != NULL;
 }

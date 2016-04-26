@@ -186,7 +186,7 @@
   nonstatic_field(Method,                      _vtable_index,                                 int)                                   \
   nonstatic_field(Method,                      _intrinsic_id,                                 u2)                                    \
   nonstatic_field(Method,                      _flags,                                        u2)                                    \
-  volatile_nonstatic_field(Method,             _code,                                         nmethod*)                              \
+  volatile_nonstatic_field(Method,             _code,                                         CompiledMethod*)                       \
   volatile_nonstatic_field(Method,             _from_compiled_entry,                          address)                               \
                                                                                                                                      \
   nonstatic_field(MethodCounters,              _invocation_counter,                           InvocationCounter)                     \

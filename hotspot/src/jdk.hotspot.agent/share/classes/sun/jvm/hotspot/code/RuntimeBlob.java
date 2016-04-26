@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,21 @@
 package sun.jvm.hotspot.code;
 
 import java.util.*;
+
+import sun.jvm.hotspot.compiler.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.utilities.*;
 
-public class AdapterBlob extends RuntimeBlob {
+public class RuntimeBlob extends CodeBlob {
+
+  // Only used by server compiler on x86; computed over in SA rather
+  // than relying on computation in target VM
+  private static final int     NOT_YET_COMPUTED = -2;
+  private static final int     UNDEFINED        = -1;
+  private              int     linkOffset       = NOT_YET_COMPUTED;
+
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -39,20 +49,10 @@ public class AdapterBlob extends RuntimeBlob {
   }
 
   private static void initialize(TypeDataBase db) {
-    // Type type = db.lookupType("AdapterBlob");
-
-    // // FIXME: add any needed fields
+    Type type = db.lookupType("RuntimeBlob");
   }
 
-  public AdapterBlob(Address addr) {
+  public RuntimeBlob(Address addr) {
     super(addr);
-  }
-
-  public boolean isAdapterBlob() {
-    return true;
-  }
-
-  public String getName() {
-    return "AdapterBlob: " + super.getName();
   }
 }

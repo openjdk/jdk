@@ -315,7 +315,7 @@ JVM_handle_linux_signal(int sig,
                ((NativeInstruction*)pc)->is_safepoint_poll() &&
                CodeCache::contains((void*) pc) &&
                ((cb = CodeCache::find_blob(pc)) != NULL) &&
-               cb->is_nmethod()) {
+               cb->is_compiled()) {
         if (TraceTraps) {
           tty->print_cr("trap: safepoint_poll at " INTPTR_FORMAT " (SIGSEGV)", p2i(pc));
         }
@@ -364,7 +364,7 @@ JVM_handle_linux_signal(int sig,
         // BugId 4454115: A read from a MappedByteBuffer can fault here if the
         // underlying file has been truncated. Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
-        nmethod* nm = (cb != NULL && cb->is_nmethod()) ? (nmethod*)cb : NULL;
+        CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
         if (nm != NULL && nm->has_unsafe_access()) {
           // We don't really need a stub here! Just set the pending exeption and
           // continue at the next instruction after the faulting read. Returning
