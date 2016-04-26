@@ -54,6 +54,9 @@ class ObjArrayKlass : public ArrayKlass {
   void set_bottom_klass(Klass* k)   { _bottom_klass = k; }
   Klass** bottom_klass_addr()       { return &_bottom_klass; }
 
+  ModuleEntry* module() const;
+  PackageEntry* package() const;
+
   // Compiler/Interpreter offset
   static ByteSize element_klass_offset() { return in_ByteSize(offset_of(ObjArrayKlass, _element_klass)); }
 

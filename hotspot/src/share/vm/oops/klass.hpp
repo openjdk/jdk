@@ -52,11 +52,13 @@
 template <class T> class Array;
 template <class T> class GrowableArray;
 class ClassLoaderData;
+class fieldDescriptor;
+class KlassSizeStats;
 class klassVtable;
+class ModuleEntry;
+class PackageEntry;
 class ParCompactionManager;
 class PSPromotionManager;
-class KlassSizeStats;
-class fieldDescriptor;
 class vtableEntry;
 
 class Klass : public Metadata {
@@ -274,6 +276,9 @@ protected:
     _shared_class_path_index = index;
   };
 
+  // Obtain the module or package for this class
+  virtual ModuleEntry* module() const = 0;
+  virtual PackageEntry* package() const = 0;
 
  protected:                                // internal accessors
   void     set_subklass(Klass* s);
