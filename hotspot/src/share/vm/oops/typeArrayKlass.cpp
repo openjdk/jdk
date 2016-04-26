@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/moduleEntry.hpp"
+#include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -340,4 +342,13 @@ void TypeArrayKlass::oop_print_on(oop obj, outputStream* st) {
 
 const char* TypeArrayKlass::internal_name() const {
   return Klass::external_name();
+}
+
+// A TypeArrayKlass is an array of a primitive type, its defining module is java.base
+ModuleEntry* TypeArrayKlass::module() const {
+  return ModuleEntryTable::javabase_module();
+}
+
+PackageEntry* TypeArrayKlass::package() const {
+  return NULL;
 }
