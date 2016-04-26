@@ -36,7 +36,7 @@ import jdk.test.lib.*;
 public class DumpSymbolAndStringTable {
     public static void main(String[] args) throws Exception {
         // Grab my own PID
-        String pid = Integer.toString(ProcessTools.getProcessId());
+        String pid = Long.toString(ProcessTools.getProcessId());
 
         ProcessBuilder pb = new ProcessBuilder();
         pb.command(new String[] {JDKToolFinder.getJDKTool("jcmd"), pid, "VM.symboltable", "-verbose"});

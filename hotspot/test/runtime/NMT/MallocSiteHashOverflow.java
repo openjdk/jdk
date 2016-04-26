@@ -48,7 +48,7 @@ public class MallocSiteHashOverflow {
         int MAX_HASH_SIZE = wb.NMTGetHashSize();
 
         // Grab my own PID
-        String pid = Integer.toString(ProcessTools.getProcessId());
+        String pid = Long.toString(ProcessTools.getProcessId());
         ProcessBuilder pb = new ProcessBuilder();
 
         // Verify that current tracking level is "detail"

@@ -49,7 +49,7 @@ public class ReleaseNoCommit {
         ProcessBuilder pb = new ProcessBuilder();
         OutputAnalyzer output;
         // Grab my own PID
-        String pid = Integer.toString(ProcessTools.getProcessId());
+        String pid = Long.toString(ProcessTools.getProcessId());
 
         addr = wb.NMTReserveMemory(reserveSize);
         // Check for reserved
