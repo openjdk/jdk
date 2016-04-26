@@ -323,6 +323,8 @@ class MacroAssembler: public Assembler {
   void movbool(Address dst, Register src);
   void testbool(Register dst);
 
+  void load_mirror(Register mirror, Register method);
+
   // oop manipulations
   void load_klass(Register dst, Register src);
   void store_klass(Register dst, Register src);

@@ -4602,7 +4602,7 @@ int os::ftruncate(int fd, jlong length) {
   return 0;
 }
 
-int os::fileno(FILE* fp) {
+int os::get_fileno(FILE* fp) {
   return _fileno(fp);
 }
 
