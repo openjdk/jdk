@@ -228,16 +228,12 @@ ALL_TARGETS += $(LAUNCHER_TARGETS)
 # Build hotspot target
 
 ifeq ($(BUILD_HOTSPOT),true)
-  hotspot:
-        ifeq ($(USE_NEW_HOTSPOT_BUILD), true)
-	  +($(CD) $(HOTSPOT_TOPDIR)/makefiles && $(MAKE) $(MAKE_ARGS) -f BuildHotspot.gmk)
-        else
-	  +($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f HotspotWrapper.gmk)
-        endif
+hotspot:
+	+($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f BuildHotspot.gmk)
 endif
 
 hotspot-ide-project:
-	+($(CD) $(HOTSPOT_TOPDIR)/makefiles && $(MAKE) $(MAKE_ARGS) -f ide/CreateVSProject.gmk)
+	+($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f ide/CreateVSProject.gmk)
 
 ALL_TARGETS += hotspot hotspot-ide-project
 
