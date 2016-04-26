@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import jdk.test.lib.OutputAnalyzer;
  * @test
  * @summary Test of diagnostic command GC.heap_info
  * @library /testlibrary
+ * @modules java.xml
+ *          java.management
  * @build jdk.test.lib.*
  * @build jdk.test.lib.dcmd.*
  * @run testng HeapInfoTest
