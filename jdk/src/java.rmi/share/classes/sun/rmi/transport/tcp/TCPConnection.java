@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,10 @@
 package sun.rmi.transport.tcp;
 
 import java.io.*;
-import java.net.InetAddress;
 import java.net.Socket;
-import java.net.SocketException;
 import java.rmi.*;
-import java.rmi.server.RMISocketFactory;
 import sun.rmi.runtime.Log;
 import sun.rmi.transport.*;
-import sun.rmi.transport.proxy.*;
 
 public class TCPConnection implements Connection {
 
@@ -120,10 +116,7 @@ public class TCPConnection implements Connection {
      */
     public boolean isReusable()
     {
-        if ((socket != null) && (socket instanceof RMISocketInfo))
-            return ((RMISocketInfo) socket).isReusable();
-        else
-            return true;
+        return true;
     }
 
     /**
