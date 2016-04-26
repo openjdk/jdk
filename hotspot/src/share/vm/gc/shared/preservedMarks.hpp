@@ -30,25 +30,25 @@
 #include "oops/oop.hpp"
 #include "utilities/stack.hpp"
 
-class OopAndMarkOop {
-private:
-  oop _o;
-  markOop _m;
-
-public:
-  OopAndMarkOop(oop obj, markOop m) : _o(obj), _m(m) { }
-
-  void set_mark() const {
-    _o->set_mark(_m);
-  }
-};
-typedef Stack<OopAndMarkOop, mtGC> OopAndMarkOopStack;
-
 class GCTaskManager;
 class WorkGang;
 
 class PreservedMarks VALUE_OBJ_CLASS_SPEC {
 private:
+  class OopAndMarkOop {
+  private:
+    oop _o;
+    markOop _m;
+
+  public:
+    OopAndMarkOop(oop obj, markOop m) : _o(obj), _m(m) { }
+
+    void set_mark() const {
+      _o->set_mark(_m);
+    }
+  };
+  typedef Stack<OopAndMarkOop, mtGC> OopAndMarkOopStack;
+
   OopAndMarkOopStack _stack;
 
   inline bool should_preserve_mark(oop obj, markOop m) const;
