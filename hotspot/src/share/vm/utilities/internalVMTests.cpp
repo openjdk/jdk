@@ -98,6 +98,7 @@ void InternalVMTests::run() {
   run_unit_test(test_memset_with_concurrent_readers);
   run_unit_test(TestPredictions_test);
   run_unit_test(WorkerDataArray_test);
+  run_unit_test(ParallelCompact_test);
 #endif
   tty->print_cr("All internal VM tests passed");
 }
