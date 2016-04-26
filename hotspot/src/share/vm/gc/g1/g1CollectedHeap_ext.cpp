@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1DefaultPolicy.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 
@@ -40,5 +41,5 @@ HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
 }
 
 G1Policy* G1CollectedHeap::create_g1_policy() {
-  return new G1Policy;
+  return new G1DefaultPolicy();
 }

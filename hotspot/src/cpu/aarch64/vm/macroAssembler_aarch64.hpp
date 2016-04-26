@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -770,6 +770,8 @@ public:
   void store_klass(Register dst, Register src);
   void cmp_klass(Register oop, Register trial_klass, Register tmp);
 
+  void load_mirror(Register dst, Register method);
+
   void load_heap_oop(Register dst, Address src);
 
   void load_heap_oop_not_null(Register dst, Address src);
@@ -1183,6 +1185,10 @@ public:
   void arrays_equals(Register a1, Register a2,
                      Register result, Register cnt1,
                      int elem_size, bool is_string);
+
+  void fill_words(Register base, Register cnt, Register value);
+  void zero_words(Register base, Register cnt);
+  void zero_words(Register base, u_int64_t cnt);
 
   void byte_array_inflate(Register src, Register dst, Register len,
                           FloatRegister vtmp1, FloatRegister vtmp2,

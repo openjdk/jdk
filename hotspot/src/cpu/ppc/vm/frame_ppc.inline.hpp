@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -148,6 +148,11 @@ inline BasicObjectLock* frame::interpreter_frame_monitor_begin() const {
 inline Method** frame::interpreter_frame_method_addr() const {
   return (Method**) &(get_ijava_state()->method);
 }
+
+inline oop* frame::interpreter_frame_mirror_addr() const {
+  return (oop*) &(get_ijava_state()->mirror);
+}
+
 inline ConstantPoolCache** frame::interpreter_frame_cpoolcache_addr() const {
   return (ConstantPoolCache**) &(get_ijava_state()->cpoolCache);
 }
