@@ -652,21 +652,6 @@ MEMORY_SIZE
 NUM_CORES
 BUILD_FAILURE_HANDLER
 ENABLE_INTREE_EC
-JVM_VARIANT_CORE
-JVM_VARIANT_ZEROSHARK
-JVM_VARIANT_ZERO
-JVM_VARIANT_HOTSPOT
-JVM_VARIANT_MINIMAL1
-JVM_VARIANT_CLIENT
-JVM_VARIANT_SERVER
-JVM_VARIANTS_COMMA
-TEST_IN_BUILD
-HOTSPOT_MAKE_ARGS
-MACOSX_UNIVERSAL
-DEBUG_CLASSFILES
-FASTDEBUG
-VARIANT
-USE_NEW_HOTSPOT_BUILD
 LIBZIP_CAN_USE_MMAP
 LIBDL
 LIBM
@@ -1225,8 +1210,6 @@ with_dxsdk
 with_dxsdk_lib
 with_dxsdk_include
 enable_jtreg_failure_handler
-enable_new_hotspot_build
-enable_hotspot_test_in_build
 with_num_cores
 with_memory_size
 with_jobs
@@ -1997,11 +1980,6 @@ Optional Features:
                           disable bundling of the freetype library with the
                           build result [enabled on Windows or when using
                           --with-freetype, disabled otherwise]
-  --disable-new-hotspot-build
-                          disable the new hotspot build system (use the old)
-                          [enabled]
-  --enable-hotspot-test-in-build
-                          run the Queens test after Hotspot build [disabled]
   --enable-jtreg-failure-handler
                           forces build of the jtreg failure handler to be
                           enabled, missing dependencies become fatal errors.
@@ -4300,12 +4278,6 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 #
 
 
-###############################################################################
-# Support for old hotspot build. Remove once new hotspot build has proven
-# to work satisfactory.
-#
-
-
 #
 # Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -5070,7 +5042,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1461064700
+DATE_WHEN_GENERATED=1461670455
 
 ###############################################################################
 #
@@ -17014,9 +16986,6 @@ $as_echo "$as_me: The path of OUTPUT_ROOT, which resolves as \"$path\", is inval
 
   # The spec.gmk file contains all variables for the make system.
   ac_config_files="$ac_config_files $OUTPUT_ROOT/spec.gmk:$AUTOCONF_DIR/spec.gmk.in"
-
-  # The hotspot-spec.gmk file contains legacy variables for the hotspot make system.
-  ac_config_files="$ac_config_files $OUTPUT_ROOT/hotspot-spec.gmk:$AUTOCONF_DIR/hotspot-spec.gmk.in"
 
   # The bootcycle-spec.gmk file contains support for boot cycle builds.
   ac_config_files="$ac_config_files $OUTPUT_ROOT/bootcycle-spec.gmk:$AUTOCONF_DIR/bootcycle-spec.gmk.in"
@@ -63746,144 +63715,6 @@ fi
 ###############################################################################
 
 
-  # Check whether --enable-new-hotspot-build was given.
-if test "${enable_new_hotspot_build+set}" = set; then :
-  enableval=$enable_new_hotspot_build;
-fi
-
-
-   if test "x$enable_new_hotspot_build" = "x" || test "x$enable_new_hotspot_build" = "xyes"; then
-     USE_NEW_HOTSPOT_BUILD=true
-   else
-     USE_NEW_HOTSPOT_BUILD=false
-   fi
-
-
-  case $HOTSPOT_DEBUG_LEVEL in
-    product )
-      VARIANT="OPT"
-      FASTDEBUG="false"
-      DEBUG_CLASSFILES="false"
-      ;;
-    fastdebug )
-      VARIANT="DBG"
-      FASTDEBUG="true"
-      DEBUG_CLASSFILES="true"
-      ;;
-    debug )
-      VARIANT="DBG"
-      FASTDEBUG="false"
-      DEBUG_CLASSFILES="true"
-      ;;
-    optimized )
-      VARIANT="OPT"
-      FASTDEBUG="false"
-      DEBUG_CLASSFILES="false"
-      ;;
-  esac
-
-
-
-
-  if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
-    MACOSX_UNIVERSAL="true"
-  fi
-
-
-
-  # Make sure JVM_VARIANTS_COMMA use minimal1 for backwards compatibility
-  JVM_VARIANTS_COMMA=`$ECHO ,$JVM_VARIANTS_OPT, | $SED -e 's/,minimal,/,minimal1,/'`
-
-  JVM_VARIANT_SERVER=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,server,/!s/.*/false/g' -e '/,server,/s/.*/true/g'`
-  JVM_VARIANT_CLIENT=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,client,/!s/.*/false/g' -e '/,client,/s/.*/true/g'`
-  JVM_VARIANT_MINIMAL1=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,minimal1\?,/!s/.*/false/g' -e '/,minimal1\?,/s/.*/true/g'`
-  JVM_VARIANT_CORE=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,core,/!s/.*/false/g' -e '/,core,/s/.*/true/g'`
-  JVM_VARIANT_ZERO=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,zero,/!s/.*/false/g' -e '/,zero,/s/.*/true/g'`
-  JVM_VARIANT_ZEROSHARK=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,zeroshark,/!s/.*/false/g' -e '/,zeroshark,/s/.*/true/g'`
-  JVM_VARIANT_CUSTOM=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,custom,/!s/.*/false/g' -e '/,custom,/s/.*/true/g'`
-
-  #####
-  # Generate the legacy makefile targets for hotspot.
-  HOTSPOT_TARGET=""
-
-  if test "x$JVM_VARIANT_SERVER" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL} "
-  fi
-
-  if test "x$JVM_VARIANT_CLIENT" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}1 "
-  fi
-
-  if test "x$JVM_VARIANT_MINIMAL1" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}minimal1 "
-  fi
-
-  if test "x$JVM_VARIANT_ZERO" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}zero "
-  fi
-
-  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}shark "
-  fi
-
-  if test "x$JVM_VARIANT_CORE" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}core "
-  fi
-
-  HOTSPOT_TARGET="$HOTSPOT_TARGET docs export_$HOTSPOT_DEBUG_LEVEL"
-
-  # On Macosx universal binaries are produced, but they only contain
-  # 64 bit intel. This invalidates control of which jvms are built
-  # from configure, but only server is valid anyway. Fix this
-  # when hotspot makefiles are rewritten.
-  if test "x$MACOSX_UNIVERSAL" = xtrue; then
-    HOTSPOT_TARGET=universal_${HOTSPOT_DEBUG_LEVEL}
-  fi
-
-  HOTSPOT_MAKE_ARGS="$HOTSPOT_TARGET"
-
-
-  # Control wether Hotspot runs Queens test after build.
-  # Check whether --enable-hotspot-test-in-build was given.
-if test "${enable_hotspot_test_in_build+set}" = set; then :
-  enableval=$enable_hotspot_test_in_build;
-else
-  enable_hotspot_test_in_build=no
-fi
-
-  if test "x$enable_hotspot_test_in_build" = "xyes"; then
-    TEST_IN_BUILD=true
-  else
-    TEST_IN_BUILD=false
-  fi
-
-
-  if test "x$USE_NEW_HOTSPOT_BUILD" = xfalse; then
-    if test "x$JVM_VARIANT_CLIENT" = xtrue; then
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        as_fn_error $? "You cannot build a client JVM for a 64-bit machine." "$LINENO" 5
-      fi
-    fi
-    if test "x$JVM_VARIANT_MINIMAL1" = xtrue; then
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        as_fn_error $? "You cannot build a minimal JVM for a 64-bit machine." "$LINENO" 5
-      fi
-    fi
-    if test "x$JVM_VARIANT_CUSTOM" = xtrue; then
-        as_fn_error $? "You cannot build a custom JVM using the old hotspot build system." "$LINENO" 5
-    fi
-  fi
-
-
-
-
-
-
-
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if elliptic curve crypto implementation is present" >&5
 $as_echo_n "checking if elliptic curve crypto implementation is present... " >&6; }
 
@@ -66336,7 +66167,6 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "$OUTPUT_ROOT/spec.gmk") CONFIG_FILES="$CONFIG_FILES $OUTPUT_ROOT/spec.gmk:$AUTOCONF_DIR/spec.gmk.in" ;;
-    "$OUTPUT_ROOT/hotspot-spec.gmk") CONFIG_FILES="$CONFIG_FILES $OUTPUT_ROOT/hotspot-spec.gmk:$AUTOCONF_DIR/hotspot-spec.gmk.in" ;;
     "$OUTPUT_ROOT/bootcycle-spec.gmk") CONFIG_FILES="$CONFIG_FILES $OUTPUT_ROOT/bootcycle-spec.gmk:$AUTOCONF_DIR/bootcycle-spec.gmk.in" ;;
     "$OUTPUT_ROOT/buildjdk-spec.gmk") CONFIG_FILES="$CONFIG_FILES $OUTPUT_ROOT/buildjdk-spec.gmk:$AUTOCONF_DIR/buildjdk-spec.gmk.in" ;;
     "$OUTPUT_ROOT/compare.sh") CONFIG_FILES="$CONFIG_FILES $OUTPUT_ROOT/compare.sh:$AUTOCONF_DIR/compare.sh.in" ;;
