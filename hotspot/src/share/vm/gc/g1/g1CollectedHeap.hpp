@@ -45,6 +45,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/plab.hpp"
+#include "gc/shared/preservedMarks.hpp"
 #include "memory/memRegion.hpp"
 #include "utilities/stack.hpp"
 
@@ -797,16 +798,11 @@ protected:
   // forwarding pointers to themselves.  Reset them.
   void remove_self_forwarding_pointers();
 
-  // Restore the preserved mark words for objects with self-forwarding pointers.
-  void restore_preserved_marks();
-
   // Restore the objects in the regions in the collection set after an
   // evacuation failure.
   void restore_after_evac_failure();
 
-  // Stores marks with the corresponding oop that we need to preserve during evacuation
-  // failure.
-  OopAndMarkOopStack*  _preserved_objs;
+  PreservedMarksSet _preserved_marks_set;
 
   // Preserve the mark of "obj", if necessary, in preparation for its mark
   // word being overwritten with a self-forwarding-pointer.
