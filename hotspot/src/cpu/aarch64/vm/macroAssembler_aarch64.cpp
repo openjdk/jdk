@@ -4093,7 +4093,10 @@ void MacroAssembler::load_byte_map_base(Register reg) {
     // and it might even be negative.
     unsigned long offset;
     adrp(reg, ExternalAddress((address)byte_map_base), offset);
-    assert(offset == 0, "misaligned card table base");
+    // We expect offset to be zero with most collectors.
+    if (offset != 0) {
+      add(reg, reg, offset);
+    }
   } else {
     mov(reg, (uint64_t)byte_map_base);
   }
