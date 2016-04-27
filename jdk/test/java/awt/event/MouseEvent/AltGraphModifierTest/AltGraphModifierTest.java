@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class AltGraphModifierTest {
                     "3. If Alt-Gr key is not present, press Ctrl+Alt keys &",
                     "   perform mouse click on the TestWindow.",
                     "4. Test will exit by itself with appropriate result.",
-                    "",
+                    " ",
                     "Linux :-",
                     "1. Please check if Alt-Gr key is present on keyboard.",
                     "2. If present, press the Alt-Gr key and perform",
@@ -63,10 +63,11 @@ public class AltGraphModifierTest {
                     "6. Press Right Alt Key & perform mouse click on the",
                     "   TestWindow",
                     "7. Test will exit by itself with appropriate result.",
-                    "",
+                    " ",
                     "Mac :-",
-                    "   Mac fix is under progress, & will be fixed soon.",
-                    "   Please click Fail"
+                    "1. Press Right Option key on the keyboard and mouse click",
+                    "   on the TestWindow",
+                    "3. Test will exit by itself with appropriate result.",
                 };
 
         Sysout.createDialog();
@@ -77,7 +78,7 @@ public class AltGraphModifierTest {
     public static void initTestWindow() {
         mainFrame = new Frame();
         mainFrame.setTitle("TestWindow");
-        mainFrame.setSize(300, 200);
+        mainFrame.setBounds(700, 10, 300, 300);
         mainFrame.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
