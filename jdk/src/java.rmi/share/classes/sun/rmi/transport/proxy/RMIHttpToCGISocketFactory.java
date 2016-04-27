@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,34 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.rmi.transport.tcp;
+package sun.rmi.transport.proxy;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.net.ServerSocket;
+import java.net.URL;
 import java.rmi.server.RMISocketFactory;
 
 /**
- * RMIDirectSocketFactory creates a direct socket connection to the
- * specified port on the specified host.
+ * RMIHttpToCGISocketFactory creates a socket connection to the
+ * specified host that is comminicated within an HTTP request,
+ * forwarded through the default firewall proxy, to the target host's
+ * normal HTTP server, to a CGI program which forwards the request to
+ * the actual specified port on the socket.
  */
-public class TCPDirectSocketFactory extends RMISocketFactory {
+public class RMIHttpToCGISocketFactory extends RMISocketFactory {
 
-    public Socket createSocket(String host, int port) throws IOException
+    public Socket createSocket(String host, int port)
+        throws IOException
     {
-        return new Socket(host, port);
+        return new HttpSendSocket(host, port,
+                                  new URL("http", host,
+                                          "/cgi-bin/java-rmi.cgi" +
+                                          "?forward=" + port));
     }
 
     public ServerSocket createServerSocket(int port) throws IOException
     {
-        return new ServerSocket(port);
+        return new HttpAwareServerSocket(port);
     }
 }

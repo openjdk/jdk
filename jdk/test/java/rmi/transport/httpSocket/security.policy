@@ -1,0 +1,10 @@
+
+grant {
+    permission java.net.SocketPermission "*:1024-", "accept,connect,listen";
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.rmi.registry";
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.rmi.server";
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.rmi.transport";
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.rmi.transport.proxy";
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.rmi.transport.tcp";
+    permission java.lang.RuntimePermission "setFactory";
+};
