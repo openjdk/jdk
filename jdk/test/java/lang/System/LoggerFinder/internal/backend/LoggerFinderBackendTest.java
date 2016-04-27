@@ -77,6 +77,7 @@ import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import sun.util.logging.internal.LoggingProviderImpl;
+import java.lang.reflect.Module;
 
 /**
  * @author danielfuchs
@@ -1506,7 +1507,7 @@ public class LoggerFinderBackendTest {
         Logger getBackendLogger(String name) {
             if (isSystem) {
                 return LoggingProviderImpl.getLogManagerAccess().demandLoggerFor(
-                        LogManager.getLogManager(), name, Thread.class);
+                        LogManager.getLogManager(), name, Thread.class.getModule());
             } else {
                 return Logger.getLogger(name);
             }
@@ -1699,7 +1700,7 @@ public class LoggerFinderBackendTest {
                 Collections.synchronizedMap(new HashMap<>());
 
         @Override
-        public java.lang.System.Logger getLogger(String name, Class<?> caller) {
+        public java.lang.System.Logger getLogger(String name, Module caller) {
             ClassLoader callerLoader = caller.getClassLoader();
             if (callerLoader == null) {
                 systemLoggers.putIfAbsent(name, new CustomLogger(name));
@@ -1827,8 +1828,8 @@ public class LoggerFinderBackendTest {
             public void setLevel(java.lang.System.Logger logger, Level level) {
                 final CustomLoggerFinder.CustomLogger l =
                         (CustomLoggerFinder.CustomLogger)
-                        (isSystem ? provider.getLogger(logger.getName(), Thread.class) :
-                        provider.getLogger(logger.getName(), LoggerFinderBackendTest.class));
+                        (isSystem ? provider.getLogger(logger.getName(), Thread.class.getModule()) :
+                        provider.getLogger(logger.getName(), LoggerFinderBackendTest.class.getModule()));
                 l.setLevel(provider.fromJul(level));
             }
             @Override
@@ -1840,8 +1841,8 @@ public class LoggerFinderBackendTest {
             CustomLoggerFinder.CustomLevel getLevel(java.lang.System.Logger logger) {
                 final CustomLoggerFinder.CustomLogger l =
                         (CustomLoggerFinder.CustomLogger)
-                        (isSystem ? provider.getLogger(logger.getName(), Thread.class) :
-                        provider.getLogger(logger.getName(), LoggerFinderBackendTest.class));
+                        (isSystem ? provider.getLogger(logger.getName(), Thread.class.getModule()) :
+                        provider.getLogger(logger.getName(), LoggerFinderBackendTest.class.getModule()));
                 return l.level;
             }
 
@@ -1962,7 +1963,7 @@ public class LoggerFinderBackendTest {
         try {
             Class<?> lazyLoggers = jdk.internal.logger.LazyLoggers.class;
             getLazyLogger = lazyLoggers.getMethod("getLazyLogger",
-                    String.class, Class.class);
+                    String.class, Module.class);
             getLazyLogger.setAccessible(true);
             Class<?> loggerFinderLoader =
                     Class.forName("java.lang.System$LoggerFinder");
@@ -1973,7 +1974,7 @@ public class LoggerFinderBackendTest {
         }
     }
 
-    static java.lang.System.Logger getSystemLogger(String name, Class<?> caller) throws Exception {
+    static java.lang.System.Logger getSystemLogger(String name, Module caller) throws Exception {
         try {
             return java.lang.System.Logger.class.cast(getLazyLogger.invoke(null, name, caller));
         } catch (InvocationTargetException x) {
@@ -1986,7 +1987,7 @@ public class LoggerFinderBackendTest {
         }
     }
     static java.lang.System.Logger getSystemLogger(String name,
-            ResourceBundle bundle, Class<?> caller) throws Exception {
+            ResourceBundle bundle, Module caller) throws Exception {
         try {
             LoggerFinder provider = LoggerFinder.class.cast(accessLoggerFinder.invoke(null));
             return provider.getLocalizedLogger(name, bundle, caller);
@@ -2047,14 +2048,14 @@ public class LoggerFinderBackendTest {
         final BackendTester tester = factory.createBackendTester(false);
         final java.lang.System.Logger logger =
                 java.lang.System.LoggerFinder.getLoggerFinder()
-                        .getLogger("foo", LoggerFinderBackendTest.class);
+                        .getLogger("foo", LoggerFinderBackendTest.class.getModule());
 
         testLogger(tester, logger, nb);
 
         // Test a simple system logger with JUL backend
         final java.lang.System.Logger system =
                 java.lang.System.LoggerFinder.getLoggerFinder()
-                        .getLogger("bar", Thread.class);
+                        .getLogger("bar", Thread.class.getModule());
         final BackendTester systemTester = factory.createBackendTester(true);
         testLogger(systemTester, system, nb);
 
@@ -2062,7 +2063,7 @@ public class LoggerFinderBackendTest {
         // JUL backend
         final java.lang.System.Logger noBundleLogger =
                 java.lang.System.LoggerFinder.getLoggerFinder()
-                        .getLocalizedLogger("baz", null, LoggerFinderBackendTest.class);
+                        .getLocalizedLogger("baz", null, LoggerFinderBackendTest.class.getModule());
         final BackendTester noBundleTester =
                 factory.createBackendTester(false, spiLoggerClass);
         testLogger(noBundleTester, noBundleLogger, nb);
@@ -2071,7 +2072,7 @@ public class LoggerFinderBackendTest {
         // backend
         final java.lang.System.Logger noBundleSysLogger =
                 java.lang.System.LoggerFinder.getLoggerFinder()
-                        .getLocalizedLogger("oof", null, Thread.class);
+                        .getLocalizedLogger("oof", null, Thread.class.getModule());
         final BackendTester noBundleSysTester =
                 factory.createBackendTester(true, spiLoggerClass);
         testLogger(noBundleSysTester, noBundleSysLogger, nb);
@@ -2085,14 +2086,14 @@ public class LoggerFinderBackendTest {
             System.out.println("System.Loggers.getLogger(\"baz\", null): got expected " + x);
         }
         final java.lang.System.Logger noBundleExtensionLogger =
-                getSystemLogger("baz", null, LoggerFinderBackendTest.class);
+                getSystemLogger("baz", null, LoggerFinderBackendTest.class.getModule());
         final BackendTester noBundleExtensionTester =
                 factory.createBackendTester(false, jdkLoggerClass);
         testLogger(noBundleExtensionTester, noBundleExtensionLogger, nb);
 
         // Test a simple system logger with JUL backend
         final java.lang.System.Logger sysExtensionLogger =
-                getSystemLogger("oof", Thread.class);
+                getSystemLogger("oof", Thread.class.getModule());
         final BackendTester sysExtensionTester =
                 factory.createBackendTester(true, jdkLoggerClass);
         testLogger(sysExtensionTester, sysExtensionLogger, nb);
@@ -2100,7 +2101,7 @@ public class LoggerFinderBackendTest {
         // Test a localized system logger with null resource bundle and JUL
         // backend
         final java.lang.System.Logger noBundleSysExtensionLogger =
-                getSystemLogger("oof", null, Thread.class);
+                getSystemLogger("oof", null, Thread.class.getModule());
         final BackendTester noBundleSysExtensionTester =
                 factory.createBackendTester(true, jdkLoggerClass);
         testLogger(noBundleSysExtensionTester, noBundleSysExtensionLogger, nb);
@@ -2127,7 +2128,7 @@ public class LoggerFinderBackendTest {
                 ResourceBundle.getBundle(ResourceBundeLocalized.class.getName());
         final java.lang.System.Logger bundleLogger =
                 java.lang.System.LoggerFinder.getLoggerFinder()
-                        .getLocalizedLogger("toto", bundle, LoggerFinderBackendTest.class);
+                        .getLocalizedLogger("toto", bundle, LoggerFinderBackendTest.class.getModule());
         final BackendTester bundleTester =
                 factory.createBackendTester(false, spiLoggerClass, bundle);
         testLogger(bundleTester, bundleLogger, nb);
@@ -2135,7 +2136,7 @@ public class LoggerFinderBackendTest {
         // Test a localized system logger with resource bundle and JUL backend
         final java.lang.System.Logger bundleSysLogger =
                 java.lang.System.LoggerFinder.getLoggerFinder()
-                        .getLocalizedLogger("titi", bundle, Thread.class);
+                        .getLocalizedLogger("titi", bundle, Thread.class.getModule());
         final BackendTester bundleSysTester =
                 factory.createBackendTester(true, spiLoggerClass, bundle);
         testLogger(bundleSysTester, bundleSysLogger, nb);
@@ -2151,7 +2152,7 @@ public class LoggerFinderBackendTest {
         // Test a localized Jdk system logger with resource bundle and JUL
         // backend
         final java.lang.System.Logger bundleExtensionSysLogger =
-                getSystemLogger("titu", bundle, Thread.class);
+                getSystemLogger("titu", bundle, Thread.class.getModule());
         final BackendTester bundleExtensionSysTester =
                 factory.createBackendTester(true, jdkLoggerClass, bundle);
         testLogger(bundleExtensionSysTester, bundleExtensionSysLogger, nb);
