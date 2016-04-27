@@ -99,7 +99,8 @@ void FileMapInfo::fail_continue(const char *msg, ...) {
       fail(msg, ap);
     } else {
       if (PrintSharedSpaces) {
-        tty->print_cr("UseSharedSpaces: %s", msg);
+        tty->print("UseSharedSpaces: ");
+        tty->vprint_cr(msg, ap);
       }
     }
     UseSharedSpaces = false;
