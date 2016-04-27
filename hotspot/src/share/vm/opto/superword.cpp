@@ -119,7 +119,7 @@ void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
 
   // skip any loop that has not been assigned max unroll by analysis
   if (do_optimization) {
-    if (cl->slp_max_unroll() == 0) return;
+    if (SuperWordLoopUnrollAnalysis && cl->slp_max_unroll() == 0) return;
   }
 
   // Check for no control flow in body (other than exit)
