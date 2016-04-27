@@ -906,6 +906,45 @@ class MacroAssembler: public Assembler {
   void ldmxcsr(Address src) { Assembler::ldmxcsr(src); }
   void ldmxcsr(AddressLiteral src);
 
+#ifdef _LP64
+ private:
+  void sha256_AVX2_one_round_compute(
+    Register  reg_old_h,
+    Register  reg_a,
+    Register  reg_b,
+    Register  reg_c,
+    Register  reg_d,
+    Register  reg_e,
+    Register  reg_f,
+    Register  reg_g,
+    Register  reg_h,
+    int iter);
+  void sha256_AVX2_four_rounds_compute_first(int start);
+  void sha256_AVX2_four_rounds_compute_last(int start);
+  void sha256_AVX2_one_round_and_sched(
+        XMMRegister xmm_0,     /* == ymm4 on 0, 1, 2, 3 iterations, then rotate 4 registers left on 4, 8, 12 iterations */
+        XMMRegister xmm_1,     /* ymm5 */  /* full cycle is 16 iterations */
+        XMMRegister xmm_2,     /* ymm6 */
+        XMMRegister xmm_3,     /* ymm7 */
+        Register    reg_a,      /* == eax on 0 iteration, then rotate 8 register right on each next iteration */
+        Register    reg_b,      /* ebx */    /* full cycle is 8 iterations */
+        Register    reg_c,      /* edi */
+        Register    reg_d,      /* esi */
+        Register    reg_e,      /* r8d */
+        Register    reg_f,      /* r9d */
+        Register    reg_g,      /* r10d */
+        Register    reg_h,      /* r11d */
+        int iter);
+
+  void addm(int disp, Register r1, Register r2);
+
+ public:
+  void sha256_AVX2(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
+                   XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
+                   Register buf, Register state, Register ofs, Register limit, Register rsp,
+                   bool multi_block, XMMRegister shuf_mask);
+#endif
+
   void fast_sha1(XMMRegister abcd, XMMRegister e0, XMMRegister e1, XMMRegister msg0,
                  XMMRegister msg1, XMMRegister msg2, XMMRegister msg3, XMMRegister shuf_mask,
                  Register buf, Register state, Register ofs, Register limit, Register rsp,

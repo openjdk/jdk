@@ -1522,6 +1522,7 @@ private:
   // Pemutation of 64bit words
   void vpermq(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
   void vpermq(XMMRegister dst, XMMRegister src, int imm8);
+  void vperm2i128(XMMRegister dst,  XMMRegister nds, XMMRegister src, int imm8);
 
   void pause();
 
@@ -1606,10 +1607,12 @@ private:
   // Shuffle Bytes
   void pshufb(XMMRegister dst, XMMRegister src);
   void pshufb(XMMRegister dst, Address src);
+  void vpshufb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   // Shuffle Packed Doublewords
   void pshufd(XMMRegister dst, XMMRegister src, int mode);
   void pshufd(XMMRegister dst, Address src,     int mode);
+  void vpshufd(XMMRegister dst, XMMRegister src, int mode, int vector_len);
 
   // Shuffle Packed Low Words
   void pshuflw(XMMRegister dst, XMMRegister src, int mode);
@@ -1661,6 +1664,7 @@ private:
 #ifdef _LP64
   void rorq(Register dst, int imm8);
   void rorxq(Register dst, Register src, int imm8);
+  void rorxd(Register dst, Register src, int imm8);
 #endif
 
   void sahf();
@@ -1684,6 +1688,8 @@ private:
   void setb(Condition cc, Register dst);
 
   void palignr(XMMRegister dst, XMMRegister src, int imm8);
+  void vpalignr(XMMRegister dst, XMMRegister src1, XMMRegister src2, int imm8, int vector_len);
+
   void pblendw(XMMRegister dst, XMMRegister src, int imm8);
 
   void sha1rnds4(XMMRegister dst, XMMRegister src, int imm8);
