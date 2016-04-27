@@ -65,24 +65,39 @@ public class Block extends Node implements BreakableNode, Terminal, Flags<Block>
     private final LocalVariableConversion conversion;
 
     /** Flag indicating that this block needs scope */
-    public static final int NEEDS_SCOPE = 1 << 0;
+    public static final int NEEDS_SCOPE        = 1 << 0;
 
     /**
      * Is this block tagged as terminal based on its contents
      * (usually the last statement)
      */
-    public static final int IS_TERMINAL = 1 << 2;
+    public static final int IS_TERMINAL        = 1 << 2;
 
     /**
      * Is this block the eager global scope - i.e. the original program. This isn't true for the
      * outermost level of recompiles
      */
-    public static final int IS_GLOBAL_SCOPE = 1 << 3;
+    public static final int IS_GLOBAL_SCOPE    = 1 << 3;
 
     /**
      * Is this block a synthetic one introduced by Parser?
      */
-    public static final int IS_SYNTHETIC = 1 << 4;
+    public static final int IS_SYNTHETIC       = 1 << 4;
+
+    /**
+     * Is this the function body block? May not be the first, if parameter list contains expressions.
+     */
+    public static final int IS_BODY            = 1 << 5;
+
+    /**
+     * Is this the parameter initialization block? If present, must be the first block, immediately wrapping the function body block.
+     */
+    public static final int IS_PARAMETER_BLOCK = 1 << 6;
+
+    /**
+     * Marks the variable declaration block for case clauses of a switch statement.
+     */
+    public static final int IS_SWITCH_BLOCK    = 1 << 7;
 
     /**
      * Constructor
@@ -488,5 +503,32 @@ public class Block extends Node implements BreakableNode, Terminal, Flags<Block>
     @Override
     public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         return Acceptor.accept(this, visitor);
+    }
+
+    /**
+     * Checks if this is a function body.
+     *
+     * @return true if the function body flag is set
+     */
+    public boolean isFunctionBody() {
+        return getFlag(IS_BODY);
+    }
+
+    /**
+     * Checks if this is a parameter block.
+     *
+     * @return true if the parameter block flag is set
+     */
+    public boolean isParameterBlock() {
+        return getFlag(IS_PARAMETER_BLOCK);
+    }
+
+    /**
+     * Checks whether this is a switch block.
+     *
+     * @return true if this is a switch block
+     */
+    public boolean isSwitchBlock() {
+        return getFlag(IS_SWITCH_BLOCK);
     }
 }
