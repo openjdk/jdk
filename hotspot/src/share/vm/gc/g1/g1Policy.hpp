@@ -57,8 +57,8 @@ public:
 
   // Accessors
 
-  virtual void set_region_eden(HeapRegion* hr, int young_index_in_cset) = 0;
-  virtual void set_region_survivor(HeapRegion* hr, int young_index_in_cset) = 0;
+  virtual void set_region_eden(HeapRegion* hr) = 0;
+  virtual void set_region_survivor(HeapRegion* hr) = 0;
 
   virtual void record_max_rs_lengths(size_t rs_lengths) = 0;
 
