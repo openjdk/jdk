@@ -3217,6 +3217,14 @@ void MacroAssembler::load_klass(Register dst, Register src) {
   }
 }
 
+void MacroAssembler::load_mirror(Register dst, Register method) {
+  const int mirror_offset = in_bytes(Klass::java_mirror_offset());
+  ldr(dst, Address(rmethod, Method::const_offset()));
+  ldr(dst, Address(dst, ConstMethod::constants_offset()));
+  ldr(dst, Address(dst, ConstantPool::pool_holder_offset_in_bytes()));
+  ldr(dst, Address(dst, mirror_offset));
+}
+
 void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp) {
   if (UseCompressedClassPointers) {
     ldrw(tmp, Address(oop, oopDesc::klass_offset_in_bytes()));
@@ -4085,7 +4093,10 @@ void MacroAssembler::load_byte_map_base(Register reg) {
     // and it might even be negative.
     unsigned long offset;
     adrp(reg, ExternalAddress((address)byte_map_base), offset);
-    assert(offset == 0, "misaligned card table base");
+    // We expect offset to be zero with most collectors.
+    if (offset != 0) {
+      add(reg, reg, offset);
+    }
   } else {
     mov(reg, (uint64_t)byte_map_base);
   }

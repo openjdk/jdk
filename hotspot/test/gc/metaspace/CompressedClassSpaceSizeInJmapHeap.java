@@ -49,7 +49,7 @@ public class CompressedClassSpaceSizeInJmapHeap {
             return;
         }
 
-        String pid = Integer.toString(ProcessTools.getProcessId());
+        String pid = Long.toString(ProcessTools.getProcessId());
 
         JDKToolLauncher jmap = JDKToolLauncher.create("jmap")
                                               .addToolArg("-heap")

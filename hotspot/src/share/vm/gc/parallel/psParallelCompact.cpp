@@ -2148,8 +2148,7 @@ void PSParallelCompact::adjust_roots(ParCompactionManager* cm) {
   // General strong roots.
   Universe::oops_do(&oop_closure);
   JNIHandles::oops_do(&oop_closure);   // Global (strong) JNI handles
-  CLDToOopClosure adjust_from_cld(&oop_closure);
-  Threads::oops_do(&oop_closure, &adjust_from_cld, NULL);
+  Threads::oops_do(&oop_closure, NULL);
   ObjectSynchronizer::oops_do(&oop_closure);
   FlatProfiler::oops_do(&oop_closure);
   Management::oops_do(&oop_closure);

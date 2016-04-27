@@ -55,11 +55,11 @@ public class Test8028623 {
             System.out.println("SA attach not expected to work - test skipped.");
             return;
         }
-        int pid = ProcessTools.getProcessId();
+        long pid = ProcessTools.getProcessId();
         JDKToolLauncher jmap = JDKToolLauncher.create("jmap")
                                               .addToolArg("-F")
                                               .addToolArg("-dump:live,format=b,file=" + dumpFile)
-                                              .addToolArg(Integer.toString(pid));
+                                              .addToolArg(Long.toString(pid));
         ProcessBuilder pb = new ProcessBuilder(jmap.getCommand());
         OutputBuffer output = ProcessTools.getOutput(pb);
         Process p = pb.start();

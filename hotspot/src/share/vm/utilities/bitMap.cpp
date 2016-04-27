@@ -271,10 +271,10 @@ void BitMap::par_at_put_large_range(idx_t beg, idx_t end, bool value) {
   par_put_range_within_word(bit_index(end_full_word), end, value);
 }
 
-bool BitMap::contains(const BitMap other) const {
+bool BitMap::contains(const BitMap& other) const {
   assert(size() == other.size(), "must have same size");
-  bm_word_t* dest_map = map();
-  bm_word_t* other_map = other.map();
+  const bm_word_t* dest_map = map();
+  const bm_word_t* other_map = other.map();
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size_in_words(); index++) {
     bm_word_t word_union = dest_map[index] | other_map[index];
@@ -285,10 +285,10 @@ bool BitMap::contains(const BitMap other) const {
   return true;
 }
 
-bool BitMap::intersects(const BitMap other) const {
+bool BitMap::intersects(const BitMap& other) const {
   assert(size() == other.size(), "must have same size");
-  bm_word_t* dest_map = map();
-  bm_word_t* other_map = other.map();
+  const bm_word_t* dest_map = map();
+  const bm_word_t* other_map = other.map();
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size_in_words(); index++) {
     if ((dest_map[index] & other_map[index]) != 0) return true;
@@ -297,10 +297,10 @@ bool BitMap::intersects(const BitMap other) const {
   return false;
 }
 
-void BitMap::set_union(BitMap other) {
+void BitMap::set_union(const BitMap& other) {
   assert(size() == other.size(), "must have same size");
   bm_word_t* dest_map = map();
-  bm_word_t* other_map = other.map();
+  const bm_word_t* other_map = other.map();
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size_in_words(); index++) {
     dest_map[index] = dest_map[index] | other_map[index];
@@ -308,10 +308,10 @@ void BitMap::set_union(BitMap other) {
 }
 
 
-void BitMap::set_difference(BitMap other) {
+void BitMap::set_difference(const BitMap& other) {
   assert(size() == other.size(), "must have same size");
   bm_word_t* dest_map = map();
-  bm_word_t* other_map = other.map();
+  const bm_word_t* other_map = other.map();
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size_in_words(); index++) {
     dest_map[index] = dest_map[index] & ~(other_map[index]);
@@ -319,10 +319,10 @@ void BitMap::set_difference(BitMap other) {
 }
 
 
-void BitMap::set_intersection(BitMap other) {
+void BitMap::set_intersection(const BitMap& other) {
   assert(size() == other.size(), "must have same size");
   bm_word_t* dest_map = map();
-  bm_word_t* other_map = other.map();
+  const bm_word_t* other_map = other.map();
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size; index++) {
     dest_map[index]  = dest_map[index] & other_map[index];
@@ -330,14 +330,14 @@ void BitMap::set_intersection(BitMap other) {
 }
 
 
-void BitMap::set_intersection_at_offset(BitMap other, idx_t offset) {
+void BitMap::set_intersection_at_offset(const BitMap& other, idx_t offset) {
   assert(other.size() >= offset, "offset not in range");
   assert(other.size() - offset >= size(), "other not large enough");
   // XXX Ideally, we would remove this restriction.
   guarantee((offset % (sizeof(bm_word_t) * BitsPerByte)) == 0,
             "Only handle aligned cases so far.");
   bm_word_t* dest_map = map();
-  bm_word_t* other_map = other.map();
+  const bm_word_t* other_map = other.map();
   idx_t offset_word_ind = word_index(offset);
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size; index++) {
@@ -345,11 +345,11 @@ void BitMap::set_intersection_at_offset(BitMap other, idx_t offset) {
   }
 }
 
-bool BitMap::set_union_with_result(BitMap other) {
+bool BitMap::set_union_with_result(const BitMap& other) {
   assert(size() == other.size(), "must have same size");
   bool changed = false;
   bm_word_t* dest_map = map();
-  bm_word_t* other_map = other.map();
+  const bm_word_t* other_map = other.map();
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size; index++) {
     idx_t temp = dest_map[index] | other_map[index];
@@ -360,11 +360,11 @@ bool BitMap::set_union_with_result(BitMap other) {
 }
 
 
-bool BitMap::set_difference_with_result(BitMap other) {
+bool BitMap::set_difference_with_result(const BitMap& other) {
   assert(size() == other.size(), "must have same size");
   bool changed = false;
   bm_word_t* dest_map = map();
-  bm_word_t* other_map = other.map();
+  const bm_word_t* other_map = other.map();
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size; index++) {
     bm_word_t temp = dest_map[index] & ~(other_map[index]);
@@ -375,11 +375,11 @@ bool BitMap::set_difference_with_result(BitMap other) {
 }
 
 
-bool BitMap::set_intersection_with_result(BitMap other) {
+bool BitMap::set_intersection_with_result(const BitMap& other) {
   assert(size() == other.size(), "must have same size");
   bool changed = false;
   bm_word_t* dest_map = map();
-  bm_word_t* other_map = other.map();
+  const bm_word_t* other_map = other.map();
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size; index++) {
     bm_word_t orig = dest_map[index];
@@ -391,10 +391,10 @@ bool BitMap::set_intersection_with_result(BitMap other) {
 }
 
 
-void BitMap::set_from(BitMap other) {
+void BitMap::set_from(const BitMap& other) {
   assert(size() == other.size(), "must have same size");
   bm_word_t* dest_map = map();
-  bm_word_t* other_map = other.map();
+  const bm_word_t* other_map = other.map();
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size; index++) {
     dest_map[index] = other_map[index];
@@ -402,10 +402,10 @@ void BitMap::set_from(BitMap other) {
 }
 
 
-bool BitMap::is_same(BitMap other) {
+bool BitMap::is_same(const BitMap& other) {
   assert(size() == other.size(), "must have same size");
   bm_word_t* dest_map = map();
-  bm_word_t* other_map = other.map();
+  const bm_word_t* other_map = other.map();
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size; index++) {
     if (dest_map[index] != other_map[index]) return false;
@@ -414,7 +414,7 @@ bool BitMap::is_same(BitMap other) {
 }
 
 bool BitMap::is_full() const {
-  bm_word_t* word = map();
+  const bm_word_t* word = map();
   idx_t rest = size();
   for (; rest >= (idx_t) BitsPerWord; rest -= BitsPerWord) {
     if (*word != ~(bm_word_t)0) return false;
@@ -425,7 +425,7 @@ bool BitMap::is_full() const {
 
 
 bool BitMap::is_empty() const {
-  bm_word_t* word = map();
+  const bm_word_t* word = map();
   idx_t rest = size();
   for (; rest >= (idx_t) BitsPerWord; rest -= BitsPerWord) {
     if (*word != 0) return false;

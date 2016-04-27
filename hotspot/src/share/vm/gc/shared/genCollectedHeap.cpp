@@ -582,14 +582,11 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
     ClassLoaderDataGraph::roots_cld_do(strong_cld_closure, weak_cld_closure);
   }
 
-  // Some CLDs contained in the thread frames should be considered strong.
-  // Don't process them if they will be processed during the ClassLoaderDataGraph phase.
-  CLDClosure* roots_from_clds_p = (strong_cld_closure != weak_cld_closure) ? strong_cld_closure : NULL;
   // Only process code roots from thread stacks if we aren't visiting the entire CodeCache anyway
   CodeBlobToOopClosure* roots_from_code_p = (so & SO_AllCodeCache) ? NULL : code_roots;
 
   bool is_par = scope->n_threads() > 1;
-  Threads::possibly_parallel_oops_do(is_par, strong_roots, roots_from_clds_p, roots_from_code_p);
+  Threads::possibly_parallel_oops_do(is_par, strong_roots, roots_from_code_p);
 
   if (!_process_strong_tasks->is_task_claimed(GCH_PS_Universe_oops_do)) {
     Universe::oops_do(strong_roots);
