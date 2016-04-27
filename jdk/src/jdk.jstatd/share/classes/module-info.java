@@ -23,7 +23,7 @@
  * questions.
  */
 
-module jdk.jvmstat.rmi {
+module jdk.jstatd {
     requires java.rmi;
     requires jdk.jvmstat;
 
