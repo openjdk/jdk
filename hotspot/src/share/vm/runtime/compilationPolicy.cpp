@@ -107,6 +107,33 @@ bool CompilationPolicy::must_be_compiled(methodHandle m, int comp_level) {
          (UseCompiler && AlwaysCompileLoopMethods && m->has_loops() && CompileBroker::should_compile_new_jobs()); // eagerly compile loop methods
 }
 
+void CompilationPolicy::compile_if_required(methodHandle selected_method, TRAPS) {
+  if (must_be_compiled(selected_method)) {
+    // This path is unusual, mostly used by the '-Xcomp' stress test mode.
+
+    // Note: with several active threads, the must_be_compiled may be true
+    //       while can_be_compiled is false; remove assert
+    // assert(CompilationPolicy::can_be_compiled(selected_method), "cannot compile");
+    if (!THREAD->can_call_java() || THREAD->is_Compiler_thread()) {
+      // don't force compilation, resolve was on behalf of compiler
+      return;
+    }
+    if (selected_method->method_holder()->is_not_initialized()) {
+      // 'is_not_initialized' means not only '!is_initialized', but also that
+      // initialization has not been started yet ('!being_initialized')
+      // Do not force compilation of methods in uninitialized classes.
+      // Note that doing this would throw an assert later,
+      // in CompileBroker::compile_method.
+      // We sometimes use the link resolver to do reflective lookups
+      // even before classes are initialized.
+      return;
+    }
+    CompileBroker::compile_method(selected_method, InvocationEntryBci,
+        CompilationPolicy::policy()->initial_compile_level(),
+        methodHandle(), 0, "must_be_compiled", CHECK);
+  }
+}
+
 // Returns true if m is allowed to be compiled
 bool CompilationPolicy::can_be_compiled(methodHandle m, int comp_level) {
   // allow any levels for WhiteBox

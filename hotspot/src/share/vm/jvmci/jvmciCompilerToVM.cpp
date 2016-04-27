@@ -628,65 +628,35 @@ C2V_VMENTRY(jint, getVtableIndexForInterfaceMethod, (JNIEnv *, jobject, jobject 
 C2V_END
 
 C2V_VMENTRY(jobject, resolveMethod, (JNIEnv *, jobject, jobject receiver_jvmci_type, jobject jvmci_method, jobject caller_jvmci_type))
-  Klass* recv_klass = CompilerToVM::asKlass(receiver_jvmci_type);
-  Klass* caller_klass = CompilerToVM::asKlass(caller_jvmci_type);
-  Method* method = CompilerToVM::asMethod(jvmci_method);
+  KlassHandle recv_klass = CompilerToVM::asKlass(receiver_jvmci_type);
+  KlassHandle caller_klass = CompilerToVM::asKlass(caller_jvmci_type);
+  methodHandle method = CompilerToVM::asMethod(jvmci_method);
 
-  if (recv_klass->is_array_klass() || (InstanceKlass::cast(recv_klass)->is_linked())) {
-    Klass* holder_klass = method->method_holder();
-    Symbol* method_name = method->name();
-    Symbol* method_signature = method->signature();
+  KlassHandle h_resolved   (THREAD, method->method_holder());
+  Symbol* h_name      = method->name();
+  Symbol* h_signature = method->signature();
 
-    if (holder_klass->is_interface()) {
-      // do link-time resolution to check all access rules.
-      LinkInfo link_info(holder_klass, method_name, method_signature, caller_klass, true);
-      methodHandle resolved_method = LinkResolver::linktime_resolve_interface_method_or_null(link_info);
-      if (resolved_method.is_null() || resolved_method->is_private()) {
-        return NULL;
-      }
-      assert(recv_klass->is_subtype_of(holder_klass), "");
-      // do actual lookup
-      methodHandle sel_method = LinkResolver::lookup_instance_method_in_klasses(recv_klass, resolved_method->name(), resolved_method->signature(), CHECK_AND_CLEAR_0);
-      oop result = CompilerToVM::get_jvmci_method(sel_method, CHECK_NULL);
-      return JNIHandles::make_local(THREAD, result);
+  bool check_access = true;
+  LinkInfo link_info(h_resolved, h_name, h_signature, caller_klass, check_access);
+  methodHandle m;
+  // Only do exact lookup if receiver klass has been linked.  Otherwise,
+  // the vtable has not been setup, and the LinkResolver will fail.
+  if (recv_klass->is_array_klass() ||
+      InstanceKlass::cast(recv_klass())->is_linked() && !recv_klass->is_interface()) {
+    if (h_resolved->is_interface()) {
+      m = LinkResolver::resolve_interface_call_or_null(recv_klass, link_info);
     } else {
-      // do link-time resolution to check all access rules.
-      LinkInfo link_info(holder_klass, method_name, method_signature, caller_klass, true);
-      methodHandle resolved_method = LinkResolver::linktime_resolve_virtual_method_or_null(link_info);
-      if (resolved_method.is_null()) {
-        return NULL;
-      }
-      // do actual lookup (see LinkResolver::runtime_resolve_virtual_method)
-      int vtable_index = Method::invalid_vtable_index;
-      Method* selected_method;
-
-      if (resolved_method->method_holder()->is_interface()) { // miranda method
-        vtable_index = LinkResolver::vtable_index_of_interface_method(holder_klass, resolved_method);
-        assert(vtable_index >= 0 , "we should have valid vtable index at this point");
-
-        selected_method = recv_klass->method_at_vtable(vtable_index);
-      } else {
-        // at this point we are sure that resolved_method is virtual and not
-        // a miranda method; therefore, it must have a valid vtable index.
-        assert(!resolved_method->has_itable_index(), "");
-        vtable_index = resolved_method->vtable_index();
-        // We could get a negative vtable_index for final methods,
-        // because as an optimization they are they are never put in the vtable,
-        // unless they override an existing method.
-        // If we do get a negative, it means the resolved method is the the selected
-        // method, and it can never be changed by an override.
-        if (vtable_index == Method::nonvirtual_vtable_index) {
-          assert(resolved_method->can_be_statically_bound(), "cannot override this method");
-          selected_method = resolved_method();
-        } else {
-          selected_method = recv_klass->method_at_vtable(vtable_index);
-        }
-      }
-      oop result = CompilerToVM::get_jvmci_method(selected_method, CHECK_NULL);
-      return JNIHandles::make_local(THREAD, result);
+      m = LinkResolver::resolve_virtual_call_or_null(recv_klass, link_info);
     }
   }
-  return NULL;
+
+  if (m.is_null()) {
+    // Return NULL only if there was a problem with lookup (uninitialized class, etc.)
+    return NULL;
+  }
+
+  oop result = CompilerToVM::get_jvmci_method(m, CHECK_NULL);
+  return JNIHandles::make_local(THREAD, result);
 C2V_END
 
 C2V_VMENTRY(jboolean, hasFinalizableSubclass,(JNIEnv *, jobject, jobject jvmci_type))
