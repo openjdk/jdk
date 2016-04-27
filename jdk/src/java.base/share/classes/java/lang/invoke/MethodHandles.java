@@ -25,34 +25,38 @@
 
 package java.lang.invoke;
 
-import java.lang.reflect.*;
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Arrays;
-import java.util.Objects;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyAccess;
 import sun.invoke.util.Wrapper;
-import jdk.internal.reflect.CallerSensitive;
-import jdk.internal.reflect.Reflection;
 import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
-import java.lang.invoke.LambdaForm.BasicType;
 
-import static java.lang.invoke.MethodHandleImpl.Intrinsic;
-import static java.lang.invoke.MethodHandleNatives.Constants.*;
+import java.lang.invoke.LambdaForm.BasicType;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ReflectPermission;
+import java.nio.ByteOrder;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Opcodes;
-
+import static java.lang.invoke.MethodHandleImpl.Intrinsic;
+import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
 import static java.lang.invoke.MethodType.methodType;
 
@@ -2337,13 +2341,12 @@ return mh1;
      *
      * @param viewArrayClass the view array class, with a component type of
      * type {@code T}
-     * @param bigEndian true if the endianness of the view array elements, as
-     * stored in the underlying {@code byte} array, is big endian, otherwise
-     * little endian
+     * @param byteOrder the endianness of the view array elements, as
+     * stored in the underlying {@code byte} array
      * @return a VarHandle giving access to elements of a {@code byte[]} array
      * viewed as if elements corresponding to the components type of the view
      * array class
-     * @throws NullPointerException if viewArrayClass is null
+     * @throws NullPointerException if viewArrayClass or byteOrder is null
      * @throws IllegalArgumentException if viewArrayClass is not an array type
      * @throws UnsupportedOperationException if the component type of
      * viewArrayClass is not supported as a variable type
@@ -2351,8 +2354,10 @@ return mh1;
      */
     public static
     VarHandle byteArrayViewVarHandle(Class<?> viewArrayClass,
-                                     boolean bigEndian) throws IllegalArgumentException {
-        return VarHandles.byteArrayViewHandle(viewArrayClass, bigEndian);
+                                     ByteOrder byteOrder) throws IllegalArgumentException {
+        Objects.requireNonNull(byteOrder);
+        return VarHandles.byteArrayViewHandle(viewArrayClass,
+                                              byteOrder == ByteOrder.BIG_ENDIAN);
     }
 
     /**
@@ -2422,14 +2427,13 @@ return mh1;
      *
      * @param viewArrayClass the view array class, with a component type of
      * type {@code T}
-     * @param bigEndian true if the endianness of the view array elements, as
-     * stored in the underlying {@code ByteBuffer}, is big endian, otherwise
-     * little endian (Note this overrides the endianness of a
-     * {@code ByteBuffer})
+     * @param byteOrder the endianness of the view array elements, as
+     * stored in the underlying {@code ByteBuffer} (Note this overrides the
+     * endianness of a {@code ByteBuffer})
      * @return a VarHandle giving access to elements of a {@code ByteBuffer}
      * viewed as if elements corresponding to the components type of the view
      * array class
-     * @throws NullPointerException if viewArrayClass is null
+     * @throws NullPointerException if viewArrayClass or byteOrder is null
      * @throws IllegalArgumentException if viewArrayClass is not an array type
      * @throws UnsupportedOperationException if the component type of
      * viewArrayClass is not supported as a variable type
@@ -2437,8 +2441,10 @@ return mh1;
      */
     public static
     VarHandle byteBufferViewVarHandle(Class<?> viewArrayClass,
-                                      boolean bigEndian) throws IllegalArgumentException {
-        return VarHandles.makeByteBufferViewHandle(viewArrayClass, bigEndian);
+                                      ByteOrder byteOrder) throws IllegalArgumentException {
+        Objects.requireNonNull(byteOrder);
+        return VarHandles.makeByteBufferViewHandle(viewArrayClass,
+                                                   byteOrder == ByteOrder.BIG_ENDIAN);
     }
 
 
