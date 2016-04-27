@@ -3211,6 +3211,16 @@ void Assembler::vpermq(XMMRegister dst, XMMRegister src, int imm8, int vector_le
   emit_int8(imm8);
 }
 
+void Assembler::vperm2i128(XMMRegister dst,  XMMRegister nds, XMMRegister src, int imm8) {
+  assert(VM_Version::supports_avx2(), "");
+  InstructionAttr attributes(AVX_256bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  emit_int8(0x46);
+  emit_int8(0xC0 | encode);
+  emit_int8(imm8);
+}
+
+
 void Assembler::pause() {
   emit_int8((unsigned char)0xF3);
   emit_int8((unsigned char)0x90);
@@ -3679,6 +3689,16 @@ void Assembler::pshufb(XMMRegister dst, XMMRegister src) {
   emit_int8((unsigned char)(0xC0 | encode));
 }
 
+void Assembler::vpshufb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  assert(vector_len == AVX_128bit? VM_Version::supports_avx() :
+         vector_len == AVX_256bit? VM_Version::supports_avx2() :
+         0, "");
+  InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ _legacy_mode_bw, /* no_mask_reg */ true, /* uses_vl */ true);
+  int encode = simd_prefix_and_encode(dst, nds, src, VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int8(0x00);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
 void Assembler::pshufb(XMMRegister dst, Address src) {
   assert(VM_Version::supports_ssse3(), "");
   InstructionMark im(this);
@@ -3693,6 +3713,18 @@ void Assembler::pshufd(XMMRegister dst, XMMRegister src, int mode) {
   assert(isByte(mode), "invalid value");
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   int vector_len = VM_Version::supports_avx512novl() ? AVX_512bit : AVX_128bit;
+  InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
+  int encode = simd_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
+  emit_int8(0x70);
+  emit_int8((unsigned char)(0xC0 | encode));
+  emit_int8(mode & 0xFF);
+}
+
+void Assembler::vpshufd(XMMRegister dst, XMMRegister src, int mode, int vector_len) {
+  assert(vector_len == AVX_128bit? VM_Version::supports_avx() :
+         vector_len == AVX_256bit? VM_Version::supports_avx2() :
+         0, "");
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
   int encode = simd_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
   emit_int8(0x70);
@@ -3740,7 +3772,6 @@ void Assembler::psrldq(XMMRegister dst, int shift) {
   // Shift left 128 bit value in dst XMMRegister by shift number of bytes.
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ _legacy_mode_bw, /* no_mask_reg */ true, /* uses_vl */ false);
-  // XMM3 is for /3 encoding: 66 0F 73 /3 ib
   int encode = simd_prefix_and_encode(xmm3, dst, dst, VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
   emit_int8(0x73);
   emit_int8((unsigned char)(0xC0 | encode));
@@ -4018,6 +4049,17 @@ void Assembler::palignr(XMMRegister dst, XMMRegister src, int imm8) {
   assert(VM_Version::supports_ssse3(), "");
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ _legacy_mode_bw, /* no_mask_reg */ false, /* uses_vl */ false);
   int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  emit_int8((unsigned char)0x0F);
+  emit_int8((unsigned char)(0xC0 | encode));
+  emit_int8(imm8);
+}
+
+void Assembler::vpalignr(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8, int vector_len) {
+  assert(vector_len == AVX_128bit? VM_Version::supports_avx() :
+         vector_len == AVX_256bit? VM_Version::supports_avx2() :
+         0, "");
+  InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ _legacy_mode_bw, /* no_mask_reg */ false, /* uses_vl */ true);
+  int encode = simd_prefix_and_encode(dst, nds, src, VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
   emit_int8((unsigned char)0x0F);
   emit_int8((unsigned char)(0xC0 | encode));
   emit_int8(imm8);
@@ -8299,6 +8341,15 @@ void Assembler::rorq(Register dst, int imm8) {
 void Assembler::rorxq(Register dst, Register src, int imm8) {
   assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F_3A, &attributes);
+  emit_int8((unsigned char)0xF0);
+  emit_int8((unsigned char)(0xC0 | encode));
+  emit_int8(imm8);
+}
+
+void Assembler::rorxd(Register dst, Register src, int imm8) {
+  assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F_3A, &attributes);
   emit_int8((unsigned char)0xF0);
   emit_int8((unsigned char)(0xC0 | encode));
