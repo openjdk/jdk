@@ -5318,14 +5318,14 @@ HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
   assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
   assert(!force || g1_policy()->can_expand_young_list(),
          "if force is true we should be able to expand the young list");
-  bool young_list_full = g1_policy()->is_young_list_full();
-  if (force || !young_list_full) {
+  bool should_allocate = g1_policy()->should_allocate_mutator_region();
+  if (force || should_allocate) {
     HeapRegion* new_alloc_region = new_region(word_size,
                                               false /* is_old */,
                                               false /* do_expand */);
     if (new_alloc_region != NULL) {
       set_region_short_lived_locked(new_alloc_region);
-      _hr_printer.alloc(new_alloc_region, young_list_full);
+      _hr_printer.alloc(new_alloc_region, !should_allocate);
       _verifier->check_bitmaps("Mutator Region Allocation", new_alloc_region);
       return new_alloc_region;
     }

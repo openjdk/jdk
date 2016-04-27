@@ -384,7 +384,7 @@ public:
 
   size_t young_list_target_length() const { return _young_list_target_length; }
 
-  bool is_young_list_full() const;
+  bool should_allocate_mutator_region() const;
 
   bool can_expand_young_list() const;
 
