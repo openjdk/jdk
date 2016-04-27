@@ -2323,6 +2323,15 @@ void Assembler::kortestql(KRegister src1, KRegister src2) {
   emit_int8((unsigned char)(0xC0 | encode));
 }
 
+// This instruction produces ZF or CF flags
+void Assembler::ktestql(KRegister src1, KRegister src2) {
+  assert(VM_Version::supports_avx512bw(), "");
+  InstructionAttr attributes(AVX_128bit, /* rex_w */ true, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(src1->encoding(), 0, src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
+  emit_int8((unsigned char)0x99);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
 void Assembler::movb(Address dst, int imm8) {
   InstructionMark im(this);
    prefix(dst);
@@ -2489,6 +2498,19 @@ void Assembler::evmovdqub(Address dst, XMMRegister src, int vector_len) {
   vex_prefix(dst, 0, src->encoding(), (Assembler::VexSimdPrefix)prefix, VEX_OPCODE_0F, &attributes);
   emit_int8(0x7F);
   emit_operand(src, dst);
+}
+
+void Assembler::evmovdqub(KRegister mask, XMMRegister dst, Address src, int vector_len) {
+  assert(VM_Version::supports_avx512vlbw(), "");
+  assert(is_vector_masking(), "");    // For stub code use only
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ _legacy_mode_bw, /* no_mask_reg */ false, /* uses_vl */ true);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_FVM, /* input_size_in_bits */ EVEX_NObit);
+  attributes.set_embedded_opmask_register_specifier(mask);
+  attributes.set_is_evex_instruction();
+  vex_prefix(src, 0, dst->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F, &attributes);
+  emit_int8(0x6F);
+  emit_operand(dst, src);
 }
 
 void Assembler::evmovdquw(XMMRegister dst, XMMRegister src, int vector_len) {
@@ -3283,6 +3305,19 @@ void Assembler::evpcmpeqb(KRegister kdst, XMMRegister nds, Address src, int vect
   vex_prefix(src, nds->encoding(), dst_enc, VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
   emit_int8(0x74);
   emit_operand(as_Register(dst_enc), src);
+}
+
+void Assembler::evpcmpeqb(KRegister mask, KRegister kdst, XMMRegister nds, Address src, int vector_len) {
+  assert(VM_Version::supports_avx512vlbw(), "");
+  assert(is_vector_masking(), "");    // For stub code use only
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_reg_mask */ false, /* uses_vl */ false);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_FVM, /* input_size_in_bits */ EVEX_NObit);
+  attributes.set_embedded_opmask_register_specifier(mask);
+  attributes.set_is_evex_instruction();
+  vex_prefix(src, nds->encoding(), kdst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
+  emit_int8(0x74);
+  emit_operand(as_Register(kdst->encoding()), src);
 }
 
 // In this context, the dst vector contains the components that are equal, non equal components are zeroed in dst
@@ -6938,7 +6973,7 @@ void Assembler::evex_prefix(bool vex_r, bool vex_b, bool vex_x, bool evex_r, boo
   emit_int8(byte3);
 
   // P2: byte 4 as zL'Lbv'aaa
-  int byte4 = (_attributes->is_no_reg_mask()) ? 0 : 1; // kregs are implemented in the low 3 bits as aaa (hard code k1, it will be initialized for now)
+  int byte4 = (_attributes->is_no_reg_mask()) ? 0 : _attributes->get_embedded_opmask_register_specifier(); // kregs are implemented in the low 3 bits as aaa (hard code k1, it will be initialized for now)
   // EVEX.v` for extending EVEX.vvvv or VIDX
   byte4 |= (evex_v ? 0: EVEX_V);
   // third EXEC.b for broadcast actions
