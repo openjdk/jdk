@@ -606,6 +606,7 @@ private:
   bool _legacy_mode_vl;
   bool _legacy_mode_vlbw;
   bool _is_managed;
+  bool _vector_masking;    // For stub code use only
 
   class InstructionAttr *_attributes;
 
@@ -813,6 +814,7 @@ private:
     _legacy_mode_vl = (VM_Version::supports_avx512vl() == false);
     _legacy_mode_vlbw = (VM_Version::supports_avx512vlbw() == false);
     _is_managed = false;
+    _vector_masking = false;
     _attributes = NULL;
   }
 
@@ -822,6 +824,12 @@ private:
   void set_managed(void) { _is_managed = true; }
   void clear_managed(void) { _is_managed = false; }
   bool is_managed(void) { return _is_managed; }
+
+  // Following functions are for stub code use only
+  void set_vector_masking(void) { _vector_masking = true; }
+  void clear_vector_masking(void) { _vector_masking = false; }
+  bool is_vector_masking(void) { return _vector_masking; }
+
 
   void lea(Register dst, Address src);
 
@@ -1354,6 +1362,8 @@ private:
   void kortestdl(KRegister dst, KRegister src);
   void kortestql(KRegister dst, KRegister src);
 
+  void ktestql(KRegister dst, KRegister src);
+
   void movdl(XMMRegister dst, Register src);
   void movdl(Register dst, XMMRegister src);
   void movdl(XMMRegister dst, Address src);
@@ -1381,6 +1391,7 @@ private:
   void evmovdqub(Address dst, XMMRegister src, int vector_len);
   void evmovdqub(XMMRegister dst, Address src, int vector_len);
   void evmovdqub(XMMRegister dst, XMMRegister src, int vector_len);
+  void evmovdqub(KRegister mask, XMMRegister dst, Address src, int vector_len);
   void evmovdquw(Address dst, XMMRegister src, int vector_len);
   void evmovdquw(XMMRegister dst, Address src, int vector_len);
   void evmovdquw(XMMRegister dst, XMMRegister src, int vector_len);
@@ -1534,6 +1545,7 @@ private:
   void vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpeqb(KRegister kdst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpeqb(KRegister kdst, XMMRegister nds, Address src, int vector_len);
+  void evpcmpeqb(KRegister mask, KRegister kdst, XMMRegister nds, Address src, int vector_len);
 
   void pcmpeqw(XMMRegister dst, XMMRegister src);
   void vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -2098,7 +2110,8 @@ public:
       _evex_encoding(0),
       _is_clear_context(false),
       _is_extended_context(false),
-      _current_assembler(NULL) {
+      _current_assembler(NULL),
+      _embedded_opmask_register_specifier(1) { // hard code k1, it will be initialized for now
     if (UseAVX < 3) _legacy_mode = true;
   }
 
@@ -2122,6 +2135,7 @@ private:
   int  _evex_encoding;
   bool _is_clear_context;
   bool _is_extended_context;
+  int _embedded_opmask_register_specifier;
 
   Assembler *_current_assembler;
 
@@ -2139,6 +2153,7 @@ public:
   int  get_evex_encoding(void) const { return _evex_encoding; }
   bool is_clear_context(void) const { return _is_clear_context; }
   bool is_extended_context(void) const { return _is_extended_context; }
+  int get_embedded_opmask_register_specifier(void) const { return _embedded_opmask_register_specifier; }
 
   // Set the vector len manually
   void set_vector_len(int vector_len) { _avx_vector_len = vector_len; }
@@ -2170,6 +2185,11 @@ public:
       _tuple_type = tuple_type;
       _input_size_in_bits = input_size_in_bits;
     }
+  }
+
+  // Set embedded opmask register specifier.
+  void set_embedded_opmask_register_specifier(KRegister mask) {
+    _embedded_opmask_register_specifier = (*mask).encoding() & 0x7;
   }
 
 };

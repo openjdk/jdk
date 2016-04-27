@@ -9425,6 +9425,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
 void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register length, Register log2_array_indxscale,
   Register result, Register tmp1, Register tmp2, XMMRegister rymm0, XMMRegister rymm1, XMMRegister rymm2){
   assert(UseSSE42Intrinsics, "SSE4.2 must be enabled.");
+  Label VECTOR64_LOOP, VECTOR64_TAIL, VECTOR64_NOT_EQUAL, VECTOR32_TAIL;
   Label VECTOR32_LOOP, VECTOR16_LOOP, VECTOR8_LOOP, VECTOR4_LOOP;
   Label VECTOR16_TAIL, VECTOR8_TAIL, VECTOR4_TAIL;
   Label VECTOR32_NOT_EQUAL, VECTOR16_NOT_EQUAL, VECTOR8_NOT_EQUAL, VECTOR4_NOT_EQUAL;
@@ -9437,11 +9438,62 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
   shlq(length);
   xorq(result, result);
 
+  if ((UseAVX > 2) &&
+      VM_Version::supports_avx512vlbw()) {
+    set_vector_masking();  // opening of the stub context for programming mask registers
+    cmpq(length, 64);
+    jcc(Assembler::less, VECTOR32_TAIL);
+    movq(tmp1, length);
+    andq(tmp1, 0x3F);      // tail count
+    andq(length, ~(0x3F)); //vector count
+
+    bind(VECTOR64_LOOP);
+    // AVX512 code to compare 64 byte vectors.
+    evmovdqub(rymm0, Address(obja, result), Assembler::AVX_512bit);
+    evpcmpeqb(k7, rymm0, Address(objb, result), Assembler::AVX_512bit);
+    kortestql(k7, k7);
+    jcc(Assembler::aboveEqual, VECTOR64_NOT_EQUAL);     // mismatch
+    addq(result, 64);
+    subq(length, 64);
+    jccb(Assembler::notZero, VECTOR64_LOOP);
+
+    //bind(VECTOR64_TAIL);
+    testq(tmp1, tmp1);
+    jcc(Assembler::zero, SAME_TILL_END);
+
+    bind(VECTOR64_TAIL);
+    // AVX512 code to compare upto 63 byte vectors.
+    // Save k1
+    kmovql(k3, k1);
+    mov64(tmp2, 0xFFFFFFFFFFFFFFFF);
+    shlxq(tmp2, tmp2, tmp1);
+    notq(tmp2);
+    kmovql(k1, tmp2);
+
+    evmovdqub(k1, rymm0, Address(obja, result), Assembler::AVX_512bit);
+    evpcmpeqb(k1, k7, rymm0, Address(objb, result), Assembler::AVX_512bit);
+
+    ktestql(k7, k1);
+    // Restore k1
+    kmovql(k1, k3);
+    jcc(Assembler::below, SAME_TILL_END);     // not mismatch
+
+    bind(VECTOR64_NOT_EQUAL);
+    kmovql(tmp1, k7);
+    notq(tmp1);
+    tzcntq(tmp1, tmp1);
+    addq(result, tmp1);
+    shrq(result);
+    jmp(DONE);
+    bind(VECTOR32_TAIL);
+    clear_vector_masking();   // closing of the stub context for programming mask registers
+  }
+
   cmpq(length, 8);
   jcc(Assembler::equal, VECTOR8_LOOP);
   jcc(Assembler::less, VECTOR4_TAIL);
 
-  if (UseAVX >= 2){
+  if (UseAVX >= 2) {
 
     cmpq(length, 16);
     jcc(Assembler::equal, VECTOR16_LOOP);
@@ -9549,7 +9601,7 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
   jccb(Assembler::notZero, BYTES_NOT_EQUAL);//mismatch found
   jmpb(SAME_TILL_END);
 
-  if (UseAVX >= 2){
+  if (UseAVX >= 2) {
     bind(VECTOR32_NOT_EQUAL);
     vpcmpeqb(rymm2, rymm2, rymm2, Assembler::AVX_256bit);
     vpcmpeqb(rymm0, rymm0, rymm1, Assembler::AVX_256bit);
@@ -9562,7 +9614,7 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
   }
 
   bind(VECTOR16_NOT_EQUAL);
-  if (UseAVX >= 2){
+  if (UseAVX >= 2) {
     vpcmpeqb(rymm2, rymm2, rymm2, Assembler::AVX_128bit);
     vpcmpeqb(rymm0, rymm0, rymm1, Assembler::AVX_128bit);
     pxor(rymm0, rymm2);
@@ -9592,7 +9644,6 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
 
   bind(DONE);
 }
-
 
 //Helper functions for square_to_len()
 
