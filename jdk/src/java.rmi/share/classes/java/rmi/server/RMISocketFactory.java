@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,21 @@ import java.net.*;
  * request that the RMI runtime use its socket factory instance
  * instead of the default implementation.
  *
- * <p>The default socket factory implementation creates a direct
- * socket connection to the remote host.
+ * <p>The default socket factory implementation performs a
+ * three-tiered approach to creating client sockets. First, a direct
+ * socket connection to the remote VM is attempted.  If that fails
+ * (due to a firewall), the runtime uses HTTP with the explicit port
+ * number of the server.  If the firewall does not allow this type of
+ * communication, then HTTP to a cgi-bin script on the server is used
+ * to POST the RMI call. The HTTP tunneling mechanisms are disabled by
+ * default. This behavior is controlled by the {@code java.rmi.server.disableHttp}
+ * property, whose default value is {@code true}. Setting this property's
+ * value to {@code false} will enable the HTTP tunneling mechanisms.
+ *
+ * <p><strong>Deprecated: HTTP Tunneling.</strong> <em>The HTTP tunneling mechanisms
+ * described above, specifically HTTP with an explicit port and HTTP to a
+ * cgi-bin script, are deprecated. These HTTP tunneling mechanisms are
+ * subject to removal in a future release of the platform.</em>
  *
  * <p>The default socket factory implementation creates server sockets that
  * are bound to the wildcard address, which accepts requests from all network
@@ -168,7 +181,7 @@ public abstract class RMISocketFactory
     public synchronized static RMISocketFactory getDefaultSocketFactory() {
         if (defaultSocketFactory == null) {
             defaultSocketFactory =
-                new sun.rmi.transport.tcp.TCPDirectSocketFactory();
+                new sun.rmi.transport.proxy.RMIMasterSocketFactory();
         }
         return defaultSocketFactory;
     }
