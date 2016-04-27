@@ -745,10 +745,13 @@ public class MethodHandles {
             if (name.startsWith("java.lang.invoke."))
                 throw newIllegalArgumentException("illegal lookupClass: "+lookupClass);
 
-            // For caller-sensitive MethodHandles.lookup()
-            // disallow lookup more restricted packages
+            // For caller-sensitive MethodHandles.lookup() disallow lookup from
+            // restricted packages.  This a fragile and blunt approach.
+            // TODO replace with a more formal and less fragile mechanism
+            // that does not bluntly restrict classes under packages within
+            // java.base from looking up MethodHandles or VarHandles.
             if (allowedModes == ALL_MODES && lookupClass.getClassLoader() == null) {
-                if (name.startsWith("java.") ||
+                if ((name.startsWith("java.") && !name.startsWith("java.util.concurrent.")) ||
                         (name.startsWith("sun.") && !name.startsWith("sun.invoke."))) {
                     throw newIllegalArgumentException("illegal lookupClass: " + lookupClass);
                 }
