@@ -54,8 +54,8 @@ G1DefaultPolicy::G1DefaultPolicy() :
   _ihop_control(create_ihop_control(&_predictor)),
   _policy_counters(new GCPolicyCounters("GarbageFirst", 1, 3)),
   _young_list_fixed_length(0),
-  _short_lived_surv_rate_group(new SurvRateGroup(&_predictor, "Short Lived", G1YoungSurvRateNumRegionsSummary)),
-  _survivor_surv_rate_group(new SurvRateGroup(&_predictor, "Survivor", G1YoungSurvRateNumRegionsSummary)),
+  _short_lived_surv_rate_group(new SurvRateGroup()),
+  _survivor_surv_rate_group(new SurvRateGroup()),
   _reserve_factor((double) G1ReservePercent / 100.0),
   _reserve_regions(0),
   _rs_lengths_prediction(0),
@@ -396,35 +396,29 @@ void G1DefaultPolicy::update_rs_lengths_prediction(size_t prediction) {
 
 #ifndef PRODUCT
 bool G1DefaultPolicy::verify_young_ages() {
-  return verify_young_ages(_collection_set->inc_head(), _short_lived_surv_rate_group);
-}
-
-bool G1DefaultPolicy::verify_young_ages(HeapRegion* head, SurvRateGroup *surv_rate_group) {
-  guarantee( surv_rate_group != NULL, "pre-condition" );
-
-  const char* name = surv_rate_group->name();
   bool ret = true;
 
-  for (HeapRegion* curr = head;
+  for (HeapRegion* curr = _collection_set->inc_head();
        curr != NULL;
        curr = curr->next_in_collection_set()) {
+    guarantee(curr->is_young(), "Region must be young");
+
     SurvRateGroup* group = curr->surv_rate_group();
-    if (group == NULL && !curr->is_survivor()) {
-      log_error(gc, verify)("## %s: encountered NULL surv_rate_group", name);
+
+    if (group == NULL) {
+      log_error(gc, verify)("## encountered NULL surv_rate_group in young region");
       ret = false;
     }
 
-    if (surv_rate_group == group) {
-      if (curr->age_in_surv_rate_group() < 0) {
-        log_error(gc, verify)("## %s: encountered negative age", name);
-        ret = false;
-      }
+    if (curr->age_in_surv_rate_group() < 0) {
+      log_error(gc, verify)("## encountered negative age in young region");
+      ret = false;
     }
   }
 
   if (!ret) {
     LogStreamHandle(Error, gc, verify) log;
-    _collection_set->print(head, &log);
+    _collection_set->print(_collection_set->inc_head(), &log);
   }
 
   return ret;
@@ -841,10 +835,6 @@ double G1DefaultPolicy::predict_yg_surv_rate(int age, SurvRateGroup* surv_rate_g
   return pred;
 }
 
-double G1DefaultPolicy::predict_yg_surv_rate(int age) const {
-  return predict_yg_surv_rate(age, _short_lived_surv_rate_group);
-}
-
 double G1DefaultPolicy::accum_yg_surv_rate_pred(int age) const {
   return _short_lived_surv_rate_group->accum_surv_rate_pred(age);
 }
@@ -896,14 +886,6 @@ double G1DefaultPolicy::predict_region_elapsed_time_ms(HeapRegion* hr,
     region_elapsed_time_ms += _analytics->predict_non_young_other_time_ms(1);
   }
   return region_elapsed_time_ms;
-}
-
-
-void G1DefaultPolicy::print_yg_surv_rate_info() const {
-#ifndef PRODUCT
-  _short_lived_surv_rate_group->print_surv_rate_summary();
-  // add this call for any other surv rate groups
-#endif // PRODUCT
 }
 
 bool G1DefaultPolicy::should_allocate_mutator_region() const {
