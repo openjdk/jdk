@@ -137,8 +137,14 @@ public class ResolveMethodTest {
         HotSpotResolvedObjectType callerMetaspace = CompilerToVMHelper
                 .lookupType(Utils.toJVMTypeSignature(tcase.caller),
                         getClass(), /* resolve = */ true);
+        HotSpotResolvedObjectType receiverMetaspace = CompilerToVMHelper
+                .lookupType(Utils.toJVMTypeSignature(tcase.receiver),
+                        getClass(), /* resolve = */ true);
+
+        // Can only resolve methods on a linked class so force initialization
+        receiverMetaspace.initialize();
         HotSpotResolvedJavaMethod resolvedMetaspaceMethod
-                = CompilerToVMHelper.resolveMethod(holderMetaspace,
+                = CompilerToVMHelper.resolveMethod(receiverMetaspace,
                         metaspaceMethod, callerMetaspace);
         if (tcase.isPositive) {
             Asserts.assertNotNull(resolvedMetaspaceMethod,
