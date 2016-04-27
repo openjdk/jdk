@@ -21,23 +21,23 @@
  * questions.
  */
 
-/*
+ /*
  * @test
- * @bug 7160951
+ * @bug 7160951 8152492
  * @summary [macosx] ActionListener called twice for JMenuItem using ScreenMenuBar
  * @author vera.akulova@oracle.com
  * @library ../../../../lib/testlibrary
  * @build jdk.testlibrary.OSInfo
  * @run main ActionListenerCalledTwiceTest
  */
-
 import jdk.testlibrary.OSInfo;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
 public class ActionListenerCalledTwiceTest {
-    static String menuItems[] = { "Item1", "Item2", "Item3", "Item4", "Item5", "Item6" };
+
+    static String menuItems[] = {"Item1", "Item2", "Item3", "Item4", "Item5", "Item6"};
     static KeyStroke keyStrokes[] = {
         KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.META_MASK),
         KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0),
@@ -46,8 +46,10 @@ public class ActionListenerCalledTwiceTest {
         KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_MASK),
         KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, InputEvent.META_MASK)
     };
-
+    static JMenu menu;
+    static JFrame frame;
     static volatile int listenerCallCounter = 0;
+
     public static void main(String[] args) throws Exception {
         if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
             System.out.println("This test is for MacOS only. Automatically passed on other platforms.");
@@ -82,33 +84,38 @@ public class ActionListenerCalledTwiceTest {
             robot.waitForIdle();
 
             if (listenerCallCounter != 1) {
-                throw new Exception("Test failed: ActionListener for " + menuItems[i] +
-                    " called " + listenerCallCounter + " times instead of 1!");
+                throw new Exception("Test failed: ActionListener for " + menuItems[i]
+                        + " called " + listenerCallCounter + " times instead of 1!");
             }
 
             listenerCallCounter = 0;
         }
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+                frame.dispose();
+            }
+        });
     }
 
     private static void createAndShowGUI() {
-        JMenu menu = new JMenu("Menu");
+        menu = new JMenu("Menu");
 
         for (int i = 0; i < menuItems.length; ++i) {
             JMenuItem newItem = new JMenuItem(menuItems[i]);
             newItem.setAccelerator(keyStrokes[i]);
             newItem.addActionListener(
-                new ActionListener(){
-                    public void actionPerformed(ActionEvent e) {
-                        listenerCallCounter++;
-                    }
+                    new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    listenerCallCounter++;
                 }
+            }
             );
             menu.add(newItem);
         }
 
         JMenuBar bar = new JMenuBar();
         bar.add(menu);
-        JFrame frame = new JFrame("Test");
+        frame = new JFrame("Test");
         frame.setJMenuBar(bar);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
