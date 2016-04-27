@@ -27,14 +27,12 @@ package sun.nio.ch;
 
 import java.io.*;
 import java.net.*;
-import jdk.net.*;
 import java.nio.channels.*;
 import java.util.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import sun.net.ExtendedOptionsImpl;
+import sun.net.ext.ExtendedSocketOptions;
 import sun.security.action.GetPropertyAction;
-
 
 public class Net {
 
@@ -281,6 +279,9 @@ public class Net {
 
     // -- Socket options
 
+    static final ExtendedSocketOptions extendedOptions =
+            ExtendedSocketOptions.getInstance();
+
     static void setSocketOption(FileDescriptor fd, ProtocolFamily family,
                                 SocketOption<?> name, Object value)
         throws IOException
@@ -291,12 +292,8 @@ public class Net {
         // only simple values supported by this method
         Class<?> type = name.type();
 
-        if (type == SocketFlow.class) {
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(new NetworkPermission("setOption.SO_FLOW_SLA"));
-            }
-            ExtendedOptionsImpl.setFlowOption(fd, (SocketFlow)value);
+        if (extendedOptions.isOptionSupported(name)) {
+            extendedOptions.setOption(fd, name, value);
             return;
         }
 
@@ -353,14 +350,8 @@ public class Net {
     {
         Class<?> type = name.type();
 
-        if (type == SocketFlow.class) {
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(new NetworkPermission("getOption.SO_FLOW_SLA"));
-            }
-            SocketFlow flow = SocketFlow.create();
-            ExtendedOptionsImpl.getFlowOption(fd, flow);
-            return flow;
+        if (extendedOptions.isOptionSupported(name)) {
+            return extendedOptions.getOption(fd, name);
         }
 
         // only simple values supported by this method
