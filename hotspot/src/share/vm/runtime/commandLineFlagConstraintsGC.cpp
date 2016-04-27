@@ -312,20 +312,6 @@ Flag::Error G1RSetSparseRegionEntriesConstraintFunc(intx value, bool verbose) {
   }
 }
 
-Flag::Error G1YoungSurvRateNumRegionsSummaryConstraintFunc(intx value, bool verbose) {
-  if (!UseG1GC) return Flag::SUCCESS;
-
-  if (value > (intx)HeapRegionBounds::target_number()) {
-    CommandLineError::print(verbose,
-                            "G1YoungSurvRateNumRegionsSummary (" INTX_FORMAT ") must be "
-                            "less than or equal to region count (" SIZE_FORMAT ")\n",
-                            value, HeapRegionBounds::target_number());
-    return Flag::VIOLATES_CONSTRAINT;
-  } else {
-    return Flag::SUCCESS;
-  }
-}
-
 Flag::Error G1HeapRegionSizeConstraintFunc(size_t value, bool verbose) {
   if (!UseG1GC) return Flag::SUCCESS;
 

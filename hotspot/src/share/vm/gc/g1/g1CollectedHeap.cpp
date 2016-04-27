@@ -2710,7 +2710,6 @@ void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
 void G1CollectedHeap::print_tracing_info() const {
   g1_rem_set()->print_summary_info();
   concurrent_mark()->print_summary_info();
-  g1_policy()->print_yg_surv_rate_info();
 }
 
 #ifndef PRODUCT

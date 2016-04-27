@@ -49,7 +49,6 @@ Flag::Error MaxTenuringThresholdConstraintFunc(uintx value, bool verbose);
 #if INCLUDE_ALL_GCS
 Flag::Error G1RSetRegionEntriesConstraintFunc(intx value, bool verbose);
 Flag::Error G1RSetSparseRegionEntriesConstraintFunc(intx value, bool verbose);
-Flag::Error G1YoungSurvRateNumRegionsSummaryConstraintFunc(intx value, bool verbose);
 Flag::Error G1HeapRegionSizeConstraintFunc(size_t value, bool verbose);
 Flag::Error G1NewSizePercentConstraintFunc(uintx value, bool verbose);
 Flag::Error G1MaxNewSizePercentConstraintFunc(uintx value, bool verbose);

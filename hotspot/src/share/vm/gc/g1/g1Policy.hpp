@@ -156,8 +156,6 @@ public:
   // the initial-mark work and start a marking cycle.
   virtual void decide_on_conc_mark_initiation() = 0;
 
-  // Print stats on young survival ratio
-  virtual void print_yg_surv_rate_info() const = 0;
 
   virtual void finished_recalculating_age_indexes(bool is_survivors) = 0;
 

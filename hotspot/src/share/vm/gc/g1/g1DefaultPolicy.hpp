@@ -148,8 +148,8 @@ public:
   void cset_regions_freed() {
     bool update = should_update_surv_rate_group_predictors();
 
-    _short_lived_surv_rate_group->all_surviving_words_recorded(update);
-    _survivor_surv_rate_group->all_surviving_words_recorded(update);
+    _short_lived_surv_rate_group->all_surviving_words_recorded(predictor(), update);
+    _survivor_surv_rate_group->all_surviving_words_recorded(predictor(), update);
   }
 
   G1MMUTracker* mmu_tracker() {
@@ -369,9 +369,6 @@ public:
   // it will set during_initial_mark_pause() to so that the pause does
   // the initial-mark work and start a marking cycle.
   void decide_on_conc_mark_initiation();
-
-  // Print stats on young survival ratio
-  void print_yg_surv_rate_info() const;
 
   void finished_recalculating_age_indexes(bool is_survivors) {
     if (is_survivors) {
