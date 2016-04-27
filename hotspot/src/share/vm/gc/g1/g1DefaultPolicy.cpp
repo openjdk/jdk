@@ -911,10 +911,10 @@ void G1DefaultPolicy::print_yg_surv_rate_info() const {
 #endif // PRODUCT
 }
 
-bool G1DefaultPolicy::is_young_list_full() const {
+bool G1DefaultPolicy::should_allocate_mutator_region() const {
   uint young_list_length = _g1->young_list()->length();
   uint young_list_target_length = _young_list_target_length;
-  return young_list_length >= young_list_target_length;
+  return young_list_length < young_list_target_length;
 }
 
 bool G1DefaultPolicy::can_expand_young_list() const {
