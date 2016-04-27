@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,43 +23,34 @@
  * questions.
  */
 
-#include <jni.h>
-#include <string.h>
+package jdk.net;
 
-#include "net_util.h"
+import java.net.SocketException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import jdk.net.ExtendedSocketOptions.PlatformSocketOptions;
 
-/*
- * Class:     sun_net_ExtendedOptionsImpl
- * Method:    init
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_sun_net_ExtendedOptionsImpl_init
-  (JNIEnv *env, jclass UNUSED)
-{
-}
+class SolarisSocketOptions extends PlatformSocketOptions {
 
-/* Non Solaris. Functionality is not supported. So, throw UnsupportedOpExc */
+    public SolarisSocketOptions() { }
 
-JNIEXPORT void JNICALL Java_sun_net_ExtendedOptionsImpl_setFlowOption
-  (JNIEnv *env, jclass UNUSED, jobject fileDesc, jobject flow)
-{
-    JNU_ThrowByName(env, "java/lang/UnsupportedOperationException",
-        "unsupported socket option");
-}
+    @Override native int setFlowOption(int fd, int priority, long bandwidth)
+            throws SocketException;
 
-JNIEXPORT void JNICALL Java_sun_net_ExtendedOptionsImpl_getFlowOption
-  (JNIEnv *env, jclass UNUSED, jobject fileDesc, jobject flow)
-{
-    JNU_ThrowByName(env, "java/lang/UnsupportedOperationException",
-        "unsupported socket option");
-}
+    @Override native int getFlowOption(int fd, SocketFlow f)
+            throws SocketException;
 
-static jboolean flowSupported0()  {
-    return JNI_FALSE;
-}
+    @Override native boolean flowSupported();
 
-JNIEXPORT jboolean JNICALL Java_sun_net_ExtendedOptionsImpl_flowSupported
-  (JNIEnv *env, jclass UNUSED)
-{
-    return JNI_FALSE;
+    private static native void init();
+
+    static {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
+                System.loadLibrary("extnet");
+                return null;
+            }
+        });
+        init();
+    }
 }
