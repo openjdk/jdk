@@ -226,7 +226,7 @@ private:
 
   volatile bool        _scan_in_progress;
   volatile bool        _should_abort;
-  HeapRegion* volatile _next_survivor;
+  volatile int         _claimed_survivor_index;
 
   void notify_scan_done();
 

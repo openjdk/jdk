@@ -41,6 +41,7 @@
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/pair.hpp"
 
 G1DefaultPolicy::G1DefaultPolicy() :
@@ -358,10 +359,12 @@ G1DefaultPolicy::calculate_young_list_target_length(size_t rs_lengths,
 
 double G1DefaultPolicy::predict_survivor_regions_evac_time() const {
   double survivor_regions_evac_time = 0.0;
-  for (HeapRegion * r = _g1->young_list()->first_survivor_region();
-       r != NULL && r != _g1->young_list()->last_survivor_region()->get_next_young_region();
-       r = r->get_next_young_region()) {
-    survivor_regions_evac_time += predict_region_elapsed_time_ms(r, collector_state()->gcs_are_young());
+  const GrowableArray<HeapRegion*>* survivor_regions = _g1->young_list()->survivor_regions();
+
+  for (GrowableArrayIterator<HeapRegion*> it = survivor_regions->begin();
+       it != survivor_regions->end();
+       ++it) {
+    survivor_regions_evac_time += predict_region_elapsed_time_ms(*it, collector_state()->gcs_are_young());
   }
   return survivor_regions_evac_time;
 }
