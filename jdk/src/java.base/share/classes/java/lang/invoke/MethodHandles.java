@@ -1010,6 +1010,9 @@ assertEquals("[x, y, z]", pb.command().toString());
          * @throws NullPointerException if any argument is null
          */
         public MethodHandle findConstructor(Class<?> refc, MethodType type) throws NoSuchMethodException, IllegalAccessException {
+            if (refc.isArray()) {
+                throw new NoSuchMethodException("no constructor for array class: " + refc.getName());
+            }
             String name = "<init>";
             MemberName ctor = resolveOrFail(REF_newInvokeSpecial, refc, name, type);
             return getDirectConstructor(refc, ctor);
@@ -2218,6 +2221,27 @@ return mh1;
          * @see MethodHandles#publicLookup
          */
         static final Lookup PUBLIC_LOOKUP = new Lookup(PUBLIC_LOOKUP_CLASS, Lookup.PUBLIC);
+    }
+
+    /**
+     * Produces a method handle constructing arrays of a desired type.
+     * The return type of the method handle will be the array type.
+     * The type of its sole argument will be {@code int}, which specifies the size of the array.
+     * @param arrayClass an array type
+     * @return a method handle which can create arrays of the given type
+     * @throws NullPointerException if the argument is {@code null}
+     * @throws IllegalArgumentException if {@code arrayClass} is not an array type
+     * @see java.lang.reflect.Array#newInstance(Class, int)
+     * @since 9
+     */
+    public static
+    MethodHandle arrayConstructor(Class<?> arrayClass) throws IllegalArgumentException {
+        if (!arrayClass.isArray()) {
+            throw newIllegalArgumentException("not an array class: " + arrayClass.getName());
+        }
+        MethodHandle ani = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_Array_newInstance).
+                bindTo(arrayClass.getComponentType());
+        return ani.asType(ani.type().changeReturnType(arrayClass));
     }
 
     /**
