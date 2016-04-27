@@ -57,6 +57,7 @@
 #include "runtime/java.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/growableArray.hpp"
 
 // Concurrent marking bit map wrapper
 
@@ -261,7 +262,7 @@ void G1CMMarkStack::note_end_of_gc() {
 
 G1CMRootRegions::G1CMRootRegions() :
   _young_list(NULL), _cm(NULL), _scan_in_progress(false),
-  _should_abort(false),  _next_survivor(NULL) { }
+  _should_abort(false), _claimed_survivor_index(0) { }
 
 void G1CMRootRegions::init(G1CollectedHeap* g1h, G1ConcurrentMark* cm) {
   _young_list = g1h->young_list();
@@ -272,9 +273,8 @@ void G1CMRootRegions::prepare_for_scan() {
   assert(!scan_in_progress(), "pre-condition");
 
   // Currently, only survivors can be root regions.
-  assert(_next_survivor == NULL, "pre-condition");
-  _next_survivor = _young_list->first_survivor_region();
-  _scan_in_progress = (_next_survivor != NULL);
+  _claimed_survivor_index = 0;
+  _scan_in_progress = true;
   _should_abort = false;
 }
 
@@ -286,27 +286,13 @@ HeapRegion* G1CMRootRegions::claim_next() {
   }
 
   // Currently, only survivors can be root regions.
-  HeapRegion* res = _next_survivor;
-  if (res != NULL) {
-    MutexLockerEx x(RootRegionScan_lock, Mutex::_no_safepoint_check_flag);
-    // Read it again in case it changed while we were waiting for the lock.
-    res = _next_survivor;
-    if (res != NULL) {
-      if (res == _young_list->last_survivor_region()) {
-        // We just claimed the last survivor so store NULL to indicate
-        // that we're done.
-        _next_survivor = NULL;
-      } else {
-        _next_survivor = res->get_next_young_region();
-      }
-    } else {
-      // Someone else claimed the last survivor while we were trying
-      // to take the lock so nothing else to do.
-    }
-  }
-  assert(res == NULL || res->is_survivor(), "post-condition");
+  const GrowableArray<HeapRegion*>* survivor_regions = _young_list->survivor_regions();
 
-  return res;
+  int claimed_index = Atomic::add(1, &_claimed_survivor_index) - 1;
+  if (claimed_index < survivor_regions->length()) {
+    return survivor_regions->at(claimed_index);
+  }
+  return NULL;
 }
 
 void G1CMRootRegions::notify_scan_done() {
@@ -324,9 +310,10 @@ void G1CMRootRegions::scan_finished() {
 
   // Currently, only survivors can be root regions.
   if (!_should_abort) {
-    assert(_next_survivor == NULL, "we should have claimed all survivors");
+    assert(_claimed_survivor_index >= _young_list->survivor_regions()->length(),
+           "we should have claimed all survivors, claimed index = %d, length = %d",
+           _claimed_survivor_index, _young_list->survivor_regions()->length());
   }
-  _next_survivor = NULL;
 
   notify_scan_done();
 }

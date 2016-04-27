@@ -301,15 +301,17 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms) {
   uint eden_region_length = young_list->eden_length();
   init_region_lengths(eden_region_length, survivor_region_length);
 
-  HeapRegion* hr = young_list->first_survivor_region();
-  while (hr != NULL) {
+  const GrowableArray<HeapRegion*>* survivor_regions = _g1->young_list()->survivor_regions();
+  for (GrowableArrayIterator<HeapRegion*> it = survivor_regions->begin();
+       it != survivor_regions->end();
+       ++it) {
+    HeapRegion* hr = *it;
     assert(hr->is_survivor(), "badly formed young list");
     // There is a convention that all the young regions in the CSet
     // are tagged as "eden", so we do this for the survivors here. We
     // use the special set_eden_pre_gc() as it doesn't check that the
     // region is free (which is not the case here).
     hr->set_eden_pre_gc();
-    hr = hr->get_next_young_region();
   }
 
   verify_young_cset_indices();

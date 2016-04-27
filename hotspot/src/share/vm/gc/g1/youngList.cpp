@@ -31,11 +31,14 @@
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/youngList.hpp"
 #include "logging/log.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 
 YoungList::YoungList(G1CollectedHeap* g1h) :
-    _g1h(g1h), _head(NULL), _length(0),
-    _survivor_head(NULL), _survivor_tail(NULL), _survivor_length(0) {
+    _g1h(g1h),
+    _survivor_regions(new (ResourceObj::C_HEAP, mtGC) GrowableArray<HeapRegion*>(8, true, mtGC)),
+    _head(NULL),
+    _length(0) {
   guarantee(check_list_empty(), "just making sure...");
 }
 
@@ -54,12 +57,7 @@ void YoungList::add_survivor_region(HeapRegion* hr) {
   assert(hr->is_survivor(), "should be flagged as survivor region");
   assert(hr->get_next_young_region() == NULL, "cause it should!");
 
-  hr->set_next_young_region(_survivor_head);
-  if (_survivor_head == NULL) {
-    _survivor_tail = hr;
-  }
-  _survivor_head = hr;
-  ++_survivor_length;
+  _survivor_regions->append(hr);
 }
 
 void YoungList::empty_list(HeapRegion* list) {
@@ -82,12 +80,16 @@ void YoungList::empty_list() {
   _head = NULL;
   _length = 0;
 
-  empty_list(_survivor_head);
-  _survivor_head = NULL;
-  _survivor_tail = NULL;
-  _survivor_length = 0;
+  if (survivor_length() > 0) {
+    empty_list(_survivor_regions->last());
+  }
+  _survivor_regions->clear();
 
   assert(check_list_empty(), "just making sure...");
+}
+
+uint YoungList::survivor_length() {
+  return _survivor_regions->length();
 }
 
 bool YoungList::check_list_well_formed() {
@@ -145,25 +147,25 @@ YoungList::reset_auxilary_lists() {
   _g1h->g1_policy()->note_start_adding_survivor_regions();
   _g1h->g1_policy()->finished_recalculating_age_indexes(true /* is_survivors */);
 
-  for (HeapRegion* curr = _survivor_head;
-       curr != NULL;
-       curr = curr->get_next_young_region()) {
+  HeapRegion* last = NULL;
+  for (GrowableArrayIterator<HeapRegion*> it = _survivor_regions->begin();
+       it != _survivor_regions->end();
+       ++it) {
+    HeapRegion* curr = *it;
     _g1h->g1_policy()->set_region_survivor(curr);
 
     // The region is a non-empty survivor so let's add it to
     // the incremental collection set for the next evacuation
     // pause.
     _g1h->collection_set()->add_survivor_regions(curr);
+
+    curr->set_next_young_region(last);
+    last = curr;
   }
   _g1h->g1_policy()->note_stop_adding_survivor_regions();
 
-  _head   = _survivor_head;
-  _length = _survivor_length;
-  if (_survivor_head != NULL) {
-    assert(_survivor_tail != NULL, "cause it shouldn't be");
-    assert(_survivor_length > 0, "invariant");
-    _survivor_tail->set_next_young_region(NULL);
-  }
+  _head   = last;
+  _length = _survivor_regions->length();
 
   // Don't clear the survivor list handles until the start of
   // the next evacuation pause - we need it in order to re-tag
@@ -173,27 +175,4 @@ YoungList::reset_auxilary_lists() {
   _g1h->g1_policy()->finished_recalculating_age_indexes(false /* is_survivors */);
 
   assert(check_list_well_formed(), "young list should be well formed");
-}
-
-void YoungList::print() {
-  HeapRegion* lists[] = {_head,   _survivor_head};
-  const char* names[] = {"YOUNG", "SURVIVOR"};
-
-  for (uint list = 0; list < ARRAY_SIZE(lists); ++list) {
-    tty->print_cr("%s LIST CONTENTS", names[list]);
-    HeapRegion *curr = lists[list];
-    if (curr == NULL) {
-      tty->print_cr("  empty");
-    }
-    while (curr != NULL) {
-      tty->print_cr("  " HR_FORMAT ", P: " PTR_FORMAT ", N: " PTR_FORMAT ", age: %4d",
-                             HR_FORMAT_PARAMS(curr),
-                             p2i(curr->prev_top_at_mark_start()),
-                             p2i(curr->next_top_at_mark_start()),
-                             curr->age_in_surv_rate_group_cond());
-      curr = curr->get_next_young_region();
-    }
-  }
-
-  tty->cr();
 }
