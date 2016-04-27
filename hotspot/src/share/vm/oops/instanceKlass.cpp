@@ -2296,7 +2296,7 @@ bool InstanceKlass::is_same_class_package(const Klass* class2) const {
   PackageEntry* classpkg2;
   if (class2->is_instance_klass()) {
     classloader2 = class2->class_loader();
-    classpkg2 = InstanceKlass::cast(class2)->package();
+    classpkg2 = class2->package();
   } else {
     assert(class2->is_typeArray_klass(), "should be type array");
     classloader2 = NULL;

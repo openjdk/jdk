@@ -869,7 +869,6 @@ void TemplateInterpreterGenerator::lock_method(Register Rflags, Register Rscratc
 
   // Get synchronization object to Rscratch2.
   {
-    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     Label Lstatic;
     Label Ldone;
 
@@ -881,10 +880,7 @@ void TemplateInterpreterGenerator::lock_method(Register Rflags, Register Rscratc
     __ b(Ldone);
 
     __ bind(Lstatic); // Static case: Lock the java mirror
-    __ ld(Robj_to_lock, in_bytes(Method::const_offset()), R19_method);
-    __ ld(Robj_to_lock, in_bytes(ConstMethod::constants_offset()), Robj_to_lock);
-    __ ld(Robj_to_lock, ConstantPool::pool_holder_offset_in_bytes(), Robj_to_lock);
-    __ ld(Robj_to_lock, mirror_offset, Robj_to_lock);
+    __ load_mirror(Robj_to_lock, R19_method);
 
     __ bind(Ldone);
     __ verify_oop(Robj_to_lock);
@@ -1049,10 +1045,14 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   __ addi(R26_monitor, R1_SP, - frame::ijava_state_size);
   __ addi(R15_esp, R26_monitor, - Interpreter::stackElementSize);
 
+  // Get mirror and store it in the frame as GC root for this Method*
+  __ load_mirror(R12_scratch2, R19_method);
+
   // Store values.
   // R15_esp, R14_bcp, R26_monitor, R28_mdx are saved at java calls
   // in InterpreterMacroAssembler::call_from_interpreter.
   __ std(R19_method, _ijava_state_neg(method), R1_SP);
+  __ std(R12_scratch2, _ijava_state_neg(mirror), R1_SP);
   __ std(R21_sender_SP, _ijava_state_neg(sender_sp), R1_SP);
   __ std(R27_constPoolCache, _ijava_state_neg(cpoolCache), R1_SP);
   __ std(R18_locals, _ijava_state_neg(locals), R1_SP);
@@ -1317,21 +1317,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ testbitdi(CCR0, R0, access_flags, JVM_ACC_STATIC_BIT);
     __ bfalse(CCR0, method_is_not_static);
 
-    // constants = method->constants();
-    __ ld(R11_scratch1, in_bytes(Method::const_offset()), R19_method);
-    __ ld(R11_scratch1, in_bytes(ConstMethod::constants_offset()), R11_scratch1);
-    // pool_holder = method->constants()->pool_holder();
-    __ ld(R11_scratch1/*pool_holder*/, ConstantPool::pool_holder_offset_in_bytes(),
-          R11_scratch1/*constants*/);
-
-    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
-
-    // mirror = pool_holder->klass_part()->java_mirror();
-    __ ld(R0/*mirror*/, mirror_offset, R11_scratch1/*pool_holder*/);
+    __ load_mirror(R12_scratch2, R19_method);
     // state->_native_mirror = mirror;
 
     __ ld(R11_scratch1, 0, R1_SP);
-    __ std(R0/*mirror*/, _ijava_state_neg(oop_tmp), R11_scratch1);
+    __ std(R12_scratch2/*mirror*/, _ijava_state_neg(oop_tmp), R11_scratch1);
     // R4_ARG2 = &state->_oop_temp;
     __ addi(R4_ARG2, R11_scratch1, _ijava_state_neg(oop_tmp));
     BIND(method_is_not_static);

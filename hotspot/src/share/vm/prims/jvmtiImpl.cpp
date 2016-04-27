@@ -278,7 +278,7 @@ bool JvmtiBreakpoint::is_valid() {
          _bci >= 0;
 }
 
-address JvmtiBreakpoint::getBcp() {
+address JvmtiBreakpoint::getBcp() const {
   return _method->bcp_from(_bci);
 }
 
@@ -323,7 +323,7 @@ void JvmtiBreakpoint::clear() {
   each_method_version_do(&Method::clear_breakpoint);
 }
 
-void JvmtiBreakpoint::print(outputStream* out) {
+void JvmtiBreakpoint::print_on(outputStream* out) const {
 #ifndef PRODUCT
   ResourceMark rm;
   const char *class_name  = (_method == NULL) ? "NULL" : _method->klass_name()->as_C_string();
@@ -400,7 +400,7 @@ void JvmtiBreakpoints::print() {
   for (int i=0; i<n; i++) {
     JvmtiBreakpoint& bp = _bps.at(i);
     log_stream.print("%d: ", i);
-    bp.print(&log_stream);
+    bp.print_on(&log_stream);
     log_stream.cr();
   }
 #endif

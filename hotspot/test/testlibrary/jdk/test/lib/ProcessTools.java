@@ -90,11 +90,8 @@ public final class ProcessTools {
    *
    * @return Process id
    */
-  public static int getProcessId() throws Exception {
-    RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
-    int pid = Integer.parseInt(runtime.getName().split("@")[0]);
-
-    return pid;
+  public static long getProcessId() throws Exception {
+    return ProcessHandle.current().getPid();
   }
 
   /**

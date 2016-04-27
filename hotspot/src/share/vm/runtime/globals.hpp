@@ -1253,7 +1253,7 @@ public:
   product(intx, MonitorBound, 0, "Bound Monitor population")                \
           range(0, max_jint)                                                \
                                                                             \
-  product(bool, MonitorInUseLists, false, "Track Monitors for Deflation")   \
+  product(bool, MonitorInUseLists, true, "Track Monitors for Deflation")    \
                                                                             \
   experimental(intx, SyncFlags, 0, "(Unsafe, Unstable) "                    \
                "Experimental Sync flags")                                   \

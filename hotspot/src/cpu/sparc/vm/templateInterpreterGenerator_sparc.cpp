@@ -557,17 +557,12 @@ void TemplateInterpreterGenerator::lock_method() {
 
   // get synchronization object to O0
   { Label done;
-    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     __ btst(JVM_ACC_STATIC, O0);
     __ br( Assembler::zero, true, Assembler::pt, done);
     __ delayed()->ld_ptr(Llocals, Interpreter::local_offset_in_bytes(0), O0); // get receiver for not-static case
 
-    __ ld_ptr( Lmethod, in_bytes(Method::const_offset()), O0);
-    __ ld_ptr( O0, in_bytes(ConstMethod::constants_offset()), O0);
-    __ ld_ptr( O0, ConstantPool::pool_holder_offset_in_bytes(), O0);
-
     // lock the mirror, not the Klass*
-    __ ld_ptr( O0, mirror_offset, O0);
+    __ load_mirror(O0, Lmethod);
 
 #ifdef ASSERT
     __ tst(O0);
@@ -881,6 +876,10 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ add(Lbcp, in_bytes(ConstMethod::codes_offset()), Lbcp);
   }
   __ mov( G5_method, Lmethod);                 // set Lmethod
+  // Get mirror and store it in the frame as GC root for this Method*
+  Register mirror = LcpoolCache;
+  __ load_mirror(mirror, Lmethod);
+  __ st_ptr(mirror, FP, (frame::interpreter_frame_mirror_offset * wordSize) + STACK_BIAS);
   __ get_constant_pool_cache( LcpoolCache );   // set LcpoolCache
   __ sub(FP, rounded_vm_local_words * BytesPerWord, Lmonitors ); // set Lmonitors
 #ifdef _LP64
@@ -1297,12 +1296,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // get native function entry point(O0 is a good temp until the very end)
     __ delayed()->ld_ptr(Lmethod, in_bytes(Method::native_function_offset()), O0);
     // for static methods insert the mirror argument
-    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
-
-    __ ld_ptr(Lmethod, Method:: const_offset(), O1);
-    __ ld_ptr(O1, ConstMethod::constants_offset(), O1);
-    __ ld_ptr(O1, ConstantPool::pool_holder_offset_in_bytes(), O1);
-    __ ld_ptr(O1, mirror_offset, O1);
+    __ load_mirror(O1, Lmethod);
 #ifdef ASSERT
     if (!PrintSignatureHandlers)  // do not dirty the output with this
     { Label L;
