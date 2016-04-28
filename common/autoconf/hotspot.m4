@@ -93,7 +93,10 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_VARIANTS],
   # Check that the selected variants are valid
 
   # grep filter function inspired by a comment to http://stackoverflow.com/a/1617326
-  INVALID_VARIANTS=`$GREP -Fvx "${VALID_JVM_VARIANTS// /$'\n'}" <<< "${JVM_VARIANTS// /$'\n'}"`
+  # Notice that the original variant failes on SLES 10 and 11
+  NEEDLE=${VALID_JVM_VARIANTS// /$'\n'}
+  STACK=${JVM_VARIANTS// /$'\n'}
+  INVALID_VARIANTS=`$GREP -Fvx "${NEEDLE}" <<< "${STACK}"`
   if test "x$INVALID_VARIANTS" != x; then
     AC_MSG_NOTICE([Unknown variant(s) specified: $INVALID_VARIANTS])
     AC_MSG_ERROR([The available JVM variants are: $VALID_JVM_VARIANTS])
@@ -101,7 +104,9 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_VARIANTS],
 
   # All "special" variants share the same output directory ("server")
   VALID_MULTIPLE_JVM_VARIANTS="server client minimal"
-  INVALID_MULTIPLE_VARIANTS=`$GREP -Fvx "${VALID_MULTIPLE_JVM_VARIANTS// /$'\n'}" <<< "${JVM_VARIANTS// /$'\n'}"`
+  NEEDLE=${VALID_MULTIPLE_JVM_VARIANTS// /$'\n'}
+  STACK=${JVM_VARIANTS// /$'\n'}
+  INVALID_MULTIPLE_VARIANTS=`$GREP -Fvx "${NEEDLE}" <<< "${STACK}"`
   if  test "x$INVALID_MULTIPLE_VARIANTS" != x && test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = xtrue; then
     AC_MSG_ERROR([You cannot build multiple variants with anything else than $VALID_MULTIPLE_JVM_VARIANTS.])
   fi
@@ -293,7 +298,9 @@ AC_DEFUN_ONCE([HOTSPOT_VALIDATE_JVM_FEATURES],
     features_var_name=JVM_FEATURES_$variant
     JVM_FEATURES_TO_TEST=${!features_var_name}
     AC_MSG_RESULT([$JVM_FEATURES_TO_TEST])
-    INVALID_FEATURES=`$GREP -Fvx "${VALID_JVM_FEATURES// /$'\n'}" <<< "${JVM_FEATURES_TO_TEST// /$'\n'}"`
+    NEEDLE=${VALID_JVM_FEATURES// /$'\n'}
+    STACK=${JVM_FEATURES_TO_TEST// /$'\n'}
+    INVALID_FEATURES=`$GREP -Fvx "${NEEDLE}" <<< "${STACK}"`
     if test "x$INVALID_FEATURES" != x; then
       AC_MSG_ERROR([Invalid JVM feature(s): $INVALID_FEATURES])
     fi
