@@ -5306,9 +5306,69 @@ operand immIOffset()
   interface(CONST_INTER);
 %}
 
+operand immIOffset4()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_int(), 2));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immIOffset8()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_int(), 3));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immIOffset16()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_int(), 4));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 operand immLoffset()
 %{
   predicate(Address::offset_ok_for_immed(n->get_long()));
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immLoffset4()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_long(), 2));
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immLoffset8()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_long(), 3));
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immLoffset16()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_long(), 4));
   match(ConL);
 
   op_cost(0);
@@ -6150,6 +6210,48 @@ operand indOffI(iRegP reg, immIOffset off)
   %}
 %}
 
+operand indOffI4(iRegP reg, immIOffset4 off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg off);
+  op_cost(0);
+  format %{ "[$reg, $off]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffI8(iRegP reg, immIOffset8 off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg off);
+  op_cost(0);
+  format %{ "[$reg, $off]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffI16(iRegP reg, immIOffset16 off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg off);
+  op_cost(0);
+  format %{ "[$reg, $off]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
 operand indOffL(iRegP reg, immLoffset off)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
@@ -6164,6 +6266,47 @@ operand indOffL(iRegP reg, immLoffset off)
   %}
 %}
 
+operand indOffL4(iRegP reg, immLoffset4 off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg off);
+  op_cost(0);
+  format %{ "[$reg, $off]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffL8(iRegP reg, immLoffset8 off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg off);
+  op_cost(0);
+  format %{ "[$reg, $off]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffL16(iRegP reg, immLoffset16 off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg off);
+  op_cost(0);
+  format %{ "[$reg, $off]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
 
 operand indirectN(iRegN reg)
 %{
@@ -6476,7 +6619,9 @@ operand iRegL2I(iRegL reg) %{
   interface(REG_INTER)
 %}
 
-opclass vmem(indirect, indIndex, indOffI, indOffL);
+opclass vmem4(indirect, indIndex, indOffI4, indOffL4);
+opclass vmem8(indirect, indIndex, indOffI8, indOffL8);
+opclass vmem16(indirect, indIndex, indOffI16, indOffL16);
 
 //----------OPERAND CLASSES----------------------------------------------------
 // Operand Classes are groups of operands that are used as to simplify
@@ -7008,7 +7153,7 @@ pipe_class vmovi_reg_imm128(vecX dst)
   NEON_FP : S3;
 %}
 
-pipe_class vload_reg_mem64(vecD dst, vmem mem)
+pipe_class vload_reg_mem64(vecD dst, vmem8 mem)
 %{
   single_instruction;
   dst    : S5(write);
@@ -7017,7 +7162,7 @@ pipe_class vload_reg_mem64(vecD dst, vmem mem)
   NEON_FP : S3;
 %}
 
-pipe_class vload_reg_mem128(vecX dst, vmem mem)
+pipe_class vload_reg_mem128(vecX dst, vmem16 mem)
 %{
   single_instruction;
   dst    : S5(write);
@@ -7026,7 +7171,7 @@ pipe_class vload_reg_mem128(vecX dst, vmem mem)
   NEON_FP : S3;
 %}
 
-pipe_class vstore_reg_mem64(vecD src, vmem mem)
+pipe_class vstore_reg_mem64(vecD src, vmem8 mem)
 %{
   single_instruction;
   mem    : ISS(read);
@@ -7035,7 +7180,7 @@ pipe_class vstore_reg_mem64(vecD src, vmem mem)
   NEON_FP : S3;
 %}
 
-pipe_class vstore_reg_mem128(vecD src, vmem mem)
+pipe_class vstore_reg_mem128(vecD src, vmem16 mem)
 %{
   single_instruction;
   mem    : ISS(read);
@@ -14919,7 +15064,7 @@ instruct tlsLoadP(thread_RegP dst)
 // ====================VECTOR INSTRUCTIONS=====================================
 
 // Load vector (32 bits)
-instruct loadV4(vecD dst, vmem mem)
+instruct loadV4(vecD dst, vmem4 mem)
 %{
   predicate(n->as_LoadVector()->memory_size() == 4);
   match(Set dst (LoadVector mem));
@@ -14930,7 +15075,7 @@ instruct loadV4(vecD dst, vmem mem)
 %}
 
 // Load vector (64 bits)
-instruct loadV8(vecD dst, vmem mem)
+instruct loadV8(vecD dst, vmem8 mem)
 %{
   predicate(n->as_LoadVector()->memory_size() == 8);
   match(Set dst (LoadVector mem));
@@ -14941,7 +15086,7 @@ instruct loadV8(vecD dst, vmem mem)
 %}
 
 // Load Vector (128 bits)
-instruct loadV16(vecX dst, vmem mem)
+instruct loadV16(vecX dst, vmem16 mem)
 %{
   predicate(n->as_LoadVector()->memory_size() == 16);
   match(Set dst (LoadVector mem));
@@ -14952,7 +15097,7 @@ instruct loadV16(vecX dst, vmem mem)
 %}
 
 // Store Vector (32 bits)
-instruct storeV4(vecD src, vmem mem)
+instruct storeV4(vecD src, vmem4 mem)
 %{
   predicate(n->as_StoreVector()->memory_size() == 4);
   match(Set mem (StoreVector mem src));
@@ -14963,7 +15108,7 @@ instruct storeV4(vecD src, vmem mem)
 %}
 
 // Store Vector (64 bits)
-instruct storeV8(vecD src, vmem mem)
+instruct storeV8(vecD src, vmem8 mem)
 %{
   predicate(n->as_StoreVector()->memory_size() == 8);
   match(Set mem (StoreVector mem src));
@@ -14974,7 +15119,7 @@ instruct storeV8(vecD src, vmem mem)
 %}
 
 // Store Vector (128 bits)
-instruct storeV16(vecX src, vmem mem)
+instruct storeV16(vecX src, vmem16 mem)
 %{
   predicate(n->as_StoreVector()->memory_size() == 16);
   match(Set mem (StoreVector mem src));
