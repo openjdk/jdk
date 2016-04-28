@@ -1449,12 +1449,12 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
 
   ResourceMark rm(THREAD);
   _index_map_count = 0;
-  _index_map_p = new intArray(scratch_cp->length(), -1);
+  _index_map_p = new intArray(scratch_cp->length(), scratch_cp->length(), -1);
 
   _operands_cur_length = ConstantPool::operand_array_length(old_cp->operands());
   _operands_index_map_count = 0;
-  _operands_index_map_p = new intArray(
-    ConstantPool::operand_array_length(scratch_cp->operands()), -1);
+  int operands_index_map_len = ConstantPool::operand_array_length(scratch_cp->operands());
+  _operands_index_map_p = new intArray(operands_index_map_len, operands_index_map_len, -1);
 
   // reference to the cp holder is needed for copy_operands()
   merge_cp->set_pool_holder(scratch_class());

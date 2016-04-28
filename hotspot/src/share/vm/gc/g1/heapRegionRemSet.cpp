@@ -692,8 +692,8 @@ HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetTable* bot,
                                    HeapRegion* hr)
   : _bot(bot),
     _m(Mutex::leaf, FormatBuffer<128>("HeapRegionRemSet lock #%u", hr->hrm_index()), true, Monitor::_safepoint_check_never),
-    _code_roots(), _other_regions(hr, &_m), _iter_state(Unclaimed), _iter_claimed(0) {
-  reset_for_par_iteration();
+    _code_roots(),
+    _other_regions(hr, &_m) {
 }
 
 void HeapRegionRemSet::setup_remset_size() {
@@ -708,20 +708,6 @@ void HeapRegionRemSet::setup_remset_size() {
     G1RSetRegionEntries = G1RSetRegionEntriesBase * (region_size_log_mb + 1);
   }
   guarantee(G1RSetSparseRegionEntries > 0 && G1RSetRegionEntries > 0 , "Sanity");
-}
-
-bool HeapRegionRemSet::claim_iter() {
-  if (_iter_state != Unclaimed) return false;
-  jint res = Atomic::cmpxchg(Claimed, (jint*)(&_iter_state), Unclaimed);
-  return (res == Unclaimed);
-}
-
-void HeapRegionRemSet::set_iter_complete() {
-  _iter_state = Complete;
-}
-
-bool HeapRegionRemSet::iter_is_complete() {
-  return _iter_state == Complete;
 }
 
 #ifndef PRODUCT
@@ -760,14 +746,6 @@ void HeapRegionRemSet::clear_locked() {
   _code_roots.clear();
   _other_regions.clear();
   assert(occupied_locked() == 0, "Should be clear.");
-  reset_for_par_iteration();
-}
-
-void HeapRegionRemSet::reset_for_par_iteration() {
-  _iter_state = Unclaimed;
-  _iter_claimed = 0;
-  // It's good to check this to make sure that the two methods are in sync.
-  assert(verify_ready_for_par_iteration(), "post-condition");
 }
 
 void HeapRegionRemSet::scrub(G1CardLiveData* live_data) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,8 @@ public class VM {
   private StubRoutines stubRoutines;
   private Bytes        bytes;
 
+  /** Flag indicating if JVMTI support is included in the build */
+  private boolean      isJvmtiSupported;
   /** Flags indicating whether we are attached to a core, C1, or C2 build */
   private boolean      usingClientCompiler;
   private boolean      usingServerCompiler;
@@ -335,6 +337,16 @@ public class VM {
 
     stackBias    = db.lookupIntConstant("STACK_BIAS").intValue();
     invocationEntryBCI = db.lookupIntConstant("InvocationEntryBci").intValue();
+
+    // We infer the presence of JVMTI from the presence of the InstanceKlass::_breakpoints field.
+    {
+      Type type = db.lookupType("InstanceKlass");
+      if (type.getField("_breakpoints", false, false) == null) {
+        isJvmtiSupported = false;
+      } else {
+        isJvmtiSupported = true;
+      }
+    }
 
     // We infer the presence of C1 or C2 from a couple of fields we
     // already have present in the type database
@@ -699,6 +711,11 @@ public class VM {
   /** Returns true if this is a isBigEndian, false otherwise */
   public boolean isBigEndian() {
     return isBigEndian;
+  }
+
+  /** Returns true if JVMTI is supported, false otherwise */
+  public boolean isJvmtiSupported() {
+    return isJvmtiSupported;
   }
 
   /** Returns true if this is a "core" build, false if either C1 or C2

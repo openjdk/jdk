@@ -124,6 +124,9 @@ public:
     }
   }
 
+  bool is_valid() const {
+    return basic_type() != T_ILLEGAL;
+  }
   // Debugging output
   void print();
 };

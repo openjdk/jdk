@@ -156,6 +156,10 @@ class MacroAssembler: public Assembler {
   void incrementq(Register reg, int value = 1);
   void incrementq(Address dst, int value = 1);
 
+  // special instructions for EVEX
+  void setvectmask(Register dst, Register src);
+  void restorevectmask();
+
   // Support optimal SSE move instructions.
   void movflt(XMMRegister dst, XMMRegister src) {
     if (UseXmmRegToRegMoveAll) { movaps(dst, src); return; }
@@ -318,6 +322,8 @@ class MacroAssembler: public Assembler {
   void movbool(Address dst, bool boolconst);
   void movbool(Address dst, Register src);
   void testbool(Register dst);
+
+  void load_mirror(Register mirror, Register method);
 
   // oop manipulations
   void load_klass(Register dst, Register src);
@@ -928,6 +934,10 @@ class MacroAssembler: public Assembler {
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
                 Register rax, Register rcx, Register rdx, Register tmp1, Register tmp2);
 
+  void fast_log10(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                  XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                  Register rax, Register rcx, Register rdx, Register r11);
+
   void fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4,
                 XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, Register rax, Register rcx,
                 Register rdx, Register tmp1, Register tmp2, Register tmp3, Register tmp4);
@@ -941,10 +951,18 @@ class MacroAssembler: public Assembler {
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
                 Register rax, Register rcx, Register rdx, Register tmp1,
                 Register tmp2, Register tmp3, Register tmp4);
+  void fast_tan(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                Register rax, Register rcx, Register rdx, Register tmp1,
+                Register tmp2, Register tmp3, Register tmp4);
 #else
   void fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
                 Register rax, Register rcx, Register rdx, Register tmp1);
+
+  void fast_log10(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                Register rax, Register rcx, Register rdx, Register tmp);
 
   void fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4,
                 XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, Register rax, Register rcx,
@@ -964,6 +982,14 @@ class MacroAssembler: public Assembler {
 
   void libm_reduce_pi04l(Register eax, Register ecx, Register edx, Register ebx,
                          Register esi, Register edi, Register ebp, Register esp);
+
+  void libm_tancot_huge(XMMRegister xmm0, XMMRegister xmm1, Register eax, Register ecx,
+                        Register edx, Register ebx, Register esi, Register edi,
+                        Register ebp, Register esp);
+
+  void fast_tan(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                Register rax, Register rcx, Register rdx, Register tmp);
 #endif
 
   void increase_precision();

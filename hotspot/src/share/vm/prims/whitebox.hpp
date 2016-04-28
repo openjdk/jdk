@@ -77,6 +77,7 @@ class WhiteBox : public AllStatic {
   static void register_methods(JNIEnv* env, jclass wbclass, JavaThread* thread,
     JNINativeMethod* method_array, int method_count);
   static void register_extended(JNIEnv* env, jclass wbclass, JavaThread* thread);
+  static bool compile_method(Method* method, int comp_level, int bci, Thread* THREAD);
 };
 
 

@@ -28,11 +28,11 @@ import compiler.whitebox.CompilerWhiteBoxTest;
  * @library /testlibrary /test/lib /compiler/whitebox /
  * @modules java.management
  * @build TieredLevelsTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+TieredCompilation
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCase$Helper::*
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCounterDecay
+ *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
  *                   TieredLevelsTest
  * @summary Verify that all levels &lt; 'TieredStopAtLevel' can be used
  * @author igor.ignatyev@oracle.com

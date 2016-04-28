@@ -252,7 +252,7 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
 
   if (_file_count == 0 && is_regular_file(_file_name)) {
     log_trace(logging)("Truncating log file");
-    os::ftruncate(os::fileno(_stream), 0);
+    os::ftruncate(os::get_fileno(_stream), 0);
   }
 
   return true;

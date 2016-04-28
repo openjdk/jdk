@@ -27,6 +27,8 @@
 
 #include "libadt/set.hpp"
 
+#define BITS_IN_BYTE_ARRAY_SIZE 256
+
 // Vector Sets - An Abstract Data Type
 //INTERFACE
 

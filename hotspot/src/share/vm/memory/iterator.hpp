@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,6 +355,9 @@ public:
   // Read/write the void pointer pointed to by p.
   virtual void do_ptr(void** p) = 0;
 
+  // Read/write the 32-bit unsigned integer pointed to by p.
+  virtual void do_u4(u4* p) = 0;
+
   // Read/write the region specified.
   virtual void do_region(u_char* start, size_t size) = 0;
 
@@ -363,6 +366,10 @@ public:
   // for verification that sections of the serialized data are of the
   // correct length.
   virtual void do_tag(int tag) = 0;
+
+  bool writing() {
+    return !reading();
+  }
 };
 
 class SymbolClosure : public StackObj {

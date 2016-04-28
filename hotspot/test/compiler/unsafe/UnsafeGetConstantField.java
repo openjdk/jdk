@@ -33,6 +33,7 @@
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.vm.annotation
  *          java.base/jdk.internal.misc
+ *
  * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions
  *                         -Xbatch -XX:-TieredCompilation
  *                         -XX:+FoldStableValues
@@ -63,7 +64,6 @@ import jdk.test.lib.Platform;
 import jdk.internal.misc.Unsafe;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;

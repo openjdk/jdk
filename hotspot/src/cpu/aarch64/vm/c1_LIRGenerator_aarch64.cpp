@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -331,7 +331,7 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
     length.load_item();
 
   }
-  if (needs_store_check) {
+  if (needs_store_check || x->check_boolean()) {
     value.load_item();
   } else {
     value.load_for_store(x->elt_type());
@@ -380,7 +380,8 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
     // Seems to be a precise
     post_barrier(LIR_OprFact::address(array_addr), value.result());
   } else {
-    __ move(value.result(), array_addr, null_check_info);
+    LIR_Opr result = maybe_mask_boolean(x, array.result(), value.result(), null_check_info);
+    __ move(result, array_addr, null_check_info);
   }
 }
 
@@ -1127,7 +1128,7 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
 void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
   Values* dims = x->dims();
   int i = dims->length();
-  LIRItemList* items = new LIRItemList(dims->length(), NULL);
+  LIRItemList* items = new LIRItemList(i, i, NULL);
   while (i-- > 0) {
     LIRItem* size = new LIRItem(dims->at(i), this);
     items->at_put(i, size);

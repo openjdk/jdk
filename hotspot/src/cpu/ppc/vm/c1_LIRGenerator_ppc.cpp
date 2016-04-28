@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1056,7 +1056,7 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
 void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
   Values* dims = x->dims();
   int i = dims->length();
-  LIRItemList* items = new LIRItemList(dims->length(), NULL);
+  LIRItemList* items = new LIRItemList(i, i, NULL);
   while (i-- > 0) {
     LIRItem* size = new LIRItem(dims->at(i), this);
     items->at_put(i, size);

@@ -20,15 +20,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package compiler.jvmci.code;
+package jdk.vm.ci.code.test;
 
 import java.lang.reflect.Method;
+
+import org.junit.Assert;
 
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.code.test.amd64.AMD64TestAssembler;
+import jdk.vm.ci.code.test.sparc.SPARCTestAssembler;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
@@ -36,11 +40,6 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
 import jdk.vm.ci.sparc.SPARC;
-
-import org.junit.Assert;
-
-import compiler.jvmci.code.amd64.AMD64TestAssembler;
-import compiler.jvmci.code.sparc.SPARCTestAssembler;
 
 /**
  * Base class for code installation tests.

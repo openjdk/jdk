@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,14 +32,15 @@
  *          jdk.vm.ci/jdk.vm.ci.runtime
  *          jdk.vm.ci/jdk.vm.ci.amd64
  *          jdk.vm.ci/jdk.vm.ci.sparc
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI compiler.jvmci.code.SimpleCodeInstallationTest
+ * @compile CodeInstallationTest.java DebugInfoTest.java TestAssembler.java amd64/AMD64TestAssembler.java sparc/SPARCTestAssembler.java
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI jdk.vm.ci.code.test.SimpleCodeInstallationTest
  */
 
-package compiler.jvmci.code;
-
-import jdk.vm.ci.code.Register;
+package jdk.vm.ci.code.test;
 
 import org.junit.Test;
+
+import jdk.vm.ci.code.Register;
 
 /**
  * Test simple code installation.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -78,7 +78,9 @@
     interpreter_frame_last_sp_offset                 = interpreter_frame_sender_sp_offset - 1,
     interpreter_frame_method_offset                  = interpreter_frame_last_sp_offset - 1,
     interpreter_frame_mdp_offset                     = interpreter_frame_method_offset - 1,
-    interpreter_frame_cache_offset                   = interpreter_frame_mdp_offset - 1,
+    interpreter_frame_padding_offset                 = interpreter_frame_mdp_offset - 1,
+    interpreter_frame_mirror_offset                  = interpreter_frame_padding_offset - 1,
+    interpreter_frame_cache_offset                   = interpreter_frame_mirror_offset - 1,
     interpreter_frame_locals_offset                  = interpreter_frame_cache_offset - 1,
     interpreter_frame_bcp_offset                     = interpreter_frame_locals_offset - 1,
     interpreter_frame_initial_sp_offset              = interpreter_frame_bcp_offset - 1,

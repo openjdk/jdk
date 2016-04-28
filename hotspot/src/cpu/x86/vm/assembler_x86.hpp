@@ -1048,6 +1048,8 @@ private:
   void cvttss2sil(Register dst, XMMRegister src);
   void cvttss2siq(Register dst, XMMRegister src);
 
+  void cvttpd2dq(XMMRegister dst, XMMRegister src);
+
   // Divide Scalar Double-Precision Floating-Point Values
   void divsd(XMMRegister dst, Address src);
   void divsd(XMMRegister dst, XMMRegister src);
@@ -1335,6 +1337,7 @@ private:
   void kmovbl(KRegister dst, Register src);
   void kmovbl(Register dst, KRegister src);
   void kmovwl(KRegister dst, Register src);
+  void kmovwl(KRegister dst, Address src);
   void kmovwl(Register dst, KRegister src);
   void kmovdl(KRegister dst, Register src);
   void kmovdl(Register dst, KRegister src);
@@ -1343,6 +1346,8 @@ private:
   void kmovql(KRegister dst, Address src);
   void kmovql(KRegister dst, Register src);
   void kmovql(Register dst, KRegister src);
+
+  void knotwl(KRegister dst, KRegister src);
 
   void kortestbl(KRegister dst, KRegister src);
   void kortestwl(KRegister dst, KRegister src);
@@ -2050,6 +2055,8 @@ private:
   void cmppd(XMMRegister dst, XMMRegister nds, XMMRegister src, int cop, int vector_len);
   void vpblendd(XMMRegister dst, XMMRegister nds, XMMRegister src1, XMMRegister src2, int vector_len);
 
+  void shlxl(Register dst, Register src1, Register src2);
+  void shlxq(Register dst, Register src1, Register src2);
 
  protected:
   // Next instructions require address alignment 16 bytes SSE mode.
@@ -2075,6 +2082,7 @@ public:
     :
       _avx_vector_len(vector_len),
       _rex_vex_w(rex_vex_w),
+      _rex_vex_w_reverted(false),
       _legacy_mode(legacy_mode),
       _no_reg_mask(no_reg_mask),
       _uses_vl(uses_vl),
@@ -2098,6 +2106,7 @@ public:
 private:
   int  _avx_vector_len;
   bool _rex_vex_w;
+  bool _rex_vex_w_reverted;
   bool _legacy_mode;
   bool _no_reg_mask;
   bool _uses_vl;
@@ -2114,6 +2123,7 @@ public:
   // query functions for field accessors
   int  get_vector_len(void) const { return _avx_vector_len; }
   bool is_rex_vex_w(void) const { return _rex_vex_w; }
+  bool is_rex_vex_w_reverted(void) { return _rex_vex_w_reverted; }
   bool is_legacy_mode(void) const { return _legacy_mode; }
   bool is_no_reg_mask(void) const { return _no_reg_mask; }
   bool uses_vl(void) const { return _uses_vl; }
@@ -2126,6 +2136,12 @@ public:
 
   // Set the vector len manually
   void set_vector_len(int vector_len) { _avx_vector_len = vector_len; }
+
+  // Set revert rex_vex_w for avx encoding
+  void set_rex_vex_w_reverted(void) { _rex_vex_w_reverted = true; }
+
+  // Set rex_vex_w based on state
+  void set_rex_vex_w(bool state) { _rex_vex_w = state; }
 
   // Set the instruction to be encoded in AVX mode
   void set_is_legacy_mode(void) { _legacy_mode = true; }

@@ -1628,6 +1628,7 @@ bool CompressedLineNumberReadStream::read_pair() {
   return true;
 }
 
+#if INCLUDE_JVMTI
 
 Bytecodes::Code Method::orig_bytecode_at(int bci) const {
   BreakpointInfo* bp = method_holder()->breakpoints();
@@ -1708,6 +1709,7 @@ void Method::clear_all_breakpoints() {
   clear_matches(this, -1);
 }
 
+#endif // INCLUDE_JVMTI
 
 int Method::invocation_count() {
   MethodCounters *mcs = method_counters();
@@ -1773,6 +1775,8 @@ void Method::set_highest_osr_comp_level(int level) {
   }
 }
 
+#if INCLUDE_JVMTI
+
 BreakpointInfo::BreakpointInfo(Method* m, int bci) {
   _bci = bci;
   _name_index = m->name_index();
@@ -1809,6 +1813,8 @@ void BreakpointInfo::clear(Method* method) {
   assert(method->number_of_breakpoints() > 0, "must not go negative");
   method->decr_number_of_breakpoints(Thread::current());
 }
+
+#endif // INCLUDE_JVMTI
 
 // jmethodID handling
 
