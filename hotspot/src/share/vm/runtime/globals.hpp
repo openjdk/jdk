@@ -3847,9 +3847,9 @@ public:
                                                                             \
   /* Properties for Java libraries  */                                      \
                                                                             \
-  product(size_t, MaxDirectMemorySize, 0,                                   \
+  product(uint64_t, MaxDirectMemorySize, 0,                                 \
           "Maximum total size of NIO direct-buffer allocations")            \
-          range(0, (size_t)SIZE_MAX)                                        \
+          range(0, max_jlong)                                               \
                                                                             \
   /* Flags used for temporary code during development  */                   \
                                                                             \
