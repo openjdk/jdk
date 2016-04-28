@@ -4516,18 +4516,10 @@ void MacroAssembler::string_compare(Register str1, Register str2,
   }
 
   // Compare the rest of the characters
-  if (ae == StrIntrinsicNode::UU) {
-    lduh(str1, limit1, chr1);
-  } else {
-    ldub(str1, limit1, chr1);
-  }
+  load_sized_value(Address(str1, limit1), chr1, (ae == StrIntrinsicNode::UU) ? 2 : 1, false);
 
   bind(Lloop);
-  if (ae == StrIntrinsicNode::LL) {
-    ldub(str2, limit2, chr2);
-  } else {
-    lduh(str2, limit2, chr2);
-  }
+  load_sized_value(Address(str2, limit2), chr2, (ae == StrIntrinsicNode::LL) ? 1 : 2, false);
 
   subcc(chr1, chr2, chr1);
   br(Assembler::notZero, false, Assembler::pt, Ldone);
@@ -4539,11 +4531,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
 
   // annul LDUB if branch is not taken to prevent access past end of string
   br(Assembler::notZero, true, Assembler::pt, Lloop);
-  if (ae == StrIntrinsicNode::UU) {
-    delayed()->lduh(str1, limit2, chr1);
-  } else {
-    delayed()->ldub(str1, limit1, chr1);
-  }
+  delayed()->load_sized_value(Address(str1, limit1), chr1, (ae == StrIntrinsicNode::UU) ? 2 : 1, false);
 
   // If strings are equal up to min length, return the length difference.
   if (ae == StrIntrinsicNode::UU) {
@@ -4563,23 +4551,24 @@ void MacroAssembler::string_compare(Register str1, Register str2,
 
 void MacroAssembler::array_equals(bool is_array_equ, Register ary1, Register ary2,
                                   Register limit, Register tmp, Register result, bool is_byte) {
-  Label Ldone, Lvector, Lloop;
+  Label Ldone, Lloop, Lremaining;
   assert_different_registers(ary1, ary2, limit, tmp, result);
 
   int length_offset  = arrayOopDesc::length_offset_in_bytes();
   int base_offset    = arrayOopDesc::base_offset_in_bytes(is_byte ? T_BYTE : T_CHAR);
+  assert(base_offset % 8 == 0, "Base offset must be 8-byte aligned");
 
   if (is_array_equ) {
     // return true if the same array
     cmp(ary1, ary2);
     brx(Assembler::equal, true, Assembler::pn, Ldone);
-    delayed()->add(G0, 1, result); // equal
+    delayed()->mov(1, result);  // equal
 
     br_null(ary1, true, Assembler::pn, Ldone);
-    delayed()->mov(G0, result);    // not equal
+    delayed()->clr(result);     // not equal
 
     br_null(ary2, true, Assembler::pn, Ldone);
-    delayed()->mov(G0, result);    // not equal
+    delayed()->clr(result);     // not equal
 
     // load the lengths of arrays
     ld(Address(ary1, length_offset), limit);
@@ -4588,81 +4577,77 @@ void MacroAssembler::array_equals(bool is_array_equ, Register ary1, Register ary
     // return false if the two arrays are not equal length
     cmp(limit, tmp);
     br(Assembler::notEqual, true, Assembler::pn, Ldone);
-    delayed()->mov(G0, result);    // not equal
+    delayed()->clr(result);     // not equal
   }
 
   cmp_zero_and_br(Assembler::zero, limit, Ldone, true, Assembler::pn);
-  delayed()->add(G0, 1, result); // zero-length arrays are equal
+  delayed()->mov(1, result); // zero-length arrays are equal
 
   if (is_array_equ) {
     // load array addresses
     add(ary1, base_offset, ary1);
     add(ary2, base_offset, ary2);
+    // set byte count
+    if (!is_byte) {
+      sll(limit, exact_log2(sizeof(jchar)), limit);
+    }
   } else {
     // We have no guarantee that on 64 bit the higher half of limit is 0
     signx(limit);
   }
 
-  if (is_byte) {
-    Label Lskip;
-    // check for trailing byte
-    andcc(limit, 0x1, tmp);
-    br(Assembler::zero, false, Assembler::pt, Lskip);
-    delayed()->nop();
+#ifdef ASSERT
+  // Sanity check for doubleword (8-byte) alignment of ary1 and ary2.
+  // Guaranteed on 64-bit systems (see arrayOopDesc::header_size_in_bytes()).
+  Label Laligned;
+  or3(ary1, ary2, tmp);
+  andcc(tmp, 7, tmp);
+  br_null_short(tmp, Assembler::pn, Laligned);
+  STOP("First array element is not 8-byte aligned.");
+  should_not_reach_here();
+  bind(Laligned);
+#endif
 
-    // compare the trailing byte
-    sub(limit, sizeof(jbyte), limit);
-    ldub(ary1, limit, result);
-    ldub(ary2, limit, tmp);
-    cmp(result, tmp);
-    br(Assembler::notEqual, true, Assembler::pt, Ldone);
-    delayed()->mov(G0, result);    // not equal
-
-    // only one byte?
-    cmp_zero_and_br(zero, limit, Ldone, true, Assembler::pn);
-    delayed()->add(G0, 1, result); // zero-length arrays are equal
-    bind(Lskip);
-  } else if (is_array_equ) {
-    // set byte count
-    sll(limit, exact_log2(sizeof(jchar)), limit);
-  }
-
-  // check for trailing character
-  andcc(limit, 0x2, tmp);
-  br(Assembler::zero, false, Assembler::pt, Lvector);
-  delayed()->nop();
-
-  // compare the trailing char
-  sub(limit, sizeof(jchar), limit);
-  lduh(ary1, limit, result);
-  lduh(ary2, limit, tmp);
-  cmp(result, tmp);
-  br(Assembler::notEqual, true, Assembler::pt, Ldone);
-  delayed()->mov(G0, result);     // not equal
-
-  // only one char?
-  cmp_zero_and_br(zero, limit, Ldone, true, Assembler::pn);
-  delayed()->add(G0, 1, result); // zero-length arrays are equal
-
-  // word by word compare, dont't need alignment check
-  bind(Lvector);
   // Shift ary1 and ary2 to the end of the arrays, negate limit
   add(ary1, limit, ary1);
   add(ary2, limit, ary2);
   neg(limit, limit);
 
-  lduw(ary1, limit, result);
+  // MAIN LOOP
+  // Load and compare array elements of size 'byte_width' until the elements are not
+  // equal or we reached the end of the arrays. If the size of the arrays is not a
+  // multiple of 'byte_width', we simply read over the end of the array, bail out and
+  // compare the remaining bytes below by skipping the garbage bytes.
+  ldx(ary1, limit, result);
   bind(Lloop);
-  lduw(ary2, limit, tmp);
-  cmp(result, tmp);
-  br(Assembler::notEqual, true, Assembler::pt, Ldone);
-  delayed()->mov(G0, result);     // not equal
-  inccc(limit, 2*sizeof(jchar));
-  // annul LDUW if branch is not taken to prevent access past end of array
-  br(Assembler::notZero, true, Assembler::pt, Lloop);
-  delayed()->lduw(ary1, limit, result); // hoisted
+  ldx(ary2, limit, tmp);
+  inccc(limit, 8);
+  // Bail out if we reached the end (but still do the comparison)
+  br(Assembler::positive, false, Assembler::pn, Lremaining);
+  delayed()->cmp(result, tmp);
+  // Check equality of elements
+  brx(Assembler::equal, false, Assembler::pt, target(Lloop));
+  delayed()->ldx(ary1, limit, result);
 
-  add(G0, 1, result); // equals
+  ba(Ldone);
+  delayed()->clr(result); // not equal
+
+  // TAIL COMPARISON
+  // We got here because we reached the end of the arrays. 'limit' is the number of
+  // garbage bytes we may have compared by reading over the end of the arrays. Shift
+  // out the garbage and compare the remaining elements.
+  bind(Lremaining);
+  // Optimistic shortcut: elements potentially including garbage are equal
+  brx(Assembler::equal, true, Assembler::pt, target(Ldone));
+  delayed()->mov(1, result); // equal
+  // Shift 'limit' bytes to the right and compare
+  sll(limit, 3, limit); // bytes to bits
+  srlx(result, limit, result);
+  srlx(tmp, limit, tmp);
+  cmp(result, tmp);
+  clr(result);
+  movcc(Assembler::equal, false, xcc, 1, result);
+
   bind(Ldone);
 }
 
