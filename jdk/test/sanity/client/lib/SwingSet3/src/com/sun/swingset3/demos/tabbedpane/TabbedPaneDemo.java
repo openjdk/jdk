@@ -204,7 +204,9 @@ public class TabbedPaneDemo extends JPanel implements ActionListener {
         }
 
         public void go() {
-            animator = new javax.swing.Timer(22 + 22 + 22, this);
+            if (animator == null) {
+                animator = new javax.swing.Timer(22 + 22 + 22, this);
+            }
             animator.start();
         }
 
@@ -246,7 +248,7 @@ public class TabbedPaneDemo extends JPanel implements ActionListener {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            if (isVisible()) {
+            if (isShowing()) {
                 repaint();
             } else {
                 animator.stop();
