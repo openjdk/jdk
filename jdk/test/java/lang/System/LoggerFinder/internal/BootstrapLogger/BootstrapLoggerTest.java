@@ -43,6 +43,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.logger.BootstrapLogger;
 import jdk.internal.logger.LazyLoggers;
+import java.lang.reflect.Module;
 
 /*
  * @test
@@ -105,7 +106,7 @@ public class BootstrapLoggerTest {
         if (BootstrapLogger.isBooted()) {
             throw new RuntimeException("VM should not be booted!");
         }
-        Logger logger = LazyLoggers.getLogger("foo.bar", Thread.class);
+        Logger logger = LazyLoggers.getLogger("foo.bar", Thread.class.getModule());
 
         if (test != TestCase.NO_SECURITY) {
             LogStream.err.println("Setting security manager");
@@ -261,7 +262,7 @@ public class BootstrapLoggerTest {
         SimplePolicy.allowAll.set(Boolean.TRUE);
         try {
             bazbaz = java.lang.System.LoggerFinder
-                    .getLoggerFinder().getLogger("foo.bar.baz.baz", BootstrapLoggerTest.class);
+                    .getLoggerFinder().getLogger("foo.bar.baz.baz", BootstrapLoggerTest.class.getModule());
         } finally {
             SimplePolicy.allowAll.set(Boolean.FALSE);
         }
