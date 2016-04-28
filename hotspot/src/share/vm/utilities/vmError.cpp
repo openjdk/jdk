@@ -290,8 +290,8 @@ const char*  VMError::_current_step_info;
 
 void VMError::report(outputStream* st, bool _verbose) {
 
-# define BEGIN if (_current_step == 0) { _current_step = 1;
-# define STEP(n, s) } if (_current_step < n) { _current_step = n; _current_step_info = s;
+# define BEGIN if (_current_step == 0) { _current_step = __LINE__;
+# define STEP(s) } if (_current_step < __LINE__) { _current_step = __LINE__; _current_step_info = s;
 # define END }
 
   // don't allocate large buffer on stack
@@ -299,7 +299,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   BEGIN
 
-  STEP(10, "(printing fatal error message)")
+  STEP("printing fatal error message")
 
     st->print_cr("#");
     if (should_report_bug(_id)) {
@@ -314,21 +314,21 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   // test secondary error handling. Test it twice, to test that resetting
   // error handler after a secondary crash works.
-  STEP(20, "(test secondary crash 1)")
+  STEP("test secondary crash 1")
     if (_verbose && TestCrashInErrorHandler != 0) {
       st->print_cr("Will crash now (TestCrashInErrorHandler=" UINTX_FORMAT ")...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
     }
 
-  STEP(30, "(test secondary crash 2)")
+  STEP("test secondary crash 2")
     if (_verbose && TestCrashInErrorHandler != 0) {
       st->print_cr("Will crash now (TestCrashInErrorHandler=" UINTX_FORMAT ")...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
     }
 
-  STEP(40, "(test safefetch in error handler)")
+  STEP("test safefetch in error handler")
     // test whether it is safe to use SafeFetch32 in Crash Handler. Test twice
     // to test that resetting the signal handler works correctly.
     if (_verbose && TestSafeFetchInErrorHandler) {
@@ -349,7 +349,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     }
 #endif // PRODUCT
 
-  STEP(50, "(printing type of error)")
+  STEP("printing type of error")
 
      switch(_id) {
        case OOM_MALLOC_ERROR:
@@ -384,7 +384,7 @@ void VMError::report(outputStream* st, bool _verbose) {
          break;
      }
 
-  STEP(60, "(printing exception/signal name)")
+  STEP("printing exception/signal name")
 
      st->print_cr("#");
      st->print("#  ");
@@ -414,14 +414,14 @@ void VMError::report(outputStream* st, bool _verbose) {
        }
      }
 
-  STEP(70, "(printing current thread and pid)")
+  STEP("printing current thread and pid")
 
      // process id, thread id
      st->print(", pid=%d", os::current_process_id());
      st->print(", tid=" UINTX_FORMAT, os::current_thread_id());
      st->cr();
 
-  STEP(80, "(printing error message)")
+  STEP("printing error message")
 
      if (should_report_bug(_id)) {  // already printed the message.
        // error message
@@ -432,11 +432,11 @@ void VMError::report(outputStream* st, bool _verbose) {
        }
      }
 
-  STEP(90, "(printing Java version string)")
+  STEP("printing Java version string")
 
      report_vm_version(st, buf, sizeof(buf));
 
-  STEP(100, "(printing problematic frame)")
+  STEP("printing problematic frame")
 
      // Print current frame if we have a context (i.e. it's a crash)
      if (_context) {
@@ -448,7 +448,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->print_cr("#");
      }
 
-  STEP(110, "(printing core file information)")
+  STEP("printing core file information")
     st->print("# ");
     if (CreateCoredumpOnCrash) {
       if (coredump_status) {
@@ -462,13 +462,13 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->cr();
     st->print_cr("#");
 
-  STEP(120, "(printing bug submit message)")
+  STEP("printing bug submit message")
 
      if (should_report_bug(_id) && _verbose) {
        print_bug_submit_message(st, _thread);
      }
 
-  STEP(130, "(printing summary)" )
+  STEP("printing summary")
 
      if (_verbose) {
        st->cr();
@@ -476,7 +476,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP(140, "(printing VM option summary)" )
+  STEP("printing VM option summary")
 
      if (_verbose) {
        // VM options
@@ -484,20 +484,20 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP(150, "(printing summary machine and OS info)")
+  STEP("printing summary machine and OS info")
 
      if (_verbose) {
        os::print_summary_info(st, buf, sizeof(buf));
      }
 
 
-  STEP(160, "(printing date and time)" )
+  STEP("printing date and time")
 
      if (_verbose) {
        os::print_date_and_time(st, buf, sizeof(buf));
      }
 
-  STEP(170, "(printing thread)" )
+  STEP("printing thread")
 
      if (_verbose) {
        st->cr();
@@ -505,7 +505,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP(180, "(printing current thread)" )
+  STEP("printing current thread")
 
      // current thread
      if (_verbose) {
@@ -519,7 +519,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP(190, "(printing current compile task)" )
+  STEP("printing current compile task")
 
      if (_verbose && _thread && _thread->is_Compiler_thread()) {
         CompilerThread* t = (CompilerThread*)_thread;
@@ -532,7 +532,7 @@ void VMError::report(outputStream* st, bool _verbose) {
      }
 
 
-  STEP(200, "(printing stack bounds)" )
+  STEP("printing stack bounds")
 
      if (_verbose) {
        st->print("Stack: ");
@@ -563,7 +563,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP(210, "(printing native stack)" )
+  STEP("printing native stack")
 
    if (_verbose) {
      if (os::platform_print_native_stack(st, _context, buf, sizeof(buf))) {
@@ -577,13 +577,13 @@ void VMError::report(outputStream* st, bool _verbose) {
      }
    }
 
-  STEP(220, "(printing Java stack)" )
+  STEP("printing Java stack")
 
      if (_verbose && _thread && _thread->is_Java_thread()) {
        print_stack_trace(st, (JavaThread*)_thread, buf, sizeof(buf));
      }
 
-  STEP(230, "(printing target Java thread stack)" )
+  STEP("printing target Java thread stack")
 
      // printing Java thread stack trace if it is involved in GC crash
      if (_verbose && _thread && (_thread->is_Named_thread())) {
@@ -594,7 +594,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        }
      }
 
-  STEP(240, "(printing siginfo)" )
+  STEP("printing siginfo")
 
      // signal no, signal code, address that caused the fault
      if (_verbose && _siginfo) {
@@ -603,7 +603,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP(245, "(CDS archive access warning)" )
+  STEP("CDS archive access warning")
 
      // Print an explicit hint if we crashed on access to the CDS archive.
      if (_verbose && _siginfo) {
@@ -611,7 +611,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP(250, "(printing register info)")
+  STEP("printing register info")
 
      // decode register contents if possible
      if (_verbose && _context && Universe::is_fully_initialized()) {
@@ -619,7 +619,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP(260, "(printing registers, top of stack, instructions near pc)")
+  STEP("printing registers, top of stack, instructions near pc")
 
      // registers, top of stack, instructions near pc
      if (_verbose && _context) {
@@ -627,7 +627,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP(265, "(printing code blob if possible)")
+  STEP("printing code blob if possible")
 
      if (_verbose && _context) {
        CodeBlob* cb = CodeCache::find_blob(_pc);
@@ -652,7 +652,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        }
      }
 
-  STEP(270, "(printing VM operation)" )
+  STEP("printing VM operation")
 
      if (_verbose && _thread && _thread->is_VM_thread()) {
         VMThread* t = (VMThread*)_thread;
@@ -664,7 +664,7 @@ void VMError::report(outputStream* st, bool _verbose) {
         }
      }
 
-  STEP(280, "(printing process)" )
+  STEP("printing process")
 
      if (_verbose) {
        st->cr();
@@ -672,7 +672,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP(290, "(printing all threads)" )
+  STEP("printing all threads")
 
      // all threads
      if (_verbose && _thread) {
@@ -680,7 +680,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP(300, "(printing VM state)" )
+  STEP("printing VM state")
 
      if (_verbose) {
        // Safepoint state
@@ -702,7 +702,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP(310, "(printing owned locks on error)" )
+  STEP("printing owned locks on error")
 
      // mutexes/monitors that currently have an owner
      if (_verbose) {
@@ -710,7 +710,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP(320, "(printing number of OutOfMemoryError and StackOverflow exceptions)")
+  STEP("printing number of OutOfMemoryError and StackOverflow exceptions")
 
      if (_verbose && Exceptions::has_exception_counts()) {
        st->print_cr("OutOfMemory and StackOverflow Exception counts:");
@@ -718,7 +718,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP(330, "(printing compressed oops mode")
+  STEP("printing compressed oops mode")
 
      if (_verbose && UseCompressedOops) {
        Universe::print_compressed_oops_mode(st);
@@ -728,7 +728,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP(340, "(printing heap information)" )
+  STEP("printing heap information")
 
      if (_verbose && Universe::is_fully_initialized()) {
        Universe::heap()->print_on_error(st);
@@ -737,7 +737,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP(350, "(printing code cache information)" )
+  STEP("printing code cache information")
 
      if (_verbose && Universe::is_fully_initialized()) {
        // print code cache information before vm abort
@@ -745,14 +745,14 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP(360, "(printing ring buffers)" )
+  STEP("printing ring buffers")
 
      if (_verbose) {
        Events::print_all(st);
        st->cr();
      }
 
-  STEP(370, "(printing dynamic libraries)" )
+  STEP("printing dynamic libraries")
 
      if (_verbose) {
        // dynamic libraries, or memory map
@@ -760,7 +760,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP(380, "(printing VM options)" )
+  STEP("printing VM options")
 
      if (_verbose) {
        // VM options
@@ -768,40 +768,40 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP(390, "(printing warning if internal testing API used)" )
+  STEP("printing warning if internal testing API used")
 
      if (WhiteBox::used()) {
        st->print_cr("Unsupported internal testing APIs have been used.");
        st->cr();
      }
 
-  STEP(395, "(printing log configuration)")
+  STEP("printing log configuration")
     if (_verbose){
       st->print_cr("Logging:");
       LogConfiguration::describe_current_configuration(st);
       st->cr();
     }
 
-  STEP(400, "(printing all environment variables)" )
+  STEP("printing all environment variables")
 
      if (_verbose) {
        os::print_environment_variables(st, env_list);
        st->cr();
      }
 
-  STEP(410, "(printing signal handlers)" )
+  STEP("printing signal handlers")
 
      if (_verbose) {
        os::print_signal_handlers(st, buf, sizeof(buf));
        st->cr();
      }
 
-  STEP(420, "(Native Memory Tracking)" )
+  STEP("Native Memory Tracking")
      if (_verbose) {
        MemTracker::error_report(st);
      }
 
-  STEP(430, "(printing system)" )
+  STEP("printing system")
 
      if (_verbose) {
        st->cr();
@@ -809,27 +809,27 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP(440, "(printing OS information)" )
+  STEP("printing OS information")
 
      if (_verbose) {
        os::print_os_info(st);
        st->cr();
      }
 
-  STEP(450, "(printing CPU info)" )
+  STEP("printing CPU info")
      if (_verbose) {
        os::print_cpu_info(st, buf, sizeof(buf));
        st->cr();
      }
 
-  STEP(460, "(printing memory info)" )
+  STEP("printing memory info")
 
      if (_verbose) {
        os::print_memory_info(st);
        st->cr();
      }
 
-  STEP(470, "(printing internal vm info)" )
+  STEP("printing internal vm info")
 
      if (_verbose) {
        st->print_cr("vm_info: %s", Abstract_VM_Version::internal_vm_info_string());
@@ -837,7 +837,7 @@ void VMError::report(outputStream* st, bool _verbose) {
      }
 
   // print a defined marker to show that error handling finished correctly.
-  STEP(480, "(printing end marker)" )
+  STEP("printing end marker")
 
      if (_verbose) {
        st->print_cr("END.");
@@ -858,35 +858,35 @@ void VMError::print_vm_info(outputStream* st) {
   char buf[O_BUFLEN];
   report_vm_version(st, buf, sizeof(buf));
 
-  // STEP("(printing summary)")
+  // STEP("printing summary")
 
   st->cr();
   st->print_cr("---------------  S U M M A R Y ------------");
   st->cr();
 
-  // STEP("(printing VM option summary)")
+  // STEP("printing VM option summary")
 
   // VM options
   Arguments::print_summary_on(st);
   st->cr();
 
-  // STEP("(printing summary machine and OS info)")
+  // STEP("printing summary machine and OS info")
 
   os::print_summary_info(st, buf, sizeof(buf));
 
-  // STEP("(printing date and time)")
+  // STEP("printing date and time")
 
   os::print_date_and_time(st, buf, sizeof(buf));
 
-  // Skip: STEP("(printing thread)")
+  // Skip: STEP("printing thread")
 
-  // STEP("(printing process)")
+  // STEP("printing process")
 
   st->cr();
   st->print_cr("---------------  P R O C E S S  ---------------");
   st->cr();
 
-  // STEP("(printing number of OutOfMemoryError and StackOverflow exceptions)")
+  // STEP("printing number of OutOfMemoryError and StackOverflow exceptions")
 
   if (Exceptions::has_exception_counts()) {
     st->print_cr("OutOfMemory and StackOverflow Exception counts:");
@@ -894,7 +894,7 @@ void VMError::print_vm_info(outputStream* st) {
     st->cr();
   }
 
-  // STEP("(printing compressed oops mode")
+  // STEP("printing compressed oops mode")
 
   if (UseCompressedOops) {
     Universe::print_compressed_oops_mode(st);
@@ -904,7 +904,7 @@ void VMError::print_vm_info(outputStream* st) {
     st->cr();
   }
 
-  // STEP("(printing heap information)")
+  // STEP("printing heap information")
 
   if (Universe::is_fully_initialized()) {
     Universe::heap()->print_on_error(st);
@@ -913,7 +913,7 @@ void VMError::print_vm_info(outputStream* st) {
     st->cr();
   }
 
-  // STEP("(printing code cache information)")
+  // STEP("printing code cache information")
 
   if (Universe::is_fully_initialized()) {
     // print code cache information before vm abort
@@ -921,77 +921,77 @@ void VMError::print_vm_info(outputStream* st) {
     st->cr();
   }
 
-  // STEP("(printing ring buffers)")
+  // STEP("printing ring buffers")
 
   Events::print_all(st);
   st->cr();
 
-  // STEP("(printing dynamic libraries)")
+  // STEP("printing dynamic libraries")
 
   // dynamic libraries, or memory map
   os::print_dll_info(st);
   st->cr();
 
-  // STEP("(printing VM options)")
+  // STEP("printing VM options")
 
   // VM options
   Arguments::print_on(st);
   st->cr();
 
-  // STEP("(printing warning if internal testing API used)")
+  // STEP("printing warning if internal testing API used")
 
   if (WhiteBox::used()) {
     st->print_cr("Unsupported internal testing APIs have been used.");
     st->cr();
   }
 
-  // STEP("(printing log configuration)")
+  // STEP("printing log configuration")
   st->print_cr("Logging:");
   LogConfiguration::describe(st);
   st->cr();
 
-  // STEP("(printing all environment variables)")
+  // STEP("printing all environment variables")
 
   os::print_environment_variables(st, env_list);
   st->cr();
 
-  // STEP("(printing signal handlers)")
+  // STEP("printing signal handlers")
 
   os::print_signal_handlers(st, buf, sizeof(buf));
   st->cr();
 
-  // STEP("(Native Memory Tracking)")
+  // STEP("Native Memory Tracking")
 
   MemTracker::error_report(st);
 
-  // STEP("(printing system)")
+  // STEP("printing system")
 
   st->cr();
   st->print_cr("---------------  S Y S T E M  ---------------");
   st->cr();
 
-  // STEP("(printing OS information)")
+  // STEP("printing OS information")
 
   os::print_os_info(st);
   st->cr();
 
-  // STEP("(printing CPU info)")
+  // STEP("printing CPU info")
 
   os::print_cpu_info(st, buf, sizeof(buf));
   st->cr();
 
-  // STEP("(printing memory info)")
+  // STEP("printing memory info")
 
   os::print_memory_info(st);
   st->cr();
 
-  // STEP("(printing internal vm info)")
+  // STEP("printing internal vm info")
 
   st->print_cr("vm_info: %s", Abstract_VM_Version::internal_vm_info_string());
   st->cr();
 
   // print a defined marker to show that error handling finished correctly.
-  // STEP("(printing end marker)")
+  // STEP("printing end marker")
 
   st->print_cr("END.");
 }
@@ -1190,7 +1190,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       }
 
       jio_snprintf(buffer, sizeof(buffer),
-                   "[error occurred during error reporting %s, id 0x%x]",
+                   "[error occurred during error reporting (%s), id 0x%x]",
                    _current_step_info, _id);
       if (log.is_open()) {
         log.cr();
