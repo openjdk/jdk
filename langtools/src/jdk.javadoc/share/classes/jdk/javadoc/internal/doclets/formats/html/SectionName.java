@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ public enum SectionName {
     METHOD_DETAIL("method.detail"),
     METHODS_INHERITANCE("methods.inherited.from.class."),
     METHOD_SUMMARY("method.summary"),
+    MODULE_DESCRIPTION("module.description"),
     NAVBAR_BOTTOM("navbar.bottom"),
     NAVBAR_BOTTOM_FIRSTROW("navbar.bottom.firstrow"),
     NAVBAR_TOP("navbar.top"),
