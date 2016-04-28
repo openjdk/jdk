@@ -108,7 +108,7 @@ import static jdk.jshell.Snippet.SubKind.VAR_VALUE_SUBKIND;
  * Command line REPL tool for Java using the JShell API.
  * @author Robert Field
  */
-public class JShellTool {
+public class JShellTool implements MessageHandler {
 
     private static final String LINE_SEP = System.getProperty("line.separator");
     private static final Pattern LINEBREAK = Pattern.compile("\\R");
@@ -166,6 +166,8 @@ public class JShellTool {
     private boolean regenerateOnDeath = true;
     private boolean live = false;
     private boolean feedbackInitialized = false;
+    private String initialMode = null;
+    private List<String> remoteVMOptions = new ArrayList<>();
 
     SourceCodeAnalysis analysis;
     JShell state = null;
@@ -256,7 +258,8 @@ public class JShellTool {
      * @param format printf format
      * @param args printf args
      */
-    void fluff(String format, Object... args) {
+    @Override
+    public void fluff(String format, Object... args) {
         if (feedback.shouldDisplayCommandFluff() && interactive()) {
             hard(format, args);
         }
@@ -362,7 +365,8 @@ public class JShellTool {
      * @param key the resource key
      * @param args
      */
-    void errormsg(String key, Object... args) {
+    @Override
+    public void errormsg(String key, Object... args) {
         cmdout.println(prefix(messageFormat(key, args), feedback.getErrorPre()));
     }
 
@@ -383,7 +387,8 @@ public class JShellTool {
      * @param key the resource key
      * @param args
      */
-    void fluffmsg(String key, Object... args) {
+    @Override
+    public void fluffmsg(String key, Object... args) {
         if (feedback.shouldDisplayCommandFluff() && interactive()) {
             hardmsg(key, args);
         }
@@ -512,6 +517,23 @@ public class JShellTool {
                     case "-fullversion":
                         cmdout.printf("jshell %s\n", fullVersion());
                         return null;
+                    case "-feedback":
+                        if (ai.hasNext()) {
+                            initialMode = ai.next();
+                        } else {
+                            startmsg("jshell.err.opt.feedback.arg");
+                            return null;
+                        }
+                        break;
+                    case "-q":
+                        initialMode = "concise";
+                        break;
+                    case "-qq":
+                        initialMode = "silent";
+                        break;
+                    case "-v":
+                        initialMode = "verbose";
+                        break;
                     case "-startup":
                         if (cmdlineStartup != null) {
                             startmsg("jshell.err.opt.startup.conflict");
@@ -530,6 +552,10 @@ public class JShellTool {
                         cmdlineStartup = "";
                         break;
                     default:
+                        if (arg.startsWith("-R")) {
+                            remoteVMOptions.add(arg.substring(2));
+                            break;
+                        }
                         startmsg("jshell.err.opt.unknown", arg);
                         printUsage();
                         return null;
@@ -567,6 +593,7 @@ public class JShellTool {
                 .idGenerator((sn, i) -> (currentNameSpace == startNamespace || state.status(sn).isActive)
                         ? currentNameSpace.tid(sn)
                         : errorNamespace.tid(sn))
+                .remoteVMOptions(remoteVMOptions.toArray(new String[remoteVMOptions.size()]))
                 .build();
         shutdownSubscription = state.onShutdown((JShell deadState) -> {
             if (deadState == state) {
@@ -596,6 +623,26 @@ public class JShellTool {
             start = cmdlineStartup;
         }
         startUpRun(start);
+        if (initialMode != null) {
+            MessageHandler mh = new MessageHandler() {
+                @Override
+                public void fluff(String format, Object... args) {
+                }
+
+                @Override
+                public void fluffmsg(String messageKey, Object... args) {
+                }
+
+                @Override
+                public void errormsg(String messageKey, Object... args) {
+                    startmsg(messageKey, args);
+                }
+            };
+            if (!feedback.setFeedback(mh, new ArgTokenizer("-feedback ", initialMode))) {
+                regenerateOnDeath = false;
+            }
+            initialMode = null;
+        }
         currentNameSpace = mainNamespace;
     }
     //where
@@ -1050,7 +1097,7 @@ public class JShellTool {
         "format", "feedback", "newmode", "prompt", "editor", "start"};
 
     final boolean cmdSet(String arg) {
-        ArgTokenizer at = new ArgTokenizer(arg.trim());
+        ArgTokenizer at = new ArgTokenizer("/set ", arg.trim());
         String which = setSubCommand(at);
         if (which == null) {
             return false;

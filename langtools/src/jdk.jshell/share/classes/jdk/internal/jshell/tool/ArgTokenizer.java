@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 class ArgTokenizer {
 
     private final String str;
+    private final String prefix;
     private final int length;
     private int next = 0;
     private char buf[] = new char[20];
@@ -49,7 +50,12 @@ class ArgTokenizer {
     private boolean isQuoted = false;
 
     ArgTokenizer(String arg) {
+        this("", arg);
+    }
+
+    ArgTokenizer(String prefix, String arg) {
         this.str = arg;
+        this.prefix = prefix;
         this.length = arg.length();
         quoteChar('"');
         quoteChar('\'');
@@ -88,7 +94,7 @@ class ArgTokenizer {
     }
 
     String whole() {
-        return str;
+        return prefix + str;
     }
 
     void mark() {
