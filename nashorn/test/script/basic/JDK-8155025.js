@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,17 @@
  * questions.
  */
 
-
 /**
- * Check yield keyword is parsed and yield statement does nothing (yet).
+ * JDK-8155025: 0.001.toFixed(2) should return "0.00" not "0"
  *
  * @test
  * @run
  */
 
-function func() {
-    yield 2;
+for (var i = 0, zeros=""; i <= 9; i++, zeros += "0") {
+    var n = Number("0." + zeros + "1");
+    for (var j = 1; j <= i + 3; j++) {
+        print(n + ".toFixed(" + j + ")=" + n.toFixed(j));
+    }
 }
+
