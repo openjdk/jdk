@@ -9995,6 +9995,17 @@ myInit() {
           See <eventlink id="VMStart"/>.
         </description>
       </capabilityfield>
+      <capabilityfield id="can_generate_early_class_hook_events" since="9">
+        <description>
+          Can generate the <eventlink id="ClassFileLoadHook"/> events
+          in the primordial phase. If this capability and
+          <internallink id="jvmtiCapabilities.can_generate_all_class_hook_events">
+          <code>can_generate_all_class_hook_events</code></internallink>
+          are enabled then the <eventlink id="ClassFileLoadHook"/> events
+          can be posted for classes loaded in the primordial phase.
+          See <eventlink id="ClassFileLoadHook"/>.
+        </description>
+      </capabilityfield>
     </capabilitiestypedef>
 
     <function id="GetPotentialCapabilities" jkernel="yes" phase="onload" num="140">
@@ -12405,7 +12416,7 @@ myInit() {
     </parameters>
   </event>
 
-  <event label="Class File Load Hook" phase="start"
+  <event label="Class File Load Hook" phase="any"
 	 id="ClassFileLoadHook" const="JVMTI_EVENT_CLASS_FILE_LOAD_HOOK" num="54">
     <description>
       This event is sent when the VM obtains class file data,
@@ -12421,7 +12432,13 @@ myInit() {
       <internallink id="bci">bytecode instrumentation</internallink>
       for usage information.
       <p/>
-    This event may be sent before the VM is initialized (the start 
+    When the capabilities
+    <internallink id="jvmtiCapabilities.can_generate_early_class_hook_events">
+    <code>can_generate_early_class_hook_events</code></internallink> and
+    <internallink id="jvmtiCapabilities.can_generate_all_class_hook_events">
+    <code>can_generate_all_class_hook_events</code></internallink>
+    are enabled then this event may be sent in the primordial phase.
+    Otherwise, this event may be sent before the VM is initialized (the start 
     <functionlink id="GetPhase">phase</functionlink>).
     Some classes might not be compatible
     with the function (eg. ROMized classes) and this event will not be
@@ -12471,6 +12488,7 @@ myInit() {
   <origin>jvmpi</origin>
     <capabilities>
       <capability id="can_generate_all_class_hook_events"></capability>
+      <capability id="can_generate_early_class_hook_events"></capability>
     </capabilities>
     <parameters>
       <param id="jni_env">
@@ -12543,7 +12561,7 @@ myInit() {
   <event label="VM Start Event"
 	 id="VMStart" const="JVMTI_EVENT_VM_START" num="57" phase="start">
     <description>
-      The VM initialization event signals the start of the VM.
+      The VM start event signals the start of the VM.
       At this time JNI is live but the VM is not yet fully initialized.
       Once this event is generated, the agent is free to call any JNI function.
       This event signals the beginning of the start phase,
@@ -14419,6 +14437,10 @@ typedef void (JNICALL *jvmtiEventVMInit)
       Support for modules:
        - Add new capability can_generate_early_vmstart
        - Allow CompiledMethodLoad events at start phase
+  </change>
+  <change date="14 April 2016" version="9.0.0">
+      Support for modules:
+       - Add new capability can_generate_early_class_hook_events
   </change>
 </changehistory>
 
