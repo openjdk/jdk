@@ -852,6 +852,7 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
           new (ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(500, true);
         set_fixup_module_field_list(list);
       }
+      k->class_loader_data()->inc_keep_alive();
       fixup_module_field_list()->push(k());
     }
   } else {

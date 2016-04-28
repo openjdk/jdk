@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -564,7 +564,7 @@ void BlockBegin::disconnect_edge(BlockBegin* from, BlockBegin* to) {
   for (int s = 0; s < from->number_of_sux();) {
     BlockBegin* sux = from->sux_at(s);
     if (sux == to) {
-      int index = sux->_predecessors.index_of(from);
+      int index = sux->_predecessors.find(from);
       if (index >= 0) {
         sux->_predecessors.remove_at(index);
       }
@@ -664,7 +664,7 @@ BlockBegin* BlockBegin::insert_block_between(BlockBegin* sux) {
 
 void BlockBegin::remove_successor(BlockBegin* pred) {
   int idx;
-  while ((idx = _successors.index_of(pred)) >= 0) {
+  while ((idx = _successors.find(pred)) >= 0) {
     _successors.remove_at(idx);
   }
 }
@@ -677,7 +677,7 @@ void BlockBegin::add_predecessor(BlockBegin* pred) {
 
 void BlockBegin::remove_predecessor(BlockBegin* pred) {
   int idx;
-  while ((idx = _predecessors.index_of(pred)) >= 0) {
+  while ((idx = _predecessors.find(pred)) >= 0) {
     _predecessors.remove_at(idx);
   }
 }
@@ -722,13 +722,15 @@ void BlockBegin::iterate_postorder(boolArray& mark, BlockClosure* closure) {
 
 
 void BlockBegin::iterate_preorder(BlockClosure* closure) {
-  boolArray mark(number_of_blocks(), false);
+  int mark_len = number_of_blocks();
+  boolArray mark(mark_len, mark_len, false);
   iterate_preorder(mark, closure);
 }
 
 
 void BlockBegin::iterate_postorder(BlockClosure* closure) {
-  boolArray mark(number_of_blocks(), false);
+  int mark_len = number_of_blocks();
+  boolArray mark(mark_len, mark_len, false);
   iterate_postorder(mark, closure);
 }
 

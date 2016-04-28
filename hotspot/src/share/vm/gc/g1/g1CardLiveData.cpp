@@ -28,6 +28,7 @@
 #include "gc/g1/g1CardLiveData.inline.hpp"
 #include "gc/g1/suspendibleThreadSet.hpp"
 #include "gc/shared/workgroup.hpp"
+#include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/globals.hpp"
@@ -38,6 +39,7 @@
 G1CardLiveData::G1CardLiveData() :
   _max_capacity(0),
   _cards_per_region(0),
+  _gc_timestamp_at_create(0),
   _live_regions(NULL),
   _live_regions_size_in_bits(0),
   _live_cards(NULL),
@@ -58,7 +60,7 @@ G1CardLiveData::bm_word_t* G1CardLiveData::allocate_large_bitmap(size_t size_in_
 }
 
 void G1CardLiveData::free_large_bitmap(bm_word_t* bitmap, size_t size_in_bits) {
-  MmapArrayAllocator<bm_word_t, mtGC>::free(bitmap, size_in_bits / BitsPerWord);
+  MmapArrayAllocator<bm_word_t, mtGC>::free(bitmap, BitMap::calc_size_in_words(size_in_bits));
 }
 
 void G1CardLiveData::initialize(size_t max_capacity, uint num_max_regions) {
@@ -127,6 +129,13 @@ private:
   // lots of work most of the time.
   BitMap::idx_t _last_marked_bit_idx;
 
+  void clear_card_bitmap_range(HeapWord* start, HeapWord* end) {
+    BitMap::idx_t start_idx = card_live_bitmap_index_for(start);
+    BitMap::idx_t end_idx = card_live_bitmap_index_for((HeapWord*)align_ptr_up(end, CardTableModRefBS::card_size));
+
+    _card_bm.clear_range(start_idx, end_idx);
+  }
+
   // Mark the card liveness bitmap for the object spanning from start to end.
   void mark_card_bitmap_range(HeapWord* start, HeapWord* end) {
     BitMap::idx_t start_idx = card_live_bitmap_index_for(start);
@@ -167,6 +176,10 @@ public:
   // bitmap to 1.
   void set_bit_for_region(HeapRegion* hr) {
     _region_bm.par_set_bit(hr->hrm_index());
+  }
+
+  void reset_live_data(HeapRegion* hr) {
+    clear_card_bitmap_range(hr->next_top_at_mark_start(), hr->end());
   }
 
   // Mark the range of bits covered by allocations done since the last marking
@@ -305,6 +318,8 @@ public:
 };
 
 void G1CardLiveData::create(WorkGang* workers, G1CMBitMap* mark_bitmap) {
+  _gc_timestamp_at_create = G1CollectedHeap::heap()->get_gc_time_stamp();
+
   uint n_workers = workers->active_workers();
 
   G1CreateCardLiveDataTask cl(mark_bitmap,
@@ -322,14 +337,24 @@ class G1FinalizeCardLiveDataTask: public AbstractGangTask {
   class G1FinalizeCardLiveDataClosure: public HeapRegionClosure {
   private:
     G1CardLiveDataHelper _helper;
+
+    uint _gc_timestamp_at_create;
+
+    bool has_been_reclaimed(HeapRegion* hr) const {
+      return hr->get_gc_time_stamp() > _gc_timestamp_at_create;
+    }
   public:
     G1FinalizeCardLiveDataClosure(G1CollectedHeap* g1h,
                                   G1CMBitMap* bitmap,
                                   G1CardLiveData* live_data) :
       HeapRegionClosure(),
-      _helper(live_data, g1h->reserved_region().start()) { }
+      _helper(live_data, g1h->reserved_region().start()),
+      _gc_timestamp_at_create(live_data->gc_timestamp_at_create()) { }
 
     bool doHeapRegion(HeapRegion* hr) {
+      if (has_been_reclaimed(hr)) {
+        _helper.reset_live_data(hr);
+      }
       bool allocated_since_marking = _helper.mark_allocated_since_marking(hr);
       if (allocated_since_marking || hr->next_marked_bytes() > 0) {
         _helper.set_bit_for_region(hr);
@@ -459,27 +484,26 @@ class G1VerifyCardLiveDataTask: public AbstractGangTask {
       // Verify the marked bytes for this region.
 
       if (exp_marked_bytes != act_marked_bytes) {
+        log_error(gc)("Expected marked bytes " SIZE_FORMAT " != actual marked bytes " SIZE_FORMAT " in region %u", exp_marked_bytes, act_marked_bytes, hr->hrm_index());
         failures += 1;
       } else if (exp_marked_bytes > HeapRegion::GrainBytes) {
+        log_error(gc)("Expected marked bytes " SIZE_FORMAT " larger than possible " SIZE_FORMAT " in region %u", exp_marked_bytes, HeapRegion::GrainBytes, hr->hrm_index());
         failures += 1;
       }
 
       // Verify the bit, for this region, in the actual and expected
       // (which was just calculated) region bit maps.
-      // We're not OK if the bit in the calculated expected region
-      // bitmap is set and the bit in the actual region bitmap is not.
       uint index = hr->hrm_index();
 
       bool expected = _exp_live_data->is_region_live(index);
       bool actual = _act_live_data->is_region_live(index);
-      if (expected && !actual) {
+      if (expected != actual) {
+        log_error(gc)("Expected liveness %d not equal actual %d in region %u", expected, actual, hr->hrm_index());
         failures += 1;
       }
 
       // Verify that the card bit maps for the cards spanned by the current
-      // region match. We have an error if we have a set bit in the expected
-      // bit map and the corresponding bit in the actual bitmap is not set.
-
+      // region match.
       BitMap::idx_t start_idx = _helper.card_live_bitmap_index_for(hr->bottom());
       BitMap::idx_t end_idx = _helper.card_live_bitmap_index_for(hr->top());
 
@@ -487,7 +511,8 @@ class G1VerifyCardLiveDataTask: public AbstractGangTask {
         expected = _exp_live_data->is_card_live_at(i);
         actual = _act_live_data->is_card_live_at(i);
 
-        if (expected && !actual) {
+        if (expected != actual) {
+          log_error(gc)("Expected card liveness %d not equal actual card liveness %d at card " SIZE_FORMAT " in region %u", expected, actual, i, hr->hrm_index());
           failures += 1;
         }
       }

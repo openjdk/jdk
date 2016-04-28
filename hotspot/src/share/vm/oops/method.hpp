@@ -187,8 +187,18 @@ class Method : public Metadata {
   }
 
   // JVMTI breakpoints
+#if !INCLUDE_JVMTI
+  Bytecodes::Code orig_bytecode_at(int bci) const {
+    ShouldNotReachHere();
+    return Bytecodes::_shouldnotreachhere;
+  }
+  void set_orig_bytecode_at(int bci, Bytecodes::Code code) {
+    ShouldNotReachHere();
+  };
+  u2   number_of_breakpoints() const {return 0;}
+#else // !INCLUDE_JVMTI
   Bytecodes::Code orig_bytecode_at(int bci) const;
-  void        set_orig_bytecode_at(int bci, Bytecodes::Code code);
+  void set_orig_bytecode_at(int bci, Bytecodes::Code code);
   void set_breakpoint(int bci);
   void clear_breakpoint(int bci);
   void clear_all_breakpoints();
@@ -221,6 +231,7 @@ class Method : public Metadata {
       mcs->clear_number_of_breakpoints();
     }
   }
+#endif // !INCLUDE_JVMTI
 
   // index into InstanceKlass methods() array
   // note: also used by jfr
@@ -1034,6 +1045,8 @@ class CompressedLineNumberReadStream: public CompressedReadStream {
 };
 
 
+#if INCLUDE_JVMTI
+
 /// Fast Breakpoints.
 
 // If this structure gets more complicated (because bpts get numerous),
@@ -1077,6 +1090,8 @@ class BreakpointInfo : public CHeapObj<mtClass> {
   void set(Method* method);
   void clear(Method* method);
 };
+
+#endif // INCLUDE_JVMTI
 
 // Utility class for access exception handlers
 class ExceptionTable : public StackObj {

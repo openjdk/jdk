@@ -41,15 +41,16 @@ class ExceptionCache : public CHeapObj<mtCode> {
   Klass*   _exception_type;
   address  _pc[cache_size];
   address  _handler[cache_size];
-  int      _count;
+  volatile int _count;
   ExceptionCache* _next;
 
   address pc_at(int index)                     { assert(index >= 0 && index < count(),""); return _pc[index]; }
   void    set_pc_at(int index, address a)      { assert(index >= 0 && index < cache_size,""); _pc[index] = a; }
   address handler_at(int index)                { assert(index >= 0 && index < count(),""); return _handler[index]; }
   void    set_handler_at(int index, address a) { assert(index >= 0 && index < cache_size,""); _handler[index] = a; }
-  int     count()                              { return _count; }
-  void    increment_count()                    { _count++; }
+  int     count()                              { return OrderAccess::load_acquire(&_count); }
+  // increment_count is only called under lock, but there may be concurrent readers.
+  void    increment_count()                    { OrderAccess::release_store(&_count, _count + 1); }
 
  public:
 
@@ -241,7 +242,7 @@ class nmethod : public CodeBlob {
   // counter is decreased (by 1) while sweeping.
   int _hotness_counter;
 
-  ExceptionCache *_exception_cache;
+  ExceptionCache * volatile _exception_cache;
   PcDescCache     _pc_desc_cache;
 
   // These are used for compiled synchronized native methods to
@@ -433,7 +434,7 @@ class nmethod : public CodeBlob {
 
   // flag accessing and manipulation
   bool  is_in_use() const                         { return _state == in_use; }
-  bool  is_alive() const                          { return _state == in_use || _state == not_entrant; }
+  bool  is_alive() const                          { unsigned char s = _state; return s == in_use || s == not_entrant; }
   bool  is_not_entrant() const                    { return _state == not_entrant; }
   bool  is_zombie() const                         { return _state == zombie; }
   bool  is_unloaded() const                       { return _state == unloaded; }
@@ -576,8 +577,10 @@ public:
   void  set_stack_traversal_mark(long l)          { _stack_traversal_mark = l; }
 
   // Exception cache support
+  // Note: _exception_cache may be read concurrently. We rely on memory_order_consume here.
   ExceptionCache* exception_cache() const         { return _exception_cache; }
   void set_exception_cache(ExceptionCache *ec)    { _exception_cache = ec; }
+  void release_set_exception_cache(ExceptionCache *ec) { OrderAccess::release_store_ptr(&_exception_cache, ec); }
   address handler_for_exception_and_pc(Handle exception, address pc);
   void add_handler_for_exception_and_pc(Handle exception, address pc, address handler);
   void clean_exception_cache(BoolObjectClosure* is_alive);

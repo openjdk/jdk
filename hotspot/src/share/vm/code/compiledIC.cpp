@@ -533,6 +533,22 @@ bool CompiledIC::is_icholder_entry(address entry) {
   return (cb != NULL && cb->is_adapter_blob());
 }
 
+// Release the CompiledICHolder* associated with this call site is there is one.
+void CompiledIC::cleanup_call_site(virtual_call_Relocation* call_site) {
+  // This call site might have become stale so inspect it carefully.
+  NativeCall* call = nativeCall_at(call_site->addr());
+  if (is_icholder_entry(call->destination())) {
+    NativeMovConstReg* value = nativeMovConstReg_at(call_site->cached_value());
+    InlineCacheBuffer::queue_for_release((CompiledICHolder*)value->data());
+  }
+}
+
+bool CompiledIC::is_icholder_call_site(virtual_call_Relocation* call_site) {
+  // This call site might have become stale so inspect it carefully.
+  NativeCall* call = nativeCall_at(call_site->addr());
+  return is_icholder_entry(call->destination());
+}
+
 // ----------------------------------------------------------------------------
 
 void CompiledStaticCall::set_to_clean() {

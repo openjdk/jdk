@@ -3217,6 +3217,14 @@ void MacroAssembler::load_klass(Register dst, Register src) {
   }
 }
 
+void MacroAssembler::load_mirror(Register dst, Register method) {
+  const int mirror_offset = in_bytes(Klass::java_mirror_offset());
+  ldr(dst, Address(rmethod, Method::const_offset()));
+  ldr(dst, Address(dst, ConstMethod::constants_offset()));
+  ldr(dst, Address(dst, ConstantPool::pool_holder_offset_in_bytes()));
+  ldr(dst, Address(dst, mirror_offset));
+}
+
 void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp) {
   if (UseCompressedClassPointers) {
     ldrw(tmp, Address(oop, oopDesc::klass_offset_in_bytes()));
@@ -4585,7 +4593,16 @@ void MacroAssembler::arrays_equals(Register a1, Register a2,
   assert(elem_size == 1 || elem_size == 2, "must be char or byte");
   assert_different_registers(a1, a2, result, cnt1, rscratch1, rscratch2);
 
-  BLOCK_COMMENT(is_string ? "string_equals {" : "array_equals {");
+#ifndef PRODUCT
+  {
+    const char kind = (elem_size == 2) ? 'U' : 'L';
+    char comment[64];
+    snprintf(comment, sizeof comment, "%s%c%s {",
+             is_string ? "string_equals" : "array_equals",
+             kind, "{");
+    BLOCK_COMMENT(comment);
+  }
+#endif
 
   mov(result, false);
 
@@ -4670,8 +4687,97 @@ void MacroAssembler::arrays_equals(Register a1, Register a2,
   BLOCK_COMMENT(is_string ? "} string_equals" : "} array_equals");
 }
 
+// base:   Address of a buffer to be zeroed, 8 bytes aligned.
+// cnt:    Count in 8-byte unit.
+void MacroAssembler::zero_words(Register base, Register cnt)
+{
+  fill_words(base, cnt, zr);
+}
 
-// encode char[] to byte[] in ISO_8859_1
+// base:   Address of a buffer to be zeroed, 8 bytes aligned.
+// cnt:    Immediate count in 8-byte unit.
+#define ShortArraySize (18 * BytesPerLong)
+void MacroAssembler::zero_words(Register base, u_int64_t cnt)
+{
+  int i = cnt & 1;  // store any odd word to start
+  if (i) str(zr, Address(base));
+
+  if (cnt <= ShortArraySize / BytesPerLong) {
+    for (; i < (int)cnt; i += 2)
+      stp(zr, zr, Address(base, i * wordSize));
+  } else {
+    const int unroll = 4; // Number of stp(zr, zr) instructions we'll unroll
+    int remainder = cnt % (2 * unroll);
+    for (; i < remainder; i += 2)
+      stp(zr, zr, Address(base, i * wordSize));
+
+    Label loop;
+    Register cnt_reg = rscratch1;
+    Register loop_base = rscratch2;
+    cnt = cnt - remainder;
+    mov(cnt_reg, cnt);
+    // adjust base and prebias by -2 * wordSize so we can pre-increment
+    add(loop_base, base, (remainder - 2) * wordSize);
+    bind(loop);
+    sub(cnt_reg, cnt_reg, 2 * unroll);
+    for (i = 1; i < unroll; i++)
+      stp(zr, zr, Address(loop_base, 2 * i * wordSize));
+    stp(zr, zr, Address(pre(loop_base, 2 * unroll * wordSize)));
+    cbnz(cnt_reg, loop);
+  }
+}
+
+// base:   Address of a buffer to be filled, 8 bytes aligned.
+// cnt:    Count in 8-byte unit.
+// value:  Value to be filled with.
+// base will point to the end of the buffer after filling.
+void MacroAssembler::fill_words(Register base, Register cnt, Register value)
+{
+//  Algorithm:
+//
+//    scratch1 = cnt & 7;
+//    cnt -= scratch1;
+//    p += scratch1;
+//    switch (scratch1) {
+//      do {
+//        cnt -= 8;
+//          p[-8] = v;
+//        case 7:
+//          p[-7] = v;
+//        case 6:
+//          p[-6] = v;
+//          // ...
+//        case 1:
+//          p[-1] = v;
+//        case 0:
+//          p += 8;
+//      } while (cnt);
+//    }
+
+  assert_different_registers(base, cnt, value, rscratch1, rscratch2);
+
+  Label entry, loop;
+  const int unroll = 8; // Number of str instructions we'll unroll
+
+  andr(rscratch1, cnt, unroll - 1);  // tmp1 = cnt % unroll
+  cbz(rscratch1, entry);
+  sub(cnt, cnt, rscratch1);          // cnt -= tmp1
+  // base always points to the end of the region we're about to fill
+  add(base, base, rscratch1, Assembler::LSL, 3);
+  adr(rscratch2, entry);
+  sub(rscratch2, rscratch2, rscratch1, Assembler::LSL, 2);
+  br(rscratch2);
+  bind(loop);
+  add(base, base, unroll * 8);
+  sub(cnt, cnt, unroll);
+  for (int i = -unroll; i < 0; i++)
+    str(value, Address(base, i * 8));
+  bind(entry);
+  cbnz(cnt, loop);
+}
+
+// Intrinsic for sun/nio/cs/ISO_8859_1$Encoder.implEncodeISOArray and
+// java/lang/StringUTF16.compress.
 void MacroAssembler::encode_iso_array(Register src, Register dst,
                       Register len, Register result,
                       FloatRegister Vtmp1, FloatRegister Vtmp2,
@@ -4734,6 +4840,90 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
 
     BIND(DONE);
       sub(result, result, len); // Return index where we stopped
+                                // Return len == 0 if we processed all
+                                // characters
+}
+
+
+// Inflate byte[] array to char[].
+void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len,
+                                        FloatRegister vtmp1, FloatRegister vtmp2, FloatRegister vtmp3,
+                                        Register tmp4) {
+  Label big, done;
+
+  assert_different_registers(src, dst, len, tmp4, rscratch1);
+
+  fmovd(vtmp1 , zr);
+  lsrw(rscratch1, len, 3);
+
+  cbnzw(rscratch1, big);
+
+  // Short string: less than 8 bytes.
+  {
+    Label loop, around, tiny;
+
+    subsw(len, len, 4);
+    andw(len, len, 3);
+    br(LO, tiny);
+
+    // Use SIMD to do 4 bytes.
+    ldrs(vtmp2, post(src, 4));
+    zip1(vtmp3, T8B, vtmp2, vtmp1);
+    strd(vtmp3, post(dst, 8));
+
+    cbzw(len, done);
+
+    // Do the remaining bytes by steam.
+    bind(loop);
+    ldrb(tmp4, post(src, 1));
+    strh(tmp4, post(dst, 2));
+    subw(len, len, 1);
+
+    bind(tiny);
+    cbnz(len, loop);
+
+    bind(around);
+    b(done);
+  }
+
+  // Unpack the bytes 8 at a time.
+  bind(big);
+  andw(len, len, 7);
+
+  {
+    Label loop, around;
+
+    bind(loop);
+    ldrd(vtmp2, post(src, 8));
+    sub(rscratch1, rscratch1, 1);
+    zip1(vtmp3, T16B, vtmp2, vtmp1);
+    st1(vtmp3, T8H, post(dst, 16));
+    cbnz(rscratch1, loop);
+
+    bind(around);
+  }
+
+  // Do the tail of up to 8 bytes.
+  sub(src, src, 8);
+  add(src, src, len, ext::uxtw, 0);
+  ldrd(vtmp2, Address(src));
+  sub(dst, dst, 16);
+  add(dst, dst, len, ext::uxtw, 1);
+  zip1(vtmp3, T16B, vtmp2, vtmp1);
+  st1(vtmp3, T8H, Address(dst));
+
+  bind(done);
+}
+
+// Compress char[] array to byte[].
+void MacroAssembler::char_array_compress(Register src, Register dst, Register len,
+                                         FloatRegister tmp1Reg, FloatRegister tmp2Reg,
+                                         FloatRegister tmp3Reg, FloatRegister tmp4Reg,
+                                         Register result) {
+  encode_iso_array(src, dst, len, result,
+                   tmp1Reg, tmp2Reg, tmp3Reg, tmp4Reg);
+  cmp(len, zr);
+  csel(result, result, zr, EQ);
 }
 
 // get_thread() can be called anywhere inside generated code so we

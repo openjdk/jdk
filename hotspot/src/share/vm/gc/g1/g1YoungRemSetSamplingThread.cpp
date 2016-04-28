@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
+#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1YoungRemSetSamplingThread.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
@@ -74,7 +74,7 @@ void G1YoungRemSetSamplingThread::stop_service() {
 void G1YoungRemSetSamplingThread::sample_young_list_rs_lengths() {
   SuspendibleThreadSetJoiner sts;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  G1CollectorPolicy* g1p = g1h->g1_policy();
+  G1Policy* g1p = g1h->g1_policy();
   if (g1p->adaptive_young_list_length()) {
     int regions_visited = 0;
     HeapRegion* hr = g1h->young_list()->first_region();

@@ -31,7 +31,7 @@ import compiler.whitebox.CompilerWhiteBoxTest;
  * @build SetDontInlineMethodTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCase$Helper::* SetDontInlineMethodTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::* SetDontInlineMethodTest
  * @summary testing of WB::testSetDontInlineMethod()
  * @author igor.ignatyev@oracle.com
  */

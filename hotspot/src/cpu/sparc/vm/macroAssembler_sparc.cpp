@@ -3257,12 +3257,12 @@ void MacroAssembler::eden_allocate(
     if (var_size_in_bytes->is_valid()) {
       // size is unknown at compile time
       cmp(free, var_size_in_bytes);
-      br(Assembler::lessUnsigned, false, Assembler::pn, slow_case); // if there is not enough space go the slow case
+      brx(Assembler::lessUnsigned, false, Assembler::pn, slow_case); // if there is not enough space go the slow case
       delayed()->add(obj, var_size_in_bytes, end);
     } else {
       // size is known at compile time
       cmp(free, con_size_in_bytes);
-      br(Assembler::lessUnsigned, false, Assembler::pn, slow_case); // if there is not enough space go the slow case
+      brx(Assembler::lessUnsigned, false, Assembler::pn, slow_case); // if there is not enough space go the slow case
       delayed()->add(obj, con_size_in_bytes, end);
     }
     // Compare obj with the value at top_addr; if still equal, swap the value of
@@ -3970,6 +3970,14 @@ void MacroAssembler::card_write_barrier_post(Register store_addr, Register new_v
   assert(bs->kind() == BarrierSet::CardTableForRS ||
          bs->kind() == BarrierSet::CardTableExtension, "wrong barrier");
   card_table_write(bs->byte_map_base, tmp, store_addr);
+}
+
+void MacroAssembler::load_mirror(Register mirror, Register method) {
+  const int mirror_offset = in_bytes(Klass::java_mirror_offset());
+  ld_ptr(method, in_bytes(Method::const_offset()), mirror);
+  ld_ptr(mirror, in_bytes(ConstMethod::constants_offset()), mirror);
+  ld_ptr(mirror, ConstantPool::pool_holder_offset_in_bytes(), mirror);
+  ld_ptr(mirror, mirror_offset, mirror);
 }
 
 void MacroAssembler::load_klass(Register src_oop, Register klass) {

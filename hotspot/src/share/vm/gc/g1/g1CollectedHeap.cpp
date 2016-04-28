@@ -45,6 +45,7 @@
 #include "gc/g1/g1MarkSweep.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
+#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/g1/g1RemSet.inline.hpp"
 #include "gc/g1/g1RootClosures.hpp"
@@ -97,7 +98,7 @@ public:
   RefineCardTableEntryClosure() : _concurrent(true) { }
 
   bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
-    bool oops_into_cset = G1CollectedHeap::heap()->g1_rem_set()->refine_card(card_ptr, worker_i, false);
+    bool oops_into_cset = G1CollectedHeap::heap()->g1_rem_set()->refine_card(card_ptr, worker_i, NULL);
     // This path is executed by the concurrent refine or mutator threads,
     // concurrently, and so we do not care if card_ptr contains references
     // that point into the collection set.
@@ -1744,10 +1745,11 @@ void G1CollectedHeap::shrink(size_t shrink_bytes) {
 
 // Public methods.
 
-G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
+G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   CollectedHeap(),
-  _g1_policy(policy_),
-  _collection_set(this),
+  _collector_policy(collector_policy),
+  _g1_policy(create_g1_policy()),
+  _collection_set(this, _g1_policy),
   _dirty_card_queue_set(false),
   _is_alive_closure_cm(this),
   _is_alive_closure_stw(this),
@@ -1987,7 +1989,7 @@ jint G1CollectedHeap::initialize() {
   }
 
   // Perform any initialization actions delegated to the policy.
-  g1_policy()->init();
+  g1_policy()->init(this, &_collection_set);
 
   JavaThread::satb_mark_queue_set().initialize(SATB_Q_CBL_mon,
                                                SATB_Q_FL_lock,
@@ -2056,7 +2058,6 @@ size_t G1CollectedHeap::conservative_max_heap_alignment() {
 }
 
 void G1CollectedHeap::post_initialize() {
-  CollectedHeap::post_initialize();
   ref_processing_init();
 }
 
@@ -2134,7 +2135,7 @@ void G1CollectedHeap::ref_processing_init() {
 }
 
 CollectorPolicy* G1CollectedHeap::collector_policy() const {
-  return g1_policy();
+  return _collector_policy;
 }
 
 size_t G1CollectedHeap::capacity() const {
@@ -3088,28 +3089,6 @@ class VerifyRegionRemSetClosure : public HeapRegionClosure {
     }
 };
 
-#ifdef ASSERT
-class VerifyCSetClosure: public HeapRegionClosure {
-public:
-  bool doHeapRegion(HeapRegion* hr) {
-    // Here we check that the CSet region's RSet is ready for parallel
-    // iteration. The fields that we'll verify are only manipulated
-    // when the region is part of a CSet and is collected. Afterwards,
-    // we reset these fields when we clear the region's RSet (when the
-    // region is freed) so they are ready when the region is
-    // re-allocated. The only exception to this is if there's an
-    // evacuation failure and instead of freeing the region we leave
-    // it in the heap. In that case, we reset these fields during
-    // evacuation failure handling.
-    guarantee(hr->rem_set()->verify_ready_for_par_iteration(), "verification");
-
-    // Here's a good place to add any other checks we'd like to
-    // perform on CSet regions.
-    return false;
-  }
-};
-#endif // ASSERT
-
 uint G1CollectedHeap::num_task_queues() const {
   return _task_queues->size();
 }
@@ -3351,11 +3330,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
             hr = hr->next_in_collection_set();
           }
         }
-
-#ifdef ASSERT
-        VerifyCSetClosure cl;
-        collection_set_iterate(&cl);
-#endif // ASSERT
 
         // Initialize the GC alloc regions.
         _allocator->init_gc_alloc_regions(evacuation_info);
@@ -4859,7 +4833,7 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head, EvacuationInfo& e
   // head and length, and unlink any young regions in the code below
   _young_list->clear();
 
-  G1CollectorPolicy* policy = g1_policy();
+  G1Policy* policy = g1_policy();
 
   double start_sec = os::elapsedTime();
   bool non_young = true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,7 @@ class Invoke;
 class SwitchRange;
 class LIRItem;
 
-define_array(LIRItemArray, LIRItem*)
-define_stack(LIRItemList, LIRItemArray)
+typedef GrowableArray<LIRItem*> LIRItemList;
 
 class SwitchRange: public CompilationResourceObj {
  private:
@@ -56,15 +55,12 @@ class SwitchRange: public CompilationResourceObj {
   BlockBegin* sux() const { return _sux; }
 };
 
-define_array(SwitchRangeArray, SwitchRange*)
-define_stack(SwitchRangeList, SwitchRangeArray)
-
+typedef GrowableArray<SwitchRange*> SwitchRangeArray;
+typedef GrowableArray<SwitchRange*> SwitchRangeList;
 
 class ResolveNode;
 
-define_array(NodeArray, ResolveNode*);
-define_stack(NodeList, NodeArray);
-
+typedef GrowableArray<ResolveNode*> NodeList;
 
 // Node objects form a directed graph of LIR_Opr
 // Edges between Nodes represent moves from one Node to its destinations
@@ -86,7 +82,7 @@ class ResolveNode: public CompilationResourceObj {
   // accessors
   LIR_Opr operand() const           { return _operand; }
   int no_of_destinations() const    { return _destinations.length(); }
-  ResolveNode* destination_at(int i)     { return _destinations[i]; }
+  ResolveNode* destination_at(int i)     { return _destinations.at(i); }
   bool assigned() const             { return _assigned; }
   bool visited() const              { return _visited; }
   bool start_node() const           { return _start_node; }

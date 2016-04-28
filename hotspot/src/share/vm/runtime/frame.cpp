@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -396,6 +396,11 @@ void frame::interpreter_frame_set_method(Method* method) {
   *interpreter_frame_method_addr() = method;
 }
 
+void frame::interpreter_frame_set_mirror(oop mirror) {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  *interpreter_frame_mirror_addr() = mirror;
+}
+
 jint frame::interpreter_frame_bci() const {
   assert(is_interpreted_frame(), "interpreted frame expected");
   address bcp = interpreter_frame_bcp();
@@ -665,10 +670,12 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
       nmethod* nm = (nmethod*)_cb;
       Method* m = nm->method();
       if (m != NULL) {
+        st->print("J %d%s", nm->compile_id(), (nm->is_osr_method() ? "%" : ""));
+        if (nm->compiler() != NULL) {
+          st->print(" %s", nm->compiler()->name());
+        }
         m->name_and_sig_as_C_string(buf, buflen);
-        st->print("J %d%s %s ",
-                  nm->compile_id(), (nm->is_osr_method() ? "%" : ""),
-                  ((nm->compiler() != NULL) ? nm->compiler()->name() : ""));
+        st->print(" %s", buf);
         ModuleEntry* module = m->method_holder()->module();
         if (module->is_named()) {
           module->name()->as_C_string(buf, buflen);
@@ -676,8 +683,8 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
           module->version()->as_C_string(buf, buflen);
           st->print("@%s", buf);
         }
-        st->print("%s (%d bytes) @ " PTR_FORMAT " [" PTR_FORMAT "+" INTPTR_FORMAT "]",
-                  buf, m->code_size(), p2i(_pc), p2i(_cb->code_begin()), _pc - _cb->code_begin());
+        st->print(" (%d bytes) @ " PTR_FORMAT " [" PTR_FORMAT "+" INTPTR_FORMAT "]",
+                  m->code_size(), p2i(_pc), p2i(_cb->code_begin()), _pc - _cb->code_begin());
 #if INCLUDE_JVMCI
         char* jvmciName = nm->jvmci_installed_code_name(buf, buflen);
         if (jvmciName != NULL) {
@@ -850,8 +857,7 @@ oop* frame::interpreter_callee_receiver_addr(Symbol* signature) {
 }
 
 
-void frame::oops_interpreted_do(OopClosure* f, CLDClosure* cld_f,
-    const RegisterMap* map, bool query_oop_map_cache) {
+void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool query_oop_map_cache) {
   assert(is_interpreted_frame(), "Not an interpreted frame");
   assert(map != NULL, "map must be set");
   Thread *thread = Thread::current();
@@ -877,20 +883,15 @@ void frame::oops_interpreted_do(OopClosure* f, CLDClosure* cld_f,
     current->oops_do(f);
   }
 
-  // process fixed part
-  if (cld_f != NULL) {
-    // The method pointer in the frame might be the only path to the method's
-    // klass, and the klass needs to be kept alive while executing. The GCs
-    // don't trace through method pointers, so typically in similar situations
-    // the mirror or the class loader of the klass are installed as a GC root.
-    // To minimize the overhead of doing that here, we ask the GC to pass down a
-    // closure that knows how to keep klasses alive given a ClassLoaderData.
-    cld_f->do_cld(m->method_holder()->class_loader_data());
-  }
-
-  if (m->is_native() PPC32_ONLY(&& m->is_static())) {
+  if (m->is_native()) {
     f->do_oop(interpreter_frame_temp_oop_addr());
   }
+
+  // The method pointer in the frame might be the only path to the method's
+  // klass, and the klass needs to be kept alive while executing. The GCs
+  // don't trace through method pointers, so the mirror of the method's klass
+  // is installed as a GC root.
+  f->do_oop(interpreter_frame_mirror_addr());
 
   int max_locals = m->is_native() ? m->size_of_parameters() : m->max_locals();
 
@@ -1091,7 +1092,7 @@ void frame::oops_entry_do(OopClosure* f, const RegisterMap* map) {
 }
 
 
-void frame::oops_do_internal(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf, RegisterMap* map, bool use_interpreter_oop_map_cache) {
+void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf, RegisterMap* map, bool use_interpreter_oop_map_cache) {
 #ifndef PRODUCT
   // simulate GC crash here to dump java thread in error report
   if (CrashGCForDumpingJavaThread) {
@@ -1100,7 +1101,7 @@ void frame::oops_do_internal(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* 
   }
 #endif
   if (is_interpreted_frame()) {
-    oops_interpreted_do(f, cld_f, map, use_interpreter_oop_map_cache);
+    oops_interpreted_do(f, map, use_interpreter_oop_map_cache);
   } else if (is_entry_frame()) {
     oops_entry_do(f, map);
   } else if (CodeCache::contains(pc())) {
@@ -1145,7 +1146,7 @@ void frame::verify(const RegisterMap* map) {
 #if defined(COMPILER2) || INCLUDE_JVMCI
   assert(DerivedPointerTable::is_empty(), "must be empty before verify");
 #endif
-  oops_do_internal(&VerifyOopClosure::verify_oop, NULL, NULL, (RegisterMap*)map, false);
+  oops_do_internal(&VerifyOopClosure::verify_oop, NULL, (RegisterMap*)map, false);
 }
 
 

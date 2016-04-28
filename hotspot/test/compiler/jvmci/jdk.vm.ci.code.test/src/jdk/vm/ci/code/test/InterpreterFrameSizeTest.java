@@ -33,22 +33,19 @@
  *          jdk.vm.ci/jdk.vm.ci.amd64
  *          jdk.vm.ci/jdk.vm.ci.sparc
  * @compile CodeInstallationTest.java DebugInfoTest.java TestAssembler.java amd64/AMD64TestAssembler.java sparc/SPARCTestAssembler.java
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI compiler.jvmci.code.InterpreterFrameSizeTest
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI jdk.vm.ci.code.test.InterpreterFrameSizeTest
  */
 
-package compiler.jvmci.code;
-
-import java.lang.reflect.Method;
-
-import jdk.vm.ci.code.BytecodeFrame;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.JavaValue;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-
-import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
+package jdk.vm.ci.code.test;
 
 import org.junit.Assert;
 import org.junit.Test;
+
+import jdk.vm.ci.code.BytecodeFrame;
+import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaValue;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public class InterpreterFrameSizeTest extends CodeInstallationTest {
 
@@ -61,7 +58,7 @@ public class InterpreterFrameSizeTest extends CodeInstallationTest {
         try {
             hotspotCodeCache().interpreterFrameSize(null);
         } catch (NullPointerException npe) {
-            System.out.println("threw NPE as expected");
+            // Threw NPE as expected.
             return;
         }
         Assert.fail("expected NullPointerException");
@@ -78,7 +75,6 @@ public class InterpreterFrameSizeTest extends CodeInstallationTest {
         JavaKind[] slotKinds = new JavaKind[numLocals];
         BytecodeFrame frame = new BytecodeFrame(null, resolvedMethod, bci, false, false, values, slotKinds, numLocals, numStack, 0);
         int size = hotspotCodeCache().interpreterFrameSize(frame);
-        System.out.println("Frame size is " + size + " bytes");
         if (size <= 0) {
             Assert.fail("expected non-zero result");
         }

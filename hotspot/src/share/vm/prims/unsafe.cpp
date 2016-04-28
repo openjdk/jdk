@@ -943,7 +943,7 @@ UNSAFE_ENTRY(jclass, Unsafe_DefineAnonymousClass0(JNIEnv *env, jobject unsafe, j
   // this point.   The mirror and any instances of this class have to keep
   // it alive afterwards.
   if (anon_klass() != NULL) {
-    anon_klass->class_loader_data()->set_keep_alive(false);
+    anon_klass->class_loader_data()->dec_keep_alive();
   }
 
   // let caller initialize it as needed...

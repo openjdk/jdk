@@ -420,6 +420,7 @@ static AliasedLoggingFlag const aliased_logging_flags[] = {
   { "TraceLoaderConstraints",    LogLevel::Info,  true,  LOG_TAGS(classload, constraints) },
   { "TraceMonitorInflation",     LogLevel::Debug, true,  LOG_TAGS(monitorinflation) },
   { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LOG_TAGS(safepointcleanup) },
+  { "TraceJVMTIObjectTagging",   LogLevel::Debug, true,  LOG_TAGS(jvmti, objecttagging) },
   { NULL,                        LogLevel::Off,   false, LOG_TAGS(_NO_TAG) }
 };
 
@@ -998,7 +999,7 @@ void log_deprecated_flag(const char* name, bool on, AliasedLoggingFlag alf) {
   int max_tags = sizeof(tagSet)/sizeof(tagSet[0]);
   for (int i = 0; i < max_tags && tagSet[i] != LogTag::__NO_TAG; i++) {
     if (i > 0) {
-      strncat(tagset_buffer, ",", max_tagset_len - strlen(tagset_buffer));
+      strncat(tagset_buffer, "+", max_tagset_len - strlen(tagset_buffer));
     }
     strncat(tagset_buffer, LogTag::name(tagSet[i]), max_tagset_len - strlen(tagset_buffer));
   }
@@ -2115,6 +2116,28 @@ void Arguments::set_g1_gc_flags() {
     FLAG_SET_DEFAULT(GCTimeRatio, 12);
   }
 
+  // Below, we might need to calculate the pause time interval based on
+  // the pause target. When we do so we are going to give G1 maximum
+  // flexibility and allow it to do pauses when it needs to. So, we'll
+  // arrange that the pause interval to be pause time target + 1 to
+  // ensure that a) the pause time target is maximized with respect to
+  // the pause interval and b) we maintain the invariant that pause
+  // time target < pause interval. If the user does not want this
+  // maximum flexibility, they will have to set the pause interval
+  // explicitly.
+
+  if (FLAG_IS_DEFAULT(MaxGCPauseMillis)) {
+    // The default pause time target in G1 is 200ms
+    FLAG_SET_DEFAULT(MaxGCPauseMillis, 200);
+  }
+
+  // Then, if the interval parameter was not set, set it according to
+  // the pause time target (this will also deal with the case when the
+  // pause time target is the default value).
+  if (FLAG_IS_DEFAULT(GCPauseIntervalMillis)) {
+    FLAG_SET_DEFAULT(GCPauseIntervalMillis, MaxGCPauseMillis + 1);
+  }
+
   log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
   log_trace(gc)("ConcGCThreads: %u", ConcGCThreads);
 }
@@ -2618,6 +2641,12 @@ bool Arguments::check_vm_args_consistency() {
       warning("BackgroundCompilation disabled due to CompileTheWorld or ReplayCompiles options.");
     }
     FLAG_SET_CMDLINE(bool, BackgroundCompilation, false);
+  }
+  if (UseCompiler && is_interpreter_only()) {
+    if (!FLAG_IS_DEFAULT(UseCompiler)) {
+      warning("UseCompiler disabled due to -Xint.");
+    }
+    FLAG_SET_CMDLINE(bool, UseCompiler, false);
   }
   return status;
 }
@@ -4510,6 +4539,11 @@ jint Arguments::apply_ergo() {
 
   if (FLAG_IS_CMDLINE(CompressedClassSpaceSize) && !UseCompressedClassPointers) {
     warning("Setting CompressedClassSpaceSize has no effect when compressed class pointers are not used");
+  }
+
+  if (UseOnStackReplacement && !UseLoopCounter) {
+    warning("On-stack-replacement requires loop counters; enabling loop counters");
+    FLAG_SET_DEFAULT(UseLoopCounter, true);
   }
 
 #ifndef PRODUCT

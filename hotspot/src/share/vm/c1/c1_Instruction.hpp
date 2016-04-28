@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,11 +115,8 @@ class   Assert;
 
 // A Value is a reference to the instruction creating the value
 typedef Instruction* Value;
-define_array(ValueArray, Value)
-define_stack(Values, ValueArray)
-
-define_array(ValueStackArray, ValueStack*)
-define_stack(ValueStackStack, ValueStackArray)
+typedef GrowableArray<Value> Values;
+typedef GrowableArray<ValueStack*> ValueStackStack;
 
 // BlockClosure is the base class for block traversal/iteration.
 
@@ -137,14 +134,13 @@ class ValueVisitor: public StackObj {
 
 
 // Some array and list classes
-define_array(BlockBeginArray, BlockBegin*)
-define_stack(_BlockList, BlockBeginArray)
+typedef GrowableArray<BlockBegin*> BlockBeginArray;
 
-class BlockList: public _BlockList {
+class BlockList: public GrowableArray<BlockBegin*> {
  public:
-  BlockList(): _BlockList() {}
-  BlockList(const int size): _BlockList(size) {}
-  BlockList(const int size, BlockBegin* init): _BlockList(size, init) {}
+  BlockList(): GrowableArray<BlockBegin*>() {}
+  BlockList(const int size): GrowableArray<BlockBegin*>(size) {}
+  BlockList(const int size, BlockBegin* init): GrowableArray<BlockBegin*>(size, size, init) {}
 
   void iterate_forward(BlockClosure* closure);
   void iterate_backward(BlockClosure* closure);
@@ -1747,7 +1743,7 @@ LEAF(BlockBegin, StateSplit)
   void remove_predecessor(BlockBegin* pred);
   bool is_predecessor(BlockBegin* pred) const    { return _predecessors.contains(pred); }
   int number_of_preds() const                    { return _predecessors.length(); }
-  BlockBegin* pred_at(int i) const               { return _predecessors[i]; }
+  BlockBegin* pred_at(int i) const               { return _predecessors.at(i); }
 
   // exception handlers potentially invoked by this block
   void add_exception_handler(BlockBegin* b);
@@ -2612,10 +2608,7 @@ class BlockPair: public CompilationResourceObj {
   void set_from(BlockBegin* b) { _from = b; }
 };
 
-
-define_array(BlockPairArray, BlockPair*)
-define_stack(BlockPairList, BlockPairArray)
-
+typedef GrowableArray<BlockPair*> BlockPairList;
 
 inline int         BlockBegin::number_of_sux() const            { assert(_end == NULL || _end->number_of_sux() == _successors.length(), "mismatch"); return _successors.length(); }
 inline BlockBegin* BlockBegin::sux_at(int i) const              { assert(_end == NULL || _end->sux_at(i) == _successors.at(i), "mismatch");          return _successors.at(i); }

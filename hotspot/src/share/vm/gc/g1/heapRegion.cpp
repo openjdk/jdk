@@ -153,6 +153,10 @@ void HeapRegion::setup_heap_region_size(size_t initial_heap_size, size_t max_hea
 
   guarantee(CardsPerRegion == 0, "we should only set it once");
   CardsPerRegion = GrainBytes >> CardTableModRefBS::card_shift;
+
+  if (G1HeapRegionSize != GrainBytes) {
+    FLAG_SET_ERGO(size_t, G1HeapRegionSize, GrainBytes);
+  }
 }
 
 void HeapRegion::reset_after_compaction() {
@@ -187,6 +191,7 @@ void HeapRegion::hr_clear(bool par, bool clear_space, bool locked) {
   zero_marked_bytes();
 
   init_top_at_mark_start();
+  _gc_time_stamp = G1CollectedHeap::heap()->get_gc_time_stamp();
   if (clear_space) clear(SpaceDecorator::Mangle);
 }
 
@@ -204,7 +209,7 @@ void HeapRegion::calc_gc_efficiency() {
   // GC efficiency is the ratio of how much space would be
   // reclaimed over how long we predict it would take to reclaim it.
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  G1CollectorPolicy* g1p = g1h->g1_policy();
+  G1Policy* g1p = g1h->g1_policy();
 
   // Retrieve a prediction of the elapsed time for this region for
   // a mixed gc because the region will only be evacuated during a
@@ -1044,7 +1049,7 @@ HeapWord* G1ContiguousSpace::scan_top() const {
 
 void G1ContiguousSpace::record_timestamp() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  unsigned curr_gc_time_stamp = g1h->get_gc_time_stamp();
+  uint curr_gc_time_stamp = g1h->get_gc_time_stamp();
 
   if (_gc_time_stamp < curr_gc_time_stamp) {
     // Setting the time stamp here tells concurrent readers to look at

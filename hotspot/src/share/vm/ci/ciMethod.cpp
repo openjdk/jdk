@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,6 +202,7 @@ void ciMethod::load_code() {
   _code = (address)arena->Amalloc(code_size());
   memcpy(_code, me->code_base(), code_size());
 
+#if INCLUDE_JVMTI
   // Revert any breakpoint bytecodes in ci's copy
   if (me->number_of_breakpoints() > 0) {
     BreakpointInfo* bp = me->method_holder()->breakpoints();
@@ -211,6 +212,7 @@ void ciMethod::load_code() {
       }
     }
   }
+#endif
 
   // And load the exception table.
   ExceptionTable exc_table(me);

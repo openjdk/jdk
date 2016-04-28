@@ -3399,6 +3399,18 @@ void MacroAssembler::movq(XMMRegister dst, AddressLiteral src) {
   }
 }
 
+void MacroAssembler::setvectmask(Register dst, Register src) {
+  Assembler::movl(dst, 1);
+  Assembler::shlxl(dst, dst, src);
+  Assembler::decl(dst);
+  Assembler::kmovdl(k1, dst);
+  Assembler::movl(dst, src);
+}
+
+void MacroAssembler::restorevectmask() {
+  Assembler::knotwl(k1, k0);
+}
+
 void MacroAssembler::movdbl(XMMRegister dst, AddressLiteral src) {
   if (reachable(src)) {
     if (UseXmmLoadAndClearUpper) {
@@ -6693,6 +6705,14 @@ void MacroAssembler::restore_cpu_control_state_after_jni() {
 #endif // _LP64
 }
 
+void MacroAssembler::load_mirror(Register mirror, Register method) {
+  // get mirror
+  const int mirror_offset = in_bytes(Klass::java_mirror_offset());
+  movptr(mirror, Address(method, Method::const_offset()));
+  movptr(mirror, Address(mirror, ConstMethod::constants_offset()));
+  movptr(mirror, Address(mirror, ConstantPool::pool_holder_offset_in_bytes()));
+  movptr(mirror, Address(mirror, mirror_offset));
+}
 
 void MacroAssembler::load_klass(Register dst, Register src) {
 #ifdef _LP64

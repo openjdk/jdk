@@ -357,7 +357,7 @@ void BlockListBuilder::mark_loops() {
 
   _active = BitMap(BlockBegin::number_of_blocks());         _active.clear();
   _visited = BitMap(BlockBegin::number_of_blocks());        _visited.clear();
-  _loop_map = intArray(BlockBegin::number_of_blocks(), 0);
+  _loop_map = intArray(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), 0);
   _next_loop_index = 0;
   _next_block_number = _blocks.length();
 
@@ -1366,7 +1366,7 @@ void GraphBuilder::lookup_switch() {
   } else {
     // collect successors & keys
     BlockList* sux = new BlockList(l + 1, NULL);
-    intArray* keys = new intArray(l, 0);
+    intArray* keys = new intArray(l, l, 0);
     int i;
     bool has_bb = false;
     for (i = 0; i < l; i++) {
@@ -1563,6 +1563,8 @@ void GraphBuilder::method_return(Value x) {
 }
 
 Value GraphBuilder::make_constant(ciConstant field_value, ciField* field) {
+  if (!field_value.is_valid())  return NULL;
+
   BasicType field_type = field_value.basic_type();
   ValueType* value = as_ValueType(field_value);
 
@@ -1630,9 +1632,8 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
     case Bytecodes::_getstatic: {
       // check for compile-time constants, i.e., initialized static final fields
       Value constant = NULL;
-      if (field->is_constant() && !PatchALot) {
+      if (field->is_static_constant() && !PatchALot) {
         ciConstant field_value = field->constant_value();
-        // Stable static fields are checked for non-default values in ciField::initialize_from().
         assert(!field->is_stable() || !field_value.is_null_or_zero(),
                "stable static w/ default value shouldn't be a constant");
         constant = make_constant(field_value, field);
@@ -1665,31 +1666,18 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
       Value constant = NULL;
       obj = apop();
       ObjectType* obj_type = obj->type()->as_ObjectType();
-      if (obj_type->is_constant() && !PatchALot) {
+      if (field->is_constant() && obj_type->is_constant() && !PatchALot) {
         ciObject* const_oop = obj_type->constant_value();
         if (!const_oop->is_null_object() && const_oop->is_loaded()) {
-          if (field->is_constant()) {
-            ciConstant field_value = field->constant_value_of(const_oop);
-            if (FoldStableValues && field->is_stable() && field_value.is_null_or_zero()) {
-              // Stable field with default value can't be constant.
-              constant = NULL;
-            } else {
-              constant = make_constant(field_value, field);
-            }
-          } else {
-            // For CallSite objects treat the target field as a compile time constant.
-            if (const_oop->is_call_site()) {
+          ciConstant field_value = field->constant_value_of(const_oop);
+          if (field_value.is_valid()) {
+            constant = make_constant(field_value, field);
+            // For CallSite objects add a dependency for invalidation of the optimization.
+            if (field->is_call_site_target()) {
               ciCallSite* call_site = const_oop->as_call_site();
-              if (field->is_call_site_target()) {
-                ciMethodHandle* target = call_site->get_target();
-                if (target != NULL) {  // just in case
-                  ciConstant field_val(T_OBJECT, target);
-                  constant = new Constant(as_ValueType(field_val));
-                  // Add a dependence for invalidation of the optimization.
-                  if (!call_site->is_constant_call_site()) {
-                    dependency_recorder()->assert_call_site_target_value(call_site, target);
-                  }
-                }
+              if (!call_site->is_constant_call_site()) {
+                ciMethodHandle* target = field_value.as_object()->as_method_handle();
+                dependency_recorder()->assert_call_site_target_value(call_site, target);
               }
             }
           }
@@ -1772,7 +1760,7 @@ void GraphBuilder::check_args_for_profiling(Values* obj_args, int expected) {
   bool ignored_will_link;
   ciSignature* declared_signature = NULL;
   ciMethod* real_target = method()->get_method_at_bci(bci(), ignored_will_link, &declared_signature);
-  assert(expected == obj_args->length() || real_target->is_method_handle_intrinsic(), "missed on arg?");
+  assert(expected == obj_args->max_length() || real_target->is_method_handle_intrinsic(), "missed on arg?");
 #endif
 }
 
@@ -1783,7 +1771,7 @@ Values* GraphBuilder::collect_args_for_profiling(Values* args, ciMethod* target,
   if (obj_args == NULL) {
     return NULL;
   }
-  int s = obj_args->size();
+  int s = obj_args->max_length();
   // if called through method handle invoke, some arguments may have been popped
   for (int i = start, j = 0; j < s && i < args->length(); i++) {
     if (args->at(i)->type()->is_object_kind()) {
@@ -2220,7 +2208,7 @@ void GraphBuilder::new_multi_array(int dimensions) {
   ciKlass* klass = stream()->get_klass(will_link);
   ValueStack* state_before = !klass->is_loaded() || PatchALot ? copy_state_before() : copy_state_exhandling();
 
-  Values* dims = new Values(dimensions, NULL);
+  Values* dims = new Values(dimensions, dimensions, NULL);
   // fill in all dimensions
   int i = dimensions;
   while (i-- > 0) dims->at_put(i, ipop());
@@ -3823,9 +3811,9 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
       int start = 0;
       Values* obj_args = args_list_for_profiling(callee, start, has_receiver);
       if (obj_args != NULL) {
-        int s = obj_args->size();
+        int s = obj_args->max_length();
         // if called through method handle invoke, some arguments may have been popped
-        for (int i = args_base+start, j = 0; j < obj_args->size() && i < state()->stack_size(); ) {
+        for (int i = args_base+start, j = 0; j < obj_args->max_length() && i < state()->stack_size(); ) {
           Value v = state()->stack_at_inc(i);
           if (v->type()->is_object_kind()) {
             obj_args->push(v);
@@ -4142,7 +4130,7 @@ void GraphBuilder::push_scope_for_jsr(BlockBegin* jsr_continuation, int jsr_dest
   // properly clone all blocks in jsr region as well as exception
   // handlers containing rets
   BlockList* new_bci2block = new BlockList(bci2block()->length());
-  new_bci2block->push_all(bci2block());
+  new_bci2block->appendAll(bci2block());
   data->set_bci2block(new_bci2block);
   data->set_scope(scope());
   data->setup_jsr_xhandlers();
