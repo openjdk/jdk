@@ -667,7 +667,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
   }
 
   void post_to_env(JvmtiEnv* env, bool caching_needed) {
-    if (env->phase() == JVMTI_PHASE_PRIMORDIAL) {
+    if (env->phase() == JVMTI_PHASE_PRIMORDIAL && !env->early_class_hook_env()) {
       return;
     }
     unsigned char *new_data = NULL;
