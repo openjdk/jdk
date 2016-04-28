@@ -2846,7 +2846,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
     assert( !addp->is_AddP() ||
             addp->in(AddPNode::Base)->is_top() || // Top OK for allocation
             addp->in(AddPNode::Base) == n->in(AddPNode::Base),
-            "Base pointers must match" );
+            "Base pointers must match (addp %u)", addp->_idx );
 #ifdef _LP64
     if ((UseCompressedOops || UseCompressedClassPointers) &&
         addp->Opcode() == Op_ConP &&
@@ -2880,6 +2880,21 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
             nn = new DecodeNNode(nn, t);
           } else {
             nn = new DecodeNKlassNode(nn, t);
+          }
+          // Check for succeeding AddP which uses the same Base.
+          // Otherwise we will run into the assertion above when visiting that guy.
+          for (uint i = 0; i < n->outcnt(); ++i) {
+            Node *out_i = n->raw_out(i);
+            if (out_i && out_i->is_AddP() && out_i->in(AddPNode::Base) == addp) {
+              out_i->set_req(AddPNode::Base, nn);
+#ifdef ASSERT
+              for (uint j = 0; j < out_i->outcnt(); ++j) {
+                Node *out_j = out_i->raw_out(j);
+                assert(out_j == NULL || !out_j->is_AddP() || out_j->in(AddPNode::Base) != addp,
+                       "more than 2 AddP nodes in a chain (out_j %u)", out_j->_idx);
+              }
+#endif
+            }
           }
           n->set_req(AddPNode::Base, nn);
           n->set_req(AddPNode::Address, nn);
