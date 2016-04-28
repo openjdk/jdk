@@ -389,7 +389,7 @@ JVM_ENTRY(jobject, JVM_InitProperties(JNIEnv *env, jobject properties))
       PUTPROP(props, "sun.nio.MaxDirectMemorySize", "-1");
     } else {
       char as_chars[256];
-      jio_snprintf(as_chars, sizeof(as_chars), SIZE_FORMAT, MaxDirectMemorySize);
+      jio_snprintf(as_chars, sizeof(as_chars), JULONG_FORMAT, MaxDirectMemorySize);
       PUTPROP(props, "sun.nio.MaxDirectMemorySize", as_chars);
     }
   }
