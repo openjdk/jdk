@@ -25,6 +25,7 @@
 package java.lang;
 
 import jdk.internal.misc.VM;
+import jdk.internal.reflect.MethodAccessor;
 
 import java.io.PrintStream;
 import java.lang.StackWalker.Option;
@@ -1081,13 +1082,13 @@ final class StackStreamFactory {
     }
 
     private static boolean isReflectionFrame(Class<?> c) {
-        if (c.getName().startsWith("sun.reflect") &&
-                !sun.reflect.MethodAccessor.class.isAssignableFrom(c)) {
-            throw new InternalError("Not sun.reflect.MethodAccessor: " + c.toString());
+        if (c.getName().startsWith("jdk.internal.reflect") &&
+                !MethodAccessor.class.isAssignableFrom(c)) {
+            throw new InternalError("Not jdk.internal.reflect.MethodAccessor: " + c.toString());
         }
         // ## should filter all @Hidden frames?
         return c == Method.class ||
-                sun.reflect.MethodAccessor.class.isAssignableFrom(c) ||
+                MethodAccessor.class.isAssignableFrom(c) ||
                 c.getName().startsWith("java.lang.invoke.LambdaForm");
     }
 

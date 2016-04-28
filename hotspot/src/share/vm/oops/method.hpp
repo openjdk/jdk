@@ -70,9 +70,6 @@ class Method : public Metadata {
   AccessFlags       _access_flags;               // Access flags
   int               _vtable_index;               // vtable index of this method (see VtableIndexFlag)
                                                  // note: can have vtables with >2**16 elements (because of inheritance)
-#ifdef CC_INTERP
-  int               _result_index;               // C++ interpreter needs for converting results to/from stack
-#endif
   u2                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
 
   // Flags
@@ -172,11 +169,6 @@ class Method : public Metadata {
     return constMethod()->type_annotations();
   }
 
-#ifdef CC_INTERP
-  void set_result_index(BasicType type);
-  int  result_index()                            { return _result_index; }
-#endif
-
   // Helper routine: get klass name + "." + method name + signature as
   // C string, for the purpose of providing more useful NoSuchMethodErrors
   // and fatal error handling. The string is allocated in resource
@@ -196,8 +188,18 @@ class Method : public Metadata {
   }
 
   // JVMTI breakpoints
+#if !INCLUDE_JVMTI
+  Bytecodes::Code orig_bytecode_at(int bci) const {
+    ShouldNotReachHere();
+    return Bytecodes::_shouldnotreachhere;
+  }
+  void set_orig_bytecode_at(int bci, Bytecodes::Code code) {
+    ShouldNotReachHere();
+  };
+  u2   number_of_breakpoints() const {return 0;}
+#else // !INCLUDE_JVMTI
   Bytecodes::Code orig_bytecode_at(int bci) const;
-  void        set_orig_bytecode_at(int bci, Bytecodes::Code code);
+  void set_orig_bytecode_at(int bci, Bytecodes::Code code);
   void set_breakpoint(int bci);
   void clear_breakpoint(int bci);
   void clear_all_breakpoints();
@@ -230,6 +232,7 @@ class Method : public Metadata {
       mcs->clear_number_of_breakpoints();
     }
   }
+#endif // !INCLUDE_JVMTI
 
   // index into InstanceKlass methods() array
   // note: also used by jfr
@@ -553,7 +556,6 @@ class Method : public Metadata {
   void compute_size_of_parameters(Thread *thread); // word size of parameters (receiver if any + arguments)
   Symbol* klass_name() const;                    // returns the name of the method holder
   BasicType result_type() const;                 // type of the method result
-  int result_type_index() const;                 // type index of the method result
   bool is_returning_oop() const                  { BasicType r = result_type(); return (r == T_OBJECT || r == T_ARRAY); }
   bool is_returning_fp() const                   { BasicType r = result_type(); return (r == T_FLOAT || r == T_DOUBLE); }
 
@@ -654,9 +656,6 @@ class Method : public Metadata {
   // interpreter support
   static ByteSize const_offset()                 { return byte_offset_of(Method, _constMethod       ); }
   static ByteSize access_flags_offset()          { return byte_offset_of(Method, _access_flags      ); }
-#ifdef CC_INTERP
-  static ByteSize result_index_offset()          { return byte_offset_of(Method, _result_index ); }
-#endif /* CC_INTERP */
   static ByteSize from_compiled_offset()         { return byte_offset_of(Method, _from_compiled_entry); }
   static ByteSize code_offset()                  { return byte_offset_of(Method, _code); }
   static ByteSize method_data_offset()           {
@@ -1047,6 +1046,8 @@ class CompressedLineNumberReadStream: public CompressedReadStream {
 };
 
 
+#if INCLUDE_JVMTI
+
 /// Fast Breakpoints.
 
 // If this structure gets more complicated (because bpts get numerous),
@@ -1090,6 +1091,8 @@ class BreakpointInfo : public CHeapObj<mtClass> {
   void set(Method* method);
   void clear(Method* method);
 };
+
+#endif // INCLUDE_JVMTI
 
 // Utility class for access exception handlers
 class ExceptionTable : public StackObj {

@@ -2116,6 +2116,28 @@ void Arguments::set_g1_gc_flags() {
     FLAG_SET_DEFAULT(GCTimeRatio, 12);
   }
 
+  // Below, we might need to calculate the pause time interval based on
+  // the pause target. When we do so we are going to give G1 maximum
+  // flexibility and allow it to do pauses when it needs to. So, we'll
+  // arrange that the pause interval to be pause time target + 1 to
+  // ensure that a) the pause time target is maximized with respect to
+  // the pause interval and b) we maintain the invariant that pause
+  // time target < pause interval. If the user does not want this
+  // maximum flexibility, they will have to set the pause interval
+  // explicitly.
+
+  if (FLAG_IS_DEFAULT(MaxGCPauseMillis)) {
+    // The default pause time target in G1 is 200ms
+    FLAG_SET_DEFAULT(MaxGCPauseMillis, 200);
+  }
+
+  // Then, if the interval parameter was not set, set it according to
+  // the pause time target (this will also deal with the case when the
+  // pause time target is the default value).
+  if (FLAG_IS_DEFAULT(GCPauseIntervalMillis)) {
+    FLAG_SET_DEFAULT(GCPauseIntervalMillis, MaxGCPauseMillis + 1);
+  }
+
   log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
   log_trace(gc)("ConcGCThreads: %u", ConcGCThreads);
 }

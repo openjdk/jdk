@@ -30,8 +30,8 @@ import java.lang.reflect.*;
 import java.util.Arrays;
 import java.util.Vector;
 import javax.sql.rowset.RowSetWarning;
-import sun.reflect.CallerSensitive;
-import sun.reflect.Reflection;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 import sun.reflect.misc.ReflectUtil;
 
 /**
@@ -141,7 +141,7 @@ public class SerialJavaObject implements Serializable, Cloneable {
                  * Check if the caller is allowed to access the specified class's package.
                  * If access is denied, throw a SecurityException.
                  */
-                Class<?> caller = sun.reflect.Reflection.getCallerClass();
+                Class<?> caller = Reflection.getCallerClass();
                 if (ReflectUtil.needsPackageAccessCheck(caller.getClassLoader(),
                                                         c.getClassLoader())) {
                     ReflectUtil.checkPackageAccess(c);

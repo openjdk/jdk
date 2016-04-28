@@ -48,7 +48,6 @@ double G1CollectionSet::predict_region_elapsed_time_ms(HeapRegion* hr) {
   return _policy->predict_region_elapsed_time_ms(hr, collector_state()->gcs_are_young());
 }
 
-
 G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _g1(g1h),
   _policy(policy),
@@ -68,7 +67,8 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _inc_recorded_rs_lengths(0),
   _inc_recorded_rs_lengths_diffs(0),
   _inc_predicted_elapsed_time_ms(0.0),
-  _inc_predicted_elapsed_time_ms_diffs(0.0) {}
+  _inc_predicted_elapsed_time_ms_diffs(0.0),
+  _inc_region_length(0) {}
 
 G1CollectionSet::~G1CollectionSet() {
   delete _cset_chooser;
@@ -78,6 +78,9 @@ void G1CollectionSet::init_region_lengths(uint eden_cset_region_length,
                                           uint survivor_cset_region_length) {
   _eden_region_length     = eden_cset_region_length;
   _survivor_region_length = survivor_cset_region_length;
+
+  assert(young_region_length() == _inc_region_length, "should match %u == %u", young_region_length(), _inc_region_length);
+
   _old_region_length      = 0;
 }
 
@@ -107,6 +110,7 @@ void G1CollectionSet::start_incremental_building() {
   _inc_head = NULL;
   _inc_tail = NULL;
   _inc_bytes_used_before = 0;
+  _inc_region_length = 0;
 
   _inc_recorded_rs_lengths = 0;
   _inc_recorded_rs_lengths_diffs = 0;
@@ -177,8 +181,10 @@ void G1CollectionSet::update_young_region_prediction(HeapRegion* hr,
 
 void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
   assert(hr->is_young(), "invariant");
-  assert(hr->young_index_in_cset() > -1, "should have already been set");
   assert(_inc_build_state == Active, "Precondition");
+
+  hr->set_young_index_in_cset(_inc_region_length);
+  _inc_region_length++;
 
   // This routine is used when:
   // * adding survivor regions to the incremental cset at the end of an
@@ -306,6 +312,8 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms) {
     hr = hr->get_next_young_region();
   }
 
+  verify_young_cset_indices();
+
   // Clear the fields that point to the survivor list - they are all young now.
   young_list->clear_survivors();
 
@@ -424,3 +432,25 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
   double non_young_end_time_sec = os::elapsedTime();
   phase_times()->record_non_young_cset_choice_time_ms((non_young_end_time_sec - non_young_start_time_sec) * 1000.0);
 }
+
+#ifdef ASSERT
+void G1CollectionSet::verify_young_cset_indices() const {
+  ResourceMark rm;
+  uint* heap_region_indices = NEW_RESOURCE_ARRAY(uint, young_region_length());
+  for (uint i = 0; i < young_region_length(); ++i) {
+    heap_region_indices[i] = (uint)-1;
+  }
+
+  for (HeapRegion* hr = _inc_head; hr != NULL; hr = hr->next_in_collection_set()) {
+    const int idx = hr->young_index_in_cset();
+    assert(idx > -1, "must be set for all inc cset regions");
+    assert((uint)idx < young_region_length(), "young cset index too large");
+
+    assert(heap_region_indices[idx] == (uint)-1,
+           "index %d used by multiple regions, first use by %u, second by %u",
+           idx, heap_region_indices[idx], hr->hrm_index());
+
+    heap_region_indices[idx] = hr->hrm_index();
+  }
+}
+#endif

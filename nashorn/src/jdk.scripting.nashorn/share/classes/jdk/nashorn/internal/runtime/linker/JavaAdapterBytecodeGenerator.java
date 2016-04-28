@@ -72,7 +72,7 @@ import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.linker.AdaptationResult.Outcome;
-import sun.reflect.CallerSensitive;
+import jdk.internal.reflect.CallerSensitive;
 
 /**
  * Generates bytecode for a Java adapter class. Used by the {@link JavaAdapterFactory}.

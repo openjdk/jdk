@@ -976,7 +976,19 @@ void GraphBuilder::store_indexed(BasicType type) {
       (array->as_NewArray() && array->as_NewArray()->length() && array->as_NewArray()->length()->type()->is_constant())) {
     length = append(new ArrayLength(array, state_before));
   }
-  StoreIndexed* result = new StoreIndexed(array, index, length, type, value, state_before);
+  ciType* array_type = array->declared_type();
+  bool check_boolean = false;
+  if (array_type != NULL) {
+    if (array_type->is_loaded() &&
+      array_type->as_array_klass()->element_type()->basic_type() == T_BOOLEAN) {
+      assert(type == T_BYTE, "boolean store uses bastore");
+      Value mask = append(new Constant(new IntConstant(1)));
+      value = append(new LogicOp(Bytecodes::_iand, value, mask));
+    }
+  } else if (type == T_BYTE) {
+    check_boolean = true;
+  }
+  StoreIndexed* result = new StoreIndexed(array, index, length, type, value, state_before, check_boolean);
   append(result);
   _memory->store_value(value);
 
@@ -1443,6 +1455,36 @@ void GraphBuilder::method_return(Value x) {
     need_mem_bar = true;
   }
 
+  BasicType bt = method()->return_type()->basic_type();
+  switch (bt) {
+    case T_BYTE:
+    {
+      Value shift = append(new Constant(new IntConstant(24)));
+      x = append(new ShiftOp(Bytecodes::_ishl, x, shift));
+      x = append(new ShiftOp(Bytecodes::_ishr, x, shift));
+      break;
+    }
+    case T_SHORT:
+    {
+      Value shift = append(new Constant(new IntConstant(16)));
+      x = append(new ShiftOp(Bytecodes::_ishl, x, shift));
+      x = append(new ShiftOp(Bytecodes::_ishr, x, shift));
+      break;
+    }
+    case T_CHAR:
+    {
+      Value mask = append(new Constant(new IntConstant(0xFFFF)));
+      x = append(new LogicOp(Bytecodes::_iand, x, mask));
+      break;
+    }
+    case T_BOOLEAN:
+    {
+      Value mask = append(new Constant(new IntConstant(1)));
+      x = append(new LogicOp(Bytecodes::_iand, x, mask));
+      break;
+    }
+  }
+
   // Check to see whether we are inlining. If so, Return
   // instructions become Gotos to the continuation point.
   if (continuation() != NULL) {
@@ -1612,6 +1654,10 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
       if (state_before == NULL) {
         state_before = copy_state_for_exception();
       }
+      if (field->type()->basic_type() == T_BOOLEAN) {
+        Value mask = append(new Constant(new IntConstant(1)));
+        val = append(new LogicOp(Bytecodes::_iand, val, mask));
+      }
       append(new StoreField(append(obj), offset, field, val, true, state_before, needs_patching));
       break;
     }
@@ -1659,6 +1705,10 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
       obj = apop();
       if (state_before == NULL) {
         state_before = copy_state_for_exception();
+      }
+      if (field->type()->basic_type() == T_BOOLEAN) {
+        Value mask = append(new Constant(new IntConstant(1)));
+        val = append(new LogicOp(Bytecodes::_iand, val, mask));
       }
       StoreField* store = new StoreField(obj, offset, field, val, false, state_before, needs_patching);
       if (!needs_patching) store = _memory->store(store);
@@ -4108,7 +4158,12 @@ void GraphBuilder::append_unsafe_put_obj(ciMethod* callee, BasicType t, bool is_
 #ifndef _LP64
   offset = append(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
 #endif
-  Instruction* op = append(new UnsafePutObject(t, args->at(1), offset, args->at(3), is_volatile));
+  Value val = args->at(3);
+  if (t == T_BOOLEAN) {
+    Value mask = append(new Constant(new IntConstant(1)));
+    val = append(new LogicOp(Bytecodes::_iand, val, mask));
+  }
+  Instruction* op = append(new UnsafePutObject(t, args->at(1), offset, val, is_volatile));
   compilation()->set_has_unsafe_access(true);
   kill_all();
 }
@@ -4182,7 +4237,7 @@ void GraphBuilder::append_char_access(ciMethod* callee, bool is_store) {
   Value index = args->at(1);
   if (is_store) {
     Value value = args->at(2);
-    Instruction* store = append(new StoreIndexed(array, index, NULL, T_CHAR, value, state_before));
+    Instruction* store = append(new StoreIndexed(array, index, NULL, T_CHAR, value, state_before, false));
     store->set_flag(Instruction::NeedsRangeCheckFlag, false);
     _memory->store_value(value);
   } else {

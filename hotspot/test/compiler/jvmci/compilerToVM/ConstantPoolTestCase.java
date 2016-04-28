@@ -28,8 +28,8 @@ import java.util.HashMap;
 import java.util.Map;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import sun.hotspot.WhiteBox;
-import sun.reflect.ConstantPool;
-import sun.reflect.ConstantPool.Tag;
+import jdk.internal.reflect.ConstantPool;
+import jdk.internal.reflect.ConstantPool.Tag;
 import compiler.jvmci.compilerToVM.ConstantPoolTestsHelper.DummyClasses;
 import static compiler.jvmci.compilerToVM.ConstantPoolTestCase.ConstantTypes.*;
 

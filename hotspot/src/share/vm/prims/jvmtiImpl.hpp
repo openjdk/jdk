@@ -183,11 +183,11 @@ public:
   bool lessThan(JvmtiBreakpoint &bp);
   void copy(JvmtiBreakpoint& bp);
   bool is_valid();
-  address getBcp();
+  address getBcp() const;
   void each_method_version_do(method_action meth_act);
   void set();
   void clear();
-  void print(outputStream* out);
+  void print_on(outputStream* out) const;
 
   Method* method() { return _method; }
 

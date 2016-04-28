@@ -482,10 +482,9 @@ class Thread: public ThreadShadow {
 
   // GC support
   // Apply "f->do_oop" to all root oops in "this".
-  // Apply "cld_f->do_cld" to CLDs that are otherwise not kept alive.
   //   Used by JavaThread::oops_do.
   // Apply "cf->do_code_blob" (if !NULL) to all code blobs active in frames
-  virtual void oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf);
+  virtual void oops_do(OopClosure* f, CodeBlobClosure* cf);
 
   // Handles the parallel case for the method below.
  private:
@@ -1642,7 +1641,7 @@ class JavaThread: public Thread {
   void frames_do(void f(frame*, const RegisterMap*));
 
   // Memory operations
-  void oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf);
+  void oops_do(OopClosure* f, CodeBlobClosure* cf);
 
   // Sweeper operations
   virtual void nmethods_do(CodeBlobClosure* cf);
@@ -1995,7 +1994,7 @@ class CodeCacheSweeperThread : public JavaThread {
   bool is_Code_cache_sweeper_thread() const { return true; }
 
   // Prevent GC from unloading _scanned_compiled_method
-  void oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf);
+  void oops_do(OopClosure* f, CodeBlobClosure* cf);
   void nmethods_do(CodeBlobClosure* cf);
 };
 
@@ -2122,9 +2121,9 @@ class Threads: AllStatic {
 
   // Apply "f->do_oop" to all root oops in all threads.
   // This version may only be called by sequential code.
-  static void oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf);
+  static void oops_do(OopClosure* f, CodeBlobClosure* cf);
   // This version may be called by sequential or parallel code.
-  static void possibly_parallel_oops_do(bool is_par, OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf);
+  static void possibly_parallel_oops_do(bool is_par, OopClosure* f, CodeBlobClosure* cf);
   // This creates a list of GCTasks, one per thread.
   static void create_thread_roots_tasks(GCTaskQueue* q);
   // This creates a list of GCTasks, one per thread, for marking objects.

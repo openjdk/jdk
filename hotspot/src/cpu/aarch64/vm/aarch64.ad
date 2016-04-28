@@ -3325,9 +3325,15 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
 
 const bool Matcher::match_rule_supported(int opcode) {
 
-  // TODO
-  // identify extra cases that we might want to provide match rules for
-  // e.g. Op_StrEquals and other intrinsics
+  switch (opcode) {
+  case Op_StrComp:
+  case Op_StrIndexOf:
+    if (CompactStrings)  return false;
+    break;
+  default:
+    break;
+  }
+
   if (!has_match_rule(opcode)) {
     return false;
   }
@@ -14914,10 +14920,10 @@ instruct partialSubtypeCheckVsZero(iRegP_R4 sub, iRegP_R0 super, iRegP_R2 temp, 
   ins_pipe(pipe_class_memory);
 %}
 
-instruct string_compare(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
+instruct string_compareU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
                         iRegI_R0 result, iRegP_R10 tmp1, rFlagsReg cr)
 %{
-  predicate(!CompactStrings);
+  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -14936,7 +14942,7 @@ instruct string_compare(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cn
 instruct string_indexof(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 cnt2,
        iRegI_R0 result, iRegI tmp1, iRegI tmp2, iRegI tmp3, iRegI tmp4, rFlagsReg cr)
 %{
-  predicate(!CompactStrings);
+  predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
@@ -14956,7 +14962,7 @@ instruct string_indexof_con(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
                  immI_le_4 int_cnt2, iRegI_R0 result, iRegI tmp1, iRegI tmp2,
                  iRegI tmp3, iRegI tmp4, rFlagsReg cr)
 %{
-  predicate(!CompactStrings);
+  predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt1,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
@@ -14973,10 +14979,27 @@ instruct string_indexof_con(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
   ins_pipe(pipe_class_memory);
 %}
 
-instruct string_equals(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
+instruct string_equalsL(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
                         iRegI_R0 result, rFlagsReg cr)
 %{
-  predicate(!CompactStrings);
+  predicate(((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::LL);
+  match(Set result (StrEquals (Binary str1 str2) cnt));
+  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL cr);
+
+  format %{ "String Equals $str1,$str2,$cnt -> $result" %}
+  ins_encode %{
+    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
+    __ arrays_equals($str1$$Register, $str2$$Register,
+                     $result$$Register, $cnt$$Register,
+                     1, /*is_string*/true);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct string_equalsU(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
+                        iRegI_R0 result, rFlagsReg cr)
+%{
+  predicate(((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrEquals (Binary str1 str2) cnt));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL cr);
 
@@ -15023,6 +15046,40 @@ instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
   ins_pipe(pipe_class_memory);
 %}
 
+
+// fast char[] to byte[] compression
+instruct string_compress(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
+                         vRegD_V0 tmp1, vRegD_V1 tmp2,
+                         vRegD_V2 tmp3, vRegD_V3 tmp4,
+                         iRegI_R0 result, rFlagsReg cr)
+%{
+  match(Set result (StrCompressedCopy src (Binary dst len)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
+
+  format %{ "String Compress $src,$dst -> $result    // KILL R1, R2, R3, R4" %}
+  ins_encode %{
+    __ char_array_compress($src$$Register, $dst$$Register, $len$$Register,
+                           $tmp1$$FloatRegister, $tmp2$$FloatRegister,
+                           $tmp3$$FloatRegister, $tmp4$$FloatRegister,
+                           $result$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// fast byte[] to char[] inflation
+instruct string_inflate(Universe dummy, iRegP_R0 src, iRegP_R1 dst, iRegI_R2 len,
+                        vRegD tmp1, vRegD tmp2, vRegD tmp3, iRegP_R3 tmp4, rFlagsReg cr)
+%{
+  match(Set dummy (StrInflatedCopy src (Binary dst len)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
+
+  format %{ "String Inflate $src,$dst    // KILL $tmp1, $tmp2" %}
+  ins_encode %{
+    __ byte_array_inflate($src$$Register, $dst$$Register, $len$$Register,
+                          $tmp1$$FloatRegister, $tmp2$$FloatRegister, $tmp3$$FloatRegister, $tmp4$$Register);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
 
 // encode char[] to byte[] in ISO_8859_1
 instruct encode_iso_array(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,

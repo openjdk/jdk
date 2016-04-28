@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.invoke.WrapperInstance;
 import java.util.ArrayList;
-import sun.reflect.CallerSensitive;
-import sun.reflect.Reflection;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 import sun.reflect.misc.ReflectUtil;
 import static java.lang.invoke.MethodHandleStatics.*;
 
@@ -216,13 +216,7 @@ public class MethodHandleProxies {
     }
 
     private static MethodHandle bindCaller(MethodHandle target, Class<?> hostClass) {
-        MethodHandle cbmh = MethodHandleImpl.bindCaller(target, hostClass);
-        if (target.isVarargsCollector()) {
-            MethodType type = cbmh.type();
-            int arity = type.parameterCount();
-            return cbmh.asVarargsCollector(type.parameterType(arity-1));
-        }
-        return cbmh;
+        return MethodHandleImpl.bindCaller(target, hostClass).withVarargs(target.isVarargsCollector());
     }
 
     /**

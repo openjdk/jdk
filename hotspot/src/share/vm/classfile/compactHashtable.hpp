@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,10 @@
 #include "services/diagnosticCommand.hpp"
 #include "utilities/hashtable.hpp"
 
+template <class T, class N> class CompactHashtable;
 class NumberSeq;
+class SimpleCompactHashtable;
+class SerializeClosure;
 
 // Stats for symbol tables in the CDS archive
 class CompactHashtableStats VALUE_OBJ_CLASS_SPEC {
@@ -70,66 +73,74 @@ public:
 //
 class CompactHashtableWriter: public StackObj {
 public:
-  class Entry: public CHeapObj<mtSymbol> {
-    Entry* _next;
+  class Entry VALUE_OBJ_CLASS_SPEC {
     unsigned int _hash;
-    void* _literal;
+    u4 _value;
 
   public:
-    Entry(unsigned int hash, Symbol *symbol) : _next(NULL), _hash(hash), _literal(symbol) {}
-    Entry(unsigned int hash, oop string)     : _next(NULL), _hash(hash), _literal(string) {}
+    Entry() {}
+    Entry(unsigned int hash, u4 val) : _hash(hash), _value(val) {}
 
-    void *value() {
-      return _literal;
-    }
-    Symbol *symbol() {
-      return (Symbol*)_literal;
-    }
-    oop string() {
-      return (oop)_literal;
+    u4 value() {
+      return _value;
     }
     unsigned int hash() {
       return _hash;
     }
-    Entry *next()           {return _next;}
-    void set_next(Entry *p) {_next = p;}
+
+    bool operator==(const CompactHashtableWriter::Entry& other) {
+      return (_value == other._value && _hash == other._hash);
+    }
   }; // class CompactHashtableWriter::Entry
 
 private:
-  static int number_of_buckets(int num_entries);
-
-  int _type;
   int _num_entries;
   int _num_buckets;
-  juint* _bucket_sizes;
-  Entry** _buckets;
-  int _required_bytes;
+  int _num_empty_buckets;
+  int _num_value_only_buckets;
+  int _num_other_buckets;
+  GrowableArray<Entry>** _buckets;
   CompactHashtableStats* _stats;
+  Array<u4>* _compact_buckets;
+  Array<u4>* _compact_entries;
 
 public:
   // This is called at dump-time only
-  CompactHashtableWriter(int table_type, int num_entries, CompactHashtableStats* stats);
+  CompactHashtableWriter(int num_buckets, CompactHashtableStats* stats);
   ~CompactHashtableWriter();
 
-  int get_required_bytes() {
-    return _required_bytes;
+  void add(unsigned int hash, u4 value);
+  void add(u4 value) {
+    add((unsigned int)value, value);
   }
 
-  inline void add(unsigned int hash, Symbol* symbol);
-  inline void add(unsigned int hash, oop string);
-
 private:
-  void add(unsigned int hash, Entry* entry);
-  juint* dump_table(juint* p, juint** first_bucket, NumberSeq* summary);
-  juint* dump_buckets(juint* table, juint* p, NumberSeq* summary);
+  void allocate_table();
+  void dump_table(NumberSeq* summary);
 
 public:
-  void dump(char** top, char* end);
+  void dump(SimpleCompactHashtable *cht, const char* table_name);
   const char* table_name();
 };
 
+class CompactSymbolTableWriter: public CompactHashtableWriter {
+public:
+  CompactSymbolTableWriter(int num_buckets, CompactHashtableStats* stats) :
+    CompactHashtableWriter(num_buckets, stats) {}
+  void add(unsigned int hash, Symbol *symbol);
+  void dump(CompactHashtable<Symbol*, char> *cht);
+};
+
+class CompactStringTableWriter: public CompactHashtableWriter {
+public:
+  CompactStringTableWriter(int num_entries, CompactHashtableStats* stats) :
+    CompactHashtableWriter(num_entries, stats) {}
+  void add(unsigned int hash, oop string);
+  void dump(CompactHashtable<oop, char> *cht);
+};
+
 #define REGULAR_BUCKET_TYPE       0
-#define COMPACT_BUCKET_TYPE       1
+#define VALUE_ONLY_BUCKET_TYPE    1
 #define TABLEEND_BUCKET_TYPE      3
 #define BUCKET_OFFSET_MASK        0x3FFFFFFF
 #define BUCKET_OFFSET(info)       ((info) & BUCKET_OFFSET_MASK)
@@ -146,90 +157,106 @@ public:
 // and tend to have large number of entries, we try to minimize the footprint
 // cost per entry.
 //
-// Layout of compact table in the shared archive:
+// The CompactHashtable is split into two arrays
 //
-//   uintx base_address;
-//   juint num_entries;
-//   juint num_buckets;
-//   juint bucket_infos[num_buckets+1]; // bit[31,30]: type; bit[29-0]: offset
-//   juint table[]
+//   u4 buckets[num_buckets+1]; // bit[31,30]: type; bit[29-0]: offset
+//   u4 entries[<variable size>]
 //
-// -----------------------------------
-// | base_address  | num_entries     |
-// |---------------------------------|
-// | num_buckets   | bucket_info0    |
-// |---------------------------------|
-// | bucket_info1  | bucket_info2    |
-// | bucket_info3    ...             |
-// | ....          | table_end_info  |
-// |---------------------------------|
-// | entry0                          |
-// | entry1                          |
-// | entry2                          |
-// |                                 |
-// | ...                             |
-// -----------------------------------
-//
-// The size of the bucket_info table is 'num_buckets + 1'. Each entry of the
-// bucket_info table is a 32-bit encoding of the bucket type and bucket offset,
+// The size of buckets[] is 'num_buckets + 1'. Each entry of
+// buckets[] is a 32-bit encoding of the bucket type and bucket offset,
 // with the type in the left-most 2-bit and offset in the remaining 30-bit.
-// The last entry is a special type. It contains the offset of the last
-// bucket end. We use that information when traversing the compact table.
+// The last entry is a special type. It contains the end of the last
+// bucket.
 //
-// There are two types of buckets, regular buckets and compact buckets. The
-// compact buckets have '01' in their highest 2-bit, and regular buckets have
+// There are two types of buckets, regular buckets and value_only buckets. The
+// value_only buckets have '01' in their highest 2-bit, and regular buckets have
 // '00' in their highest 2-bit.
 //
-// For normal buckets, each entry is 8 bytes in the table[]:
-//   juint hash;    /* symbol/string hash */
+// For normal buckets, each entry is 8 bytes in the entries[]:
+//   u4 hash;    /* symbol/string hash */
 //   union {
-//     juint offset;  /* Symbol* sym = (Symbol*)(base_address + offset) */
+//     u4 offset;  /* Symbol* sym = (Symbol*)(base_address + offset) */
 //     narrowOop str; /* String narrowOop encoding */
 //   }
 //
 //
-// For compact buckets, each entry has only the 4-byte 'offset' in the table[].
+// For value_only buckets, each entry has only the 4-byte 'offset' in the entries[].
+//
+// Example -- note that the second bucket is a VALUE_ONLY_BUCKET_TYPE so the hash code
+//            is skipped.
+// buckets[0, 4, 5, ....]
+//         |  |  |
+//         |  |  +---+
+//         |  |      |
+//         |  +----+ |
+//         v       v v
+// entries[H,O,H,O,O,H,O,H,O.....]
 //
 // See CompactHashtable::lookup() for how the table is searched at runtime.
 // See CompactHashtableWriter::dump() for how the table is written at CDS
 // dump time.
 //
-template <class T, class N> class CompactHashtable VALUE_OBJ_CLASS_SPEC {
+class SimpleCompactHashtable VALUE_OBJ_CLASS_SPEC {
+protected:
+  address  _base_address;
+  u4  _bucket_count;
+  u4  _entry_count;
+  u4* _buckets;
+  u4* _entries;
+
+public:
+  SimpleCompactHashtable() {
+    _entry_count = 0;
+    _bucket_count = 0;
+    _buckets = 0;
+    _entries = 0;
+  }
+
+  void reset() {
+    _bucket_count = 0;
+    _entry_count = 0;
+    _buckets = 0;
+    _entries = 0;
+  }
+
+  void init(address base_address, u4 entry_count, u4 bucket_count, u4* buckets, u4* entries) {
+    _base_address = base_address;
+    _bucket_count = bucket_count;
+    _entry_count = entry_count;
+    _buckets = buckets;
+    _entries = entries;
+  }
+
+  template <class I> inline void iterate(const I& iterator);
+
+  bool exists(u4 value);
+
+  // For reading from/writing to the CDS archive
+  void serialize(SerializeClosure* soc);
+};
+
+template <class T, class N> class CompactHashtable : public SimpleCompactHashtable {
   friend class VMStructs;
 
- public:
+public:
   enum CompactHashtableType {
     _symbol_table = 0,
     _string_table = 1
   };
 
 private:
-  CompactHashtableType _type;
-  uintx  _base_address;
-  juint  _entry_count;
-  juint  _bucket_count;
-  juint  _table_end_offset;
-  juint* _buckets;
+  u4 _type;
 
-  inline Symbol* lookup_entry(CompactHashtable<Symbol*, char>* const t,
-                              juint* addr, const char* name, int len);
+  inline Symbol* decode_entry(CompactHashtable<Symbol*, char>* const t,
+                              u4 offset, const char* name, int len);
 
-  inline oop lookup_entry(CompactHashtable<oop, char>* const t,
-                          juint* addr, const char* name, int len);
+  inline oop decode_entry(CompactHashtable<oop, char>* const t,
+                          u4 offset, const char* name, int len);
 public:
-  CompactHashtable() {
-    _entry_count = 0;
-    _bucket_count = 0;
-    _table_end_offset = 0;
-    _buckets = 0;
-  }
-  const char* init(CompactHashtableType type, const char *buffer);
+  CompactHashtable() : SimpleCompactHashtable() {}
 
-  void reset() {
-    _entry_count = 0;
-    _bucket_count = 0;
-    _table_end_offset = 0;
-    _buckets = 0;
+  void set_type(CompactHashtableType type) {
+    _type = (u4)type;
   }
 
   // Lookup an entry from the compact table
@@ -240,6 +267,9 @@ public:
 
   // iterate over strings
   void oops_do(OopClosure* f);
+
+  // For reading from/writing to the CDS archive
+  void serialize(SerializeClosure* soc);
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -293,7 +323,7 @@ public:
     u8 n = 0;
 
     while (p < end) {
-      char c = *p ++;
+      char c = *p++;
       if ('0' <= c && c <= '9') {
         n = n * 10 + (c - '0');
         if (n > (u8)INT_MAX) {

@@ -65,6 +65,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
+#include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "logging/log.hpp"
@@ -1759,6 +1760,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   _cg1r(NULL),
   _g1mm(NULL),
   _refine_cte_cl(NULL),
+  _preserved_marks_set(true /* in_c_heap */),
   _secondary_free_list("Secondary Free List", new SecondaryFreeRegionListMtSafeChecker()),
   _old_set("Old Set", false /* humongous */, new OldRegionSetMtSafeChecker()),
   _humongous_set("Master Humongous Set", true /* humongous */, new HumongousRegionSetMtSafeChecker()),
@@ -1989,7 +1991,7 @@ jint G1CollectedHeap::initialize() {
   }
 
   // Perform any initialization actions delegated to the policy.
-  g1_policy()->init();
+  g1_policy()->init(this, &_collection_set);
 
   JavaThread::satb_mark_queue_set().initialize(SATB_Q_CBL_mon,
                                                SATB_Q_FL_lock,
@@ -2034,10 +2036,7 @@ jint G1CollectedHeap::initialize() {
 
   G1StringDedup::initialize();
 
-  _preserved_objs = NEW_C_HEAP_ARRAY(OopAndMarkOopStack, ParallelGCThreads, mtGC);
-  for (uint i = 0; i < ParallelGCThreads; i++) {
-    new (&_preserved_objs[i]) OopAndMarkOopStack();
-  }
+  _preserved_marks_set.init(ParallelGCThreads);
 
   return JNI_OK;
 }
@@ -2058,7 +2057,6 @@ size_t G1CollectedHeap::conservative_max_heap_alignment() {
 }
 
 void G1CollectedHeap::post_initialize() {
-  CollectedHeap::post_initialize();
   ref_processing_init();
 }
 
@@ -3528,11 +3526,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   return true;
 }
 
-void G1CollectedHeap::restore_preserved_marks() {
-  G1RestorePreservedMarksTask rpm_task(_preserved_objs);
-  workers()->run_task(&rpm_task);
-}
-
 void G1CollectedHeap::remove_self_forwarding_pointers() {
   G1ParRemoveSelfForwardPtrsTask rsfp_task;
   workers()->run_task(&rsfp_task);
@@ -3542,7 +3535,7 @@ void G1CollectedHeap::restore_after_evac_failure() {
   double remove_self_forwards_start = os::elapsedTime();
 
   remove_self_forwarding_pointers();
-  restore_preserved_marks();
+  _preserved_marks_set.restore(workers());
 
   g1_policy()->phase_times()->record_evac_fail_remove_self_forwards((os::elapsedTime() - remove_self_forwards_start) * 1000.0);
 }
@@ -3553,13 +3546,7 @@ void G1CollectedHeap::preserve_mark_during_evac_failure(uint worker_id, oop obj,
   }
 
   _evacuation_failed_info_array[worker_id].register_copy_failure(obj->size());
-
-  // We want to call the "for_promotion_failure" version only in the
-  // case of a promotion failure.
-  if (m->must_be_preserved_for_promotion_failure(obj)) {
-    OopAndMarkOop elem(obj, m);
-    _preserved_objs[worker_id].push(elem);
-  }
+  _preserved_marks_set.get(worker_id)->push_if_necessary(obj, m);
 }
 
 bool G1ParEvacuateFollowersClosure::offer_termination() {
@@ -4582,6 +4569,7 @@ void G1CollectedHeap::pre_evacuate_collection_set() {
   hot_card_cache->set_use_cache(false);
 
   g1_rem_set()->prepare_for_oops_into_collection_set_do();
+  _preserved_marks_set.assert_empty();
 }
 
 void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
@@ -4658,6 +4646,8 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
     // evacuation failure occurs.
     NOT_PRODUCT(reset_evacuation_should_fail();)
   }
+
+  _preserved_marks_set.assert_empty();
 
   // Enqueue any remaining references remaining on the STW
   // reference processor's discovered lists. We need to do
@@ -5328,14 +5318,14 @@ HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
   assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
   assert(!force || g1_policy()->can_expand_young_list(),
          "if force is true we should be able to expand the young list");
-  bool young_list_full = g1_policy()->is_young_list_full();
-  if (force || !young_list_full) {
+  bool should_allocate = g1_policy()->should_allocate_mutator_region();
+  if (force || should_allocate) {
     HeapRegion* new_alloc_region = new_region(word_size,
                                               false /* is_old */,
                                               false /* do_expand */);
     if (new_alloc_region != NULL) {
       set_region_short_lived_locked(new_alloc_region);
-      _hr_printer.alloc(new_alloc_region, young_list_full);
+      _hr_printer.alloc(new_alloc_region, !should_allocate);
       _verifier->check_bitmaps("Mutator Region Allocation", new_alloc_region);
       return new_alloc_region;
     }

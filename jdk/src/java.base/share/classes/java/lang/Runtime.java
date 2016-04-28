@@ -27,8 +27,8 @@ package java.lang;
 
 import java.io.*;
 import java.util.StringTokenizer;
-import sun.reflect.CallerSensitive;
-import sun.reflect.Reflection;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 
 /**
  * Every Java application has a single instance of class

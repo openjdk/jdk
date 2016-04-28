@@ -277,6 +277,11 @@ static void define_javabase_module(jobject module, jstring version,
   {
     MutexLocker m1(Module_lock, THREAD);
 
+    if (ModuleEntryTable::javabase_defined()) {
+      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+                "Module java.base is already defined");
+    }
+
     // Verify that all java.base packages created during bootstrapping are in
     // pkg_list.  If any are not in pkg_list, than a non-java.base class was
     // loaded erroneously pre java.base module definition.

@@ -58,19 +58,16 @@ void ThreadRootsMarkingTask::do_it(GCTaskManager* manager, uint which) {
     ParCompactionManager::gc_thread_compaction_manager(which);
 
   ParCompactionManager::MarkAndPushClosure mark_and_push_closure(cm);
-  CLDToOopClosure mark_and_push_from_clds(&mark_and_push_closure, true);
   MarkingCodeBlobClosure mark_and_push_in_blobs(&mark_and_push_closure, !CodeBlobToOopClosure::FixRelocations);
 
   if (_java_thread != NULL)
     _java_thread->oops_do(
         &mark_and_push_closure,
-        &mark_and_push_from_clds,
         &mark_and_push_in_blobs);
 
   if (_vm_thread != NULL)
     _vm_thread->oops_do(
         &mark_and_push_closure,
-        &mark_and_push_from_clds,
         &mark_and_push_in_blobs);
 
   // Do the real work
@@ -99,8 +96,7 @@ void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
     {
       ResourceMark rm;
       MarkingCodeBlobClosure each_active_code_blob(&mark_and_push_closure, !CodeBlobToOopClosure::FixRelocations);
-      CLDToOopClosure mark_and_push_from_cld(&mark_and_push_closure);
-      Threads::oops_do(&mark_and_push_closure, &mark_and_push_from_cld, &each_active_code_blob);
+      Threads::oops_do(&mark_and_push_closure, &each_active_code_blob);
     }
     break;
 
