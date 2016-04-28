@@ -31,6 +31,7 @@
 #include "classfile/sharedClassUtil.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "interpreter/bytecodeStream.hpp"
@@ -106,7 +107,8 @@ void MetaspaceShared::initialize_shared_rs(ReservedSpace* rs) {
 // Read/write a data stream for restoring/preserving metadata pointers and
 // miscellaneous data from/to the shared archive file.
 
-void MetaspaceShared::serialize(SerializeClosure* soc) {
+void MetaspaceShared::serialize(SerializeClosure* soc, GrowableArray<MemRegion> *string_space,
+                                size_t* space_size) {
   int tag = 0;
   soc->do_tag(--tag);
 
@@ -126,6 +128,15 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
 
   // Dump/restore references to commonly used names and signatures.
   vmSymbols::serialize(soc);
+  soc->do_tag(--tag);
+
+  // Dump/restore the symbol and string tables
+  SymbolTable::serialize(soc);
+  StringTable::serialize(soc, string_space, space_size);
+  soc->do_tag(--tag);
+
+  // Dump/restore the misc information for system dictionary
+  SystemDictionaryShared::serialize(soc);
   soc->do_tag(--tag);
 
   soc->do_tag(666);
@@ -314,6 +325,11 @@ public:
     ++top;
   }
 
+  void do_u4(u4* p) {
+    void* ptr = (void*)(uintx(*p));
+    do_ptr(&ptr);
+  }
+
   void do_tag(int tag) {
     check_space();
     *top = (intptr_t)tag;
@@ -348,6 +364,8 @@ public:
   METASPACE_OBJ_TYPES_DO(f) \
   f(SymbolHashentry) \
   f(SymbolBucket) \
+  f(StringHashentry) \
+  f(StringBucket) \
   f(Other)
 
 #define SHAREDSPACE_OBJ_TYPE_DECLARE(name) name ## Type,
@@ -406,13 +424,22 @@ void DumpAllocClosure::dump_stats(int ro_all, int rw_all, int md_all, int mc_all
   MetaspaceSharedStats *stats = MetaspaceShared::stats();
 
   // symbols
-  _counts[RW][SymbolHashentryType] = stats->symbol.hashentry_count;
-  _bytes [RW][SymbolHashentryType] = stats->symbol.hashentry_bytes;
-  other_bytes -= stats->symbol.hashentry_bytes;
+  _counts[RO][SymbolHashentryType] = stats->symbol.hashentry_count;
+  _bytes [RO][SymbolHashentryType] = stats->symbol.hashentry_bytes;
+  _bytes [RO][TypeArrayU4Type]    -= stats->symbol.hashentry_bytes;
 
-  _counts[RW][SymbolBucketType] = stats->symbol.bucket_count;
-  _bytes [RW][SymbolBucketType] = stats->symbol.bucket_bytes;
-  other_bytes -= stats->symbol.bucket_bytes;
+  _counts[RO][SymbolBucketType] = stats->symbol.bucket_count;
+  _bytes [RO][SymbolBucketType] = stats->symbol.bucket_bytes;
+  _bytes [RO][TypeArrayU4Type] -= stats->symbol.bucket_bytes;
+
+  // strings
+  _counts[RO][StringHashentryType] = stats->string.hashentry_count;
+  _bytes [RO][StringHashentryType] = stats->string.hashentry_bytes;
+  _bytes [RO][TypeArrayU4Type]    -= stats->string.hashentry_bytes;
+
+  _counts[RO][StringBucketType] = stats->string.bucket_count;
+  _bytes [RO][StringBucketType] = stats->string.bucket_bytes;
+  _bytes [RO][TypeArrayU4Type] -= stats->string.bucket_bytes;
 
   // TODO: count things like dictionary, vtable, etc
   _bytes[RW][OtherType] =  other_bytes;
@@ -488,7 +515,6 @@ private:
   GrowableArray<Klass*> *_class_promote_order;
   VirtualSpace _md_vs;
   VirtualSpace _mc_vs;
-  CompactHashtableWriter* _string_cht;
   GrowableArray<MemRegion> *_string_regions;
 
 public:
@@ -600,39 +626,27 @@ void VM_PopulateDumpSharedSpace::doit() {
   // Not doing this either.
 
   SystemDictionary::reorder_dictionary();
-
   NOT_PRODUCT(SystemDictionary::verify();)
-
-  // Copy the symbol table, string table, and the system dictionary to the shared
-  // space in usable form.  Copy the hashtable
-  // buckets first [read-write], then copy the linked lists of entries
-  // [read-only].
-
-  NOT_PRODUCT(SymbolTable::verify());
-  handle_misc_data_space_failure(SymbolTable::copy_compact_table(&md_top, md_end));
-
-  size_t ss_bytes = 0;
-  char* ss_low;
-  // The string space has maximum two regions. See FileMapInfo::write_string_regions() for details.
-  _string_regions = new GrowableArray<MemRegion>(2);
-  NOT_PRODUCT(StringTable::verify());
-  handle_misc_data_space_failure(StringTable::copy_compact_table(&md_top, md_end, _string_regions,
-                                                                 &ss_bytes));
-  ss_low = _string_regions->is_empty() ? NULL : (char*)_string_regions->first().start();
-
   SystemDictionary::reverse();
   SystemDictionary::copy_buckets(&md_top, md_end);
 
   SystemDictionary::copy_table(&md_top, md_end);
 
   // Write the other data to the output array.
+  // SymbolTable, StringTable and extra information for system dictionary
+  NOT_PRODUCT(SymbolTable::verify());
+  NOT_PRODUCT(StringTable::verify());
+  size_t ss_bytes = 0;
+  char* ss_low;
+  // The string space has maximum two regions. See FileMapInfo::write_string_regions() for details.
+  _string_regions = new GrowableArray<MemRegion>(2);
+
   WriteClosure wc(md_top, md_end);
-  MetaspaceShared::serialize(&wc);
+  MetaspaceShared::serialize(&wc, _string_regions, &ss_bytes);
   md_top = wc.get_top();
+  ss_low = _string_regions->is_empty() ? NULL : (char*)_string_regions->first().start();
 
   // Print shared spaces all the time
-// To make fmt_space be a syntactic constant (for format warnings), use #define.
-#define fmt_space "%s space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [%4.1f%% used] at " INTPTR_FORMAT
   Metaspace* ro_space = _loader_data->ro_metaspace();
   Metaspace* rw_space = _loader_data->rw_metaspace();
 
@@ -665,12 +679,13 @@ void VM_PopulateDumpSharedSpace::doit() {
   const double mc_u_perc = mc_bytes / double(mc_alloced) * 100.0;
   const double total_u_perc = total_bytes / double(total_alloced) * 100.0;
 
+#define fmt_space "%s space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used] at " INTPTR_FORMAT
   tty->print_cr(fmt_space, "ro", ro_bytes, ro_t_perc, ro_alloced, ro_u_perc, p2i(ro_space->bottom()));
   tty->print_cr(fmt_space, "rw", rw_bytes, rw_t_perc, rw_alloced, rw_u_perc, p2i(rw_space->bottom()));
   tty->print_cr(fmt_space, "md", md_bytes, md_t_perc, md_alloced, md_u_perc, p2i(md_low));
   tty->print_cr(fmt_space, "mc", mc_bytes, mc_t_perc, mc_alloced, mc_u_perc, p2i(mc_low));
   tty->print_cr(fmt_space, "st", ss_bytes, ss_t_perc, ss_bytes,   100.0,     p2i(ss_low));
-  tty->print_cr("total   : " SIZE_FORMAT_W(9) " [100.0%% of total] out of " SIZE_FORMAT_W(9) " bytes [%4.1f%% used]",
+  tty->print_cr("total   : " SIZE_FORMAT_W(9) " [100.0%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used]",
                  total_bytes, total_alloced, total_u_perc);
 
   // Update the vtable pointers in all of the Klass objects in the
@@ -974,6 +989,11 @@ public:
     *p = (void*)obj;
   }
 
+  void do_u4(u4* p) {
+    intptr_t obj = nextPtr();
+    *p = (u4)(uintx(obj));
+  }
+
   void do_tag(int tag) {
     int old_tag;
     old_tag = (int)(intptr_t)nextPtr();
@@ -1097,21 +1117,6 @@ void MetaspaceShared::initialize_shared_spaces() {
   buffer += sizeof(intptr_t);
   buffer += vtable_size;
 
-  // Create the shared symbol table using the compact table at this spot in the
-  // misc data space. (Todo: move this to read-only space. Currently
-  // this is mapped copy-on-write but will never be written into).
-
-  buffer = (char*)SymbolTable::init_shared_table(buffer);
-  SymbolTable::create_table();
-
-  // Create the shared string table using the compact table
-  buffer = (char*)StringTable::init_shared_table(mapinfo, buffer);
-
-  // Create the shared dictionary using the bucket array at this spot in
-  // the misc data space.  Since the shared dictionary table is never
-  // modified, this region (of mapped pages) will be (effectively, if
-  // not explicitly) read-only.
-
   int sharedDictionaryLen = *(intptr_t*)buffer;
   buffer += sizeof(intptr_t);
   int number_of_entries = *(intptr_t*)buffer;
@@ -1129,9 +1134,14 @@ void MetaspaceShared::initialize_shared_spaces() {
   buffer += sizeof(intptr_t);
   buffer += len;
 
+  // Verify various attributes of the archive, plus initialize the
+  // shared string/symbol tables
   intptr_t* array = (intptr_t*)buffer;
   ReadClosure rc(&array);
-  serialize(&rc);
+  serialize(&rc, NULL, NULL);
+
+  // Initialize the run-time symbol table.
+  SymbolTable::create_table();
 
   // Close the mapinfo file
   mapinfo->close();

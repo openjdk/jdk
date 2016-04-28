@@ -783,7 +783,7 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
   if (is_interpreted_frame()) {
     DESCRIBE_FP_OFFSET(interpreter_frame_d_scratch_fp);
     DESCRIBE_FP_OFFSET(interpreter_frame_l_scratch_fp);
-    DESCRIBE_FP_OFFSET(interpreter_frame_padding);
+    DESCRIBE_FP_OFFSET(interpreter_frame_mirror);
     DESCRIBE_FP_OFFSET(interpreter_frame_oop_temp);
 
     // esp, according to Lesp (e.g. not depending on bci), if seems valid

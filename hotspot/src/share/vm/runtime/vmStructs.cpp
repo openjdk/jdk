@@ -337,7 +337,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   volatile_nonstatic_field(InstanceKlass,      _oop_map_cache,                                OopMapCache*)                          \
   nonstatic_field(InstanceKlass,               _jni_ids,                                      JNIid*)                                \
   nonstatic_field(InstanceKlass,               _osr_nmethods_head,                            nmethod*)                              \
-  nonstatic_field(InstanceKlass,               _breakpoints,                                  BreakpointInfo*)                       \
+  JVMTI_ONLY(nonstatic_field(InstanceKlass,    _breakpoints,                                  BreakpointInfo*))                      \
   nonstatic_field(InstanceKlass,               _generic_signature_index,                      u2)                                    \
   nonstatic_field(InstanceKlass,               _methods_jmethod_ids,                          jmethodID*)                            \
   volatile_nonstatic_field(InstanceKlass,      _idnum_allocated_count,                        u2)                                    \
@@ -387,7 +387,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(MethodCounters,              _backedge_mask,                                int)                                   \
   COMPILER2_OR_JVMCI_PRESENT(nonstatic_field(MethodCounters, _interpreter_invocation_count,   int))                                  \
   COMPILER2_OR_JVMCI_PRESENT(nonstatic_field(MethodCounters, _interpreter_throwout_count,     u2))                                   \
-  nonstatic_field(MethodCounters,              _number_of_breakpoints,                        u2)                                    \
+  JVMTI_ONLY(nonstatic_field(MethodCounters,   _number_of_breakpoints,                        u2))                                   \
   nonstatic_field(MethodCounters,              _invocation_counter,                           InvocationCounter)                     \
   nonstatic_field(MethodCounters,              _backedge_counter,                             InvocationCounter)                     \
   nonstatic_field(Method,                      _constMethod,                                  ConstMethod*)                          \
@@ -447,11 +447,11 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(ExceptionTableElement,       end_pc,                                        u2)                                    \
   nonstatic_field(ExceptionTableElement,       handler_pc,                                    u2)                                    \
   nonstatic_field(ExceptionTableElement,       catch_type_index,                              u2)                                    \
-  nonstatic_field(BreakpointInfo,              _orig_bytecode,                                Bytecodes::Code)                       \
-  nonstatic_field(BreakpointInfo,              _bci,                                          int)                                   \
-  nonstatic_field(BreakpointInfo,              _name_index,                                   u2)                                    \
-  nonstatic_field(BreakpointInfo,              _signature_index,                              u2)                                    \
-  nonstatic_field(BreakpointInfo,              _next,                                         BreakpointInfo*)                       \
+  JVMTI_ONLY(nonstatic_field(BreakpointInfo,   _orig_bytecode,                                Bytecodes::Code))                      \
+  JVMTI_ONLY(nonstatic_field(BreakpointInfo,   _bci,                                          int))                                  \
+  JVMTI_ONLY(nonstatic_field(BreakpointInfo,   _name_index,                                   u2))                                   \
+  JVMTI_ONLY(nonstatic_field(BreakpointInfo,   _signature_index,                              u2))                                   \
+  JVMTI_ONLY(nonstatic_field(BreakpointInfo,   _next,                                         BreakpointInfo*))                      \
   /***********/                                                                                                                      \
   /* JNI IDs */                                                                                                                      \
   /***********/                                                                                                                      \
@@ -662,11 +662,11 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /* CompactHashTable */                                                                                                             \
   /********************/                                                                                                             \
                                                                                                                                      \
-  nonstatic_field(SymbolCompactHashTable,      _base_address,                                 uintx)                                 \
-  nonstatic_field(SymbolCompactHashTable,      _entry_count,                                  juint)                                 \
-  nonstatic_field(SymbolCompactHashTable,      _bucket_count,                                 juint)                                 \
-  nonstatic_field(SymbolCompactHashTable,      _table_end_offset,                             juint)                                 \
-  nonstatic_field(SymbolCompactHashTable,      _buckets,                                      juint*)                                \
+  nonstatic_field(SymbolCompactHashTable,      _base_address,                                 address)                               \
+  nonstatic_field(SymbolCompactHashTable,      _entry_count,                                  u4)                                    \
+  nonstatic_field(SymbolCompactHashTable,      _bucket_count,                                 u4)                                    \
+  nonstatic_field(SymbolCompactHashTable,      _buckets,                                      u4*)                                   \
+  nonstatic_field(SymbolCompactHashTable,      _entries,                                      u4*)                                   \
                                                                                                                                      \
   /********************/                                                                                                             \
   /* SystemDictionary */                                                                                                             \

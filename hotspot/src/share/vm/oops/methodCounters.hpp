@@ -38,7 +38,9 @@ class MethodCounters: public MetaspaceObj {
   int               _interpreter_invocation_count; // Count of times invoked (reused as prev_event_count in tiered)
   u2                _interpreter_throwout_count; // Count of times method was exited via exception while interpreting
 #endif
+#if INCLUDE_JVMTI
   u2                _number_of_breakpoints;      // fullspeed debugging support
+#endif
   InvocationCounter _invocation_counter;         // Incremented before each activation of the method - used to trigger frequency-based optimizations
   InvocationCounter _backedge_counter;           // Incremented before each backedge taken - used to trigger frequencey-based optimizations
   // NMethod age is a counter for warm methods detection in the code cache sweeper.
@@ -62,8 +64,7 @@ class MethodCounters: public MetaspaceObj {
   u1                _highest_osr_comp_level;      // Same for OSR level
 #endif
 
-  MethodCounters(methodHandle mh) : _number_of_breakpoints(0),
-                                    _nmethod_age(INT_MAX)
+  MethodCounters(methodHandle mh) : _nmethod_age(INT_MAX)
 #ifdef TIERED
                                  , _rate(0),
                                    _prev_time(0),
@@ -73,6 +74,7 @@ class MethodCounters: public MetaspaceObj {
   {
     set_interpreter_invocation_count(0);
     set_interpreter_throwout_count(0);
+    JVMTI_ONLY(clear_number_of_breakpoints());
     invocation_counter()->init();
     backedge_counter()->init();
 
@@ -153,10 +155,12 @@ class MethodCounters: public MetaspaceObj {
 
 #endif // defined(COMPILER2) || INCLUDE_JVMCI
 
+#if INCLUDE_JVMTI
   u2   number_of_breakpoints() const   { return _number_of_breakpoints; }
   void incr_number_of_breakpoints()    { ++_number_of_breakpoints; }
   void decr_number_of_breakpoints()    { --_number_of_breakpoints; }
   void clear_number_of_breakpoints()   { _number_of_breakpoints = 0; }
+#endif
 
 #ifdef TIERED
   jlong prev_time() const                        { return _prev_time; }

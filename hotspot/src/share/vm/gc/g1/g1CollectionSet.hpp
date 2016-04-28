@@ -104,11 +104,14 @@ class G1CollectionSet VALUE_OBJ_CLASS_SPEC {
   // See the comment for _inc_recorded_rs_lengths_diffs.
   double _inc_predicted_elapsed_time_ms_diffs;
 
+  uint _inc_region_length;
+
   G1CollectorState* collector_state();
   G1GCPhaseTimes* phase_times();
 
   double predict_region_elapsed_time_ms(HeapRegion* hr);
 
+  void verify_young_cset_indices() const NOT_DEBUG_RETURN;
 public:
   G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy);
   ~G1CollectionSet();
@@ -147,6 +150,7 @@ public:
   void clear_incremental() {
     _inc_head = NULL;
     _inc_tail = NULL;
+    _inc_region_length = 0;
   }
 
   // Stop adding regions to the incremental collection set

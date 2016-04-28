@@ -28,6 +28,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "logging/logConfiguration.hpp"
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.inline.hpp"
@@ -774,6 +775,13 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
+  STEP(395, "(printing log configuration)")
+    if (_verbose){
+      st->print_cr("Logging:");
+      LogConfiguration::describe_current_configuration(st);
+      st->cr();
+    }
+
   STEP(400, "(printing all environment variables)" )
 
      if (_verbose) {
@@ -936,6 +944,11 @@ void VMError::print_vm_info(outputStream* st) {
     st->print_cr("Unsupported internal testing APIs have been used.");
     st->cr();
   }
+
+  // STEP("(printing log configuration)")
+  st->print_cr("Logging:");
+  LogConfiguration::describe(st);
+  st->cr();
 
   // STEP("(printing all environment variables)")
 

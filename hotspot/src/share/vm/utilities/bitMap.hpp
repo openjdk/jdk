@@ -70,11 +70,13 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
   static idx_t bit_index(idx_t word)  { return word << LogBitsPerWord; }
 
   // Return the array of bitmap words, or a specific word from it.
-  bm_word_t* map() const           { return _map; }
+  bm_word_t* map()                 { return _map; }
+  const bm_word_t* map() const     { return _map; }
   bm_word_t  map(idx_t word) const { return _map[word]; }
 
   // Return a pointer to the word containing the specified bit.
-  bm_word_t* word_addr(idx_t bit) const { return map() + word_index(bit); }
+  bm_word_t* word_addr(idx_t bit)             { return map() + word_index(bit); }
+  const bm_word_t* word_addr(idx_t bit) const { return map() + word_index(bit); }
 
   // Set a word to a specified value or to all ones; clear a word.
   void set_word  (idx_t word, bm_word_t val) { _map[word] = val; }
@@ -237,19 +239,19 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
   idx_t count_one_bits() const;
 
   // Set operations.
-  void set_union(BitMap bits);
-  void set_difference(BitMap bits);
-  void set_intersection(BitMap bits);
+  void set_union(const BitMap& bits);
+  void set_difference(const BitMap& bits);
+  void set_intersection(const BitMap& bits);
   // Returns true iff "this" is a superset of "bits".
-  bool contains(const BitMap bits) const;
+  bool contains(const BitMap& bits) const;
   // Returns true iff "this and "bits" have a non-empty intersection.
-  bool intersects(const BitMap bits) const;
+  bool intersects(const BitMap& bits) const;
 
   // Returns result of whether this map changed
   // during the operation
-  bool set_union_with_result(BitMap bits);
-  bool set_difference_with_result(BitMap bits);
-  bool set_intersection_with_result(BitMap bits);
+  bool set_union_with_result(const BitMap& bits);
+  bool set_difference_with_result(const BitMap& bits);
+  bool set_intersection_with_result(const BitMap& bits);
 
   // Requires the submap of "bits" starting at offset to be at least as
   // large as "this".  Modifies "this" to be the intersection of its
@@ -258,11 +260,11 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
   // (For expedience, currently requires the offset to be aligned to the
   // bitsize of a uintptr_t.  This should go away in the future though it
   // will probably remain a good case to optimize.)
-  void set_intersection_at_offset(BitMap bits, idx_t offset);
+  void set_intersection_at_offset(const BitMap& bits, idx_t offset);
 
-  void set_from(BitMap bits);
+  void set_from(const BitMap& bits);
 
-  bool is_same(BitMap bits);
+  bool is_same(const BitMap& bits);
 
   // Test if all bits are set or cleared
   bool is_full() const;

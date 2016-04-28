@@ -852,6 +852,7 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
           new (ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(500, true);
         set_fixup_module_field_list(list);
       }
+      k->class_loader_data()->inc_keep_alive();
       fixup_module_field_list()->push(k());
     }
   } else {
@@ -2697,7 +2698,7 @@ void java_lang_reflect_Field::set_type_annotations(oop field, oop value) {
   field->obj_field_put(type_annotations_offset, value);
 }
 
-void sun_reflect_ConstantPool::compute_offsets() {
+void reflect_ConstantPool::compute_offsets() {
   Klass* k = SystemDictionary::reflect_ConstantPool_klass();
   // This null test can be removed post beta
   if (k != NULL) {
@@ -2841,7 +2842,7 @@ void java_lang_reflect_Module::set_module_entry(oop module, ModuleEntry* module_
   module->address_field_put(_module_entry_offset, (address)module_entry);
 }
 
-Handle sun_reflect_ConstantPool::create(TRAPS) {
+Handle reflect_ConstantPool::create(TRAPS) {
   assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
   Klass* k = SystemDictionary::reflect_ConstantPool_klass();
   instanceKlassHandle klass (THREAD, k);
@@ -2851,14 +2852,14 @@ Handle sun_reflect_ConstantPool::create(TRAPS) {
 }
 
 
-void sun_reflect_ConstantPool::set_cp(oop reflect, ConstantPool* value) {
+void reflect_ConstantPool::set_cp(oop reflect, ConstantPool* value) {
   assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
   oop mirror = value->pool_holder()->java_mirror();
   // Save the mirror to get back the constant pool.
   reflect->obj_field_put(_oop_offset, mirror);
 }
 
-ConstantPool* sun_reflect_ConstantPool::get_cp(oop reflect) {
+ConstantPool* reflect_ConstantPool::get_cp(oop reflect) {
   assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
 
   oop mirror = reflect->obj_field(_oop_offset);
@@ -2873,7 +2874,7 @@ ConstantPool* sun_reflect_ConstantPool::get_cp(oop reflect) {
   return InstanceKlass::cast(k)->constants();
 }
 
-void sun_reflect_UnsafeStaticFieldAccessorImpl::compute_offsets() {
+void reflect_UnsafeStaticFieldAccessorImpl::compute_offsets() {
   Klass* k = SystemDictionary::reflect_UnsafeStaticFieldAccessorImpl_klass();
   // This null test can be removed post beta
   if (k != NULL) {
@@ -3648,8 +3649,8 @@ int java_lang_AssertionStatusDirectives::packageEnabled_offset;
 int java_lang_AssertionStatusDirectives::deflt_offset;
 int java_nio_Buffer::_limit_offset;
 int java_util_concurrent_locks_AbstractOwnableSynchronizer::_owner_offset = 0;
-int sun_reflect_ConstantPool::_oop_offset;
-int sun_reflect_UnsafeStaticFieldAccessorImpl::_base_offset;
+int reflect_ConstantPool::_oop_offset;
+int reflect_UnsafeStaticFieldAccessorImpl::_base_offset;
 
 
 // Support for java_lang_StackTraceElement
@@ -3834,8 +3835,8 @@ void JavaClasses::compute_offsets() {
   java_lang_reflect_Constructor::compute_offsets();
   java_lang_reflect_Field::compute_offsets();
   java_nio_Buffer::compute_offsets();
-  sun_reflect_ConstantPool::compute_offsets();
-  sun_reflect_UnsafeStaticFieldAccessorImpl::compute_offsets();
+  reflect_ConstantPool::compute_offsets();
+  reflect_UnsafeStaticFieldAccessorImpl::compute_offsets();
   java_lang_reflect_Parameter::compute_offsets();
   java_lang_reflect_Module::compute_offsets();
   java_lang_StackFrameInfo::compute_offsets();

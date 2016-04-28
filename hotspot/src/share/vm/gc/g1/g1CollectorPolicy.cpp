@@ -47,43 +47,6 @@ G1CollectorPolicy::G1CollectorPolicy() {
   // unaligned values for the heap.
   HeapRegion::setup_heap_region_size(InitialHeapSize, MaxHeapSize);
   HeapRegionRemSet::setup_remset_size();
-
-  // Below, we might need to calculate the pause time target based on
-  // the pause interval. When we do so we are going to give G1 maximum
-  // flexibility and allow it to do pauses when it needs to. So, we'll
-  // arrange that the pause interval to be pause time target + 1 to
-  // ensure that a) the pause time target is maximized with respect to
-  // the pause interval and b) we maintain the invariant that pause
-  // time target < pause interval. If the user does not want this
-  // maximum flexibility, they will have to set the pause interval
-  // explicitly.
-
-  // First make sure that, if either parameter is set, its value is
-  // reasonable.
-  guarantee(MaxGCPauseMillis >= 1, "Range checking for MaxGCPauseMillis should guarantee that value is >= 1");
-
-  // Then, if the pause time target parameter was not set, set it to
-  // the default value.
-  if (FLAG_IS_DEFAULT(MaxGCPauseMillis)) {
-    if (FLAG_IS_DEFAULT(GCPauseIntervalMillis)) {
-      // The default pause time target in G1 is 200ms
-      FLAG_SET_DEFAULT(MaxGCPauseMillis, 200);
-    } else {
-      // We do not allow the pause interval to be set without the
-      // pause time target
-      vm_exit_during_initialization("GCPauseIntervalMillis cannot be set "
-                                    "without setting MaxGCPauseMillis");
-    }
-  }
-
-  // Then, if the interval parameter was not set, set it according to
-  // the pause time target (this will also deal with the case when the
-  // pause time target is the default value).
-  if (FLAG_IS_DEFAULT(GCPauseIntervalMillis)) {
-    FLAG_SET_DEFAULT(GCPauseIntervalMillis, MaxGCPauseMillis + 1);
-  }
-  guarantee(GCPauseIntervalMillis >= 1, "Constraint for GCPauseIntervalMillis should guarantee that value is >= 1");
-  guarantee(GCPauseIntervalMillis > MaxGCPauseMillis, "Constraint for GCPauseIntervalMillis should guarantee that GCPauseIntervalMillis > MaxGCPauseMillis");
 }
 
 void G1CollectorPolicy::initialize_alignments() {
@@ -91,19 +54,4 @@ void G1CollectorPolicy::initialize_alignments() {
   size_t card_table_alignment = CardTableRS::ct_max_alignment_constraint();
   size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
   _heap_alignment = MAX3(card_table_alignment, _space_alignment, page_size);
-}
-
-void G1CollectorPolicy::initialize_flags() {
-  if (G1HeapRegionSize != HeapRegion::GrainBytes) {
-    FLAG_SET_ERGO(size_t, G1HeapRegionSize, HeapRegion::GrainBytes);
-  }
-
-  guarantee(SurvivorRatio >= 1, "Range checking for SurvivorRatio should guarantee that value is >= 1");
-
-  CollectorPolicy::initialize_flags();
-}
-
-// Create the jstat counters for the policy.
-void G1CollectorPolicy::initialize_gc_policy_counters() {
-  _gc_policy_counters = new GCPolicyCounters("GarbageFirst", 1, 3);
 }

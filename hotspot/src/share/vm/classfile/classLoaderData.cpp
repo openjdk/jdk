@@ -84,7 +84,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous, Depen
   // An anonymous class loader data doesn't have anything to keep
   // it from being unloaded during parsing of the anonymous class.
   // The null-class-loader should always be kept alive.
-  _keep_alive(is_anonymous || h_class_loader.is_null()),
+  _keep_alive((is_anonymous || h_class_loader.is_null()) ? 1 : 0),
   _metaspace(NULL), _unloading(false), _klasses(NULL),
   _modules(NULL), _packages(NULL),
   _claimed(0), _jmethod_ids(NULL), _handles(NULL), _deallocate_list(NULL),
@@ -112,6 +112,21 @@ bool ClassLoaderData::claim() {
   }
 
   return (int) Atomic::cmpxchg(1, &_claimed, 0) == 0;
+}
+
+// Anonymous classes have their own ClassLoaderData that is marked to keep alive
+// while the class is being parsed, and if the class appears on the module fixup list.
+// Due to the uniqueness that no other class shares the anonymous class' name or
+// ClassLoaderData, no other non-GC thread has knowledge of the anonymous class while
+// it is being defined, therefore _keep_alive is not volatile or atomic.
+void ClassLoaderData::inc_keep_alive() {
+  assert(_keep_alive >= 0, "Invalid keep alive count");
+  _keep_alive++;
+}
+
+void ClassLoaderData::dec_keep_alive() {
+  assert(_keep_alive > 0, "Invalid keep alive count");
+  _keep_alive--;
 }
 
 void ClassLoaderData::oops_do(OopClosure* f, KlassClosure* klass_closure, bool must_claim) {

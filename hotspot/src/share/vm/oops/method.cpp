@@ -84,9 +84,6 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags) {
   NoSafepointVerifier no_safepoint;
   set_constMethod(xconst);
   set_access_flags(access_flags);
-#ifdef CC_INTERP
-  set_result_index(T_VOID);
-#endif
   set_intrinsic_id(vmIntrinsics::_none);
   set_jfr_towrite(false);
   set_force_inline(false);
@@ -444,12 +441,6 @@ void Method::compute_size_of_parameters(Thread *thread) {
   ArgumentSizeComputer asc(signature());
   set_size_of_parameters(asc.size() + (is_static() ? 0 : 1));
 }
-
-#ifdef CC_INTERP
-void Method::set_result_index(BasicType type)          {
-  _result_index = Interpreter::BasicType_as_index(type);
-}
-#endif
 
 BasicType Method::result_type() const {
   ResultTypeFinder rtf(signature());
@@ -1220,10 +1211,8 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
   m->set_signature_index(_imcp_invoke_signature);
   assert(MethodHandles::is_signature_polymorphic_name(m->name()), "");
   assert(m->signature() == signature, "");
-#ifdef CC_INTERP
   ResultTypeFinder rtf(signature);
-  m->set_result_index(rtf.type());
-#endif
+  m->constMethod()->set_result_type(rtf.type());
   m->compute_size_of_parameters(THREAD);
   m->init_intrinsic_id();
   assert(m->is_method_handle_intrinsic(), "");
@@ -1639,6 +1628,7 @@ bool CompressedLineNumberReadStream::read_pair() {
   return true;
 }
 
+#if INCLUDE_JVMTI
 
 Bytecodes::Code Method::orig_bytecode_at(int bci) const {
   BreakpointInfo* bp = method_holder()->breakpoints();
@@ -1719,6 +1709,7 @@ void Method::clear_all_breakpoints() {
   clear_matches(this, -1);
 }
 
+#endif // INCLUDE_JVMTI
 
 int Method::invocation_count() {
   MethodCounters *mcs = method_counters();
@@ -1784,6 +1775,8 @@ void Method::set_highest_osr_comp_level(int level) {
   }
 }
 
+#if INCLUDE_JVMTI
+
 BreakpointInfo::BreakpointInfo(Method* m, int bci) {
   _bci = bci;
   _name_index = m->name_index();
@@ -1820,6 +1813,8 @@ void BreakpointInfo::clear(Method* method) {
   assert(method->number_of_breakpoints() > 0, "must not go negative");
   method->decr_number_of_breakpoints(Thread::current());
 }
+
+#endif // INCLUDE_JVMTI
 
 // jmethodID handling
 

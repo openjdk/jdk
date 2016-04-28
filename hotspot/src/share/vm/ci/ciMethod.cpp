@@ -202,6 +202,7 @@ void ciMethod::load_code() {
   _code = (address)arena->Amalloc(code_size());
   memcpy(_code, me->code_base(), code_size());
 
+#if INCLUDE_JVMTI
   // Revert any breakpoint bytecodes in ci's copy
   if (me->number_of_breakpoints() > 0) {
     BreakpointInfo* bp = me->method_holder()->breakpoints();
@@ -211,6 +212,7 @@ void ciMethod::load_code() {
       }
     }
   }
+#endif
 
   // And load the exception table.
   ExceptionTable exc_table(me);

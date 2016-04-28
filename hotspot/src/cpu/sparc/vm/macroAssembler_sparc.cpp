@@ -3972,6 +3972,14 @@ void MacroAssembler::card_write_barrier_post(Register store_addr, Register new_v
   card_table_write(bs->byte_map_base, tmp, store_addr);
 }
 
+void MacroAssembler::load_mirror(Register mirror, Register method) {
+  const int mirror_offset = in_bytes(Klass::java_mirror_offset());
+  ld_ptr(method, in_bytes(Method::const_offset()), mirror);
+  ld_ptr(mirror, in_bytes(ConstMethod::constants_offset()), mirror);
+  ld_ptr(mirror, ConstantPool::pool_holder_offset_in_bytes(), mirror);
+  ld_ptr(mirror, mirror_offset, mirror);
+}
+
 void MacroAssembler::load_klass(Register src_oop, Register klass) {
   // The number of bytes in this code is used by
   // MachCallDynamicJavaNode::ret_addr_offset()

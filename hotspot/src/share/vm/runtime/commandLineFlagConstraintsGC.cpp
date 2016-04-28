@@ -599,6 +599,14 @@ Flag::Error GCPauseIntervalMillisConstraintFunc(uintx value, bool verbose) {
                                 value);
         return Flag::VIOLATES_CONSTRAINT;
       }
+
+      if (FLAG_IS_DEFAULT(MaxGCPauseMillis)) {
+        CommandLineError::print(verbose,
+                                "GCPauseIntervalMillis cannot be set "
+                                "without setting MaxGCPauseMillis\n");
+        return Flag::VIOLATES_CONSTRAINT;
+      }
+
       if (value <= MaxGCPauseMillis) {
         CommandLineError::print(verbose,
                                 "GCPauseIntervalMillis (" UINTX_FORMAT ") must be "

@@ -155,10 +155,8 @@ ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
 	-DNO_DEIMOS=true \
 	-DTOKEN=solaris \
 	-DTEST=${TEST} \
-	-Djava.security.manager \
-	-Djava.security.policy=${TESTSRC}${FS}Basic.policy \
 	-Djava.security.debug=${DEBUG} \
-	Basic
+	Basic sm Basic.policy
 
 # clean up
 

@@ -35,17 +35,9 @@ class G1YoungGenSizer;
 class G1CollectorPolicy: public CollectorPolicy {
 protected:
   void initialize_alignments();
-  void initialize_flags();
 
 public:
   G1CollectorPolicy();
-
-  G1CollectorPolicy* as_g1_policy() { return this; }
-
-  void post_heap_initialize() {} // Nothing needed.
-
-  // Create jstat counters for the policy.
-  virtual void initialize_gc_policy_counters();
 };
 
 #endif // SHARE_VM_GC_G1_G1COLLECTORPOLICY_HPP

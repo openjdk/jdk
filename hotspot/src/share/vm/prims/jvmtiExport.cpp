@@ -428,6 +428,7 @@ JvmtiExport::add_default_read_edges(Handle h_module, TRAPS) {
     LogTarget(Trace, jvmti) log;
     LogStreamCHeap log_stream(log);
     java_lang_Throwable::print(PENDING_EXCEPTION, &log_stream);
+    log_stream.cr();
     CLEAR_PENDING_EXCEPTION;
     return;
   }
@@ -666,7 +667,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
   }
 
   void post_to_env(JvmtiEnv* env, bool caching_needed) {
-    if (env->phase() == JVMTI_PHASE_PRIMORDIAL) {
+    if (env->phase() == JVMTI_PHASE_PRIMORDIAL && !env->early_class_hook_env()) {
       return;
     }
     unsigned char *new_data = NULL;
@@ -1698,7 +1699,7 @@ void JvmtiExport::post_raw_field_modification(JavaThread *thread, Method* method
   address location, KlassHandle field_klass, Handle object, jfieldID field,
   char sig_type, jvalue *value) {
 
-  if (sig_type == 'I' || sig_type == 'Z' || sig_type == 'C' || sig_type == 'S') {
+  if (sig_type == 'I' || sig_type == 'Z' || sig_type == 'B' || sig_type == 'C' || sig_type == 'S') {
     // 'I' instructions are used for byte, char, short and int.
     // determine which it really is, and convert
     fieldDescriptor fd;

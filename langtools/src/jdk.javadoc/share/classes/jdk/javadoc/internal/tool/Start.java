@@ -52,6 +52,8 @@ import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.CommandLine;
+import com.sun.tools.javac.main.OptionHelper;
+import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
 import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.platform.PlatformUtils;
 import com.sun.tools.javac.util.ClientCodeException;
@@ -342,7 +344,7 @@ public class Start extends ToolOption.Helper {
         compOpts = Options.instance(context);
 
         // Make sure no obsolete source/target messages are reported
-        compOpts.put("-Xlint:-options", "-Xlint:-options");
+        com.sun.tools.javac.main.Option.XLINT.process(getOptionHelper(), "-Xlint:-options");
 
         doclet.init(locale, messager);
         parseArgs(argList, javaNames);
@@ -550,6 +552,8 @@ public class Start extends ToolOption.Helper {
                 if (o.hasArg) {
                     oneArg(args, i++);
                     o.process(this, args.get(i));
+                } else if (o.hasSuffix) {
+                    o.process(this, arg);
                 } else {
                     setOption(arg);
                     o.process(this);
@@ -689,5 +693,20 @@ public class Start extends ToolOption.Helper {
             }
         }
         return null;
+    }
+
+    @Override
+    OptionHelper getOptionHelper() {
+        return new GrumpyHelper(null) {
+            @Override
+            public String get(com.sun.tools.javac.main.Option option) {
+                return compOpts.get(option);
+            }
+
+            @Override
+            public void put(String name, String value) {
+                compOpts.put(name, value);
+            }
+        };
     }
 }
