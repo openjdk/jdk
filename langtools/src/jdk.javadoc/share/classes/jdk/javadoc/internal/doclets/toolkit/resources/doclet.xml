@@ -30,6 +30,7 @@
 
     <ModuleDoc>
         <Content>
+            <ModuleDescription/>
             <Summary>
                 <PackageSummary/>
             </Summary>
