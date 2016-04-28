@@ -13470,9 +13470,10 @@ instruct clearArray_reg_reg(iRegL_R11 cnt, iRegP_R10 base, Universe dummy, rFlag
   ins_pipe(pipe_class_memory);
 %}
 
-instruct clearArray_imm_reg(immL cnt, iRegP base, Universe dummy, rFlagsReg cr)
+instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, iRegL_R11 tmp, Universe dummy, rFlagsReg cr)
 %{
   match(Set dummy (ClearArray cnt base));
+  effect(USE_KILL base, TEMP tmp);
 
   ins_cost(4 * INSN_COST);
   format %{ "ClearArray $cnt, $base" %}
