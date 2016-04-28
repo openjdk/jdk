@@ -6482,6 +6482,7 @@ class C2 extends C1 implements I2 {
       <synopsis>Get All Modules</synopsis>
       <description>
 	Return an array of all modules loaded in the virtual machine.
+        The array includes the unnamed module for each class loader.
 	The number of modules in the array is returned via
 	<code>module_count_ptr</code>, and the array itself via
 	<code>modules_ptr</code>.
