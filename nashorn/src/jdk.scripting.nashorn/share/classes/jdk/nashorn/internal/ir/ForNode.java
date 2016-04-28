@@ -90,7 +90,6 @@ public final class ForNode extends LoopNode {
         this.init = init;
         this.modify = modify;
         this.iterator = null;
-
     }
 
     private ForNode(final ForNode forNode, final Expression init, final JoinPredecessorExpression test,
