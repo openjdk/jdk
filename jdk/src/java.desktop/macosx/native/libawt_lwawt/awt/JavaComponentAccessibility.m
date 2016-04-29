@@ -25,7 +25,7 @@
 
 // External Java Accessibility links:
 //
-// <http://java.sun.com/j2se/1.4.2/docs/guide/access/index.html>
+// <https://docs.oracle.com/javase/8/docs/technotes/guides/access/index.html>
 // <http://www-106.ibm.com/developerworks/library/j-access/?n-j-10172>
 // <http://archives.java.sun.com/archives/java-access.html> (Sun's mailing list for Java accessibility)
 
@@ -973,7 +973,7 @@ static NSObject *sAttributeNamesLOCK = nil;
 // Element's value (id)
 // note that the appKit meaning of "accessibilityValue" is different from the java
 // meaning of "accessibleValue", which is specific to numerical values
-// (http://java.sun.com/j2se/1.3/docs/api/javax/accessibility/AccessibleValue.html#setCurrentAccessibleValue(java.lang.Number))
+// (https://docs.oracle.com/javase/8/docs/api/javax/accessibility/AccessibleValue.html#setCurrentAccessibleValue-java.lang.Number-)
 - (id)accessibilityValueAttribute
 {
     static JNF_STATIC_MEMBER_CACHE(jm_getCurrentAccessibleValue, sjc_CAccessibility, "getCurrentAccessibleValue", "(Ljavax/accessibility/AccessibleValue;Ljava/awt/Component;)Ljava/lang/Number;");
