@@ -31,7 +31,6 @@
  *
  * @modules java.base/sun.util.logging
  *          java.logging/sun.util.logging.internal
- * @compile -XDignore.symbol.file PlatformLoggerTest.java
  * @run main/othervm PlatformLoggerTest
  */
 
@@ -42,25 +41,31 @@ import sun.util.logging.PlatformLogger;
 import static sun.util.logging.PlatformLogger.Level.*;
 
 public class PlatformLoggerTest {
+
+    static Logger logger;
+    static PlatformLogger bar;
+    static PlatformLogger goo;
+    static PlatformLogger foo;
+
     public static void main(String[] args) throws Exception {
         final String FOO_PLATFORM_LOGGER = "test.platformlogger.foo";
         final String BAR_PLATFORM_LOGGER = "test.platformlogger.bar";
         final String GOO_PLATFORM_LOGGER = "test.platformlogger.goo";
         final String BAR_LOGGER = "test.logger.bar";
-        PlatformLogger goo = PlatformLogger.getLogger(GOO_PLATFORM_LOGGER);
+        goo = PlatformLogger.getLogger(GOO_PLATFORM_LOGGER);
         // test the PlatformLogger methods
         testLogMethods(goo);
 
         // Create a platform logger using the default
-        PlatformLogger foo = PlatformLogger.getLogger(FOO_PLATFORM_LOGGER);
+        foo = PlatformLogger.getLogger(FOO_PLATFORM_LOGGER);
         checkPlatformLogger(foo, FOO_PLATFORM_LOGGER);
 
         // create a java.util.logging.Logger
         // now java.util.logging.Logger should be created for each platform logger
-        Logger logger = Logger.getLogger(BAR_LOGGER);
+        logger = Logger.getLogger(BAR_LOGGER);
         logger.setLevel(Level.WARNING);
 
-        PlatformLogger bar = PlatformLogger.getLogger(BAR_PLATFORM_LOGGER);
+        bar = PlatformLogger.getLogger(BAR_PLATFORM_LOGGER);
         checkPlatformLogger(bar, BAR_PLATFORM_LOGGER);
 
         // test the PlatformLogger methods
