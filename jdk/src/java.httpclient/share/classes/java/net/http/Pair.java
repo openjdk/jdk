@@ -43,4 +43,9 @@ final class Pair<T, U> {
     static <T, U> Pair<T, U> pair(T first, U second) {
         return new Pair<>(first, second);
     }
+
+    @Override
+    public String toString() {
+        return "(" + first + ", " + second + ")";
+    }
 }
