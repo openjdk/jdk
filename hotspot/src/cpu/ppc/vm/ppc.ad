@@ -2313,6 +2313,8 @@ const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return RegMask();
 }
 
+const bool Matcher::convi2l_type_required = true;
+
 %}
 
 //----------ENCODING BLOCK-----------------------------------------------------
