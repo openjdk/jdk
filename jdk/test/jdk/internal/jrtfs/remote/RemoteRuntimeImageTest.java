@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8141609
+ * @bug 8141609 8154403
  * @summary Verify JDK 8 can use jrt-fs.jar to work with jrt file system.
  * @run main RemoteRuntimeImageTest
  */
@@ -63,7 +63,6 @@ public class RemoteRuntimeImageTest {
 
         String java = jdk8Path.resolve("bin/java").toAbsolutePath().toString();
         String javac = jdk8Path.resolve("bin/javac").toAbsolutePath().toString();
-
         Files.createDirectories(Paths.get(".", CLASSES_DIR));
         String jrtJar = Paths.get(TEST_JAVAHOME, JRTFS_JAR).toAbsolutePath().toString();
 
@@ -121,4 +120,3 @@ public class RemoteRuntimeImageTest {
         return version.startsWith("\"1.8");
     }
 }
-

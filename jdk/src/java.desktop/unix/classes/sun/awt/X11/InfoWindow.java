@@ -29,7 +29,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.peer.TrayIconPeer;
 import sun.awt.*;
-import sun.misc.ManagedLocalsThread;
 
 import java.awt.image.*;
 import java.text.BreakIterator;
@@ -452,7 +451,7 @@ public abstract class InfoWindow extends Window {
             final Thread thread;
 
             Displayer() {
-                this.thread = new ManagedLocalsThread(this);
+                this.thread = new Thread(null, this, "Displayer", 0, false);
                 this.thread.setDaemon(true);
             }
 

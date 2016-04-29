@@ -25,12 +25,13 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/g1/heapRegion.hpp"
+#include "logging/log.hpp"
 
 G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults), _adaptive_size(true),
         _min_desired_young_length(0), _max_desired_young_length(0) {
   if (FLAG_IS_CMDLINE(NewRatio)) {
     if (FLAG_IS_CMDLINE(NewSize) || FLAG_IS_CMDLINE(MaxNewSize)) {
-      warning("-XX:NewSize and -XX:MaxNewSize override -XX:NewRatio");
+      log_warning(gc, ergo)("-XX:NewSize and -XX:MaxNewSize override -XX:NewRatio");
     } else {
       _sizer_kind = SizerNewRatio;
       _adaptive_size = false;
@@ -40,9 +41,9 @@ G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults), _adaptive_size(
 
   if (NewSize > MaxNewSize) {
     if (FLAG_IS_CMDLINE(MaxNewSize)) {
-      warning("NewSize (" SIZE_FORMAT "k) is greater than the MaxNewSize (" SIZE_FORMAT "k). "
-              "A new max generation size of " SIZE_FORMAT "k will be used.",
-              NewSize/K, MaxNewSize/K, NewSize/K);
+      log_warning(gc, ergo)("NewSize (" SIZE_FORMAT "k) is greater than the MaxNewSize (" SIZE_FORMAT "k). "
+                            "A new max generation size of " SIZE_FORMAT "k will be used.",
+                            NewSize/K, MaxNewSize/K, NewSize/K);
     }
     MaxNewSize = NewSize;
   }

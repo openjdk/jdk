@@ -134,7 +134,7 @@ public class Klist {
         Character arg;
         for (int i = 0; i < args.length; i++) {
             if ((args[i].length() >= 2) && (args[i].startsWith("-"))) {
-                arg = new Character(args[i].charAt(1));
+                arg = Character.valueOf(args[i].charAt(1));
                 switch (arg.charValue()) {
                 case 'c':
                     action = 'c';

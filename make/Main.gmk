@@ -336,10 +336,10 @@ docs-javadoc:
 docs-jvmtidoc:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk jvmtidocs)
 
-zip-docs: docs-javadoc docs-jvmtidoc
+zip-docs:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk zip-docs)
 
-ALL_TARGETS += docs-javadoc docs-jvmtidoc
+ALL_TARGETS += docs-javadoc docs-jvmtidoc zip-docs
 
 ################################################################################
 # Cross compilation support
@@ -598,6 +598,8 @@ else
 
   docs-jvmtidoc: hotspot
 
+  zip-docs: docs-javadoc docs-jvmtidoc
+
   test: jimages test-image
 
   create-buildjdk-copy: jdk.jlink-java java.base-gendata
@@ -699,7 +701,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 endif
 
 # This target builds the documentation image
-docs-image: zip-docs
+docs-image: docs-javadoc docs-jvmtidoc
 
 # This target builds the test image
 test-image: prepare-test-image test-image-hotspot-jtreg-native \
@@ -723,7 +725,7 @@ images: product-images
 docs: docs-image
 all: all-images
 
-ALL_TARGETS += default jdk images docs all zip-docs
+ALL_TARGETS += default jdk images docs all
 
 ################################################################################
 ################################################################################
@@ -824,6 +826,10 @@ create-main-targets-include:
 	      $(MAKESUPPORT_OUTPUTDIR)/main-targets.gmk
 
 ################################################################################
+
+
+# workaround issue when building open targets when closed jib-profiles.js is used
+installer: product-images test-image
 
 .PHONY: $(ALL_TARGETS)
 

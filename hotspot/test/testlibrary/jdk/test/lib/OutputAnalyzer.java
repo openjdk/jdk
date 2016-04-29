@@ -378,14 +378,14 @@ public final class OutputAnalyzer {
    *  - exit code
    *  Note: the command line is printed by the ProcessTools
    */
-    private void reportDiagnosticSummary() {
-        String msg =
-            " stdout: [" + stdout + "];\n" +
-            " stderr: [" + stderr + "]\n" +
-            " exitValue = " + getExitValue() + "\n";
+  public void reportDiagnosticSummary() {
+      String msg =
+          " stdout: [" + stdout + "];\n" +
+          " stderr: [" + stderr + "]\n" +
+          " exitValue = " + getExitValue() + "\n";
 
-        System.err.println(msg);
-    }
+      System.err.println(msg);
+  }
 
 
   /**

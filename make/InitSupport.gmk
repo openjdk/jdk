@@ -331,7 +331,7 @@ else # $(HAS_SPEC)=true
   BUILD_LOG := $(OUTPUT_ROOT)/build.log
   BUILD_TRACE_LOG := $(OUTPUT_ROOT)/build-trace-time.log
 
-  BUILD_LOG_PIPE := > >($(TEE) -a $(BUILD_LOG)) 2> >($(TEE) -a $(BUILD_LOG) >&2)
+  BUILD_LOG_PIPE := > >($(TEE) -a $(BUILD_LOG)) 2> >($(TEE) -a $(BUILD_LOG) >&2) && wait
 
   # Sanity check the spec file, so it matches this source code
   define CheckSpecSanity

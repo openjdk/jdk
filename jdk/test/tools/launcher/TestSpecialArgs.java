@@ -241,7 +241,7 @@ public class TestSpecialArgs extends TestHelper {
 
     @Test
     void testNMArgumentProcessing() throws FileNotFoundException {
-        TestResult tr = null;
+        TestResult tr;
         // the direct invokers of the VM
         String options[] = {
             "-version", "-fullversion", "-help", "-?", "-X"

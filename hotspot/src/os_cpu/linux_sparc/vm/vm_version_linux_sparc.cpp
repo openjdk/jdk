@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,12 +66,12 @@ int VM_Version::platform_features(int features) {
   features = generic_v9_m;
 
   if (detect_niagara()) {
-    if (PrintMiscellaneous && Verbose) { tty->print_cr("Detected Linux on Niagara"); }
+    log_info(os, cpu)("Detected Linux on Niagara");
     features = niagara1_m | T_family_m;
   }
 
   if (detect_M_family()) {
-    if (PrintMiscellaneous && Verbose) { tty->print_cr("Detected Linux on M family"); }
+    log_info(os, cpu)("Detected Linux on M family");
     features = sun4v_m | generic_v9_m | M_family_m | T_family_m;
   }
 

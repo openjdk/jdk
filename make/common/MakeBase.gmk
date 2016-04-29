@@ -706,10 +706,10 @@ endif
 ExecuteWithLog = \
   $(call LogCmdlines, Exececuting: [$(strip $2)]) \
   $(call WriteFile, $2, $(strip $1).cmdline) \
-  ( $(strip $2) > >($(TEE) $(strip $1).log) 2> >($(TEE) $(strip $1).log >&2) || \
+  ( ( $(strip $2) > >($(TEE) $(strip $1).log) 2> >($(TEE) $(strip $1).log >&2) || \
       ( exitcode=$(DOLLAR)? && \
       $(CP) $(strip $1).log $(MAKESUPPORT_OUTPUTDIR)/failure-logs/$(subst /,_,$(patsubst $(BUILD_OUTPUT)/%,%,$(strip $1))).log && \
-      exit $(DOLLAR)exitcode ) )
+      exit $(DOLLAR)exitcode ) ) && wait )
 
 ################################################################################
 # Find lib dir for module

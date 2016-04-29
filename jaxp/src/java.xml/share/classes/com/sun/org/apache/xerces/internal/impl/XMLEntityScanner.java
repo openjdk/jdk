@@ -1,15 +1,16 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
- * Copyright 2005 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,8 +20,6 @@
  */
 
 package com.sun.org.apache.xerces.internal.impl;
-
-
 
 import com.sun.org.apache.xerces.internal.impl.io.ASCIIReader;
 import com.sun.org.apache.xerces.internal.impl.io.UCSReader;
@@ -44,8 +43,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Locale;
-import java.util.Vector;
 
 /**
  * Implements the entity scanner methods.
@@ -58,11 +57,10 @@ import java.util.Vector;
  */
 public class XMLEntityScanner implements XMLLocator  {
 
-
-    protected Entity.ScannedEntity fCurrentEntity = null ;
+    protected Entity.ScannedEntity fCurrentEntity = null;
     protected int fBufferSize = XMLEntityManager.DEFAULT_BUFFER_SIZE;
 
-    protected XMLEntityManager fEntityManager ;
+    protected XMLEntityManager fEntityManager;
 
     /** Security manager. */
     protected XMLSecurityManager fSecurityManager = null;
@@ -72,8 +70,9 @@ public class XMLEntityScanner implements XMLLocator  {
 
     /** Debug switching readers for encodings. */
     private static final boolean DEBUG_ENCODINGS = false;
+
     /** Listeners which should know when load is being called */
-    private Vector listeners = new Vector();
+    private ArrayList<XMLBufferListener> listeners = new ArrayList<>();
 
     private static final boolean [] VALID_NAMES = new boolean[127];
 
@@ -140,9 +139,11 @@ public class XMLEntityScanner implements XMLLocator  {
         VALID_NAMES[58]=true;
         VALID_NAMES[95]=true;
     }
-    // SAPJVM: Remember, that the XML version has explicitly been set,
+
+    // Remember, that the XML version has explicitly been set,
     // so that XMLStreamReader.getVersion() can find that out.
-    boolean xmlVersionSetExplicitly = false;
+    protected boolean xmlVersionSetExplicitly = false;
+
     //
     // Constructors
     //
@@ -257,7 +258,7 @@ public class XMLEntityScanner implements XMLLocator  {
      * @param xmlVersion the XML version of the current entity
      */
     public final void setXMLVersion(String xmlVersion) {
-        xmlVersionSetExplicitly = true; // SAPJVM
+        xmlVersionSetExplicitly = true;
         fCurrentEntity.xmlVersion = xmlVersion;
     } // setXMLVersion(String)
 
@@ -546,8 +547,7 @@ public class XMLEntityScanner implements XMLLocator  {
 
         // scan character
         int c = fCurrentEntity.ch[fCurrentEntity.position++];
-        if (c == '\n' ||
-                (c == '\r' && isExternal)) {
+        if (c == '\n' || (c == '\r' && isExternal)) {
             fCurrentEntity.lineNumber++;
             fCurrentEntity.columnNumber = 1;
             if (fCurrentEntity.position == fCurrentEntity.count) {
@@ -953,7 +953,7 @@ public class XMLEntityScanner implements XMLLocator  {
         if (fCurrentEntity.position == fCurrentEntity.count) {
             load(0, true, true);
         } else if (fCurrentEntity.position == fCurrentEntity.count - 1) {
-            invokeListeners(0);
+            invokeListeners(1);
             fCurrentEntity.ch[0] = fCurrentEntity.ch[fCurrentEntity.count - 1];
             load(1, false, false);
             fCurrentEntity.position = 0;
@@ -1105,7 +1105,7 @@ public class XMLEntityScanner implements XMLLocator  {
         if (fCurrentEntity.position == fCurrentEntity.count) {
             load(0, true, true);
         } else if (fCurrentEntity.position == fCurrentEntity.count - 1) {
-            invokeListeners(0);
+            invokeListeners(1);
             fCurrentEntity.ch[0] = fCurrentEntity.ch[fCurrentEntity.count - 1];
             load(1, false, false);
             fCurrentEntity.position = 0;
@@ -1256,8 +1256,8 @@ public class XMLEntityScanner implements XMLLocator  {
      * <p>
      * <strong>Note:</strong> The characters are consumed.
      * <p>
-     * <strong>Note:</strong> This assumes that the length of the delimiter
-     * and that the delimiter contains at least one character.
+     * <strong>Note:</strong> This assumes that the delimiter contains at
+     * least one character.
      * <p>
      * <strong>Note:</strong> This method does not guarantee to return
      * the longest run of character data. This method may return before
@@ -1436,7 +1436,7 @@ public class XMLEntityScanner implements XMLLocator  {
         } while (!done);
         return !done;
 
-    } // scanData(String,XMLString)
+    } // scanData(String, XMLStringBuffer)
 
     /**
      * Skips a character appearing immediately on the input.
@@ -1558,7 +1558,7 @@ public class XMLEntityScanner implements XMLLocator  {
                     fCurrentEntity.lineNumber++;
                     fCurrentEntity.columnNumber = 1;
                     if (fCurrentEntity.position == fCurrentEntity.count - 1) {
-                        invokeListeners(0);
+                        invokeListeners(1);
                         fCurrentEntity.ch[0] = (char)c;
                         entityChanged = load(1, true, false);
                         if (!entityChanged){
@@ -1727,8 +1727,7 @@ public class XMLEntityScanner implements XMLLocator  {
         final int length = s.length;
         //first make sure that required capacity is avaible
         if(arrangeCapacity(length, false)){
-            int beforeSkip = fCurrentEntity.position ;
-            int afterSkip = fCurrentEntity.position + length  ;
+            int beforeSkip = fCurrentEntity.position;
 
             if(DEBUG_SKIP_STRING){
                 System.out.println("skipString,length = " + new String(s) + "," + length);
@@ -2107,8 +2106,9 @@ public class XMLEntityScanner implements XMLLocator  {
      * is being changed.
      */
     public void registerListener(XMLBufferListener listener) {
-        if(!listeners.contains(listener))
+        if (!listeners.contains(listener)) {
             listeners.add(listener);
+        }
     }
 
     /**
@@ -2116,9 +2116,8 @@ public class XMLEntityScanner implements XMLLocator  {
      * @param loadPos Starting position from which new data is being loaded into scanner buffer.
      */
     public void invokeListeners(int loadPos){
-        for(int i=0;i<listeners.size();i++){
-            XMLBufferListener listener =(XMLBufferListener) listeners.get(i);
-            listener.refresh(loadPos);
+        for (int i=0; i<listeners.size(); i++) {
+            listeners.get(i).refresh(loadPos);
         }
     }
 

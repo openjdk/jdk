@@ -30,4 +30,9 @@ public interface JavaLangInvokeAccess {
      * Create a new MemberName instance
      */
     Object newMemberName();
+
+    /**
+     * Returns the name for the given MemberName
+     */
+    String getName(Object mname);
 }

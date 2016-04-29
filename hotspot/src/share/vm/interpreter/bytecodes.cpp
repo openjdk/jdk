@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -496,6 +496,7 @@ void Bytecodes::initialize() {
 
   def(_fast_aputfield      , "fast_aputfield"      , "bJJ"  , NULL    , T_OBJECT ,  0, true , _putfield       );
   def(_fast_bputfield      , "fast_bputfield"      , "bJJ"  , NULL    , T_INT    ,  0, true , _putfield       );
+  def(_fast_zputfield      , "fast_zputfield"      , "bJJ"  , NULL    , T_INT    ,  0, true , _putfield       );
   def(_fast_cputfield      , "fast_cputfield"      , "bJJ"  , NULL    , T_CHAR   ,  0, true , _putfield       );
   def(_fast_dputfield      , "fast_dputfield"      , "bJJ"  , NULL    , T_DOUBLE ,  0, true , _putfield       );
   def(_fast_fputfield      , "fast_fputfield"      , "bJJ"  , NULL    , T_FLOAT  ,  0, true , _putfield       );

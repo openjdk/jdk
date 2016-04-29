@@ -398,6 +398,10 @@ class SharedRuntime: AllStatic {
   static void convert_ints_to_longints(int i2l_argcnt, int& in_args_count,
                                        BasicType*& in_sig_bt, VMRegPair*& in_regs);
 
+  static size_t trampoline_size();
+
+  static void generate_trampoline(MacroAssembler *masm, address destination);
+
   // Generate I2C and C2I adapters. These adapters are simple argument marshalling
   // blobs. Unlike adapters in the tiger and earlier releases the code in these
   // blobs does not create a new frame and are therefore virtually invisible
@@ -680,6 +684,17 @@ class AdapterHandlerEntry : public BasicHashtableEntry<mtCode> {
   void print_adapter_on(outputStream* st) const;
 };
 
+class CDSAdapterHandlerEntry: public AdapterHandlerEntry {
+  address               _c2i_entry_trampoline;   // allocated from shared spaces "MC" region
+  AdapterHandlerEntry** _adapter_trampoline;     // allocated from shared spaces "MD" region
+
+public:
+  address get_c2i_entry_trampoline()             const { return _c2i_entry_trampoline; }
+  AdapterHandlerEntry** get_adapter_trampoline() const { return _adapter_trampoline; }
+  void init() NOT_CDS_RETURN;
+};
+
+
 class AdapterHandlerLibrary: public AllStatic {
  private:
   static BufferBlob* _buffer; // the temporary code buffer in CodeCache
@@ -687,6 +702,7 @@ class AdapterHandlerLibrary: public AllStatic {
   static AdapterHandlerEntry* _abstract_method_handler;
   static BufferBlob* buffer_blob();
   static void initialize();
+  static AdapterHandlerEntry* get_adapter0(const methodHandle& method);
 
  public:
 

@@ -35,7 +35,6 @@
 #include "trace/tracing.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/top.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1_globals.hpp"
 #endif // INCLUDE_ALL_GCS
@@ -1293,7 +1292,7 @@ void CommandLineFlags::printSetFlags(outputStream* out) {
   const size_t length = Flag::numFlags - 1;
 
   // Sort
-  Flag** array = NEW_C_HEAP_ARRAY(Flag*, length, mtInternal);
+  Flag** array = NEW_C_HEAP_ARRAY(Flag*, length, mtArguments);
   for (size_t i = 0; i < length; i++) {
     array[i] = &flagTable[i];
   }
@@ -1327,7 +1326,7 @@ void CommandLineFlags::printFlags(outputStream* out, bool withComments, bool pri
   const size_t length = Flag::numFlags - 1;
 
   // Sort
-  Flag** array = NEW_C_HEAP_ARRAY(Flag*, length, mtInternal);
+  Flag** array = NEW_C_HEAP_ARRAY(Flag*, length, mtArguments);
   for (size_t i = 0; i < length; i++) {
     array[i] = &flagTable[i];
   }

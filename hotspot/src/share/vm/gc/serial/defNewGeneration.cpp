@@ -692,7 +692,7 @@ void DefNewGeneration::collect(bool   full,
     _promo_failure_scan_stack.clear(true); // Clear cached segments.
 
     remove_forwarding_pointers();
-    log_debug(gc)("Promotion failed");
+    log_info(gc, promotion)("Promotion failed");
     // Add to-space to the list of space to compact
     // when a promotion failure has occurred.  In that
     // case there can be live objects in to-space
@@ -739,8 +739,7 @@ void DefNewGeneration::remove_forwarding_pointers() {
   eden()->object_iterate(&rspc);
   from()->object_iterate(&rspc);
 
-  // Now restore saved marks, if any.
-  _preserved_marks_set.restore();
+  _preserved_marks_set.restore(GenCollectedHeap::heap()->workers());
 }
 
 void DefNewGeneration::handle_promotion_failure(oop old) {

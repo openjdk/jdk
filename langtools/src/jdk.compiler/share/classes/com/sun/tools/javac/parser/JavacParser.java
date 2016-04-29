@@ -686,7 +686,7 @@ public class JavacParser implements Parser {
             try {
                 t = F.at(pos).Literal(
                     TypeTag.LONG,
-                    new Long(Convert.string2long(strval(prefix), token.radix())));
+                    Long.valueOf(Convert.string2long(strval(prefix), token.radix())));
             } catch (NumberFormatException ex) {
                 error(token.pos, "int.number.too.large", strval(prefix));
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,18 +39,21 @@
  * If the image of the specified size won't fit into the status bar,
  * then scale it down proprtionally. Otherwise, leave it as is.
  */
-static NSSize ScaledImageSizeForStatusBar(NSSize imageSize) {
+static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     NSRect imageRect = NSMakeRect(0.0, 0.0, imageSize.width, imageSize.height);
 
     // There is a black line at the bottom of the status bar
     // that we don't want to cover with image pixels.
-    CGFloat desiredHeight = [[NSStatusBar systemStatusBar] thickness] - 1.0;
-    CGFloat scaleFactor = MIN(1.0, desiredHeight/imageSize.height);
-
-    imageRect.size.width *= scaleFactor;
-    imageRect.size.height *= scaleFactor;
+    CGFloat desiredSize = [[NSStatusBar systemStatusBar] thickness] - 1.0;
+    if (autosize) {
+        imageRect.size.width = desiredSize;
+        imageRect.size.height = desiredSize;
+    } else {
+        CGFloat scaleFactor = MIN(1.0, desiredSize/imageSize.height);
+        imageRect.size.width *= scaleFactor;
+        imageRect.size.height *= scaleFactor;
+    }
     imageRect = NSIntegralRect(imageRect);
-
     return imageRect.size;
 }
 
@@ -101,9 +104,9 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize) {
     return peer;
 }
 
-- (void) setImage:(NSImage *) imagePtr sizing:(BOOL)autosize{
+- (void) setImage:(NSImage *) imagePtr sizing:(BOOL)autosize {
     NSSize imageSize = [imagePtr size];
-    NSSize scaledSize = ScaledImageSizeForStatusBar(imageSize);
+    NSSize scaledSize = ScaledImageSizeForStatusBar(imageSize, autosize);
     if (imageSize.width != scaledSize.width ||
         imageSize.height != scaledSize.height) {
         [imagePtr setSize: scaledSize];

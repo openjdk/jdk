@@ -245,11 +245,12 @@ public final class ZoneInfoFile {
     };
 
     static {
-        String oldmapping = AccessController.doPrivileged(
-            new GetPropertyAction("sun.timezone.ids.oldmapping", "false")).toLowerCase(Locale.ROOT);
+        String oldmapping = GetPropertyAction
+                .getProperty("sun.timezone.ids.oldmapping", "false")
+                .toLowerCase(Locale.ROOT);
         USE_OLDMAPPING = (oldmapping.equals("yes") || oldmapping.equals("true"));
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
-            public Object run() {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
                 try {
                     String libDir = System.getProperty("java.home") + File.separator + "lib";
                     try (DataInputStream dis = new DataInputStream(
