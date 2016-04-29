@@ -3566,6 +3566,8 @@ const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return FP_REG_mask();
 }
 
+const bool Matcher::convi2l_type_required = false;
+
 // helper for encoding java_to_runtime calls on sim
 //
 // this is needed to compute the extra arguments required when

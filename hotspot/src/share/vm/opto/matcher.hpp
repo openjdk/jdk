@@ -488,6 +488,9 @@ public:
   // ourselves.
   static const bool need_masked_shift_count;
 
+  // Whether code generation need accurate ConvI2L types.
+  static const bool convi2l_type_required;
+
   // This routine is run whenever a graph fails to match.
   // If it returns, the compiler should bailout to interpreter without error.
   // In non-product mode, SoftMatchFailure is false to detect non-canonical
