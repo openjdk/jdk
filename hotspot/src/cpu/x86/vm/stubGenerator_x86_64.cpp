@@ -3771,12 +3771,29 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
     __ emit_data64(0x0405060700010203, relocInfo::none);
     __ emit_data64(0x0c0d0e0f08090a0b, relocInfo::none);
+
+    if (VM_Version::supports_avx2()) {
+      __ emit_data64(0x0405060700010203, relocInfo::none); // second copy
+      __ emit_data64(0x0c0d0e0f08090a0b, relocInfo::none);
+      // _SHUF_00BA
+      __ emit_data64(0x0b0a090803020100, relocInfo::none);
+      __ emit_data64(0xFFFFFFFFFFFFFFFF, relocInfo::none);
+      __ emit_data64(0x0b0a090803020100, relocInfo::none);
+      __ emit_data64(0xFFFFFFFFFFFFFFFF, relocInfo::none);
+      // _SHUF_DC00
+      __ emit_data64(0xFFFFFFFFFFFFFFFF, relocInfo::none);
+      __ emit_data64(0x0b0a090803020100, relocInfo::none);
+      __ emit_data64(0xFFFFFFFFFFFFFFFF, relocInfo::none);
+      __ emit_data64(0x0b0a090803020100, relocInfo::none);
+    }
+
     return start;
   }
 
 // ofs and limit are use for multi-block byte array.
 // int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
   address generate_sha256_implCompress(bool multi_block, const char *name) {
+    assert(VM_Version::supports_sha() || VM_Version::supports_avx2(), "");
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -3805,16 +3822,37 @@ class StubGenerator: public StubCodeGenerator {
     __ movdqu(Address(rsp, 0), xmm6);
     __ movdqu(Address(rsp, 2 * wordSize), xmm7);
     __ movdqu(Address(rsp, 4 * wordSize), xmm8);
+
+    if (!VM_Version::supports_sha() && VM_Version::supports_avx2()) {
+      __ subptr(rsp, 10 * wordSize);
+      __ movdqu(Address(rsp, 0), xmm9);
+      __ movdqu(Address(rsp, 2 * wordSize), xmm10);
+      __ movdqu(Address(rsp, 4 * wordSize), xmm11);
+      __ movdqu(Address(rsp, 6 * wordSize), xmm12);
+      __ movdqu(Address(rsp, 8 * wordSize), xmm13);
+    }
 #endif
 
     __ subptr(rsp, 4 * wordSize);
 
-    __ fast_sha256(msg, state0, state1, msgtmp0, msgtmp1, msgtmp2, msgtmp3, msgtmp4,
-      buf, state, ofs, limit, rsp, multi_block, shuf_mask);
-
+    if (VM_Version::supports_sha()) {
+      __ fast_sha256(msg, state0, state1, msgtmp0, msgtmp1, msgtmp2, msgtmp3, msgtmp4,
+        buf, state, ofs, limit, rsp, multi_block, shuf_mask);
+    } else if (VM_Version::supports_avx2()) {
+      __ sha256_AVX2(msg, state0, state1, msgtmp0, msgtmp1, msgtmp2, msgtmp3, msgtmp4,
+        buf, state, ofs, limit, rsp, multi_block, shuf_mask);
+    }
     __ addptr(rsp, 4 * wordSize);
 #ifdef _WIN64
     // restore xmm regs belonging to calling function
+    if (!VM_Version::supports_sha() && VM_Version::supports_avx2()) {
+      __ movdqu(xmm9, Address(rsp, 0));
+      __ movdqu(xmm10, Address(rsp, 2 * wordSize));
+      __ movdqu(xmm11, Address(rsp, 4 * wordSize));
+      __ movdqu(xmm12, Address(rsp, 6 * wordSize));
+      __ movdqu(xmm13, Address(rsp, 8 * wordSize));
+      __ addptr(rsp, 10 * wordSize);
+    }
     __ movdqu(xmm6, Address(rsp, 0));
     __ movdqu(xmm7, Address(rsp, 2 * wordSize));
     __ movdqu(xmm8, Address(rsp, 4 * wordSize));
@@ -5217,6 +5255,13 @@ class StubGenerator: public StubCodeGenerator {
     }
     if (UseSHA256Intrinsics) {
       StubRoutines::x86::_k256_adr = (address)StubRoutines::x86::_k256;
+      char* dst = (char*)StubRoutines::x86::_k256_W;
+      char* src = (char*)StubRoutines::x86::_k256;
+      for (int ii = 0; ii < 16; ++ii) {
+        memcpy(dst + 32 * ii,      src + 16 * ii, 16);
+        memcpy(dst + 32 * ii + 16, src + 16 * ii, 16);
+      }
+      StubRoutines::x86::_k256_W_adr = (address)StubRoutines::x86::_k256_W;
       StubRoutines::x86::_pshuffle_byte_flip_mask_addr = generate_pshuffle_byte_flip_mask();
       StubRoutines::_sha256_implCompress = generate_sha256_implCompress(false, "sha256_implCompress");
       StubRoutines::_sha256_implCompressMB = generate_sha256_implCompress(true, "sha256_implCompressMB");

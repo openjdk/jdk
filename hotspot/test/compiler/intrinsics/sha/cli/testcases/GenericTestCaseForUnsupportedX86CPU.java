@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,9 @@
 import jdk.test.lib.ExitCode;
 import jdk.test.lib.Platform;
 import jdk.test.lib.cli.CommandLineOptionTest;
+import jdk.test.lib.cli.predicate.AndPredicate;
 import jdk.test.lib.cli.predicate.OrPredicate;
+import jdk.test.lib.cli.predicate.NotPredicate;
 
 /**
  * Generic test case for SHA-related options targeted to X86 CPUs that don't
@@ -33,21 +35,14 @@ import jdk.test.lib.cli.predicate.OrPredicate;
 public class GenericTestCaseForUnsupportedX86CPU
         extends SHAOptionsBase.TestCase {
     public GenericTestCaseForUnsupportedX86CPU(String optionName) {
-        super(optionName, new OrPredicate(Platform::isX64, Platform::isX86));
+        super(optionName, new AndPredicate(new OrPredicate(Platform::isX64, Platform::isX86),
+                new NotPredicate(SHAOptionsBase.getPredicateForOption(
+                        optionName))));
     }
 
     @Override
     protected void verifyWarnings() throws Throwable {
-        String shouldPassMessage = String.format("JVM should start with '-XX:+"
-                + "%s' flag, but output should contain warning.", optionName);
-        // Verify that when the tested option is explicitly enabled, then
-        // a warning will occur in VM output.
-        CommandLineOptionTest.verifySameJVMStartup(new String[] {
-                        SHAOptionsBase.getWarningForUnsupportedCPU(optionName)
-                }, null, shouldPassMessage, shouldPassMessage, ExitCode.OK,
-                CommandLineOptionTest.prepareBooleanFlag(optionName, true));
-
-        shouldPassMessage = String.format("JVM should start with '-XX:-%s' "
+        String shouldPassMessage = String.format("JVM should start with '-XX:-%s' "
                 + "flag without any warnings", optionName);
         // Verify that the tested option could be explicitly disabled without
         // a warning.
@@ -55,6 +50,19 @@ public class GenericTestCaseForUnsupportedX86CPU
                         SHAOptionsBase.getWarningForUnsupportedCPU(optionName)
                 }, shouldPassMessage, shouldPassMessage, ExitCode.OK,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, false));
+
+        // Verify that when the tested option is enabled, then
+        // a warning will occur in VM output if UseSHA is disabled.
+        if (!optionName.equals(SHAOptionsBase.USE_SHA_OPTION)) {
+            CommandLineOptionTest.verifySameJVMStartup(
+                    new String[] { SHAOptionsBase.getWarningForUnsupportedCPU(optionName) },
+                    null,
+                    shouldPassMessage,
+                    shouldPassMessage,
+                    ExitCode.OK,
+                    CommandLineOptionTest.prepareBooleanFlag(SHAOptionsBase.USE_SHA_OPTION, false),
+                    CommandLineOptionTest.prepareBooleanFlag(optionName, true));
+        }
     }
 
     @Override

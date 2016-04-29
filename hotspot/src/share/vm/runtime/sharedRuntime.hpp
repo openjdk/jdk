@@ -188,7 +188,7 @@ class SharedRuntime: AllStatic {
 #endif // INCLUDE_ALL_GCS
 
   // exception handling and implicit exceptions
-  static address compute_compiled_exc_handler(nmethod* nm, address ret_pc, Handle& exception,
+  static address compute_compiled_exc_handler(CompiledMethod* nm, address ret_pc, Handle& exception,
                                               bool force_unwind, bool top_frame_only);
   enum ImplicitExceptionKind {
     IMPLICIT_NULL,
@@ -207,7 +207,7 @@ class SharedRuntime: AllStatic {
                                                      address faulting_pc,
                                                      ImplicitExceptionKind exception_kind);
 #if INCLUDE_JVMCI
-  static address deoptimize_for_implicit_exception(JavaThread* thread, address pc, nmethod* nm, int deopt_reason);
+  static address deoptimize_for_implicit_exception(JavaThread* thread, address pc, CompiledMethod* nm, int deopt_reason);
 #endif
 
   static void enable_stack_reserved_zone(JavaThread* thread);

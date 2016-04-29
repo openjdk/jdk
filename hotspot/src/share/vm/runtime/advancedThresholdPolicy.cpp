@@ -496,7 +496,7 @@ void AdvancedThresholdPolicy::submit_compile(const methodHandle& mh, int bci, Co
 
 // Handle the invocation event.
 void AdvancedThresholdPolicy::method_invocation_event(const methodHandle& mh, const methodHandle& imh,
-                                                      CompLevel level, nmethod* nm, JavaThread* thread) {
+                                                      CompLevel level, CompiledMethod* nm, JavaThread* thread) {
   if (should_create_mdo(mh(), level)) {
     create_mdo(mh, thread);
   }
@@ -511,7 +511,7 @@ void AdvancedThresholdPolicy::method_invocation_event(const methodHandle& mh, co
 // Handle the back branch event. Notice that we can compile the method
 // with a regular entry from here.
 void AdvancedThresholdPolicy::method_back_branch_event(const methodHandle& mh, const methodHandle& imh,
-                                                       int bci, CompLevel level, nmethod* nm, JavaThread* thread) {
+                                                       int bci, CompLevel level, CompiledMethod* nm, JavaThread* thread) {
   if (should_create_mdo(mh(), level)) {
     create_mdo(mh, thread);
   }

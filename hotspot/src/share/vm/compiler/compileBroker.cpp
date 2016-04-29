@@ -1075,10 +1075,10 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
 
   if (osr_bci == InvocationEntryBci) {
     // standard compilation
-    nmethod* method_code = method->code();
-    if (method_code != NULL) {
+    CompiledMethod* method_code = method->code();
+    if (method_code != NULL && method_code->is_nmethod()) {
       if (compilation_is_complete(method, osr_bci, comp_level)) {
-        return method_code;
+        return (nmethod*) method_code;
       }
     }
     if (method->is_not_compilable(comp_level)) {
@@ -1184,7 +1184,12 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   // return requested nmethod
   // We accept a higher level osr method
   if (osr_bci == InvocationEntryBci) {
-    return method->code();
+    CompiledMethod* code = method->code();
+    if (code == NULL) {
+      return (nmethod*) code;
+    } else {
+      return code->as_nmethod_or_null();
+    }
   }
   return method->lookup_osr_nmethod_for(osr_bci, comp_level, false);
 }
@@ -1209,7 +1214,7 @@ bool CompileBroker::compilation_is_complete(const methodHandle& method,
     if (method->is_not_compilable(comp_level)) {
       return true;
     } else {
-      nmethod* result = method->code();
+      CompiledMethod* result = method->code();
       if (result == NULL) return false;
       return comp_level == result->comp_level();
     }

@@ -1432,7 +1432,7 @@ void JavaThread::initialize() {
   set_vframe_array_last(NULL);
   set_deferred_locals(NULL);
   set_deopt_mark(NULL);
-  set_deopt_nmethod(NULL);
+  set_deopt_compiled_method(NULL);
   clear_must_deopt_id();
   set_monitor_chunks(NULL);
   set_next(NULL);
@@ -3300,26 +3300,26 @@ bool CompilerThread::can_call_java() const {
 // Create sweeper thread
 CodeCacheSweeperThread::CodeCacheSweeperThread()
 : JavaThread(&sweeper_thread_entry) {
-  _scanned_nmethod = NULL;
+  _scanned_compiled_method = NULL;
 }
 
 void CodeCacheSweeperThread::oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
   JavaThread::oops_do(f, cld_f, cf);
-  if (_scanned_nmethod != NULL && cf != NULL) {
+  if (_scanned_compiled_method != NULL && cf != NULL) {
     // Safepoints can occur when the sweeper is scanning an nmethod so
     // process it here to make sure it isn't unloaded in the middle of
     // a scan.
-    cf->do_code_blob(_scanned_nmethod);
+    cf->do_code_blob(_scanned_compiled_method);
   }
 }
 
 void CodeCacheSweeperThread::nmethods_do(CodeBlobClosure* cf) {
   JavaThread::nmethods_do(cf);
-  if (_scanned_nmethod != NULL && cf != NULL) {
+  if (_scanned_compiled_method != NULL && cf != NULL) {
     // Safepoints can occur when the sweeper is scanning an nmethod so
     // process it here to make sure it isn't unloaded in the middle of
     // a scan.
-    cf->do_code_blob(_scanned_nmethod);
+    cf->do_code_blob(_scanned_compiled_method);
   }
 }
 
@@ -4353,7 +4353,7 @@ void Threads::nmethods_do(CodeBlobClosure* cf) {
   ALL_JAVA_THREADS(p) {
     // This is used by the code cache sweeper to mark nmethods that are active
     // on the stack of a Java thread. Ignore the sweeper thread itself to avoid
-    // marking CodeCacheSweeperThread::_scanned_nmethod as active.
+    // marking CodeCacheSweeperThread::_scanned_compiled_method as active.
     if(!p->is_Code_cache_sweeper_thread()) {
       p->nmethods_do(cf);
     }

@@ -4670,24 +4670,35 @@ void MacroAssembler::arrays_equals(Register a1, Register a2,
   BLOCK_COMMENT(is_string ? "} string_equals" : "} array_equals");
 }
 
-// base:   Address of a buffer to be zeroed, 8 bytes aligned.
-// cnt:    Count in 8-byte unit.
+
+// base:     Address of a buffer to be zeroed, 8 bytes aligned.
+// cnt:      Count in HeapWords.
+// is_large: True when 'cnt' is known to be >= BlockZeroingLowLimit.
 void MacroAssembler::zero_words(Register base, Register cnt)
 {
-  fill_words(base, cnt, zr);
+  if (UseBlockZeroing) {
+    block_zero(base, cnt);
+  } else {
+    fill_words(base, cnt, zr);
+  }
 }
 
-// base:   Address of a buffer to be zeroed, 8 bytes aligned.
-// cnt:    Immediate count in 8-byte unit.
+// r10 = base:   Address of a buffer to be zeroed, 8 bytes aligned.
+// cnt:          Immediate count in HeapWords.
+// r11 = tmp:    For use as cnt if we need to call out
 #define ShortArraySize (18 * BytesPerLong)
 void MacroAssembler::zero_words(Register base, u_int64_t cnt)
 {
+  Register tmp = r11;
   int i = cnt & 1;  // store any odd word to start
   if (i) str(zr, Address(base));
 
   if (cnt <= ShortArraySize / BytesPerLong) {
     for (; i < (int)cnt; i += 2)
       stp(zr, zr, Address(base, i * wordSize));
+  } else if (UseBlockZeroing && cnt >= (u_int64_t)(BlockZeroingLowLimit >> LogBytesPerWord)) {
+    mov(tmp, cnt);
+    block_zero(base, tmp, true);
   } else {
     const int unroll = 4; // Number of stp(zr, zr) instructions we'll unroll
     int remainder = cnt % (2 * unroll);
@@ -4739,24 +4750,95 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value)
 
   assert_different_registers(base, cnt, value, rscratch1, rscratch2);
 
-  Label entry, loop;
-  const int unroll = 8; // Number of str instructions we'll unroll
+  Label fini, skip, entry, loop;
+  const int unroll = 8; // Number of stp instructions we'll unroll
 
-  andr(rscratch1, cnt, unroll - 1);  // tmp1 = cnt % unroll
-  cbz(rscratch1, entry);
-  sub(cnt, cnt, rscratch1);          // cnt -= tmp1
-  // base always points to the end of the region we're about to fill
+  cbz(cnt, fini);
+  tbz(base, 3, skip);
+  str(value, Address(post(base, 8)));
+  sub(cnt, cnt, 1);
+  bind(skip);
+
+  andr(rscratch1, cnt, (unroll-1) * 2);
+  sub(cnt, cnt, rscratch1);
   add(base, base, rscratch1, Assembler::LSL, 3);
   adr(rscratch2, entry);
-  sub(rscratch2, rscratch2, rscratch1, Assembler::LSL, 2);
+  sub(rscratch2, rscratch2, rscratch1, Assembler::LSL, 1);
   br(rscratch2);
+
   bind(loop);
-  add(base, base, unroll * 8);
-  sub(cnt, cnt, unroll);
   for (int i = -unroll; i < 0; i++)
-    str(value, Address(base, i * 8));
+    stp(value, value, Address(base, i * 16));
   bind(entry);
-  cbnz(cnt, loop);
+  subs(cnt, cnt, unroll * 2);
+  add(base, base, unroll * 16);
+  br(Assembler::GE, loop);
+
+  tbz(cnt, 0, fini);
+  str(value, Address(base, -unroll * 16));
+  bind(fini);
+}
+
+// Use DC ZVA to do fast zeroing.
+// base:   Address of a buffer to be zeroed, 8 bytes aligned.
+// cnt:    Count in HeapWords.
+// is_large: True when 'cnt' is known to be >= BlockZeroingLowLimit.
+void MacroAssembler::block_zero(Register base, Register cnt, bool is_large)
+{
+  Label small;
+  Label store_pair, loop_store_pair, done;
+  Label base_aligned;
+
+  assert_different_registers(base, cnt, rscratch1);
+
+  Register tmp = rscratch1;
+  Register tmp2 = rscratch2;
+  int zva_length = VM_Version::zva_length();
+
+  // Ensure ZVA length can be divided by 16. This is required by
+  // the subsequent operations.
+  assert (zva_length % 16 == 0, "Unexpected ZVA Length");
+
+  if (!is_large) cbz(cnt, done);
+  tbz(base, 3, base_aligned);
+  str(zr, Address(post(base, 8)));
+  sub(cnt, cnt, 1);
+  bind(base_aligned);
+
+  // Ensure count >= zva_length * 2 so that it still deserves a zva after
+  // alignment.
+  if (!is_large || !(BlockZeroingLowLimit >= zva_length * 2)) {
+    int low_limit = MAX2(zva_length * 2, (int)BlockZeroingLowLimit);
+    cmp(cnt, low_limit >> 3);
+    br(Assembler::LT, small);
+  }
+
+  far_call(StubRoutines::aarch64::get_zero_longs());
+
+  bind(small);
+
+  const int unroll = 8; // Number of stp instructions we'll unroll
+  Label small_loop, small_table_end;
+
+  andr(tmp, cnt, (unroll-1) * 2);
+  sub(cnt, cnt, tmp);
+  add(base, base, tmp, Assembler::LSL, 3);
+  adr(tmp2, small_table_end);
+  sub(tmp2, tmp2, tmp, Assembler::LSL, 1);
+  br(tmp2);
+
+  bind(small_loop);
+  for (int i = -unroll; i < 0; i++)
+    stp(zr, zr, Address(base, i * 16));
+  bind(small_table_end);
+  subs(cnt, cnt, unroll * 2);
+  add(base, base, unroll * 16);
+  br(Assembler::GE, small_loop);
+
+  tbz(cnt, 0, done);
+  str(zr, Address(base, -unroll * 16));
+
+  bind(done);
 }
 
 // encode char[] to byte[] in ISO_8859_1

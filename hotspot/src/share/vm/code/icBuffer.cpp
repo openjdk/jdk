@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,8 @@ int InlineCacheBuffer::_pending_count = 0;
 void ICStub::finalize() {
   if (!is_empty()) {
     ResourceMark rm;
-    CompiledIC *ic = CompiledIC_at(CodeCache::find_nmethod(ic_site()), ic_site());
-    assert(CodeCache::find_nmethod(ic->instruction_address()) != NULL, "inline cache in non-nmethod?");
+    CompiledIC *ic = CompiledIC_at(CodeCache::find_compiled(ic_site()), ic_site());
+    assert(CodeCache::find_compiled(ic->instruction_address()) != NULL, "inline cache in non-compiled?");
 
     assert(this == ICStub_from_destination_address(ic->stub_address()), "wrong owner of ic buffer");
     ic->set_ic_destination_and_value(destination(), cached_value());

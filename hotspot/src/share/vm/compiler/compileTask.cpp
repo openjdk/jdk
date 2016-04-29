@@ -135,7 +135,11 @@ AbstractCompiler* CompileTask::compiler() {
 //
 nmethod* CompileTask::code() const {
   if (_code_handle == NULL)  return NULL;
-  return _code_handle->code();
+  CodeBlob *blob = _code_handle->code();
+  if (blob != NULL) {
+    return blob->as_nmethod();
+  }
+  return NULL;
 }
 
 void CompileTask::set_code(nmethod* nm) {

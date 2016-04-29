@@ -393,17 +393,12 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     @Override
-    public ResolvedJavaMethod resolveConcreteMethod(ResolvedJavaMethod method, ResolvedJavaType callerType) {
-        ResolvedJavaMethod resolvedMethod = resolveMethod(method, callerType);
-        if (resolvedMethod == null || resolvedMethod.isAbstract()) {
-            return null;
-        }
-        return resolvedMethod;
-    }
-
-    @Override
     public ResolvedJavaMethod resolveMethod(ResolvedJavaMethod method, ResolvedJavaType callerType) {
         assert !callerType.isArray();
+        if (isInterface()) {
+            // Methods can only be resolved against concrete types
+            return null;
+        }
         if (method.isConcrete() && method.getDeclaringClass().equals(this) && method.isPublic()) {
             return method;
         }

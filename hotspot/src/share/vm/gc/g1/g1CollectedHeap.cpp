@@ -3776,12 +3776,12 @@ private:
   const uint               _num_workers;
 
   // Variables used to claim nmethods.
-  nmethod* _first_nmethod;
-  volatile nmethod* _claimed_nmethod;
+  CompiledMethod* _first_nmethod;
+  volatile CompiledMethod* _claimed_nmethod;
 
   // The list of nmethods that need to be processed by the second pass.
-  volatile nmethod* _postponed_list;
-  volatile uint     _num_entered_barrier;
+  volatile CompiledMethod* _postponed_list;
+  volatile uint            _num_entered_barrier;
 
  public:
   G1CodeCacheUnloadingTask(uint num_workers, BoolObjectClosure* is_alive, bool unloading_occurred) :
@@ -3793,13 +3793,13 @@ private:
       _postponed_list(NULL),
       _num_entered_barrier(0)
   {
-    nmethod::increase_unloading_clock();
+    CompiledMethod::increase_unloading_clock();
     // Get first alive nmethod
-    NMethodIterator iter = NMethodIterator();
+    CompiledMethodIterator iter = CompiledMethodIterator();
     if(iter.next_alive()) {
       _first_nmethod = iter.method();
     }
-    _claimed_nmethod = (volatile nmethod*)_first_nmethod;
+    _claimed_nmethod = (volatile CompiledMethod*)_first_nmethod;
   }
 
   ~G1CodeCacheUnloadingTask() {
@@ -3812,15 +3812,15 @@ private:
   }
 
  private:
-  void add_to_postponed_list(nmethod* nm) {
-      nmethod* old;
+  void add_to_postponed_list(CompiledMethod* nm) {
+      CompiledMethod* old;
       do {
-        old = (nmethod*)_postponed_list;
+        old = (CompiledMethod*)_postponed_list;
         nm->set_unloading_next(old);
-      } while ((nmethod*)Atomic::cmpxchg_ptr(nm, &_postponed_list, old) != old);
+      } while ((CompiledMethod*)Atomic::cmpxchg_ptr(nm, &_postponed_list, old) != old);
   }
 
-  void clean_nmethod(nmethod* nm) {
+  void clean_nmethod(CompiledMethod* nm) {
     bool postponed = nm->do_unloading_parallel(_is_alive, _unloading_occurred);
 
     if (postponed) {
@@ -3830,24 +3830,24 @@ private:
 
     // Mark that this thread has been cleaned/unloaded.
     // After this call, it will be safe to ask if this nmethod was unloaded or not.
-    nm->set_unloading_clock(nmethod::global_unloading_clock());
+    nm->set_unloading_clock(CompiledMethod::global_unloading_clock());
   }
 
-  void clean_nmethod_postponed(nmethod* nm) {
+  void clean_nmethod_postponed(CompiledMethod* nm) {
     nm->do_unloading_parallel_postponed(_is_alive, _unloading_occurred);
   }
 
   static const int MaxClaimNmethods = 16;
 
-  void claim_nmethods(nmethod** claimed_nmethods, int *num_claimed_nmethods) {
-    nmethod* first;
-    NMethodIterator last;
+  void claim_nmethods(CompiledMethod** claimed_nmethods, int *num_claimed_nmethods) {
+    CompiledMethod* first;
+    CompiledMethodIterator last;
 
     do {
       *num_claimed_nmethods = 0;
 
-      first = (nmethod*)_claimed_nmethod;
-      last = NMethodIterator(first);
+      first = (CompiledMethod*)_claimed_nmethod;
+      last = CompiledMethodIterator(first);
 
       if (first != NULL) {
 
@@ -3860,22 +3860,22 @@ private:
         }
       }
 
-    } while ((nmethod*)Atomic::cmpxchg_ptr(last.method(), &_claimed_nmethod, first) != first);
+    } while ((CompiledMethod*)Atomic::cmpxchg_ptr(last.method(), &_claimed_nmethod, first) != first);
   }
 
-  nmethod* claim_postponed_nmethod() {
-    nmethod* claim;
-    nmethod* next;
+  CompiledMethod* claim_postponed_nmethod() {
+    CompiledMethod* claim;
+    CompiledMethod* next;
 
     do {
-      claim = (nmethod*)_postponed_list;
+      claim = (CompiledMethod*)_postponed_list;
       if (claim == NULL) {
         return NULL;
       }
 
       next = claim->unloading_next();
 
-    } while ((nmethod*)Atomic::cmpxchg_ptr(next, &_postponed_list, claim) != claim);
+    } while ((CompiledMethod*)Atomic::cmpxchg_ptr(next, &_postponed_list, claim) != claim);
 
     return claim;
   }
@@ -3911,7 +3911,7 @@ private:
     }
 
     int num_claimed_nmethods;
-    nmethod* claimed_nmethods[MaxClaimNmethods];
+    CompiledMethod* claimed_nmethods[MaxClaimNmethods];
 
     while (true) {
       claim_nmethods(claimed_nmethods, &num_claimed_nmethods);
@@ -3927,7 +3927,7 @@ private:
   }
 
   void work_second_pass(uint worker_id) {
-    nmethod* nm;
+    CompiledMethod* nm;
     // Take care of postponed nmethods.
     while ((nm = claim_postponed_nmethod()) != NULL) {
       clean_nmethod_postponed(nm);
