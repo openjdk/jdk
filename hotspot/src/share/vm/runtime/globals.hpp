@@ -2901,9 +2901,9 @@ public:
                                                                             \
   product(intx,  AllocatePrefetchStyle, 1,                                  \
           "0 = no prefetch, "                                               \
-          "1 = prefetch instructions for each allocation, "                 \
+          "1 = generate prefetch instructions for each allocation, "        \
           "2 = use TLAB watermark to gate allocation prefetch, "            \
-          "3 = use BIS instruction on Sparc for allocation prefetch")       \
+          "3 = generate one prefetch instruction per cache line")           \
           range(0, 3)                                                       \
                                                                             \
   product(intx,  AllocatePrefetchDistance, -1,                              \
@@ -2926,8 +2926,8 @@ public:
           constraint(AllocatePrefetchStepSizeConstraintFunc,AfterMemoryInit)\
                                                                             \
   product(intx,  AllocatePrefetchInstr, 0,                                  \
-          "Prefetch instruction to prefetch ahead of allocation pointer")   \
-          constraint(AllocatePrefetchInstrConstraintFunc, AfterErgo)        \
+          "Select instruction to prefetch ahead of allocation pointer")     \
+          constraint(AllocatePrefetchInstrConstraintFunc, AfterMemoryInit)  \
                                                                             \
   /* deoptimization */                                                      \
   develop(bool, TraceDeoptimization, false,                                 \
