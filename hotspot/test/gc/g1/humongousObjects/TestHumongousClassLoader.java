@@ -40,6 +40,7 @@ import java.nio.file.Paths;
  * @summary Checks that unreachable classes and unreachable humongous class loader are unloaded after GC
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @requires vm.opt.G1HeapRegionSize == "null" | vm.opt.G1HeapRegionSize == "1M"
+ * @requires vm.opt.ExplicitGCInvokesConcurrent != true
  * @library /testlibrary /test/lib /
  * @modules java.management
  * @build sun.hotspot.WhiteBox
