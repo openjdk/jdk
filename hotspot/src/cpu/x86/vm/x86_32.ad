@@ -1452,6 +1452,15 @@ bool Matcher::narrow_klass_use_complex_address() {
   return true;
 }
 
+bool Matcher::const_oop_prefer_decode() {
+  ShouldNotCallThis();
+  return true;
+}
+
+bool Matcher::const_klass_prefer_decode() {
+  ShouldNotCallThis();
+  return true;
+}
 
 // Is it better to copy float constants, or load them directly from memory?
 // Intel can load a float constant from a direct address, requiring no
