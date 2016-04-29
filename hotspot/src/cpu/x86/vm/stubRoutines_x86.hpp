@@ -54,6 +54,10 @@
   //k256 table for sha256
   static juint _k256[];
   static address _k256_adr;
+#ifdef _LP64
+  static juint _k256_W[];
+  static address _k256_W_adr;
+#endif
   // byte flip mask for sha256
   static address _pshuffle_byte_flip_mask_addr;
 
@@ -109,6 +113,9 @@
   static address upper_word_mask_addr() { return _upper_word_mask_addr; }
   static address shuffle_byte_flip_mask_addr() { return _shuffle_byte_flip_mask_addr; }
   static address k256_addr()      { return _k256_adr; }
+#ifdef _LP64
+  static address k256_W_addr()    { return _k256_W_adr; }
+#endif
   static address pshuffle_byte_flip_mask_addr() { return _pshuffle_byte_flip_mask_addr; }
   static void generate_CRC32C_table(bool is_pclmulqdq_supported);
   static address _ONEHALF_addr()      { return _ONEHALF_adr; }

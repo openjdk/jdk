@@ -820,7 +820,7 @@ class JavaThread: public Thread {
 
   intptr_t*      _must_deopt_id;                 // id of frame that needs to be deopted once we
                                                  // transition out of native
-  nmethod*       _deopt_nmethod;                 // nmethod that is currently being deoptimized
+  CompiledMethod*       _deopt_nmethod;         // CompiledMethod that is currently being deoptimized
   vframeArray*  _vframe_array_head;              // Holds the heap of the active vframeArrays
   vframeArray*  _vframe_array_last;              // Holds last vFrameArray we popped
   // Because deoptimization is lazy we must save jvmti requests to set locals
@@ -1298,8 +1298,8 @@ class JavaThread: public Thread {
   void     set_must_deopt_id(intptr_t* id)       { _must_deopt_id = id; }
   void     clear_must_deopt_id()                 { _must_deopt_id = NULL; }
 
-  void set_deopt_nmethod(nmethod* nm)            { _deopt_nmethod = nm;   }
-  nmethod* deopt_nmethod()                       { return _deopt_nmethod; }
+  void set_deopt_compiled_method(CompiledMethod* nm)  { _deopt_nmethod = nm; }
+  CompiledMethod* deopt_compiled_method()        { return _deopt_nmethod; }
 
   Method*    callee_target() const               { return _callee_target; }
   void set_callee_target  (Method* x)          { _callee_target   = x; }
@@ -1980,13 +1980,13 @@ inline CompilerThread* JavaThread::as_CompilerThread() {
 
 // Dedicated thread to sweep the code cache
 class CodeCacheSweeperThread : public JavaThread {
-  nmethod*       _scanned_nmethod; // nmethod being scanned by the sweeper
+  CompiledMethod*       _scanned_compiled_method; // nmethod being scanned by the sweeper
  public:
   CodeCacheSweeperThread();
   // Track the nmethod currently being scanned by the sweeper
-  void set_scanned_nmethod(nmethod* nm) {
-    assert(_scanned_nmethod == NULL || nm == NULL, "should reset to NULL before writing a new value");
-    _scanned_nmethod = nm;
+  void set_scanned_compiled_method(CompiledMethod* cm) {
+    assert(_scanned_compiled_method == NULL || cm == NULL, "should reset to NULL before writing a new value");
+    _scanned_compiled_method = cm;
   }
 
   // Hide sweeper thread from external view.
@@ -1994,7 +1994,7 @@ class CodeCacheSweeperThread : public JavaThread {
 
   bool is_Code_cache_sweeper_thread() const { return true; }
 
-  // Prevent GC from unloading _scanned_nmethod
+  // Prevent GC from unloading _scanned_compiled_method
   void oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf);
   void nmethods_do(CodeBlobClosure* cf);
 };

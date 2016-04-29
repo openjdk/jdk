@@ -103,7 +103,7 @@ void CompiledIC::internal_set_ic_destination(address entry_point, bool is_icstub
     MutexLockerEx pl(SafepointSynchronize::is_at_safepoint() ? NULL : Patching_lock, Mutex::_no_safepoint_check_flag);
 #ifdef ASSERT
     CodeBlob* cb = CodeCache::find_blob_unsafe(_ic_call);
-    assert(cb != NULL && cb->is_nmethod(), "must be nmethod");
+    assert(cb != NULL && cb->is_compiled(), "must be compiled");
 #endif
      _ic_call->set_destination_mt_safe(entry_point);
   }
@@ -182,17 +182,17 @@ void CompiledIC::initialize_from_iter(RelocIterator* iter) {
   }
 }
 
-CompiledIC::CompiledIC(nmethod* nm, NativeCall* call)
+CompiledIC::CompiledIC(CompiledMethod* cm, NativeCall* call)
   : _ic_call(call)
 {
   address ic_call = _ic_call->instruction_address();
 
   assert(ic_call != NULL, "ic_call address must be set");
-  assert(nm != NULL, "must pass nmethod");
-  assert(nm->contains(ic_call), "must be in nmethod");
+  assert(cm != NULL, "must pass compiled method");
+  assert(cm->contains(ic_call), "must be in compiled method");
 
   // Search for the ic_call at the given address.
-  RelocIterator iter(nm, ic_call, ic_call+1);
+  RelocIterator iter(cm, ic_call, ic_call+1);
   bool ret = iter.next();
   assert(ret == true, "relocInfo must exist at this address");
   assert(iter.addr() == ic_call, "must find ic_call");
@@ -205,10 +205,10 @@ CompiledIC::CompiledIC(RelocIterator* iter)
 {
   address ic_call = _ic_call->instruction_address();
 
-  nmethod* nm = iter->code();
+  CompiledMethod* nm = iter->code();
   assert(ic_call != NULL, "ic_call address must be set");
-  assert(nm != NULL, "must pass nmethod");
-  assert(nm->contains(ic_call), "must be in nmethod");
+  assert(nm != NULL, "must pass compiled method");
+  assert(nm->contains(ic_call), "must be in compiled method");
 
   initialize_from_iter(iter);
 }
@@ -278,7 +278,7 @@ bool CompiledIC::is_call_to_compiled() const {
   // method is guaranteed to still exist, since we only remove methods after all inline caches
   // has been cleaned up
   CodeBlob* cb = CodeCache::find_blob_unsafe(ic_destination());
-  bool is_monomorphic = (cb != NULL && cb->is_nmethod());
+  bool is_monomorphic = (cb != NULL && cb->is_compiled());
   // Check that the cached_value is a klass for non-optimized monomorphic calls
   // This assertion is invalid for compiler1: a call that does not look optimized (no static stub) can be used
   // for calling directly to vep without using the inline cache (i.e., cached_value == NULL).
@@ -423,7 +423,7 @@ void CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
     bool static_bound = info.is_optimized() || (info.cached_metadata() == NULL);
 #ifdef ASSERT
     CodeBlob* cb = CodeCache::find_blob_unsafe(info.entry());
-    assert (cb->is_nmethod(), "must be compiled!");
+    assert (cb->is_compiled(), "must be compiled!");
 #endif /* ASSERT */
 
     // This is MT safe if we come from a clean-cache and go through a
@@ -469,9 +469,11 @@ void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
                                            bool static_bound,
                                            CompiledICInfo& info,
                                            TRAPS) {
-  nmethod* method_code = method->code();
+  CompiledMethod* method_code = method->code();
+
   address entry = NULL;
   if (method_code != NULL && method_code->is_in_use()) {
+    assert(method_code->is_compiled(), "must be compiled");
     // Call to compiled code
     if (static_bound || is_optimized) {
       entry      = method_code->verified_entry_point();
@@ -520,6 +522,7 @@ void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
       info.set_interpreter_entry(method()->get_c2i_entry(), method());
     } else {
       // Use icholder entry
+      assert(method_code == NULL || method_code->is_compiled(), "must be compiled");
       CompiledICHolder* holder = new CompiledICHolder(method(), receiver_klass());
       info.set_icholder_entry(method()->get_c2i_unverified_entry(), holder);
     }
@@ -557,7 +560,7 @@ void CompiledStaticCall::set_to_clean() {
   MutexLockerEx pl(SafepointSynchronize::is_at_safepoint() ? NULL : Patching_lock, Mutex::_no_safepoint_check_flag);
 #ifdef ASSERT
   CodeBlob* cb = CodeCache::find_blob_unsafe(this);
-  assert(cb != NULL && cb->is_nmethod(), "must be nmethod");
+  assert(cb != NULL && cb->is_compiled(), "must be compiled");
 #endif
   set_destination_mt_safe(SharedRuntime::get_resolve_static_call_stub());
 
@@ -579,8 +582,8 @@ bool CompiledStaticCall::is_call_to_compiled() const {
 bool CompiledStaticCall::is_call_to_interpreted() const {
   // It is a call to interpreted, if it calls to a stub. Hence, the destination
   // must be in the stub part of the nmethod that contains the call
-  nmethod* nm = CodeCache::find_nmethod(instruction_address());
-  return nm->stub_contains(destination());
+  CompiledMethod* cm = CodeCache::find_compiled(instruction_address());
+  return cm->stub_contains(destination());
 }
 
 void CompiledStaticCall::set(const StaticCallInfo& info) {
@@ -612,7 +615,7 @@ void CompiledStaticCall::set(const StaticCallInfo& info) {
 // Compute settings for a CompiledStaticCall. Since we might have to set
 // the stub when calling to the interpreter, we need to return arguments.
 void CompiledStaticCall::compute_entry(const methodHandle& m, StaticCallInfo& info) {
-  nmethod* m_code = m->code();
+  CompiledMethod* m_code = m->code();
   info._callee = m;
   if (m_code != NULL && m_code->is_in_use()) {
     info._to_interpreter = false;

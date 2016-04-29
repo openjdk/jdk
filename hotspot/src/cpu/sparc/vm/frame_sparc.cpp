@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,7 +212,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     // ok. adapter blobs never have a frame complete and are never ok.
 
     if (!_cb->is_frame_complete_at(_pc)) {
-      if (_cb->is_nmethod() || _cb->is_adapter_blob() || _cb->is_runtime_stub()) {
+      if (_cb->is_compiled() || _cb->is_adapter_blob() || _cb->is_runtime_stub()) {
         return false;
       }
     }
@@ -304,7 +304,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     // because you must allocate window space
 
     if (sender_blob->frame_size() <= 0) {
-      assert(!sender_blob->is_nmethod(), "should count return address at least");
+      assert(!sender_blob->is_compiled(), "should count return address at least");
       return false;
     }
 
@@ -315,7 +315,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     // the stack unwalkable. pd_get_top_frame_for_signal_handler tries to recover from this by unwinding
     // that initial frame and retrying.
 
-    if (!sender_blob->is_nmethod()) {
+    if (!sender_blob->is_compiled()) {
       return false;
     }
 
@@ -358,9 +358,9 @@ void frame::init(intptr_t* sp, address pc, CodeBlob* cb) {
   }
   _deopt_state = unknown;
 #ifdef ASSERT
-  if ( _cb != NULL && _cb->is_nmethod()) {
+  if ( _cb != NULL && _cb->is_compiled()) {
     // Without a valid unextended_sp() we can't convert the pc to "original"
-    assert(!((nmethod*)_cb)->is_deopt_pc(_pc), "invariant broken");
+    assert(!((CompiledMethod*)_cb)->is_deopt_pc(_pc), "invariant broken");
   }
 #endif // ASSERT
 }
@@ -393,7 +393,7 @@ frame::frame(intptr_t* sp, intptr_t* younger_sp, bool younger_frame_is_interpret
 
   // Check for MethodHandle call sites.
   if (_cb != NULL) {
-    nmethod* nm = _cb->as_nmethod_or_null();
+    CompiledMethod* nm = _cb->as_compiled_method_or_null();
     if (nm != NULL) {
       if (nm->is_deopt_mh_entry(_pc) || nm->is_method_handle_return(_pc)) {
         _sp_adjustment_by_callee = (intptr_t*) ((intptr_t) sp[L7_mh_SP_save->sp_offset_in_saved_window()] + STACK_BIAS) - sp;
@@ -413,7 +413,7 @@ frame::frame(intptr_t* sp, intptr_t* younger_sp, bool younger_frame_is_interpret
   // this lookup as get_deopt_original_pc() needs a correct value for
   // unextended_sp() which uses _sp_adjustment_by_callee.
   if (_pc != NULL) {
-    address original_pc = nmethod::get_deopt_original_pc(this);
+    address original_pc = CompiledMethod::get_deopt_original_pc(this);
     if (original_pc != NULL) {
       _pc = original_pc;
       _deopt_state = is_deoptimized;
@@ -547,7 +547,7 @@ void frame::patch_pc(Thread* thread, address pc) {
   _cb = CodeCache::find_blob(pc);
   *O7_addr() = pc - pc_return_offset;
   _cb = CodeCache::find_blob(_pc);
-  address original_pc = nmethod::get_deopt_original_pc(this);
+  address original_pc = CompiledMethod::get_deopt_original_pc(this);
   if (original_pc != NULL) {
     assert(original_pc == _pc, "expected original to be stored before patching");
     _deopt_state = is_deoptimized;

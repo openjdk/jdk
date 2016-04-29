@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -254,8 +254,8 @@ class StubRoutines: AllStatic {
       (_code2 != NULL && _code2->blob_contains(addr)) ;
   }
 
-  static CodeBlob* code1() { return _code1; }
-  static CodeBlob* code2() { return _code2; }
+  static RuntimeBlob* code1() { return _code1; }
+  static RuntimeBlob* code2() { return _code2; }
 
   // Debugging
   static jint    verify_oop_count()                        { return _verify_oop_count; }

@@ -220,15 +220,15 @@ extern void vm_exit(int code);
 // been deoptimized. If that is the case we return the deopt blob
 // unpack_with_exception entry instead. This makes life for the exception blob easier
 // because making that same check and diverting is painful from assembly language.
-JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* thread, oopDesc* ex, address pc, nmethod*& nm))
+JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* thread, oopDesc* ex, address pc, CompiledMethod*& cm))
   // Reset method handle flag.
   thread->set_is_method_handle_return(false);
 
   Handle exception(thread, ex);
-  nm = CodeCache::find_nmethod(pc);
-  assert(nm != NULL, "this is not a compiled method");
+  cm = CodeCache::find_compiled(pc);
+  assert(cm != NULL, "this is not a compiled method");
   // Adjust the pc as needed/
-  if (nm->is_deopt_pc(pc)) {
+  if (cm->is_deopt_pc(pc)) {
     RegisterMap map(thread, false);
     frame exception_frame = thread->last_frame().sender(&map);
     // if the frame isn't deopted then pc must not correspond to the caller of last_frame
@@ -275,10 +275,10 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
 
   // ExceptionCache is used only for exceptions at call sites and not for implicit exceptions
   if (guard_pages_enabled) {
-    address fast_continuation = nm->handler_for_exception_and_pc(exception, pc);
+    address fast_continuation = cm->handler_for_exception_and_pc(exception, pc);
     if (fast_continuation != NULL) {
       // Set flag if return address is a method handle call site.
-      thread->set_is_method_handle_return(nm->is_method_handle_return(pc));
+      thread->set_is_method_handle_return(cm->is_method_handle_return(pc));
       return fast_continuation;
     }
   }
@@ -299,7 +299,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
       stringStream tempst;
       tempst.print("compiled method <%s>\n"
                    " at PC" INTPTR_FORMAT " for thread " INTPTR_FORMAT,
-                   nm->method()->print_value_string(), p2i(pc), p2i(thread));
+                   cm->method()->print_value_string(), p2i(pc), p2i(thread));
       Exceptions::log_exception(exception, tempst);
     }
     // for AbortVMOnException flag
@@ -311,19 +311,19 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
     // normal bytecode execution.
     thread->clear_exception_oop_and_pc();
 
-    continuation = SharedRuntime::compute_compiled_exc_handler(nm, pc, exception, false, false);
+    continuation = SharedRuntime::compute_compiled_exc_handler(cm, pc, exception, false, false);
     // If an exception was thrown during exception dispatch, the exception oop may have changed
     thread->set_exception_oop(exception());
     thread->set_exception_pc(pc);
 
     // the exception cache is used only by non-implicit exceptions
     if (continuation != NULL && !SharedRuntime::deopt_blob()->contains(continuation)) {
-      nm->add_handler_for_exception_and_pc(exception, pc, continuation);
+      cm->add_handler_for_exception_and_pc(exception, pc, continuation);
     }
   }
 
   // Set flag if return address is a method handle call site.
-  thread->set_is_method_handle_return(nm->is_method_handle_return(pc));
+  thread->set_is_method_handle_return(cm->is_method_handle_return(pc));
 
   if (log_is_enabled(Info, exceptions)) {
     ResourceMark rm;
@@ -345,18 +345,18 @@ address JVMCIRuntime::exception_handler_for_pc(JavaThread* thread) {
   address pc = thread->exception_pc();
   // Still in Java mode
   DEBUG_ONLY(ResetNoHandleMark rnhm);
-  nmethod* nm = NULL;
+  CompiledMethod* cm = NULL;
   address continuation = NULL;
   {
     // Enter VM mode by calling the helper
     ResetNoHandleMark rnhm;
-    continuation = exception_handler_for_pc_helper(thread, exception, pc, nm);
+    continuation = exception_handler_for_pc_helper(thread, exception, pc, cm);
   }
   // Back in JAVA, use no oops DON'T safepoint
 
   // Now check to see if the compiled method we were called from is now deoptimized.
   // If so we must return to the deopt blob and deoptimize the nmethod
-  if (nm != NULL && caller_is_deopted()) {
+  if (cm != NULL && caller_is_deopted()) {
     continuation = SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
   }
 

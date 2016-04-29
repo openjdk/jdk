@@ -536,6 +536,15 @@ public:
     msr(0b011, 0b0100, 0b0100, 0b001, zr);
   }
 
+  // DCZID_EL0: op1 == 011
+  //            CRn == 0000
+  //            CRm == 0000
+  //            op2 == 111
+  inline void get_dczid_el0(Register reg)
+  {
+    mrs(0b011, 0b0000, 0b0000, 0b111, reg);
+  }
+
   // idiv variant which deals with MINLONG as dividend and -1 as divisor
   int corrected_idivl(Register result, Register ra, Register rb,
                       bool want_remainder, Register tmp = rscratch1);
@@ -1185,8 +1194,9 @@ public:
                      int elem_size, bool is_string);
 
   void fill_words(Register base, Register cnt, Register value);
-  void zero_words(Register base, Register cnt);
   void zero_words(Register base, u_int64_t cnt);
+  void zero_words(Register base, Register cnt);
+  void block_zero(Register base, Register cnt, bool is_large = false);
 
   void encode_iso_array(Register src, Register dst,
                         Register len, Register result,
