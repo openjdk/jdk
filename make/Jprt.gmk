@@ -108,8 +108,8 @@ SRC_JDK_MACOSX_BUNDLE_DIR := $(JDK_MACOSX_BUNDLE_DIR)
 SRC_JRE_MACOSX_BUNDLE_DIR := $(JRE_MACOSX_BUNDLE_DIR)
 
 # Bundle up the images
-JPRT_TARGET ?= all
-ifeq ($(JPRT_TARGET), all)
+JPRT_TARGET ?= default
+ifeq ($(JPRT_TARGET), default)
   bundles: $(JPRT_TARGET)
 	@$(call TargetEnter)
 	$(MKDIR) -p $(BUILD_OUTPUT)/bundles
