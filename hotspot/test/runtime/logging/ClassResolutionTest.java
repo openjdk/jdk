@@ -51,7 +51,8 @@ public class ClassResolutionTest {
         };
 
         public static void main(String... args) throws Exception {
-            Thing1Handler.getThingNumber();
+            int x = Thing1Handler.getThingNumber();
+            System.out.println("ThingNumber: "+Integer.toString(x));
         }
     }
 
@@ -62,6 +63,7 @@ public class ClassResolutionTest {
                                                                   ClassResolutionTestMain.class.getName());
         OutputAnalyzer o = new OutputAnalyzer(pb.start());
         o.shouldContain("[classresolve] ClassResolutionTest$ClassResolutionTestMain$Thing1Handler ClassResolutionTest$ClassResolutionTestMain$Thing1");
+        o.shouldContain("[classresolve] resolve JVM_CONSTANT_MethodHandle");
 
         // (2) classresolve should turn off.
         pb = ProcessTools.createJavaProcessBuilder("-Xlog:classresolve=debug",

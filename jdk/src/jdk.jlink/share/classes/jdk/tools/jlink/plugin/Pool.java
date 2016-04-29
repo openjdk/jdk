@@ -226,7 +226,7 @@ public abstract class Pool {
      * <li>For jimage content: /{module name}/{package1}/.../{packageN}/{file
      * name}</li>
      * <li>For other files (shared lib, launchers, config, ...):/{module name}/
-     * {@literal bin|conf|native}/{dir1}>/.../{dirN}/{file name}</li>
+     * {@literal bin|conf|native}/{dir1}/.../{dirN}/{file name}</li>
      * </ul>
      */
     public static class ModuleData {

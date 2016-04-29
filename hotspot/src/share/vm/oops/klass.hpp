@@ -342,6 +342,21 @@ protected:
     assert(btvalue >= T_BOOLEAN && btvalue <= T_OBJECT, "sanity");
     return (BasicType) btvalue;
   }
+
+  // Want a pattern to quickly diff against layout header in register
+  // find something less clever!
+  static int layout_helper_boolean_diffbit() {
+    jint zlh = array_layout_helper(T_BOOLEAN);
+    jint blh = array_layout_helper(T_BYTE);
+    assert(zlh != blh, "array layout helpers must differ");
+    int diffbit = 1;
+    while ((diffbit & (zlh ^ blh)) == 0 && (diffbit & zlh) == 0) {
+      diffbit <<= 1;
+      assert(diffbit != 0, "make sure T_BOOLEAN has a different bit than T_BYTE");
+    }
+    return diffbit;
+  }
+
   static int layout_helper_log2_element_size(jint lh) {
     assert(lh < (jint)_lh_neutral_value, "must be array");
     int l2esz = (lh >> _lh_log2_element_size_shift) & _lh_log2_element_size_mask;

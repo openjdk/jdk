@@ -97,8 +97,7 @@ public class ReplaceTest extends KullaTesting {
         assertEval("mu() == 0.0;", "true");
         assertEval("double x = 2.5;",
                 ste(MAIN_SNIPPET, VALID, VALID, true, null),
-                ste(x, VALID, OVERWRITTEN, false, MAIN_SNIPPET),
-                ste(musn, VALID, VALID, false, MAIN_SNIPPET));
+                ste(x, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
         Collection<MethodSnippet> meths = getState().methods();
         assertEquals(meths.size(), 1);
         assertTrue(musn == meths.iterator().next(), "Identity must not change");
@@ -115,8 +114,7 @@ public class ReplaceTest extends KullaTesting {
         assertEval("d();", "1060.0");
         assertEval("int a() { return 5; }",
                 ste(MAIN_SNIPPET, VALID, VALID, true, null),
-                ste(a, VALID, OVERWRITTEN, false, MAIN_SNIPPET),
-                ste(b, VALID, VALID, false, MAIN_SNIPPET));
+                ste(a, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
         assertEval("d();", "1150.0");
         assertActiveKeys();
     }
@@ -127,8 +125,7 @@ public class ReplaceTest extends KullaTesting {
         assertEval("m();", "7");
         assertEval("class C { int x = 99; int f() { return x; } }",
                 ste(MAIN_SNIPPET, VALID, VALID, true, null),
-                ste(c, VALID, OVERWRITTEN, false, MAIN_SNIPPET),
-                ste(m, VALID, VALID, false, MAIN_SNIPPET));
+                ste(c, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
         assertEval("m();", "99");
         assertActiveKeys();
     }
@@ -140,8 +137,7 @@ public class ReplaceTest extends KullaTesting {
         assertEval("new A().a == 0.0;", "true");
         assertEval("double x = 2.5;",
                 ste(MAIN_SNIPPET, VALID, VALID, true, null),
-                ste(x, VALID, OVERWRITTEN, false, MAIN_SNIPPET),
-                ste(c, VALID, VALID, false, MAIN_SNIPPET));
+                ste(x, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
         Collection<TypeDeclSnippet> classes = getState().types();
         assertEquals(classes.size(), 1);
         assertTrue(c == classes.iterator().next(), "Identity must not change");
@@ -157,8 +153,7 @@ public class ReplaceTest extends KullaTesting {
         assertEval("new A().a == 0.0;", "true");
         assertEval("double x() { return 2.5; }",
                 ste(MAIN_SNIPPET, VALID, VALID, true, null),
-                ste(x, VALID, OVERWRITTEN, false, MAIN_SNIPPET),
-                ste(c, VALID, VALID, false, MAIN_SNIPPET));
+                ste(x, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
         assertEval("x();", "2.5");
         Collection<TypeDeclSnippet> classes = getState().types();
         assertEquals(classes.size(), 1);
@@ -875,18 +870,15 @@ public class ReplaceTest extends KullaTesting {
         MethodSnippet k1 = methodKey(assertEval(ms1, added(VALID)));
         VarSnippet xd = varKey(assertEval(xsd,
                 ste(MAIN_SNIPPET, VALID, VALID, true, null),
-                ste(xi, VALID, OVERWRITTEN, false, MAIN_SNIPPET),
-                ste(k1, VALID, VALID, false, MAIN_SNIPPET)));
+                ste(xi, VALID, OVERWRITTEN, false, MAIN_SNIPPET)));
         MethodSnippet k2 = methodKey(assertEval(ms2,
                 ste(MAIN_SNIPPET, VALID, VALID, true, null), //TODO: technically, should be false
                 ste(k1, VALID, OVERWRITTEN, false, MAIN_SNIPPET)));
         VarSnippet xi2 = varKey(assertEval(xsi,
                 ste(MAIN_SNIPPET, VALID, VALID, true, null),
-                ste(xd, VALID, OVERWRITTEN, false, MAIN_SNIPPET),
-                ste(k2, VALID, VALID, false, MAIN_SNIPPET)));
+                ste(xd, VALID, OVERWRITTEN, false, MAIN_SNIPPET)));
         varKey(assertEval(xsd,
                 ste(MAIN_SNIPPET, VALID, VALID, true, null),
-                ste(xi2, VALID, OVERWRITTEN, false, MAIN_SNIPPET),
-                ste(k2, VALID, VALID, false, MAIN_SNIPPET)));
+                ste(xi2, VALID, OVERWRITTEN, false, MAIN_SNIPPET)));
     }
 }

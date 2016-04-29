@@ -36,6 +36,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import com.sun.jdi.*;
 import java.io.EOFException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,7 +95,7 @@ class ExecutionControl {
     }
 
 
-    boolean commandLoad(List<ClassInfo> cil) {
+    boolean commandLoad(Collection<ClassInfo> cil) {
         try {
             out.writeInt(CMD_LOAD);
             out.writeInt(cil.size());
@@ -122,7 +123,7 @@ class ExecutionControl {
                 String result = in.readUTF();
                 return result;
             }
-        } catch (IOException | ClassNotFoundException ex) {
+        } catch (IOException | RuntimeException ex) {
             if (!env.connection().isRunning()) {
                 env.shutdown();
             } else {
@@ -204,7 +205,7 @@ class ExecutionControl {
         }
     }
 
-    private boolean readAndReportExecutionResult() throws IOException, ClassNotFoundException, EvalException, UnresolvedReferenceException {
+    private boolean readAndReportExecutionResult() throws IOException, EvalException, UnresolvedReferenceException {
         int ok = in.readInt();
         switch (ok) {
             case RESULT_SUCCESS:
@@ -224,7 +225,7 @@ class ExecutionControl {
             case RESULT_CORRALLED: {
                 int id = in.readInt();
                 StackTraceElement[] elems = readStackTrace();
-                Snippet si = maps.getSnippet(id);
+                Snippet si = maps.getSnippetDeadOrAlive(id);
                 throw new UnresolvedReferenceException((DeclarationSnippet) si, elems);
             }
             case RESULT_KILLED: {

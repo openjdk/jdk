@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "code/codeCacheExtensions.hpp"
+#include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/virtualspace.hpp"
 #include "oops/markOop.hpp"
 #include "oops/oop.inline.hpp"
@@ -78,10 +80,7 @@ static bool failed_to_reserve_as_requested(char* base, char* requested_address,
     // Different reserve address may be acceptable in other cases
     // but for compressed oops heap should be at requested address.
     assert(UseCompressedOops, "currently requested address used only for compressed oops");
-    if (PrintCompressedOopsMode) {
-      tty->cr();
-      tty->print_cr("Reserved memory not at requested address: " PTR_FORMAT " vs " PTR_FORMAT, p2i(base), p2i(requested_address));
-    }
+    log_debug(gc, heap, coops)("Reserved memory not at requested address: " PTR_FORMAT " vs " PTR_FORMAT, p2i(base), p2i(requested_address));
     // OS ignored requested address. Try different address.
     if (special) {
       if (!os::release_memory_special(base, size)) {
@@ -143,10 +142,7 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
       // failed; try to reserve regular memory below
       if (UseLargePages && (!FLAG_IS_DEFAULT(UseLargePages) ||
                             !FLAG_IS_DEFAULT(LargePageSizeInBytes))) {
-        if (PrintCompressedOopsMode) {
-          tty->cr();
-          tty->print_cr("Reserve regular memory without large pages.");
-        }
+        log_debug(gc, heap, coops)("Reserve regular memory without large pages");
       }
     }
   }
@@ -286,11 +282,10 @@ void ReservedHeapSpace::establish_noaccess_prefix() {
       if (!os::protect_memory(_base, _noaccess_prefix, os::MEM_PROT_NONE, _special)) {
         fatal("cannot protect protection page");
       }
-      if (PrintCompressedOopsMode) {
-        tty->cr();
-        tty->print_cr("Protected page at the reserved heap base: "
-                      PTR_FORMAT " / " INTX_FORMAT " bytes", p2i(_base), _noaccess_prefix);
-      }
+      log_debug(gc, heap, coops)("Protected page at the reserved heap base: "
+                                 PTR_FORMAT " / " INTX_FORMAT " bytes",
+                                 p2i(_base),
+                                 _noaccess_prefix);
       assert(Universe::narrow_oop_use_implicit_null_checks() == true, "not initialized?");
     } else {
       Universe::set_narrow_oop_use_implicit_null_checks(false);
@@ -321,10 +316,10 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
   bool special = large && !os::can_commit_large_page_memory();
   char* base = NULL;
 
-  if (PrintCompressedOopsMode && Verbose) {
-    tty->print("Trying to allocate at address " PTR_FORMAT " heap of size " SIZE_FORMAT_HEX ".\n",
-               p2i(requested_address), size);
-  }
+  log_trace(gc, heap, coops)("Trying to allocate at address " PTR_FORMAT
+                             " heap of size " SIZE_FORMAT_HEX,
+                             p2i(requested_address),
+                             size);
 
   if (special) {
     base = os::reserve_memory_special(size, alignment, requested_address, false);
@@ -343,10 +338,7 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
     // Failed; try to reserve regular memory below
     if (UseLargePages && (!FLAG_IS_DEFAULT(UseLargePages) ||
                           !FLAG_IS_DEFAULT(LargePageSizeInBytes))) {
-      if (PrintCompressedOopsMode) {
-        tty->cr();
-        tty->print_cr("Reserve regular memory without large pages.");
-      }
+      log_debug(gc, heap, coops)("Reserve regular memory without large pages");
     }
 
     // Optimistically assume that the OSes returns an aligned base pointer.
@@ -558,9 +550,7 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
 
     // Last, desperate try without any placement.
     if (_base == NULL) {
-      if (PrintCompressedOopsMode && Verbose) {
-        tty->print("Trying to allocate at address NULL heap of size " SIZE_FORMAT_HEX ".\n", size + noaccess_prefix);
-      }
+      log_trace(gc, heap, coops)("Trying to allocate at address NULL heap of size " SIZE_FORMAT_HEX, size + noaccess_prefix);
       initialize(size + noaccess_prefix, alignment, large, NULL, false);
     }
   }

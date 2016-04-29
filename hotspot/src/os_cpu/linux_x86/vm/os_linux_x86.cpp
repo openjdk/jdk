@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,11 +287,7 @@ JVM_handle_linux_signal(int sig,
     if (os::Linux::chained_handler(sig, info, ucVoid)) {
       return true;
     } else {
-      if (PrintMiscellaneous && (WizardMode || Verbose)) {
-        char buf[64];
-        warning("Ignoring %s - see bugs 4229104 or 646499219",
-                os::exception_name(sig, buf, sizeof(buf)));
-      }
+      // Ignoring SIGPIPE/SIGXFSZ - see bugs 4229104 or 6499219
       return true;
     }
   }
@@ -542,14 +538,10 @@ JVM_handle_linux_signal(int sig,
         bool res = os::protect_memory((char*) page_start, page_size,
                                       os::MEM_PROT_RWX);
 
-        if (PrintMiscellaneous && Verbose) {
-          char buf[256];
-          jio_snprintf(buf, sizeof(buf), "Execution protection violation "
-                       "at " INTPTR_FORMAT
-                       ", unguarding " INTPTR_FORMAT ": %s, errno=%d", addr,
-                       page_start, (res ? "success" : "failed"), errno);
-          tty->print_raw_cr(buf);
-        }
+        log_debug(os)("Execution protection violation "
+                      "at " INTPTR_FORMAT
+                      ", unguarding " INTPTR_FORMAT ": %s, errno=%d", p2i(addr),
+                      p2i(page_start), (res ? "success" : "failed"), errno);
         stub = pc;
 
         // Set last_addr so if we fault again at the same address, we don't end
@@ -645,12 +637,8 @@ bool os::supports_sse() {
   int major = strtol(uts.release,&minor_string,10);
   int minor = strtol(minor_string+1,NULL,10);
   bool result = (major > 2 || (major==2 && minor >= 4));
-#ifndef PRODUCT
-  if (PrintMiscellaneous && Verbose) {
-    tty->print("OS version is %d.%d, which %s support SSE/SSE2\n",
+  log_info(os)("OS version is %d.%d, which %s support SSE/SSE2",
                major,minor, result ? "DOES" : "does NOT");
-  }
-#endif
   return result;
 #endif // AMD64
 }
@@ -939,9 +927,7 @@ void os::workaround_expand_exec_shield_cs_limit() {
 
   MemTracker::record_virtual_memory_type((address)codebuf, mtInternal);
 
-  if (PrintMiscellaneous && (Verbose || WizardMode)) {
-     tty->print_cr("[CS limit NX emulation work-around, exec code at: %p]", codebuf);
-  }
+  log_info(os)("[CS limit NX emulation work-around, exec code at: %p]", codebuf);
 
   // Some code to exec: the 'ret' instruction
   codebuf[0] = 0xC3;
