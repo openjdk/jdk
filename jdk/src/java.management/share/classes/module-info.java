@@ -27,8 +27,6 @@ module java.management {
     requires public java.rmi;
     requires java.logging;
     requires java.naming;
-    // 8147553
-    requires jdk.unsupported;
 
     exports java.lang.management;
     exports javax.management;

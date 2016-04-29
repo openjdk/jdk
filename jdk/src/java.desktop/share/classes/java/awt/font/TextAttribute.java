@@ -79,7 +79,7 @@ import jdk.internal.misc.SharedSecrets;
  *   will be ignored.
  *   <li>The identity of the value does not matter, only the actual
  *   value.  For example, {@code TextAttribute.WEIGHT_BOLD} and
- *   {@code new Float(2.0)}
+ *   {@code Float.valueOf(2.0f)}
  *   indicate the same {@code WEIGHT}.
  *   <li>Attribute values of type {@code Number} (used for
  *   {@code WEIGHT}, {@code WIDTH}, {@code POSTURE},

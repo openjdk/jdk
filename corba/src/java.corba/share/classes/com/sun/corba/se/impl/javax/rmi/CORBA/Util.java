@@ -751,12 +751,13 @@ public class Util implements javax.rmi.CORBA.UtilDelegate
     }
 }
 
-class KeepAlive extends sun.misc.ManagedLocalsThread
+class KeepAlive extends Thread
 {
     boolean quit = false;
 
     public KeepAlive ()
     {
+        super(null, null, "Servant-KeepAlive-Thread", 0, false);
         setDaemon(false);
     }
 

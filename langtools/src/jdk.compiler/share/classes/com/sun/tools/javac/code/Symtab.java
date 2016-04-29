@@ -698,7 +698,7 @@ public class Symtab {
      */
     public boolean packageExists(ModuleSymbol msym, Name fullname) {
         Assert.checkNonNull(msym);
-        return enterPackage(msym, fullname).exists();
+        return lookupPackage(msym, fullname).exists();
     }
 
     /** Make a package, given its fully qualified name.

@@ -423,6 +423,55 @@ ifeq ($(GCOV_ENABLED), true)
 endif
 
 ################################################################################
+# Debug symbols
+# Since debug symbols are not included in the jmod files, they need to be copied
+# in manually after generating the images.
+
+ALL_JDK_MODULES := $(JDK_MODULES)
+ALL_JRE_MODULES := $(sort $(JRE_MODULES), $(foreach m, $(JRE_MODULES), \
+    $(call FindTransitiveDepsForModule, $m)))
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  LIBS_TARGET_SUBDIR := bin
+else
+  LIBS_TARGET_SUBDIR := lib
+endif
+
+DEBUGINFO_SUFFIXES := .diz .debuginfo .pdb .map
+
+# Param 1 - dir to find debuginfo files in
+FindDebuginfoFiles = \
+    $(wildcard $(addprefix $1/*, $(DEBUGINFO_SUFFIXES)) \
+        $(addprefix $1/*/*, $(DEBUGINFO_SUFFIXES)) \
+        $(addprefix $1/*/*/*, $(DEBUGINFO_SUFFIXES)))
+
+# On Macosx, if debug symbols have not been zipped, find all files inside *.dSYM
+# dirs.
+ifeq ($(OPENJDK_TARGET_OS)-$(ZIP_EXTERNAL_DEBUG_SYMBOLS), macosx-false)
+  $(eval $(call FillCacheFind, \
+      $(SUPPORT_OUTPUTDIR)/modules_cmds $(SUPPORT_OUTPUTDIR)/modules_libs/))
+  FindDebuginfoFiles = \
+      $(if $(wildcard $1), $(call containing, .dSYM/, $(call CacheFind, $1)))
+endif
+
+# Param 1 - either JDK or JRE
+SetupCopyDebuginfo = \
+    $(foreach m, $(ALL_$1_MODULES), \
+      $(eval $(call SetupCopyFiles, COPY_$1_LIBS_DEBUGINFO_$m, \
+          SRC := $(SUPPORT_OUTPUTDIR)/modules_libs/$m, \
+          DEST := $($1_IMAGE_DIR)/$(LIBS_TARGET_SUBDIR), \
+          FILES := $(call FindDebuginfoFiles, \
+              $(SUPPORT_OUTPUTDIR)/modules_libs/$m), \
+      )) \
+      $(eval $1_TARGETS += $$(COPY_$1_LIBS_DEBUGINFO_$m)) \
+    )
+
+# No space before argument to avoid having to put $(strip ) everywhere in
+# implementation above.
+$(call SetupCopyDebuginfo,JDK)
+$(call SetupCopyDebuginfo,JRE)
+
+################################################################################
 
 # Include custom post hook here to make it possible to augment the target lists
 # before actual target prerequisites are declared.

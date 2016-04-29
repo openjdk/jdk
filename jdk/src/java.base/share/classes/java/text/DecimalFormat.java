@@ -1996,7 +1996,7 @@ public class DecimalFormat extends NumberFormat {
         // special case NaN
         if (text.regionMatches(pos.index, symbols.getNaN(), 0, symbols.getNaN().length())) {
             pos.index = pos.index + symbols.getNaN().length();
-            return new Double(Double.NaN);
+            return Double.valueOf(Double.NaN);
         }
 
         boolean[] status = new boolean[STATUS_LENGTH];
@@ -2007,19 +2007,19 @@ public class DecimalFormat extends NumberFormat {
         // special case INFINITY
         if (status[STATUS_INFINITE]) {
             if (status[STATUS_POSITIVE] == (multiplier >= 0)) {
-                return new Double(Double.POSITIVE_INFINITY);
+                return Double.valueOf(Double.POSITIVE_INFINITY);
             } else {
-                return new Double(Double.NEGATIVE_INFINITY);
+                return Double.valueOf(Double.NEGATIVE_INFINITY);
             }
         }
 
         if (multiplier == 0) {
             if (digitList.isZero()) {
-                return new Double(Double.NaN);
+                return Double.valueOf(Double.NaN);
             } else if (status[STATUS_POSITIVE]) {
-                return new Double(Double.POSITIVE_INFINITY);
+                return Double.valueOf(Double.POSITIVE_INFINITY);
             } else {
-                return new Double(Double.NEGATIVE_INFINITY);
+                return Double.valueOf(Double.NEGATIVE_INFINITY);
             }
         }
 
@@ -2093,8 +2093,8 @@ public class DecimalFormat extends NumberFormat {
                             !isParseIntegerOnly();
             }
 
-            return gotDouble ?
-                (Number)new Double(doubleResult) : (Number)Long.valueOf(longResult);
+            // cast inside of ?: because of binary numeric promotion, JLS 15.25
+            return gotDouble ? (Number)doubleResult : (Number)longResult;
         }
     }
 

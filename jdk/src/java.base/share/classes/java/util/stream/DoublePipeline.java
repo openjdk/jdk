@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,6 +167,19 @@ abstract class DoublePipeline<E_IN>
         return Nodes.doubleBuilder(exactSizeIfKnown);
     }
 
+    private <U> Stream<U> mapToObj(DoubleFunction<? extends U> mapper, int opFlags) {
+        return new ReferencePipeline.StatelessOp<Double, U>(this, StreamShape.DOUBLE_VALUE, opFlags) {
+            @Override
+            Sink<Double> opWrapSink(int flags, Sink<U> sink) {
+                return new Sink.ChainedDouble<U>(sink) {
+                    @Override
+                    public void accept(double t) {
+                        downstream.accept(mapper.apply(t));
+                    }
+                };
+            }
+        };
+    }
 
     // DoubleStream
 
@@ -184,7 +197,7 @@ abstract class DoublePipeline<E_IN>
 
     @Override
     public final Stream<Double> boxed() {
-        return mapToObj(Double::valueOf);
+        return mapToObj(Double::valueOf, 0);
     }
 
     @Override
@@ -207,18 +220,7 @@ abstract class DoublePipeline<E_IN>
     @Override
     public final <U> Stream<U> mapToObj(DoubleFunction<? extends U> mapper) {
         Objects.requireNonNull(mapper);
-        return new ReferencePipeline.StatelessOp<Double, U>(this, StreamShape.DOUBLE_VALUE,
-                                                            StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
-            @Override
-            Sink<Double> opWrapSink(int flags, Sink<U> sink) {
-                return new Sink.ChainedDouble<U>(sink) {
-                    @Override
-                    public void accept(double t) {
-                        downstream.accept(mapper.apply(t));
-                    }
-                };
-            }
-        };
+        return mapToObj(mapper, StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT);
     }
 
     @Override

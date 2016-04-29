@@ -110,54 +110,5 @@ public class JImageTest {
                 .dir(helper.createNewExtractedDir("modules"))
                 .image(image.resolve("lib").resolve("modules"))
                 .extract().assertSuccess();
-
-        Path recreatedImage = JImageGenerator.getJImageTask()
-                .dir(extractedDir)
-                .image(helper.createNewRecreatedDir(extractedDir.getFileName().toString()))
-                .recreate().assertSuccess();
-        JImageValidator.validate(recreatedImage, bootClasses, Collections.emptyList());
-
-        // Check replacing the boot image by recreated one
-        Path destFile = image.resolve("lib").resolve("modules");
-        Files.copy(recreatedImage, destFile, REPLACE_EXISTING);
-        JImageValidator validator = new JImageValidator(module, Collections.emptyList(),
-                image.toFile(), Collections.emptyList(), Collections.emptyList());
-        validator.validate();
-
-        Path recreatedImage2 = JImageGenerator.getJImageTask()
-                .dir(extractedDir)
-                .option("--compress").option("2")
-                .image(helper.createNewRecreatedDir(extractedDir.getFileName().toString()))
-                .recreate().assertSuccess();
-        JImageValidator.validate(recreatedImage2, bootClasses, Collections.emptyList());
-
-        Path recreatedImage3 = JImageGenerator.getJImageTask()
-                .dir(extractedDir)
-                .option("--strip-debug")
-                .image(helper.createNewRecreatedDir(extractedDir.getFileName().toString()))
-                .recreate().assertSuccess();
-        JImageValidator.validate(recreatedImage3, bootClasses, Collections.emptyList());
-
-        Path recreatedImage4 = JImageGenerator.getJImageTask()
-                .dir(extractedDir)
-                .option("--exclude-resources")
-                .option("*.jcov, */META-INF/*")
-                .image(helper.createNewRecreatedDir(extractedDir.getFileName().toString()))
-                .recreate().assertSuccess();
-        List<String> unexpectedPaths = new ArrayList<>();
-        unexpectedPaths.add(".jcov");
-        unexpectedPaths.add("/META-INF/");
-        JImageValidator.validate(recreatedImage4, bootClasses, unexpectedPaths);
-
-        Path recreatedImage5 = JImageGenerator.getJImageTask()
-                .dir(extractedDir)
-                .option("--compress")
-                .option("2")
-                .option("--strip-debug")
-                .option("--exclude-resources")
-                .option("*.jcov, */META-INF/*")
-                .image(helper.createNewRecreatedDir(extractedDir.getFileName().toString()))
-                .recreate().assertSuccess();
-        JImageValidator.validate(recreatedImage5, bootClasses, unexpectedPaths);
     }
 }

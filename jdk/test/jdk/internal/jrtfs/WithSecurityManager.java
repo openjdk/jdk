@@ -31,6 +31,7 @@ import java.net.URI;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 
 public class WithSecurityManager {
     public static void main(String[] args) throws Exception {
@@ -61,7 +62,7 @@ public class WithSecurityManager {
 
         // check FileSystems.newFileSystem
         try {
-            FileSystems.newFileSystem(URI.create("jrt:/"), null);
+            FileSystems.newFileSystem(URI.create("jrt:/"), Collections.emptyMap());
             if (!allow) throw new RuntimeException("access not expected");
         } catch (SecurityException se) {
             if (allow)

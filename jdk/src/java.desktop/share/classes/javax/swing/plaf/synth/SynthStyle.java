@@ -775,7 +775,7 @@ public abstract class SynthStyle {
                 if (disabledColor == null || disabledColor instanceof UIResource) {
                     return getColorForState(context, type);
                 }
-            } else if (c instanceof JLabel &&
+            } else if ((c instanceof JLabel || c instanceof JMenuItem) &&
                             (type == ColorType.FOREGROUND ||
                              type == ColorType.TEXT_FOREGROUND)) {
                 return getColorForState(context, type);

@@ -60,6 +60,7 @@
 #include <java_awt_Insets.h>
 #include <sun_awt_windows_WPanelPeer.h>
 #include <java_awt_event_InputEvent.h>
+#include <java_awt_event_ActionEvent.h>
 #include <java_awt_event_InputMethodEvent.h>
 #include <sun_awt_windows_WInputMethod.h>
 #include <java_awt_event_MouseEvent.h>
@@ -2585,6 +2586,27 @@ jint AwtComponent::GetShiftKeyLocation(UINT vkey, UINT flags)
 
     // default value
     return java_awt_event_KeyEvent_KEY_LOCATION_LEFT;
+}
+
+/* Returns Java ActionEvent modifieres.
+ * When creating ActionEvent, modifiers provided by ActionEvent
+ * class should be set.
+ */
+jint
+AwtComponent::GetActionModifiers()
+{
+    jint modifiers = GetJavaModifiers();
+
+    if (modifiers & java_awt_event_InputEvent_CTRL_DOWN_MASK) {
+        modifiers |= java_awt_event_ActionEvent_CTRL_MASK;
+    }
+    if (modifiers & java_awt_event_InputEvent_SHIFT_DOWN_MASK) {
+        modifiers |= java_awt_event_ActionEvent_SHIFT_MASK;
+    }
+    if (modifiers & java_awt_event_InputEvent_ALT_DOWN_MASK) {
+        modifiers |= java_awt_event_ActionEvent_ALT_MASK;
+    }
+    return modifiers;
 }
 
 /* Returns Java extended InputEvent modifieres.

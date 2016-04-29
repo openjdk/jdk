@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8154283
  * @summary tests for multi-module mode compilation
  * @library /tools/lib
  * @modules
@@ -57,7 +58,6 @@ import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import toolbox.JarTask;
 import toolbox.JavacTask;
 import toolbox.Task;
-import toolbox.ToolBox;
 
 public class EdgeCases extends ModuleTestBase {
 
@@ -66,7 +66,7 @@ public class EdgeCases extends ModuleTestBase {
     }
 
     @Test
-    void testAddExportUndefinedModule(Path base) throws Exception {
+    public void testAddExportUndefinedModule(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "package test; import undef.Any; public class Test {}");
         Path classes = base.resolve("classes");
@@ -89,7 +89,7 @@ public class EdgeCases extends ModuleTestBase {
     }
 
     @Test
-    void testModuleSymbolOutterMostClass(Path base) throws Exception {
+    public void testModuleSymbolOutterMostClass(Path base) throws Exception {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
             Path moduleSrc = base.resolve("module-src");
@@ -110,7 +110,7 @@ public class EdgeCases extends ModuleTestBase {
     }
 
     @Test
-    void testParseEnterAnalyze(Path base) throws Exception {
+    public void testParseEnterAnalyze(Path base) throws Exception {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
             Path moduleSrc = base.resolve("module-src");
@@ -148,7 +148,7 @@ public class EdgeCases extends ModuleTestBase {
     }
 
     @Test
-    void testModuleImplicitModuleBoundaries(Path base) throws Exception {
+    public void testModuleImplicitModuleBoundaries(Path base) throws Exception {
         Path src = base.resolve("src");
         Path src_m1 = src.resolve("m1");
         tb.writeJavaFiles(src_m1,
@@ -180,7 +180,7 @@ public class EdgeCases extends ModuleTestBase {
     }
 
     @Test
-    void testAssignClassToAutomaticModule(Path base) throws Exception {
+    public void testAssignClassToAutomaticModule(Path base) throws Exception {
         //check that if a ClassSymbol belongs to an automatic module, it is properly assigned and not
         //duplicated when being accessed through a classfile.
         Path automaticSrc = base.resolve("automaticSrc");
@@ -239,7 +239,7 @@ public class EdgeCases extends ModuleTestBase {
     }
 
     @Test
-    void testEmptyImplicitModuleInfo(Path base) throws Exception {
+    public void testEmptyImplicitModuleInfo(Path base) throws Exception {
         Path src = base.resolve("src");
         Path src_m1 = src.resolve("m1");
         Files.createDirectories(src_m1);
@@ -267,6 +267,41 @@ public class EdgeCases extends ModuleTestBase {
                 .run()
                 .writeAll();
 
+    }
+
+    @Test
+    public void testClassPackageClash(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path src_m1 = src.resolve("m1");
+        tb.writeJavaFiles(src_m1,
+                          "module m1 { exports test.m1; }",
+                          "package test.m1;\n" +
+                          "public class Test {}\n");
+        Path src_m2 = src.resolve("m2");
+        tb.writeJavaFiles(src_m2,
+                          "module m2 { requires m1; }",
+                          "package test;\n" +
+                          "public class m1 {}\n");
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        List<String> log = new JavacTask(tb)
+                .options("-modulesourcepath", src.toString(),
+                         "-XDrawDiagnostics")
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected = Arrays.asList(
+            "m1.java:2:8: compiler.err.clash.with.pkg.of.same.name: kindname.class, test.m1",
+            "1 error"
+        );
+
+        if (!expected.equals(log)) {
+            throw new IllegalStateException(log.toString());
+        }
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ import static org.testng.Assert.assertEquals;
 
 import java.text.ParsePosition;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -661,6 +662,8 @@ public class TCKDateTimeFormatterBuilder {
             {"W"},
             {"W"},
 
+            {"g"},
+            {"ggggg"},
         };
     }
 
@@ -760,6 +763,37 @@ public class TCKDateTimeFormatterBuilder {
     private static Temporal date(int y, int m, int d) {
         return LocalDate.of(y, m, d);
     }
+
+    //-----------------------------------------------------------------------
+    @DataProvider(name="modJulianFieldPattern")
+    Object[][] data_modJuilanFieldPattern() {
+        return new Object[][] {
+            {"g", "1"},
+            {"g", "123456"},
+            {"gggggg", "123456"},
+        };
+    }
+
+    @Test(dataProvider="modJulianFieldPattern")
+    public void test_modJulianFieldPattern(String pattern, String input) throws Exception {
+        DateTimeFormatter.ofPattern(pattern).parse(input);
+    }
+
+    @DataProvider(name="modJulianFieldValues")
+    Object[][] data_modJuilanFieldValues() {
+        return new Object[][] {
+            {1970, 1, 1, "40587"},
+            {1858, 11, 17, "0"},
+            {1858, 11, 16, "-1"},
+        };
+    }
+
+    @Test(dataProvider="modJulianFieldValues")
+    public void test_modJulianFieldValues(int y, int m, int d, String expected) throws Exception {
+        DateTimeFormatter df = new DateTimeFormatterBuilder().appendPattern("g").toFormatter();
+         assertEquals(LocalDate.of(y, m, d).format(df), expected);
+    }
+
 
     //-----------------------------------------------------------------------
     @Test
@@ -897,7 +931,7 @@ public class TCKDateTimeFormatterBuilder {
 
     @Test
     public void test_adjacent_lenient_fractionFollows_0digit() throws Exception {
-        // succeeds because hour/min are fixed width
+        // succeeds because hour, min and fraction of seconds are fixed width
         DateTimeFormatter f = builder.parseLenient().appendValue(HOUR_OF_DAY, 2).appendValue(MINUTE_OF_HOUR, 2).appendFraction(NANO_OF_SECOND, 3, 3, false).toFormatter(Locale.UK);
         ParsePosition pp = new ParsePosition(0);
         TemporalAccessor parsed = f.parseUnresolved("1230", pp);
@@ -905,6 +939,21 @@ public class TCKDateTimeFormatterBuilder {
         assertEquals(pp.getIndex(), 4);
         assertEquals(parsed.getLong(HOUR_OF_DAY), 12L);
         assertEquals(parsed.getLong(MINUTE_OF_HOUR), 30L);
+    }
+
+    @DataProvider(name="adjacentFractionParseData")
+    Object[][] data_adjacent_fraction_parse() {
+        return new Object[][] {
+            {"20130812214600025", "yyyyMMddHHmmssSSS", LocalDateTime.of(2013, 8, 12, 21, 46, 00, 25000000)},
+            {"201308122146000256", "yyyyMMddHHmmssSSSS", LocalDateTime.of(2013, 8, 12, 21, 46, 00, 25600000)},
+        };
+    }
+
+    @Test(dataProvider = "adjacentFractionParseData")
+    public void test_adjacent_fraction(String input, String pattern, LocalDateTime expected) {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern(pattern);
+        LocalDateTime actual = LocalDateTime.parse(input, dtf);
+        assertEquals(actual, expected);
     }
 
     @DataProvider(name="lenientOffsetParseData")

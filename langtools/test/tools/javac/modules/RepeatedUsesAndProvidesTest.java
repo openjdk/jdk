@@ -46,7 +46,7 @@ public class RepeatedUsesAndProvidesTest extends ModuleTestBase {
     }
 
     @Test
-    void testDuplicateUses(Path base) throws Exception {
+    public void testDuplicateUses(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { uses p1.C1; uses p1.C1; }",
@@ -66,7 +66,7 @@ public class RepeatedUsesAndProvidesTest extends ModuleTestBase {
     }
 
     @Test
-    void testDuplicateProvides(Path base) throws Exception {
+    public void testDuplicateProvides(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { provides p1.C1 with p2.C2; provides p1.C1 with p2.C2; }",

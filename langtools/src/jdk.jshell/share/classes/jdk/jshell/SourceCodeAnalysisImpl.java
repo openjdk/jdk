@@ -211,11 +211,6 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         throw new InternalError();
     }
 
-    private OuterWrap wrapInClass(Wrap guts) {
-        String imports = proc.maps.packageAndImportsExcept(null, null);
-        return OuterWrap.wrapInClass(proc.maps.packageName(), REPL_DOESNOTMATTER_CLASS_NAME, imports, "", guts);
-    }
-
     private Tree.Kind guessKind(String code) {
         ParseTask pt = proc.taskFactory.new ParseTask(code);
         List<? extends Tree> units = pt.units();
@@ -258,13 +253,13 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         OuterWrap codeWrap;
         switch (guessKind(code)) {
             case IMPORT:
-                codeWrap = OuterWrap.wrapImport(null, Wrap.simpleWrap(code + "any.any"));
+                codeWrap = proc.outerMap.wrapImport(Wrap.simpleWrap(code + "any.any"), null);
                 break;
             case METHOD:
-                codeWrap = wrapInClass(Wrap.classMemberWrap(code));
+                codeWrap = proc.outerMap.wrapInTrialClass(Wrap.classMemberWrap(code));
                 break;
             default:
-                codeWrap = wrapInClass(Wrap.methodWrap(code));
+                codeWrap = proc.outerMap.wrapInTrialClass(Wrap.methodWrap(code));
                 break;
         }
         String requiredPrefix = identifier;
@@ -946,7 +941,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         if (guessKind(code) == Kind.IMPORT)
             return null;
 
-        OuterWrap codeWrap = wrapInClass(Wrap.methodWrap(code));
+        OuterWrap codeWrap = proc.outerMap.wrapInTrialClass(Wrap.methodWrap(code));
         AnalyzeTask at = proc.taskFactory.new AnalyzeTask(codeWrap);
         SourcePositions sp = at.trees().getSourcePositions();
         CompilationUnitTree topLevel = at.firstCuTree();
@@ -1064,7 +1059,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             case INTERFACE: case ANNOTATION_TYPE: case VARIABLE:
                 return null;
             default:
-                codeWrap = wrapInClass(Wrap.methodWrap(code));
+                codeWrap = proc.outerMap.wrapInTrialClass(Wrap.methodWrap(code));
                 break;
         }
         AnalyzeTask at = proc.taskFactory.new AnalyzeTask(codeWrap);
@@ -1104,10 +1099,10 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             case IMPORT:
                 return new QualifiedNames(Collections.emptyList(), -1, true, false);
             case METHOD:
-                codeWrap = wrapInClass(Wrap.classMemberWrap(code));
+                codeWrap = proc.outerMap.wrapInTrialClass(Wrap.classMemberWrap(code));
                 break;
             default:
-                codeWrap = wrapInClass(Wrap.methodWrap(code));
+                codeWrap = proc.outerMap.wrapInTrialClass(Wrap.methodWrap(code));
                 break;
         }
         AnalyzeTask at = proc.taskFactory.new AnalyzeTask(codeWrap);

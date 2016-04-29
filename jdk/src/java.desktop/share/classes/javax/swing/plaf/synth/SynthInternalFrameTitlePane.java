@@ -138,7 +138,6 @@ class SynthInternalFrameTitlePane extends BasicInternalFrameTitlePane
                 }
             }
         }
-        context.dispose();
     }
 
     protected void installDefaults() {
@@ -149,7 +148,6 @@ class SynthInternalFrameTitlePane extends BasicInternalFrameTitlePane
     protected void uninstallDefaults() {
         SynthContext context = getContext(this, ENABLED);
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
         JInternalFrame.JDesktopIcon di = frame.getDesktopIcon();
         if(di != null && di.getComponentPopupMenu() == systemPopupMenu) {
@@ -235,7 +233,6 @@ class SynthInternalFrameTitlePane extends BasicInternalFrameTitlePane
         context.getPainter().paintInternalFrameTitlePaneBackground(context,
                           g, 0, 0, getWidth(), getHeight());
         paint(context, g);
-        context.dispose();
     }
 
     protected void paint(SynthContext context, Graphics g) {
@@ -321,7 +318,6 @@ class SynthInternalFrameTitlePane extends BasicInternalFrameTitlePane
         SynthContext context = getContext(this);
         LayoutManager lm =
             (LayoutManager)style.get(context, "InternalFrameTitlePane.titlePaneLayout");
-        context.dispose();
         return (lm != null) ? lm : new SynthTitlePaneLayout();
     }
 
@@ -362,7 +358,6 @@ class SynthInternalFrameTitlePane extends BasicInternalFrameTitlePane
                              Image.SCALE_SMOOTH));
             }
         }
-        context.dispose();
         menuButton.setIcon(frameIcon);
     }
 
@@ -433,7 +428,6 @@ class SynthInternalFrameTitlePane extends BasicInternalFrameTitlePane
             Insets insets = getInsets();
             height += insets.top + insets.bottom;
             width += insets.left + insets.right;
-            context.dispose();
             return new Dimension(width, height);
         }
 

@@ -79,13 +79,16 @@ public final class Boolean implements java.io.Serializable,
      * Allocates a {@code Boolean} object representing the
      * {@code value} argument.
      *
-     * <p><b>Note: It is rarely appropriate to use this constructor.
-     * Unless a <i>new</i> instance is required, the static factory
-     * {@link #valueOf(boolean)} is generally a better choice. It is
-     * likely to yield significantly better space and time performance.</b>
-     *
      * @param   value   the value of the {@code Boolean}.
+     *
+     * @deprecated
+     * It is rarely appropriate to use this constructor. The static factory
+     * {@link #valueOf(boolean)} is generally a better choice, as it is
+     * likely to yield significantly better space and time performance.
+     * Also consider using the final fields {@link #TRUE} and {@link #FALSE}
+     * if possible.
      */
+    @Deprecated(since="9")
     public Boolean(boolean value) {
         this.value = value;
     }
@@ -94,15 +97,18 @@ public final class Boolean implements java.io.Serializable,
      * Allocates a {@code Boolean} object representing the value
      * {@code true} if the string argument is not {@code null}
      * and is equal, ignoring case, to the string {@code "true"}.
-     * Otherwise, allocate a {@code Boolean} object representing the
-     * value {@code false}. Examples:<p>
-     * {@code new Boolean("True")} produces a {@code Boolean} object
-     * that represents {@code true}.<br>
-     * {@code new Boolean("yes")} produces a {@code Boolean} object
-     * that represents {@code false}.
+     * Otherwise, allocates a {@code Boolean} object representing the
+     * value {@code false}.
      *
      * @param   s   the string to be converted to a {@code Boolean}.
+     *
+     * @deprecated
+     * It is rarely appropriate to use this constructor.
+     * Use {@link #parseBoolean(String)} to convert a string to a
+     * {@code boolean} primitive, or use {@link #valueOf(String)}
+     * to convert a string to a {@code Boolean} object.
      */
+    @Deprecated(since="9")
     public Boolean(String s) {
         this(parseBoolean(s));
     }

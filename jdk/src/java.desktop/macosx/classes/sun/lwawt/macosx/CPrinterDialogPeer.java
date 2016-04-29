@@ -29,7 +29,6 @@ import java.awt.*;
 import java.awt.dnd.*;
 
 import sun.lwawt.*;
-import sun.misc.ManagedLocalsThread;
 
 public class CPrinterDialogPeer extends LWWindowPeer {
     static {
@@ -59,7 +58,7 @@ public class CPrinterDialogPeer extends LWWindowPeer {
                 printerDialog.setRetVal(printerDialog.showDialog());
                 printerDialog.setVisible(false);
             };
-            new ManagedLocalsThread(task).start();
+            new Thread(null, task, "PrintDialog", 0, false).start();
         }
     }
 

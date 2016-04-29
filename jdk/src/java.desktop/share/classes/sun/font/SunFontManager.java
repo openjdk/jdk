@@ -55,7 +55,6 @@ import sun.awt.FontConfiguration;
 import sun.awt.SunToolkit;
 import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.FontSupport;
-import sun.misc.ManagedLocalsThread;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -1844,7 +1843,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
 
     private PhysicalFont registerFontFile(String file) {
         if (new File(file).isAbsolute() &&
-            !registeredFonts.contains(file)) {
+            !registeredFonts.containsKey(file)) {
             int fontFormat = FONTFORMAT_NONE;
             int fontRank = Font2D.UNKNOWN_RANK;
             if (ttFilter.accept(null, file)) {
@@ -2513,8 +2512,8 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                     };
                     AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
                         ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
-                        fileCloser = new ManagedLocalsThread(rootTG,
-                                                             fileCloserRunnable);
+                        fileCloser = new Thread(rootTG, fileCloserRunnable,
+                                                "FileCloser", 0, false);
                         fileCloser.setContextClassLoader(null);
                         Runtime.getRuntime().addShutdownHook(fileCloser);
                         return null;

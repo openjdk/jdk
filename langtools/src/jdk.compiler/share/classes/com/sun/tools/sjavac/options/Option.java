@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,6 +151,7 @@ public enum Option {
             // Construct transformer
             try {
                 Class<?> trCls = Class.forName(classname);
+                @SuppressWarnings("deprecation")
                 Transformer transformer = (Transformer) trCls.newInstance();
                 transformer.setExtra(extra);
                 helper.addTransformer(suffix, transformer);

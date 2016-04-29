@@ -67,7 +67,6 @@ public class SynthRootPaneUI extends BasicRootPaneUI implements SynthUI {
         SynthContext context = getContext(root, ENABLED);
 
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
     }
 
@@ -97,7 +96,6 @@ public class SynthRootPaneUI extends BasicRootPaneUI implements SynthUI {
                 installKeyboardActions((JRootPane)c);
             }
         }
-        context.dispose();
     }
 
     /**
@@ -120,7 +118,6 @@ public class SynthRootPaneUI extends BasicRootPaneUI implements SynthUI {
         context.getPainter().paintRootPaneBackground(context,
                           g, 0, 0, c.getWidth(), c.getHeight());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -137,7 +134,6 @@ public class SynthRootPaneUI extends BasicRootPaneUI implements SynthUI {
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**

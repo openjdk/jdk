@@ -50,6 +50,7 @@ import jdk.internal.misc.VM;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import sun.reflect.misc.ReflectUtil;
+import sun.security.action.GetPropertyAction;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -581,11 +582,7 @@ public class Proxy implements java.io.Serializable {
         }
 
         private static final String DEBUG =
-            AccessController.doPrivileged(new PrivilegedAction<>() {
-                public String run() {
-                    return System.getProperty("jdk.proxy.debug", "");
-                }
-            });
+                GetPropertyAction.getProperty("jdk.proxy.debug", "");
 
         private static boolean isDebug() {
             return !DEBUG.isEmpty();

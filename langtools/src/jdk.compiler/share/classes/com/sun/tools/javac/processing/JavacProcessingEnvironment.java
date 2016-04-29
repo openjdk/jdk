@@ -282,6 +282,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         if (options.isSet(XPRINT)) {
             try {
+                @SuppressWarnings("deprecation")
                 Processor processor = PrintingProcessor.class.newInstance();
                 processorIterator = List.of(processor).iterator();
             } catch (Throwable t) {
@@ -549,8 +550,9 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                         try {
                             Class<?> processorClass = processorCL.loadClass(processorName);
                             ensureReadable(processorClass);
-                            processor =
-                                (Processor) (processorClass.newInstance());
+                            @SuppressWarnings("deprecation")
+                            Object tmp = processorClass.newInstance();
+                            processor = (Processor) tmp;
                         } catch (ClassNotFoundException cnfe) {
                             log.error("proc.processor.not.found", processorName);
                             return false;

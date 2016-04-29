@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package sun.awt.windows;
 
 import java.awt.*;
+import java.awt.event.FocusEvent.Cause;
 import java.awt.dnd.DropTarget;
 import java.awt.peer.*;
 import java.io.File;
@@ -34,9 +35,7 @@ import java.security.PrivilegedAction;
 import java.util.ResourceBundle;
 import java.util.MissingResourceException;
 import java.util.Vector;
-import sun.awt.CausedFocusEvent;
 import sun.awt.AWTAccessor;
-import sun.misc.ManagedLocalsThread;
 
 final class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
 
@@ -98,7 +97,7 @@ final class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
 
     @Override
     public void show() {
-        new ManagedLocalsThread(this::_show).start();
+        new Thread(null, this::_show, "FileDialog", 0, false).start();
     }
 
     @Override
@@ -283,7 +282,7 @@ final class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
     @Override
     public boolean requestFocus
          (Component lightweightChild, boolean temporary,
-          boolean focusedWindowChangeAllowed, long time, CausedFocusEvent.Cause cause)
+          boolean focusedWindowChangeAllowed, long time, Cause cause)
     {
         return false;
     }

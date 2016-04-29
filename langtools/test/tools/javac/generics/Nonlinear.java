@@ -22,7 +22,7 @@ public class Nonlinear {
     // the program.
 
     public static void main (String [] args) {
-        Integer x = new Integer (5);
+        Integer x = Integer.valueOf(5);
         String y = castit (x);
         System.out.println (y);
     }

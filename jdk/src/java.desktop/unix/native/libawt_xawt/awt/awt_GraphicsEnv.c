@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1877,31 +1877,34 @@ Java_sun_awt_X11GraphicsDevice_getCurrentDisplayMode
 
     AWT_LOCK();
 
-    config = awt_XRRGetScreenInfo(awt_display,
-                                  RootWindow(awt_display, screen));
-    if (config != NULL) {
-        Rotation rotation;
-        short curRate;
-        SizeID curSizeIndex;
-        XRRScreenSize *sizes;
-        int nsizes;
+    if (screen < ScreenCount(awt_display)) {
 
-        curSizeIndex = awt_XRRConfigCurrentConfiguration(config, &rotation);
-        sizes = awt_XRRConfigSizes(config, &nsizes);
-        curRate = awt_XRRConfigCurrentRate(config);
+        config = awt_XRRGetScreenInfo(awt_display,
+                                      RootWindow(awt_display, screen));
+        if (config != NULL) {
+            Rotation rotation;
+            short curRate;
+            SizeID curSizeIndex;
+            XRRScreenSize *sizes;
+            int nsizes;
 
-        if ((sizes != NULL) &&
-            (curSizeIndex < nsizes))
-        {
-            XRRScreenSize curSize = sizes[curSizeIndex];
-            displayMode = X11GD_CreateDisplayMode(env,
-                                                  curSize.width,
-                                                  curSize.height,
-                                                  BIT_DEPTH_MULTI,
-                                                  curRate);
+            curSizeIndex = awt_XRRConfigCurrentConfiguration(config, &rotation);
+            sizes = awt_XRRConfigSizes(config, &nsizes);
+            curRate = awt_XRRConfigCurrentRate(config);
+
+            if ((sizes != NULL) &&
+                (curSizeIndex < nsizes))
+            {
+                XRRScreenSize curSize = sizes[curSizeIndex];
+                displayMode = X11GD_CreateDisplayMode(env,
+                                                      curSize.width,
+                                                      curSize.height,
+                                                      BIT_DEPTH_MULTI,
+                                                      curRate);
+            }
+
+            awt_XRRFreeScreenConfigInfo(config);
         }
-
-        awt_XRRFreeScreenConfigInfo(config);
     }
 
     AWT_FLUSH_UNLOCK();

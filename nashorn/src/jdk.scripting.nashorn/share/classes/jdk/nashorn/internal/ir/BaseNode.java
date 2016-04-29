@@ -52,6 +52,9 @@ public abstract class BaseNode extends Expression implements FunctionCall, Optim
     /** Program point id */
     protected final int programPoint;
 
+    /** Super property access. */
+    private final boolean isSuper;
+
     /**
      * Constructor
      *
@@ -59,13 +62,15 @@ public abstract class BaseNode extends Expression implements FunctionCall, Optim
      * @param finish finish
      * @param base   base node
      * @param isFunction is this a function
+     * @param isSuper is this a super property access
      */
-    public BaseNode(final long token, final int finish, final Expression base, final boolean isFunction) {
+    public BaseNode(final long token, final int finish, final Expression base, final boolean isFunction, final boolean isSuper) {
         super(token, base.getStart(), finish);
         this.base           = base;
         this.isFunction     = isFunction;
         this.type = null;
         this.programPoint   = INVALID_PROGRAM_POINT;
+        this.isSuper        = isSuper;
     }
 
     /**
@@ -75,13 +80,15 @@ public abstract class BaseNode extends Expression implements FunctionCall, Optim
      * @param isFunction is this a function
      * @param callSiteType  the callsite type for this base node, either optimistic or conservative
      * @param programPoint  program point id
+     * @param isSuper is this a super property access
      */
-    protected BaseNode(final BaseNode baseNode, final Expression base, final boolean isFunction, final Type callSiteType, final int programPoint) {
+    protected BaseNode(final BaseNode baseNode, final Expression base, final boolean isFunction, final Type callSiteType, final int programPoint, final boolean isSuper) {
         super(baseNode);
         this.base           = base;
         this.isFunction     = isFunction;
         this.type = callSiteType;
         this.programPoint   = programPoint;
+        this.isSuper        = isSuper;
     }
 
     /**
@@ -136,4 +143,17 @@ public abstract class BaseNode extends Expression implements FunctionCall, Optim
      */
     public abstract BaseNode setIsFunction();
 
+    /**
+     * @return {@code true} if a SuperProperty access.
+     */
+    public boolean isSuper() {
+        return isSuper;
+    }
+
+    /**
+     * Mark this node as being a SuperProperty access.
+     *
+     * @return  a base node identical to this one in all aspects except with its super flag set.
+     */
+    public abstract BaseNode setIsSuper();
 }
