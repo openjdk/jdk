@@ -47,7 +47,7 @@ public class DoclintOtherModules extends ModuleTestBase {
     }
 
     @Test
-    void testSimple(Path base) throws Exception {
+    public void testSimple(Path base) throws Exception {
         Path src = base.resolve("src");
         Path m1 = src.resolve("m1");
         Path m2 = src.resolve("m2");

@@ -516,7 +516,7 @@ public class POAImpl extends ObjectAdapterBase implements POA
 
     // Converted from anonymous class to local class
     // so that we can call performDestroy() directly.
-    static class DestroyThread extends sun.misc.ManagedLocalsThread {
+    static class DestroyThread extends Thread {
         private boolean wait ;
         private boolean etherealize ;
         private boolean debug ;
@@ -524,6 +524,7 @@ public class POAImpl extends ObjectAdapterBase implements POA
 
         public DestroyThread( boolean etherealize, boolean debug )
         {
+            super(null, null, "POA-Destroy-Thread", 0, false);
             this.etherealize = etherealize ;
             this.debug = debug ;
         }

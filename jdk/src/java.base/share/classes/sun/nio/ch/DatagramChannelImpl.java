@@ -33,7 +33,7 @@ import java.nio.channels.*;
 import java.nio.channels.spi.*;
 import java.util.*;
 import sun.net.ResourceManager;
-import sun.net.ExtendedOptionsImpl;
+import sun.net.ext.ExtendedSocketOptions;
 
 /**
  * An implementation of DatagramChannels.
@@ -306,9 +306,9 @@ class DatagramChannelImpl
             set.add(StandardSocketOptions.IP_MULTICAST_IF);
             set.add(StandardSocketOptions.IP_MULTICAST_TTL);
             set.add(StandardSocketOptions.IP_MULTICAST_LOOP);
-            if (ExtendedOptionsImpl.flowSupported()) {
-                set.add(jdk.net.ExtendedSocketOptions.SO_FLOW_SLA);
-            }
+            ExtendedSocketOptions extendedOptions =
+                    ExtendedSocketOptions.getInstance();
+            set.addAll(extendedOptions.options());
             return Collections.unmodifiableSet(set);
         }
     }

@@ -26,8 +26,6 @@
 package com.sun.tools.sjavac;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.Writer;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,9 +40,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
+import com.sun.tools.javac.main.Main.Result;
 import com.sun.tools.sjavac.comp.CompilationService;
 import com.sun.tools.sjavac.options.Options;
 import com.sun.tools.sjavac.pubapi.PubApi;
@@ -283,7 +280,7 @@ public class CompileJavaPackages implements Transformer {
             }
 
             // Check the return values.
-            if (subResult.returnCode != 0) {
+            if (subResult.result != Result.OK) {
                 rc = false;
             }
         }

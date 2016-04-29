@@ -1,3 +1,5 @@
+/* /nodynamiccopyright/ */
+
 package p;
 
 class Inner extends Outer.Super {

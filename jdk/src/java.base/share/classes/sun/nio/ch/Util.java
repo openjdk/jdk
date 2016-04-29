@@ -64,13 +64,7 @@ public class Util {
      * for potential future-proofing.
      */
     private static long getMaxCachedBufferSize() {
-        String s = java.security.AccessController.doPrivileged(
-            new PrivilegedAction<String>() {
-                @Override
-                public String run() {
-                    return System.getProperty("jdk.nio.maxCachedBufferSize");
-                }
-            });
+        String s = GetPropertyAction.getProperty("jdk.nio.maxCachedBufferSize");
         if (s != null) {
             try {
                 long m = Long.parseLong(s);
@@ -471,8 +465,7 @@ public class Util {
         if (bugLevel == null) {
             if (!jdk.internal.misc.VM.isBooted())
                 return false;
-            String value = AccessController.doPrivileged(
-                new GetPropertyAction("sun.nio.ch.bugLevel"));
+            String value = GetPropertyAction.getProperty("sun.nio.ch.bugLevel");
             bugLevel = (value != null) ? value : "";
         }
         return bugLevel.equals(bl);

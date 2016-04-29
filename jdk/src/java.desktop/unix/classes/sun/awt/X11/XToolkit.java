@@ -52,7 +52,6 @@ import sun.awt.*;
 import sun.awt.datatransfer.DataTransferer;
 import sun.font.FontConfigManager;
 import sun.java2d.SunGraphicsEnvironment;
-import sun.misc.*;
 import sun.awt.util.PerformanceLogger;
 import sun.awt.util.ThreadGroupUtils;
 import sun.print.PrintJob2D;
@@ -284,8 +283,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                 }
             };
             String name = "XToolkt-Shutdown-Thread";
-            Thread shutdownThread = new ManagedLocalsThread(
-                    ThreadGroupUtils.getRootThreadGroup(), r, name);
+            Thread shutdownThread = new Thread(
+                    ThreadGroupUtils.getRootThreadGroup(), r, name, 0, false);
             shutdownThread.setContextClassLoader(null);
             Runtime.getRuntime().addShutdownHook(shutdownThread);
             return null;
@@ -332,8 +331,9 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
             toolkitThread = AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
                 String name = "AWT-XAWT";
-                Thread thread = new ManagedLocalsThread(
-                        ThreadGroupUtils.getRootThreadGroup(), this, name);
+                Thread thread = new Thread(
+                        ThreadGroupUtils.getRootThreadGroup(), this, name,
+                        0, false);
                 thread.setContextClassLoader(null);
                 thread.setPriority(Thread.NORM_PRIORITY + 1);
                 thread.setDaemon(true);
@@ -1143,7 +1143,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     public FileDialogPeer createFileDialog(FileDialog target) {
         FileDialogPeer peer = null;
         // The current GtkFileChooser is available from GTK+ 2.4
-        if (!getSunAwtDisableGtkFileDialogs() && checkGtkVersion(2, 4, 0)) {
+        if (!getSunAwtDisableGtkFileDialogs() &&
+                      (checkGtkVersion(2, 4, 0) || checkGtkVersion(3, 0, 0))) {
             peer = new GtkFileDialogPeer(target);
         } else {
             peer = new XFileDialogPeer(target);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,12 @@ public class HtmlConstants {
      */
     public static final Content END_OF_BOTTOM_NAVBAR =
             new Comment("======== END OF BOTTOM NAVBAR =======");
+
+    /**
+     * Marker to identify start of module description.
+     */
+    public static final Content START_OF_MODULE_DESCRIPTION =
+            new Comment("============ MODULE DESCRIPTION ===========");
 
     /**
      * Marker to identify start of class data.

@@ -70,7 +70,6 @@ import javax.print.attribute.*;
 import sun.awt.AppContext;
 
 
-import sun.misc.ManagedLocalsThread;
 import sun.swing.PrintingStatus;
 import sun.swing.SwingUtilities2;
 import sun.swing.text.TextComponentPrintable;
@@ -2353,7 +2352,8 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
             runnablePrinting.run();
         } else {
             if (isEventDispatchThread) {
-                new ManagedLocalsThread(runnablePrinting).start();
+                new Thread(null, runnablePrinting,
+                           "JTextComponentPrint", 0, false ).start();
                 printingStatus.showModal(true);
             } else {
                 printingStatus.showModal(false);
@@ -2580,7 +2580,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
          * @param e the DocumentEvent
          */
         public void insertUpdate(DocumentEvent e) {
-            final Integer pos = new Integer (e.getOffset());
+            final Integer pos = e.getOffset();
             if (SwingUtilities.isEventDispatchThread()) {
                 firePropertyChange(ACCESSIBLE_TEXT_PROPERTY, null, pos);
             } else {
@@ -2602,7 +2602,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
          * @param e the DocumentEvent
          */
         public void removeUpdate(DocumentEvent e) {
-            final Integer pos = new Integer (e.getOffset());
+            final Integer pos = e.getOffset();
             if (SwingUtilities.isEventDispatchThread()) {
                 firePropertyChange(ACCESSIBLE_TEXT_PROPERTY, null, pos);
             } else {
@@ -2624,7 +2624,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
          * @param e the DocumentEvent
          */
         public void changedUpdate(DocumentEvent e) {
-            final Integer pos = new Integer (e.getOffset());
+            final Integer pos = e.getOffset();
             if (SwingUtilities.isEventDispatchThread()) {
                 firePropertyChange(ACCESSIBLE_TEXT_PROPERTY, null, pos);
             } else {

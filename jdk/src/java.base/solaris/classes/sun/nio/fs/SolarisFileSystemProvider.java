@@ -29,7 +29,6 @@ import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.nio.file.spi.FileTypeDetector;
 import java.io.IOException;
-import java.security.AccessController;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -85,8 +84,8 @@ public class SolarisFileSystemProvider extends UnixFileSystemProvider {
 
     @Override
     FileTypeDetector getFileTypeDetector() {
-        Path userMimeTypes = Paths.get(AccessController.doPrivileged(
-            new GetPropertyAction("user.home")), ".mime.types");
+        Path userMimeTypes = Paths.get(
+            GetPropertyAction.getProperty("user.home"), ".mime.types");
         Path etcMimeTypes = Paths.get("/etc/mime.types");
 
         return chain(new GioFileTypeDetector(),

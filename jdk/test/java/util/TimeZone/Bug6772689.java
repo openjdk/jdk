@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 6772689
- * @key intermittent
  * @summary Test for standard-to-daylight transitions at midnight:
  * date stays on the given day.
  */

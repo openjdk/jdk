@@ -45,7 +45,7 @@ public class ResolveTest extends ModuleTestBase {
     }
 
     @Test
-    void testMissingSimpleTypeUnnamedModule(Path base) throws Exception {
+    public void testMissingSimpleTypeUnnamedModule(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "class C { D d; }");
 
@@ -62,7 +62,7 @@ public class ResolveTest extends ModuleTestBase {
     }
 
     @Test
-    void testMissingSimpleTypeNamedModule(Path base) throws Exception {
+    public void testMissingSimpleTypeNamedModule(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { }",
@@ -81,7 +81,7 @@ public class ResolveTest extends ModuleTestBase {
     }
 
     @Test
-    void testUnexportedTypeUnreadableModule(Path base) throws Exception {
+    public void testUnexportedTypeUnreadableModule(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("m1"),
                 "module m1 { }",
@@ -105,7 +105,7 @@ public class ResolveTest extends ModuleTestBase {
     }
 
     @Test
-    void testUnexportedTypeReadableModule(Path base) throws Exception {
+    public void testUnexportedTypeReadableModule(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("m1"),
                 "module m1 { }",
@@ -129,7 +129,7 @@ public class ResolveTest extends ModuleTestBase {
     }
 
     @Test
-    void testQualifiedExportedTypeReadableModule(Path base) throws Exception {
+    public void testQualifiedExportedTypeReadableModule(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("m1"),
                 "module m1 { exports p1 to m3; }",
@@ -155,7 +155,7 @@ public class ResolveTest extends ModuleTestBase {
     }
 
     @Test
-    void testExportedTypeUnreadableModule(Path base) throws Exception {
+    public void testExportedTypeUnreadableModule(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("m1"),
                 "module m1 { exports p1; }",
@@ -179,7 +179,7 @@ public class ResolveTest extends ModuleTestBase {
     }
 
     @Test
-    void testExportedTypeReadableModule(Path base) throws Exception {
+    public void testExportedTypeReadableModule(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("m1"),
                 "module m1 { exports p1; }",
@@ -199,7 +199,7 @@ public class ResolveTest extends ModuleTestBase {
     }
 
     @Test
-    void testExportedTypeReadableModule2(Path base) throws Exception {
+    public void testExportedTypeReadableModule2(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("m1"),
                 "module m1 { exports p1 to m2; }",

@@ -33,6 +33,9 @@ import java.util.function.Function;
 import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
 import java.lang.ref.ReferenceQueue;
+import java.lang.reflect.Module;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.ResourceBundle;
 
@@ -129,41 +132,49 @@ public class DefaultLoggerFinder extends LoggerFinder {
             return w;
         }
 
-
         final static SharedLoggers system = new SharedLoggers();
         final static SharedLoggers application = new SharedLoggers();
     }
 
+    public static boolean isSystem(Module m) {
+        ClassLoader cl = AccessController.doPrivileged(new PrivilegedAction<>() {
+            @Override
+            public ClassLoader run() {
+                return m.getClassLoader();
+            }
+        });
+        return cl == null;
+    }
+
     @Override
-    public final Logger getLogger(String name,  /* Module */ Class<?> caller) {
+    public final Logger getLogger(String name,  Module module) {
         checkPermission();
-        return demandLoggerFor(name, caller);
+        return demandLoggerFor(name, module);
     }
 
     @Override
     public final Logger getLocalizedLogger(String name, ResourceBundle bundle,
-                                           /* Module */  Class<?> caller) {
-        return super.getLocalizedLogger(name, bundle, caller);
+                                           Module module) {
+        return super.getLocalizedLogger(name, bundle, module);
     }
 
-
-
     /**
-     * Returns a {@link Logger logger} suitable for the caller usage.
+     * Returns a {@link Logger logger} suitable for use within the
+     * given {@code module}.
      *
      * @implSpec The default implementation for this method is to return a
      *    simple logger that will print all messages of INFO level and above
      *    to the console. That simple logger is not configurable.
      *
      * @param name The name of the logger.
-     * @param caller The class on behalf of which the logger is created.
+     * @param module The module on behalf of which the logger is created.
      * @return A {@link Logger logger} suitable for the application usage.
      * @throws SecurityException if the calling code does not have the
      * {@code RuntimePermission("loggerFinder")}.
      */
-    protected Logger demandLoggerFor(String name, /* Module */ Class<?> caller) {
+    protected Logger demandLoggerFor(String name, Module module) {
         checkPermission();
-        if (caller.getClassLoader() == null) {
+        if (isSystem(module)) {
             return SharedLoggers.system.get(SimpleConsoleLogger::makeSimpleLogger, name);
         } else {
             return SharedLoggers.application.get(SimpleConsoleLogger::makeSimpleLogger, name);

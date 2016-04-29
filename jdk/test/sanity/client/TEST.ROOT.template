@@ -12,7 +12,7 @@
 # A "headful" test requires a graphical environment to meaningfully
 # run. Tests that are not headful are "headless." 
 
-keys=screenshots
+keys=2d dnd i18n intermittent randomness headful
 
 # Tests that must run in othervm mode
 othervm.dirs=sanity/client/SwingSet

@@ -37,11 +37,13 @@ class JImageFile;
 typedef jlong JImageLocationRef;
 
 // Max path length limit independent of platform.  Windows max path is 1024,
-// other platforms use 4096.  The JCK fails several tests when 1024 is used.
+// other platforms use 4096.
 #define JIMAGE_MAX_PATH 4096
 
 // JImage Error Codes
 
+// Resource was not found
+#define JIMAGE_NOT_FOUND (0)
 // The image file is not prefixed with 0xCAFEDADA
 #define JIMAGE_BAD_MAGIC (-1)
 // The image file does not have a compatible (translatable) version
@@ -184,3 +186,20 @@ extern "C" void JIMAGE_ResourceIterator(JImageFile* jimage,
 
 typedef void (*JImageResourceIterator_t)(JImageFile* jimage,
         JImageResourceVisitor_t visitor, void* arg);
+
+/*
+ * JIMAGE_ResourcePath- Given an open image file, a location reference, a buffer
+ * and a maximum buffer size, copy the path of the resource into the buffer.
+ * Returns false if not a valid location reference.
+ *
+ * Ex.
+ *   JImageLocationRef location = ...
+ *   char path[JIMAGE_MAX_PATH];
+ *    (*JImageResourcePath)(image, location, path, JIMAGE_MAX_PATH);
+ */
+extern "C" bool JIMAGE_ResourcePath(JImageFile* image, JImageLocationRef locationRef,
+                                    char* path, size_t max);
+
+typedef bool (*JImage_ResourcePath_t)(JImageFile* jimage, JImageLocationRef location,
+        char* buffer, jlong size);
+

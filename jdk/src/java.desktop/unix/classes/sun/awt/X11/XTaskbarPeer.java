@@ -29,7 +29,8 @@ import java.awt.PopupMenu;
 import java.awt.Taskbar.Feature;
 import java.awt.peer.TaskbarPeer;
 import java.awt.event.ActionEvent;
-import sun.misc.ManagedLocalsThread;
+
+import sun.awt.UNIXToolkit;
 import java.security.AccessController;
 import sun.security.action.GetPropertyAction;
 
@@ -46,12 +47,12 @@ final class XTaskbarPeer implements TaskbarPeer {
             if (!initExecuted) {
                 String dname = AccessController.doPrivileged(
                                 new GetPropertyAction("java.desktop.appName", ""));
-                nativeLibraryLoaded = init(dname);
+                nativeLibraryLoaded = init(dname,
+                        UNIXToolkit.getEnabledGtkVersion().ordinal(),
+                        UNIXToolkit.isGtkVerbose());
                 if (nativeLibraryLoaded) {
-                    ManagedLocalsThread t
-                            = new ManagedLocalsThread(() -> {
-                                runloop();
-                            });
+                    Thread t = new Thread(null, () -> { runloop(); },
+                                          "TaskBar", 0, false);
                     t.setDaemon(true);
                     t.start();
                 }
@@ -150,7 +151,8 @@ final class XTaskbarPeer implements TaskbarPeer {
         }
     }
 
-    private static native boolean init(String name);
+    private static native boolean init(String name, int version,
+                                                               boolean verbose);
 
     private static native void runloop();
 

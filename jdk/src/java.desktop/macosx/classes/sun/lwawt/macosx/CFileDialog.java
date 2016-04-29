@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.lwawt.macosx;
 
 import java.awt.*;
+import java.awt.event.FocusEvent.Cause;
 import java.awt.peer.*;
 import java.awt.BufferCapabilities.FlipContents;
 import java.awt.event.*;
@@ -34,10 +35,8 @@ import java.security.AccessController;
 import java.util.List;
 import java.io.*;
 
-import sun.awt.CausedFocusEvent.Cause;
 import sun.awt.AWTAccessor;
 import sun.java2d.pipe.Region;
-import sun.misc.ManagedLocalsThread;
 import sun.security.action.GetBooleanAction;
 
 class CFileDialog implements FileDialogPeer {
@@ -120,7 +119,7 @@ class CFileDialog implements FileDialogPeer {
         if (visible) {
             // Java2 Dialog class requires peer to run code in a separate thread
             // and handles keeping the call modal
-            new ManagedLocalsThread(new Task()).start();
+            new Thread(null, new Task(), "FileDialog", 0, false).start();
         }
         // We hide ourself before "show" returns - setVisible(false)
         // doesn't apply

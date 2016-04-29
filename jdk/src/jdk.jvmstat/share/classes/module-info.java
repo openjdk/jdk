@@ -28,12 +28,12 @@ module jdk.jvmstat {
         jdk.attach,
         jdk.jcmd,
         jdk.jconsole,
-        jdk.jvmstat.rmi;
+        jdk.jstatd;
     exports sun.jvmstat.monitor.event to
         jdk.jcmd,
-        jdk.jvmstat.rmi;
+        jdk.jstatd;
     exports sun.jvmstat.perfdata.monitor to
-        jdk.jvmstat.rmi;
+        jdk.jstatd;
 
     uses sun.jvmstat.monitor.MonitoredHostService;
     provides sun.jvmstat.monitor.MonitoredHostService with sun.jvmstat.perfdata.monitor.protocol.file.MonitoredHostFileService;

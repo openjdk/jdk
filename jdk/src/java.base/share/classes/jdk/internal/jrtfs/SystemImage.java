@@ -49,7 +49,7 @@ import jdk.internal.jimage.ImageReader.Node;
  */
 abstract class SystemImage {
 
-    abstract Node findNode(String path);
+    abstract Node findNode(String path) throws IOException;
     abstract byte[] getResource(Node node) throws IOException;
     abstract void close() throws IOException;
 
@@ -60,7 +60,7 @@ abstract class SystemImage {
             image.getRootDirectory();
             return new SystemImage() {
                 @Override
-                Node findNode(String path) {
+                Node findNode(String path) throws IOException {
                     return image.findNode(path);
                 }
                 @Override

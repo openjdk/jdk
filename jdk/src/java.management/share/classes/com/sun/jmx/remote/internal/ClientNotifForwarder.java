@@ -52,7 +52,6 @@ import javax.management.remote.TargetedNotification;
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
 import java.rmi.UnmarshalException;
-import sun.misc.ManagedLocalsThread;
 
 
 public abstract class ClientNotifForwarder {
@@ -91,7 +90,8 @@ public abstract class ClientNotifForwarder {
                 throw new IllegalArgumentException("More than one command");
             this.command = command;
             if (thread == null) {
-                thread = new ManagedLocalsThread(
+                thread = new Thread(
+                    null,
                     ()-> {
                         while (true) {
                             Runnable r;
@@ -107,7 +107,9 @@ public abstract class ClientNotifForwarder {
                             r.run();
                         }
                     },
-                    "ClientNotifForwarder-" + ++threadId
+                    "ClientNotifForwarder-" + ++threadId,
+                    0,
+                    false
                 );
                 thread.setDaemon(true);
                 thread.start();

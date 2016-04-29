@@ -30,13 +30,12 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.channels.Pipe;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import sun.security.action.GetPropertyAction;
+
 /**
  * This class is used to create operating system processes.
  *
@@ -468,11 +467,9 @@ public final class ProcessBuilder
      * @since 1.7
      */
     public abstract static class Redirect {
-        private static final File NULL_FILE = AccessController.doPrivileged(
-                (PrivilegedAction<File>) () -> {
-                    return new File((System.getProperty("os.name")
-                            .startsWith("Windows") ? "NUL" : "/dev/null"));
-                }
+        private static final File NULL_FILE = new File(
+                (GetPropertyAction.getProperty("os.name")
+                        .startsWith("Windows") ? "NUL" : "/dev/null")
         );
 
         /**

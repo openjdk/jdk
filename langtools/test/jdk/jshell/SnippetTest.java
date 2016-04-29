@@ -142,8 +142,7 @@ public class SnippetTest extends KullaTesting {
         assertActiveKeys();
         assertEval("double f() { return 0.0; }",
                 ste(MAIN_SNIPPET, VALID, VALID, true, null),
-                ste(f, VALID, OVERWRITTEN, false, MAIN_SNIPPET),
-                ste(g, VALID, VALID, false, MAIN_SNIPPET));
+                ste(f, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
         assertKeys(method("()void", "g"), clazz(KullaTesting.ClassType.INTERFACE, "A"),
                 method("()double", "f"));
         assertActiveKeys();

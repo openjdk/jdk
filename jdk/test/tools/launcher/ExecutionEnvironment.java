@@ -120,15 +120,14 @@ public class ExecutionEnvironment extends TestHelper {
      */
     @Test
     void testEcoFriendly() {
-        TestResult tr = null;
-
         Map<String, String> env = new HashMap<>();
         for (String x : LD_PATH_STRINGS) {
             String pairs[] = x.split("=");
             env.put(pairs[0], pairs[1]);
         }
 
-        tr = doExec(env, javaCmd, "-jar", testJarFile.getAbsolutePath());
+        TestResult tr =
+            doExec(env, javaCmd, "-jar", testJarFile.getAbsolutePath());
 
         if (!tr.isNotZeroOutput()) {
             flagError(tr, "Error: No output at all. Did the test execute ?");
@@ -180,7 +179,7 @@ public class ExecutionEnvironment extends TestHelper {
      */
     @Test
     void testJavaLibraryPath() {
-        TestResult tr = null;
+        TestResult tr;
 
         Map<String, String> env = new HashMap<>();
 
@@ -240,17 +239,14 @@ public class ExecutionEnvironment extends TestHelper {
      */
     @Test
     void testVmSelection() {
-
-        TestResult tr = null;
-
         if (haveClientVM) {
-            tr = doExec(javaCmd, "-client", "-version");
+            TestResult tr = doExec(javaCmd, "-client", "-version");
             if (!tr.matches(".*Client VM.*")) {
                 flagError(tr, "the expected vm -client did not launch");
             }
         }
         if (haveServerVM) {
-            tr = doExec(javaCmd, "-server", "-version");
+            TestResult tr = doExec(javaCmd, "-server", "-version");
             if (!tr.matches(".*Server VM.*")) {
                 flagError(tr, "the expected vm -server did not launch");
             }

@@ -21,28 +21,37 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  */
-
 package java.net.http;
 
+import sun.net.NetProperties;
+
+import javax.net.ssl.SSLParameters;
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
 import java.net.NetPermission;
 import java.net.URI;
 import java.net.URLPermission;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.net.ssl.SSLParameters;
-import sun.net.NetProperties;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.LongBinaryOperator;
+import java.util.function.Predicate;
 
 /**
  * Miscellaneous utilities
  */
-class Utils {
+final class Utils {
 
     /**
      * Allocated buffer size. Must never be higher than 16K. But can be lower
@@ -51,7 +60,59 @@ class Utils {
      */
     public static final int BUFSIZE = 16 * 1024;
 
-    /** Validates a RFC7230 token */
+    private static final Set<String> DISALLOWED_HEADERS_SET = Set.of(
+            "authorization", "connection", "cookie", "content-length",
+            "date", "expect", "from", "host", "origin", "proxy-authorization",
+            "referer", "user-agent", "upgrade", "via", "warning");
+
+    static final Predicate<String>
+        ALLOWED_HEADERS = header -> !Utils.DISALLOWED_HEADERS_SET.contains(header);
+
+    static final Predicate<String>
+        ALL_HEADERS = header -> true;
+
+    static InetSocketAddress getAddress(HttpRequestImpl req) {
+        URI uri = req.uri();
+        if (uri == null) {
+            return req.authority();
+        }
+        int port = uri.getPort();
+        if (port == -1) {
+            if (uri.getScheme().equalsIgnoreCase("https")) {
+                port = 443;
+            } else {
+                port = 80;
+            }
+        }
+        String host = uri.getHost();
+        if (req.proxy() == null) {
+            return new InetSocketAddress(host, port);
+        } else {
+            return InetSocketAddress.createUnresolved(host, port);
+        }
+    }
+
+    /**
+     * Puts position to limit and limit to capacity so we can resume reading
+     * into this buffer, but if required > 0 then limit may be reduced so that
+     * no more than required bytes are read next time.
+     */
+    static void resumeChannelRead(ByteBuffer buf, int required) {
+        int limit = buf.limit();
+        buf.position(limit);
+        int capacity = buf.capacity() - limit;
+        if (required > 0 && required < capacity) {
+            buf.limit(limit + required);
+        } else {
+            buf.limit(buf.capacity());
+        }
+    }
+
+    private Utils() { }
+
+    /**
+     * Validates a RFC7230 token
+     */
     static void validateToken(String token, String errormsg) {
         int length = token.length();
         for (int i = 0; i < length; i++) {
@@ -69,7 +130,7 @@ class Utils {
     }
 
     /**
-     * Return sthe security permission required for the given details.
+     * Returns the security permission required for the given details.
      * If method is CONNECT, then uri must be of form "scheme://host:port"
      */
     static URLPermission getPermission(URI uri,
@@ -117,13 +178,13 @@ class Utils {
     }
 
     static int getIntegerNetProperty(String name, int defaultValue) {
-        return AccessController.doPrivileged((PrivilegedAction<Integer>)() ->
-            NetProperties.getInteger(name, defaultValue) );
+        return AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
+                NetProperties.getInteger(name, defaultValue));
     }
 
     static String getNetProperty(String name) {
-        return AccessController.doPrivileged((PrivilegedAction<String>)() ->
-            NetProperties.get(name) );
+        return AccessController.doPrivileged((PrivilegedAction<String>) () ->
+                NetProperties.get(name));
     }
 
     static SSLParameters copySSLParameters(SSLParameters p) {
@@ -134,7 +195,9 @@ class Utils {
         p1.setEndpointIdentificationAlgorithm(p.getEndpointIdentificationAlgorithm());
         p1.setMaximumPacketSize(p.getMaximumPacketSize());
         p1.setNeedClientAuth(p.getNeedClientAuth());
-        p1.setProtocols(p.getProtocols().clone());
+        String[] protocols = p.getProtocols();
+        if (protocols != null)
+            p1.setProtocols(protocols.clone());
         p1.setSNIMatchers(p.getSNIMatchers());
         p1.setServerNames(p.getServerNames());
         p1.setUseCipherSuitesOrder(p.getUseCipherSuitesOrder());
@@ -142,31 +205,12 @@ class Utils {
         return p1;
     }
 
-
-    /** Resumes reading into the given buffer. */
-    static void unflip(ByteBuffer buf) {
-        buf.position(buf.limit());
-        buf.limit(buf.capacity());
-    }
-
     /**
      * Set limit to position, and position to mark.
-     *
-     *
-     * @param buffer
-     * @param mark
      */
     static void flipToMark(ByteBuffer buffer, int mark) {
         buffer.limit(buffer.position());
         buffer.position(mark);
-    }
-
-    /** Compact and leave ready for reading. */
-    static void compact(List<ByteBuffer> buffers) {
-        for (ByteBuffer b : buffers) {
-            b.compact();
-            b.flip();
-        }
     }
 
     static String stackTrace(Throwable t) {
@@ -182,8 +226,10 @@ class Utils {
         return s;
     }
 
-    /** Copies as much of src to dst as possible. */
-    static void copy (ByteBuffer src, ByteBuffer dst) {
+    /**
+     * Copies as much of src to dst as possible.
+     */
+    static void copy(ByteBuffer src, ByteBuffer dst) {
         int srcLen = src.remaining();
         int dstLen = dst.remaining();
         if (srcLen > dstLen) {
@@ -204,18 +250,101 @@ class Utils {
         return dst;
     }
 
-    static String combine(String[] s) {
-        StringBuilder sb = new StringBuilder();
-        sb.append('[');
-        boolean first = true;
-        for (String s1 : s) {
-            if (!first) {
-                sb.append(", ");
-                first = false;
-            }
-            sb.append(s1);
-        }
-        sb.append(']');
-        return sb.toString();
+    //
+    // Helps to trim long names (packages, nested/inner types) in logs/toString
+    //
+    static String toStringSimple(Object o) {
+        return o.getClass().getSimpleName() + "@" +
+                Integer.toHexString(System.identityHashCode(o));
     }
+
+    //
+    // 1. It adds a number of remaining bytes;
+    // 2. Standard Buffer-type toString for CharBuffer (since it adheres to the
+    // contract of java.lang.CharSequence.toString() which is both not too
+    // useful and not too private)
+    //
+    static String toString(Buffer b) {
+        return toStringSimple(b)
+                + "[pos=" + b.position()
+                + " lim=" + b.limit()
+                + " cap=" + b.capacity()
+                + " rem=" + b.remaining() + "]";
+    }
+
+    static String toString(CharSequence s) {
+        return s == null
+                ? "null"
+                : toStringSimple(s) + "[len=" + s.length() + "]";
+    }
+
+    static String dump(Object... objects) {
+        return Arrays.toString(objects);
+    }
+
+    static final System.Logger logger = System.getLogger("java.net.http.WebSocket");
+
+    static final ByteBuffer EMPTY_BYTE_BUFFER = ByteBuffer.allocate(0);
+
+    static String webSocketSpecViolation(String section, String detail) {
+        return "RFC 6455 " + section + " " + detail;
+    }
+
+    static void logResponse(HttpResponseImpl r) {
+        if (!Log.requests()) {
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        String method = r.request().method();
+        URI uri = r.uri();
+        String uristring = uri == null ? "" : uri.toString();
+        sb.append('(').append(method).append(" ").append(uristring).append(") ").append(Integer.toString(r.statusCode()));
+        Log.logResponse(sb.toString());
+    }
+
+    static int remaining(ByteBuffer[] bufs) {
+        int remain = 0;
+        for (ByteBuffer buf : bufs)
+            remain += buf.remaining();
+        return remain;
+    }
+
+    // assumes buffer was written into starting at position zero
+    static void unflip(ByteBuffer buf) {
+        buf.position(buf.limit());
+        buf.limit(buf.capacity());
+    }
+
+    static void close(Closeable... chans) {
+        for (Closeable chan : chans) {
+            System.err.println("Closing " + chan);
+            try {
+                chan.close();
+            } catch (IOException e) {
+            }
+        }
+    }
+
+    static ByteBuffer[] reduce(ByteBuffer[] bufs, int start, int number) {
+        if (start == 0 && number == bufs.length)
+            return bufs;
+        ByteBuffer[] nbufs = new ByteBuffer[number];
+        int j = 0;
+        for (int i=start; i<start+number; i++)
+            nbufs[j++] = bufs[i];
+        return nbufs;
+    }
+
+    static String asString(ByteBuffer buf) {
+        byte[] b = new byte[buf.remaining()];
+        buf.get(b);
+        return new String(b, StandardCharsets.US_ASCII);
+    }
+
+    // Put all these static 'empty' singletons here
+    @SuppressWarnings("rawtypes")
+    static CompletableFuture[] EMPTY_CFARRAY = new CompletableFuture[0];
+
+    static ByteBuffer EMPTY_BYTEBUFFER = ByteBuffer.allocate(0);
+    static ByteBuffer[] EMPTY_BB_ARRAY = new ByteBuffer[0];
 }
