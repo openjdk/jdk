@@ -258,20 +258,19 @@ public class JemmyExt {
     }
 
     /**
-     * Wraps the test code so that in case of any failure as much information as
-     * possible is captured
-     *
-     * @param r test code Runnable
-     * @throws Exception whatever exception the test may throw
+     * Dispose all AWT/Swing windows causing event thread to stop
      */
-    public static void captureDebugInfoOnFail(RunnableWithException r) throws Exception {
-        // TODO: Remove this once https://bugs.openjdk.java.net/browse/JDK-8151671 is fixed
+    public static void disposeAllWindows() {
+        System.out.println("disposeAllWindows");
         try {
-            r.run();
-            System.out.println("TEST PASSED");
-        } catch (Throwable t) {
-            captureAll();
-            throw t;
+            EventQueue.invokeAndWait(() -> {
+                Window[] windows = Window.getWindows();
+                for (Window w : windows) {
+                    w.dispose();
+                }
+            });
+        } catch (InterruptedException | InvocationTargetException ex) {
+            Logger.getLogger(JemmyExt.class.getName()).log(Level.SEVERE, "Failed to dispose all windows", ex);
         }
     }
 

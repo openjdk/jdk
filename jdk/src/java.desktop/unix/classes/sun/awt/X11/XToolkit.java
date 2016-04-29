@@ -52,7 +52,6 @@ import sun.awt.*;
 import sun.awt.datatransfer.DataTransferer;
 import sun.font.FontConfigManager;
 import sun.java2d.SunGraphicsEnvironment;
-import sun.misc.*;
 import sun.awt.util.PerformanceLogger;
 import sun.awt.util.ThreadGroupUtils;
 import sun.print.PrintJob2D;
