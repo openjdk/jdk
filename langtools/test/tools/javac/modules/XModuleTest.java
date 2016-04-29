@@ -28,7 +28,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask toolbox.ModuleBuilder ModuleTestBase
  * @run main XModuleTest
  */
 
@@ -37,7 +37,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import toolbox.JavacTask;
+import toolbox.ModuleBuilder;
 import toolbox.Task;
+import toolbox.TestRunner;
 import toolbox.ToolBox;
 
 public class XModuleTest extends ModuleTestBase {
@@ -47,7 +49,7 @@ public class XModuleTest extends ModuleTestBase {
     }
 
     @Test
-    void testCorrectXModule(Path base) throws Exception {
+    public void testCorrectXModule(Path base) throws Exception {
         //note: avoiding use of java.base, as that gets special handling on some places:
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "package javax.lang.model.element; public interface Extra extends Element { }");
@@ -67,7 +69,7 @@ public class XModuleTest extends ModuleTestBase {
     }
 
     @Test
-    void testSourcePath(Path base) throws Exception {
+    public void testSourcePath(Path base) throws Exception {
         //note: avoiding use of java.base, as that gets special handling on some places:
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "package javax.lang.model.element; public interface Extra extends Element, Other { }", "package javax.lang.model.element; interface Other { }");
@@ -87,7 +89,7 @@ public class XModuleTest extends ModuleTestBase {
     }
 
     @Test
-    void testClassPath(Path base) throws Exception {
+    public void testClassPath(Path base) throws Exception {
         Path cpSrc = base.resolve("cpSrc");
         tb.writeJavaFiles(cpSrc, "package p; public interface Other { }");
         Path cpClasses = base.resolve("cpClasses");
@@ -122,7 +124,7 @@ public class XModuleTest extends ModuleTestBase {
     }
 
     @Test
-    void testNoModuleInfoOnSourcePath(Path base) throws Exception {
+    public void testNoModuleInfoOnSourcePath(Path base) throws Exception {
         //note: avoiding use of java.base, as that gets special handling on some places:
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
@@ -147,7 +149,7 @@ public class XModuleTest extends ModuleTestBase {
     }
 
     @Test
-    void testNoModuleInfoInClassOutput(Path base) throws Exception {
+    public void testNoModuleInfoInClassOutput(Path base) throws Exception {
         //note: avoiding use of java.base, as that gets special handling on some places:
         Path srcMod = base.resolve("src-mod");
         tb.writeJavaFiles(srcMod,
@@ -187,7 +189,7 @@ public class XModuleTest extends ModuleTestBase {
     }
 
     @Test
-    void testModuleSourcePathXModule(Path base) throws Exception {
+    public void testModuleSourcePathXModule(Path base) throws Exception {
         //note: avoiding use of java.base, as that gets special handling on some places:
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "package javax.lang.model.element; public interface Extra extends Element { }");
@@ -210,7 +212,7 @@ public class XModuleTest extends ModuleTestBase {
     }
 
     @Test
-    void testXModuleTooMany(Path base) throws Exception {
+    public void testXModuleTooMany(Path base) throws Exception {
         //note: avoiding use of java.base, as that gets special handling on some places:
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "package javax.lang.model.element; public interface Extra extends Element { }");
@@ -234,9 +236,9 @@ public class XModuleTest extends ModuleTestBase {
     }
 
     @Test
-    void testWithModulePath(Path base) throws Exception {
+    public void testWithModulePath(Path base) throws Exception {
         Path module = base.resolve("modules");
-        new ModuleBuilder("m1")
+        new ModuleBuilder(tb, "m1")
                 .classes("package pkg1; public interface E { }")
                 .build(module);
 
@@ -251,7 +253,7 @@ public class XModuleTest extends ModuleTestBase {
                 .writeAll();
 
         //checks module bounds still exist
-        new ModuleBuilder("m2")
+        new ModuleBuilder(tb, "m2")
                 .classes("package pkg2; public interface D { }")
                 .build(module);
 
@@ -275,14 +277,14 @@ public class XModuleTest extends ModuleTestBase {
     }
 
     @Test
-    void testWithUpgradeModulePath(Path base) throws Exception {
+    public void testWithUpgradeModulePath(Path base) throws Exception {
         Path module = base.resolve("modules");
-        new ModuleBuilder("m1")
+        new ModuleBuilder(tb, "m1")
                 .classes("package pkg1; public interface E { }")
                 .build(module);
 
         Path upgrade = base.resolve("upgrade");
-        new ModuleBuilder("m1")
+        new ModuleBuilder(tb, "m1")
                 .classes("package pkg1; public interface D { }")
                 .build(upgrade);
 

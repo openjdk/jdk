@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -430,13 +430,10 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         if (isXEmbedActive()) {
             xembedLog.fine("Forwarding FOCUS_GAINED");
             int flavor = XEMBED_FOCUS_CURRENT;
-            if (e instanceof CausedFocusEvent) {
-                CausedFocusEvent ce = (CausedFocusEvent)e;
-                if (ce.getCause() == CausedFocusEvent.Cause.TRAVERSAL_FORWARD) {
-                    flavor = XEMBED_FOCUS_FIRST;
-                } else if (ce.getCause() == CausedFocusEvent.Cause.TRAVERSAL_BACKWARD) {
-                    flavor = XEMBED_FOCUS_LAST;
-                }
+            if (e.getCause() == FocusEvent.Cause.TRAVERSAL_FORWARD) {
+                flavor = XEMBED_FOCUS_FIRST;
+            } else if (e.getCause() == FocusEvent.Cause.TRAVERSAL_BACKWARD) {
+                flavor = XEMBED_FOCUS_LAST;
             }
             xembed.sendMessage(xembed.handle, XEMBED_FOCUS_IN, flavor, 0, 0);
         }

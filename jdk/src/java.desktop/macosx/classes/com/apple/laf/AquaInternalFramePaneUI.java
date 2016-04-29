@@ -91,7 +91,7 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
     JComponent getDock() {
         if (fDock == null) {
             fDock = new Dock(desktop);
-            desktop.add(fDock, new Integer(399)); // Just below the DRAG_LAYER
+            desktop.add(fDock, Integer.valueOf(399)); // Just below the DRAG_LAYER
         }
         return fDock;
     }

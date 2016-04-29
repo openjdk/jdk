@@ -52,6 +52,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Properties;
 import java.util.Set;
 import java.util.Stack;
 import java.util.StringTokenizer;
@@ -69,6 +70,7 @@ import jdk.internal.util.jar.InvalidJarIndexError;
 import jdk.internal.util.jar.JarIndex;
 import sun.net.util.URLUtil;
 import sun.net.www.ParseUtil;
+import sun.security.action.GetPropertyAction;
 
 /**
  * This class is used to maintain a search path of URLs for loading classes
@@ -78,20 +80,15 @@ import sun.net.www.ParseUtil;
  */
 public class URLClassPath {
     private static final String USER_AGENT_JAVA_VERSION = "UA-Java-Version";
-    private static final String JAVA_HOME;
     private static final String JAVA_VERSION;
     private static final boolean DEBUG;
     private static final boolean DISABLE_JAR_CHECKING;
 
     static {
-        JAVA_HOME = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("java.home"));
-        JAVA_VERSION = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("java.version"));
-        DEBUG        = (java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("sun.misc.URLClassPath.debug")) != null);
-        String p = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("sun.misc.URLClassPath.disableJarChecking"));
+        Properties props = GetPropertyAction.getProperties();
+        JAVA_VERSION = props.getProperty("java.version");
+        DEBUG = (props.getProperty("sun.misc.URLClassPath.debug") != null);
+        String p = props.getProperty("sun.misc.URLClassPath.disableJarChecking");
         DISABLE_JAR_CHECKING = p != null ? p.equals("true") || p.equals("") : false;
     }
 

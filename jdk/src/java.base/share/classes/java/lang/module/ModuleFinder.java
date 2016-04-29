@@ -39,6 +39,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import sun.security.action.GetPropertyAction;
 
 /**
  * A finder of modules. A {@code ModuleFinder} is used to find modules during
@@ -152,7 +153,7 @@ public interface ModuleFinder {
 
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            PrivilegedAction<String> pa = () -> System.getProperty("java.home");
+            PrivilegedAction<String> pa = new GetPropertyAction("java.home");
             home = AccessController.doPrivileged(pa);
             Permission p = new FilePermission(home + File.separator + "-", "read");
             sm.checkPermission(p);

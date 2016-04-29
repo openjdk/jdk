@@ -83,14 +83,14 @@ public class ExpressionExecuter implements ExpressionEvaluator {
         if (op == null) {
             return evaluate(l);
         } else {
-            Double lval = new Double(((Number)evaluate(l)).doubleValue());
-            Double rval = new Double(((Number)evaluate(r)).doubleValue());
-            double result = op.eval(lval.doubleValue(), rval.doubleValue());
+            double lval = ((Number)evaluate(l)).doubleValue();
+            double rval = ((Number)evaluate(r)).doubleValue();
+            double result = op.eval(lval, rval);
             if (debug) {
                 System.out.println("Performed Operation: " + lval + op + rval
                                    + " = " + result);
             }
-            return new Double(result);
+            return Double.valueOf(result);
         }
     }
 }

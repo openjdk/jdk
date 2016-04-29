@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8154556
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 VarHandleTestByteArrayAsFloat
  * @run testng/othervm -Diters=20000                         VarHandleTestByteArrayAsFloat
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  VarHandleTestByteArrayAsFloat
@@ -57,15 +58,16 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
         // Combinations of VarHandle byte[] or ByteBuffer
         vhss = new ArrayList<>();
         for (MemoryMode endianess : Arrays.asList(MemoryMode.BIG_ENDIAN, MemoryMode.LITTLE_ENDIAN)) {
+
+            ByteOrder bo = endianess == MemoryMode.BIG_ENDIAN
+                    ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
             VarHandleSource aeh = new VarHandleSource(
-                    MethodHandles.byteArrayViewVarHandle(float[].class,
-                                                         endianess == MemoryMode.BIG_ENDIAN),
+                    MethodHandles.byteArrayViewVarHandle(float[].class, bo),
                     endianess, MemoryMode.READ_WRITE);
             vhss.add(aeh);
 
             VarHandleSource bbh = new VarHandleSource(
-                    MethodHandles.byteBufferViewVarHandle(float[].class,
-                                                          endianess == MemoryMode.BIG_ENDIAN),
+                    MethodHandles.byteBufferViewVarHandle(float[].class, bo),
                     endianess, MemoryMode.READ_WRITE);
             vhss.add(bbh);
         }
@@ -91,8 +93,8 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
 
@@ -238,6 +240,10 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
             });
 
             checkROBE(() -> {
+                boolean r = vh.weakCompareAndSetVolatile(array, ci, VALUE_1, VALUE_2);
+            });
+
+            checkROBE(() -> {
                 boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
             });
 
@@ -333,6 +339,10 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
             });
 
             checkIOOBE(() -> {
+                boolean r = vh.weakCompareAndSetVolatile(array, ci, VALUE_1, VALUE_2);
+            });
+
+            checkIOOBE(() -> {
                 boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
             });
 
@@ -414,6 +424,10 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
                 });
 
                 checkIOOBE(() -> {
+                    boolean r = vh.weakCompareAndSetVolatile(array, ci, VALUE_1, VALUE_2);
+                });
+
+                checkIOOBE(() -> {
                     boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
                 });
 
@@ -483,6 +497,10 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
 
                 checkISE(() -> {
                     boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+                });
+
+                checkISE(() -> {
+                    boolean r = vh.weakCompareAndSetVolatile(array, ci, VALUE_1, VALUE_2);
                 });
 
                 checkISE(() -> {
@@ -558,6 +576,10 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
 
                     checkISE(() -> {
                         boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+                    });
+
+                    checkISE(() -> {
+                        boolean r = vh.weakCompareAndSetVolatile(array, ci, VALUE_1, VALUE_2);
                     });
 
                     checkISE(() -> {
@@ -698,12 +720,19 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
                     assertEquals(x, VALUE_2, "weakCompareAndSetRelease float");
                 }
 
+                {
+                    boolean r = vh.weakCompareAndSetVolatile(array, i, VALUE_2, VALUE_1);
+                    assertEquals(r, true, "weakCompareAndSetVolatile float");
+                    float x = (float) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "weakCompareAndSetVolatile float value");
+                }
+
                 // Compare set and get
                 {
-                    float o = (float) vh.getAndSet(array, i, VALUE_1);
-                    assertEquals(o, VALUE_2, "getAndSet float");
+                    float o = (float) vh.getAndSet(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndSet float");
                     float x = (float) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "getAndSet float value");
+                    assertEquals(x, VALUE_2, "getAndSet float value");
                 }
 
             }
@@ -831,12 +860,19 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
                     assertEquals(x, VALUE_2, "weakCompareAndSetRelease float");
                 }
 
+                {
+                    boolean r = vh.weakCompareAndSetVolatile(array, i, VALUE_2, VALUE_1);
+                    assertEquals(r, true, "weakCompareAndSetVolatile float");
+                    float x = (float) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "weakCompareAndSetVolatile float value");
+                }
+
                 // Compare set and get
                 {
-                    float o = (float) vh.getAndSet(array, i, VALUE_1);
-                    assertEquals(o, VALUE_2, "getAndSet float");
+                    float o = (float) vh.getAndSet(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndSet float");
                     float x = (float) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "getAndSet float value");
+                    assertEquals(x, VALUE_2, "getAndSet float value");
                 }
 
             }

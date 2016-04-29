@@ -27,11 +27,23 @@ package java.net.http;
 import java.nio.ByteBuffer;
 
 /**
- * Implemented by buffer pools.
+ * Implemented by buffer pools. A buffer pool has a current buffer size
+ * (number of bytes in each buffer) which may increase over time.
  */
 interface BufferHandler {
 
-    ByteBuffer getBuffer();
+    default ByteBuffer getBuffer() {
+        return getBuffer(-1);
+    }
+
+    void setMinBufferSize(int size);
+
+    /**
+     * size == -1 means return any sized buffer. Any other value means
+     * @param size
+     * @return
+     */
+    ByteBuffer getBuffer(int size);
 
     void returnBuffer(ByteBuffer buffer);
 }

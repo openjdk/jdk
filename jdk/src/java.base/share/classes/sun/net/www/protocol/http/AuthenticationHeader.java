@@ -25,9 +25,10 @@
 
 package sun.net.www.protocol.http;
 
-import sun.net.www.*;
 import java.util.Iterator;
 import java.util.HashMap;
+import sun.net.www.*;
+import sun.security.action.GetPropertyAction;
 
 /**
  * This class is used to parse the information in WWW-Authenticate: and Proxy-Authenticate:
@@ -93,8 +94,7 @@ public class AuthenticationHeader {
     }
 
     static {
-        authPref = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("http.auth.preference"));
+        authPref = GetPropertyAction.getProperty("http.auth.preference");
 
         // http.auth.preference can be set to SPNEGO or Kerberos.
         // In fact they means "Negotiate with SPNEGO" and "Negotiate with

@@ -826,7 +826,7 @@ public class ClassWriter extends ClassFile {
         }
         public void visitClass(Attribute.Class clazz) {
             databuf.appendByte('c');
-            databuf.appendChar(pool.put(typeSig(clazz.classType)));
+            databuf.appendChar(pool.put(typeSig(types.erasure(clazz.classType))));
         }
         public void visitCompound(Attribute.Compound compound) {
             databuf.appendByte('@');

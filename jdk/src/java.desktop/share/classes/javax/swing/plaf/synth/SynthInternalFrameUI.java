@@ -118,7 +118,6 @@ public class SynthInternalFrameUI extends BasicInternalFrameUI
                 installKeyboardActions();
             }
         }
-        context.dispose();
     }
 
     /**
@@ -128,7 +127,6 @@ public class SynthInternalFrameUI extends BasicInternalFrameUI
     protected void uninstallDefaults() {
         SynthContext context = getContext(frame, ENABLED);
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
         if(frame.getLayout() == internalFrameLayout) {
             frame.setLayout(null);
@@ -216,7 +214,6 @@ public class SynthInternalFrameUI extends BasicInternalFrameUI
         context.getPainter().paintInternalFrameBackground(context,
                           g, 0, 0, c.getWidth(), c.getHeight());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -233,7 +230,6 @@ public class SynthInternalFrameUI extends BasicInternalFrameUI
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**

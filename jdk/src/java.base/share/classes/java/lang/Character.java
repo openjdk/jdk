@@ -1256,14 +1256,14 @@ class Character implements java.io.Serializable, Comparable<Character> {
             new UnicodeBlock("SPECIALS");
 
         /**
-         * @deprecated As of J2SE 5, use {@link #HIGH_SURROGATES},
-         *             {@link #HIGH_PRIVATE_USE_SURROGATES}, and
-         *             {@link #LOW_SURROGATES}. These new constants match
-         *             the block definitions of the Unicode Standard.
-         *             The {@link #of(char)} and {@link #of(int)} methods
-         *             return the new constants, not SURROGATES_AREA.
+         * @deprecated
+         * Instead of {@code SURROGATES_AREA}, use {@link #HIGH_SURROGATES},
+         * {@link #HIGH_PRIVATE_USE_SURROGATES}, and {@link #LOW_SURROGATES}.
+         * These constants match the block definitions of the Unicode Standard.
+         * The {@link #of(char)} and {@link #of(int)} methods return the
+         * standard constants.
          */
-        @Deprecated
+        @Deprecated(since="1.5")
         public static final UnicodeBlock SURROGATES_AREA =
             new UnicodeBlock("SURROGATES_AREA");
 
@@ -7451,7 +7451,13 @@ class Character implements java.io.Serializable, Comparable<Character> {
      *
      * @param  value   the value to be represented by the
      *                  {@code Character} object.
+     *
+     * @deprecated
+     * It is rarely appropriate to use this constructor. The static factory
+     * {@link #valueOf(char)} is generally a better choice, as it is
+     * likely to yield significantly better space and time performance.
      */
+    @Deprecated(since="9")
     public Character(char value) {
         this.value = value;
     }
@@ -8799,7 +8805,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @since   1.0.2
      * @deprecated Replaced by isJavaIdentifierStart(char).
      */
-    @Deprecated
+    @Deprecated(since="1.1")
     public static boolean isJavaLetter(char ch) {
         return isJavaIdentifierStart(ch);
     }
@@ -8835,7 +8841,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @since   1.0.2
      * @deprecated Replaced by isJavaIdentifierPart(char).
      */
-    @Deprecated
+    @Deprecated(since="1.1")
     public static boolean isJavaLetterOrDigit(char ch) {
         return isJavaIdentifierPart(ch);
     }
@@ -9580,7 +9586,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @see        Character#isWhitespace(char)
      * @deprecated Replaced by isWhitespace(char).
      */
-    @Deprecated
+    @Deprecated(since="1.1")
     public static boolean isSpace(char ch) {
         return (ch <= 0x0020) &&
             (((((1L << 0x0009) |

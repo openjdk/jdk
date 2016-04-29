@@ -25,6 +25,8 @@
 
 package jdk.jshell;
 
+import java.util.Arrays;
+import static java.util.stream.Collectors.joining;
 import static jdk.internal.jshell.remote.RemoteCodes.DOIT_METHOD_NAME;
 
 /**
@@ -237,6 +239,27 @@ abstract class Wrap implements GeneralWrap {
             return 0;
         }
 
+        Wrap wrapIndexToWrap(long wi) {
+            int before = 0;
+            Wrap w = null;
+            for (Object o : os) {
+                if (o instanceof String) {
+                    String s = (String) o;
+                    before += s.length();
+                } else if (o instanceof Wrap) {
+                    w = (Wrap) o;
+                    int len = w.wrapped().length();
+                    if ((wi - before) <= len) {
+                        //System.err.printf("Defer to wrap %s - wi: %d. before; %d   -- %s  >>> %s\n",
+                        //        w, wi, before, w.debugPos(wi - before), w.wrapped());
+                        return w;
+                    }
+                    before += len;
+                }
+            }
+            return w;
+        }
+
         @Override
         public int wrapIndexToSnippetIndex(int wi) {
             int before = 0;
@@ -286,6 +309,25 @@ abstract class Wrap implements GeneralWrap {
             return 0;
         }
 
+        Wrap wrapLineToWrap(int wline) {
+            int before = 0;
+            Wrap w = null;
+            for (Object o : os) {
+                if (o instanceof String) {
+                    String s = (String) o;
+                    before += countLines(s);
+                } else if (o instanceof Wrap) {
+                    w = (Wrap) o;
+                    int lns = countLines(w.wrapped());
+                    if ((wline - before) < lns) {
+                        return w;
+                    }
+                    before += lns;
+                }
+            }
+            return w;
+        }
+
         @Override
         public int wrapLineToSnippetLine(int wline) {
             int before = 0;
@@ -315,7 +357,10 @@ abstract class Wrap implements GeneralWrap {
             return snlineLast;
         }
 
-
+        @Override
+        public String toString() {
+            return "CompoundWrap(" + Arrays.stream(os).map(u -> u.toString()).collect(joining(",")) + ")";
+        }
     }
 
     private static class RangeWrap extends Wrap {
@@ -404,6 +449,10 @@ abstract class Wrap implements GeneralWrap {
             return lastSnline;
         }
 
+        @Override
+        public String toString() {
+            return "RangeWrap(" + range + ")";
+        }
     }
 
     private static class NoWrap extends RangeWrap {

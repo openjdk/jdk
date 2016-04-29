@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Set;
 
 import sun.awt.util.ThreadGroupUtils;
-import sun.misc.ManagedLocalsThread;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -337,8 +336,8 @@ public final class AWTAutoShutdown implements Runnable {
     private void activateBlockerThread() {
         AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
             String name = "AWT-Shutdown";
-            Thread thread = new ManagedLocalsThread(
-                    ThreadGroupUtils.getRootThreadGroup(), this, name);
+            Thread thread = new Thread(
+                   ThreadGroupUtils.getRootThreadGroup(), this, name, 0, false);
             thread.setContextClassLoader(null);
             thread.setDaemon(false);
             blockerThread = thread;

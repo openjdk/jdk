@@ -52,7 +52,6 @@ import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
 import java.io.*;
-import java.net.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -78,12 +77,15 @@ import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 import java.net.MalformedURLException;
 import java.nio.ByteBuffer;
+import java.util.Properties;
 import static sun.net.www.protocol.http.AuthScheme.BASIC;
 import static sun.net.www.protocol.http.AuthScheme.DIGEST;
 import static sun.net.www.protocol.http.AuthScheme.NTLM;
 import static sun.net.www.protocol.http.AuthScheme.NEGOTIATE;
 import static sun.net.www.protocol.http.AuthScheme.KERBEROS;
 import static sun.net.www.protocol.http.AuthScheme.UNKNOWN;
+import sun.security.action.GetIntegerAction;
+import sun.security.action.GetPropertyAction;
 
 /**
  * A class to represent an HTTP connection to a remote object.
@@ -205,46 +207,38 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     };
 
     static {
-        maxRedirects = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetIntegerAction(
-                "http.maxRedirects", defaultmaxRedirects)).intValue();
-        version = java.security.AccessController.doPrivileged(
-                    new sun.security.action.GetPropertyAction("java.version"));
-        String agent = java.security.AccessController.doPrivileged(
-                    new sun.security.action.GetPropertyAction("http.agent"));
+        Properties props = GetPropertyAction.getProperties();
+        maxRedirects = GetIntegerAction.getProperty("http.maxRedirects",
+                        defaultmaxRedirects);
+        version = props.getProperty("java.version");
+        String agent = props.getProperty("http.agent");
         if (agent == null) {
             agent = "Java/"+version;
         } else {
             agent = agent + " Java/"+version;
         }
         userAgent = agent;
-        validateProxy = java.security.AccessController.doPrivileged(
-                new sun.security.action.GetBooleanAction(
-                    "http.auth.digest.validateProxy")).booleanValue();
-        validateServer = java.security.AccessController.doPrivileged(
-                new sun.security.action.GetBooleanAction(
-                    "http.auth.digest.validateServer")).booleanValue();
+        validateProxy = Boolean.parseBoolean(
+                props.getProperty("http.auth.digest.validateProxy"));
+        validateServer = Boolean.parseBoolean(
+                props.getProperty("http.auth.digest.validateServer"));
 
-        enableESBuffer = java.security.AccessController.doPrivileged(
-                new sun.security.action.GetBooleanAction(
-                    "sun.net.http.errorstream.enableBuffering")).booleanValue();
-        timeout4ESBuffer = java.security.AccessController.doPrivileged(
-                new sun.security.action.GetIntegerAction(
-                    "sun.net.http.errorstream.timeout", 300)).intValue();
+        enableESBuffer = Boolean.parseBoolean(
+                props.getProperty("sun.net.http.errorstream.enableBuffering"));
+        timeout4ESBuffer = GetIntegerAction
+                .getProperty("sun.net.http.errorstream.timeout", 300);
         if (timeout4ESBuffer <= 0) {
             timeout4ESBuffer = 300; // use the default
         }
 
-        bufSize4ES = java.security.AccessController.doPrivileged(
-                new sun.security.action.GetIntegerAction(
-                    "sun.net.http.errorstream.bufferSize", 4096)).intValue();
+        bufSize4ES = GetIntegerAction
+                .getProperty("sun.net.http.errorstream.bufferSize", 4096);
         if (bufSize4ES <= 0) {
             bufSize4ES = 4096; // use the default
         }
 
-        allowRestrictedHeaders = java.security.AccessController.doPrivileged(
-                new sun.security.action.GetBooleanAction(
-                    "sun.net.http.allowRestrictedHeaders")).booleanValue();
+        allowRestrictedHeaders = Boolean.parseBoolean(
+                props.getProperty("sun.net.http.allowRestrictedHeaders"));
         if (!allowRestrictedHeaders) {
             restrictedHeaderSet = new HashSet<>(restrictedHeaders.length);
             for (int i=0; i < restrictedHeaders.length; i++) {

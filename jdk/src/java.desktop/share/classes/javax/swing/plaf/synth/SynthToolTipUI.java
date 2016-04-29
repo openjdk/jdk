@@ -68,7 +68,6 @@ public class SynthToolTipUI extends BasicToolTipUI
     private void updateStyle(JComponent c) {
         SynthContext context = getContext(c, ENABLED);
         style = SynthLookAndFeel.updateStyle(context, this);
-        context.dispose();
     }
 
     /**
@@ -78,7 +77,6 @@ public class SynthToolTipUI extends BasicToolTipUI
     protected void uninstallDefaults(JComponent c) {
         SynthContext context = getContext(c, ENABLED);
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
     }
 
@@ -139,7 +137,6 @@ public class SynthToolTipUI extends BasicToolTipUI
         context.getPainter().paintToolTipBackground(context,
                           g, 0, 0, c.getWidth(), c.getHeight());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -165,7 +162,6 @@ public class SynthToolTipUI extends BasicToolTipUI
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -218,7 +214,6 @@ public class SynthToolTipUI extends BasicToolTipUI
                 prefSize.height += fm.getHeight();
             }
         }
-        context.dispose();
         return prefSize;
     }
 

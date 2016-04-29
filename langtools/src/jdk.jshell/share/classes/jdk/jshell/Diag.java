@@ -36,12 +36,18 @@ public abstract class Diag {
     // Simplified view on compiler Diagnostic.
 
     /**
+     * In-package creation only.
+     */
+    Diag() {
+    }
+
+    /**
      * Used to signal that no position is available.
      */
     public final static long NOPOS = Diagnostic.NOPOS;
 
     /**
-     * Is this diagnostic and error (as opposed to a warning or note)
+     * Is this diagnostic an error (as opposed to a warning or note)
      * @return true if this diagnostic is an error
      */
     public abstract boolean isError();
@@ -100,10 +106,12 @@ public abstract class Diag {
     // *** Internal support ***
 
     /**
-     * Internal: If this is from a compile, extract the compilation Unit.
+     * Internal: If this is from a compile/analyze wrapped in an outer class, extract the snippet.
      * Otherwise null.
      */
-    abstract Unit unitOrNull();
+    Snippet snippetOrNull() {
+        return null;
+    }
 
     /**
      * This is an unreachable-statement error
@@ -124,6 +132,7 @@ public abstract class Diag {
      */
     boolean isResolutionError() {
         //TODO: try javac RESOLVE_ERROR flag
-        return getCode().startsWith("compiler.err.cant.resolve");
+        return getCode().startsWith("compiler.err.cant.resolve")
+                || getCode().equals("compiler.err.cant.apply.symbol");
     }
 }

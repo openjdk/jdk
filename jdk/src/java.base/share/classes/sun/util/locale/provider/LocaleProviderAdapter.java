@@ -25,7 +25,6 @@
 
 package sun.util.locale.provider;
 
-import java.security.AccessController;
 import java.text.spi.BreakIteratorProvider;
 import java.text.spi.CollatorProvider;
 import java.text.spi.DateFormatProvider;
@@ -47,6 +46,7 @@ import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleNameProvider;
 import java.util.spi.LocaleServiceProvider;
 import java.util.spi.TimeZoneNameProvider;
+import sun.security.action.GetPropertyAction;
 import sun.util.spi.CalendarProvider;
 
 /**
@@ -116,8 +116,7 @@ public abstract class LocaleProviderAdapter {
         adapterCache = new ConcurrentHashMap<>();
 
     static {
-        String order = AccessController.doPrivileged(
-                           new sun.security.action.GetPropertyAction("java.locale.providers"));
+        String order = GetPropertyAction.getProperty("java.locale.providers");
         List<Type> typeList = new ArrayList<>();
 
         // Check user specified adapter preference

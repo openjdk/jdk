@@ -48,6 +48,7 @@ import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
 import java.util.stream.Stream;
 import sun.util.logging.internal.LoggingProviderImpl;
+import java.lang.reflect.Module;
 
 /**
  * @test
@@ -246,7 +247,7 @@ public class DefaultLoggerBridgeTest {
         }
     }
 
-    static Logger getLogger(String name, Class<?> caller) {
+    static Logger getLogger(String name, Module caller) {
         boolean old = allowAccess.get().get();
         allowAccess.get().set(true);
         try {
@@ -311,8 +312,8 @@ public class DefaultLoggerBridgeTest {
                 ResourceBundle.getBundle(MyLoggerBundle.class.getName());
         final Map<Object, String> loggerDescMap = new HashMap<>();
 
-        Logger sysLogger1a = getLogger("foo", Thread.class);
-        loggerDescMap.put(sysLogger1a, "jdk.internal.logger.LazyLoggers.getLogger(\"foo\", Thread.class)");
+        Logger sysLogger1a = getLogger("foo", Thread.class.getModule());
+        loggerDescMap.put(sysLogger1a, "jdk.internal.logger.LazyLoggers.getLogger(\"foo\", Thread.class.getModule())");
 
         Logger appLogger1 = System.getLogger("foo");
         loggerDescMap.put(appLogger1, "System.getLogger(\"foo\")");
@@ -341,9 +342,9 @@ public class DefaultLoggerBridgeTest {
 
         Logger sysLogger1b = null;
         try {
-            sysLogger1b = provider.getLogger("foo", Thread.class);
+            sysLogger1b = provider.getLogger("foo", Thread.class.getModule());
             if (sysLogger1b != sysLogger1a) {
-                loggerDescMap.put(sysLogger1b, "provider.getLogger(\"foo\", Thread.class)");
+                loggerDescMap.put(sysLogger1b, "provider.getLogger(\"foo\", Thread.class.getModule())");
             }
             if (!hasRequiredPermissions) {
                 throw new RuntimeException("Managed to obtain a system logger without permission");
@@ -367,8 +368,8 @@ public class DefaultLoggerBridgeTest {
 
         Logger sysLogger2 = null;
         try {
-            sysLogger2 = provider.getLocalizedLogger("foo", loggerBundle, Thread.class);
-            loggerDescMap.put(sysLogger2, "provider.getLocalizedLogger(\"foo\", loggerBundle, Thread.class)");
+            sysLogger2 = provider.getLocalizedLogger("foo", loggerBundle, Thread.class.getModule());
+            loggerDescMap.put(sysLogger2, "provider.getLocalizedLogger(\"foo\", loggerBundle, Thread.class.getModule())");
             if (!hasRequiredPermissions) {
                 throw new RuntimeException("Managed to obtain a system logger without permission");
             }
@@ -396,9 +397,9 @@ public class DefaultLoggerBridgeTest {
         allowAll.get().set(true);
         try {
             sysSink = LoggingProviderImpl.getLogManagerAccess().demandLoggerFor(
-                    LogManager.getLogManager(), "foo", Thread.class);
+                    LogManager.getLogManager(), "foo", Thread.class.getModule());
             appSink = LoggingProviderImpl.getLogManagerAccess().demandLoggerFor(
-                    LogManager.getLogManager(), "foo", DefaultLoggerBridgeTest.class);
+                    LogManager.getLogManager(), "foo", DefaultLoggerBridgeTest.class.getModule());
             if (appSink == sysSink) {
                 throw new RuntimeException("identical backend loggers");
             }

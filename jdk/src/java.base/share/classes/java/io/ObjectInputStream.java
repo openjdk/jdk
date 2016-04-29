@@ -40,6 +40,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import static java.io.ObjectStreamClass.processQueue;
+import jdk.internal.misc.JavaObjectInputStreamAccess;
+import jdk.internal.misc.ObjectStreamClassValidator;
+import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import sun.reflect.misc.ReflectUtil;
 
@@ -853,10 +856,14 @@ public class ObjectInputStream
      * exactly 'length' bytes.
      *
      * @param   buf the buffer into which the data is read
-     * @param   off the start offset of the data
+     * @param   off the start offset in the destination array {@code buf}
      * @param   len the maximum number of bytes read
      * @return  the actual number of bytes read, -1 is returned when the end of
      *          the stream is reached.
+     * @throws  NullPointerException if {@code buf} is {@code null}.
+     * @throws  IndexOutOfBoundsException if {@code off} is negative,
+     *          {@code len} is negative, or {@code len} is greater than
+     *          {@code buf.length - off}.
      * @throws  IOException If an I/O error has occurred.
      * @see java.io.DataInputStream#readFully(byte[],int,int)
      */
@@ -1014,6 +1021,7 @@ public class ObjectInputStream
      * Reads bytes, blocking until all bytes are read.
      *
      * @param   buf the buffer into which the data is read
+     * @throws  NullPointerException If {@code buf} is {@code null}.
      * @throws  EOFException If end of file is reached.
      * @throws  IOException If other I/O error has occurred.
      */
@@ -1025,8 +1033,12 @@ public class ObjectInputStream
      * Reads bytes, blocking until all bytes are read.
      *
      * @param   buf the buffer into which the data is read
-     * @param   off the start offset of the data
+     * @param   off the start offset into the data array {@code buf}
      * @param   len the maximum number of bytes to read
+     * @throws  NullPointerException If {@code buf} is {@code null}.
+     * @throws  IndexOutOfBoundsException If {@code off} is negative,
+     *          {@code len} is negative, or {@code len} is greater than
+     *          {@code buf.length - off}.
      * @throws  EOFException If end of file is reached.
      * @throws  IOException If other I/O error has occurred.
      */
@@ -1509,23 +1521,28 @@ public class ObjectInputStream
         throws IOException
     {
         byte tc = bin.peekByte();
+        ObjectStreamClass descriptor;
         switch (tc) {
             case TC_NULL:
-                return (ObjectStreamClass) readNull();
-
+                descriptor = (ObjectStreamClass) readNull();
+                break;
             case TC_REFERENCE:
-                return (ObjectStreamClass) readHandle(unshared);
-
+                descriptor = (ObjectStreamClass) readHandle(unshared);
+                break;
             case TC_PROXYCLASSDESC:
-                return readProxyDesc(unshared);
-
+                descriptor = readProxyDesc(unshared);
+                break;
             case TC_CLASSDESC:
-                return readNonProxyDesc(unshared);
-
+                descriptor = readNonProxyDesc(unshared);
+                break;
             default:
                 throw new StreamCorruptedException(
                     String.format("invalid type code: %02X", tc));
         }
+        if (descriptor != null) {
+            validateDescriptor(descriptor);
+        }
+        return descriptor;
     }
 
     private boolean isCustomSubclass() {
@@ -1915,6 +1932,8 @@ public class ObjectInputStream
                 if (obj == null || handles.lookupException(passHandle) != null) {
                     defaultReadFields(null, slotDesc); // skip field values
                 } else if (slotDesc.hasReadObjectMethod()) {
+                    ThreadDeath t = null;
+                    boolean reset = false;
                     SerialCallbackContext oldContext = curContext;
                     if (oldContext != null)
                         oldContext.check();
@@ -1933,10 +1952,19 @@ public class ObjectInputStream
                          */
                         handles.markException(passHandle, ex);
                     } finally {
-                        curContext.setUsed();
-                        if (oldContext!= null)
-                            oldContext.check();
-                        curContext = oldContext;
+                        do {
+                            try {
+                                curContext.setUsed();
+                                if (oldContext!= null)
+                                    oldContext.check();
+                                curContext = oldContext;
+                                reset = true;
+                            } catch (ThreadDeath x) {
+                                t = x;  // defer until reset is true
+                            }
+                        } while (!reset);
+                        if (t != null)
+                            throw t;
                     }
 
                     /*
@@ -3647,4 +3675,20 @@ public class ObjectInputStream
         }
     }
 
+    private void validateDescriptor(ObjectStreamClass descriptor) {
+        ObjectStreamClassValidator validating = validator;
+        if (validating != null) {
+            validating.validateDescriptor(descriptor);
+        }
+    }
+
+    // controlled access to ObjectStreamClassValidator
+    private volatile ObjectStreamClassValidator validator;
+
+    private static void setValidator(ObjectInputStream ois, ObjectStreamClassValidator validator) {
+        ois.validator = validator;
+    }
+    static {
+        SharedSecrets.setJavaObjectInputStreamAccess(ObjectInputStream::setValidator);
+    }
 }

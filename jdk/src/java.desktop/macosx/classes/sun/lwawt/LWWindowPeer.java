@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,14 +256,14 @@ public class LWWindowPeer
                 if (!getTarget().isAutoRequestFocus()) {
                     return;
                 } else {
-                    requestWindowFocus(CausedFocusEvent.Cause.ACTIVATION);
+                    requestWindowFocus(FocusEvent.Cause.ACTIVATION);
                 }
             // Focus the owner in case this window is focused.
             } else if (kfmPeer.getCurrentFocusedWindow() == getTarget()) {
                 // Transfer focus to the owner.
                 LWWindowPeer owner = getOwnerFrameDialog(LWWindowPeer.this);
                 if (owner != null) {
-                    owner.requestWindowFocus(CausedFocusEvent.Cause.ACTIVATION);
+                    owner.requestWindowFocus(FocusEvent.Cause.ACTIVATION);
                 }
             }
         }
@@ -295,7 +295,7 @@ public class LWWindowPeer
         if (f == null) {
             f = DEFAULT_FONT;
         }
-        return platformWindow.transformGraphics(new SunGraphics2D(getSurfaceData(), fg, bg, f));
+        return new SunGraphics2D(getSurfaceData(), fg, bg, f);
     }
 
     @Override
@@ -848,7 +848,7 @@ public class LWWindowPeer
                 // 2. An active but not focused owner frame/dialog is clicked.
                 // The mouse event then will trigger a focus request "in window" to the component, so the window
                 // should gain focus before.
-                requestWindowFocus(CausedFocusEvent.Cause.MOUSE_EVENT);
+                requestWindowFocus(FocusEvent.Cause.MOUSE_EVENT);
 
                 mouseDownTarget[targetIdx] = targetPeer;
             } else if (id == MouseEvent.MOUSE_DRAGGED) {
@@ -1199,7 +1199,7 @@ public class LWWindowPeer
      * Requests platform to set native focus on a frame/dialog.
      * In case of a simple window, triggers appropriate java focus change.
      */
-    public boolean requestWindowFocus(CausedFocusEvent.Cause cause) {
+    public boolean requestWindowFocus(FocusEvent.Cause cause) {
         if (focusLog.isLoggable(PlatformLogger.Level.FINE)) {
             focusLog.fine("requesting native focus to " + this);
         }

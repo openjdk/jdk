@@ -30,7 +30,6 @@
  * @run main ShellFolderQueriesTest
  */
 
-import sun.awt.OSInfo;
 
 import javax.swing.filechooser.FileSystemView;
 import java.io.File;
@@ -50,7 +49,8 @@ public class ShellFolderQueriesTest {
     static String scriptEnd = "\"\noShellLink.WindowStyle = 1\noShellLink.Save";
 
     public static void main(String[] args) throws Exception {
-        if(OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
+        if(System.getProperty("os.name").toLowerCase().contains("windows")) {
+            System.out.println("Windows detected: will run shortcut test");
             testGet();
             testLink();
         } else {

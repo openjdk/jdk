@@ -33,7 +33,7 @@ public class CaptureInSubtype {
 
 
     public static class ShowFlaw extends SuperOfShowFlaw {
-        static Flaw<Number> fn =  new Flaw<Number>(new Integer(3));
+        static Flaw<Number> fn =  new Flaw<Number>(Integer.valueOf(3));
 
         Flaw<?> m(){return fn;}
     }

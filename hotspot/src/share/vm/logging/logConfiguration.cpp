@@ -408,10 +408,12 @@ void LogConfiguration::describe_current_configuration(outputStream* out){
   out->print_cr("Log output configuration:");
   for (size_t i = 0; i < _n_outputs; i++) {
     out->print("#" SIZE_FORMAT ": %s %s ", i, _outputs[i]->name(), _outputs[i]->config_string());
+    char delimiter[2] = {0};
     for (size_t d = 0; d < LogDecorators::Count; d++) {
       LogDecorators::Decorator decorator = static_cast<LogDecorators::Decorator>(d);
       if (_outputs[i]->decorators().is_decorator(decorator)) {
-        out->print("%s,", LogDecorators::name(decorator));
+        out->print("%s%s", delimiter, LogDecorators::name(decorator));
+        *delimiter = ',';
       }
     }
     out->cr();

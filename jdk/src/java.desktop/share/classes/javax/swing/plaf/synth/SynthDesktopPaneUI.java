@@ -119,7 +119,6 @@ public class SynthDesktopPaneUI extends BasicDesktopPaneUI implements
             uninstallKeyboardActions();
             installKeyboardActions();
         }
-        context.dispose();
     }
 
     /**
@@ -143,7 +142,6 @@ public class SynthDesktopPaneUI extends BasicDesktopPaneUI implements
         SynthContext context = getContext(desktop, ENABLED);
 
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
 
         if (taskBar != null) {
@@ -460,7 +458,6 @@ public class SynthDesktopPaneUI extends BasicDesktopPaneUI implements
         context.getPainter().paintDesktopPaneBackground(context, g, 0, 0,
                                                   c.getWidth(), c.getHeight());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -477,7 +474,6 @@ public class SynthDesktopPaneUI extends BasicDesktopPaneUI implements
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**

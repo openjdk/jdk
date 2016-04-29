@@ -28,7 +28,8 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask toolbox.ModuleBuilder
+ *      ModuleTestBase
  * @run main GraphsTest
  */
 
@@ -41,6 +42,7 @@ import java.util.regex.Pattern;
 
 import toolbox.JarTask;
 import toolbox.JavacTask;
+import toolbox.ModuleBuilder;
 import toolbox.Task;
 import toolbox.ToolBox;
 
@@ -69,11 +71,11 @@ public class GraphsTest extends ModuleTestBase {
      *
      */
     @Test
-    void diamond(Path base) throws Exception {
+    public void diamond(Path base) throws Exception {
 
         Path modules = Files.createDirectories(base.resolve("modules"));
 
-        new ModuleBuilder("J")
+        new ModuleBuilder(tb, "J")
                 .exports("openJ")
                 .classes("package openJ; public class J { }")
                 .classes("package closedJ; public class J { }")
@@ -87,25 +89,25 @@ public class GraphsTest extends ModuleTestBase {
                 .run()
                 .writeAll();
 
-        new ModuleBuilder("O")
+        new ModuleBuilder(tb, "O")
                 .exports("openO")
                 .requiresPublic("J", jarModules)
                 .classes("package openO; public class O { openJ.J j; }")
                 .classes("package closedO; public class O { }")
                 .build(modules);
-        new ModuleBuilder("N")
+        new ModuleBuilder(tb, "N")
                 .requiresPublic("O", modules, jarModules)
                 .exports("openN")
                 .classes("package openN; public class N { }")
                 .classes("package closedN; public class N { }")
                 .build(modules);
-        new ModuleBuilder("L")
+        new ModuleBuilder(tb, "L")
                 .requiresPublic("O", modules, jarModules)
                 .exports("openL")
                 .classes("package openL; public class L { }")
                 .classes("package closedL; public class L { }")
                 .build(modules);
-        ModuleBuilder m = new ModuleBuilder("M");
+        ModuleBuilder m = new ModuleBuilder(tb, "M");
         //positive case
         Path positiveSrc = m
                 .requires("N", modules)
@@ -178,14 +180,14 @@ public class GraphsTest extends ModuleTestBase {
     @Test
     public void reexportOfQualifiedExport(Path base) throws Exception {
         Path modules = base.resolve("modules");
-        new ModuleBuilder("M")
+        new ModuleBuilder(tb, "M")
                 .requiresPublic("N")
                 .write(modules);
-        new ModuleBuilder("N")
+        new ModuleBuilder(tb, "N")
                 .exportsTo("pack", "M")
                 .classes("package pack; public class Clazz { }")
                 .write(modules);
-        new ModuleBuilder("L")
+        new ModuleBuilder(tb, "L")
                 .requires("M")
                 .classes("package p; public class A { A(pack.Clazz cl){} } ")
                 .write(modules);
