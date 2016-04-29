@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015-2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,47 +25,23 @@
 
 package jdk.jshell;
 
-import jdk.jshell.Wrap.CompoundWrap;
-import static jdk.jshell.Util.*;
 import java.util.Locale;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
-import jdk.jshell.MemoryFileManager.SourceMemoryJavaFileObject;
-import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
+import jdk.internal.jshell.remote.RemoteCodes;
+import static jdk.jshell.Util.*;
+import static jdk.internal.jshell.remote.RemoteCodes.REPL_PACKAGE;
 
 /**
  *
  * @author Robert Field
  */
-final class OuterWrap implements GeneralWrap {
+class OuterWrap implements GeneralWrap {
 
-    private final String packageName;
-    private final String className;
-    private final String userSource;
-    private final GeneralWrap w;
-    private final Wrap guts;
+    protected final Wrap w;
 
-    public static OuterWrap wrapInClass(String packageName, String className,
-             String imports, String userSource, Wrap guts) {
-        GeneralWrap kw = new CompoundWrap(
-                imports
-                + "class " + className + " {\n",
-                guts,
-                "}\n");
-        return new OuterWrap(packageName, className, userSource, kw, guts);
-    }
-
-    public static OuterWrap wrapImport(String userSource, Wrap guts) {
-        return new OuterWrap("", "", userSource, guts, guts);
-    }
-
-    private OuterWrap(String packageName, String className, String userSource,
-            GeneralWrap w, Wrap guts) {
-        this.packageName = packageName;
-        this.className = className;
-        this.userSource = userSource;
-        this.w = w;
-        this.guts = guts;
+    OuterWrap(Wrap wrap) {
+        this.w = wrap;
     }
 
     @Override
@@ -114,19 +90,28 @@ final class OuterWrap implements GeneralWrap {
     }
 
     public String className() {
-        return className;
+        return REPL_DOESNOTMATTER_CLASS_NAME;
     }
 
     public String classFullName() {
-        return packageName + "." + className;
+        return REPL_PACKAGE + "." + className();
     }
 
-    public String getUserSource() {
-        return userSource;
+    @Override
+    public int hashCode() {
+        return className().hashCode();
     }
 
-    Wrap guts() {
-        return guts;
+    @Override
+    public boolean equals(Object o) {
+        return (o instanceof OuterWrap)
+                ? className().equals(((OuterWrap) o).className())
+                : false;
+    }
+
+    @Override
+    public String toString() {
+        return "OW(" + w + ")";
     }
 
     Diag wrapDiag(Diagnostic<? extends JavaFileObject> d) {
@@ -135,7 +120,7 @@ final class OuterWrap implements GeneralWrap {
 
     class WrappedDiagnostic extends Diag {
 
-        private final Diagnostic<? extends JavaFileObject> diag;
+        final Diagnostic<? extends JavaFileObject> diag;
 
         WrappedDiagnostic(Diagnostic<? extends JavaFileObject> diag) {
             this.diag = diag;
@@ -172,25 +157,13 @@ final class OuterWrap implements GeneralWrap {
         }
 
         @Override
-        Unit unitOrNull() {
-            JavaFileObject fo = diag.getSource();
-            if (fo instanceof SourceMemoryJavaFileObject) {
-                SourceMemoryJavaFileObject sfo = (SourceMemoryJavaFileObject) fo;
-                if (sfo.getOrigin() instanceof Unit) {
-                    return (Unit) sfo.getOrigin();
-                }
-            }
-            return null;
-        }
-
-        @Override
         boolean isResolutionError() {
             if (!super.isResolutionError()) {
                 return false;
             }
             for (String line : diag.getMessage(PARSED_LOCALE).split("\\r?\\n")) {
                 if (line.trim().startsWith("location:")) {
-                    if (!line.contains(REPL_CLASS_PREFIX)) {
+                    if (!line.contains(RemoteCodes.REPL_CLASS_PREFIX)) {
                         // Resolution error must occur within a REPL class or it is not resolvable
                         return false;
                     }

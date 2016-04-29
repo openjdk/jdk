@@ -74,7 +74,7 @@ AC_DEFUN_ONCE([LIB_DETERMINE_DEPENDENCIES],
   fi
 
   # Check if ffi is needed
-  if test "x$JVM_VARIANT_ZERO" = xtrue || test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
+  if HOTSPOT_CHECK_JVM_VARIANT(zero) || HOTSPOT_CHECK_JVM_VARIANT(zeroshark); then
     NEEDS_LIB_FFI=true
   else
     NEEDS_LIB_FFI=false
@@ -102,7 +102,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
 ################################################################################
 AC_DEFUN_ONCE([LIB_SETUP_LLVM],
 [
-  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
+  if HOTSPOT_CHECK_JVM_VARIANT(zeroshark); then
     AC_CHECK_PROG([LLVM_CONFIG], [llvm-config], [llvm-config])
 
     if test "x$LLVM_CONFIG" != xllvm-config; then

@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/top.hpp"
 
 // Basic error support
 
@@ -374,39 +373,89 @@ STATIC_ASSERT(left_n_bits(1|2) == (intptr_t) LP64_ONLY(0xE000000000000000) NOT_L
 
 #ifndef PRODUCT
 // For unit testing only
-class GlobalDefinitions {
+class TestGlobalDefinitions {
+private:
+
+  static void test_clamp_address_in_page() {
+    intptr_t page_sizes[] = { os::vm_page_size(), 4096, 8192, 65536, 2*1024*1024 };
+    const int num_page_sizes = sizeof(page_sizes) / sizeof(page_sizes[0]);
+
+    for (int i = 0; i < num_page_sizes; i++) {
+      intptr_t page_size = page_sizes[i];
+
+      address a_page = (address)(10*page_size);
+
+      // Check that address within page is returned as is
+      assert(clamp_address_in_page(a_page, a_page, page_size) == a_page, "incorrect");
+      assert(clamp_address_in_page(a_page + 128, a_page, page_size) == a_page + 128, "incorrect");
+      assert(clamp_address_in_page(a_page + page_size - 1, a_page, page_size) == a_page + page_size - 1, "incorrect");
+
+      // Check that address above page returns start of next page
+      assert(clamp_address_in_page(a_page + page_size, a_page, page_size) == a_page + page_size, "incorrect");
+      assert(clamp_address_in_page(a_page + page_size + 1, a_page, page_size) == a_page + page_size, "incorrect");
+      assert(clamp_address_in_page(a_page + page_size*5 + 1, a_page, page_size) == a_page + page_size, "incorrect");
+
+      // Check that address below page returns start of page
+      assert(clamp_address_in_page(a_page - 1, a_page, page_size) == a_page, "incorrect");
+      assert(clamp_address_in_page(a_page - 2*page_size - 1, a_page, page_size) == a_page, "incorrect");
+      assert(clamp_address_in_page(a_page - 5*page_size - 1, a_page, page_size) == a_page, "incorrect");
+    }
+  }
+
+  static void test_exact_unit_for_byte_size() {
+    assert(strcmp(exact_unit_for_byte_size(0),     "B") == 0, "incorrect");
+    assert(strcmp(exact_unit_for_byte_size(1),     "B") == 0, "incorrect");
+    assert(strcmp(exact_unit_for_byte_size(K - 1), "B") == 0, "incorrect");
+    assert(strcmp(exact_unit_for_byte_size(K),     "K") == 0, "incorrect");
+    assert(strcmp(exact_unit_for_byte_size(K + 1), "B") == 0, "incorrect");
+    assert(strcmp(exact_unit_for_byte_size(M - 1), "B") == 0, "incorrect");
+    assert(strcmp(exact_unit_for_byte_size(M),     "M") == 0, "incorrect");
+    assert(strcmp(exact_unit_for_byte_size(M + 1), "B") == 0, "incorrect");
+    assert(strcmp(exact_unit_for_byte_size(M + K), "K") == 0, "incorrect");
+#ifdef LP64
+    assert(strcmp(exact_unit_for_byte_size(G - 1),     "B") == 0, "incorrect");
+    assert(strcmp(exact_unit_for_byte_size(G),         "G") == 0, "incorrect");
+    assert(strcmp(exact_unit_for_byte_size(G + 1),     "B") == 0, "incorrect");
+    assert(strcmp(exact_unit_for_byte_size(G + K),     "K") == 0, "incorrect");
+    assert(strcmp(exact_unit_for_byte_size(G + M),     "M") == 0, "incorrect");
+    assert(strcmp(exact_unit_for_byte_size(G + M + K), "K") == 0, "incorrect");
+#endif
+  }
+
+  static void test_byte_size_in_exact_unit() {
+    assert(byte_size_in_exact_unit(0)     == 0,     "incorrect");
+    assert(byte_size_in_exact_unit(1)     == 1,     "incorrect");
+    assert(byte_size_in_exact_unit(K - 1) == K - 1, "incorrect");
+    assert(byte_size_in_exact_unit(K)     == 1,     "incorrect");
+    assert(byte_size_in_exact_unit(K + 1) == K + 1, "incorrect");
+    assert(byte_size_in_exact_unit(M - 1) == M - 1, "incorrect");
+    assert(byte_size_in_exact_unit(M)     == 1,     "incorrect");
+    assert(byte_size_in_exact_unit(M + 1) == M + 1, "incorrect");
+    assert(byte_size_in_exact_unit(M + K) == K + 1, "incorrect");
+#ifdef LP64
+    assert(byte_size_in_exact_unit(G - 1)     == G - 1,     "incorrect");
+    assert(byte_size_in_exact_unit(G)         == 1,         "incorrect");
+    assert(byte_size_in_exact_unit(G + 1)     == G + 1,     "incorrect");
+    assert(byte_size_in_exact_unit(G + K)     == M + 1,     "incorrect");
+    assert(byte_size_in_exact_unit(G + M)     == K + 1,     "incorrect");
+    assert(byte_size_in_exact_unit(G + M + K) == M + K + 1, "incorrect");
+#endif
+  }
+
+  static void test_exact_units() {
+    test_exact_unit_for_byte_size();
+    test_byte_size_in_exact_unit();
+  }
+
 public:
-  static void test_globals();
+  static void test() {
+    test_clamp_address_in_page();
+    test_exact_units();
+  }
 };
 
-void GlobalDefinitions::test_globals() {
-  intptr_t page_sizes[] = { os::vm_page_size(), 4096, 8192, 65536, 2*1024*1024 };
-  const int num_page_sizes = sizeof(page_sizes) / sizeof(page_sizes[0]);
-
-  for (int i = 0; i < num_page_sizes; i++) {
-    intptr_t page_size = page_sizes[i];
-
-    address a_page = (address)(10*page_size);
-
-    // Check that address within page is returned as is
-    assert(clamp_address_in_page(a_page, a_page, page_size) == a_page, "incorrect");
-    assert(clamp_address_in_page(a_page + 128, a_page, page_size) == a_page + 128, "incorrect");
-    assert(clamp_address_in_page(a_page + page_size - 1, a_page, page_size) == a_page + page_size - 1, "incorrect");
-
-    // Check that address above page returns start of next page
-    assert(clamp_address_in_page(a_page + page_size, a_page, page_size) == a_page + page_size, "incorrect");
-    assert(clamp_address_in_page(a_page + page_size + 1, a_page, page_size) == a_page + page_size, "incorrect");
-    assert(clamp_address_in_page(a_page + page_size*5 + 1, a_page, page_size) == a_page + page_size, "incorrect");
-
-    // Check that address below page returns start of page
-    assert(clamp_address_in_page(a_page - 1, a_page, page_size) == a_page, "incorrect");
-    assert(clamp_address_in_page(a_page - 2*page_size - 1, a_page, page_size) == a_page, "incorrect");
-    assert(clamp_address_in_page(a_page - 5*page_size - 1, a_page, page_size) == a_page, "incorrect");
-  }
-}
-
-void GlobalDefinitions_test() {
-  GlobalDefinitions::test_globals();
+void TestGlobalDefinitions_test() {
+  TestGlobalDefinitions::test();
 }
 
 #endif // PRODUCT

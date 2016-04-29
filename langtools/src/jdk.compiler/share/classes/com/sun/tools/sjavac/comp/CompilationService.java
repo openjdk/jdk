@@ -42,6 +42,8 @@ import javax.tools.ToolProvider;
 
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.api.JavacTool;
+import com.sun.tools.javac.main.Main;
+import com.sun.tools.javac.main.Main.Result;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Dependencies;
 import com.sun.tools.javac.util.ListBuffer;
@@ -80,7 +82,7 @@ public class CompilationService {
             Dependencies.GraphDependencies.preRegister(context);
 
             // Now setup the actual compilation
-            CompilationSubResult compilationResult = new CompilationSubResult(0);
+            CompilationSubResult compilationResult = new CompilationSubResult(Result.OK);
 
             // First deal with explicit source files on cmdline and in at file
             ListBuffer<JavaFileObject> explicitJFOs = new ListBuffer<>();
@@ -97,7 +99,7 @@ public class CompilationService {
 
             // Create a log to capture compiler output
             StringWriter stderrLog = new StringWriter();
-            com.sun.tools.javac.main.Main.Result rc = com.sun.tools.javac.main.Main.Result.OK;
+            Result result;
             PublicApiCollector pubApiCollector = new PublicApiCollector(context, explicitJFOs);
             PathAndPackageVerifier papVerifier = new PathAndPackageVerifier();
             NewDependencyCollector depsCollector = new NewDependencyCollector(context, explicitJFOs);
@@ -120,20 +122,23 @@ public class CompilationService {
                     task.addTaskListener(pubApiCollector);
                     task.addTaskListener(papVerifier);
                     logJavacInvocation(args);
-                    rc = task.doCall();
-                    Log.debug("javac returned with code " + rc);
+                    result = task.doCall();
+                    Log.debug("javac result: " + result);
                     sfm.flush();
+                } else {
+                    result = Result.ERROR;
                 }
             } catch (Exception e) {
                 Log.error(Util.getStackTrace(e));
                 stderrLog.append(Util.getStackTrace(e));
-                rc = com.sun.tools.javac.main.Main.Result.ERROR;
+                result = Result.ERROR;
             }
 
             compilationResult.packageArtifacts = sfm.getPackageArtifacts();
 
-            if (papVerifier.errorsDiscovered())
-                rc = com.sun.tools.javac.main.Main.Result.ERROR;
+            if (papVerifier.errorsDiscovered()) {
+                result = Result.ERROR;
+            }
 
             compilationResult.packageDependencies = depsCollector.getDependencies(false);
             compilationResult.packageCpDependencies = depsCollector.getDependencies(true);
@@ -141,7 +146,7 @@ public class CompilationService {
             compilationResult.packagePubapis = pubApiCollector.getPubApis(true);
             compilationResult.dependencyPubapis = pubApiCollector.getPubApis(false);
             compilationResult.stderr = stderrLog.toString();
-            compilationResult.returnCode = rc.exitCode;
+            compilationResult.result = result;
 
             return compilationResult;
         } catch (IOException e) {

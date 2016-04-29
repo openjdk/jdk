@@ -267,7 +267,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJIMAGE, \
     LDFLAGS_windows := -export:JIMAGE_Open -export:JIMAGE_Close \
         -export:JIMAGE_PackageToModule \
         -export:JIMAGE_FindResource -export:JIMAGE_GetResource \
-        -export:JIMAGE_ResourceIterator, \
+        -export:JIMAGE_ResourceIterator -export:JIMAGE_ResourcePath, \
     LIBS_unix := -ljvm -ldl $(LIBCXX), \
     LIBS_solaris := -lc, \
     LIBS_macosx := -lc++, \

@@ -65,7 +65,7 @@ public class SnippetStatusListenerTest extends KullaTesting {
         getState().unsubscribe(subscription1);
 
         assertDrop(f, DiagCheck.DIAG_IGNORE, DiagCheck.DIAG_IGNORE, ste(f, REJECTED, DROPPED, false, null));
-        assertEval("void f() { }", ste(MAIN_SNIPPET, DROPPED, VALID, true, null));
+        assertEval("void f() { }", added(VALID));
         assertEvalException("throw new RuntimeException();");
         assertEquals(listener1.getEvents(), events1, "Checking that unsubscribed listener does not get events");
 

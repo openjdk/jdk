@@ -818,13 +818,17 @@ void Thread::print_on(outputStream* st) const {
 // Thread::print_on_error() is called by fatal error handler. Don't use
 // any lock or allocate memory.
 void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
-  if (is_VM_thread())                 st->print("VMThread");
-  else if (is_Compiler_thread())      st->print("CompilerThread");
-  else if (is_Java_thread())          st->print("JavaThread");
-  else if (is_GC_task_thread())       st->print("GCTaskThread");
-  else if (is_Watcher_thread())       st->print("WatcherThread");
-  else if (is_ConcurrentGC_thread())  st->print("ConcurrentGCThread");
-  else                                st->print("Thread");
+  assert(!(is_Compiler_thread() || is_Java_thread()), "Can't call name() here if it allocates");
+
+  if (is_VM_thread())                 { st->print("VMThread"); }
+  else if (is_GC_task_thread())       { st->print("GCTaskThread"); }
+  else if (is_Watcher_thread())       { st->print("WatcherThread"); }
+  else if (is_ConcurrentGC_thread())  { st->print("ConcurrentGCThread"); }
+  else                                { st->print("Thread"); }
+
+  if (is_Named_thread()) {
+    st->print(" \"%s\"", name());
+  }
 
   st->print(" [stack: " PTR_FORMAT "," PTR_FORMAT "]",
             p2i(stack_end()), p2i(stack_base()));
@@ -4498,6 +4502,36 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   st->flush();
 }
 
+void Threads::print_on_error(Thread* this_thread, outputStream* st, Thread* current, char* buf,
+                             int buflen, bool* found_current) {
+  if (this_thread != NULL) {
+    bool is_current = (current == this_thread);
+    *found_current = *found_current || is_current;
+    st->print("%s", is_current ? "=>" : "  ");
+
+    st->print(PTR_FORMAT, p2i(this_thread));
+    st->print(" ");
+    this_thread->print_on_error(st, buf, buflen);
+    st->cr();
+  }
+}
+
+class PrintOnErrorClosure : public ThreadClosure {
+  outputStream* _st;
+  Thread* _current;
+  char* _buf;
+  int _buflen;
+  bool* _found_current;
+ public:
+  PrintOnErrorClosure(outputStream* st, Thread* current, char* buf,
+                      int buflen, bool* found_current) :
+   _st(st), _current(current), _buf(buf), _buflen(buflen), _found_current(found_current) {}
+
+  virtual void do_thread(Thread* thread) {
+    Threads::print_on_error(thread, _st, _current, _buf, _buflen, _found_current);
+  }
+};
+
 // Threads::print_on_error() is called by fatal error handler. It's possible
 // that VM is not at safepoint and/or current thread is inside signal handler.
 // Don't print stack trace, as the stack may not be walkable. Don't allocate
@@ -4507,40 +4541,17 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   bool found_current = false;
   st->print_cr("Java Threads: ( => current thread )");
   ALL_JAVA_THREADS(thread) {
-    bool is_current = (current == thread);
-    found_current = found_current || is_current;
-
-    st->print("%s", is_current ? "=>" : "  ");
-
-    st->print(PTR_FORMAT, p2i(thread));
-    st->print(" ");
-    thread->print_on_error(st, buf, buflen);
-    st->cr();
+    print_on_error(thread, st, current, buf, buflen, &found_current);
   }
   st->cr();
 
   st->print_cr("Other Threads:");
-  if (VMThread::vm_thread()) {
-    bool is_current = (current == VMThread::vm_thread());
-    found_current = found_current || is_current;
-    st->print("%s", current == VMThread::vm_thread() ? "=>" : "  ");
+  print_on_error(VMThread::vm_thread(), st, current, buf, buflen, &found_current);
+  print_on_error(WatcherThread::watcher_thread(), st, current, buf, buflen, &found_current);
 
-    st->print(PTR_FORMAT, p2i(VMThread::vm_thread()));
-    st->print(" ");
-    VMThread::vm_thread()->print_on_error(st, buf, buflen);
-    st->cr();
-  }
-  WatcherThread* wt = WatcherThread::watcher_thread();
-  if (wt != NULL) {
-    bool is_current = (current == wt);
-    found_current = found_current || is_current;
-    st->print("%s", is_current ? "=>" : "  ");
+  PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);
+  Universe::heap()->gc_threads_do(&print_closure);
 
-    st->print(PTR_FORMAT, p2i(wt));
-    st->print(" ");
-    wt->print_on_error(st, buf, buflen);
-    st->cr();
-  }
   if (!found_current) {
     st->cr();
     st->print("=>" PTR_FORMAT " (exited) ", p2i(current));

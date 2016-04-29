@@ -113,7 +113,6 @@ class RemoteAgent {
                     }
                     Method doitMethod;
                     try {
-                        this.getClass().getModule().addReads(klass.getModule());
                         this.getClass().getModule().addExports(RemoteResolutionException.class.getPackage().getName(), klass.getModule());
                         doitMethod = klass.getDeclaredMethod(DOIT_METHOD_NAME, new Class<?>[0]);
                         doitMethod.setAccessible(true);
@@ -184,7 +183,6 @@ class RemoteAgent {
                         break;
                     }
                     try {
-                        this.getClass().getModule().addReads(klass.getModule());
                         Field var = klass.getDeclaredField(varname);
                         var.setAccessible(true);
                         Object res = var.get(null);
@@ -264,9 +262,14 @@ class RemoteAgent {
         }
     }
 
+    /**
+     * Expunge internal info from string
+     * @param s string to process
+     * @return string the display, JShell package and wrapper class names removed
+     */
     static String expunge(String s) {
         StringBuilder sb = new StringBuilder();
-        for (String comp : prefixPattern.split(s)) {
+        for (String comp : PREFIX_PATTERN.split(s)) {
             sb.append(comp);
         }
         return sb.toString();

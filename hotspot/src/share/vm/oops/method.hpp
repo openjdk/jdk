@@ -69,9 +69,6 @@ class Method : public Metadata {
   AccessFlags       _access_flags;               // Access flags
   int               _vtable_index;               // vtable index of this method (see VtableIndexFlag)
                                                  // note: can have vtables with >2**16 elements (because of inheritance)
-#ifdef CC_INTERP
-  int               _result_index;               // C++ interpreter needs for converting results to/from stack
-#endif
   u2                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
 
   // Flags
@@ -93,8 +90,6 @@ class Method : public Metadata {
 #endif
   // Entry point for calling both from and to the interpreter.
   address _i2i_entry;           // All-args-on-stack calling convention
-  // Adapter blob (i2c/c2i) for this Method*. Set once when method is linked.
-  AdapterHandlerEntry* _adapter;
   // Entry point for calling from compiled code, to compiled code if it exists
   // or else the interpreter.
   volatile address _from_compiled_entry;        // Cache of: _code ? _code->entry_point() : _adapter->c2i_entry()
@@ -137,6 +132,7 @@ class Method : public Metadata {
 
   static address make_adapters(methodHandle mh, TRAPS);
   volatile address from_compiled_entry() const   { return (address)OrderAccess::load_ptr_acquire(&_from_compiled_entry); }
+  volatile address from_compiled_entry_no_trampoline() const;
   volatile address from_interpreted_entry() const{ return (address)OrderAccess::load_ptr_acquire(&_from_interpreted_entry); }
 
   // access flag
@@ -171,11 +167,6 @@ class Method : public Metadata {
   AnnotationArray* type_annotations() const      {
     return constMethod()->type_annotations();
   }
-
-#ifdef CC_INTERP
-  void set_result_index(BasicType type);
-  int  result_index()                            { return _result_index; }
-#endif
 
   // Helper routine: get klass name + "." + method name + signature as
   // C string, for the purpose of providing more useful NoSuchMethodErrors
@@ -435,15 +426,23 @@ class Method : public Metadata {
   nmethod* volatile code() const                 { assert( check_code(), "" ); return (nmethod *)OrderAccess::load_ptr_acquire(&_code); }
   void clear_code();            // Clear out any compiled code
   static void set_code(methodHandle mh, nmethod* code);
-  void set_adapter_entry(AdapterHandlerEntry* adapter) {  _adapter = adapter; }
+  void set_adapter_entry(AdapterHandlerEntry* adapter) {
+    constMethod()->set_adapter_entry(adapter);
+  }
+  void update_adapter_trampoline(AdapterHandlerEntry* adapter) {
+    constMethod()->update_adapter_trampoline(adapter);
+  }
+
   address get_i2c_entry();
   address get_c2i_entry();
   address get_c2i_unverified_entry();
-  AdapterHandlerEntry* adapter() {  return _adapter; }
+  AdapterHandlerEntry* adapter() const {
+    return constMethod()->adapter();
+  }
   // setup entry points
   void link_method(const methodHandle& method, TRAPS);
-  // clear entry points. Used by sharing code
-  void unlink_method();
+  // clear entry points. Used by sharing code during dump time
+  void unlink_method() NOT_CDS_RETURN;
 
   // vtable index
   enum VtableIndexFlag {
@@ -469,7 +468,15 @@ class Method : public Metadata {
   // interpreter entry
   address interpreter_entry() const              { return _i2i_entry; }
   // Only used when first initialize so we can set _i2i_entry and _from_interpreted_entry
-  void set_interpreter_entry(address entry)      { _i2i_entry = entry;  _from_interpreted_entry = entry; }
+  void set_interpreter_entry(address entry) {
+    assert(!is_shared(), "shared method's interpreter entry should not be changed at run time");
+    if (_i2i_entry != entry) {
+      _i2i_entry = entry;
+    }
+    if (_from_interpreted_entry != entry) {
+      _from_interpreted_entry = entry;
+    }
+  }
 
   // native function (used for native methods only)
   enum {
@@ -537,7 +544,6 @@ class Method : public Metadata {
   void compute_size_of_parameters(Thread *thread); // word size of parameters (receiver if any + arguments)
   Symbol* klass_name() const;                    // returns the name of the method holder
   BasicType result_type() const;                 // type of the method result
-  int result_type_index() const;                 // type index of the method result
   bool is_returning_oop() const                  { BasicType r = result_type(); return (r == T_OBJECT || r == T_ARRAY); }
   bool is_returning_fp() const                   { BasicType r = result_type(); return (r == T_FLOAT || r == T_DOUBLE); }
 
@@ -638,9 +644,6 @@ class Method : public Metadata {
   // interpreter support
   static ByteSize const_offset()                 { return byte_offset_of(Method, _constMethod       ); }
   static ByteSize access_flags_offset()          { return byte_offset_of(Method, _access_flags      ); }
-#ifdef CC_INTERP
-  static ByteSize result_index_offset()          { return byte_offset_of(Method, _result_index ); }
-#endif /* CC_INTERP */
   static ByteSize from_compiled_offset()         { return byte_offset_of(Method, _from_compiled_entry); }
   static ByteSize code_offset()                  { return byte_offset_of(Method, _code); }
   static ByteSize method_data_offset()           {
