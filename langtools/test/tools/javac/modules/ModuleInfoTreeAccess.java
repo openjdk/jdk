@@ -61,7 +61,7 @@ public class ModuleInfoTreeAccess extends ModuleTestBase {
     }
 
     @Test
-    void testTreePathForModuleDecl(Path base) throws Exception {
+    public void testTreePathForModuleDecl(Path base) throws Exception {
 
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {

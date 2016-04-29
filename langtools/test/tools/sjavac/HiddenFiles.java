@@ -36,6 +36,7 @@
  * @run main Wrapper HiddenFiles
  */
 
+import com.sun.tools.javac.main.Main.Result;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.sjavac.server.Sjavac;
 
@@ -62,6 +63,6 @@ public class HiddenFiles extends SjavacBase {
                          "-d", BIN.toString(),
                          "--state-dir=" + STATE_DIR);
 
-        Assert.check(rc == Sjavac.RC_FATAL, "Compilation succeeded unexpectedly.");
+        Assert.check(rc == Result.ERROR.exitCode, "Compilation succeeded unexpectedly.");
     }
 }

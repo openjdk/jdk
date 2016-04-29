@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.awt.image.RasterFormatException;
 import java.awt.image.SampleModel;
 import java.awt.image.ComponentSampleModel;
 import java.awt.image.SinglePixelPackedSampleModel;
-import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferByte;
 import java.awt.Rectangle;
 import java.awt.Point;
@@ -94,7 +93,7 @@ public class ByteComponentRaster extends SunWritableRaster {
      */
     public ByteComponentRaster(SampleModel sampleModel, Point origin) {
         this(sampleModel,
-             sampleModel.createDataBuffer(),
+             (DataBufferByte) sampleModel.createDataBuffer(),
              new Rectangle(origin.x,
                            origin.y,
                            sampleModel.getWidth(),
@@ -111,12 +110,13 @@ public class ByteComponentRaster extends SunWritableRaster {
      * SampleModel must be of type SinglePixelPackedSampleModel
      * or ComponentSampleModel.
      * @param sampleModel     The SampleModel that specifies the layout.
-     * @param dataBuffer      The DataBufferShort that contains the image data.
+     * @param dataBuffer      The DataBufferByte that contains the image data.
      * @param origin          The Point that specifies the origin.
      */
     public ByteComponentRaster(SampleModel sampleModel,
-                                  DataBuffer dataBuffer,
-                                  Point origin) {
+                               DataBufferByte dataBuffer,
+                               Point origin)
+    {
         this(sampleModel,
              dataBuffer,
              new Rectangle(origin.x,
@@ -141,33 +141,28 @@ public class ByteComponentRaster extends SunWritableRaster {
      * Note that this constructor should generally be called by other
      * constructors or create methods, it should not be used directly.
      * @param sampleModel     The SampleModel that specifies the layout.
-     * @param dataBuffer      The DataBufferShort that contains the image data.
+     * @param dataBuffer      The DataBufferByte that contains the image data.
      * @param aRegion         The Rectangle that specifies the image area.
      * @param origin          The Point that specifies the origin.
      * @param parent          The parent (if any) of this raster.
      */
     public ByteComponentRaster(SampleModel sampleModel,
-                                  DataBuffer dataBuffer,
-                                  Rectangle aRegion,
-                                  Point origin,
-                                  ByteComponentRaster parent) {
+                               DataBufferByte dataBuffer,
+                               Rectangle aRegion,
+                               Point origin,
+                               ByteComponentRaster parent)
+    {
         super(sampleModel, dataBuffer, aRegion, origin, parent);
         this.maxX = minX + width;
         this.maxY = minY + height;
 
-        if (!(dataBuffer instanceof DataBufferByte)) {
-            throw new RasterFormatException("ByteComponentRasters must have " +
-                                            "byte DataBuffers");
-        }
-
-        DataBufferByte dbb = (DataBufferByte)dataBuffer;
-        this.data = stealData(dbb, 0);
-        if (dbb.getNumBanks() != 1) {
+        this.data = stealData(dataBuffer, 0);
+        if (dataBuffer.getNumBanks() != 1) {
             throw new
                 RasterFormatException("DataBuffer for ByteComponentRasters"+
                                       " must only have 1 bank.");
         }
-        int dbOffset = dbb.getOffset();
+        int dbOffset = dataBuffer.getOffset();
 
         if (sampleModel instanceof ComponentSampleModel) {
             ComponentSampleModel ism = (ComponentSampleModel)sampleModel;
@@ -823,7 +818,7 @@ public class ByteComponentRaster extends SunWritableRaster {
         int deltaY = y0 - y;
 
         return new ByteComponentRaster(sm,
-                                       dataBuffer,
+                                       (DataBufferByte) dataBuffer,
                                        new Rectangle(x0, y0, width, height),
                                        new Point(sampleModelTranslateX+deltaX,
                                                  sampleModelTranslateY+deltaY),

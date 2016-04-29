@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,38 +150,43 @@ class DataInputStream extends FilterInputStream implements DataInput {
     }
 
     /**
-     * See the general contract of the <code>readFully</code>
-     * method of <code>DataInput</code>.
+     * See the general contract of the {@code readFully}
+     * method of {@code DataInput}.
      * <p>
      * Bytes
      * for this operation are read from the contained
      * input stream.
      *
-     * @param      b   the buffer into which the data is read.
-     * @exception  EOFException  if this input stream reaches the end before
-     *             reading all the bytes.
-     * @exception  IOException   the stream has been closed and the contained
-     *             input stream does not support reading after close, or
-     *             another I/O error occurs.
-     * @see        java.io.FilterInputStream#in
+     * @param   b   the buffer into which the data is read.
+     * @throws  NullPointerException if {@code b} is {@code null}.
+     * @throws  EOFException  if this input stream reaches the end before
+     *          reading all the bytes.
+     * @throws  IOException   the stream has been closed and the contained
+     *          input stream does not support reading after close, or
+     *          another I/O error occurs.
+     * @see     java.io.FilterInputStream#in
      */
     public final void readFully(byte b[]) throws IOException {
         readFully(b, 0, b.length);
     }
 
     /**
-     * See the general contract of the <code>readFully</code>
-     * method of <code>DataInput</code>.
+     * See the general contract of the {@code readFully}
+     * method of {@code DataInput}.
      * <p>
      * Bytes
      * for this operation are read from the contained
      * input stream.
      *
      * @param      b     the buffer into which the data is read.
-     * @param      off   the start offset of the data.
+     * @param      off   the start offset in the data array {@code b}.
      * @param      len   the number of bytes to read.
+     * @exception  NullPointerException if {@code b} is {@code null}.
+     * @exception  IndexOutOfBoundsException if {@code off} is negative,
+     *             {@code len} is negative, or {@code len} is greater than
+     *             {@code b.length - off}.
      * @exception  EOFException  if this input stream reaches the end before
-     *               reading all the bytes.
+     *             reading all the bytes.
      * @exception  IOException   the stream has been closed and the contained
      *             input stream does not support reading after close, or
      *             another I/O error occurs.

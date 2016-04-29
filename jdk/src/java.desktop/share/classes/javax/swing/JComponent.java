@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.util.Set;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.peer.LightweightPeer;
 
 import java.applet.Applet;
 
@@ -57,7 +56,6 @@ import javax.accessibility.*;
 import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
 import sun.swing.SwingUtilities2;
-import sun.swing.UIClientPropertyKey;
 
 /**
  * The base class for all Swing components except top-level containers.
@@ -3558,7 +3556,7 @@ public abstract class JComponent extends Container implements Serializable,
         new sun.awt.RequestFocusController() {
             public boolean acceptRequestFocus(Component from, Component to,
                                               boolean temporary, boolean focusedWindowChangeAllowed,
-                                              sun.awt.CausedFocusEvent.Cause cause)
+                                              FocusEvent.Cause cause)
             {
                 if ((to == null) || !(to instanceof JComponent)) {
                     return true;

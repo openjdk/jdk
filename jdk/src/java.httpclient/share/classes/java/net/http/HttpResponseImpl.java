@@ -26,6 +26,7 @@
 package java.net.http;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.security.AccessControlContext;
@@ -42,17 +43,18 @@ class HttpResponseImpl extends HttpResponse {
     int responseCode;
     Exchange exchange;
     HttpRequestImpl request;
-    HttpHeaders1 headers;
-    HttpHeaders1 trailers;
+    HttpHeaders headers;
+    HttpHeaders trailers;
     SSLParameters sslParameters;
     URI uri;
     HttpClient.Version version;
     AccessControlContext acc;
     RawChannel rawchan;
     HttpConnection connection;
+    final Stream stream;
 
-    public HttpResponseImpl(int responseCode, Exchange exch, HttpHeaders1 headers,
-            HttpHeaders1 trailers, SSLParameters sslParameters,
+    public HttpResponseImpl(int responseCode, Exchange exch, HttpHeaders headers,
+            HttpHeaders trailers, SSLParameters sslParameters,
             HttpClient.Version version, HttpConnection connection) {
         this.responseCode = responseCode;
         this.exchange = exch;
@@ -63,6 +65,23 @@ class HttpResponseImpl extends HttpResponse {
         this.uri = request.uri();
         this.version = version;
         this.connection = connection;
+        this.stream = null;
+    }
+
+    // A response to a PUSH_PROMISE
+    public HttpResponseImpl(int responseCode, HttpRequestImpl pushRequest,
+            ImmutableHeaders headers,
+            Stream stream, SSLParameters sslParameters) {
+        this.responseCode = responseCode;
+        this.exchange = null;
+        this.request = pushRequest;
+        this.headers = headers;
+        this.trailers = null;
+        this.sslParameters = sslParameters;
+        this.uri = request.uri(); // TODO: take from headers
+        this.version = HttpClient.Version.HTTP_2;
+        this.connection = null;
+        this.stream = stream;
     }
 
     @Override
@@ -77,26 +96,35 @@ class HttpResponseImpl extends HttpResponse {
 
     @Override
     public HttpHeaders headers() {
-        headers.makeUnmodifiable();
         return headers;
     }
 
     @Override
     public HttpHeaders trailers() {
-        trailers.makeUnmodifiable();
         return trailers;
     }
 
 
     @Override
     public <T> T body(java.net.http.HttpResponse.BodyProcessor<T> processor) {
-        return exchange.responseBody(processor);
+        try {
+            if (exchange != null) {
+                return exchange.responseBody(processor);
+            } else {
+                return stream.responseBody(processor);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
     public <T> CompletableFuture<T> bodyAsync(java.net.http.HttpResponse.BodyProcessor<T> processor) {
         acc = AccessController.getContext();
-        return exchange.responseBodyAsync(processor);
+        if (exchange != null)
+            return exchange.responseBodyAsync(processor);
+        else
+            return stream.responseBodyAsync(processor);
     }
 
     @Override

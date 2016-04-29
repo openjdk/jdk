@@ -378,9 +378,9 @@ public final class LWCToolkit extends LWToolkit {
 
         // These DnD properties must be set, otherwise Swing ends up spewing NPEs
         // all over the place. The values came straight off of MToolkit.
-        desktopProperties.put("DnD.Autoscroll.initialDelay", new Integer(50));
-        desktopProperties.put("DnD.Autoscroll.interval", new Integer(50));
-        desktopProperties.put("DnD.Autoscroll.cursorHysteresis", new Integer(5));
+        desktopProperties.put("DnD.Autoscroll.initialDelay", Integer.valueOf(50));
+        desktopProperties.put("DnD.Autoscroll.interval", Integer.valueOf(50));
+        desktopProperties.put("DnD.Autoscroll.cursorHysteresis", Integer.valueOf(5));
 
         desktopProperties.put("DnD.isDragImageSupported", Boolean.TRUE);
 

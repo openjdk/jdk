@@ -41,7 +41,6 @@ import java.security.Principal;
 import java.security.cert.*;
 import java.util.StringTokenizer;
 import java.util.Vector;
-import java.security.AccessController;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -139,8 +138,8 @@ final class HttpsClient extends HttpClient
         // If ciphers are assigned, sort them into an array.
         //
         String ciphers [];
-        String cipherString = AccessController.doPrivileged(
-                new GetPropertyAction("https.cipherSuites"));
+        String cipherString =
+                GetPropertyAction.getProperty("https.cipherSuites");
 
         if (cipherString == null || "".equals(cipherString)) {
             ciphers = null;
@@ -163,8 +162,8 @@ final class HttpsClient extends HttpClient
         // If protocols are assigned, sort them into an array.
         //
         String protocols [];
-        String protocolString = AccessController.doPrivileged(
-                new GetPropertyAction("https.protocols"));
+        String protocolString =
+                GetPropertyAction.getProperty("https.protocols");
 
         if (protocolString == null || "".equals(protocolString)) {
             protocols = null;
@@ -184,8 +183,7 @@ final class HttpsClient extends HttpClient
     }
 
     private String getUserAgent() {
-        String userAgent = java.security.AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction("https.agent"));
+        String userAgent = GetPropertyAction.getProperty("https.agent");
         if (userAgent == null || userAgent.length() == 0) {
             userAgent = "JSSE";
         }

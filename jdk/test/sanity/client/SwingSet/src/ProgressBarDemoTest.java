@@ -21,6 +21,7 @@
  * questions.
  */
 
+import org.jtregext.GuiTestListener;
 import com.sun.swingset3.demos.progressbar.ProgressBarDemo;
 import static com.sun.swingset3.demos.progressbar.ProgressBarDemo.*;
 import java.awt.Component;
@@ -31,7 +32,7 @@ import org.netbeans.jemmy.ComponentChooser;
 import org.netbeans.jemmy.operators.JButtonOperator;
 import org.netbeans.jemmy.operators.JFrameOperator;
 import org.netbeans.jemmy.operators.JProgressBarOperator;
-import static org.jemmy2ext.JemmyExt.captureDebugInfoOnFail;
+import org.testng.annotations.Listeners;
 
 /*
  * @test
@@ -40,31 +41,31 @@ import static org.jemmy2ext.JemmyExt.captureDebugInfoOnFail;
  *          buttons and checking the progress bar and the buttons state.
  *
  * @library /sanity/client/lib/jemmy/src
- * @library /sanity/client/lib/Jemmy2Ext/src
+ * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.progressbar.ProgressBarDemo
  * @run testng ProgressBarDemoTest
  */
+@Listeners(GuiTestListener.class)
 public class ProgressBarDemoTest {
 
     @Test
     public void test() throws Exception {
-        captureDebugInfoOnFail(() -> {
-            new ClassReference(ProgressBarDemo.class.getCanonicalName()).startApplication();
 
-            JFrameOperator frame = new JFrameOperator(DEMO_TITLE);
+        new ClassReference(ProgressBarDemo.class.getCanonicalName()).startApplication();
 
-            JButtonOperator startButton = new JButtonOperator(frame, START_BUTTON);
-            JButtonOperator stopButton = new JButtonOperator(frame, STOP_BUTTON);
-            JProgressBarOperator jpbo = new JProgressBarOperator(frame);
+        JFrameOperator frame = new JFrameOperator(DEMO_TITLE);
 
-            // Check that progress completes and corect enable/disable of start/stop buttons
-            checkCompleteProgress(frame, startButton, stopButton, jpbo);
+        JButtonOperator startButton = new JButtonOperator(frame, START_BUTTON);
+        JButtonOperator stopButton = new JButtonOperator(frame, STOP_BUTTON);
+        JProgressBarOperator jpbo = new JProgressBarOperator(frame);
 
-            // Check progess bar progression and start/stop button disabled/enabled states
-            checkStartStop(frame, startButton, stopButton, jpbo);
-        });
+        // Check that progress completes and corect enable/disable of start/stop buttons
+        checkCompleteProgress(frame, startButton, stopButton, jpbo);
+
+        // Check progess bar progression and start/stop button disabled/enabled states
+        checkStartStop(frame, startButton, stopButton, jpbo);
     }
 
     // Check that progress completes and corect enable/disable of start/stop buttons

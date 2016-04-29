@@ -27,6 +27,7 @@ package sun.util.calendar;
 
 import java.security.AccessController;
 import java.util.TimeZone;
+import sun.security.action.GetPropertyAction;
 
 /**
  *
@@ -142,8 +143,8 @@ public class LocalGregorianCalendar extends BaseCalendar {
         }
 
         // Append an era to the predefined eras if it's given by the property.
-        String prop = AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction("jdk.calendar.japanese.supplemental.era"));
+        String prop = GetPropertyAction
+                .getProperty("jdk.calendar.japanese.supplemental.era");
         if (prop != null) {
             Era era = parseEraEntry(prop);
             if (era != null) {

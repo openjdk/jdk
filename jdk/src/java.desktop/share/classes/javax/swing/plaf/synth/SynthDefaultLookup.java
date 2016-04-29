@@ -41,7 +41,6 @@ class SynthDefaultLookup extends DefaultLookup {
         }
         SynthContext context = ((SynthUI)ui).getContext(c);
         Object value = context.getStyle().get(context, key);
-        context.dispose();
         return value;
     }
 }

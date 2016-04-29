@@ -60,6 +60,7 @@ StateTableProcessor2::StateTableProcessor2(const LEReferenceTo<MorphSubtableHead
   entryTableOffset = SWAPL(stHeader->entryTableOffset);
 
   classTable = LEReferenceTo<LookupTable>(stHeader, success, classTableOffset);
+  if (LE_FAILURE(success)) return;
   format = SWAPW(classTable->format);
 
   stateArray = LEReferenceToArrayOf<EntryTableIndex2>(stHeader, success, stateArrayOffset, LE_UNBOUNDED_ARRAY);

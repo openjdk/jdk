@@ -319,6 +319,8 @@ tools/pack200/Pack200Test.java                                  8059906,8151901 
 
 tools/launcher/FXLauncherTest.java                              8068049 linux-all,macosx-all
 
+tools/pack200/Pack200Props.java                                 8155857 generic-all
+
 ############################################################################
 
 # jdk_jdi
@@ -334,10 +336,6 @@ com/sun/jdi/RedefinePop.sh                                      8058616 generic-
 com/sun/jdi/CatchPatternTest.sh                                 8068645 generic-all
 
 com/sun/jdi/GetLocalVariables4Test.sh                           8067354 windows-all
-
-com/sun/jdi/InterfaceMethodsTest.java				8152586 generic-all
-
-com/sun/jdi/InvokeTest.java					8152586 generic-all
 
 ############################################################################
 

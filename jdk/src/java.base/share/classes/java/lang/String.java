@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,14 +78,8 @@ import jdk.internal.vm.annotation.Stable;
  * <p>
  * The Java language provides special support for the string
  * concatenation operator (&nbsp;+&nbsp;), and for conversion of
- * other objects to strings. String concatenation is implemented
- * through the {@code StringBuilder}(or {@code StringBuffer})
- * class and its {@code append} method.
- * String conversions are implemented through the method
- * {@code toString}, defined by {@code Object} and
- * inherited by all classes in Java. For additional information on
- * string concatenation and conversion, see Gosling, Joy, and Steele,
- * <i>The Java Language Specification</i>.
+ * other objects to strings. For additional information on string
+ * concatenation and conversion, see <i>The Java&trade; Language Specification</i>.
  *
  * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
  * or method in this class will cause a {@link NullPointerException} to be
@@ -106,6 +100,14 @@ import jdk.internal.vm.annotation.Stable;
  * into account.  The {@link java.text.Collator} class provides methods for
  * finer-grain, locale-sensitive String comparison.
  *
+ * @implNote The implementation of the string concatenation operator is left to
+ * the discretion of a Java compiler, as long as the compiler ultimately conforms
+ * to <i>The Java&trade; Language Specification</i>. For example, the {@code javac} compiler
+ * may implement the operator with {@code StringBuffer}, {@code StringBuilder},
+ * or {@code java.lang.invoke.StringConcatFactory} depending on the JDK version. The
+ * implementation of string conversion is typically through the method {@code toString},
+ * defined by {@code Object} and inherited by all classes in Java.
+ *
  * @author  Lee Boynton
  * @author  Arthur van Hoff
  * @author  Martin Buchholz
@@ -115,6 +117,7 @@ import jdk.internal.vm.annotation.Stable;
  * @see     java.lang.StringBuilder
  * @see     java.nio.charset.Charset
  * @since   1.0
+ * @jls     15.18.1 String Concatenation Operator +
  */
 
 public final class String
@@ -363,7 +366,7 @@ public final class String
      * @see  #String(byte[], java.nio.charset.Charset)
      * @see  #String(byte[])
      */
-    @Deprecated
+    @Deprecated(since="1.1")
     public String(byte ascii[], int hibyte, int offset, int count) {
         checkBoundsOffCount(offset, count, ascii.length);
         if (count == 0) {
@@ -415,7 +418,7 @@ public final class String
      * @see  #String(byte[], java.nio.charset.Charset)
      * @see  #String(byte[])
      */
-    @Deprecated
+    @Deprecated(since="1.1")
     public String(byte ascii[], int hibyte) {
         this(ascii, hibyte, 0, ascii.length);
     }
@@ -911,7 +914,7 @@ public final class String
      *                 dst.length}
      *          </ul>
      */
-    @Deprecated
+    @Deprecated(since="1.1")
     public void getBytes(int srcBegin, int srcEnd, byte dst[], int dstBegin) {
         checkBoundsBeginEnd(srcBegin, srcEnd, length());
         Objects.requireNonNull(dst);
@@ -2977,6 +2980,7 @@ public final class String
      *
      * @return  a string that has the same contents as this string, but is
      *          guaranteed to be from a pool of unique strings.
+     * @jls 3.10.5 String Literals
      */
     public native String intern();
 

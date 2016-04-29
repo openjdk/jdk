@@ -1628,6 +1628,7 @@ public class Utils {
 
     /**
      * Comparator for ModuleElements, simply compares the fully qualified names
+     * @return a Comparator
      */
     public Comparator<Element> makeModuleComparator() {
         return new Utils.ElementComparator<Element>() {
@@ -1639,7 +1640,28 @@ public class Utils {
     }
 
     /**
-     * Comparator for PackageElements, simply compares the fully qualified names
+     * Returns a Comparator for all classes, compares the simple names of
+     * TypeElement, if equal then the fully qualified names.
+     *
+     * @return Comparator
+     */
+    public Comparator<Element> makeAllClassesComparator() {
+        return new Utils.ElementComparator<Element>() {
+            @Override
+            public int compare(Element e1, Element e2) {
+                int result =  compareNames(e1, e2);
+                if (result == 0)
+                    result =  compareFullyQualifiedNames(e1, e2);
+
+                return result;
+            }
+        };
+    }
+
+    /**
+     * Returns a Comparator for packages, by comparing the fully qualified names.
+     *
+     * @return a Comparator
      */
     public Comparator<Element> makePackageComparator() {
         return new Utils.ElementComparator<Element>() {
@@ -1650,6 +1672,10 @@ public class Utils {
         };
     }
 
+    /**
+     * Returns a Comparator for SerialFieldTree.
+     * @return a Comparator
+     */
     public Comparator<SerialFieldTree> makeSerialFieldTreeComparator() {
         return (SerialFieldTree o1, SerialFieldTree o2) -> {
             String s1 = o1.getName().toString();
@@ -1659,18 +1685,19 @@ public class Utils {
     }
 
     /**
-     * Comparator for General Purpose
-     * @return a ElementComparatorForClassUse
+     * Returns a general purpose comparator.
+     * @return a Comparator
      */
     public Comparator<Element> makeGeneralPurposeComparator() {
         return makeClassUseComparator();
     }
 
     /**
-     * A Comparator for Overrides and Implements use used on ExecutableElements
-     * compares the name first, then compares the SimpleName of the enclosing
-     * class and the FullyQualifiedName of the enclosing class.
-     * @return
+     * Returns a Comparator for overrides and implements,
+     * used primarily on methods, compares the name first,
+     * then compares the simple names of the enclosing
+     * TypeElement and the fully qualified name of the enclosing TypeElement.
+     * @return a Comparator
      */
     public Comparator<Element> makeOverrideUseComparator() {
         return new Utils.ElementComparator<Element>() {
@@ -1696,21 +1723,24 @@ public class Utils {
     }
 
     /**
-     * A comparator for index file presentations, and are sorted as follows:
+     * Returns a Comparator for index file presentations, and are sorted as follows.
+     *  If comparing packages then simply compare the qualified names, otherwise
      *  1. sort on simple names of entities
      *  2. if equal, then compare the ElementKind ex: Package, Interface etc.
      *  3a. if equal and if the type is of ExecutableElement(Constructor, Methods),
      *      a case insensitive comparison of parameter the type signatures
      *  3b. if equal, case sensitive comparison of the type signatures
      *  4. finally, if equal, compare the FQNs of the entities
+     * Iff comparing packages then simply sort on qualified names.
      * @return a comparator for index file use
      */
     public Comparator<Element> makeIndexUseComparator() {
         return new Utils.ElementComparator<Element>() {
             /**
-             * Compare two given elements, first sort on names, then on the kinds,
-             * then on the parameters only if the type is an instance of ExecutableElement,
-             * the parameters are compared and finally the fully qualified names.
+             * Compare two given elements, if comparing two packages, return the
+             * comparison of FullyQualifiedName, first sort on names, then on the
+             * kinds, then on the parameters only if the type is an ExecutableElement,
+             * the parameters are compared and finally the qualified names.
              *
              * @param e1 - an element.
              * @param e2 - an element.
@@ -1719,14 +1749,15 @@ public class Utils {
              */
             @Override
             public int compare(Element e1, Element e2) {
-                int result = compareElementTypeKinds(e1, e2);
-                if (result != 0) {
-                    return result;
-                }
+                int result = 0;
                 if (isPackage(e1) && isPackage(e2)) {
                     return compareFullyQualifiedNames(e1, e2);
                 }
                 result = compareNames(e1, e2);
+                if (result != 0) {
+                    return result;
+                }
+                result = compareElementTypeKinds(e1, e2);
                 if (result != 0) {
                     return result;
                 }

@@ -3,24 +3,27 @@
  * @bug     6554097
  * @summary "final" confuses at-SuppressWarnings
  * @compile T6554097.java
- * @compile/fail/ref=T6554097.out -XDrawDiagnostics -Werror -Xlint:serial T6554097.java
+ * @compile/fail/ref=T6554097.out -XDrawDiagnostics -Werror -Xlint:rawtypes T6554097.java
  */
 
+import java.util.ArrayList;
+
 class T6554097 {
-    @SuppressWarnings("serial") final Throwable[] v1 = { new Throwable() {} };
-    @SuppressWarnings("serial")       Throwable[] v2 = { new Throwable() {} };
+
+    @SuppressWarnings("unchecked") final ArrayList[] v1 = { new ArrayList() {} };
+    @SuppressWarnings("unchecked")       ArrayList[] v2 = { new ArrayList() {} };
 
     public static void m1() throws Throwable {
-            @SuppressWarnings("serial") final Throwable[] v3 = { new Throwable() {} };
-            @SuppressWarnings("serial")       Throwable[] v4 = { new Throwable() {} };
+            @SuppressWarnings("unchecked") final ArrayList[] v3 = { new ArrayList() {} };
+            @SuppressWarnings("unchecked")       ArrayList[] v4 = { new ArrayList() {} };
     }
 
-    final Throwable[] v5 = { new Throwable() {} };
-          Throwable[] v6 = { new Throwable() {} };
+    final ArrayList[] v5 = { new ArrayList() {} };
+          ArrayList[] v6 = { new ArrayList() {} };
 
     public static void m2() throws Throwable {
-        final Throwable[] v7 = { new Throwable() {} };
-                  Throwable[] v8 = { new Throwable() {} };
+        final ArrayList[] v7 = { new ArrayList() {} };
+              ArrayList[] v8 = { new ArrayList() {} };
     }
 }
 

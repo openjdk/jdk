@@ -46,6 +46,7 @@ import java.net.ProxySelector;
 import java.util.StringTokenizer;
 import java.util.Iterator;
 import java.security.Permission;
+import java.util.Properties;
 import sun.net.NetworkClient;
 import sun.net.www.MessageHeader;
 import sun.net.www.MeteredStream;
@@ -277,11 +278,10 @@ public class FtpURLConnection extends URLConnection {
 
         if (user == null) {
             user = "anonymous";
-            String vers = java.security.AccessController.doPrivileged(
-                    new GetPropertyAction("java.version"));
-            password = java.security.AccessController.doPrivileged(
-                    new GetPropertyAction("ftp.protocol.user",
-                                          "Java" + vers + "@"));
+            Properties props = GetPropertyAction.getProperties();
+            String vers = props.getProperty("java.version");
+            password = props.getProperty("ftp.protocol.user",
+                    "Java" + vers + "@");
         }
         try {
             ftp = FtpClient.create();

@@ -83,7 +83,7 @@ class _AppMenuBarHandler {
 
         // if we have no foreground frames, then we have to "kick" the menubar
         final JFrame pingFrame = new JFrame();
-        pingFrame.getRootPane().putClientProperty("Window.alpha", new Float(0.0f));
+        pingFrame.getRootPane().putClientProperty("Window.alpha", Float.valueOf(0.0f));
         pingFrame.setUndecorated(true);
         pingFrame.setVisible(true);
         pingFrame.toFront();

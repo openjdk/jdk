@@ -30,7 +30,8 @@
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.jdeps/com.sun.tools.javap
  *      jdk.jlink/jdk.tools.jmod
- * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask toolbox.ModuleBuilder
+ *      ModuleTestBase
  * @run main ModulePathTest
  */
 
@@ -41,6 +42,7 @@ import java.nio.file.Path;
 
 import toolbox.JarTask;
 import toolbox.JavacTask;
+import toolbox.ModuleBuilder;
 import toolbox.Task;
 import toolbox.ToolBox;
 
@@ -54,7 +56,7 @@ public class ModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void testNotExistsOnPath(Path base) throws Exception {
+    public void testNotExistsOnPath(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "class C { }");
 
@@ -71,7 +73,7 @@ public class ModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void testNotADirOnPath_1(Path base) throws Exception {
+    public void testNotADirOnPath_1(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "class C { }");
         tb.writeFile("dummy.txt", "");
@@ -89,7 +91,7 @@ public class ModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void testNotADirOnPath_2(Path base) throws Exception {
+    public void testNotADirOnPath_2(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "class C { }");
         tb.writeFile("dummy.jimage", "");
@@ -107,7 +109,7 @@ public class ModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void testExplodedModuleOnPath(Path base) throws Exception {
+    public void testExplodedModuleOnPath(Path base) throws Exception {
         Path modSrc = base.resolve("modSrc");
         tb.writeJavaFiles(modSrc,
                 "module m1 { exports p; }",
@@ -137,7 +139,7 @@ public class ModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void testBadExplodedModuleOnPath(Path base) throws Exception {
+    public void testBadExplodedModuleOnPath(Path base) throws Exception {
         Path modClasses = base.resolve("modClasses");
         tb.writeFile(modClasses.resolve("module-info.class"), "module m1 { }");
 
@@ -162,7 +164,7 @@ public class ModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void testAutoJarOnPath(Path base) throws Exception {
+    public void testAutoJarOnPath(Path base) throws Exception {
         Path jarSrc = base.resolve("jarSrc");
         tb.writeJavaFiles(jarSrc,
                 "package p; public class CC { }");
@@ -195,7 +197,7 @@ public class ModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void testModJarOnPath(Path base) throws Exception {
+    public void testModJarOnPath(Path base) throws Exception {
         Path jarSrc = base.resolve("jarSrc");
         tb.writeJavaFiles(jarSrc,
                 "module m1 { exports p; }",
@@ -231,7 +233,7 @@ public class ModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void testBadJarOnPath(Path base) throws Exception {
+    public void testBadJarOnPath(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "class C { }");
         tb.writeFile("dummy.jar", "");
@@ -249,7 +251,7 @@ public class ModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void testJModOnPath(Path base) throws Exception {
+    public void testJModOnPath(Path base) throws Exception {
         Path jmodSrc = base.resolve("jmodSrc");
         tb.writeJavaFiles(jmodSrc,
                 "module m1 { exports p; }",
@@ -282,7 +284,7 @@ public class ModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void testBadJModOnPath(Path base) throws Exception {
+    public void testBadJModOnPath(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "class C { }");
         tb.writeFile("dummy.jmod", "");
@@ -300,9 +302,9 @@ public class ModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void relativePath(Path base) throws Exception {
+    public void relativePath(Path base) throws Exception {
         final Path modules = base.resolve("modules");
-        new ModuleBuilder("m1").build(modules);
+        new ModuleBuilder(tb, "m1").build(modules);
 
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "module m2 { requires m1; }", "class A { }");
@@ -316,9 +318,9 @@ public class ModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void duplicatePaths_1(Path base) throws Exception {
+    public void duplicatePaths_1(Path base) throws Exception {
         final Path modules = base.resolve("modules");
-        new ModuleBuilder("m1").build(modules);
+        new ModuleBuilder(tb, "m1").build(modules);
 
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "module m2 { requires m1; }", "class A { }");
@@ -332,9 +334,9 @@ public class ModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void duplicatePaths_2(Path base) throws Exception {
+    public void duplicatePaths_2(Path base) throws Exception {
         final Path modules = base.resolve("modules");
-        new ModuleBuilder("m1").build(modules);
+        new ModuleBuilder(tb, "m1").build(modules);
 
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "module m2 { requires m1; }", "class A { }");
@@ -349,15 +351,15 @@ public class ModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void oneModuleHidesAnother(Path base) throws Exception {
+    public void oneModuleHidesAnother(Path base) throws Exception {
         final Path module = base.resolve("modules");
-        new ModuleBuilder("m1")
+        new ModuleBuilder(tb, "m1")
                 .exports("pkg1")
                 .classes("package pkg1; public class E { }")
                 .build(module);
 
         final Path deepModuleDir = module.resolve("deepModuleDir");
-        new ModuleBuilder("m1")
+        new ModuleBuilder(tb, "m1")
                 .exports("pkg2")
                 .classes("package pkg2; public class E { }")
                 .build(deepModuleDir);
@@ -374,19 +376,19 @@ public class ModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void modulesInDifferentContainers(Path base) throws Exception {
+    public void modulesInDifferentContainers(Path base) throws Exception {
         final Path modules = base.resolve("modules");
-        new ModuleBuilder("m1")
+        new ModuleBuilder(tb, "m1")
                 .exports("one")
                 .classes("package one; public class A { }")
                 .build(modules);
 
-        new ModuleBuilder("m2")
+        new ModuleBuilder(tb, "m2")
                 .requires("m1", modules)
                 .build(base.resolve("tmp"));
         jar(base.resolve("tmp/m2"), modules.resolve("m2.jar"));
 
-        new ModuleBuilder("m3")
+        new ModuleBuilder(tb, "m3")
                 .requires("m2", modules)
                 .build(base.resolve("tmp"));
         jmod(base.resolve("tmp/m3"), modules.resolve("m3.jmod"));

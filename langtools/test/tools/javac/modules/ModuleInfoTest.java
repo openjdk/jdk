@@ -51,7 +51,7 @@ public class ModuleInfoTest extends ModuleTestBase {
      * Check error message if module declaration not in module-info.java.
      */
     @Test
-    void testModuleDeclNotInModuleJava(Path base) throws Exception {
+    public void testModuleDeclNotInModuleJava(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeFile(src.resolve("M.java"), "module M { }");
         String log = new JavacTask(tb)
@@ -69,7 +69,7 @@ public class ModuleInfoTest extends ModuleTestBase {
      * Verify that a package private class can be put in module-info.java.
      */
     @Test
-    void testNotModuleDeclInModuleJava_1(Path base) throws Exception {
+    public void testNotModuleDeclInModuleJava_1(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeFile(src.resolve("module-info.java"), "class C { }");
         new JavacTask(tb)
@@ -83,7 +83,7 @@ public class ModuleInfoTest extends ModuleTestBase {
      * Verify that a public class cannot be put in module-info.java.
      */
     @Test
-    void testNotModuleDeclInModuleJava_2(Path base) throws Exception {
+    public void testNotModuleDeclInModuleJava_2(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeFile(src.resolve("module-info.java"), "public class C { }");
         String log = new JavacTask(tb)
@@ -101,7 +101,7 @@ public class ModuleInfoTest extends ModuleTestBase {
      * Verify that only one module decl can be put in module-info.java.
      */
     @Test
-    void testSingleModuleDecl(Path base) throws Exception {
+    public void testSingleModuleDecl(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "module M1 { } /*...*/ module M2 { }");
         String log = new JavacTask(tb)
@@ -119,7 +119,7 @@ public class ModuleInfoTest extends ModuleTestBase {
      * Verify that missing requires are reported.
      */
     @Test
-    void testRequiresNotFound(Path base) throws Exception {
+    public void testRequiresNotFound(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "module M1 { requires M2; }");
         String log = new JavacTask(tb)
@@ -137,7 +137,7 @@ public class ModuleInfoTest extends ModuleTestBase {
      * Verify that missing exports are reported.
      */
     @Test
-    void testExportsNotFound(Path base) throws Exception {
+    public void testExportsNotFound(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "module M1 { exports p to M2; }");
         String log = new JavacTask(tb)
@@ -155,7 +155,7 @@ public class ModuleInfoTest extends ModuleTestBase {
      * Verify that a simple loop is detected.
      */
     @Test
-    void testRequiresSelf(Path base) throws Exception {
+    public void testRequiresSelf(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "module M { requires M; }");
         String log = new JavacTask(tb)
@@ -173,7 +173,7 @@ public class ModuleInfoTest extends ModuleTestBase {
      * Verify that a multi-module loop is detected.
      */
     @Test
-    void testRequiresLoop(Path base) throws Exception {
+    public void testRequiresLoop(Path base) throws Exception {
         Path src = base.resolve("src");
         Path src_m1 = src.resolve("m1");
         tb.writeFile(src_m1.resolve("module-info.java"), "module m1 { requires m2; }");
@@ -201,7 +201,7 @@ public class ModuleInfoTest extends ModuleTestBase {
      * Verify that a multi-module loop is detected.
      */
     @Test
-    void testRequiresPublicLoop(Path base) throws Exception {
+    public void testRequiresPublicLoop(Path base) throws Exception {
         Path src = base.resolve("src");
         Path src_m1 = src.resolve("m1");
         tb.writeFile(src_m1.resolve("module-info.java"), "module m1 { requires m2; }");
@@ -229,7 +229,7 @@ public class ModuleInfoTest extends ModuleTestBase {
      * Verify that duplicate requires are detected.
      */
     @Test
-    void testDuplicateRequires(Path base) throws Exception {
+    public void testDuplicateRequires(Path base) throws Exception {
         Path src = base.resolve("src");
         Path src_m1 = src.resolve("m1");
         tb.writeFile(src_m1.resolve("module-info.java"), "module m1 { }");
@@ -255,7 +255,7 @@ public class ModuleInfoTest extends ModuleTestBase {
      * Verify that duplicate exported packages are detected.
      */
     @Test
-    void testDuplicateExports_packages(Path base) throws Exception {
+    public void testDuplicateExports_packages(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "module m1 { exports p; exports p; }");
 
@@ -278,7 +278,7 @@ public class ModuleInfoTest extends ModuleTestBase {
      * Verify that duplicate exported packages are detected.
      */
     @Test
-    void testDuplicateExports_packages2(Path base) throws Exception {
+    public void testDuplicateExports_packages2(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("m1"), "module m1 { exports p; exports p to m2; }");
         tb.writeJavaFiles(src.resolve("m2"), "module m2 { }");
@@ -302,7 +302,7 @@ public class ModuleInfoTest extends ModuleTestBase {
      * Verify that duplicate exported packages are detected.
      */
     @Test
-    void testDuplicateExports_modules(Path base) throws Exception {
+    public void testDuplicateExports_modules(Path base) throws Exception {
         Path src = base.resolve("src");
         Path src_m1 = src.resolve("m1");
         tb.writeFile(src_m1.resolve("module-info.java"), "module m1 { }");
