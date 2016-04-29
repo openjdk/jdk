@@ -47,17 +47,18 @@ import java.lang.annotation.Native;
  */
 public class SocketFlow {
 
-    private static final int UNSET = -1;
+    @Native public static final int UNSET = -1;
     @Native public static final int NORMAL_PRIORITY = 1;
     @Native public static final int HIGH_PRIORITY = 2;
 
-    private int priority = NORMAL_PRIORITY;
-
-    private long bandwidth = UNSET;
-
-    private Status status = Status.NO_STATUS;
-
-    private SocketFlow() {}
+    @Native private static final int NO_STATUS_VALUE = 0;
+    @Native private static final int OK_VALUE = 1;
+    @Native private static final int NO_PERMISSION_VALUE = 2;
+    @Native private static final int NOT_CONNECTED_VALUE = 3;
+    @Native private static final int NOT_SUPPORTED_VALUE = 4;
+    @Native private static final int ALREADY_CREATED_VALUE = 5;
+    @Native private static final int IN_PROGRESS_VALUE = 6;
+    @Native private static final int OTHER_VALUE = 7;
 
     /**
      * Enumeration of the return values from the SO_FLOW_SLA
@@ -72,36 +73,55 @@ public class SocketFlow {
          * Set or get socket option has not been called yet. Status
          * values can only be retrieved after calling set or get.
          */
-        NO_STATUS,
+        NO_STATUS(NO_STATUS_VALUE),
         /**
          * Flow successfully created.
          */
-        OK,
+        OK(OK_VALUE),
         /**
          * Caller has no permission to create flow.
          */
-        NO_PERMISSION,
+        NO_PERMISSION(NO_PERMISSION_VALUE),
         /**
          * Flow can not be created because socket is not connected.
          */
-        NOT_CONNECTED,
+        NOT_CONNECTED(NOT_CONNECTED_VALUE),
         /**
          * Flow creation not supported for this socket.
          */
-        NOT_SUPPORTED,
+        NOT_SUPPORTED(NOT_SUPPORTED_VALUE),
         /**
          * A flow already exists with identical attributes.
          */
-        ALREADY_CREATED,
+        ALREADY_CREATED(ALREADY_CREATED_VALUE),
         /**
          * A flow is being created.
          */
-        IN_PROGRESS,
+        IN_PROGRESS(IN_PROGRESS_VALUE),
         /**
          * Some other unspecified error.
          */
-        OTHER
+        OTHER(OTHER_VALUE);
+
+        private final int value;
+        Status(int value) { this.value = value; }
+
+        static Status from(int value) {
+            if      (value == NO_STATUS.value)       return NO_STATUS;
+            else if (value == OK.value)              return OK;
+            else if (value == NO_PERMISSION.value)   return NO_PERMISSION;
+            else if (value == NOT_CONNECTED.value)   return NOT_CONNECTED;
+            else if (value == NOT_SUPPORTED.value)   return NOT_SUPPORTED;
+            else if (value == ALREADY_CREATED.value) return ALREADY_CREATED;
+            else if (value == IN_PROGRESS.value)     return IN_PROGRESS;
+            else if (value == OTHER.value)           return OTHER;
+            else     throw new InternalError("Unknown value: " + value);
+        }
     }
+
+    private int priority = NORMAL_PRIORITY;
+    private long bandwidth = UNSET;
+    private Status status = Status.NO_STATUS;
 
     /**
      * Creates a new SocketFlow that can be used to set the SO_FLOW_SLA
@@ -111,6 +131,8 @@ public class SocketFlow {
         return new SocketFlow();
     }
 
+    private SocketFlow() { }
+
     /**
      * Sets this SocketFlow's priority. Must be either NORMAL_PRIORITY
      * HIGH_PRIORITY. If not set, a flow's priority is normal.
@@ -119,9 +141,8 @@ public class SocketFlow {
      *         HIGH_PRIORITY.
      */
     public SocketFlow priority(int priority) {
-        if (priority != NORMAL_PRIORITY && priority != HIGH_PRIORITY) {
-            throw new IllegalArgumentException("invalid priority");
-        }
+        if (priority != NORMAL_PRIORITY && priority != HIGH_PRIORITY)
+            throw new IllegalArgumentException("invalid priority :" + priority);
         this.priority = priority;
         return this;
     }
@@ -133,11 +154,9 @@ public class SocketFlow {
      * @throws IllegalArgumentException if bandwidth is less than zero.
      */
     public SocketFlow bandwidth(long bandwidth) {
-        if (bandwidth < 0) {
-            throw new IllegalArgumentException("invalid bandwidth");
-        } else {
-            this.bandwidth = bandwidth;
-        }
+        if (bandwidth < 0)
+            throw new IllegalArgumentException("invalid bandwidth: " + bandwidth);
+        this.bandwidth = bandwidth;
         return this;
     }
 
@@ -163,5 +182,19 @@ public class SocketFlow {
      */
     public Status status() {
         return status;
+    }
+
+    void status(int status) {
+        this.status = Status.from(status);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(super.toString());
+        sb.append(" [ priority=").append(priority())
+          .append(", bandwidth=").append(bandwidth())
+          .append(", status=").append(status())
+          .append(" ]");
+        return sb.toString();
     }
 }

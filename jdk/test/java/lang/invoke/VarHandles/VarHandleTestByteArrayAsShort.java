@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8154556
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 VarHandleTestByteArrayAsShort
  * @run testng/othervm -Diters=20000                         VarHandleTestByteArrayAsShort
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  VarHandleTestByteArrayAsShort
@@ -57,15 +58,16 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
         // Combinations of VarHandle byte[] or ByteBuffer
         vhss = new ArrayList<>();
         for (MemoryMode endianess : Arrays.asList(MemoryMode.BIG_ENDIAN, MemoryMode.LITTLE_ENDIAN)) {
+
+            ByteOrder bo = endianess == MemoryMode.BIG_ENDIAN
+                    ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
             VarHandleSource aeh = new VarHandleSource(
-                    MethodHandles.byteArrayViewVarHandle(short[].class,
-                                                         endianess == MemoryMode.BIG_ENDIAN),
+                    MethodHandles.byteArrayViewVarHandle(short[].class, bo),
                     endianess, MemoryMode.READ_WRITE);
             vhss.add(aeh);
 
             VarHandleSource bbh = new VarHandleSource(
-                    MethodHandles.byteBufferViewVarHandle(short[].class,
-                                                          endianess == MemoryMode.BIG_ENDIAN),
+                    MethodHandles.byteBufferViewVarHandle(short[].class, bo),
                     endianess, MemoryMode.READ_WRITE);
             vhss.add(bbh);
         }
@@ -92,7 +94,6 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
 

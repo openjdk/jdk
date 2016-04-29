@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,43 +23,13 @@
  * questions.
  */
 
-#include <jni.h>
-#include <string.h>
+module jdk.jstatd {
+    requires java.rmi;
+    requires jdk.jvmstat;
 
-#include "net_util.h"
+    // RMI needs to serialize types in this package
+    exports sun.jvmstat.monitor.remote to java.rmi;
 
-/*
- * Class:     sun_net_ExtendedOptionsImpl
- * Method:    init
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_sun_net_ExtendedOptionsImpl_init
-  (JNIEnv *env, jclass UNUSED)
-{
+    provides sun.jvmstat.monitor.MonitoredHostService with sun.jvmstat.perfdata.monitor.protocol.rmi.MonitoredHostRmiService;
 }
 
-/* Non Solaris. Functionality is not supported. So, throw UnsupportedOpExc */
-
-JNIEXPORT void JNICALL Java_sun_net_ExtendedOptionsImpl_setFlowOption
-  (JNIEnv *env, jclass UNUSED, jobject fileDesc, jobject flow)
-{
-    JNU_ThrowByName(env, "java/lang/UnsupportedOperationException",
-        "unsupported socket option");
-}
-
-JNIEXPORT void JNICALL Java_sun_net_ExtendedOptionsImpl_getFlowOption
-  (JNIEnv *env, jclass UNUSED, jobject fileDesc, jobject flow)
-{
-    JNU_ThrowByName(env, "java/lang/UnsupportedOperationException",
-        "unsupported socket option");
-}
-
-static jboolean flowSupported0()  {
-    return JNI_FALSE;
-}
-
-JNIEXPORT jboolean JNICALL Java_sun_net_ExtendedOptionsImpl_flowSupported
-  (JNIEnv *env, jclass UNUSED)
-{
-    return JNI_FALSE;
-}

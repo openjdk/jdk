@@ -43,6 +43,8 @@ import java.util.stream.Stream;
 import jdk.internal.misc.JavaAWTAccess;
 import jdk.internal.misc.SharedSecrets;
 import sun.util.logging.internal.LoggingProviderImpl;
+import java.lang.reflect.Module;
+import static jdk.internal.logger.DefaultLoggerFinder.isSystem;
 
 /**
  * There is a single global LogManager object that is used to
@@ -503,10 +505,16 @@ public class LogManager {
     // as a LogManager subclass may override the addLogger, getLogger,
     // readConfiguration, and other methods.
     Logger demandLogger(String name, String resourceBundleName, Class<?> caller) {
+        final Module module = caller == null ? null : caller.getModule();
+        return demandLogger(name, resourceBundleName, module);
+    }
+
+    Logger demandLogger(String name, String resourceBundleName, Module module) {
         Logger result = getLogger(name);
         if (result == null) {
             // only allocate the new logger once
-            Logger newLogger = new Logger(name, resourceBundleName, caller, this, false);
+            Logger newLogger = new Logger(name, resourceBundleName,
+                    module == null ? null : module, this, false);
             do {
                 if (addLogger(newLogger)) {
                     // We successfully added the new Logger that we
@@ -532,9 +540,14 @@ public class LogManager {
     }
 
     Logger demandSystemLogger(String name, String resourceBundleName, Class<?> caller) {
+        final Module module = caller == null ? null : caller.getModule();
+        return demandSystemLogger(name, resourceBundleName, module);
+    }
+
+    Logger demandSystemLogger(String name, String resourceBundleName, Module module) {
         // Add a system logger in the system context's namespace
         final Logger sysLogger = getSystemContext()
-                .demandLogger(name, resourceBundleName, caller);
+                .demandLogger(name, resourceBundleName, module);
 
         // Add the system logger to the LogManager's namespace if not exist
         // so that there is only one single logger of the given name.
@@ -619,11 +632,11 @@ public class LogManager {
             return global;
         }
 
-        Logger demandLogger(String name, String resourceBundleName, Class<?> caller) {
+        Logger demandLogger(String name, String resourceBundleName, Module module) {
             // a LogManager subclass may have its own implementation to add and
             // get a Logger.  So delegate to the LogManager to do the work.
             final LogManager owner = getOwner();
-            return owner.demandLogger(name, resourceBundleName, caller);
+            return owner.demandLogger(name, resourceBundleName, module);
         }
 
 
@@ -907,11 +920,13 @@ public class LogManager {
         // one single logger of the given name.  System loggers are visible
         // to applications unless a logger of the same name has been added.
         @Override
-        Logger demandLogger(String name, String resourceBundleName, Class<?> caller) {
+        Logger demandLogger(String name, String resourceBundleName,
+                            Module module) {
             Logger result = findLogger(name);
             if (result == null) {
                 // only allocate the new system logger once
-                Logger newLogger = new Logger(name, resourceBundleName, caller, getOwner(), true);
+                Logger newLogger = new Logger(name, resourceBundleName,
+                                              module, getOwner(), true);
                 do {
                     if (addLocalLogger(newLogger)) {
                         // We successfully added the new Logger that we
@@ -2622,18 +2637,18 @@ public class LogManager {
         }
 
         /**
-         * Demands a logger on behalf of the given {@code caller}.
+         * Demands a logger on behalf of the given {@code module}.
          * <p>
-         * If a named logger suitable for the given caller is found
+         * If a named logger suitable for the given module is found
          * returns it.
-         * Otherwise, creates a new logger suitable for the given caller.
+         * Otherwise, creates a new logger suitable for the given module.
          *
          * @param name   The logger name.
-         * @param caller The caller on which behalf the logger is created/retrieved.
-         * @return A logger for the given {@code caller}.
+         * @param module The module on which behalf the logger is created/retrieved.
+         * @return A logger for the given {@code module}.
          *
          * @throws NullPointerException if {@code name} is {@code null}
-         *         or {@code caller} is {@code null}.
+         *         or {@code module} is {@code null}.
          * @throws IllegalArgumentException if {@code manager} is not the default
          *         LogManager.
          * @throws SecurityException if a security manager is present and the
@@ -2641,7 +2656,7 @@ public class LogManager {
          *        {@link LoggingPermission LoggingPermission("demandLogger", null)}.
          */
         @Override
-        public Logger demandLoggerFor(LogManager manager, String name, /* Module */ Class<?> caller) {
+        public Logger demandLoggerFor(LogManager manager, String name, Module module) {
             if (manager != getLogManager()) {
                 // having LogManager as parameter just ensures that the
                 // caller will have initialized the LogManager before reaching
@@ -2649,15 +2664,16 @@ public class LogManager {
                 throw new IllegalArgumentException("manager");
             }
             Objects.requireNonNull(name);
+            Objects.requireNonNull(module);
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(controlPermission);
             }
-            if (caller.getClassLoader() == null) {
+            if (isSystem(module)) {
                 return manager.demandSystemLogger(name,
-                    Logger.SYSTEM_LOGGER_RB_NAME, caller);
+                    Logger.SYSTEM_LOGGER_RB_NAME, module);
             } else {
-                return manager.demandLogger(name, null, caller);
+                return manager.demandLogger(name, null, module);
             }
         }
 

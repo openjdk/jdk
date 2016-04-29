@@ -83,8 +83,6 @@ module java.base {
 
     // see JDK-8144062
     exports jdk;
-    // see JDK-8044773
-    exports jdk.net;
 
 
     // the service types defined by the APIs in this module
@@ -168,6 +166,7 @@ module java.base {
         java.sql,
         java.xml,
         jdk.charsets,
+        jdk.net,
         jdk.scripting.nashorn,
         jdk.unsupported,
         jdk.vm.ci;
@@ -194,6 +193,8 @@ module java.base {
         jdk.jvmstat;
     exports sun.net to
         java.httpclient;
+    exports sun.net.ext to
+        jdk.net;
     exports sun.net.dns to
         java.security.jgss,
         jdk.naming.dns;
