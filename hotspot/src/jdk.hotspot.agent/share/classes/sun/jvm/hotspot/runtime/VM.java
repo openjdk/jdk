@@ -324,8 +324,9 @@ public class VM {
        Address vmInternalInfoAddr = vmVersion.getAddressField("_s_internal_vm_info_string").getValue();
        vmInternalInfo = CStringUtilities.getString(vmInternalInfoAddr);
 
+       Type threadLocalAllocBuffer = db.lookupType("ThreadLocalAllocBuffer");
        CIntegerType intType = (CIntegerType) db.lookupType("int");
-       CIntegerField reserveForAllocationPrefetchField = vmVersion.getCIntegerField("_reserve_for_allocation_prefetch");
+       CIntegerField reserveForAllocationPrefetchField = threadLocalAllocBuffer.getCIntegerField("_reserve_for_allocation_prefetch");
        reserveForAllocationPrefetch = (int)reserveForAllocationPrefetchField.getCInteger(intType);
     } catch (Exception exp) {
        throw new RuntimeException("can't determine target's VM version : " + exp.getMessage());

@@ -90,13 +90,6 @@ public class TestOptionsWithRanges {
         excludeTestMaxRange("CICompilerCount");
 
         /*
-         * JDK-8153340
-         * Temporary exclude AllocatePrefetchDistance option from testing
-         */
-        excludeTestRange("AllocatePrefetchDistance");
-
-
-        /*
          * JDK-8136766
          * Temporarily remove ThreadStackSize from testing because Windows can set it to 0
          * (for default OS size) but other platforms insist it must be greater than 0

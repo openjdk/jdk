@@ -49,9 +49,11 @@ void VM_Version::initialize() {
   AllocatePrefetchDistance = allocate_prefetch_distance();
   AllocatePrefetchStyle    = allocate_prefetch_style();
 
-  if (AllocatePrefetchStyle == 3 && !has_blk_init()) {
-    warning("BIS instructions are not available on this CPU");
-    FLAG_SET_DEFAULT(AllocatePrefetchStyle, 1);
+  if (!has_blk_init()) {
+    if (AllocatePrefetchInstr == 1) {
+      warning("BIS instructions required for AllocatePrefetchInstr 1 unavailable");
+      FLAG_SET_DEFAULT(AllocatePrefetchInstr, 0);
+    }
   }
 
   UseSSE = 0; // Only on x86 and x64
@@ -88,11 +90,13 @@ void VM_Version::initialize() {
       if (has_blk_init() && UseTLAB &&
           FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {
         // Use BIS instruction for TLAB allocation prefetch.
-        FLAG_SET_ERGO(intx, AllocatePrefetchInstr, 1);
-        if (FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
-          FLAG_SET_ERGO(intx, AllocatePrefetchStyle, 3);
-        }
-        if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
+        FLAG_SET_DEFAULT(AllocatePrefetchInstr, 1);
+      }
+      if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
+        if (AllocatePrefetchInstr == 0) {
+          // Use different prefetch distance without BIS
+          FLAG_SET_DEFAULT(AllocatePrefetchDistance, 256);
+        } else {
           // Use smaller prefetch distance with BIS
           FLAG_SET_DEFAULT(AllocatePrefetchDistance, 64);
         }
@@ -107,25 +111,14 @@ void VM_Version::initialize() {
           FLAG_SET_ERGO(intx, AllocateInstancePrefetchLines, AllocateInstancePrefetchLines*2);
         }
       }
-      if (AllocatePrefetchStyle != 3 && FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
-        // Use different prefetch distance without BIS
-        FLAG_SET_DEFAULT(AllocatePrefetchDistance, 256);
-      }
-      if (AllocatePrefetchInstr == 1) {
-        // Need extra space at the end of TLAB for BIS, otherwise prefetching
-        // instructions will fault (due to accessing memory outside of heap).
-        // The amount of space is the max of the number of lines to
-        // prefetch for array and for instance allocations. (Extra space must be
-        // reserved to accomodate both types of allocations.)
-
-        // +1 for rounding up to next cache line, +1 to be safe
-        int lines = MAX2(AllocatePrefetchLines, AllocateInstancePrefetchLines) + 2;
-        int step_size = AllocatePrefetchStepSize;
-        int distance = AllocatePrefetchDistance;
-        _reserve_for_allocation_prefetch = (distance + step_size*lines)/(int)HeapWordSize;
-      }
     }
-#endif
+
+    if (AllocatePrefetchInstr == 1) {
+      // Use allocation prefetch style 3 because BIS instructions
+      // require aligned memory addresses.
+      FLAG_SET_DEFAULT(AllocatePrefetchStyle, 3);
+    }
+#endif /* COMPILER2 */
   }
 
   // Use hardware population count instruction if available.
