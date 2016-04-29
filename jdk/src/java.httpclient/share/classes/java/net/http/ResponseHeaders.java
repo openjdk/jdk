@@ -48,7 +48,7 @@ import java.util.Set;
  *
  * This class is not thread-safe
  */
-class ResponseHeaders implements HttpHeaders1 {
+class ResponseHeaders implements HttpHeaders {
 
     static final int DATA_SIZE = 16 * 1024;  // initial space for headers
     static final int NUM_HEADERS = 50; // initial expected max number of headers
@@ -366,10 +366,6 @@ class ResponseHeaders implements HttpHeaders1 {
             l = populateMapEntry(name);
         }
         return Collections.unmodifiableList(l);
-    }
-
-    @Override
-    public void makeUnmodifiable() {
     }
 
     // Delegates map to HashMap but converts keys to lower case
