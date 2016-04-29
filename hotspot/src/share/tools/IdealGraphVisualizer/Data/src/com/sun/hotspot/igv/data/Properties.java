@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,9 @@
 package com.sun.hotspot.igv.data;
 
 import java.io.Serializable;
+import java.lang.ref.WeakReference;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -36,7 +38,7 @@ import java.util.regex.PatternSyntaxException;
 public class Properties implements Serializable, Iterable<Property> {
 
     public static final long serialVersionUID = 1L;
-    private String[] map = new String[4];
+    protected String[] map = new String[4];
 
     public Properties() {
     }
@@ -102,6 +104,59 @@ public class Properties implements Serializable, Iterable<Property> {
         System.arraycopy(p.map, 0, map, 0, p.map.length);
     }
 
+    protected Properties(String[] map) {
+        this.map = map;
+    }
+
+    static class SharedProperties extends Properties {
+        int hashCode;
+
+        SharedProperties(String[] map) {
+            super(map);
+            this.hashCode = Arrays.hashCode(map);
+        }
+
+        @Override
+        protected void setPropertyInternal(String name, String value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (this == other) {
+                return true;
+            }
+            if (!(other instanceof SharedProperties)) {
+                return super.equals(other);
+            }
+            SharedProperties props2 = (SharedProperties) other;
+            return Arrays.equals(map, props2.map);
+        }
+
+        @Override
+        public int hashCode() {
+            return hashCode;
+        }
+    }
+
+    private static class PropertyCache {
+        static WeakHashMap<SharedProperties, WeakReference<SharedProperties>> immutableCache = new WeakHashMap<>();
+
+        static synchronized SharedProperties intern(Properties properties) {
+            String[] map = properties.map;
+            SharedProperties key = new SharedProperties(map);
+            WeakReference<SharedProperties> entry = immutableCache.get(key);
+            if (entry != null) {
+                SharedProperties props = entry.get();
+                if (props != null) {
+                    return props;
+                }
+            }
+            immutableCache.put(key, new WeakReference<>(key));
+            return key;
+        }
+    }
+
     public static class Entity implements Provider {
 
         private Properties properties;
@@ -117,6 +172,10 @@ public class Properties implements Serializable, Iterable<Property> {
         @Override
         public Properties getProperties() {
             return properties;
+        }
+
+        public void internProperties() {
+            properties = PropertyCache.intern(properties);
         }
     }
 
@@ -322,8 +381,8 @@ public class Properties implements Serializable, Iterable<Property> {
     public void setProperty(String name, String value) {
         setPropertyInternal(name.intern(), value != null ? value.intern() : null);
     }
-    private void setPropertyInternal(String name, String value) {
 
+    protected void setPropertyInternal(String name, String value) {
         for (int i = 0; i < map.length; i += 2) {
             if (map[i] != null && map[i].equals(name)) {
                 String p = map[i + 1];
