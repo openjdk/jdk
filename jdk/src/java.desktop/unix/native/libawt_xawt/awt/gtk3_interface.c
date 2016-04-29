@@ -195,6 +195,7 @@ static gboolean gtk3_show_uri_load(JNIEnv *env) {
         fprintf(stderr, "dlsym(gtk_show_uri) returned NULL\n");
 #endif /* DEBUG */
     } else {
+        gtk->gtk_show_uri = fp_gtk_show_uri;
         update_supported_actions(env);
         success = TRUE;
     }
