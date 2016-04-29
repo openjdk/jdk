@@ -249,7 +249,7 @@ print_generic_summary_data(ParallelCompactData& summary_data,
   const size_t last = summary_data.addr_to_region_idx(end_addr);
   HeapWord* pdest = 0;
 
-  while (i <= last) {
+  while (i < last) {
     ParallelCompactData::RegionData* c = summary_data.region(i);
     if (c->data_size() != 0 || c->destination() != pdest) {
       print_generic_summary_region(i, c);
@@ -376,6 +376,33 @@ print_initial_summary_data(ParallelCompactData& summary_data,
     space = space_info[id].space();
     print_generic_summary_data(summary_data, space->bottom(), space->top());
   } while (++id < PSParallelCompact::last_space_id);
+}
+
+void ParallelCompact_test() {
+  if (!UseParallelGC) {
+    return;
+  }
+  // Check that print_generic_summary_data() does not print the
+  // end region by placing a bad value in the destination of the
+  // end region.  The end region should not be printed because it
+  // corresponds to the space after the end of the heap.
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
+  ParCompactionManager* const vmthread_cm =
+    ParCompactionManager::manager_array(ParallelGCThreads);
+  HeapWord* begin_heap =
+    (HeapWord*) heap->old_gen()->virtual_space()->low_boundary();
+  HeapWord* end_heap =
+    (HeapWord*) heap->young_gen()->virtual_space()->high_boundary();
+
+  size_t end_index =
+    PSParallelCompact::summary_data().addr_to_region_idx(end_heap);
+  ParallelCompactData::RegionData* c = PSParallelCompact::summary_data().region(end_index);
+
+  // Initialize the end region with a bad destination.
+  c->set_destination(begin_heap - 1);
+
+  print_generic_summary_data(PSParallelCompact::summary_data(),
+    begin_heap, end_heap);
 }
 #endif  // #ifndef PRODUCT
 
