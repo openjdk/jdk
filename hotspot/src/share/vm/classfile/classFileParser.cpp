@@ -5800,8 +5800,8 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
       guarantee_property(super_class_name == vmSymbols::java_lang_Object(),
         "Interfaces must have java.lang.Object as superclass in class file %s",
         CHECK);
-      }
-      _super_klass = (const InstanceKlass*)
+    }
+    _super_klass = (const InstanceKlass*)
                        SystemDictionary::resolve_super_or_fail(_class_name,
                                                                super_class_name,
                                                                _loader_data->class_loader(),
