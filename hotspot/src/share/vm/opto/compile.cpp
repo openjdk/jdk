@@ -2867,15 +2867,20 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
         addp->Opcode() == Op_ConP &&
         addp == n->in(AddPNode::Base) &&
         n->in(AddPNode::Offset)->is_Con()) {
+      // If the transformation of ConP to ConN+DecodeN is beneficial depends
+      // on the platform and on the compressed oops mode.
       // Use addressing with narrow klass to load with offset on x86.
-      // On sparc loading 32-bits constant and decoding it have less
-      // instructions (4) then load 64-bits constant (7).
+      // Some platforms can use the constant pool to load ConP.
       // Do this transformation here since IGVN will convert ConN back to ConP.
       const Type* t = addp->bottom_type();
-      if (t->isa_oopptr() || t->isa_klassptr()) {
+      bool is_oop   = t->isa_oopptr() != NULL;
+      bool is_klass = t->isa_klassptr() != NULL;
+
+      if ((is_oop   && Matcher::const_oop_prefer_decode()  ) ||
+          (is_klass && Matcher::const_klass_prefer_decode())) {
         Node* nn = NULL;
 
-        int op = t->isa_oopptr() ? Op_ConN : Op_ConNKlass;
+        int op = is_oop ? Op_ConN : Op_ConNKlass;
 
         // Look for existing ConN node of the same exact type.
         Node* r  = root();
@@ -2891,7 +2896,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
         if (nn != NULL) {
           // Decode a narrow oop to match address
           // [R12 + narrow_oop_reg<<3 + offset]
-          if (t->isa_oopptr()) {
+          if (is_oop) {
             nn = new DecodeNNode(nn, t);
           } else {
             nn = new DecodeNKlassNode(nn, t);
