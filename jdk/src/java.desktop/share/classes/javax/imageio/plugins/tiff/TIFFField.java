@@ -1089,6 +1089,15 @@ public class TIFFField implements Cloneable {
      * {@code TIFF_SBYTE} data will be returned in the range
      * [-128, 127].
      *
+     * <p> Data in {@code TIFF_FLOAT} and {@code TIFF_DOUBLE} are
+     * simply cast to {@code long} and may suffer from truncation.
+     *
+     * <p> Data in {@code TIFF_SRATIONAL} or
+     * {@code TIFF_RATIONAL} format are evaluated by dividing the
+     * numerator into the denominator using double-precision
+     * arithmetic and then casting to {@code long}.  Loss of
+     * precision and truncation may occur.
+     *
      * <p> Data in {@code TIFF_ASCII} format will be parsed as by
      * the {@code Double.parseDouble} method, with the result
      * cast to {@code long}.
@@ -1112,6 +1121,10 @@ public class TIFFField implements Cloneable {
         case TIFFTag.TIFF_LONG:
         case TIFFTag.TIFF_IFD_POINTER:
             return ((long[])data)[index];
+        case TIFFTag.TIFF_FLOAT:
+            return (long)((float[])data)[index];
+        case TIFFTag.TIFF_DOUBLE:
+            return (long)((double[])data)[index];
         case TIFFTag.TIFF_SRATIONAL:
             int[] ivalue = getAsSRational(index);
             return (long)((double)ivalue[0]/ivalue[1]);
