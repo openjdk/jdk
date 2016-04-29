@@ -78,14 +78,8 @@ import jdk.internal.vm.annotation.Stable;
  * <p>
  * The Java language provides special support for the string
  * concatenation operator (&nbsp;+&nbsp;), and for conversion of
- * other objects to strings. String concatenation is implemented
- * through the {@code StringBuilder}(or {@code StringBuffer})
- * class and its {@code append} method.
- * String conversions are implemented through the method
- * {@code toString}, defined by {@code Object} and
- * inherited by all classes in Java. For additional information on
- * string concatenation and conversion, see Gosling, Joy, and Steele,
- * <i>The Java Language Specification</i>.
+ * other objects to strings. For additional information on string
+ * concatenation and conversion, see <i>The Java&trade; Language Specification</i>.
  *
  * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
  * or method in this class will cause a {@link NullPointerException} to be
@@ -105,6 +99,14 @@ import jdk.internal.vm.annotation.Stable;
  * <p>Unless otherwise noted, methods for comparing Strings do not take locale
  * into account.  The {@link java.text.Collator} class provides methods for
  * finer-grain, locale-sensitive String comparison.
+ *
+ * @implNote The implementation of the string concatenation operator is left to
+ * the discretion of a Java compiler, as long as the compiler ultimately conforms
+ * to <i>The Java&trade; Language Specification</i>. For example, the {@code javac} compiler
+ * may implement the operator with {@code StringBuffer}, {@code StringBuilder},
+ * or {@code java.lang.invoke.StringConcatFactory} depending on the JDK version. The
+ * implementation of string conversion is typically through the method {@code toString},
+ * defined by {@code Object} and inherited by all classes in Java.
  *
  * @author  Lee Boynton
  * @author  Arthur van Hoff
