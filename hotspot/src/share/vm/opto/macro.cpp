@@ -1897,7 +1897,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
 
       Node *prefetch_adr;
       Node *prefetch;
-      uint lines = AllocatePrefetchDistance / AllocatePrefetchStepSize;
+      uint lines = (length != NULL) ? AllocatePrefetchLines : AllocateInstancePrefetchLines;
       uint step_size = AllocatePrefetchStepSize;
       uint distance = 0;
 
@@ -1926,12 +1926,8 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       contended_phi_rawmem = pf_phi_rawmem;
       i_o = pf_phi_abio;
    } else if( UseTLAB && AllocatePrefetchStyle == 3 ) {
-      // Insert a prefetch for each allocation.
-      // This code is used for Sparc with BIS.
-      Node *pf_region = new RegionNode(3);
-      Node *pf_phi_rawmem = new PhiNode( pf_region, Type::MEMORY,
-                                             TypeRawPtr::BOTTOM );
-      transform_later(pf_region);
+      // Insert a prefetch instruction for each allocation.
+      // This code is used for SPARC with BIS.
 
       // Generate several prefetch instructions.
       uint lines = (length != NULL) ? AllocatePrefetchLines : AllocateInstancePrefetchLines;
@@ -1940,10 +1936,15 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
 
       // Next cache address.
       Node *cache_adr = new AddPNode(old_eden_top, old_eden_top,
-                                            _igvn.MakeConX(distance));
+                                     _igvn.MakeConX(step_size + distance));
       transform_later(cache_adr);
       cache_adr = new CastP2XNode(needgc_false, cache_adr);
       transform_later(cache_adr);
+      // For BIS instructions to be emitted, the address must be aligned at cache line size.
+      // (The VM sets AllocatePrefetchStepSize to the cache line size, unless a value is
+      // specified at the command line.) If the address is not aligned at cache line size
+      // boundary, a standard store instruction is triggered (instead of the BIS). For the
+      // latter, 8-byte alignment is necessary.
       Node* mask = _igvn.MakeConX(~(intptr_t)(step_size-1));
       cache_adr = new AndXNode(cache_adr, mask);
       transform_later(cache_adr);
