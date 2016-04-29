@@ -27,15 +27,12 @@ package jdk.net;
 
 import java.net.*;
 import java.io.IOException;
-import java.io.FileDescriptor;
-import java.security.PrivilegedAction;
-import java.security.AccessController;
-import java.lang.reflect.Field;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.HashMap;
 import java.util.Collections;
-import sun.net.ExtendedOptionsImpl;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import jdk.net.ExtendedSocketOptions.PlatformSocketOptions;
 
 /**
  * Defines static methods to set and get socket options defined by the
@@ -57,12 +54,8 @@ import sun.net.ExtendedOptionsImpl;
  */
 public class Sockets {
 
-    private static final HashMap<Class<?>,Set<SocketOption<?>>>
-        options = new HashMap<>();
-
-    static {
-        initOptionSets();
-    }
+    private static final Map<Class<?>,Set<SocketOption<?>>>
+            options = optionSets();
 
     private Sockets() {}
 
@@ -259,14 +252,16 @@ public class Sockets {
      */
     static boolean isReusePortAvailable() {
         if (!checkedReusePort) {
-            isReusePortAvailable = isReusePortAvailable0();
+            Set<SocketOption<?>> s = new Socket().supportedOptions();
+            isReusePortAvailable = s.contains(StandardSocketOptions.SO_REUSEPORT);
             checkedReusePort = true;
         }
         return isReusePortAvailable;
     }
 
-    private static void initOptionSets() {
-        boolean flowsupported = ExtendedOptionsImpl.flowSupported();
+    private static Map<Class<?>,Set<SocketOption<?>>> optionSets() {
+        Map<Class<?>,Set<SocketOption<?>>> options = new HashMap<>();
+        boolean flowsupported = PlatformSocketOptions.get().flowSupported();
         boolean reuseportsupported = isReusePortAvailable();
         // Socket
 
@@ -333,7 +328,7 @@ public class Sockets {
         }
         set = Collections.unmodifiableSet(set);
         options.put(MulticastSocket.class, set);
-    }
 
-    private static native boolean isReusePortAvailable0();
+        return Collections.unmodifiableMap(options);
+    }
 }

@@ -265,7 +265,7 @@ Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
     if (isGtkSupported) {
         gtk->gdk_threads_enter();
         gtk_failed = gtk->get_drawable_data(env, pixelArray, x, y, width,
-                                            jwidth, height, dx, dy, scale);
+                                            height, jwidth, dx, dy, scale);
         gtk->gdk_threads_leave();
     }
 
