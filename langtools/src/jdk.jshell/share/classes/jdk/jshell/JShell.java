@@ -77,6 +77,7 @@ public class JShell implements AutoCloseable {
 
     final SnippetMaps maps;
     final KeyMap keyMap;
+    final OuterWrapMap outerMap;
     final TaskFactory taskFactory;
     final InputStream in;
     final PrintStream out;
@@ -106,8 +107,8 @@ public class JShell implements AutoCloseable {
         this.idGenerator = b.idGenerator;
 
         this.maps = new SnippetMaps(this);
-        maps.setPackageName("REPL");
         this.keyMap = new KeyMap(this);
+        this.outerMap = new OuterWrapMap(this);
         this.taskFactory = new TaskFactory(this);
         this.eval = new Eval(this);
         this.classTracker = new ClassTracker(this);
@@ -563,7 +564,7 @@ public class JShell implements AutoCloseable {
             throw new IllegalArgumentException(
                     messageFormat("jshell.exc.var.not.valid",  snippet, snippet.status()));
         }
-        String value = executionControl().commandVarValue(maps.classFullName(snippet), snippet.name());
+        String value = executionControl().commandVarValue(snippet.classFullName(), snippet.name());
         return expunge(value);
     }
 

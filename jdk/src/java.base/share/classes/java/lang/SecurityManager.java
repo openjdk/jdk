@@ -229,7 +229,7 @@ class SecurityManager {
      *  It is recommended that the <code>checkPermission</code>
      *  call be used instead.
      */
-    @Deprecated
+    @Deprecated(since="1.2")
     protected boolean inCheck;
 
     /*
@@ -262,7 +262,7 @@ class SecurityManager {
      *  It is recommended that the <code>checkPermission</code>
      *  call be used instead.
      */
-    @Deprecated
+    @Deprecated(since="1.2")
     public boolean getInCheck() {
         return inCheck;
     }
@@ -345,7 +345,7 @@ class SecurityManager {
      * @see  java.lang.ClassLoader#getSystemClassLoader() getSystemClassLoader
      * @see  #checkPermission(java.security.Permission) checkPermission
      */
-    @Deprecated
+    @Deprecated(since="1.2")
     protected ClassLoader currentClassLoader() {
         ClassLoader cl = currentClassLoader0();
         if ((cl != null) && hasAllPermission())
@@ -391,7 +391,7 @@ class SecurityManager {
      * @see  java.lang.ClassLoader#getSystemClassLoader() getSystemClassLoader
      * @see  #checkPermission(java.security.Permission) checkPermission
      */
-    @Deprecated
+    @Deprecated(since="1.2")
     protected Class<?> currentLoadedClass() {
         Class<?> c = currentLoadedClass0();
         if ((c != null) && hasAllPermission())
@@ -411,7 +411,7 @@ class SecurityManager {
      *  call be used instead.
      *
      */
-    @Deprecated
+    @Deprecated(since="1.2")
     protected native int classDepth(String name);
 
     /**
@@ -449,7 +449,7 @@ class SecurityManager {
      * @see   java.lang.ClassLoader#getSystemClassLoader() getSystemClassLoader
      * @see   #checkPermission(java.security.Permission) checkPermission
      */
-    @Deprecated
+    @Deprecated(since="1.2")
     protected int classLoaderDepth() {
         int depth = classLoaderDepth0();
         if (depth != -1) {
@@ -474,7 +474,7 @@ class SecurityManager {
      *  It is recommended that the <code>checkPermission</code>
      *  call be used instead.
      */
-    @Deprecated
+    @Deprecated(since="1.2")
     protected boolean inClass(String name) {
         return classDepth(name) >= 0;
     }
@@ -491,7 +491,7 @@ class SecurityManager {
      *  call be used instead.
      * @see        #currentClassLoader() currentClassLoader
      */
-    @Deprecated
+    @Deprecated(since="1.2")
     protected boolean inClassLoader() {
         return currentClassLoader() != null;
     }
@@ -1217,7 +1217,7 @@ class SecurityManager {
      * @deprecated Use #checkPermission(java.security.Permission) instead
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
-    @Deprecated
+    @Deprecated(since="1.4")
     public void checkMulticast(InetAddress maddr, byte ttl) {
         String host = maddr.getHostAddress();
         if (!host.startsWith("[") && host.indexOf(':') != -1) {
@@ -1297,9 +1297,10 @@ class SecurityManager {
      *             was trusted to bring up a top-level window. The method has been
      *             obsoleted and code should instead use {@link #checkPermission}
      *             to check {@code AWTPermission("showWindowWithoutWarningBanner")}.
+     *             This method is subject to removal in a future version of Java SE.
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
-    @Deprecated
+    @Deprecated(since="1.8", forRemoval=true)
     public boolean checkTopLevelWindow(Object window) {
         if (window == null) {
             throw new NullPointerException("window can't be null");
@@ -1340,9 +1341,10 @@ class SecurityManager {
      *             thread could access the system clipboard. The method has been
      *             obsoleted and code should instead use {@link #checkPermission}
      *             to check {@code AWTPermission("accessClipboard")}.
+     *             This method is subject to removal in a future version of Java SE.
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
-    @Deprecated
+    @Deprecated(since="1.8", forRemoval=true)
     public void checkSystemClipboardAccess() {
         checkPermission(SecurityConstants.ALL_PERMISSION);
     }
@@ -1358,9 +1360,10 @@ class SecurityManager {
      *             thread could access the AWT event queue. The method has been
      *             obsoleted and code should instead use {@link #checkPermission}
      *             to check {@code AWTPermission("accessEventQueue")}.
+     *             This method is subject to removal in a future version of Java SE.
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
-    @Deprecated
+    @Deprecated(since="1.8", forRemoval=true)
     public void checkAwtEventQueueAccess() {
         checkPermission(SecurityConstants.ALL_PERMISSION);
     }
@@ -1626,12 +1629,13 @@ class SecurityManager {
      *             Users of this method should instead invoke {@link #checkPermission}
      *             directly.  This method will be changed in a future release
      *             to check the permission {@code java.security.AllPermission}.
+     *             This method is subject to removal in a future version of Java SE.
      *
      * @see java.lang.reflect.Member
      * @since 1.1
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
-    @Deprecated
+    @Deprecated(since="1.8", forRemoval=true)
     @CallerSensitive
     public void checkMemberAccess(Class<?> clazz, int which) {
         if (clazz == null) {

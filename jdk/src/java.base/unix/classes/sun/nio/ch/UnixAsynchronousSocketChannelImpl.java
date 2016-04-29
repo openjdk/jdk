@@ -31,7 +31,6 @@ import java.net.*;
 import java.util.concurrent.*;
 import java.io.IOException;
 import java.io.FileDescriptor;
-import java.security.AccessController;
 import sun.net.NetHooks;
 import sun.security.action.GetPropertyAction;
 
@@ -47,8 +46,8 @@ class UnixAsynchronousSocketChannelImpl
 
     private static final boolean disableSynchronousRead;
     static {
-        String propValue = AccessController.doPrivileged(
-            new GetPropertyAction("sun.nio.ch.disableSynchronousRead", "false"));
+        String propValue = GetPropertyAction
+                .getProperty("sun.nio.ch.disableSynchronousRead", "false");
         disableSynchronousRead = (propValue.length() == 0) ?
             true : Boolean.valueOf(propValue);
     }

@@ -86,6 +86,7 @@ public class Lower extends TreeTranslator {
     private final TypeEnvs typeEnvs;
     private final Name dollarAssertionsDisabled;
     private final Name classDollar;
+    private final Name dollarCloseResource;
     private final Types types;
     private final boolean debugLower;
     private final PkgInfo pkginfoOpt;
@@ -109,6 +110,8 @@ public class Lower extends TreeTranslator {
             fromString(target.syntheticNameChar() + "assertionsDisabled");
         classDollar = names.
             fromString("class" + target.syntheticNameChar());
+        dollarCloseResource = names.
+            fromString(target.syntheticNameChar() + "closeResource");
 
         types = Types.instance(context);
         Options options = Options.instance(context);
@@ -1648,9 +1651,11 @@ public class Lower extends TreeTranslator {
         ListBuffer<JCStatement> stats = new ListBuffer<>();
         JCTree resource = resources.head;
         JCExpression expr = null;
+        boolean resourceNonNull;
         if (resource instanceof JCVariableDecl) {
             JCVariableDecl var = (JCVariableDecl) resource;
             expr = make.Ident(var.sym).setType(resource.type);
+            resourceNonNull = var.init != null && TreeInfo.skipParens(var.init).hasTag(NEWCLASS);
             stats.add(var);
         } else {
             Assert.check(resource instanceof JCExpression);
@@ -1665,6 +1670,7 @@ public class Lower extends TreeTranslator {
             JCVariableDecl syntheticTwrVarDecl =
                 make.VarDef(syntheticTwrVar, (JCExpression)resource);
             expr = (JCExpression)make.Ident(syntheticTwrVar);
+            resourceNonNull = TreeInfo.skipParens(resource).hasTag(NEWCLASS);
             stats.add(syntheticTwrVarDecl);
         }
 
@@ -1694,7 +1700,7 @@ public class Lower extends TreeTranslator {
 
         int oldPos = make.pos;
         make.at(TreeInfo.endPos(block));
-        JCBlock finallyClause = makeTwrFinallyClause(primaryException, expr);
+        JCBlock finallyClause = makeTwrFinallyClause(primaryException, expr, resourceNonNull);
         make.at(oldPos);
         JCTry outerTry = make.Try(makeTwrBlock(resources.tail, block,
                                     finallyCanCompleteNormally, depth + 1),
@@ -1706,7 +1712,96 @@ public class Lower extends TreeTranslator {
         return newBlock;
     }
 
-    private JCBlock makeTwrFinallyClause(Symbol primaryException, JCExpression resource) {
+    /**If the estimated number of copies the close resource code in a single class is above this
+     * threshold, generate and use a method for the close resource code, leading to smaller code.
+     * As generating a method has overhead on its own, generating the method for cases below the
+     * threshold could lead to an increase in code size.
+     */
+    public static final int USE_CLOSE_RESOURCE_METHOD_THRESHOLD = 4;
+
+    private JCBlock makeTwrFinallyClause(Symbol primaryException, JCExpression resource,
+            boolean resourceNonNull) {
+        MethodSymbol closeResource = (MethodSymbol)lookupSynthetic(dollarCloseResource,
+                                                                   currentClass.members());
+
+        if (closeResource == null && shouldUseCloseResourceMethod()) {
+            closeResource = new MethodSymbol(
+                PRIVATE | STATIC | SYNTHETIC,
+                dollarCloseResource,
+                new MethodType(
+                    List.of(syms.throwableType, syms.autoCloseableType),
+                    syms.voidType,
+                    List.<Type>nil(),
+                    syms.methodClass),
+                currentClass);
+            enterSynthetic(resource.pos(), closeResource, currentClass.members());
+
+            JCMethodDecl md = make.MethodDef(closeResource, null);
+            List<JCVariableDecl> params = md.getParameters();
+            md.body = make.Block(0, List.<JCStatement>of(makeTwrCloseStatement(params.get(0).sym,
+                                                                               make.Ident(params.get(1)))));
+
+            JCClassDecl currentClassDecl = classDef(currentClass);
+            currentClassDecl.defs = currentClassDecl.defs.prepend(md);
+        }
+
+        JCStatement closeStatement;
+
+        if (closeResource != null) {
+            //$closeResource(#primaryException, #resource)
+            closeStatement = make.Exec(make.Apply(List.<JCExpression>nil(),
+                                                  make.Ident(closeResource),
+                                                  List.of(make.Ident(primaryException),
+                                                          resource)
+                                                 ).setType(syms.voidType));
+        } else {
+            closeStatement = makeTwrCloseStatement(primaryException, resource);
+        }
+
+        JCStatement finallyStatement;
+
+        if (resourceNonNull) {
+            finallyStatement = closeStatement;
+        } else {
+            // if (#resource != null) { $closeResource(...); }
+            finallyStatement = make.If(makeNonNullCheck(resource),
+                                       closeStatement,
+                                       null);
+        }
+
+        return make.Block(0L,
+                          List.<JCStatement>of(finallyStatement));
+    }
+        //where:
+        private boolean shouldUseCloseResourceMethod() {
+            class TryFinder extends TreeScanner {
+                int closeCount;
+                @Override
+                public void visitTry(JCTry tree) {
+                    boolean empty = tree.body.stats.isEmpty();
+
+                    for (JCTree r : tree.resources) {
+                        closeCount += empty ? 1 : 2;
+                        empty = false; //with multiple resources, only the innermost try can be empty.
+                    }
+                    super.visitTry(tree);
+                }
+                @Override
+                public void scan(JCTree tree) {
+                    if (useCloseResourceMethod())
+                        return;
+                    super.scan(tree);
+                }
+                boolean useCloseResourceMethod() {
+                    return closeCount >= USE_CLOSE_RESOURCE_METHOD_THRESHOLD;
+                }
+            }
+            TryFinder tryFinder = new TryFinder();
+            tryFinder.scan(classDef(currentClass));
+            return tryFinder.useCloseResourceMethod();
+        }
+
+    private JCStatement makeTwrCloseStatement(Symbol primaryException, JCExpression resource) {
         // primaryException.addSuppressed(catchException);
         VarSymbol catchException =
             new VarSymbol(SYNTHETIC, make.paramName(2),
@@ -1731,11 +1826,7 @@ public class Lower extends TreeTranslator {
                                         tryTree,
                                         makeResourceCloseInvocation(resource));
 
-        // if (#resource != null) { if (primaryException ...  }
-        return make.Block(0L,
-                          List.<JCStatement>of(make.If(makeNonNullCheck(resource),
-                                                       closeIfStatement,
-                                                       null)));
+        return closeIfStatement;
     }
 
     private JCStatement makeResourceCloseInvocation(JCExpression resource) {

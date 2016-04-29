@@ -25,6 +25,7 @@
 
 package com.sun.tools.sjavac.comp;
 
+import com.sun.tools.javac.main.Main.Result;
 import com.sun.tools.sjavac.Log;
 import com.sun.tools.sjavac.server.Sjavac;
 
@@ -54,7 +55,7 @@ public class PooledSjavac implements Sjavac {
     }
 
     @Override
-    public int compile(String[] args) {
+    public Result compile(String[] args) {
         Log log = Log.get();
         try {
             return pool.submit(() -> {

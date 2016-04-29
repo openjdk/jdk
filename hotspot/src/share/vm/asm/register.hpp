@@ -25,7 +25,8 @@
 #ifndef SHARE_VM_ASM_REGISTER_HPP
 #define SHARE_VM_ASM_REGISTER_HPP
 
-#include "utilities/top.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Use AbstractRegister as shortcut
 class AbstractRegisterImpl;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,15 @@
  */
 
 // key: compiler.misc.anonymous.class
-// key: compiler.warn.missing.SVUID
-// options: -Xlint:serial
+// key: compiler.err.prob.found.req
+// key: compiler.misc.inconvertible.types
+// options: -Xlint:rawtypes
 // run: simple
 
+import java.util.ArrayList;
+
 class AnonymousClass {
-    Exception m() {
-        return new Exception() { };
+     Object m() {
+         return (ArrayList<String>) new ArrayList<Object>() { };
     }
 }

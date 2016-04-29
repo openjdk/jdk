@@ -24,7 +24,7 @@
  */
 package java.net;
 
-import java.security.AccessController;
+import sun.security.action.GetPropertyAction;
 
 /**
  * This class defines a factory for creating DatagramSocketImpls. It defaults
@@ -40,8 +40,7 @@ class DefaultDatagramSocketImplFactory {
     static {
         String prefix = null;
         try {
-            prefix = AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction("impl.prefix", null));
+            prefix = GetPropertyAction.getProperty("impl.prefix", null);
             if (prefix != null)
                 prefixImplClass = Class.forName("java.net."+prefix+"DatagramSocketImpl");
         } catch (Exception e) {

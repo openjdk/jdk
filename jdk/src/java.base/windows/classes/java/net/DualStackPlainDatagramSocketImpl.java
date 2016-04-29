@@ -220,7 +220,7 @@ class DualStackPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
             case IP_TOS :
             case SO_RCVBUF :
             case SO_SNDBUF :
-                returnValue = new Integer(value);
+                returnValue = Integer.valueOf(value);
                 break;
             default: /* shouldn't get here */
                 throw new SocketException("Option not supported");

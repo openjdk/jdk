@@ -29,7 +29,7 @@
 #include "oops/method.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/javaFrameAnchor.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 #ifdef TARGET_ARCH_x86
 # include "jniTypes_x86.hpp"

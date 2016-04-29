@@ -40,6 +40,7 @@ import java.net.MalformedURLException;
 import java.net.URLStreamHandler;
 import java.io.InputStream;
 import java.io.IOException;
+import sun.security.action.GetPropertyAction;
 
 public class Handler extends URLStreamHandler {
     static URL base;
@@ -54,12 +55,10 @@ public class Handler extends URLStreamHandler {
         URLConnection uc = null;
         URL ru;
 
-        Boolean tmp = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetBooleanAction("newdoc.localonly"));
-        boolean localonly = tmp.booleanValue();
+        boolean localonly = Boolean.parseBoolean(
+                GetPropertyAction.getProperty("newdoc.localonly"));
 
-        String docurl = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("doc.url"));
+        String docurl = GetPropertyAction.getProperty("doc.url");
 
         String file = u.getFile();
         if (!localonly) {

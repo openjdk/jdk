@@ -33,6 +33,7 @@ import java.util.Vector;
 import java.util.HashSet;
 import static java.util.zip.ZipConstants64.*;
 import static java.util.zip.ZipUtils.*;
+import sun.security.action.GetPropertyAction;
 
 /**
  * This class implements an output stream filter for writing files in the
@@ -54,9 +55,7 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
      */
     private static final boolean inhibitZip64 =
         Boolean.parseBoolean(
-            java.security.AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction(
-                    "jdk.util.zip.inhibitZip64", "false")));
+            GetPropertyAction.getProperty("jdk.util.zip.inhibitZip64"));
 
     private static class XEntry {
         final ZipEntry entry;

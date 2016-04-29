@@ -100,10 +100,12 @@ public abstract class Diag {
     // *** Internal support ***
 
     /**
-     * Internal: If this is from a compile, extract the compilation Unit.
+     * Internal: If this is from a compile/analyze wrapped in an outer class, extract the snippet.
      * Otherwise null.
      */
-    abstract Unit unitOrNull();
+    Snippet snippetOrNull() {
+        return null;
+    }
 
     /**
      * This is an unreachable-statement error
@@ -124,6 +126,7 @@ public abstract class Diag {
      */
     boolean isResolutionError() {
         //TODO: try javac RESOLVE_ERROR flag
-        return getCode().startsWith("compiler.err.cant.resolve");
+        return getCode().startsWith("compiler.err.cant.resolve")
+                || getCode().equals("compiler.err.cant.apply.symbol");
     }
 }
