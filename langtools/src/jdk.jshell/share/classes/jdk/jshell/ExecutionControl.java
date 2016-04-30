@@ -119,7 +119,7 @@ class ExecutionControl {
         }
     }
 
-    String commandInvoke(String classname) throws EvalException, UnresolvedReferenceException {
+    String commandInvoke(String classname) throws JShellException {
         try {
             synchronized (STOP_LOCK) {
                 userCodeRunning = true;
@@ -213,7 +213,7 @@ class ExecutionControl {
         }
     }
 
-    private boolean readAndReportExecutionResult() throws IOException, EvalException, UnresolvedReferenceException {
+    private boolean readAndReportExecutionResult() throws IOException, JShellException {
         int ok = in.readInt();
         switch (ok) {
             case RESULT_SUCCESS:

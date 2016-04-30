@@ -452,7 +452,7 @@ class Eval {
 
         // If appropriate, execute the snippet
         String value = null;
-        Exception exception = null;
+        JShellException exception = null;
         if (si.status().isDefined) {
             if (si.isExecutable()) {
                 try {
@@ -462,7 +462,8 @@ class Eval {
                             : "";
                 } catch (EvalException ex) {
                     exception = translateExecutionException(ex);
-                } catch (UnresolvedReferenceException ex) {
+                } catch (JShellException ex) {
+                    // UnresolvedReferenceException
                     exception = ex;
                 }
             } else if (si.subKind() == SubKind.VAR_DECLARATION_SUBKIND) {
@@ -499,7 +500,7 @@ class Eval {
                     || e.exception() != null;
     }
 
-    private List<SnippetEvent> events(Unit c, Collection<Unit> outs, String value, Exception exception) {
+    private List<SnippetEvent> events(Unit c, Collection<Unit> outs, String value, JShellException exception) {
         List<SnippetEvent> events = new ArrayList<>();
         events.add(c.event(value, exception));
         events.addAll(outs.stream()
