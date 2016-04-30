@@ -1555,7 +1555,7 @@ int WhiteBox::offset_for_field(const char* field_name, oop object,
   if (res == NULL) {
     tty->print_cr("Invalid layout of %s at %s", ik->external_name(),
         name_symbol->as_C_string());
-    vm_exit_during_initialization("Invalid layout of preloaded class: use -Xlog:classload=info to see the origin of the problem class");
+    vm_exit_during_initialization("Invalid layout of preloaded class: use -Xlog:class+load=info to see the origin of the problem class");
   }
 
   //fetch the field at the offset we've found

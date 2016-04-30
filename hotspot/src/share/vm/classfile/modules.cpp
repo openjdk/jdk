@@ -167,7 +167,7 @@ static void add_to_boot_loader_list(char *module_name, TRAPS) {
               ObjectLocker ol(loader_lock, THREAD);
               ClassLoader::prepend_to_list(prefix_path);
             }
-            log_info(classload)("opened: -Xpatch %s", prefix_path);
+            log_info(class, load)("opened: -Xpatch %s", prefix_path);
           }
         }
       }
@@ -195,7 +195,7 @@ static void add_to_boot_loader_list(char *module_name, TRAPS) {
     Handle loader_lock = Handle(THREAD, SystemDictionary::system_loader_lock());
     ObjectLocker ol(loader_lock, THREAD);
 
-    log_info(classload)("opened: %s", path);
+    log_info(class, load)("opened: %s", path);
     ClassLoader::add_to_list(path);
   }
 }

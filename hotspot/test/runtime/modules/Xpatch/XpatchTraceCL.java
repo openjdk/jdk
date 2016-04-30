@@ -54,12 +54,12 @@ public class XpatchTraceCL {
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         // "modules" jimage case.
-        output.shouldContain("[classload] java.lang.Thread source: jrt:/java.base");
+        output.shouldContain("[class,load] java.lang.Thread source: jrt:/java.base");
         // -Xpatch case.
-        output.shouldContain("[classload] javax.naming.spi.NamingManager source: mods" +
+        output.shouldContain("[class,load] javax.naming.spi.NamingManager source: mods" +
             File.separator + "java.naming");
         // -cp case.
-        output.shouldContain("[classload] XpatchMain source: file");
+        output.shouldContain("[class,load] XpatchMain source: file");
 
         // Test -XX:+TraceClassLoading output for -Xbootclasspath/a
         source = "package XpatchTraceCL_pkg; "                 +
@@ -77,7 +77,7 @@ public class XpatchTraceCL {
              "-XX:+TraceClassLoading", "XpatchMain", "XpatchTraceCL_pkg.ItIsI");
         output = new OutputAnalyzer(pb.start());
         // -Xbootclasspath/a case.
-        output.shouldContain("[classload] XpatchTraceCL_pkg.ItIsI source: xbcp");
+        output.shouldContain("[class,load] XpatchTraceCL_pkg.ItIsI source: xbcp");
         output.shouldHaveExitValue(0);
     }
 }

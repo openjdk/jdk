@@ -39,18 +39,15 @@
   LOG_TAG(biasedlocking) \
   LOG_TAG(bot) \
   LOG_TAG(census) \
+  LOG_TAG(class) \
   LOG_TAG(classhisto) \
-  LOG_TAG(classresolve) \
-  LOG_TAG(classinit) \
-  LOG_TAG(classload) /* Trace all classes loaded */ \
-  LOG_TAG(classloaderdata) /* class loader loader_data lifetime */ \
-  LOG_TAG(classunload) /* Trace unloading of classes */ \
-  LOG_TAG(classpath) \
+  LOG_TAG(cleanup) \
   LOG_TAG(compaction) \
   LOG_TAG(constraints) \
   LOG_TAG(coops) \
   LOG_TAG(cpu) \
   LOG_TAG(cset) \
+  LOG_TAG(data) \
   LOG_TAG(defaultmethods) \
   LOG_TAG(ergo) \
   LOG_TAG(exceptions) \
@@ -60,10 +57,13 @@
   LOG_TAG(heap) \
   LOG_TAG(humongous) \
   LOG_TAG(ihop) \
+  LOG_TAG(init) \
   LOG_TAG(itables) \
   LOG_TAG(jni) \
   LOG_TAG(jvmti) \
   LOG_TAG(liveness) \
+  LOG_TAG(load) /* Trace all classes loaded */ \
+  LOG_TAG(loader) \
   LOG_TAG(logging) \
   LOG_TAG(marking) \
   LOG_TAG(metaspace) \
@@ -74,6 +74,7 @@
   LOG_TAG(objecttagging) \
   LOG_TAG(os) \
   LOG_TAG(pagesize) \
+  LOG_TAG(path) \
   LOG_TAG(phases) \
   LOG_TAG(plab) \
   LOG_TAG(promotion) \
@@ -83,8 +84,8 @@
   LOG_TAG(refine) \
   LOG_TAG(region) \
   LOG_TAG(remset) \
+  LOG_TAG(resolve) \
   LOG_TAG(safepoint) \
-  LOG_TAG(safepointcleanup) \
   LOG_TAG(scavenge) \
   LOG_TAG(scrub) \
   LOG_TAG(stacktrace) \
@@ -101,6 +102,7 @@
   LOG_TAG(thread) \
   LOG_TAG(tlab) \
   LOG_TAG(time) \
+  LOG_TAG(unload) /* Trace unloading of classes */ \
   LOG_TAG(verification) \
   LOG_TAG(verify) \
   LOG_TAG(vmoperation) \

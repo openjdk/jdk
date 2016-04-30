@@ -56,17 +56,17 @@ import java.nio.file.Paths;
  *                                gc.g1.humongousObjects.ClassLoaderGenerator 1
  *
  * @run main/othervm -Xms256M -Xmx256M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -Xlog:classload,classunload=debug:file=TestHumongousClassLoader_Full_GC.log
+ *                   -Xlog:class+load,class+unload=debug:file=TestHumongousClassLoader_Full_GC.log
  *                   -XX:G1HeapRegionSize=1M
  *                   gc.g1.humongousObjects.TestHumongousClassLoader FULL_GC
  *
  * @run main/othervm -Xms256M -Xmx256M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -Xlog:classload,classunload=debug:file=TestHumongousClassLoader_Full_GC_Mem_Pressure.log
+ *                   -Xlog:class+load,class+unload=debug:file=TestHumongousClassLoader_Full_GC_Mem_Pressure.log
  *                   -XX:G1HeapRegionSize=1M
  *                   gc.g1.humongousObjects.TestHumongousClassLoader FULL_GC_MEMORY_PRESSURE
  *
  *@run main/othervm -Xms256M -Xmx256M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -Xlog:classload,classunload=debug:file=TestHumongousClassLoader_CMC.log
+ *                   -Xlog:class+load,class+unload=debug:file=TestHumongousClassLoader_CMC.log
  *                   -XX:G1HeapRegionSize=1M -XX:MaxTenuringThreshold=1
  *                   gc.g1.humongousObjects.TestHumongousClassLoader CMC
  *

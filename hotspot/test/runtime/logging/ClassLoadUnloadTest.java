@@ -79,50 +79,50 @@ public class ClassLoadUnloadTest {
 
     public static void main(String... args) throws Exception {
 
-        //  -Xlog:classunload=info
-        pb = exec("-Xlog:classunload=info");
-        checkFor("[classunload]", "unloading class");
+        //  -Xlog:class+unload=info
+        pb = exec("-Xlog:class+unload=info");
+        checkFor("[class,unload]", "unloading class");
 
-        //  -Xlog:classunload=off
-        pb = exec("-Xlog:classunload=off");
-        checkAbsent("[classunload]");
+        //  -Xlog:class+unload=off
+        pb = exec("-Xlog:class+unload=off");
+        checkAbsent("[class,unload]");
 
         //  -XX:+TraceClassUnloading
         pb = exec("-XX:+TraceClassUnloading");
-        checkFor("[classunload]", "unloading class");
+        checkFor("[class,unload]", "unloading class");
 
         //  -XX:-TraceClassUnloading
         pb = exec("-XX:-TraceClassUnloading");
-        checkAbsent("[classunload]");
+        checkAbsent("[class,unload]");
 
-        //  -Xlog:classload=info
-        pb = exec("-Xlog:classload=info");
-        checkFor("[classload]", "java.lang.Object", "source:");
+        //  -Xlog:class+load=info
+        pb = exec("-Xlog:class+load=info");
+        checkFor("[class,load]", "java.lang.Object", "source:");
 
-        //  -Xlog:classload=debug
-        pb = exec("-Xlog:classload=debug");
-        checkFor("[classload]", "java.lang.Object", "source:", "klass:", "super:", "loader:", "bytes:");
+        //  -Xlog:class+load=debug
+        pb = exec("-Xlog:class+load=debug");
+        checkFor("[class,load]", "java.lang.Object", "source:", "klass:", "super:", "loader:", "bytes:");
 
-        //  -Xlog:classload=off
-        pb = exec("-Xlog:classload=off");
-        checkAbsent("[classload]");
+        //  -Xlog:class+load=off
+        pb = exec("-Xlog:class+load=off");
+        checkAbsent("[class,load]");
 
         //  -XX:+TraceClassLoading
         pb = exec("-XX:+TraceClassLoading");
-        checkFor("[classload]", "java.lang.Object", "source:");
+        checkFor("[class,load]", "java.lang.Object", "source:");
 
         //  -XX:-TraceClassLoading
         pb = exec("-XX:-TraceClassLoading");
-        checkAbsent("[classload]");
+        checkAbsent("[class,load]");
 
         //  -verbose:class
         pb = exec("-verbose:class");
-        checkFor("[classload]", "java.lang.Object", "source:");
-        checkFor("[classunload]", "unloading class");
+        checkFor("[class,load]", "java.lang.Object", "source:");
+        checkFor("[class,unload]", "unloading class");
 
-        //  -Xlog:classloaderdata=trace
-        pb = exec("-Xlog:classloaderdata=trace");
-        checkFor("[classloaderdata]", "create class loader data");
+        //  -Xlog:class+loader+data=trace
+        pb = exec("-Xlog:class+loader+data=trace");
+        checkFor("[class,loader,data]", "create class loader data");
 
     }
 }

@@ -38,7 +38,7 @@ public class TraceClassRes {
         "-XX:+TraceClassResolution", "-verify", "-Xshare:off", "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("[classresolve] java.lang.ClassLoader java.lang.Throwable ClassLoader.java (verification)");
+    output.shouldContain("[class,resolve] java.lang.ClassLoader java.lang.Throwable ClassLoader.java (verification)");
     output.shouldHaveExitValue(0);
   }
 }
