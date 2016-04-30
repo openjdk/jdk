@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,6 +117,7 @@ import jdk.internal.vm.annotation.Stable;
  * @see     java.lang.StringBuilder
  * @see     java.nio.charset.Charset
  * @since   1.0
+ * @jls     15.18.1 String Concatenation Operator +
  */
 
 public final class String
@@ -2979,6 +2980,7 @@ public final class String
      *
      * @return  a string that has the same contents as this string, but is
      *          guaranteed to be from a pool of unique strings.
+     * @jls 3.10.5 String Literals
      */
     public native String intern();
 
