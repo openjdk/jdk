@@ -4767,15 +4767,15 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value)
   br(rscratch2);
 
   bind(loop);
+  add(base, base, unroll * 16);
   for (int i = -unroll; i < 0; i++)
     stp(value, value, Address(base, i * 16));
   bind(entry);
   subs(cnt, cnt, unroll * 2);
-  add(base, base, unroll * 16);
   br(Assembler::GE, loop);
 
   tbz(cnt, 0, fini);
-  str(value, Address(base, -unroll * 16));
+  str(value, Address(post(base, 8)));
   bind(fini);
 }
 
@@ -4828,15 +4828,15 @@ void MacroAssembler::block_zero(Register base, Register cnt, bool is_large)
   br(tmp2);
 
   bind(small_loop);
+  add(base, base, unroll * 16);
   for (int i = -unroll; i < 0; i++)
     stp(zr, zr, Address(base, i * 16));
   bind(small_table_end);
   subs(cnt, cnt, unroll * 2);
-  add(base, base, unroll * 16);
   br(Assembler::GE, small_loop);
 
   tbz(cnt, 0, done);
-  str(zr, Address(base, -unroll * 16));
+  str(zr, Address(post(base, 8)));
 
   bind(done);
 }

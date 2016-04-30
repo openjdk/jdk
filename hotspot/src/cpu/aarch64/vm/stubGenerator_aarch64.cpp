@@ -724,11 +724,15 @@ class StubGenerator: public StubCodeGenerator {
     Register tmp2 = rscratch2;
     int zva_length = VM_Version::zva_length();
     Label initial_table_end, loop_zva;
+    Label fini;
 
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "zero_longs");
     address start = __ pc();
 
+    // Base must be 16 byte aligned. If not just return and let caller handle it
+    __ tst(base, 0x0f);
+    __ br(Assembler::NE, fini);
     // Align base with ZVA length.
     __ neg(tmp, base);
     __ andr(tmp, tmp, zva_length - 1);
@@ -751,6 +755,7 @@ class StubGenerator: public StubCodeGenerator {
     __ add(base, base, zva_length);
     __ br(Assembler::GE, loop_zva);
     __ add(cnt, cnt, zva_length >> 3); // count not zeroed by DC ZVA
+    __ bind(fini);
     __ ret(lr);
 
     return start;
