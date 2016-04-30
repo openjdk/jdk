@@ -58,32 +58,32 @@ public class ClassResolutionTest {
 
     public static void main(String... args) throws Exception {
 
-        // (1) classresolve should turn on.
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:classresolve=debug",
+        // (1) class+resolve should turn on.
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:class+resolve=debug",
                                                                   ClassResolutionTestMain.class.getName());
         OutputAnalyzer o = new OutputAnalyzer(pb.start());
-        o.shouldContain("[classresolve] ClassResolutionTest$ClassResolutionTestMain$Thing1Handler ClassResolutionTest$ClassResolutionTestMain$Thing1");
-        o.shouldContain("[classresolve] resolve JVM_CONSTANT_MethodHandle");
+        o.shouldContain("[class,resolve] ClassResolutionTest$ClassResolutionTestMain$Thing1Handler ClassResolutionTest$ClassResolutionTestMain$Thing1");
+        o.shouldContain("[class,resolve] resolve JVM_CONSTANT_MethodHandle");
 
-        // (2) classresolve should turn off.
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:classresolve=debug",
-                                                   "-Xlog:classresolve=off",
+        // (2) class+resolve should turn off.
+        pb = ProcessTools.createJavaProcessBuilder("-Xlog:class+resolve=debug",
+                                                   "-Xlog:class+resolve=off",
                                                    ClassResolutionTestMain.class.getName());
         o = new OutputAnalyzer(pb.start());
-        o.shouldNotContain("[classresolve]");
+        o.shouldNotContain("[class,resolve]");
 
         // (3) TraceClassResolution should turn on.
         pb = ProcessTools.createJavaProcessBuilder("-XX:+TraceClassResolution",
                                                    ClassResolutionTestMain.class.getName());
         o = new OutputAnalyzer(pb.start());
-        o.shouldContain("[classresolve] ClassResolutionTest$ClassResolutionTestMain$Thing1Handler ClassResolutionTest$ClassResolutionTestMain$Thing1");
+        o.shouldContain("[class,resolve] ClassResolutionTest$ClassResolutionTestMain$Thing1Handler ClassResolutionTest$ClassResolutionTestMain$Thing1");
 
         // (4) TraceClassResolution should turn off.
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:classresolve=debug",
+        pb = ProcessTools.createJavaProcessBuilder("-Xlog:class+resolve=debug",
                                                    "-XX:-TraceClassResolution",
                                                    ClassResolutionTestMain.class.getName());
         o = new OutputAnalyzer(pb.start());
-        o.shouldNotContain("[classresolve]");
+        o.shouldNotContain("[class,resolve]");
 
     };
 

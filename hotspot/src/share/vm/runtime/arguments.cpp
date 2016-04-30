@@ -411,15 +411,15 @@ static AliasedFlag const aliased_jvm_flags[] = {
 static AliasedLoggingFlag const aliased_logging_flags[] = {
   { "PrintCompressedOopsMode",   LogLevel::Info,  true,  LOG_TAGS(gc, heap, coops) },
   { "TraceBiasedLocking",        LogLevel::Info,  true,  LOG_TAGS(biasedlocking) },
-  { "TraceClassLoading",         LogLevel::Info,  true,  LOG_TAGS(classload) },
-  { "TraceClassLoadingPreorder", LogLevel::Debug, true,  LOG_TAGS(classload, preorder) },
-  { "TraceClassPaths",           LogLevel::Info,  true,  LOG_TAGS(classpath) },
-  { "TraceClassResolution",      LogLevel::Debug, true,  LOG_TAGS(classresolve) },
-  { "TraceClassUnloading",       LogLevel::Info,  true,  LOG_TAGS(classunload) },
+  { "TraceClassLoading",         LogLevel::Info,  true,  LOG_TAGS(class, load) },
+  { "TraceClassLoadingPreorder", LogLevel::Debug, true,  LOG_TAGS(class, preorder) },
+  { "TraceClassPaths",           LogLevel::Info,  true,  LOG_TAGS(class, path) },
+  { "TraceClassResolution",      LogLevel::Debug, true,  LOG_TAGS(class, resolve) },
+  { "TraceClassUnloading",       LogLevel::Info,  true,  LOG_TAGS(class, unload) },
   { "TraceExceptions",           LogLevel::Info,  true,  LOG_TAGS(exceptions) },
-  { "TraceLoaderConstraints",    LogLevel::Info,  true,  LOG_TAGS(classload, constraints) },
+  { "TraceLoaderConstraints",    LogLevel::Info,  true,  LOG_TAGS(class, loader, constraints) },
   { "TraceMonitorInflation",     LogLevel::Debug, true,  LOG_TAGS(monitorinflation) },
-  { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LOG_TAGS(safepointcleanup) },
+  { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LOG_TAGS(safepoint, cleanup) },
   { "TraceJVMTIObjectTagging",   LogLevel::Debug, true,  LOG_TAGS(jvmti, objecttagging) },
   { NULL,                        LogLevel::Off,   false, LOG_TAGS(_NO_TAG) }
 };
@@ -427,8 +427,8 @@ static AliasedLoggingFlag const aliased_logging_flags[] = {
 #ifndef PRODUCT
 // These options are removed in jdk9. Remove this code for jdk10.
 static AliasedFlag const removed_develop_logging_flags[] = {
-  { "TraceClassInitialization",   "-Xlog:classinit" },
-  { "TraceClassLoaderData",       "-Xlog:classloaderdata" },
+  { "TraceClassInitialization",   "-Xlog:class+init" },
+  { "TraceClassLoaderData",       "-Xlog:class+loader+data" },
   { "TraceDefaultMethods",        "-Xlog:defaultmethods=debug" },
   { "TraceItables",               "-Xlog:itables=debug" },
   { "TraceMonitorMismatch",       "-Xlog:monitormismatch=info" },
@@ -2846,8 +2846,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     // -verbose:[class/gc/jni]
     if (match_option(option, "-verbose", &tail)) {
       if (!strcmp(tail, ":class") || !strcmp(tail, "")) {
-        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(classload));
-        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(classunload));
+        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, load));
+        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, unload));
       } else if (!strcmp(tail, ":gc")) {
         LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(gc));
       } else if (!strcmp(tail, ":jni")) {
@@ -3488,7 +3488,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
 
   // PrintSharedArchiveAndExit will turn on
   //   -Xshare:on
-  //   -Xlog:classpath=info
+  //   -Xlog:class+path=info
   if (PrintSharedArchiveAndExit) {
     if (FLAG_SET_CMDLINE(bool, UseSharedSpaces, true) != Flag::SUCCESS) {
       return JNI_EINVAL;
@@ -3496,7 +3496,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     if (FLAG_SET_CMDLINE(bool, RequireSharedSpaces, true) != Flag::SUCCESS) {
       return JNI_EINVAL;
     }
-    LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(classpath));
+    LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, path));
   }
 
   // Change the default value for flags  which have different default values

@@ -537,15 +537,15 @@ bool ClassPathImageEntry::is_jrt() {
 #if INCLUDE_CDS
 void ClassLoader::exit_with_path_failure(const char* error, const char* message) {
   assert(DumpSharedSpaces, "only called at dump time");
-  tty->print_cr("Hint: enable -Xlog:classpath=info to diagnose the failure");
+  tty->print_cr("Hint: enable -Xlog:class+path=info to diagnose the failure");
   vm_exit_during_initialization(error, message);
 }
 #endif
 
 void ClassLoader::trace_class_path(const char* msg, const char* name) {
-  if (log_is_enabled(Info, classpath)) {
+  if (log_is_enabled(Info, class, path)) {
     ResourceMark rm;
-    outputStream* out = Log(classpath)::info_stream();
+    outputStream* out = Log(class, path)::info_stream();
     if (msg) {
       out->print("%s", msg);
     }
@@ -711,12 +711,12 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
         }
       }
     }
-    log_info(classpath)("opened: %s", path);
-    log_info(classload)("opened: %s", path);
+    log_info(class, path)("opened: %s", path);
+    log_info(class, load)("opened: %s", path);
   } else {
     // Directory
     new_entry = new ClassPathDirEntry(path);
-    log_info(classload)("path: %s", path);
+    log_info(class, load)("path: %s", path);
   }
   return new_entry;
 }

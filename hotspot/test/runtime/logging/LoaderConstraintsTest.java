@@ -67,22 +67,22 @@ public class LoaderConstraintsTest {
         pb = exec("-XX:+TraceLoaderConstraints");
         out = new OutputAnalyzer(pb.start());
         out.getOutput();
-        out.shouldContain("[classload,constraints] adding new constraint for name: java/lang/Class, loader[0]: jdk/internal/loader/ClassLoaders$AppClassLoader, loader[1]: <bootloader>");
+        out.shouldContain("[class,loader,constraints] adding new constraint for name: java/lang/Class, loader[0]: jdk/internal/loader/ClassLoaders$AppClassLoader, loader[1]: <bootloader>");
 
-        // -Xlog:classload+constraints=info
-        pb = exec("-Xlog:classload+constraints=info");
+        // -Xlog:class+loader+constraints=info
+        pb = exec("-Xlog:class+loader+constraints=info");
         out = new OutputAnalyzer(pb.start());
-        out.shouldContain("[classload,constraints] adding new constraint for name: java/lang/Class, loader[0]: jdk/internal/loader/ClassLoaders$AppClassLoader, loader[1]: <bootloader>");
+        out.shouldContain("[class,loader,constraints] adding new constraint for name: java/lang/Class, loader[0]: jdk/internal/loader/ClassLoaders$AppClassLoader, loader[1]: <bootloader>");
 
         // -XX:-TraceLoaderConstraints
         pb = exec("-XX:-TraceLoaderConstraints");
         out = new OutputAnalyzer(pb.start());
-        out.shouldNotContain("[classload,constraints]");
+        out.shouldNotContain("[class,loaderconstraints]");
 
-        // -Xlog:classload+constraints=off
-        pb = exec("-Xlog:classload+constraints=off");
+        // -Xlog:class+loader+constraints=off
+        pb = exec("-Xlog:class+loader+constraints=off");
         out = new OutputAnalyzer(pb.start());
-        out.shouldNotContain("[classload,constraints]");
+        out.shouldNotContain("[class,loader,constraints]");
 
     }
 }

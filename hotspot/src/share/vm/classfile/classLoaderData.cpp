@@ -333,7 +333,7 @@ void ClassLoaderData::add_class(Klass* k, bool publicize /* true */) {
 
   if (publicize && k->class_loader_data() != NULL) {
     ResourceMark rm;
-    log_trace(classloaderdata)("Adding k: " PTR_FORMAT " %s to CLD: "
+    log_trace(class, loader, data)("Adding k: " PTR_FORMAT " %s to CLD: "
                   PTR_FORMAT " loader: " PTR_FORMAT " %s",
                   p2i(k),
                   k->external_name(),
@@ -371,9 +371,9 @@ void ClassLoaderData::unload() {
   // Tell serviceability tools these classes are unloading
   classes_do(InstanceKlass::notify_unload_class);
 
-  if (log_is_enabled(Debug, classloaderdata)) {
+  if (log_is_enabled(Debug, class, loader, data)) {
     ResourceMark rm;
-    outputStream* log = Log(classloaderdata)::debug_stream();
+    outputStream* log = Log(class, loader, data)::debug_stream();
     log->print(": unload loader data " INTPTR_FORMAT, p2i(this));
     log->print(" for instance " INTPTR_FORMAT " of %s", p2i((void *)class_loader()),
                loader_name());
@@ -506,12 +506,12 @@ Metaspace* ClassLoaderData::metaspace_non_null() {
       set_metaspace(new Metaspace(_metaspace_lock, Metaspace::BootMetaspaceType));
     } else if (is_anonymous()) {
       if (class_loader() != NULL) {
-        log_trace(classloaderdata)("is_anonymous: %s", class_loader()->klass()->internal_name());
+        log_trace(class, loader, data)("is_anonymous: %s", class_loader()->klass()->internal_name());
       }
       set_metaspace(new Metaspace(_metaspace_lock, Metaspace::AnonymousMetaspaceType));
     } else if (class_loader()->is_a(SystemDictionary::reflect_DelegatingClassLoader_klass())) {
       if (class_loader() != NULL) {
-        log_trace(classloaderdata)("is_reflection: %s", class_loader()->klass()->internal_name());
+        log_trace(class, loader, data)("is_reflection: %s", class_loader()->klass()->internal_name());
       }
       set_metaspace(new Metaspace(_metaspace_lock, Metaspace::ReflectionMetaspaceType));
     } else {
@@ -702,7 +702,7 @@ ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_anonymous, TRA
     cld->set_next(next);
     ClassLoaderData* exchanged = (ClassLoaderData*)Atomic::cmpxchg_ptr(cld, list_head, next);
     if (exchanged == next) {
-      if (log_is_enabled(Debug, classloaderdata)) {
+      if (log_is_enabled(Debug, class, loader, data)) {
        PauseNoSafepointVerifier pnsv(&no_safepoints); // Need safe points for JavaCalls::call_virtual
        log_creation(loader, cld, CHECK_NULL);
       }
@@ -730,7 +730,7 @@ void ClassLoaderDataGraph::log_creation(Handle loader, ClassLoaderData* cld, TRA
   }
 
   ResourceMark rm;
-  outputStream* log = Log(classloaderdata)::debug_stream();
+  outputStream* log = Log(class, loader, data)::debug_stream();
   log->print("create class loader data " INTPTR_FORMAT, p2i(cld));
   log->print(" for instance " INTPTR_FORMAT " of %s", p2i((void *)cld->class_loader()),
              cld->loader_name());
@@ -871,8 +871,8 @@ GrowableArray<ClassLoaderData*>* ClassLoaderDataGraph::new_clds() {
     if (!curr->claimed()) {
       array->push(curr);
 
-      if (log_is_enabled(Debug, classloaderdata)) {
-        outputStream* log = Log(classloaderdata)::debug_stream();
+      if (log_is_enabled(Debug, class, loader, data)) {
+        outputStream* log = Log(class, loader, data)::debug_stream();
         log->print("found new CLD: ");
         curr->print_value_on(log);
         log->cr();

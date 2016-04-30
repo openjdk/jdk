@@ -545,7 +545,7 @@ void SafepointSynchronize::do_cleanup_tasks() {
   {
     const char* name = "deflating idle monitors";
     EventSafepointCleanupTask event;
-    TraceTime timer(name, TRACETIME_LOG(Info, safepointcleanup));
+    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
     ObjectSynchronizer::deflate_idle_monitors();
     event_safepoint_cleanup_task_commit(event, name);
   }
@@ -553,14 +553,14 @@ void SafepointSynchronize::do_cleanup_tasks() {
   {
     const char* name = "updating inline caches";
     EventSafepointCleanupTask event;
-    TraceTime timer(name, TRACETIME_LOG(Info, safepointcleanup));
+    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
     InlineCacheBuffer::update_inline_caches();
     event_safepoint_cleanup_task_commit(event, name);
   }
   {
     const char* name = "compilation policy safepoint handler";
     EventSafepointCleanupTask event;
-    TraceTime timer("compilation policy safepoint handler", TRACETIME_LOG(Info, safepointcleanup));
+    TraceTime timer("compilation policy safepoint handler", TRACETIME_LOG(Info, safepoint, cleanup));
     CompilationPolicy::policy()->do_safepoint_work();
     event_safepoint_cleanup_task_commit(event, name);
   }
@@ -568,7 +568,7 @@ void SafepointSynchronize::do_cleanup_tasks() {
   {
     const char* name = "mark nmethods";
     EventSafepointCleanupTask event;
-    TraceTime timer(name, TRACETIME_LOG(Info, safepointcleanup));
+    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
     NMethodSweeper::mark_active_nmethods();
     event_safepoint_cleanup_task_commit(event, name);
   }
@@ -576,7 +576,7 @@ void SafepointSynchronize::do_cleanup_tasks() {
   if (SymbolTable::needs_rehashing()) {
     const char* name = "rehashing symbol table";
     EventSafepointCleanupTask event;
-    TraceTime timer(name, TRACETIME_LOG(Info, safepointcleanup));
+    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
     SymbolTable::rehash_table();
     event_safepoint_cleanup_task_commit(event, name);
   }
@@ -584,7 +584,7 @@ void SafepointSynchronize::do_cleanup_tasks() {
   if (StringTable::needs_rehashing()) {
     const char* name = "rehashing string table";
     EventSafepointCleanupTask event;
-    TraceTime timer(name, TRACETIME_LOG(Info, safepointcleanup));
+    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
     StringTable::rehash_table();
     event_safepoint_cleanup_task_commit(event, name);
   }
@@ -594,7 +594,7 @@ void SafepointSynchronize::do_cleanup_tasks() {
     // make sure concurrent sweep is done
     const char* name = "purging class loader data graph";
     EventSafepointCleanupTask event;
-    TraceTime timer(name, TRACETIME_LOG(Info, safepointcleanup));
+    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
     ClassLoaderDataGraph::purge_if_needed();
     event_safepoint_cleanup_task_commit(event, name);
   }

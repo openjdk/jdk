@@ -40,7 +40,7 @@ public class ClassInitializationTest {
     public static void main(String... args) throws Exception {
 
         // (1)
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:classinit=info",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:class+init=info",
                                                                   "-Xverify:all",
                                                                   "-Xmx64m",
                                                                   "BadMap50");
@@ -53,7 +53,7 @@ public class ClassInitializationTest {
 
         // (2)
         if (Platform.isDebugBuild()) {
-            pb = ProcessTools.createJavaProcessBuilder("-Xlog:classinit=info",
+            pb = ProcessTools.createJavaProcessBuilder("-Xlog:class+init=info",
                                                        "-Xverify:all",
                                                        "-XX:+EagerInitialization",
                                                        "-Xmx64m",
@@ -63,13 +63,13 @@ public class ClassInitializationTest {
             out.shouldHaveExitValue(0);
         }
 
-        // (3) classinit should turn off.
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:classinit=off",
+        // (3) class+init should turn off.
+        pb = ProcessTools.createJavaProcessBuilder("-Xlog:class+init=off",
                                                    "-Xverify:all",
                                                    "-Xmx64m",
                                                    "BadMap50");
         out = new OutputAnalyzer(pb.start());
-        out.shouldNotContain("[classinit]");
+        out.shouldNotContain("[class,init]");
         out.shouldNotContain("Fail over class verification to old verifier for: BadMap50");
 
     }

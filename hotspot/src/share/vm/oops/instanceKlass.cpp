@@ -450,9 +450,9 @@ void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_k) {
     this_k->set_init_state (fully_initialized);
     this_k->fence_and_clear_init_lock();
     // trace
-    if (log_is_enabled(Info, classinit)) {
+    if (log_is_enabled(Info, class, init)) {
       ResourceMark rm(THREAD);
-      log_info(classinit)("[Initialized %s without side effects]", this_k->external_name());
+      log_info(class, init)("[Initialized %s without side effects]", this_k->external_name());
     }
   }
 }
@@ -1088,9 +1088,9 @@ void InstanceKlass::call_class_initializer_impl(instanceKlassHandle this_k, TRAP
 
   methodHandle h_method(THREAD, this_k->class_initializer());
   assert(!this_k->is_initialized(), "we cannot initialize twice");
-  if (log_is_enabled(Info, classinit)) {
+  if (log_is_enabled(Info, class, init)) {
     ResourceMark rm;
-    outputStream* log = Log(classinit)::info_stream();
+    outputStream* log = Log(class, init)::info_stream();
     log->print("%d Initializing ", call_class_initializer_impl_counter++);
     this_k->name()->print_value_on(log);
     log->print_cr("%s (" INTPTR_FORMAT ")", h_method() == NULL ? "(no method)" : "", p2i(this_k()));
@@ -3014,11 +3014,11 @@ void InstanceKlass::print_loading_log(LogLevel::type type,
   assert(type == LogLevel::Info || type == LogLevel::Debug, "sanity");
 
   if (type == LogLevel::Info) {
-    log = Log(classload)::info_stream();
+    log = Log(class, load)::info_stream();
   } else {
     assert(type == LogLevel::Debug,
            "print_loading_log supports only Debug and Info levels");
-    log = Log(classload)::debug_stream();
+    log = Log(class, load)::debug_stream();
   }
 
   // Name and class hierarchy info
