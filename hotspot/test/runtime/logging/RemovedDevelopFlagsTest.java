@@ -25,6 +25,7 @@
 /*
  * @test RemovedDevelopFlagsTest
  * @bug 8146632
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
  * @run driver RemovedDevelopFlagsTest

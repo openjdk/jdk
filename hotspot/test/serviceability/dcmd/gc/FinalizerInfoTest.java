@@ -36,6 +36,7 @@ import jdk.test.lib.dcmd.PidJcmdExecutor;
  * @test
  * @summary
  * @library /testlibrary
+ * @modules java.base/jdk.internal.misc
  * @modules java.xml
  *          java.management
  * @build jdk.test.lib.*

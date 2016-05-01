@@ -26,6 +26,7 @@
  * @bug 8137167
  * @summary Tests jcmd to be able to add a directive to print assembly
  *          only for specified methods
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib /compiler/testlibrary ../share /
  * @build compiler.compilercontrol.jcmd.AddPrintAssemblyTest
  *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox

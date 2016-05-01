@@ -26,6 +26,7 @@
  * @requires vm.opt.DisableExplicitGC == null
  * @summary Verify GC behavior with DisableExplicitGC flag.
  * @library /testlibrary
+ * @modules java.base/jdk.internal.misc
  * @modules jdk.management/com.sun.management.internal
  * @run main/othervm                             -Xlog:gc=debug TestDisableExplicitGC
  * @run main/othervm/fail -XX:+DisableExplicitGC -Xlog:gc=debug TestDisableExplicitGC

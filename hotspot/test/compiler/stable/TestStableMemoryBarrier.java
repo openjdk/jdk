@@ -28,6 +28,7 @@
  * @bug 8139758
  * @summary tests memory barrier correctly inserted for stable fields
  * @library /testlibrary /test/lib
+ * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.vm.annotation
  *
  * @run main/bootclasspath -Xcomp -XX:CompileOnly=::testCompile

@@ -25,6 +25,7 @@
  * @test
  * @bug 8076318
  * @summary split verifier needs to add TraceClassResolution
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  */
 

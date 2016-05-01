@@ -27,6 +27,7 @@
  * @summary Checks PLAB statistics on evacuation failure
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @library /testlibrary /
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build gc.g1.plab.lib.LogParser
  *        gc.g1.plab.lib.AppPLABEvacuationFailure

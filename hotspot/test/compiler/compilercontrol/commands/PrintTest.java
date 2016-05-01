@@ -25,6 +25,7 @@
  * @test
  * @bug 8137167
  * @summary Tests CompileCommand=print
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib /compiler/testlibrary ../share /
  * @build compiler.compilercontrol.commands.PrintTest
  *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox

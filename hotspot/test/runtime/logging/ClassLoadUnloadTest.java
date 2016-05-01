@@ -25,6 +25,7 @@
 /*
  * @test ClassLoadUnloadTest
  * @bug 8142506
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /runtime/testlibrary
  * @library classes
  * @build ClassUnloadCommon test.Empty jdk.test.lib.* jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools

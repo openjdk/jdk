@@ -31,7 +31,7 @@
  * @run main Test6968348
  */
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import java.lang.reflect.*;
 
 public class Test6968348 {
@@ -40,7 +40,7 @@ public class Test6968348 {
     static int array_long_base_offset;
 
     public static void main(String[] args) throws Exception {
-        Class c = Test6968348.class.getClassLoader().loadClass("sun.misc.Unsafe");
+        Class c = Test6968348.class.getClassLoader().loadClass("jdk.internal.misc.Unsafe");
         Field f = c.getDeclaredField("theUnsafe");
         f.setAccessible(true);
         unsafe = (Unsafe)f.get(c);

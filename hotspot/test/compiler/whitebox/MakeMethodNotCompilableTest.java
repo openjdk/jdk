@@ -27,6 +27,7 @@ import compiler.whitebox.CompilerWhiteBoxTest;
  * @test MakeMethodNotCompilableTest
  * @bug 8012322 8006683 8007288 8022832
  * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build MakeMethodNotCompilableTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

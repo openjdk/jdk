@@ -27,6 +27,7 @@ import compiler.whitebox.CompilerWhiteBoxTest;
  * @test DeoptimizeAllTest
  * @bug 8006683 8007288 8022832
  * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build DeoptimizeAllTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
