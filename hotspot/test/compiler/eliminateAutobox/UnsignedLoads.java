@@ -25,6 +25,7 @@
 
 /*
  * @test
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+EliminateAutoBox
  *                   -XX:CompileOnly=::valueOf,::byteValue,::shortValue,::testUnsignedByte,::testUnsignedShort

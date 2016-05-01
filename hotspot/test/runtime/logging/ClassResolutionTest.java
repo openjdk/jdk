@@ -25,6 +25,7 @@
 /*
  * @test ClassResolutionTest
  * @bug 8144874
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
  * @run driver ClassResolutionTest

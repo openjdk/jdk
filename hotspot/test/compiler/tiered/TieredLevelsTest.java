@@ -26,6 +26,7 @@ import compiler.whitebox.CompilerWhiteBoxTest;
 /**
  * @test TieredLevelsTest
  * @library /testlibrary /test/lib /compiler/whitebox /
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build TieredLevelsTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

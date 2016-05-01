@@ -25,6 +25,7 @@
 /*
  * @test ClassInitializationTest
  * @bug 8142976
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @compile BadMap50.jasm
  * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.Platform jdk.test.lib.ProcessTools

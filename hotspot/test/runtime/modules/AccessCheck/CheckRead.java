@@ -27,6 +27,7 @@
  * @test
  * @summary Test that if module m1 can not read module m2, then class p1.c1
  *          in module m1 can not access p2.c2 in module m2.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @compile myloaders/MySameClassLoader.java
  * @compile p2/c2.java

@@ -25,6 +25,7 @@
 /*
  * @test LoaderConstraintsTest
  * @bug 8149996
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /runtime/testlibrary
  * @library classes
  * @build ClassUnloadCommon test.Empty jdk.test.lib.* jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools

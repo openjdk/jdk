@@ -31,6 +31,7 @@ import compiler.whitebox.CompilerWhiteBoxTest;
  * @test GetNMethodTest
  * @bug 8038240
  * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build GetNMethodTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

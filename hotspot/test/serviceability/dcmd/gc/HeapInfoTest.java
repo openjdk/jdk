@@ -35,6 +35,7 @@ import jdk.test.lib.OutputAnalyzer;
  * @test
  * @summary Test of diagnostic command GC.heap_info
  * @library /testlibrary
+ * @modules java.base/jdk.internal.misc
  * @modules java.xml
  *          java.management
  * @build jdk.test.lib.*

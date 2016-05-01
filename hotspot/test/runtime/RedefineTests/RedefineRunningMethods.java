@@ -26,6 +26,7 @@
  * @bug 8055008
  * @summary Redefine EMCP and non-EMCP methods that are running in an infinite loop
  * @library /testlibrary
+ * @modules java.base/jdk.internal.misc
  * @modules java.compiler
  *          java.instrument
  *          jdk.jartool/sun.tools.jar

@@ -25,6 +25,7 @@ import java.util.Map;
  * @library /testlibrary /test/lib /
  * @library ../common/patches
  * @ignore 8139383
+ * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.org.objectweb.asm.tree
  *          jdk.vm.ci/jdk.vm.ci.hotspot

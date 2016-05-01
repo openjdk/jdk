@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8057967
+ * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.org.objectweb.asm
  * @library patches
  * @build java.base/java.lang.invoke.MethodHandleHelper
@@ -46,7 +47,7 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.Field;
 
 import jdk.internal.org.objectweb.asm.*;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 

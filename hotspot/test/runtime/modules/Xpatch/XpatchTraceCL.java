@@ -26,6 +26,7 @@
  * @bug 8069469
  * @summary Make sure -XX:+TraceClassLoading works properly with "modules" jimage,
             -Xpatch, and with -Xbootclasspath/a
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @compile XpatchMain.java
  * @run main XpatchTraceCL

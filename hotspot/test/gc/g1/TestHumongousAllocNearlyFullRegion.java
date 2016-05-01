@@ -26,6 +26,7 @@
  * @bug 8143587
  * @summary G1: humongous object allocations should work even when there is
  *              not enough space in the heapRegion to fit a filler object.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @run driver TestHumongousAllocNearlyFullRegion
  */

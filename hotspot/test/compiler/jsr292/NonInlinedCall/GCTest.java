@@ -25,6 +25,7 @@
  * @test
  * @bug 8072008
  * @library /testlibrary /test/lib ../patches
+ * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.vm.annotation
  * @build java.base/java.lang.invoke.MethodHandleHelper
  * @build sun.hotspot.WhiteBox
