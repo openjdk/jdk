@@ -36,6 +36,7 @@
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
 #include "gc/g1/g1EvacStats.hpp"
+#include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/g1YCTypes.hpp"
 #include "gc/g1/hSpaceCounters.hpp"
@@ -1165,10 +1166,6 @@ public:
     return barrier_set_cast<G1SATBCardTableLoggingModRefBS>(barrier_set());
   }
 
-  // This resets the card table to all zeros.  It is used after
-  // a collection pause which used the card table to claim cards.
-  void cleanUpCardTable();
-
   // Iteration functions.
 
   // Iterate over all objects, calling "cl.do_object" on each.
@@ -1393,16 +1390,6 @@ public:
   // Refinement
 
   ConcurrentG1Refine* concurrent_g1_refine() const { return _cg1r; }
-
-  // The dirty cards region list is used to record a subset of regions
-  // whose cards need clearing. The list if populated during the
-  // remembered set scanning and drained during the card table
-  // cleanup. Although the methods are reentrant, population/draining
-  // phases must not overlap. For synchronization purposes the last
-  // element on the list points to itself.
-  HeapRegion* _dirty_cards_region_list;
-  void push_dirty_cards_region(HeapRegion* hr);
-  HeapRegion* pop_dirty_cards_region();
 
   // Optimized nmethod scanning support routines
 
