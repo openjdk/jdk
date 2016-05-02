@@ -1929,7 +1929,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     ParCompactionManager* const cm =
       ParCompactionManager::manager_array(int(i));
     assert(cm->marking_stack()->is_empty(),       "should be empty");
-    assert(ParCompactionManager::region_list(int(i))->is_empty(), "should be empty");
+    assert(cm->region_stack()->is_empty(), "should be empty");
   }
 #endif // ASSERT
 
@@ -2238,7 +2238,7 @@ public:
   }
 };
 
-void PSParallelCompact::enqueue_region_draining_tasks(GCTaskQueue* q,
+void PSParallelCompact::prepare_region_draining_tasks(GCTaskQueue* q,
                                                       uint parallel_gc_threads)
 {
   GCTraceTime(Trace, gc, phases) tm("Drain Task Setup", &_gc_timer);
@@ -2246,28 +2246,11 @@ void PSParallelCompact::enqueue_region_draining_tasks(GCTaskQueue* q,
   // Find the threads that are active
   unsigned int which = 0;
 
-  const uint task_count = MAX2(parallel_gc_threads, 1U);
-  for (uint j = 0; j < task_count; j++) {
-    q->enqueue(new DrainStacksCompactionTask(j));
-    ParCompactionManager::verify_region_list_empty(j);
-    // Set the region stacks variables to "no" region stack values
-    // so that they will be recognized and needing a region stack
-    // in the stealing tasks if they do not get one by executing
-    // a draining stack.
-    ParCompactionManager* cm = ParCompactionManager::manager_array(j);
-    cm->set_region_stack(NULL);
-    cm->set_region_stack_index((uint)max_uintx);
-  }
-  ParCompactionManager::reset_recycled_stack_index();
-
   // Find all regions that are available (can be filled immediately) and
   // distribute them to the thread stacks.  The iteration is done in reverse
   // order (high to low) so the regions will be removed in ascending order.
 
   const ParallelCompactData& sd = PSParallelCompact::summary_data();
-
-  // A region index which corresponds to the tasks created above.
-  // "which" must be 0 <= which < task_count
 
   which = 0;
   // id + 1 is used to test termination so unsigned  can
@@ -2284,12 +2267,11 @@ void PSParallelCompact::enqueue_region_draining_tasks(GCTaskQueue* q,
 
     for (size_t cur = end_region - 1; cur + 1 > beg_region; --cur) {
       if (sd.region(cur)->claim_unsafe()) {
-        ParCompactionManager::region_list_push(which, cur);
+        ParCompactionManager* cm = ParCompactionManager::manager_array(which);
+        cm->region_stack()->push(cur);
         region_logger.handle(cur);
         // Assign regions to tasks in round-robin fashion.
-        if (++which == task_count) {
-          assert(which <= parallel_gc_threads,
-            "Inconsistent number of workers");
+        if (++which == parallel_gc_threads) {
           which = 0;
         }
       }
@@ -2448,7 +2430,7 @@ void PSParallelCompact::compact() {
   ParallelTaskTerminator terminator(active_gc_threads, qset);
 
   GCTaskQueue* q = GCTaskQueue::create();
-  enqueue_region_draining_tasks(q, active_gc_threads);
+  prepare_region_draining_tasks(q, active_gc_threads);
   enqueue_dense_prefix_tasks(q, active_gc_threads);
   enqueue_region_stealing_tasks(q, &terminator, active_gc_threads);
 

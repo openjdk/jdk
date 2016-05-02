@@ -1079,7 +1079,7 @@ class PSParallelCompact : AllStatic {
   static void compact();
 
   // Add available regions to the stack and draining tasks to the task queue.
-  static void enqueue_region_draining_tasks(GCTaskQueue* q,
+  static void prepare_region_draining_tasks(GCTaskQueue* q,
                                             uint parallel_gc_threads);
 
   // Add dense prefix update tasks to the task queue.
