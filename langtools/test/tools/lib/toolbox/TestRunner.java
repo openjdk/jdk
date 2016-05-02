@@ -35,15 +35,16 @@ import java.util.function.Function;
  * Utility class to manage and execute sub-tests within a test.
  *
  * This class does the following:
- * i.   invokes those test methods annotated with @Test
- * ii.  keeps track of successful and failed tests
- * iii. throws an Exception if any test fails.
- * iv.  provides a test summary at the end of the run.
- *
+ * <ul>
+ * <li>  invokes those test methods annotated with @Test
+ * <li>  keeps track of successful and failed tests
+ * <li>  throws an Exception if any test fails.
+ * <li>  provides a test summary at the end of the run.
+ * </ul>
+
  * Tests must extend this class, annotate the test methods
  * with @Test and call one of the runTests method.
  */
-
 public abstract class TestRunner {
    /** Marker annotation for test cases. */
     @Retention(RetentionPolicy.RUNTIME)
@@ -54,7 +55,7 @@ public abstract class TestRunner {
 
     public String testName = null;
 
-    final PrintStream out;
+    protected PrintStream out;
 
     /**
      * Constructs the Object.
@@ -66,18 +67,18 @@ public abstract class TestRunner {
 
     /**
      * Invoke all methods annotated with @Test.
-     * @throws java.lang.Exception
+     * @throws java.lang.Exception if any errors occur
      */
-    public void runTests() throws Exception {
+    protected void runTests() throws Exception {
         runTests(f -> new Object[0]);
     }
 
     /**
      * Invoke all methods annotated with @Test.
-     * @param f a lambda expression to specify arguments.
-     * @throws java.lang.Exception
+     * @param f a lambda expression to specify arguments for the test method
+     * @throws java.lang.Exception if any errors occur
      */
-    public void runTests(Function<Method, Object[]> f) throws Exception {
+    protected void runTests(Function<Method, Object[]> f) throws Exception {
         for (Method m : getClass().getDeclaredMethods()) {
             Annotation a = m.getAnnotation(Test.class);
             if (a != null) {

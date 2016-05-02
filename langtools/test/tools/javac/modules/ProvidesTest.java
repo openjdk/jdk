@@ -48,7 +48,7 @@ public class ProvidesTest extends ModuleTestBase {
     }
 
     @Test
-    void testSimple(Path base) throws Exception {
+    public void testSimple(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { provides p1.C1 with p2.C2; }",
@@ -65,7 +65,7 @@ public class ProvidesTest extends ModuleTestBase {
     }
 
     @Test
-    void testMulti(Path base) throws Exception {
+    public void testMulti(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("m1"),
                 "module m1 { exports p1; }",
@@ -86,7 +86,7 @@ public class ProvidesTest extends ModuleTestBase {
     }
 
     @Test
-    void testMissingWith(Path base) throws Exception {
+    public void testMissingWith(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { provides p.C; }",
@@ -108,7 +108,7 @@ public class ProvidesTest extends ModuleTestBase {
     }
 
     @Test
-    void testDuplicateProvides(Path base) throws Exception {
+    public void testDuplicateProvides(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { provides p1.C1 with p2.C2; provides p1.C1 with p2.C2; }",
@@ -126,7 +126,7 @@ public class ProvidesTest extends ModuleTestBase {
     }
 
     @Test
-    void testMissingService(Path base) throws Exception {
+    public void testMissingService(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { provides p.Missing with p.C; }",
@@ -151,7 +151,7 @@ public class ProvidesTest extends ModuleTestBase {
     }
 
     @Test
-    void testProvidesFromAnotherModule(Path base) throws Exception {
+    public void testProvidesFromAnotherModule(Path base) throws Exception {
         Path modules = base.resolve("modules");
         tb.writeJavaFiles(modules.resolve("M"),
                 "module M { exports p; }",
@@ -177,7 +177,7 @@ public class ProvidesTest extends ModuleTestBase {
     }
 
     @Test
-    void testServiceIsNotImplemented(Path base) throws Exception {
+    public void testServiceIsNotImplemented(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { provides p.A with p.B; }",
@@ -200,7 +200,7 @@ public class ProvidesTest extends ModuleTestBase {
     }
 
     @Test
-    void testMissingImplementation(Path base) throws Exception {
+    public void testMissingImplementation(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { provides p.C with p.Impl; }",
@@ -222,7 +222,7 @@ public class ProvidesTest extends ModuleTestBase {
     }
 
     @Test
-    void testSeveralImplementations(Path base) throws Exception {
+    public void testSeveralImplementations(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { provides p.C with p.Impl1; provides p.C with p.Impl2; }",
@@ -238,7 +238,7 @@ public class ProvidesTest extends ModuleTestBase {
     }
 
     @Test
-    void testOneImplementationsForServices(Path base) throws Exception {
+    public void testOneImplementationsForServices(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { provides p.Service1 with p.Impl; provides p.Service2 with p.Impl; }",
@@ -254,7 +254,7 @@ public class ProvidesTest extends ModuleTestBase {
     }
 
     @Test
-    void testAbstractImplementation(Path base) throws Exception {
+    public void testAbstractImplementation(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { provides p1.C1 with p2.C2; }",
@@ -277,7 +277,7 @@ public class ProvidesTest extends ModuleTestBase {
     }
 
     @Test
-    void testInterfaceImplementation(Path base) throws Exception {
+    public void testInterfaceImplementation(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { provides p1.Service with p2.Impl; }",
@@ -300,7 +300,7 @@ public class ProvidesTest extends ModuleTestBase {
     }
 
     @Test
-    void testProtectedImplementation(Path base) throws Exception {
+    public void testProtectedImplementation(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { provides p1.C1 with p2.C2; }",
@@ -323,7 +323,7 @@ public class ProvidesTest extends ModuleTestBase {
     }
 
     @Test
-    void testNoNoArgConstructor(Path base) throws Exception {
+    public void testNoNoArgConstructor(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { uses p1.C1; provides p1.C1 with p2.C2; }",
@@ -346,7 +346,7 @@ public class ProvidesTest extends ModuleTestBase {
     }
 
     @Test
-    void testPrivateNoArgConstructor(Path base) throws Exception {
+    public void testPrivateNoArgConstructor(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { uses p1.C1; provides p1.C1 with p2.C2; }",
@@ -369,7 +369,7 @@ public class ProvidesTest extends ModuleTestBase {
     }
 
     @Test
-    void testServiceIndirectlyImplemented(Path base) throws Exception {
+    public void testServiceIndirectlyImplemented(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { provides p1.C1 with p2.C3; }",
@@ -385,7 +385,7 @@ public class ProvidesTest extends ModuleTestBase {
     }
 
     @Test
-    void testServiceImplementationInnerClass(Path base) throws Exception {
+    public void testServiceImplementationInnerClass(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { provides p1.C1 with p2.C2.Inner; }",
@@ -408,7 +408,7 @@ public class ProvidesTest extends ModuleTestBase {
     }
 
     @Test
-    void testServiceDefinitionInnerClass(Path base) throws Exception {
+    public void testServiceDefinitionInnerClass(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { provides p1.C1.InnerDefinition with p2.C2; }",

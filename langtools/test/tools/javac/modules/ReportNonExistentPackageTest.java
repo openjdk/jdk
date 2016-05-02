@@ -46,7 +46,7 @@ public class ReportNonExistentPackageTest extends ModuleTestBase {
     }
 
     @Test
-    void testExportUnknownPackage(Path base) throws Exception {
+    public void testExportUnknownPackage(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "module m { exports p1; }");
         Path classes = base.resolve("classes");
@@ -64,7 +64,7 @@ public class ReportNonExistentPackageTest extends ModuleTestBase {
     }
 
     @Test
-    void testExportEmptyPackage(Path base) throws Exception {
+    public void testExportEmptyPackage(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { exports p1; }",
@@ -84,7 +84,7 @@ public class ReportNonExistentPackageTest extends ModuleTestBase {
     }
 
     @Test
-    void testPackageWithMemberWOPackageDeclaration(Path base) throws Exception {
+    public void testPackageWithMemberWOPackageDeclaration(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "module m { exports p1; }");
         Path p1 = src.resolve("p1");
