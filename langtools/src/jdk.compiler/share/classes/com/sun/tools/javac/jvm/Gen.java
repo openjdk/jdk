@@ -1086,17 +1086,19 @@ public class Gen extends JCTree.Visitor {
                 genStat(body, loopEnv, CRT_STATEMENT | CRT_FLOW_TARGET);
                 code.resolve(loopEnv.info.cont);
                 genStats(step, loopEnv);
-                CondItem c;
-                if (cond != null) {
-                    code.statBegin(cond.pos);
+                if (code.isAlive()) {
+                    CondItem c;
+                    if (cond != null) {
+                        code.statBegin(cond.pos);
+                        Assert.check(code.state.stacksize == 0);
+                        c = genCond(TreeInfo.skipParens(cond), CRT_FLOW_CONTROLLER);
+                    } else {
+                        c = items.makeCondItem(goto_);
+                    }
+                    code.resolve(c.jumpTrue(), startpc);
                     Assert.check(code.state.stacksize == 0);
-                    c = genCond(TreeInfo.skipParens(cond), CRT_FLOW_CONTROLLER);
-                } else {
-                    c = items.makeCondItem(goto_);
+                    code.resolve(c.falseJumps);
                 }
-                code.resolve(c.jumpTrue(), startpc);
-                Assert.check(code.state.stacksize == 0);
-                code.resolve(c.falseJumps);
             }
             Chain exit = loopEnv.info.exit;
             if (exit != null) {
