@@ -215,27 +215,27 @@ public:
 
   // Clear the card table of "dirty" regions.
   void clear_card_table(WorkGang* workers) {
-   if (_cur_dirty_region == 0) {
-     return;
-   }
+    if (_cur_dirty_region == 0) {
+      return;
+    }
 
-   size_t const num_chunks = align_size_up(_cur_dirty_region * HeapRegion::CardsPerRegion, G1ClearCardTableTask::chunk_size()) / G1ClearCardTableTask::chunk_size();
-   uint const num_workers = (uint)MIN2(num_chunks, (size_t)workers->active_workers());
-   size_t const chunk_length = G1ClearCardTableTask::chunk_size() / HeapRegion::CardsPerRegion;
+    size_t const num_chunks = align_size_up(_cur_dirty_region * HeapRegion::CardsPerRegion, G1ClearCardTableTask::chunk_size()) / G1ClearCardTableTask::chunk_size();
+    uint const num_workers = (uint)MIN2(num_chunks, (size_t)workers->active_workers());
+    size_t const chunk_length = G1ClearCardTableTask::chunk_size() / HeapRegion::CardsPerRegion;
 
-   // Iterate over the dirty cards region list.
-   G1ClearCardTableTask cl(G1CollectedHeap::heap(), _dirty_region_buffer, _cur_dirty_region, chunk_length);
+    // Iterate over the dirty cards region list.
+    G1ClearCardTableTask cl(G1CollectedHeap::heap(), _dirty_region_buffer, _cur_dirty_region, chunk_length);
 
-   log_debug(gc, ergo)("Running %s using %u workers for " SIZE_FORMAT " "
-                       "units of work for " SIZE_FORMAT " regions.",
-                       cl.name(), num_workers, num_chunks, _cur_dirty_region);
-   workers->run_task(&cl, num_workers);
+    log_debug(gc, ergo)("Running %s using %u workers for " SIZE_FORMAT " "
+                        "units of work for " SIZE_FORMAT " regions.",
+                        cl.name(), num_workers, num_chunks, _cur_dirty_region);
+    workers->run_task(&cl, num_workers);
 
 #ifndef PRODUCT
-   // Need to synchronize with concurrent cleanup since it needs to
-   // finish its card table clearing before we can verify.
-   G1CollectedHeap::heap()->wait_while_free_regions_coming();
-   G1CollectedHeap::heap()->verifier()->verify_card_table_cleanup();
+    // Need to synchronize with concurrent cleanup since it needs to
+    // finish its card table clearing before we can verify.
+    G1CollectedHeap::heap()->wait_while_free_regions_coming();
+    G1CollectedHeap::heap()->verifier()->verify_card_table_cleanup();
 #endif
   }
 };
