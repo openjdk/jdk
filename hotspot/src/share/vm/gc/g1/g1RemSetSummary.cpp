@@ -144,10 +144,6 @@ void G1RemSetSummary::subtract_from(G1RemSetSummary* other) {
   _sampling_thread_vtime = other->sampling_thread_vtime() - _sampling_thread_vtime;
 }
 
-static size_t round_to_K(size_t value) {
-  return value / K;
-}
-
 class RegionTypeCounter VALUE_OBJ_CLASS_SPEC {
 private:
   const char* _name;
@@ -198,8 +194,10 @@ public:
   size_t code_root_elems() const { return _code_root_elems; }
 
   void print_rs_mem_info_on(outputStream * out, size_t total) {
-    out->print_cr("    " SIZE_FORMAT_W(8) "K (%5.1f%%) by " SIZE_FORMAT " %s regions",
-        round_to_K(rs_mem_size()), rs_mem_size_percent_of(total), amount(), _name);
+    out->print_cr("    " SIZE_FORMAT_W(8) "%s (%5.1f%%) by " SIZE_FORMAT " %s regions",
+        byte_size_in_proper_unit(rs_mem_size()),
+        proper_unit_for_byte_size(rs_mem_size()),
+        rs_mem_size_percent_of(total), amount(), _name);
   }
 
   void print_cards_occupied_info_on(outputStream * out, size_t total) {
@@ -208,8 +206,10 @@ public:
   }
 
   void print_code_root_mem_info_on(outputStream * out, size_t total) {
-    out->print_cr("    " SIZE_FORMAT_W(8) "K (%5.1f%%) by " SIZE_FORMAT " %s regions",
-        round_to_K(code_root_mem_size()), code_root_mem_size_percent_of(total), amount(), _name);
+    out->print_cr("    " SIZE_FORMAT_W(8) "%s (%5.1f%%) by " SIZE_FORMAT " %s regions",
+        byte_size_in_proper_unit(code_root_mem_size()),
+        proper_unit_for_byte_size(code_root_mem_size()),
+        code_root_mem_size_percent_of(total), amount(), _name);
   }
 
   void print_code_root_elems_info_on(outputStream * out, size_t total) {
@@ -291,17 +291,22 @@ public:
     RegionTypeCounter* counters[] = { &_young, &_humongous, &_free, &_old, NULL };
 
     out->print_cr(" Current rem set statistics");
-    out->print_cr("  Total per region rem sets sizes = " SIZE_FORMAT "K."
-                  " Max = " SIZE_FORMAT "K.",
-                  round_to_K(total_rs_mem_sz()), round_to_K(max_rs_mem_sz()));
+    out->print_cr("  Total per region rem sets sizes = " SIZE_FORMAT "%s."
+                  " Max = " SIZE_FORMAT "%s.",
+                  byte_size_in_proper_unit(total_rs_mem_sz()),
+                  proper_unit_for_byte_size(total_rs_mem_sz()),
+                  byte_size_in_proper_unit(max_rs_mem_sz()),
+                  proper_unit_for_byte_size(max_rs_mem_sz()));
     for (RegionTypeCounter** current = &counters[0]; *current != NULL; current++) {
       (*current)->print_rs_mem_info_on(out, total_rs_mem_sz());
     }
 
-    out->print_cr("   Static structures = " SIZE_FORMAT "K,"
-                  " free_lists = " SIZE_FORMAT "K.",
-                  round_to_K(HeapRegionRemSet::static_mem_size()),
-                  round_to_K(HeapRegionRemSet::fl_mem_size()));
+    out->print_cr("   Static structures = " SIZE_FORMAT "%s,"
+                  " free_lists = " SIZE_FORMAT "%s.",
+                  byte_size_in_proper_unit(HeapRegionRemSet::static_mem_size()),
+                  proper_unit_for_byte_size(HeapRegionRemSet::static_mem_size()),
+                  byte_size_in_proper_unit(HeapRegionRemSet::fl_mem_size()),
+                  proper_unit_for_byte_size(HeapRegionRemSet::fl_mem_size()));
 
     out->print_cr("    " SIZE_FORMAT " occupied cards represented.",
                   total_cards_occupied());
@@ -312,17 +317,20 @@ public:
     // Largest sized rem set region statistics
     HeapRegionRemSet* rem_set = max_rs_mem_sz_region()->rem_set();
     out->print_cr("    Region with largest rem set = " HR_FORMAT ", "
-                  "size = " SIZE_FORMAT "K, occupied = " SIZE_FORMAT "K.",
+                  "size = " SIZE_FORMAT "%s, occupied = " SIZE_FORMAT "%s.",
                   HR_FORMAT_PARAMS(max_rs_mem_sz_region()),
-                  round_to_K(rem_set->mem_size()),
-                  round_to_K(rem_set->occupied()));
-
+                  byte_size_in_proper_unit(rem_set->mem_size()),
+                  proper_unit_for_byte_size(rem_set->mem_size()),
+                  byte_size_in_proper_unit(rem_set->occupied()),
+                  proper_unit_for_byte_size(rem_set->occupied()));
     // Strong code root statistics
     HeapRegionRemSet* max_code_root_rem_set = max_code_root_mem_sz_region()->rem_set();
-    out->print_cr("  Total heap region code root sets sizes = " SIZE_FORMAT "K."
-                  "  Max = " SIZE_FORMAT "K.",
-                  round_to_K(total_code_root_mem_sz()),
-                  round_to_K(max_code_root_rem_set->strong_code_roots_mem_size()));
+    out->print_cr("  Total heap region code root sets sizes = " SIZE_FORMAT "%s."
+                  "  Max = " SIZE_FORMAT "%s.",
+                  byte_size_in_proper_unit(total_code_root_mem_sz()),
+                  proper_unit_for_byte_size(total_code_root_mem_sz()),
+                  byte_size_in_proper_unit(max_code_root_rem_set->strong_code_roots_mem_size()),
+                  proper_unit_for_byte_size(max_code_root_rem_set->strong_code_roots_mem_size()));
     for (RegionTypeCounter** current = &counters[0]; *current != NULL; current++) {
       (*current)->print_code_root_mem_info_on(out, total_code_root_mem_sz());
     }
@@ -334,10 +342,11 @@ public:
     }
 
     out->print_cr("    Region with largest amount of code roots = " HR_FORMAT ", "
-                  "size = " SIZE_FORMAT "K, num_elems = " SIZE_FORMAT ".",
+                  "size = " SIZE_FORMAT "%s, num_elems = " SIZE_FORMAT ".",
                   HR_FORMAT_PARAMS(max_code_root_mem_sz_region()),
-                  round_to_K(max_code_root_rem_set->strong_code_roots_mem_size()),
-                  round_to_K(max_code_root_rem_set->strong_code_roots_list_length()));
+                  byte_size_in_proper_unit(max_code_root_rem_set->strong_code_roots_mem_size()),
+                  proper_unit_for_byte_size(max_code_root_rem_set->strong_code_roots_mem_size()),
+                  max_code_root_rem_set->strong_code_roots_list_length());
   }
 };
 
