@@ -42,6 +42,7 @@
 #include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
+#include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1MarkSweep.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
@@ -1322,10 +1323,9 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
       // the compaction events.
       print_hrm_post_compaction();
 
-      G1HotCardCache* hot_card_cache = _cg1r->hot_card_cache();
-      if (hot_card_cache->use_cache()) {
-        hot_card_cache->reset_card_counts();
-        hot_card_cache->reset_hot_cache();
+      if (_hot_card_cache->use_cache()) {
+        _hot_card_cache->reset_card_counts();
+        _hot_card_cache->reset_hot_cache();
       }
 
       // Rebuild remembered sets of all regions.
@@ -1704,6 +1704,8 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   _ref_processor_cm(NULL),
   _ref_processor_stw(NULL),
   _bot(NULL),
+  _hot_card_cache(NULL),
+  _g1_rem_set(NULL),
   _cg1r(NULL),
   _g1mm(NULL),
   _refine_cte_cl(NULL),
@@ -1817,7 +1819,7 @@ jint G1CollectedHeap::initialize() {
   _refine_cte_cl = new RefineCardTableEntryClosure();
 
   jint ecode = JNI_OK;
-  _cg1r = ConcurrentG1Refine::create(this, _refine_cte_cl, &ecode);
+  _cg1r = ConcurrentG1Refine::create(_refine_cte_cl, &ecode);
   if (_cg1r == NULL) {
     return ecode;
   }
@@ -1847,8 +1849,11 @@ jint G1CollectedHeap::initialize() {
   assert(bs->is_a(BarrierSet::G1SATBCTLogging), "sanity");
   set_barrier_set(bs);
 
+  // Create the hot card cache.
+  _hot_card_cache = new G1HotCardCache(this);
+
   // Also create a G1 rem set.
-  _g1_rem_set = new G1RemSet(this, g1_barrier_set());
+  _g1_rem_set = new G1RemSet(this, g1_barrier_set(), _hot_card_cache);
 
   // Carve out the G1 part of the heap.
   ReservedSpace g1_rs = heap_rs.first_part(max_byte_size);
@@ -1893,8 +1898,8 @@ jint G1CollectedHeap::initialize() {
 
   _hrm.initialize(heap_storage, prev_bitmap_storage, next_bitmap_storage, bot_storage, cardtable_storage, card_counts_storage);
   g1_barrier_set()->initialize(cardtable_storage);
-   // Do later initialization work for concurrent refinement.
-  _cg1r->init(card_counts_storage);
+  // Do later initialization work for concurrent refinement.
+  _hot_card_cache->initialize(card_counts_storage);
 
   // 6843694 - ensure that the maximum region index can fit
   // in the remembered set structures.
@@ -2123,7 +2128,7 @@ void G1CollectedHeap::check_gc_time_stamps() {
 #endif // PRODUCT
 
 void G1CollectedHeap::iterate_hcc_closure(CardTableEntryClosure* cl, uint worker_i) {
-  _cg1r->hot_card_cache()->drain(cl, worker_i);
+  _hot_card_cache->drain(cl, worker_i);
 }
 
 void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl, uint worker_i) {
@@ -4510,9 +4515,8 @@ void G1CollectedHeap::pre_evacuate_collection_set() {
   _evacuation_failed = false;
 
   // Disable the hot card cache.
-  G1HotCardCache* hot_card_cache = _cg1r->hot_card_cache();
-  hot_card_cache->reset_hot_cache_claimed_index();
-  hot_card_cache->set_use_cache(false);
+  _hot_card_cache->reset_hot_cache_claimed_index();
+  _hot_card_cache->set_use_cache(false);
 
   g1_rem_set()->prepare_for_oops_into_collection_set_do();
   _preserved_marks_set.assert_empty();
@@ -4615,9 +4619,8 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
   // Reset and re-enable the hot card cache.
   // Note the counts for the cards in the regions in the
   // collection set are reset when the collection set is freed.
-  G1HotCardCache* hot_card_cache = _cg1r->hot_card_cache();
-  hot_card_cache->reset_hot_cache();
-  hot_card_cache->set_use_cache(true);
+  _hot_card_cache->reset_hot_cache();
+  _hot_card_cache->set_use_cache(true);
 
   purge_code_root_memory();
 
@@ -4652,7 +4655,7 @@ void G1CollectedHeap::free_region(HeapRegion* hr,
   // Note: we only need to do this if the region is not young
   // (since we don't refine cards in young regions).
   if (!hr->is_young()) {
-    _cg1r->hot_card_cache()->reset_card_counts(hr);
+    _hot_card_cache->reset_card_counts(hr);
   }
   hr->hr_clear(par, true /* clear_space */, locked /* locked */);
   free_list->add_ordered(hr);

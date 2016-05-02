@@ -30,6 +30,7 @@
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1DefaultPolicy.hpp"
+#include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1IHOPControl.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1Policy.hpp"
@@ -675,7 +676,7 @@ void G1DefaultPolicy::record_collection_pause_end(double pause_time_ms, size_t c
   _short_lived_surv_rate_group->start_adding_regions();
   // Do that for any other surv rate groups
 
-  double scan_hcc_time_ms = ConcurrentG1Refine::hot_card_cache_enabled() ? average_time_ms(G1GCPhaseTimes::ScanHCC) : 0.0;
+  double scan_hcc_time_ms = G1HotCardCache::default_use_cache() ? average_time_ms(G1GCPhaseTimes::ScanHCC) : 0.0;
 
   if (update_stats) {
     double cost_per_card_ms = 0.0;
