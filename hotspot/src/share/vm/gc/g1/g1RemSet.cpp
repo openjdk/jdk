@@ -48,6 +48,47 @@
 // Collects information about the overall remembered set scan progress during an evacuation.
 class G1RemSetScanState : public CHeapObj<mtGC> {
 private:
+  class G1ClearCardTableTask : public AbstractGangTask {
+    G1CollectedHeap* _g1h;
+    uint* _dirty_region_list;
+    size_t _num_dirty_regions;
+    size_t _chunk_length;
+
+    size_t volatile _cur_dirty_regions;
+  public:
+    G1ClearCardTableTask(G1CollectedHeap* g1h,
+                         uint* dirty_region_list,
+                         size_t num_dirty_regions,
+                         size_t chunk_length) :
+      AbstractGangTask("G1 Clear Card Table Task"),
+      _g1h(g1h),
+      _dirty_region_list(dirty_region_list),
+      _num_dirty_regions(num_dirty_regions),
+      _chunk_length(chunk_length),
+      _cur_dirty_regions(0) {
+
+      assert(chunk_length > 0, "must be");
+    }
+
+    static size_t chunk_size() { return M; }
+
+    void work(uint worker_id) {
+      G1SATBCardTableModRefBS* ct_bs = _g1h->g1_barrier_set();
+
+      while (_cur_dirty_regions < _num_dirty_regions) {
+        size_t next = Atomic::add(_chunk_length, &_cur_dirty_regions) - _chunk_length;
+        size_t max = MIN2(next + _chunk_length, _num_dirty_regions);
+
+        for (size_t i = next; i < max; i++) {
+          HeapRegion* r = _g1h->region_at(_dirty_region_list[i]);
+          if (!r->is_survivor()) {
+            ct_bs->clear(MemRegion(r->bottom(), r->end()));
+          }
+        }
+      }
+    }
+  };
+
   size_t _max_regions;
 
   // Scan progress for the remembered set of a single region. Transitions from
@@ -65,11 +106,25 @@ private:
   // remembered set.
   size_t volatile* _iter_claims;
 
+  // Temporary buffer holding the regions we used to store remembered set scan duplicate
+  // information. These are also called "dirty". Valid entries are from [0.._cur_dirty_region)
+  uint* _dirty_region_buffer;
+
+  typedef jbyte IsDirtyRegionState;
+  static const IsDirtyRegionState Clean = 0;
+  static const IsDirtyRegionState Dirty = 1;
+  // Holds a flag for every region whether it is in the _dirty_region_buffer already
+  // to avoid duplicates. Uses jbyte since there are no atomic instructions for bools.
+  IsDirtyRegionState* _in_dirty_region_buffer;
+  size_t _cur_dirty_region;
 public:
   G1RemSetScanState() :
     _max_regions(0),
     _iter_states(NULL),
-    _iter_claims(NULL) {
+    _iter_claims(NULL),
+    _dirty_region_buffer(NULL),
+    _in_dirty_region_buffer(NULL),
+    _cur_dirty_region(0) {
 
   }
 
@@ -80,6 +135,12 @@ public:
     if (_iter_claims != NULL) {
       FREE_C_HEAP_ARRAY(size_t, _iter_claims);
     }
+    if (_dirty_region_buffer != NULL) {
+      FREE_C_HEAP_ARRAY(uint, _dirty_region_buffer);
+    }
+    if (_in_dirty_region_buffer != NULL) {
+      FREE_C_HEAP_ARRAY(IsDirtyRegionState, _in_dirty_region_buffer);
+    }
   }
 
   void initialize(uint max_regions) {
@@ -88,6 +149,8 @@ public:
     _max_regions = max_regions;
     _iter_states = NEW_C_HEAP_ARRAY(G1RemsetIterState, max_regions, mtGC);
     _iter_claims = NEW_C_HEAP_ARRAY(size_t, max_regions, mtGC);
+    _dirty_region_buffer = NEW_C_HEAP_ARRAY(uint, max_regions, mtGC);
+    _in_dirty_region_buffer = NEW_C_HEAP_ARRAY(IsDirtyRegionState, max_regions, mtGC);
   }
 
   void reset() {
@@ -95,6 +158,8 @@ public:
       _iter_states[i] = Unclaimed;
     }
     memset((void*)_iter_claims, 0, _max_regions * sizeof(size_t));
+    memset(_in_dirty_region_buffer, Clean, _max_regions * sizeof(IsDirtyRegionState));
+    _cur_dirty_region = 0;
   }
 
   // Attempt to claim the remembered set of the region for iteration. Returns true
@@ -134,6 +199,44 @@ public:
   // step size.
   inline size_t iter_claimed_next(uint region, size_t step) {
     return Atomic::add(step, &_iter_claims[region]) - step;
+  }
+
+  void add_dirty_region(uint region) {
+    if (_in_dirty_region_buffer[region] == Dirty) {
+      return;
+    }
+
+    bool marked_as_dirty = Atomic::cmpxchg(Dirty, &_in_dirty_region_buffer[region], Clean) == Clean;
+    if (marked_as_dirty) {
+      size_t allocated = Atomic::add(1, &_cur_dirty_region) - 1;
+      _dirty_region_buffer[allocated] = region;
+    }
+  }
+
+  // Clear the card table of "dirty" regions.
+  void clear_card_table(WorkGang* workers) {
+   if (_cur_dirty_region == 0) {
+     return;
+   }
+
+   size_t const num_chunks = align_size_up(_cur_dirty_region * HeapRegion::CardsPerRegion, G1ClearCardTableTask::chunk_size()) / G1ClearCardTableTask::chunk_size();
+   uint const num_workers = (uint)MIN2(num_chunks, (size_t)workers->active_workers());
+   size_t const chunk_length = G1ClearCardTableTask::chunk_size() / HeapRegion::CardsPerRegion;
+
+   // Iterate over the dirty cards region list.
+   G1ClearCardTableTask cl(G1CollectedHeap::heap(), _dirty_region_buffer, _cur_dirty_region, chunk_length);
+
+   log_debug(gc, ergo)("Running %s using %u workers for " SIZE_FORMAT " "
+                       "units of work for " SIZE_FORMAT " regions.",
+                       cl.name(), num_workers, num_chunks, _cur_dirty_region);
+   workers->run_task(&cl, num_workers);
+
+#ifndef PRODUCT
+   // Need to synchronize with concurrent cleanup since it needs to
+   // finish its card table clearing before we can verify.
+   G1CollectedHeap::heap()->wait_while_free_regions_coming();
+   G1CollectedHeap::heap()->verifier()->verify_card_table_cleanup();
+#endif
   }
 };
 
@@ -237,7 +340,7 @@ bool G1ScanRSClosure::doHeapRegion(HeapRegion* r) {
     // If we ever free the collection set concurrently, we should also
     // clear the card table concurrently therefore we won't need to
     // add regions of the collection set to the dirty cards region.
-    _g1h->push_dirty_cards_region(r);
+    _scan_state->add_dirty_region(region_idx);
   }
 
   HeapRegionRemSetIterator iter(r->rem_set());
@@ -258,9 +361,7 @@ bool G1ScanRSClosure::doHeapRegion(HeapRegion* r) {
     HeapRegion* card_region = _g1h->heap_region_containing(card_start);
     _cards++;
 
-    if (!card_region->is_on_dirty_cards_region_list()) {
-      _g1h->push_dirty_cards_region(card_region);
-    }
+    _scan_state->add_dirty_region(card_region->hrm_index());
 
     // If the card is dirty, then we will scan it during updateRS.
     if (!card_region->in_collection_set() &&
@@ -376,10 +477,14 @@ void G1RemSet::prepare_for_oops_into_collection_set_do() {
 }
 
 void G1RemSet::cleanup_after_oops_into_collection_set_do() {
+  G1GCPhaseTimes* phase_times = _g1->g1_policy()->phase_times();
   // Cleanup after copy
   _g1->set_refine_cte_cl_concurrency(true);
+
   // Set all cards back to clean.
-  _g1->cleanUpCardTable();
+  double start = os::elapsedTime();
+  _scan_state->clear_card_table(_g1->workers());
+  phase_times->record_clear_ct_time((os::elapsedTime() - start) * 1000.0);
 
   DirtyCardQueueSet& into_cset_dcqs = _into_cset_dirty_card_queue_set;
 
@@ -391,7 +496,7 @@ void G1RemSet::cleanup_after_oops_into_collection_set_do() {
     // used to hold cards that contain references that point into the collection set
     // to the DCQS used to hold the deferred RS updates.
     _g1->dirty_card_queue_set().merge_bufferlists(&into_cset_dcqs);
-    _g1->g1_policy()->phase_times()->record_evac_fail_restore_remsets((os::elapsedTime() - restore_remembered_set_start) * 1000.0);
+    phase_times->record_evac_fail_restore_remsets((os::elapsedTime() - restore_remembered_set_start) * 1000.0);
   }
 
   // Free any completed buffers in the DirtyCardQueueSet used to hold cards

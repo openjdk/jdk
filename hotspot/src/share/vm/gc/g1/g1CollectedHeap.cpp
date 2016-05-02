@@ -163,59 +163,6 @@ void G1RegionMappingChangedListener::on_commit(uint start_idx, size_t num_region
   reset_from_card_cache(start_idx, num_regions);
 }
 
-void G1CollectedHeap::push_dirty_cards_region(HeapRegion* hr)
-{
-  // Claim the right to put the region on the dirty cards region list
-  // by installing a self pointer.
-  HeapRegion* next = hr->get_next_dirty_cards_region();
-  if (next == NULL) {
-    HeapRegion* res = (HeapRegion*)
-      Atomic::cmpxchg_ptr(hr, hr->next_dirty_cards_region_addr(),
-                          NULL);
-    if (res == NULL) {
-      HeapRegion* head;
-      do {
-        // Put the region to the dirty cards region list.
-        head = _dirty_cards_region_list;
-        next = (HeapRegion*)
-          Atomic::cmpxchg_ptr(hr, &_dirty_cards_region_list, head);
-        if (next == head) {
-          assert(hr->get_next_dirty_cards_region() == hr,
-                 "hr->get_next_dirty_cards_region() != hr");
-          if (next == NULL) {
-            // The last region in the list points to itself.
-            hr->set_next_dirty_cards_region(hr);
-          } else {
-            hr->set_next_dirty_cards_region(next);
-          }
-        }
-      } while (next != head);
-    }
-  }
-}
-
-HeapRegion* G1CollectedHeap::pop_dirty_cards_region()
-{
-  HeapRegion* head;
-  HeapRegion* hr;
-  do {
-    head = _dirty_cards_region_list;
-    if (head == NULL) {
-      return NULL;
-    }
-    HeapRegion* new_head = head->get_next_dirty_cards_region();
-    if (head == new_head) {
-      // The last region.
-      new_head = NULL;
-    }
-    hr = (HeapRegion*)Atomic::cmpxchg_ptr(new_head, &_dirty_cards_region_list,
-                                          head);
-  } while (hr != head);
-  assert(hr != NULL, "invariant");
-  hr->set_next_dirty_cards_region(NULL);
-  return hr;
-}
-
 // Returns true if the reference points to an object that
 // can move in an incremental collection.
 bool G1CollectedHeap::is_scavengable(const void* p) {
@@ -1777,7 +1724,6 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   _old_marking_cycles_started(0),
   _old_marking_cycles_completed(0),
   _in_cset_fast_test(),
-  _dirty_cards_region_list(NULL),
   _worker_cset_start_region(NULL),
   _worker_cset_start_region_time_stamp(NULL),
   _gc_timer_stw(new (ResourceObj::C_HEAP, mtGC) STWGCTimer()),
@@ -4743,31 +4689,6 @@ void G1CollectedHeap::decrement_summary_bytes(size_t bytes) {
   decrease_used(bytes);
 }
 
-class G1ParCleanupCTTask : public AbstractGangTask {
-  G1SATBCardTableModRefBS* _ct_bs;
-  G1CollectedHeap* _g1h;
-  HeapRegion* volatile _su_head;
-public:
-  G1ParCleanupCTTask(G1SATBCardTableModRefBS* ct_bs,
-                     G1CollectedHeap* g1h) :
-    AbstractGangTask("G1 Par Cleanup CT Task"),
-    _ct_bs(ct_bs), _g1h(g1h) { }
-
-  void work(uint worker_id) {
-    HeapRegion* r;
-    while (r = _g1h->pop_dirty_cards_region()) {
-      clear_cards(r);
-    }
-  }
-
-  void clear_cards(HeapRegion* r) {
-    // Cards of the survivors should have already been dirtied.
-    if (!r->is_survivor()) {
-      _ct_bs->clear(MemRegion(r->bottom(), r->end()));
-    }
-  }
-};
-
 class G1ParScrubRemSetTask: public AbstractGangTask {
 protected:
   G1RemSet* _g1rs;
@@ -4789,27 +4710,6 @@ void G1CollectedHeap::scrub_rem_set() {
   uint num_workers = workers()->active_workers();
   G1ParScrubRemSetTask g1_par_scrub_rs_task(g1_rem_set(), num_workers);
   workers()->run_task(&g1_par_scrub_rs_task);
-}
-
-void G1CollectedHeap::cleanUpCardTable() {
-  G1SATBCardTableModRefBS* ct_bs = g1_barrier_set();
-  double start = os::elapsedTime();
-
-  {
-    // Iterate over the dirty cards region list.
-    G1ParCleanupCTTask cleanup_task(ct_bs, this);
-
-    workers()->run_task(&cleanup_task);
-#ifndef PRODUCT
-    // Need to synchronize with concurrent cleanup since it needs to
-    // finish its card table clearing before we can verify.
-    wait_while_free_regions_coming();
-    _verifier->verify_card_table_cleanup();
-#endif
-  }
-
-  double elapsed = os::elapsedTime() - start;
-  g1_policy()->phase_times()->record_clear_ct_time(elapsed * 1000.0);
 }
 
 void G1CollectedHeap::free_collection_set(HeapRegion* cs_head, EvacuationInfo& evacuation_info, const size_t* surviving_young_words) {
