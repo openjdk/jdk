@@ -28,17 +28,17 @@
 #include "memory/allocation.hpp"
 #include "runtime/globals.hpp"
 
+template <typename T>
+class GrowableArray;
+
 class YoungList : public CHeapObj<mtGC> {
 private:
   G1CollectedHeap* _g1h;
+  GrowableArray<HeapRegion*>* _survivor_regions;
 
   HeapRegion* _head;
 
-  HeapRegion* _survivor_head;
-  HeapRegion* _survivor_tail;
-
   uint        _length;
-  uint        _survivor_length;
 
   void         empty_list(HeapRegion* list);
 
@@ -52,7 +52,9 @@ public:
   bool         is_empty() { return _length == 0; }
   uint         length() { return _length; }
   uint         eden_length() { return length() - survivor_length(); }
-  uint         survivor_length() { return _survivor_length; }
+  uint         survivor_length();
+
+  const GrowableArray<HeapRegion*>* survivor_regions() const { return _survivor_regions; }
 
   // Currently we do not keep track of the used byte sum for the
   // young list and the survivors and it'd be quite a lot of work to
@@ -72,14 +74,10 @@ public:
   void clear() { _head = NULL; _length = 0; }
 
   void clear_survivors() {
-    _survivor_head    = NULL;
-    _survivor_tail    = NULL;
-    _survivor_length  = 0;
+    _survivor_regions->clear();
   }
 
   HeapRegion* first_region() { return _head; }
-  HeapRegion* first_survivor_region() { return _survivor_head; }
-  HeapRegion* last_survivor_region() { return _survivor_tail; }
 
   // debugging
   bool          check_list_well_formed();
