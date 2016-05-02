@@ -5070,7 +5070,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1462194239
+DATE_WHEN_GENERATED=1462204427
 
 ###############################################################################
 #
@@ -64274,6 +64274,21 @@ $as_echo_n "checking flags for boot jdk java command for small workloads... " >&
   FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
   if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
     boot_jdk_jvmargs_small="$boot_jdk_jvmargs_small -Xmx512M"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  $ECHO "Check if jvm arg is ok: -XX:TieredStopAtLevel=1" >&5
+  $ECHO "Command: $JAVA -XX:TieredStopAtLevel=1 -version" >&5
+  OUTPUT=`$JAVA -XX:TieredStopAtLevel=1 -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs_small="$boot_jdk_jvmargs_small -XX:TieredStopAtLevel=1"
     JVM_ARG_OK=true
   else
     $ECHO "Arg failed:" >&5
