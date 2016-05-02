@@ -33,6 +33,7 @@ import utils.*;
  * @library ../share
  * @build common.*
  * @build utils.*
+ * @ignore 8155570
  * @run main/othervm -XX:+UsePerfData -Xmx128M -XX:MaxMetaspaceSize=128M GcTest02
  */
 
