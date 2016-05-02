@@ -71,6 +71,7 @@ class Space;
 class G1CollectionSet;
 class G1CollectorPolicy;
 class G1Policy;
+class G1HotCardCache;
 class G1RemSet;
 class HeapRegionRemSetIterator;
 class G1ConcurrentMark;
@@ -761,6 +762,9 @@ protected:
                                size_t undo_waste) const;
   // Update object copying statistics.
   void record_obj_copy_mem_stats();
+
+  // The hot card cache for remembered set insertion optimization.
+  G1HotCardCache* _hot_card_cache;
 
   // The g1 remembered set of the heap.
   G1RemSet* _g1_rem_set;

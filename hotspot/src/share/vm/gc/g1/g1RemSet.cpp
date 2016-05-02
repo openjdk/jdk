@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/concurrentG1Refine.hpp"
-#include "gc/g1/concurrentG1RefineThread.hpp"
 #include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -240,13 +239,15 @@ public:
   }
 };
 
-G1RemSet::G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs) :
+G1RemSet::G1RemSet(G1CollectedHeap* g1,
+                   CardTableModRefBS* ct_bs,
+                   G1HotCardCache* hot_card_cache) :
   _g1(g1),
   _scan_state(new G1RemSetScanState()),
   _conc_refine_cards(0),
   _ct_bs(ct_bs),
   _g1p(_g1->g1_policy()),
-  _cg1r(g1->concurrent_g1_refine()),
+  _hot_card_cache(hot_card_cache),
   _prev_period_summary(),
   _into_cset_dirty_card_queue_set(false)
 {
@@ -437,7 +438,7 @@ void G1RemSet::update_rem_set(DirtyCardQueue* into_cset_dcq,
   RefineRecordRefsIntoCSCardTableEntryClosure into_cset_update_rs_cl(_g1, into_cset_dcq, oops_in_heap_closure);
 
   G1GCParPhaseTimesTracker x(_g1p->phase_times(), G1GCPhaseTimes::UpdateRS, worker_i);
-  if (ConcurrentG1Refine::hot_card_cache_enabled()) {
+  if (G1HotCardCache::default_use_cache()) {
     // Apply the closure to the entries of the hot card cache.
     G1GCParPhaseTimesTracker y(_g1p->phase_times(), G1GCPhaseTimes::ScanHCC, worker_i);
     _g1->iterate_hcc_closure(&into_cset_update_rs_cl, worker_i);
@@ -614,12 +615,11 @@ bool G1RemSet::refine_card(jbyte* card_ptr,
   //   * a pointer to a "hot" card that was evicted from the "hot" cache.
   //
 
-  G1HotCardCache* hot_card_cache = _cg1r->hot_card_cache();
-  if (hot_card_cache->use_cache()) {
+  if (_hot_card_cache->use_cache()) {
     assert(!check_for_refs_into_cset, "sanity");
     assert(!SafepointSynchronize::is_at_safepoint(), "sanity");
 
-    card_ptr = hot_card_cache->insert(card_ptr);
+    card_ptr = _hot_card_cache->insert(card_ptr);
     if (card_ptr == NULL) {
       // There was no eviction. Nothing to do.
       return false;
@@ -754,15 +754,14 @@ void G1RemSet::prepare_for_verify() {
       dcqs.concatenate_logs();
     }
 
-    G1HotCardCache* hot_card_cache = _cg1r->hot_card_cache();
-    bool use_hot_card_cache = hot_card_cache->use_cache();
-    hot_card_cache->set_use_cache(false);
+    bool use_hot_card_cache = _hot_card_cache->use_cache();
+    _hot_card_cache->set_use_cache(false);
 
     DirtyCardQueue into_cset_dcq(&_into_cset_dirty_card_queue_set);
     update_rem_set(&into_cset_dcq, NULL, 0);
     _into_cset_dirty_card_queue_set.clear();
 
-    hot_card_cache->set_use_cache(use_hot_card_cache);
+    _hot_card_cache->set_use_cache(use_hot_card_cache);
     assert(JavaThread::dirty_card_queue_set().completed_buffers_num() == 0, "All should be consumed");
   }
 }

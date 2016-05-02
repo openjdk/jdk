@@ -38,9 +38,9 @@
 class BitMap;
 class CardTableModRefBS;
 class G1BlockOffsetTable;
-class ConcurrentG1Refine;
 class CodeBlobClosure;
 class G1CollectedHeap;
+class G1HotCardCache;
 class G1ParPushHeapRSClosure;
 class G1RemSetScanState;
 class G1Policy;
@@ -71,8 +71,7 @@ protected:
 protected:
   CardTableModRefBS*     _ct_bs;
   G1Policy*              _g1p;
-
-  ConcurrentG1Refine*    _cg1r;
+  G1HotCardCache*        _hot_card_cache;
 
 public:
   // Gives an approximation on how many threads can be expected to add records to
@@ -90,7 +89,9 @@ public:
   // scanned.
   void cleanupHRRS();
 
-  G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs);
+  G1RemSet(G1CollectedHeap* g1,
+           CardTableModRefBS* ct_bs,
+           G1HotCardCache* hot_card_cache);
   ~G1RemSet();
 
   // Invoke "cl->do_oop" on all pointers into the collection set
