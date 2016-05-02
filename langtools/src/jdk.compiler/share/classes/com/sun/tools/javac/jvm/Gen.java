@@ -1649,6 +1649,7 @@ public class Gen extends JCTree.Visitor {
 
     public void visitConditional(JCConditional tree) {
         Chain thenExit = null;
+        code.statBegin(tree.cond.pos);
         CondItem c = genCond(tree.cond, CRT_FLOW_CONTROLLER);
         Chain elseChain = c.jumpFalse();
         if (!c.isFalse()) {
