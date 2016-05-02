@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <X11/Xlib.h>
+#include <X11/keysym.h>
 #include <sys/time.h>
 
 #include "awt.h"

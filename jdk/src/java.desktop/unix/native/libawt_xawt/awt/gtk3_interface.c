@@ -2547,14 +2547,14 @@ static jobject get_string_property(JNIEnv *env, GtkSettings* settings,
 
 static jobject get_integer_property(JNIEnv *env, GtkSettings* settings,
                                                              const gchar* key) {
-    gint intval = NULL;
+    gint intval = 0;
     (*fp_g_object_get)(settings, key, &intval, NULL);
     return create_Integer(env, intval);
 }
 
 static jobject get_boolean_property(JNIEnv *env, GtkSettings* settings,
                                                              const gchar* key) {
-    gint intval = NULL;
+    gint intval = 0;
     (*fp_g_object_get)(settings, key, &intval, NULL);
     return create_Boolean(env, intval);
 }
