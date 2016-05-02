@@ -79,31 +79,7 @@ private:
   // Is there a way to reuse the _marking_stack for the
   // saving empty regions?  For now just create a different
   // type of TaskQueue.
-  RegionTaskQueue*             _region_stack;
-
-  static RegionTaskQueue**     _region_list;
-  // Index in _region_list for current _region_stack.
-  uint _region_stack_index;
-
-  // Indexes of recycled region stacks/overflow stacks
-  // Stacks of regions to be compacted are embedded in the tasks doing
-  // the compaction.  A thread that executes the task extracts the
-  // region stack and drains it.  These threads keep these region
-  // stacks for use during compaction task stealing.  If a thread
-  // gets a second draining task, it pushed its current region stack
-  // index into the array _recycled_stack_index and gets a new
-  // region stack from the task.  A thread that is executing a
-  // compaction stealing task without ever having executing a
-  // draining task, will get a region stack from _recycled_stack_index.
-  //
-  // Array of indexes into the array of region stacks.
-  static uint*                    _recycled_stack_index;
-  // The index into _recycled_stack_index of the last region stack index
-  // pushed.  If -1, there are no entries into _recycled_stack_index.
-  static int                      _recycled_top;
-  // The index into _recycled_stack_index of the last region stack index
-  // popped.  If -1, there has not been any entry popped.
-  static int                      _recycled_bottom;
+  RegionTaskQueue              _region_stack;
 
   static ParMarkBitMap* _mark_bitmap;
 
@@ -151,32 +127,15 @@ private:
 
   static void reset_all_bitmap_query_caches();
 
-  RegionTaskQueue* region_stack()                { return _region_stack; }
-  void set_region_stack(RegionTaskQueue* v)       { _region_stack = v; }
+  RegionTaskQueue* region_stack()                { return &_region_stack; }
 
   inline static ParCompactionManager* manager_array(uint index);
 
-  inline static RegionTaskQueue* region_list(int index) {
-    return _region_list[index];
-  }
-
-  uint region_stack_index() { return _region_stack_index; }
-  void set_region_stack_index(uint v) { _region_stack_index = v; }
-
-  // Pop and push unique reusable stack index
-  static int pop_recycled_stack_index();
-  static void push_recycled_stack_index(uint v);
-  static void reset_recycled_stack_index() {
-    _recycled_bottom = _recycled_top = -1;
-  }
-
   ParCompactionManager();
-  ~ParCompactionManager();
 
   // Pushes onto the region stack at the given index.  If the
   // region stack is full,
   // pushes onto the region overflow stack.
-  static void region_list_push(uint stack_index, size_t region_index);
   static void verify_region_list_empty(uint stack_index);
   ParMarkBitMap* mark_bitmap() { return _mark_bitmap; }
 
