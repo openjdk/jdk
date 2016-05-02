@@ -331,27 +331,6 @@ public class Start extends ToolOption.Helper {
     }
 
     /**
-     * Ensures that the module of the given class is readable to this
-     * module.
-     * @param targetClass class in module to be made readable
-     */
-    private void ensureReadable(Class<?> targetClass) {
-        try {
-            Method getModuleMethod = Class.class.getMethod("getModule");
-            Object thisModule = getModuleMethod.invoke(this.getClass());
-            Object targetModule = getModuleMethod.invoke(targetClass);
-
-            Class<?> moduleClass = getModuleMethod.getReturnType();
-            Method addReadsMethod = moduleClass.getMethod("addReads", moduleClass);
-            addReadsMethod.invoke(thisModule, targetModule);
-        } catch (NoSuchMethodException e) {
-            // ignore
-        } catch (Exception e) {
-            throw new InternalError(e);
-        }
-    }
-
-    /**
      * Main program - internal
      */
     private boolean parseAndExecute(List<String> argList,
@@ -550,7 +529,6 @@ public class Start extends ToolOption.Helper {
             }
             try {
                 Class<?> klass = cl.loadClass(userDocletName);
-                ensureReadable(klass);
                 return klass;
             } catch (ClassNotFoundException cnfe) {
                 error("main.doclet_class_not_found", userDocletName);
@@ -601,7 +579,6 @@ public class Start extends ToolOption.Helper {
         for (String tagletName : tagletNames) {
             try {
                 Class<?> klass = cl.loadClass(tagletName);
-                ensureReadable(klass);
                 if (com.sun.tools.doclets.Taglet.class.isAssignableFrom(klass)) {
                     return true;
                 }
