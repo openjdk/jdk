@@ -102,7 +102,6 @@ public class DocletInvoker {
         this.apiMode = apiMode;
         this.exportInternalAPI = exportInternalAPI; // for backdoor use by standard doclet for taglets
 
-        ensureReadable(docletClass);
         // this may not be soon enough if the class has already been loaded
         if (exportInternalAPI) {
             exportInternalAPI(docletClass.getClassLoader());
@@ -149,8 +148,6 @@ public class DocletInvoker {
             messager.exit();
         }
         docletClass = dc;
-
-        ensureReadable(docletClass);
     }
 
     /*
@@ -359,27 +356,6 @@ public class DocletInvoker {
             } finally {
                 Thread.currentThread().setContextClassLoader(savedCCL);
             }
-    }
-
-    /**
-     * Ensures that the module of the given class is readable to this
-     * module.
-     * @param targetClass class in module to be made readable
-     */
-    private void ensureReadable(Class<?> targetClass) {
-        try {
-            Method getModuleMethod = Class.class.getMethod("getModule");
-            Object thisModule = getModuleMethod.invoke(this.getClass());
-            Object targetModule = getModuleMethod.invoke(targetClass);
-
-            Class<?> moduleClass = getModuleMethod.getReturnType();
-            Method addReadsMethod = moduleClass.getMethod("addReads", moduleClass);
-            addReadsMethod.invoke(thisModule, targetModule);
-        } catch (NoSuchMethodException e) {
-            // ignore
-        } catch (Exception e) {
-            throw new InternalError(e);
-        }
     }
 
     /**
