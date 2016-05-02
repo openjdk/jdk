@@ -35,14 +35,14 @@ public final class DeprecatedAppletViewer {
     private static final String TEXT = "AppletViewer is deprecated.";
 
     public static void main(final String[] args) {
-        final PrintStream old = System.out;
+        final PrintStream old = System.err;
         final ByteArrayOutputStream baos = new ByteArrayOutputStream(1000);
         final PrintStream ps = new PrintStream(baos);
         try {
-            System.setOut(ps);
+            System.setErr(ps);
             sun.applet.Main.main(new String[]{});
         } finally {
-            System.setOut(old);
+            System.setErr(old);
         }
 
         final String text = new String(baos.toByteArray());
