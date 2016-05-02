@@ -265,7 +265,8 @@ OtherRegionsTable::OtherRegionsTable(HeapRegion* hr, Mutex* m) :
   _first_all_fine_prts(NULL), _last_all_fine_prts(NULL),
   _n_fine_entries(0), _n_coarse_entries(0),
   _fine_eviction_start(0),
-  _sparse_table(hr)
+  _sparse_table(hr),
+  _coarse_dirty(false)
 {
   typedef PerRegionTable* PerRegionTablePtr;
 
@@ -504,6 +505,7 @@ PerRegionTable* OtherRegionsTable::delete_region_table() {
   size_t max_hrm_index = (size_t) max->hr()->hrm_index();
   if (!_coarse_map.at(max_hrm_index)) {
     _coarse_map.at_put(max_hrm_index, true);
+    _coarse_dirty = true;
     _n_coarse_entries++;
   }
 
@@ -519,8 +521,11 @@ void OtherRegionsTable::scrub(G1CardLiveData* live_data) {
   log_develop_trace(gc, remset, scrub)("Scrubbing region %u:", _hr->hrm_index());
 
   log_develop_trace(gc, remset, scrub)("   Coarse map: before = " SIZE_FORMAT "...", _n_coarse_entries);
-  live_data->remove_nonlive_regions(&_coarse_map);
-  _n_coarse_entries = _coarse_map.count_one_bits();
+  if (_coarse_dirty) {
+    live_data->remove_nonlive_regions(&_coarse_map);
+    _n_coarse_entries = _coarse_map.count_one_bits();
+    _coarse_dirty = _n_coarse_entries != 0;
+  }
   log_develop_trace(gc, remset, scrub)("   after = " SIZE_FORMAT ".", _n_coarse_entries);
 
   // Now do the fine-grained maps.
@@ -646,7 +651,10 @@ void OtherRegionsTable::clear() {
 
   _first_all_fine_prts = _last_all_fine_prts = NULL;
   _sparse_table.clear();
-  _coarse_map.clear();
+  if (_coarse_dirty) {
+    _coarse_map.clear();
+    _coarse_dirty = false;
+  }
   _n_fine_entries = 0;
   _n_coarse_entries = 0;
 

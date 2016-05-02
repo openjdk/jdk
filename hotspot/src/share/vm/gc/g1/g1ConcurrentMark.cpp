@@ -609,6 +609,10 @@ G1ConcurrentMark::~G1ConcurrentMark() {
 }
 
 class G1ClearBitMapTask : public AbstractGangTask {
+public:
+  static size_t chunk_size() { return M; }
+
+private:
   // Heap region closure used for clearing the given mark bitmap.
   class G1ClearBitmapHRClosure : public HeapRegionClosure {
   private:
@@ -619,7 +623,7 @@ class G1ClearBitMapTask : public AbstractGangTask {
     }
 
     virtual bool doHeapRegion(HeapRegion* r) {
-      size_t const chunk_size_in_words = M / HeapWordSize;
+      size_t const chunk_size_in_words = G1ClearBitMapTask::chunk_size() / HeapWordSize;
 
       HeapWord* cur = r->bottom();
       HeapWord* const end = r->end();
@@ -653,7 +657,7 @@ class G1ClearBitMapTask : public AbstractGangTask {
 
 public:
   G1ClearBitMapTask(G1CMBitMap* bitmap, G1ConcurrentMark* cm, uint n_workers, bool suspendible) :
-    AbstractGangTask("Parallel Clear Bitmap Task"),
+    AbstractGangTask("G1 Clear Bitmap"),
     _cl(bitmap, suspendible ? cm : NULL),
     _hr_claimer(n_workers),
     _suspendible(suspendible)
@@ -672,9 +676,16 @@ public:
 void G1ConcurrentMark::clear_bitmap(G1CMBitMap* bitmap, WorkGang* workers, bool may_yield) {
   assert(may_yield || SafepointSynchronize::is_at_safepoint(), "Non-yielding bitmap clear only allowed at safepoint.");
 
-  G1ClearBitMapTask task(bitmap, this, workers->active_workers(), may_yield);
-  workers->run_task(&task);
-  guarantee(!may_yield || task.is_complete(), "Must have completed iteration when not yielding.");
+  size_t const num_bytes_to_clear = (HeapRegion::GrainBytes * _g1h->num_regions()) / G1CMBitMap::heap_map_factor();
+  size_t const num_chunks = align_size_up(num_bytes_to_clear, G1ClearBitMapTask::chunk_size()) / G1ClearBitMapTask::chunk_size();
+
+  uint const num_workers = (uint)MIN2(num_chunks, (size_t)workers->active_workers());
+
+  G1ClearBitMapTask cl(bitmap, this, num_workers, may_yield);
+
+  log_debug(gc, ergo)("Running %s with %u workers for " SIZE_FORMAT " work units.", cl.name(), num_workers, num_chunks);
+  workers->run_task(&cl, num_workers);
+  guarantee(!may_yield || cl.is_complete(), "Must have completed iteration when not yielding.");
 }
 
 void G1ConcurrentMark::cleanup_for_next_mark() {

@@ -288,7 +288,7 @@ HeapRegion::HeapRegion(uint hrm_index,
     _evacuation_failed(false),
     _prev_marked_bytes(0), _next_marked_bytes(0), _gc_efficiency(0.0),
     _next_young_region(NULL),
-    _next_dirty_cards_region(NULL), _next(NULL), _prev(NULL),
+    _next(NULL), _prev(NULL),
 #ifdef ASSERT
     _containing_set(NULL),
 #endif // ASSERT
