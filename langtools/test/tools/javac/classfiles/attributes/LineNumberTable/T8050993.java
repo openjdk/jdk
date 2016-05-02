@@ -19,7 +19,7 @@ import com.sun.tools.classfile.*;
 public class T8050993 {
     public static void main(String[] args) throws IOException, ConstantPoolException {
         ClassFile someTestIn = ClassFile.read(T8050993.class.getResourceAsStream("T8050993.class"));
-        Set<Integer> expectedLineNumbers = new HashSet<>(Arrays.asList(48, 49, 46, 47));
+        Set<Integer> expectedLineNumbers = new HashSet<>(Arrays.asList(49, 50, 47, 48));
         for (Method m : someTestIn.methods) {
             if ("method".equals(m.getName(someTestIn.constant_pool))) {
                 Code_attribute code_attribute = (Code_attribute) m.attributes.get(Attribute.Code);
