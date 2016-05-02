@@ -28,7 +28,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask toolbox.ModuleBuilder ModuleTestBase
  * @run main UsesTest
  */
 
@@ -39,6 +39,7 @@ import java.util.Collection;
 import java.util.List;
 
 import toolbox.JavacTask;
+import toolbox.ModuleBuilder;
 import toolbox.Task;
 import toolbox.ToolBox;
 
@@ -49,7 +50,7 @@ public class UsesTest extends ModuleTestBase {
     }
 
     @Test
-    void testSimple(Path base) throws Exception {
+    public void testSimple(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { uses p.C; }",
@@ -65,7 +66,7 @@ public class UsesTest extends ModuleTestBase {
     }
 
     @Test
-    void testSimpleInner(Path base) throws Exception {
+    public void testSimpleInner(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { uses p.C.Inner; }",
@@ -81,7 +82,7 @@ public class UsesTest extends ModuleTestBase {
     }
 
     @Test
-    void testSimpleAnnotation(Path base) throws Exception {
+    public void testSimpleAnnotation(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { uses p.C; }",
@@ -97,7 +98,7 @@ public class UsesTest extends ModuleTestBase {
     }
 
     @Test
-    void testPrivateService(Path base) throws Exception {
+    public void testPrivateService(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { uses p.C.A; uses p.C; }",
@@ -119,7 +120,7 @@ public class UsesTest extends ModuleTestBase {
     }
 
     @Test
-    void testMulti(Path base) throws Exception {
+    public void testMulti(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("m1"),
                 "module m1 { exports p; }",
@@ -138,13 +139,13 @@ public class UsesTest extends ModuleTestBase {
     }
 
     @Test
-    void testMultiOnModulePath(Path base) throws Exception {
+    public void testMultiOnModulePath(Path base) throws Exception {
         Path modules = base.resolve("modules");
-        new ModuleBuilder("m1")
+        new ModuleBuilder(tb, "m1")
                 .exports("p")
                 .classes("package p; public class C { }")
                 .build(modules);
-        new ModuleBuilder("m2")
+        new ModuleBuilder(tb, "m2")
                 .requires("m1")
                 .uses("p.C")
                 .write(modules);
@@ -158,13 +159,13 @@ public class UsesTest extends ModuleTestBase {
     }
 
     @Test
-    void testMultiOnModulePathInner(Path base) throws Exception {
+    public void testMultiOnModulePathInner(Path base) throws Exception {
         Path modules = base.resolve("modules");
-        new ModuleBuilder("m1")
+        new ModuleBuilder(tb, "m1")
                 .exports("p")
                 .classes("package p; public class C { public class Inner { } }")
                 .build(modules);
-        new ModuleBuilder("m2")
+        new ModuleBuilder(tb, "m2")
                 .requires("m1")
                 .uses("p.C.Inner")
                 .write(modules);
@@ -178,7 +179,7 @@ public class UsesTest extends ModuleTestBase {
     }
 
     @Test
-    void testDuplicateUses(Path base) throws Exception {
+    public void testDuplicateUses(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("m"),
                 "module m { uses p.C; uses p.C; }",
@@ -199,7 +200,7 @@ public class UsesTest extends ModuleTestBase {
     }
 
     @Test
-    void testServiceNotExist(Path base) throws Exception {
+    public void testServiceNotExist(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { uses p.NotExist; }",
@@ -220,7 +221,7 @@ public class UsesTest extends ModuleTestBase {
     }
 
     @Test
-    void testUsesUnexportedService(Path base) throws Exception {
+    public void testUsesUnexportedService(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("m1"),
                 "module m1 { }",
@@ -244,7 +245,7 @@ public class UsesTest extends ModuleTestBase {
     }
 
     @Test
-    void testUsesUnexportedButProvidedService(Path base) throws Exception {
+    public void testUsesUnexportedButProvidedService(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("m1"),
                 "module m1 { provides p.C with p.C; }",

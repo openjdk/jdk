@@ -66,7 +66,7 @@ public class EdgeCases extends ModuleTestBase {
     }
 
     @Test
-    void testAddExportUndefinedModule(Path base) throws Exception {
+    public void testAddExportUndefinedModule(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "package test; import undef.Any; public class Test {}");
         Path classes = base.resolve("classes");
@@ -89,7 +89,7 @@ public class EdgeCases extends ModuleTestBase {
     }
 
     @Test
-    void testModuleSymbolOutterMostClass(Path base) throws Exception {
+    public void testModuleSymbolOutterMostClass(Path base) throws Exception {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
             Path moduleSrc = base.resolve("module-src");
@@ -110,7 +110,7 @@ public class EdgeCases extends ModuleTestBase {
     }
 
     @Test
-    void testParseEnterAnalyze(Path base) throws Exception {
+    public void testParseEnterAnalyze(Path base) throws Exception {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
             Path moduleSrc = base.resolve("module-src");
@@ -148,7 +148,7 @@ public class EdgeCases extends ModuleTestBase {
     }
 
     @Test
-    void testModuleImplicitModuleBoundaries(Path base) throws Exception {
+    public void testModuleImplicitModuleBoundaries(Path base) throws Exception {
         Path src = base.resolve("src");
         Path src_m1 = src.resolve("m1");
         tb.writeJavaFiles(src_m1,
@@ -180,7 +180,7 @@ public class EdgeCases extends ModuleTestBase {
     }
 
     @Test
-    void testAssignClassToAutomaticModule(Path base) throws Exception {
+    public void testAssignClassToAutomaticModule(Path base) throws Exception {
         //check that if a ClassSymbol belongs to an automatic module, it is properly assigned and not
         //duplicated when being accessed through a classfile.
         Path automaticSrc = base.resolve("automaticSrc");
@@ -239,7 +239,7 @@ public class EdgeCases extends ModuleTestBase {
     }
 
     @Test
-    void testEmptyImplicitModuleInfo(Path base) throws Exception {
+    public void testEmptyImplicitModuleInfo(Path base) throws Exception {
         Path src = base.resolve("src");
         Path src_m1 = src.resolve("m1");
         Files.createDirectories(src_m1);
@@ -270,7 +270,7 @@ public class EdgeCases extends ModuleTestBase {
     }
 
     @Test
-    void testClassPackageClash(Path base) throws Exception {
+    public void testClassPackageClash(Path base) throws Exception {
         Path src = base.resolve("src");
         Path src_m1 = src.resolve("m1");
         tb.writeJavaFiles(src_m1,
