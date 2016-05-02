@@ -3106,6 +3106,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   SvcGCMarker sgcm(SvcGCMarker::MINOR);
   ResourceMark rm;
 
+  g1_policy()->note_gc_start();
+
   wait_for_root_region_scanning();
 
   print_heap_before_gc();
@@ -3164,8 +3166,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
                                                                   workers()->active_workers(),
                                                                   Threads::number_of_non_daemon_threads());
     workers()->set_active_workers(active_workers);
-
-    g1_policy()->note_gc_start();
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
     TraceMemoryManagerStats tms(false /* fullGC */, gc_cause());
