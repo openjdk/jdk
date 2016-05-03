@@ -90,7 +90,9 @@ class DefaultDatagramSocketImplFactory
         throws SocketException {
         if (prefixImplClass != null) {
             try {
-                return (DatagramSocketImpl) prefixImplClass.newInstance();
+                @SuppressWarnings("deprecation")
+                Object result = prefixImplClass.newInstance();
+                return (DatagramSocketImpl) result;
             } catch (Exception e) {
                 throw new SocketException("can't instantiate DatagramSocketImpl");
             }
