@@ -99,7 +99,7 @@ bool Disassembler::load_library() {
     const char* p = strrchr(buf, *os::file_separator());
     if (p != NULL) lib_offset = p - base + 1;
     p = strstr(p ? p : base, "jvm");
-    if (p != NULL)  jvm_offset = p - base;
+    if (p != NULL) jvm_offset = p - base;
   }
 #endif
   // Find the disassembler shared library.
@@ -113,13 +113,13 @@ bool Disassembler::load_library() {
     strcpy(&buf[jvm_offset], hsdis_library_name);
     strcat(&buf[jvm_offset], os::dll_file_extension());
     _library = os::dll_load(buf, ebuf, sizeof ebuf);
-    if (_library == NULL) {
+    if (_library == NULL && lib_offset >= 0) {
       // 2. <home>/jre/lib/<arch>/<vm>/hsdis-<arch>.so
       strcpy(&buf[lib_offset], hsdis_library_name);
       strcat(&buf[lib_offset], os::dll_file_extension());
       _library = os::dll_load(buf, ebuf, sizeof ebuf);
     }
-    if (_library == NULL) {
+    if (_library == NULL && lib_offset > 0) {
       // 3. <home>/jre/lib/<arch>/hsdis-<arch>.so
       buf[lib_offset - 1] = '\0';
       const char* p = strrchr(buf, *os::file_separator());
