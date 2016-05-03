@@ -270,7 +270,9 @@ public class Start extends ToolOption.Helper {
             initMessager();
             messager.setLocale(locale);
             try {
-                doclet = (Doclet) docletClass.newInstance();
+                @SuppressWarnings("deprecation")
+                Object o = docletClass.newInstance();
+                doclet = (Doclet) o;
             } catch (InstantiationException | IllegalAccessException exc) {
                 exc.printStackTrace();
                 if (!apiMode) {
