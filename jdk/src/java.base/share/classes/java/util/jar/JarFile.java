@@ -155,7 +155,7 @@ class JarFile extends ZipFile {
         BASE_VERSION = 8;  // one less than lowest version for versioned entries
         int runtimeVersion = jdk.Version.current().major();
         String jarVersion =
-                GetPropertyAction.getProperty("jdk.util.jar.version");
+                GetPropertyAction.privilegedGetProperty("jdk.util.jar.version");
         if (jarVersion != null) {
             int jarVer = Integer.parseInt(jarVersion);
             runtimeVersion = (jarVer > runtimeVersion)
@@ -163,7 +163,7 @@ class JarFile extends ZipFile {
         }
         RUNTIME_VERSION = runtimeVersion;
         String enableMultiRelease = GetPropertyAction
-                .getProperty("jdk.util.jar.enableMultiRelease", "true");
+                .privilegedGetProperty("jdk.util.jar.enableMultiRelease", "true");
         switch (enableMultiRelease) {
             case "true":
             default:

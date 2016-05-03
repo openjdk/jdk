@@ -164,7 +164,7 @@ public class StandardCharsets extends CharsetProvider {
             return;
         initialized = true;
 
-        String map = getProperty("sun.nio.cs.map");
+        String map = GetPropertyAction.privilegedGetProperty("sun.nio.cs.map");
         if (map != null) {
             String[] maps = map.split(",");
             for (int i = 0; i < maps.length; i++) {
@@ -198,10 +198,5 @@ public class StandardCharsets extends CharsetProvider {
             }
         }
     }
-
-    private static String getProperty(String key) {
-        return GetPropertyAction.getProperty(key);
-    }
-
 
 }

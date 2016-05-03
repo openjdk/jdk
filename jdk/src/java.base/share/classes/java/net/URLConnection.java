@@ -1397,7 +1397,7 @@ public abstract class URLConnection {
      */
     private String getContentHandlerPkgPrefixes() {
         String packagePrefixList =
-                GetPropertyAction.getProperty(contentPathProp, "");
+                GetPropertyAction.privilegedGetProperty(contentPathProp, "");
 
         if (packagePrefixList != "") {
             packagePrefixList += "|";

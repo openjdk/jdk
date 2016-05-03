@@ -1212,7 +1212,7 @@ public final class URL implements java.io.Serializable {
 
     private static URLStreamHandler lookupViaProperty(String protocol) {
         String packagePrefixList =
-                GetPropertyAction.getProperty(protocolPathProp);
+                GetPropertyAction.privilegedGetProperty(protocolPathProp);
         if (packagePrefixList == null) {
             // not set
             return null;

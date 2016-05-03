@@ -85,7 +85,7 @@ public class URLClassPath {
     private static final boolean DISABLE_JAR_CHECKING;
 
     static {
-        Properties props = GetPropertyAction.getProperties();
+        Properties props = GetPropertyAction.privilegedGetProperties();
         JAVA_VERSION = props.getProperty("java.version");
         DEBUG = (props.getProperty("sun.misc.URLClassPath.debug") != null);
         String p = props.getProperty("sun.misc.URLClassPath.disableJarChecking");

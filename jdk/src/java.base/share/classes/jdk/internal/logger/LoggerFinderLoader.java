@@ -81,7 +81,7 @@ public final class LoggerFinderLoader {
     // Get configuration error policy
     private static ErrorPolicy configurationErrorPolicy() {
         String errorPolicy =
-                GetPropertyAction.getProperty("jdk.logger.finder.error");
+                GetPropertyAction.privilegedGetProperty("jdk.logger.finder.error");
         if (errorPolicy == null || errorPolicy.isEmpty()) {
             return ErrorPolicy.WARNING;
         }
@@ -96,7 +96,7 @@ public final class LoggerFinderLoader {
     // This is further submitted to the configuration error policy.
     private static boolean ensureSingletonProvider() {
         return Boolean.parseBoolean(
-                GetPropertyAction.getProperty("jdk.logger.finder.singleton"));
+                GetPropertyAction.privilegedGetProperty("jdk.logger.finder.singleton"));
     }
 
     private static Iterator<System.LoggerFinder> findLoggerFinderProviders() {

@@ -114,8 +114,8 @@ class WindowsFileAttributes
     // indicates if accurate metadata is required (interesting on NTFS only)
     private static final boolean ensureAccurateMetadata;
     static {
-        String propValue = GetPropertyAction
-                .getProperty("sun.nio.fs.ensureAccurateMetadata", "false");
+        String propValue = GetPropertyAction.privilegedGetProperty(
+            "sun.nio.fs.ensureAccurateMetadata", "false");
         ensureAccurateMetadata = (propValue.length() == 0) ?
             true : Boolean.valueOf(propValue);
     }

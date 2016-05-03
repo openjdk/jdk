@@ -54,7 +54,7 @@ public class DefaultFileSystemProvider {
      * Returns the default FileSystemProvider.
      */
     public static FileSystemProvider create() {
-        String osname = GetPropertyAction.getProperty("os.name");
+        String osname = GetPropertyAction.privilegedGetProperty("os.name");
         if (osname.equals("SunOS"))
             return createProvider("sun.nio.fs.SolarisFileSystemProvider");
         if (osname.equals("Linux"))

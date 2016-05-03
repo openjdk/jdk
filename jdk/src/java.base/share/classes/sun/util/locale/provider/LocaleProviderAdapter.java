@@ -116,7 +116,7 @@ public abstract class LocaleProviderAdapter {
         adapterCache = new ConcurrentHashMap<>();
 
     static {
-        String order = GetPropertyAction.getProperty("java.locale.providers");
+        String order = GetPropertyAction.privilegedGetProperty("java.locale.providers");
         List<Type> typeList = new ArrayList<>();
 
         // Check user specified adapter preference
