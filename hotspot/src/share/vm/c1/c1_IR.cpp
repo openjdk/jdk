@@ -460,14 +460,14 @@ class ComputeLinearScanOrder : public StackObj {
 
   BlockList* _linear_scan_order;   // the resulting list of blocks in correct order
 
-  BitMap     _visited_blocks;      // used for recursive processing of blocks
-  BitMap     _active_blocks;       // used for recursive processing of blocks
-  BitMap     _dominator_blocks;    // temproary BitMap used for computation of dominator
-  intArray   _forward_branches;    // number of incoming forward branches for each block
-  BlockList  _loop_end_blocks;     // list of all loop end blocks collected during count_edges
-  BitMap2D   _loop_map;            // two-dimensional bit set: a bit is set if a block is contained in a loop
-  BlockList  _work_list;           // temporary list (used in mark_loops and compute_order)
-  BlockList  _loop_headers;
+  ResourceBitMap _visited_blocks;   // used for recursive processing of blocks
+  ResourceBitMap _active_blocks;    // used for recursive processing of blocks
+  ResourceBitMap _dominator_blocks; // temproary BitMap used for computation of dominator
+  intArray       _forward_branches; // number of incoming forward branches for each block
+  BlockList      _loop_end_blocks;  // list of all loop end blocks collected during count_edges
+  BitMap2D       _loop_map;         // two-dimensional bit set: a bit is set if a block is contained in a loop
+  BlockList      _work_list;        // temporary list (used in mark_loops and compute_order)
+  BlockList      _loop_headers;
 
   Compilation* _compilation;
 
@@ -535,7 +535,7 @@ ComputeLinearScanOrder::ComputeLinearScanOrder(Compilation* c, BlockBegin* start
   _loop_end_blocks(8),
   _work_list(8),
   _linear_scan_order(NULL), // initialized later with correct size
-  _loop_map(0, 0),          // initialized later with correct size
+  _loop_map(0),             // initialized later with correct size
   _compilation(c)
 {
   TRACE_LINEAR_SCAN(2, tty->print_cr("***** computing linear-scan block order"));

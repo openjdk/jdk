@@ -350,7 +350,7 @@ class GenerateOopMap VALUE_OBJ_CLASS_SPEC {
   BasicBlock *    _basic_blocks;             // Array of basicblock info
   int             _gc_points;
   int             _bb_count;
-  BitMap          _bb_hdr_bits;
+  ResourceBitMap  _bb_hdr_bits;
 
   // Basicblocks methods
   void          initialize_bb               ();

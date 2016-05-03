@@ -3967,7 +3967,7 @@ void ClassFileParser::layout_fields(ConstantPool* cp,
     next_nonstatic_padded_offset += ContendedPaddingWidth;
 
     // collect all contended groups
-    BitMap bm(cp->size());
+    ResourceBitMap bm(cp->size());
     for (AllFieldStream fs(_fields, cp); !fs.done(); fs.next()) {
       // skip already laid out fields
       if (fs.is_offset_set()) continue;
