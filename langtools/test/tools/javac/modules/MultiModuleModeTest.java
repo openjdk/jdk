@@ -49,7 +49,7 @@ public class MultiModuleModeTest extends ModuleTestBase {
     }
 
     @Test
-    void testDuplicateModules(Path base) throws Exception {
+    public void testDuplicateModules(Path base) throws Exception {
         Path src = base.resolve("src");
         Path src_m1 = src.resolve("m1");
         tb.writeJavaFiles(src_m1, "module m1 { }");
@@ -72,7 +72,7 @@ public class MultiModuleModeTest extends ModuleTestBase {
     }
 
     @Test
-    void testCantFindModule(Path base) throws Exception {
+    public void testCantFindModule(Path base) throws Exception {
         Path src = base.resolve("src");
         Path src_m1 = src.resolve("m1");
         tb.writeJavaFiles(src_m1, "module m1 { }");
@@ -95,7 +95,7 @@ public class MultiModuleModeTest extends ModuleTestBase {
     }
 
     @Test
-    void testModuleNameMismatch(Path base) throws Exception {
+    public void testModuleNameMismatch(Path base) throws Exception {
         Path src = base.resolve("src");
         Path src_m1 = src.resolve("m1");
         tb.writeJavaFiles(src_m1, "module m2 { }");
@@ -116,7 +116,7 @@ public class MultiModuleModeTest extends ModuleTestBase {
     }
 
     @Test
-    void testImplicitModuleSource(Path base) throws Exception {
+    public void testImplicitModuleSource(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("m1"), "module m1 { }");
         tb.writeJavaFiles(src.resolve("m2"), "module m2 { requires m1; }");
@@ -132,7 +132,7 @@ public class MultiModuleModeTest extends ModuleTestBase {
     }
 
     @Test
-    void testImplicitModuleClass(Path base) throws Exception {
+    public void testImplicitModuleClass(Path base) throws Exception {
         Path src1 = base.resolve("src1");
         tb.writeJavaFiles(src1.resolve("m1"), "module m1 { }");
         Path modules1 = base.resolve("modules1");

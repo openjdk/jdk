@@ -497,13 +497,13 @@ krb5.kdc.bad.policy = tryLast
 #       " DisabledAlgorithm { , DisabledAlgorithm } "
 #
 #   DisabledAlgorithm:
-#       AlgorithmName [Constraint]
+#       AlgorithmName [Constraint] { '&' Constraint }
 #
 #   AlgorithmName:
 #       (see below)
 #
 #   Constraint:
-#       KeySizeConstraint
+#       KeySizeConstraint, CertConstraint
 #
 #   KeySizeConstraint:
 #       keySize Operator DecimalInteger
@@ -519,6 +519,9 @@ krb5.kdc.bad.policy = tryLast
 #
 #   DecimalDigit: one of
 #       1 2 3 4 5 6 7 8 9 0
+#
+#   CertConstraint
+#       jdkCA
 #
 # The "AlgorithmName" is the standard algorithm name of the disabled
 # algorithm. See "Java Cryptography Architecture Standard Algorithm Name
@@ -541,6 +544,29 @@ krb5.kdc.bad.policy = tryLast
 # that any RSA key with key size less than 1024 or greater than 2048 should
 # be disabled. Note that the "KeySizeConstraint" only makes sense to key
 # algorithms.
+#
+# "CertConstraint" specifies additional constraints for
+# certificates that contain algorithms that are restricted:
+#
+#   "jdkCA" prohibits the specified algorithm only if the algorithm is used
+#     in a certificate chain that terminates at a marked trust anchor in the
+#     lib/security/cacerts keystore.  All other chains are not affected.
+#     If the jdkCA constraint is not set, then all chains using the
+#     specified algorithm are restricted.  jdkCA may only be used once in
+#     a DisabledAlgorithm expression.
+#     Example:  To apply this constraint to SHA-1 certificates, include
+#     the following:  "SHA1 jdkCA"
+#
+# When an algorithm must satisfy more than one constraint, it must be
+# delimited by an ampersand '&'.  For example, to restrict certificates in a
+# chain that terminate at a distribution provided trust anchor and contain
+# RSA keys that are less than or equal to 1024 bits, add the following
+# constraint:  "RSA keySize <= 1024 & jdkCA".
+#
+# All DisabledAlgorithms expressions are processed in the order defined in the
+# property.  This requires lower keysize constraints to be specified
+# before larger keysize constraints of the same algorithm.  For example:
+# "RSA keySize < 1024 & jdkCA, RSA keySize < 2048".
 #
 # Note: This property is currently used by Oracle's PKIX implementation. It
 # is not guaranteed to be examined and used by other implementations.

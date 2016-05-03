@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ public class Messager extends Log implements Reporter {
         }
     }
 
-    public class ExitJavadoc extends Error {
+    public static class ExitJavadoc extends Error {
         private static final long serialVersionUID = 0;
     }
 
@@ -414,15 +414,6 @@ public class Messager extends Log implements Reporter {
             notice((nwarnings > 1) ?  "main.warnings" : "main.warning",
                    "" + nwarnings);
         }
-    }
-
-    /**
-     * Force program exit, e.g., from a fatal error.
-     * <p>
-     * TODO: This method does not really belong here.
-     */
-    public void exit() {
-        throw new ExitJavadoc();
     }
 
     private void report(DiagnosticType type, String pos, String msg) {

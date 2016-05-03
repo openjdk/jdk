@@ -55,8 +55,9 @@ public class SdpProvider extends NetHooks.Provider {
     private PrintStream log;
 
     public SdpProvider() {
+        Properties props = GetPropertyAction.privilegedGetProperties();
         // if this property is not defined then there is nothing to do.
-        String file = GetPropertyAction.getProperty("com.sun.sdp.conf");
+        String file = props.getProperty("com.sun.sdp.conf");
         if (file == null) {
             this.enabled = false;
             this.rules = null;
@@ -65,17 +66,15 @@ public class SdpProvider extends NetHooks.Provider {
 
         // load configuration file
         List<Rule> list = null;
-        if (file != null) {
-            try {
-                list = loadRulesFromFile(file);
-            } catch (IOException e) {
-                fail("Error reading %s: %s", file, e.getMessage());
-            }
+        try {
+            list = loadRulesFromFile(file);
+        } catch (IOException e) {
+            fail("Error reading %s: %s", file, e.getMessage());
         }
 
         // check if debugging is enabled
         PrintStream out = null;
-        String logfile = GetPropertyAction.getProperty("com.sun.sdp.debug");
+        String logfile = props.getProperty("com.sun.sdp.debug");
         if (logfile != null) {
             out = System.out;
             if (logfile.length() > 0) {

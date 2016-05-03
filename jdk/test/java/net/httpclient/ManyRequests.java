@@ -24,18 +24,17 @@
 /**
  * @test
  * @bug 8087112
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.SimpleSSLContext
+ * @library /lib/testlibrary/ /
+ * @build jdk.testlibrary.SimpleSSLContext EchoHandler
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
- * @run main/othervm ManyRequests
+ * @run main/othervm/timeout=40 -Djava.net.http.HttpClient.log=ssl ManyRequests
  * @summary Send a large number of requests asynchronously
  */
 
 //package javaapplication16;
 
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
+import com.sun.net.httpserver.*;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.http.HttpClient;
@@ -47,18 +46,25 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Random;
+import java.util.logging.*;
 import java.util.concurrent.CompletableFuture;
-import javax.net.ssl.SSLContext;
+import javax.net.ssl.*;
 import jdk.testlibrary.SimpleSSLContext;
 
 public class ManyRequests {
 
+    volatile static int counter = 0;
+
     public static void main(String[] args) throws Exception {
+        Logger logger = Logger.getLogger("com.sun.net.httpserver");
+        logger.setLevel(Level.ALL);
+        logger.info("TEST");
+
         SSLContext ctx = new SimpleSSLContext().get();
 
         InetSocketAddress addr = new InetSocketAddress(0);
         HttpsServer server = HttpsServer.create(addr, 0);
-        server.setHttpsConfigurator(new HttpsConfigurator(ctx));
+        server.setHttpsConfigurator(new Configurator(ctx));
 
         HttpClient client = HttpClient.create()
                                       .sslContext(ctx)
@@ -72,7 +78,8 @@ public class ManyRequests {
         }
     }
 
-    static final int REQUESTS = 1000;
+    //static final int REQUESTS = 1000;
+    static final int REQUESTS = 20;
 
     static void test(HttpsServer server, HttpClient client) throws Exception {
         int port = server.getAddress().getPort();
@@ -102,6 +109,9 @@ public class ManyRequests {
                                resp.bodyAsync(HttpResponse.ignoreBody());
                                String s = "Expected 200, got: " + resp.statusCode();
                                return completedWithIOException(s);
+                           } else {
+                               counter++;
+                               System.out.println("Result from " + counter);
                            }
                            return resp.bodyAsync(HttpResponse.asByteArray())
                                       .thenApply((b) -> new Pair<>(resp, b));
@@ -114,14 +124,18 @@ public class ManyRequests {
 
                       });
         }
+
         // wait for them all to complete and throw exception in case of error
-        CompletableFuture.allOf(results).join();
+        //try {
+            CompletableFuture.allOf(results).join();
+        //} catch (Exception  e) {
+            //e.printStackTrace();
+            //throw e;
+        //}
     }
 
     static <T> CompletableFuture<T> completedWithIOException(String message) {
-        CompletableFuture<T> cf = new CompletableFuture<>();
-        cf.completeExceptionally(new IOException(message));
-        return cf;
+        return CompletableFuture.failedFuture(new IOException(message));
     }
 
     static final class Pair<T,U> {
@@ -192,3 +206,14 @@ public class ManyRequests {
         throw new RuntimeException(sb.toString());
     }
 }
+
+class Configurator extends HttpsConfigurator {
+    public Configurator(SSLContext ctx) {
+        super(ctx);
+    }
+
+    public void configure (HttpsParameters params) {
+        params.setSSLParameters (getSSLContext().getSupportedSSLParameters());
+    }
+}
+

@@ -53,7 +53,7 @@ import sun.security.action.GetPropertyAction;
     static final boolean VAR_HANDLE_GUARDS;
 
     static {
-        Properties props = GetPropertyAction.getProperties();
+        Properties props = GetPropertyAction.privilegedGetProperties();
         DEBUG_METHOD_HANDLE_NAMES = Boolean.parseBoolean(
                 props.getProperty("java.lang.invoke.MethodHandle.DEBUG_NAMES"));
         DUMP_CLASS_FILES = Boolean.parseBoolean(

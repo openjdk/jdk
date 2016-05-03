@@ -94,7 +94,7 @@ public class AuthenticationHeader {
     }
 
     static {
-        authPref = GetPropertyAction.getProperty("http.auth.preference");
+        authPref = GetPropertyAction.privilegedGetProperty("http.auth.preference");
 
         // http.auth.preference can be set to SPNEGO or Kerberos.
         // In fact they means "Negotiate with SPNEGO" and "Negotiate with

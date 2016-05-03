@@ -53,10 +53,6 @@ import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
 public class MemberEnter extends JCTree.Visitor {
     protected static final Context.Key<MemberEnter> memberEnterKey = new Context.Key<>();
 
-    /** A switch to determine whether we check for package/class conflicts
-     */
-    final static boolean checkClash = true;
-
     private final Enter enter;
     private final Log log;
     private final Check chk;

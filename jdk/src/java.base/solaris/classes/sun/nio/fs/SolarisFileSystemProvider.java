@@ -85,7 +85,7 @@ public class SolarisFileSystemProvider extends UnixFileSystemProvider {
     @Override
     FileTypeDetector getFileTypeDetector() {
         Path userMimeTypes = Paths.get(
-            GetPropertyAction.getProperty("user.home"), ".mime.types");
+            GetPropertyAction.privilegedGetProperty("user.home"), ".mime.types");
         Path etcMimeTypes = Paths.get("/etc/mime.types");
 
         return chain(new GioFileTypeDetector(),

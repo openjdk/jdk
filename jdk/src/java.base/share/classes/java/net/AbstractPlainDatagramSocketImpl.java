@@ -52,7 +52,8 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
     protected InetAddress connectedAddress = null;
     private int connectedPort = -1;
 
-    private static final String os = GetPropertyAction.getProperty("os.name");
+    private static final String os =
+            GetPropertyAction.privilegedGetProperty("os.name");
 
     /**
      * flag set if the native connect() call not to be used

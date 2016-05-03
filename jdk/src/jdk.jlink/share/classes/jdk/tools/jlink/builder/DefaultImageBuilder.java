@@ -95,38 +95,29 @@ public class DefaultImageBuilder implements ImageBuilder {
 
     private final Path root;
     private final Path mdir;
-    private final boolean genBom;
     private final Set<String> modules = new HashSet<>();
 
     /**
      * Default image builder constructor.
      *
-     * @param genBom true, generates a bom file.
      * @param root The image root directory.
      * @throws IOException
      */
-    public DefaultImageBuilder(boolean genBom, Path root) throws IOException {
+    public DefaultImageBuilder(Path root) throws IOException {
         Objects.requireNonNull(root);
-
-        this.genBom = genBom;
 
         this.root = root;
         this.mdir = root.resolve("lib");
         Files.createDirectories(mdir);
     }
 
-    private void storeFiles(Set<String> modules, String bom, Properties release) throws IOException {
+    private void storeFiles(Set<String> modules, Properties release) throws IOException {
         if (release != null) {
             addModules(release, modules);
             File r = new File(root.toFile(), "release");
             try (FileOutputStream fo = new FileOutputStream(r)) {
                 release.store(fo, null);
             }
-        }
-        // Generate bom
-        if (genBom) {
-            File bomFile = new File(root.toFile(), "bom");
-            createUtf8File(bomFile, bom);
         }
     }
 
@@ -144,7 +135,7 @@ public class DefaultImageBuilder implements ImageBuilder {
     }
 
     @Override
-    public void storeFiles(Pool files, String bom, Properties release) {
+    public void storeFiles(Pool files, Properties release) {
         try {
             for (ModuleData f : files.getContent()) {
                if (!f.getType().equals(Pool.ModuleDataType.CLASS_OR_RESOURCE)) {
@@ -161,7 +152,7 @@ public class DefaultImageBuilder implements ImageBuilder {
                     modules.add(m.getName());
                 }
             }
-            storeFiles(modules, bom, release);
+            storeFiles(modules, release);
 
             if (Files.getFileStore(root).supportsFileAttributeView(PosixFileAttributeView.class)) {
                 // launchers in the bin directory need execute permission
@@ -190,8 +181,8 @@ public class DefaultImageBuilder implements ImageBuilder {
     }
 
     @Override
-    public void storeFiles(Pool files, String bom) {
-        storeFiles(files, bom, new Properties());
+    public void storeFiles(Pool files) {
+        storeFiles(files, new Properties());
     }
 
     /**
@@ -213,27 +204,47 @@ public class DefaultImageBuilder implements ImageBuilder {
             mainClass = ModuleDescriptor.read(stream).mainClass();
             if (mainClass.isPresent()) {
                 Path cmd = root.resolve("bin").resolve(module);
-                if (!Files.exists(cmd)) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("#!/bin/sh")
-                            .append("\n");
-                    sb.append("JLINK_VM_OPTIONS=")
-                            .append("\n");
-                    sb.append("DIR=`dirname $0`")
-                            .append("\n");
-                    sb.append("$DIR/java $JLINK_VM_OPTIONS -m ")
+                // generate shell script for Unix platforms
+                StringBuilder sb = new StringBuilder();
+                sb.append("#!/bin/sh")
+                        .append("\n");
+                sb.append("JLINK_VM_OPTIONS=")
+                        .append("\n");
+                sb.append("DIR=`dirname $0`")
+                        .append("\n");
+                sb.append("$DIR/java $JLINK_VM_OPTIONS -m ")
+                        .append(module).append('/')
+                        .append(mainClass.get())
+                        .append(" $@\n");
+
+                try (BufferedWriter writer = Files.newBufferedWriter(cmd,
+                        StandardCharsets.ISO_8859_1,
+                        StandardOpenOption.CREATE_NEW)) {
+                    writer.write(sb.toString());
+                }
+                if (Files.getFileStore(root.resolve("bin"))
+                        .supportsFileAttributeView(PosixFileAttributeView.class)) {
+                    setExecutable(cmd);
+                }
+                // generate .bat file for Windows
+                if (isWindows()) {
+                    Path bat = root.resolve("bin").resolve(module + ".bat");
+                    sb = new StringBuilder();
+                    sb.append("@echo off")
+                            .append("\r\n");
+                    sb.append("set JLINK_VM_OPTIONS=")
+                            .append("\r\n");
+                    sb.append("set DIR=%~dp0")
+                            .append("\r\n");
+                    sb.append("\"%DIR%\\java\" %JLINK_VM_OPTIONS% -m ")
                             .append(module).append('/')
                             .append(mainClass.get())
-                            .append(" $@\n");
+                            .append(" %*\r\n");
 
-                    try (BufferedWriter writer = Files.newBufferedWriter(cmd,
+                    try (BufferedWriter writer = Files.newBufferedWriter(bat,
                             StandardCharsets.ISO_8859_1,
                             StandardOpenOption.CREATE_NEW)) {
                         writer.write(sb.toString());
-                    }
-                    if (Files.getFileStore(root.resolve("bin"))
-                            .supportsFileAttributeView(PosixFileAttributeView.class)) {
-                        setExecutable(cmd);
                     }
                 }
             }

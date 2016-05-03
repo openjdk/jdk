@@ -458,6 +458,7 @@ public class MBeanServerFactory {
      **/
     private static MBeanServerBuilder newBuilder(Class<?> builderClass) {
         try {
+            @SuppressWarnings("deprecation")
             final Object abuilder = builderClass.newInstance();
             return (MBeanServerBuilder)abuilder;
         } catch (RuntimeException x) {
