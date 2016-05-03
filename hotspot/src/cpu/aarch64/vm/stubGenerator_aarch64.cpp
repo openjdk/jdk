@@ -2082,7 +2082,9 @@ class StubGenerator: public StubCodeGenerator {
     const Register to        = c_rarg0;  // source array address
     const Register value     = c_rarg1;  // value
     const Register count     = c_rarg2;  // elements count
-    const Register cnt_words = c_rarg3; // temp register
+
+    const Register bz_base = r10;        // base for block_zero routine
+    const Register cnt_words = r11;      // temp register
 
     __ enter();
 
@@ -2152,7 +2154,9 @@ class StubGenerator: public StubCodeGenerator {
       __ cmp(cnt_words, BlockZeroingLowLimit >> 3);
       __ ccmp(value, 0 /* comparing value */, 0 /* NZCV */, Assembler::GE);
       __ br(Assembler::NE, non_block_zeroing);
-      __ block_zero(to, cnt_words, true);
+      __ mov(bz_base, to);
+      __ block_zero(bz_base, cnt_words, true);
+      __ mov(to, bz_base);
       __ b(rest);
       __ bind(non_block_zeroing);
       __ fill_words(to, cnt_words, value);

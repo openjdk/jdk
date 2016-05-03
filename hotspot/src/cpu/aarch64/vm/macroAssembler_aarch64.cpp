@@ -4790,6 +4790,7 @@ void MacroAssembler::block_zero(Register base, Register cnt, bool is_large)
   Label base_aligned;
 
   assert_different_registers(base, cnt, rscratch1);
+  guarantee(base == r10 && cnt == r11, "fix register usage");
 
   Register tmp = rscratch1;
   Register tmp2 = rscratch2;
