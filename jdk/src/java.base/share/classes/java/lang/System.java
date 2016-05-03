@@ -69,7 +69,6 @@ import jdk.internal.logger.LazyLoggers;
 import jdk.internal.logger.LocalizedLoggerWrapper;
 
 import jdk.internal.module.ModuleBootstrap;
-import jdk.internal.module.Modules;
 import jdk.internal.module.ServicesCatalog;
 
 /**
@@ -1916,10 +1915,6 @@ public final class System {
     private static void initPhase2() {
         // initialize the module system
         System.bootLayer = ModuleBootstrap.boot();
-
-        // base module needs to be loose (CODETOOLS-7901619)
-        Module base = Object.class.getModule();
-        Modules.addReads(base, null);
 
         // module system initialized
         VM.initLevel(2);
