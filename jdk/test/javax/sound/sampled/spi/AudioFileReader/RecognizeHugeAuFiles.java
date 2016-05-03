@@ -30,20 +30,25 @@ import javax.sound.sampled.AudioSystem;
 
 /**
  * @test
- * @bug 8132782
+ * @bug 6729836
  */
-public final class RecognizeHugeWaveExtFiles {
+public final class RecognizeHugeAuFiles {
 
     /**
-     * The maximum size in bytes per WAVE specification.
+     * The size of the header's data.
      */
-    private static final /*unsigned int */ long MAX_UNSIGNED_INT = 0xffffffffL;
+    private static final byte AU_HEADER = 44;
 
     /**
-     * The supported wave ext format and sample size in bits.
+     * This value should be used if the size in bytes is unknown.
      */
-    private static final int[][] waveTypeBits = {
-            {0xFFFE/*WAVE_FORMAT_EXTENSIBLE*/, 8}
+    private static final /* unsigned int */ long MAX_UNSIGNED_INT = 0xffffffffL;
+
+    /**
+     * The list of supported au formats and sample size in bits per format.
+     */
+    private static final byte[][] auTypeBits = {
+            {1, 8}, {2, 8}, {3, 16}, {4, 24}, {5, 32}, {6, 32}, {27, 8}
     };
 
     /**
@@ -65,15 +70,17 @@ public final class RecognizeHugeWaveExtFiles {
     /**
      * The list of supported size of data (stored as unsigned int).
      * <p>
-     * The {@code MAX_UNSIGNED_INT} is a maximum size.
+     * The {@code MAX_UNSIGNED_INT} used if the size in bytes is unknown.
      */
     private static final long[] dataSizes = {
-            0, 1, 2, 3, Integer.MAX_VALUE - 1, Integer.MAX_VALUE,
-            (long) Integer.MAX_VALUE + 1, MAX_UNSIGNED_INT - 1, MAX_UNSIGNED_INT
+            0, 1, 2, 3, Integer.MAX_VALUE - AU_HEADER, Integer.MAX_VALUE - 1,
+            Integer.MAX_VALUE, (long) Integer.MAX_VALUE + 1,
+            (long) Integer.MAX_VALUE + AU_HEADER, MAX_UNSIGNED_INT - AU_HEADER,
+            MAX_UNSIGNED_INT - 1, MAX_UNSIGNED_INT
     };
 
     public static void main(final String[] args) throws Exception {
-        for (final int[] type : waveTypeBits) {
+        for (final byte[] type : auTypeBits) {
             for (final int sampleRate : sampleRates) {
                 for (final int channel : channels) {
                     for (final long dataSize : dataSizes) {
@@ -89,10 +96,10 @@ public final class RecognizeHugeWaveExtFiles {
      * Tests the {@code AudioFileFormat} fetched from the fake header.
      * <p>
      * Note that the frameLength and byteLength are stored as int which means
-     * that {@code AudioFileFormat} will store the data above {@code MAX_INT} as
-     * NOT_SPECIFIED.
+     * that {@code AudioFileFormat} will store the data above {@code  MAX_INT}
+     * as NOT_SPECIFIED.
      */
-    private static void testAFF(final int[] type, final int rate,
+    private static void testAFF(final byte[] type, final int rate,
                                 final int channel, final long size)
             throws Exception {
         final byte[] header = createHeader(type, rate, channel, size);
@@ -100,12 +107,12 @@ public final class RecognizeHugeWaveExtFiles {
         final AudioFileFormat aff = AudioSystem.getAudioFileFormat(fake);
         final AudioFormat format = aff.getFormat();
 
-        if (aff.getType() != AudioFileFormat.Type.WAVE) {
+        if (aff.getType() != AudioFileFormat.Type.AU) {
             throw new RuntimeException("Error");
         }
 
         final long frameLength = size / format.getFrameSize();
-        if (frameLength <= Integer.MAX_VALUE) {
+        if (size != MAX_UNSIGNED_INT && frameLength <= Integer.MAX_VALUE) {
             if (aff.getFrameLength() != frameLength) {
                 System.err.println("Expected: " + frameLength);
                 System.err.println("Actual: " + aff.getFrameLength());
@@ -118,16 +125,31 @@ public final class RecognizeHugeWaveExtFiles {
                 throw new RuntimeException();
             }
         }
+
+        final long byteLength = size + AU_HEADER;
+        if (byteLength <= Integer.MAX_VALUE) {
+            if (aff.getByteLength() != byteLength) {
+                System.err.println("Expected: " + byteLength);
+                System.err.println("Actual: " + aff.getByteLength());
+                throw new RuntimeException();
+            }
+        } else {
+            if (aff.getByteLength() != AudioSystem.NOT_SPECIFIED) {
+                System.err.println("Expected: " + AudioSystem.NOT_SPECIFIED);
+                System.err.println("Actual: " + aff.getByteLength());
+                throw new RuntimeException();
+            }
+        }
         validateFormat(type[1], rate, channel, aff.getFormat());
     }
 
     /**
      * Tests the {@code AudioInputStream} fetched from the fake header.
      * <p>
-     * Note that the frameLength is stored as long which means that {@code
-     * AudioInputStream} must store all possible data from wave file.
+     * Note that the frameLength is stored as long which means
+     * that {@code AudioInputStream} must store all possible data from au file.
      */
-    private static void testAIS(final int[] type, final int rate,
+    private static void testAIS(final byte[] type, final int rate,
                                 final int channel, final long size)
             throws Exception {
         final byte[] header = createHeader(type, rate, channel, size);
@@ -135,16 +157,23 @@ public final class RecognizeHugeWaveExtFiles {
         final AudioInputStream ais = AudioSystem.getAudioInputStream(fake);
         final AudioFormat format = ais.getFormat();
         final long frameLength = size / format.getFrameSize();
-        if (frameLength != ais.getFrameLength()) {
-            System.err.println("Expected: " + frameLength);
-            System.err.println("Actual: " + ais.getFrameLength());
-            throw new RuntimeException();
+        if (size != MAX_UNSIGNED_INT) {
+            if (frameLength != ais.getFrameLength()) {
+                System.err.println("Expected: " + frameLength);
+                System.err.println("Actual: " + ais.getFrameLength());
+                throw new RuntimeException();
+            }
+        } else {
+            if (ais.getFrameLength() != AudioSystem.NOT_SPECIFIED) {
+                System.err.println("Expected: " + AudioSystem.NOT_SPECIFIED);
+                System.err.println("Actual: " + ais.getFrameLength());
+                throw new RuntimeException();
+            }
         }
         if (ais.available() < 0) {
             System.err.println("available should be >=0: " + ais.available());
             throw new RuntimeException();
         }
-
         validateFormat(type[1], rate, channel, format);
     }
 
@@ -152,95 +181,52 @@ public final class RecognizeHugeWaveExtFiles {
      * Tests that format contains the same data as were provided to the fake
      * stream.
      */
-    private static void validateFormat(final int bits, final int rate,
+    private static void validateFormat(final byte bits, final int rate,
                                        final int channel,
                                        final AudioFormat format) {
 
         if (Float.compare(format.getSampleRate(), rate) != 0) {
-            System.err.println("Expected: " + rate);
-            System.err.println("Actual: " + format.getSampleRate());
+            System.out.println("Expected: " + rate);
+            System.out.println("Actual: " + format.getSampleRate());
             throw new RuntimeException();
         }
         if (format.getChannels() != channel) {
-            System.err.println("Expected: " + channel);
-            System.err.println("Actual: " + format.getChannels());
+            System.out.println("Expected: " + channel);
+            System.out.println("Actual: " + format.getChannels());
             throw new RuntimeException();
         }
         int frameSize = ((bits + 7) / 8) * channel;
         if (format.getFrameSize() != frameSize) {
-            System.err.println("Expected: " + frameSize);
-            System.err.println("Actual: " + format.getFrameSize());
+            System.out.println("Expected: " + frameSize);
+            System.out.println("Actual: " + format.getFrameSize());
             throw new RuntimeException();
         }
     }
 
     /**
-     * Creates the custom header of the WAVE file. It is expected that all
-     * passed data are supported.
+     * Creates the custom header of the AU file. It is expected that all passed
+     * data are supported.
      */
-    private static byte[] createHeader(final int[] type, final int rate,
+    private static byte[] createHeader(final byte[] type, final int rate,
                                        final int channel, final long size) {
-        final int frameSize = ((type[1] + 7) / 8) * channel;
         return new byte[]{
-                // RIFF_MAGIC
-                0x52, 0x49, 0x46, 0x46,
-                // fileLength
-                -1, -1, -1, -1,
-                //  waveMagic
-                0x57, 0x41, 0x56, 0x45,
-                // FMT_MAGIC
-                0x66, 0x6d, 0x74, 0x20,
-                // size
-                40, 0, 0, 0,
-                // wav_type  WAVE_FORMAT_EXTENSIBLE
-                (byte) (type[0]), (byte) (type[0] >> 8),
+                // AU_SUN_MAGIC
+                0x2e, 0x73, 0x6e, 0x64,
+                // headerSize
+                0, 0, 0, AU_HEADER,
+                // dataSize
+                (byte) (size >> 24), (byte) (size >> 16), (byte) (size >> 8),
+                (byte) size,
+                // encoding
+                0, 0, 0, type[0],
+                // sampleRate
+                (byte) (rate >> 24), (byte) (rate >> 16), (byte) (rate >> 8),
+                (byte) (rate),
                 // channels
-                (byte) (channel), (byte) (channel >> 8),
-                // samplerate
-                (byte) (rate), (byte) (rate >> 8), (byte) (rate >> 16),
-                (byte) (rate >> 24),
-                // framerate
-                1, 0, 0, 0,
-                // framesize
-                (byte) (frameSize), (byte) (frameSize >> 8),
-                // bits
-                (byte) type[1], 0,
-                // cbsize
-                22, 0,
-                // validBitsPerSample
-                8, 0,
-                // channelMask
-                0, 0, 0, 0,
-                // SUBTYPE_IEEE_FLOAT
-                // i1
-                0x3, 0x0, 0x0, 0x0,
-                //s1
-                0x0, 0x0,
-                //s2
-                0x10, 0,
-                //x1
-                (byte) 0x80,
-                //x2
-                0x0,
-                //x3
-                0x0,
-                //x4
-                (byte) 0xaa,
-                //x5
-                0x0,
-                //x6
-                0x38,
-                //x7
-                (byte) 0x9b,
-                //x8
-                0x71,
-                // DATA_MAGIC
-                0x64, 0x61, 0x74, 0x61,
-                // data size
-                (byte) (size), (byte) (size >> 8), (byte) (size >> 16),
-                (byte) (size >> 24)
+                (byte) (channel >> 24), (byte) (channel >> 16),
+                (byte) (channel >> 8), (byte) (channel),
                 // data
-                , 0, 0, 0, 0, 0
+                0, 0, 0, 0, 0, 0
         };
     }
 }
