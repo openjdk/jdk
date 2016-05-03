@@ -183,7 +183,7 @@ class MimeLauncher extends Thread {
         }
 
         String execPathList;
-        execPathList = GetPropertyAction.getProperty("exec.path");
+        execPathList = GetPropertyAction.privilegedGetProperty("exec.path");
         if (execPathList == null) {
             // exec.path property not set
             return false;

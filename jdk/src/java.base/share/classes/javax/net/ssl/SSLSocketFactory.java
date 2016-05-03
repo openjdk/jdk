@@ -51,7 +51,7 @@ public abstract class SSLSocketFactory extends SocketFactory
     static final boolean DEBUG;
 
     static {
-        String s = GetPropertyAction.getProperty("javax.net.debug", "")
+        String s = GetPropertyAction.privilegedGetProperty("javax.net.debug", "")
                 .toLowerCase(Locale.ENGLISH);
 
         DEBUG = s.contains("all") || s.contains("ssl");

@@ -133,7 +133,7 @@ public class URLEncoder {
         dontNeedEncoding.set('.');
         dontNeedEncoding.set('*');
 
-        dfltEncName = GetPropertyAction.getProperty("file.encoding");
+        dfltEncName = GetPropertyAction.privilegedGetProperty("file.encoding");
     }
 
     /**

@@ -40,7 +40,7 @@ class DefaultDatagramSocketImplFactory {
     static {
         String prefix = null;
         try {
-            prefix = GetPropertyAction.getProperty("impl.prefix", null);
+            prefix = GetPropertyAction.privilegedGetProperty("impl.prefix");
             if (prefix != null)
                 prefixImplClass = Class.forName("java.net."+prefix+"DatagramSocketImpl");
         } catch (Exception e) {

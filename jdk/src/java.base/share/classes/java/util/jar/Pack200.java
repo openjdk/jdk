@@ -695,7 +695,7 @@ public abstract class Pack200 {
             Class<?> impl = (PACK_PROVIDER.equals(prop))? packerImpl: unpackerImpl;
             if (impl == null) {
                 // The first time, we must decide which class to use.
-                implName = GetPropertyAction.getProperty(prop,"");
+                implName = GetPropertyAction.privilegedGetProperty(prop,"");
                 if (implName != null && !implName.equals(""))
                     impl = Class.forName(implName);
                 else if (PACK_PROVIDER.equals(prop))

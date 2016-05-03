@@ -56,7 +56,7 @@ class DefaultDatagramSocketImplFactory
     static {
         Class<?> prefixImplClassLocal = null;
 
-        Properties props = GetPropertyAction.getProperties();
+        Properties props = GetPropertyAction.privilegedGetProperties();
         preferIPv4Stack = Boolean.parseBoolean(
                 props.getProperty("java.net.preferIPv4Stack"));
 

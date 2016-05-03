@@ -59,7 +59,7 @@ public class DefaultAsynchronousChannelProvider {
      * Returns the default AsynchronousChannelProvider.
      */
     public static AsynchronousChannelProvider create() {
-        String osname = GetPropertyAction.getProperty("os.name");
+        String osname = GetPropertyAction.privilegedGetProperty("os.name");
         if (osname.equals("SunOS"))
             return createProvider("sun.nio.ch.SolarisAsynchronousChannelProvider");
         if (osname.equals("Linux"))
