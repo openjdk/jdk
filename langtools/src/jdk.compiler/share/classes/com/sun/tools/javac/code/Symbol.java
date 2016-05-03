@@ -960,12 +960,12 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             return n;
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(ElementVisitor<R, P> v, P p) {
             return v.visitModule(this, p);
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public List<Symbol> getEnclosedElements() {
             List<Symbol> list = List.nil();
             for (Symbol sym : enclosedPackages) {

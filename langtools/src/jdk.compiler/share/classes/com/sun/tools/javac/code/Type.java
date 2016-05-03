@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1588,17 +1588,17 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return v.visitModuleType(this, s);
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
             return tsym.getQualifiedName().toString();
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public TypeKind getKind() {
             return TypeKind.MODULE;
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitNoType(this, p);
         }
