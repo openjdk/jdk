@@ -44,7 +44,9 @@ public class DefaultFileSystemProvider {
             throw new AssertionError(x);
         }
         try {
-            return c.newInstance();
+            @SuppressWarnings("deprecation")
+            FileSystemProvider result = c.newInstance();
+            return result;
         } catch (IllegalAccessException | InstantiationException x) {
             throw new AssertionError(x);
         }

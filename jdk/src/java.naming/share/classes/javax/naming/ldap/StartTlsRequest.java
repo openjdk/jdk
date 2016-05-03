@@ -192,18 +192,12 @@ public class StartTlsRequest implements ExtendedRequest {
         }
         try {
             VersionHelper helper = VersionHelper.getVersionHelper();
-            Class<?> clas = helper.loadClass(
-                "com.sun.jndi.ldap.ext.StartTlsResponseImpl");
+            @SuppressWarnings("deprecation")
+            Object o = helper.loadClass(
+                "com.sun.jndi.ldap.ext.StartTlsResponseImpl").newInstance();
+            resp = (StartTlsResponse) o;
 
-            resp = (StartTlsResponse) clas.newInstance();
-
-        } catch (IllegalAccessException e) {
-            throw wrapException(e);
-
-        } catch (InstantiationException e) {
-            throw wrapException(e);
-
-        } catch (ClassNotFoundException e) {
+        } catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
             throw wrapException(e);
         }
 

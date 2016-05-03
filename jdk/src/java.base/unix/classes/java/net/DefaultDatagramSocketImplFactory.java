@@ -61,7 +61,9 @@ class DefaultDatagramSocketImplFactory {
         throws SocketException {
         if (prefixImplClass != null) {
             try {
-                return (DatagramSocketImpl)prefixImplClass.newInstance();
+                @SuppressWarnings("deprecation")
+                DatagramSocketImpl result = (DatagramSocketImpl)prefixImplClass.newInstance();
+                return result;
             } catch (Exception e) {
                 throw new SocketException("can't instantiate DatagramSocketImpl");
             }
