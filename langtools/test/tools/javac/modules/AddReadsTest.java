@@ -58,7 +58,7 @@ public class AddReadsTest extends ModuleTestBase {
     }
 
     @Test
-    void testAddReads(Path base) throws Exception {
+    public void testAddReads(Path base) throws Exception {
         Path src = base.resolve("src");
         Path src_m1 = src.resolve("m1");
         tb.writeJavaFiles(src_m1,
@@ -150,7 +150,7 @@ public class AddReadsTest extends ModuleTestBase {
     }
 
     @Test
-    void testAddReadsUnnamedModule(Path base) throws Exception {
+    public void testAddReadsUnnamedModule(Path base) throws Exception {
         Path jar = prepareTestJar(base);
 
         Path moduleSrc = base.resolve("module-src");
@@ -175,7 +175,7 @@ public class AddReadsTest extends ModuleTestBase {
     }
 
     @Test
-    void testAddReadsUnnamedModulePackageConflict(Path base) throws Exception {
+    public void testAddReadsUnnamedModulePackageConflict(Path base) throws Exception {
         Path jar = prepareTestJar(base);
 
         Path moduleSrc = base.resolve("module-src");
@@ -202,7 +202,7 @@ public class AddReadsTest extends ModuleTestBase {
     }
 
     @Test
-    void testAddReadsUnnamedToJavaBase(Path base) throws Exception {
+    public void testAddReadsUnnamedToJavaBase(Path base) throws Exception {
         Path jar = prepareTestJar(base);
         Path src = base.resolve("src");
         Path classes = base.resolve("classes");
@@ -223,7 +223,7 @@ public class AddReadsTest extends ModuleTestBase {
     }
 
     @Test
-    void testAddReadsToJavaBase(Path base) throws Exception {
+    public void testAddReadsToJavaBase(Path base) throws Exception {
         Path src = base.resolve("src");
         Path classes = base.resolve("classes");
 
@@ -275,7 +275,7 @@ public class AddReadsTest extends ModuleTestBase {
     }
 
     @Test
-    void testX(Path base) throws Exception {
+    public void testX(Path base) throws Exception {
         Path src = base.resolve("src");
         Path src_m1 = src.resolve("m1");
         tb.writeJavaFiles(src_m1,

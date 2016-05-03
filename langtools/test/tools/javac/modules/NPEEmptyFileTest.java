@@ -45,7 +45,7 @@ public class NPEEmptyFileTest extends ModuleTestBase {
     }
 
     @Test
-    void compileEmptyFile(Path base) throws Exception {
+    public void compileEmptyFile(Path base) throws Exception {
         Path modules = base.resolve("modules");
         Files.createDirectories(modules);
         Path emptyJavaFile = base.resolve("Test.java");

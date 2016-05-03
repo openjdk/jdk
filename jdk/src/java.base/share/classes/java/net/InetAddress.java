@@ -1124,7 +1124,7 @@ class InetAddress implements java.io.Serializable {
     private static NameService createNameService() {
 
         String hostsFileName =
-                GetPropertyAction.getProperty("jdk.net.hosts.file");
+                GetPropertyAction.privilegedGetProperty("jdk.net.hosts.file");
         NameService theNameService;
         if (hostsFileName != null) {
             theNameService = new HostsFileNameService(hostsFileName);
@@ -1643,9 +1643,11 @@ class InetAddress implements java.io.Serializable {
          * property can vary across implementations of the java.
          * classes.  The default is an empty String "".
          */
-        String prefix = GetPropertyAction.getProperty("impl.prefix", "");
+        String prefix = GetPropertyAction.privilegedGetProperty("impl.prefix", "");
         try {
-            impl = Class.forName("java.net." + prefix + implName).newInstance();
+            @SuppressWarnings("deprecation")
+            Object tmp = Class.forName("java.net." + prefix + implName).newInstance();
+            impl = tmp;
         } catch (ClassNotFoundException e) {
             System.err.println("Class not found: java.net." + prefix +
                                implName + ":\ncheck impl.prefix property " +
@@ -1662,7 +1664,9 @@ class InetAddress implements java.io.Serializable {
 
         if (impl == null) {
             try {
-                impl = Class.forName(implName).newInstance();
+                @SuppressWarnings("deprecation")
+                Object tmp = Class.forName(implName).newInstance();
+                impl = tmp;
             } catch (Exception e) {
                 throw new Error("System property impl.prefix incorrect");
             }

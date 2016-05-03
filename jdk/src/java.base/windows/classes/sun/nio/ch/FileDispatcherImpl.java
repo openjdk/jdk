@@ -120,7 +120,7 @@ class FileDispatcherImpl extends FileDispatcher {
 
     static boolean isFastFileTransferRequested() {
         String fileTransferProp = GetPropertyAction
-                .getProperty("jdk.nio.enableFastFileTransfer");
+                .privilegedGetProperty("jdk.nio.enableFastFileTransfer");
         boolean enable;
         if ("".equals(fileTransferProp)) {
             enable = true;

@@ -144,7 +144,7 @@ public class LocalGregorianCalendar extends BaseCalendar {
 
         // Append an era to the predefined eras if it's given by the property.
         String prop = GetPropertyAction
-                .getProperty("jdk.calendar.japanese.supplemental.era");
+                .privilegedGetProperty("jdk.calendar.japanese.supplemental.era");
         if (prop != null) {
             Era era = parseEraEntry(prop);
             if (era != null) {

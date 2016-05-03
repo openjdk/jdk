@@ -438,6 +438,9 @@ public class Shell implements PartialParser {
                 final File file = new File(fileName);
                 final ScriptFunction script = context.compileScript(sourceFor(fileName, file), global);
                 if (script == null || errors.getNumberOfErrors() != 0) {
+                    if (context.getEnv()._parse_only && !errors.hasErrors()) {
+                        continue; // No error, continue to consume all files in list
+                    }
                     return COMPILATION_ERROR;
                 }
 

@@ -23,6 +23,7 @@
 package catalog;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import javax.xml.catalog.Catalog;
 import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogFeatures;
@@ -34,6 +35,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import org.testng.Assert;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.xml.sax.Attributes;
@@ -44,10 +46,49 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.ext.DefaultHandler2;
 
 /*
- * @bug 8081248, 8144966, 8146606, 8146237, 8151154, 8150969, 8151162, 8152527
+ * @bug 8081248, 8144966, 8146606, 8146237, 8151154, 8150969, 8151162, 8152527, 8154220
  * @summary Tests basic Catalog functions.
  */
 public class CatalogTest {
+    static final String KEY_FILES = "javax.xml.catalog.files";
+
+    public String filepath;
+
+    /*
+     * Initializing fields
+     */
+    @BeforeClass
+    public void setUpClass() throws Exception {
+        String file1 = getClass().getResource("first_cat.xml").getFile();
+        if (System.getProperty("os.name").contains("Windows")) {
+            filepath = file1.substring(1, file1.lastIndexOf("/") + 1);
+        } else {
+            filepath = file1.substring(0, file1.lastIndexOf("/") + 1);
+        }
+    }
+
+    /*
+     * @bug 8154220
+     * Verifies that the file input is validated properly. Valid input includes
+     * multiple file paths separated by semicolon.
+     */
+    @Test(dataProvider = "hierarchyOfCatFilesData")
+    public void hierarchyOfCatFiles2(String systemId, String expectedUri) {
+        String file1 = getClass().getResource("first_cat.xml").getFile();
+        String file2 = getClass().getResource("second_cat.xml").getFile();
+        String files = file1 + ";" + file2;
+
+        try {
+            System.setProperty(KEY_FILES, files);
+            CatalogResolver catalogResolver = CatalogManager.catalogResolver(CatalogFeatures.defaults());
+            String sysId = catalogResolver.resolveEntity(null, systemId).getSystemId();
+            Assert.assertEquals(sysId, Paths.get(filepath + expectedUri).toUri().toString().replace("///", "/"), "System ID match not right");
+        } finally {
+            System.clearProperty(KEY_FILES);
+        }
+
+    }
+
     /*
      * @bug 8152527
      * This test is the same as the JDK test ResolveEntityTests:testMatch1.
@@ -289,6 +330,19 @@ public class CatalogTest {
     }
 
     /*
+        DataProvider: used to verify hierarchical catalogs. Refer to JCK test
+    hierarchyOfCatFiles2.
+     */
+    @DataProvider(name = "hierarchyOfCatFilesData")
+    Object[][] getHierarchyOfCatFilesData() {
+        return new Object[][]{
+            {"http://www.oracle.com/sequence.dtd", "first.dtd"},
+            {"http://www.oracle.com/sequence_next.dtd", "next.dtd"},
+            {"http://www.oracle.com/sequence_second.dtd", "second.dtd"}
+        };
+    }
+
+    /*
         DataProvider: used to verify CatalogResolver's resolveEntity function.
         Data columns:
         catalog, prefer, systemId, publicId, expectedUri, expectedFile, msg
@@ -300,6 +354,7 @@ public class CatalogTest {
             {"rewriteSystem_id.xml", "system", "http://www.sys00test.com/rewrite.dtd", "PUB-404", expected, expected, "Relative rewriteSystem with xml:base at group level failed"},
         };
     }
+
     static String id = "http://openjdk.java.net/xml/catalog/dtd/system.dtd";
     /*
        DataProvider: used to verify how prefer settings affect the result of the

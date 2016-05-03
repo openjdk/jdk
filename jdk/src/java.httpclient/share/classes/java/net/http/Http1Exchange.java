@@ -64,32 +64,12 @@ class Http1Exchange extends ExchangeImpl {
         if (connection != null) {
             this.connection = connection;
         } else {
-            InetSocketAddress addr = getAddress(request);
+            InetSocketAddress addr = Utils.getAddress(request);
             this.connection = HttpConnection.getConnection(addr, request);
         }
         this.requestAction = new Http1Request(request, this.connection);
     }
 
-    private static InetSocketAddress getAddress(HttpRequestImpl req) {
-        URI uri = req.uri();
-        if (uri == null) {
-            return req.authority();
-        }
-        int port = uri.getPort();
-        if (port == -1) {
-            if (uri.getScheme().equalsIgnoreCase("https")) {
-                port = 443;
-            } else {
-                port = 80;
-            }
-        }
-        String host = uri.getHost();
-        if (req.proxy() == null) {
-            return new InetSocketAddress(host, port);
-        } else {
-            return InetSocketAddress.createUnresolved(host, port);
-        }
-    }
 
     HttpConnection connection() {
         return connection;
@@ -211,7 +191,7 @@ class Http1Exchange extends ExchangeImpl {
                                 connection.close();
                             }
                          },
-                         () -> request.getAccessControlContext());
+                request::getAccessControlContext);
         operations.add(cf);
         return cf;
     }
@@ -269,7 +249,7 @@ class Http1Exchange extends ExchangeImpl {
                 cf.completeExceptionally(e);
                 connection.close();
             }
-        }, () -> request.getAccessControlContext());
+        }, request::getAccessControlContext);
         operations.add(cf);
         return cf;
     }
@@ -302,7 +282,7 @@ class Http1Exchange extends ExchangeImpl {
                 cf.completeExceptionally(e);
                 connection.close();
             }
-        }, () -> request.getAccessControlContext());
+        }, request::getAccessControlContext);
         operations.add(cf);
         return cf;
     }

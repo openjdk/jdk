@@ -111,7 +111,7 @@ class PlainTunnelingConnection extends HttpConnection {
     }
 
     @Override
-    void close() {
+    public void close() {
         delegate.close();
         connected = false;
     }

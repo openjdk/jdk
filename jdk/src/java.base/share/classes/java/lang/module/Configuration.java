@@ -25,6 +25,7 @@
 
 package java.lang.module;
 
+import java.io.PrintStream;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -183,17 +184,20 @@ public final class Configuration {
         this.nameToModule = Collections.emptyMap();
     }
 
-    private Configuration(Configuration parent, Resolver resolver) {
-        Map<ResolvedModule, Set<ResolvedModule>> graph = resolver.finish(this);
+    private Configuration(Configuration parent,
+                          Resolver resolver,
+                          boolean check)
+    {
+        Map<ResolvedModule, Set<ResolvedModule>> g = resolver.finish(this, check);
 
         Map<String, ResolvedModule> nameToModule = new HashMap<>();
-        for (ResolvedModule resolvedModule : graph.keySet()) {
+        for (ResolvedModule resolvedModule : g.keySet()) {
             nameToModule.put(resolvedModule.name(), resolvedModule);
         }
 
         this.parent = parent;
-        this.graph = graph;
-        this.modules = Collections.unmodifiableSet(graph.keySet());
+        this.graph = g;
+        this.modules = Collections.unmodifiableSet(g.keySet());
         this.nameToModule = Collections.unmodifiableMap(nameToModule);
     }
 
@@ -283,10 +287,10 @@ public final class Configuration {
         Objects.requireNonNull(after);
         Objects.requireNonNull(roots);
 
-        Resolver resolver = new Resolver(before, this, after);
+        Resolver resolver = new Resolver(before, this, after, null);
         resolver.resolveRequires(roots);
 
-        return new Configuration(this, resolver);
+        return new Configuration(this, resolver, true);
     }
 
 
@@ -340,10 +344,32 @@ public final class Configuration {
         Objects.requireNonNull(after);
         Objects.requireNonNull(roots);
 
-        Resolver resolver = new Resolver(before, this, after);
+        Resolver resolver = new Resolver(before, this, after, null);
         resolver.resolveRequires(roots).resolveUses();
 
-        return new Configuration(this, resolver);
+        return new Configuration(this, resolver, true);
+    }
+
+
+    /**
+     * Resolves a collection of root modules, with service binding, and with
+     * the empty configuration as its parent. The post resolution checks
+     * are optionally run.
+     *
+     * This method is used to create the configuration for the boot layer.
+     */
+    static Configuration resolveRequiresAndUses(ModuleFinder finder,
+                                                Collection<String> roots,
+                                                boolean check,
+                                                PrintStream traceOutput)
+    {
+        Configuration parent = empty();
+
+        Resolver resolver
+            = new Resolver(finder, parent, ModuleFinder.empty(), traceOutput);
+        resolver.resolveRequires(roots).resolveUses();
+
+        return new Configuration(parent, resolver, check);
     }
 
 

@@ -60,7 +60,7 @@ public class OutputDirTest extends ModuleTestBase {
     }
 
     @Test
-    void testError(Path base) throws Exception {
+    public void testError(Path base) throws Exception {
         String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", src.toString())
@@ -74,7 +74,7 @@ public class OutputDirTest extends ModuleTestBase {
     }
 
     @Test
-    void testProcOnly(Path base) throws IOException {
+    public void testProcOnly(Path base) throws IOException {
         new JavacTask(tb)
                 .options("-XDrawDiagnostics",
                         "-proc:only",
@@ -85,7 +85,7 @@ public class OutputDirTest extends ModuleTestBase {
     }
 
     @Test
-    void testClassOutDir(Path base) throws IOException {
+    public void testClassOutDir(Path base) throws IOException {
         Path classes = base.resolve("classes");
         new JavacTask(tb)
                 .options("-XDrawDiagnostics",
@@ -97,7 +97,7 @@ public class OutputDirTest extends ModuleTestBase {
     }
 
     @Test
-    void testExplodedOutDir(Path base) throws Exception {
+    public void testExplodedOutDir(Path base) throws Exception {
         Path modSrc = base.resolve("modSrc");
         tb.writeJavaFiles(modSrc,
                 "module m1 { exports p; }",
@@ -131,7 +131,7 @@ public class OutputDirTest extends ModuleTestBase {
     }
 
     @Test
-    void testInExplodedOutDir(Path base) throws Exception {
+    public void testInExplodedOutDir(Path base) throws Exception {
         Path modSrc = base.resolve("modSrc");
         tb.writeJavaFiles(modSrc,
                 "module m1 { exports p; }",

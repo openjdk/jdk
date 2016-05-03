@@ -64,18 +64,20 @@ public class SunCommandLineLauncher extends AbstractLauncher implements Launchin
          * transport or the socket transport
          */
         try {
-            Class<?> c = Class.forName("com.sun.tools.jdi.SharedMemoryTransportService");
-            transportService = (TransportService)c.newInstance();
+            @SuppressWarnings("deprecation")
+            Object o =
+                Class.forName("com.sun.tools.jdi.SharedMemoryTransportService").newInstance();
+            transportService = (TransportService)o;
             transport = new Transport() {
                 public String name() {
                     return "dt_shmem";
                 }
             };
             usingSharedMemory = true;
-        } catch (ClassNotFoundException x) {
-        } catch (UnsatisfiedLinkError x) {
-        } catch (InstantiationException x) {
-        } catch (IllegalAccessException x) {
+        } catch (ClassNotFoundException |
+                 UnsatisfiedLinkError |
+                 InstantiationException |
+                 IllegalAccessException x) {
         };
         if (transportService == null) {
             transportService = new SocketTransportService();

@@ -468,7 +468,7 @@ public final class ProcessBuilder
      */
     public abstract static class Redirect {
         private static final File NULL_FILE = new File(
-                (GetPropertyAction.getProperty("os.name")
+                (GetPropertyAction.privilegedGetProperty("os.name")
                         .startsWith("Windows") ? "NUL" : "/dev/null")
         );
 

@@ -681,7 +681,9 @@ public class RMIClassLoader {
                     Class.forName(providerClassName, false,
                                   ClassLoader.getSystemClassLoader())
                     .asSubclass(RMIClassLoaderSpi.class);
-                return providerClass.newInstance();
+                @SuppressWarnings("deprecation")
+                RMIClassLoaderSpi result = providerClass.newInstance();
+                return result;
 
             } catch (ClassNotFoundException e) {
                 throw new NoClassDefFoundError(e.getMessage());

@@ -151,29 +151,26 @@ public class ToolsOpts extends TestHelper {
         init();
         TestResult tr;
         int jpos = -1;
+        String xPatch = "-J-Xpatch:jdk.compiler=jdk.compiler";
         for (String arg[] : optionPatterns) {
             jpos = indexOfJoption(arg);
             //Build a cmd string for output in results reporting.
-            String cmdString = javacCmd + " -J-Xpatch:.";
+            String cmdString = javacCmd + " " + xPatch;
             for (String opt : arg) {
                 cmdString = cmdString.concat(" " + opt);
             }
             switch (arg.length) {
                 case 1:
-                    tr = doExec(javacCmd, "-J-Xpatch:.",
-                            arg[0]);
+                    tr = doExec(javacCmd, xPatch, arg[0]);
                     break;
                 case 2:
-                    tr = doExec(javacCmd, "-J-Xpatch:.",
-                            arg[0], arg[1]);
+                    tr = doExec(javacCmd, xPatch, arg[0], arg[1]);
                     break;
                 case 3:
-                    tr = doExec(javacCmd, "-J-Xpatch:.",
-                            arg[0], arg[1], arg[2]);
+                    tr = doExec(javacCmd, xPatch, arg[0], arg[1], arg[2]);
                     break;
                 case 4:
-                    tr = doExec(javacCmd, "-J-Xpatch:.",
-                            arg[0], arg[1], arg[2], arg[3]);
+                    tr = doExec(javacCmd, xPatch, arg[0], arg[1], arg[2], arg[3]);
                     break;
                 default:
                     tr = null;

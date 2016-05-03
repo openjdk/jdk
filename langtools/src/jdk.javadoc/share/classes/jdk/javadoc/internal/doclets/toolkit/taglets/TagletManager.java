@@ -246,7 +246,7 @@ public class TagletManager {
             }
             tagClassLoader = fileManager.getClassLoader(TAGLET_PATH);
             Class<?> customTagClass = tagClassLoader.loadClass(classname);
-            ensureReadable(customTagClass);
+            @SuppressWarnings("deprecation")
             Object instance = customTagClass.newInstance();
             Taglet newLegacy = new UserTaglet((jdk.javadoc.doclet.taglet.Taglet)instance);
             String tname = newLegacy.getName();
@@ -258,27 +258,6 @@ public class TagletManager {
             message.notice("doclet.Notice_taglet_registered", classname);
         } catch (Exception exc) {
             message.error("doclet.Error_taglet_not_registered", exc.getClass().getName(), classname);
-        }
-    }
-
-    /**
-     * Ensures that the module of the given class is readable to this
-     * module.
-     * @param targetClass class in module to be made readable
-     */
-    private void ensureReadable(Class<?> targetClass) {
-        try {
-            Method getModuleMethod = Class.class.getMethod("getModule");
-            Object thisModule = getModuleMethod.invoke(this.getClass());
-            Object targetModule = getModuleMethod.invoke(targetClass);
-
-            Class<?> moduleClass = getModuleMethod.getReturnType();
-            Method addReadsMethod = moduleClass.getMethod("addReads", moduleClass);
-            addReadsMethod.invoke(thisModule, targetModule);
-        } catch (NoSuchMethodException e) {
-            // ignore
-        } catch (Exception e) {
-            throw new InternalError(e.toString());
         }
     }
 
