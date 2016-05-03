@@ -45,6 +45,7 @@ class G1CollectionSet;
 class CollectionSetChooser;
 class G1IHOPControl;
 class G1Analytics;
+class G1SurvivorRegions;
 class G1YoungGenSizer;
 
 class G1Policy: public CHeapObj<mtGC> {
@@ -139,7 +140,7 @@ public:
   // The amount of space we copied during a GC.
   virtual size_t bytes_copied_during_gc() const = 0;
 
-  virtual void finalize_collection_set(double target_pause_time_ms) = 0;
+  virtual void finalize_collection_set(double target_pause_time_ms, G1SurvivorRegions* survivor) = 0;
 
   // This sets the initiate_conc_mark_if_possible() flag to start a
   // new cycle, as long as we are not already in one. It's best if it
@@ -159,6 +160,8 @@ public:
   virtual void print_yg_surv_rate_info() const = 0;
 
   virtual void finished_recalculating_age_indexes(bool is_survivors) = 0;
+
+  virtual void transfer_survivors_to_cset(const G1SurvivorRegions* survivors) = 0;
 
   virtual size_t young_list_target_length() const = 0;
 

@@ -1355,8 +1355,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
 
       // At this point there should be no regions in the
       // entire heap tagged as young.
-      assert(check_young_list_empty(true /* check_heap */),
-             "young list should be empty at this point");
+      assert(check_young_list_empty(), "young list should be empty at this point");
 
       // Update the number of full collections that have been completed.
       increment_old_marking_cycles_completed(false /* concurrent */);
@@ -1717,7 +1716,6 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   _has_humongous_reclaim_candidates(false),
   _archive_allocator(NULL),
   _free_regions_coming(false),
-  _young_list(new YoungList(this)),
   _gc_time_stamp(0),
   _summary_bytes_used(0),
   _survivor_evac_stats("Young", YoungPLABSize, PLABWeight),
@@ -2563,11 +2561,11 @@ bool G1CollectedHeap::supports_tlab_allocation() const {
 }
 
 size_t G1CollectedHeap::tlab_capacity(Thread* ignored) const {
-  return (_g1_policy->young_list_target_length() - young_list()->survivor_length()) * HeapRegion::GrainBytes;
+  return (_g1_policy->young_list_target_length() - _survivor.length()) * HeapRegion::GrainBytes;
 }
 
 size_t G1CollectedHeap::tlab_used(Thread* ignored) const {
-  return young_list()->eden_used_bytes();
+  return _eden.length() * HeapRegion::GrainBytes;
 }
 
 // For G1 TLABs should not contain humongous objects, so the maximum TLAB size
@@ -2652,10 +2650,10 @@ void G1CollectedHeap::print_on(outputStream* st) const {
             p2i(_hrm.reserved().end()));
   st->cr();
   st->print("  region size " SIZE_FORMAT "K, ", HeapRegion::GrainBytes / K);
-  uint young_regions = _young_list->length();
+  uint young_regions = young_regions_count();
   st->print("%u young (" SIZE_FORMAT "K), ", young_regions,
             (size_t) young_regions * HeapRegion::GrainBytes / K);
-  uint survivor_regions = _young_list->survivor_length();
+  uint survivor_regions = survivor_regions_count();
   st->print("%u survivors (" SIZE_FORMAT "K)", survivor_regions,
             (size_t) survivor_regions * HeapRegion::GrainBytes / K);
   st->cr();
@@ -2765,10 +2763,9 @@ void G1CollectedHeap::print_all_rsets() {
 #endif // PRODUCT
 
 G1HeapSummary G1CollectedHeap::create_g1_heap_summary() {
-  YoungList* young_list = heap()->young_list();
 
-  size_t eden_used_bytes = young_list->eden_used_bytes();
-  size_t survivor_used_bytes = young_list->survivor_used_bytes();
+  size_t eden_used_bytes = heap()->eden_regions_count() * HeapRegion::GrainBytes;
+  size_t survivor_used_bytes = heap()->survivor_regions_count() * HeapRegion::GrainBytes;
   size_t heap_used = Heap_lock->owned_by_self() ? used() : used_unlocked();
 
   size_t eden_capacity_bytes =
@@ -3188,8 +3185,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     G1HeapTransition heap_transition(this);
     size_t heap_used_bytes_before_gc = used();
 
-    assert(check_young_list_well_formed(), "young list should be well formed");
-
     // Don't dynamically change the number of GC threads this early.  A value of
     // 0 is used to indicate serial work.  When parallel work is done,
     // it will be set.
@@ -3253,7 +3248,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
           concurrent_mark()->checkpointRootsInitialPre();
         }
 
-        g1_policy()->finalize_collection_set(target_pause_time_ms);
+        g1_policy()->finalize_collection_set(target_pause_time_ms, &_survivor);
 
         evacuation_info.set_collectionset_regions(collection_set()->region_length());
 
@@ -3308,14 +3303,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
         clear_cset_fast_test();
 
-        // Don't check the whole heap at this point as the
-        // GC alloc regions from this pause have been tagged
-        // as survivors and moved on to the survivor list.
-        // Survivor regions will fail the !is_young() check.
-        assert(check_young_list_empty(false /* check_heap */),
-          "young list should be empty");
-
-        _young_list->reset_auxilary_lists();
+        guarantee(_eden.length() == 0, "eden should have been cleared");
+        g1_policy()->transfer_survivors_to_cset(survivor());
 
         if (evacuation_failed()) {
           set_used(recalculate_used());
@@ -4722,10 +4711,7 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head, EvacuationInfo& e
   double young_time_ms     = 0.0;
   double non_young_time_ms = 0.0;
 
-  // Since the collection set is a superset of the the young list,
-  // all we need to do to clear the young list is clear its
-  // head and length, and unlink any young regions in the code below
-  _young_list->clear();
+  _eden.clear();
 
   G1Policy* policy = g1_policy();
 
@@ -4772,11 +4758,6 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head, EvacuationInfo& e
       size_t words_survived = surviving_young_words[index];
       cur->record_surv_words_in_group(words_survived);
 
-      // At this point the we have 'popped' cur from the collection set
-      // (linked via next_in_collection_set()) but it is still in the
-      // young list (linked via next_young_region()). Clear the
-      // _next_young_region field.
-      cur->set_next_young_region(NULL);
     } else {
       int index = cur->young_index_in_cset();
       assert(index == -1, "invariant");
@@ -5043,8 +5024,11 @@ bool G1CollectedHeap::is_old_gc_alloc_region(HeapRegion* hr) {
 }
 
 void G1CollectedHeap::set_region_short_lived_locked(HeapRegion* hr) {
-  _young_list->push_region(hr);
+  _eden.add(hr);
+  _g1_policy->set_region_eden(hr);
 }
+
+#ifdef ASSERT
 
 class NoYoungRegionsClosure: public HeapRegionClosure {
 private:
@@ -5062,17 +5046,17 @@ public:
   bool success() { return _success; }
 };
 
-bool G1CollectedHeap::check_young_list_empty(bool check_heap) {
-  bool ret = _young_list->check_list_empty();
+bool G1CollectedHeap::check_young_list_empty() {
+  bool ret = (young_regions_count() == 0);
 
-  if (check_heap) {
-    NoYoungRegionsClosure closure;
-    heap_region_iterate(&closure);
-    ret = ret && closure.success();
-  }
+  NoYoungRegionsClosure closure;
+  heap_region_iterate(&closure);
+  ret = ret && closure.success();
 
   return ret;
 }
+
+#endif // ASSERT
 
 class TearDownRegionSetsClosure : public HeapRegionClosure {
 private:
@@ -5084,12 +5068,13 @@ public:
   bool doHeapRegion(HeapRegion* r) {
     if (r->is_old()) {
       _old_set->remove(r);
+    } else if(r->is_young()) {
+      r->uninstall_surv_rate_group();
     } else {
       // We ignore free regions, we'll empty the free list afterwards.
-      // We ignore young regions, we'll empty the young list afterwards.
       // We ignore humongous regions, we're not tearing down the
       // humongous regions set.
-      assert(r->is_free() || r->is_young() || r->is_humongous(),
+      assert(r->is_free() || r->is_humongous(),
              "it cannot be another type");
     }
     return false;
@@ -5155,16 +5140,12 @@ public:
       r->set_allocation_context(AllocationContext::system());
       _hrm->insert_into_free_list(r);
     } else if (!_free_list_only) {
-      assert(!r->is_young(), "we should not come across young regions");
 
       if (r->is_humongous()) {
         // We ignore humongous regions. We left the humongous set unchanged.
       } else {
-        // Objects that were compacted would have ended up on regions
-        // that were previously old or free.  Archive regions (which are
-        // old) will not have been touched.
-        assert(r->is_free() || r->is_old(), "invariant");
-        // We now consider them old, so register as such. Leave
+        assert(r->is_young() || r->is_free() || r->is_old(), "invariant");
+        // We now consider all regions old, so register as such. Leave
         // archive regions set that way, however, while still adding
         // them to the old set.
         if (!r->is_archive()) {
@@ -5187,7 +5168,8 @@ void G1CollectedHeap::rebuild_region_sets(bool free_list_only) {
   assert_at_safepoint(true /* should_be_vm_thread */);
 
   if (!free_list_only) {
-    _young_list->empty_list();
+    _eden.clear();
+    _survivor.clear();
   }
 
   RebuildRegionSetsClosure cl(free_list_only, &_old_set, &_hrm);
@@ -5256,7 +5238,7 @@ bool G1CollectedHeap::has_more_regions(InCSetState dest) {
   if (dest.is_old()) {
     return true;
   } else {
-    return young_list()->survivor_length() < g1_policy()->max_survivor_regions();
+    return survivor_regions_count() < g1_policy()->max_survivor_regions();
   }
 }
 
@@ -5279,7 +5261,7 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, InCSetState d
     new_alloc_region->record_timestamp();
     if (is_survivor) {
       new_alloc_region->set_survivor();
-      young_list()->add_survivor_region(new_alloc_region);
+      _survivor.add(new_alloc_region);
       _verifier->check_bitmaps("Survivor Region Allocation", new_alloc_region);
     } else {
       new_alloc_region->set_old();

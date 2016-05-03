@@ -261,11 +261,11 @@ void G1CMMarkStack::note_end_of_gc() {
 }
 
 G1CMRootRegions::G1CMRootRegions() :
-  _young_list(NULL), _cm(NULL), _scan_in_progress(false),
+  _cm(NULL), _scan_in_progress(false),
   _should_abort(false), _claimed_survivor_index(0) { }
 
-void G1CMRootRegions::init(G1CollectedHeap* g1h, G1ConcurrentMark* cm) {
-  _young_list = g1h->young_list();
+void G1CMRootRegions::init(const G1SurvivorRegions* survivors, G1ConcurrentMark* cm) {
+  _survivors = survivors;
   _cm = cm;
 }
 
@@ -286,7 +286,7 @@ HeapRegion* G1CMRootRegions::claim_next() {
   }
 
   // Currently, only survivors can be root regions.
-  const GrowableArray<HeapRegion*>* survivor_regions = _young_list->survivor_regions();
+  const GrowableArray<HeapRegion*>* survivor_regions = _survivors->regions();
 
   int claimed_index = Atomic::add(1, &_claimed_survivor_index) - 1;
   if (claimed_index < survivor_regions->length()) {
@@ -310,9 +310,10 @@ void G1CMRootRegions::scan_finished() {
 
   // Currently, only survivors can be root regions.
   if (!_should_abort) {
-    assert(_claimed_survivor_index >= _young_list->survivor_regions()->length(),
-           "we should have claimed all survivors, claimed index = %d, length = %d",
-           _claimed_survivor_index, _young_list->survivor_regions()->length());
+    assert(_claimed_survivor_index >= 0, "otherwise comparison is invalid: %d", _claimed_survivor_index);
+    assert((uint)_claimed_survivor_index >= _survivors->length(),
+           "we should have claimed all survivors, claimed index = %u, length = %u",
+           (uint)_claimed_survivor_index, _survivors->length());
   }
 
   notify_scan_done();
@@ -394,7 +395,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* 
   SATBMarkQueueSet& satb_qs = JavaThread::satb_mark_queue_set();
   satb_qs.set_buffer_size(G1SATBBufferSize);
 
-  _root_regions.init(_g1h, this);
+  _root_regions.init(_g1h->survivor(), this);
 
   if (ConcGCThreads > ParallelGCThreads) {
     log_warning(gc)("Can't have more ConcGCThreads (%u) than ParallelGCThreads (%u).",

@@ -36,6 +36,7 @@ class G1CMTask;
 class G1ConcurrentMark;
 class ConcurrentGCTimer;
 class G1OldTracer;
+class G1SurvivorRegions;
 typedef GenericTaskQueue<oop, mtGC>              G1CMTaskQueue;
 typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
 
@@ -204,8 +205,6 @@ class G1CMMarkStack VALUE_OBJ_CLASS_SPEC {
   template<typename Fn> void iterate(Fn fn);
 };
 
-class YoungList;
-
 // Root Regions are regions that are not empty at the beginning of a
 // marking cycle and which we might collect during an evacuation pause
 // while the cycle is active. Given that, during evacuation pauses, we
@@ -221,19 +220,19 @@ class YoungList;
 // regions populated during the initial-mark pause.
 class G1CMRootRegions VALUE_OBJ_CLASS_SPEC {
 private:
-  YoungList*           _young_list;
-  G1ConcurrentMark*    _cm;
+  const G1SurvivorRegions* _survivors;
+  G1ConcurrentMark*        _cm;
 
-  volatile bool        _scan_in_progress;
-  volatile bool        _should_abort;
-  volatile int         _claimed_survivor_index;
+  volatile bool            _scan_in_progress;
+  volatile bool            _should_abort;
+  volatile int             _claimed_survivor_index;
 
   void notify_scan_done();
 
 public:
   G1CMRootRegions();
   // We actually do most of the initialization in this method.
-  void init(G1CollectedHeap* g1h, G1ConcurrentMark* cm);
+  void init(const G1SurvivorRegions* survivors, G1ConcurrentMark* cm);
 
   // Reset the claiming / scanning of the root regions.
   void prepare_for_scan();

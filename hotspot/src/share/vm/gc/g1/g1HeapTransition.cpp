@@ -30,9 +30,8 @@
 #include "memory/metaspace.hpp"
 
 G1HeapTransition::Data::Data(G1CollectedHeap* g1_heap) {
-  YoungList* young_list = g1_heap->young_list();
-  _eden_length = young_list->eden_length();
-  _survivor_length = young_list->survivor_length();
+  _eden_length = g1_heap->eden_regions_count();
+  _survivor_length = g1_heap->survivor_regions_count();
   _old_length = g1_heap->old_regions_count();
   _humongous_length = g1_heap->humongous_regions_count();
   _metaspace_used_bytes = MetaspaceAux::used_bytes();
