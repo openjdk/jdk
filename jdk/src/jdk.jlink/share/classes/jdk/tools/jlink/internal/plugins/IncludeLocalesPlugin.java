@@ -164,7 +164,7 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
                 try {
                     return new Locale.LanguageRange(s);
                 } catch (IllegalArgumentException iae) {
-                    throw new PluginException(String.format(
+                    throw new IllegalArgumentException(String.format(
                         PluginsResourceBundle.getMessage(NAME + ".invalidtag"), s));
                 }
             })

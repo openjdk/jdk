@@ -204,7 +204,7 @@ public class JLinkTest {
             String[] userOptions = {"--compress", "invalid"};
             String moduleName = "invalidCompressLevel";
             helper.generateDefaultJModule(moduleName, "composite2");
-            helper.generateDefaultImage(userOptions, moduleName).assertFailure("Error: Invalid level invalid");
+            helper.generateDefaultImage(userOptions, moduleName).assertFailure("Error: Invalid compression level invalid");
         }
 
         // @file

@@ -337,8 +337,8 @@ public final class TaskHelper {
             return null;
         }
 
-        private PluginsConfiguration getPluginsConfig(Path output,
-                boolean genbom) throws IOException, BadArgs {
+        private PluginsConfiguration getPluginsConfig(Path output
+                    ) throws IOException, BadArgs {
             if (output != null) {
                 if (Files.exists(output)) {
                     throw new PluginException(PluginsResourceBundle.
@@ -367,7 +367,7 @@ public final class TaskHelper {
             // recreate or postprocessing don't require an output directory.
             ImageBuilder builder = null;
             if (output != null) {
-                builder = new DefaultImageBuilder(genbom, output);
+                builder = new DefaultImageBuilder(output);
 
             }
             return new Jlink.PluginsConfiguration(pluginsList,
@@ -676,9 +676,9 @@ public final class TaskHelper {
                 + bundleHelper.getMessage(key, args));
     }
 
-    public PluginsConfiguration getPluginsConfig(Path output, boolean genbom)
+    public PluginsConfiguration getPluginsConfig(Path output)
             throws IOException, BadArgs {
-        return pluginOptions.getPluginsConfig(output, genbom);
+        return pluginOptions.getPluginsConfig(output);
     }
 
     public Path getExistingImage() {

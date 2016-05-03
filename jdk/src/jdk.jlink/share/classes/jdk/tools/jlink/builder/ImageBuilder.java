@@ -42,22 +42,20 @@ public interface ImageBuilder {
      * Store the external files.
      *
      * @param content Pool of module content.
-     * @param bom The options used to build the image file.
      * @param release the release properties
      * @throws PluginException
      */
-    public default void storeFiles(Pool content, String bom, Properties release) {
-        storeFiles(content, bom);
+    public default void storeFiles(Pool content, Properties release) {
+        storeFiles(content);
     }
 
     /**
      * Store the external files.
      *
      * @param content Pool of module content.
-     * @param bom The options used to build the image file.
      * @throws PluginException
      */
-    public default void storeFiles(Pool content, String bom) {
+    public default void storeFiles(Pool content) {
         throw new UnsupportedOperationException("storeFiles");
     }
 
