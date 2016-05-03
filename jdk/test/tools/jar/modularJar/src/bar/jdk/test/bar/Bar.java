@@ -30,7 +30,7 @@ import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.StringJoiner;
 
-import jdk.internal.module.Hasher;
+import jdk.internal.module.ModuleHashes;
 import jdk.test.bar.internal.Message;
 
 public class Bar {
@@ -43,10 +43,11 @@ public class Bar {
 
         Method m = ModuleDescriptor.class.getDeclaredMethod("hashes");
         m.setAccessible(true);
-        Optional<Hasher.DependencyHashes> optHashes =
-                (Optional<Hasher.DependencyHashes>) m.invoke(md);
+        ModuleDescriptor foo = jdk.test.foo.Foo.class.getModule().getDescriptor();
+        Optional<ModuleHashes> oHashes =
+                (Optional<ModuleHashes>) m.invoke(foo);
 
-        System.out.println("hashes:" + optHashes.get().hashFor("foo"));
+        System.out.println("hashes:" + oHashes.get().hashFor("bar"));
 
         StringJoiner sj = new StringJoiner(",");
         md.conceals().forEach(sj::add);

@@ -214,14 +214,12 @@ public class ImageFileCreatorTest {
             }
 
             @Override
-            public void storeFiles(Pool content, String bom) {
-
+            public void storeFiles(Pool content) {
             }
-
         };
 
         ImagePluginStack stack = new ImagePluginStack(noopBuilder, Collections.emptyList(),
-                null, Collections.emptyList(), "");
+                null, Collections.emptyList());
 
         ImageFileCreator.create(archives, ByteOrder.nativeOrder(), stack);
     }

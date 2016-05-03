@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,24 @@
 
 package jdk.internal.misc;
 
+import java.io.PrintStream;
+import java.lang.module.Configuration;
+import jdk.internal.module.ModuleHashes;
+
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.module.ModuleDescriptor.Version;
+import java.lang.module.ModuleFinder;
+import java.util.Collection;
+import java.lang.module.ModuleReader;
+import java.lang.module.ModuleReference;
+import java.net.URI;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Provides access to non-public methods in java.lang.module.
@@ -89,5 +100,29 @@ public interface JavaLangModuleAccess {
                                          String osArch,
                                          String osVersion,
                                          Set<String> conceals,
-                                         Set<String> packages);
+                                         Set<String> packages,
+                                         ModuleHashes hashes);
+
+    /**
+     * Resolves a collection of root modules, with service binding
+     * and the empty configuration as the parent. The post resolution
+     * checks are optionally run.
+     */
+    Configuration resolveRequiresAndUses(ModuleFinder finder,
+                                         Collection<String> roots,
+                                         boolean check,
+                                         PrintStream traceOutput);
+
+    /**
+     * Creates a ModuleReference to a "patched" module.
+     */
+    ModuleReference newPatchedModule(ModuleDescriptor descriptor,
+                                     URI location,
+                                     Supplier<ModuleReader> readerSupplier);
+
+    /**
+     * Returns the object with the hashes of other modules
+     */
+    Optional<ModuleHashes> hashes(ModuleDescriptor descriptor);
+
 }

@@ -208,7 +208,7 @@ public final class ExcludeVMPlugin implements TransformerPlugin {
                     break;
                 }
                 default: {
-                    throw new PluginException("Unknown option " + value);
+                    throw new IllegalArgumentException("Unknown exclude VM option: " + value);
                 }
             }
             predicate = new ResourceFilter(Utils.listParser.apply(exclude), true);

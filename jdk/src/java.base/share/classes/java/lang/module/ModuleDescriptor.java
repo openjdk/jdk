@@ -27,13 +27,17 @@ package java.lang.module;
 
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -45,7 +49,7 @@ import static jdk.internal.module.Checks.*;
 import static java.util.Objects.*;
 
 import jdk.internal.module.Checks;
-import jdk.internal.module.Hasher.DependencyHashes;
+import jdk.internal.module.ModuleHashes;
 
 
 /**
@@ -372,8 +376,9 @@ public class ModuleDescriptor
 
         private Provides(String service, Set<String> providers, boolean check) {
             this.service = check ? requireServiceTypeName(service) : service;
-            providers = check ? Collections.unmodifiableSet(new HashSet<>(providers))
-                              : Collections.unmodifiableSet(providers);
+            providers = check
+                ? Collections.unmodifiableSet(new LinkedHashSet<>(providers))
+                : Collections.unmodifiableSet(providers);
             if (providers.isEmpty())
                 throw new IllegalArgumentException("Empty providers set");
             if (check)
@@ -787,7 +792,7 @@ public class ModuleDescriptor
     private final String osVersion;
     private final Set<String> conceals;
     private final Set<String> packages;
-    private final DependencyHashes hashes;
+    private final ModuleHashes hashes;
 
     private ModuleDescriptor(String name,
                              boolean automatic,
@@ -802,7 +807,7 @@ public class ModuleDescriptor
                              String osArch,
                              String osVersion,
                              Set<String> conceals,
-                             DependencyHashes hashes)
+                             ModuleHashes hashes)
     {
 
         this.name = name;
@@ -878,7 +883,8 @@ public class ModuleDescriptor
                      String osArch,
                      String osVersion,
                      Set<String> conceals,
-                     Set<String> packages) {
+                     Set<String> packages,
+                     ModuleHashes hashes) {
         this.name = name;
         this.automatic = automatic;
         this.synthetic = synthetic;
@@ -894,7 +900,7 @@ public class ModuleDescriptor
         this.osName = osName;
         this.osArch = osArch;
         this.osVersion = osVersion;
-        this.hashes = null;
+        this.hashes = hashes;
     }
 
     /**
@@ -1063,9 +1069,9 @@ public class ModuleDescriptor
     }
 
     /**
-     * Returns the object with the hashes of the dependences.
+     * Returns the object with the hashes of other modules
      */
-    Optional<DependencyHashes> hashes() {
+    Optional<ModuleHashes> hashes() {
         return Optional.ofNullable(hashes);
     }
 
@@ -1103,7 +1109,7 @@ public class ModuleDescriptor
         String osArch;
         String osVersion;
         String mainClass;
-        DependencyHashes hashes;
+        ModuleHashes hashes;
 
         /**
          * Initializes a new builder with the given module name.
@@ -1580,7 +1586,7 @@ public class ModuleDescriptor
             return this;
         }
 
-        /* package */ Builder hashes(DependencyHashes hashes) {
+        /* package */ Builder hashes(ModuleHashes hashes) {
             this.hashes = hashes;
             return this;
         }
@@ -1719,7 +1725,9 @@ public class ModuleDescriptor
             hc = hc * 43 + Objects.hashCode(osVersion);
             hc = hc * 43 + Objects.hashCode(conceals);
             hc = hc * 43 + Objects.hashCode(hashes);
-            if (hc != 0) hash = hc;
+            if (hc == 0)
+                hc = -1;
+            hash = hc;
         }
         return hc;
     }
@@ -1925,11 +1933,12 @@ public class ModuleDescriptor
 
     static {
         /**
-         * Setup the shared secret to allow code in other packages create
-         * ModuleDescriptor and associated objects directly.
+         * Setup the shared secret to allow code in other packages access
+         * private package methods in java.lang.module.
          */
         jdk.internal.misc.SharedSecrets
             .setJavaLangModuleAccess(new jdk.internal.misc.JavaLangModuleAccess() {
+
                 @Override
                 public Requires newRequires(Set<Requires.Modifier> ms, String mn) {
                     return new Requires(ms, mn, false);
@@ -1974,7 +1983,8 @@ public class ModuleDescriptor
                                                             String osArch,
                                                             String osVersion,
                                                             Set<String> conceals,
-                                                            Set<String> packages) {
+                                                            Set<String> packages,
+                                                            ModuleHashes hashes) {
                     return new ModuleDescriptor(name,
                                                 automatic,
                                                 synthetic,
@@ -1988,7 +1998,29 @@ public class ModuleDescriptor
                                                 osArch,
                                                 osVersion,
                                                 conceals,
-                                                packages);
+                                                packages,
+                                                hashes);
+                }
+
+                @Override
+                public Configuration resolveRequiresAndUses(ModuleFinder finder,
+                                                            Collection<String> roots,
+                                                            boolean check,
+                                                            PrintStream traceOutput)
+                {
+                    return Configuration.resolveRequiresAndUses(finder, roots, check, traceOutput);
+                }
+
+                @Override
+                public ModuleReference newPatchedModule(ModuleDescriptor descriptor,
+                                                        URI location,
+                                                        Supplier<ModuleReader> s) {
+                    return new ModuleReference(descriptor, location, s, true, null);
+                }
+
+                @Override
+                public Optional<ModuleHashes> hashes(ModuleDescriptor descriptor) {
+                    return descriptor.hashes();
                 }
             });
     }
