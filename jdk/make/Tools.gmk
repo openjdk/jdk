@@ -96,7 +96,13 @@ TOOL_CHARSETMAPPING = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classe
 TOOL_SPP = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes build.tools.spp.Spp
 
 # Nimbus is used somewhere in the swing build.
+
+ifeq ($(BOOT_JDK_MODULAR), true)
+  COMPILENIMBUS_ADD_MODS := -addmods java.xml.bind
+endif
+
 TOOL_GENERATENIMBUS = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    $(COMPILENIMBUS_ADD_MODS) \
     build.tools.generatenimbus.Generator
 
 TOOL_WRAPPERGENERATOR = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \

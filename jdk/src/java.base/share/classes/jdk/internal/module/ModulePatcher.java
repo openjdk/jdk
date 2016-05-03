@@ -91,55 +91,28 @@ public final class ModulePatcher {
 
         Map<String, List<Path>> map = new HashMap<>();
         while (value != null) {
+
+            // <module>=<file>(:<file>)*
+
             int pos = value.indexOf('=');
-
-            if (pos == -1 && index > 0)
+            if (pos == -1)
                 throwIAE("Unable to parse: " + value);
-
             if (pos == 0)
                 throwIAE("Missing module name: " + value);
 
-            if (pos > 0) {
+            String mn = value.substring(0, pos);
+            List<Path> list = map.get(mn);
+            if (list != null)
+                throwIAE("Module " + mn + " specified more than once");
+            list = new ArrayList<>();
+            map.put(mn, list);
 
-                // new format: <module>=<file>(:<file>)*
-
-                String mn = value.substring(0, pos);
-                List<Path> list = map.get(mn);
-                if (list != null)
-                    throwIAE("Module " + mn + " specified more than once");
-                list = new ArrayList<>();
-                map.put(mn, list);
-
-                String paths = value.substring(pos+1);
-                for (String path : paths.split(File.pathSeparator)) {
-                    if (!path.isEmpty()) {
-                        list.add(Paths.get(path));
-                    }
+            String paths = value.substring(pos+1);
+            for (String path : paths.split(File.pathSeparator)) {
+                if (!path.isEmpty()) {
+                    list.add(Paths.get(path));
                 }
-
-            } else {
-
-                // old format: <dir>(:<dir>)*
-
-                assert index == 0; // old format only allowed in first -Xpatch
-
-                String[] dirs = value.split(File.pathSeparator);
-                for (String d : dirs) {
-                    if (d.length() > 0) {
-                        Path top = Paths.get(d);
-                        try {
-                            Files.list(top).forEach(e -> {
-                                String mn = e.getFileName().toString();
-                                Path dir = top.resolve(mn);
-                                map.computeIfAbsent(mn, k -> new ArrayList<>())
-                                    .add(dir);
-                            });
-                        } catch (IOException ignore) { }
-                    }
-                }
-
             }
-
 
             index++;
             value = System.getProperty(PATCH_PROPERTY_PREFIX + index);
@@ -175,7 +148,8 @@ public final class ModulePatcher {
             for (Path file : paths) {
                 if (Files.isRegularFile(file)) {
 
-                    // JAR file
+                    // JAR file - do not open as a multi-release JAR as this
+                    // is not supported by the boot class loader
                     try (JarFile jf = new JarFile(file.toFile())) {
                         jf.stream()
                           .filter(e -> e.getName().endsWith(".class"))
@@ -209,10 +183,11 @@ public final class ModulePatcher {
             descriptor = JLMA.newModuleDescriptor(descriptor, packages);
         }
 
-        // return a new module reference
+        // return a module reference to the patched module
         URI location = mref.location().orElse(null);
-        return new ModuleReference(descriptor, location,
-                                   () -> new PatchedModuleReader(paths, mref));
+        return JLMA.newPatchedModule(descriptor,
+                                     location,
+                                     () -> new PatchedModuleReader(paths, mref));
 
     }
 

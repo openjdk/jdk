@@ -25,7 +25,7 @@
  * @test
  * @library /lib/testlibrary
  * @modules jdk.compiler
- * @build PatchTest CompilerUtils jdk.testlibrary.*
+ * @build PatchTest CompilerUtils JarUtils jdk.testlibrary.*
  * @run testng PatchTest
  * @summary Basic test for -Xpatch
  */
@@ -72,6 +72,9 @@ public class PatchTest {
     private static final Path SRC2_DIR = Paths.get(TEST_SRC, "src2");
     private static final Path PATCHES2_DIR = Paths.get("patches2");
 
+    // destination directory for patches packaged as JAR files
+    private static final Path PATCHES_DIR = Paths.get("patches");
+
 
     // the classes overridden or added with -Xpatch
     private static final String[] CLASSES = {
@@ -95,7 +98,7 @@ public class PatchTest {
 
 
     @BeforeTest
-    public void compile() throws Exception {
+    public void setup() throws Exception {
 
         // javac -d mods/test src/test/**
         boolean compiled= CompilerUtils.compile(SRC_DIR.resolve("test"),
@@ -103,36 +106,40 @@ public class PatchTest {
         assertTrue(compiled, "classes did not compile");
 
         // javac -Xmodule:$MODULE -d patches1/$MODULE patches1/$MODULE/**
+        // jar cf patches/$MODULE-1.jar -C patches1/$MODULE .
         for (Path src : Files.newDirectoryStream(SRC1_DIR)) {
             Path output = PATCHES1_DIR.resolve(src.getFileName());
             String mn = src.getFileName().toString();
             compiled  = CompilerUtils.compile(src, output, "-Xmodule:" + mn);
             assertTrue(compiled, "classes did not compile");
+            JarUtils.createJarFile(PATCHES_DIR.resolve(mn + "-1.jar"), output);
         }
 
         // javac -Xmodule:$MODULE -d patches2/$MODULE patches2/$MODULE/**
+        // jar cf patches/$MODULE-2.jar -C patches2/$MODULE .
         for (Path src : Files.newDirectoryStream(SRC2_DIR)) {
             Path output = PATCHES2_DIR.resolve(src.getFileName());
             String mn = src.getFileName().toString();
             compiled  = CompilerUtils.compile(src, output, "-Xmodule:" + mn);
             assertTrue(compiled, "classes did not compile");
+            JarUtils.createJarFile(PATCHES_DIR.resolve(mn + "-2.jar"), output);
         }
 
     }
 
     /**
-     * Run the test with -Xpatch
+     * Run test with patches to java.base, jdk.naming.dns and jdk.compiler
      */
-    public void testRunWithXPatch() throws Exception {
-
-        // value for -Xpatch
-        String patchPath = PATCHES1_DIR + File.pathSeparator + PATCHES2_DIR;
-
+    void runTest(String basePatches, String dnsPatches, String compilerPatches)
+        throws Exception
+    {
         // the argument to the test is the list of classes overridden or added
         String arg = Stream.of(CLASSES).collect(Collectors.joining(","));
 
         int exitValue
-            =  executeTestJava("-Xpatch:" + patchPath,
+            =  executeTestJava("-Xpatch:java.base=" + basePatches,
+                               "-Xpatch:jdk.naming.dns=" + dnsPatches,
+                               "-Xpatch:jdk.compiler=" + compilerPatches,
                                "-XaddExports:java.base/java.lang2=test",
                                "-XaddExports:jdk.naming.dns/com.sun.jndi.dns=test",
                                "-XaddExports:jdk.naming.dns/com.sun.jndi.dns2=test",
@@ -145,6 +152,44 @@ public class PatchTest {
                 .getExitValue();
 
         assertTrue(exitValue == 0);
+    }
+
+
+    /**
+     * Run test with -Xpatch and exploded patches
+     */
+    public void testWithExplodedPatches() throws Exception {
+
+        // patches1/java.base:patches2/java.base
+        String basePatches = PATCHES1_DIR.resolve("java.base")
+                + File.pathSeparator + PATCHES2_DIR.resolve("java.base");
+
+        String dnsPatches = PATCHES1_DIR.resolve("jdk.naming.dns")
+                + File.pathSeparator + PATCHES2_DIR.resolve("jdk.naming.dns");
+
+        String compilerPatches = PATCHES1_DIR.resolve("jdk.compiler")
+                + File.pathSeparator + PATCHES2_DIR.resolve("jdk.compiler");
+
+        runTest(basePatches, dnsPatches, compilerPatches);
+    }
+
+
+    /**
+     * Run test with -Xpatch and patches in JAR files
+     */
+    public void testWitJarPatches() throws Exception {
+
+        // patches/java.base-1.jar:patches/java-base-2.jar
+        String basePatches = PATCHES_DIR.resolve("java.base-1.jar")
+                + File.pathSeparator + PATCHES_DIR.resolve("java.base-2.jar");
+
+        String dnsPatches = PATCHES_DIR.resolve("jdk.naming.dns-1.jar")
+                +  File.pathSeparator + PATCHES_DIR.resolve("jdk.naming.dns-2.jar");
+
+        String compilerPatches = PATCHES_DIR.resolve("jdk.compiler-1.jar")
+                +  File.pathSeparator + PATCHES_DIR.resolve("jdk.compiler-2.jar");
+
+        runTest(basePatches, dnsPatches, compilerPatches);
 
     }
 

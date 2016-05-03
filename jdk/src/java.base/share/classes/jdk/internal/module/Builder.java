@@ -74,6 +74,8 @@ final class Builder {
     String osName;
     String osArch;
     String osVersion;
+    String algorithm;
+    Map<String, String> hashes;
 
     Builder(String name, int reqs, int exports,
             int provides, int conceals, int packages) {
@@ -252,6 +254,25 @@ final class Builder {
     }
 
     /**
+     * Sets the algorithm of the module hashes
+     */
+    public Builder algorithm(String algorithm) {
+        this.algorithm = algorithm;
+        return this;
+    }
+
+    /**
+     * Sets the module hash for the given module name
+     */
+    public Builder moduleHash(String mn, String hash) {
+        if (hashes == null)
+            hashes = new HashMap<>();
+
+        hashes.put(mn, hash);
+        return this;
+    }
+
+    /**
      * Returns the set of packages that is the union of the exported and
      * concealed packages.
      */
@@ -273,6 +294,9 @@ final class Builder {
     public ModuleDescriptor build() {
         assert name != null;
 
+        ModuleHashes moduleHashes =
+            hashes != null ? new ModuleHashes(algorithm, hashes) : null;
+
         return jlma.newModuleDescriptor(name,
                                         false,    // automatic
                                         false,    // assume not synthetic for now
@@ -286,6 +310,7 @@ final class Builder {
                                         osArch,
                                         osVersion,
                                         conceals,
-                                        computePackages(exports, conceals));
+                                        computePackages(exports, conceals),
+                                        moduleHashes);
     }
 }

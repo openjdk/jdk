@@ -26,7 +26,8 @@
  * @bug 8049021
  * @summary Test different constructors for CommandAPDU and check CLA,INS,NC,NE,
  * P1,and P2
- * @run testng CommandAPDUTest
+ * @compile -addmods java.smartcardio CommandAPDUTest.java
+ * @run testng/othervm -addmods java.smartcardio CommandAPDUTest
  */
 import java.nio.ByteBuffer;
 import javax.smartcardio.CommandAPDU;
