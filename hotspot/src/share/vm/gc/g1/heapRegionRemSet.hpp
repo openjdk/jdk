@@ -79,7 +79,7 @@ class OtherRegionsTable VALUE_OBJ_CLASS_SPEC {
   HeapRegion*      _hr;
 
   // These are protected by "_m".
-  BitMap      _coarse_map;
+  CHeapBitMap _coarse_map;
   size_t      _n_coarse_entries;
   static jint _n_coarsenings;
 

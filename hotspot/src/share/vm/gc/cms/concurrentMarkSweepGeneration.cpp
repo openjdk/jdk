@@ -5666,10 +5666,9 @@ bool CMSBitMap::allocate(MemRegion mr) {
   }
   assert(_virtual_space.committed_size() == brs.size(),
          "didn't reserve backing store for all of CMS bit map?");
-  _bm.set_map((BitMap::bm_word_t*)_virtual_space.low());
   assert(_virtual_space.committed_size() << (_shifter + LogBitsPerByte) >=
          _bmWordSize, "inconsistency in bit map sizing");
-  _bm.set_size(_bmWordSize >> _shifter);
+  _bm = BitMapView((BitMap::bm_word_t*)_virtual_space.low(), _bmWordSize >> _shifter);
 
   // bm.clear(); // can we rely on getting zero'd memory? verify below
   assert(isAllClear(),
