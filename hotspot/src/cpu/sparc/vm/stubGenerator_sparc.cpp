@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,20 +63,6 @@ static const Register& Lstub_temp = L2;
 
 // -------------------------------------------------------------------------------------------------------------------------
 // Stub Code definitions
-
-static address handle_unsafe_access() {
-  JavaThread* thread = JavaThread::current();
-  address pc  = thread->saved_exception_pc();
-  address npc = thread->saved_exception_npc();
-  // pc is the instruction which we must emulate
-  // doing a no-op is fine:  return garbage from the load
-
-  // request an async exception
-  thread->set_pending_unsafe_access_error();
-
-  // return address of next instruction to execute
-  return npc;
-}
 
 class StubGenerator: public StubCodeGenerator {
  private:
@@ -744,62 +730,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
   Label _atomic_add_stub;  // called from other stubs
-
-
-  //------------------------------------------------------------------------------------------------------------------------
-  // The following routine generates a subroutine to throw an asynchronous
-  // UnknownError when an unsafe access gets a fault that could not be
-  // reasonably prevented by the programmer.  (Example: SIGBUS/OBJERR.)
-  //
-  // Arguments :
-  //
-  //      trapping PC:    O7
-  //
-  // Results:
-  //     posts an asynchronous exception, skips the trapping instruction
-  //
-
-  address generate_handler_for_unsafe_access() {
-    StubCodeMark mark(this, "StubRoutines", "handler_for_unsafe_access");
-    address start = __ pc();
-
-    const int preserve_register_words = (64 * 2);
-    Address preserve_addr(FP, (-preserve_register_words * wordSize) + STACK_BIAS);
-
-    Register Lthread = L7_thread_cache;
-    int i;
-
-    __ save_frame(0);
-    __ mov(G1, L1);
-    __ mov(G2, L2);
-    __ mov(G3, L3);
-    __ mov(G4, L4);
-    __ mov(G5, L5);
-    for (i = 0; i < 64; i += 2) {
-      __ stf(FloatRegisterImpl::D, as_FloatRegister(i), preserve_addr, i * wordSize);
-    }
-
-    address entry_point = CAST_FROM_FN_PTR(address, handle_unsafe_access);
-    BLOCK_COMMENT("call handle_unsafe_access");
-    __ call(entry_point, relocInfo::runtime_call_type);
-    __ delayed()->nop();
-
-    __ mov(L1, G1);
-    __ mov(L2, G2);
-    __ mov(L3, G3);
-    __ mov(L4, G4);
-    __ mov(L5, G5);
-    for (i = 0; i < 64; i += 2) {
-      __ ldf(FloatRegisterImpl::D, preserve_addr, as_FloatRegister(i), i * wordSize);
-    }
-
-    __ verify_thread();
-
-    __ jmp(O0, 0);
-    __ delayed()->restore();
-
-    return start;
-  }
 
 
   // Support for uint StubRoutine::Sparc::partial_subtype_check( Klass sub, Klass super );
@@ -5379,9 +5309,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_throw_AbstractMethodError_entry         = generate_throw_exception("AbstractMethodError throw_exception",          CAST_FROM_FN_PTR(address, SharedRuntime::throw_AbstractMethodError));
     StubRoutines::_throw_IncompatibleClassChangeError_entry= generate_throw_exception("IncompatibleClassChangeError throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_IncompatibleClassChangeError));
     StubRoutines::_throw_NullPointerException_at_call_entry= generate_throw_exception("NullPointerException at call throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_NullPointerException_at_call));
-
-    StubRoutines::_handler_for_unsafe_access_entry =
-      generate_handler_for_unsafe_access();
 
     // support for verify_oop (must happen after universe_init)
     StubRoutines::_verify_oop_subroutine_entry     = generate_verify_oop_subroutine();
