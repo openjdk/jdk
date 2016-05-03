@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,23 +31,23 @@
  * @build sun.hotspot.WhiteBox
  * @build compiler.stable.TestStableObject
  *
- * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
  *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                         -XX:-TieredCompilation
  *                         -XX:+FoldStableValues
  *                         compiler.stable.TestStableObject
- * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
  *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                         -XX:-TieredCompilation
  *                         -XX:+FoldStableValues
  *                         compiler.stable.TestStableObject
  *
- * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
  *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                         -XX:-TieredCompilation
  *                         -XX:+FoldStableValues
  *                         compiler.stable.TestStableObject
- * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
  *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                         -XX:-TieredCompilation
  *                         -XX:+FoldStableValues
