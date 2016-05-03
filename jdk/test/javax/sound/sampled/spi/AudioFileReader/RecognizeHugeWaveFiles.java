@@ -30,9 +30,9 @@ import javax.sound.sampled.AudioSystem;
 
 /**
  * @test
- * @bug 8132782
+ * @bug 8132782 6729836
  */
-public final class RecognizeHugeWaveFloatFiles {
+public final class RecognizeHugeWaveFiles {
 
     /**
      * The maximum size in bytes per WAVE specification.
@@ -43,7 +43,17 @@ public final class RecognizeHugeWaveFloatFiles {
      * The  supported wave pcm_float format and sample size in bits.
      */
     private static final byte[][] waveTypeBits = {
-            {0x0003/*WAVE_FORMAT_IEEE_FLOAT*/, 32}
+            {0x0001/*WAVE_FORMAT_PCM*/,1},
+            {0x0001/*WAVE_FORMAT_PCM*/,2},
+            {0x0001/*WAVE_FORMAT_PCM*/,4},
+            {0x0001/*WAVE_FORMAT_PCM*/,8},
+            {0x0001/*WAVE_FORMAT_PCM*/,16},
+            {0x0001/*WAVE_FORMAT_PCM*/,20},
+            {0x0001/*WAVE_FORMAT_PCM*/,24},
+            {0x0001/*WAVE_FORMAT_PCM*/,32},
+            {0x0003/*WAVE_FORMAT_IEEE_FLOAT*/, 32},
+            {0x0006/*WAVE_FORMAT_ALAW*/, 8},
+            {0x0007/*WAVE_FORMAT_MULAW*/, 8}
     };
 
     /**
@@ -125,7 +135,7 @@ public final class RecognizeHugeWaveFloatFiles {
      * Tests the {@code AudioInputStream} fetched from the fake header.
      * <p>
      * Note that the frameLength is stored as long which means that {@code
-     * AudioInputStream} must store all possible data from au file.
+     * AudioInputStream} must store all possible data from wave file.
      */
     private static void testAIS(final byte[] type, final int rate,
                                 final int channel, final long size)
@@ -166,8 +176,9 @@ public final class RecognizeHugeWaveFloatFiles {
             System.err.println("Actual: " + format.getChannels());
             throw new RuntimeException();
         }
-        if (format.getFrameSize() != ((bits + 7) / 8) * channel) {
-            System.err.println("Expected: " + (bits * channel + 1) / 8);
+        int frameSize = ((bits + 7) / 8) * channel;
+        if (format.getFrameSize() != frameSize) {
+            System.err.println("Expected: " + frameSize);
             System.err.println("Actual: " + format.getFrameSize());
             throw new RuntimeException();
         }
