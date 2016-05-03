@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,7 @@
  * @test
  * @bug 8043643
  * @summary Run the langtools coding rules over the langtools source code.
- * @modules java.base/sun.reflect.annotation
- *          java.logging
- *          java.xml
- *          jdk.compiler/com.sun.tools.javac.resources
- *          jdk.compiler/com.sun.tools.javac.util
+ * @modules jdk.compiler/com.sun.tools.javac.util
  */
 
 
@@ -58,25 +54,33 @@ public class RunCodingRules {
 
     public void run() throws Exception {
         Path testSrc = Paths.get(System.getProperty("test.src", "."));
-        Path targetDir = Paths.get(System.getProperty("test.classes", "."));
+        Path targetDir = Paths.get(".");
         List<Path> sourceDirs = null;
         Path crulesDir = null;
+        Path mainSrcDir = null;
+        List<Path> genSrcDirs = null;
         for (Path d = testSrc; d != null; d = d.getParent()) {
             if (Files.exists(d.resolve("TEST.ROOT"))) {
                 d = d.getParent();
                 Path toolsPath = d.resolve("make/tools");
-                if (Files.exists(toolsPath)) {
+                Path buildDir = d.getParent().resolve("build");
+                if (Files.exists(toolsPath) && Files.exists(buildDir)) {
+                    mainSrcDir = d.resolve("src");
                     crulesDir = toolsPath;
-                    sourceDirs = Files.walk(d.resolve("src"), 1)
+                    sourceDirs = Files.walk(mainSrcDir, 1)
                                       .map(p -> p.resolve("share/classes"))
                                       .filter(p -> Files.isDirectory(p))
+                                      .collect(Collectors.toList());
+                    genSrcDirs = Files.walk(buildDir, 1)
+                                      .map(p -> p.resolve("support/gensrc"))
+                                      .filter(p -> Files.isDirectory(p.resolve("jdk.compiler")))
                                       .collect(Collectors.toList());
                     break;
                 }
             }
         }
 
-        if (sourceDirs == null || crulesDir == null) {
+        if (sourceDirs == null || crulesDir == null || genSrcDirs == null) {
             System.err.println("Warning: sources not found, test skipped.");
             return ;
         }
@@ -96,12 +100,11 @@ public class RunCodingRules {
             Path crulesTarget = targetDir.resolve("crules");
             Files.createDirectories(crulesTarget);
             List<String> crulesOptions = Arrays.asList(
-                    "-XaddExports:"
-                        + "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED,"
-                        + "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED,"
-                        + "jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED,"
-                        + "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED,"
-                        + "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+                    "-XaddExports:jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+                    "-XaddExports:jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+                    "-XaddExports:jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED",
+                    "-XaddExports:jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+                    "-XaddExports:jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
                     "-d", crulesTarget.toString());
             javaCompiler.getTask(null, fm, noErrors, crulesOptions, null,
                     fm.getJavaFileObjectsFromFiles(crulesFiles)).call();
@@ -117,11 +120,36 @@ public class RunCodingRules {
                                            .map(p -> p.toFile())
                                            .collect(Collectors.toList());
 
+            String FS = File.separator;
+            String PS = File.pathSeparator;
+
+            Path genSrcTarget = targetDir.resolve("gensrc");
+            List<String> genSrcFiles = Arrays.asList(
+                    "jdk.compiler/com/sun/tools/javac/resources/CompilerProperties.java"
+                );
+            for (String f : genSrcFiles) {
+                for (Path dir : genSrcDirs) {
+                    Path from = dir.resolve(f.replace("/", FS));
+                    if (Files.exists(from)) {
+                        try {
+                            Path to = genSrcTarget.resolve(f.replace("/", FS));
+                            Files.createDirectories(to.getParent());
+                            Files.copy(from, to);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+
             Path sourceTarget = targetDir.resolve("classes");
             Files.createDirectories(sourceTarget);
-            String processorPath = crulesTarget.toString() + File.pathSeparator + crulesDir.toString();
+            String processorPath = crulesTarget + PS + crulesDir;
+
             List<String> options = Arrays.asList(
                     "-d", sourceTarget.toString(),
+                    "-modulesourcepath", mainSrcDir + FS + "*" + FS + "share" + FS + "classes" + PS + genSrcTarget,
+                    "-XDaccessInternalAPI",
                     "-processorpath", processorPath,
                     "-Xplugin:coding_rules");
             javaCompiler.getTask(null, fm, noErrors, options, null,

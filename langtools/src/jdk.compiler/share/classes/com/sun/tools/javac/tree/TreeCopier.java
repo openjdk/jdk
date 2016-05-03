@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -505,7 +505,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).Wildcard(kind, inner);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitModule(ModuleTree node, P p) {
         JCModuleDecl t = (JCModuleDecl) node;
         JCExpression qualId = copy(t.qualId);
@@ -513,7 +513,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).ModuleDef(qualId, directives);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public JCExports visitExports(ExportsTree node, P p) {
         JCExports t = (JCExports) node;
         JCExpression qualId = copy(t.qualid, p);
@@ -521,7 +521,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).Exports(qualId, moduleNames);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public JCProvides visitProvides(ProvidesTree node, P p) {
         JCProvides t = (JCProvides) node;
         JCExpression serviceName = copy(t.serviceName, p);
@@ -529,14 +529,14 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).Provides(serviceName, implName);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public JCRequires visitRequires(RequiresTree node, P p) {
         JCRequires t = (JCRequires) node;
         JCExpression moduleName = copy(t.moduleName, p);
         return M.at(t.pos).Requires(t.isPublic, moduleName);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public JCUses visitUses(UsesTree node, P p) {
         JCUses t = (JCUses) node;
         JCExpression serviceName = copy(t.qualid, p);

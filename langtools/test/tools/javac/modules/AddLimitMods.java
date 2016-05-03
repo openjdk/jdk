@@ -40,6 +40,7 @@
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -69,7 +70,6 @@ import toolbox.JarTask;
 import toolbox.JavacTask;
 import toolbox.JavaTask;
 import toolbox.Task;
-import toolbox.ToolBox;
 
 public class AddLimitMods extends ModuleTestBase {
 
@@ -174,6 +174,58 @@ public class AddLimitMods extends ModuleTestBase {
                 .run()
                 .writeAll();
     }
+
+    @Test
+    void testObservableForUnnamed(Path base) throws Exception {
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                          "package test;\n" +
+                          "@javax.annotation.Generated(\"test\")\n" +
+                          "public class Test {\n" +
+                          "    com.sun.tools.javac.Main m;\n" +
+                          "    javax.xml.bind.JAXBException e;\n" +
+                          "}\n");
+
+        Path out = base.resolve("out");
+
+        Files.createDirectories(out);
+
+        for (Entry<String[], String> variant : variants) {
+            System.err.println("running variant: options=" + Arrays.asList(variant.getKey()) + ", expected log: " + variant.getValue());
+
+            List<String> options = new ArrayList<>();
+            options.add("-XDrawDiagnostics");
+            options.addAll(Arrays.asList(variant.getKey()));
+
+            String log = new JavacTask(tb)
+                    .options(options.toArray(new String[0]))
+                    .outdir(out)
+                    .files(findJavaFiles(src))
+                    .run(variant.getValue() == null ? Task.Expect.SUCCESS : Task.Expect.FAIL)
+                    .writeAll()
+                    .getOutput(Task.OutputKind.DIRECT);
+
+            log = log.replace(System.getProperty("line.separator"), "\n");
+
+            if (variant.getValue() != null && !log.equals(variant.getValue())) {
+                throw new AssertionError();
+            }
+        }
+    }
+
+    private static final List<Entry<String[], String>> variants = Arrays.asList(
+            new SimpleEntry<String[], String>(new String[] {},
+                                              "Test.java:2:18: compiler.err.doesnt.exist: javax.annotation\n"
+                                            + "Test.java:5:19: compiler.err.doesnt.exist: javax.xml.bind\n"
+                                            + "2 errors\n"),
+            new SimpleEntry<String[], String>(new String[] {"-addmods", "java.annotations.common,java.xml.bind"},
+                                              null),
+            new SimpleEntry<String[], String>(new String[] {"-limitmods", "java.xml.ws,jdk.compiler"},
+                                              null),
+            new SimpleEntry<String[], String>(new String[] {"-addmods", "ALL-SYSTEM"},
+                                              null)
+    );
 
     @Test
     void testAllModulePath(Path base) throws Exception {
