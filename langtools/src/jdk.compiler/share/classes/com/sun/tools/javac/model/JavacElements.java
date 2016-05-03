@@ -107,12 +107,13 @@ public class JavacElements implements Elements {
         return modules.getObservableModule(names.fromString(strName));
     }
 
-    @DefinedBy(Api.LANGUAGE_MODEL)
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public PackageSymbol getPackageElement(CharSequence name) {
         ensureEntered("getPackageElement");
         return getPackageElement(modules.getDefaultModule(), name);
     }
 
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public PackageSymbol getPackageElement(ModuleElement module, CharSequence name) {
         String strName = name.toString();
         if (strName.equals(""))
@@ -122,12 +123,13 @@ public class JavacElements implements Elements {
             : null;
     }
 
-    @DefinedBy(Api.LANGUAGE_MODEL)
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public ClassSymbol getTypeElement(CharSequence name) {
         ensureEntered("getTypeElement");
         return getTypeElement(modules.getDefaultModule(), name);
     }
 
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public ClassSymbol getTypeElement(ModuleElement module, CharSequence name) {
         String strName = name.toString();
         return SourceVersion.isName(strName)

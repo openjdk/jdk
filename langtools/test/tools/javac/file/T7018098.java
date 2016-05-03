@@ -60,10 +60,9 @@ public class T7018098 extends JavacTestingAbstractProcessor {
         _assert(!testDir.exists());
 
         compile(
-            "-XaddExports:"
-                + "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED,"
-                + "jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED,"
-                + "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+            "-XaddExports:jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+            "-XaddExports:jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
+            "-XaddExports:jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
             "-XDaccessInternalAPI",
             "-proc:only",
             "-processor", myName,
@@ -74,10 +73,9 @@ public class T7018098 extends JavacTestingAbstractProcessor {
         _assert(testDir.exists());
 
         compile(
-            "-XaddExports:"
-                + "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED,"
-                + "jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED,"
-                + "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+            "-XaddExports:jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+            "-XaddExports:jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
+            "-XaddExports:jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
             "-XDaccessInternalAPI",
             "-proc:only",
             "-processor", myName,
