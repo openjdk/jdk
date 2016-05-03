@@ -866,6 +866,31 @@ public class TestResolvedJavaType extends TypeUniverse {
         }
     }
 
+    static class TrivialCloneable implements Cloneable {
+        @Override
+        protected Object clone() {
+            return new TrivialCloneable();
+        }
+    }
+
+    @Test
+    public void isCloneableWithAllocationTest() {
+        ResolvedJavaType cloneable = metaAccess.lookupJavaType(Cloneable.class);
+        for (Class<?> c : classes) {
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            if (type.isCloneableWithAllocation()) {
+                // Only Cloneable types should be allocation cloneable
+                assertTrue(c.toString(), cloneable.isAssignableFrom(type));
+            }
+        }
+        /*
+         * We can't know for sure which types should be allocation cloneable on a particular
+         * platform but assume that at least totally trivial objects should be.
+         */
+        ResolvedJavaType trivialCloneable = metaAccess.lookupJavaType(TrivialCloneable.class);
+        assertTrue(trivialCloneable.toString(), trivialCloneable.isCloneableWithAllocation());
+    }
+
     @Test
     public void findMethodTest() {
         try {
