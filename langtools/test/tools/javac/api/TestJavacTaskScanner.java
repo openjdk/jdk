@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,11 +73,11 @@ public class TestJavacTaskScanner extends ToolTester {
         final Iterable<? extends JavaFileObject> compilationUnits =
             fm.getJavaFileObjects(new File[] {file});
         StandardJavaFileManager fm = getLocalFileManager(tool, null, null);
-        java.util.List<String> options = Arrays.asList("-XaddExports:"
-                + "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED,"
-                + "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED,"
-                + "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED,"
-                + "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED");
+        java.util.List<String> options = Arrays.asList(
+                "-XaddExports:jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+                "-XaddExports:jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+                "-XaddExports:jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+                "-XaddExports:jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED");
         task = (JavacTaskImpl)tool.getTask(null, fm, null, options, null, compilationUnits);
         task.getContext().put(ScannerFactory.scannerFactoryKey,
                 new MyScanner.Factory(task.getContext(), this));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@ package crules;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TaskEvent.Kind;
@@ -48,16 +50,8 @@ public class MutableFieldsAnalyzer extends AbstractCodingRulesAnalyzer {
     }
 
     private boolean ignoreField(String className, String field) {
-        List<String> currentFieldsToIgnore =
-                classFieldsToIgnoreMap.get(className);
-        if (currentFieldsToIgnore != null) {
-            for (String fieldToIgnore : currentFieldsToIgnore) {
-                if (field.equals(fieldToIgnore)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        Set<String> fieldsToIgnore = classFieldsToIgnoreMap.get(className);
+        return (fieldsToIgnore) != null && fieldsToIgnore.contains(field);
     }
 
     class MutableFieldsVisitor extends TreeScanner {
@@ -89,34 +83,29 @@ public class MutableFieldsAnalyzer extends AbstractCodingRulesAnalyzer {
 
     private static final String packageToCheck = "com.sun.tools.javac";
 
-    private static final Map<String, List<String>> classFieldsToIgnoreMap =
+    private static final Map<String, Set<String>> classFieldsToIgnoreMap =
                 new HashMap<>();
 
+    private static void ignoreFields(String className, String... fieldNames) {
+        classFieldsToIgnoreMap.put(className, new HashSet<>(Arrays.asList(fieldNames)));
+    };
+
     static {
-        classFieldsToIgnoreMap.
-                put("com.sun.tools.javac.util.JCDiagnostic",
-                    Arrays.asList("fragmentFormatter"));
-        classFieldsToIgnoreMap.
-                put("com.sun.tools.javac.util.JavacMessages",
-                    Arrays.asList("defaultBundle", "defaultMessages"));
-        classFieldsToIgnoreMap.
-                put("com.sun.tools.javac.file.ZipFileIndexCache",
-                    Arrays.asList("sharedInstance"));
-        classFieldsToIgnoreMap.
-                put("com.sun.tools.javac.file.JRTIndex",
-                    Arrays.asList("sharedInstance"));
-        classFieldsToIgnoreMap.
-                put("com.sun.tools.javac.main.JavaCompiler",
-                    Arrays.asList("versionRB"));
-        classFieldsToIgnoreMap.
-                put("com.sun.tools.javac.code.Type",
-                    Arrays.asList("moreInfo"));
-        classFieldsToIgnoreMap.
-                put("com.sun.tools.javac.util.SharedNameTable",
-                    Arrays.asList("freelist"));
-        classFieldsToIgnoreMap.
-                put("com.sun.tools.javac.util.Log",
-                    Arrays.asList("useRawMessages"));
+        ignoreFields("com.sun.tools.javac.util.JCDiagnostic", "fragmentFormatter");
+        ignoreFields("com.sun.tools.javac.util.JavacMessages", "defaultBundle", "defaultMessages");
+        ignoreFields("com.sun.tools.javac.file.JRTIndex", "sharedInstance");
+        ignoreFields("com.sun.tools.javac.main.JavaCompiler", "versionRB");
+        ignoreFields("com.sun.tools.javac.code.Type", "moreInfo");
+        ignoreFields("com.sun.tools.javac.util.SharedNameTable", "freelist");
+        ignoreFields("com.sun.tools.javac.util.Log", "useRawMessages");
+        ignoreFields("com.sun.tools.javac.util.ModuleWrappers$ModuleFinderHelper",
+                "moduleFinderInterface", "ofMethod", "emptyMethod");
+        ignoreFields("com.sun.tools.javac.util.ModuleWrappers$ConfigurationHelper",
+                "configurationClass", "resolveRequiresAndUsesMethod");
+        ignoreFields("com.sun.tools.javac.util.ModuleWrappers$LayerHelper",
+                "layerClass", "bootMethod", "defineModulesWithOneLoaderMethod", "configurationMethod");
+        ignoreFields("com.sun.tools.javac.util.ModuleHelper",
+                "addExportsMethod", "getUnnamedModuleMethod", "getModuleMethod");
     }
 
 }

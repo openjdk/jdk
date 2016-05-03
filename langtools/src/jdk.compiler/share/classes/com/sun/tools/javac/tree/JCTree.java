@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2626,22 +2626,22 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public void accept(Visitor v) { v.visitModuleDef(this); }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.MODULE;
         }
 
-//        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getName() {
             return qualId;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public List<JCDirective> getDirectives() {
             return directives;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(TreeVisitor<R, D> v, D d) {
             return v.visitModule(this, d);
         }
@@ -2666,22 +2666,22 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public void accept(Visitor v) { v.visitExports(this); }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.EXPORTS;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getExportName() {
             return qualid;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public List<JCExpression> getModuleNames() {
             return moduleNames;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(TreeVisitor<R, D> v, D d) {
             return v.visitExports(this, d);
         }
@@ -2705,22 +2705,22 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public void accept(Visitor v) { v.visitProvides(this); }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.PROVIDES;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(TreeVisitor<R, D> v, D d) {
             return v.visitProvides(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getServiceName() {
             return serviceName;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getImplementationName() {
             return implName;
         }
@@ -2745,22 +2745,22 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public void accept(Visitor v) { v.visitRequires(this); }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.REQUIRES;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(TreeVisitor<R, D> v, D d) {
             return v.visitRequires(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public boolean isPublic() {
             return isPublic;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getModuleName() {
             return moduleName;
         }
@@ -2782,17 +2782,17 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public void accept(Visitor v) { v.visitUses(this); }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.USES;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getServiceName() {
             return qualid;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(TreeVisitor<R, D> v, D d) {
             return v.visitUses(this, d);
         }

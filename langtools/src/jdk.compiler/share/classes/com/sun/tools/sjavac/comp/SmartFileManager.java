@@ -203,7 +203,7 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
         return file;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public Location getModuleLocation(Location location, JavaFileObject fo, String pkgName) throws IOException {
         return super.getModuleLocation(location, locUnwrap(fo), pkgName);
     }
