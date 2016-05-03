@@ -305,11 +305,9 @@ u1* ClassPathZipEntry::open_versioned_entry(const char* name, jint* filesize, TR
     }
 
     if (is_multi_ver) {
-      int n;
       char entry_name[JVM_MAXPATHLEN];
       if (version > 0) {
-        n = jio_snprintf(entry_name, sizeof(entry_name), "META-INF/versions/%d/%s", version, name);
-        entry_name[n] = '\0';
+        jio_snprintf(entry_name, sizeof(entry_name), "META-INF/versions/%d/%s", version, name);
         buffer = open_entry((const char*)entry_name, filesize, false, CHECK_NULL);
         if (buffer == NULL) {
           warning("Could not find %s in %s, try to find highest version instead", entry_name, _zip_name);
@@ -317,8 +315,7 @@ u1* ClassPathZipEntry::open_versioned_entry(const char* name, jint* filesize, TR
       }
       if (buffer == NULL) {
         for (int i = cur_ver; i >= base_version; i--) {
-          n = jio_snprintf(entry_name, sizeof(entry_name), "META-INF/versions/%d/%s", i, name);
-          entry_name[n] = '\0';
+          jio_snprintf(entry_name, sizeof(entry_name), "META-INF/versions/%d/%s", i, name);
           buffer = open_entry((const char*)entry_name, filesize, false, CHECK_NULL);
           if (buffer != NULL) {
             break;
