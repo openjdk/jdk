@@ -42,7 +42,7 @@
            destdir="${build.classes.dir}"
            debug="${javac.debug}"
            includeantruntime="false" fork="true">
-      <compilerarg value="-XaddExports:${nasgen.module.imports}"/>
+      <compilerarg line="${nasgen.module.imports}"/>
       <compilerarg value="-Xlint:unchecked"/>
       <compilerarg value="-Xlint:deprecation"/>
       <compilerarg value="-XDignore.symbol.file"/>
