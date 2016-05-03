@@ -50,11 +50,11 @@ class BlockListBuilder VALUE_OBJ_CLASS_SPEC {
   BlockList*   _bci2block;             // mapping from bci to blocks for GraphBuilder
 
   // fields used by mark_loops
-  BitMap       _active;                // for iteration of control flow graph
-  BitMap       _visited;               // for iteration of control flow graph
-  intArray     _loop_map;              // caches the information if a block is contained in a loop
-  int          _next_loop_index;       // next free loop number
-  int          _next_block_number;     // for reverse postorder numbering of blocks
+  ResourceBitMap _active;              // for iteration of control flow graph
+  ResourceBitMap _visited;             // for iteration of control flow graph
+  intArray       _loop_map;            // caches the information if a block is contained in a loop
+  int            _next_loop_index;     // next free loop number
+  int            _next_block_number;   // for reverse postorder numbering of blocks
 
   // accessors
   Compilation*  compilation() const              { return _compilation; }
@@ -227,7 +227,7 @@ void BlockListBuilder::set_leaders() {
   // Without it, backward branches could jump to a bci where no block was created
   // during bytecode iteration. This would require the creation of a new block at the
   // branch target and a modification of the successor lists.
-  BitMap bci_block_start = method()->bci_block_start();
+  const BitMap& bci_block_start = method()->bci_block_start();
 
   ciBytecodeStream s(method());
   while (s.next() != ciBytecodeStream::EOBC()) {
@@ -355,8 +355,8 @@ void BlockListBuilder::set_leaders() {
 void BlockListBuilder::mark_loops() {
   ResourceMark rm;
 
-  _active = BitMap(BlockBegin::number_of_blocks());         _active.clear();
-  _visited = BitMap(BlockBegin::number_of_blocks());        _visited.clear();
+  _active.initialize(BlockBegin::number_of_blocks());
+  _visited.initialize(BlockBegin::number_of_blocks());
   _loop_map = intArray(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), 0);
   _next_loop_index = 0;
   _next_block_number = _blocks.length();
@@ -364,6 +364,10 @@ void BlockListBuilder::mark_loops() {
   // recursively iterate the control flow graph
   mark_loops(_bci2block->at(0), false);
   assert(_next_block_number >= 0, "invalid block numbers");
+
+  // Remove dangling Resource pointers before the ResourceMark goes out-of-scope.
+  _active.resize(0);
+  _visited.resize(0);
 }
 
 void BlockListBuilder::make_loop_header(BlockBegin* block) {
@@ -3076,7 +3080,7 @@ void GraphBuilder::setup_osr_entry_block() {
   Value local;
 
   // find all the locals that the interpreter thinks contain live oops
-  const BitMap live_oops = method()->live_local_oops_at_bci(osr_bci);
+  const ResourceBitMap live_oops = method()->live_local_oops_at_bci(osr_bci);
 
   // compute the offset into the locals so that we can treat the buffer
   // as if the locals were still in the interpreter frame

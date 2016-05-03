@@ -443,12 +443,12 @@ MethodLivenessResult ciMethod::liveness_at_bci(int bci) {
 // gc'ing an interpreter frame we need to use its viewpoint  during
 // OSR when loading the locals.
 
-BitMap ciMethod::live_local_oops_at_bci(int bci) {
+ResourceBitMap ciMethod::live_local_oops_at_bci(int bci) {
   VM_ENTRY_MARK;
   InterpreterOopMap mask;
   OopMapCache::compute_one_oop_map(get_Method(), bci, &mask);
   int mask_size = max_locals();
-  BitMap result(mask_size);
+  ResourceBitMap result(mask_size);
   result.clear();
   int i;
   for (i = 0; i < mask_size ; i++ ) {
@@ -463,7 +463,7 @@ BitMap ciMethod::live_local_oops_at_bci(int bci) {
 // ciMethod::bci_block_start
 //
 // Marks all bcis where a new basic block starts
-const BitMap ciMethod::bci_block_start() {
+const BitMap& ciMethod::bci_block_start() {
   check_is_loaded();
   if (_liveness == NULL) {
     // Create the liveness analyzer.
