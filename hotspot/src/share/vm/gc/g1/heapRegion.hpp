@@ -267,9 +267,6 @@ class HeapRegion: public G1ContiguousSpace {
   //   The collection set.
   HeapRegion* _next_in_special_set;
 
-  // next region in the young "generation" region set
-  HeapRegion* _next_young_region;
-
   // Fields used by the HeapRegionSetBase class and subclasses.
   HeapRegion* _next;
   HeapRegion* _prev;
@@ -523,10 +520,6 @@ class HeapRegion: public G1ContiguousSpace {
   // to provide a dummy version of it.
 #endif // ASSERT
 
-  HeapRegion* get_next_young_region() { return _next_young_region; }
-  void set_next_young_region(HeapRegion* hr) {
-    _next_young_region = hr;
-  }
 
   // Reset HR stuff to default values.
   void hr_clear(bool par, bool clear_space, bool locked = false);

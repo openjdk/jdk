@@ -31,58 +31,38 @@
 template <typename T>
 class GrowableArray;
 
-class YoungList : public CHeapObj<mtGC> {
+class G1SurvivorRegions VALUE_OBJ_CLASS_SPEC {
 private:
-  G1CollectedHeap* _g1h;
-  GrowableArray<HeapRegion*>* _survivor_regions;
-
-  HeapRegion* _head;
-
-  uint        _length;
-
-  void         empty_list(HeapRegion* list);
+  GrowableArray<HeapRegion*>* _regions;
 
 public:
-  YoungList(G1CollectedHeap* g1h);
+  G1SurvivorRegions();
 
-  void         push_region(HeapRegion* hr);
-  void         add_survivor_region(HeapRegion* hr);
+  void add(HeapRegion* hr);
 
-  void         empty_list();
-  bool         is_empty() { return _length == 0; }
-  uint         length() { return _length; }
-  uint         eden_length() { return length() - survivor_length(); }
-  uint         survivor_length();
+  void convert_to_eden();
 
-  const GrowableArray<HeapRegion*>* survivor_regions() const { return _survivor_regions; }
+  void clear();
 
-  // Currently we do not keep track of the used byte sum for the
-  // young list and the survivors and it'd be quite a lot of work to
-  // do so. When we'll eventually replace the young list with
-  // instances of HeapRegionLinkedList we'll get that for free. So,
-  // we'll report the more accurate information then.
-  size_t       eden_used_bytes() {
-    assert(length() >= survivor_length(), "invariant");
-    return (size_t) eden_length() * HeapRegion::GrainBytes;
+  uint length() const;
+
+  const GrowableArray<HeapRegion*>* regions() const {
+    return _regions;
   }
-  size_t       survivor_used_bytes() {
-    return (size_t) survivor_length() * HeapRegion::GrainBytes;
-  }
+};
 
-  // for development purposes
-  void reset_auxilary_lists();
-  void clear() { _head = NULL; _length = 0; }
+class G1EdenRegions VALUE_OBJ_CLASS_SPEC {
+private:
+  int _length;
 
-  void clear_survivors() {
-    _survivor_regions->clear();
-  }
+public:
+  G1EdenRegions() : _length(0) {}
 
-  HeapRegion* first_region() { return _head; }
+  void add(HeapRegion* hr);
 
-  // debugging
-  bool          check_list_well_formed();
-  bool          check_list_empty();
-  void          print();
+  void clear() { _length = 0; }
+
+  uint length() const { return _length; }
 };
 
 #endif // SHARE_VM_GC_G1_YOUNGLIST_HPP

@@ -34,6 +34,7 @@ class G1CollectedHeap;
 class G1CollectorState;
 class G1GCPhaseTimes;
 class G1Policy;
+class G1SurvivorRegions;
 class HeapRegion;
 
 class G1CollectionSet VALUE_OBJ_CLASS_SPEC {
@@ -175,7 +176,7 @@ public:
   // Choose a new collection set.  Marks the chosen regions as being
   // "in_collection_set", and links them together.  The head and number of
   // the collection set are available via access methods.
-  double finalize_young_part(double target_pause_time_ms);
+  double finalize_young_part(double target_pause_time_ms, G1SurvivorRegions* survivors);
   void finalize_old_part(double time_remaining_ms);
 
   // Add old region "hr" to the CSet.

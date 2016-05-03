@@ -274,10 +274,9 @@ void G1CollectionSet::print(HeapRegion* list_head, outputStream* st) {
 }
 #endif // !PRODUCT
 
-double G1CollectionSet::finalize_young_part(double target_pause_time_ms) {
+double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1SurvivorRegions* survivors) {
   double young_start_time_sec = os::elapsedTime();
 
-  YoungList* young_list = _g1->young_list();
   finalize_incremental_building();
 
   guarantee(target_pause_time_ms > 0.0,
@@ -297,27 +296,14 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms) {
   // pause are appended to the RHS of the young list, i.e.
   //   [Newly Young Regions ++ Survivors from last pause].
 
-  uint survivor_region_length = young_list->survivor_length();
-  uint eden_region_length = young_list->eden_length();
+  uint survivor_region_length = survivors->length();
+  uint eden_region_length = _g1->eden_regions_count();
   init_region_lengths(eden_region_length, survivor_region_length);
-
-  const GrowableArray<HeapRegion*>* survivor_regions = _g1->young_list()->survivor_regions();
-  for (GrowableArrayIterator<HeapRegion*> it = survivor_regions->begin();
-       it != survivor_regions->end();
-       ++it) {
-    HeapRegion* hr = *it;
-    assert(hr->is_survivor(), "badly formed young list");
-    // There is a convention that all the young regions in the CSet
-    // are tagged as "eden", so we do this for the survivors here. We
-    // use the special set_eden_pre_gc() as it doesn't check that the
-    // region is free (which is not the case here).
-    hr->set_eden_pre_gc();
-  }
 
   verify_young_cset_indices();
 
   // Clear the fields that point to the survivor list - they are all young now.
-  young_list->clear_survivors();
+  survivors->convert_to_eden();
 
   _head = _inc_head;
   _bytes_used_before = _inc_bytes_used_before;

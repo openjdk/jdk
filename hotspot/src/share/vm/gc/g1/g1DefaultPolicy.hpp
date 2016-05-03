@@ -46,6 +46,7 @@ class G1CollectionSet;
 class CollectionSetChooser;
 class G1IHOPControl;
 class G1Analytics;
+class G1SurvivorRegions;
 class G1YoungGenSizer;
 class GCPolicyCounters;
 
@@ -347,7 +348,7 @@ public:
   bool next_gc_should_be_mixed(const char* true_action_str,
                                const char* false_action_str) const;
 
-  virtual void finalize_collection_set(double target_pause_time_ms);
+  virtual void finalize_collection_set(double target_pause_time_ms, G1SurvivorRegions* survivor);
 private:
   // Set the state to start a concurrent marking cycle and clear
   // _initiate_conc_mark_if_possible because it has now been
@@ -395,6 +396,8 @@ public:
   virtual bool should_process_references() const {
     return true;
   }
+
+  void transfer_survivors_to_cset(const G1SurvivorRegions* survivors);
 
 private:
   //

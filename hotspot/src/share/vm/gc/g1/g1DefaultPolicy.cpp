@@ -37,7 +37,9 @@
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/youngList.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
+#include "logging/logStream.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -195,11 +197,11 @@ G1DefaultPolicy::YoungTargetLengths G1DefaultPolicy::young_list_target_lengths(s
   // Calculate the absolute and desired min bounds first.
 
   // This is how many young regions we already have (currently: the survivors).
-  const uint base_min_length = _g1->young_list()->survivor_length();
+  const uint base_min_length = _g1->survivor_regions_count();
   uint desired_min_length = calculate_young_list_desired_min_length(base_min_length);
   // This is the absolute minimum young length. Ensure that we
   // will at least have one eden region available for allocation.
-  uint absolute_min_length = base_min_length + MAX2(_g1->young_list()->eden_length(), (uint)1);
+  uint absolute_min_length = base_min_length + MAX2(_g1->eden_regions_count(), (uint)1);
   // If we shrank the young list target it should not shrink below the current size.
   desired_min_length = MAX2(desired_min_length, absolute_min_length);
   // Calculate the absolute and desired max bounds.
@@ -360,7 +362,7 @@ G1DefaultPolicy::calculate_young_list_target_length(size_t rs_lengths,
 
 double G1DefaultPolicy::predict_survivor_regions_evac_time() const {
   double survivor_regions_evac_time = 0.0;
-  const GrowableArray<HeapRegion*>* survivor_regions = _g1->young_list()->survivor_regions();
+  const GrowableArray<HeapRegion*>* survivor_regions = _g1->survivor()->regions();
 
   for (GrowableArrayIterator<HeapRegion*> it = survivor_regions->begin();
        it != survivor_regions->end();
@@ -394,10 +396,7 @@ void G1DefaultPolicy::update_rs_lengths_prediction(size_t prediction) {
 
 #ifndef PRODUCT
 bool G1DefaultPolicy::verify_young_ages() {
-  HeapRegion* head = _g1->young_list()->first_region();
-  return
-    verify_young_ages(head, _short_lived_surv_rate_group);
-  // also call verify_young_ages on any additional surv rate groups
+  return verify_young_ages(_collection_set->inc_head(), _short_lived_surv_rate_group);
 }
 
 bool G1DefaultPolicy::verify_young_ages(HeapRegion* head, SurvRateGroup *surv_rate_group) {
@@ -405,11 +404,10 @@ bool G1DefaultPolicy::verify_young_ages(HeapRegion* head, SurvRateGroup *surv_ra
 
   const char* name = surv_rate_group->name();
   bool ret = true;
-  int prev_age = -1;
 
   for (HeapRegion* curr = head;
        curr != NULL;
-       curr = curr->get_next_young_region()) {
+       curr = curr->next_in_collection_set()) {
     SurvRateGroup* group = curr->surv_rate_group();
     if (group == NULL && !curr->is_survivor()) {
       log_error(gc, verify)("## %s: encountered NULL surv_rate_group", name);
@@ -417,19 +415,16 @@ bool G1DefaultPolicy::verify_young_ages(HeapRegion* head, SurvRateGroup *surv_ra
     }
 
     if (surv_rate_group == group) {
-      int age = curr->age_in_surv_rate_group();
-
-      if (age < 0) {
+      if (curr->age_in_surv_rate_group() < 0) {
         log_error(gc, verify)("## %s: encountered negative age", name);
         ret = false;
       }
-
-      if (age <= prev_age) {
-        log_error(gc, verify)("## %s: region ages are not strictly increasing (%d, %d)", name, age, prev_age);
-        ret = false;
-      }
-      prev_age = age;
     }
+  }
+
+  if (!ret) {
+    LogStreamHandle(Error, gc, verify) log;
+    _collection_set->print(head, &log);
   }
 
   return ret;
@@ -912,13 +907,13 @@ void G1DefaultPolicy::print_yg_surv_rate_info() const {
 }
 
 bool G1DefaultPolicy::should_allocate_mutator_region() const {
-  uint young_list_length = _g1->young_list()->length();
+  uint young_list_length = _g1->young_regions_count();
   uint young_list_target_length = _young_list_target_length;
   return young_list_length < young_list_target_length;
 }
 
 bool G1DefaultPolicy::can_expand_young_list() const {
-  uint young_list_length = _g1->young_list()->length();
+  uint young_list_length = _g1->young_regions_count();
   uint young_list_max_length = _young_list_max_length;
   return young_list_length < young_list_max_length;
 }
@@ -1160,7 +1155,37 @@ uint G1DefaultPolicy::calc_max_old_cset_length() const {
   return (uint) result;
 }
 
-void G1DefaultPolicy::finalize_collection_set(double target_pause_time_ms) {
-  double time_remaining_ms = _collection_set->finalize_young_part(target_pause_time_ms);
+void G1DefaultPolicy::finalize_collection_set(double target_pause_time_ms, G1SurvivorRegions* survivor) {
+  double time_remaining_ms = _collection_set->finalize_young_part(target_pause_time_ms, survivor);
   _collection_set->finalize_old_part(time_remaining_ms);
+}
+
+void G1DefaultPolicy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {
+
+  // Add survivor regions to SurvRateGroup.
+  note_start_adding_survivor_regions();
+  finished_recalculating_age_indexes(true /* is_survivors */);
+
+  HeapRegion* last = NULL;
+  for (GrowableArrayIterator<HeapRegion*> it = survivors->regions()->begin();
+       it != survivors->regions()->end();
+       ++it) {
+    HeapRegion* curr = *it;
+    set_region_survivor(curr);
+
+    // The region is a non-empty survivor so let's add it to
+    // the incremental collection set for the next evacuation
+    // pause.
+    _collection_set->add_survivor_regions(curr);
+
+    last = curr;
+  }
+  note_stop_adding_survivor_regions();
+
+  // Don't clear the survivor list handles until the start of
+  // the next evacuation pause - we need it in order to re-tag
+  // the survivor regions from this evacuation pause as 'young'
+  // at the start of the next.
+
+  finished_recalculating_age_indexes(false /* is_survivors */);
 }

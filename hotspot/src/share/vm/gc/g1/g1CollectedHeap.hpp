@@ -364,7 +364,8 @@ private:
 protected:
 
   // The young region list.
-  YoungList*  _young_list;
+  G1EdenRegions _eden;
+  G1SurvivorRegions _survivor;
 
   // The current policy object for the collector.
   G1Policy* _g1_policy;
@@ -1332,18 +1333,27 @@ public:
   void set_region_short_lived_locked(HeapRegion* hr);
   // add appropriate methods for any other surv rate groups
 
-  YoungList* young_list() const { return _young_list; }
+  const G1SurvivorRegions* survivor() const { return &_survivor; }
+
+  uint survivor_regions_count() const {
+    return _survivor.length();
+  }
+
+  uint eden_regions_count() const {
+    return _eden.length();
+  }
+
+  uint young_regions_count() const {
+    return _eden.length() + _survivor.length();
+  }
 
   uint old_regions_count() const { return _old_set.length(); }
 
   uint humongous_regions_count() const { return _humongous_set.length(); }
 
-  // debugging
-  bool check_young_list_well_formed() {
-    return _young_list->check_list_well_formed();
-  }
-
-  bool check_young_list_empty(bool check_heap);
+#ifdef ASSERT
+  bool check_young_list_empty();
+#endif
 
   // *** Stuff related to concurrent marking.  It's not clear to me that so
   // many of these need to be public.
