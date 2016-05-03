@@ -412,7 +412,7 @@ public class TIFFField implements Cloneable {
 
     /**
      * Creates a {@code TIFFField} from a TIFF native image
-     * metadata node. If the value of the <tt>"tagNumber"</tt> attribute
+     * metadata node. If the value of the <tt>"number"</tt> attribute
      * of the node is not found in {@code tagSet} then a new
      * {@code TIFFTag} with name {@code TIFFTag.UNKNOWN_TAG_NAME}
      * will be created and assigned to the field.
@@ -424,6 +424,10 @@ public class TIFFField implements Cloneable {
      * {@code null}.
      * @throws IllegalArgumentException if the name of the node is not
      * {@code "TIFFField"}.
+     * @throws NullPointerException if the node does not contain any data.
+     * @throws IllegalArgumentException if the combination of node attributes
+     * and data is not legal per the {@link #TIFFField(TIFFTag,int,int,Object)}
+     * constructor specification.
      * @return A new {@code TIFFField}.
      */
     public static TIFFField createFromMetadataNode(TIFFTagSet tagSet,
