@@ -58,10 +58,10 @@ class G1CMIsAliveClosure: public BoolObjectClosure {
 
 class G1CMBitMapRO VALUE_OBJ_CLASS_SPEC {
  protected:
-  HeapWord* _bmStartWord;      // base address of range covered by map
-  size_t    _bmWordSize;       // map size (in #HeapWords covered)
-  const int _shifter;          // map to char or bit
-  BitMap    _bm;               // the bit map itself
+  HeapWord*  _bmStartWord; // base address of range covered by map
+  size_t     _bmWordSize;  // map size (in #HeapWords covered)
+  const int  _shifter;     // map to char or bit
+  BitMapView _bm;          // the bit map itself
 
  public:
   // constructor

@@ -1594,7 +1594,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
            declare_type(TenuredGeneration,            CardGeneration)     \
   declare_toplevel_type(GenCollectorPolicy)                               \
   declare_toplevel_type(Space)                                            \
-  declare_toplevel_type(BitMap)                                           \
            declare_type(CompactibleSpace,             Space)              \
            declare_type(ContiguousSpace,              CompactibleSpace)   \
            declare_type(OffsetTableContigSpace,       ContiguousSpace)    \
@@ -2237,6 +2236,9 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
             declare_type(Array<u2>, MetaspaceObj)                         \
             declare_type(Array<Klass*>, MetaspaceObj)                     \
             declare_type(Array<Method*>, MetaspaceObj)                    \
+                                                                          \
+   declare_toplevel_type(BitMap)                                          \
+            declare_type(BitMapView, BitMap)                              \
                                                                           \
    declare_integer_type(AccessFlags)  /* FIXME: wrong type (not integer) */\
   declare_toplevel_type(address)      /* FIXME: should this be an integer type? */\

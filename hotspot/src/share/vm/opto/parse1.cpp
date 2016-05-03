@@ -261,7 +261,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
   Node *locals_addr = basic_plus_adr(osr_buf, osr_buf, (max_locals-1)*wordSize);
 
   // find all the locals that the interpreter thinks contain live oops
-  const BitMap live_oops = method()->live_local_oops_at_bci(osr_bci());
+  const ResourceBitMap live_oops = method()->live_local_oops_at_bci(osr_bci());
   for (index = 0; index < max_locals; index++) {
 
     if (!live_locals.at(index)) {
