@@ -811,7 +811,9 @@ public final class ServiceLoader<S>
             }
             S p = null;
             try {
-                p = service.cast(c.newInstance());
+                @SuppressWarnings("deprecation")
+                Object tmp = c.newInstance();
+                p = service.cast(tmp);
             } catch (Throwable x) {
                 fail(service,
                      "Provider " + cn + " could not be instantiated",

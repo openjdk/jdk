@@ -117,7 +117,9 @@ public class MemoryHandler extends Handler {
         Class<?> clz;
         try {
             clz = ClassLoader.getSystemClassLoader().loadClass(targetName);
-            target = (Handler) clz.newInstance();
+            @SuppressWarnings("deprecation")
+            Object o = clz.newInstance();
+            target = (Handler) o;
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             throw new RuntimeException("MemoryHandler can't load handler target \"" + targetName + "\"" , e);
         }

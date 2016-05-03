@@ -48,7 +48,9 @@ public class DefaultAsynchronousChannelProvider {
             throw new AssertionError(x);
         }
         try {
-            return c.newInstance();
+            @SuppressWarnings("deprecation")
+            AsynchronousChannelProvider result = c.newInstance();
+            return result;
         } catch (IllegalAccessException | InstantiationException x) {
             throw new AssertionError(x);
         }

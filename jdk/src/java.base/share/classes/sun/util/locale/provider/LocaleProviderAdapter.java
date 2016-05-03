@@ -171,8 +171,9 @@ public abstract class LocaleProviderAdapter {
             if (cached == null) {
                 try {
                     // lazily load adapters here
-                    adapter = (LocaleProviderAdapter)Class.forName(type.getAdapterClassName())
-                        .newInstance();
+                    @SuppressWarnings("deprecation")
+                    Object tmp = Class.forName(type.getAdapterClassName()).newInstance();
+                    adapter = (LocaleProviderAdapter)tmp;
                     cached = adapterInstances.putIfAbsent(type, adapter);
                     if (cached != null) {
                         adapter = cached;

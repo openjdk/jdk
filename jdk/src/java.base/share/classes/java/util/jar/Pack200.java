@@ -704,7 +704,9 @@ public abstract class Pack200 {
                     impl = com.sun.java.util.jar.pack.UnpackerImpl.class;
             }
             // We have a class.  Now instantiate it.
-            return impl.newInstance();
+            @SuppressWarnings("deprecation")
+            Object result = impl.newInstance();
+            return result;
         } catch (ClassNotFoundException e) {
             throw new Error("Class not found: " + implName +
                                 ":\ncheck property " + prop +

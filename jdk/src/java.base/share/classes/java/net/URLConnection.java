@@ -1323,7 +1323,9 @@ public abstract class URLConnection {
                     }
                 }
                 if (cls != null) {
-                    return (ContentHandler) cls.newInstance();
+                    @SuppressWarnings("deprecation")
+                    Object tmp = cls.newInstance();
+                    return (ContentHandler) tmp;
                 }
             } catch(Exception ignored) { }
         }

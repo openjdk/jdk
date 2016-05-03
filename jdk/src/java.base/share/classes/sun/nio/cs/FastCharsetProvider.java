@@ -115,10 +115,11 @@ public class FastCharsetProvider
 
         // Instantiate the charset and cache it
         try {
-            Class<?> c = Class.forName(packagePrefix + "." + cln,
+            @SuppressWarnings("deprecation")
+            Object o= Class.forName(packagePrefix + "." + cln,
                                     true,
-                                    this.getClass().getClassLoader());
-            cs = (Charset)c.newInstance();
+                                    this.getClass().getClassLoader()).newInstance();
+            cs = (Charset)o;
             cache.put(csn, cs);
             return cs;
         } catch (ClassNotFoundException |

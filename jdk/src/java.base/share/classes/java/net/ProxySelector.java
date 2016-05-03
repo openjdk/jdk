@@ -71,7 +71,9 @@ public abstract class ProxySelector {
         try {
             Class<?> c = Class.forName("sun.net.spi.DefaultProxySelector");
             if (c != null && ProxySelector.class.isAssignableFrom(c)) {
-                theProxySelector = (ProxySelector) c.newInstance();
+                @SuppressWarnings("deprecation")
+                ProxySelector tmp = (ProxySelector) c.newInstance();
+                theProxySelector = tmp;
             }
         } catch (Exception e) {
             theProxySelector = null;
