@@ -562,9 +562,9 @@ else
   $(foreach m, $(GENDATA_MODULES), $(eval $m-strip: $m-gendata))
   $(foreach m, $(COPY_MODULES), $(eval $m-strip: $m-copy))
 
-  # Declare dependencies between jmod targets
-  $(foreach m, $(JMOD_MODULES), \
-      $(eval $m-jmod: $(addsuffix -jmod, $(call FindDepsForModule,$m))))
+  # Declare dependencies between jmod targets. Only java.base jmod needs access
+  # to the other jmods to be built.
+  java.base-jmod: $(filter-out java.base-jmod, $(JMOD_TARGETS))
 
   # Declare dependencies from <module>-jmod to all other module targets
   $(foreach m, $(STRIP_MODULES), $(eval $m-jmod: $m-strip))
