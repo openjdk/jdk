@@ -23,11 +23,14 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/parallel/gcTaskManager.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc/parallel/gcTaskManager.hpp"
+#endif
 
 void PreservedMarks::restore() {
   while (!_stack.is_empty()) {
@@ -108,6 +111,7 @@ void PreservedMarksSet::restore_internal(WorkGang* workers,
   workers->run_task(&task);
 }
 
+#if INCLUDE_ALL_GCS
 class ParRestoreGCTask : public GCTask {
 private:
   const uint _id;
@@ -146,6 +150,7 @@ void PreservedMarksSet::restore_internal(GCTaskManager* gc_task_manager,
   }
   gc_task_manager->execute_and_wait(q);
 }
+#endif
 
 void PreservedMarksSet::reclaim() {
   assert_empty();
