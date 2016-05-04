@@ -941,6 +941,10 @@ int ClassLoader::crc32(int crc, const char* buf, int len) {
 
 #if INCLUDE_CDS
 void ClassLoader::initialize_module_loader_map(JImageFile* jimage) {
+  if (!DumpSharedSpaces) {
+    return; // only needed for CDS dump time
+  }
+
   jlong size;
   JImageLocationRef location = (*JImageFindResource)(jimage, "java.base", get_jimage_version_string(), MODULE_LOADER_MAP, &size);
   if (location == 0) {
@@ -1085,6 +1089,7 @@ objArrayOop ClassLoader::get_system_packages(TRAPS) {
 #if INCLUDE_CDS
 s2 ClassLoader::module_to_classloader(const char* module_name) {
 
+  assert(DumpSharedSpaces, "dump time only");
   assert(_boot_modules_array != NULL, "_boot_modules_array is NULL");
   assert(_platform_modules_array != NULL, "_platform_modules_array is NULL");
 
@@ -1104,11 +1109,11 @@ s2 ClassLoader::module_to_classloader(const char* module_name) {
 
   return APP_LOADER;
 }
-#endif
 
 s2 ClassLoader::classloader_type(Symbol* class_name, ClassPathEntry* e,
                                      int classpath_index, TRAPS) {
-#if INCLUDE_CDS
+  assert(DumpSharedSpaces, "Only used for CDS dump time");
+
   // obtain the classloader type based on the class name.
   // First obtain the package name based on the class name. Then obtain
   // the classloader type based on the package name from the jimage using
@@ -1133,10 +1138,8 @@ s2 ClassLoader::classloader_type(Symbol* class_name, ClassPathEntry* e,
     loader_type = ClassLoader::BOOT_LOADER;
   }
   return loader_type;
-#endif
-  return ClassLoader::BOOT_LOADER; // the classloader type is ignored in non-CDS cases
 }
-
+#endif
 
 // caller needs ResourceMark
 const char* ClassLoader::file_name_for_class_name(const char* class_name,
@@ -1253,8 +1256,7 @@ instanceKlassHandle ClassLoader::load_class(Symbol* name, bool search_append_onl
     return NULL;
   }
 
-  jshort loader_type = classloader_type(name, e, classpath_index, CHECK_NULL);
-  return context.record_result(classpath_index, loader_type, e, result, THREAD);
+  return context.record_result(name, e, classpath_index, result, THREAD);
 }
 
 // Initialize the class loader's access to methods in libzip.  Parse and
