@@ -198,7 +198,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
     ignored_loop_nodes[i] = -1;
   }
 
-  int max_vector = Matcher::max_vector_size(T_INT);
+  int max_vector = Matcher::max_vector_size(T_BYTE);
   bool post_loop_allowed = (PostLoopMultiversioning && Matcher::has_predicated_vectors() && cl->is_post_loop());
 
   // Process the loop, some/all of the stack entries will not be in order, ergo
