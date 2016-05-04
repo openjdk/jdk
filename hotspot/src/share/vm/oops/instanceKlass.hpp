@@ -321,7 +321,7 @@ class InstanceKlass: public Klass {
     return (_misc_flags & _misc_is_shared_app_class) != 0;
   }
 
-  void set_class_loader_type(jshort loader_type) {
+  void set_class_loader_type(s2 loader_type) {
     assert(( _misc_flags & loader_type_bits()) == 0,
            "Should only be called once for each class.");
     switch (loader_type) {
