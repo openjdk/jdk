@@ -22,14 +22,15 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_YOUNGLIST_HPP
-#define SHARE_VM_GC_G1_YOUNGLIST_HPP
+#ifndef SHARE_VM_GC_G1_G1SURVIVORREGIONS_HPP
+#define SHARE_VM_GC_G1_G1SURVIVORREGIONS_HPP
 
 #include "memory/allocation.hpp"
 #include "runtime/globals.hpp"
 
 template <typename T>
 class GrowableArray;
+class HeapRegion;
 
 class G1SurvivorRegions VALUE_OBJ_CLASS_SPEC {
 private:
@@ -51,18 +52,4 @@ public:
   }
 };
 
-class G1EdenRegions VALUE_OBJ_CLASS_SPEC {
-private:
-  int _length;
-
-public:
-  G1EdenRegions() : _length(0) {}
-
-  void add(HeapRegion* hr);
-
-  void clear() { _length = 0; }
-
-  uint length() const { return _length; }
-};
-
-#endif // SHARE_VM_GC_G1_YOUNGLIST_HPP
+#endif // SHARE_VM_GC_G1_G1SURVIVORREGIONS_HPP

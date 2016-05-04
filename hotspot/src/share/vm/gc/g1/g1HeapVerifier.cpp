@@ -36,7 +36,6 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/g1StringDedup.hpp"
-#include "gc/g1/youngList.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 

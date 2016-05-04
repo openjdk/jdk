@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,38 +22,29 @@
  *
  */
 
-#include "precompiled.hpp"
+#ifndef SHARE_VM_GC_G1_G1EDENREGIONS_HPP
+#define SHARE_VM_GC_G1_G1EDENREGIONS_HPP
+
 #include "gc/g1/heapRegion.hpp"
-#include "gc/g1/youngList.hpp"
-#include "utilities/growableArray.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
 
-G1SurvivorRegions::G1SurvivorRegions() : _regions(new (ResourceObj::C_HEAP, mtGC) GrowableArray<HeapRegion*>(8, true, mtGC)) {}
+class G1EdenRegions VALUE_OBJ_CLASS_SPEC {
+private:
+  int _length;
 
-void G1SurvivorRegions::add(HeapRegion* hr) {
-  assert(hr->is_survivor(), "should be flagged as survivor region");
-  _regions->append(hr);
-}
+public:
+  G1EdenRegions() : _length(0) {}
 
-uint G1SurvivorRegions::length() const {
-  return (uint)_regions->length();
-}
-
-void G1SurvivorRegions::convert_to_eden() {
-  for (GrowableArrayIterator<HeapRegion*> it = _regions->begin();
-       it != _regions->end();
-       ++it) {
-    HeapRegion* hr = *it;
-    hr->set_eden_pre_gc();
+  void add(HeapRegion* hr) {
+    assert(!hr->is_eden(), "should not already be set");
+    _length++;
   }
-  clear();
-}
 
-void G1SurvivorRegions::clear() {
-  _regions->clear();
-}
+  void clear() { _length = 0; }
 
-void G1EdenRegions::add(HeapRegion* hr) {
-  assert(!hr->is_eden(), "should not already be set");
-  _length++;
-}
+  uint length() const { return _length; }
+};
+
+#endif // SHARE_VM_GC_G1_G1EDENREGIONS_HPP
