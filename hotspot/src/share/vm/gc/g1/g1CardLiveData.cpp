@@ -95,8 +95,8 @@ size_t G1CardLiveData::live_card_bitmap_size_in_bits() const {
 // information.
 class G1CardLiveDataHelper VALUE_OBJ_CLASS_SPEC {
 private:
-  BitMap _region_bm;
-  BitMap _card_bm;
+  BitMapView _region_bm;
+  BitMapView _card_bm;
 
   // The card number of the bottom of the G1 heap.
   // Used in biasing indices into accounting card bitmaps.
@@ -393,11 +393,11 @@ void G1CardLiveData::finalize(WorkGang* workers, G1CMBitMap* mark_bitmap) {
 }
 
 class G1ClearCardLiveDataTask : public AbstractGangTask {
-  BitMap _bitmap;
-  size_t _num_chunks;
-  size_t _cur_chunk;
+  BitMapView _bitmap;
+  size_t     _num_chunks;
+  size_t     _cur_chunk;
 public:
-  G1ClearCardLiveDataTask(BitMap bitmap, size_t num_tasks) :
+  G1ClearCardLiveDataTask(const BitMapView& bitmap, size_t num_tasks) :
     AbstractGangTask("G1 Clear Card Live Data"),
     _bitmap(bitmap),
     _num_chunks(num_tasks),

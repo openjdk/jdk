@@ -380,7 +380,7 @@ ALIGNED_(8) juint StubRoutines::x86::_P_1[] =
 
 ALIGNED_(8) juint StubRoutines::x86::_NEG_ZERO[] =
 {
-    0x00000000UL, 0x3c800000UL
+    0x00000000UL, 0x80000000UL
 };
 
 void MacroAssembler::fast_sin(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, Register eax, Register ebx, Register ecx, Register edx, Register tmp1, Register tmp2, Register tmp3, Register tmp4) {

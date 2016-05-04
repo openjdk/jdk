@@ -470,7 +470,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
     : _compilation(compilation)
     , _method(method)
     , _virtual_register_number(LIR_OprDesc::vreg_base)
-    , _vreg_flags(NULL, 0, num_vreg_flags) {
+    , _vreg_flags(num_vreg_flags) {
     init();
   }
 

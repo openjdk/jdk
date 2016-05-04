@@ -787,7 +787,7 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
         TRACE_PHI(tty->print_cr("creating phi-function %c%d for stack %d", new_state->stack_at(index)->type()->tchar(), new_state->stack_at(index)->id(), index));
       }
 
-      BitMap requires_phi_function = new_state->scope()->requires_phi_function();
+      BitMap& requires_phi_function = new_state->scope()->requires_phi_function();
 
       for_each_local_value(new_state, index, new_value) {
         bool requires_phi = requires_phi_function.at(index) || (new_value->type()->is_double_word() && requires_phi_function.at(index + 1));

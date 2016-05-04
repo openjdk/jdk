@@ -33,6 +33,16 @@ class BitMapClosure;
 // Operations for bitmaps represented as arrays of unsigned integers.
 // Bit offsets are numbered from 0 to size-1.
 
+// The "abstract" base BitMap class.
+//
+// The constructor and destructor are protected to prevent
+// creation of BitMap instances outside of the BitMap class.
+//
+// The BitMap class doesn't use virtual calls on purpose,
+// this ensures that we don't get a vtable unnecessarily.
+//
+// The allocation of the backing storage for the BitMap are handled by
+// the subclasses. BitMap doesn't allocate or delete backing storage.
 class BitMap VALUE_OBJ_CLASS_SPEC {
   friend class BitMap2D;
 
@@ -49,10 +59,6 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
  private:
   bm_word_t* _map;     // First word in bitmap
   idx_t      _size;    // Size of bitmap (in bits)
-
-  // Puts the given value at the given offset, using resize() to size
-  // the bitmap appropriately if needed using factor-of-two expansion.
-  void at_put_grow(idx_t index, bool value);
 
  protected:
   // Return the position of bit within the word that contains it (e.g., if
@@ -97,6 +103,8 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
   void      set_large_range_of_words   (idx_t beg, idx_t end);
   void      clear_large_range_of_words (idx_t beg, idx_t end);
 
+  static void clear_range_of_words(bm_word_t* map, idx_t beg, idx_t end);
+
   // The index of the first full word in a range.
   idx_t word_index_round_up(idx_t bit) const;
 
@@ -110,45 +118,68 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
   static idx_t num_set_bits(bm_word_t w);
   static idx_t num_set_bits_from_table(unsigned char c);
 
- public:
+  // Allocation Helpers.
 
-  // Constructs a bitmap with no map, and size 0.
-  BitMap() : _map(NULL), _size(0) {}
+  // Allocates and clears the bitmap memory.
+  template <class Allocator>
+  static bm_word_t* allocate(const Allocator&, idx_t size_in_bits);
 
-  // Constructs a bitmap with the given map and size.
-  BitMap(bm_word_t* map, idx_t size_in_bits) :_map(map), _size(size_in_bits) {}
+  // Reallocates and clears the new bitmap memory.
+  template <class Allocator>
+  static bm_word_t* reallocate(const Allocator&, bm_word_t* map, idx_t old_size_in_bits, idx_t new_size_in_bits);
 
-  // Constructs an empty bitmap of the given size (that is, this clears the
-  // new bitmap).  Allocates the map array in resource area if
-  // "in_resource_area" is true, else in the C heap.
-  BitMap(idx_t size_in_bits, bool in_resource_area = true);
+  // Free the bitmap memory.
+  template <class Allocator>
+  static void free(const Allocator&, bm_word_t* map, idx_t size_in_bits);
+
+  // Protected functions, that are used by BitMap sub-classes that support them.
+
+  // Resize the backing bitmap memory.
+  //
+  // Old bits are transfered to the new memory
+  // and the extended memory is cleared.
+  template <class Allocator>
+  void resize(const Allocator& allocator, idx_t new_size_in_bits);
+
+  // Set up and clear the bitmap memory.
+  //
+  // Precondition: The bitmap was default constructed and has
+  // not yet had memory allocated via resize or (re)initialize.
+  template <class Allocator>
+  void initialize(const Allocator& allocator, idx_t size_in_bits);
+
+  // Set up and clear the bitmap memory.
+  //
+  // Can be called on previously initialized bitmaps.
+  template <class Allocator>
+  void reinitialize(const Allocator& allocator, idx_t new_size_in_bits);
 
   // Set the map and size.
-  void set_map(bm_word_t* map)      { _map = map; }
-  void set_size(idx_t size_in_bits) { _size = size_in_bits; }
+  void update(bm_word_t* map, idx_t size) {
+    _map = map;
+    _size = size;
+  }
 
-  // Allocates necessary data structure, either in the resource area
-  // or in the C heap, as indicated by "in_resource_area."
-  // Preserves state currently in bit map by copying data.
-  // Zeros any newly-addressable bits.
-  // If "in_resource_area" is false, frees the current map.
-  // (Note that this assumes that all calls to "resize" on the same BitMap
-  // use the same value for "in_resource_area".)
-  void resize(idx_t size_in_bits, bool in_resource_area = true);
+  // Protected constructor and destructor.
+  BitMap(bm_word_t* map, idx_t size_in_bits) : _map(map), _size(size_in_bits) {}
+  ~BitMap() {}
 
+ public:
   // Pretouch the entire range of memory this BitMap covers.
   void pretouch();
 
   // Accessing
-  idx_t size() const                    { return _size; }
-  idx_t size_in_bytes() const           { return size_in_words() * BytesPerWord; }
-  idx_t size_in_words() const           {
-    return calc_size_in_words(size());
-  }
-
   static idx_t calc_size_in_words(size_t size_in_bits) {
     return word_index(size_in_bits + BitsPerWord - 1);
   }
+
+  static idx_t calc_size_in_bytes(size_t size_in_bits) {
+    return calc_size_in_words(size_in_bits) * BytesPerWord;
+  }
+
+  idx_t size() const          { return _size; }
+  idx_t size_in_words() const { return calc_size_in_words(size()); }
+  idx_t size_in_bytes() const { return calc_size_in_bytes(size()); }
 
   bool at(idx_t index) const {
     verify_index(index);
@@ -279,6 +310,88 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
 #endif
 };
 
+// A concrete implementation of the the "abstract" BitMap class.
+//
+// The BitMapView is used when the backing storage is managed externally.
+class BitMapView : public BitMap {
+ public:
+  BitMapView() : BitMap(NULL, 0) {}
+  BitMapView(bm_word_t* map, idx_t size_in_bits) : BitMap(map, size_in_bits) {}
+};
+
+// A BitMap with storage in a ResourceArea.
+class ResourceBitMap : public BitMap {
+  friend class TestBitMap;
+
+ public:
+  ResourceBitMap() : BitMap(NULL, 0) {}
+  // Clears the bitmap memory.
+  ResourceBitMap(idx_t size_in_bits);
+
+  // Resize the backing bitmap memory.
+  //
+  // Old bits are transfered to the new memory
+  // and the extended memory is cleared.
+  void resize(idx_t new_size_in_bits);
+
+  // Set up and clear the bitmap memory.
+  //
+  // Precondition: The bitmap was default constructed and has
+  // not yet had memory allocated via resize or initialize.
+  void initialize(idx_t size_in_bits);
+
+  // Set up and clear the bitmap memory.
+  //
+  // Can be called on previously initialized bitmaps.
+  void reinitialize(idx_t size_in_bits);
+};
+
+// A BitMap with storage in a specific Arena.
+class ArenaBitMap : public BitMap {
+ public:
+  // Clears the bitmap memory.
+  ArenaBitMap(Arena* arena, idx_t size_in_bits);
+
+ private:
+  // Don't allow copy or assignment.
+  ArenaBitMap(const ArenaBitMap&);
+  ArenaBitMap& operator=(const ArenaBitMap&);
+};
+
+// A BitMap with storage in the CHeap.
+class CHeapBitMap : public BitMap {
+  friend class TestBitMap;
+
+ private:
+  // Don't allow copy or assignment, to prevent the
+  // allocated memory from leaking out to other instances.
+  CHeapBitMap(const CHeapBitMap&);
+  CHeapBitMap& operator=(const CHeapBitMap&);
+
+ public:
+  CHeapBitMap() : BitMap(NULL, 0) {}
+  // Clears the bitmap memory.
+  CHeapBitMap(idx_t size_in_bits);
+  ~CHeapBitMap();
+
+  // Resize the backing bitmap memory.
+  //
+  // Old bits are transfered to the new memory
+  // and the extended memory is cleared.
+  void resize(idx_t new_size_in_bits);
+
+  // Set up and clear the bitmap memory.
+  //
+  // Precondition: The bitmap was default constructed and has
+  // not yet had memory allocated via resize or initialize.
+  void initialize(idx_t size_in_bits);
+
+  // Set up and clear the bitmap memory.
+  //
+  // Can be called on previously initialized bitmaps.
+  void reinitialize(idx_t size_in_bits);
+};
+
 // Convenience class wrapping BitMap which provides multiple bits per slot.
 class BitMap2D VALUE_OBJ_CLASS_SPEC {
  public:
@@ -286,8 +399,8 @@ class BitMap2D VALUE_OBJ_CLASS_SPEC {
   typedef BitMap::bm_word_t bm_word_t;  // Element type of array that
                                         // represents the bitmap.
  private:
-  BitMap _map;
-  idx_t  _bits_per_slot;
+  ResourceBitMap _map;
+  idx_t          _bits_per_slot;
 
   idx_t bit_index(idx_t slot_index, idx_t bit_within_slot_index) const {
     return slot_index * _bits_per_slot + bit_within_slot_index;
@@ -299,10 +412,12 @@ class BitMap2D VALUE_OBJ_CLASS_SPEC {
 
  public:
   // Construction. bits_per_slot must be greater than 0.
-  BitMap2D(bm_word_t* map, idx_t size_in_slots, idx_t bits_per_slot);
+  BitMap2D(idx_t bits_per_slot) :
+      _map(), _bits_per_slot(bits_per_slot) {}
 
   // Allocates necessary data structure in resource area. bits_per_slot must be greater than 0.
-  BitMap2D(idx_t size_in_slots, idx_t bits_per_slot);
+  BitMap2D(idx_t size_in_slots, idx_t bits_per_slot) :
+      _map(size_in_slots * bits_per_slot), _bits_per_slot(bits_per_slot) {}
 
   idx_t size_in_bits() {
     return _map.size();
