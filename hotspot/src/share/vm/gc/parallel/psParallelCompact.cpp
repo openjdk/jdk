@@ -1929,7 +1929,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     ParCompactionManager* const cm =
       ParCompactionManager::manager_array(int(i));
     assert(cm->marking_stack()->is_empty(),       "should be empty");
-    assert(cm->region_stack()->is_empty(), "should be empty");
+    assert(cm->region_stack()->is_empty(), "Region stack " SIZE_FORMAT " is not empty", i);
   }
 #endif // ASSERT
 
@@ -2370,10 +2370,8 @@ void PSParallelCompact::enqueue_region_stealing_tasks(
 
   // Once a thread has drained it's stack, it should try to steal regions from
   // other threads.
-  if (parallel_gc_threads > 1) {
-    for (uint j = 0; j < parallel_gc_threads; j++) {
-      q->enqueue(new StealRegionCompactionTask(terminator_ptr));
-    }
+  for (uint j = 0; j < parallel_gc_threads; j++) {
+    q->enqueue(new StealRegionCompactionTask(terminator_ptr));
   }
 }
 
