@@ -9,3 +9,6 @@ groups=TEST.groups
 
 # Minimum jtreg version
 requiredVersion=4.2 b02
+
+# Use new form of -Xpatch
+useNewXpatch=true
