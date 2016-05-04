@@ -177,24 +177,28 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
         Pool.Module module = resources.getModule(MODULENAME);
 
         // jdk.localedata module validation
-        Set<String> packages = module.getAllPackages();
-        if (!packages.containsAll(LOCALEDATA_PACKAGES)) {
-            throw new PluginException(PluginsResourceBundle.getMessage(NAME + ".missingpackages") +
-                LOCALEDATA_PACKAGES.stream()
-                    .filter(pn -> !packages.contains(pn))
-                    .collect(Collectors.joining(",\n\t")));
+        if (module != null) {
+            Set<String> packages = module.getAllPackages();
+            if (!packages.containsAll(LOCALEDATA_PACKAGES)) {
+                throw new PluginException(PluginsResourceBundle.getMessage(NAME + ".missingpackages") +
+                    LOCALEDATA_PACKAGES.stream()
+                        .filter(pn -> !packages.contains(pn))
+                        .collect(Collectors.joining(",\n\t")));
+            }
+
+            available = Stream.concat(module.getContent().stream()
+                                        .map(md -> p.matcher(md.getPath()))
+                                        .filter(m -> m.matches())
+                                        .map(m -> m.group("tag").replaceAll("_", "-")),
+                                    Stream.concat(Stream.of(jaJPJPTag), Stream.of(thTHTHTag)))
+                .distinct()
+                .sorted()
+                .map(IncludeLocalesPlugin::tagToLocale)
+                .collect(Collectors.toList());
+        } else {
+            // jdk.localedata is not added.
+            throw new PluginException(PluginsResourceBundle.getMessage(NAME + ".localedatanotfound"));
         }
-
-        available = Stream.concat(module.getContent().stream()
-                                    .map(md -> p.matcher(md.getPath()))
-                                    .filter(m -> m.matches())
-                                    .map(m -> m.group("tag").replaceAll("_", "-")),
-                                Stream.concat(Stream.of(jaJPJPTag), Stream.of(thTHTHTag)))
-            .distinct()
-            .sorted()
-            .map(IncludeLocalesPlugin::tagToLocale)
-            .collect(Collectors.toList());
-
         filtered = filterLocales(available);
 
         if (filtered.isEmpty()) {
