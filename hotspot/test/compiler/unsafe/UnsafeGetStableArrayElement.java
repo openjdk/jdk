@@ -33,7 +33,7 @@
  * @modules java.base/jdk.internal.vm.annotation
  *          java.base/jdk.internal.misc
 
- * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions
+ * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions
  *                   -Xbatch -XX:-TieredCompilation
  *                   -XX:+FoldStableValues
  *                   -XX:CompileCommand=dontinline,*Test::test*

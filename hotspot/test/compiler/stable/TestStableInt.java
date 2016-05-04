@@ -32,27 +32,27 @@
  * @build sun.hotspot.WhiteBox
  * @build compiler.stable.TestStableInt
  *
- * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                         -XX:-TieredCompilation
- *                         -XX:+FoldStableValues
- *                         compiler.stable.TestStableInt
- * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                         -XX:-TieredCompilation
- *                         -XX:+FoldStableValues
- *                         compiler.stable.TestStableInt
+ * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:-TieredCompilation
+ *                                 -XX:+FoldStableValues
+ *                                 compiler.stable.TestStableInt
+ * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:-TieredCompilation
+ *                                 -XX:+FoldStableValues
+ *                                 compiler.stable.TestStableInt
  *
- * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                         -XX:-TieredCompilation
- *                         -XX:+FoldStableValues
- *                         compiler.stable.TestStableInt
- * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                         -XX:-TieredCompilation
- *                         -XX:+FoldStableValues
- *                         compiler.stable.TestStableInt
+ * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:-TieredCompilation
+ *                                 -XX:+FoldStableValues
+ *                                 compiler.stable.TestStableInt
+ * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:-TieredCompilation
+ *                                 -XX:+FoldStableValues
+ *                                 compiler.stable.TestStableInt
  */
 
 package compiler.stable;

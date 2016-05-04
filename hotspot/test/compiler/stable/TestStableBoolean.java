@@ -32,27 +32,27 @@
  * @build sun.hotspot.WhiteBox
  * @build compiler.stable.TestStableBoolean
  *
- * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                         -XX:-TieredCompilation
- *                         -XX:+FoldStableValues
- *                         compiler.stable.TestStableBoolean
- * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                         -XX:-TieredCompilation
- *                         -XX:-FoldStableValues
- *                         compiler.stable.TestStableBoolean
+ * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:-TieredCompilation
+ *                                 -XX:+FoldStableValues
+ *                                 compiler.stable.TestStableBoolean
+ * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:-TieredCompilation
+ *                                 -XX:-FoldStableValues
+ *                                 compiler.stable.TestStableBoolean
  *
- * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                         -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- *                         -XX:+FoldStableValues
- *                         compiler.stable.TestStableBoolean
- * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                         -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- *                         -XX:-FoldStableValues
- *                         compiler.stable.TestStableBoolean
+ * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                                 -XX:+FoldStableValues
+ *                                 compiler.stable.TestStableBoolean
+ * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                                 -XX:-FoldStableValues
+ *                                 compiler.stable.TestStableBoolean
  */
 
 package compiler.stable;
