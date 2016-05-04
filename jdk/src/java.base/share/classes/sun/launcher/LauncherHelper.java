@@ -84,8 +84,10 @@ import java.util.jar.Manifest;
 import jdk.internal.misc.VM;
 
 
-public enum LauncherHelper {
-    INSTANCE;
+public final class LauncherHelper {
+
+    // No instantiation
+    private LauncherHelper() {}
 
     // used to identify JavaFX applications
     private static final String JAVAFX_APPLICATION_MARKER =
