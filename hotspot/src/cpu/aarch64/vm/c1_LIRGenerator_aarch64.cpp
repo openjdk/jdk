@@ -1029,6 +1029,10 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
   }
 }
 
+void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
+  Unimplemented();
+}
+
 // _i2l, _i2f, _i2d, _l2i, _l2f, _l2d, _f2i, _f2l, _f2d, _d2i, _d2l, _d2f
 // _i2b, _i2c, _i2s
 void LIRGenerator::do_Convert(Convert* x) {
