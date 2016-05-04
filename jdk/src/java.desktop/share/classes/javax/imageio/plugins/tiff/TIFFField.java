@@ -1303,7 +1303,11 @@ public class TIFFField implements Cloneable {
      * version of the data item.  Data of type
      * {@code TIFFTag.TIFF_RATIONAL} or {@code TIFF_SRATIONAL} are
      * represented as a pair of integers separated by a
-     * {@code '/'} character.
+     * {@code '/'} character.  If the numerator of a
+     * {@code TIFFTag.TIFF_RATIONAL} or {@code TIFF_SRATIONAL} is an integral
+     * multiple of the denominator, then the value is represented as
+     * {@code "q/1"} where {@code q} is the quotient of the numerator and
+     * denominator.
      *
      * @param index The index of the data.
      * @return The data at the given index as a {@code String}.
