@@ -208,22 +208,31 @@ public class VarHandleTestMethodHandleAccessLong extends VarHandleBaseTest {
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(recv, 1L, 2L);
-            assertEquals(r, true, "weakCompareAndSet long");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(recv, 1L, 2L);
+            }
+            assertEquals(success, true, "weakCompareAndSet long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, 2L, "weakCompareAndSet long value");
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(recv, 2L, 1L);
-            assertEquals(r, true, "weakCompareAndSetAcquire long");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(recv, 2L, 1L);
+            }
+            assertEquals(success, true, "weakCompareAndSetAcquire long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, 1L, "weakCompareAndSetAcquire long");
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(recv, 1L, 2L);
-            assertEquals(r, true, "weakCompareAndSetRelease long");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(recv, 1L, 2L);
+            }
+            assertEquals(success, true, "weakCompareAndSetRelease long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, 2L, "weakCompareAndSetRelease long");
         }
@@ -342,22 +351,31 @@ public class VarHandleTestMethodHandleAccessLong extends VarHandleBaseTest {
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(1L, 2L);
-            assertEquals(r, true, "weakCompareAndSet long");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(1L, 2L);
+            }
+            assertEquals(success, true, "weakCompareAndSet long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, 2L, "weakCompareAndSet long value");
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(2L, 1L);
-            assertEquals(r, true, "weakCompareAndSetAcquire long");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(2L, 1L);
+            }
+            assertEquals(success, true, "weakCompareAndSetAcquire long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, 1L, "weakCompareAndSetAcquire long");
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact( 1L, 2L);
-            assertEquals(r, true, "weakCompareAndSetRelease long");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(1L, 2L);
+            }
+            assertEquals(success, true, "weakCompareAndSetRelease long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, 2L, "weakCompareAndSetRelease long");
         }
@@ -479,22 +497,31 @@ public class VarHandleTestMethodHandleAccessLong extends VarHandleBaseTest {
             }
 
             {
-                boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(array, i, 1L, 2L);
-                assertEquals(r, true, "weakCompareAndSet long");
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(array, i, 1L, 2L);
+                }
+                assertEquals(success, true, "weakCompareAndSet long");
                 long x = (long) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, 2L, "weakCompareAndSet long value");
             }
 
             {
-                boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, 2L, 1L);
-                assertEquals(r, true, "weakCompareAndSetAcquire long");
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, 2L, 1L);
+                }
+                assertEquals(success, true, "weakCompareAndSetAcquire long");
                 long x = (long) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, 1L, "weakCompareAndSetAcquire long");
             }
 
             {
-                boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(array, i, 1L, 2L);
-                assertEquals(r, true, "weakCompareAndSetRelease long");
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(array, i, 1L, 2L);
+                }
+                assertEquals(success, true, "weakCompareAndSetRelease long");
                 long x = (long) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, 2L, "weakCompareAndSetRelease long");
             }

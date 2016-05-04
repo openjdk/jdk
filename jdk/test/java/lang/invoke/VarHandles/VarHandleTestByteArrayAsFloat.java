@@ -93,7 +93,6 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
 
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
@@ -678,22 +677,31 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
                 }
 
                 {
-                    boolean r = vh.weakCompareAndSet(array, i, VALUE_1, VALUE_2);
-                    assertEquals(r, true, "weakCompareAndSet float");
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSet(array, i, VALUE_1, VALUE_2);
+                    }
+                    assertEquals(success, true, "weakCompareAndSet float");
                     float x = (float) vh.get(array, i);
                     assertEquals(x, VALUE_2, "weakCompareAndSet float value");
                 }
 
                 {
-                    boolean r = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_1);
-                    assertEquals(r, true, "weakCompareAndSetAcquire float");
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_1);
+                    }
+                    assertEquals(success, true, "weakCompareAndSetAcquire float");
                     float x = (float) vh.get(array, i);
                     assertEquals(x, VALUE_1, "weakCompareAndSetAcquire float");
                 }
 
                 {
-                    boolean r = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_2);
-                    assertEquals(r, true, "weakCompareAndSetRelease float");
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_2);
+                    }
+                    assertEquals(success, true, "weakCompareAndSetRelease float");
                     float x = (float) vh.get(array, i);
                     assertEquals(x, VALUE_2, "weakCompareAndSetRelease float");
                 }
@@ -811,22 +819,31 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
                 }
 
                 {
-                    boolean r = vh.weakCompareAndSet(array, i, VALUE_1, VALUE_2);
-                    assertEquals(r, true, "weakCompareAndSet float");
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSet(array, i, VALUE_1, VALUE_2);
+                    }
+                    assertEquals(success, true, "weakCompareAndSet float");
                     float x = (float) vh.get(array, i);
                     assertEquals(x, VALUE_2, "weakCompareAndSet float value");
                 }
 
                 {
-                    boolean r = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_1);
-                    assertEquals(r, true, "weakCompareAndSetAcquire float");
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_1);
+                    }
+                    assertEquals(success, true, "weakCompareAndSetAcquire float");
                     float x = (float) vh.get(array, i);
                     assertEquals(x, VALUE_1, "weakCompareAndSetAcquire float");
                 }
 
                 {
-                    boolean r = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_2);
-                    assertEquals(r, true, "weakCompareAndSetRelease float");
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_2);
+                    }
+                    assertEquals(success, true, "weakCompareAndSetRelease float");
                     float x = (float) vh.get(array, i);
                     assertEquals(x, VALUE_2, "weakCompareAndSetRelease float");
                 }

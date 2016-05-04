@@ -208,22 +208,31 @@ public class VarHandleTestMethodHandleAccessInt extends VarHandleBaseTest {
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(recv, 1, 2);
-            assertEquals(r, true, "weakCompareAndSet int");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(recv, 1, 2);
+            }
+            assertEquals(success, true, "weakCompareAndSet int");
             int x = (int) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, 2, "weakCompareAndSet int value");
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(recv, 2, 1);
-            assertEquals(r, true, "weakCompareAndSetAcquire int");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(recv, 2, 1);
+            }
+            assertEquals(success, true, "weakCompareAndSetAcquire int");
             int x = (int) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, 1, "weakCompareAndSetAcquire int");
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(recv, 1, 2);
-            assertEquals(r, true, "weakCompareAndSetRelease int");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(recv, 1, 2);
+            }
+            assertEquals(success, true, "weakCompareAndSetRelease int");
             int x = (int) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, 2, "weakCompareAndSetRelease int");
         }
@@ -342,22 +351,31 @@ public class VarHandleTestMethodHandleAccessInt extends VarHandleBaseTest {
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(1, 2);
-            assertEquals(r, true, "weakCompareAndSet int");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(1, 2);
+            }
+            assertEquals(success, true, "weakCompareAndSet int");
             int x = (int) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, 2, "weakCompareAndSet int value");
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(2, 1);
-            assertEquals(r, true, "weakCompareAndSetAcquire int");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(2, 1);
+            }
+            assertEquals(success, true, "weakCompareAndSetAcquire int");
             int x = (int) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, 1, "weakCompareAndSetAcquire int");
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact( 1, 2);
-            assertEquals(r, true, "weakCompareAndSetRelease int");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(1, 2);
+            }
+            assertEquals(success, true, "weakCompareAndSetRelease int");
             int x = (int) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, 2, "weakCompareAndSetRelease int");
         }
@@ -479,22 +497,31 @@ public class VarHandleTestMethodHandleAccessInt extends VarHandleBaseTest {
             }
 
             {
-                boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(array, i, 1, 2);
-                assertEquals(r, true, "weakCompareAndSet int");
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(array, i, 1, 2);
+                }
+                assertEquals(success, true, "weakCompareAndSet int");
                 int x = (int) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, 2, "weakCompareAndSet int value");
             }
 
             {
-                boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, 2, 1);
-                assertEquals(r, true, "weakCompareAndSetAcquire int");
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, 2, 1);
+                }
+                assertEquals(success, true, "weakCompareAndSetAcquire int");
                 int x = (int) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, 1, "weakCompareAndSetAcquire int");
             }
 
             {
-                boolean r = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(array, i, 1, 2);
-                assertEquals(r, true, "weakCompareAndSetRelease int");
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(array, i, 1, 2);
+                }
+                assertEquals(success, true, "weakCompareAndSetRelease int");
                 int x = (int) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, 2, "weakCompareAndSetRelease int");
             }
