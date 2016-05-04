@@ -454,6 +454,20 @@ ALL_TARGETS += test test-hotspot-jtreg test-hotspot-jtreg-native \
     test-hotspot-internal test-jdk-jtreg-native test-make
 
 ################################################################################
+# Bundles
+
+product-bundles:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Bundles.gmk product-bundles)
+
+test-bundles:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Bundles.gmk test-bundles)
+
+docs-bundles:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Bundles.gmk docs-bundles)
+
+ALL_TARGETS += product-bundles test-bundles docs-bundles
+
+################################################################################
 # Install targets
 
 install:
@@ -678,6 +692,12 @@ else
 
   install: product-images
 
+  product-bundles: product-images
+
+  test-bundles: test-image
+
+  docs-bundles: docs-image
+
   generate-summary: jmods
 
 endif
@@ -758,12 +778,16 @@ docs-image: docs-javadoc docs-jvmtidoc
 test-image: prepare-test-image test-image-hotspot-jtreg-native \
     test-image-jdk-jtreg-native test-image-failure-handler test-image-hotspot-gtest
 
-# all-images is the top-most target, it builds all our deliverables ("images").
+# all-images builds all our deliverables as images.
 all-images: product-images test-image docs-image
+
+# all-bundles packages all our deliverables as tar.gz bundles.
+all-bundles: product-bundles test-bundles docs-bundles
 
 ALL_TARGETS += buildtools gensrc gendata copy java rmic libs launchers jmods \
     jdk.jdwp.agent-gensrc $(ALL_MODULES) demos samples exploded-image \
-    create-buildjdk mac-bundles product-images docs-image test-image all-images
+    create-buildjdk mac-bundles product-images docs-image test-image all-images \
+    all-bundles
 
 ################################################################################
 
@@ -774,9 +798,10 @@ default: $(DEFAULT_MAKE_TARGET)
 jdk: exploded-image
 images: product-images
 docs: docs-image
+bundles: all-bundles
 all: all-images
 
-ALL_TARGETS += default jdk images docs all
+ALL_TARGETS += default jdk images docs bundles all
 
 ################################################################################
 ################################################################################

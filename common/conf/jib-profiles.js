@@ -215,7 +215,7 @@ var getJibProfilesCommon = function (input) {
     var common = {};
 
     common.dependencies = ["boot_jdk", "gnumake", "jtreg"],
-    common.default_make_targets = ["product-images", "test-image"],
+    common.default_make_targets = ["product-bundles", "test-bundles"],
     common.default_make_targets_debug = common.default_make_targets;
     common.default_make_targets_slowdebug = common.default_make_targets;
     common.configure_args = ["--enable-jtreg-failure-handler"],
@@ -245,7 +245,7 @@ var getJibProfilesProfiles = function (input, common) {
             target_cpu: "x64",
             dependencies: concat(common.dependencies, "devkit"),
             configure_args: concat(common.configure_args, "--with-zlib=system"),
-            default_make_targets: concat(common.default_make_targets, "docs-image")
+            default_make_targets: concat(common.default_make_targets, "docs-bundles")
         },
 
         "linux-x86": {
