@@ -1427,3 +1427,7 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
     }
   }
 }
+
+void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
+  Unimplemented();
+}
