@@ -40,6 +40,7 @@ import static org.testng.Assert.*;
 
 public class JdkInternalMiscUnsafeAccessTestObject {
     static final int ITERS = Integer.getInteger("iters", 1);
+    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 10);
 
     static final jdk.internal.misc.Unsafe UNSAFE;
 
@@ -204,22 +205,31 @@ public class JdkInternalMiscUnsafeAccessTestObject {
         }
 
         {
-            boolean r = UNSAFE.weakCompareAndSwapObject(base, offset, "foo", "bar");
-            assertEquals(r, true, "weakCompareAndSwap Object");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapObject(base, offset, "foo", "bar");
+            }
+            assertEquals(success, true, "weakCompareAndSwap Object");
             Object x = UNSAFE.getObject(base, offset);
             assertEquals(x, "bar", "weakCompareAndSwap Object value");
         }
 
         {
-            boolean r = UNSAFE.weakCompareAndSwapObjectAcquire(base, offset, "bar", "foo");
-            assertEquals(r, true, "weakCompareAndSwapAcquire Object");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapObjectAcquire(base, offset, "bar", "foo");
+            }
+            assertEquals(success, true, "weakCompareAndSwapAcquire Object");
             Object x = UNSAFE.getObject(base, offset);
             assertEquals(x, "foo", "weakCompareAndSwapAcquire Object");
         }
 
         {
-            boolean r = UNSAFE.weakCompareAndSwapObjectRelease(base, offset, "foo", "bar");
-            assertEquals(r, true, "weakCompareAndSwapRelease Object");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapObjectRelease(base, offset, "foo", "bar");
+            }
+            assertEquals(success, true, "weakCompareAndSwapRelease Object");
             Object x = UNSAFE.getObject(base, offset);
             assertEquals(x, "bar", "weakCompareAndSwapRelease Object");
         }
@@ -235,5 +245,4 @@ public class JdkInternalMiscUnsafeAccessTestObject {
     }
 
 }
-
 
