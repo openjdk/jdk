@@ -34,22 +34,22 @@
  *          java.base/jdk.internal.vm.annotation
  *          java.base/jdk.internal.misc
  *
- * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions
- *                         -Xbatch -XX:-TieredCompilation
- *                         -XX:+FoldStableValues
- *                         -XX:CompileCommand=dontinline,UnsafeGetConstantField.checkGetAddress()
- *                         -XX:CompileCommand=dontinline,*.test*
- *                         -XX:+UseUnalignedAccesses
- *                         compiler.unsafe.UnsafeGetConstantField
+ * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions
+ *                                 -Xbatch -XX:-TieredCompilation
+ *                                 -XX:+FoldStableValues
+ *                                 -XX:CompileCommand=dontinline,UnsafeGetConstantField.checkGetAddress()
+ *                                 -XX:CompileCommand=dontinline,*.test*
+ *                                 -XX:+UseUnalignedAccesses
+ *                                 compiler.unsafe.UnsafeGetConstantField
  *
- * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions
- *                         -Xbatch -XX:-TieredCompilation
- *                         -XX:+FoldStableValues
- *                         -XX:CompileCommand=dontinline,UnsafeGetConstantField.checkGetAddress()
- *                         -XX:CompileCommand=dontinline,*.test*
- *                         -XX:CompileCommand=inline,*Unsafe.get*
- *                         -XX:-UseUnalignedAccesses
- *                         compiler.unsafe.UnsafeGetConstantField
+ * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions
+ *                                 -Xbatch -XX:-TieredCompilation
+ *                                 -XX:+FoldStableValues
+ *                                 -XX:CompileCommand=dontinline,UnsafeGetConstantField.checkGetAddress()
+ *                                 -XX:CompileCommand=dontinline,*.test*
+ *                                 -XX:CompileCommand=inline,*Unsafe.get*
+ *                                 -XX:-UseUnalignedAccesses
+ *                                 compiler.unsafe.UnsafeGetConstantField
  */
 package compiler.unsafe;
 
