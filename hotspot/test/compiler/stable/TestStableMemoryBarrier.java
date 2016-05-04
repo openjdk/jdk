@@ -31,8 +31,8 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.vm.annotation
  *
- * @run main/bootclasspath -Xcomp -XX:CompileOnly=::testCompile
- *                         compiler.stable.TestStableMemoryBarrier
+ * @run main/bootclasspath/othervm -Xcomp -XX:CompileOnly=::testCompile
+ *                                 compiler.stable.TestStableMemoryBarrier
  *
  * @author hui.shi@linaro.org
  */
