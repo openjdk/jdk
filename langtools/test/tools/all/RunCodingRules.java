@@ -30,6 +30,9 @@
 
 
 import java.io.*;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -58,29 +61,23 @@ public class RunCodingRules {
         List<Path> sourceDirs = null;
         Path crulesDir = null;
         Path mainSrcDir = null;
-        List<Path> genSrcDirs = null;
         for (Path d = testSrc; d != null; d = d.getParent()) {
             if (Files.exists(d.resolve("TEST.ROOT"))) {
                 d = d.getParent();
                 Path toolsPath = d.resolve("make/tools");
-                Path buildDir = d.getParent().resolve("build");
-                if (Files.exists(toolsPath) && Files.exists(buildDir)) {
+                if (Files.exists(toolsPath)) {
                     mainSrcDir = d.resolve("src");
                     crulesDir = toolsPath;
                     sourceDirs = Files.walk(mainSrcDir, 1)
                                       .map(p -> p.resolve("share/classes"))
                                       .filter(p -> Files.isDirectory(p))
                                       .collect(Collectors.toList());
-                    genSrcDirs = Files.walk(buildDir, 1)
-                                      .map(p -> p.resolve("support/gensrc"))
-                                      .filter(p -> Files.isDirectory(p.resolve("jdk.compiler")))
-                                      .collect(Collectors.toList());
                     break;
                 }
             }
         }
 
-        if (sourceDirs == null || crulesDir == null || genSrcDirs == null) {
+        if (sourceDirs == null || crulesDir == null) {
             System.err.println("Warning: sources not found, test skipped.");
             return ;
         }
@@ -90,7 +87,10 @@ public class RunCodingRules {
             DiagnosticListener<JavaFileObject> noErrors = diagnostic -> {
                 Assert.check(diagnostic.getKind() != Diagnostic.Kind.ERROR, diagnostic.toString());
             };
+            String FS = File.separator;
+            String PS = File.pathSeparator;
 
+            //compile crules:
             List<File> crulesFiles = Files.walk(crulesDir)
                                           .filter(entry -> entry.getFileName().toString().endsWith(".java"))
                                           .filter(entry -> entry.getParent().endsWith("crules"))
@@ -114,33 +114,52 @@ public class RunCodingRules {
                 metaInfServices.write("crules.CodingRulesAnalyzerPlugin\n");
             }
 
+            //generate CompilerProperties.java:
+            List<File> propertiesParserFiles =
+                    Files.walk(crulesDir.resolve("propertiesparser"))
+                         .filter(entry -> entry.getFileName().toString().endsWith(".java"))
+                         .map(entry -> entry.toFile())
+                         .collect(Collectors.toList());
+
+            Path propertiesParserTarget = targetDir.resolve("propertiesParser");
+            Files.createDirectories(propertiesParserTarget);
+            List<String> propertiesParserOptions = Arrays.asList(
+                    "-d", propertiesParserTarget.toString());
+            javaCompiler.getTask(null, fm, noErrors, propertiesParserOptions, null,
+                    fm.getJavaFileObjectsFromFiles(propertiesParserFiles)).call();
+
+            Path genSrcTarget = targetDir.resolve("gensrc");
+
+            ClassLoader propertiesParserLoader = new URLClassLoader(new URL[] {
+                propertiesParserTarget.toUri().toURL(),
+                crulesDir.toUri().toURL()
+            });
+            Class propertiesParserClass =
+                    Class.forName("propertiesparser.PropertiesParser", false, propertiesParserLoader);
+            Method propertiesParserRun =
+                    propertiesParserClass.getDeclaredMethod("run", String[].class, PrintStream.class);
+            String compilerProperties =
+                    "jdk.compiler/share/classes/com/sun/tools/javac/resources/compiler.properties";
+            Path propertiesPath = mainSrcDir.resolve(compilerProperties.replace("/", FS));
+            Path genSrcTargetDir = genSrcTarget.resolve(mainSrcDir.relativize(propertiesPath.getParent()));
+
+            Files.createDirectories(genSrcTargetDir);
+            String[] propertiesParserRunOptions = new String[] {
+                "-compile", propertiesPath.toString(), genSrcTargetDir.toString()
+            };
+
+            Object result = propertiesParserRun.invoke(null, propertiesParserRunOptions, System.err);
+
+            if (!(result instanceof Boolean) || !(Boolean) result) {
+                throw new AssertionError("Cannot parse properties: " + result);
+            }
+
+            //compile langtools sources with crules enabled:
             List<File> sources = sourceDirs.stream()
                                            .flatMap(dir -> silentFilesWalk(dir))
                                            .filter(entry -> entry.getFileName().toString().endsWith(".java"))
                                            .map(p -> p.toFile())
                                            .collect(Collectors.toList());
-
-            String FS = File.separator;
-            String PS = File.pathSeparator;
-
-            Path genSrcTarget = targetDir.resolve("gensrc");
-            List<String> genSrcFiles = Arrays.asList(
-                    "jdk.compiler/com/sun/tools/javac/resources/CompilerProperties.java"
-                );
-            for (String f : genSrcFiles) {
-                for (Path dir : genSrcDirs) {
-                    Path from = dir.resolve(f.replace("/", FS));
-                    if (Files.exists(from)) {
-                        try {
-                            Path to = genSrcTarget.resolve(f.replace("/", FS));
-                            Files.createDirectories(to.getParent());
-                            Files.copy(from, to);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            }
 
             Path sourceTarget = targetDir.resolve("classes");
             Files.createDirectories(sourceTarget);
@@ -148,7 +167,8 @@ public class RunCodingRules {
 
             List<String> options = Arrays.asList(
                     "-d", sourceTarget.toString(),
-                    "-modulesourcepath", mainSrcDir + FS + "*" + FS + "share" + FS + "classes" + PS + genSrcTarget,
+                    "-modulesourcepath", mainSrcDir + FS + "*" + FS + "share" + FS + "classes" + PS
+                                       + genSrcTarget + FS + "*" + FS + "share" + FS + "classes",
                     "-XDaccessInternalAPI",
                     "-processorpath", processorPath,
                     "-Xplugin:coding_rules");
