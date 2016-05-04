@@ -110,8 +110,7 @@ void G1CMBitMap::initialize(MemRegion heap, G1RegionToSpaceMapper* storage) {
   _bmStartWord = heap.start();
   _bmWordSize = heap.word_size();
 
-  _bm.set_map((BitMap::bm_word_t*) storage->reserved().start());
-  _bm.set_size(_bmWordSize >> _shifter);
+  _bm = BitMapView((BitMap::bm_word_t*) storage->reserved().start(), _bmWordSize >> _shifter);
 
   storage->set_mapping_changed_listener(&_listener);
 }

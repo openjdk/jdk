@@ -151,7 +151,7 @@ class IRScope: public CompilationResourceObj {
   bool          _wrote_volatile;                 // has written volatile field
   BlockBegin*   _start;                          // the start block, successsors are method entries
 
-  BitMap        _requires_phi_function;          // bit is set if phi functions at loop headers are necessary for a local variable
+  ResourceBitMap _requires_phi_function;         // bit is set if phi functions at loop headers are necessary for a local variable
 
   // helper functions
   BlockBegin* build_graph(Compilation* compilation, int osr_bci);

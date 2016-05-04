@@ -65,15 +65,15 @@ private:
   size_t _live_regions_size_in_bits;
   // The bits in this bitmap contain for every card whether it contains
   // at least part of at least one live object.
-  BitMap live_cards_bm() const { return BitMap(_live_cards, _live_cards_size_in_bits); }
+  BitMapView live_cards_bm() const { return BitMapView(_live_cards, _live_cards_size_in_bits); }
   // The bits in this bitmap indicate that a given region contains some live objects.
-  BitMap live_regions_bm() const { return BitMap(_live_regions, _live_regions_size_in_bits); }
+  BitMapView live_regions_bm() const { return BitMapView(_live_regions, _live_regions_size_in_bits); }
 
   // Allocate a "large" bitmap from virtual memory with the given size in bits.
   bm_word_t* allocate_large_bitmap(size_t size_in_bits);
   void free_large_bitmap(bm_word_t* map, size_t size_in_bits);
 
-  inline BitMap live_card_bitmap(uint region);
+  inline BitMapView live_card_bitmap(uint region);
 
   inline bool is_card_live_at(BitMap::idx_t idx) const;
 
