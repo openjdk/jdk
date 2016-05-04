@@ -40,6 +40,7 @@ import static org.testng.Assert.*;
 
 public class JdkInternalMiscUnsafeAccessTestLong {
     static final int ITERS = Integer.getInteger("iters", 1);
+    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 10);
 
     static final jdk.internal.misc.Unsafe UNSAFE;
 
@@ -251,22 +252,31 @@ public class JdkInternalMiscUnsafeAccessTestLong {
         }
 
         {
-            boolean r = UNSAFE.weakCompareAndSwapLong(base, offset, 1L, 2L);
-            assertEquals(r, true, "weakCompareAndSwap long");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapLong(base, offset, 1L, 2L);
+            }
+            assertEquals(success, true, "weakCompareAndSwap long");
             long x = UNSAFE.getLong(base, offset);
             assertEquals(x, 2L, "weakCompareAndSwap long value");
         }
 
         {
-            boolean r = UNSAFE.weakCompareAndSwapLongAcquire(base, offset, 2L, 1L);
-            assertEquals(r, true, "weakCompareAndSwapAcquire long");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapLongAcquire(base, offset, 2L, 1L);
+            }
+            assertEquals(success, true, "weakCompareAndSwapAcquire long");
             long x = UNSAFE.getLong(base, offset);
             assertEquals(x, 1L, "weakCompareAndSwapAcquire long");
         }
 
         {
-            boolean r = UNSAFE.weakCompareAndSwapLongRelease(base, offset, 1L, 2L);
-            assertEquals(r, true, "weakCompareAndSwapRelease long");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapLongRelease(base, offset, 1L, 2L);
+            }
+            assertEquals(success, true, "weakCompareAndSwapRelease long");
             long x = UNSAFE.getLong(base, offset);
             assertEquals(x, 2L, "weakCompareAndSwapRelease long");
         }
@@ -286,7 +296,7 @@ public class JdkInternalMiscUnsafeAccessTestLong {
             long o = UNSAFE.getAndAddLong(base, offset, 2L);
             assertEquals(o, 1L, "getAndAdd long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 1L + 2L, "weakCompareAndSwapRelease long");
+            assertEquals(x, 1L + 2L, "getAndAdd long");
         }
     }
 
@@ -299,5 +309,4 @@ public class JdkInternalMiscUnsafeAccessTestLong {
         }
     }
 }
-
 

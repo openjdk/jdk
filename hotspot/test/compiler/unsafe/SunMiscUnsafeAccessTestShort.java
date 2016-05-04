@@ -40,6 +40,7 @@ import static org.testng.Assert.*;
 
 public class SunMiscUnsafeAccessTestShort {
     static final int ITERS = Integer.getInteger("iters", 1);
+    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 10);
 
     static final sun.misc.Unsafe UNSAFE;
 
@@ -160,7 +161,6 @@ public class SunMiscUnsafeAccessTestShort {
 
 
 
-
     }
 
     static void testAccess(long address) {
@@ -172,5 +172,4 @@ public class SunMiscUnsafeAccessTestShort {
         }
     }
 }
-
 
