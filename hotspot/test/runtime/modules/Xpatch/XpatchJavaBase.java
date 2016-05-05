@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,34 @@
 
 /*
  * @test
- * @bug 6583051
- * @summary Give error if java.lang.Object has been incompatibly overridden on the bootpath
+ * @bug 8130399
+ * @summary Make sure -Xpatch works for java.base.
  * @library /testlibrary
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run main BootstrapRedefine
+ * @compile XpatchMain.java
+ * @run main XpatchJavaBase
  */
 
 import jdk.test.lib.*;
 
-public class BootstrapRedefine {
+public class XpatchJavaBase {
 
     public static void main(String[] args) throws Exception {
-        String source = "package java.lang;" +
-                        "public class Object {" +
-                        "    void dummy1() { return; }" +
-                        "    void dummy2() { return; }" +
-                        "    void dummy3() { return; }" +
+        String source = "package java.lang; "                       +
+                        "public class NewClass { "                  +
+                        "    static { "                             +
+                        "        System.out.println(\"I pass!\"); " +
+                        "    } "                                    +
                         "}";
 
-        ClassFileInstaller.writeClassToDisk("java/lang/Object",
-                                        InMemoryJavaCompiler.compile("java.lang.Object", source,
-                                        "-Xmodule:java.base"),
-                                        "mods/java.base");
+        ClassFileInstaller.writeClassToDisk("java/lang/NewClass",
+             InMemoryJavaCompiler.compile("java.lang.NewClass", source, "-Xmodule:java.base"),
+             "mods/java.base");
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xpatch:java.base=mods/java.base", "-version");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xpatch:java.base=mods/java.base",
+             "XpatchMain", "java.lang.NewClass");
+
         new OutputAnalyzer(pb.start())
-            .shouldContain("Incompatible definition of java.lang.Object")
-            .shouldHaveExitValue(1);
+            .shouldContain("I pass!")
+            .shouldHaveExitValue(0);
     }
 }

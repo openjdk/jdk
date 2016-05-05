@@ -415,8 +415,12 @@ static bool check_inlined_mh_linker_info(ciMethod* symbolic_info, ciMethod* reso
   if (symbolic_info->arg_size() != (resolved_method->arg_size() + has_appendix)) {
     return false; // Total size of arguments on stack mismatch.
   }
-  if (!check_type(symbolic_info->return_type(), resolved_method->return_type())) {
-    return false; // Return value size or type mismatch encountered.
+  if (!symbolic_info->return_type()->is_void()) {
+    // Only check the return type if the symbolic method is not void
+    // i.e. the return value of the resolved method can be dropped
+    if (!check_type(symbolic_info->return_type(), resolved_method->return_type())) {
+      return false; // Return value size or type mismatch encountered.
+    }
   }
 
   switch (symbolic_info->intrinsic_id()) {
