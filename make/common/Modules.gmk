@@ -38,12 +38,11 @@ _MODULES_GMK := 1
 BOOT_MODULES :=
 PLATFORM_MODULES :=
 JRE_TOOL_MODULES :=
+UPGRADEABLE_MODULES :=
+AGGREGATOR_MODULES :=
 
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, , common/Modules.gmk))
-
-UPGRADEABLE_MDOULES :=
-AGGREGATOR_MDOULES :=
 
 BOOT_MODULES += \
     java.base \
