@@ -430,14 +430,14 @@ class MethodHandleNatives {
 
         // If not polymorphic in the return type, such as the compareAndSet
         // methods that return boolean
-        if (ak.isPolyMorphicInReturnType) {
-            if (ak.returnType != mtype.returnType()) {
+        if (ak.at.isMonomorphicInReturnType) {
+            if (ak.at.returnType != mtype.returnType()) {
                 // The caller contains a different return type than that
                 // defined by the method
                 throw newNoSuchMethodErrorOnVarHandle(name, mtype);
             }
             // Adjust the return type of the signature method type
-            sigType = sigType.changeReturnType(ak.returnType);
+            sigType = sigType.changeReturnType(ak.at.returnType);
         }
 
         // Get the guard method type for linking
@@ -455,26 +455,25 @@ class MethodHandleNatives {
             MemberName linker = new MemberName(
                     VarHandleGuards.class, "guard_" + getVarHandleMethodSignature(sigType),
                     guardType, REF_invokeStatic);
-            try {
-                return MemberName.getFactory().resolveOrFail(
-                        REF_invokeStatic, linker, VarHandleGuards.class, ReflectiveOperationException.class);
-            } catch (ReflectiveOperationException ex) {
-                // Fall back to lambda form linkage if guard method is not available
-                // TODO Optionally log fallback ?
+
+            linker = MemberName.getFactory().resolveOrNull(REF_invokeStatic, linker,
+                                                           VarHandleGuards.class);
+            if (linker != null) {
+                return linker;
             }
+            // Fall back to lambda form linkage if guard method is not available
+            // TODO Optionally log fallback ?
         }
         return Invokers.varHandleInvokeLinkerMethod(name, mtype);
     }
     static String getVarHandleMethodSignature(MethodType mt) {
-        StringBuilder sb = new StringBuilder(mt.parameterCount() + 1);
+        StringBuilder sb = new StringBuilder(mt.parameterCount() + 2);
 
         for (int i = 0; i < mt.parameterCount(); i++) {
             Class<?> pt = mt.parameterType(i);
             sb.append(getCharType(pt));
         }
-
         sb.append('_').append(getCharType(mt.returnType()));
-
         return sb.toString();
     }
     static char getCharType(Class<?> pt) {
