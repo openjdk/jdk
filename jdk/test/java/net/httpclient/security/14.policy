@@ -1,5 +1,4 @@
-// Policy: 0
-
+// Policy 14
 grant {
     // permissions common to all tests
     permission java.util.PropertyPermission "*", "read";
@@ -13,6 +12,7 @@ grant {
 
 
     // permissions specific to this test
+    permission java.net.URLPermission "http://127.0.0.1:*/files/foo.txt", "GET";
 };
 
 // For proxy only. Not being tested
