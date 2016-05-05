@@ -294,6 +294,7 @@ public class CheckResourceKeys {
             "opt.Xlint.desc.",
             "count.",
             "illegal.",
+            "java.",
             "javac.",
             "verbose.",
             "locn."

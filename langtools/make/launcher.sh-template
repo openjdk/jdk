@@ -25,17 +25,6 @@
 # questions.
 #
 
-mydir="`dirname $0`"
-case `uname -s` in
-    CYGWIN*)
-      mydir=`cygpath -m $mydir`
-      ;;
-esac
-mylib="$mydir/../modules"
-
-# patch langtools modules
-bcp=-Xpatch:"$mylib"
-
 # tools currently assumes that assertions are enabled in the launcher
 ea=-ea:com.sun.tools...
 
@@ -59,4 +48,4 @@ done
 unset DUALCASE
 
 IFS=$nl
-"#TARGET_JAVA#" $bcp ${ea} ${javaOpts} #PROGRAM# ${toolOpts}
+"#TARGET_JAVA#" "#XPATCH#" ${ea} ${javaOpts} #PROGRAM# ${toolOpts}
