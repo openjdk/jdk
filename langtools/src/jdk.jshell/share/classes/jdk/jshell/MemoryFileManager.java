@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,6 +231,7 @@ class MemoryFileManager implements JavaFileManager {
     }
 
     // Make compatible with Jigsaw
+    @DefinedBy(Api.COMPILER)
     public String inferModuleName(Location location) {
         try {
             if (inferModuleNameMethod == null) {
@@ -249,6 +250,7 @@ class MemoryFileManager implements JavaFileManager {
     }
 
     // Make compatible with Jigsaw
+    @DefinedBy(Api.COMPILER)
     public Iterable<Set<Location>> listModuleLocations(Location location) throws IOException {
         try {
             if (listModuleLocationsMethod == null) {

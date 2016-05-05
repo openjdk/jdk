@@ -199,7 +199,7 @@ public enum Option {
 
     SYSTEM("-system", "opt.arg.jdk", "opt.system", STANDARD, FILEMANAGER),
 
-    XPATCH("-Xpatch:", "opt.arg.path", "opt.Xpatch", EXTENDED, FILEMANAGER),
+    XPATCH("-Xpatch:", "opt.arg.patch", "opt.patch", EXTENDED, FILEMANAGER),
 
     BOOTCLASSPATH("-bootclasspath", "opt.arg.path", "opt.bootclasspath", STANDARD, FILEMANAGER) {
         @Override
@@ -529,82 +529,20 @@ public enum Option {
     XADDEXPORTS("-XaddExports:", "opt.arg.addExports", "opt.addExports", EXTENDED, BASIC) {
         @Override
         public boolean process(OptionHelper helper, String option) {
-            if (option.matches(".*,.*=.*")) { // temporary, for backwards compatibility
-                return processOldStyle(helper, option);
-            }
             String p = option.substring(option.indexOf(':') + 1).trim();
             String prev = helper.get(XADDEXPORTS);
             helper.put(XADDEXPORTS.text, (prev == null) ? p : prev + '\0' + p);
             return false;
-        }
-
-        // convert old style option into a series of new-style options
-        private boolean processOldStyle(OptionHelper helper, String option) {
-            String p = option.substring(option.indexOf(':') + 1).trim();
-            String[] entries = p.split("[ ,]+");
-            Map<String, String> map = new LinkedHashMap<>();
-            for (String e: entries) {
-                // Each entry is of the form   module/package=target
-                // we must group values for the same module/package together
-                int eq = e.indexOf('=');
-                if (eq == -1) {
-                    // don't bother with error message for backwards compatible support
-                    continue;
-                }
-                String modPkg = e.substring(0, eq);
-                String target = e.substring(eq + 1);
-                String targets = map.get(modPkg);
-                map.put(modPkg, (targets == null) ? target : targets + "," + target);
-            }
-            boolean ok = true;
-            for (Map.Entry<String, String> e: map.entrySet()) {
-                // process as new-style options
-                String key = e.getKey();
-                String value = e.getValue();
-                ok = ok & process(helper, XADDEXPORTS.text + key + "=" + value);
-            };
-            return ok;
         }
     },
 
     XADDREADS("-XaddReads:", "opt.arg.addReads", "opt.addReads", EXTENDED, BASIC) {
         @Override
         public boolean process(OptionHelper helper, String option) {
-            if (option.matches(".*,.*=.*")) { // temporary, for backwards compatibility
-                return processOldStyle(helper, option);
-            }
             String p = option.substring(option.indexOf(':') + 1).trim();
             String prev = helper.get(XADDREADS);
             helper.put(XADDREADS.text, (prev == null) ? p : prev + '\0' + p);
             return false;
-        }
-
-        // convert old style option into a series of new-style options
-        private boolean processOldStyle(OptionHelper helper, String option) {
-            String p = option.substring(option.indexOf(':') + 1).trim();
-            String[] entries = p.split("[ ,]+");
-            Map<String, String> map = new LinkedHashMap<>();
-            for (String e: entries) {
-                // Each entry is of the form   module=target
-                // we must group values for the same module together
-                int eq = e.indexOf('=');
-                if (eq == -1) {
-                    // don't bother with error message for backwards compatible support
-                    continue;
-                }
-                String modPkg = e.substring(0, eq);
-                String target = e.substring(eq + 1);
-                String targets = map.get(modPkg);
-                map.put(modPkg, (targets == null) ? target : targets + "," + target);
-            }
-            boolean ok = true;
-            for (Map.Entry<String, String> e: map.entrySet()) {
-                // process as new-style options
-                String key = e.getKey();
-                String value = e.getValue();
-                ok = ok & process(helper, XADDEXPORTS.text + key + "=" + value);
-            };
-            return ok;
         }
     },
 
