@@ -283,8 +283,8 @@ public abstract class Charset
         if (level == null) {
             if (!VM.isBooted())
                 return false;
-            bugLevel = level =
-                    GetPropertyAction.getProperty("sun.nio.cs.bugLevel", "");
+            bugLevel = level = GetPropertyAction
+                    .privilegedGetProperty("sun.nio.cs.bugLevel", "");
         }
         return level.equals(bl);
     }
@@ -609,7 +609,8 @@ public abstract class Charset
     public static Charset defaultCharset() {
         if (defaultCharset == null) {
             synchronized (Charset.class) {
-                String csn = GetPropertyAction.getProperty("file.encoding");
+                String csn = GetPropertyAction
+                        .privilegedGetProperty("file.encoding");
                 Charset cs = lookup(csn);
                 if (cs != null)
                     defaultCharset = cs;

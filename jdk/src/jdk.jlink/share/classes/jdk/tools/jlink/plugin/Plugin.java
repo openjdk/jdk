@@ -201,6 +201,8 @@ public interface Plugin {
      * This method is called prior to invoke the plugin.
      *
      * @param config The plugin configuration.
+     * @throws IllegalArgumentException if a mandatory argument is missing or
+     * if an argument has invalid value.
      */
     public default void configure(Map<String, String> config) {
     }
@@ -211,6 +213,9 @@ public interface Plugin {
      *
      * @param config The plugin configuration.
      * @param ctx The plugin context
+     * @throws IllegalArgumentException if a mandatory argument is missing or
+     * if an argument has invalid value.
+     *
      */
     public default void configure(Map<String, String> config, PluginContext ctx) {
         configure(config);

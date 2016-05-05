@@ -48,7 +48,9 @@ public class DefaultAsynchronousChannelProvider {
             throw new AssertionError(x);
         }
         try {
-            return c.newInstance();
+            @SuppressWarnings("deprecation")
+            AsynchronousChannelProvider result = c.newInstance();
+            return result;
         } catch (IllegalAccessException | InstantiationException x) {
             throw new AssertionError(x);
         }
@@ -59,7 +61,7 @@ public class DefaultAsynchronousChannelProvider {
      * Returns the default AsynchronousChannelProvider.
      */
     public static AsynchronousChannelProvider create() {
-        String osname = GetPropertyAction.getProperty("os.name");
+        String osname = GetPropertyAction.privilegedGetProperty("os.name");
         if (osname.equals("SunOS"))
             return createProvider("sun.nio.ch.SolarisAsynchronousChannelProvider");
         if (osname.equals("Linux"))

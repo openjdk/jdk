@@ -858,7 +858,7 @@ public final class Locale implements Cloneable, Serializable {
 
     private static Locale initDefault() {
         String language, region, script, country, variant;
-        Properties props = GetPropertyAction.getProperties();
+        Properties props = GetPropertyAction.privilegedGetProperties();
         language = props.getProperty("user.language", "en");
         // for compatibility, check for old user.region property
         region = props.getProperty("user.region");
@@ -883,7 +883,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     private static Locale initDefault(Locale.Category category) {
-        Properties props = GetPropertyAction.getProperties();
+        Properties props = GetPropertyAction.privilegedGetProperties();
         return getInstance(
             props.getProperty(category.languageKey,
                     defaultLocale.getLanguage()),

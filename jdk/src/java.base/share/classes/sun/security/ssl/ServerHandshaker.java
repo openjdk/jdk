@@ -119,8 +119,8 @@ final class ServerHandshaker extends Handshaker {
     private long statusRespTimeout;
 
     static {
-        String property =
-                GetPropertyAction.getProperty("jdk.tls.ephemeralDHKeySize");
+        String property = GetPropertyAction
+                .privilegedGetProperty("jdk.tls.ephemeralDHKeySize");
         if (property == null || property.length() == 0) {
             useLegacyEphemeralDHKeys = false;
             useSmartEphemeralDHKeys = false;

@@ -94,7 +94,7 @@ public class PatternSyntaxException
     }
 
     private static final String nl =
-            GetPropertyAction.getProperty("line.separator");
+            GetPropertyAction.privilegedGetProperty("line.separator");
 
     /**
      * Returns a multi-line string containing the description of the syntax

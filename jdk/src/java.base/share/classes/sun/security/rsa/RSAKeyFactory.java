@@ -84,7 +84,7 @@ public final class RSAKeyFactory extends KeyFactorySpi {
     public static final int MAX_RESTRICTED_EXPLEN = 64;
 
     private static final boolean restrictExpLen =
-        "true".equalsIgnoreCase(GetPropertyAction.getProperty(
+        "true".equalsIgnoreCase(GetPropertyAction.privilegedGetProperty(
                 "sun.security.rsa.restrictRSAExponent", "true"));
 
     // instance used for static translateKey();

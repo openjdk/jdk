@@ -99,8 +99,10 @@ public class ResourceResolver {
                 ResourceResolver resolverTmp = resolver;
                 if (!resolver.resolverSpi.engineIsThreadSafe()) {
                     try {
-                        resolverTmp =
-                            new ResourceResolver(resolver.resolverSpi.getClass().newInstance());
+                        @SuppressWarnings("deprecation")
+                        ResourceResolver tmp = new ResourceResolver(resolver.resolverSpi.getClass().newInstance());
+                        resolverTmp = tmp;
+                            ;
                     } catch (InstantiationException e) {
                         throw new ResourceResolverException("", e, context.attr, context.baseUri);
                     } catch (IllegalAccessException e) {
@@ -246,6 +248,7 @@ public class ResourceResolver {
     public static void register(Class<? extends ResourceResolverSpi> className, boolean start) {
         JavaUtils.checkRegisterPermission();
         try {
+            @SuppressWarnings("deprecation")
             ResourceResolverSpi resourceResolverSpi = className.newInstance();
             register(resourceResolverSpi, start);
         } catch (IllegalAccessException e) {
