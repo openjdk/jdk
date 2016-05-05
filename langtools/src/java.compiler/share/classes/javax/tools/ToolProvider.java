@@ -27,6 +27,8 @@ package javax.tools;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
@@ -145,23 +147,26 @@ public class ToolProvider {
     }
 
     /**
-     * Determine if this is tho desired tool instance.
+     * Determine if this is the desired tool instance.
      * @param <T>        the interface of the tool
      * @param tool       the instance of the tool
      * @param moduleName the name of the module containing the desired implementation
      * @return true if and only if the tool matches the specified criteria
      */
     private static <T> boolean matches(T tool, String moduleName) {
-        // for now, use reflection to implement
-        //      return moduleName.equals(tool.getClass().getModule().getName());
-        try {
-            Method getModuleMethod = Class.class.getDeclaredMethod("getModule");
-            Object toolModule = getModuleMethod.invoke(tool.getClass());
-            Method getNameMethod = toolModule.getClass().getDeclaredMethod("getName");
-            String toolModuleName = (String) getNameMethod.invoke(toolModule);
-            return moduleName.equals(toolModuleName);
-        } catch (InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
-            return false;
-        }
+        PrivilegedAction<Boolean> pa = () -> {
+            // for now, use reflection to implement
+            //      return moduleName.equals(tool.getClass().getModule().getName());
+            try {
+                Method getModuleMethod = Class.class.getDeclaredMethod("getModule");
+                Object toolModule = getModuleMethod.invoke(tool.getClass());
+                Method getNameMethod = toolModule.getClass().getDeclaredMethod("getName");
+                String toolModuleName = (String) getNameMethod.invoke(toolModule);
+                return moduleName.equals(toolModuleName);
+            } catch (InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
+                return false;
+            }
+        };
+        return AccessController.doPrivileged(pa);
     }
 }
