@@ -95,22 +95,6 @@ public final class ProcessTools {
   }
 
   /**
-   * Get the string containing input arguments passed to the VM
-   *
-   * @return arguments
-   */
-  public static String getVmInputArguments() {
-    RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
-
-    List<String> args = runtime.getInputArguments();
-    StringBuilder result = new StringBuilder();
-    for (String arg : args)
-        result.append(arg).append(' ');
-
-    return result.toString();
-  }
-
-  /**
    * Gets the array of strings containing input arguments passed to the VM
    *
    * @return arguments
