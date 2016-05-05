@@ -1019,7 +1019,7 @@ ConcurrentMarkSweepGeneration::par_promote(int thread_num,
       return NULL;
     }
   }
-  assert(promoInfo->has_spooling_space(), "Control point invariant");
+  assert(!promoInfo->tracking() || promoInfo->has_spooling_space(), "Control point invariant");
   const size_t alloc_sz = CompactibleFreeListSpace::adjustObjectSize(word_sz);
   HeapWord* obj_ptr = ps->lab.alloc(alloc_sz);
   if (obj_ptr == NULL) {
@@ -1094,6 +1094,12 @@ par_oop_since_save_marks_iterate_done(int thread_num) {
   CMSParGCThreadState* ps = _par_gc_thread_states[thread_num];
   ParScanWithoutBarrierClosure* dummy_cl = NULL;
   ps->promo.promoted_oops_iterate_nv(dummy_cl);
+
+  // Because card-scanning has been completed, subsequent phases
+  // (e.g., reference processing) will not need to recognize which
+  // objects have been promoted during this GC. So, we can now disable
+  // promotion tracking.
+  ps->promo.stopTrackingPromotions();
 }
 
 bool ConcurrentMarkSweepGeneration::should_collect(bool   full,
@@ -2032,6 +2038,12 @@ void ConcurrentMarkSweepGeneration::gc_prologue(bool full) {
   _capacity_at_prologue = capacity();
   _used_at_prologue = used();
 
+  // We enable promotion tracking so that card-scanning can recognize
+  // which objects have been promoted during this GC and skip them.
+  for (uint i = 0; i < ParallelGCThreads; i++) {
+    _par_gc_thread_states[i]->promo.startTrackingPromotions();
+  }
+
   // Delegate to CMScollector which knows how to coordinate between
   // this and any other CMS generations that it is responsible for
   // collecting.
@@ -2118,9 +2130,15 @@ void CMSCollector::gc_epilogue(bool full) {
 void ConcurrentMarkSweepGeneration::gc_epilogue(bool full) {
   collector()->gc_epilogue(full);
 
-  // Also reset promotion tracking in par gc thread states.
+  // When using ParNew, promotion tracking should have already been
+  // disabled. However, the prologue (which enables promotion
+  // tracking) and epilogue are called irrespective of the type of
+  // GC. So they will also be called before and after Full GCs, during
+  // which promotion tracking will not be explicitly disabled. So,
+  // it's safer to also disable it here too (to be symmetric with
+  // enabling it in the prologue).
   for (uint i = 0; i < ParallelGCThreads; i++) {
-    _par_gc_thread_states[i]->promo.stopTrackingPromotions(i);
+    _par_gc_thread_states[i]->promo.stopTrackingPromotions();
   }
 }
 
@@ -2431,9 +2449,6 @@ void CMSCollector::verify_after_remark_work_2() {
 void ConcurrentMarkSweepGeneration::save_marks() {
   // delegate to CMS space
   cmsSpace()->save_marks();
-  for (uint i = 0; i < ParallelGCThreads; i++) {
-    _par_gc_thread_states[i]->promo.startTrackingPromotions();
-  }
 }
 
 bool ConcurrentMarkSweepGeneration::no_allocs_since_save_marks() {
