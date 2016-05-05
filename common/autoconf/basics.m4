@@ -839,8 +839,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
 
   # The spec.gmk file contains all variables for the make system.
   AC_CONFIG_FILES([$OUTPUT_ROOT/spec.gmk:$AUTOCONF_DIR/spec.gmk.in])
-  # The hotspot-spec.gmk file contains legacy variables for the hotspot make system.
-  AC_CONFIG_FILES([$OUTPUT_ROOT/hotspot-spec.gmk:$AUTOCONF_DIR/hotspot-spec.gmk.in])
   # The bootcycle-spec.gmk file contains support for boot cycle builds.
   AC_CONFIG_FILES([$OUTPUT_ROOT/bootcycle-spec.gmk:$AUTOCONF_DIR/bootcycle-spec.gmk.in])
   # The buildjdk-spec.gmk file contains support for building a buildjdk when cross compiling.
