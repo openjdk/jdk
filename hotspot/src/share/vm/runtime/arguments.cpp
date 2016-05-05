@@ -778,8 +778,8 @@ char* ArgumentBootClassPath::add_jars_to_path(char* path, const char* directory)
   return path;
 }
 
-// Parses a memory size specification string.
-static bool atomull(const char *s, julong* result) {
+// Parses a size specification string.
+bool Arguments::atojulong(const char *s, julong* result) {
   julong n = 0;
   int args_read = 0;
   bool is_hex = false;
@@ -885,7 +885,7 @@ static bool set_numeric_flag(const char* name, char* value, Flag::Flags origin) 
     return false;
   }
 
-  // Check the sign first since atomull() parses only unsigned values.
+  // Check the sign first since atojulong() parses only unsigned values.
   if (*value == '-') {
     if (!result->is_intx() && !result->is_int()) {
       return false;
@@ -893,7 +893,7 @@ static bool set_numeric_flag(const char* name, char* value, Flag::Flags origin) 
     value++;
     is_neg = true;
   }
-  if (!atomull(value, &v)) {
+  if (!Arguments::atojulong(value, &v)) {
     return false;
   }
   if (result->is_int()) {
@@ -2693,12 +2693,12 @@ bool Arguments::parse_uintx(const char* value,
                             uintx* uintx_arg,
                             uintx min_size) {
 
-  // Check the sign first since atomull() parses only unsigned values.
+  // Check the sign first since atojulong() parses only unsigned values.
   bool value_is_positive = !(*value == '-');
 
   if (value_is_positive) {
     julong n;
-    bool good_return = atomull(value, &n);
+    bool good_return = atojulong(value, &n);
     if (good_return) {
       bool above_minimum = n >= min_size;
       bool value_is_too_large = n > max_uintx;
@@ -2715,7 +2715,7 @@ bool Arguments::parse_uintx(const char* value,
 Arguments::ArgsRange Arguments::parse_memory_size(const char* s,
                                                   julong* long_arg,
                                                   julong min_size) {
-  if (!atomull(s, long_arg)) return arg_unreadable;
+  if (!atojulong(s, long_arg)) return arg_unreadable;
   return check_memory_size(*long_arg, min_size);
 }
 
