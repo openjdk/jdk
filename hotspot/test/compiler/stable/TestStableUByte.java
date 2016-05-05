@@ -31,26 +31,26 @@
  * @build sun.hotspot.WhiteBox
  * @build compiler.stable.TestStableUByte
  *
- * @run main/bootclasspath -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
+ * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
  *                         -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
  *                         -XX:-TieredCompilation
  *                         -XX:+FoldStableValues
  *                         -XX:CompileOnly=::get,::get1
  *                         compiler.stable.TestStableUByte
- * @run main/bootclasspath -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
+ * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
  *                         -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
  *                         -XX:-TieredCompilation
  *                         -XX:-FoldStableValues
  *                         -XX:CompileOnly=::get,::get1
  *                         compiler.stable.TestStableUByte
  *
- * @run main/bootclasspath -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
+ * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
  *                         -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
  *                         -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                         -XX:+FoldStableValues
  *                         -XX:CompileOnly=::get,::get1
  *                         compiler.stable.TestStableUByte
- * @run main/bootclasspath -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
+ * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
  *                         -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
  *                         -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                         -XX:-FoldStableValues

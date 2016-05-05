@@ -33,21 +33,23 @@
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.vm.annotation
  *          java.base/jdk.internal.misc
- * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions
+ * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions
  *                         -Xbatch -XX:-TieredCompilation
  *                         -XX:+FoldStableValues
  *                         -XX:CompileCommand=dontinline,UnsafeGetConstantField.checkGetAddress()
  *                         -XX:CompileCommand=dontinline,*.test*
  *                         -XX:+UseUnalignedAccesses
+ *                         -XaddReads:java.base=ALL-UNNAMED
  *                         compiler.unsafe.UnsafeGetConstantField
  *
- * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions
+ * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions
  *                         -Xbatch -XX:-TieredCompilation
  *                         -XX:+FoldStableValues
  *                         -XX:CompileCommand=dontinline,UnsafeGetConstantField.checkGetAddress()
  *                         -XX:CompileCommand=dontinline,*.test*
  *                         -XX:CompileCommand=inline,*Unsafe.get*
  *                         -XX:-UseUnalignedAccesses
+ *                         -XaddReads:java.base=ALL-UNNAMED
  *                         compiler.unsafe.UnsafeGetConstantField
  */
 package compiler.unsafe;
