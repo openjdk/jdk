@@ -464,7 +464,7 @@ void LogConfiguration::print_command_line_help(FILE* out) {
               " -Xlog:gc=debug:file=gc.txt:none\n"
               "\t Log messages tagged with 'gc' tag using 'debug' level to file 'gc.txt' with no decorations.\n\n"
 
-              " -Xlog:gc=trace:file=gctrace.txt:uptimemillis,pids:filecount=5,filesize=1024\n"
+              " -Xlog:gc=trace:file=gctrace.txt:uptimemillis,pids:filecount=5,filesize=1m\n"
               "\t Log messages tagged with 'gc' tag using 'trace' level to a rotating fileset of 5 files of size 1MB,\n"
               "\t using the base name 'gctrace.txt', with 'uptimemillis' and 'pid' decorations.\n\n"
 

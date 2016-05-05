@@ -75,7 +75,7 @@ public class TestLogRotation {
         ArrayList<String> args = new ArrayList();
         String[] logOpts = new String[]{
             "-cp", System.getProperty("java.class.path"),
-            "-Xlog:gc=debug:" + logFileName + "::filesize=" + logFileSizeK + ",filecount=" + numberOfFiles,
+            "-Xlog:gc=debug:" + logFileName + "::filesize=" + logFileSizeK + "k,filecount=" + numberOfFiles,
             "-XX:-DisableExplicitGC", // to ensure that System.gc() works
             "-Xmx128M"};
         // System.getProperty("test.java.opts") is '' if no options is set
