@@ -162,6 +162,8 @@ public class WsgenTool {
         boolean bootCP = useBootClasspath(EndpointReference.class) || useBootClasspath(XmlSeeAlso.class);
         List<String> args = new ArrayList<String>(6 + (bootCP ? 1 : 0) + (options.nocompile ? 1 : 0)
                 + (options.encoding != null ? 2 : 0));
+        args.add("-addmods");
+        args.add("java.xml.ws");
         args.add("-d");
         args.add(options.destDir.getAbsolutePath());
         args.add("-classpath");
