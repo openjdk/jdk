@@ -126,7 +126,7 @@ classesForSignature(PacketInputStream *in, PacketOutputStream *out)
             int writtenCount = 0;
             int i;
 
-            for (i=0; i<classCount; i++) {
+            for (i = 0; i < classCount; i++) {
                 jclass clazz = theClasses[i];
                 jint status = classStatus(clazz);
                 char *candidate_signature = NULL;
@@ -141,7 +141,13 @@ classesForSignature(PacketInputStream *in, PacketOutputStream *out)
 
                 error = classSignature(clazz, &candidate_signature, NULL);
                 if (error != JVMTI_ERROR_NONE) {
-                    break;
+                  // Clazz become invalid since the time we get the class list
+                  // Skip this entry
+                  if (error == JVMTI_ERROR_INVALID_CLASS) {
+                    continue;
+                  }
+
+                  break;
                 }
 
                 if (strcmp(candidate_signature, signature) == 0) {
