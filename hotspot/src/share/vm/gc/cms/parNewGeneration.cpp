@@ -476,7 +476,6 @@ void ParScanThreadStateSet::flush() {
 
     // Inform old gen that we're done.
     _old_gen.par_promote_alloc_done(i);
-    _old_gen.par_oop_since_save_marks_iterate_done(i);
   }
 
   if (UseConcMarkSweepGC) {
@@ -619,6 +618,16 @@ void ParNewGenTask::work(uint worker_id) {
 
   // "evacuate followers".
   par_scan_state.evacuate_followers_closure().do_void();
+
+  // This will collapse this worker's promoted object list that's
+  // created during the main ParNew parallel phase of ParNew. This has
+  // to be called after all workers have finished promoting objects
+  // and scanning promoted objects. It should be safe calling it from
+  // here, given that we can only reach here after all thread have
+  // offered termination, i.e., after there is no more work to be
+  // done. It will also disable promotion tracking for the rest of
+  // this GC as it's not necessary to be on during reference processing.
+  _old_gen->par_oop_since_save_marks_iterate_done((int) worker_id);
 }
 
 ParNewGeneration::ParNewGeneration(ReservedSpace rs, size_t initial_byte_size)
