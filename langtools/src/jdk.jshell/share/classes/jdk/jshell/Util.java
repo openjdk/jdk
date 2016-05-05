@@ -25,6 +25,9 @@
 
 package jdk.jshell;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -93,6 +96,15 @@ class Util {
 
     static <T> Stream<T> stream(Iterable<T> iterable) {
         return StreamSupport.stream(iterable.spliterator(), false);
+    }
+
+    static String[] join(String[] a1, String[] a2) {
+        List<String> result = new ArrayList<>();
+
+        result.addAll(Arrays.asList(a1));
+        result.addAll(Arrays.asList(a2));
+
+        return result.toArray(new String[0]);
     }
 
     static class Pair<T, U> {
