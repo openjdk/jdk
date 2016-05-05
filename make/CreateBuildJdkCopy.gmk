@@ -35,7 +35,7 @@ MODULES_TO_COPY := $(call FindTransitiveDepsForModule, jdk.jlink) jdk.jlink
 # Copy the modules needed to run jlink and jmod. Use bulk copy instead of
 # SetupCopyFiles since there are so many files.
 
-COPY_CLASSES_TARGET := $(BUILDJDK_OUTPUTDIR)/jdk/modules/_buildjdk-copy-maker
+COPY_CLASSES_TARGET := $(BUILDJDK_OUTPUTDIR)/jdk/modules/java.base/_the.buildjdk-copy-marker
 
 $(COPY_CLASSES_TARGET): $(call CacheFind, $(wildcard \
     $(addprefix $(JDK_OUTPUTDIR)/modules/, $(MODULES_TO_COPY))))
