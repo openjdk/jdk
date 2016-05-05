@@ -289,9 +289,9 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
 }
 
 /**
-* Method entry for static native methods:
+* Method entry for static (non-native) methods:
 *   int java.util.zip.CRC32C.updateBytes(int crc, byte[] b, int off, int end)
-*   int java.util.zip.CRC32C.updateByteBuffer(int crc, long address, int off, int end)
+*   int java.util.zip.CRC32C.updateDirectByteBuffer(int crc, long address, int off, int end)
 */
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
   if (UseCRC32CIntrinsics) {
@@ -306,7 +306,7 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
     // Arguments are reversed on java expression stack
     // Calculate address of start element
     if (kind == Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer) {
-      __ movptr(buf, Address(rsp, 3 * wordSize)); // long buf
+      __ movptr(buf, Address(rsp, 3 * wordSize)); // long address
       __ movl2ptr(off, Address(rsp, 2 * wordSize)); // offset
       __ addq(buf, off); // + offset
       __ movl(crc, Address(rsp, 5 * wordSize)); // Initial CRC
