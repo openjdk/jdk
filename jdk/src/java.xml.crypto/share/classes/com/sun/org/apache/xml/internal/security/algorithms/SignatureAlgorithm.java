@@ -152,7 +152,9 @@ public class SignatureAlgorithm extends Algorithm {
                 log.log(java.util.logging.Level.FINE, "Create URI \"" + algorithmURI + "\" class \""
                    + implementingClass + "\"");
             }
-            return implementingClass.newInstance();
+            @SuppressWarnings("deprecation")
+            SignatureAlgorithmSpi result = implementingClass.newInstance();
+            return result;
         }  catch (IllegalAccessException ex) {
             Object exArgs[] = { algorithmURI, ex.getMessage() };
             throw new XMLSignatureException("algorithms.NoSuchAlgorithm", exArgs, ex);

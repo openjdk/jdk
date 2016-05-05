@@ -398,7 +398,7 @@ public class ReflectionFactory {
             return;
         }
 
-        Properties props = GetPropertyAction.getProperties();
+        Properties props = GetPropertyAction.privilegedGetProperties();
         String val = props.getProperty("sun.reflect.noInflation");
         if (val != null && val.equals("true")) {
             noInflation = true;

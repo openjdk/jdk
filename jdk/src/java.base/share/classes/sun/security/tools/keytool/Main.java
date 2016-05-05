@@ -728,6 +728,7 @@ public final class Main {
                     provClass = Class.forName(provName);
                 }
 
+                @SuppressWarnings("deprecation")
                 Object obj = provClass.newInstance();
                 if (!(obj instanceof Provider)) {
                     MessageFormat form = new MessageFormat

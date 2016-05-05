@@ -84,7 +84,8 @@ class KQueueArrayWrapper {
     static {
         IOUtil.load();
         initStructSizes();
-        String datamodel = GetPropertyAction.getProperty("sun.arch.data.model");
+        String datamodel =
+                GetPropertyAction.privilegedGetProperty("sun.arch.data.model");
         is64bit = "64".equals(datamodel);
     }
 

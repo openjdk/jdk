@@ -160,7 +160,9 @@ public final class Transform extends SignatureElementProxy {
             throw new InvalidTransformException("signature.Transform.UnknownTransform", exArgs);
         }
         try {
-            transformSpi = transformSpiClass.newInstance();
+            @SuppressWarnings("deprecation")
+            TransformSpi tmp = transformSpiClass.newInstance();
+            transformSpi = tmp;
         } catch (InstantiationException ex) {
             Object exArgs[] = { algorithmURI };
             throw new InvalidTransformException(
@@ -345,7 +347,9 @@ public final class Transform extends SignatureElementProxy {
         }
         TransformSpi newTransformSpi = null;
         try {
-            newTransformSpi = transformSpiClass.newInstance();
+            @SuppressWarnings("deprecation")
+            TransformSpi tmp = transformSpiClass.newInstance();
+            newTransformSpi = tmp;
         } catch (InstantiationException ex) {
             Object exArgs[] = { algorithmURI };
             throw new InvalidTransformException(

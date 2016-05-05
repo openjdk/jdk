@@ -1536,7 +1536,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * be performed to generate a result with the specified scale, the
      * specified rounding mode is applied.
      *
-     * <p>The new {@link #divide(BigDecimal, int, RoundingMode)} method
+     * @deprecated The method {@link #divide(BigDecimal, int, RoundingMode)}
      * should be used in preference to this legacy method.
      *
      * @param  divisor value by which this {@code BigDecimal} is to be divided.
@@ -1558,6 +1558,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @see    #ROUND_HALF_EVEN
      * @see    #ROUND_UNNECESSARY
      */
+    @Deprecated(since="9")
     public BigDecimal divide(BigDecimal divisor, int scale, int roundingMode) {
         if (roundingMode < ROUND_UP || roundingMode > ROUND_UNNECESSARY)
             throw new IllegalArgumentException("Invalid rounding mode");
@@ -1602,7 +1603,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * rounding must be performed to generate a result with the given
      * scale, the specified rounding mode is applied.
      *
-     * <p>The new {@link #divide(BigDecimal, RoundingMode)} method
+     * @deprecated The method {@link #divide(BigDecimal, RoundingMode)}
      * should be used in preference to this legacy method.
      *
      * @param  divisor value by which this {@code BigDecimal} is to be divided.
@@ -1623,6 +1624,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @see    #ROUND_HALF_EVEN
      * @see    #ROUND_UNNECESSARY
      */
+    @Deprecated(since="9")
     public BigDecimal divide(BigDecimal divisor, int roundingMode) {
         return this.divide(divisor, scale, roundingMode);
     }
@@ -2267,14 +2269,20 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * Rounding mode to round away from zero.  Always increments the
      * digit prior to a nonzero discarded fraction.  Note that this rounding
      * mode never decreases the magnitude of the calculated value.
+     *
+     * @deprecated Use {@link RoundingMode#UP} instead.
      */
+    @Deprecated(since="9")
     public static final int ROUND_UP =           0;
 
     /**
      * Rounding mode to round towards zero.  Never increments the digit
      * prior to a discarded fraction (i.e., truncates).  Note that this
      * rounding mode never increases the magnitude of the calculated value.
+     *
+     * @deprecated Use {@link RoundingMode#DOWN} instead.
      */
+    @Deprecated(since="9")
     public static final int ROUND_DOWN =         1;
 
     /**
@@ -2283,7 +2291,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * {@code ROUND_UP}; if negative, behaves as for
      * {@code ROUND_DOWN}.  Note that this rounding mode never
      * decreases the calculated value.
+     *
+     * @deprecated Use {@link RoundingMode#CEILING} instead.
      */
+    @Deprecated(since="9")
     public static final int ROUND_CEILING =      2;
 
     /**
@@ -2292,7 +2303,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * {@code ROUND_DOWN}; if negative, behave as for
      * {@code ROUND_UP}.  Note that this rounding mode never
      * increases the calculated value.
+     *
+     * @deprecated Use {@link RoundingMode#FLOOR} instead.
      */
+    @Deprecated(since="9")
     public static final int ROUND_FLOOR =        3;
 
     /**
@@ -2302,7 +2316,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * &ge; 0.5; otherwise, behaves as for {@code ROUND_DOWN}.  Note
      * that this is the rounding mode that most of us were taught in
      * grade school.
+     *
+     * @deprecated Use {@link RoundingMode#HALF_UP} instead.
      */
+    @Deprecated(since="9")
     public static final int ROUND_HALF_UP =      4;
 
     /**
@@ -2311,7 +2328,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * down.  Behaves as for {@code ROUND_UP} if the discarded
      * fraction is {@literal >} 0.5; otherwise, behaves as for
      * {@code ROUND_DOWN}.
+     *
+     * @deprecated Use {@link RoundingMode#HALF_DOWN} instead.
      */
+    @Deprecated(since="9")
     public static final int ROUND_HALF_DOWN =    5;
 
     /**
@@ -2323,7 +2343,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * {@code ROUND_HALF_DOWN} if it's even.  Note that this is the
      * rounding mode that minimizes cumulative error when applied
      * repeatedly over a sequence of calculations.
+     *
+     * @deprecated Use {@link RoundingMode#HALF_EVEN} instead.
      */
+    @Deprecated(since="9")
     public static final int ROUND_HALF_EVEN =    6;
 
     /**
@@ -2331,7 +2354,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * result, hence no rounding is necessary.  If this rounding mode is
      * specified on an operation that yields an inexact result, an
      * {@code ArithmeticException} is thrown.
+     *
+     * @deprecated Use {@link RoundingMode#UNNECESSARY} instead.
      */
+    @Deprecated(since="9")
     public static final int ROUND_UNNECESSARY =  7;
 
 
@@ -2408,7 +2434,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * Instead, {@code setScale} returns an object with the proper
      * scale; the returned object may or may not be newly allocated.
      *
-     * <p>The new {@link #setScale(int, RoundingMode)} method should
+     * @deprecated The method {@link #setScale(int, RoundingMode)} should
      * be used in preference to this legacy method.
      *
      * @param  newScale scale of the {@code BigDecimal} value to be returned.
@@ -2431,6 +2457,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @see    #ROUND_HALF_EVEN
      * @see    #ROUND_UNNECESSARY
      */
+    @Deprecated(since="9")
     public BigDecimal setScale(int newScale, int roundingMode) {
         if (roundingMode < ROUND_UP || roundingMode > ROUND_UNNECESSARY)
             throw new IllegalArgumentException("Invalid rounding mode");

@@ -392,6 +392,7 @@ class MethodAccessorGenerator extends AccessorGenerator {
         // matter.
         return AccessController.doPrivileged(
             new PrivilegedAction<MagicAccessorImpl>() {
+                @SuppressWarnings("deprecation") // Class.newInstance
                 public MagicAccessorImpl run() {
                         try {
                         return (MagicAccessorImpl)

@@ -70,7 +70,7 @@ public class DSAKeyFactory extends KeyFactorySpi {
          * By default this is false.
          * This incompatibility was introduced by 4532506.
          */
-        String prop = GetPropertyAction.getProperty(SERIAL_PROP);
+        String prop = GetPropertyAction.privilegedGetProperty(SERIAL_PROP);
         SERIAL_INTEROP = "true".equalsIgnoreCase(prop);
     }
 

@@ -88,7 +88,7 @@ public final class ImageFileCreator {
             ByteOrder byteOrder)
             throws IOException {
         return ImageFileCreator.create(archives, byteOrder,
-                new ImagePluginStack(null));
+                new ImagePluginStack());
     }
 
     public static ExecutableImage create(Set<Archive> archives,

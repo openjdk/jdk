@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public class BootLoader {
     }
 
     // ServiceCatalog for the boot class loader
-    private static final ServicesCatalog SERVICES_CATALOG = new ServicesCatalog();
+    private static final ServicesCatalog SERVICES_CATALOG = ServicesCatalog.create();
 
     // ClassLoaderValue map for boot class loader
     private static final ConcurrentHashMap<?, ?> CLASS_LOADER_VALUE_MAP =
