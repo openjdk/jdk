@@ -206,7 +206,8 @@ ColorData.img_oda_green	28
 ColorData.img_oda_blue	32
 ColorData.pGrayInverseLutData	36
 ColorData.screendata	40
-ColorData	44
+ColorData.representsPrimaries	44
+ColorData	48
 XFontStruct.ext_data	0
 XFontStruct.fid	4
 XFontStruct.direction	8
