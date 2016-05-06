@@ -33,6 +33,7 @@ import jdk.internal.reflect.Reflection;
 import jdk.internal.misc.VM;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.ForceInline;
 
 
 /**
@@ -209,45 +210,102 @@ public final class Unsafe {
     /** @see #getInt(Object, long) */
     @HotSpotIntrinsicCandidate
     public native boolean getBoolean(Object o, long offset);
+
     /** @see #putInt(Object, long, int) */
     @HotSpotIntrinsicCandidate
     public native void    putBoolean(Object o, long offset, boolean x);
+
     /** @see #getInt(Object, long) */
     @HotSpotIntrinsicCandidate
     public native byte    getByte(Object o, long offset);
+
     /** @see #putInt(Object, long, int) */
     @HotSpotIntrinsicCandidate
     public native void    putByte(Object o, long offset, byte x);
+
     /** @see #getInt(Object, long) */
     @HotSpotIntrinsicCandidate
     public native short   getShort(Object o, long offset);
+
     /** @see #putInt(Object, long, int) */
     @HotSpotIntrinsicCandidate
     public native void    putShort(Object o, long offset, short x);
+
     /** @see #getInt(Object, long) */
     @HotSpotIntrinsicCandidate
     public native char    getChar(Object o, long offset);
+
     /** @see #putInt(Object, long, int) */
     @HotSpotIntrinsicCandidate
     public native void    putChar(Object o, long offset, char x);
+
     /** @see #getInt(Object, long) */
     @HotSpotIntrinsicCandidate
     public native long    getLong(Object o, long offset);
+
     /** @see #putInt(Object, long, int) */
     @HotSpotIntrinsicCandidate
     public native void    putLong(Object o, long offset, long x);
+
     /** @see #getInt(Object, long) */
     @HotSpotIntrinsicCandidate
     public native float   getFloat(Object o, long offset);
+
     /** @see #putInt(Object, long, int) */
     @HotSpotIntrinsicCandidate
     public native void    putFloat(Object o, long offset, float x);
+
     /** @see #getInt(Object, long) */
     @HotSpotIntrinsicCandidate
     public native double  getDouble(Object o, long offset);
+
     /** @see #putInt(Object, long, int) */
     @HotSpotIntrinsicCandidate
     public native void    putDouble(Object o, long offset, double x);
+
+    /**
+     * Fetches a native pointer from a given memory address.  If the address is
+     * zero, or does not point into a block obtained from {@link
+     * #allocateMemory}, the results are undefined.
+     *
+     * <p>If the native pointer is less than 64 bits wide, it is extended as
+     * an unsigned number to a Java long.  The pointer may be indexed by any
+     * given byte offset, simply by adding that offset (as a simple integer) to
+     * the long representing the pointer.  The number of bytes actually read
+     * from the target address may be determined by consulting {@link
+     * #addressSize}.
+     *
+     * @see #allocateMemory
+     * @see #getInt(Object, long)
+     */
+    @ForceInline
+    public long getAddress(Object o, long offset) {
+        if (ADDRESS_SIZE == 4) {
+            return Integer.toUnsignedLong(getInt(o, offset));
+        } else {
+            return getLong(o, offset);
+        }
+    }
+
+    /**
+     * Stores a native pointer into a given memory address.  If the address is
+     * zero, or does not point into a block obtained from {@link
+     * #allocateMemory}, the results are undefined.
+     *
+     * <p>The number of bytes actually written at the target address may be
+     * determined by consulting {@link #addressSize}.
+     *
+     * @see #allocateMemory
+     * @see #putInt(Object, long, int)
+     */
+    @ForceInline
+    public void putAddress(Object o, long offset, long x) {
+        if (ADDRESS_SIZE == 4) {
+            putInt(o, offset, (int)x);
+        } else {
+            putLong(o, offset, x);
+        }
+    }
 
     // These read VM internal data.
 
@@ -287,8 +345,10 @@ public final class Unsafe {
      *
      * @see #allocateMemory
      */
-    @HotSpotIntrinsicCandidate
-    public native byte    getByte(long address);
+    @ForceInline
+    public byte getByte(long address) {
+        return getByte(null, address);
+    }
 
     /**
      * Stores a value into a given memory address.  If the address is zero, or
@@ -297,75 +357,94 @@ public final class Unsafe {
      *
      * @see #getByte(long)
      */
-    @HotSpotIntrinsicCandidate
-    public native void    putByte(long address, byte x);
+    @ForceInline
+    public void putByte(long address, byte x) {
+        putByte(null, address, x);
+    }
 
     /** @see #getByte(long) */
-    @HotSpotIntrinsicCandidate
-    public native short   getShort(long address);
-    /** @see #putByte(long, byte) */
-    @HotSpotIntrinsicCandidate
-    public native void    putShort(long address, short x);
-    /** @see #getByte(long) */
-    @HotSpotIntrinsicCandidate
-    public native char    getChar(long address);
-    /** @see #putByte(long, byte) */
-    @HotSpotIntrinsicCandidate
-    public native void    putChar(long address, char x);
-    /** @see #getByte(long) */
-    @HotSpotIntrinsicCandidate
-    public native int     getInt(long address);
-    /** @see #putByte(long, byte) */
-    @HotSpotIntrinsicCandidate
-    public native void    putInt(long address, int x);
-    /** @see #getByte(long) */
-    @HotSpotIntrinsicCandidate
-    public native long    getLong(long address);
-    /** @see #putByte(long, byte) */
-    @HotSpotIntrinsicCandidate
-    public native void    putLong(long address, long x);
-    /** @see #getByte(long) */
-    @HotSpotIntrinsicCandidate
-    public native float   getFloat(long address);
-    /** @see #putByte(long, byte) */
-    @HotSpotIntrinsicCandidate
-    public native void    putFloat(long address, float x);
-    /** @see #getByte(long) */
-    @HotSpotIntrinsicCandidate
-    public native double  getDouble(long address);
-    /** @see #putByte(long, byte) */
-    @HotSpotIntrinsicCandidate
-    public native void    putDouble(long address, double x);
+    @ForceInline
+    public short getShort(long address) {
+        return getShort(null, address);
+    }
 
-    /**
-     * Fetches a native pointer from a given memory address.  If the address is
-     * zero, or does not point into a block obtained from {@link
-     * #allocateMemory}, the results are undefined.
-     *
-     * <p>If the native pointer is less than 64 bits wide, it is extended as
-     * an unsigned number to a Java long.  The pointer may be indexed by any
-     * given byte offset, simply by adding that offset (as a simple integer) to
-     * the long representing the pointer.  The number of bytes actually read
-     * from the target address may be determined by consulting {@link
-     * #addressSize}.
-     *
-     * @see #allocateMemory
-     */
-    @HotSpotIntrinsicCandidate
-    public native long getAddress(long address);
+    /** @see #putByte(long, byte) */
+    @ForceInline
+    public void putShort(long address, short x) {
+        putShort(null, address, x);
+    }
 
-    /**
-     * Stores a native pointer into a given memory address.  If the address is
-     * zero, or does not point into a block obtained from {@link
-     * #allocateMemory}, the results are undefined.
-     *
-     * <p>The number of bytes actually written at the target address may be
-     * determined by consulting {@link #addressSize}.
-     *
-     * @see #getAddress(long)
-     */
-    @HotSpotIntrinsicCandidate
-    public native void putAddress(long address, long x);
+    /** @see #getByte(long) */
+    @ForceInline
+    public char getChar(long address) {
+        return getChar(null, address);
+    }
+
+    /** @see #putByte(long, byte) */
+    @ForceInline
+    public void putChar(long address, char x) {
+        putChar(null, address, x);
+    }
+
+    /** @see #getByte(long) */
+    @ForceInline
+    public int getInt(long address) {
+        return getInt(null, address);
+    }
+
+    /** @see #putByte(long, byte) */
+    @ForceInline
+    public void putInt(long address, int x) {
+        putInt(null, address, x);
+    }
+
+    /** @see #getByte(long) */
+    @ForceInline
+    public long getLong(long address) {
+        return getLong(null, address);
+    }
+
+    /** @see #putByte(long, byte) */
+    @ForceInline
+    public void putLong(long address, long x) {
+        putLong(null, address, x);
+    }
+
+    /** @see #getByte(long) */
+    @ForceInline
+    public float getFloat(long address) {
+        return getFloat(null, address);
+    }
+
+    /** @see #putByte(long, byte) */
+    @ForceInline
+    public void putFloat(long address, float x) {
+        putFloat(null, address, x);
+    }
+
+    /** @see #getByte(long) */
+    @ForceInline
+    public double getDouble(long address) {
+        return getDouble(null, address);
+    }
+
+    /** @see #putByte(long, byte) */
+    @ForceInline
+    public void putDouble(long address, double x) {
+        putDouble(null, address, x);
+    }
+
+    /** @see #getAddress(Object, long) */
+    @ForceInline
+    public long getAddress(long address) {
+        return getAddress(null, address);
+    }
+
+    /** @see #putAddress(Object, long, long) */
+    @ForceInline
+    public void putAddress(long address, long x) {
+        putAddress(null, address, x);
+    }
 
 
 
