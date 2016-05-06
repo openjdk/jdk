@@ -587,6 +587,16 @@ class Assembler : public AbstractAssembler  {
 #endif
   };
 
+  enum ComparisonPredicate {
+    eq = 0,
+    lt = 1,
+    le = 2,
+    _false = 3,
+    neq = 4,
+    nlt = 5,
+    nle = 6,
+    _true = 7
+  };
 
 
   // NOTE: The general philopsophy of the declarations here is that 64bit versions
@@ -829,7 +839,6 @@ private:
   void set_vector_masking(void) { _vector_masking = true; }
   void clear_vector_masking(void) { _vector_masking = false; }
   bool is_vector_masking(void) { return _vector_masking; }
-
 
   void lea(Register dst, Address src);
 
@@ -1362,6 +1371,9 @@ private:
   void kortestdl(KRegister dst, KRegister src);
   void kortestql(KRegister dst, KRegister src);
 
+  void ktestq(KRegister src1, KRegister src2);
+  void ktestd(KRegister src1, KRegister src2);
+
   void ktestql(KRegister dst, KRegister src);
 
   void movdl(XMMRegister dst, Register src);
@@ -1391,10 +1403,11 @@ private:
   void evmovdqub(Address dst, XMMRegister src, int vector_len);
   void evmovdqub(XMMRegister dst, Address src, int vector_len);
   void evmovdqub(XMMRegister dst, XMMRegister src, int vector_len);
-  void evmovdqub(KRegister mask, XMMRegister dst, Address src, int vector_len);
+  void evmovdqub(XMMRegister dst, KRegister mask, Address src, int vector_len);
   void evmovdquw(Address dst, XMMRegister src, int vector_len);
+  void evmovdquw(Address dst, KRegister mask, XMMRegister src, int vector_len);
   void evmovdquw(XMMRegister dst, Address src, int vector_len);
-  void evmovdquw(XMMRegister dst, XMMRegister src, int vector_len);
+  void evmovdquw(XMMRegister dst, KRegister mask, Address src, int vector_len);
   void evmovdqul(Address dst, XMMRegister src, int vector_len);
   void evmovdqul(XMMRegister dst, Address src, int vector_len);
   void evmovdqul(XMMRegister dst, XMMRegister src, int vector_len);
@@ -1545,7 +1558,14 @@ private:
   void vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpeqb(KRegister kdst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpeqb(KRegister kdst, XMMRegister nds, Address src, int vector_len);
-  void evpcmpeqb(KRegister mask, KRegister kdst, XMMRegister nds, Address src, int vector_len);
+  void evpcmpeqb(KRegister kdst, KRegister mask, XMMRegister nds, Address src, int vector_len);
+
+  void evpcmpgtb(KRegister kdst, XMMRegister nds, Address src, int vector_len);
+  void evpcmpgtb(KRegister kdst, KRegister mask, XMMRegister nds, Address src, int vector_len);
+
+  void evpcmpuw(KRegister kdst, XMMRegister nds, XMMRegister src, ComparisonPredicate vcc, int vector_len);
+  void evpcmpuw(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src, ComparisonPredicate of, int vector_len);
+  void evpcmpuw(KRegister kdst, XMMRegister nds, Address src, ComparisonPredicate vcc, int vector_len);
 
   void pcmpeqw(XMMRegister dst, XMMRegister src);
   void vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -1589,7 +1609,11 @@ private:
   void pmovzxbw(XMMRegister dst, XMMRegister src);
   void pmovzxbw(XMMRegister dst, Address src);
 
-  void vpmovzxbw(XMMRegister dst, Address src, int vector_len);
+  void vpmovzxbw( XMMRegister dst, Address src, int vector_len);
+  void evpmovzxbw(XMMRegister dst, KRegister mask, Address src, int vector_len);
+
+  void evpmovwb(Address dst, XMMRegister src, int vector_len);
+  void evpmovwb(Address dst, KRegister mask, XMMRegister src, int vector_len);
 
 #ifndef _LP64 // no 32bit push/pop on amd64
   void popl(Address dst);
@@ -1839,6 +1863,8 @@ private:
   void vsubss(XMMRegister dst, XMMRegister nds, Address src);
   void vsubss(XMMRegister dst, XMMRegister nds, XMMRegister src);
 
+  void shlxl(Register dst, Register src1, Register src2);
+  void shlxq(Register dst, Register src1, Register src2);
 
   //====================VECTOR ARITHMETIC=====================================
 
@@ -2072,9 +2098,6 @@ private:
   // AVX support for vectorized conditional move (double). The following two instructions used only coupled.
   void cmppd(XMMRegister dst, XMMRegister nds, XMMRegister src, int cop, int vector_len);
   void vpblendd(XMMRegister dst, XMMRegister nds, XMMRegister src1, XMMRegister src2, int vector_len);
-
-  void shlxl(Register dst, Register src1, Register src2);
-  void shlxq(Register dst, Register src1, Register src2);
 
  protected:
   // Next instructions require address alignment 16 bytes SSE mode.
