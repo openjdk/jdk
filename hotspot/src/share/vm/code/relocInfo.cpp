@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,6 @@ relocInfo* relocInfo::finish_prefix(short* prefix_limit) {
   return (relocInfo*)prefix_limit;
 }
 
-
 void relocInfo::set_type(relocType t) {
   int old_offset = addr_offset();
   int old_format = format();
@@ -91,6 +90,9 @@ void relocInfo::set_type(relocType t) {
   assert(format()==old_format, "sanity check");
 }
 
+nmethod* RelocIterator::code_as_nmethod() const {
+  return _code->as_nmethod();
+}
 
 void relocInfo::set_format(int f) {
   int old_offset = addr_offset();
@@ -121,13 +123,13 @@ void relocInfo::remove_reloc_info_for_address(RelocIterator *itr, address pc, re
 // ----------------------------------------------------------------------------------------------------
 // Implementation of RelocIterator
 
-void RelocIterator::initialize(nmethod* nm, address begin, address limit) {
+void RelocIterator::initialize(CompiledMethod* nm, address begin, address limit) {
   initialize_misc();
 
   if (nm == NULL && begin != NULL) {
     // allow nmethod to be deduced from beginning address
     CodeBlob* cb = CodeCache::find_blob(begin);
-    nm = cb->as_nmethod_or_null();
+    nm = cb->as_compiled_method_or_null();
   }
   assert(nm != NULL, "must be able to deduce nmethod from other arguments");
 

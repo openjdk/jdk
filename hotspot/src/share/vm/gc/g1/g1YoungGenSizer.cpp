@@ -108,13 +108,18 @@ void G1YoungGenSizer::recalculate_min_max_young_length(uint number_of_heap_regio
   assert(*min_young_length <= *max_young_length, "Invalid min/max young gen size values");
 }
 
-uint G1YoungGenSizer::max_young_length(uint number_of_heap_regions) {
+void G1YoungGenSizer::adjust_max_new_size(uint number_of_heap_regions) {
+
   // We need to pass the desired values because recalculation may not update these
   // values in some cases.
   uint temp = _min_desired_young_length;
   uint result = _max_desired_young_length;
   recalculate_min_max_young_length(number_of_heap_regions, &temp, &result);
-  return result;
+
+  size_t max_young_size = result * HeapRegion::GrainBytes;
+  if (max_young_size != MaxNewSize) {
+    FLAG_SET_ERGO(size_t, MaxNewSize, max_young_size);
+  }
 }
 
 void G1YoungGenSizer::heap_size_changed(uint new_number_of_heap_regions) {

@@ -25,6 +25,7 @@
  * @test
  * @bug 6800154
  * @summary Add comments to long_by_long_mulhi() for better understandability
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @run main/othervm -Xcomp -XX:CompileOnly=Test6800154.divcomp Test6800154
  */

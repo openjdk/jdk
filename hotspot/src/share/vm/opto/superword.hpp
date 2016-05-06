@@ -261,6 +261,7 @@ class SuperWord : public ResourceObj {
   GrowableArray<int> _bb_idx;            // Map from Node _idx to index within block
 
   GrowableArray<Node*> _block;           // Nodes in current block
+  GrowableArray<Node*> _post_block;      // Nodes in post loop block
   GrowableArray<Node*> _data_entry;      // Nodes with all inputs from outside
   GrowableArray<Node*> _mem_slice_head;  // Memory slice head nodes
   GrowableArray<Node*> _mem_slice_tail;  // Memory slice tail nodes

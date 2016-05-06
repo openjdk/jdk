@@ -34,7 +34,7 @@
 import java.security.ProtectionDomain;
 import java.io.InputStream;
 import jdk.test.lib.*;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import static jdk.test.lib.Asserts.*;
 
 public class DefineClass {

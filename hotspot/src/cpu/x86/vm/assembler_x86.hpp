@@ -606,6 +606,7 @@ private:
   bool _legacy_mode_vl;
   bool _legacy_mode_vlbw;
   bool _is_managed;
+  bool _vector_masking;    // For stub code use only
 
   class InstructionAttr *_attributes;
 
@@ -813,6 +814,7 @@ private:
     _legacy_mode_vl = (VM_Version::supports_avx512vl() == false);
     _legacy_mode_vlbw = (VM_Version::supports_avx512vlbw() == false);
     _is_managed = false;
+    _vector_masking = false;
     _attributes = NULL;
   }
 
@@ -822,6 +824,12 @@ private:
   void set_managed(void) { _is_managed = true; }
   void clear_managed(void) { _is_managed = false; }
   bool is_managed(void) { return _is_managed; }
+
+  // Following functions are for stub code use only
+  void set_vector_masking(void) { _vector_masking = true; }
+  void clear_vector_masking(void) { _vector_masking = false; }
+  bool is_vector_masking(void) { return _vector_masking; }
+
 
   void lea(Register dst, Address src);
 
@@ -1047,6 +1055,8 @@ private:
   // Convert with Truncation Scalar Single-Precision Floating-Point Value to Doubleword Integer
   void cvttss2sil(Register dst, XMMRegister src);
   void cvttss2siq(Register dst, XMMRegister src);
+
+  void cvttpd2dq(XMMRegister dst, XMMRegister src);
 
   // Divide Scalar Double-Precision Floating-Point Values
   void divsd(XMMRegister dst, Address src);
@@ -1335,6 +1345,7 @@ private:
   void kmovbl(KRegister dst, Register src);
   void kmovbl(Register dst, KRegister src);
   void kmovwl(KRegister dst, Register src);
+  void kmovwl(KRegister dst, Address src);
   void kmovwl(Register dst, KRegister src);
   void kmovdl(KRegister dst, Register src);
   void kmovdl(Register dst, KRegister src);
@@ -1344,10 +1355,14 @@ private:
   void kmovql(KRegister dst, Register src);
   void kmovql(Register dst, KRegister src);
 
+  void knotwl(KRegister dst, KRegister src);
+
   void kortestbl(KRegister dst, KRegister src);
   void kortestwl(KRegister dst, KRegister src);
   void kortestdl(KRegister dst, KRegister src);
   void kortestql(KRegister dst, KRegister src);
+
+  void ktestql(KRegister dst, KRegister src);
 
   void movdl(XMMRegister dst, Register src);
   void movdl(Register dst, XMMRegister src);
@@ -1376,6 +1391,7 @@ private:
   void evmovdqub(Address dst, XMMRegister src, int vector_len);
   void evmovdqub(XMMRegister dst, Address src, int vector_len);
   void evmovdqub(XMMRegister dst, XMMRegister src, int vector_len);
+  void evmovdqub(KRegister mask, XMMRegister dst, Address src, int vector_len);
   void evmovdquw(Address dst, XMMRegister src, int vector_len);
   void evmovdquw(XMMRegister dst, Address src, int vector_len);
   void evmovdquw(XMMRegister dst, XMMRegister src, int vector_len);
@@ -1517,6 +1533,7 @@ private:
   // Pemutation of 64bit words
   void vpermq(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
   void vpermq(XMMRegister dst, XMMRegister src, int imm8);
+  void vperm2i128(XMMRegister dst,  XMMRegister nds, XMMRegister src, int imm8);
 
   void pause();
 
@@ -1528,6 +1545,7 @@ private:
   void vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpeqb(KRegister kdst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpeqb(KRegister kdst, XMMRegister nds, Address src, int vector_len);
+  void evpcmpeqb(KRegister mask, KRegister kdst, XMMRegister nds, Address src, int vector_len);
 
   void pcmpeqw(XMMRegister dst, XMMRegister src);
   void vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -1601,10 +1619,12 @@ private:
   // Shuffle Bytes
   void pshufb(XMMRegister dst, XMMRegister src);
   void pshufb(XMMRegister dst, Address src);
+  void vpshufb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   // Shuffle Packed Doublewords
   void pshufd(XMMRegister dst, XMMRegister src, int mode);
   void pshufd(XMMRegister dst, Address src,     int mode);
+  void vpshufd(XMMRegister dst, XMMRegister src, int mode, int vector_len);
 
   // Shuffle Packed Low Words
   void pshuflw(XMMRegister dst, XMMRegister src, int mode);
@@ -1656,6 +1676,7 @@ private:
 #ifdef _LP64
   void rorq(Register dst, int imm8);
   void rorxq(Register dst, Register src, int imm8);
+  void rorxd(Register dst, Register src, int imm8);
 #endif
 
   void sahf();
@@ -1679,6 +1700,8 @@ private:
   void setb(Condition cc, Register dst);
 
   void palignr(XMMRegister dst, XMMRegister src, int imm8);
+  void vpalignr(XMMRegister dst, XMMRegister src1, XMMRegister src2, int imm8, int vector_len);
+
   void pblendw(XMMRegister dst, XMMRegister src, int imm8);
 
   void sha1rnds4(XMMRegister dst, XMMRegister src, int imm8);
@@ -2050,6 +2073,8 @@ private:
   void cmppd(XMMRegister dst, XMMRegister nds, XMMRegister src, int cop, int vector_len);
   void vpblendd(XMMRegister dst, XMMRegister nds, XMMRegister src1, XMMRegister src2, int vector_len);
 
+  void shlxl(Register dst, Register src1, Register src2);
+  void shlxq(Register dst, Register src1, Register src2);
 
  protected:
   // Next instructions require address alignment 16 bytes SSE mode.
@@ -2075,6 +2100,7 @@ public:
     :
       _avx_vector_len(vector_len),
       _rex_vex_w(rex_vex_w),
+      _rex_vex_w_reverted(false),
       _legacy_mode(legacy_mode),
       _no_reg_mask(no_reg_mask),
       _uses_vl(uses_vl),
@@ -2084,7 +2110,8 @@ public:
       _evex_encoding(0),
       _is_clear_context(false),
       _is_extended_context(false),
-      _current_assembler(NULL) {
+      _current_assembler(NULL),
+      _embedded_opmask_register_specifier(1) { // hard code k1, it will be initialized for now
     if (UseAVX < 3) _legacy_mode = true;
   }
 
@@ -2098,6 +2125,7 @@ public:
 private:
   int  _avx_vector_len;
   bool _rex_vex_w;
+  bool _rex_vex_w_reverted;
   bool _legacy_mode;
   bool _no_reg_mask;
   bool _uses_vl;
@@ -2107,6 +2135,7 @@ private:
   int  _evex_encoding;
   bool _is_clear_context;
   bool _is_extended_context;
+  int _embedded_opmask_register_specifier;
 
   Assembler *_current_assembler;
 
@@ -2114,6 +2143,7 @@ public:
   // query functions for field accessors
   int  get_vector_len(void) const { return _avx_vector_len; }
   bool is_rex_vex_w(void) const { return _rex_vex_w; }
+  bool is_rex_vex_w_reverted(void) { return _rex_vex_w_reverted; }
   bool is_legacy_mode(void) const { return _legacy_mode; }
   bool is_no_reg_mask(void) const { return _no_reg_mask; }
   bool uses_vl(void) const { return _uses_vl; }
@@ -2123,9 +2153,16 @@ public:
   int  get_evex_encoding(void) const { return _evex_encoding; }
   bool is_clear_context(void) const { return _is_clear_context; }
   bool is_extended_context(void) const { return _is_extended_context; }
+  int get_embedded_opmask_register_specifier(void) const { return _embedded_opmask_register_specifier; }
 
   // Set the vector len manually
   void set_vector_len(int vector_len) { _avx_vector_len = vector_len; }
+
+  // Set revert rex_vex_w for avx encoding
+  void set_rex_vex_w_reverted(void) { _rex_vex_w_reverted = true; }
+
+  // Set rex_vex_w based on state
+  void set_rex_vex_w(bool state) { _rex_vex_w = state; }
 
   // Set the instruction to be encoded in AVX mode
   void set_is_legacy_mode(void) { _legacy_mode = true; }
@@ -2148,6 +2185,11 @@ public:
       _tuple_type = tuple_type;
       _input_size_in_bits = input_size_in_bits;
     }
+  }
+
+  // Set embedded opmask register specifier.
+  void set_embedded_opmask_register_specifier(KRegister mask) {
+    _embedded_opmask_register_specifier = (*mask).encoding() & 0x7;
   }
 
 };

@@ -24,6 +24,7 @@
 /*
  * @test TestMultipleXlogArgs
  * @summary Ensure multiple -Xlog arguments aggregate the logging options.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  */
 

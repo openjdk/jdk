@@ -2925,7 +2925,7 @@ static const intArray* sort_methods(Array<Method*>* methods) {
   // If JVMTI original method ordering or sharing is enabled construct int
   // array remembering the original ordering
   if (JvmtiExport::can_maintain_original_method_order() || DumpSharedSpaces) {
-    method_ordering = new intArray(length);
+    method_ordering = new intArray(length, length, -1);
     for (int index = 0; index < length; index++) {
       Method* const m = methods->at(index);
       const int old_index = m->vtable_index();
@@ -3967,7 +3967,7 @@ void ClassFileParser::layout_fields(ConstantPool* cp,
     next_nonstatic_padded_offset += ContendedPaddingWidth;
 
     // collect all contended groups
-    BitMap bm(cp->size());
+    ResourceBitMap bm(cp->size());
     for (AllFieldStream fs(_fields, cp); !fs.done(); fs.next()) {
       // skip already laid out fields
       if (fs.is_offset_set()) continue;
@@ -5349,7 +5349,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   ClassLoadingService::notify_class_loaded(ik, false /* not shared class */);
 
   if (!is_internal()) {
-    if (log_is_enabled(Info, classload)) {
+    if (log_is_enabled(Info, class, load)) {
       ResourceMark rm;
       const char* module_name = NULL;
       static const size_t modules_image_name_len = strlen(MODULES_IMAGE_NAME);
@@ -5361,21 +5361,21 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
         module_name = module_entry->name()->as_C_string();
       }
 
-      if (log_is_enabled(Info, classload)) {
+      if (log_is_enabled(Info, class, load)) {
         ik->print_loading_log(LogLevel::Info, _loader_data, module_name, _stream);
       }
       // No 'else' here as logging levels are not mutually exclusive
-      if (log_is_enabled(Debug, classload)) {
+      if (log_is_enabled(Debug, class, load)) {
         ik->print_loading_log(LogLevel::Debug, _loader_data, module_name, _stream);
       }
     }
 
-    if (log_is_enabled(Debug, classresolve))  {
+    if (log_is_enabled(Debug, class, resolve))  {
       ResourceMark rm;
       // print out the superclass.
       const char * from = ik->external_name();
       if (ik->java_super() != NULL) {
-        log_debug(classresolve)("%s %s (super)",
+        log_debug(class, resolve)("%s %s (super)",
                    from,
                    ik->java_super()->external_name());
       }
@@ -5386,7 +5386,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
         for (int i = 0; i < length; i++) {
           const Klass* const k = local_interfaces->at(i);
           const char * to = k->external_name();
-          log_debug(classresolve)("%s %s (interface)", from, to);
+          log_debug(class, resolve)("%s %s (interface)", from, to);
         }
       }
     }
@@ -5696,9 +5696,9 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   }
 
   if (!is_internal()) {
-    if (log_is_enabled(Debug, classload, preorder)){
+    if (log_is_enabled(Debug, class, preorder)){
       ResourceMark rm(THREAD);
-      outputStream* log = Log(classload, preorder)::debug_stream();
+      outputStream* log = Log(class, preorder)::debug_stream();
       log->print("%s", _class_name->as_klass_external_name());
       if (stream->source() != NULL) {
         log->print(" source: %s", stream->source());
@@ -5800,8 +5800,8 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
       guarantee_property(super_class_name == vmSymbols::java_lang_Object(),
         "Interfaces must have java.lang.Object as superclass in class file %s",
         CHECK);
-      }
-      _super_klass = (const InstanceKlass*)
+    }
+    _super_klass = (const InstanceKlass*)
                        SystemDictionary::resolve_super_or_fail(_class_name,
                                                                super_class_name,
                                                                _loader_data->class_loader(),

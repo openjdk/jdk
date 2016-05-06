@@ -42,7 +42,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import jdk.test.lib.HeapRegionUsageTool;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.ProcessTools;
 import jdk.test.lib.Utils;
@@ -130,6 +130,7 @@ public class TestTargetSurvivorRatioFlag {
         LinkedList<String> vmOptions = new LinkedList<>(options);
         Collections.addAll(vmOptions,
                 "-Xbootclasspath/a:.",
+                "-XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
                 "-XX:+UseAdaptiveSizePolicy",

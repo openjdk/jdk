@@ -75,19 +75,15 @@ void G1PageBasedVirtualSpace::initialize_with_page_size(ReservedSpace rs, size_t
 
   vmassert(_committed.size() == 0, "virtual space initialized more than once");
   BitMap::idx_t size_in_pages = rs.size() / page_size;
-  _committed.resize(size_in_pages, /* in_resource_area */ false);
+  _committed.initialize(size_in_pages);
   if (_special) {
-    _dirty.resize(size_in_pages, /* in_resource_area */ false);
+    _dirty.initialize(size_in_pages);
   }
 
   _tail_size = used_size % _page_size;
 }
 
 G1PageBasedVirtualSpace::~G1PageBasedVirtualSpace() {
-  release();
-}
-
-void G1PageBasedVirtualSpace::release() {
   // This does not release memory it never reserved.
   // Caller must release via rs.release();
   _low_boundary           = NULL;
@@ -96,8 +92,6 @@ void G1PageBasedVirtualSpace::release() {
   _executable             = false;
   _page_size              = 0;
   _tail_size              = 0;
-  _committed.resize(0, false);
-  _dirty.resize(0, false);
 }
 
 size_t G1PageBasedVirtualSpace::committed_size() const {

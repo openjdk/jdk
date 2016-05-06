@@ -27,6 +27,7 @@
  * @test
  * @summary class p3.c3 defined in module m1 tries to access c4 defined in an unnamed package
  *          and an unnamed module.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @compile myloaders/MyDiffClassLoader.java
  * @compile c4.java

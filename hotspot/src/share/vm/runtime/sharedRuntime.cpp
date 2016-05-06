@@ -540,10 +540,10 @@ address SharedRuntime::get_poll_stub(address pc) {
   CodeBlob *cb = CodeCache::find_blob(pc);
 
   // Should be an nmethod
-  assert(cb && cb->is_nmethod(), "safepoint polling: pc must refer to an nmethod");
+  assert(cb && cb->is_compiled(), "safepoint polling: pc must refer to an nmethod");
 
   // Look up the relocation information
-  assert(((nmethod*)cb)->is_at_poll_or_poll_return(pc),
+  assert(((CompiledMethod*)cb)->is_at_poll_or_poll_return(pc),
     "safepoint polling: type must be poll");
 
 #ifdef ASSERT
@@ -554,8 +554,8 @@ address SharedRuntime::get_poll_stub(address pc) {
   }
 #endif
 
-  bool at_poll_return = ((nmethod*)cb)->is_at_poll_return(pc);
-  bool has_wide_vectors = ((nmethod*)cb)->has_wide_vectors();
+  bool at_poll_return = ((CompiledMethod*)cb)->is_at_poll_return(pc);
+  bool has_wide_vectors = ((CompiledMethod*)cb)->has_wide_vectors();
   if (at_poll_return) {
     assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
            "polling page return stub not created yet");
@@ -630,22 +630,22 @@ JRT_END
 
 // ret_pc points into caller; we are returning caller's exception handler
 // for given exception
-address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc, Handle& exception,
+address SharedRuntime::compute_compiled_exc_handler(CompiledMethod* cm, address ret_pc, Handle& exception,
                                                     bool force_unwind, bool top_frame_only) {
-  assert(nm != NULL, "must exist");
+  assert(cm != NULL, "must exist");
   ResourceMark rm;
 
 #if INCLUDE_JVMCI
-  if (nm->is_compiled_by_jvmci()) {
+  if (cm->is_compiled_by_jvmci()) {
     // lookup exception handler for this pc
-    int catch_pco = ret_pc - nm->code_begin();
-    ExceptionHandlerTable table(nm);
+    int catch_pco = ret_pc - cm->code_begin();
+    ExceptionHandlerTable table(cm);
     HandlerTableEntry *t = table.entry_for(catch_pco, -1, 0);
     if (t != NULL) {
-      return nm->code_begin() + t->pco();
+      return cm->code_begin() + t->pco();
     } else {
       // there is no exception handler for this pc => deoptimize
-      nm->make_not_entrant();
+      cm->make_not_entrant();
 
       // Use Deoptimization::deoptimize for all of its side-effects:
       // revoking biases of monitors, gathering traps statistics, logging...
@@ -662,6 +662,7 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
   }
 #endif // INCLUDE_JVMCI
 
+  nmethod* nm = cm->as_nmethod();
   ScopeDesc* sd = nm->scope_desc_at(ret_pc);
   // determine handler bci, if any
   EXCEPTION_MARK;
@@ -797,7 +798,7 @@ void SharedRuntime::throw_StackOverflowError_common(JavaThread* thread, bool del
 }
 
 #if INCLUDE_JVMCI
-address SharedRuntime::deoptimize_for_implicit_exception(JavaThread* thread, address pc, nmethod* nm, int deopt_reason) {
+address SharedRuntime::deoptimize_for_implicit_exception(JavaThread* thread, address pc, CompiledMethod* nm, int deopt_reason) {
   assert(deopt_reason > Deoptimization::Reason_none && deopt_reason < Deoptimization::Reason_LIMIT, "invalid deopt reason");
   thread->set_jvmci_implicit_exception_pc(pc);
   thread->set_pending_deoptimization(Deoptimization::make_trap_request((Deoptimization::DeoptReason)deopt_reason, Deoptimization::Action_reinterpret));
@@ -871,7 +872,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
           // 2. Inline-cache check in nmethod, or
           // 3. Implicit null exception in nmethod
 
-          if (!cb->is_nmethod()) {
+          if (!cb->is_compiled()) {
             bool is_in_blob = cb->is_adapter_blob() || cb->is_method_handles_adapter_blob();
             if (!is_in_blob) {
               // Allow normal crash reporting to handle this
@@ -882,9 +883,9 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
             return StubRoutines::throw_NullPointerException_at_call_entry();
           }
 
-          // Otherwise, it's an nmethod.  Consult its exception handlers.
-          nmethod* nm = (nmethod*)cb;
-          if (nm->inlinecache_check_contains(pc)) {
+          // Otherwise, it's a compiled method.  Consult its exception handlers.
+          CompiledMethod* cm = (CompiledMethod*)cb;
+          if (cm->inlinecache_check_contains(pc)) {
             // exception happened inside inline-cache check code
             // => the nmethod is not yet active (i.e., the frame
             // is not set up yet) => use return address pushed by
@@ -893,7 +894,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
             return StubRoutines::throw_NullPointerException_at_call_entry();
           }
 
-          if (nm->method()->is_method_handle_intrinsic()) {
+          if (cm->method()->is_method_handle_intrinsic()) {
             // exception happened inside MH dispatch code, similar to a vtable stub
             Events::log_exception(thread, "NullPointerException in MH adapter " INTPTR_FORMAT, p2i(pc));
             return StubRoutines::throw_NullPointerException_at_call_entry();
@@ -903,15 +904,15 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
           _implicit_null_throws++;
 #endif
 #if INCLUDE_JVMCI
-          if (nm->is_compiled_by_jvmci() && nm->pc_desc_at(pc) != NULL) {
+          if (cm->is_compiled_by_jvmci() && cm->pc_desc_at(pc) != NULL) {
             // If there's no PcDesc then we'll die way down inside of
             // deopt instead of just getting normal error reporting,
             // so only go there if it will succeed.
-            return deoptimize_for_implicit_exception(thread, pc, nm, Deoptimization::Reason_null_check);
+            return deoptimize_for_implicit_exception(thread, pc, cm, Deoptimization::Reason_null_check);
           } else {
 #endif // INCLUDE_JVMCI
-          assert (nm->is_nmethod(), "Expect nmethod");
-          target_pc = nm->continuation_for_implicit_exception(pc);
+          assert (cm->is_nmethod(), "Expect nmethod");
+          target_pc = ((nmethod*)cm)->continuation_for_implicit_exception(pc);
 #if INCLUDE_JVMCI
           }
 #endif // INCLUDE_JVMCI
@@ -925,17 +926,17 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
 
 
       case IMPLICIT_DIVIDE_BY_ZERO: {
-        nmethod* nm = CodeCache::find_nmethod(pc);
-        guarantee(nm != NULL, "must have containing compiled method for implicit division-by-zero exceptions");
+        CompiledMethod* cm = CodeCache::find_compiled(pc);
+        guarantee(cm != NULL, "must have containing compiled method for implicit division-by-zero exceptions");
 #ifndef PRODUCT
         _implicit_div0_throws++;
 #endif
 #if INCLUDE_JVMCI
-        if (nm->is_compiled_by_jvmci() && nm->pc_desc_at(pc) != NULL) {
-          return deoptimize_for_implicit_exception(thread, pc, nm, Deoptimization::Reason_div0_check);
+        if (cm->is_compiled_by_jvmci() && cm->pc_desc_at(pc) != NULL) {
+          return deoptimize_for_implicit_exception(thread, pc, cm, Deoptimization::Reason_div0_check);
         } else {
 #endif // INCLUDE_JVMCI
-        target_pc = nm->continuation_for_implicit_exception(pc);
+        target_pc = cm->continuation_for_implicit_exception(pc);
 #if INCLUDE_JVMCI
         }
 #endif // INCLUDE_JVMCI
@@ -1084,14 +1085,14 @@ Handle SharedRuntime::find_callee_info(JavaThread* thread, Bytecodes::Code& bc, 
 }
 
 methodHandle SharedRuntime::extract_attached_method(vframeStream& vfst) {
-  nmethod* caller_nm = vfst.nm();
+  CompiledMethod* caller = vfst.nm();
 
-  nmethodLocker caller_lock(caller_nm);
+  nmethodLocker caller_lock(caller);
 
   address pc = vfst.frame_pc();
   { // Get call instruction under lock because another thread may be busy patching it.
     MutexLockerEx ml_patch(Patching_lock, Mutex::_no_safepoint_check_flag);
-    return caller_nm->attached_method_before_pc(pc);
+    return caller->attached_method_before_pc(pc);
   }
   return NULL;
 }
@@ -1283,8 +1284,8 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
   frame caller_frame = thread->last_frame().sender(&cbl_map);
 
   CodeBlob* caller_cb = caller_frame.cb();
-  guarantee(caller_cb != NULL && caller_cb->is_nmethod(), "must be called from nmethod");
-  nmethod* caller_nm = caller_cb->as_nmethod_or_null();
+  guarantee(caller_cb != NULL && caller_cb->is_compiled(), "must be called from compiled method");
+  CompiledMethod* caller_nm = caller_cb->as_compiled_method_or_null();
 
   // make sure caller is not getting deoptimized
   // and removed before we are done with it.
@@ -1347,14 +1348,19 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
 
   // Make sure the callee nmethod does not get deoptimized and removed before
   // we are done patching the code.
-  nmethod* callee_nm = callee_method->code();
-  if (callee_nm != NULL && !callee_nm->is_in_use()) {
-    // Patch call site to C2I adapter if callee nmethod is deoptimized or unloaded.
-    callee_nm = NULL;
+  CompiledMethod* callee = callee_method->code();
+
+  if (callee != NULL) {
+    assert(callee->is_compiled(), "must be nmethod for patching");
   }
-  nmethodLocker nl_callee(callee_nm);
+
+  if (callee != NULL && !callee->is_in_use()) {
+    // Patch call site to C2I adapter if callee nmethod is deoptimized or unloaded.
+    callee = NULL;
+  }
+  nmethodLocker nl_callee(callee);
 #ifdef ASSERT
-  address dest_entry_point = callee_nm == NULL ? 0 : callee_nm->entry_point(); // used below
+  address dest_entry_point = callee == NULL ? 0 : callee->entry_point(); // used below
 #endif
 
   if (is_virtual) {
@@ -1382,12 +1388,12 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
     // which may happen when multiply alive nmethod (tiered compilation)
     // will be supported.
     if (!callee_method->is_old() &&
-        (callee_nm == NULL || callee_nm->is_in_use() && (callee_method->code() == callee_nm))) {
+        (callee == NULL || callee->is_in_use() && (callee_method->code() == callee))) {
 #ifdef ASSERT
       // We must not try to patch to jump to an already unloaded method.
       if (dest_entry_point != 0) {
         CodeBlob* cb = CodeCache::find_blob(dest_entry_point);
-        assert((cb != NULL) && cb->is_nmethod() && (((nmethod*)cb) == callee_nm),
+        assert((cb != NULL) && cb->is_compiled() && (((CompiledMethod*)cb) == callee),
                "should not call unloaded nmethod");
       }
 #endif
@@ -1582,8 +1588,9 @@ methodHandle SharedRuntime::handle_ic_miss_helper(JavaThread *thread, TRAPS) {
     RegisterMap reg_map(thread, false);
     frame caller_frame = thread->last_frame().sender(&reg_map);
     CodeBlob* cb = caller_frame.cb();
-    if (cb->is_nmethod()) {
-      CompiledIC* inline_cache = CompiledIC_before(((nmethod*)cb), caller_frame.pc());
+    CompiledMethod* caller_nm = cb->as_compiled_method_or_null();
+    if (cb->is_compiled()) {
+      CompiledIC* inline_cache = CompiledIC_before(((CompiledMethod*)cb), caller_frame.pc());
       bool should_be_mono = false;
       if (inline_cache->is_optimized()) {
         if (TraceCallFixup) {
@@ -1667,7 +1674,7 @@ methodHandle SharedRuntime::reresolve_call_site(JavaThread *thread, TRAPS) {
 
     // Check for static or virtual call
     bool is_static_call = false;
-    nmethod* caller_nm = CodeCache::find_nmethod(pc);
+    CompiledMethod* caller_nm = CodeCache::find_compiled(pc);
 
     // Default call_addr is the location of the "basic" call.
     // Determine the address of the call we a reresolving. With
@@ -1802,12 +1809,12 @@ IRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
   // ask me how I know this...
 
   CodeBlob* cb = CodeCache::find_blob(caller_pc);
-  if (!cb->is_nmethod() || entry_point == moop->get_c2i_entry()) {
+  if (!cb->is_compiled() || entry_point == moop->get_c2i_entry()) {
     return;
   }
 
   // The check above makes sure this is a nmethod.
-  nmethod* nm = cb->as_nmethod_or_null();
+  CompiledMethod* nm = cb->as_compiled_method_or_null();
   assert(nm, "must be");
 
   // Get the return PC for the passed caller PC.

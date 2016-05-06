@@ -156,6 +156,10 @@ class MacroAssembler: public Assembler {
   void incrementq(Register reg, int value = 1);
   void incrementq(Address dst, int value = 1);
 
+  // special instructions for EVEX
+  void setvectmask(Register dst, Register src);
+  void restorevectmask();
+
   // Support optimal SSE move instructions.
   void movflt(XMMRegister dst, XMMRegister src) {
     if (UseXmmRegToRegMoveAll) { movaps(dst, src); return; }
@@ -318,6 +322,8 @@ class MacroAssembler: public Assembler {
   void movbool(Address dst, bool boolconst);
   void movbool(Address dst, Register src);
   void testbool(Register dst);
+
+  void load_mirror(Register mirror, Register method);
 
   // oop manipulations
   void load_klass(Register dst, Register src);
@@ -902,6 +908,45 @@ class MacroAssembler: public Assembler {
   void ldmxcsr(Address src) { Assembler::ldmxcsr(src); }
   void ldmxcsr(AddressLiteral src);
 
+#ifdef _LP64
+ private:
+  void sha256_AVX2_one_round_compute(
+    Register  reg_old_h,
+    Register  reg_a,
+    Register  reg_b,
+    Register  reg_c,
+    Register  reg_d,
+    Register  reg_e,
+    Register  reg_f,
+    Register  reg_g,
+    Register  reg_h,
+    int iter);
+  void sha256_AVX2_four_rounds_compute_first(int start);
+  void sha256_AVX2_four_rounds_compute_last(int start);
+  void sha256_AVX2_one_round_and_sched(
+        XMMRegister xmm_0,     /* == ymm4 on 0, 1, 2, 3 iterations, then rotate 4 registers left on 4, 8, 12 iterations */
+        XMMRegister xmm_1,     /* ymm5 */  /* full cycle is 16 iterations */
+        XMMRegister xmm_2,     /* ymm6 */
+        XMMRegister xmm_3,     /* ymm7 */
+        Register    reg_a,      /* == eax on 0 iteration, then rotate 8 register right on each next iteration */
+        Register    reg_b,      /* ebx */    /* full cycle is 8 iterations */
+        Register    reg_c,      /* edi */
+        Register    reg_d,      /* esi */
+        Register    reg_e,      /* r8d */
+        Register    reg_f,      /* r9d */
+        Register    reg_g,      /* r10d */
+        Register    reg_h,      /* r11d */
+        int iter);
+
+  void addm(int disp, Register r1, Register r2);
+
+ public:
+  void sha256_AVX2(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
+                   XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
+                   Register buf, Register state, Register ofs, Register limit, Register rsp,
+                   bool multi_block, XMMRegister shuf_mask);
+#endif
+
   void fast_sha1(XMMRegister abcd, XMMRegister e0, XMMRegister e1, XMMRegister msg0,
                  XMMRegister msg1, XMMRegister msg2, XMMRegister msg3, XMMRegister shuf_mask,
                  Register buf, Register state, Register ofs, Register limit, Register rsp,
@@ -928,6 +973,10 @@ class MacroAssembler: public Assembler {
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
                 Register rax, Register rcx, Register rdx, Register tmp1, Register tmp2);
 
+  void fast_log10(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                  XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                  Register rax, Register rcx, Register rdx, Register r11);
+
   void fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4,
                 XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, Register rax, Register rcx,
                 Register rdx, Register tmp1, Register tmp2, Register tmp3, Register tmp4);
@@ -941,10 +990,18 @@ class MacroAssembler: public Assembler {
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
                 Register rax, Register rcx, Register rdx, Register tmp1,
                 Register tmp2, Register tmp3, Register tmp4);
+  void fast_tan(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                Register rax, Register rcx, Register rdx, Register tmp1,
+                Register tmp2, Register tmp3, Register tmp4);
 #else
   void fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
                 Register rax, Register rcx, Register rdx, Register tmp1);
+
+  void fast_log10(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                Register rax, Register rcx, Register rdx, Register tmp);
 
   void fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4,
                 XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, Register rax, Register rcx,
@@ -964,6 +1021,14 @@ class MacroAssembler: public Assembler {
 
   void libm_reduce_pi04l(Register eax, Register ecx, Register edx, Register ebx,
                          Register esi, Register edi, Register ebp, Register esp);
+
+  void libm_tancot_huge(XMMRegister xmm0, XMMRegister xmm1, Register eax, Register ecx,
+                        Register edx, Register ebx, Register esi, Register edi,
+                        Register ebp, Register esp);
+
+  void fast_tan(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                Register rax, Register rcx, Register rdx, Register tmp);
 #endif
 
   void increase_precision();

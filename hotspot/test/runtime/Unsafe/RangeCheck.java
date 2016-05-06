@@ -31,7 +31,7 @@
  */
 
 import jdk.test.lib.*;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 public class RangeCheck {
 
@@ -44,6 +44,7 @@ public class RangeCheck {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 true,
                 "-Xmx32m",
+                "-XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-XX:-TransmitErrorReport",
                 "-XX:-CreateCoredumpOnCrash",
                 "-XX:-InlineUnsafeOps", // The compiler intrinsics doesn't have the assert

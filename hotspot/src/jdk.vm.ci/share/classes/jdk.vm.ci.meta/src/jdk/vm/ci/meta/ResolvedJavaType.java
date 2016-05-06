@@ -217,27 +217,34 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider {
 
     /**
      * Resolves the method implementation for virtual dispatches on objects of this dynamic type.
-     * This resolution process only searches "up" the class hierarchy of this type.
+     * This resolution process only searches "up" the class hierarchy of this type. A broader search
+     * that also walks "down" the hierarchy is implemented by
+     * {@link #findUniqueConcreteMethod(ResolvedJavaMethod)}. For interface types it returns null
+     * since no concrete object can be an interface.
      *
      * @param method the method to select the implementation of
      * @param callerType the caller or context type used to perform access checks
-     * @return the link-time resolved method (might be abstract) or {@code null} if it can not be
-     *         linked
+     * @return the method that would be selected at runtime (might be abstract) or {@code null} if
+     *         it can not be resolved
      */
     ResolvedJavaMethod resolveMethod(ResolvedJavaMethod method, ResolvedJavaType callerType);
 
     /**
-     * Resolves the method implementation for virtual dispatches on objects of this dynamic type.
-     * This resolution process only searches "up" the class hierarchy of this type. A broader search
-     * that also walks "down" the hierarchy is implemented by
-     * {@link #findUniqueConcreteMethod(ResolvedJavaMethod)}.
+     * A convenience wrapper for {@link #resolveMethod(ResolvedJavaMethod, ResolvedJavaType)} that
+     * only returns non-abstract methods.
      *
      * @param method the method to select the implementation of
      * @param callerType the caller or context type used to perform access checks
      * @return the concrete method that would be selected at runtime, or {@code null} if there is no
      *         concrete implementation of {@code method} in this type or any of its superclasses
      */
-    ResolvedJavaMethod resolveConcreteMethod(ResolvedJavaMethod method, ResolvedJavaType callerType);
+    default ResolvedJavaMethod resolveConcreteMethod(ResolvedJavaMethod method, ResolvedJavaType callerType) {
+        ResolvedJavaMethod resolvedMethod = resolveMethod(method, callerType);
+        if (resolvedMethod == null || resolvedMethod.isAbstract()) {
+            return null;
+        }
+        return resolvedMethod;
+    }
 
     /**
      * Given a {@link ResolvedJavaMethod} A, returns a concrete {@link ResolvedJavaMethod} B that is

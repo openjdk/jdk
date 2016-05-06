@@ -281,6 +281,7 @@ class LibraryCallKit : public GraphKit {
   MemNode::MemOrd access_kind_to_memord(AccessKind access_kind);
   bool inline_unsafe_load_store(BasicType type,  LoadStoreKind kind, AccessKind access_kind);
   bool inline_unsafe_fence(vmIntrinsics::ID id);
+  bool inline_onspinwait();
   bool inline_fp_conversions(vmIntrinsics::ID id);
   bool inline_number_methods(vmIntrinsics::ID id);
   bool inline_reference_get();
@@ -695,6 +696,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_loadFence:
   case vmIntrinsics::_storeFence:
   case vmIntrinsics::_fullFence:                return inline_unsafe_fence(intrinsic_id());
+
+  case vmIntrinsics::_onSpinWait:               return inline_onspinwait();
 
   case vmIntrinsics::_currentThread:            return inline_native_currentThread();
   case vmIntrinsics::_isInterrupted:            return inline_native_isInterrupted();
@@ -1677,7 +1680,6 @@ bool LibraryCallKit::inline_math(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_dabs:   n = new AbsDNode(                arg);  break;
   case vmIntrinsics::_dsqrt:  n = new SqrtDNode(C, control(),  arg);  break;
-  case vmIntrinsics::_dlog10: n = new Log10DNode(C, control(), arg);  break;
   default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));
@@ -1691,10 +1693,6 @@ bool LibraryCallKit::inline_trig(vmIntrinsics::ID id) {
   Node* arg = round_double_node(argument(0));
   Node* n = NULL;
 
-  switch (id) {
-  case vmIntrinsics::_dtan:  n = new TanDNode(C, control(), arg);  break;
-  default:  fatal_unexpected_iid(id);  break;
-  }
   n = _gvn.transform(n);
 
   // Rounding required?  Check for argument reduction!
@@ -1812,15 +1810,18 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
     return StubRoutines::dcos() != NULL ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dcos(), "dcos") :
       runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dcos),   "COS");
-  case vmIntrinsics::_dtan:   return Matcher::has_match_rule(Op_TanD)   ? inline_trig(id) :
-    runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dtan),   "TAN");
-
+  case vmIntrinsics::_dtan:
+    return StubRoutines::dtan() != NULL ?
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dtan(), "dtan") :
+      runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dtan), "TAN");
   case vmIntrinsics::_dlog:
     return StubRoutines::dlog() != NULL ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dlog(), "dlog") :
       runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dlog),   "LOG");
-  case vmIntrinsics::_dlog10: return Matcher::has_match_rule(Op_Log10D) ? inline_math(id) :
-    runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dlog10), "LOG10");
+  case vmIntrinsics::_dlog10:
+    return StubRoutines::dlog10() != NULL ?
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dlog10(), "dlog10") :
+      runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dlog10), "LOG10");
 
     // These intrinsics are supported on all hardware
   case vmIntrinsics::_dsqrt:  return Matcher::match_rule_supported(Op_SqrtD) ? inline_math(id) : false;
@@ -2340,6 +2341,7 @@ bool LibraryCallKit::inline_unsafe_access(const bool is_native_ptr, bool is_stor
   if (callee()->is_static())  return false;  // caller must have the capability!
   guarantee(!is_store || kind != Acquire, "Acquire accesses can be produced only for loads");
   guarantee( is_store || kind != Release, "Release accesses can be produced only for stores");
+  assert(type != T_OBJECT || !unaligned, "unaligned access not supported with object type");
 
 #ifndef PRODUCT
   {
@@ -2415,13 +2417,34 @@ bool LibraryCallKit::inline_unsafe_access(const bool is_native_ptr, bool is_stor
 
   const TypePtr *adr_type = _gvn.type(adr)->isa_ptr();
 
-  // First guess at the value type.
-  const Type *value_type = Type::get_const_basic_type(type);
-
   // Try to categorize the address.  If it comes up as TypeJavaPtr::BOTTOM,
   // there was not enough information to nail it down.
   Compile::AliasType* alias_type = C->alias_type(adr_type);
   assert(alias_type->index() != Compile::AliasIdxBot, "no bare pointers here");
+
+  assert(alias_type->adr_type() == TypeRawPtr::BOTTOM || alias_type->adr_type() == TypeOopPtr::BOTTOM ||
+         alias_type->basic_type() != T_ILLEGAL, "field, array element or unknown");
+  bool mismatched = false;
+  BasicType bt = alias_type->basic_type();
+  if (bt != T_ILLEGAL) {
+    if (bt == T_BYTE && adr_type->isa_aryptr()) {
+      // Alias type doesn't differentiate between byte[] and boolean[]).
+      // Use address type to get the element type.
+      bt = adr_type->is_aryptr()->elem()->array_element_basic_type();
+    }
+    if (bt == T_ARRAY || bt == T_NARROWOOP) {
+      // accessing an array field with getObject is not a mismatch
+      bt = T_OBJECT;
+    }
+    if ((bt == T_OBJECT) != (type == T_OBJECT)) {
+      // Don't intrinsify mismatched object accesses
+      return false;
+    }
+    mismatched = (bt != type);
+  }
+
+  // First guess at the value type.
+  const Type *value_type = Type::get_const_basic_type(type);
 
   // We will need memory barriers unless we can determine a unique
   // alias category for this reference.  (Note:  If for some reason
@@ -2523,40 +2546,13 @@ bool LibraryCallKit::inline_unsafe_access(const bool is_native_ptr, bool is_stor
   // of safe & unsafe memory.
   if (need_mem_bar) insert_mem_bar(Op_MemBarCPUOrder);
 
-  assert(alias_type->adr_type() == TypeRawPtr::BOTTOM || alias_type->adr_type() == TypeOopPtr::BOTTOM ||
-         alias_type->field() != NULL || alias_type->element() != NULL, "field, array element or unknown");
-  bool mismatched = false;
-  if (alias_type->element() != NULL || alias_type->field() != NULL) {
-    BasicType bt;
-    if (alias_type->element() != NULL) {
-      // Use address type to get the element type. Alias type doesn't provide
-      // enough information (e.g., doesn't differentiate between byte[] and boolean[]).
-      const Type* element = adr_type->is_aryptr()->elem();
-      bt = element->isa_narrowoop() ? T_OBJECT : element->array_element_basic_type();
-    } else {
-      bt = alias_type->field()->layout_type();
-    }
-    if (bt == T_ARRAY) {
-      // accessing an array field with getObject is not a mismatch
-      bt = T_OBJECT;
-    }
-    if (bt != type) {
-      mismatched = true;
-    }
-  }
-  assert(type != T_OBJECT || !unaligned, "unaligned access not supported with object type");
-
   if (!is_store) {
     Node* p = NULL;
     // Try to constant fold a load from a constant field
     ciField* field = alias_type->field();
-    if (heap_base_oop != top() &&
-        field != NULL && field->is_constant() && !mismatched) {
+    if (heap_base_oop != top() && field != NULL && field->is_constant() && !mismatched) {
       // final or stable field
-      const Type* con_type = Type::make_constant(alias_type->field(), heap_base_oop);
-      if (con_type != NULL) {
-        p = makecon(con_type);
-      }
+      p = make_constant_from_field(field, heap_base_oop);
     }
     if (p == NULL) {
       // To be valid, unsafe loads may depend on other conditions than
@@ -2817,11 +2813,20 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   Node* adr = make_unsafe_address(base, offset);
   const TypePtr *adr_type = _gvn.type(adr)->isa_ptr();
 
+  Compile::AliasType* alias_type = C->alias_type(adr_type);
+  assert(alias_type->adr_type() == TypeRawPtr::BOTTOM || alias_type->adr_type() == TypeOopPtr::BOTTOM ||
+         alias_type->basic_type() != T_ILLEGAL, "field, array element or unknown");
+  BasicType bt = alias_type->basic_type();
+  if (bt != T_ILLEGAL &&
+      ((bt == T_OBJECT || bt == T_ARRAY) != (type == T_OBJECT))) {
+    // Don't intrinsify mismatched object accesses.
+    return false;
+  }
+
   // For CAS, unlike inline_unsafe_access, there seems no point in
   // trying to refine types. Just use the coarse types here.
-  const Type *value_type = Type::get_const_basic_type(type);
-  Compile::AliasType* alias_type = C->alias_type(adr_type);
   assert(alias_type->index() != Compile::AliasIdxBot, "no bare pointers here");
+  const Type *value_type = Type::get_const_basic_type(type);
 
   switch (kind) {
     case LS_get_set:
@@ -3125,6 +3130,11 @@ bool LibraryCallKit::inline_unsafe_fence(vmIntrinsics::ID id) {
       fatal_unexpected_iid(id);
       return false;
   }
+}
+
+bool LibraryCallKit::inline_onspinwait() {
+  insert_mem_bar(Op_OnSpinWait);
+  return true;
 }
 
 bool LibraryCallKit::klass_needs_init_guard(Node* kls) {

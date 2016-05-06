@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
@@ -42,7 +43,7 @@
 #define EC_TRACE(out) do { \
   if (JvmtiTrace::trace_event_controller()) { \
     SafeResourceMark rm; \
-    tty->print_cr out; \
+    log_trace(jvmti) out; \
   } \
 } while (0)
 #else
@@ -344,7 +345,7 @@ void VM_ChangeSingleStep::doit() {
 
 
 void JvmtiEventControllerPrivate::enter_interp_only_mode(JvmtiThreadState *state) {
-  EC_TRACE(("JVMTI [%s] # Entering interpreter only mode",
+  EC_TRACE(("[%s] # Entering interpreter only mode",
             JvmtiTrace::safe_get_thread_name(state->get_thread())));
 
   VM_EnterInterpOnlyMode op(state);
@@ -354,7 +355,7 @@ void JvmtiEventControllerPrivate::enter_interp_only_mode(JvmtiThreadState *state
 
 void
 JvmtiEventControllerPrivate::leave_interp_only_mode(JvmtiThreadState *state) {
-  EC_TRACE(("JVMTI [%s] # Leaving interpreter only mode",
+  EC_TRACE(("[%s] # Leaving interpreter only mode",
             JvmtiTrace::safe_get_thread_name(state->get_thread())));
   state->leave_interp_only_mode();
 }
@@ -370,7 +371,7 @@ JvmtiEventControllerPrivate::trace_changed(JvmtiThreadState *state, jlong now_en
       jlong bit = JvmtiEventEnabled::bit_for((jvmtiEvent)ei);
       if (changed & bit) {
         // it changed, print it
-        tty->print_cr("JVMTI [%s] # %s event %s",
+         log_trace(jvmti)("[%s] # %s event %s",
                       JvmtiTrace::safe_get_thread_name(state->get_thread()),
                       (now_enabled & bit)? "Enabling" : "Disabling", JvmtiTrace::event_name((jvmtiEvent)ei));
       }
@@ -390,7 +391,7 @@ JvmtiEventControllerPrivate::trace_changed(jlong now_enabled, jlong changed) {
       jlong bit = JvmtiEventEnabled::bit_for((jvmtiEvent)ei);
       if (changed & bit) {
         // it changed, print it
-        tty->print_cr("JVMTI [-] # %s event %s",
+         log_trace(jvmti)("[-] # %s event %s",
                       (now_enabled & bit)? "Enabling" : "Disabling", JvmtiTrace::event_name((jvmtiEvent)ei));
       }
     }
@@ -563,7 +564,7 @@ JvmtiEventControllerPrivate::recompute_enabled() {
   jlong was_any_env_thread_enabled = JvmtiEventController::_universal_global_event_enabled.get_bits();
   jlong any_env_thread_enabled = 0;
 
-  EC_TRACE(("JVMTI [-] # recompute enabled - before " UINT64_FORMAT_X, was_any_env_thread_enabled));
+  EC_TRACE(("[-] # recompute enabled - before " UINT64_FORMAT_X, was_any_env_thread_enabled));
 
   // compute non-thread-filters events.
   // This must be done separately from thread-filtered events, since some
@@ -643,7 +644,7 @@ JvmtiEventControllerPrivate::recompute_enabled() {
 
   }
 
-  EC_TRACE(("JVMTI [-] # recompute enabled - after " UINT64_FORMAT_X, any_env_thread_enabled));
+  EC_TRACE(("[-] # recompute enabled - after " UINT64_FORMAT_X, any_env_thread_enabled));
 }
 
 
@@ -653,7 +654,7 @@ JvmtiEventControllerPrivate::thread_started(JavaThread *thread) {
   assert(thread == Thread::current(), "must be current thread");
   assert(JvmtiEnvBase::environments_might_exist(), "to enter event controller, JVM TI environments must exist");
 
-  EC_TRACE(("JVMTI [%s] # thread started", JvmtiTrace::safe_get_thread_name(thread)));
+  EC_TRACE(("[%s] # thread started", JvmtiTrace::safe_get_thread_name(thread)));
 
   // if we have any thread filtered events globally enabled, create/update the thread state
   if ((JvmtiEventController::_universal_global_event_enabled.get_bits() & THREAD_FILTERED_EVENT_BITS) != 0) {
@@ -673,7 +674,7 @@ JvmtiEventControllerPrivate::thread_ended(JavaThread *thread) {
   // May be called after all environments have been disposed.
   assert(JvmtiThreadState_lock->is_locked(), "sanity check");
 
-  EC_TRACE(("JVMTI [%s] # thread ended", JvmtiTrace::safe_get_thread_name(thread)));
+  EC_TRACE(("[%s] # thread ended", JvmtiTrace::safe_get_thread_name(thread)));
 
   JvmtiThreadState *state = thread->jvmti_thread_state();
   assert(state != NULL, "else why are we here?");
@@ -684,7 +685,7 @@ void JvmtiEventControllerPrivate::set_event_callbacks(JvmtiEnvBase *env,
                                                       const jvmtiEventCallbacks* callbacks,
                                                       jint size_of_callbacks) {
   assert(Threads::number_of_threads() == 0 || JvmtiThreadState_lock->is_locked(), "sanity check");
-  EC_TRACE(("JVMTI [*] # set event callbacks"));
+  EC_TRACE(("[*] # set event callbacks"));
 
   env->set_event_callbacks(callbacks, size_of_callbacks);
   jlong enabled_bits = 0;
@@ -704,7 +705,7 @@ JvmtiEventControllerPrivate::set_extension_event_callback(JvmtiEnvBase *env,
                                                           jvmtiExtensionEvent callback)
 {
   assert(Threads::number_of_threads() == 0 || JvmtiThreadState_lock->is_locked(), "sanity check");
-  EC_TRACE(("JVMTI [*] # set extension event callback"));
+  EC_TRACE(("[*] # set extension event callback"));
 
   // extension events are allocated below JVMTI_MIN_EVENT_TYPE_VAL
   assert(extension_event_index >= (jint)EXT_MIN_EVENT_TYPE_VAL &&
@@ -750,7 +751,7 @@ JvmtiEventControllerPrivate::set_extension_event_callback(JvmtiEnvBase *env,
 void
 JvmtiEventControllerPrivate::env_initialize(JvmtiEnvBase *env) {
   assert(Threads::number_of_threads() == 0 || JvmtiThreadState_lock->is_locked(), "sanity check");
-  EC_TRACE(("JVMTI [*] # env initialize"));
+  EC_TRACE(("[*] # env initialize"));
 
   if (JvmtiEnvBase::is_vm_live()) {
     // if we didn't initialize event info already (this is a late
@@ -772,7 +773,7 @@ JvmtiEventControllerPrivate::env_initialize(JvmtiEnvBase *env) {
 void
 JvmtiEventControllerPrivate::env_dispose(JvmtiEnvBase *env) {
   assert(Threads::number_of_threads() == 0 || JvmtiThreadState_lock->is_locked(), "sanity check");
-  EC_TRACE(("JVMTI [*] # env dispose"));
+  EC_TRACE(("[*] # env dispose"));
 
   // Before the environment is marked disposed, disable all events on this
   // environment (by zapping the callbacks).  As a result, the disposed
@@ -794,7 +795,7 @@ JvmtiEventControllerPrivate::set_user_enabled(JvmtiEnvBase *env, JavaThread *thr
                                           jvmtiEvent event_type, bool enabled) {
   assert(Threads::number_of_threads() == 0 || JvmtiThreadState_lock->is_locked(), "sanity check");
 
-  EC_TRACE(("JVMTI [%s] # user %s event %s",
+  EC_TRACE(("[%s] # user %s event %s",
             thread==NULL? "ALL": JvmtiTrace::safe_get_thread_name(thread),
             enabled? "enabled" : "disabled", JvmtiTrace::event_name(event_type)));
 
@@ -813,7 +814,7 @@ JvmtiEventControllerPrivate::set_user_enabled(JvmtiEnvBase *env, JavaThread *thr
 
 void
 JvmtiEventControllerPrivate::set_frame_pop(JvmtiEnvThreadState *ets, JvmtiFramePop fpop) {
-  EC_TRACE(("JVMTI [%s] # set frame pop - frame=%d",
+  EC_TRACE(("[%s] # set frame pop - frame=%d",
             JvmtiTrace::safe_get_thread_name(ets->get_thread()),
             fpop.frame_number() ));
 
@@ -824,7 +825,7 @@ JvmtiEventControllerPrivate::set_frame_pop(JvmtiEnvThreadState *ets, JvmtiFrameP
 
 void
 JvmtiEventControllerPrivate::clear_frame_pop(JvmtiEnvThreadState *ets, JvmtiFramePop fpop) {
-  EC_TRACE(("JVMTI [%s] # clear frame pop - frame=%d",
+  EC_TRACE(("[%s] # clear frame pop - frame=%d",
             JvmtiTrace::safe_get_thread_name(ets->get_thread()),
             fpop.frame_number() ));
 
@@ -837,7 +838,7 @@ void
 JvmtiEventControllerPrivate::clear_to_frame_pop(JvmtiEnvThreadState *ets, JvmtiFramePop fpop) {
   int cleared_cnt = ets->get_frame_pops()->clear_to(fpop);
 
-  EC_TRACE(("JVMTI [%s] # clear to frame pop - frame=%d, count=%d",
+  EC_TRACE(("[%s] # clear to frame pop - frame=%d, count=%d",
             JvmtiTrace::safe_get_thread_name(ets->get_thread()),
             fpop.frame_number(),
             cleared_cnt ));
@@ -863,7 +864,7 @@ JvmtiEventControllerPrivate::change_field_watch(jvmtiEvent event_type, bool adde
     return;
   }
 
-  EC_TRACE(("JVMTI [-] # change field watch - %s %s count=%d",
+  EC_TRACE(("[-] # change field watch - %s %s count=%d",
             event_type==JVMTI_EVENT_FIELD_MODIFICATION? "modification" : "access",
             added? "add" : "remove",
             *count_addr));
@@ -893,7 +894,7 @@ JvmtiEventControllerPrivate::event_init() {
     return;
   }
 
-  EC_TRACE(("JVMTI [-] # VM live"));
+  EC_TRACE(("[-] # VM live"));
 
 #ifdef ASSERT
   // check that our idea and the spec's idea of threaded events match

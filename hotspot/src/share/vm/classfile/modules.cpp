@@ -158,7 +158,7 @@ static void add_to_exploded_build_list(char *module_name, TRAPS) {
     HandleMark hm;
     Handle loader_lock = Handle(THREAD, SystemDictionary::system_loader_lock());
     ObjectLocker ol(loader_lock, THREAD);
-    log_info(classload)("opened: %s", path);
+    log_info(class, load)("opened: %s", path);
     ClassLoader::add_to_list(path);
   }
 }
@@ -239,6 +239,11 @@ static void define_javabase_module(jobject module, jstring version,
 
   {
     MutexLocker m1(Module_lock, THREAD);
+
+    if (ModuleEntryTable::javabase_defined()) {
+      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+                "Module java.base is already defined");
+    }
 
     // Verify that all java.base packages created during bootstrapping are in
     // pkg_list.  If any are not in pkg_list, than a non-java.base class was

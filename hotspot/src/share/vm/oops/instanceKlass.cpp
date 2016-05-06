@@ -450,9 +450,9 @@ void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_k) {
     this_k->set_init_state (fully_initialized);
     this_k->fence_and_clear_init_lock();
     // trace
-    if (log_is_enabled(Info, classinit)) {
+    if (log_is_enabled(Info, class, init)) {
       ResourceMark rm(THREAD);
-      log_info(classinit)("[Initialized %s without side effects]", this_k->external_name());
+      log_info(class, init)("[Initialized %s without side effects]", this_k->external_name());
     }
   }
 }
@@ -1088,9 +1088,9 @@ void InstanceKlass::call_class_initializer_impl(instanceKlassHandle this_k, TRAP
 
   methodHandle h_method(THREAD, this_k->class_initializer());
   assert(!this_k->is_initialized(), "we cannot initialize twice");
-  if (log_is_enabled(Info, classinit)) {
+  if (log_is_enabled(Info, class, init)) {
     ResourceMark rm;
-    outputStream* log = Log(classinit)::info_stream();
+    outputStream* log = Log(class, init)::info_stream();
     log->print("%d Initializing ", call_class_initializer_impl_counter++);
     this_k->name()->print_value_on(log);
     log->print_cr("%s (" INTPTR_FORMAT ")", h_method() == NULL ? "(no method)" : "", p2i(this_k()));
@@ -2032,10 +2032,11 @@ bool InstanceKlass::check_sharing_error_state() {
   return (old_state != is_in_error_state());
 }
 
+#if INCLUDE_JVMTI
 static void clear_all_breakpoints(Method* m) {
   m->clear_all_breakpoints();
 }
-
+#endif
 
 void InstanceKlass::notify_unload_class(InstanceKlass* ik) {
   // notify the debugger
@@ -2097,6 +2098,7 @@ void InstanceKlass::release_C_heap_structures() {
   // DC::remove_all_dependents() when it touches unloaded nmethod.
   dependencies().wipe();
 
+#if INCLUDE_JVMTI
   // Deallocate breakpoint records
   if (breakpoints() != 0x0) {
     methods_do(clear_all_breakpoints);
@@ -2108,6 +2110,7 @@ void InstanceKlass::release_C_heap_structures() {
     os::free(_cached_class_file);
     _cached_class_file = NULL;
   }
+#endif
 
   // Decrement symbol reference counts associated with the unloaded class.
   if (_name != NULL) _name->decrement_refcount();
@@ -2293,7 +2296,7 @@ bool InstanceKlass::is_same_class_package(const Klass* class2) const {
   PackageEntry* classpkg2;
   if (class2->is_instance_klass()) {
     classloader2 = class2->class_loader();
-    classpkg2 = InstanceKlass::cast(class2)->package();
+    classpkg2 = class2->package();
   } else {
     assert(class2->is_typeArray_klass(), "should be type array");
     classloader2 = NULL;
@@ -2841,7 +2844,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   {
     bool have_pv = false;
     // previous versions are linked together through the InstanceKlass
-    for (InstanceKlass* pv_node = _previous_versions;
+    for (InstanceKlass* pv_node = previous_versions();
          pv_node != NULL;
          pv_node = pv_node->previous_versions()) {
       if (!have_pv)
@@ -3011,11 +3014,11 @@ void InstanceKlass::print_loading_log(LogLevel::type type,
   assert(type == LogLevel::Info || type == LogLevel::Debug, "sanity");
 
   if (type == LogLevel::Info) {
-    log = Log(classload)::info_stream();
+    log = Log(class, load)::info_stream();
   } else {
     assert(type == LogLevel::Debug,
            "print_loading_log supports only Debug and Info levels");
-    log = Log(classload)::debug_stream();
+    log = Log(class, load)::debug_stream();
   }
 
   // Name and class hierarchy info
@@ -3334,7 +3337,7 @@ void InstanceKlass::set_init_state(ClassState state) {
 }
 #endif
 
-
+#if INCLUDE_JVMTI
 
 // RedefineClasses() support for previous versions:
 int InstanceKlass::_previous_version_count = 0;
@@ -3549,6 +3552,7 @@ void InstanceKlass::add_previous_version(instanceKlassHandle scratch_class,
   _previous_version_count++;
 } // end add_previous_version()
 
+#endif // INCLUDE_JVMTI
 
 Method* InstanceKlass::method_with_idnum(int idnum) {
   Method* m = NULL;
@@ -3598,7 +3602,7 @@ Method* InstanceKlass::method_with_orig_idnum(int idnum, int version) {
   return method;
 }
 
-
+#if INCLUDE_JVMTI
 jint InstanceKlass::get_cached_class_file_len() {
   return VM_RedefineClasses::get_cached_class_file_len(_cached_class_file);
 }
@@ -3606,3 +3610,4 @@ jint InstanceKlass::get_cached_class_file_len() {
 unsigned char * InstanceKlass::get_cached_class_file_bytes() {
   return VM_RedefineClasses::get_cached_class_file_bytes(_cached_class_file);
 }
+#endif

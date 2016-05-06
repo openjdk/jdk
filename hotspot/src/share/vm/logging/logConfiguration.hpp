@@ -37,6 +37,7 @@ class LogTagLevelExpression;
 // kept implicitly in the LogTagSets and their LogOutputLists. During configuration the tagsets
 // are iterated over and updated accordingly.
 class LogConfiguration : public AllStatic {
+ friend class VMError;
  public:
   // Function for listeners
   typedef void (*UpdateListenerFunction)(void);
@@ -78,6 +79,11 @@ class LogConfiguration : public AllStatic {
 
   // This should be called after any configuration change while still holding ConfigurationLock
   static void notify_update_listeners();
+
+  // Respectively describe the built-in and runtime dependent portions of the configuration.
+  static void describe_available(outputStream* out);
+  static void describe_current_configuration(outputStream* out);
+
 
  public:
   // Initialization and finalization of log configuration, to be run at vm startup and shutdown respectively.
