@@ -72,6 +72,7 @@ import static org.testng.Assert.assertEquals;
 import java.text.ParsePosition;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -794,6 +795,54 @@ public class TCKDateTimeFormatterBuilder {
          assertEquals(LocalDate.of(y, m, d).format(df), expected);
     }
 
+    //-----------------------------------------------------------------------
+    @DataProvider(name="secondsPattern")
+    Object[][] data_secondsPattern() {
+        return new Object[][] {
+                {"A", "1", LocalTime.ofNanoOfDay(1_000_000)},
+                {"A", "100000", LocalTime.ofSecondOfDay(100)},
+                {"AA", "01", LocalTime.ofNanoOfDay(1_000_000)},
+                {"AA", "100000", LocalTime.ofSecondOfDay(100)},
+                {"AAAAAA", "100000", LocalTime.ofSecondOfDay(100)},
+                {"HHmmssn", "0000001", LocalTime.ofNanoOfDay(1)},
+                {"HHmmssn", "000000111", LocalTime.ofNanoOfDay(111)},
+                {"HHmmssnn", "00000001", LocalTime.ofNanoOfDay(1)},
+                {"HHmmssnn", "0000001111", LocalTime.ofNanoOfDay(1111)},
+                {"HHmmssnnnnnn", "000000111111", LocalTime.ofNanoOfDay(111_111)},
+                {"N", "1", LocalTime.ofNanoOfDay(1)},
+                {"N", "100000", LocalTime.ofNanoOfDay(100_000)},
+                {"NN", "01", LocalTime.ofNanoOfDay(1)},
+                {"NN", "100000", LocalTime.ofNanoOfDay(100_000)},
+                {"NNNNNN", "100000", LocalTime.ofNanoOfDay(100_000)},
+        };
+    }
+
+    @Test(dataProvider="secondsPattern")
+    public void test_secondsPattern(String pattern, String input, LocalTime expected) throws Exception {
+        DateTimeFormatter df = new DateTimeFormatterBuilder().appendPattern(pattern).toFormatter();
+        assertEquals(LocalTime.parse(input, df), expected);
+    }
+
+    @DataProvider(name="secondsValues")
+    Object[][] data_secondsValues() {
+        return new Object[][] {
+                {"A", 1, "1000"},
+                {"n", 1, "0"},
+                {"N", 1, "1000000000"},
+        };
+    }
+
+    @Test(dataProvider="secondsValues")
+    public void test_secondsValues(String pattern, int seconds , String expected) throws Exception {
+        DateTimeFormatter df = new DateTimeFormatterBuilder().appendPattern(pattern).toFormatter();
+        assertEquals(LocalTime.ofSecondOfDay(seconds).format(df), expected);
+    }
+
+    @Test(expectedExceptions = DateTimeParseException.class)
+    public void test_secondsPatternInvalidAdacentValueParsingPattern() {
+        // patterns A*, N*, n* will not take part in adjacent value parsing
+        DateTimeFormatter.ofPattern("yyyyAA").parse("201610");
+    }
 
     //-----------------------------------------------------------------------
     @Test

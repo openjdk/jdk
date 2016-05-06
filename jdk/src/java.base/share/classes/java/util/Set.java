@@ -444,7 +444,7 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of() {
-        return Collections.emptySet();
+        return new ImmutableCollections.Set0<>();
     }
 
     /**
@@ -459,7 +459,7 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of(E e1) {
-        return Collections.singleton(Objects.requireNonNull(e1));
+        return new ImmutableCollections.Set1<>(e1);
     }
 
     /**
@@ -476,12 +476,7 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of(E e1, E e2) {
-        Set<E> set = new HashSet<>(Arrays.asList(Objects.requireNonNull(e1),
-                                                 Objects.requireNonNull(e2)));
-        if (set.size() != 2) {
-            throw new IllegalArgumentException("duplicate elements");
-        }
-        return Collections.unmodifiableSet(set);
+        return new ImmutableCollections.Set2<>(e1, e2);
     }
 
     /**
@@ -499,13 +494,7 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of(E e1, E e2, E e3) {
-        Set<E> set = new HashSet<>(Arrays.asList(Objects.requireNonNull(e1),
-                                                 Objects.requireNonNull(e2),
-                                                 Objects.requireNonNull(e3)));
-        if (set.size() != 3) {
-            throw new IllegalArgumentException("duplicate elements");
-        }
-        return Collections.unmodifiableSet(set);
+        return new ImmutableCollections.SetN<>(e1, e2, e3);
     }
 
     /**
@@ -524,14 +513,7 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of(E e1, E e2, E e3, E e4) {
-        Set<E> set = new HashSet<>(Arrays.asList(Objects.requireNonNull(e1),
-                                                 Objects.requireNonNull(e2),
-                                                 Objects.requireNonNull(e3),
-                                                 Objects.requireNonNull(e4)));
-        if (set.size() != 4) {
-            throw new IllegalArgumentException("duplicate elements");
-        }
-        return Collections.unmodifiableSet(set);
+        return new ImmutableCollections.SetN<>(e1, e2, e3, e4);
     }
 
     /**
@@ -551,15 +533,7 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5) {
-        Set<E> set = new HashSet<>(Arrays.asList(Objects.requireNonNull(e1),
-                                                 Objects.requireNonNull(e2),
-                                                 Objects.requireNonNull(e3),
-                                                 Objects.requireNonNull(e4),
-                                                 Objects.requireNonNull(e5)));
-        if (set.size() != 5) {
-            throw new IllegalArgumentException("duplicate elements");
-        }
-        return Collections.unmodifiableSet(set);
+        return new ImmutableCollections.SetN<>(e1, e2, e3, e4, e5);
     }
 
     /**
@@ -580,16 +554,8 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6) {
-        Set<E> set = new HashSet<>(Arrays.asList(Objects.requireNonNull(e1),
-                                                 Objects.requireNonNull(e2),
-                                                 Objects.requireNonNull(e3),
-                                                 Objects.requireNonNull(e4),
-                                                 Objects.requireNonNull(e5),
-                                                 Objects.requireNonNull(e6)));
-        if (set.size() != 6) {
-            throw new IllegalArgumentException("duplicate elements");
-        }
-        return Collections.unmodifiableSet(set);
+        return new ImmutableCollections.SetN<>(e1, e2, e3, e4, e5,
+                                               e6);
     }
 
     /**
@@ -611,17 +577,8 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7) {
-        Set<E> set = new HashSet<>(Arrays.asList(Objects.requireNonNull(e1),
-                                                 Objects.requireNonNull(e2),
-                                                 Objects.requireNonNull(e3),
-                                                 Objects.requireNonNull(e4),
-                                                 Objects.requireNonNull(e5),
-                                                 Objects.requireNonNull(e6),
-                                                 Objects.requireNonNull(e7)));
-        if (set.size() != 7) {
-            throw new IllegalArgumentException("duplicate elements");
-        }
-        return Collections.unmodifiableSet(set);
+        return new ImmutableCollections.SetN<>(e1, e2, e3, e4, e5,
+                                               e6, e7);
     }
 
     /**
@@ -644,18 +601,8 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8) {
-        Set<E> set = new HashSet<>(Arrays.asList(Objects.requireNonNull(e1),
-                                                 Objects.requireNonNull(e2),
-                                                 Objects.requireNonNull(e3),
-                                                 Objects.requireNonNull(e4),
-                                                 Objects.requireNonNull(e5),
-                                                 Objects.requireNonNull(e6),
-                                                 Objects.requireNonNull(e7),
-                                                 Objects.requireNonNull(e8)));
-        if (set.size() != 8) {
-            throw new IllegalArgumentException("duplicate elements");
-        }
-        return Collections.unmodifiableSet(set);
+        return new ImmutableCollections.SetN<>(e1, e2, e3, e4, e5,
+                                               e6, e7, e8);
     }
 
     /**
@@ -679,19 +626,8 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8, E e9) {
-        Set<E> set = new HashSet<>(Arrays.asList(Objects.requireNonNull(e1),
-                                                 Objects.requireNonNull(e2),
-                                                 Objects.requireNonNull(e3),
-                                                 Objects.requireNonNull(e4),
-                                                 Objects.requireNonNull(e5),
-                                                 Objects.requireNonNull(e6),
-                                                 Objects.requireNonNull(e7),
-                                                 Objects.requireNonNull(e8),
-                                                 Objects.requireNonNull(e9)));
-        if (set.size() != 9) {
-            throw new IllegalArgumentException("duplicate elements");
-        }
-        return Collections.unmodifiableSet(set);
+        return new ImmutableCollections.SetN<>(e1, e2, e3, e4, e5,
+                                               e6, e7, e8, e9);
     }
 
     /**
@@ -716,20 +652,8 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8, E e9, E e10) {
-        Set<E> set = new HashSet<>(Arrays.asList(Objects.requireNonNull(e1),
-                                                 Objects.requireNonNull(e2),
-                                                 Objects.requireNonNull(e3),
-                                                 Objects.requireNonNull(e4),
-                                                 Objects.requireNonNull(e5),
-                                                 Objects.requireNonNull(e6),
-                                                 Objects.requireNonNull(e7),
-                                                 Objects.requireNonNull(e8),
-                                                 Objects.requireNonNull(e9),
-                                                 Objects.requireNonNull(e10)));
-        if (set.size() != 10) {
-            throw new IllegalArgumentException("duplicate elements");
-        }
-        return Collections.unmodifiableSet(set);
+        return new ImmutableCollections.SetN<>(e1, e2, e3, e4, e5,
+                                               e6, e7, e8, e9, e10);
     }
 
     /**
@@ -759,15 +683,18 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     @SafeVarargs
+    @SuppressWarnings("varargs")
     static <E> Set<E> of(E... elements) {
-        for (E e : elements) { // throws NPE if es is null
-            Objects.requireNonNull(e);
+        Objects.requireNonNull(elements);
+        switch (elements.length) {
+            case 0:
+                return new ImmutableCollections.Set0<>();
+            case 1:
+                return new ImmutableCollections.Set1<>(elements[0]);
+            case 2:
+                return new ImmutableCollections.Set2<>(elements[0], elements[1]);
+            default:
+                return new ImmutableCollections.SetN<>(elements);
         }
-        @SuppressWarnings("varargs")
-        Set<E> set = new HashSet<>(Arrays.asList(elements));
-        if (set.size() != elements.length) {
-            throw new IllegalArgumentException("duplicate elements");
-        }
-        return Collections.unmodifiableSet(set);
     }
 }

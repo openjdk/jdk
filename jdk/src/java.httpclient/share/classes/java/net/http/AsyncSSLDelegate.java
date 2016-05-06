@@ -144,13 +144,9 @@ public class AsyncSSLDelegate implements Closeable, AsyncConnection {
         sslParameters = Utils.copySSLParameters(sslp);
         if (alpn != null) {
             sslParameters.setApplicationProtocols(alpn);
-            Log.logSSL("Setting application protocols: " + Arrays.toString(alpn));
-        } else {
-            Log.logSSL("No application protocols proposed");
         }
+        logParams(sslParameters);
         engine.setSSLParameters(sslParameters);
-        engine.setEnabledCipherSuites(sslp.getCipherSuites());
-        engine.setEnabledProtocols(sslp.getProtocols());
         this.lowerOutput = lowerOutput;
         this.client = client;
         this.channelInputQ = new Queue<>();
@@ -560,24 +556,26 @@ public class AsyncSSLDelegate implements Closeable, AsyncConnection {
         return sslParameters;
     }
 
-    static void printParams(SSLParameters p) {
-        System.out.println("SSLParameters:");
+    static void logParams(SSLParameters p) {
+        if (!Log.ssl())
+            return;
+        Log.logSSL("SSLParameters:");
         if (p == null) {
-            System.out.println("Null params");
+            Log.logSSL("Null params");
             return;
         }
         for (String cipher : p.getCipherSuites()) {
-                System.out.printf("cipher: %s\n", cipher);
+            Log.logSSL("cipher: {0}\n", cipher);
         }
         for (String approto : p.getApplicationProtocols()) {
-                System.out.printf("application protocol: %s\n", approto);
+            Log.logSSL("application protocol: {0}\n", approto);
         }
         for (String protocol : p.getProtocols()) {
-                System.out.printf("protocol: %s\n", protocol);
+            Log.logSSL("protocol: {0}\n", protocol);
         }
         if (p.getServerNames() != null)
-        for (SNIServerName sname : p.getServerNames()) {
-                System.out.printf("server name: %s\n", sname.toString());
+            for (SNIServerName sname : p.getServerNames()) {
+                Log.logSSL("server name: {0}\n", sname.toString());
         }
     }
 

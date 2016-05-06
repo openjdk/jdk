@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,5 +216,12 @@ typedef jubyte  FourByteAbgrPreDataType;
         (pRas)[4*(x)+2] = (jubyte) COMP_PREFIX ## G; \
         (pRas)[4*(x)+3] = (jubyte) COMP_PREFIX ## R; \
     } while (0)
+
+/*
+ * SrcOver ## TYPE ## BlendFactor
+ * Returns appropriate blend value for use in blending calculations.
+ */
+#define SrcOverFourByteAbgrPreBlendFactor(dF, dA) \
+    (dF)
 
 #endif /* FourByteAbgrPre_h_Included */
