@@ -578,20 +578,6 @@ bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
   case vmIntrinsics::_putLongOpaque:
   case vmIntrinsics::_putFloatOpaque:
   case vmIntrinsics::_putDoubleOpaque:
-  case vmIntrinsics::_getByte_raw:
-  case vmIntrinsics::_getShort_raw:
-  case vmIntrinsics::_getChar_raw:
-  case vmIntrinsics::_getInt_raw:
-  case vmIntrinsics::_getLong_raw:
-  case vmIntrinsics::_getFloat_raw:
-  case vmIntrinsics::_getDouble_raw:
-  case vmIntrinsics::_putByte_raw:
-  case vmIntrinsics::_putShort_raw:
-  case vmIntrinsics::_putChar_raw:
-  case vmIntrinsics::_putInt_raw:
-  case vmIntrinsics::_putLong_raw:
-  case vmIntrinsics::_putFloat_raw:
-  case vmIntrinsics::_putDouble_raw:
   case vmIntrinsics::_getAndAddInt:
   case vmIntrinsics::_getAndAddLong:
   case vmIntrinsics::_getAndSetInt:
@@ -632,8 +618,6 @@ bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
   case vmIntrinsics::_putIntUnaligned:
   case vmIntrinsics::_putLongUnaligned:
   case vmIntrinsics::_allocateInstance:
-  case vmIntrinsics::_getAddress_raw:
-  case vmIntrinsics::_putAddress_raw:
     if (!InlineUnsafeOps || !UseUnalignedAccesses) return true;
     break;
   case vmIntrinsics::_hashCode:
