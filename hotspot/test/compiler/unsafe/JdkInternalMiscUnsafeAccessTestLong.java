@@ -281,6 +281,18 @@ public class JdkInternalMiscUnsafeAccessTestLong {
             assertEquals(x, 2L, "weakCompareAndSwapRelease long");
         }
 
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapLongVolatile(base, offset, 2L, 1L);
+            }
+            assertEquals(success, true, "weakCompareAndSwapVolatile long");
+            long x = UNSAFE.getLong(base, offset);
+            assertEquals(x, 1L, "weakCompareAndSwapVolatile long");
+        }
+
+        UNSAFE.putLong(base, offset, 2L);
+
         // Compare set and get
         {
             long o = UNSAFE.getAndSetLong(base, offset, 1L);
