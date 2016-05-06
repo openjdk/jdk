@@ -1,0 +1,74 @@
+#
+# Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# Generate classlist
+################################################################################
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+include Tools.gmk
+include JarArchive.gmk
+
+################################################################################
+# Create a jar with our generator class. Using a jar is intentional since it
+# will load more classes
+
+$(eval $(call SetupJarArchive, CLASSLIST_JAR, \
+    SRCS := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes, \
+    INCLUDES := build/tools/classlist, \
+    JAR := $(SUPPORT_OUTPUTDIR)/classlist.jar, \
+))
+
+TARGETS += $(CLASSLIST_JAR)
+
+################################################################################
+
+CLASSLIST_FILE := $(SUPPORT_OUTPUTDIR)/classlist/classlist
+
+# If an external buildjdk has been supplied, we don't build a separate interim
+# image, so just use the external build jdk instead.
+ifeq ($(EXTERNAL_BUILDJDK), true)
+  INTERIM_IMAGE_DIR := $(BUILD_JDK)
+endif
+
+$(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXE_SUFFIX) $(CLASSLIST_JAR)
+	$(call MakeDir, $(@D))
+	$(call LogInfo, Generating lib/classlist)
+	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java -XX:DumpLoadedClassList=$@.tmp \
+	    -cp $(SUPPORT_OUTPUTDIR)/classlist.jar \
+	    build.tools.classlist.HelloClasslist $(LOG_DEBUG) 2>&1
+        # Filter out generated classes, remove after JDK-8149977
+	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java -XX:DumpLoadedClassList=$@ \
+	    -Xshare:dump -XX:SharedClassListFile=$@.tmp $(LOG_DEBUG) 2>&1
+	$(RM) $@.tmp
+
+TARGETS += $(CLASSLIST_FILE)
+
+################################################################################
+
+all: $(TARGETS)
