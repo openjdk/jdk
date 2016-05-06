@@ -522,6 +522,8 @@ class SharedRuntime: AllStatic {
   static address handle_wrong_method_abstract(JavaThread* thread);
   static address handle_wrong_method_ic_miss(JavaThread* thread);
 
+  static address handle_unsafe_access(JavaThread* thread, address next_pc);
+
 #ifndef PRODUCT
 
   // Collect and print inline cache miss statistics
