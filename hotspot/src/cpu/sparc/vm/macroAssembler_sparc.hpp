@@ -1012,6 +1012,8 @@ public:
   inline void ldbool(const Address& a, Register d);
   inline void movbool( bool boolconst, Register d);
 
+  void load_mirror(Register mirror, Register method);
+
   // klass oop manipulations if compressed
   void load_klass(Register src_oop, Register klass);
   void store_klass(Register klass, Register dst_oop);

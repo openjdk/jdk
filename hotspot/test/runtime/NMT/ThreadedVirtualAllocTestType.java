@@ -45,7 +45,7 @@ public class ThreadedVirtualAllocTestType {
   public static void main(String args[]) throws Exception {
     OutputAnalyzer output;
 
-    String pid = Integer.toString(ProcessTools.getProcessId());
+    String pid = Long.toString(ProcessTools.getProcessId());
     ProcessBuilder pb = new ProcessBuilder();
 
     Thread reserveThread = new Thread() {

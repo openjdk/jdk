@@ -3399,6 +3399,18 @@ void MacroAssembler::movq(XMMRegister dst, AddressLiteral src) {
   }
 }
 
+void MacroAssembler::setvectmask(Register dst, Register src) {
+  Assembler::movl(dst, 1);
+  Assembler::shlxl(dst, dst, src);
+  Assembler::decl(dst);
+  Assembler::kmovdl(k1, dst);
+  Assembler::movl(dst, src);
+}
+
+void MacroAssembler::restorevectmask() {
+  Assembler::knotwl(k1, k0);
+}
+
 void MacroAssembler::movdbl(XMMRegister dst, AddressLiteral src) {
   if (reachable(src)) {
     if (UseXmmLoadAndClearUpper) {
@@ -4320,9 +4332,7 @@ void MacroAssembler::vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src,
   int nds_enc = nds->encoding();
   int src_enc = src->encoding();
   assert(dst_enc == nds_enc, "");
-  if (VM_Version::supports_avxonly() || VM_Version::supports_avx512bw()) {
-    Assembler::vpcmpeqb(dst, nds, src, vector_len);
-  } else if ((dst_enc < 16) && (src_enc < 16)) {
+  if ((dst_enc < 16) && (src_enc < 16)) {
     Assembler::vpcmpeqb(dst, nds, src, vector_len);
   } else if (src_enc < 16) {
     subptr(rsp, 64);
@@ -4360,9 +4370,7 @@ void MacroAssembler::vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src,
   int nds_enc = nds->encoding();
   int src_enc = src->encoding();
   assert(dst_enc == nds_enc, "");
-  if (VM_Version::supports_avxonly() || VM_Version::supports_avx512bw()) {
-    Assembler::vpcmpeqw(dst, nds, src, vector_len);
-  } else if ((dst_enc < 16) && (src_enc < 16)) {
+  if ((dst_enc < 16) && (src_enc < 16)) {
     Assembler::vpcmpeqw(dst, nds, src, vector_len);
   } else if (src_enc < 16) {
     subptr(rsp, 64);
@@ -6693,6 +6701,14 @@ void MacroAssembler::restore_cpu_control_state_after_jni() {
 #endif // _LP64
 }
 
+void MacroAssembler::load_mirror(Register mirror, Register method) {
+  // get mirror
+  const int mirror_offset = in_bytes(Klass::java_mirror_offset());
+  movptr(mirror, Address(method, Method::const_offset()));
+  movptr(mirror, Address(mirror, ConstMethod::constants_offset()));
+  movptr(mirror, Address(mirror, ConstantPool::pool_holder_offset_in_bytes()));
+  movptr(mirror, Address(mirror, mirror_offset));
+}
 
 void MacroAssembler::load_klass(Register dst, Register src) {
 #ifdef _LP64
@@ -7318,7 +7334,7 @@ void MacroAssembler::string_indexofC8(Register str1, Register str2,
 
     decrementl(cnt1);     // Shift to next element
     cmpl(cnt1, cnt2);
-    jccb(Assembler::negative, RET_NOT_FOUND);  // Left less then substring
+    jcc(Assembler::negative, RET_NOT_FOUND);  // Left less then substring
 
     addptr(result, (1<<scale1));
 
@@ -7359,7 +7375,7 @@ void MacroAssembler::string_indexofC8(Register str1, Register str2,
 
   bind(RET_NOT_FOUND);
   movl(result, -1);
-  jmpb(EXIT);
+  jmp(EXIT);
 
   if (int_cnt2 > stride) {
     // This code is optimized for the case when whole substring
@@ -7367,7 +7383,7 @@ void MacroAssembler::string_indexofC8(Register str1, Register str2,
     bind(MATCH_SUBSTR_HEAD);
     pcmpestri(vec, Address(result, 0), mode);
     // Reload only string if does not match
-    jccb(Assembler::noOverflow, RELOAD_STR); // OF == 0
+    jcc(Assembler::noOverflow, RELOAD_STR); // OF == 0
 
     Label CONT_SCAN_SUBSTR;
     // Compare the rest of substring (> 8 chars).
@@ -7625,7 +7641,7 @@ void MacroAssembler::string_indexof(Register str1, Register str2,
     addl(cnt1, str1);
     decrementl(cnt1);   // Shift to next element
     cmpl(cnt1, cnt2);
-    jccb(Assembler::negative, RET_NOT_FOUND);  // Left less then substring
+    jcc(Assembler::negative, RET_NOT_FOUND);  // Left less then substring
 
     addptr(result, (1<<scale1));
   } // non constant
@@ -7730,7 +7746,7 @@ void MacroAssembler::string_indexof(Register str1, Register str2,
     } else {
       movdqu(vec, Address(str2, 0));
     }
-    jmpb(SCAN_SUBSTR);
+    jmp(SCAN_SUBSTR);
 
     bind(RET_FOUND_LONG);
     movptr(str1, Address(rsp, wordSize));
@@ -7763,9 +7779,9 @@ void MacroAssembler::string_indexof_char(Register str1, Register cnt1, Register 
   movptr(result, str1);
   if (UseAVX >= 2) {
     cmpl(cnt1, stride);
-    jccb(Assembler::less, SCAN_TO_CHAR_LOOP);
+    jcc(Assembler::less, SCAN_TO_CHAR_LOOP);
     cmpl(cnt1, 2*stride);
-    jccb(Assembler::less, SCAN_TO_8_CHAR_INIT);
+    jcc(Assembler::less, SCAN_TO_8_CHAR_INIT);
     movdl(vec1, ch);
     vpbroadcastw(vec1, vec1);
     vpxor(vec2, vec2);
@@ -7791,9 +7807,9 @@ void MacroAssembler::string_indexof_char(Register str1, Register cnt1, Register 
   bind(SCAN_TO_8_CHAR);
   cmpl(cnt1, stride);
   if (UseAVX >= 2) {
-    jccb(Assembler::less, SCAN_TO_CHAR);
+    jcc(Assembler::less, SCAN_TO_CHAR);
   } else {
-    jccb(Assembler::less, SCAN_TO_CHAR_LOOP);
+    jcc(Assembler::less, SCAN_TO_CHAR_LOOP);
     movdl(vec1, ch);
     pshuflw(vec1, vec1, 0x00);
     pshufd(vec1, vec1, 0);
@@ -8045,14 +8061,14 @@ void MacroAssembler::string_compare(Register str1, Register str2,
     jcc(Assembler::notZero, VECTOR_NOT_EQUAL);
     addptr(result, stride2);
     subl(cnt2, stride2);
-    jccb(Assembler::notZero, COMPARE_WIDE_VECTORS_LOOP);
+    jcc(Assembler::notZero, COMPARE_WIDE_VECTORS_LOOP);
     // clean upper bits of YMM registers
     vpxor(vec1, vec1);
 
     // compare wide vectors tail
     bind(COMPARE_WIDE_TAIL);
     testptr(result, result);
-    jccb(Assembler::zero, LENGTH_DIFF_LABEL);
+    jcc(Assembler::zero, LENGTH_DIFF_LABEL);
 
     movl(result, stride2);
     movl(cnt2, result);
@@ -8076,7 +8092,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
     bind(COMPARE_TAIL_LONG);
     movl(cnt2, result);
     cmpl(cnt2, stride);
-    jccb(Assembler::less, COMPARE_SMALL_STR);
+    jcc(Assembler::less, COMPARE_SMALL_STR);
 
     if (ae == StrIntrinsicNode::LL || ae == StrIntrinsicNode::UU) {
       movdqu(vec1, Address(str1, 0));
@@ -8086,7 +8102,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
     pcmpestri(vec1, Address(str2, 0), pcmpmask);
     jcc(Assembler::below, COMPARE_INDEX_CHAR);
     subptr(cnt2, stride);
-    jccb(Assembler::zero, LENGTH_DIFF_LABEL);
+    jcc(Assembler::zero, LENGTH_DIFF_LABEL);
     if (ae == StrIntrinsicNode::LL || ae == StrIntrinsicNode::UU) {
       lea(str1, Address(str1, result, scale));
       lea(str2, Address(str2, result, scale));
@@ -8109,7 +8125,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
     if (ae == StrIntrinsicNode::LL) {
       pcmpmask &= ~0x01;
     }
-    jccb(Assembler::zero, COMPARE_TAIL);
+    jcc(Assembler::zero, COMPARE_TAIL);
     if (ae == StrIntrinsicNode::LL || ae == StrIntrinsicNode::UU) {
       lea(str1, Address(str1, result, scale));
       lea(str2, Address(str2, result, scale));
@@ -8148,7 +8164,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
 
     // compare wide vectors tail
     testptr(result, result);
-    jccb(Assembler::zero, LENGTH_DIFF_LABEL);
+    jcc(Assembler::zero, LENGTH_DIFF_LABEL);
 
     movl(cnt2, stride);
     movl(result, stride);
@@ -8268,7 +8284,7 @@ void MacroAssembler::has_negatives(Register ary1, Register len,
     // Compare 32-byte vectors
     andl(result, 0x0000001f);  //   tail count (in bytes)
     andl(len, 0xffffffe0);   // vector count (in bytes)
-    jccb(Assembler::zero, COMPARE_TAIL);
+    jcc(Assembler::zero, COMPARE_TAIL);
 
     lea(ary1, Address(ary1, len, Address::times_1));
     negptr(len);
@@ -8280,17 +8296,17 @@ void MacroAssembler::has_negatives(Register ary1, Register len,
     bind(COMPARE_WIDE_VECTORS);
     vmovdqu(vec1, Address(ary1, len, Address::times_1));
     vptest(vec1, vec2);
-    jccb(Assembler::notZero, TRUE_LABEL);
+    jcc(Assembler::notZero, TRUE_LABEL);
     addptr(len, 32);
     jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
 
     testl(result, result);
-    jccb(Assembler::zero, FALSE_LABEL);
+    jcc(Assembler::zero, FALSE_LABEL);
 
     vmovdqu(vec1, Address(ary1, result, Address::times_1, -32));
     vptest(vec1, vec2);
-    jccb(Assembler::notZero, TRUE_LABEL);
-    jmpb(FALSE_LABEL);
+    jcc(Assembler::notZero, TRUE_LABEL);
+    jmp(FALSE_LABEL);
 
     bind(COMPARE_TAIL); // len is zero
     movl(len, result);
@@ -8315,12 +8331,12 @@ void MacroAssembler::has_negatives(Register ary1, Register len,
     bind(COMPARE_WIDE_VECTORS);
     movdqu(vec1, Address(ary1, len, Address::times_1));
     ptest(vec1, vec2);
-    jccb(Assembler::notZero, TRUE_LABEL);
+    jcc(Assembler::notZero, TRUE_LABEL);
     addptr(len, 16);
     jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
 
     testl(result, result);
-    jccb(Assembler::zero, FALSE_LABEL);
+    jcc(Assembler::zero, FALSE_LABEL);
 
     movdqu(vec1, Address(ary1, result, Address::times_1, -16));
     ptest(vec1, vec2);
@@ -8482,12 +8498,12 @@ void MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register ar
     vpxor(vec1, vec2);
 
     vptest(vec1, vec1);
-    jccb(Assembler::notZero, FALSE_LABEL);
+    jcc(Assembler::notZero, FALSE_LABEL);
     addptr(limit, 32);
     jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
 
     testl(result, result);
-    jccb(Assembler::zero, TRUE_LABEL);
+    jcc(Assembler::zero, TRUE_LABEL);
 
     vmovdqu(vec1, Address(ary1, result, Address::times_1, -32));
     vmovdqu(vec2, Address(ary2, result, Address::times_1, -32));
@@ -8508,7 +8524,7 @@ void MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register ar
     // Compare 16-byte vectors
     andl(result, 0x0000000f);  //   tail count (in bytes)
     andl(limit, 0xfffffff0);   // vector count (in bytes)
-    jccb(Assembler::zero, COMPARE_TAIL);
+    jcc(Assembler::zero, COMPARE_TAIL);
 
     lea(ary1, Address(ary1, limit, Address::times_1));
     lea(ary2, Address(ary2, limit, Address::times_1));
@@ -8520,12 +8536,12 @@ void MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register ar
     pxor(vec1, vec2);
 
     ptest(vec1, vec1);
-    jccb(Assembler::notZero, FALSE_LABEL);
+    jcc(Assembler::notZero, FALSE_LABEL);
     addptr(limit, 16);
     jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
 
     testl(result, result);
-    jccb(Assembler::zero, TRUE_LABEL);
+    jcc(Assembler::zero, TRUE_LABEL);
 
     movdqu(vec1, Address(ary1, result, Address::times_1, -16));
     movdqu(vec2, Address(ary2, result, Address::times_1, -16));
@@ -8860,7 +8876,7 @@ void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
       movl(tmp5, 0xff00ff00);   // create mask to test for Unicode chars in vector
       movdl(tmp1Reg, tmp5);
       vpbroadcastd(tmp1Reg, tmp1Reg);
-      jmpb(L_chars_32_check);
+      jmp(L_chars_32_check);
 
       bind(L_copy_32_chars);
       vmovdqu(tmp3Reg, Address(src, len, Address::times_2, -64));
@@ -8874,7 +8890,7 @@ void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
 
       bind(L_chars_32_check);
       addptr(len, 32);
-      jccb(Assembler::lessEqual, L_copy_32_chars);
+      jcc(Assembler::lessEqual, L_copy_32_chars);
 
       bind(L_copy_32_chars_exit);
       subptr(len, 16);
@@ -8891,7 +8907,7 @@ void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
     if (UseAVX >= 2) {
       vmovdqu(tmp2Reg, Address(src, len, Address::times_2, -32));
       vptest(tmp2Reg, tmp1Reg);
-      jccb(Assembler::notZero, L_copy_16_chars_exit);
+      jcc(Assembler::notZero, L_copy_16_chars_exit);
       vpackuswb(tmp2Reg, tmp2Reg, tmp1Reg, /* vector_len */ 1);
       vpermq(tmp3Reg, tmp2Reg, 0xD8, /* vector_len */ 1);
     } else {
@@ -8913,7 +8929,7 @@ void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
 
     bind(L_chars_16_check);
     addptr(len, 16);
-    jccb(Assembler::lessEqual, L_copy_16_chars);
+    jcc(Assembler::lessEqual, L_copy_16_chars);
 
     bind(L_copy_16_chars_exit);
     if (UseAVX >= 2) {
@@ -9417,6 +9433,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
 void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register length, Register log2_array_indxscale,
   Register result, Register tmp1, Register tmp2, XMMRegister rymm0, XMMRegister rymm1, XMMRegister rymm2){
   assert(UseSSE42Intrinsics, "SSE4.2 must be enabled.");
+  Label VECTOR64_LOOP, VECTOR64_TAIL, VECTOR64_NOT_EQUAL, VECTOR32_TAIL;
   Label VECTOR32_LOOP, VECTOR16_LOOP, VECTOR8_LOOP, VECTOR4_LOOP;
   Label VECTOR16_TAIL, VECTOR8_TAIL, VECTOR4_TAIL;
   Label VECTOR32_NOT_EQUAL, VECTOR16_NOT_EQUAL, VECTOR8_NOT_EQUAL, VECTOR4_NOT_EQUAL;
@@ -9429,11 +9446,62 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
   shlq(length);
   xorq(result, result);
 
+  if ((UseAVX > 2) &&
+      VM_Version::supports_avx512vlbw()) {
+    set_vector_masking();  // opening of the stub context for programming mask registers
+    cmpq(length, 64);
+    jcc(Assembler::less, VECTOR32_TAIL);
+    movq(tmp1, length);
+    andq(tmp1, 0x3F);      // tail count
+    andq(length, ~(0x3F)); //vector count
+
+    bind(VECTOR64_LOOP);
+    // AVX512 code to compare 64 byte vectors.
+    evmovdqub(rymm0, Address(obja, result), Assembler::AVX_512bit);
+    evpcmpeqb(k7, rymm0, Address(objb, result), Assembler::AVX_512bit);
+    kortestql(k7, k7);
+    jcc(Assembler::aboveEqual, VECTOR64_NOT_EQUAL);     // mismatch
+    addq(result, 64);
+    subq(length, 64);
+    jccb(Assembler::notZero, VECTOR64_LOOP);
+
+    //bind(VECTOR64_TAIL);
+    testq(tmp1, tmp1);
+    jcc(Assembler::zero, SAME_TILL_END);
+
+    bind(VECTOR64_TAIL);
+    // AVX512 code to compare upto 63 byte vectors.
+    // Save k1
+    kmovql(k3, k1);
+    mov64(tmp2, 0xFFFFFFFFFFFFFFFF);
+    shlxq(tmp2, tmp2, tmp1);
+    notq(tmp2);
+    kmovql(k1, tmp2);
+
+    evmovdqub(k1, rymm0, Address(obja, result), Assembler::AVX_512bit);
+    evpcmpeqb(k1, k7, rymm0, Address(objb, result), Assembler::AVX_512bit);
+
+    ktestql(k7, k1);
+    // Restore k1
+    kmovql(k1, k3);
+    jcc(Assembler::below, SAME_TILL_END);     // not mismatch
+
+    bind(VECTOR64_NOT_EQUAL);
+    kmovql(tmp1, k7);
+    notq(tmp1);
+    tzcntq(tmp1, tmp1);
+    addq(result, tmp1);
+    shrq(result);
+    jmp(DONE);
+    bind(VECTOR32_TAIL);
+    clear_vector_masking();   // closing of the stub context for programming mask registers
+  }
+
   cmpq(length, 8);
   jcc(Assembler::equal, VECTOR8_LOOP);
   jcc(Assembler::less, VECTOR4_TAIL);
 
-  if (UseAVX >= 2){
+  if (UseAVX >= 2) {
 
     cmpq(length, 16);
     jcc(Assembler::equal, VECTOR16_LOOP);
@@ -9541,7 +9609,7 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
   jccb(Assembler::notZero, BYTES_NOT_EQUAL);//mismatch found
   jmpb(SAME_TILL_END);
 
-  if (UseAVX >= 2){
+  if (UseAVX >= 2) {
     bind(VECTOR32_NOT_EQUAL);
     vpcmpeqb(rymm2, rymm2, rymm2, Assembler::AVX_256bit);
     vpcmpeqb(rymm0, rymm0, rymm1, Assembler::AVX_256bit);
@@ -9554,7 +9622,7 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
   }
 
   bind(VECTOR16_NOT_EQUAL);
-  if (UseAVX >= 2){
+  if (UseAVX >= 2) {
     vpcmpeqb(rymm2, rymm2, rymm2, Assembler::AVX_128bit);
     vpcmpeqb(rymm0, rymm0, rymm1, Assembler::AVX_128bit);
     pxor(rymm0, rymm2);
@@ -9584,7 +9652,6 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
 
   bind(DONE);
 }
-
 
 //Helper functions for square_to_len()
 

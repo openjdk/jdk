@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,8 +206,8 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
   // in which case bcp should point to the monitorenter since it is within the exception's range.
 
   assert(*bcp != Bytecodes::_monitorenter || is_top_frame, "a _monitorenter must be a top frame");
-  assert(thread->deopt_nmethod() != NULL, "nmethod should be known");
-  guarantee(!(thread->deopt_nmethod()->is_compiled_by_c2() &&
+  assert(thread->deopt_compiled_method() != NULL, "compiled method should be known");
+  guarantee(!(thread->deopt_compiled_method()->is_compiled_by_c2() &&
               *bcp == Bytecodes::_monitorenter             &&
               exec_mode == Deoptimization::Unpack_exception),
             "shouldn't get exception during monitorenter");

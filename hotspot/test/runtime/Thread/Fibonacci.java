@@ -28,6 +28,7 @@
  *     This test is skipped on 32-bit Windows: limited virtual space on Win-32
  *     make this test inherently unstable on Windows with 32-bit VM data model.
  * @requires !(os.family == "windows" & sun.arch.data.model == "32")
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @run main/othervm Fibonacci 15
  */

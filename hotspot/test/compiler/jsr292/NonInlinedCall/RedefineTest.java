@@ -36,10 +36,10 @@
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  *                              compiler.jsr292.NonInlinedCall.RedefineTest
  * @run main/bootclasspath/othervm -javaagent:agent.jar
- *                         -XX:+IgnoreUnrecognizedVMOptions
- *                         -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                         -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1
- *                         compiler.jsr292.NonInlinedCall.RedefineTest
+ *                                 -XX:+IgnoreUnrecognizedVMOptions
+ *                                 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                                 -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1
+ *                                 compiler.jsr292.NonInlinedCall.RedefineTest
  */
 
 package compiler.jsr292.NonInlinedCall;

@@ -25,6 +25,7 @@ import static jdk.test.lib.Asserts.*;
 
 /* @test
  * @summary Tests the different assertions in the Assert class
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  */
 public class AssertsTest {

@@ -55,7 +55,7 @@ private:
 public:
   static void init();
 
-  static bool get_verbose() { return log_is_enabled(Info, classload); }
+  static bool get_verbose() { return log_is_enabled(Info, class, load); }
   static bool set_verbose(bool verbose);
   static void reset_trace_class_unloading() NOT_MANAGEMENT_RETURN;
 

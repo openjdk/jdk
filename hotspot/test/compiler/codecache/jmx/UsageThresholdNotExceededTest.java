@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,9 +58,12 @@ public class UsageThresholdNotExceededTest {
         MemoryPoolMXBean bean = btype.getMemoryPool();
         long initialThresholdCount = bean.getUsageThresholdCount();
         long initialUsage = bean.getUsage().getUsed();
+
         bean.setUsageThreshold(initialUsage + 1 + CodeCacheUtils.MIN_ALLOCATION);
-        CodeCacheUtils.WB.allocateCodeBlob(CodeCacheUtils.MIN_ALLOCATION
-                - CodeCacheUtils.getHeaderSize(btype), btype.id);
+        long size = CodeCacheUtils.getHeaderSize(btype);
+
+        CodeCacheUtils.WB.allocateCodeBlob(Math.max(0, CodeCacheUtils.MIN_ALLOCATION
+                - size), btype.id);
         // a gc cycle triggers usage threshold recalculation
         CodeCacheUtils.WB.fullGC();
         CodeCacheUtils.assertEQorGTE(btype, bean.getUsageThresholdCount(), initialThresholdCount,

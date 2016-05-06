@@ -1021,10 +1021,10 @@ static int vec_stack_to_stack_helper(CodeBuffer *cbuf, bool do_size, int src_off
       __ vmovdqu(xmm0, Address(rsp, -32));
       break;
     case Op_VecZ:
-      __ evmovdqul(Address(rsp, -64), xmm0, 2);
-      __ evmovdqul(xmm0, Address(rsp, src_offset), 2);
-      __ evmovdqul(Address(rsp, dst_offset), xmm0, 2);
-      __ evmovdqul(xmm0, Address(rsp, -64), 2);
+      __ evmovdquq(Address(rsp, -64), xmm0, 2);
+      __ evmovdquq(xmm0, Address(rsp, src_offset), 2);
+      __ evmovdquq(Address(rsp, dst_offset), xmm0, 2);
+      __ evmovdquq(xmm0, Address(rsp, -64), 2);
       break;
     default:
       ShouldNotReachHere();
@@ -9828,27 +9828,6 @@ instruct modD_reg(regD dst, regD src0, regD src1, eAXRegI rax, eFlagsReg cr) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct tanDPR_reg(regDPR1 dst, regDPR1 src) %{
-  predicate (UseSSE<=1);
-  match(Set dst(TanD src));
-  format %{ "DTAN   $dst" %}
-  ins_encode( Opcode(0xD9), Opcode(0xF2),    // fptan
-              Opcode(0xDD), Opcode(0xD8));   // fstp st
-  ins_pipe( pipe_slow );
-%}
-
-instruct tanD_reg(regD dst, eFlagsReg cr) %{
-  predicate (UseSSE>=2);
-  match(Set dst(TanD dst));
-  effect(KILL cr); // Push_{Src|Result}D() uses "{SUB|ADD} ESP,8"
-  format %{ "DTAN   $dst" %}
-  ins_encode( Push_SrcD(dst),
-              Opcode(0xD9), Opcode(0xF2),    // fptan
-              Opcode(0xDD), Opcode(0xD8),   // fstp st
-              Push_ResultD(dst) );
-  ins_pipe( pipe_slow );
-%}
-
 instruct atanDPR_reg(regDPR dst, regDPR src) %{
   predicate (UseSSE<=1);
   match(Set dst(AtanD dst src));
@@ -9877,41 +9856,6 @@ instruct sqrtDPR_reg(regDPR dst, regDPR src) %{
   opcode(0xFA, 0xD9);
   ins_encode( Push_Reg_DPR(src),
               OpcS, OpcP, Pop_Reg_DPR(dst) );
-  ins_pipe( pipe_slow );
-%}
-
-instruct log10DPR_reg(regDPR1 dst, regDPR1 src) %{
-  predicate (UseSSE<=1);
-  // The source Double operand on FPU stack
-  match(Set dst (Log10D src));
-  // fldlg2       ; push log_10(2) on the FPU stack; full 80-bit number
-  // fxch         ; swap ST(0) with ST(1)
-  // fyl2x        ; compute log_10(2) * log_2(x)
-  format %{ "FLDLG2 \t\t\t#Log10\n\t"
-            "FXCH   \n\t"
-            "FYL2X  \t\t\t# Q=Log10*Log_2(x)"
-         %}
-  ins_encode( Opcode(0xD9), Opcode(0xEC),   // fldlg2
-              Opcode(0xD9), Opcode(0xC9),   // fxch
-              Opcode(0xD9), Opcode(0xF1));  // fyl2x
-
-  ins_pipe( pipe_slow );
-%}
-
-instruct log10D_reg(regD dst, regD src, eFlagsReg cr) %{
-  predicate (UseSSE>=2);
-  effect(KILL cr);
-  match(Set dst (Log10D src));
-  // fldlg2       ; push log_10(2) on the FPU stack; full 80-bit number
-  // fyl2x        ; compute log_10(2) * log_2(x)
-  format %{ "FLDLG2 \t\t\t#Log10\n\t"
-            "FYL2X  \t\t\t# Q=Log10*Log_2(x)"
-         %}
-  ins_encode( Opcode(0xD9), Opcode(0xEC),   // fldlg2
-              Push_SrcD(src),
-              Opcode(0xD9), Opcode(0xF1),   // fyl2x
-              Push_ResultD(dst));
-
   ins_pipe( pipe_slow );
 %}
 
@@ -12103,6 +12047,7 @@ instruct jmpCon(cmpOp cop, eFlagsReg cr, label labl) %{
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
 instruct jmpLoopEnd(cmpOp cop, eFlagsReg cr, label labl) %{
+  predicate(!n->has_vector_mask_set());
   match(CountedLoopEnd cop cr);
   effect(USE labl);
 
@@ -12118,6 +12063,7 @@ instruct jmpLoopEnd(cmpOp cop, eFlagsReg cr, label labl) %{
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
 instruct jmpLoopEndU(cmpOpU cop, eFlagsRegU cmp, label labl) %{
+  predicate(!n->has_vector_mask_set());
   match(CountedLoopEnd cop cmp);
   effect(USE labl);
 
@@ -12132,6 +12078,7 @@ instruct jmpLoopEndU(cmpOpU cop, eFlagsRegU cmp, label labl) %{
 %}
 
 instruct jmpLoopEndUCF(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
+  predicate(!n->has_vector_mask_set());
   match(CountedLoopEnd cop cmp);
   effect(USE labl);
 
@@ -12141,6 +12088,60 @@ instruct jmpLoopEndUCF(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
   ins_encode %{
     Label* L = $labl$$label;
     __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
+  %}
+  ins_pipe( pipe_jcc );
+%}
+
+// mask version
+// Jump Direct Conditional - Label defines a relative address from Jcc+1
+instruct jmpLoopEnd_and_restoreMask(cmpOp cop, eFlagsReg cr, label labl) %{
+  predicate(n->has_vector_mask_set());
+  match(CountedLoopEnd cop cr);
+  effect(USE labl);
+
+  ins_cost(400);
+  format %{ "J$cop    $labl\t# Loop end\n\t"
+            "restorevectmask \t# vector mask restore for loops" %}
+  size(10);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
+    __ restorevectmask();
+  %}
+  ins_pipe( pipe_jcc );
+%}
+
+// Jump Direct Conditional - Label defines a relative address from Jcc+1
+instruct jmpLoopEndU_and_restoreMask(cmpOpU cop, eFlagsRegU cmp, label labl) %{
+  predicate(n->has_vector_mask_set());
+  match(CountedLoopEnd cop cmp);
+  effect(USE labl);
+
+  ins_cost(400);
+  format %{ "J$cop,u  $labl\t# Loop end\n\t"
+            "restorevectmask \t# vector mask restore for loops" %}
+  size(10);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
+    __ restorevectmask();
+  %}
+  ins_pipe( pipe_jcc );
+%}
+
+instruct jmpLoopEndUCF_and_restoreMask(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
+  predicate(n->has_vector_mask_set());
+  match(CountedLoopEnd cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "J$cop,u  $labl\t# Loop end\n\t"
+            "restorevectmask \t# vector mask restore for loops" %}
+  size(10);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
+    __ restorevectmask();
   %}
   ins_pipe( pipe_jcc );
 %}

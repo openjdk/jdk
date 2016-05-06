@@ -587,7 +587,7 @@
           range(0, 100)                                                     \
                                                                             \
   product(bool, BlockLayoutRotateLoops, true,                               \
-          "Allow back branches to be fall throughs in the block layour")    \
+          "Allow back branches to be fall throughs in the block layout")    \
                                                                             \
   develop(bool, InlineReflectionGetCallerClass, true,                       \
           "inline sun.reflect.Reflection.getCallerClass(), known to be "    \

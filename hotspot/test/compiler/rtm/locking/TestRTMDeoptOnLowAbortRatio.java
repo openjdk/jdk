@@ -43,7 +43,7 @@ import jdk.test.lib.cli.predicate.AndPredicate;
 import rtm.*;
 import rtm.predicate.SupportedCPU;
 import rtm.predicate.SupportedVM;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * Test verifies that low abort ratio method will be deoptimized with

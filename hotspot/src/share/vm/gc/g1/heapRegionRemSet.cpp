@@ -43,7 +43,7 @@ class PerRegionTable: public CHeapObj<mtGC> {
   friend class HeapRegionRemSetIterator;
 
   HeapRegion*     _hr;
-  BitMap          _bm;
+  CHeapBitMap     _bm;
   jint            _occupied;
 
   // next pointer for free/allocated 'all' list
@@ -69,7 +69,7 @@ protected:
   PerRegionTable(HeapRegion* hr) :
     _hr(hr),
     _occupied(0),
-    _bm(HeapRegion::CardsPerRegion, false /* in-resource-area */),
+    _bm(HeapRegion::CardsPerRegion),
     _collision_list_next(NULL), _next(NULL), _prev(NULL)
   {}
 
@@ -259,8 +259,7 @@ size_t OtherRegionsTable::_fine_eviction_sample_size = 0;
 OtherRegionsTable::OtherRegionsTable(HeapRegion* hr, Mutex* m) :
   _g1h(G1CollectedHeap::heap()),
   _hr(hr), _m(m),
-  _coarse_map(G1CollectedHeap::heap()->max_regions(),
-              false /* in-resource-area */),
+  _coarse_map(G1CollectedHeap::heap()->max_regions()),
   _fine_grain_regions(NULL),
   _first_all_fine_prts(NULL), _last_all_fine_prts(NULL),
   _n_fine_entries(0), _n_coarse_entries(0),
@@ -519,8 +518,10 @@ void OtherRegionsTable::scrub(G1CardLiveData* live_data) {
   log_develop_trace(gc, remset, scrub)("Scrubbing region %u:", _hr->hrm_index());
 
   log_develop_trace(gc, remset, scrub)("   Coarse map: before = " SIZE_FORMAT "...", _n_coarse_entries);
-  live_data->remove_nonlive_regions(&_coarse_map);
-  _n_coarse_entries = _coarse_map.count_one_bits();
+  if (_n_coarse_entries > 0) {
+    live_data->remove_nonlive_regions(&_coarse_map);
+    _n_coarse_entries = _coarse_map.count_one_bits();
+  }
   log_develop_trace(gc, remset, scrub)("   after = " SIZE_FORMAT ".", _n_coarse_entries);
 
   // Now do the fine-grained maps.
@@ -646,7 +647,9 @@ void OtherRegionsTable::clear() {
 
   _first_all_fine_prts = _last_all_fine_prts = NULL;
   _sparse_table.clear();
-  _coarse_map.clear();
+  if (_n_coarse_entries > 0) {
+    _coarse_map.clear();
+  }
   _n_fine_entries = 0;
   _n_coarse_entries = 0;
 
@@ -692,8 +695,8 @@ HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetTable* bot,
                                    HeapRegion* hr)
   : _bot(bot),
     _m(Mutex::leaf, FormatBuffer<128>("HeapRegionRemSet lock #%u", hr->hrm_index()), true, Monitor::_safepoint_check_never),
-    _code_roots(), _other_regions(hr, &_m), _iter_state(Unclaimed), _iter_claimed(0) {
-  reset_for_par_iteration();
+    _code_roots(),
+    _other_regions(hr, &_m) {
 }
 
 void HeapRegionRemSet::setup_remset_size() {
@@ -708,20 +711,6 @@ void HeapRegionRemSet::setup_remset_size() {
     G1RSetRegionEntries = G1RSetRegionEntriesBase * (region_size_log_mb + 1);
   }
   guarantee(G1RSetSparseRegionEntries > 0 && G1RSetRegionEntries > 0 , "Sanity");
-}
-
-bool HeapRegionRemSet::claim_iter() {
-  if (_iter_state != Unclaimed) return false;
-  jint res = Atomic::cmpxchg(Claimed, (jint*)(&_iter_state), Unclaimed);
-  return (res == Unclaimed);
-}
-
-void HeapRegionRemSet::set_iter_complete() {
-  _iter_state = Complete;
-}
-
-bool HeapRegionRemSet::iter_is_complete() {
-  return _iter_state == Complete;
 }
 
 #ifndef PRODUCT
@@ -760,14 +749,6 @@ void HeapRegionRemSet::clear_locked() {
   _code_roots.clear();
   _other_regions.clear();
   assert(occupied_locked() == 0, "Should be clear.");
-  reset_for_par_iteration();
-}
-
-void HeapRegionRemSet::reset_for_par_iteration() {
-  _iter_state = Unclaimed;
-  _iter_claimed = 0;
-  // It's good to check this to make sure that the two methods are in sync.
-  assert(verify_ready_for_par_iteration(), "post-condition");
 }
 
 void HeapRegionRemSet::scrub(G1CardLiveData* live_data) {

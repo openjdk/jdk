@@ -234,27 +234,4 @@ class UpdateDensePrefixTask : public GCTask {
 
   virtual void do_it(GCTaskManager* manager, uint which);
 };
-
-//
-// DrainStacksCompactionTask
-//
-// This task processes regions that have been added to the stacks of each
-// compaction manager.
-//
-// Trying to use one draining thread does not work because there are no
-// guarantees about which task will be picked up by which thread.  For example,
-// if thread A gets all the preloaded regions, thread A may not get a draining
-// task (they may all be done by other threads).
-//
-
-class DrainStacksCompactionTask : public GCTask {
- uint _stack_index;
- uint stack_index() { return _stack_index; }
- public:
-  DrainStacksCompactionTask(uint stack_index) : GCTask(),
-                                                _stack_index(stack_index) {};
-  char* name() { return (char *)"drain-region-task"; }
-  virtual void do_it(GCTaskManager* manager, uint which);
-};
-
 #endif // SHARE_VM_GC_PARALLEL_PCTASKS_HPP

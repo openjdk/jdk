@@ -29,6 +29,7 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 #define __ _masm->
 
@@ -373,31 +374,59 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     __ sqrtsd(xmm0, Address(rsp, wordSize));
   } else if (kind == Interpreter::java_lang_math_exp) {
     __ movdbl(xmm0, Address(rsp, wordSize));
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dexp())));
+    if (StubRoutines::dexp() != NULL) {
+      __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dexp())));
+    } else {
+      __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dexp)));
+    }
   } else if (kind == Interpreter::java_lang_math_log) {
     __ movdbl(xmm0, Address(rsp, wordSize));
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dlog())));
+    if (StubRoutines::dlog() != NULL) {
+      __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dlog())));
+    } else {
+      __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dlog)));
+    }
+  } else if (kind == Interpreter::java_lang_math_log10) {
+    __ movdbl(xmm0, Address(rsp, wordSize));
+    if (StubRoutines::dlog10() != NULL) {
+      __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dlog10())));
+    } else {
+      __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dlog10)));
+    }
+  } else if (kind == Interpreter::java_lang_math_sin) {
+    __ movdbl(xmm0, Address(rsp, wordSize));
+    if (StubRoutines::dsin() != NULL) {
+      __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dsin())));
+    } else {
+      __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dsin)));
+    }
+  } else if (kind == Interpreter::java_lang_math_cos) {
+    __ movdbl(xmm0, Address(rsp, wordSize));
+    if (StubRoutines::dcos() != NULL) {
+      __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dcos())));
+    } else {
+      __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dcos)));
+    }
   } else if (kind == Interpreter::java_lang_math_pow) {
     __ movdbl(xmm1, Address(rsp, wordSize));
     __ movdbl(xmm0, Address(rsp, 3 * wordSize));
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dpow())));
+    if (StubRoutines::dpow() != NULL) {
+      __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dpow())));
+    } else {
+      __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dpow)));
+    }
+  } else if (kind == Interpreter::java_lang_math_tan) {
+    __ movdbl(xmm0, Address(rsp, wordSize));
+    if (StubRoutines::dtan() != NULL) {
+      __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dtan())));
+    } else {
+      __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dtan)));
+    }
   } else {
     __ fld_d(Address(rsp, wordSize));
     switch (kind) {
-      case Interpreter::java_lang_math_sin :
-          __ trigfunc('s');
-          break;
-      case Interpreter::java_lang_math_cos :
-          __ trigfunc('c');
-          break;
-      case Interpreter::java_lang_math_tan :
-          __ trigfunc('t');
-          break;
       case Interpreter::java_lang_math_abs:
           __ fabs();
-          break;
-      case Interpreter::java_lang_math_log10:
-          __ flog10();
           break;
       default                              :
           ShouldNotReachHere();

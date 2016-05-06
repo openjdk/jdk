@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,7 @@ class CodeCache : AllStatic {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class NMethodIterator;
+  friend class CompiledMethodIterator;
   friend class WhiteBox;
   friend class CodeCacheLoader;
  private:
@@ -134,12 +135,13 @@ class CodeCache : AllStatic {
   static void blobs_do(void f(CodeBlob* cb));              // iterates over all CodeBlobs
   static void blobs_do(CodeBlobClosure* f);                // iterates over all CodeBlobs
   static void nmethods_do(void f(nmethod* nm));            // iterates over all nmethods
-  static void alive_nmethods_do(void f(nmethod* nm));      // iterates over all alive nmethods
+  static void metadata_do(void f(Metadata* m));            // iterates over metadata in alive nmethods
 
   // Lookup
   static CodeBlob* find_blob(void* start);              // Returns the CodeBlob containing the given address
   static CodeBlob* find_blob_unsafe(void* start);       // Same as find_blob but does not fail if looking up a zombie method
   static nmethod*  find_nmethod(void* start);           // Returns the nmethod containing the given address
+  static CompiledMethod* find_compiled(void* start);
 
   static int       blob_count();                        // Returns the total number of CodeBlobs in the cache
   static int       blob_count(int code_blob_type);
@@ -207,8 +209,8 @@ class CodeCache : AllStatic {
   static bool heap_available(int code_blob_type);
 
   // Returns the CodeBlobType for the given nmethod
-  static int get_code_blob_type(nmethod* nm) {
-    return get_code_heap(nm)->code_blob_type();
+  static int get_code_blob_type(CompiledMethod* cm) {
+    return get_code_heap(cm)->code_blob_type();
   }
 
   // Returns the CodeBlobType for the given compilation level
@@ -335,6 +337,55 @@ private:
     }
     return _code_blob != NULL;
   }
+};
+
+// Iterator to iterate over compiled methods in the CodeCache.
+class CompiledMethodIterator : public StackObj {
+ private:
+  CodeBlob* _code_blob;   // Current CodeBlob
+  int _code_blob_type;    // Refers to current CodeHeap
+
+ public:
+  CompiledMethodIterator() {
+    initialize(NULL); // Set to NULL, initialized by first call to next()
+  }
+
+  CompiledMethodIterator(CompiledMethod* cm) {
+    initialize(cm);
+  }
+
+  // Advance iterator to next compiled method
+  bool next() {
+    assert_locked_or_safepoint(CodeCache_lock);
+    assert(_code_blob_type < CodeBlobType::NumTypes, "end reached");
+
+    bool result = next_compiled_method();
+    while (!result && (_code_blob_type < CodeBlobType::MethodProfiled)) {
+      // Advance to next code heap if segmented code cache
+      _code_blob_type++;
+      result = next_compiled_method();
+    }
+    return result;
+  }
+
+  // Advance iterator to next alive compiled method
+  bool next_alive() {
+    bool result = next();
+    while(result && !_code_blob->is_alive()) {
+      result = next();
+    }
+    return result;
+  }
+
+  bool end()        const   { return _code_blob == NULL; }
+  CompiledMethod* method() const   { return (_code_blob != NULL) ? _code_blob->as_compiled_method() : NULL; }
+
+private:
+  // Initialize iterator to given compiled method
+  void initialize(CompiledMethod* cm);
+
+  // Advance iterator to the next compiled method in the current code heap
+  bool next_compiled_method();
 };
 
 #endif // SHARE_VM_CODE_CODECACHE_HPP

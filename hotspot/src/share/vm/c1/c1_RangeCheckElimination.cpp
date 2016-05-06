@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,8 @@ void RangeCheckElimination::eliminate(IR *ir) {
 
 // Constructor
 RangeCheckEliminator::RangeCheckEliminator(IR *ir) :
-  _bounds(Instruction::number_of_instructions(), NULL),
-  _access_indexed_info(Instruction::number_of_instructions(), NULL)
+  _bounds(Instruction::number_of_instructions(), Instruction::number_of_instructions(), NULL),
+  _access_indexed_info(Instruction::number_of_instructions(), Instruction::number_of_instructions(), NULL)
 {
   _visitor.set_range_check_eliminator(this);
   _ir = ir;
@@ -303,28 +303,28 @@ RangeCheckEliminator::Bound *RangeCheckEliminator::get_bound(Value v) {
   // Wrong type or NULL -> No bound
   if (!v || (!v->type()->as_IntType() && !v->type()->as_ObjectType())) return NULL;
 
-  if (!_bounds[v->id()]) {
+  if (!_bounds.at(v->id())) {
     // First (default) bound is calculated
     // Create BoundStack
-    _bounds[v->id()] = new BoundStack();
+    _bounds.at_put(v->id(), new BoundStack());
     _visitor.clear_bound();
     Value visit_value = v;
     visit_value->visit(&_visitor);
     Bound *bound = _visitor.bound();
     if (bound) {
-      _bounds[v->id()]->push(bound);
+      _bounds.at(v->id())->push(bound);
     }
-    if (_bounds[v->id()]->length() == 0) {
+    if (_bounds.at(v->id())->length() == 0) {
       assert(!(v->as_Constant() && v->type()->as_IntConstant()), "constants not handled here");
-      _bounds[v->id()]->push(new Bound());
+      _bounds.at(v->id())->push(new Bound());
     }
-  } else if (_bounds[v->id()]->length() == 0) {
+  } else if (_bounds.at(v->id())->length() == 0) {
     // To avoid endless loops, bound is currently in calculation -> nothing known about it
     return new Bound();
   }
 
   // Return bound
-  return _bounds[v->id()]->top();
+  return _bounds.at(v->id())->top();
 }
 
 // Update bound
@@ -353,28 +353,28 @@ void RangeCheckEliminator::update_bound(IntegerStack &pushed, Value v, Bound *bo
     // No bound update for constants
     return;
   }
-  if (!_bounds[v->id()]) {
+  if (!_bounds.at(v->id())) {
     get_bound(v);
-    assert(_bounds[v->id()], "Now Stack must exist");
+    assert(_bounds.at(v->id()), "Now Stack must exist");
   }
   Bound *top = NULL;
-  if (_bounds[v->id()]->length() > 0) {
-    top = _bounds[v->id()]->top();
+  if (_bounds.at(v->id())->length() > 0) {
+    top = _bounds.at(v->id())->top();
   }
   if (top) {
     bound->and_op(top);
   }
-  _bounds[v->id()]->push(bound);
+  _bounds.at(v->id())->push(bound);
   pushed.append(v->id());
 }
 
 // Add instruction + idx for in block motion
 void RangeCheckEliminator::add_access_indexed_info(InstructionList &indices, int idx, Value instruction, AccessIndexed *ai) {
   int id = instruction->id();
-  AccessIndexedInfo *aii = _access_indexed_info[id];
+  AccessIndexedInfo *aii = _access_indexed_info.at(id);
   if (aii == NULL) {
     aii = new AccessIndexedInfo();
-    _access_indexed_info[id] = aii;
+    _access_indexed_info.at_put(id, aii);
     indices.append(instruction);
     aii->_min = idx;
     aii->_max = idx;
@@ -461,7 +461,7 @@ void RangeCheckEliminator::in_block_motion(BlockBegin *block, AccessIndexedList 
     if (_optimistic) {
       for (int i = 0; i < indices.length(); i++) {
         Instruction *index_instruction = indices.at(i);
-        AccessIndexedInfo *info = _access_indexed_info[index_instruction->id()];
+        AccessIndexedInfo *info = _access_indexed_info.at(index_instruction->id());
         assert(info != NULL, "Info must not be null");
 
         // if idx < 0, max > 0, max + idx may fall between 0 and
@@ -562,7 +562,7 @@ void RangeCheckEliminator::in_block_motion(BlockBegin *block, AccessIndexedList 
     // Clear data structures for next array
     for (int i = 0; i < indices.length(); i++) {
       Instruction *index_instruction = indices.at(i);
-      _access_indexed_info[index_instruction->id()] = NULL;
+      _access_indexed_info.at_put(index_instruction->id(), NULL);
     }
     indices.clear();
   }
@@ -1005,7 +1005,7 @@ void RangeCheckEliminator::calc_bounds(BlockBegin *block, BlockBegin *loop_heade
 
   // Reset stack
   for (int i=0; i<pushed.length(); i++) {
-    _bounds[pushed[i]]->pop();
+    _bounds.at(pushed.at(i))->pop();
   }
 }
 
@@ -1051,7 +1051,7 @@ void RangeCheckEliminator::dump_condition_stack(BlockBegin *block) {
 #endif
 
 // Verification or the IR
-RangeCheckEliminator::Verification::Verification(IR *ir) : _used(BlockBegin::number_of_blocks(), false) {
+RangeCheckEliminator::Verification::Verification(IR *ir) : _used(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), false) {
   this->_ir = ir;
   ir->iterate_linear_scan_order(this);
 }
@@ -1146,14 +1146,14 @@ bool RangeCheckEliminator::Verification::can_reach(BlockBegin *start, BlockBegin
   if (start == end) return start != dont_use;
   // Simple BSF from start to end
   //  BlockBeginList _current;
-  for (int i=0; i<_used.length(); i++) {
-    _used[i] = false;
+  for (int i=0; i < _used.length(); i++) {
+    _used.at_put(i, false);
   }
-  _current.truncate(0);
-  _successors.truncate(0);
+  _current.trunc_to(0);
+  _successors.trunc_to(0);
   if (start != dont_use) {
     _current.push(start);
-    _used[start->block_id()] = true;
+    _used.at_put(start->block_id(), true);
   }
 
   //  BlockBeginList _successors;
@@ -1180,17 +1180,17 @@ bool RangeCheckEliminator::Verification::can_reach(BlockBegin *start, BlockBegin
       }
     }
     for (int i=0; i<_successors.length(); i++) {
-      BlockBegin *sux = _successors[i];
+      BlockBegin *sux = _successors.at(i);
       assert(sux != NULL, "Successor must not be NULL!");
       if (sux == end) {
         return true;
       }
-      if (sux != dont_use && !_used[sux->block_id()]) {
-        _used[sux->block_id()] = true;
+      if (sux != dont_use && !_used.at(sux->block_id())) {
+        _used.at_put(sux->block_id(), true);
         _current.push(sux);
       }
     }
-    _successors.truncate(0);
+    _successors.trunc_to(0);
   }
 
   return false;

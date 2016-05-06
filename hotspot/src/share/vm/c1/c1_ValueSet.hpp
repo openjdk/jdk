@@ -36,7 +36,7 @@
 
 class ValueSet: public CompilationResourceObj {
  private:
-  BitMap _map;
+  ResourceBitMap _map;
 
  public:
   ValueSet();

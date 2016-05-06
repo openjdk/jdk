@@ -48,9 +48,9 @@ define_pd_global(intx, InlineFrequencyCount,     100);
 #define DEFAULT_STACK_SHADOW_PAGES (4 DEBUG_ONLY(+5))
 #define DEFAULT_STACK_RESERVED_PAGES (0)
 
-#define MIN_STACK_YELLOW_PAGES 1
-#define MIN_STACK_RED_PAGES    1
-#define MIN_STACK_SHADOW_PAGES 1
+#define MIN_STACK_YELLOW_PAGES DEFAULT_STACK_YELLOW_PAGES
+#define MIN_STACK_RED_PAGES    DEFAULT_STACK_RED_PAGES
+#define MIN_STACK_SHADOW_PAGES DEFAULT_STACK_SHADOW_PAGES
 #define MIN_STACK_RESERVED_PAGES (0)
 
 define_pd_global(intx, StackYellowPages, DEFAULT_STACK_YELLOW_PAGES);
@@ -76,7 +76,8 @@ define_pd_global(bool, CompactStrings, false);
 // avoid biased locking while we are bootstrapping the aarch64 build
 define_pd_global(bool, UseBiasedLocking, false);
 
-define_pd_global(intx, InitArrayShortSize, 18*BytesPerLong);
+// Clear short arrays bigger than one word in an arch-specific way
+define_pd_global(intx, InitArrayShortSize, BytesPerLong);
 
 #if defined(COMPILER1) || defined(COMPILER2)
 define_pd_global(intx, InlineSmallCode,          1000);
@@ -131,6 +132,11 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Use SIMD instructions in generated memory move code")        \
   product(bool, UseLSE, false,                                          \
           "Use LSE instructions")                                       \
+  product(bool, UseBlockZeroing, true,                                  \
+          "Use DC ZVA for block zeroing")                               \
+  product(intx, BlockZeroingLowLimit, 256,                              \
+          "Minimum size in bytes when block zeroing will be used")      \
+          range(1, max_jint)                                            \
   product(bool, TraceTraps, false, "Trace all traps the signal handler")
 
 #endif

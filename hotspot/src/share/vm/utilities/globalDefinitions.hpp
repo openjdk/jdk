@@ -1004,7 +1004,9 @@ class VM_Operation;
 class VMOperationQueue;
 
 class CodeBlob;
-class  nmethod;
+class  CompiledMethod;
+class   nmethod;
+class RuntimeBlob;
 class  OSRAdapter;
 class  I2CAdapter;
 class  C2IAdapter;

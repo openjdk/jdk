@@ -38,7 +38,7 @@ import jdk.vm.ci.hotspotvmconfig.HotSpotVMData;
 import jdk.vm.ci.hotspotvmconfig.HotSpotVMField;
 import jdk.vm.ci.hotspotvmconfig.HotSpotVMFlag;
 import jdk.vm.ci.hotspotvmconfig.HotSpotVMType;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 //JaCoCo Exclude
 
@@ -1230,7 +1230,7 @@ public class HotSpotVMConfig {
     @HotSpotVMField(name = "Method::_method_counters", type = "MethodCounters*", get = HotSpotVMField.Type.OFFSET) @Stable public int methodCountersOffset;
     @HotSpotVMField(name = "Method::_method_data", type = "MethodData*", get = HotSpotVMField.Type.OFFSET) @Stable public int methodDataOffset;
     @HotSpotVMField(name = "Method::_from_compiled_entry", type = "address", get = HotSpotVMField.Type.OFFSET) @Stable public int methodCompiledEntryOffset;
-    @HotSpotVMField(name = "Method::_code", type = "nmethod*", get = HotSpotVMField.Type.OFFSET) @Stable public int methodCodeOffset;
+    @HotSpotVMField(name = "Method::_code", type = "CompiledMethod*", get = HotSpotVMField.Type.OFFSET) @Stable public int methodCodeOffset;
 
     @HotSpotVMConstant(name = "Method::_jfr_towrite") @Stable public int methodFlagsJfrTowrite;
     @HotSpotVMConstant(name = "Method::_caller_sensitive") @Stable public int methodFlagsCallerSensitive;

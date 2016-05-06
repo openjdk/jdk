@@ -179,12 +179,6 @@
   develop(bool, G1ScrubRemSets, true,                                       \
           "When true, do RS scrubbing after cleanup.")                      \
                                                                             \
-  develop(intx, G1YoungSurvRateNumRegionsSummary, 0,                        \
-          "the number of regions for which we'll print a surv rate "        \
-          "summary.")                                                       \
-          range(0, max_intx)                                                \
-          constraint(G1YoungSurvRateNumRegionsSummaryConstraintFunc,AfterErgo)\
-                                                                            \
   product(uintx, G1ReservePercent, 10,                                      \
           "It determines the minimum reserve we should have in the heap "   \
           "to minimize the probability of promotion failure.")              \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,11 +212,14 @@ class StubRoutines: AllStatic {
 
   static address _dexp;
   static address _dlog;
+  static address _dlog10;
   static address _dpow;
   static address _dsin;
   static address _dcos;
   static address _dlibm_sin_cos_huge;
   static address _dlibm_reduce_pi04l;
+  static address _dlibm_tan_cot_huge;
+  static address _dtan;
 
   // These are versions of the java.lang.Math methods which perform
   // the same operations as the intrinsic version.  They are used for
@@ -251,8 +254,8 @@ class StubRoutines: AllStatic {
       (_code2 != NULL && _code2->blob_contains(addr)) ;
   }
 
-  static CodeBlob* code1() { return _code1; }
-  static CodeBlob* code2() { return _code2; }
+  static RuntimeBlob* code1() { return _code1; }
+  static RuntimeBlob* code2() { return _code2; }
 
   // Debugging
   static jint    verify_oop_count()                        { return _verify_oop_count; }
@@ -390,11 +393,14 @@ class StubRoutines: AllStatic {
 
   static address dexp()                { return _dexp; }
   static address dlog()                { return _dlog; }
+  static address dlog10()                { return _dlog10; }
   static address dpow()                { return _dpow; }
   static address dsin()                { return _dsin; }
   static address dcos()                { return _dcos; }
   static address dlibm_reduce_pi04l()  { return _dlibm_reduce_pi04l; }
   static address dlibm_sin_cos_huge()  { return _dlibm_sin_cos_huge; }
+  static address dlibm_tan_cot_huge()  { return _dlibm_tan_cot_huge; }
+  static address dtan()                { return _dtan; }
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
 
