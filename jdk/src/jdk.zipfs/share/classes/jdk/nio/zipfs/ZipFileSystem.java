@@ -68,36 +68,29 @@ import static java.nio.file.StandardCopyOption.*;
 class ZipFileSystem extends FileSystem {
 
     private final ZipFileSystemProvider provider;
-    private final ZipPath defaultdir;
-    private boolean readOnly = false;
     private final Path zfpath;
     private final ZipCoder zc;
-
+    private final boolean noExtt;        // see readExtra()
+    private final ZipPath rootdir;
     // configurable by env map
-    private final String  defaultDir;    // default dir for the file system
-    private final String  nameEncoding;  // default encoding for name/comment
     private final boolean useTempFile;   // use a temp file for newOS, default
                                          // is to use BAOS for better performance
-    private final boolean createNew;     // create a new zip if not exists
+    private boolean readOnly = false;    // readonly file system
     private static final boolean isWindows = AccessController.doPrivileged(
             (PrivilegedAction<Boolean>) () -> System.getProperty("os.name")
                                                     .startsWith("Windows"));
 
     ZipFileSystem(ZipFileSystemProvider provider,
                   Path zfpath,
-                  Map<String, ?> env)
-        throws IOException
+                  Map<String, ?> env)  throws IOException
     {
-        // configurable env setup
-        this.createNew    = "true".equals(env.get("create"));
-        this.nameEncoding = env.containsKey("encoding") ?
-                            (String)env.get("encoding") : "UTF-8";
+        // create a new zip if not exists
+        boolean createNew = "true".equals(env.get("create"));
+        // default encoding for name/comment
+        String nameEncoding = env.containsKey("encoding") ?
+                              (String)env.get("encoding") : "UTF-8";
+        this.noExtt = "false".equals(env.get("zipinfo-time"));
         this.useTempFile  = TRUE.equals(env.get("useTempFile"));
-        this.defaultDir   = env.containsKey("default.dir") ?
-                            (String)env.get("default.dir") : "/";
-        if (this.defaultDir.charAt(0) != '/')
-            throw new IllegalArgumentException("default dir should be absolute");
-
         this.provider = provider;
         this.zfpath = zfpath;
         if (Files.notExists(zfpath)) {
@@ -113,10 +106,9 @@ class ZipFileSystem extends FileSystem {
         zfpath.getFileSystem().provider().checkAccess(zfpath, AccessMode.READ);
         boolean writeable = AccessController.doPrivileged(
             (PrivilegedAction<Boolean>) () ->  Files.isWritable(zfpath));
-        if (!writeable)
-            this.readOnly = true;
+        this.readOnly = !writeable;
         this.zc = ZipCoder.get(nameEncoding);
-        this.defaultdir = new ZipPath(this, getBytes(defaultDir));
+        this.rootdir = new ZipPath(this, new byte[]{'/'});
         this.ch = Files.newByteChannel(zfpath, READ);
         try {
             this.cen = initCEN();
@@ -161,33 +153,29 @@ class ZipFileSystem extends FileSystem {
 
     @Override
     public Iterable<Path> getRootDirectories() {
-        ArrayList<Path> pathArr = new ArrayList<>();
-        pathArr.add(new ZipPath(this, new byte[]{'/'}));
-        return pathArr;
+        return List.of(rootdir);
     }
 
-    ZipPath getDefaultDir() {  // package private
-        return defaultdir;
+    ZipPath getRootDir() {
+        return rootdir;
     }
 
     @Override
     public ZipPath getPath(String first, String... more) {
-        String path;
         if (more.length == 0) {
-            path = first;
-        } else {
-            StringBuilder sb = new StringBuilder();
-            sb.append(first);
-            for (String segment: more) {
-                if (segment.length() > 0) {
-                    if (sb.length() > 0)
-                        sb.append('/');
-                    sb.append(segment);
-                }
-            }
-            path = sb.toString();
+            return new ZipPath(this, getBytes(first));
         }
-        return new ZipPath(this, getBytes(path));
+        StringBuilder sb = new StringBuilder();
+        sb.append(first);
+        for (String path : more) {
+            if (path.length() > 0) {
+                if (sb.length() > 0) {
+                    sb.append('/');
+                }
+                sb.append(path);
+            }
+        }
+        return new ZipPath(this, getBytes(sb.toString()));
     }
 
     @Override
@@ -206,14 +194,11 @@ class ZipFileSystem extends FileSystem {
 
     @Override
     public Iterable<FileStore> getFileStores() {
-        ArrayList<FileStore> list = new ArrayList<>(1);
-        list.add(new ZipFileStore(new ZipPath(this, new byte[]{'/'})));
-        return list;
+        return List.of(new ZipFileStore(rootdir));
     }
 
     private static final Set<String> supportedFileAttributeViews =
-            Collections.unmodifiableSet(
-                new HashSet<String>(Arrays.asList("basic", "zip")));
+            Set.of("basic", "zip");
 
     @Override
     public Set<String> supportedFileAttributeViews() {
@@ -331,12 +316,26 @@ class ZipFileSystem extends FileSystem {
                     return null;
                 e = new Entry(inode.name);       // pseudo directory
                 e.method = METHOD_STORED;        // STORED for dir
-                e.mtime = e.atime = e.ctime = -1;// -1 for all times
+                e.mtime = e.atime = e.ctime = zfsDefaultTimeStamp;
             }
         } finally {
             endRead();
         }
-        return new ZipFileAttributes(e);
+        return e;
+    }
+
+    void checkAccess(byte[] path) throws IOException {
+        beginRead();
+        try {
+            ensureOpen();
+            // is it necessary to readCEN as a sanity check?
+            if (getInode(path) == null) {
+                throw new NoSuchFileException(toString());
+            }
+
+        } finally {
+            endRead();
+        }
     }
 
     void setTimes(byte[] path, FileTime mtime, FileTime atime, FileTime ctime)
@@ -387,14 +386,6 @@ class ZipFileSystem extends FileSystem {
         }
     }
 
-    private ZipPath toZipPath(byte[] path) {
-        // make it absolute
-        byte[] p = new byte[path.length + 1];
-        p[0] = '/';
-        System.arraycopy(path, 0, p, 1, path.length);
-        return new ZipPath(this, p);
-    }
-
     // returns the list of child paths of "path"
     Iterator<Path> iteratorOf(byte[] path,
                               DirectoryStream.Filter<? super Path> filter)
@@ -409,7 +400,7 @@ class ZipFileSystem extends FileSystem {
             List<Path> list = new ArrayList<>();
             IndexNode child = inode.child;
             while (child != null) {
-                ZipPath zp = toZipPath(child.name);
+                ZipPath zp = new ZipPath(this, child.name);
                 if (filter == null || filter.accept(zp))
                     list.add(zp);
                 child = child.sibling;
@@ -450,6 +441,7 @@ class ZipFileSystem extends FileSystem {
         try {
             ensureOpen();
             Entry eSrc = getEntry(src);  // ensureOpen checked
+
             if (eSrc == null)
                 throw new NoSuchFileException(getString(src));
             if (eSrc.isDir()) {    // spec says to create dst dir
@@ -679,7 +671,7 @@ class ZipFileSystem extends FileSystem {
                     }
 
                     public SeekableByteChannel truncate(long size)
-                    throws IOException
+                        throws IOException
                     {
                         throw new NonWritableChannelException();
                     }
@@ -879,7 +871,8 @@ class ZipFileSystem extends FileSystem {
     private void checkParents(byte[] path) throws IOException {
         beginRead();
         try {
-            while ((path = getParent(path)) != null && path.length != 0) {
+            while ((path = getParent(path)) != null &&
+                    path != ROOTPATH) {
                 if (!inodes.containsKey(IndexNode.keyOf(path))) {
                     throw new NoSuchFileException(getString(path));
                 }
@@ -889,15 +882,20 @@ class ZipFileSystem extends FileSystem {
         }
     }
 
-    private static byte[] ROOTPATH = new byte[0];
+    private static byte[] ROOTPATH = new byte[] { '/' };
     private static byte[] getParent(byte[] path) {
+        int off = getParentOff(path);
+        if (off <= 1)
+            return ROOTPATH;
+        return Arrays.copyOf(path, off + 1);
+    }
+
+    private static int getParentOff(byte[] path) {
         int off = path.length - 1;
         if (off > 0 && path[off] == '/')  // isDirectory
             off--;
         while (off > 0 && path[off] != '/') { off--; }
-        if (off <= 0)
-            return ROOTPATH;
-        return Arrays.copyOf(path, off + 1);
+        return off;
     }
 
     private final void beginWrite() {
@@ -939,19 +937,6 @@ class ZipFileSystem extends FileSystem {
 
     protected void finalize() throws IOException {
         close();
-    }
-
-    private long getDataPos(Entry e) throws IOException {
-        if (e.locoff == -1) {
-            Entry e2 = getEntry(e.name);
-            if (e2 == null)
-                throw new ZipException("invalid loc for entry <" + e.name + ">");
-            e.locoff = e2.locoff;
-        }
-        byte[] buf = new byte[LOCHDR];
-        if (readFullyAt(buf, 0, buf.length, e.locoff) != buf.length)
-            throw new ZipException("invalid loc for entry <" + e.name + ">");
-        return locpos + e.locoff + LOCHDR + LOCNAM(buf) + LOCEXT(buf);
     }
 
     // Reads len bytes of data from the specified offset into buf.
@@ -1090,7 +1075,9 @@ class ZipFileSystem extends FileSystem {
             if (pos + CENHDR + nlen > limit) {
                 zerror("invalid CEN header (bad header size)");
             }
-            byte[] name = Arrays.copyOfRange(cen, pos + CENHDR, pos + CENHDR + nlen);
+            byte[] name = new byte[nlen + 1];
+            System.arraycopy(cen, pos + CENHDR, name, 1, nlen);
+            name[0] = '/';
             IndexNode inode = new IndexNode(name, pos);
             inodes.put(inode, inode);
             // skip ext and comment
@@ -1278,7 +1265,7 @@ class ZipFileSystem extends FileSystem {
                     if (inode.pos == -1) {
                         continue;               // pseudo directory node
                     }
-                    e = Entry.readCEN(this, inode.pos);
+                    e = Entry.readCEN(this, inode);
                     try {
                         written += copyLOCEntry(e, false, os, written, buf);
                         elist.add(e);
@@ -1320,13 +1307,6 @@ class ZipFileSystem extends FileSystem {
 
         Files.move(tmpFile, zfpath, REPLACE_EXISTING);
         hasUpdate = false;    // clear
-        /*
-        if (isOpen) {
-            ch = zfpath.newByteChannel(READ); // re-fresh "ch" and "cen"
-            cen = initCEN();
-        }
-         */
-        //System.out.printf("->sync(%s) done!%n", toString());
     }
 
     IndexNode getInode(byte[] path) {
@@ -1350,7 +1330,7 @@ class ZipFileSystem extends FileSystem {
             return (Entry)inode;
         if (inode == null || inode.pos == -1)
             return null;
-        return Entry.readCEN(this, inode.pos);
+        return Entry.readCEN(this, inode);
     }
 
     public void deleteFile(byte[] path, boolean failIfNotExists)
@@ -1432,7 +1412,6 @@ class ZipFileSystem extends FileSystem {
                 bufSize = 8192;
             final long size = e.size;
             eis = new InflaterInputStream(eis, getInflater(), (int)bufSize) {
-
                 private boolean isClosed = false;
                 public void close() throws IOException {
                     if (!isClosed) {
@@ -1493,10 +1472,20 @@ class ZipFileSystem extends FileSystem {
             this.zfch = zfch;
             rem = e.csize;
             size = e.size;
-            pos = getDataPos(e);
+            pos = e.locoff;
+            if (pos == -1) {
+                Entry e2 = getEntry(e.name);
+                if (e2 == null) {
+                    throw new ZipException("invalid loc for entry <" + e.name + ">");
+                }
+                pos = e2.locoff;
+            }
+            pos = -pos;  // lazy initialize the real data offset
         }
+
         public int read(byte b[], int off, int len) throws IOException {
             ensureOpen();
+            initDataPos();
             if (rem == 0) {
                 return -1;
             }
@@ -1523,6 +1512,7 @@ class ZipFileSystem extends FileSystem {
             }
             return (int)n;
         }
+
         public int read() throws IOException {
             byte[] b = new byte[1];
             if (read(b, 0, 1) == 1) {
@@ -1531,6 +1521,7 @@ class ZipFileSystem extends FileSystem {
                 return -1;
             }
         }
+
         public long skip(long n) throws IOException {
             ensureOpen();
             if (n > rem)
@@ -1542,15 +1533,29 @@ class ZipFileSystem extends FileSystem {
             }
             return n;
         }
+
         public int available() {
             return rem > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) rem;
         }
+
         public long size() {
             return size;
         }
+
         public void close() {
             rem = 0;
             streams.remove(this);
+        }
+
+        private void initDataPos() throws IOException {
+            if (pos <= 0) {
+                pos = -pos + locpos;
+                byte[] buf = new byte[LOCHDR];
+                if (readFullyAt(buf, 0, buf.length, pos) != LOCHDR) {
+                    throw new ZipException("invalid loc " + pos + " for entry reading");
+                }
+                pos += LOCHDR + LOCNAM(buf) + LOCEXT(buf);
+            }
         }
     }
 
@@ -1701,8 +1706,9 @@ class ZipFileSystem extends FileSystem {
 
     // End of central directory record
     static class END {
-        int  disknum;
-        int  sdisknum;
+        // these 2 fields are not used by anyone and write() uses "0"
+        // int  disknum;
+        // int  sdisknum;
         int  endsub;     // endsub
         int  centot;     // 4 bytes
         long cenlen;     // 4 bytes
@@ -1711,9 +1717,9 @@ class ZipFileSystem extends FileSystem {
         byte[] comment;
 
         /* members of Zip64 end of central directory locator */
-        int diskNum;
+        // int diskNum;
         long endpos;
-        int disktot;
+        // int disktot;
 
         void write(OutputStream os, long offset) throws IOException {
             boolean hasZip64 = false;
@@ -1776,6 +1782,11 @@ class ZipFileSystem extends FileSystem {
         int    hashcode;  // node is hashable/hashed by its name
         int    pos = -1;  // position in cen table, -1 menas the
                           // entry does not exists in zip file
+        IndexNode(byte[] name) {
+            name(name);
+            this.pos = -1;
+        }
+
         IndexNode(byte[] name, int pos) {
             name(name);
             this.pos = pos;
@@ -1804,6 +1815,9 @@ class ZipFileSystem extends FileSystem {
             if (!(other instanceof IndexNode)) {
                 return false;
             }
+            if (other instanceof ParentLookup) {
+                return ((ParentLookup)other).equals(this);
+            }
             return Arrays.equals(name, ((IndexNode)other).name);
         }
 
@@ -1816,17 +1830,16 @@ class ZipFileSystem extends FileSystem {
         IndexNode child;  // 1st child
     }
 
-    static class Entry extends IndexNode {
+    static class Entry extends IndexNode implements ZipFileAttributes {
 
-        static final int CEN    = 1;    // entry read from cen
-        static final int NEW    = 2;    // updated contents in bytes or file
-        static final int FILECH = 3;    // fch update in "file"
-        static final int COPY   = 4;    // copy of a CEN entry
+        static final int CEN    = 1;  // entry read from cen
+        static final int NEW    = 2;  // updated contents in bytes or file
+        static final int FILECH = 3;  // fch update in "file"
+        static final int COPY   = 4;  // copy of a CEN entry
 
-
-        byte[] bytes;      // updated content bytes
-        Path   file;       // use tmp file to store bytes;
-        int    type = CEN; // default is the entry read from cen
+        byte[] bytes;                 // updated content bytes
+        Path   file;                  // use tmp file to store bytes;
+        int    type = CEN;            // default is the entry read from cen
 
         // entry attributes
         int    version;
@@ -1841,10 +1854,12 @@ class ZipFileSystem extends FileSystem {
         byte[] extra;
 
         // cen
-        int    versionMade;
-        int    disk;
-        int    attrs;
-        long   attrsEx;
+
+        // these fields are not used by anyone and writeCEN uses "0"
+        // int    versionMade;
+        // int    disk;
+        // int    attrs;
+        // long   attrsEx;
         long   locoff;
         byte[] comment;
 
@@ -1875,10 +1890,12 @@ class ZipFileSystem extends FileSystem {
             this.csize     = e.csize;
             this.method    = e.method;
             this.extra     = e.extra;
+            /*
             this.versionMade = e.versionMade;
             this.disk      = e.disk;
             this.attrs     = e.attrs;
             this.attrsEx   = e.attrsEx;
+            */
             this.locoff    = e.locoff;
             this.comment   = e.comment;
             this.type      = type;
@@ -1899,19 +1916,19 @@ class ZipFileSystem extends FileSystem {
         }
 
         ///////////////////// CEN //////////////////////
-        static Entry readCEN(ZipFileSystem zipfs, int pos)
+        static Entry readCEN(ZipFileSystem zipfs, IndexNode inode)
             throws IOException
         {
-            return new Entry().cen(zipfs, pos);
+            return new Entry().cen(zipfs, inode);
         }
 
-        private Entry cen(ZipFileSystem zipfs, int pos)
+        private Entry cen(ZipFileSystem zipfs, IndexNode inode)
             throws IOException
         {
             byte[] cen = zipfs.cen;
+            int pos = inode.pos;
             if (!cenSigAt(cen, pos))
                 zerror("invalid CEN header (bad signature)");
-            versionMade = CENVEM(cen, pos);
             version     = CENVER(cen, pos);
             flag        = CENFLG(cen, pos);
             method      = CENHOW(cen, pos);
@@ -1922,13 +1939,16 @@ class ZipFileSystem extends FileSystem {
             int nlen    = CENNAM(cen, pos);
             int elen    = CENEXT(cen, pos);
             int clen    = CENCOM(cen, pos);
+            /*
+            versionMade = CENVEM(cen, pos);
             disk        = CENDSK(cen, pos);
             attrs       = CENATT(cen, pos);
             attrsEx     = CENATX(cen, pos);
+            */
             locoff      = CENOFF(cen, pos);
-
             pos += CENHDR;
-            name(Arrays.copyOfRange(cen, pos, pos + nlen));
+            this.name = inode.name;
+            this.hashcode = inode.hashcode;
 
             pos += nlen;
             if (elen > 0) {
@@ -1955,7 +1975,8 @@ class ZipFileSystem extends FileSystem {
             boolean foundExtraTime = false;  // if time stamp NTFS, EXTT present
 
             // confirm size/length
-            int nlen = (name != null) ? name.length : 0;
+
+            int nlen = (name != null) ? name.length - 1 : 0;  // name has [0] as "slash"
             int elen = (extra != null) ? extra.length : 0;
             int eoff = 0;
             int clen = (comment != null) ? comment.length : 0;
@@ -2004,7 +2025,7 @@ class ZipFileSystem extends FileSystem {
             writeInt(os, crc);               // crc-32
             writeInt(os, csize0);            // compressed size
             writeInt(os, size0);             // uncompressed size
-            writeShort(os, name.length);
+            writeShort(os, nlen);
             writeShort(os, elen + elen64 + elenNTFS + elenEXTT);
 
             if (comment != null) {
@@ -2016,7 +2037,7 @@ class ZipFileSystem extends FileSystem {
             writeShort(os, 0);              // internal file attributes (unused)
             writeInt(os, 0);                // external file attributes (unused)
             writeInt(os, locoff0);          // relative offset of local header
-            writeBytes(os, name);
+            writeBytes(os, name, 1, nlen);
             if (elen64 != 0) {
                 writeShort(os, EXTID_ZIP64);// Zip64 extra
                 writeShort(os, elen64 - 4); // size of "this" extra block
@@ -2086,8 +2107,9 @@ class ZipFileSystem extends FileSystem {
             int nlen = LOCNAM(buf);
             int elen = LOCEXT(buf);
 
-            name = new byte[nlen];
-            if (zipfs.readFullyAt(name, 0, nlen, pos + LOCHDR) != nlen) {
+            name = new byte[nlen + 1];
+            name[0] = '/';
+            if (zipfs.readFullyAt(name, 1, nlen, pos + LOCHDR) != nlen) {
                 throw new ZipException("loc: name reading failed");
             }
             if (elen > 0) {
@@ -2130,12 +2152,10 @@ class ZipFileSystem extends FileSystem {
             return this;
         }
 
-        int writeLOC(OutputStream os)
-            throws IOException
-        {
+        int writeLOC(OutputStream os) throws IOException {
             writeInt(os, LOCSIG);               // LOC header signature
             int version = version();
-            int nlen = (name != null) ? name.length : 0;
+            int nlen = (name != null) ? name.length - 1 : 0; // [0] is slash
             int elen = (extra != null) ? extra.length : 0;
             boolean foundExtraTime = false;     // if extra timestamp present
             int eoff = 0;
@@ -2192,9 +2212,9 @@ class ZipFileSystem extends FileSystem {
                         elenEXTT += 4;
                 }
             }
-            writeShort(os, name.length);
+            writeShort(os, nlen);
             writeShort(os, elen + elen64 + elenNTFS + elenEXTT);
-            writeBytes(os, name);
+            writeBytes(os, name, 1, nlen);
             if (elen64 != 0) {
                 writeShort(os, EXTID_ZIP64);
                 writeShort(os, 16);
@@ -2229,13 +2249,11 @@ class ZipFileSystem extends FileSystem {
             if (extra != null) {
                 writeBytes(os, extra);
             }
-            return LOCHDR + name.length + elen + elen64 + elenNTFS + elenEXTT;
+            return LOCHDR + nlen + elen + elen64 + elenNTFS + elenEXTT;
         }
 
         // Data Descriptior
-        int writeEXT(OutputStream os)
-            throws IOException
-        {
+        int writeEXT(OutputStream os) throws IOException {
             writeInt(os, EXTSIG);           // EXT header signature
             writeInt(os, crc);              // crc-32
             if (csize >= ZIP64_MINVAL || size >= ZIP64_MINVAL) {
@@ -2301,7 +2319,15 @@ class ZipFileSystem extends FileSystem {
                     break;
                 case EXTID_EXTT:
                     // spec says the Extened timestamp in cen only has mtime
-                    // need to read the loc to get the extra a/ctime
+                    // need to read the loc to get the extra a/ctime, if flag
+                    // "zipinfo-time" is not specified to false;
+                    // there is performance cost (move up to loc and read) to
+                    // access the loc table foreach entry;
+                    if (zipfs.noExtt) {
+                        if (sz == 5)
+                            mtime = unixToJavaTime(LG(extra, pos + 1));
+                         break;
+                    }
                     byte[] buf = new byte[LOCHDR];
                     if (zipfs.readFullyAt(buf, 0, buf.length , locoff)
                         != buf.length)
@@ -2309,7 +2335,6 @@ class ZipFileSystem extends FileSystem {
                     if (!locSigAt(buf, 0))
                         throw new ZipException("loc: wrong sig ->"
                                            + Long.toString(getSig(buf, 0), 16));
-
                     int locElen = LOCEXT(buf);
                     if (locElen < 9)    // EXTT is at lease 9 bytes
                         break;
@@ -2354,6 +2379,96 @@ class ZipFileSystem extends FileSystem {
             else
                 extra = null;
         }
+
+        ///////// basic file attributes ///////////
+        @Override
+        public FileTime creationTime() {
+            return FileTime.fromMillis(ctime == -1 ? mtime : ctime);
+        }
+
+        @Override
+        public boolean isDirectory() {
+            return isDir();
+        }
+
+        @Override
+        public boolean isOther() {
+            return false;
+        }
+
+        @Override
+        public boolean isRegularFile() {
+            return !isDir();
+        }
+
+        @Override
+        public FileTime lastAccessTime() {
+            return FileTime.fromMillis(atime == -1 ? mtime : atime);
+        }
+
+        @Override
+        public FileTime lastModifiedTime() {
+            return FileTime.fromMillis(mtime);
+        }
+
+        @Override
+        public long size() {
+            return size;
+        }
+
+        @Override
+        public boolean isSymbolicLink() {
+            return false;
+        }
+
+        @Override
+        public Object fileKey() {
+            return null;
+        }
+
+        ///////// zip entry attributes ///////////
+        public long compressedSize() {
+            return csize;
+        }
+
+        public long crc() {
+            return crc;
+        }
+
+        public int method() {
+            return method;
+        }
+
+        public byte[] extra() {
+            if (extra != null)
+                return Arrays.copyOf(extra, extra.length);
+            return null;
+        }
+
+        public byte[] comment() {
+            if (comment != null)
+                return Arrays.copyOf(comment, comment.length);
+            return null;
+        }
+
+        public String toString() {
+            StringBuilder sb = new StringBuilder(1024);
+            Formatter fm = new Formatter(sb);
+            fm.format("    creationTime    : %tc%n", creationTime().toMillis());
+            fm.format("    lastAccessTime  : %tc%n", lastAccessTime().toMillis());
+            fm.format("    lastModifiedTime: %tc%n", lastModifiedTime().toMillis());
+            fm.format("    isRegularFile   : %b%n", isRegularFile());
+            fm.format("    isDirectory     : %b%n", isDirectory());
+            fm.format("    isSymbolicLink  : %b%n", isSymbolicLink());
+            fm.format("    isOther         : %b%n", isOther());
+            fm.format("    fileKey         : %s%n", fileKey());
+            fm.format("    size            : %d%n", size());
+            fm.format("    compressedSize  : %d%n", compressedSize());
+            fm.format("    crc             : %x%n", crc());
+            fm.format("    method          : %d%n", method());
+            fm.close();
+            return sb.toString();
+        }
     }
 
     private static class ExChannelCloser  {
@@ -2379,25 +2494,8 @@ class ZipFileSystem extends FileSystem {
     // implemented below.
     private IndexNode root;
 
-    private void addToTree(IndexNode inode, HashSet<IndexNode> dirs) {
-        if (dirs.contains(inode)) {
-            return;
-        }
-        IndexNode parent;
-        byte[] name = inode.name;
-        byte[] pname = getParent(name);
-        if (inodes.containsKey(LOOKUPKEY.as(pname))) {
-            parent = inodes.get(LOOKUPKEY);
-        } else {    // pseudo directory entry
-            parent = new IndexNode(pname, -1);
-            inodes.put(parent, parent);
-        }
-        addToTree(parent, dirs);
-        inode.sibling = parent.child;
-        parent.child = inode;
-        if (name[name.length -1] == '/')
-            dirs.add(inode);
-    }
+    // default time stamp for pseudo entries
+    private long zfsDefaultTimeStamp = System.currentTimeMillis();
 
     private void removeFromTree(IndexNode inode) {
         IndexNode parent = inodes.get(LOOKUPKEY.as(getParent(inode.name)));
@@ -2417,15 +2515,69 @@ class ZipFileSystem extends FileSystem {
         }
     }
 
+    // purely for parent lookup, so we don't have to copy the parent
+    // name every time
+    static class ParentLookup extends IndexNode {
+        int len;
+        ParentLookup() {}
+
+        final ParentLookup as(byte[] name, int len) { // as a lookup "key"
+            name(name, len);
+            return this;
+        }
+
+        void name(byte[] name, int len) {
+            this.name = name;
+            this.len = len;
+            // calculate the hashcode the same way as Arrays.hashCode() does
+            int result = 1;
+            for (int i = 0; i < len; i++)
+                result = 31 * result + name[i];
+            this.hashcode = result;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (!(other instanceof IndexNode)) {
+                return false;
+            }
+            byte[] oname = ((IndexNode)other).name;
+            return Arrays.equals(name, 0, len,
+                                 oname, 0, oname.length);
+        }
+
+    }
+
     private void buildNodeTree() throws IOException {
         beginWrite();
         try {
-            HashSet<IndexNode> dirs = new HashSet<>();
-            IndexNode root = new IndexNode(ROOTPATH, -1);
+            IndexNode root = new IndexNode(ROOTPATH);
+            IndexNode[] nodes = inodes.keySet().toArray(new IndexNode[0]);
             inodes.put(root, root);
-            dirs.add(root);
-            for (IndexNode node : inodes.keySet().toArray(new IndexNode[0])) {
-                addToTree(node, dirs);
+            ParentLookup lookup = new ParentLookup();
+            for (IndexNode node : nodes) {
+                IndexNode parent;
+                while (true) {
+                    int off = getParentOff(node.name);
+                    if (off <= 1) {    // parent is root
+                        node.sibling = root.child;
+                        root.child = node;
+                        break;
+                    }
+                    lookup = lookup.as(node.name, off + 1);
+                    if (inodes.containsKey(lookup)) {
+                        parent = inodes.get(lookup);
+                        node.sibling = parent.child;
+                        parent.child = node;
+                        break;
+                    }
+                    // add new pseudo directory entry
+                    parent = new IndexNode(Arrays.copyOf(node.name, off + 1));
+                    inodes.put(parent, parent);
+                    node.sibling = parent.child;
+                    parent.child = node;
+                    node = parent;
+                }
             }
         } finally {
             endWrite();
