@@ -154,6 +154,14 @@ int CompilerToVM::Data::cardtable_shift;
 
 int CompilerToVM::Data::vm_page_size;
 
+address CompilerToVM::Data::dsin;
+address CompilerToVM::Data::dcos;
+address CompilerToVM::Data::dtan;
+address CompilerToVM::Data::dexp;
+address CompilerToVM::Data::dlog;
+address CompilerToVM::Data::dlog10;
+address CompilerToVM::Data::dpow;
+
 void CompilerToVM::Data::initialize() {
   Klass_vtable_start_offset = in_bytes(Klass::vtable_start_offset());
   Klass_vtable_length_offset = in_bytes(Klass::vtable_length_offset());
@@ -205,6 +213,23 @@ void CompilerToVM::Data::initialize() {
   }
 
   vm_page_size = os::vm_page_size();
+
+#define SET_TRIGFUNC(name)                                      \
+  if (StubRoutines::name() != NULL) {                           \
+    name = StubRoutines::name();                                \
+  } else {                                                      \
+    name = CAST_FROM_FN_PTR(address, SharedRuntime::name);      \
+  }
+
+  SET_TRIGFUNC(dsin);
+  SET_TRIGFUNC(dcos);
+  SET_TRIGFUNC(dtan);
+  SET_TRIGFUNC(dexp);
+  SET_TRIGFUNC(dlog10);
+  SET_TRIGFUNC(dlog);
+  SET_TRIGFUNC(dpow);
+
+#undef SET_TRIGFUNC
 }
 
 /**
