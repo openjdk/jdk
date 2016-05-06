@@ -600,8 +600,8 @@ const TypePtr *MachProjNode::adr_type() const {
 void MachProjNode::dump_spec(outputStream *st) const {
   ProjNode::dump_spec(st);
   switch (_ideal_reg) {
-  case unmatched_proj:  st->print("/unmatched");                         break;
-  case fat_proj:        st->print("/fat"); if (WizardMode) _rout.dump(); break;
+  case unmatched_proj:  st->print("/unmatched");                           break;
+  case fat_proj:        st->print("/fat"); if (WizardMode) _rout.dump(st); break;
   }
 }
 #endif
