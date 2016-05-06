@@ -128,6 +128,10 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
   PLATFORM_MODULES += jdk.crypto.ucrypto
 endif
 
+# These modules are included in the interim image which is used to run profiling
+# before building the real images.
+INTERIM_IMAGE_MODULES := java.base java.logging
+
 ################################################################################
 # Some platforms don't have the serviceability agent
 
