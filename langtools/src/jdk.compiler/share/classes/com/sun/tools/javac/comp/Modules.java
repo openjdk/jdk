@@ -102,6 +102,7 @@ import com.sun.tools.javac.tree.JCTree.JCDirective;
 import com.sun.tools.javac.tree.JCTree.Tag;
 
 import static com.sun.tools.javac.code.Flags.ABSTRACT;
+import static com.sun.tools.javac.code.Flags.ENUM;
 import static com.sun.tools.javac.code.Flags.PUBLIC;
 import static com.sun.tools.javac.tree.JCTree.Tag.MODULEDEF;
 
@@ -753,7 +754,10 @@ public class Modules extends JCTree.Visitor {
         @Override
         public void visitUses(JCUses tree) {
             Type st = attr.attribType(tree.qualid, env, syms.objectType);
-            if (st.hasTag(CLASS)) {
+            Symbol sym = TreeInfo.symbol(tree.qualid);
+            if ((sym.flags() & ENUM) != 0) {
+                log.error(tree.qualid.pos(), Errors.ServiceDefinitionIsEnum(st.tsym));
+            } else if (st.hasTag(CLASS)) {
                 ClassSymbol service = (ClassSymbol) st.tsym;
                 Directive.UsesDirective d = new Directive.UsesDirective(service);
                 if (!allUses.add(d)) {

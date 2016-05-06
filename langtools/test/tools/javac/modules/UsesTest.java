@@ -82,6 +82,29 @@ public class UsesTest extends ModuleTestBase {
     }
 
     @Test
+    public void testEnumAsAService(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                "module m { uses pkg.EnumST; }",
+                "package pkg; public enum EnumST {A, B}");
+        Path classes = base.resolve("classes");
+        Files.createDirectories(classes);
+
+        List<String> output = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .outdir(classes)
+                .files(tb.findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+        List<String> expected = Arrays.asList("module-info.java:1:20: compiler.err.service.definition.is.enum: pkg.EnumST",
+                "1 error");
+        if (!output.containsAll(expected)) {
+            throw new Exception("Expected output not found");
+        }
+    }
+
+    @Test
     public void testSimpleAnnotation(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
