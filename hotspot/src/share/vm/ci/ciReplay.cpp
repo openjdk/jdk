@@ -552,7 +552,7 @@ class CompileReplay : public StackObj {
     }
     replay_state = this;
     CompileBroker::compile_method(method, entry_bci, comp_level,
-                                  methodHandle(), 0, "replay", THREAD);
+                                  methodHandle(), 0, CompileTask::Reason_Replay, THREAD);
     replay_state = NULL;
     reset();
   }

@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,29 +20,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.hotspot.igv.data.services;
 
-import com.sun.hotspot.igv.data.InputGraph;
-import com.sun.hotspot.igv.data.InputNode;
-import java.util.Set;
-
-/**
- *
- * @author Thomas Wuerthinger
+/*
+ * @test
+ * @bug 8154151
+ * @summary Sanity test flag combo that force compiles on level 0
+ * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:TieredStopAtLevel=0 TieredStopAtLevel0SanityTest
  */
-public interface InputGraphProvider {
 
-    InputGraph getGraph();
-
-    void setSelectedNodes(Set<InputNode> nodes);
-
-    /**
-     * @return an iterator walking forward through the {@link InputGraph}s following the {@link #getGraph()}
-     */
-    Iterable<InputGraph> searchForward();
-
-    /**
-     * @return an iterator walking backward through the {@link InputGraph}s preceeding the {@link #getGraph()}
-     */
-    Iterable<InputGraph> searchBackward();
+public class TieredStopAtLevel0SanityTest {
+    public static void main(String[] args) throws Exception {
+        System.out.println("Hello world!");
+    }
 }

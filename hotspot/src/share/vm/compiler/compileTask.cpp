@@ -82,7 +82,7 @@ void CompileTask::initialize(int compile_id,
                              int comp_level,
                              const methodHandle& hot_method,
                              int hot_count,
-                             const char* comment,
+                             CompileTask::CompileReason compile_reason,
                              bool is_blocking) {
   assert(!_lock->is_locked(), "bad locking");
 
@@ -104,7 +104,7 @@ void CompileTask::initialize(int compile_id,
   _hot_method_holder = NULL;
   _hot_count = hot_count;
   _time_queued = 0;  // tidy
-  _comment = comment;
+  _compile_reason = compile_reason;
   _failure_reason = NULL;
 
   if (LogCompilation) {
@@ -309,9 +309,9 @@ void CompileTask::log_task_queued() {
 
   xtty->begin_elem("task_queued");
   log_task(xtty);
-  if (_comment != NULL) {
-    xtty->print(" comment='%s'", _comment);
-  }
+  assert(_compile_reason > CompileTask::Reason_None && _compile_reason < CompileTask::Reason_Count, "Valid values");
+  xtty->print(" comment='%s'", reason_name(_compile_reason));
+
   if (_hot_method != NULL) {
     methodHandle hot(thread, _hot_method);
     methodHandle method(thread, _method);
@@ -440,3 +440,5 @@ void CompileTask::print_inlining_inner(outputStream* st, ciMethod* method, int i
   }
   st->cr();
 }
+
+

@@ -117,6 +117,7 @@
   template(java_util_Hashtable,                       "java/util/Hashtable")                      \
   template(java_lang_Compiler,                        "java/lang/Compiler")                       \
   template(jdk_internal_misc_Signal,                  "jdk/internal/misc/Signal")                 \
+  template(jdk_internal_util_Preconditions,           "jdk/internal/util/Preconditions")          \
   template(java_lang_AssertionStatusDirectives,       "java/lang/AssertionStatusDirectives")      \
   template(getBootClassPathEntryForClass_name,        "getBootClassPathEntryForClass")            \
   template(jdk_internal_vm_PostVMInitHook,            "jdk/internal/vm/PostVMInitHook")           \
@@ -934,8 +935,8 @@
   do_intrinsic(_equalsL,                  java_lang_StringLatin1,equals_name, equalsB_signature,                 F_S)   \
   do_intrinsic(_equalsU,                  java_lang_StringUTF16, equals_name, equalsB_signature,                 F_S)   \
                                                                                                                         \
-  do_intrinsic(_Objects_checkIndex,       java_util_Objects,      checkIndex_name, Objects_checkIndex_signature, F_S)   \
-   do_signature(Objects_checkIndex_signature,                     "(IILjava/util/function/BiFunction;)I")               \
+  do_intrinsic(_Preconditions_checkIndex, jdk_internal_util_Preconditions, checkIndex_name, Preconditions_checkIndex_signature, F_S)   \
+   do_signature(Preconditions_checkIndex_signature,              "(IILjava/util/function/BiFunction;)I")                \
                                                                                                                         \
   do_class(java_nio_Buffer,               "java/nio/Buffer")                                                            \
   do_intrinsic(_checkIndex,               java_nio_Buffer,        checkIndex_name, int_int_signature,            F_R)   \

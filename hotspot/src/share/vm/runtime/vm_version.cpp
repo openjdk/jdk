@@ -43,7 +43,6 @@ bool Abstract_VM_Version::_supports_atomic_getadd4 = false;
 bool Abstract_VM_Version::_supports_atomic_getadd8 = false;
 unsigned int Abstract_VM_Version::_logical_processors_per_package = 1U;
 unsigned int Abstract_VM_Version::_L1_data_cache_line_size = 0;
-int Abstract_VM_Version::_reserve_for_allocation_prefetch = 0;
 
 #ifndef HOTSPOT_VERSION_STRING
   #error HOTSPOT_VERSION_STRING must be defined

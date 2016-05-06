@@ -1380,6 +1380,8 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     // Save return pc.
     ___(std) std(return_pc, _abi(lr), callers_sp);
   }
+  
+  C->set_frame_complete(cbuf.insts_size());
 }
 #undef ___
 #undef ___stop
@@ -2310,6 +2312,8 @@ RegMask Matcher::modL_proj_mask() {
 const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return RegMask();
 }
+
+const bool Matcher::convi2l_type_required = true;
 
 %}
 

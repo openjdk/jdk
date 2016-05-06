@@ -40,6 +40,7 @@ import static org.testng.Assert.*;
 
 public class $Qualifier$UnsafeAccessTest$Type$ {
     static final int ITERS = Integer.getInteger("iters", 1);
+    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 10);
 
     static final $package$.Unsafe UNSAFE;
 
@@ -273,22 +274,31 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
         }
 
         {
-            boolean r = UNSAFE.weakCompareAndSwap$Type$(base, offset, $value1$, $value2$);
-            assertEquals(r, true, "weakCompareAndSwap $type$");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwap$Type$(base, offset, $value1$, $value2$);
+            }
+            assertEquals(success, true, "weakCompareAndSwap $type$");
             $type$ x = UNSAFE.get$Type$(base, offset);
             assertEquals(x, $value2$, "weakCompareAndSwap $type$ value");
         }
 
         {
-            boolean r = UNSAFE.weakCompareAndSwap$Type$Acquire(base, offset, $value2$, $value1$);
-            assertEquals(r, true, "weakCompareAndSwapAcquire $type$");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwap$Type$Acquire(base, offset, $value2$, $value1$);
+            }
+            assertEquals(success, true, "weakCompareAndSwapAcquire $type$");
             $type$ x = UNSAFE.get$Type$(base, offset);
             assertEquals(x, $value1$, "weakCompareAndSwapAcquire $type$");
         }
 
         {
-            boolean r = UNSAFE.weakCompareAndSwap$Type$Release(base, offset, $value1$, $value2$);
-            assertEquals(r, true, "weakCompareAndSwapRelease $type$");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwap$Type$Release(base, offset, $value1$, $value2$);
+            }
+            assertEquals(success, true, "weakCompareAndSwapRelease $type$");
             $type$ x = UNSAFE.get$Type$(base, offset);
             assertEquals(x, $value2$, "weakCompareAndSwapRelease $type$");
         }
@@ -311,7 +321,7 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
             $type$ o = UNSAFE.getAndAdd$Type$(base, offset, $value2$);
             assertEquals(o, $value1$, "getAndAdd $type$");
             $type$ x = UNSAFE.get$Type$(base, offset);
-            assertEquals(x, $value1$ + $value2$, "weakCompareAndSwapRelease $type$");
+            assertEquals(x, $value1$ + $value2$, "getAndAdd $type$");
         }
 #end[AtomicAdd]
     }

@@ -1081,8 +1081,56 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
   return NULL;
 }
 
-// Not supported
+/**
+ * Method entry for intrinsic-candidate (non-native) methods:
+ *   int java.util.zip.CRC32C.updateBytes(int crc, byte[] b, int off, int end)
+ *   int java.util.zip.CRC32C.updateDirectByteBuffer(int crc, long buf, int off, int end)
+ * Unlike CRC32, CRC32C does not have any methods marked as native
+ * CRC32C also uses an "end" variable instead of the length variable CRC32 uses
+ */
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+
+  if (UseCRC32CIntrinsics) {
+    address entry = __ pc();
+
+    // Load parameters from the stack
+    const Register crc    = O0; // initial crc
+    const Register buf    = O1; // source java byte array address
+    const Register offset = O2; // offset
+    const Register end    = O3; // index of last element to process
+    const Register len    = O2; // len argument to the kernel
+    const Register table  = O3; // crc32c lookup table address
+
+    // Arguments are reversed on java expression stack
+    // Calculate address of start element
+    if (kind == Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer) {
+      __ lduw(Gargs, 0,  end);
+      __ lduw(Gargs, 8,  offset);
+      __ ldx( Gargs, 16, buf);
+      __ lduw(Gargs, 32, crc);
+      __ add(buf, offset, buf);
+      __ sub(end, offset, len);
+    } else {
+      __ lduw(Gargs, 0,  end);
+      __ lduw(Gargs, 8,  offset);
+      __ ldx( Gargs, 16, buf);
+      __ lduw(Gargs, 24, crc);
+      __ add(buf, arrayOopDesc::base_offset_in_bytes(T_BYTE), buf); // account for the header size
+      __ add(buf, offset, buf);
+      __ sub(end, offset, len);
+    }
+
+    // Call the crc32c kernel
+    __ MacroAssembler::save_thread(L7_thread_cache);
+    __ kernel_crc32c(crc, buf, len, table);
+    __ MacroAssembler::restore_thread(L7_thread_cache);
+
+    // result in O0
+    __ retl();
+    __ delayed()->nop();
+
+    return entry;
+  }
   return NULL;
 }
 

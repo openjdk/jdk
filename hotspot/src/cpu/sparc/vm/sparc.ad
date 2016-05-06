@@ -2133,6 +2133,8 @@ const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return L7_REGP_mask();
 }
 
+const bool Matcher::convi2l_type_required = true;
+
 %}
 
 

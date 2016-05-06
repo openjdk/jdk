@@ -4845,21 +4845,21 @@ void MacroAssembler::update_byte_crc32(Register crc, Register val, Register tabl
 
 // Reverse byte order of lower 32 bits, assuming upper 32 bits all zeros
 void MacroAssembler::reverse_bytes_32(Register src, Register dst, Register tmp) {
-  srlx(src, 24, dst);
+    srlx(src, 24, dst);
 
-  sllx(src, 32+8, tmp);
-  srlx(tmp, 32+24, tmp);
-  sllx(tmp, 8, tmp);
-  or3(dst, tmp, dst);
+    sllx(src, 32+8, tmp);
+    srlx(tmp, 32+24, tmp);
+    sllx(tmp, 8, tmp);
+    or3(dst, tmp, dst);
 
-  sllx(src, 32+16, tmp);
-  srlx(tmp, 32+24, tmp);
-  sllx(tmp, 16, tmp);
-  or3(dst, tmp, dst);
+    sllx(src, 32+16, tmp);
+    srlx(tmp, 32+24, tmp);
+    sllx(tmp, 16, tmp);
+    or3(dst, tmp, dst);
 
-  sllx(src, 32+24, tmp);
-  srlx(tmp, 32, tmp);
-  or3(dst, tmp, dst);
+    sllx(src, 32+24, tmp);
+    srlx(tmp, 32, tmp);
+    or3(dst, tmp, dst);
 }
 
 void MacroAssembler::movitof_revbytes(Register src, FloatRegister dst, Register tmp1, Register tmp2) {
@@ -5111,3 +5111,176 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
   not1(crc);
 }
 
+#define CHUNK_LEN   128          /* 128 x 8B = 1KB */
+#define CHUNK_K1    0x1307a0206  /* reverseBits(pow(x, CHUNK_LEN*8*8*3 - 32) mod P(x)) << 1 */
+#define CHUNK_K2    0x1a0f717c4  /* reverseBits(pow(x, CHUNK_LEN*8*8*2 - 32) mod P(x)) << 1 */
+#define CHUNK_K3    0x0170076fa  /* reverseBits(pow(x, CHUNK_LEN*8*8*1 - 32) mod P(x)) << 1 */
+
+void MacroAssembler::kernel_crc32c(Register crc, Register buf, Register len, Register table) {
+
+  Label L_crc32c_head, L_crc32c_aligned;
+  Label L_crc32c_parallel, L_crc32c_parallel_loop;
+  Label L_crc32c_serial, L_crc32c_x32_loop, L_crc32c_x8, L_crc32c_x8_loop;
+  Label L_crc32c_done, L_crc32c_tail, L_crc32c_return;
+
+  set(ExternalAddress(StubRoutines::crc32c_table_addr()), table);
+
+  cmp_and_br_short(len, 0, Assembler::lessEqual, Assembler::pn, L_crc32c_return);
+
+  // clear upper 32 bits of crc
+  clruwu(crc);
+
+  and3(buf, 7, G4);
+  cmp_and_brx_short(G4, 0, Assembler::equal, Assembler::pt, L_crc32c_aligned);
+
+  mov(8, G1);
+  sub(G1, G4, G4);
+
+  // ------ process the misaligned head (7 bytes or less) ------
+  bind(L_crc32c_head);
+
+  // crc = (crc >>> 8) ^ byteTable[(crc ^ b) & 0xFF];
+  ldub(buf, 0, G1);
+  update_byte_crc32(crc, G1, table);
+
+  inc(buf);
+  dec(len);
+  cmp_and_br_short(len, 0, Assembler::equal, Assembler::pn, L_crc32c_return);
+  dec(G4);
+  cmp_and_br_short(G4, 0, Assembler::greater, Assembler::pt, L_crc32c_head);
+
+  // ------ process the 8-byte-aligned body ------
+  bind(L_crc32c_aligned);
+  nop();
+  cmp_and_br_short(len, 8, Assembler::less, Assembler::pn, L_crc32c_tail);
+
+  // reverse the byte order of lower 32 bits to big endian, and move to FP side
+  movitof_revbytes(crc, F0, G1, G3);
+
+  set(CHUNK_LEN*8*4, G4);
+  cmp_and_br_short(len, G4, Assembler::less, Assembler::pt, L_crc32c_serial);
+
+  // ------ process four 1KB chunks in parallel ------
+  bind(L_crc32c_parallel);
+
+  fzero(FloatRegisterImpl::D, F2);
+  fzero(FloatRegisterImpl::D, F4);
+  fzero(FloatRegisterImpl::D, F6);
+
+  mov(CHUNK_LEN - 1, G4);
+  bind(L_crc32c_parallel_loop);
+  // schedule ldf's ahead of crc32c's to hide the load-use latency
+  ldf(FloatRegisterImpl::D, buf, 0,            F8);
+  ldf(FloatRegisterImpl::D, buf, CHUNK_LEN*8,  F10);
+  ldf(FloatRegisterImpl::D, buf, CHUNK_LEN*16, F12);
+  ldf(FloatRegisterImpl::D, buf, CHUNK_LEN*24, F14);
+  crc32c(F0, F8,  F0);
+  crc32c(F2, F10, F2);
+  crc32c(F4, F12, F4);
+  crc32c(F6, F14, F6);
+  inc(buf, 8);
+  dec(G4);
+  cmp_and_br_short(G4, 0, Assembler::greater, Assembler::pt, L_crc32c_parallel_loop);
+
+  ldf(FloatRegisterImpl::D, buf, 0,            F8);
+  ldf(FloatRegisterImpl::D, buf, CHUNK_LEN*8,  F10);
+  ldf(FloatRegisterImpl::D, buf, CHUNK_LEN*16, F12);
+  crc32c(F0, F8,  F0);
+  crc32c(F2, F10, F2);
+  crc32c(F4, F12, F4);
+
+  inc(buf, CHUNK_LEN*24);
+  ldfl(FloatRegisterImpl::D, buf, G0, F14);  // load in little endian
+  inc(buf, 8);
+
+  prefetch(buf, 0,            Assembler::severalReads);
+  prefetch(buf, CHUNK_LEN*8,  Assembler::severalReads);
+  prefetch(buf, CHUNK_LEN*16, Assembler::severalReads);
+  prefetch(buf, CHUNK_LEN*24, Assembler::severalReads);
+
+  // move to INT side, and reverse the byte order of lower 32 bits to little endian
+  movftoi_revbytes(F0, O4, G1, G4);
+  movftoi_revbytes(F2, O5, G1, G4);
+  movftoi_revbytes(F4, G5, G1, G4);
+
+  // combine the results of 4 chunks
+  set64(CHUNK_K1, G3, G1);
+  xmulx(O4, G3, O4);
+  set64(CHUNK_K2, G3, G1);
+  xmulx(O5, G3, O5);
+  set64(CHUNK_K3, G3, G1);
+  xmulx(G5, G3, G5);
+
+  movdtox(F14, G4);
+  xor3(O4, O5, O5);
+  xor3(G5, O5, O5);
+  xor3(G4, O5, O5);
+
+  // reverse the byte order to big endian, via stack, and move to FP side
+  // TODO: use new revb instruction
+  add(SP, -8, G1);
+  srlx(G1, 3, G1);
+  sllx(G1, 3, G1);
+  stx(O5, G1, G0);
+  ldfl(FloatRegisterImpl::D, G1, G0, F2);  // load in little endian
+
+  crc32c(F6, F2, F0);
+
+  set(CHUNK_LEN*8*4, G4);
+  sub(len, G4, len);
+  cmp_and_br_short(len, G4, Assembler::greaterEqual, Assembler::pt, L_crc32c_parallel);
+  nop();
+  cmp_and_br_short(len, 0, Assembler::equal, Assembler::pt, L_crc32c_done);
+
+  bind(L_crc32c_serial);
+
+  mov(32, G4);
+  cmp_and_br_short(len, G4, Assembler::less, Assembler::pn, L_crc32c_x8);
+
+  // ------ process 32B chunks ------
+  bind(L_crc32c_x32_loop);
+  ldf(FloatRegisterImpl::D, buf, 0, F2);
+  crc32c(F0, F2, F0);
+  ldf(FloatRegisterImpl::D, buf, 8, F2);
+  crc32c(F0, F2, F0);
+  ldf(FloatRegisterImpl::D, buf, 16, F2);
+  crc32c(F0, F2, F0);
+  ldf(FloatRegisterImpl::D, buf, 24, F2);
+  inc(buf, 32);
+  crc32c(F0, F2, F0);
+  dec(len, 32);
+  cmp_and_br_short(len, G4, Assembler::greaterEqual, Assembler::pt, L_crc32c_x32_loop);
+
+  bind(L_crc32c_x8);
+  nop();
+  cmp_and_br_short(len, 8, Assembler::less, Assembler::pt, L_crc32c_done);
+
+  // ------ process 8B chunks ------
+  bind(L_crc32c_x8_loop);
+  ldf(FloatRegisterImpl::D, buf, 0, F2);
+  inc(buf, 8);
+  crc32c(F0, F2, F0);
+  dec(len, 8);
+  cmp_and_br_short(len, 8, Assembler::greaterEqual, Assembler::pt, L_crc32c_x8_loop);
+
+  bind(L_crc32c_done);
+
+  // move to INT side, and reverse the byte order of lower 32 bits to little endian
+  movftoi_revbytes(F0, crc, G1, G3);
+
+  cmp_and_br_short(len, 0, Assembler::equal, Assembler::pt, L_crc32c_return);
+
+  // ------ process the misaligned tail (7 bytes or less) ------
+  bind(L_crc32c_tail);
+
+  // crc = (crc >>> 8) ^ byteTable[(crc ^ b) & 0xFF];
+  ldub(buf, 0, G1);
+  update_byte_crc32(crc, G1, table);
+
+  inc(buf);
+  dec(len);
+  cmp_and_br_short(len, 0, Assembler::greater, Assembler::pt, L_crc32c_tail);
+
+  bind(L_crc32c_return);
+  nop();
+}

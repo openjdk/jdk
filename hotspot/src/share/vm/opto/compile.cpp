@@ -3263,6 +3263,43 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
     frc._tests.push(iff);
     break;
   }
+  case Op_ConvI2L: {
+    if (!Matcher::convi2l_type_required) {
+      // Code generation on some platforms doesn't need accurate
+      // ConvI2L types. Widening the type can help remove redundant
+      // address computations.
+      n->as_Type()->set_type(TypeLong::INT);
+      ResourceMark rm;
+      Node_List wq;
+      wq.push(n);
+      for (uint next = 0; next < wq.size(); next++) {
+        Node *m = wq.at(next);
+
+        for(;;) {
+          // Loop over all nodes with identical inputs edges as m
+          Node* k = m->find_similar(m->Opcode());
+          if (k == NULL) {
+            break;
+          }
+          // Push their uses so we get a chance to remove node made
+          // redundant
+          for (DUIterator_Fast imax, i = k->fast_outs(imax); i < imax; i++) {
+            Node* u = k->fast_out(i);
+            assert(!wq.contains(u), "shouldn't process one node several times");
+            if (u->Opcode() == Op_LShiftL ||
+                u->Opcode() == Op_AddL ||
+                u->Opcode() == Op_SubL ||
+                u->Opcode() == Op_AddP) {
+              wq.push(u);
+            }
+          }
+          // Replace all nodes with identical edges as m with m
+          k->subsume_by(m, this);
+        }
+      }
+    }
+    break;
+  }
   default:
     assert( !n->is_Call(), "" );
     assert( !n->is_Mem(), "" );
