@@ -359,4 +359,12 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider {
         }
         return null;
     }
+
+    /**
+     * Returns true if this type is {@link Cloneable} and can be safely cloned by creating a normal
+     * Java allocation and populating it from the fields returned by
+     * {@link #getInstanceFields(boolean)}. Some types may require special handling by the platform
+     * so they would to go through the normal {@link Object#clone} path.
+     */
+    boolean isCloneableWithAllocation();
 }

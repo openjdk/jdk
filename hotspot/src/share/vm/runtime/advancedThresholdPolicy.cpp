@@ -191,8 +191,8 @@ CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
       max_method = method;
     } else {
       // If a method has been stale for some time, remove it from the queue.
-      // Blocking tasks don't become stale
-      if (!task->is_blocking() && is_stale(t, TieredCompileTaskTimeout, method) && !is_old(method)) {
+      // Blocking tasks and tasks submitted from whitebox API don't become stale
+      if (task->can_become_stale() && is_stale(t, TieredCompileTaskTimeout, method) && !is_old(method)) {
         if (PrintTieredEvents) {
           print_event(REMOVE_FROM_QUEUE, method, method, task->osr_bci(), (CompLevel)task->comp_level());
         }
@@ -491,7 +491,7 @@ CompLevel AdvancedThresholdPolicy::loop_event(Method* method, CompLevel cur_leve
 void AdvancedThresholdPolicy::submit_compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread) {
   int hot_count = (bci == InvocationEntryBci) ? mh->invocation_count() : mh->backedge_count();
   update_rate(os::javaTimeMillis(), mh());
-  CompileBroker::compile_method(mh, bci, level, mh, hot_count, "tiered", thread);
+  CompileBroker::compile_method(mh, bci, level, mh, hot_count, CompileTask::Reason_Tiered, thread);
 }
 
 // Handle the invocation event.

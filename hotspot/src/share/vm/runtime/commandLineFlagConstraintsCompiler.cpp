@@ -90,13 +90,26 @@ Flag::Error CICompilerCountConstraintFunc(intx value, bool verbose) {
 }
 
 Flag::Error AllocatePrefetchDistanceConstraintFunc(intx value, bool verbose) {
-  if (value < 0) {
+  if (value < 0 || value > 512) {
     CommandLineError::print(verbose,
-                            "Unable to determine system-specific value for AllocatePrefetchDistance. "
-                            "Please provide appropriate value, if unsure, use 0 to disable prefetching\n");
+                            "AllocatePrefetchDistance (" INTX_FORMAT ") must be "
+                            "between 0 and " INTX_FORMAT "\n",
+                            AllocatePrefetchDistance, 512);
     return Flag::VIOLATES_CONSTRAINT;
   }
 
+  return Flag::SUCCESS;
+}
+
+Flag::Error AllocatePrefetchStepSizeConstraintFunc(intx value, bool verbose) {
+  if (AllocatePrefetchStyle == 3) {
+    if (value % wordSize != 0) {
+      CommandLineError::print(verbose,
+                              "AllocatePrefetchStepSize (" INTX_FORMAT ") must be multiple of %d\n",
+                              value, wordSize);
+      return Flag::VIOLATES_CONSTRAINT;
+    }
+  }
   return Flag::SUCCESS;
 }
 
@@ -111,49 +124,6 @@ Flag::Error AllocatePrefetchInstrConstraintFunc(intx value, bool verbose) {
     CommandLineError::print(verbose,
                             "AllocatePrefetchInstr (" INTX_FORMAT ") must be "
                             "between 0 and " INTX_FORMAT "\n", value, max_value);
-    return Flag::VIOLATES_CONSTRAINT;
-  }
-
-  return Flag::SUCCESS;
-}
-
-Flag::Error AllocatePrefetchStepSizeConstraintFunc(intx value, bool verbose) {
-  intx max_value = 512;
-  if (value < 1 || value > max_value) {
-    CommandLineError::print(verbose,
-                            "AllocatePrefetchStepSize (" INTX_FORMAT ") "
-                            "must be between 1 and %d\n",
-                            AllocatePrefetchStepSize,
-                            max_value);
-    return Flag::VIOLATES_CONSTRAINT;
-  }
-
-  if (AllocatePrefetchDistance % AllocatePrefetchStepSize != 0) {
-    CommandLineError::print(verbose,
-                            "AllocatePrefetchDistance (" INTX_FORMAT ") "
-                            "%% AllocatePrefetchStepSize (" INTX_FORMAT ") "
-                            "= " INTX_FORMAT " "
-                            "must be 0\n",
-                            AllocatePrefetchDistance, AllocatePrefetchStepSize,
-                            AllocatePrefetchDistance % AllocatePrefetchStepSize);
-    return Flag::VIOLATES_CONSTRAINT;
-  }
-
-  /* The limit of 64 for the quotient of AllocatePrefetchDistance and AllocatePrefetchSize
-   * originates from the limit of 64 for AllocatePrefetchLines/AllocateInstancePrefetchLines.
-   * If AllocatePrefetchStyle == 2, the quotient from above is used in PhaseMacroExpand::prefetch_allocation()
-   * to determine the number of lines to prefetch. For other values of AllocatePrefetchStyle,
-   * AllocatePrefetchDistance and AllocatePrefetchSize is used. For consistency, all these
-   * quantities must have the same limit (64 in this case).
-   */
-  if (AllocatePrefetchDistance / AllocatePrefetchStepSize > 64) {
-    CommandLineError::print(verbose,
-                            "AllocatePrefetchDistance (" INTX_FORMAT ") too large or "
-                            "AllocatePrefetchStepSize (" INTX_FORMAT ") too small; "
-                            "try decreasing/increasing values so that "
-                            "AllocatePrefetchDistance / AllocatePrefetchStepSize <= 64\n",
-                            AllocatePrefetchDistance, AllocatePrefetchStepSize,
-                            AllocatePrefetchDistance % AllocatePrefetchStepSize);
     return Flag::VIOLATES_CONSTRAINT;
   }
 

@@ -724,11 +724,15 @@ class StubGenerator: public StubCodeGenerator {
     Register tmp2 = rscratch2;
     int zva_length = VM_Version::zva_length();
     Label initial_table_end, loop_zva;
+    Label fini;
 
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "zero_longs");
     address start = __ pc();
 
+    // Base must be 16 byte aligned. If not just return and let caller handle it
+    __ tst(base, 0x0f);
+    __ br(Assembler::NE, fini);
     // Align base with ZVA length.
     __ neg(tmp, base);
     __ andr(tmp, tmp, zva_length - 1);
@@ -751,6 +755,7 @@ class StubGenerator: public StubCodeGenerator {
     __ add(base, base, zva_length);
     __ br(Assembler::GE, loop_zva);
     __ add(cnt, cnt, zva_length >> 3); // count not zeroed by DC ZVA
+    __ bind(fini);
     __ ret(lr);
 
     return start;
@@ -2077,7 +2082,9 @@ class StubGenerator: public StubCodeGenerator {
     const Register to        = c_rarg0;  // source array address
     const Register value     = c_rarg1;  // value
     const Register count     = c_rarg2;  // elements count
-    const Register cnt_words = c_rarg3; // temp register
+
+    const Register bz_base = r10;        // base for block_zero routine
+    const Register cnt_words = r11;      // temp register
 
     __ enter();
 
@@ -2147,7 +2154,9 @@ class StubGenerator: public StubCodeGenerator {
       __ cmp(cnt_words, BlockZeroingLowLimit >> 3);
       __ ccmp(value, 0 /* comparing value */, 0 /* NZCV */, Assembler::GE);
       __ br(Assembler::NE, non_block_zeroing);
-      __ block_zero(to, cnt_words, true);
+      __ mov(bz_base, to);
+      __ block_zero(bz_base, cnt_words, true);
+      __ mov(to, bz_base);
       __ b(rest);
       __ bind(non_block_zeroing);
       __ fill_words(to, cnt_words, value);

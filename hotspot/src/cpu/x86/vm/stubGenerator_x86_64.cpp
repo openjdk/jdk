@@ -4409,7 +4409,7 @@ class StubGenerator: public StubCodeGenerator {
   *   c_rarg0   - int crc
   *   c_rarg1   - byte* buf
   *   c_rarg2   - long length
-  *   c_rarg3   - table_start - optional (present only when doing a library_calll,
+  *   c_rarg3   - table_start - optional (present only when doing a library_call,
   *              not used by x86 algorithm)
   *
   * Ouput:
@@ -4532,6 +4532,9 @@ class StubGenerator: public StubCodeGenerator {
   *    c_rarg1   - objb     address
   *    c_rarg3   - length   length
   *    c_rarg4   - scale    log2_array_indxscale
+  *
+  *  Output:
+  *        rax   - int >= mismatched index, < 0 bitwise complement of tail
   */
   address generate_vectorizedMismatch() {
     __ align(CodeEntryAlignment);
@@ -5291,9 +5294,6 @@ class StubGenerator: public StubCodeGenerator {
     if (UseMulAddIntrinsic) {
       StubRoutines::_mulAdd = generate_mulAdd();
     }
-    if (UseVectorizedMismatchIntrinsic) {
-      StubRoutines::_vectorizedMismatch = generate_vectorizedMismatch();
-    }
 #ifndef _WINDOWS
     if (UseMontgomeryMultiplyIntrinsic) {
       StubRoutines::_montgomeryMultiply
@@ -5305,6 +5305,10 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif // WINDOWS
 #endif // COMPILER2
+
+    if (UseVectorizedMismatchIntrinsic) {
+      StubRoutines::_vectorizedMismatch = generate_vectorizedMismatch();
+    }
   }
 
  public:

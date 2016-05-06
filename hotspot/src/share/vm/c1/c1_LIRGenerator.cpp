@@ -3174,6 +3174,15 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     do_update_CRC32(x);
     break;
 
+  case vmIntrinsics::_updateBytesCRC32C:
+  case vmIntrinsics::_updateDirectByteBufferCRC32C:
+    do_update_CRC32C(x);
+    break;
+
+  case vmIntrinsics::_vectorizedMismatch:
+    do_vectorizedMismatch(x);
+    break;
+
   default: ShouldNotReachHere(); break;
   }
 }

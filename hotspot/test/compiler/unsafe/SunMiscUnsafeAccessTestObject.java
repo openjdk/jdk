@@ -40,6 +40,7 @@ import static org.testng.Assert.*;
 
 public class SunMiscUnsafeAccessTestObject {
     static final int ITERS = Integer.getInteger("iters", 1);
+    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 10);
 
     static final sun.misc.Unsafe UNSAFE;
 
@@ -136,7 +137,6 @@ public class SunMiscUnsafeAccessTestObject {
 
 
 
-
         UNSAFE.putObject(base, offset, "foo");
 
         // Compare
@@ -155,7 +155,6 @@ public class SunMiscUnsafeAccessTestObject {
         }
 
 
-
         // Compare set and get
         {
             Object o = UNSAFE.getAndSetObject(base, offset, "foo");
@@ -167,5 +166,4 @@ public class SunMiscUnsafeAccessTestObject {
     }
 
 }
-
 

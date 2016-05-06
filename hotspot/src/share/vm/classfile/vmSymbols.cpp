@@ -353,6 +353,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
+  case vmIntrinsics::_vectorizedMismatch:
     return true;
   default:
     return false;
@@ -384,6 +385,7 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
+  case vmIntrinsics::_vectorizedMismatch:
     return false;
   default:
     return true;
@@ -669,6 +671,9 @@ bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
     if (!UseCRC32CIntrinsics) return true;
     break;
+  case vmIntrinsics::_vectorizedMismatch:
+    if (!UseVectorizedMismatchIntrinsic) return true;
+    break;
   case vmIntrinsics::_updateBytesAdler32:
   case vmIntrinsics::_updateByteBufferAdler32:
     if (!UseAdler32Intrinsics) return true;
@@ -733,9 +738,6 @@ bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
     break;
   case vmIntrinsics::_montgomerySquare:
     if (!UseMontgomerySquareIntrinsic) return true;
-    break;
-  case vmIntrinsics::_vectorizedMismatch:
-    if (!UseVectorizedMismatchIntrinsic) return true;
     break;
   case vmIntrinsics::_addExactI:
   case vmIntrinsics::_addExactL:

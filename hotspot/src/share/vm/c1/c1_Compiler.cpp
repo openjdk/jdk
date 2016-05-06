@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,6 +224,11 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
+#ifdef SPARC
+  case vmIntrinsics::_updateBytesCRC32C:
+  case vmIntrinsics::_updateDirectByteBufferCRC32C:
+#endif
+  case vmIntrinsics::_vectorizedMismatch:
   case vmIntrinsics::_compareAndSwapInt:
   case vmIntrinsics::_compareAndSwapObject:
   case vmIntrinsics::_getCharStringU:

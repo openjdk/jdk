@@ -57,7 +57,6 @@ class Abstract_VM_Version: AllStatic {
   static int          _vm_build_number;
   static unsigned int _parallel_worker_threads;
   static bool         _parallel_worker_threads_initialized;
-  static int          _reserve_for_allocation_prefetch;
 
   static unsigned int nof_parallel_worker_threads(unsigned int num,
                                                   unsigned int dem,
@@ -137,12 +136,6 @@ class Abstract_VM_Version: AllStatic {
 
   static unsigned int L1_data_cache_line_size() {
     return _L1_data_cache_line_size;
-  }
-
-  // Need a space at the end of TLAB for prefetch instructions
-  // which may fault when accessing memory outside of heap.
-  static int reserve_for_allocation_prefetch() {
-    return _reserve_for_allocation_prefetch;
   }
 
   // ARCH specific policy for the BiasedLocking

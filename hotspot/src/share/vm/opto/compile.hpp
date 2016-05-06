@@ -1101,7 +1101,7 @@ class Compile : public Phase {
   int               code_size()                 { return _method_size; }
   CodeBuffer*       code_buffer()               { return &_code_buffer; }
   int               first_block_size()          { return _first_block_size; }
-  void              set_frame_complete(int off) { _code_offsets.set_value(CodeOffsets::Frame_Complete, off); }
+  void              set_frame_complete(int off) { if (!in_scratch_emit_size()) { _code_offsets.set_value(CodeOffsets::Frame_Complete, off); } }
   ExceptionHandlerTable*  handler_table()       { return &_handler_table; }
   ImplicitExceptionTable* inc_table()           { return &_inc_table; }
   OopMapSet*        oop_map_set()               { return _oop_map_set; }

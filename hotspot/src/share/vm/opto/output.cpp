@@ -1548,6 +1548,10 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       }
       dump_asm(node_offsets, node_offset_limit);
       if (xtty != NULL) {
+        // print_metadata and dump_asm above may safepoint which makes us loose the ttylock.
+        // Retake lock too make sure the end tag is coherent, and that xmlStream->pop_tag is done
+        // thread safe
+        ttyLocker ttyl2;
         xtty->tail("opto_assembly");
       }
     }
