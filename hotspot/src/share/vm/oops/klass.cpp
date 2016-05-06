@@ -401,9 +401,9 @@ void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive, bool clean_alive
     Klass* sub = current->subklass();
     while (sub != NULL && !sub->is_loader_alive(is_alive)) {
 #ifndef PRODUCT
-      if (log_is_enabled(Trace, classunload)) {
+      if (log_is_enabled(Trace, class, unload)) {
         ResourceMark rm;
-        log_trace(classunload)("unlinking class (subclass): %s", sub->external_name());
+        log_trace(class, unload)("unlinking class (subclass): %s", sub->external_name());
       }
 #endif
       sub = sub->next_sibling();
@@ -416,9 +416,9 @@ void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive, bool clean_alive
     // Find and set the first alive sibling
     Klass* sibling = current->next_sibling();
     while (sibling != NULL && !sibling->is_loader_alive(is_alive)) {
-      if (log_is_enabled(Trace, classunload)) {
+      if (log_is_enabled(Trace, class, unload)) {
         ResourceMark rm;
-        log_trace(classunload)("[Unlinking class (sibling) %s]", sibling->external_name());
+        log_trace(class, unload)("[Unlinking class (sibling) %s]", sibling->external_name());
       }
       sibling = sibling->next_sibling();
     }

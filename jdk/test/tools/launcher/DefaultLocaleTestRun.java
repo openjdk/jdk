@@ -41,7 +41,7 @@ public class DefaultLocaleTestRun extends TestHelper {
             System.out.println("Test passes vacuously on non-windows");
             return;
         }
-        TestResult tr = null;
+        TestResult tr;
         tr = doExec(javaCmd,
                 "-cp", TEST_CLASSES_DIR.getAbsolutePath(),
                 "DefaultLocaleTest", "-w", "x.out");

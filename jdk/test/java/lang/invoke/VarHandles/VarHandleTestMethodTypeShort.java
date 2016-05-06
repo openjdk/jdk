@@ -326,7 +326,7 @@ public class VarHandleTestMethodTypeShort extends VarHandleBaseTest {
     }
 
     static void testInstanceFieldWrongMethodType(VarHandleTestMethodTypeShort recv, Handles hs) throws Throwable {
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.get)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET)) {
             // Incorrect argument types
             checkNPE(() -> { // null receiver
                 short x = (short) hs.get(am, methodType(short.class, Void.class)).
@@ -360,7 +360,7 @@ public class VarHandleTestMethodTypeShort extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.set)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.SET)) {
             // Incorrect argument types
             checkNPE(() -> { // null receiver
                 hs.get(am, methodType(void.class, Void.class, short.class)).
@@ -509,7 +509,7 @@ public class VarHandleTestMethodTypeShort extends VarHandleBaseTest {
     static void testStaticFieldWrongMethodType(Handles hs) throws Throwable {
         int i = 0;
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.get)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET)) {
             // Incorrect return type
             checkWMTE(() -> { // reference class
                 Void x = (Void) hs.get(am, methodType(Void.class)).
@@ -526,7 +526,7 @@ public class VarHandleTestMethodTypeShort extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.set)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.SET)) {
             checkWMTE(() -> { // value reference class
                 hs.get(am, methodType(void.class, Class.class)).
                     invoke(Void.class);
@@ -780,7 +780,7 @@ public class VarHandleTestMethodTypeShort extends VarHandleBaseTest {
         short[] array = new short[10];
         Arrays.fill(array, (short)1);
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.get)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET)) {
             // Incorrect argument types
             checkNPE(() -> { // null array
                 short x = (short) hs.get(am, methodType(short.class, Void.class, int.class)).
@@ -818,7 +818,7 @@ public class VarHandleTestMethodTypeShort extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.set)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.SET)) {
             // Incorrect argument types
             checkNPE(() -> { // null array
                 hs.get(am, methodType(void.class, Void.class, int.class, short.class)).

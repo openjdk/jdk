@@ -34,22 +34,22 @@
  *          java.base/jdk.internal.vm.annotation
  *          java.base/jdk.internal.misc
  *
- * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions
- *                         -Xbatch -XX:-TieredCompilation
- *                         -XX:+FoldStableValues
- *                         -XX:CompileCommand=dontinline,UnsafeGetConstantField.checkGetAddress()
- *                         -XX:CompileCommand=dontinline,*.test*
- *                         -XX:+UseUnalignedAccesses
- *                         compiler.unsafe.UnsafeGetConstantField
+ * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions
+ *                                 -Xbatch -XX:-TieredCompilation
+ *                                 -XX:+FoldStableValues
+ *                                 -XX:CompileCommand=dontinline,UnsafeGetConstantField.checkGetAddress()
+ *                                 -XX:CompileCommand=dontinline,*.test*
+ *                                 -XX:+UseUnalignedAccesses
+ *                                 compiler.unsafe.UnsafeGetConstantField
  *
- * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions
- *                         -Xbatch -XX:-TieredCompilation
- *                         -XX:+FoldStableValues
- *                         -XX:CompileCommand=dontinline,UnsafeGetConstantField.checkGetAddress()
- *                         -XX:CompileCommand=dontinline,*.test*
- *                         -XX:CompileCommand=inline,*Unsafe.get*
- *                         -XX:-UseUnalignedAccesses
- *                         compiler.unsafe.UnsafeGetConstantField
+ * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions
+ *                                 -Xbatch -XX:-TieredCompilation
+ *                                 -XX:+FoldStableValues
+ *                                 -XX:CompileCommand=dontinline,UnsafeGetConstantField.checkGetAddress()
+ *                                 -XX:CompileCommand=dontinline,*.test*
+ *                                 -XX:CompileCommand=inline,*Unsafe.get*
+ *                                 -XX:-UseUnalignedAccesses
+ *                                 compiler.unsafe.UnsafeGetConstantField
  */
 package compiler.unsafe;
 
@@ -147,10 +147,7 @@ public class UnsafeGetConstantField {
             if (!hasDefaultValue && (stable || g.isFinal())) {
                 Asserts.assertEQ(t.value, test.testDirect(),
                         "direct read doesn't return prev value");
-                // fails for getCharUnaligned due to JDK-8148518
-                if (!(t == JavaType.C && "Unaligned".equals(postfix))) {
-                    Asserts.assertEQ(test.testDirect(), test.testUnsafe());
-                }
+                Asserts.assertEQ(test.testDirect(), test.testUnsafe());
             } else {
                 Asserts.assertEQ(t.defaultValue, test.testDirect(),
                         "direct read doesn't return default value");

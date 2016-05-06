@@ -228,6 +228,16 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         }
 
         @ForceInline
+        static boolean weakCompareAndSetVolatile(ArrayHandle handle, Object oba, int index, $type$ expected, $type$ value) {
+            byte[] ba = (byte[]) oba;
+            // TODO defer to strong form until new Unsafe method is added
+            return UNSAFE.compareAndSwap$RawType$(
+                    ba,
+                    address(ba, index(ba, index)),
+                    convEndian(handle.be, expected), convEndian(handle.be, value));
+        }
+
+        @ForceInline
         static boolean weakCompareAndSetAcquire(ArrayHandle handle, Object oba, int index, $type$ expected, $type$ value) {
             byte[] ba = (byte[]) oba;
             return UNSAFE.weakCompareAndSwap$RawType$Acquire(
@@ -438,6 +448,16 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         static boolean weakCompareAndSet(ByteBufferHandle handle, Object obb, int index, $type$ expected, $type$ value) {
             ByteBuffer bb = (ByteBuffer) obb;
             return UNSAFE.weakCompareAndSwap$RawType$(
+                    UNSAFE.getObject(bb, BYTE_BUFFER_HB),
+                    address(bb, indexRO(bb, index)),
+                    convEndian(handle.be, expected), convEndian(handle.be, value));
+        }
+
+        @ForceInline
+        static boolean weakCompareAndSetVolatile(ByteBufferHandle handle, Object obb, int index, $type$ expected, $type$ value) {
+            ByteBuffer bb = (ByteBuffer) obb;
+            // TODO defer to strong form until new Unsafe method is added
+            return UNSAFE.compareAndSwap$RawType$(
                     UNSAFE.getObject(bb, BYTE_BUFFER_HB),
                     address(bb, indexRO(bb, index)),
                     convEndian(handle.be, expected), convEndian(handle.be, value));

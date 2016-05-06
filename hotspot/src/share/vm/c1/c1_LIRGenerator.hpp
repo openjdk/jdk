@@ -446,6 +446,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void profile_arguments(ProfileCall* x);
   void profile_parameters(Base* x);
   void profile_parameters_at_call(ProfileCall* x);
+  LIR_Opr maybe_mask_boolean(StoreIndexed* x, LIR_Opr array, LIR_Opr value, CodeEmitInfo*& null_check_info);
 
  public:
   Compilation*  compilation() const              { return _compilation; }
@@ -471,7 +472,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
     : _compilation(compilation)
     , _method(method)
     , _virtual_register_number(LIR_OprDesc::vreg_base)
-    , _vreg_flags(NULL, 0, num_vreg_flags) {
+    , _vreg_flags(num_vreg_flags) {
     init();
   }
 

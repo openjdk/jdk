@@ -41,5 +41,11 @@ class GenerationSizer : public GenCollectorPolicy {
   void initialize_alignments();
   void initialize_flags();
   void initialize_size_info();
+
+ public:
+  // We don't have associated counters and complain if this is invoked.
+  void initialize_gc_policy_counters() {
+    ShouldNotReachHere();
+  }
 };
 #endif // SHARE_VM_GC_PARALLEL_GENERATIONSIZER_HPP

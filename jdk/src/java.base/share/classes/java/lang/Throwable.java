@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ public class Throwable implements Serializable {
     private static final long serialVersionUID = -3042686055658047285L;
 
     /**
-     * Native code saves some indication of the stack backtrace in this slot.
+     * The JVM saves some indication of the stack backtrace in this slot.
      */
     private transient Object backtrace;
 
@@ -210,6 +210,11 @@ public class Throwable implements Serializable {
      * @since 1.4
      */
     private StackTraceElement[] stackTrace = UNASSIGNED_STACK;
+
+    /**
+     * The JVM code sets the depth of the backtrace for later retrieval
+     */
+    private transient int depth;
 
     // Setting this static field introduces an acceptable
     // initialization dependency on a few java.util classes.
@@ -780,11 +785,7 @@ public class Throwable implements Serializable {
     public synchronized Throwable fillInStackTrace() {
         if (stackTrace != null ||
             backtrace != null /* Out of protocol state */ ) {
-            if (backtrace == null && StackStreamFactory.useStackTrace(this)) {
-                backtrace = StackStreamFactory.makeStackTrace(this);
-            } else {
-                fillInStackTrace(0);
-            }
+            fillInStackTrace(0);
             stackTrace = UNASSIGNED_STACK;
         }
         return this;
@@ -825,14 +826,11 @@ public class Throwable implements Serializable {
         // backtrace if this is the first call to this method
         if (stackTrace == UNASSIGNED_STACK ||
             (stackTrace == null && backtrace != null) /* Out of protocol state */) {
-            if (backtrace instanceof StackStreamFactory.StackTrace) {
-                stackTrace = ((StackStreamFactory.StackTrace)backtrace).getStackTraceElements();
-            } else {
-                int depth = getStackTraceDepth();
-                stackTrace = new StackTraceElement[depth];
-                for (int i = 0; i < depth; i++)
-                    stackTrace[i] = getStackTraceElement(i);
+            stackTrace = new StackTraceElement[depth];
+            for (int i = 0; i < depth; i++) {
+                stackTrace[i] = new StackTraceElement();
             }
+            getStackTraceElements(stackTrace);
         } else if (stackTrace == null) {
             return UNASSIGNED_STACK;
         }
@@ -884,23 +882,11 @@ public class Throwable implements Serializable {
     }
 
     /**
-     * Returns the number of elements in the stack trace (or 0 if the stack
-     * trace is unavailable).
-     *
-     * package-protection for use by SharedSecrets.
+     * Gets the stack trace elements.
+     * @param  elements
+     * @throws IndexOutOfBoundsException if {@code elements.length != depth }
      */
-    native int getStackTraceDepth();
-
-    /**
-     * Returns the specified element of the stack trace.
-     *
-     * package-protection for use by SharedSecrets.
-     *
-     * @param index index of the element to return.
-     * @throws IndexOutOfBoundsException if {@code index < 0 ||
-     *         index >= getStackTraceDepth() }
-     */
-    native StackTraceElement getStackTraceElement(int index);
+    private native void getStackTraceElements(StackTraceElement[] elements);
 
     /**
      * Reads a {@code Throwable} from a stream, enforcing

@@ -68,7 +68,7 @@ public class AnnotationProcessing extends ModuleTestBase {
     }
 
     @Test
-    void testAPSingleModule(Path base) throws Exception {
+    public void testAPSingleModule(Path base) throws Exception {
         Path moduleSrc = base.resolve("module-src");
         Path m1 = moduleSrc.resolve("m1");
 
@@ -95,7 +95,7 @@ public class AnnotationProcessing extends ModuleTestBase {
     }
 
     @Test
-    void testAPMultiModule(Path base) throws Exception {
+    public void testAPMultiModule(Path base) throws Exception {
         Path moduleSrc = base.resolve("module-src");
         Path m1 = moduleSrc.resolve("m1");
         Path m2 = moduleSrc.resolve("m2");
@@ -196,7 +196,7 @@ public class AnnotationProcessing extends ModuleTestBase {
     }
 
     @Test
-    void testVerifyUsesProvides(Path base) throws Exception {
+    public void testVerifyUsesProvides(Path base) throws Exception {
         Path moduleSrc = base.resolve("module-src");
         Path m1 = moduleSrc.resolve("m1");
 
@@ -254,7 +254,7 @@ public class AnnotationProcessing extends ModuleTestBase {
     }
 
     @Test
-    void testPackageNoModule(Path base) throws Exception {
+    public void testPackageNoModule(Path base) throws Exception {
         Path src = base.resolve("src");
         Path classes = base.resolve("classes");
 

@@ -24,8 +24,9 @@
 /*
  * @test
  * @bug 8067247
+ * @modules java.base/jdk.internal.misc
  * @library /test/lib /compiler/whitebox /
- * @run main/bootclasspath -Xcomp -Xbatch
+ * @run main/bootclasspath/othervm -Xcomp -Xbatch
  *      -XX:CompileCommand=compileonly,InvokerGC::test
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      InvokerGC

@@ -49,6 +49,7 @@ const char *BytecodeInterpreter::name_of_field_at_address(address addr) {
   DO(_locals);
   DO(_constants);
   DO(_method);
+  DO(_mirror);
   DO(_mdx);
   DO(_stack);
   DO(_msg);
@@ -77,6 +78,7 @@ void BytecodeInterpreter::layout_interpreterState(interpreterState istate,
                                                   bool      is_top_frame) {
   istate->set_locals(locals);
   istate->set_method(method);
+  istate->set_mirror(method->method_holder()->java_mirror());
   istate->set_self_link(istate);
   istate->set_prev_link(NULL);
   // thread will be set by a hacky repurposing of frame::patch_pc()

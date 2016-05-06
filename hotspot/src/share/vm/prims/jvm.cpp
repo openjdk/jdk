@@ -210,9 +210,9 @@ static void trace_class_resolution_impl(Klass* to_class, TRAPS) {
       const char * to = to_class->external_name();
       // print in a single call to reduce interleaving between threads
       if (source_file != NULL) {
-        log_debug(classresolve)("%s %s %s:%d (%s)", from, to, source_file, line_number, trace);
+        log_debug(class, resolve)("%s %s %s:%d (%s)", from, to, source_file, line_number, trace);
       } else {
-        log_debug(classresolve)("%s %s (%s)", from, to, trace);
+        log_debug(class, resolve)("%s %s (%s)", from, to, trace);
       }
     }
   }
@@ -389,7 +389,7 @@ JVM_ENTRY(jobject, JVM_InitProperties(JNIEnv *env, jobject properties))
       PUTPROP(props, "sun.nio.MaxDirectMemorySize", "-1");
     } else {
       char as_chars[256];
-      jio_snprintf(as_chars, sizeof(as_chars), SIZE_FORMAT, MaxDirectMemorySize);
+      jio_snprintf(as_chars, sizeof(as_chars), JULONG_FORMAT, MaxDirectMemorySize);
       PUTPROP(props, "sun.nio.MaxDirectMemorySize", as_chars);
     }
   }
@@ -805,7 +805,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromBootLoader(JNIEnv* env,
     return NULL;
   }
 
-  if (log_is_enabled(Debug, classresolve)) {
+  if (log_is_enabled(Debug, class, resolve)) {
     trace_class_resolution(k);
   }
   return (jclass) JNIHandles::make_local(env, k->java_mirror());
@@ -842,7 +842,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromCaller(JNIEnv* env, const char* name,
   jclass result = find_class_from_class_loader(env, h_name, init, h_loader,
                                                h_prot, false, THREAD);
 
-  if (log_is_enabled(Debug, classresolve) && result != NULL) {
+  if (log_is_enabled(Debug, class, resolve) && result != NULL) {
     trace_class_resolution(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(result)));
   }
   return result;
@@ -872,7 +872,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
   jclass result = find_class_from_class_loader(env, h_name, init, h_loader,
                                                h_prot, true, thread);
 
-  if (log_is_enabled(Debug, classresolve) && result != NULL) {
+  if (log_is_enabled(Debug, class, resolve) && result != NULL) {
     // this function is generally only used for class loading during verification.
     ResourceMark rm;
     oop from_mirror = JNIHandles::resolve_non_null(from);
@@ -882,7 +882,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
     oop mirror = JNIHandles::resolve_non_null(result);
     Klass* to_class = java_lang_Class::as_Klass(mirror);
     const char * to = to_class->external_name();
-    log_debug(classresolve)("%s %s (verification)", from_name, to);
+    log_debug(class, resolve)("%s %s (verification)", from_name, to);
   }
 
   return result;
@@ -950,7 +950,7 @@ static jclass jvm_define_class_common(JNIEnv *env, const char *name,
                                                    &st,
                                                    CHECK_NULL);
 
-  if (log_is_enabled(Debug, classresolve) && k != NULL) {
+  if (log_is_enabled(Debug, class, resolve) && k != NULL) {
     trace_class_resolution(k);
   }
 
@@ -1940,8 +1940,8 @@ JVM_ENTRY(jobject, JVM_GetClassConstantPool(JNIEnv *env, jclass cls))
     Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
     if (k->is_instance_klass()) {
       instanceKlassHandle k_h(THREAD, k);
-      Handle jcp = sun_reflect_ConstantPool::create(CHECK_NULL);
-      sun_reflect_ConstantPool::set_cp(jcp(), k_h->constants());
+      Handle jcp = reflect_ConstantPool::create(CHECK_NULL);
+      reflect_ConstantPool::set_cp(jcp(), k_h->constants());
       return JNIHandles::make_local(jcp());
     }
   }
@@ -1953,7 +1953,7 @@ JVM_END
 JVM_ENTRY(jint, JVM_ConstantPoolGetSize(JNIEnv *env, jobject obj, jobject unused))
 {
   JVMWrapper("JVM_ConstantPoolGetSize");
-  constantPoolHandle cp = constantPoolHandle(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  constantPoolHandle cp = constantPoolHandle(THREAD, reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
   return cp->length();
 }
 JVM_END
@@ -1962,7 +1962,7 @@ JVM_END
 JVM_ENTRY(jclass, JVM_ConstantPoolGetClassAt(JNIEnv *env, jobject obj, jobject unused, jint index))
 {
   JVMWrapper("JVM_ConstantPoolGetClassAt");
-  constantPoolHandle cp = constantPoolHandle(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  constantPoolHandle cp = constantPoolHandle(THREAD, reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
   bounds_check(cp, index, CHECK_NULL);
   constantTag tag = cp->tag_at(index);
   if (!tag.is_klass() && !tag.is_unresolved_klass()) {
@@ -1976,7 +1976,7 @@ JVM_END
 JVM_ENTRY(jclass, JVM_ConstantPoolGetClassAtIfLoaded(JNIEnv *env, jobject obj, jobject unused, jint index))
 {
   JVMWrapper("JVM_ConstantPoolGetClassAtIfLoaded");
-  constantPoolHandle cp = constantPoolHandle(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  constantPoolHandle cp = constantPoolHandle(THREAD, reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
   bounds_check(cp, index, CHECK_NULL);
   constantTag tag = cp->tag_at(index);
   if (!tag.is_klass() && !tag.is_unresolved_klass()) {
@@ -2021,7 +2021,7 @@ JVM_ENTRY(jobject, JVM_ConstantPoolGetMethodAt(JNIEnv *env, jobject obj, jobject
 {
   JVMWrapper("JVM_ConstantPoolGetMethodAt");
   JvmtiVMObjectAllocEventCollector oam;
-  constantPoolHandle cp = constantPoolHandle(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  constantPoolHandle cp = constantPoolHandle(THREAD, reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
   bounds_check(cp, index, CHECK_NULL);
   jobject res = get_method_at_helper(cp, index, true, CHECK_NULL);
   return res;
@@ -2032,7 +2032,7 @@ JVM_ENTRY(jobject, JVM_ConstantPoolGetMethodAtIfLoaded(JNIEnv *env, jobject obj,
 {
   JVMWrapper("JVM_ConstantPoolGetMethodAtIfLoaded");
   JvmtiVMObjectAllocEventCollector oam;
-  constantPoolHandle cp = constantPoolHandle(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  constantPoolHandle cp = constantPoolHandle(THREAD, reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
   bounds_check(cp, index, CHECK_NULL);
   jobject res = get_method_at_helper(cp, index, false, CHECK_NULL);
   return res;
@@ -2068,7 +2068,7 @@ JVM_ENTRY(jobject, JVM_ConstantPoolGetFieldAt(JNIEnv *env, jobject obj, jobject 
 {
   JVMWrapper("JVM_ConstantPoolGetFieldAt");
   JvmtiVMObjectAllocEventCollector oam;
-  constantPoolHandle cp = constantPoolHandle(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  constantPoolHandle cp = constantPoolHandle(THREAD, reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
   bounds_check(cp, index, CHECK_NULL);
   jobject res = get_field_at_helper(cp, index, true, CHECK_NULL);
   return res;
@@ -2079,7 +2079,7 @@ JVM_ENTRY(jobject, JVM_ConstantPoolGetFieldAtIfLoaded(JNIEnv *env, jobject obj, 
 {
   JVMWrapper("JVM_ConstantPoolGetFieldAtIfLoaded");
   JvmtiVMObjectAllocEventCollector oam;
-  constantPoolHandle cp = constantPoolHandle(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  constantPoolHandle cp = constantPoolHandle(THREAD, reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
   bounds_check(cp, index, CHECK_NULL);
   jobject res = get_field_at_helper(cp, index, false, CHECK_NULL);
   return res;
@@ -2090,7 +2090,7 @@ JVM_ENTRY(jobjectArray, JVM_ConstantPoolGetMemberRefInfoAt(JNIEnv *env, jobject 
 {
   JVMWrapper("JVM_ConstantPoolGetMemberRefInfoAt");
   JvmtiVMObjectAllocEventCollector oam;
-  constantPoolHandle cp = constantPoolHandle(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  constantPoolHandle cp = constantPoolHandle(THREAD, reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
   bounds_check(cp, index, CHECK_NULL);
   constantTag tag = cp->tag_at(index);
   if (!tag.is_field_or_method()) {
@@ -2116,7 +2116,7 @@ JVM_ENTRY(jint, JVM_ConstantPoolGetClassRefIndexAt(JNIEnv *env, jobject obj, job
 {
   JVMWrapper("JVM_ConstantPoolGetClassRefIndexAt");
   JvmtiVMObjectAllocEventCollector oam;
-  constantPoolHandle cp(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  constantPoolHandle cp(THREAD, reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
   bounds_check(cp, index, CHECK_0);
   constantTag tag = cp->tag_at(index);
   if (!tag.is_field_or_method()) {
@@ -2130,7 +2130,7 @@ JVM_ENTRY(jint, JVM_ConstantPoolGetNameAndTypeRefIndexAt(JNIEnv *env, jobject ob
 {
   JVMWrapper("JVM_ConstantPoolGetNameAndTypeRefIndexAt");
   JvmtiVMObjectAllocEventCollector oam;
-  constantPoolHandle cp(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  constantPoolHandle cp(THREAD, reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
   bounds_check(cp, index, CHECK_0);
   constantTag tag = cp->tag_at(index);
   if (!tag.is_invoke_dynamic() && !tag.is_field_or_method()) {
@@ -2144,7 +2144,7 @@ JVM_ENTRY(jobjectArray, JVM_ConstantPoolGetNameAndTypeRefInfoAt(JNIEnv *env, job
 {
   JVMWrapper("JVM_ConstantPoolGetNameAndTypeRefInfoAt");
   JvmtiVMObjectAllocEventCollector oam;
-  constantPoolHandle cp(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  constantPoolHandle cp(THREAD, reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
   bounds_check(cp, index, CHECK_NULL);
   constantTag tag = cp->tag_at(index);
   if (!tag.is_name_and_type()) {
@@ -2165,7 +2165,7 @@ JVM_END
 JVM_ENTRY(jint, JVM_ConstantPoolGetIntAt(JNIEnv *env, jobject obj, jobject unused, jint index))
 {
   JVMWrapper("JVM_ConstantPoolGetIntAt");
-  constantPoolHandle cp = constantPoolHandle(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  constantPoolHandle cp = constantPoolHandle(THREAD, reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
   bounds_check(cp, index, CHECK_0);
   constantTag tag = cp->tag_at(index);
   if (!tag.is_int()) {
@@ -2178,7 +2178,7 @@ JVM_END
 JVM_ENTRY(jlong, JVM_ConstantPoolGetLongAt(JNIEnv *env, jobject obj, jobject unused, jint index))
 {
   JVMWrapper("JVM_ConstantPoolGetLongAt");
-  constantPoolHandle cp = constantPoolHandle(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  constantPoolHandle cp = constantPoolHandle(THREAD, reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
   bounds_check(cp, index, CHECK_(0L));
   constantTag tag = cp->tag_at(index);
   if (!tag.is_long()) {
@@ -2191,7 +2191,7 @@ JVM_END
 JVM_ENTRY(jfloat, JVM_ConstantPoolGetFloatAt(JNIEnv *env, jobject obj, jobject unused, jint index))
 {
   JVMWrapper("JVM_ConstantPoolGetFloatAt");
-  constantPoolHandle cp = constantPoolHandle(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  constantPoolHandle cp = constantPoolHandle(THREAD, reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
   bounds_check(cp, index, CHECK_(0.0f));
   constantTag tag = cp->tag_at(index);
   if (!tag.is_float()) {
@@ -2204,7 +2204,7 @@ JVM_END
 JVM_ENTRY(jdouble, JVM_ConstantPoolGetDoubleAt(JNIEnv *env, jobject obj, jobject unused, jint index))
 {
   JVMWrapper("JVM_ConstantPoolGetDoubleAt");
-  constantPoolHandle cp = constantPoolHandle(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  constantPoolHandle cp = constantPoolHandle(THREAD, reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
   bounds_check(cp, index, CHECK_(0.0));
   constantTag tag = cp->tag_at(index);
   if (!tag.is_double()) {
@@ -2217,7 +2217,7 @@ JVM_END
 JVM_ENTRY(jstring, JVM_ConstantPoolGetStringAt(JNIEnv *env, jobject obj, jobject unused, jint index))
 {
   JVMWrapper("JVM_ConstantPoolGetStringAt");
-  constantPoolHandle cp = constantPoolHandle(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  constantPoolHandle cp = constantPoolHandle(THREAD, reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
   bounds_check(cp, index, CHECK_NULL);
   constantTag tag = cp->tag_at(index);
   if (!tag.is_string()) {
@@ -2232,7 +2232,7 @@ JVM_ENTRY(jstring, JVM_ConstantPoolGetUTF8At(JNIEnv *env, jobject obj, jobject u
 {
   JVMWrapper("JVM_ConstantPoolGetUTF8At");
   JvmtiVMObjectAllocEventCollector oam;
-  constantPoolHandle cp = constantPoolHandle(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  constantPoolHandle cp = constantPoolHandle(THREAD, reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
   bounds_check(cp, index, CHECK_NULL);
   constantTag tag = cp->tag_at(index);
   if (!tag.is_symbol()) {
@@ -2247,7 +2247,7 @@ JVM_END
 JVM_ENTRY(jbyte, JVM_ConstantPoolGetTagAt(JNIEnv *env, jobject obj, jobject unused, jint index))
 {
   JVMWrapper("JVM_ConstantPoolGetTagAt");
-  constantPoolHandle cp = constantPoolHandle(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  constantPoolHandle cp = constantPoolHandle(THREAD, reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
   bounds_check(cp, index, CHECK_0);
   constantTag tag = cp->tag_at(index);
   jbyte result = tag.value();

@@ -192,8 +192,12 @@ public:
            bool are_GC_task_threads,
            bool are_ConcurrentGC_threads);
 
-  // Run a task, returns when the task is done.
+  // Run a task using the current active number of workers, returns when the task is done.
   virtual void run_task(AbstractGangTask* task);
+  // Run a task with the given number of workers, returns
+  // when the task is done. The number of workers must be at most the number of
+  // active workers.
+  void run_task(AbstractGangTask* task, uint num_workers);
 
 protected:
   virtual AbstractGangWorker* allocate_worker(uint which);

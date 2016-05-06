@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
 package java.awt.event;
 
 import java.awt.Component;
+import java.io.ObjectStreamException;
+
+import sun.awt.AWTAccessor;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 
@@ -51,6 +54,10 @@ import sun.awt.SunToolkit;
  * the FOCUS_GAINED and FOCUS_LOST event ids; the level may be distinguished in
  * the event using the isTemporary() method.
  * <p>
+ * Every {@code FocusEvent} records its cause - the reason why this event was
+ * generated. The cause is assigned during the focus event creation and may be
+ * retrieved by calling {@link #getCause}.
+ * <p>
  * An unspecified behavior will be caused if the {@code id} parameter
  * of any particular {@code FocusEvent} instance is not
  * in the range from {@code FOCUS_FIRST} to {@code FOCUS_LAST}.
@@ -64,6 +71,61 @@ import sun.awt.SunToolkit;
  * @since 1.1
  */
 public class FocusEvent extends ComponentEvent {
+
+    /**
+     * This enum represents the cause of a {@code FocusEvent}- the reason why it
+     * occurred. Possible reasons include mouse events, keyboard focus
+     * traversal, window activation.
+     * If no cause is provided then the reason is {@code UNKNOWN}.
+     *
+     * @since 9
+     */
+    public enum Cause {
+        /**
+         * The default value.
+         */
+        UNKNOWN,
+        /**
+         * An activating mouse event.
+         */
+        MOUSE_EVENT,
+        /**
+         * A focus traversal action with unspecified direction.
+         */
+        TRAVERSAL,
+        /**
+         * An up-cycle focus traversal action.
+         */
+        TRAVERSAL_UP,
+        /**
+         * A down-cycle focus traversal action.
+         */
+        TRAVERSAL_DOWN,
+        /**
+         * A forward focus traversal action.
+         */
+        TRAVERSAL_FORWARD,
+        /**
+         * A backward focus traversal action.
+         */
+        TRAVERSAL_BACKWARD,
+        /**
+         * Restoring focus after a focus request has been rejected.
+         */
+        ROLLBACK,
+        /**
+         * A system action causing an unexpected focus change.
+         */
+        UNEXPECTED,
+        /**
+         * An activation of a toplevel window.
+         */
+        ACTIVATION,
+        /**
+         * Clearing global focus owner.
+         */
+        CLEAR_GLOBAL_FOCUS_OWNER
+    }
 
     /**
      * The first number in the range of ids used for focus events.
@@ -84,6 +146,16 @@ public class FocusEvent extends ComponentEvent {
      * This event indicates that the Component is no longer the focus owner.
      */
     public static final int FOCUS_LOST = 1 + FOCUS_FIRST; //Event.LOST_FOCUS
+
+    /**
+     * A focus event has the reason why this event was generated.
+     * The cause is set during the focus event creation.
+     *
+     * @serial
+     * @see #getCause()
+     * @since 9
+     */
+    private final Cause cause;
 
     /**
      * A focus event can have two different levels, permanent and temporary.
@@ -115,7 +187,8 @@ public class FocusEvent extends ComponentEvent {
 
     /**
      * Constructs a {@code FocusEvent} object with the
-     * specified temporary state and opposite {@code Component}.
+     * specified temporary state, opposite {@code Component} and the
+     * {@code Cause.UNKNOWN} cause.
      * The opposite {@code Component} is the other
      * {@code Component} involved in this focus change.
      * For a {@code FOCUS_GAINED} event, this is the
@@ -142,13 +215,57 @@ public class FocusEvent extends ComponentEvent {
      * @see #getID()
      * @see #isTemporary()
      * @see #getOppositeComponent()
+     * @see Cause#UNKNOWN
      * @since 1.4
      */
     public FocusEvent(Component source, int id, boolean temporary,
                       Component opposite) {
+        this(source, id, temporary, opposite, Cause.UNKNOWN);
+    }
+
+    /**
+     * Constructs a {@code FocusEvent} object with the
+     * specified temporary state, opposite {@code Component} and the cause.
+     * The opposite {@code Component} is the other
+     * {@code Component} involved in this focus change.
+     * For a {@code FOCUS_GAINED} event, this is the
+     * {@code Component} that lost focus. For a
+     * {@code FOCUS_LOST} event, this is the {@code Component}
+     * that gained focus. If this focus change occurs with a native
+     * application, with a Java application in a different VM,
+     * or with no other {@code Component}, then the opposite
+     * {@code Component} is {@code null}.
+     * <p> This method throws an
+     * {@code IllegalArgumentException} if {@code source} or {@code cause}
+     * is {@code null}.
+     *
+     * @param source    The {@code Component} that originated the event
+     * @param id        An integer indicating the type of event.
+     *                  For information on allowable values, see
+     *                  the class description for {@link FocusEvent}
+     * @param temporary Equals {@code true} if the focus change is temporary;
+     *                  {@code false} otherwise
+     * @param opposite  The other Component involved in the focus change,
+     *                  or {@code null}
+     * @param cause     The focus event cause.
+     * @throws IllegalArgumentException if {@code source} equals {@code null}
+     *                                  or if {@code cause} equals {@code null}
+     * @see #getSource()
+     * @see #getID()
+     * @see #isTemporary()
+     * @see #getOppositeComponent()
+     * @see Cause
+     * @since 9
+     */
+    public FocusEvent(Component source, int id, boolean temporary,
+                      Component opposite, Cause cause) {
         super(source, id);
+        if (cause == null) {
+            throw new IllegalArgumentException("null cause");
+        }
         this.temporary = temporary;
         this.opposite = opposite;
+        this.cause = cause;
     }
 
     /**
@@ -220,8 +337,8 @@ public class FocusEvent extends ComponentEvent {
 
         return (SunToolkit.targetToAppContext(opposite) ==
                 AppContext.getAppContext())
-            ? opposite
-            : null;
+                ? opposite
+                : null;
     }
 
     /**
@@ -233,17 +350,56 @@ public class FocusEvent extends ComponentEvent {
     public String paramString() {
         String typeStr;
         switch(id) {
-          case FOCUS_GAINED:
-              typeStr = "FOCUS_GAINED";
-              break;
-          case FOCUS_LOST:
-              typeStr = "FOCUS_LOST";
-              break;
-          default:
-              typeStr = "unknown type";
+            case FOCUS_GAINED:
+                typeStr = "FOCUS_GAINED";
+                break;
+            case FOCUS_LOST:
+                typeStr = "FOCUS_LOST";
+                break;
+            default:
+                typeStr = "unknown type";
         }
         return typeStr + (temporary ? ",temporary" : ",permanent") +
-            ",opposite=" + getOppositeComponent();
+                ",opposite=" + getOppositeComponent() + ",cause=" + getCause();
     }
+
+    /**
+     * Returns the event cause.
+     *
+     * @return one of {@link Cause} values
+     * @since 9
+     */
+    public final Cause getCause() {
+        return cause;
+    }
+
+    /**
+     * Checks if this deserialized {@code FocusEvent} instance is compatible
+     * with the current specification which implies that focus event has
+     * non-null {@code cause} value. If the check fails a new {@code FocusEvent}
+     * instance is returned which {@code cause} field equals to
+     * {@link Cause#UNKNOWN} and its other fields have the same values as in
+     * this {@code FocusEvent} instance.
+     *
+     * @serial
+     * @see #cause
+     * @since 9
+     */
+    @SuppressWarnings("serial")
+    Object readResolve() throws ObjectStreamException {
+        if (cause != null) {
+            return this;
+        }
+        FocusEvent focusEvent = new FocusEvent(new Component(){}, getID(),
+                isTemporary(), getOppositeComponent());
+        focusEvent.setSource(null);
+        focusEvent.consumed = consumed;
+
+        AWTAccessor.AWTEventAccessor accessor =
+                AWTAccessor.getAWTEventAccessor();
+        accessor.setBData(focusEvent, accessor.getBData(this));
+        return focusEvent;
+    }
+
 
 }

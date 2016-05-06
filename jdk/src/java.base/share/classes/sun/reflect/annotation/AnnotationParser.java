@@ -32,7 +32,7 @@ import java.nio.BufferUnderflowException;
 import java.lang.reflect.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import sun.reflect.ConstantPool;
+import jdk.internal.reflect.ConstantPool;
 
 import sun.reflect.generics.parser.SignatureParser;
 import sun.reflect.generics.tree.TypeSignature;

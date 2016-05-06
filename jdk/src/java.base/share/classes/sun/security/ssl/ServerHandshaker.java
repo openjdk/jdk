@@ -119,8 +119,8 @@ final class ServerHandshaker extends Handshaker {
     private long statusRespTimeout;
 
     static {
-        String property = AccessController.doPrivileged(
-                    new GetPropertyAction("jdk.tls.ephemeralDHKeySize"));
+        String property =
+                GetPropertyAction.getProperty("jdk.tls.ephemeralDHKeySize");
         if (property == null || property.length() == 0) {
             useLegacyEphemeralDHKeys = false;
             useSmartEphemeralDHKeys = false;
@@ -138,11 +138,17 @@ final class ServerHandshaker extends Handshaker {
             useSmartEphemeralDHKeys = false;
 
             try {
+                // DH parameter generation can be extremely slow, best to
+                // use one of the supported pre-computed DH parameters
+                // (see DHCrypt class).
                 customizedDHKeySize = Integer.parseUnsignedInt(property);
-                if (customizedDHKeySize < 1024 || customizedDHKeySize > 2048) {
+                if (customizedDHKeySize < 1024 || customizedDHKeySize > 8192 ||
+                        (customizedDHKeySize & 0x3f) != 0) {
                     throw new IllegalArgumentException(
-                        "Customized DH key size should be positive integer " +
-                        "between 1024 and 2048 bits, inclusive");
+                        "Unsupported customized DH key size: " +
+                        customizedDHKeySize + ". " +
+                        "The key size must be multiple of 64, " +
+                        "and can only range from 1024 to 8192 (inclusive)");
                 }
             } catch (NumberFormatException nfe) {
                 throw new IllegalArgumentException(
@@ -1520,14 +1526,10 @@ final class ServerHandshaker extends Handshaker {
          * Applications may also want to customize the ephemeral DH key size
          * to a fixed length for non-exportable cipher suites. This can be
          * approached by setting system property "jdk.tls.ephemeralDHKeySize"
-         * to a valid positive integer between 1024 and 2048 bits, inclusive.
+         * to a valid positive integer between 1024 and 8192 bits, inclusive.
          *
          * Note that the minimum acceptable key size is 1024 bits except
          * exportable cipher suites or legacy mode.
-         *
-         * Note that the maximum acceptable key size is 2048 bits because
-         * DH keys bigger than 2048 are not always supported by underlying
-         * JCE providers.
          *
          * Note that per RFC 2246, the key size limit of DH is 512 bits for
          * exportable cipher suites.  Because of the weakness, exportable
@@ -1543,10 +1545,17 @@ final class ServerHandshaker extends Handshaker {
             } else if (useSmartEphemeralDHKeys) {    // matched mode
                 if (key != null) {
                     int ks = KeyUtil.getKeySize(key);
-                    // Note that SunJCE provider only supports 2048 bits DH
-                    // keys bigger than 1024.  Please DON'T use value other
-                    // than 1024 and 2048 at present.  We may improve the
-                    // underlying providers and key size here in the future.
+
+                    // DH parameter generation can be extremely slow, make
+                    // sure to use one of the supported pre-computed DH
+                    // parameters (see DHCrypt class).
+                    //
+                    // Old deployed applications may not be ready to support
+                    // DH key sizes bigger than 2048 bits.  Please DON'T use
+                    // value other than 1024 and 2048 at present.  May improve
+                    // the underlying providers and key size limit in the
+                    // future when the compatibility and interoperability
+                    // impact is limited.
                     //
                     // keySize = ks <= 1024 ? 1024 : (ks >= 2048 ? 2048 : ks);
                     keySize = ks <= 1024 ? 1024 : 2048;

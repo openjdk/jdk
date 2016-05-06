@@ -49,7 +49,7 @@ class MethodHandleNatives {
 
     static native void init(MemberName self, Object ref);
     static native void expand(MemberName self);
-    static native MemberName resolve(MemberName self, Class<?> caller) throws LinkageError;
+    static native MemberName resolve(MemberName self, Class<?> caller) throws LinkageError, ClassNotFoundException;
     static native int getMembers(Class<?> defc, String matchName, String matchSig,
             int matchFlags, Class<?> caller, int skip, MemberName[] results);
 
@@ -423,7 +423,7 @@ class MethodHandleNatives {
         // Get the access kind from the method name
         VarHandle.AccessMode ak;
         try {
-            ak = VarHandle.AccessMode.valueOf(name);
+            ak = VarHandle.AccessMode.valueFromMethodName(name);
         } catch (IllegalArgumentException e) {
             throw MethodHandleStatics.newInternalError(e);
         }

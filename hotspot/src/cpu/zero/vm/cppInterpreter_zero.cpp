@@ -82,6 +82,30 @@ int CppInterpreter::normal_entry(Method* method, intptr_t UNUSED, TRAPS) {
   return 0;
 }
 
+intptr_t narrow(BasicType type, intptr_t result) {
+  // mask integer result to narrower return type.
+  switch (type) {
+    case T_BOOLEAN:
+      return result&1;
+    case T_BYTE:
+      return (intptr_t)(jbyte)result;
+    case T_CHAR:
+      return (intptr_t)(uintptr_t)(jchar)result;
+    case T_SHORT:
+      return (intptr_t)(jshort)result;
+    case T_OBJECT:  // nothing to do fall through
+    case T_ARRAY:
+    case T_LONG:
+    case T_INT:
+    case T_FLOAT:
+    case T_DOUBLE:
+    case T_VOID:
+      return result;
+    default  : ShouldNotReachHere();
+  }
+}
+
+
 void CppInterpreter::main_loop(int recurse, TRAPS) {
   JavaThread *thread = (JavaThread *) THREAD;
   ZeroStack *stack = thread->zero_stack();
@@ -161,7 +185,7 @@ void CppInterpreter::main_loop(int recurse, TRAPS) {
     }
     else if (istate->msg() == BytecodeInterpreter::return_from_method) {
       // Copy the result into the caller's frame
-      result_slots = type2size[result_type_of(method)];
+      result_slots = type2size[method->result_type()];
       assert(result_slots >= 0 && result_slots <= 2, "what?");
       result = istate->stack() + result_slots;
       break;
@@ -195,8 +219,21 @@ void CppInterpreter::main_loop(int recurse, TRAPS) {
   stack->set_sp(stack->sp() + method->max_locals());
 
   // Push our result
-  for (int i = 0; i < result_slots; i++)
-    stack->push(result[-i]);
+  for (int i = 0; i < result_slots; i++) {
+    // Adjust result to smaller
+    union {
+      intptr_t res;
+      jint res_jint;
+    };
+    res = result[-i];
+    if (result_slots == 1) {
+      BasicType t = method->result_type();
+      if (is_subword_type(t)) {
+        res_jint = (jint)narrow(t, res_jint);
+      }
+    }
+    stack->push(res);
+  }
 }
 
 int CppInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
@@ -407,7 +444,7 @@ int CppInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
 
   // Push our result
   if (!HAS_PENDING_EXCEPTION) {
-    BasicType type = result_type_of(method);
+    BasicType type = method->result_type();
     stack->set_sp(stack->sp() - type2size[type]);
 
     switch (type) {
@@ -532,6 +569,7 @@ int CppInterpreter::accessor_entry(Method* method, intptr_t UNUSED, TRAPS) {
       break;
 
     case btos:
+    case ztos:
       SET_LOCALS_INT(object->byte_field_acquire(entry->f2_as_index()), 0);
       break;
 
@@ -570,6 +608,7 @@ int CppInterpreter::accessor_entry(Method* method, intptr_t UNUSED, TRAPS) {
       break;
 
     case btos:
+    case ztos:
       SET_LOCALS_INT(object->byte_field(entry->f2_as_index()), 0);
       break;
 
@@ -716,6 +755,7 @@ InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
 
   istate->set_locals(locals);
   istate->set_method(method);
+  istate->set_mirror(method->method_holder()->java_mirror());
   istate->set_self_link(istate);
   istate->set_prev_link(NULL);
   istate->set_thread(thread);
@@ -770,26 +810,6 @@ InterpreterFrame *InterpreterFrame::build(int size, TRAPS) {
   stack->alloc((size_in_words - header_words) * wordSize);
 
   return (InterpreterFrame *) fp;
-}
-
-BasicType CppInterpreter::result_type_of(Method* method) {
-  BasicType t = T_ILLEGAL; // silence compiler warnings
-  switch (method->result_index()) {
-    case 0 : t = T_BOOLEAN; break;
-    case 1 : t = T_CHAR;    break;
-    case 2 : t = T_BYTE;    break;
-    case 3 : t = T_SHORT;   break;
-    case 4 : t = T_INT;     break;
-    case 5 : t = T_LONG;    break;
-    case 6 : t = T_VOID;    break;
-    case 7 : t = T_FLOAT;   break;
-    case 8 : t = T_DOUBLE;  break;
-    case 9 : t = T_OBJECT;  break;
-    default: ShouldNotReachHere();
-  }
-  assert(AbstractInterpreter::BasicType_as_index(t) == method->result_index(),
-         "out of step with AbstractInterpreter::BasicType_as_index");
-  return t;
 }
 
 address CppInterpreter::return_entry(TosState state, int length, Bytecodes::Code code) {

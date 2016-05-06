@@ -382,7 +382,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
   return true;
 }
 
-void LogConfiguration::describe(outputStream* out) {
+void LogConfiguration::describe_available(outputStream* out){
   out->print("Available log levels:");
   for (size_t i = 0; i < LogLevel::Count; i++) {
     out->print("%s %s", (i == 0 ? "" : ","), LogLevel::name(static_cast<LogLevelType>(i)));
@@ -402,18 +402,28 @@ void LogConfiguration::describe(outputStream* out) {
   }
   out->cr();
 
-  ConfigurationLock cl;
+}
+
+void LogConfiguration::describe_current_configuration(outputStream* out){
   out->print_cr("Log output configuration:");
   for (size_t i = 0; i < _n_outputs; i++) {
     out->print("#" SIZE_FORMAT ": %s %s ", i, _outputs[i]->name(), _outputs[i]->config_string());
+    char delimiter[2] = {0};
     for (size_t d = 0; d < LogDecorators::Count; d++) {
       LogDecorators::Decorator decorator = static_cast<LogDecorators::Decorator>(d);
       if (_outputs[i]->decorators().is_decorator(decorator)) {
-        out->print("%s,", LogDecorators::name(decorator));
+        out->print("%s%s", delimiter, LogDecorators::name(decorator));
+        *delimiter = ',';
       }
     }
     out->cr();
   }
+}
+
+void LogConfiguration::describe(outputStream* out) {
+  describe_available(out);
+  ConfigurationLock cl;
+  describe_current_configuration(out);
 }
 
 void LogConfiguration::print_command_line_help(FILE* out) {
@@ -454,7 +464,7 @@ void LogConfiguration::print_command_line_help(FILE* out) {
               " -Xlog:gc=debug:file=gc.txt:none\n"
               "\t Log messages tagged with 'gc' tag using 'debug' level to file 'gc.txt' with no decorations.\n\n"
 
-              " -Xlog:gc=trace:file=gctrace.txt:uptimemillis,pids:filecount=5,filesize=1024\n"
+              " -Xlog:gc=trace:file=gctrace.txt:uptimemillis,pids:filecount=5,filesize=1m\n"
               "\t Log messages tagged with 'gc' tag using 'trace' level to a rotating fileset of 5 files of size 1MB,\n"
               "\t using the base name 'gctrace.txt', with 'uptimemillis' and 'pid' decorations.\n\n"
 

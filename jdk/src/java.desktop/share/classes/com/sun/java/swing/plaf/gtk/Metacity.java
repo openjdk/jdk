@@ -185,7 +185,7 @@ class Metacity implements SynthConstants {
                                                getIntAttr(child, "bottom", 0),
                                                getIntAttr(child, "right", 0));
                         } else if ("aspect_ratio".equals(name)) {
-                            value = new Float(getFloatAttr(child, "value", 1.0F));
+                            value = Float.valueOf(getFloatAttr(child, "value", 1.0F));
                         } else {
                             logError(themeName, "Unknown Metacity frame geometry value type: "+name);
                         }

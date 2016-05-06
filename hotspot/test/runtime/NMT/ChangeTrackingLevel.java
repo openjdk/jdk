@@ -26,6 +26,7 @@
  * @bug 8059100
  * @summary Test that you can decrease NMT tracking level but not increase it.
  * @key nmt
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @build ChangeTrackingLevel
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

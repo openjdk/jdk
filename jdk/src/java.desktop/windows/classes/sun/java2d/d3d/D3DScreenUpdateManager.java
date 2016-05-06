@@ -49,7 +49,6 @@ import sun.java2d.SurfaceData;
 import sun.java2d.windows.GDIWindowSurfaceData;
 import sun.java2d.d3d.D3DSurfaceData.D3DWindowSurfaceData;
 import sun.java2d.windows.WindowsFlags;
-import sun.misc.ManagedLocalsThread;
 
 /**
  * This class handles rendering to the screen with the D3D pipeline.
@@ -99,8 +98,9 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
                 done = true;
                 wakeUpUpdateThread();
             };
-            Thread shutdown = new ManagedLocalsThread(
-                    ThreadGroupUtils.getRootThreadGroup(), shutdownRunnable);
+            Thread shutdown = new Thread(
+                    ThreadGroupUtils.getRootThreadGroup(), shutdownRunnable,
+                    "ScreenUpdater", 0, false);
             shutdown.setContextClassLoader(null);
             try {
                 Runtime.getRuntime().addShutdownHook(shutdown);
@@ -348,8 +348,9 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
         if (screenUpdater == null) {
             screenUpdater = AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
                 String name = "D3D Screen Updater";
-                Thread t = new ManagedLocalsThread(
-                        ThreadGroupUtils.getRootThreadGroup(), this, name);
+                Thread t = new Thread(
+                        ThreadGroupUtils.getRootThreadGroup(), this, name,
+                        0, false);
                 // REMIND: should it be higher?
                 t.setPriority(Thread.NORM_PRIORITY + 2);
                 t.setDaemon(true);

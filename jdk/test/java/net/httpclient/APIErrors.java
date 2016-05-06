@@ -26,6 +26,7 @@
  * @bug 8087112
  * @library /lib/testlibrary/
  * @build jdk.testlibrary.SimpleSSLContext ProxyServer
+ * @build TestKit
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
  * @run main/othervm APIErrors
@@ -73,26 +74,6 @@ public class APIErrors {
         }
     }
 
-    static void reject(Runnable r, Class<? extends Exception> extype) {
-        try {
-            r.run();
-            throw new RuntimeException("Expected: " + extype);
-        } catch (Throwable t) {
-            if (!extype.isAssignableFrom(t.getClass())) {
-                throw new RuntimeException("Wrong exception type: " + extype + " / "
-                    +t.getClass());
-            }
-        }
-    }
-
-    static void accept(Runnable r) {
-        try {
-            r.run();
-        } catch (Throwable t) {
-            throw new RuntimeException("Unexpected exception: " + t);
-        }
-    }
-
     static void checkNonNull(Supplier<?> r) {
         if (r.get() == null)
             throw new RuntimeException("Unexpected null return:");
@@ -108,12 +89,14 @@ public class APIErrors {
         System.out.println("Test 1");
         HttpClient.Builder cb = HttpClient.create();
         InetSocketAddress addr = new InetSocketAddress("127.0.0.1", 5000);
-        reject(() -> { cb.priority(-1);}, IllegalArgumentException.class);
-        reject(() -> { cb.priority(500);}, IllegalArgumentException.class);
-        accept(() -> { cb.priority(1);});
-        accept(() -> { cb.priority(255);});
-
-        accept(() -> {clients.add(cb.build()); clients.add(cb.build());});
+        TestKit.assertThrows(IllegalArgumentException.class, () -> cb.priority(-1));
+        TestKit.assertThrows(IllegalArgumentException.class, () -> cb.priority(500));
+        TestKit.assertNotThrows(() -> cb.priority(1));
+        TestKit.assertNotThrows(() -> cb.priority(255));
+        TestKit.assertNotThrows(() -> {
+            clients.add(cb.build());
+            clients.add(cb.build());
+        });
     }
 
     static void test2() throws Exception {
@@ -139,7 +122,7 @@ public class APIErrors {
 
     static void test3() throws Exception {
         System.out.println("Test 3");
-        reject(()-> {
+        TestKit.assertThrows(IllegalStateException.class, ()-> {
             try {
                 HttpRequest r1 = request();
                 HttpResponse resp = r1.response();
@@ -147,9 +130,9 @@ public class APIErrors {
             } catch (IOException |InterruptedException e) {
                 throw new RuntimeException(e);
             }
-        }, IllegalStateException.class);
+        });
 
-        reject(()-> {
+        TestKit.assertThrows(IllegalStateException.class, ()-> {
             try {
                 HttpRequest r1 = request();
                 HttpResponse resp = r1.response();
@@ -157,8 +140,8 @@ public class APIErrors {
             } catch (IOException |InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e);
             }
-        }, IllegalStateException.class);
-        reject(()-> {
+        });
+        TestKit.assertThrows(IllegalStateException.class, ()-> {
             try {
                 HttpRequest r1 = request();
                 HttpResponse resp1 = r1.responseAsync().get();
@@ -166,7 +149,7 @@ public class APIErrors {
             } catch (IOException |InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e);
             }
-        }, IllegalStateException.class);
+        });
     }
 
     static class Auth extends java.net.Authenticator {

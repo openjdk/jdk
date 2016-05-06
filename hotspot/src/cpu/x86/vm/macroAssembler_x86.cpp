@@ -6701,6 +6701,14 @@ void MacroAssembler::restore_cpu_control_state_after_jni() {
 #endif // _LP64
 }
 
+void MacroAssembler::load_mirror(Register mirror, Register method) {
+  // get mirror
+  const int mirror_offset = in_bytes(Klass::java_mirror_offset());
+  movptr(mirror, Address(method, Method::const_offset()));
+  movptr(mirror, Address(mirror, ConstMethod::constants_offset()));
+  movptr(mirror, Address(mirror, ConstantPool::pool_holder_offset_in_bytes()));
+  movptr(mirror, Address(mirror, mirror_offset));
+}
 
 void MacroAssembler::load_klass(Register dst, Register src) {
 #ifdef _LP64

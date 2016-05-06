@@ -27,6 +27,7 @@
  * @test
  * @summary Test if package p6 in module m2 is not exported, then class c5
  *          in an unnamed module can not access p6.c2 in module m2.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @compile myloaders/MySameClassLoader.java
  * @compile p6/c6.java

@@ -25,6 +25,7 @@
  * @test LockCompilationTest
  * @bug 8059624 8152169
  * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build LockCompilationTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

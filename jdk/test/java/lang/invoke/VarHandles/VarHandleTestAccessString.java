@@ -90,27 +90,27 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
 
     @Test(dataProvider = "varHandlesProvider")
     public void testIsAccessModeSupported(VarHandle vh) {
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.get));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.set));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getVolatile));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.setVolatile));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getAcquire));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.setRelease));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getOpaque));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.setOpaque));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_OPAQUE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
 
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndSet));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndExchangeVolatile));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndExchangeAcquire));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndExchangeRelease));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSet));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSetAcquire));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSetRelease));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSetRelease));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getAndSet));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
 
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.getAndAdd));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.addAndGet));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
     }
 
 
@@ -436,12 +436,19 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
             assertEquals(x, "bar", "weakCompareAndSetRelease String");
         }
 
+        {
+            boolean r = vh.weakCompareAndSetVolatile(recv, "bar", "foo");
+            assertEquals(r, true, "weakCompareAndSetVolatile String");
+            String x = (String) vh.get(recv);
+            assertEquals(x, "foo", "weakCompareAndSetVolatile String value");
+        }
+
         // Compare set and get
         {
-            String o = (String) vh.getAndSet(recv, "foo");
-            assertEquals(o, "bar", "getAndSet String");
+            String o = (String) vh.getAndSet(recv, "bar");
+            assertEquals(o, "foo", "getAndSet String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "foo", "getAndSet String value");
+            assertEquals(x, "bar", "getAndSet String value");
         }
 
     }
@@ -562,18 +569,25 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         }
 
         {
-            boolean r = (boolean) vh.weakCompareAndSetRelease( "foo", "bar");
+            boolean r = (boolean) vh.weakCompareAndSetRelease("foo", "bar");
             assertEquals(r, true, "weakCompareAndSetRelease String");
             String x = (String) vh.get();
             assertEquals(x, "bar", "weakCompareAndSetRelease String");
         }
 
+        {
+            boolean r = (boolean) vh.weakCompareAndSetVolatile("bar", "foo");
+            assertEquals(r, true, "weakCompareAndSetVolatile String");
+            String x = (String) vh.get();
+            assertEquals(x, "foo", "weakCompareAndSetVolatile String value");
+        }
+
         // Compare set and get
         {
-            String o = (String) vh.getAndSet( "foo");
-            assertEquals(o, "bar", "getAndSet String");
+            String o = (String) vh.getAndSet( "bar");
+            assertEquals(o, "foo", "getAndSet String");
             String x = (String) vh.get();
-            assertEquals(x, "foo", "getAndSet String value");
+            assertEquals(x, "bar", "getAndSet String value");
         }
 
     }
@@ -703,12 +717,19 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
                 assertEquals(x, "bar", "weakCompareAndSetRelease String");
             }
 
+            {
+                boolean r = vh.weakCompareAndSetVolatile(array, i, "bar", "foo");
+                assertEquals(r, true, "weakCompareAndSetVolatile String");
+                String x = (String) vh.get(array, i);
+                assertEquals(x, "foo", "weakCompareAndSetVolatile String value");
+            }
+
             // Compare set and get
             {
-                String o = (String) vh.getAndSet(array, i, "foo");
-                assertEquals(o, "bar", "getAndSet String");
+                String o = (String) vh.getAndSet(array, i, "bar");
+                assertEquals(o, "foo", "getAndSet String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "foo", "getAndSet String value");
+                assertEquals(x, "bar", "getAndSet String value");
             }
 
         }
@@ -784,6 +805,10 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
 
             checkIOOBE(() -> {
                 boolean r = vh.weakCompareAndSet(array, ci, "foo", "bar");
+            });
+
+            checkIOOBE(() -> {
+                boolean r = vh.weakCompareAndSetVolatile(array, ci, "foo", "bar");
             });
 
             checkIOOBE(() -> {

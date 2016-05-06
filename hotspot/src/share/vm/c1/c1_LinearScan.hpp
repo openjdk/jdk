@@ -140,8 +140,8 @@ class LinearScan : public CompilationResourceObj {
 
   LIR_OpArray               _lir_ops;           // mapping from LIR_Op id to LIR_Op node
   BlockBeginArray           _block_of_op;       // mapping from LIR_Op id to the BlockBegin containing this instruction
-  BitMap                    _has_info;          // bit set for each LIR_Op id that has a CodeEmitInfo
-  BitMap                    _has_call;          // bit set for each LIR_Op id that destroys all caller save registers
+  ResourceBitMap            _has_info;          // bit set for each LIR_Op id that has a CodeEmitInfo
+  ResourceBitMap            _has_call;          // bit set for each LIR_Op id that destroys all caller save registers
   BitMap2D                  _interval_in_loop;  // bit set for each virtual register that is contained in each loop
 
   // cached debug info to prevent multiple creation of same object

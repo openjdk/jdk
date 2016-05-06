@@ -29,7 +29,6 @@ import java.awt.peer.FileDialogPeer;
 import java.io.File;
 import java.io.FilenameFilter;
 import sun.awt.AWTAccessor;
-import sun.misc.ManagedLocalsThread;
 
 /**
  * FileDialogPeer for the GtkFileChooser.
@@ -120,7 +119,7 @@ final class GtkFileDialogPeer extends XDialogPeer implements FileDialogPeer {
                     standaloneWindow = 0;
                     fd.setVisible(false);
                 };
-                new ManagedLocalsThread(task).start();
+                new Thread(null, task, "ShowDialog", 0, false).start();
             } else {
                 quit();
                 fd.setVisible(false);

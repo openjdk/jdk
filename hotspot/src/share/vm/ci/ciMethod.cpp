@@ -202,6 +202,7 @@ void ciMethod::load_code() {
   _code = (address)arena->Amalloc(code_size());
   memcpy(_code, me->code_base(), code_size());
 
+#if INCLUDE_JVMTI
   // Revert any breakpoint bytecodes in ci's copy
   if (me->number_of_breakpoints() > 0) {
     BreakpointInfo* bp = me->method_holder()->breakpoints();
@@ -211,6 +212,7 @@ void ciMethod::load_code() {
       }
     }
   }
+#endif
 
   // And load the exception table.
   ExceptionTable exc_table(me);
@@ -441,12 +443,12 @@ MethodLivenessResult ciMethod::liveness_at_bci(int bci) {
 // gc'ing an interpreter frame we need to use its viewpoint  during
 // OSR when loading the locals.
 
-BitMap ciMethod::live_local_oops_at_bci(int bci) {
+ResourceBitMap ciMethod::live_local_oops_at_bci(int bci) {
   VM_ENTRY_MARK;
   InterpreterOopMap mask;
   OopMapCache::compute_one_oop_map(get_Method(), bci, &mask);
   int mask_size = max_locals();
-  BitMap result(mask_size);
+  ResourceBitMap result(mask_size);
   result.clear();
   int i;
   for (i = 0; i < mask_size ; i++ ) {
@@ -461,7 +463,7 @@ BitMap ciMethod::live_local_oops_at_bci(int bci) {
 // ciMethod::bci_block_start
 //
 // Marks all bcis where a new basic block starts
-const BitMap ciMethod::bci_block_start() {
+const BitMap& ciMethod::bci_block_start() {
   check_is_loaded();
   if (_liveness == NULL) {
     // Create the liveness analyzer.

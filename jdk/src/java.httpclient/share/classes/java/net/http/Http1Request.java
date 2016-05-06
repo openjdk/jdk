@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.net.InetSocketAddress;
+import java.net.http.HttpConnection.Mode;
 import java.nio.charset.StandardCharsets;
 import java.util.function.LongConsumer;
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -48,7 +49,8 @@ class Http1Request {
     // See line 206 and below for description
     final ByteBuffer[] buffers;
     final HttpRequest.BodyProcessor requestProc;
-    final HttpHeadersImpl userHeaders, systemHeaders;
+    final HttpHeaders userHeaders;
+    final HttpHeadersImpl systemHeaders;
     final LongConsumer flowController;
     boolean streaming;
     long contentLength;
@@ -91,10 +93,10 @@ class Http1Request {
 
     private void collectHeaders1(StringBuilder sb,
                                  HttpRequestImpl request,
-                                 HttpHeadersImpl headers)
+                                 HttpHeaders headers)
         throws IOException
     {
-        Map<String,List<String>> h = headers.directMap();
+        Map<String,List<String>> h = headers.map();
         Set<Map.Entry<String,List<String>>> entries = h.entrySet();
 
         for (Map.Entry<String,List<String>> entry : entries) {
@@ -111,8 +113,6 @@ class Http1Request {
             sb.append("\r\n");
         }
     }
-
-    private static final int BUFSIZE = 64 * 1024; // TODO: configurable?
 
     private String getPathAndQuery(URI uri) {
         String path = uri.getPath();
@@ -132,6 +132,25 @@ class Http1Request {
 
     private String authorityString(InetSocketAddress addr) {
         return addr.getHostString() + ":" + addr.getPort();
+    }
+
+    private String hostString() {
+        URI uri = request.uri();
+        int port = uri.getPort();
+        String host = uri.getHost();
+
+        boolean defaultPort;
+        if (port == -1)
+            defaultPort = true;
+        else if (request.secure())
+            defaultPort = port == 443;
+        else
+            defaultPort = port == 80;
+
+        if (defaultPort)
+            return host;
+        else
+            return host + ":" + Integer.toString(port);
     }
 
     private String requestURI() {
@@ -161,6 +180,7 @@ class Http1Request {
 
     void sendRequest() throws IOException {
         collectHeaders();
+        chan.configureMode(Mode.BLOCKING);
         if (contentLength == 0) {
             chan.write(buffers, 0, 2);
         } else if (contentLength > 0) {
@@ -196,7 +216,7 @@ class Http1Request {
         buffers[0] = ByteBuffer.wrap(cmd.getBytes(StandardCharsets.US_ASCII));
         URI uri = request.uri();
         if (uri != null) {
-            systemHeaders.setHeader("Host", uri.getHost());
+            systemHeaders.setHeader("Host", hostString());
         }
         if (request == null) {
             // this is not a user request. No content

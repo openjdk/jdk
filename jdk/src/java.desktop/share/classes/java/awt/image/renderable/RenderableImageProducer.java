@@ -35,8 +35,6 @@
 
 package java.awt.image.renderable;
 
-import sun.misc.ManagedLocalsThread;
-
 import java.awt.image.ColorModel;
 import java.awt.image.DataBuffer;
 import java.awt.image.ImageConsumer;
@@ -137,7 +135,7 @@ public class RenderableImageProducer implements ImageProducer, Runnable {
         addConsumer(ic);
         // Need to build a runnable object for the Thread.
         String name = "RenderableImageProducer Thread";
-        Thread thread = new ManagedLocalsThread(this, name);
+        Thread thread = new Thread(null, this, name, 0, false);
         thread.start();
     }
 

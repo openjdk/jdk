@@ -90,27 +90,27 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
 
     @Test(dataProvider = "varHandlesProvider")
     public void testIsAccessModeSupported(VarHandle vh) {
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.get));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.set));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getVolatile));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.setVolatile));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getAcquire));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.setRelease));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getOpaque));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.setOpaque));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_OPAQUE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
 
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndSet));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndExchangeVolatile));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndExchangeAcquire));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndExchangeRelease));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSet));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSetAcquire));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSetRelease));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSetRelease));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getAndSet));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
 
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getAndAdd));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.addAndGet));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
     }
 
 
@@ -422,12 +422,19 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
             assertEquals(x, 2L, "weakCompareAndSetRelease long");
         }
 
+        {
+            boolean r = vh.weakCompareAndSetVolatile(recv, 2L, 1L);
+            assertEquals(r, true, "weakCompareAndSetVolatile long");
+            long x = (long) vh.get(recv);
+            assertEquals(x, 1L, "weakCompareAndSetVolatile long value");
+        }
+
         // Compare set and get
         {
-            long o = (long) vh.getAndSet(recv, 1L);
-            assertEquals(o, 2L, "getAndSet long");
+            long o = (long) vh.getAndSet(recv, 2L);
+            assertEquals(o, 1L, "getAndSet long");
             long x = (long) vh.get(recv);
-            assertEquals(x, 1L, "getAndSet long value");
+            assertEquals(x, 2L, "getAndSet long value");
         }
 
         vh.set(recv, 1L);
@@ -550,18 +557,25 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
         }
 
         {
-            boolean r = (boolean) vh.weakCompareAndSetRelease( 1L, 2L);
+            boolean r = (boolean) vh.weakCompareAndSetRelease(1L, 2L);
             assertEquals(r, true, "weakCompareAndSetRelease long");
             long x = (long) vh.get();
             assertEquals(x, 2L, "weakCompareAndSetRelease long");
         }
 
+        {
+            boolean r = (boolean) vh.weakCompareAndSetVolatile(2L, 1L);
+            assertEquals(r, true, "weakCompareAndSetVolatile long");
+            long x = (long) vh.get();
+            assertEquals(x, 1L, "weakCompareAndSetVolatile long value");
+        }
+
         // Compare set and get
         {
-            long o = (long) vh.getAndSet( 1L);
-            assertEquals(o, 2L, "getAndSet long");
+            long o = (long) vh.getAndSet( 2L);
+            assertEquals(o, 1L, "getAndSet long");
             long x = (long) vh.get();
-            assertEquals(x, 1L, "getAndSet long value");
+            assertEquals(x, 2L, "getAndSet long value");
         }
 
         vh.set(1L);
@@ -693,12 +707,19 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
                 assertEquals(x, 2L, "weakCompareAndSetRelease long");
             }
 
+            {
+                boolean r = vh.weakCompareAndSetVolatile(array, i, 2L, 1L);
+                assertEquals(r, true, "weakCompareAndSetVolatile long");
+                long x = (long) vh.get(array, i);
+                assertEquals(x, 1L, "weakCompareAndSetVolatile long value");
+            }
+
             // Compare set and get
             {
-                long o = (long) vh.getAndSet(array, i, 1L);
-                assertEquals(o, 2L, "getAndSet long");
+                long o = (long) vh.getAndSet(array, i, 2L);
+                assertEquals(o, 1L, "getAndSet long");
                 long x = (long) vh.get(array, i);
-                assertEquals(x, 1L, "getAndSet long value");
+                assertEquals(x, 2L, "getAndSet long value");
             }
 
             vh.set(array, i, 1L);
@@ -776,6 +797,10 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
 
             checkIOOBE(() -> {
                 boolean r = vh.weakCompareAndSet(array, ci, 1L, 2L);
+            });
+
+            checkIOOBE(() -> {
+                boolean r = vh.weakCompareAndSetVolatile(array, ci, 1L, 2L);
             });
 
             checkIOOBE(() -> {

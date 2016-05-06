@@ -25,9 +25,11 @@
  * @test
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @library ../../../../../
- * @modules jdk.vm.ci/jdk.vm.ci.meta
+ * @modules java.base/jdk.internal.reflect
+ *          jdk.vm.ci/jdk.vm.ci.meta
  *          jdk.vm.ci/jdk.vm.ci.runtime
  *          jdk.vm.ci/jdk.vm.ci.common
+ *          java.base/jdk.internal.misc
  * @build jdk.vm.ci.runtime.test.TestResolvedJavaType
  * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI jdk.vm.ci.runtime.test.TestResolvedJavaType
  */
@@ -70,7 +72,7 @@ import jdk.vm.ci.meta.TrustedInterface;
 
 import org.junit.Test;
 
-import sun.reflect.ConstantPool;
+import jdk.internal.reflect.ConstantPool;
 
 /**
  * Tests for {@link ResolvedJavaType}.

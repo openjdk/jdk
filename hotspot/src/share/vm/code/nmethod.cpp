@@ -1076,8 +1076,8 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
   flush_dependencies(is_alive);
 
   // Break cycle between nmethod & method
-  if (log_is_enabled(Trace, classunload)) {
-    outputStream* log = Log(classunload)::trace_stream();
+  if (log_is_enabled(Trace, class, unload)) {
+    outputStream* log = Log(class, unload)::trace_stream();
     log->print_cr("making nmethod " INTPTR_FORMAT
                   " unloadable, Method*(" INTPTR_FORMAT
                   "), cause(" INTPTR_FORMAT ")",

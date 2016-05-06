@@ -59,13 +59,6 @@ public class Main {
      * @return The return code.
      */
     public static int execute(String... args) {
-        // NOTE: the following should be removed when the old doclet
-        // is removed.
-        if (args != null && args.length > 0 && "-Xold".equals(args[0])) {
-            String[] nargs = new String[args.length - 1];
-            System.arraycopy(args, 1, nargs, 0, nargs.length);
-            return com.sun.tools.javadoc.Main.execute(nargs);
-        }
         Start jdoc = new Start();
         return jdoc.begin(args);
     }

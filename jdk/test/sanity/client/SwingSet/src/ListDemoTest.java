@@ -21,6 +21,7 @@
  * questions.
  */
 
+import org.jtregext.GuiTestListener;
 import com.sun.swingset3.demos.list.ListDemo;
 import static com.sun.swingset3.demos.list.ListDemo.DEMO_TITLE;
 import static org.testng.AssertJUnit.*;
@@ -30,7 +31,7 @@ import org.netbeans.jemmy.ClassReference;
 import org.netbeans.jemmy.operators.JCheckBoxOperator;
 import org.netbeans.jemmy.operators.JFrameOperator;
 import org.netbeans.jemmy.operators.JListOperator;
-import static org.jemmy2ext.JemmyExt.captureDebugInfoOnFail;
+import org.testng.annotations.Listeners;
 
 /*
  * @test
@@ -40,64 +41,64 @@ import static org.jemmy2ext.JemmyExt.captureDebugInfoOnFail;
  *          list.
  *
  * @library /sanity/client/lib/jemmy/src
- * @library /sanity/client/lib/Jemmy2Ext/src
+ * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.list.ListDemo
  * @run testng ListDemoTest
  */
+@Listeners(GuiTestListener.class)
 public class ListDemoTest {
 
     private static final int CHECKBOX_COUNT = 50;
 
     @Test
     public void test() throws Exception {
-        captureDebugInfoOnFail(() -> {
-            new ClassReference(ListDemo.class.getCanonicalName()).startApplication();
 
-            JFrameOperator frame = new JFrameOperator(DEMO_TITLE);
-            JListOperator listOp = new JListOperator(frame);
+        new ClassReference(ListDemo.class.getCanonicalName()).startApplication();
 
-            // Check *NO* Prefix and Suffixes Marked
-            for (int i = 0; i < CHECKBOX_COUNT; i++) {
-                JCheckBoxOperator checkBox = getJCheckBoxOperator(frame, i);
+        JFrameOperator frame = new JFrameOperator(DEMO_TITLE);
+        JListOperator listOp = new JListOperator(frame);
+
+        // Check *NO* Prefix and Suffixes Marked
+        for (int i = 0; i < CHECKBOX_COUNT; i++) {
+            JCheckBoxOperator checkBox = getJCheckBoxOperator(frame, i);
+            checkBox.changeSelection(false);
+        }
+        System.out.println("######## Number of Items = " + listOp.getModel().getSize());
+        assertEquals("Select None number of items is correct", 0, listOp.getModel().getSize());
+
+        // Check *ALL* Prefix and Suffixes Marked
+        for (int i = 0; i < CHECKBOX_COUNT; i++) {
+            JCheckBoxOperator checkBox = getJCheckBoxOperator(frame, i);
+            checkBox.changeSelection(true);
+        }
+        System.out.println("######## Number of Items = " + listOp.getModel().getSize());
+        assertEquals("Select All number of items is correct", CHECKBOX_COUNT / 2 * CHECKBOX_COUNT / 2, listOp.getModel().getSize());
+
+        // Check *ALL* Prefix and *NO* Suffixes Marked
+        for (int i = 0; i < CHECKBOX_COUNT; i++) {
+            JCheckBoxOperator checkBox = getJCheckBoxOperator(frame, i);
+            if (i < CHECKBOX_COUNT / 2) {
+                checkBox.changeSelection(true);
+            } else {
                 checkBox.changeSelection(false);
             }
-            System.out.println("######## Number of Items = " + listOp.getModel().getSize());
-            assertEquals("Select None number of items is correct", 0, listOp.getModel().getSize());
+        }
+        System.out.println("######## Number of Items = " + listOp.getModel().getSize());
+        assertEquals("Select All Prefixes and NO Suffixes number of items is correct", 0, listOp.getModel().getSize());
 
-            // Check *ALL* Prefix and Suffixes Marked
-            for (int i = 0; i < CHECKBOX_COUNT; i++) {
-                JCheckBoxOperator checkBox = getJCheckBoxOperator(frame, i);
+        // Check *NO* Prefix and *ALL* Suffixes Marked
+        for (int i = 0; i < CHECKBOX_COUNT; i++) {
+            JCheckBoxOperator checkBox = getJCheckBoxOperator(frame, i);
+            if (i < CHECKBOX_COUNT / 2) {
+                checkBox.changeSelection(false);
+            } else {
                 checkBox.changeSelection(true);
             }
-            System.out.println("######## Number of Items = " + listOp.getModel().getSize());
-            assertEquals("Select All number of items is correct", CHECKBOX_COUNT / 2 * CHECKBOX_COUNT / 2, listOp.getModel().getSize());
-
-            // Check *ALL* Prefix and *NO* Suffixes Marked
-            for (int i = 0; i < CHECKBOX_COUNT; i++) {
-                JCheckBoxOperator checkBox = getJCheckBoxOperator(frame, i);
-                if (i < CHECKBOX_COUNT / 2) {
-                    checkBox.changeSelection(true);
-                } else {
-                    checkBox.changeSelection(false);
-                }
-            }
-            System.out.println("######## Number of Items = " + listOp.getModel().getSize());
-            assertEquals("Select All Prefixes and NO Suffixes number of items is correct", 0, listOp.getModel().getSize());
-
-            // Check *NO* Prefix and *ALL* Suffixes Marked
-            for (int i = 0; i < CHECKBOX_COUNT; i++) {
-                JCheckBoxOperator checkBox = getJCheckBoxOperator(frame, i);
-                if (i < CHECKBOX_COUNT / 2) {
-                    checkBox.changeSelection(false);
-                } else {
-                    checkBox.changeSelection(true);
-                }
-            }
-            System.out.println("######## Number of Items = " + listOp.getModel().getSize());
-            assertEquals("Select NO Prefixes and All Suffixes number of items is correct", 0, listOp.getModel().getSize());
-        });
+        }
+        System.out.println("######## Number of Items = " + listOp.getModel().getSize());
+        assertEquals("Select NO Prefixes and All Suffixes number of items is correct", 0, listOp.getModel().getSize());
     }
 
     private JCheckBoxOperator getJCheckBoxOperator(JFrameOperator frame, int index) {

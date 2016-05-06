@@ -162,18 +162,28 @@ class TreeDissector {
         return new Range(start, end);
     }
 
-    Tree firstClassMember() {
-        if (targetClass != null) {
-            //TODO: missing classes
-            for (Tree mem : targetClass.getMembers()) {
-                if (mem.getKind() == Tree.Kind.VARIABLE) {
-                    return mem;
-                }
-                if (mem.getKind() == Tree.Kind.METHOD) {
-                    MethodTree mt = (MethodTree) mem;
-                    if (!isDoIt(mt.getName()) && !mt.getName().toString().equals("<init>")) {
+    MethodTree method(MethodSnippet msn) {
+        if (targetClass == null) {
+            return null;
+        }
+        OuterWrap ow = msn.outerWrap();
+        if (!(ow instanceof OuterSnippetsClassWrap)) {
+            return null;
+        }
+        int ordinal = ((OuterSnippetsClassWrap) ow).ordinal(msn);
+        if (ordinal < 0) {
+            return null;
+        }
+        int count = 0;
+        String name = msn.name();
+        for (Tree mem : targetClass.getMembers()) {
+            if (mem.getKind() == Tree.Kind.METHOD) {
+                MethodTree mt = (MethodTree) mem;
+                if (mt.getName().toString().equals(name)) {
+                    if (count == ordinal) {
                         return mt;
                     }
+                    ++count;
                 }
             }
         }
@@ -244,8 +254,8 @@ class TreeDissector {
         return ei;
     }
 
-    String typeOfMethod() {
-        Tree unitTree = firstClassMember();
+    String typeOfMethod(MethodSnippet msn) {
+        Tree unitTree = method(msn);
         if (unitTree instanceof JCMethodDecl) {
             JCMethodDecl mtree = (JCMethodDecl) unitTree;
             Type mt = types().erasure(mtree.type);

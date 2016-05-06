@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8154556
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 VarHandleTestByteArrayAs$Type$
  * @run testng/othervm -Diters=20000                         VarHandleTestByteArrayAs$Type$
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  VarHandleTestByteArrayAs$Type$
@@ -57,15 +58,16 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
         // Combinations of VarHandle byte[] or ByteBuffer
         vhss = new ArrayList<>();
         for (MemoryMode endianess : Arrays.asList(MemoryMode.BIG_ENDIAN, MemoryMode.LITTLE_ENDIAN)) {
+
+            ByteOrder bo = endianess == MemoryMode.BIG_ENDIAN
+                    ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
             VarHandleSource aeh = new VarHandleSource(
-                    MethodHandles.byteArrayViewVarHandle($type$[].class,
-                                                         endianess == MemoryMode.BIG_ENDIAN),
+                    MethodHandles.byteArrayViewVarHandle($type$[].class, bo),
                     endianess, MemoryMode.READ_WRITE);
             vhss.add(aeh);
 
             VarHandleSource bbh = new VarHandleSource(
-                    MethodHandles.byteBufferViewVarHandle($type$[].class,
-                                                          endianess == MemoryMode.BIG_ENDIAN),
+                    MethodHandles.byteBufferViewVarHandle($type$[].class, bo),
                     endianess, MemoryMode.READ_WRITE);
             vhss.add(bbh);
         }
@@ -76,44 +78,44 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
     public void testIsAccessModeSupported(VarHandleSource vhs) {
         VarHandle vh = vhs.s;
 
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.get));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.set));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET));
 
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getVolatile));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.setVolatile));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getAcquire));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.setRelease));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getOpaque));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.setOpaque));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_OPAQUE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
 
 #if[CAS]
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndSet));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndExchangeVolatile));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndExchangeAcquire));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndExchangeRelease));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSet));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSetAcquire));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSetRelease));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSetRelease));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getAndSet));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
 #else[CAS]
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndSet));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndExchangeVolatile));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndExchangeAcquire));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndExchangeRelease));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSet));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSetAcquire));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSetRelease));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSetRelease));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.getAndSet));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
 #end[CAS]
 
 #if[AtomicAdd]
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getAndAdd));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.addAndGet));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
 #else[AtomicAdd]
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.getAndAdd));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.addAndGet));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
 #end[AtomicAdd]
     }
 
@@ -221,6 +223,10 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
         });
 
         checkUOE(() -> {
+            boolean r = vh.weakCompareAndSetVolatile(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkUOE(() -> {
             boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
         });
 
@@ -291,6 +297,10 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
             });
 
             checkROBE(() -> {
+                boolean r = vh.weakCompareAndSetVolatile(array, ci, VALUE_1, VALUE_2);
+            });
+
+            checkROBE(() -> {
                 boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
             });
 
@@ -319,6 +329,10 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
 
             checkUOE(() -> {
                 boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+            });
+
+            checkUOE(() -> {
+                boolean r = vh.weakCompareAndSetVolatile(array, ci, VALUE_1, VALUE_2);
             });
 
             checkUOE(() -> {
@@ -372,6 +386,10 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
 
             checkUOE(() -> {
                 boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+            });
+
+            checkUOE(() -> {
+                boolean r = vh.weakCompareAndSetVolatile(array, ci, VALUE_1, VALUE_2);
             });
 
             checkUOE(() -> {
@@ -458,6 +476,10 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
 
             checkIOOBE(() -> {
                 boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+            });
+
+            checkIOOBE(() -> {
+                boolean r = vh.weakCompareAndSetVolatile(array, ci, VALUE_1, VALUE_2);
             });
 
             checkIOOBE(() -> {
@@ -553,6 +575,10 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                 });
 
                 checkIOOBE(() -> {
+                    boolean r = vh.weakCompareAndSetVolatile(array, ci, VALUE_1, VALUE_2);
+                });
+
+                checkIOOBE(() -> {
                     boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
                 });
 
@@ -633,6 +659,10 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
 
                 checkISE(() -> {
                     boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+                });
+
+                checkISE(() -> {
+                    boolean r = vh.weakCompareAndSetVolatile(array, ci, VALUE_1, VALUE_2);
                 });
 
                 checkISE(() -> {
@@ -719,6 +749,10 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
 
                     checkISE(() -> {
                         boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+                    });
+
+                    checkISE(() -> {
+                        boolean r = vh.weakCompareAndSetVolatile(array, ci, VALUE_1, VALUE_2);
                     });
 
                     checkISE(() -> {
@@ -870,12 +904,19 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                     assertEquals(x, VALUE_2, "weakCompareAndSetRelease $type$");
                 }
 
+                {
+                    boolean r = vh.weakCompareAndSetVolatile(array, i, VALUE_2, VALUE_1);
+                    assertEquals(r, true, "weakCompareAndSetVolatile $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "weakCompareAndSetVolatile $type$ value");
+                }
+
                 // Compare set and get
                 {
-                    $type$ o = ($type$) vh.getAndSet(array, i, VALUE_1);
-                    assertEquals(o, VALUE_2, "getAndSet $type$");
+                    $type$ o = ($type$) vh.getAndSet(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndSet $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "getAndSet $type$ value");
+                    assertEquals(x, VALUE_2, "getAndSet $type$ value");
                 }
 #end[CAS]
 
@@ -1016,12 +1057,19 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                     assertEquals(x, VALUE_2, "weakCompareAndSetRelease $type$");
                 }
 
+                {
+                    boolean r = vh.weakCompareAndSetVolatile(array, i, VALUE_2, VALUE_1);
+                    assertEquals(r, true, "weakCompareAndSetVolatile $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "weakCompareAndSetVolatile $type$ value");
+                }
+
                 // Compare set and get
                 {
-                    $type$ o = ($type$) vh.getAndSet(array, i, VALUE_1);
-                    assertEquals(o, VALUE_2, "getAndSet $type$");
+                    $type$ o = ($type$) vh.getAndSet(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndSet $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "getAndSet $type$ value");
+                    assertEquals(x, VALUE_2, "getAndSet $type$ value");
                 }
 #end[CAS]
 

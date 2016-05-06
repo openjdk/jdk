@@ -36,6 +36,7 @@ import javax.swing.SwingUtilities;
 
 import com.sun.swingset3.DemoProperties;
 import com.sun.swingset3.demos.JHyperlink;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  *
@@ -210,12 +211,11 @@ public final class ButtonDemo extends JPanel {
         return panel;
     }
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws InterruptedException, InvocationTargetException {
         final ButtonDemo buttonDemo = new ButtonDemo();
 
-        javax.swing.SwingUtilities.invokeLater(() -> {
+        javax.swing.SwingUtilities.invokeAndWait(() -> {
             JFrame frame = new JFrame(DEMO_TITLE);
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.add(buttonDemo);
             frame.pack();
             frame.setVisible(true);

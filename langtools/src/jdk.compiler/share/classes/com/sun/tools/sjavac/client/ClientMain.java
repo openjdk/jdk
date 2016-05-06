@@ -28,6 +28,8 @@ package com.sun.tools.sjavac.client;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 
+import com.sun.tools.javac.main.Main;
+import com.sun.tools.javac.main.Main.Result;
 import com.sun.tools.sjavac.AutoFlushWriter;
 import com.sun.tools.sjavac.Log;
 import com.sun.tools.sjavac.Util;
@@ -58,7 +60,7 @@ public class ClientMain {
             options = Options.parseArgs(args);
         } catch (IllegalArgumentException e) {
             Log.error(e.getMessage());
-            return -1;
+            return Result.CMDERR.exitCode;
         }
 
         Log.setLogLevel(options.getLogLevel());
@@ -73,13 +75,13 @@ public class ClientMain {
         Sjavac sjavac = useServer ? new SjavacClient(options) : new SjavacImpl();
 
         // Perform compilation
-        int rc = sjavac.compile(args);
+        Result result = sjavac.compile(args);
 
         // If sjavac is running in the foreground we should shut it down at this point
         if (!useServer) {
             sjavac.shutdown();
         }
 
-        return rc;
+        return result.exitCode;
     }
 }

@@ -90,27 +90,8 @@ public final class ProcessTools {
    *
    * @return Process id
    */
-  public static int getProcessId() throws Exception {
-    RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
-    int pid = Integer.parseInt(runtime.getName().split("@")[0]);
-
-    return pid;
-  }
-
-  /**
-   * Get the string containing input arguments passed to the VM
-   *
-   * @return arguments
-   */
-  public static String getVmInputArguments() {
-    RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
-
-    List<String> args = runtime.getInputArguments();
-    StringBuilder result = new StringBuilder();
-    for (String arg : args)
-        result.append(arg).append(' ');
-
-    return result.toString();
+  public static long getProcessId() throws Exception {
+    return ProcessHandle.current().getPid();
   }
 
   /**

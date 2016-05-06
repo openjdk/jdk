@@ -411,15 +411,15 @@ static AliasedFlag const aliased_jvm_flags[] = {
 static AliasedLoggingFlag const aliased_logging_flags[] = {
   { "PrintCompressedOopsMode",   LogLevel::Info,  true,  LOG_TAGS(gc, heap, coops) },
   { "TraceBiasedLocking",        LogLevel::Info,  true,  LOG_TAGS(biasedlocking) },
-  { "TraceClassLoading",         LogLevel::Info,  true,  LOG_TAGS(classload) },
-  { "TraceClassLoadingPreorder", LogLevel::Debug, true,  LOG_TAGS(classload, preorder) },
-  { "TraceClassPaths",           LogLevel::Info,  true,  LOG_TAGS(classpath) },
-  { "TraceClassResolution",      LogLevel::Debug, true,  LOG_TAGS(classresolve) },
-  { "TraceClassUnloading",       LogLevel::Info,  true,  LOG_TAGS(classunload) },
+  { "TraceClassLoading",         LogLevel::Info,  true,  LOG_TAGS(class, load) },
+  { "TraceClassLoadingPreorder", LogLevel::Debug, true,  LOG_TAGS(class, preorder) },
+  { "TraceClassPaths",           LogLevel::Info,  true,  LOG_TAGS(class, path) },
+  { "TraceClassResolution",      LogLevel::Debug, true,  LOG_TAGS(class, resolve) },
+  { "TraceClassUnloading",       LogLevel::Info,  true,  LOG_TAGS(class, unload) },
   { "TraceExceptions",           LogLevel::Info,  true,  LOG_TAGS(exceptions) },
-  { "TraceLoaderConstraints",    LogLevel::Info,  true,  LOG_TAGS(classload, constraints) },
+  { "TraceLoaderConstraints",    LogLevel::Info,  true,  LOG_TAGS(class, loader, constraints) },
   { "TraceMonitorInflation",     LogLevel::Debug, true,  LOG_TAGS(monitorinflation) },
-  { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LOG_TAGS(safepointcleanup) },
+  { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LOG_TAGS(safepoint, cleanup) },
   { "TraceJVMTIObjectTagging",   LogLevel::Debug, true,  LOG_TAGS(jvmti, objecttagging) },
   { NULL,                        LogLevel::Off,   false, LOG_TAGS(_NO_TAG) }
 };
@@ -427,8 +427,8 @@ static AliasedLoggingFlag const aliased_logging_flags[] = {
 #ifndef PRODUCT
 // These options are removed in jdk9. Remove this code for jdk10.
 static AliasedFlag const removed_develop_logging_flags[] = {
-  { "TraceClassInitialization",   "-Xlog:classinit" },
-  { "TraceClassLoaderData",       "-Xlog:classloaderdata" },
+  { "TraceClassInitialization",   "-Xlog:class+init" },
+  { "TraceClassLoaderData",       "-Xlog:class+loader+data" },
   { "TraceDefaultMethods",        "-Xlog:defaultmethods=debug" },
   { "TraceItables",               "-Xlog:itables=debug" },
   { "TraceMonitorMismatch",       "-Xlog:monitormismatch=info" },
@@ -778,8 +778,8 @@ char* ArgumentBootClassPath::add_jars_to_path(char* path, const char* directory)
   return path;
 }
 
-// Parses a memory size specification string.
-static bool atomull(const char *s, julong* result) {
+// Parses a size specification string.
+bool Arguments::atojulong(const char *s, julong* result) {
   julong n = 0;
   int args_read = 0;
   bool is_hex = false;
@@ -885,7 +885,7 @@ static bool set_numeric_flag(const char* name, char* value, Flag::Flags origin) 
     return false;
   }
 
-  // Check the sign first since atomull() parses only unsigned values.
+  // Check the sign first since atojulong() parses only unsigned values.
   if (*value == '-') {
     if (!result->is_intx() && !result->is_int()) {
       return false;
@@ -893,7 +893,7 @@ static bool set_numeric_flag(const char* name, char* value, Flag::Flags origin) 
     value++;
     is_neg = true;
   }
-  if (!atomull(value, &v)) {
+  if (!Arguments::atojulong(value, &v)) {
     return false;
   }
   if (result->is_int()) {
@@ -2116,6 +2116,28 @@ void Arguments::set_g1_gc_flags() {
     FLAG_SET_DEFAULT(GCTimeRatio, 12);
   }
 
+  // Below, we might need to calculate the pause time interval based on
+  // the pause target. When we do so we are going to give G1 maximum
+  // flexibility and allow it to do pauses when it needs to. So, we'll
+  // arrange that the pause interval to be pause time target + 1 to
+  // ensure that a) the pause time target is maximized with respect to
+  // the pause interval and b) we maintain the invariant that pause
+  // time target < pause interval. If the user does not want this
+  // maximum flexibility, they will have to set the pause interval
+  // explicitly.
+
+  if (FLAG_IS_DEFAULT(MaxGCPauseMillis)) {
+    // The default pause time target in G1 is 200ms
+    FLAG_SET_DEFAULT(MaxGCPauseMillis, 200);
+  }
+
+  // Then, if the interval parameter was not set, set it according to
+  // the pause time target (this will also deal with the case when the
+  // pause time target is the default value).
+  if (FLAG_IS_DEFAULT(GCPauseIntervalMillis)) {
+    FLAG_SET_DEFAULT(GCPauseIntervalMillis, MaxGCPauseMillis + 1);
+  }
+
   log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
   log_trace(gc)("ConcGCThreads: %u", ConcGCThreads);
 }
@@ -2671,12 +2693,12 @@ bool Arguments::parse_uintx(const char* value,
                             uintx* uintx_arg,
                             uintx min_size) {
 
-  // Check the sign first since atomull() parses only unsigned values.
+  // Check the sign first since atojulong() parses only unsigned values.
   bool value_is_positive = !(*value == '-');
 
   if (value_is_positive) {
     julong n;
-    bool good_return = atomull(value, &n);
+    bool good_return = atojulong(value, &n);
     if (good_return) {
       bool above_minimum = n >= min_size;
       bool value_is_too_large = n > max_uintx;
@@ -2693,7 +2715,7 @@ bool Arguments::parse_uintx(const char* value,
 Arguments::ArgsRange Arguments::parse_memory_size(const char* s,
                                                   julong* long_arg,
                                                   julong min_size) {
-  if (!atomull(s, long_arg)) return arg_unreadable;
+  if (!atojulong(s, long_arg)) return arg_unreadable;
   return check_memory_size(*long_arg, min_size);
 }
 
@@ -2824,8 +2846,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     // -verbose:[class/gc/jni]
     if (match_option(option, "-verbose", &tail)) {
       if (!strcmp(tail, ":class") || !strcmp(tail, "")) {
-        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(classload));
-        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(classunload));
+        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, load));
+        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, unload));
       } else if (!strcmp(tail, ":gc")) {
         LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(gc));
       } else if (!strcmp(tail, ":jni")) {
@@ -3466,7 +3488,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
 
   // PrintSharedArchiveAndExit will turn on
   //   -Xshare:on
-  //   -Xlog:classpath=info
+  //   -Xlog:class+path=info
   if (PrintSharedArchiveAndExit) {
     if (FLAG_SET_CMDLINE(bool, UseSharedSpaces, true) != Flag::SUCCESS) {
       return JNI_EINVAL;
@@ -3474,7 +3496,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     if (FLAG_SET_CMDLINE(bool, RequireSharedSpaces, true) != Flag::SUCCESS) {
       return JNI_EINVAL;
     }
-    LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(classpath));
+    LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, path));
   }
 
   // Change the default value for flags  which have different default values

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.awt.image.SampleModel;
 import java.awt.image.ComponentSampleModel;
 import java.awt.image.PixelInterleavedSampleModel;
 import java.awt.image.SinglePixelPackedSampleModel;
-import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferUShort;
 import java.awt.Rectangle;
 import java.awt.Point;
@@ -71,7 +70,7 @@ public class ShortInterleavedRaster extends ShortComponentRaster {
      */
     public ShortInterleavedRaster(SampleModel sampleModel, Point origin) {
         this(sampleModel,
-             sampleModel.createDataBuffer(),
+             (DataBufferUShort) sampleModel.createDataBuffer(),
              new Rectangle(origin.x,
                            origin.y,
                            sampleModel.getWidth(),
@@ -92,8 +91,9 @@ public class ShortInterleavedRaster extends ShortComponentRaster {
      * @param origin          The Point that specifies the origin.
      */
     public ShortInterleavedRaster(SampleModel sampleModel,
-                                   DataBuffer dataBuffer,
-                                   Point origin) {
+                                  DataBufferUShort dataBuffer,
+                                  Point origin)
+    {
         this(sampleModel,
              dataBuffer,
              new Rectangle(origin.x,
@@ -123,22 +123,17 @@ public class ShortInterleavedRaster extends ShortComponentRaster {
      * @param parent          The parent (if any) of this raster.
      */
     public ShortInterleavedRaster(SampleModel sampleModel,
-                                   DataBuffer dataBuffer,
-                                   Rectangle aRegion,
-                                   Point origin,
-                                   ShortInterleavedRaster parent) {
+                                  DataBufferUShort dataBuffer,
+                                  Rectangle aRegion,
+                                  Point origin,
+                                  ShortInterleavedRaster parent)
+    {
 
         super(sampleModel, dataBuffer, aRegion, origin, parent);
         this.maxX = minX + width;
         this.maxY = minY + height;
 
-        if(!(dataBuffer instanceof DataBufferUShort)) {
-            throw new RasterFormatException("ShortInterleavedRasters must "+
-                                            "have ushort DataBuffers");
-        }
-
-        DataBufferUShort dbus = (DataBufferUShort)dataBuffer;
-        this.data = stealData(dbus, 0);
+        this.data = stealData(dataBuffer, 0);
 
         // REMIND: need case for interleaved ComponentSampleModel
         if ((sampleModel instanceof PixelInterleavedSampleModel) ||
@@ -160,7 +155,7 @@ public class ShortInterleavedRaster extends ShortComponentRaster {
             this.scanlineStride = sppsm.getScanlineStride();
             this.pixelStride    = 1;
             this.dataOffsets = new int[1];
-            this.dataOffsets[0] = dbus.getOffset();
+            this.dataOffsets[0] = dataBuffer.getOffset();
             int xOffset = aRegion.x - origin.x;
             int yOffset = aRegion.y - origin.y;
             dataOffsets[0] += xOffset+yOffset*scanlineStride;
@@ -730,7 +725,7 @@ public class ShortInterleavedRaster extends ShortComponentRaster {
         int deltaY = y0 - y;
 
         return new ShortInterleavedRaster(sm,
-                                       dataBuffer,
+                                       (DataBufferUShort) dataBuffer,
                                        new Rectangle(x0, y0, width, height),
                                        new Point(sampleModelTranslateX+deltaX,
                                                  sampleModelTranslateY+deltaY),

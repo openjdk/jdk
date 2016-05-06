@@ -25,8 +25,6 @@
 
 package com.sun.media.sound;
 
-import sun.misc.ManagedLocalsThread;
-
 import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.io.File;
@@ -145,12 +143,11 @@ final class JSSecurityManager {
     static Thread createThread(final Runnable runnable,
                                final String threadName,
                                final boolean isDaemon, final int priority,
-                               final boolean doStart) {
-        Thread thread = new ManagedLocalsThread(runnable);
+                               final boolean doStart)
+    {
+        String name = (threadName != null) ? threadName : "JSSM Thread";
+        Thread thread = new Thread(null, runnable, threadName, 0, false);
 
-        if (threadName != null) {
-            thread.setName(threadName);
-        }
         thread.setDaemon(isDaemon);
         if (priority >= 0) {
             thread.setPriority(priority);

@@ -57,7 +57,7 @@ import jdk.vm.ci.runtime.JVMCI;
 
 import org.junit.Test;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 //JaCoCo Exclude
 

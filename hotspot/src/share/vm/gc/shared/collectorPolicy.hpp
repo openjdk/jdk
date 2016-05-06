@@ -58,8 +58,6 @@ class MarkSweepPolicy;
 
 class CollectorPolicy : public CHeapObj<mtGC> {
  protected:
-  GCPolicyCounters* _gc_policy_counters;
-
   virtual void initialize_alignments() = 0;
   virtual void initialize_flags();
   virtual void initialize_size_info();
@@ -129,17 +127,14 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   virtual MarkSweepPolicy*              as_mark_sweep_policy()            { return NULL; }
 #if INCLUDE_ALL_GCS
   virtual ConcurrentMarkSweepPolicy*    as_concurrent_mark_sweep_policy() { return NULL; }
-  virtual G1CollectorPolicy*            as_g1_policy()                    { return NULL; }
 #endif // INCLUDE_ALL_GCS
   // Note that these are not virtual.
   bool is_generation_policy()            { return as_generation_policy() != NULL; }
   bool is_mark_sweep_policy()            { return as_mark_sweep_policy() != NULL; }
 #if INCLUDE_ALL_GCS
   bool is_concurrent_mark_sweep_policy() { return as_concurrent_mark_sweep_policy() != NULL; }
-  bool is_g1_policy()                    { return as_g1_policy() != NULL; }
 #else  // INCLUDE_ALL_GCS
   bool is_concurrent_mark_sweep_policy() { return false; }
-  bool is_g1_policy()                    { return false; }
 #endif // INCLUDE_ALL_GCS
 
 
@@ -148,19 +143,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                size_t size,
                                                Metaspace::MetadataType mdtype);
-
-  // Performance Counter support
-  GCPolicyCounters* counters()     { return _gc_policy_counters; }
-
-  // Create the jstat counters for the GC policy.  By default, policy's
-  // don't have associated counters, and we complain if this is invoked.
-  virtual void initialize_gc_policy_counters() {
-    ShouldNotReachHere();
-  }
-
-  // Do any updates required to global flags that are due to heap initialization
-  // changes
-  virtual void post_heap_initialize() = 0;
 };
 
 class ClearedAllSoftRefs : public StackObj {
@@ -196,6 +178,8 @@ class GenCollectorPolicy : public CollectorPolicy {
 
   GenerationSpec* _young_gen_spec;
   GenerationSpec* _old_gen_spec;
+
+  GCPolicyCounters* _gc_policy_counters;
 
   // Return true if an allocation should be attempted in the older generation
   // if it fails in the younger generation.  Return false, otherwise.
@@ -243,6 +227,12 @@ class GenCollectorPolicy : public CollectorPolicy {
     return _old_gen_spec;
   }
 
+  // Performance Counter support
+  GCPolicyCounters* counters()     { return _gc_policy_counters; }
+
+  // Create the jstat counters for the GC policy.
+  virtual void initialize_gc_policy_counters() = 0;
+
   virtual GenCollectorPolicy* as_generation_policy() { return this; }
 
   virtual void initialize_generations() { };
@@ -266,10 +256,6 @@ class GenCollectorPolicy : public CollectorPolicy {
   virtual void initialize_size_policy(size_t init_eden_size,
                                       size_t init_promo_size,
                                       size_t init_survivor_size);
-
-  virtual void post_heap_initialize() {
-    assert(_max_young_size == MaxNewSize, "Should be taken care of by initialize_size_info");
-  }
 };
 
 class MarkSweepPolicy : public GenCollectorPolicy {

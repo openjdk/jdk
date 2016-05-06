@@ -1351,24 +1351,29 @@ double os::elapsedVTime() {
   return (double)gethrvtime() / (double)hrtime_hz;
 }
 
-// Used internally for comparisons only
-// getTimeMillis guaranteed to not move backwards on Solaris
-jlong getTimeMillis() {
-  jlong nanotime = getTimeNanos();
-  return (jlong)(nanotime / NANOSECS_PER_MILLISEC);
-}
+// in-memory timestamp support - has update accuracy of 1ms
+typedef void (*_get_nsec_fromepoch_func_t)(hrtime_t*);
+static _get_nsec_fromepoch_func_t _get_nsec_fromepoch = NULL;
 
 // Must return millis since Jan 1 1970 for JVM_CurrentTimeMillis
 jlong os::javaTimeMillis() {
-  timeval t;
-  if (gettimeofday(&t, NULL) == -1) {
-    fatal("os::javaTimeMillis: gettimeofday (%s)", os::strerror(errno));
+  if (_get_nsec_fromepoch != NULL) {
+    hrtime_t now;
+    _get_nsec_fromepoch(&now);
+    return now / NANOSECS_PER_MILLISEC;
   }
-  return jlong(t.tv_sec) * 1000  +  jlong(t.tv_usec) / 1000;
+  else {
+    timeval t;
+    if (gettimeofday(&t, NULL) == -1) {
+      fatal("os::javaTimeMillis: gettimeofday (%s)", os::strerror(errno));
+    }
+    return jlong(t.tv_sec) * 1000  +  jlong(t.tv_usec) / 1000;
+  }
 }
 
 void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
   timeval t;
+  // can't use get_nsec_fromepoch here as we need better accuracy than 1ms
   if (gettimeofday(&t, NULL) == -1) {
     fatal("os::javaTimeSystemUTC: gettimeofday (%s)", os::strerror(errno));
   }
@@ -4432,11 +4437,15 @@ void os::init(void) {
   // enough to allow the thread to get to user bytecode execution.
   Solaris::min_stack_allowed = MAX2(thr_min_stack(), Solaris::min_stack_allowed);
 
-  // retrieve entry point for pthread_setname_np
+  // dynamic lookup of functions that may not be available in our lowest
+  // supported Solaris release
   void * handle = dlopen("libc.so.1", RTLD_LAZY);
   if (handle != NULL) {
-    Solaris::_pthread_setname_np =
+    Solaris::_pthread_setname_np =  // from 11.3
         (Solaris::pthread_setname_np_func_t)dlsym(handle, "pthread_setname_np");
+
+    _get_nsec_fromepoch =           // from 11.3.6
+        (_get_nsec_fromepoch_func_t) dlsym(handle, "get_nsec_fromepoch");
   }
 }
 

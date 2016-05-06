@@ -23,6 +23,7 @@
 
 /*
  * @test MethodMatcherTest
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

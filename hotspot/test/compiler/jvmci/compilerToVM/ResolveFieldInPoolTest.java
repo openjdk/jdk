@@ -29,6 +29,7 @@
  * @library /testlibrary /test/lib /
  * @library ../common/patches
  * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.reflect
  *          java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.org.objectweb.asm.tree
  *          jdk.vm.ci/jdk.vm.ci.hotspot
@@ -59,7 +60,7 @@ import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * Test for {@code jdk.vm.ci.hotspot.CompilerToVM.resolveFieldInPool} method

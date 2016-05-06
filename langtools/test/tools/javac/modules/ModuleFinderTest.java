@@ -48,7 +48,7 @@ public class ModuleFinderTest extends ModuleTestBase {
     }
 
     @Test
-    void testDuplicateModulesOnPath(Path base) throws Exception {
+    public void testDuplicateModulesOnPath(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "module m1 { }");
 

@@ -32,7 +32,7 @@
 
 import java.lang.reflect.Field;
 import jdk.test.lib.*;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import java.lang.reflect.*;
 import static jdk.test.lib.Asserts.*;
 

@@ -25,6 +25,7 @@
  * @test
  * @bug 8137167
  * @summary Randomly generates commands with random types
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib /compiler/testlibrary ../share /
  * @build compiler.compilercontrol.mixed.RandomCommandsTest
  *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox

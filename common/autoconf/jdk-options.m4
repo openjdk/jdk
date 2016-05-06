@@ -81,6 +81,31 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_LEVEL],
       test "x$DEBUG_LEVEL" != xslowdebug; then
     AC_MSG_ERROR([Allowed debug levels are: release, fastdebug, slowdebug and optimized])
   fi
+
+  # Translate DEBUG_LEVEL to debug level used by Hotspot
+  HOTSPOT_DEBUG_LEVEL="$DEBUG_LEVEL"
+  if test "x$DEBUG_LEVEL" = xrelease; then
+    HOTSPOT_DEBUG_LEVEL="product"
+  elif test "x$DEBUG_LEVEL" = xslowdebug; then
+    HOTSPOT_DEBUG_LEVEL="debug"
+  fi
+
+  if test "x$DEBUG_LEVEL" = xoptimized; then
+    # The debug level 'optimized' is a little special because it is currently only
+    # applicable to the HotSpot build where it means to build a completely
+    # optimized version of the VM without any debugging code (like for the
+    # 'release' debug level which is called 'product' in the HotSpot build) but
+    # with the exception that it can contain additional code which is otherwise
+    # protected by '#ifndef PRODUCT' macros. These 'optimized' builds are used to
+    # test new and/or experimental features which are not intended for customer
+    # shipment. Because these new features need to be tested and benchmarked in
+    # real world scenarios, we want to build the containing JDK at the 'release'
+    # debug level.
+    DEBUG_LEVEL="release"
+  fi
+
+  AC_SUBST(HOTSPOT_DEBUG_LEVEL)
+  AC_SUBST(DEBUG_LEVEL)
 ])
 
 ###############################################################################
@@ -178,10 +203,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 
   # Should we build the serviceability agent (SA)?
   INCLUDE_SA=true
-  if test "x$JVM_VARIANT_ZERO" = xtrue ; then
-    INCLUDE_SA=false
-  fi
-  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue ; then
+  if HOTSPOT_CHECK_JVM_VARIANT(zero) || HOTSPOT_CHECK_JVM_VARIANT(zeroshark); then
     INCLUDE_SA=false
   fi
   if test "x$OPENJDK_TARGET_OS" = xaix ; then
@@ -408,7 +430,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_STATIC_BUILD],
 
 ################################################################################
 #
-# jlink options. 
+# jlink options.
 # We always keep packaged modules in JDK image.
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_JLINK_OPTIONS],
@@ -432,4 +454,43 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JLINK_OPTIONS],
   fi
 
   AC_SUBST(JLINK_KEEP_PACKAGED_MODULES)
+])
+
+################################################################################
+#
+# Check if building of the jtreg failure handler should be enabled.
+#
+AC_DEFUN_ONCE([JDKOPT_ENABLE_DISABLE_FAILURE_HANDLER],
+[
+  AC_ARG_ENABLE([jtreg-failure-handler], [AS_HELP_STRING([--enable-jtreg-failure-handler],
+    [forces build of the jtreg failure handler to be enabled, missing dependencies
+     become fatal errors. Default is auto, where the failure handler is built if all
+     dependencies are present and otherwise just disabled.])])
+
+  AC_MSG_CHECKING([if jtreg failure handler should be built])
+
+  if test "x$enable_jtreg_failure_handler" = "xyes"; then
+    if test "x$JT_HOME" = "x"; then
+      AC_MSG_ERROR([Cannot enable jtreg failure handler without jtreg.])
+    else
+      BUILD_FAILURE_HANDLER=true
+      AC_MSG_RESULT([yes, forced])
+    fi
+  elif test "x$enable_jtreg_failure_handler" = "xno"; then
+    BUILD_FAILURE_HANDLER=false
+    AC_MSG_RESULT([no, forced])
+  elif test "x$enable_jtreg_failure_handler" = "xauto" \
+      || test "x$enable_jtreg_failure_handler" = "x"; then
+    if test "x$JT_HOME" = "x"; then
+      BUILD_FAILURE_HANDLER=false
+      AC_MSG_RESULT([no, missing jtreg])
+    else
+      BUILD_FAILURE_HANDLER=true
+      AC_MSG_RESULT([yes, jtreg present])
+    fi
+  else
+    AC_MSG_ERROR([Invalid value for --enable-jtreg-failure-handler: $enable_jtreg_failure_handler])
+  fi
+
+  AC_SUBST(BUILD_FAILURE_HANDLER)
 ])

@@ -67,7 +67,7 @@ void LinearScan::allocate_fpu_stack() {
       //       register information would be incorrect.
       if (b->number_of_preds() > 1) {
         int id = b->first_lir_instruction_id();
-        BitMap regs(FrameMap::nof_fpu_regs);
+        ResourceBitMap regs(FrameMap::nof_fpu_regs);
         regs.clear();
 
         iw.walk_to(id);   // walk after the first instruction (always a label) of the block
@@ -1069,7 +1069,7 @@ bool FpuStackAllocator::merge_fpu_stack_with_successors(BlockBegin* block) {
       // clean up stack first so that there are no dead values on the stack
       if (ComputeExactFPURegisterUsage) {
         FpuStackSim* cur_sim = sim();
-        BitMap live_fpu_regs = block->sux_at(0)->fpu_register_usage();
+        ResourceBitMap live_fpu_regs = block->sux_at(0)->fpu_register_usage();
         assert(live_fpu_regs.size() == FrameMap::nof_fpu_regs, "missing register usage");
 
         merge_cleanup_fpu_stack(instrs, cur_sim, live_fpu_regs);

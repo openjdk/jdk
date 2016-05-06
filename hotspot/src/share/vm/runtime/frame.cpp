@@ -396,6 +396,11 @@ void frame::interpreter_frame_set_method(Method* method) {
   *interpreter_frame_method_addr() = method;
 }
 
+void frame::interpreter_frame_set_mirror(oop mirror) {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  *interpreter_frame_mirror_addr() = mirror;
+}
+
 jint frame::interpreter_frame_bci() const {
   assert(is_interpreted_frame(), "interpreted frame expected");
   address bcp = interpreter_frame_bcp();
@@ -858,8 +863,7 @@ oop* frame::interpreter_callee_receiver_addr(Symbol* signature) {
 }
 
 
-void frame::oops_interpreted_do(OopClosure* f, CLDClosure* cld_f,
-    const RegisterMap* map, bool query_oop_map_cache) {
+void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool query_oop_map_cache) {
   assert(is_interpreted_frame(), "Not an interpreted frame");
   assert(map != NULL, "map must be set");
   Thread *thread = Thread::current();
@@ -885,20 +889,15 @@ void frame::oops_interpreted_do(OopClosure* f, CLDClosure* cld_f,
     current->oops_do(f);
   }
 
-  // process fixed part
-  if (cld_f != NULL) {
-    // The method pointer in the frame might be the only path to the method's
-    // klass, and the klass needs to be kept alive while executing. The GCs
-    // don't trace through method pointers, so typically in similar situations
-    // the mirror or the class loader of the klass are installed as a GC root.
-    // To minimize the overhead of doing that here, we ask the GC to pass down a
-    // closure that knows how to keep klasses alive given a ClassLoaderData.
-    cld_f->do_cld(m->method_holder()->class_loader_data());
-  }
-
-  if (m->is_native() PPC32_ONLY(&& m->is_static())) {
+  if (m->is_native()) {
     f->do_oop(interpreter_frame_temp_oop_addr());
   }
+
+  // The method pointer in the frame might be the only path to the method's
+  // klass, and the klass needs to be kept alive while executing. The GCs
+  // don't trace through method pointers, so the mirror of the method's klass
+  // is installed as a GC root.
+  f->do_oop(interpreter_frame_mirror_addr());
 
   int max_locals = m->is_native() ? m->size_of_parameters() : m->max_locals();
 
@@ -1099,7 +1098,7 @@ void frame::oops_entry_do(OopClosure* f, const RegisterMap* map) {
 }
 
 
-void frame::oops_do_internal(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf, RegisterMap* map, bool use_interpreter_oop_map_cache) {
+void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf, RegisterMap* map, bool use_interpreter_oop_map_cache) {
 #ifndef PRODUCT
   // simulate GC crash here to dump java thread in error report
   if (CrashGCForDumpingJavaThread) {
@@ -1108,7 +1107,7 @@ void frame::oops_do_internal(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* 
   }
 #endif
   if (is_interpreted_frame()) {
-    oops_interpreted_do(f, cld_f, map, use_interpreter_oop_map_cache);
+    oops_interpreted_do(f, map, use_interpreter_oop_map_cache);
   } else if (is_entry_frame()) {
     oops_entry_do(f, map);
   } else if (CodeCache::contains(pc())) {
@@ -1153,7 +1152,7 @@ void frame::verify(const RegisterMap* map) {
 #if defined(COMPILER2) || INCLUDE_JVMCI
   assert(DerivedPointerTable::is_empty(), "must be empty before verify");
 #endif
-  oops_do_internal(&VerifyOopClosure::verify_oop, NULL, NULL, (RegisterMap*)map, false);
+  oops_do_internal(&VerifyOopClosure::verify_oop, NULL, (RegisterMap*)map, false);
 }
 
 

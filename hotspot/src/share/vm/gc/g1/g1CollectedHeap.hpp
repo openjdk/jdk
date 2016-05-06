@@ -31,20 +31,23 @@
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
+#include "gc/g1/g1EdenRegions.hpp"
+#include "gc/g1/g1EvacFailure.hpp"
+#include "gc/g1/g1EvacStats.hpp"
+#include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1InCSetState.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
-#include "gc/g1/g1EvacFailure.hpp"
-#include "gc/g1/g1EvacStats.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YCTypes.hpp"
 #include "gc/g1/hSpaceCounters.hpp"
 #include "gc/g1/heapRegionManager.hpp"
 #include "gc/g1/heapRegionSet.hpp"
-#include "gc/g1/youngList.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/plab.hpp"
+#include "gc/shared/preservedMarks.hpp"
 #include "memory/memRegion.hpp"
 #include "utilities/stack.hpp"
 
@@ -69,6 +72,7 @@ class Space;
 class G1CollectionSet;
 class G1CollectorPolicy;
 class G1Policy;
+class G1HotCardCache;
 class G1RemSet;
 class HeapRegionRemSetIterator;
 class G1ConcurrentMark;
@@ -361,7 +365,8 @@ private:
 protected:
 
   // The young region list.
-  YoungList*  _young_list;
+  G1EdenRegions _eden;
+  G1SurvivorRegions _survivor;
 
   // The current policy object for the collector.
   G1Policy* _g1_policy;
@@ -760,6 +765,9 @@ protected:
   // Update object copying statistics.
   void record_obj_copy_mem_stats();
 
+  // The hot card cache for remembered set insertion optimization.
+  G1HotCardCache* _hot_card_cache;
+
   // The g1 remembered set of the heap.
   G1RemSet* _g1_rem_set;
 
@@ -797,16 +805,11 @@ protected:
   // forwarding pointers to themselves.  Reset them.
   void remove_self_forwarding_pointers();
 
-  // Restore the preserved mark words for objects with self-forwarding pointers.
-  void restore_preserved_marks();
-
   // Restore the objects in the regions in the collection set after an
   // evacuation failure.
   void restore_after_evac_failure();
 
-  // Stores marks with the corresponding oop that we need to preserve during evacuation
-  // failure.
-  OopAndMarkOopStack*  _preserved_objs;
+  PreservedMarksSet _preserved_marks_set;
 
   // Preserve the mark of "obj", if necessary, in preparation for its mark
   // word being overwritten with a self-forwarding-pointer.
@@ -1169,10 +1172,6 @@ public:
     return barrier_set_cast<G1SATBCardTableLoggingModRefBS>(barrier_set());
   }
 
-  // This resets the card table to all zeros.  It is used after
-  // a collection pause which used the card table to claim cards.
-  void cleanUpCardTable();
-
   // Iteration functions.
 
   // Iterate over all objects, calling "cl.do_object" on each.
@@ -1335,18 +1334,27 @@ public:
   void set_region_short_lived_locked(HeapRegion* hr);
   // add appropriate methods for any other surv rate groups
 
-  YoungList* young_list() const { return _young_list; }
+  const G1SurvivorRegions* survivor() const { return &_survivor; }
+
+  uint survivor_regions_count() const {
+    return _survivor.length();
+  }
+
+  uint eden_regions_count() const {
+    return _eden.length();
+  }
+
+  uint young_regions_count() const {
+    return _eden.length() + _survivor.length();
+  }
 
   uint old_regions_count() const { return _old_set.length(); }
 
   uint humongous_regions_count() const { return _humongous_set.length(); }
 
-  // debugging
-  bool check_young_list_well_formed() {
-    return _young_list->check_list_well_formed();
-  }
-
-  bool check_young_list_empty(bool check_heap);
+#ifdef ASSERT
+  bool check_young_list_empty();
+#endif
 
   // *** Stuff related to concurrent marking.  It's not clear to me that so
   // many of these need to be public.
@@ -1397,16 +1405,6 @@ public:
   // Refinement
 
   ConcurrentG1Refine* concurrent_g1_refine() const { return _cg1r; }
-
-  // The dirty cards region list is used to record a subset of regions
-  // whose cards need clearing. The list if populated during the
-  // remembered set scanning and drained during the card table
-  // cleanup. Although the methods are reentrant, population/draining
-  // phases must not overlap. For synchronization purposes the last
-  // element on the list points to itself.
-  HeapRegion* _dirty_cards_region_list;
-  void push_dirty_cards_region(HeapRegion* hr);
-  HeapRegion* pop_dirty_cards_region();
 
   // Optimized nmethod scanning support routines
 

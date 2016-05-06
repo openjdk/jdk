@@ -57,6 +57,7 @@
 #include "runtime/java.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/growableArray.hpp"
 
 // Concurrent marking bit map wrapper
 
@@ -109,8 +110,7 @@ void G1CMBitMap::initialize(MemRegion heap, G1RegionToSpaceMapper* storage) {
   _bmStartWord = heap.start();
   _bmWordSize = heap.word_size();
 
-  _bm.set_map((BitMap::bm_word_t*) storage->reserved().start());
-  _bm.set_size(_bmWordSize >> _shifter);
+  _bm = BitMapView((BitMap::bm_word_t*) storage->reserved().start(), _bmWordSize >> _shifter);
 
   storage->set_mapping_changed_listener(&_listener);
 }
@@ -260,11 +260,11 @@ void G1CMMarkStack::note_end_of_gc() {
 }
 
 G1CMRootRegions::G1CMRootRegions() :
-  _young_list(NULL), _cm(NULL), _scan_in_progress(false),
-  _should_abort(false),  _next_survivor(NULL) { }
+  _cm(NULL), _scan_in_progress(false),
+  _should_abort(false), _claimed_survivor_index(0) { }
 
-void G1CMRootRegions::init(G1CollectedHeap* g1h, G1ConcurrentMark* cm) {
-  _young_list = g1h->young_list();
+void G1CMRootRegions::init(const G1SurvivorRegions* survivors, G1ConcurrentMark* cm) {
+  _survivors = survivors;
   _cm = cm;
 }
 
@@ -272,9 +272,8 @@ void G1CMRootRegions::prepare_for_scan() {
   assert(!scan_in_progress(), "pre-condition");
 
   // Currently, only survivors can be root regions.
-  assert(_next_survivor == NULL, "pre-condition");
-  _next_survivor = _young_list->first_survivor_region();
-  _scan_in_progress = (_next_survivor != NULL);
+  _claimed_survivor_index = 0;
+  _scan_in_progress = true;
   _should_abort = false;
 }
 
@@ -286,27 +285,13 @@ HeapRegion* G1CMRootRegions::claim_next() {
   }
 
   // Currently, only survivors can be root regions.
-  HeapRegion* res = _next_survivor;
-  if (res != NULL) {
-    MutexLockerEx x(RootRegionScan_lock, Mutex::_no_safepoint_check_flag);
-    // Read it again in case it changed while we were waiting for the lock.
-    res = _next_survivor;
-    if (res != NULL) {
-      if (res == _young_list->last_survivor_region()) {
-        // We just claimed the last survivor so store NULL to indicate
-        // that we're done.
-        _next_survivor = NULL;
-      } else {
-        _next_survivor = res->get_next_young_region();
-      }
-    } else {
-      // Someone else claimed the last survivor while we were trying
-      // to take the lock so nothing else to do.
-    }
-  }
-  assert(res == NULL || res->is_survivor(), "post-condition");
+  const GrowableArray<HeapRegion*>* survivor_regions = _survivors->regions();
 
-  return res;
+  int claimed_index = Atomic::add(1, &_claimed_survivor_index) - 1;
+  if (claimed_index < survivor_regions->length()) {
+    return survivor_regions->at(claimed_index);
+  }
+  return NULL;
 }
 
 void G1CMRootRegions::notify_scan_done() {
@@ -324,9 +309,11 @@ void G1CMRootRegions::scan_finished() {
 
   // Currently, only survivors can be root regions.
   if (!_should_abort) {
-    assert(_next_survivor == NULL, "we should have claimed all survivors");
+    assert(_claimed_survivor_index >= 0, "otherwise comparison is invalid: %d", _claimed_survivor_index);
+    assert((uint)_claimed_survivor_index >= _survivors->length(),
+           "we should have claimed all survivors, claimed index = %u, length = %u",
+           (uint)_claimed_survivor_index, _survivors->length());
   }
-  _next_survivor = NULL;
 
   notify_scan_done();
 }
@@ -407,7 +394,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* 
   SATBMarkQueueSet& satb_qs = JavaThread::satb_mark_queue_set();
   satb_qs.set_buffer_size(G1SATBBufferSize);
 
-  _root_regions.init(_g1h, this);
+  _root_regions.init(_g1h->survivor(), this);
 
   if (ConcGCThreads > ParallelGCThreads) {
     log_warning(gc)("Can't have more ConcGCThreads (%u) than ParallelGCThreads (%u).",
@@ -609,6 +596,10 @@ G1ConcurrentMark::~G1ConcurrentMark() {
 }
 
 class G1ClearBitMapTask : public AbstractGangTask {
+public:
+  static size_t chunk_size() { return M; }
+
+private:
   // Heap region closure used for clearing the given mark bitmap.
   class G1ClearBitmapHRClosure : public HeapRegionClosure {
   private:
@@ -619,7 +610,7 @@ class G1ClearBitMapTask : public AbstractGangTask {
     }
 
     virtual bool doHeapRegion(HeapRegion* r) {
-      size_t const chunk_size_in_words = M / HeapWordSize;
+      size_t const chunk_size_in_words = G1ClearBitMapTask::chunk_size() / HeapWordSize;
 
       HeapWord* cur = r->bottom();
       HeapWord* const end = r->end();
@@ -653,7 +644,7 @@ class G1ClearBitMapTask : public AbstractGangTask {
 
 public:
   G1ClearBitMapTask(G1CMBitMap* bitmap, G1ConcurrentMark* cm, uint n_workers, bool suspendible) :
-    AbstractGangTask("Parallel Clear Bitmap Task"),
+    AbstractGangTask("G1 Clear Bitmap"),
     _cl(bitmap, suspendible ? cm : NULL),
     _hr_claimer(n_workers),
     _suspendible(suspendible)
@@ -672,9 +663,16 @@ public:
 void G1ConcurrentMark::clear_bitmap(G1CMBitMap* bitmap, WorkGang* workers, bool may_yield) {
   assert(may_yield || SafepointSynchronize::is_at_safepoint(), "Non-yielding bitmap clear only allowed at safepoint.");
 
-  G1ClearBitMapTask task(bitmap, this, workers->active_workers(), may_yield);
-  workers->run_task(&task);
-  guarantee(!may_yield || task.is_complete(), "Must have completed iteration when not yielding.");
+  size_t const num_bytes_to_clear = (HeapRegion::GrainBytes * _g1h->num_regions()) / G1CMBitMap::heap_map_factor();
+  size_t const num_chunks = align_size_up(num_bytes_to_clear, G1ClearBitMapTask::chunk_size()) / G1ClearBitMapTask::chunk_size();
+
+  uint const num_workers = (uint)MIN2(num_chunks, (size_t)workers->active_workers());
+
+  G1ClearBitMapTask cl(bitmap, this, num_workers, may_yield);
+
+  log_debug(gc, ergo)("Running %s with %u workers for " SIZE_FORMAT " work units.", cl.name(), num_workers, num_chunks);
+  workers->run_task(&cl, num_workers);
+  guarantee(!may_yield || cl.is_complete(), "Must have completed iteration when not yielding.");
 }
 
 void G1ConcurrentMark::cleanup_for_next_mark() {

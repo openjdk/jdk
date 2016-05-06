@@ -35,7 +35,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Contended;
 
 /*
@@ -43,6 +43,7 @@ import jdk.internal.vm.annotation.Contended;
  * @bug     8014509
  * @summary \@Contended: explicit default value behaves differently from the implicit value
  *
+ * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.vm.annotation
  * @run main/othervm -XX:-RestrictContended DefaultValue
  */

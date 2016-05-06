@@ -25,6 +25,7 @@
 
 package java.lang;
 
+import java.math.BigDecimal;
 import java.util.Random;
 import jdk.internal.math.FloatConsts;
 import jdk.internal.math.DoubleConsts;
@@ -1447,6 +1448,199 @@ public final class Math {
             return b;
         }
         return (a <= b) ? a : b;
+    }
+
+    /**
+     * Returns the fused multiply add of the three arguments; that is,
+     * returns the exact product of the first two arguments summed
+     * with the third argument and then rounded once to the nearest
+     * {@code double}.
+     *
+     * The rounding is done using the {@linkplain
+     * java.math.RoundingMode#HALF_EVEN round to nearest even
+     * rounding mode}.
+     *
+     * In contrast, if {@code a * b + c} is evaluated as a regular
+     * floating-point expression, two rounding errors are involved,
+     * the first for the multiply operation, the second for the
+     * addition operation.
+     *
+     * <p>Special cases:
+     * <ul>
+     * <li> If any argument is NaN, the result is NaN.
+     *
+     * <li> If one of the first two arguments is infinite and the
+     * other is zero, the result is NaN.
+     *
+     * <li> If the exact product of the first two arguments is infinite
+     * (in other words, at least one of the arguments is infinite and
+     * the other is neither zero nor NaN) and the third argument is an
+     * infinity of the opposite sign, the result is NaN.
+     *
+     * </ul>
+     *
+     * <p>Note that {@code fma(a, 1.0, c)} returns the same
+     * result as ({@code a + c}).  However,
+     * {@code fma(a, b, +0.0)} does <em>not</em> always return the
+     * same result as ({@code a * b}) since
+     * {@code fma(-0.0, +0.0, +0.0)} is {@code +0.0} while
+     * ({@code -0.0 * +0.0}) is {@code -0.0}; {@code fma(a, b, -0.0)} is
+     * equivalent to ({@code a * b}) however.
+     *
+     * @apiNote This method corresponds to the fusedMultiplyAdd
+     * operation defined in IEEE 754-2008.
+     *
+     * @param a a value
+     * @param b a value
+     * @param c a value
+     *
+     * @return (<i>a</i>&nbsp;&times;&nbsp;<i>b</i>&nbsp;+&nbsp;<i>c</i>)
+     * computed, as if with unlimited range and precision, and rounded
+     * once to the nearest {@code double} value
+     */
+    // @HotSpotIntrinsicCandidate
+    public static double fma(double a, double b, double c) {
+        /*
+         * Infinity and NaN arithmetic is not quite the same with two
+         * roundings as opposed to just one so the simple expression
+         * "a * b + c" cannot always be used to compute the correct
+         * result.  With two roundings, the product can overflow and
+         * if the addend is infinite, a spurious NaN can be produced
+         * if the infinity from the overflow and the infinite addend
+         * have opposite signs.
+         */
+
+        // First, screen for and handle non-finite input values whose
+        // arithmetic is not supported by BigDecimal.
+        if (Double.isNaN(a) || Double.isNaN(b) || Double.isNaN(c)) {
+            return Double.NaN;
+        } else { // All inputs non-NaN
+            boolean infiniteA = Double.isInfinite(a);
+            boolean infiniteB = Double.isInfinite(b);
+            boolean infiniteC = Double.isInfinite(c);
+            double result;
+
+            if (infiniteA || infiniteB || infiniteC) {
+                if (infiniteA && b == 0.0 ||
+                    infiniteB && a == 0.0 ) {
+                    return Double.NaN;
+                }
+                // Store product in a double field to cause an
+                // overflow even if non-strictfp evaluation is being
+                // used.
+                double product = a * b;
+                if (Double.isInfinite(product) && !infiniteA && !infiniteB) {
+                    // Intermediate overflow; might cause a
+                    // spurious NaN if added to infinite c.
+                    assert Double.isInfinite(c);
+                    return c;
+                } else {
+                    result = product + c;
+                    assert !Double.isFinite(result);
+                    return result;
+                }
+            } else { // All inputs finite
+                BigDecimal product = (new BigDecimal(a)).multiply(new BigDecimal(b));
+                if (c == 0.0) { // Positive or negative zero
+                    // If the product is an exact zero, use a
+                    // floating-point expression to compute the sign
+                    // of the zero final result. The product is an
+                    // exact zero if and only if at least one of a and
+                    // b is zero.
+                    if (a == 0.0 || b == 0.0) {
+                        return a * b + c;
+                    } else {
+                        // The sign of a zero addend doesn't matter if
+                        // the product is nonzero. The sign of a zero
+                        // addend is not factored in the result if the
+                        // exact product is nonzero but underflows to
+                        // zero; see IEEE-754 2008 section 6.3 "The
+                        // sign bit".
+                        return product.doubleValue();
+                    }
+                } else {
+                    return product.add(new BigDecimal(c)).doubleValue();
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns the fused multiply add of the three arguments; that is,
+     * returns the exact product of the first two arguments summed
+     * with the third argument and then rounded once to the nearest
+     * {@code float}.
+     *
+     * The rounding is done using the {@linkplain
+     * java.math.RoundingMode#HALF_EVEN round to nearest even
+     * rounding mode}.
+     *
+     * In contrast, if {@code a * b + c} is evaluated as a regular
+     * floating-point expression, two rounding errors are involved,
+     * the first for the multiply operation, the second for the
+     * addition operation.
+     *
+     * <p>Special cases:
+     * <ul>
+     * <li> If any argument is NaN, the result is NaN.
+     *
+     * <li> If one of the first two arguments is infinite and the
+     * other is zero, the result is NaN.
+     *
+     * <li> If the exact product of the first two arguments is infinite
+     * (in other words, at least one of the arguments is infinite and
+     * the other is neither zero nor NaN) and the third argument is an
+     * infinity of the opposite sign, the result is NaN.
+     *
+     * </ul>
+     *
+     * <p>Note that {@code fma(a, 1.0f, c)} returns the same
+     * result as ({@code a + c}).  However,
+     * {@code fma(a, b, +0.0f)} does <em>not</em> always return the
+     * same result as ({@code a * b}) since
+     * {@code fma(-0.0f, +0.0f, +0.0f)} is {@code +0.0f} while
+     * ({@code -0.0f * +0.0f}) is {@code -0.0f}; {@code fma(a, b, -0.0f)} is
+     * equivalent to ({@code a * b}) however.
+     *
+     * @apiNote This method corresponds to the fusedMultiplyAdd
+     * operation defined in IEEE 754-2008.
+     *
+     * @param a a value
+     * @param b a value
+     * @param c a value
+     *
+     * @return (<i>a</i>&nbsp;&times;&nbsp;<i>b</i>&nbsp;+&nbsp;<i>c</i>)
+     * computed, as if with unlimited range and precision, and rounded
+     * once to the nearest {@code float} value
+     */
+    // @HotSpotIntrinsicCandidate
+    public static float fma(float a, float b, float c) {
+        /*
+         *  Since the double format has more than twice the precision
+         *  of the float format, the multiply of a * b is exact in
+         *  double. The add of c to the product then incurs one
+         *  rounding error. Since the double format moreover has more
+         *  than (2p + 2) precision bits compared to the p bits of the
+         *  float format, the two roundings of (a * b + c), first to
+         *  the double format and then secondarily to the float format,
+         *  are equivalent to rounding the intermediate result directly
+         *  to the float format.
+         *
+         * In terms of strictfp vs default-fp concerns related to
+         * overflow and underflow, since
+         *
+         * (Float.MAX_VALUE * Float.MAX_VALUE) << Double.MAX_VALUE
+         * (Float.MIN_VALUE * Float.MIN_VALUE) >> Double.MIN_VALUE
+         *
+         * neither the multiply nor add will overflow or underflow in
+         * double. Therefore, it is not necessary for this method to
+         * be declared strictfp to have reproducible
+         * behavior. However, it is necessary to explicitly store down
+         * to a float variable to avoid returning a value in the float
+         * extended value set.
+         */
+        float result = (float)(((double) a * (double) b ) + (double) c);
+        return result;
     }
 
     /**

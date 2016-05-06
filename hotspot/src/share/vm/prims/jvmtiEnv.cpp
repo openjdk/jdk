@@ -489,7 +489,7 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
     ObjectLocker ol(loader_lock, thread);
 
     // add the jar file to the bootclasspath
-    log_info(classload)("opened: %s", zip_entry->name());
+    log_info(class, load)("opened: %s", zip_entry->name());
     ClassLoaderExt::append_boot_classpath(zip_entry);
     return JVMTI_ERROR_NONE;
   } else {
@@ -640,11 +640,11 @@ JvmtiEnv::SetVerboseFlag(jvmtiVerboseFlag flag, jboolean value) {
     break;
   case JVMTI_VERBOSE_CLASS:
     if (value == 0) {
-      LogConfiguration::parse_log_arguments("stdout", "classunload=off", NULL, NULL, NULL);
-      LogConfiguration::parse_log_arguments("stdout", "classload=off", NULL, NULL, NULL);
+      LogConfiguration::parse_log_arguments("stdout", "class+unload=off", NULL, NULL, NULL);
+      LogConfiguration::parse_log_arguments("stdout", "class+load=off", NULL, NULL, NULL);
     } else {
-      LogConfiguration::parse_log_arguments("stdout", "classload=info", NULL, NULL, NULL);
-      LogConfiguration::parse_log_arguments("stdout", "classunload=info", NULL, NULL, NULL);
+      LogConfiguration::parse_log_arguments("stdout", "class+load=info", NULL, NULL, NULL);
+      LogConfiguration::parse_log_arguments("stdout", "class+unload=info", NULL, NULL, NULL);
     }
     break;
   case JVMTI_VERBOSE_GC:
