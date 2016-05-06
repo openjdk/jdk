@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,11 @@
 package sun.awt.windows;
 
 import java.awt.*;
+import java.awt.event.FocusEvent.Cause;
 import java.awt.peer.DialogPeer;
 import java.awt.peer.ComponentPeer;
 import java.awt.dnd.DropTarget;
 import java.util.Vector;
-import sun.awt.CausedFocusEvent;
 import sun.awt.AWTAccessor;
 
 class WPrintDialogPeer extends WWindowPeer implements DialogPeer {
@@ -153,7 +153,7 @@ class WPrintDialogPeer extends WWindowPeer implements DialogPeer {
     @Override
     public boolean requestFocus
          (Component lightweightChild, boolean temporary,
-          boolean focusedWindowChangeAllowed, long time, CausedFocusEvent.Cause cause)
+          boolean focusedWindowChangeAllowed, long time, Cause cause)
     {
 
         return false;

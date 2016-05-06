@@ -83,7 +83,6 @@ public class SynthMenuBarUI extends BasicMenuBarUI
                 installKeyboardActions();
             }
         }
-        context.dispose();
     }
 
     /**
@@ -94,7 +93,6 @@ public class SynthMenuBarUI extends BasicMenuBarUI
         SynthContext context = getContext(menuBar, ENABLED);
 
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
     }
 
@@ -143,7 +141,6 @@ public class SynthMenuBarUI extends BasicMenuBarUI
         context.getPainter().paintMenuBarBackground(context,
                           g, 0, 0, c.getWidth(), c.getHeight());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -160,7 +157,6 @@ public class SynthMenuBarUI extends BasicMenuBarUI
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**

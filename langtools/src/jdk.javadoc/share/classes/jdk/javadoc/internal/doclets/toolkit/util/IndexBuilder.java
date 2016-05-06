@@ -73,6 +73,7 @@ public class IndexBuilder {
 
     private final Configuration configuration;
     private final Utils utils;
+    private final Comparator<Element> comparator;
 
     /**
      * Constructor. Build the index map.
@@ -106,6 +107,9 @@ public class IndexBuilder {
         this.classesOnly = classesOnly;
         this.javafx = configuration.javafx;
         this.indexmap = new TreeMap<>();
+        comparator = classesOnly
+                ? utils.makeAllClassesComparator()
+                : utils.makeIndexUseComparator();
         buildIndexMap(configuration.root);
     }
 
@@ -175,7 +179,7 @@ public class IndexBuilder {
                           Character.toUpperCase(name.charAt(0));
                 Character unicode = ch;
                 SortedSet<Element> list = indexmap.computeIfAbsent(unicode,
-                        c -> new TreeSet<>(utils.makeIndexUseComparator()));
+                        c -> new TreeSet<>(comparator));
                 list.add(element);
             }
         }

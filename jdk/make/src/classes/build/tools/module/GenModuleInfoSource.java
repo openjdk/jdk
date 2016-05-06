@@ -52,7 +52,7 @@ public class GenModuleInfoSource {
         "Usage: GenModuleInfoSource [option] -o <output file> <module-info-java>\n" +
         "Options are:\n" +
         "  -exports  <package-name>\n" +
-        "  -exports  <package-name>/<module-name>\n" +
+        "  -exports  <package-name>[/<module-name>]\n" +
         "  -uses     <service>\n" +
         "  -provides <service>/<provider-impl-classname>\n";
 

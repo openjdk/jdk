@@ -268,7 +268,7 @@ public class AquaUtilControlSize {
 
         public SizeVariant alterFontSize(final float newSize) {
             final float oldSize = fontSize == null ? 0.0f : fontSize.floatValue();
-            fontSize = new Float(newSize + oldSize);
+            fontSize = newSize + oldSize;
             return this;
         }
 

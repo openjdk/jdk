@@ -54,13 +54,13 @@ class UIProperty extends UIDefault<String> {
                 return String.format("        d.put(\"%s%s\", \"%s\");\n",
                                      prefix, getName(), getValue());
             case INT:
-                return String.format("        d.put(\"%s%s\", new Integer(%s));\n",
+                return String.format("        d.put(\"%s%s\", Integer.valueOf(%s));\n",
                                      prefix, getName(), getValue());
             case FLOAT:
-                return String.format("        d.put(\"%s%s\", new Float(%sf));\n",
+                return String.format("        d.put(\"%s%s\", Float.valueOf(%sf));\n",
                                      prefix, getName(), getValue());
             case DOUBLE:
-                return String.format("        d.put(\"%s%s\", new Double(%s));\n",
+                return String.format("        d.put(\"%s%s\", Double.valueOf(%s));\n",
                                      prefix, getName(), getValue());
             case COLOR:
                 return String.format("        addColor(d, \"%s%s\", %s);\n",

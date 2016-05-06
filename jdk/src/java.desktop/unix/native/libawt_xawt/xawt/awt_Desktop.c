@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 
 #include "jni_util.h"
-#include "gtk2_interface.h"
+#include "gtk_interface.h"
 #include "gnome_interface.h"
 
 static gboolean gtk_has_been_loaded = FALSE;
@@ -36,14 +36,14 @@ static gboolean gnome_has_been_loaded = FALSE;
  * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XDesktopPeer_init
-  (JNIEnv *env, jclass cls)
+  (JNIEnv *env, jclass cls, jint version, jboolean verbose)
 {
 
     if (gtk_has_been_loaded || gnome_has_been_loaded) {
         return JNI_TRUE;
     }
 
-    if (gtk2_load(env) && gtk2_show_uri_load(env)) {
+    if (gtk_load(env, version, verbose) && gtk->show_uri_load(env)) {
         gtk_has_been_loaded = TRUE;
         return JNI_TRUE;
     } else if (gnome_load()) {
@@ -74,9 +74,9 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XDesktopPeer_gnome_1url_1show
     }
 
     if (gtk_has_been_loaded) {
-        fp_gdk_threads_enter();
-        success = fp_gtk_show_uri(NULL, url_c, GDK_CURRENT_TIME, NULL);
-        fp_gdk_threads_leave();
+        gtk->gdk_threads_enter();
+        success = gtk->gtk_show_uri(NULL, url_c, GDK_CURRENT_TIME, NULL);
+        gtk->gdk_threads_leave();
     } else if (gnome_has_been_loaded) {
         success = (*gnome_url_show)(url_c, NULL);
     }

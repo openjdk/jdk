@@ -185,4 +185,17 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
                     packageTableSummary, summaryContentTree);
         }
     }
+
+    /**
+     * Build the description for the module.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param moduleContentTree the tree to which the module description will
+     *                           be added
+     */
+    public void buildModuleDescription(XMLNode node, Content moduleContentTree) {
+        if (!configuration.nocomment) {
+            moduleWriter.addModuleDescription(moduleContentTree);
+        }
+    }
 }

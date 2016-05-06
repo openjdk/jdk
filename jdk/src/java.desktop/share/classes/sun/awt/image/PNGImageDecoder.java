@@ -87,7 +87,7 @@ public class PNGImageDecoder extends ImageDecoder
         properties.put(key,value);
     }
     private void property(String key,float value) {
-        property(key,new Float(value));
+        property(key, Float.valueOf(value));
     }
     private final void pngassert(boolean b) throws IOException {
         if(!b) {

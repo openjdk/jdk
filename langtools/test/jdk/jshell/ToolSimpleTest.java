@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955
+ * @bug 8153716 8143955 8151754 8150382
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -348,5 +348,40 @@ public class ToolSimpleTest extends ReplToolTesting {
         } finally {
             System.setProperty("java.awt.headless", prevHeadless==null? "false" : prevHeadless);
         }
+    }
+
+    public void testOptionQ() {
+        test(new String[]{"-q", "-nostartup"},
+                (a) -> assertCommand(a, "1+1", "$1 ==> 2"),
+                (a) -> assertCommand(a, "int x = 5", "")
+        );
+    }
+
+    public void testOptionQq() {
+        test(new String[]{"-qq", "-nostartup"},
+                (a) -> assertCommand(a, "1+1", "")
+        );
+    }
+
+    public void testOptionV() {
+        test(new String[]{"-v", "-nostartup"},
+                (a) -> assertCommand(a, "1+1",
+                        "$1 ==> 2\n" +
+                        "|  created scratch variable $1 : int")
+        );
+    }
+
+    public void testOptionFeedback() {
+        test(new String[]{"-feedback", "concise", "-nostartup"},
+                (a) -> assertCommand(a, "1+1", "$1 ==> 2"),
+                (a) -> assertCommand(a, "int x = 5", "")
+        );
+    }
+
+    public void testOptionR() {
+        test(new String[]{"-R-Dthe.sound=blorp", "-nostartup"},
+                (a) -> assertCommand(a, "System.getProperty(\"the.sound\")",
+                        "$1 ==> \"blorp\"")
+        );
     }
 }
