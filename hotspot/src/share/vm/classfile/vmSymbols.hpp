@@ -1231,43 +1231,6 @@
   do_intrinsic(_putIntUnaligned,           jdk_internal_misc_Unsafe,    putIntUnaligned_name, putInt_signature,         F_R)  \
   do_intrinsic(_putLongUnaligned,          jdk_internal_misc_Unsafe,    putLongUnaligned_name, putLong_signature,       F_R)  \
                                                                                                                         \
-  /* %%% these are redundant except perhaps for getAddress, but Unsafe has native methods for them */                   \
-  do_signature(getByte_raw_signature,     "(J)B")                                                                       \
-  do_signature(putByte_raw_signature,     "(JB)V")                                                                      \
-  do_signature(getShort_raw_signature,    "(J)S")                                                                       \
-  do_signature(putShort_raw_signature,    "(JS)V")                                                                      \
-  do_signature(getChar_raw_signature,     "(J)C")                                                                       \
-  do_signature(putChar_raw_signature,     "(JC)V")                                                                      \
-  do_signature(putInt_raw_signature,      "(JI)V")                                                                      \
-      do_alias(getLong_raw_signature,    /*(J)J*/ long_long_signature)                                                  \
-      do_alias(putLong_raw_signature,    /*(JJ)V*/ long_long_void_signature)                                            \
-  do_signature(getFloat_raw_signature,    "(J)F")                                                                       \
-  do_signature(putFloat_raw_signature,    "(JF)V")                                                                      \
-      do_alias(getDouble_raw_signature,  /*(J)D*/ long_double_signature)                                                \
-  do_signature(putDouble_raw_signature,   "(JD)V")                                                                      \
-      do_alias(getAddress_raw_signature, /*(J)J*/ long_long_signature)                                                  \
-      do_alias(putAddress_raw_signature, /*(JJ)V*/ long_long_void_signature)                                            \
-                                                                                                                        \
-   do_name(    getAddress_name,           "getAddress")                                                                 \
-   do_name(    putAddress_name,           "putAddress")                                                                 \
-                                                                                                                        \
-  do_intrinsic(_getByte_raw,              jdk_internal_misc_Unsafe,     getByte_name, getByte_raw_signature,           F_R)  \
-  do_intrinsic(_getShort_raw,             jdk_internal_misc_Unsafe,     getShort_name, getShort_raw_signature,         F_R)  \
-  do_intrinsic(_getChar_raw,              jdk_internal_misc_Unsafe,     getChar_name, getChar_raw_signature,           F_R)  \
-  do_intrinsic(_getInt_raw,               jdk_internal_misc_Unsafe,     getInt_name, long_int_signature,               F_R)  \
-  do_intrinsic(_getLong_raw,              jdk_internal_misc_Unsafe,     getLong_name, getLong_raw_signature,           F_R)  \
-  do_intrinsic(_getFloat_raw,             jdk_internal_misc_Unsafe,     getFloat_name, getFloat_raw_signature,         F_R)  \
-  do_intrinsic(_getDouble_raw,            jdk_internal_misc_Unsafe,     getDouble_name, getDouble_raw_signature,       F_R)  \
-  do_intrinsic(_getAddress_raw,           jdk_internal_misc_Unsafe,     getAddress_name, getAddress_raw_signature,     F_R)  \
-  do_intrinsic(_putByte_raw,              jdk_internal_misc_Unsafe,     putByte_name, putByte_raw_signature,           F_R)  \
-  do_intrinsic(_putShort_raw,             jdk_internal_misc_Unsafe,     putShort_name, putShort_raw_signature,         F_R)  \
-  do_intrinsic(_putChar_raw,              jdk_internal_misc_Unsafe,     putChar_name, putChar_raw_signature,           F_R)  \
-  do_intrinsic(_putInt_raw,               jdk_internal_misc_Unsafe,     putInt_name, putInt_raw_signature,             F_R)  \
-  do_intrinsic(_putLong_raw,              jdk_internal_misc_Unsafe,     putLong_name, putLong_raw_signature,           F_R)  \
-  do_intrinsic(_putFloat_raw,             jdk_internal_misc_Unsafe,     putFloat_name, putFloat_raw_signature,         F_R)  \
-  do_intrinsic(_putDouble_raw,            jdk_internal_misc_Unsafe,     putDouble_name, putDouble_raw_signature,       F_R)  \
-  do_intrinsic(_putAddress_raw,           jdk_internal_misc_Unsafe,     putAddress_name, putAddress_raw_signature,     F_R)  \
-                                                                                                                        \
   do_signature(compareAndSwapObject_signature,     "(Ljava/lang/Object;JLjava/lang/Object;Ljava/lang/Object;)Z")        \
   do_signature(compareAndExchangeObject_signature, "(Ljava/lang/Object;JLjava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;") \
   do_signature(compareAndSwapLong_signature,       "(Ljava/lang/Object;JJJ)Z")                                          \

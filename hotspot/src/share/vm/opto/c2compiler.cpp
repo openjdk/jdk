@@ -409,22 +409,6 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_putLong:
   case vmIntrinsics::_putFloat:
   case vmIntrinsics::_putDouble:
-  case vmIntrinsics::_getByte_raw:
-  case vmIntrinsics::_getShort_raw:
-  case vmIntrinsics::_getChar_raw:
-  case vmIntrinsics::_getInt_raw:
-  case vmIntrinsics::_getLong_raw:
-  case vmIntrinsics::_getFloat_raw:
-  case vmIntrinsics::_getDouble_raw:
-  case vmIntrinsics::_getAddress_raw:
-  case vmIntrinsics::_putByte_raw:
-  case vmIntrinsics::_putShort_raw:
-  case vmIntrinsics::_putChar_raw:
-  case vmIntrinsics::_putInt_raw:
-  case vmIntrinsics::_putLong_raw:
-  case vmIntrinsics::_putFloat_raw:
-  case vmIntrinsics::_putDouble_raw:
-  case vmIntrinsics::_putAddress_raw:
   case vmIntrinsics::_getObjectVolatile:
   case vmIntrinsics::_getBooleanVolatile:
   case vmIntrinsics::_getByteVolatile:

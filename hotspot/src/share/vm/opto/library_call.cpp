@@ -93,7 +93,7 @@ class LibraryCallKit : public GraphKit {
   Node*             _result;        // the result node, if any
   int               _reexecute_sp;  // the stack pointer when bytecode needs to be reexecuted
 
-  const TypeOopPtr* sharpen_unsafe_type(Compile::AliasType* alias_type, const TypePtr *adr_type, bool is_native_ptr = false);
+  const TypeOopPtr* sharpen_unsafe_type(Compile::AliasType* alias_type, const TypePtr *adr_type);
 
  public:
   LibraryCallKit(JVMState* jvms, LibraryIntrinsic* intrinsic)
@@ -247,7 +247,7 @@ class LibraryCallKit : public GraphKit {
   void insert_pre_barrier(Node* base_oop, Node* offset, Node* pre_val, bool need_mem_bar);
 
   typedef enum { Relaxed, Opaque, Volatile, Acquire, Release } AccessKind;
-  bool inline_unsafe_access(bool is_native_ptr, bool is_store, BasicType type, AccessKind kind, bool is_unaligned);
+  bool inline_unsafe_access(bool is_store, BasicType type, AccessKind kind, bool is_unaligned);
   static bool klass_needs_init_guard(Node* kls);
   bool inline_unsafe_allocate();
   bool inline_unsafe_newArray(bool uninitialized);
@@ -475,7 +475,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   // Handle symbolic names for otherwise undistinguished boolean switches:
   const bool is_store       = true;
   const bool is_compress    = true;
-  const bool is_native_ptr  = true;
   const bool is_static      = true;
   const bool is_volatile    = true;
 
@@ -555,113 +554,95 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_inflateStringC:
   case vmIntrinsics::_inflateStringB:           return inline_string_copy(!is_compress);
 
-  case vmIntrinsics::_getObject:                return inline_unsafe_access(!is_native_ptr, !is_store, T_OBJECT,   Relaxed, false);
-  case vmIntrinsics::_getBoolean:               return inline_unsafe_access(!is_native_ptr, !is_store, T_BOOLEAN,  Relaxed, false);
-  case vmIntrinsics::_getByte:                  return inline_unsafe_access(!is_native_ptr, !is_store, T_BYTE,     Relaxed, false);
-  case vmIntrinsics::_getShort:                 return inline_unsafe_access(!is_native_ptr, !is_store, T_SHORT,    Relaxed, false);
-  case vmIntrinsics::_getChar:                  return inline_unsafe_access(!is_native_ptr, !is_store, T_CHAR,     Relaxed, false);
-  case vmIntrinsics::_getInt:                   return inline_unsafe_access(!is_native_ptr, !is_store, T_INT,      Relaxed, false);
-  case vmIntrinsics::_getLong:                  return inline_unsafe_access(!is_native_ptr, !is_store, T_LONG,     Relaxed, false);
-  case vmIntrinsics::_getFloat:                 return inline_unsafe_access(!is_native_ptr, !is_store, T_FLOAT,    Relaxed, false);
-  case vmIntrinsics::_getDouble:                return inline_unsafe_access(!is_native_ptr, !is_store, T_DOUBLE,   Relaxed, false);
+  case vmIntrinsics::_getObject:                return inline_unsafe_access(!is_store, T_OBJECT,   Relaxed, false);
+  case vmIntrinsics::_getBoolean:               return inline_unsafe_access(!is_store, T_BOOLEAN,  Relaxed, false);
+  case vmIntrinsics::_getByte:                  return inline_unsafe_access(!is_store, T_BYTE,     Relaxed, false);
+  case vmIntrinsics::_getShort:                 return inline_unsafe_access(!is_store, T_SHORT,    Relaxed, false);
+  case vmIntrinsics::_getChar:                  return inline_unsafe_access(!is_store, T_CHAR,     Relaxed, false);
+  case vmIntrinsics::_getInt:                   return inline_unsafe_access(!is_store, T_INT,      Relaxed, false);
+  case vmIntrinsics::_getLong:                  return inline_unsafe_access(!is_store, T_LONG,     Relaxed, false);
+  case vmIntrinsics::_getFloat:                 return inline_unsafe_access(!is_store, T_FLOAT,    Relaxed, false);
+  case vmIntrinsics::_getDouble:                return inline_unsafe_access(!is_store, T_DOUBLE,   Relaxed, false);
 
-  case vmIntrinsics::_putObject:                return inline_unsafe_access(!is_native_ptr,  is_store, T_OBJECT,   Relaxed, false);
-  case vmIntrinsics::_putBoolean:               return inline_unsafe_access(!is_native_ptr,  is_store, T_BOOLEAN,  Relaxed, false);
-  case vmIntrinsics::_putByte:                  return inline_unsafe_access(!is_native_ptr,  is_store, T_BYTE,     Relaxed, false);
-  case vmIntrinsics::_putShort:                 return inline_unsafe_access(!is_native_ptr,  is_store, T_SHORT,    Relaxed, false);
-  case vmIntrinsics::_putChar:                  return inline_unsafe_access(!is_native_ptr,  is_store, T_CHAR,     Relaxed, false);
-  case vmIntrinsics::_putInt:                   return inline_unsafe_access(!is_native_ptr,  is_store, T_INT,      Relaxed, false);
-  case vmIntrinsics::_putLong:                  return inline_unsafe_access(!is_native_ptr,  is_store, T_LONG,     Relaxed, false);
-  case vmIntrinsics::_putFloat:                 return inline_unsafe_access(!is_native_ptr,  is_store, T_FLOAT,    Relaxed, false);
-  case vmIntrinsics::_putDouble:                return inline_unsafe_access(!is_native_ptr,  is_store, T_DOUBLE,   Relaxed, false);
+  case vmIntrinsics::_putObject:                return inline_unsafe_access( is_store, T_OBJECT,   Relaxed, false);
+  case vmIntrinsics::_putBoolean:               return inline_unsafe_access( is_store, T_BOOLEAN,  Relaxed, false);
+  case vmIntrinsics::_putByte:                  return inline_unsafe_access( is_store, T_BYTE,     Relaxed, false);
+  case vmIntrinsics::_putShort:                 return inline_unsafe_access( is_store, T_SHORT,    Relaxed, false);
+  case vmIntrinsics::_putChar:                  return inline_unsafe_access( is_store, T_CHAR,     Relaxed, false);
+  case vmIntrinsics::_putInt:                   return inline_unsafe_access( is_store, T_INT,      Relaxed, false);
+  case vmIntrinsics::_putLong:                  return inline_unsafe_access( is_store, T_LONG,     Relaxed, false);
+  case vmIntrinsics::_putFloat:                 return inline_unsafe_access( is_store, T_FLOAT,    Relaxed, false);
+  case vmIntrinsics::_putDouble:                return inline_unsafe_access( is_store, T_DOUBLE,   Relaxed, false);
 
-  case vmIntrinsics::_getByte_raw:              return inline_unsafe_access( is_native_ptr, !is_store, T_BYTE,     Relaxed, false);
-  case vmIntrinsics::_getShort_raw:             return inline_unsafe_access( is_native_ptr, !is_store, T_SHORT,    Relaxed, false);
-  case vmIntrinsics::_getChar_raw:              return inline_unsafe_access( is_native_ptr, !is_store, T_CHAR,     Relaxed, false);
-  case vmIntrinsics::_getInt_raw:               return inline_unsafe_access( is_native_ptr, !is_store, T_INT,      Relaxed, false);
-  case vmIntrinsics::_getLong_raw:              return inline_unsafe_access( is_native_ptr, !is_store, T_LONG,     Relaxed, false);
-  case vmIntrinsics::_getFloat_raw:             return inline_unsafe_access( is_native_ptr, !is_store, T_FLOAT,    Relaxed, false);
-  case vmIntrinsics::_getDouble_raw:            return inline_unsafe_access( is_native_ptr, !is_store, T_DOUBLE,   Relaxed, false);
-  case vmIntrinsics::_getAddress_raw:           return inline_unsafe_access( is_native_ptr, !is_store, T_ADDRESS,  Relaxed, false);
+  case vmIntrinsics::_getObjectVolatile:        return inline_unsafe_access(!is_store, T_OBJECT,   Volatile, false);
+  case vmIntrinsics::_getBooleanVolatile:       return inline_unsafe_access(!is_store, T_BOOLEAN,  Volatile, false);
+  case vmIntrinsics::_getByteVolatile:          return inline_unsafe_access(!is_store, T_BYTE,     Volatile, false);
+  case vmIntrinsics::_getShortVolatile:         return inline_unsafe_access(!is_store, T_SHORT,    Volatile, false);
+  case vmIntrinsics::_getCharVolatile:          return inline_unsafe_access(!is_store, T_CHAR,     Volatile, false);
+  case vmIntrinsics::_getIntVolatile:           return inline_unsafe_access(!is_store, T_INT,      Volatile, false);
+  case vmIntrinsics::_getLongVolatile:          return inline_unsafe_access(!is_store, T_LONG,     Volatile, false);
+  case vmIntrinsics::_getFloatVolatile:         return inline_unsafe_access(!is_store, T_FLOAT,    Volatile, false);
+  case vmIntrinsics::_getDoubleVolatile:        return inline_unsafe_access(!is_store, T_DOUBLE,   Volatile, false);
 
-  case vmIntrinsics::_putByte_raw:              return inline_unsafe_access( is_native_ptr,  is_store, T_BYTE,     Relaxed, false);
-  case vmIntrinsics::_putShort_raw:             return inline_unsafe_access( is_native_ptr,  is_store, T_SHORT,    Relaxed, false);
-  case vmIntrinsics::_putChar_raw:              return inline_unsafe_access( is_native_ptr,  is_store, T_CHAR,     Relaxed, false);
-  case vmIntrinsics::_putInt_raw:               return inline_unsafe_access( is_native_ptr,  is_store, T_INT,      Relaxed, false);
-  case vmIntrinsics::_putLong_raw:              return inline_unsafe_access( is_native_ptr,  is_store, T_LONG,     Relaxed, false);
-  case vmIntrinsics::_putFloat_raw:             return inline_unsafe_access( is_native_ptr,  is_store, T_FLOAT,    Relaxed, false);
-  case vmIntrinsics::_putDouble_raw:            return inline_unsafe_access( is_native_ptr,  is_store, T_DOUBLE,   Relaxed, false);
-  case vmIntrinsics::_putAddress_raw:           return inline_unsafe_access( is_native_ptr,  is_store, T_ADDRESS,  Relaxed, false);
+  case vmIntrinsics::_putObjectVolatile:        return inline_unsafe_access( is_store, T_OBJECT,   Volatile, false);
+  case vmIntrinsics::_putBooleanVolatile:       return inline_unsafe_access( is_store, T_BOOLEAN,  Volatile, false);
+  case vmIntrinsics::_putByteVolatile:          return inline_unsafe_access( is_store, T_BYTE,     Volatile, false);
+  case vmIntrinsics::_putShortVolatile:         return inline_unsafe_access( is_store, T_SHORT,    Volatile, false);
+  case vmIntrinsics::_putCharVolatile:          return inline_unsafe_access( is_store, T_CHAR,     Volatile, false);
+  case vmIntrinsics::_putIntVolatile:           return inline_unsafe_access( is_store, T_INT,      Volatile, false);
+  case vmIntrinsics::_putLongVolatile:          return inline_unsafe_access( is_store, T_LONG,     Volatile, false);
+  case vmIntrinsics::_putFloatVolatile:         return inline_unsafe_access( is_store, T_FLOAT,    Volatile, false);
+  case vmIntrinsics::_putDoubleVolatile:        return inline_unsafe_access( is_store, T_DOUBLE,   Volatile, false);
 
-  case vmIntrinsics::_getObjectVolatile:        return inline_unsafe_access(!is_native_ptr, !is_store, T_OBJECT,   Volatile, false);
-  case vmIntrinsics::_getBooleanVolatile:       return inline_unsafe_access(!is_native_ptr, !is_store, T_BOOLEAN,  Volatile, false);
-  case vmIntrinsics::_getByteVolatile:          return inline_unsafe_access(!is_native_ptr, !is_store, T_BYTE,     Volatile, false);
-  case vmIntrinsics::_getShortVolatile:         return inline_unsafe_access(!is_native_ptr, !is_store, T_SHORT,    Volatile, false);
-  case vmIntrinsics::_getCharVolatile:          return inline_unsafe_access(!is_native_ptr, !is_store, T_CHAR,     Volatile, false);
-  case vmIntrinsics::_getIntVolatile:           return inline_unsafe_access(!is_native_ptr, !is_store, T_INT,      Volatile, false);
-  case vmIntrinsics::_getLongVolatile:          return inline_unsafe_access(!is_native_ptr, !is_store, T_LONG,     Volatile, false);
-  case vmIntrinsics::_getFloatVolatile:         return inline_unsafe_access(!is_native_ptr, !is_store, T_FLOAT,    Volatile, false);
-  case vmIntrinsics::_getDoubleVolatile:        return inline_unsafe_access(!is_native_ptr, !is_store, T_DOUBLE,   Volatile, false);
+  case vmIntrinsics::_getShortUnaligned:        return inline_unsafe_access(!is_store, T_SHORT,    Relaxed, true);
+  case vmIntrinsics::_getCharUnaligned:         return inline_unsafe_access(!is_store, T_CHAR,     Relaxed, true);
+  case vmIntrinsics::_getIntUnaligned:          return inline_unsafe_access(!is_store, T_INT,      Relaxed, true);
+  case vmIntrinsics::_getLongUnaligned:         return inline_unsafe_access(!is_store, T_LONG,     Relaxed, true);
 
-  case vmIntrinsics::_putObjectVolatile:        return inline_unsafe_access(!is_native_ptr,  is_store, T_OBJECT,   Volatile, false);
-  case vmIntrinsics::_putBooleanVolatile:       return inline_unsafe_access(!is_native_ptr,  is_store, T_BOOLEAN,  Volatile, false);
-  case vmIntrinsics::_putByteVolatile:          return inline_unsafe_access(!is_native_ptr,  is_store, T_BYTE,     Volatile, false);
-  case vmIntrinsics::_putShortVolatile:         return inline_unsafe_access(!is_native_ptr,  is_store, T_SHORT,    Volatile, false);
-  case vmIntrinsics::_putCharVolatile:          return inline_unsafe_access(!is_native_ptr,  is_store, T_CHAR,     Volatile, false);
-  case vmIntrinsics::_putIntVolatile:           return inline_unsafe_access(!is_native_ptr,  is_store, T_INT,      Volatile, false);
-  case vmIntrinsics::_putLongVolatile:          return inline_unsafe_access(!is_native_ptr,  is_store, T_LONG,     Volatile, false);
-  case vmIntrinsics::_putFloatVolatile:         return inline_unsafe_access(!is_native_ptr,  is_store, T_FLOAT,    Volatile, false);
-  case vmIntrinsics::_putDoubleVolatile:        return inline_unsafe_access(!is_native_ptr,  is_store, T_DOUBLE,   Volatile, false);
+  case vmIntrinsics::_putShortUnaligned:        return inline_unsafe_access( is_store, T_SHORT,    Relaxed, true);
+  case vmIntrinsics::_putCharUnaligned:         return inline_unsafe_access( is_store, T_CHAR,     Relaxed, true);
+  case vmIntrinsics::_putIntUnaligned:          return inline_unsafe_access( is_store, T_INT,      Relaxed, true);
+  case vmIntrinsics::_putLongUnaligned:         return inline_unsafe_access( is_store, T_LONG,     Relaxed, true);
 
-  case vmIntrinsics::_getShortUnaligned:        return inline_unsafe_access(!is_native_ptr, !is_store, T_SHORT,    Relaxed, true);
-  case vmIntrinsics::_getCharUnaligned:         return inline_unsafe_access(!is_native_ptr, !is_store, T_CHAR,     Relaxed, true);
-  case vmIntrinsics::_getIntUnaligned:          return inline_unsafe_access(!is_native_ptr, !is_store, T_INT,      Relaxed, true);
-  case vmIntrinsics::_getLongUnaligned:         return inline_unsafe_access(!is_native_ptr, !is_store, T_LONG,     Relaxed, true);
+  case vmIntrinsics::_getObjectAcquire:         return inline_unsafe_access(!is_store, T_OBJECT,   Acquire, false);
+  case vmIntrinsics::_getBooleanAcquire:        return inline_unsafe_access(!is_store, T_BOOLEAN,  Acquire, false);
+  case vmIntrinsics::_getByteAcquire:           return inline_unsafe_access(!is_store, T_BYTE,     Acquire, false);
+  case vmIntrinsics::_getShortAcquire:          return inline_unsafe_access(!is_store, T_SHORT,    Acquire, false);
+  case vmIntrinsics::_getCharAcquire:           return inline_unsafe_access(!is_store, T_CHAR,     Acquire, false);
+  case vmIntrinsics::_getIntAcquire:            return inline_unsafe_access(!is_store, T_INT,      Acquire, false);
+  case vmIntrinsics::_getLongAcquire:           return inline_unsafe_access(!is_store, T_LONG,     Acquire, false);
+  case vmIntrinsics::_getFloatAcquire:          return inline_unsafe_access(!is_store, T_FLOAT,    Acquire, false);
+  case vmIntrinsics::_getDoubleAcquire:         return inline_unsafe_access(!is_store, T_DOUBLE,   Acquire, false);
 
-  case vmIntrinsics::_putShortUnaligned:        return inline_unsafe_access(!is_native_ptr,  is_store, T_SHORT,    Relaxed, true);
-  case vmIntrinsics::_putCharUnaligned:         return inline_unsafe_access(!is_native_ptr,  is_store, T_CHAR,     Relaxed, true);
-  case vmIntrinsics::_putIntUnaligned:          return inline_unsafe_access(!is_native_ptr,  is_store, T_INT,      Relaxed, true);
-  case vmIntrinsics::_putLongUnaligned:         return inline_unsafe_access(!is_native_ptr,  is_store, T_LONG,     Relaxed, true);
+  case vmIntrinsics::_putObjectRelease:         return inline_unsafe_access( is_store, T_OBJECT,   Release, false);
+  case vmIntrinsics::_putBooleanRelease:        return inline_unsafe_access( is_store, T_BOOLEAN,  Release, false);
+  case vmIntrinsics::_putByteRelease:           return inline_unsafe_access( is_store, T_BYTE,     Release, false);
+  case vmIntrinsics::_putShortRelease:          return inline_unsafe_access( is_store, T_SHORT,    Release, false);
+  case vmIntrinsics::_putCharRelease:           return inline_unsafe_access( is_store, T_CHAR,     Release, false);
+  case vmIntrinsics::_putIntRelease:            return inline_unsafe_access( is_store, T_INT,      Release, false);
+  case vmIntrinsics::_putLongRelease:           return inline_unsafe_access( is_store, T_LONG,     Release, false);
+  case vmIntrinsics::_putFloatRelease:          return inline_unsafe_access( is_store, T_FLOAT,    Release, false);
+  case vmIntrinsics::_putDoubleRelease:         return inline_unsafe_access( is_store, T_DOUBLE,   Release, false);
 
-  case vmIntrinsics::_getObjectAcquire:         return inline_unsafe_access(!is_native_ptr, !is_store, T_OBJECT,   Acquire, false);
-  case vmIntrinsics::_getBooleanAcquire:        return inline_unsafe_access(!is_native_ptr, !is_store, T_BOOLEAN,  Acquire, false);
-  case vmIntrinsics::_getByteAcquire:           return inline_unsafe_access(!is_native_ptr, !is_store, T_BYTE,     Acquire, false);
-  case vmIntrinsics::_getShortAcquire:          return inline_unsafe_access(!is_native_ptr, !is_store, T_SHORT,    Acquire, false);
-  case vmIntrinsics::_getCharAcquire:           return inline_unsafe_access(!is_native_ptr, !is_store, T_CHAR,     Acquire, false);
-  case vmIntrinsics::_getIntAcquire:            return inline_unsafe_access(!is_native_ptr, !is_store, T_INT,      Acquire, false);
-  case vmIntrinsics::_getLongAcquire:           return inline_unsafe_access(!is_native_ptr, !is_store, T_LONG,     Acquire, false);
-  case vmIntrinsics::_getFloatAcquire:          return inline_unsafe_access(!is_native_ptr, !is_store, T_FLOAT,    Acquire, false);
-  case vmIntrinsics::_getDoubleAcquire:         return inline_unsafe_access(!is_native_ptr, !is_store, T_DOUBLE,   Acquire, false);
+  case vmIntrinsics::_getObjectOpaque:          return inline_unsafe_access(!is_store, T_OBJECT,   Opaque, false);
+  case vmIntrinsics::_getBooleanOpaque:         return inline_unsafe_access(!is_store, T_BOOLEAN,  Opaque, false);
+  case vmIntrinsics::_getByteOpaque:            return inline_unsafe_access(!is_store, T_BYTE,     Opaque, false);
+  case vmIntrinsics::_getShortOpaque:           return inline_unsafe_access(!is_store, T_SHORT,    Opaque, false);
+  case vmIntrinsics::_getCharOpaque:            return inline_unsafe_access(!is_store, T_CHAR,     Opaque, false);
+  case vmIntrinsics::_getIntOpaque:             return inline_unsafe_access(!is_store, T_INT,      Opaque, false);
+  case vmIntrinsics::_getLongOpaque:            return inline_unsafe_access(!is_store, T_LONG,     Opaque, false);
+  case vmIntrinsics::_getFloatOpaque:           return inline_unsafe_access(!is_store, T_FLOAT,    Opaque, false);
+  case vmIntrinsics::_getDoubleOpaque:          return inline_unsafe_access(!is_store, T_DOUBLE,   Opaque, false);
 
-  case vmIntrinsics::_putObjectRelease:         return inline_unsafe_access(!is_native_ptr,  is_store, T_OBJECT,   Release, false);
-  case vmIntrinsics::_putBooleanRelease:        return inline_unsafe_access(!is_native_ptr,  is_store, T_BOOLEAN,  Release, false);
-  case vmIntrinsics::_putByteRelease:           return inline_unsafe_access(!is_native_ptr,  is_store, T_BYTE,     Release, false);
-  case vmIntrinsics::_putShortRelease:          return inline_unsafe_access(!is_native_ptr,  is_store, T_SHORT,    Release, false);
-  case vmIntrinsics::_putCharRelease:           return inline_unsafe_access(!is_native_ptr,  is_store, T_CHAR,     Release, false);
-  case vmIntrinsics::_putIntRelease:            return inline_unsafe_access(!is_native_ptr,  is_store, T_INT,      Release, false);
-  case vmIntrinsics::_putLongRelease:           return inline_unsafe_access(!is_native_ptr,  is_store, T_LONG,     Release, false);
-  case vmIntrinsics::_putFloatRelease:          return inline_unsafe_access(!is_native_ptr,  is_store, T_FLOAT,    Release, false);
-  case vmIntrinsics::_putDoubleRelease:         return inline_unsafe_access(!is_native_ptr,  is_store, T_DOUBLE,   Release, false);
-
-  case vmIntrinsics::_getObjectOpaque:          return inline_unsafe_access(!is_native_ptr, !is_store, T_OBJECT,   Opaque, false);
-  case vmIntrinsics::_getBooleanOpaque:         return inline_unsafe_access(!is_native_ptr, !is_store, T_BOOLEAN,  Opaque, false);
-  case vmIntrinsics::_getByteOpaque:            return inline_unsafe_access(!is_native_ptr, !is_store, T_BYTE,     Opaque, false);
-  case vmIntrinsics::_getShortOpaque:           return inline_unsafe_access(!is_native_ptr, !is_store, T_SHORT,    Opaque, false);
-  case vmIntrinsics::_getCharOpaque:            return inline_unsafe_access(!is_native_ptr, !is_store, T_CHAR,     Opaque, false);
-  case vmIntrinsics::_getIntOpaque:             return inline_unsafe_access(!is_native_ptr, !is_store, T_INT,      Opaque, false);
-  case vmIntrinsics::_getLongOpaque:            return inline_unsafe_access(!is_native_ptr, !is_store, T_LONG,     Opaque, false);
-  case vmIntrinsics::_getFloatOpaque:           return inline_unsafe_access(!is_native_ptr, !is_store, T_FLOAT,    Opaque, false);
-  case vmIntrinsics::_getDoubleOpaque:          return inline_unsafe_access(!is_native_ptr, !is_store, T_DOUBLE,   Opaque, false);
-
-  case vmIntrinsics::_putObjectOpaque:          return inline_unsafe_access(!is_native_ptr,  is_store, T_OBJECT,   Opaque, false);
-  case vmIntrinsics::_putBooleanOpaque:         return inline_unsafe_access(!is_native_ptr,  is_store, T_BOOLEAN,  Opaque, false);
-  case vmIntrinsics::_putByteOpaque:            return inline_unsafe_access(!is_native_ptr,  is_store, T_BYTE,     Opaque, false);
-  case vmIntrinsics::_putShortOpaque:           return inline_unsafe_access(!is_native_ptr,  is_store, T_SHORT,    Opaque, false);
-  case vmIntrinsics::_putCharOpaque:            return inline_unsafe_access(!is_native_ptr,  is_store, T_CHAR,     Opaque, false);
-  case vmIntrinsics::_putIntOpaque:             return inline_unsafe_access(!is_native_ptr,  is_store, T_INT,      Opaque, false);
-  case vmIntrinsics::_putLongOpaque:            return inline_unsafe_access(!is_native_ptr,  is_store, T_LONG,     Opaque, false);
-  case vmIntrinsics::_putFloatOpaque:           return inline_unsafe_access(!is_native_ptr,  is_store, T_FLOAT,    Opaque, false);
-  case vmIntrinsics::_putDoubleOpaque:          return inline_unsafe_access(!is_native_ptr,  is_store, T_DOUBLE,   Opaque, false);
+  case vmIntrinsics::_putObjectOpaque:          return inline_unsafe_access( is_store, T_OBJECT,   Opaque, false);
+  case vmIntrinsics::_putBooleanOpaque:         return inline_unsafe_access( is_store, T_BOOLEAN,  Opaque, false);
+  case vmIntrinsics::_putByteOpaque:            return inline_unsafe_access( is_store, T_BYTE,     Opaque, false);
+  case vmIntrinsics::_putShortOpaque:           return inline_unsafe_access( is_store, T_SHORT,    Opaque, false);
+  case vmIntrinsics::_putCharOpaque:            return inline_unsafe_access( is_store, T_CHAR,     Opaque, false);
+  case vmIntrinsics::_putIntOpaque:             return inline_unsafe_access( is_store, T_INT,      Opaque, false);
+  case vmIntrinsics::_putLongOpaque:            return inline_unsafe_access( is_store, T_LONG,     Opaque, false);
+  case vmIntrinsics::_putFloatOpaque:           return inline_unsafe_access( is_store, T_FLOAT,    Opaque, false);
+  case vmIntrinsics::_putDoubleOpaque:          return inline_unsafe_access( is_store, T_DOUBLE,   Opaque, false);
 
   case vmIntrinsics::_compareAndSwapObject:             return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap,      Volatile);
   case vmIntrinsics::_compareAndSwapInt:                return inline_unsafe_load_store(T_INT,    LS_cmp_swap,      Volatile);
@@ -2196,8 +2177,6 @@ bool LibraryCallKit::inline_number_methods(vmIntrinsics::ID id) {
 
 //----------------------------inline_unsafe_access----------------------------
 
-const static BasicType T_ADDRESS_HOLDER = T_LONG;
-
 // Helper that guards and inserts a pre-barrier.
 void LibraryCallKit::insert_pre_barrier(Node* base_oop, Node* offset,
                                         Node* pre_val, bool need_mem_bar) {
@@ -2298,13 +2277,12 @@ void LibraryCallKit::insert_pre_barrier(Node* base_oop, Node* offset,
 }
 
 
-const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_type, const TypePtr *adr_type, bool is_native_ptr) {
+const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_type, const TypePtr *adr_type) {
   // Attempt to infer a sharper value type from the offset and base type.
   ciKlass* sharpened_klass = NULL;
 
   // See if it is an instance field, with an object type.
   if (alias_type->field() != NULL) {
-    assert(!is_native_ptr, "native pointer op cannot use a java address");
     if (alias_type->field()->type()->is_klass()) {
       sharpened_klass = alias_type->field()->type()->as_klass();
     }
@@ -2337,7 +2315,7 @@ const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_
   return NULL;
 }
 
-bool LibraryCallKit::inline_unsafe_access(const bool is_native_ptr, bool is_store, const BasicType type, const AccessKind kind, const bool unaligned) {
+bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, const AccessKind kind, const bool unaligned) {
   if (callee()->is_static())  return false;  // caller must have the capability!
   guarantee(!is_store || kind != Acquire, "Acquire accesses can be produced only for loads");
   guarantee( is_store || kind != Release, "Release accesses can be produced only for stores");
@@ -2352,31 +2330,17 @@ bool LibraryCallKit::inline_unsafe_access(const bool is_native_ptr, bool is_stor
     if (!is_store) {
       // Object getObject(Object base, int/long offset), etc.
       BasicType rtype = sig->return_type()->basic_type();
-      if (rtype == T_ADDRESS_HOLDER && callee()->name() == ciSymbol::getAddress_name())
-          rtype = T_ADDRESS;  // it is really a C void*
       assert(rtype == type, "getter must return the expected value");
-      if (!is_native_ptr) {
-        assert(sig->count() == 2, "oop getter has 2 arguments");
-        assert(sig->type_at(0)->basic_type() == T_OBJECT, "getter base is object");
-        assert(sig->type_at(1)->basic_type() == T_LONG, "getter offset is correct");
-      } else {
-        assert(sig->count() == 1, "native getter has 1 argument");
-        assert(sig->type_at(0)->basic_type() == T_LONG, "getter base is long");
-      }
+      assert(sig->count() == 2, "oop getter has 2 arguments");
+      assert(sig->type_at(0)->basic_type() == T_OBJECT, "getter base is object");
+      assert(sig->type_at(1)->basic_type() == T_LONG, "getter offset is correct");
     } else {
       // void putObject(Object base, int/long offset, Object x), etc.
       assert(sig->return_type()->basic_type() == T_VOID, "putter must not return a value");
-      if (!is_native_ptr) {
-        assert(sig->count() == 3, "oop putter has 3 arguments");
-        assert(sig->type_at(0)->basic_type() == T_OBJECT, "putter base is object");
-        assert(sig->type_at(1)->basic_type() == T_LONG, "putter offset is correct");
-      } else {
-        assert(sig->count() == 2, "native putter has 2 arguments");
-        assert(sig->type_at(0)->basic_type() == T_LONG, "putter base is long");
-      }
+      assert(sig->count() == 3, "oop putter has 3 arguments");
+      assert(sig->type_at(0)->basic_type() == T_OBJECT, "putter base is object");
+      assert(sig->type_at(1)->basic_type() == T_LONG, "putter offset is correct");
       BasicType vtype = sig->type_at(sig->count()-1)->basic_type();
-      if (vtype == T_ADDRESS_HOLDER && callee()->name() == ciSymbol::putAddress_name())
-        vtype = T_ADDRESS;  // it is really a C void*
       assert(vtype == type, "putter must accept the expected value");
     }
 #endif // ASSERT
@@ -2393,27 +2357,22 @@ bool LibraryCallKit::inline_unsafe_access(const bool is_native_ptr, bool is_stor
   Node* offset = top();
   Node* val;
 
-  if (!is_native_ptr) {
-    // The base is either a Java object or a value produced by Unsafe.staticFieldBase
-    Node* base = argument(1);  // type: oop
-    // The offset is a value produced by Unsafe.staticFieldOffset or Unsafe.objectFieldOffset
-    offset = argument(2);  // type: long
-    // We currently rely on the cookies produced by Unsafe.xxxFieldOffset
-    // to be plain byte offsets, which are also the same as those accepted
-    // by oopDesc::field_base.
-    assert(Unsafe_field_offset_to_byte_offset(11) == 11,
-           "fieldOffset must be byte-scaled");
-    // 32-bit machines ignore the high half!
-    offset = ConvL2X(offset);
-    adr = make_unsafe_address(base, offset);
+  // The base is either a Java object or a value produced by Unsafe.staticFieldBase
+  Node* base = argument(1);  // type: oop
+  // The offset is a value produced by Unsafe.staticFieldOffset or Unsafe.objectFieldOffset
+  offset = argument(2);  // type: long
+  // We currently rely on the cookies produced by Unsafe.xxxFieldOffset
+  // to be plain byte offsets, which are also the same as those accepted
+  // by oopDesc::field_base.
+  assert(Unsafe_field_offset_to_byte_offset(11) == 11,
+         "fieldOffset must be byte-scaled");
+  // 32-bit machines ignore the high half!
+  offset = ConvL2X(offset);
+  adr = make_unsafe_address(base, offset);
+  if (_gvn.type(base)->isa_ptr() != TypePtr::NULL_PTR) {
     heap_base_oop = base;
-    val = is_store ? argument(4) : NULL;
-  } else {
-    Node* ptr = argument(1);  // type: long
-    ptr = ConvL2X(ptr);  // adjust Java long to machine word
-    adr = make_unsafe_address(NULL, ptr);
-    val = is_store ? argument(3) : NULL;
   }
+  val = is_store ? argument(4) : NULL;
 
   const TypePtr *adr_type = _gvn.type(adr)->isa_ptr();
 
@@ -2494,11 +2453,11 @@ bool LibraryCallKit::inline_unsafe_access(const bool is_native_ptr, bool is_stor
   // SATB log buffer using the pre-barrier mechanism.
   // Also we need to add memory barrier to prevent commoning reads
   // from this field across safepoint since GC can change its value.
-  bool need_read_barrier = !is_native_ptr && !is_store &&
+  bool need_read_barrier = !is_store &&
                            offset != top() && heap_base_oop != top();
 
   if (!is_store && type == T_OBJECT) {
-    const TypeOopPtr* tjp = sharpen_unsafe_type(alias_type, adr_type, is_native_ptr);
+    const TypeOopPtr* tjp = sharpen_unsafe_type(alias_type, adr_type);
     if (tjp != NULL) {
       value_type = tjp;
     }
