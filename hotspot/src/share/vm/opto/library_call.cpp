@@ -2472,9 +2472,10 @@ bool LibraryCallKit::inline_unsafe_access(const bool is_native_ptr, bool is_stor
   bool requires_atomic_access = false;
   switch (kind) {
       case Relaxed:
-      case Opaque:
           requires_atomic_access = AlwaysAtomicAccesses;
           break;
+      case Opaque:
+          // Opaque accesses are atomic.
       case Acquire:
       case Release:
       case Volatile:
