@@ -441,7 +441,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
 
     if (thread->thread_state() == _thread_in_vm) {
       if (sig == SIGBUS && info->si_code == BUS_OBJERR && thread->doing_unsafe_access()) {
-        stub = StubRoutines::handler_for_unsafe_access();
+        stub = SharedRuntime::handle_unsafe_access(thread, npc);
       }
     }
 
@@ -480,7 +480,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
         CompiledMethod* nm = cb->as_compiled_method_or_null();
         if (nm != NULL && nm->has_unsafe_access()) {
-          stub = StubRoutines::handler_for_unsafe_access();
+          stub = SharedRuntime::handle_unsafe_access(thread, npc);
         }
       }
 

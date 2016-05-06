@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,21 +60,6 @@
 const int MXCSR_MASK = 0xFFC0;  // Mask out any pending exceptions
 
 // Stub Code definitions
-
-static address handle_unsafe_access() {
-  JavaThread* thread = JavaThread::current();
-  address pc = thread->saved_exception_pc();
-  // pc is the instruction which we must emulate
-  // doing a no-op is fine:  return garbage from the load
-  // therefore, compute npc
-  address npc = Assembler::locate_next_instruction(pc);
-
-  // request an async exception
-  thread->set_pending_unsafe_access_error();
-
-  // return address of next instruction to execute
-  return npc;
-}
 
 class StubGenerator: public StubCodeGenerator {
  private:
@@ -985,32 +970,6 @@ class StubGenerator: public StubCodeGenerator {
 
     __ emit_data64( mask, relocInfo::none );
     __ emit_data64( mask, relocInfo::none );
-
-    return start;
-  }
-
-  // The following routine generates a subroutine to throw an
-  // asynchronous UnknownError when an unsafe access gets a fault that
-  // could not be reasonably prevented by the programmer.  (Example:
-  // SIGBUS/OBJERR.)
-  address generate_handler_for_unsafe_access() {
-    StubCodeMark mark(this, "StubRoutines", "handler_for_unsafe_access");
-    address start = __ pc();
-
-    __ push(0);                       // hole for return address-to-be
-    __ pusha();                       // push registers
-    Address next_pc(rsp, RegisterImpl::number_of_registers * BytesPerWord);
-
-    // FIXME: this probably needs alignment logic
-
-    __ subptr(rsp, frame::arg_reg_save_area_bytes);
-    BLOCK_COMMENT("call handle_unsafe_access");
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, handle_unsafe_access)));
-    __ addptr(rsp, frame::arg_reg_save_area_bytes);
-
-    __ movptr(next_pc, rax);          // stuff next address
-    __ popa();
-    __ ret(0);                        // jump to next address
 
     return start;
   }
@@ -5135,9 +5094,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_atomic_add_entry          = generate_atomic_add();
     StubRoutines::_atomic_add_ptr_entry      = generate_atomic_add_ptr();
     StubRoutines::_fence_entry               = generate_orderaccess_fence();
-
-    StubRoutines::_handler_for_unsafe_access_entry =
-      generate_handler_for_unsafe_access();
 
     // platform dependent
     StubRoutines::x86::_get_previous_fp_entry = generate_get_previous_fp();
