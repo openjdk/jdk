@@ -26,6 +26,7 @@
 package java.lang.invoke;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.reflect.Method;
@@ -34,7 +35,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -1380,7 +1380,7 @@ public abstract class VarHandle {
     }
 
     static final BiFunction<String, List<Integer>, ArrayIndexOutOfBoundsException>
-            AIOOBE_SUPPLIER = Objects.outOfBoundsExceptionFormatter(
+            AIOOBE_SUPPLIER = Preconditions.outOfBoundsExceptionFormatter(
             new Function<String, ArrayIndexOutOfBoundsException>() {
                 @Override
                 public ArrayIndexOutOfBoundsException apply(String s) {
