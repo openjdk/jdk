@@ -75,7 +75,6 @@ BOOT_MODULES += \
     java.scripting \
     java.sql.rowset \
     java.smartcardio \
-    jdk.charsets \
     jdk.naming.rmi \
     #
 
@@ -104,6 +103,7 @@ PLATFORM_MODULES += \
 PLATFORM_MODULES += \
     java.compiler \
     jdk.accessibility \
+    jdk.charsets \
     jdk.crypto.ec \
     jdk.crypto.pkcs11 \
     jdk.dynalink \
