@@ -1271,6 +1271,13 @@ public final class Unsafe {
         return compareAndSwapObject(o, offset, expected, x);
     }
 
+    @HotSpotIntrinsicCandidate
+    public final boolean weakCompareAndSwapObjectVolatile(Object o, long offset,
+                                                                Object expected,
+                                                                Object x) {
+        return compareAndSwapObject(o, offset, expected, x);
+    }
+
     /**
      * Atomically updates Java variable to {@code x} if it is currently
      * holding {@code expected}.
@@ -1325,6 +1332,13 @@ public final class Unsafe {
         return compareAndSwapInt(o, offset, expected, x);
     }
 
+    @HotSpotIntrinsicCandidate
+    public final boolean weakCompareAndSwapIntVolatile(Object o, long offset,
+                                                             int expected,
+                                                             int x) {
+        return compareAndSwapInt(o, offset, expected, x);
+    }
+
     /**
      * Atomically updates Java variable to {@code x} if it is currently
      * holding {@code expected}.
@@ -1374,6 +1388,13 @@ public final class Unsafe {
 
     @HotSpotIntrinsicCandidate
     public final boolean weakCompareAndSwapLongRelease(Object o, long offset,
+                                                              long expected,
+                                                              long x) {
+        return compareAndSwapLong(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final boolean weakCompareAndSwapLongVolatile(Object o, long offset,
                                                               long expected,
                                                               long x) {
         return compareAndSwapLong(o, offset, expected, x);
