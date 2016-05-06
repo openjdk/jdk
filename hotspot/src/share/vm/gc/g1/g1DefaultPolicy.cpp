@@ -590,8 +590,6 @@ void G1DefaultPolicy::record_collection_pause_end(double pause_time_ms, size_t c
   bool last_pause_included_initial_mark = false;
   bool update_stats = !_g1->evacuation_failed();
 
-  NOT_PRODUCT(_short_lived_surv_rate_group->print());
-
   record_pause(young_gc_pause_kind(), end_time_sec - pause_time_ms / 1000.0, end_time_sec);
 
   last_pause_included_initial_mark = collector_state()->during_initial_mark_pause();
