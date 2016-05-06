@@ -36,6 +36,7 @@ import java.util.Enumeration;
 import java.util.PropertyPermission;
 import java.util.StringJoiner;
 
+
 /*
  * Simple Policy class that supports the required Permissions to validate the
  * JAXP concrete classes.
@@ -44,6 +45,8 @@ import java.util.StringJoiner;
  */
 public class TestPolicy extends Policy {
     protected final PermissionCollection permissions = new Permissions();
+
+    private static Policy defaultPolicy = Policy.getPolicy();
 
     /**
      * Constructor which sets the minimum permissions by default allowing testNG
@@ -87,11 +90,8 @@ public class TestPolicy extends Policy {
                 "read"));
         permissions.add(new PropertyPermission("user.dir", "read"));
         permissions.add(new PropertyPermission("test.src", "read"));
-        permissions.add(new PropertyPermission("file.separator", "read"));
-        permissions.add(new PropertyPermission("line.separator", "read"));
         permissions.add(new PropertyPermission("fileStringBuffer", "read"));
         permissions.add(new PropertyPermission("dataproviderthreadcount", "read"));
-        permissions.add(new RuntimePermission("charsetProvider"));
     }
 
     /*
@@ -145,6 +145,9 @@ public class TestPolicy extends Policy {
 
     @Override
     public boolean implies(ProtectionDomain domain, Permission perm) {
+        if (defaultPolicy.implies(domain, perm))
+            return true;
+
         return permissions.implies(perm);
     }
 }
