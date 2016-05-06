@@ -40,7 +40,7 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   friend class ParallelTaskTerminator;
   friend class ParMarkBitMap;
   friend class PSParallelCompact;
-  friend class StealRegionCompactionTask;
+  friend class CompactionWithStealingTask;
   friend class UpdateAndFillClosure;
   friend class RefProcTaskExecutor;
   friend class IdleGCTask;
