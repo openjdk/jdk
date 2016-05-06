@@ -49,26 +49,27 @@ public class JVMAddReadsModule {
         assertNotNull(to_module, "Module should not be null");
         ModuleHelper.DefineModule(to_module, "9.0", "to_module/here", new String[] { "yourpackage" });
 
-        // Null from_module argument, expect an NPE
+        // Null from_module argument, expect NPE
         try {
             ModuleHelper.AddReadsModule(null, to_module);
             throw new RuntimeException("Failed to get the expected NPE");
-        } catch(NullPointerException e) {
+        } catch (NullPointerException e) {
             // Expected
         }
 
-        // Null to_module argument, do not expect an NPE
+        // Null to_module argument, expect NPE
         try {
             ModuleHelper.AddReadsModule(from_module, null);
-        } catch(NullPointerException e) {
             throw new RuntimeException("Unexpected NPE was thrown");
+        } catch (NullPointerException e) {
+            // Expected
         }
 
-        // Null from_module and to_module arguments, expect an NPE
+        // Null from_module and to_module arguments, expect NPE
         try {
             ModuleHelper.AddReadsModule(null, null);
             throw new RuntimeException("Failed to get the expected NPE");
-        } catch(NullPointerException e) {
+        } catch (NullPointerException e) {
             // Expected
         }
 

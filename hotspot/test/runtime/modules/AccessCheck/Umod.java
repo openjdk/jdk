@@ -201,9 +201,9 @@ public class Umod {
      // now use the same loader to load class p1.c1Loose
      Class p1_c1_class = loader.loadClass("p1.c1Loose");
 
-     // change m1 to be a loose module
+     // change m1 to read all unnamed modules
      Module m1 = layer.findModule("m1").get();
-     jdk.internal.module.Modules.addReads(m1, null);
+     jdk.internal.module.Modules.addReadsAllUnnamed(m1);
 
      try {
          p1_c1_class.newInstance();
