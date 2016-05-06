@@ -147,10 +147,7 @@ public class UnsafeGetConstantField {
             if (!hasDefaultValue && (stable || g.isFinal())) {
                 Asserts.assertEQ(t.value, test.testDirect(),
                         "direct read doesn't return prev value");
-                // fails for getCharUnaligned due to JDK-8148518
-                if (!(t == JavaType.C && "Unaligned".equals(postfix))) {
-                    Asserts.assertEQ(test.testDirect(), test.testUnsafe());
-                }
+                Asserts.assertEQ(test.testDirect(), test.testUnsafe());
             } else {
                 Asserts.assertEQ(t.defaultValue, test.testDirect(),
                         "direct read doesn't return default value");
