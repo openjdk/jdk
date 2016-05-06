@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,31 +24,30 @@
 /*
  * @test
  * @bug 8130399
- * @summary Make sure -Xpatch works for modules besides java.base.
- * @modules java.base/jdk.internal.misc
+ * @summary Make sure -Xpatch works for java.base.
  * @library /testlibrary
  * @compile XpatchMain.java
- * @run main XpatchTest
+ * @run main XpatchJavaBase
  */
 
 import jdk.test.lib.*;
 
-public class XpatchTest {
+public class XpatchJavaBase {
 
     public static void main(String[] args) throws Exception {
-        String source = "package javax.naming.spi; "                +
-                        "public class NamingManager { "             +
+        String source = "package java.lang; "                       +
+                        "public class NewClass { "                  +
                         "    static { "                             +
                         "        System.out.println(\"I pass!\"); " +
                         "    } "                                    +
                         "}";
 
-        ClassFileInstaller.writeClassToDisk("javax/naming/spi/NamingManager",
-             InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager", source, "-Xmodule:java.naming"),
-             "mods/java.naming");
+        ClassFileInstaller.writeClassToDisk("java/lang/NewClass",
+             InMemoryJavaCompiler.compile("java.lang.NewClass", source, "-Xmodule:java.base"),
+             "mods/java.base");
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xpatch:java.naming=mods/java.naming",
-             "XpatchMain", "javax.naming.spi.NamingManager");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xpatch:java.base=mods/java.base",
+             "XpatchMain", "java.lang.NewClass");
 
         new OutputAnalyzer(pb.start())
             .shouldContain("I pass!")
