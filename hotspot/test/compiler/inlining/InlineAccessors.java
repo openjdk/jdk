@@ -25,6 +25,7 @@
  * @test
  * @bug 8140650
  * @summary Method::is_accessor should cover getters and setters for all types
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @run main/othervm InlineAccessors
  */

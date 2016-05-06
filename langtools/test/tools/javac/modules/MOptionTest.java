@@ -47,7 +47,7 @@ public class MOptionTest extends ModuleTestBase {
     }
 
     @Test
-    void testOneModule(Path base) throws Exception {
+    public void testOneModule(Path base) throws Exception {
         Path src = base.resolve("src");
         Path m1 = src.resolve("m1");
         Path build = base.resolve("build");
@@ -112,7 +112,7 @@ public class MOptionTest extends ModuleTestBase {
     }
 
     @Test
-    void testNoOutputDir(Path base) throws Exception {
+    public void testNoOutputDir(Path base) throws Exception {
         Path src = base.resolve("src");
         Path m1 = src.resolve("m1");
         Path build = base.resolve("build");
@@ -135,7 +135,7 @@ public class MOptionTest extends ModuleTestBase {
     }
 
     @Test
-    void testNoModuleSourcePath(Path base) throws Exception {
+    public void testNoModuleSourcePath(Path base) throws Exception {
         Path src = base.resolve("src");
         Path m1 = src.resolve("m1");
         Path build = base.resolve("build");
@@ -158,7 +158,7 @@ public class MOptionTest extends ModuleTestBase {
     }
 
     @Test
-    void testMultiModule(Path base) throws Exception {
+    public void testMultiModule(Path base) throws Exception {
         Path src = base.resolve("src");
         Path m1 = src.resolve("m1");
         Path m2 = src.resolve("m2");

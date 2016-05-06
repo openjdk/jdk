@@ -25,6 +25,8 @@
 
 package com.sun.tools.sjavac.server;
 
+import com.sun.tools.javac.main.Main.Result;
+
 import java.io.Writer;
 
 
@@ -38,10 +40,6 @@ import java.io.Writer;
  *  deletion without notice.</b>
  */
 public interface Sjavac {
-
-    final static int RC_FATAL = -1;
-    final static int RC_OK = 0;
-
-    int compile(String[] args);
+    Result compile(String[] args);
     void shutdown();
 }

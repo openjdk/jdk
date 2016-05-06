@@ -36,7 +36,6 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/g1StringDedup.hpp"
-#include "gc/g1/youngList.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 
@@ -583,13 +582,13 @@ void G1HeapVerifier::verify_dirty_region(HeapRegion* hr) {
 
 void G1HeapVerifier::verify_dirty_young_list(HeapRegion* head) {
   G1SATBCardTableModRefBS* ct_bs = _g1h->g1_barrier_set();
-  for (HeapRegion* hr = head; hr != NULL; hr = hr->get_next_young_region()) {
+  for (HeapRegion* hr = head; hr != NULL; hr = hr->next_in_collection_set()) {
     verify_dirty_region(hr);
   }
 }
 
 void G1HeapVerifier::verify_dirty_young_regions() {
-  verify_dirty_young_list(_g1h->young_list()->first_region());
+  verify_dirty_young_list(_g1h->collection_set()->inc_head());
 }
 
 bool G1HeapVerifier::verify_no_bits_over_tams(const char* bitmap_name, G1CMBitMapRO* bitmap,

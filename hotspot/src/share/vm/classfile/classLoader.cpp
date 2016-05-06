@@ -98,12 +98,13 @@ static Crc32_t           Crc32              = NULL;
 
 // Entry points for jimage.dll for loading jimage file entries
 
-static JImageOpen_t                    JImageOpen                    = NULL;
-static JImageClose_t                   JImageClose                   = NULL;
-static JImagePackageToModule_t         JImagePackageToModule         = NULL;
-static JImageFindResource_t            JImageFindResource            = NULL;
-static JImageGetResource_t             JImageGetResource             = NULL;
-static JImageResourceIterator_t        JImageResourceIterator        = NULL;
+static JImageOpen_t                    JImageOpen             = NULL;
+static JImageClose_t                   JImageClose            = NULL;
+static JImagePackageToModule_t         JImagePackageToModule  = NULL;
+static JImageFindResource_t            JImageFindResource     = NULL;
+static JImageGetResource_t             JImageGetResource      = NULL;
+static JImageResourceIterator_t        JImageResourceIterator = NULL;
+static JImage_ResourcePath_t           JImageResourcePath     = NULL;
 
 // Globals
 
@@ -536,15 +537,15 @@ bool ClassPathImageEntry::is_jrt() {
 #if INCLUDE_CDS
 void ClassLoader::exit_with_path_failure(const char* error, const char* message) {
   assert(DumpSharedSpaces, "only called at dump time");
-  tty->print_cr("Hint: enable -Xlog:classpath=info to diagnose the failure");
+  tty->print_cr("Hint: enable -Xlog:class+path=info to diagnose the failure");
   vm_exit_during_initialization(error, message);
 }
 #endif
 
 void ClassLoader::trace_class_path(const char* msg, const char* name) {
-  if (log_is_enabled(Info, classpath)) {
+  if (log_is_enabled(Info, class, path)) {
     ResourceMark rm;
-    outputStream* out = Log(classpath)::info_stream();
+    outputStream* out = Log(class, path)::info_stream();
     if (msg) {
       out->print("%s", msg);
     }
@@ -710,12 +711,12 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
         }
       }
     }
-    log_info(classpath)("opened: %s", path);
-    log_info(classload)("opened: %s", path);
+    log_info(class, path)("opened: %s", path);
+    log_info(class, load)("opened: %s", path);
   } else {
     // Directory
     new_entry = new ClassPathDirEntry(path);
-    log_info(classload)("path: %s", path);
+    log_info(class, load)("path: %s", path);
   }
   return new_entry;
 }
@@ -925,6 +926,8 @@ void ClassLoader::load_jimage_library() {
   guarantee(JImageGetResource != NULL, "function JIMAGE_GetResource not found");
   JImageResourceIterator = CAST_TO_FN_PTR(JImageResourceIterator_t, os::dll_lookup(handle, "JIMAGE_ResourceIterator"));
   guarantee(JImageResourceIterator != NULL, "function JIMAGE_ResourceIterator not found");
+  JImageResourcePath = CAST_TO_FN_PTR(JImage_ResourcePath_t, os::dll_lookup(handle, "JIMAGE_ResourcePath"));
+  guarantee(JImageResourcePath != NULL, "function JIMAGE_ResourcePath not found");
 }
 
 jboolean ClassLoader::decompress(void *in, u8 inSize, void *out, u8 outSize, char **pmsg) {
@@ -938,6 +941,10 @@ int ClassLoader::crc32(int crc, const char* buf, int len) {
 
 #if INCLUDE_CDS
 void ClassLoader::initialize_module_loader_map(JImageFile* jimage) {
+  if (!DumpSharedSpaces) {
+    return; // only needed for CDS dump time
+  }
+
   jlong size;
   JImageLocationRef location = (*JImageFindResource)(jimage, "java.base", get_jimage_version_string(), MODULE_LOADER_MAP, &size);
   if (location == 0) {
@@ -1082,6 +1089,7 @@ objArrayOop ClassLoader::get_system_packages(TRAPS) {
 #if INCLUDE_CDS
 s2 ClassLoader::module_to_classloader(const char* module_name) {
 
+  assert(DumpSharedSpaces, "dump time only");
   assert(_boot_modules_array != NULL, "_boot_modules_array is NULL");
   assert(_platform_modules_array != NULL, "_platform_modules_array is NULL");
 
@@ -1101,11 +1109,11 @@ s2 ClassLoader::module_to_classloader(const char* module_name) {
 
   return APP_LOADER;
 }
-#endif
 
 s2 ClassLoader::classloader_type(Symbol* class_name, ClassPathEntry* e,
                                      int classpath_index, TRAPS) {
-#if INCLUDE_CDS
+  assert(DumpSharedSpaces, "Only used for CDS dump time");
+
   // obtain the classloader type based on the class name.
   // First obtain the package name based on the class name. Then obtain
   // the classloader type based on the package name from the jimage using
@@ -1130,10 +1138,8 @@ s2 ClassLoader::classloader_type(Symbol* class_name, ClassPathEntry* e,
     loader_type = ClassLoader::BOOT_LOADER;
   }
   return loader_type;
-#endif
-  return ClassLoader::BOOT_LOADER; // the classloader type is ignored in non-CDS cases
 }
-
+#endif
 
 // caller needs ResourceMark
 const char* ClassLoader::file_name_for_class_name(const char* class_name,
@@ -1250,8 +1256,7 @@ instanceKlassHandle ClassLoader::load_class(Symbol* name, bool search_append_onl
     return NULL;
   }
 
-  jshort loader_type = classloader_type(name, e, classpath_index, CHECK_NULL);
-  return context.record_result(classpath_index, loader_type, e, result, THREAD);
+  return context.record_result(name, e, classpath_index, result, THREAD);
 }
 
 // Initialize the class loader's access to methods in libzip.  Parse and

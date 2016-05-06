@@ -24,8 +24,6 @@
  */
 package com.sun.media.sound;
 
-import sun.misc.ManagedLocalsThread;
-
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import java.io.EOFException;
@@ -216,7 +214,7 @@ public final class SoftJitterCorrector extends AudioInputStream {
                 }
             };
 
-            thread = new ManagedLocalsThread(runnable);
+            thread = new Thread(null, runnable, "JitterCorrector", 0, false);
             thread.setDaemon(true);
             thread.setPriority(Thread.MAX_PRIORITY);
             thread.start();

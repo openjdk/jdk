@@ -28,6 +28,7 @@
  * @summary class c5 defined in an unnamed module tries to access p6.c6 defined in m2.
  *          Access is denied, since an unnamed module can read all modules but p6 in module
  *          m2 is exported specifically to module m1, not to all modules.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @compile myloaders/MyDiffClassLoader.java
  * @compile p6/c6.java

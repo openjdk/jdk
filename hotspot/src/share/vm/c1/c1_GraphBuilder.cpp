@@ -50,11 +50,11 @@ class BlockListBuilder VALUE_OBJ_CLASS_SPEC {
   BlockList*   _bci2block;             // mapping from bci to blocks for GraphBuilder
 
   // fields used by mark_loops
-  BitMap       _active;                // for iteration of control flow graph
-  BitMap       _visited;               // for iteration of control flow graph
-  intArray     _loop_map;              // caches the information if a block is contained in a loop
-  int          _next_loop_index;       // next free loop number
-  int          _next_block_number;     // for reverse postorder numbering of blocks
+  ResourceBitMap _active;              // for iteration of control flow graph
+  ResourceBitMap _visited;             // for iteration of control flow graph
+  intArray       _loop_map;            // caches the information if a block is contained in a loop
+  int            _next_loop_index;     // next free loop number
+  int            _next_block_number;   // for reverse postorder numbering of blocks
 
   // accessors
   Compilation*  compilation() const              { return _compilation; }
@@ -227,7 +227,7 @@ void BlockListBuilder::set_leaders() {
   // Without it, backward branches could jump to a bci where no block was created
   // during bytecode iteration. This would require the creation of a new block at the
   // branch target and a modification of the successor lists.
-  BitMap bci_block_start = method()->bci_block_start();
+  const BitMap& bci_block_start = method()->bci_block_start();
 
   ciBytecodeStream s(method());
   while (s.next() != ciBytecodeStream::EOBC()) {
@@ -355,8 +355,8 @@ void BlockListBuilder::set_leaders() {
 void BlockListBuilder::mark_loops() {
   ResourceMark rm;
 
-  _active = BitMap(BlockBegin::number_of_blocks());         _active.clear();
-  _visited = BitMap(BlockBegin::number_of_blocks());        _visited.clear();
+  _active.initialize(BlockBegin::number_of_blocks());
+  _visited.initialize(BlockBegin::number_of_blocks());
   _loop_map = intArray(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), 0);
   _next_loop_index = 0;
   _next_block_number = _blocks.length();
@@ -364,6 +364,10 @@ void BlockListBuilder::mark_loops() {
   // recursively iterate the control flow graph
   mark_loops(_bci2block->at(0), false);
   assert(_next_block_number >= 0, "invalid block numbers");
+
+  // Remove dangling Resource pointers before the ResourceMark goes out-of-scope.
+  _active.resize(0);
+  _visited.resize(0);
 }
 
 void BlockListBuilder::make_loop_header(BlockBegin* block) {
@@ -976,7 +980,19 @@ void GraphBuilder::store_indexed(BasicType type) {
       (array->as_NewArray() && array->as_NewArray()->length() && array->as_NewArray()->length()->type()->is_constant())) {
     length = append(new ArrayLength(array, state_before));
   }
-  StoreIndexed* result = new StoreIndexed(array, index, length, type, value, state_before);
+  ciType* array_type = array->declared_type();
+  bool check_boolean = false;
+  if (array_type != NULL) {
+    if (array_type->is_loaded() &&
+      array_type->as_array_klass()->element_type()->basic_type() == T_BOOLEAN) {
+      assert(type == T_BYTE, "boolean store uses bastore");
+      Value mask = append(new Constant(new IntConstant(1)));
+      value = append(new LogicOp(Bytecodes::_iand, value, mask));
+    }
+  } else if (type == T_BYTE) {
+    check_boolean = true;
+  }
+  StoreIndexed* result = new StoreIndexed(array, index, length, type, value, state_before, check_boolean);
   append(result);
   _memory->store_value(value);
 
@@ -1443,6 +1459,36 @@ void GraphBuilder::method_return(Value x) {
     need_mem_bar = true;
   }
 
+  BasicType bt = method()->return_type()->basic_type();
+  switch (bt) {
+    case T_BYTE:
+    {
+      Value shift = append(new Constant(new IntConstant(24)));
+      x = append(new ShiftOp(Bytecodes::_ishl, x, shift));
+      x = append(new ShiftOp(Bytecodes::_ishr, x, shift));
+      break;
+    }
+    case T_SHORT:
+    {
+      Value shift = append(new Constant(new IntConstant(16)));
+      x = append(new ShiftOp(Bytecodes::_ishl, x, shift));
+      x = append(new ShiftOp(Bytecodes::_ishr, x, shift));
+      break;
+    }
+    case T_CHAR:
+    {
+      Value mask = append(new Constant(new IntConstant(0xFFFF)));
+      x = append(new LogicOp(Bytecodes::_iand, x, mask));
+      break;
+    }
+    case T_BOOLEAN:
+    {
+      Value mask = append(new Constant(new IntConstant(1)));
+      x = append(new LogicOp(Bytecodes::_iand, x, mask));
+      break;
+    }
+  }
+
   // Check to see whether we are inlining. If so, Return
   // instructions become Gotos to the continuation point.
   if (continuation() != NULL) {
@@ -1612,6 +1658,10 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
       if (state_before == NULL) {
         state_before = copy_state_for_exception();
       }
+      if (field->type()->basic_type() == T_BOOLEAN) {
+        Value mask = append(new Constant(new IntConstant(1)));
+        val = append(new LogicOp(Bytecodes::_iand, val, mask));
+      }
       append(new StoreField(append(obj), offset, field, val, true, state_before, needs_patching));
       break;
     }
@@ -1659,6 +1709,10 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
       obj = apop();
       if (state_before == NULL) {
         state_before = copy_state_for_exception();
+      }
+      if (field->type()->basic_type() == T_BOOLEAN) {
+        Value mask = append(new Constant(new IntConstant(1)));
+        val = append(new LogicOp(Bytecodes::_iand, val, mask));
       }
       StoreField* store = new StoreField(obj, offset, field, val, false, state_before, needs_patching);
       if (!needs_patching) store = _memory->store(store);
@@ -3026,7 +3080,7 @@ void GraphBuilder::setup_osr_entry_block() {
   Value local;
 
   // find all the locals that the interpreter thinks contain live oops
-  const BitMap live_oops = method()->live_local_oops_at_bci(osr_bci);
+  const ResourceBitMap live_oops = method()->live_local_oops_at_bci(osr_bci);
 
   // compute the offset into the locals so that we can treat the buffer
   // as if the locals were still in the interpreter frame
@@ -4108,7 +4162,12 @@ void GraphBuilder::append_unsafe_put_obj(ciMethod* callee, BasicType t, bool is_
 #ifndef _LP64
   offset = append(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
 #endif
-  Instruction* op = append(new UnsafePutObject(t, args->at(1), offset, args->at(3), is_volatile));
+  Value val = args->at(3);
+  if (t == T_BOOLEAN) {
+    Value mask = append(new Constant(new IntConstant(1)));
+    val = append(new LogicOp(Bytecodes::_iand, val, mask));
+  }
+  Instruction* op = append(new UnsafePutObject(t, args->at(1), offset, val, is_volatile));
   compilation()->set_has_unsafe_access(true);
   kill_all();
 }
@@ -4182,7 +4241,7 @@ void GraphBuilder::append_char_access(ciMethod* callee, bool is_store) {
   Value index = args->at(1);
   if (is_store) {
     Value value = args->at(2);
-    Instruction* store = append(new StoreIndexed(array, index, NULL, T_CHAR, value, state_before));
+    Instruction* store = append(new StoreIndexed(array, index, NULL, T_CHAR, value, state_before, false));
     store->set_flag(Instruction::NeedsRangeCheckFlag, false);
     _memory->store_value(value);
   } else {

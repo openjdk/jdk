@@ -121,30 +121,30 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
     static void testInstanceField(VarHandleTestMethodHandleAccessShort recv, Handles hs) throws Throwable {
         // Plain
         {
-            hs.get(TestAccessMode.set).invokeExact(recv, (short)1);
-            short x = (short) hs.get(TestAccessMode.get).invokeExact(recv);
+            hs.get(TestAccessMode.SET).invokeExact(recv, (short)1);
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, (short)1, "set short value");
         }
 
 
         // Volatile
         {
-            hs.get(TestAccessMode.setVolatile).invokeExact(recv, (short)2);
-            short x = (short) hs.get(TestAccessMode.getVolatile).invokeExact(recv);
+            hs.get(TestAccessMode.SET_VOLATILE).invokeExact(recv, (short)2);
+            short x = (short) hs.get(TestAccessMode.GET_VOLATILE).invokeExact(recv);
             assertEquals(x, (short)2, "setVolatile short value");
         }
 
         // Lazy
         {
-            hs.get(TestAccessMode.setRelease).invokeExact(recv, (short)1);
-            short x = (short) hs.get(TestAccessMode.getAcquire).invokeExact(recv);
+            hs.get(TestAccessMode.SET_RELEASE).invokeExact(recv, (short)1);
+            short x = (short) hs.get(TestAccessMode.GET_ACQUIRE).invokeExact(recv);
             assertEquals(x, (short)1, "setRelease short value");
         }
 
         // Opaque
         {
-            hs.get(TestAccessMode.setOpaque).invokeExact(recv, (short)2);
-            short x = (short) hs.get(TestAccessMode.getOpaque).invokeExact(recv);
+            hs.get(TestAccessMode.SET_OPAQUE).invokeExact(recv, (short)2);
+            short x = (short) hs.get(TestAccessMode.GET_OPAQUE).invokeExact(recv);
             assertEquals(x, (short)2, "setOpaque short value");
         }
 
@@ -152,25 +152,25 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
     }
 
     static void testInstanceFieldUnsupported(VarHandleTestMethodHandleAccessShort recv, Handles hs) throws Throwable {
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
             checkUOE(am, () -> {
                 boolean r = (boolean) hs.get(am).invokeExact(recv, (short)1, (short)2);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndExchange)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
             checkUOE(am, () -> {
                 short r = (short) hs.get(am).invokeExact(recv, (short)1, (short)2);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
             checkUOE(am, () -> {
                 short r = (short) hs.get(am).invokeExact(recv, (short)1);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndAdd)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
             checkUOE(am, () -> {
                 short r = (short) hs.get(am).invokeExact(recv, (short)1);
             });
@@ -181,30 +181,30 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
     static void testStaticField(Handles hs) throws Throwable {
         // Plain
         {
-            hs.get(TestAccessMode.set).invokeExact((short)1);
-            short x = (short) hs.get(TestAccessMode.get).invokeExact();
+            hs.get(TestAccessMode.SET).invokeExact((short)1);
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, (short)1, "set short value");
         }
 
 
         // Volatile
         {
-            hs.get(TestAccessMode.setVolatile).invokeExact((short)2);
-            short x = (short) hs.get(TestAccessMode.getVolatile).invokeExact();
+            hs.get(TestAccessMode.SET_VOLATILE).invokeExact((short)2);
+            short x = (short) hs.get(TestAccessMode.GET_VOLATILE).invokeExact();
             assertEquals(x, (short)2, "setVolatile short value");
         }
 
         // Lazy
         {
-            hs.get(TestAccessMode.setRelease).invokeExact((short)1);
-            short x = (short) hs.get(TestAccessMode.getAcquire).invokeExact();
+            hs.get(TestAccessMode.SET_RELEASE).invokeExact((short)1);
+            short x = (short) hs.get(TestAccessMode.GET_ACQUIRE).invokeExact();
             assertEquals(x, (short)1, "setRelease short value");
         }
 
         // Opaque
         {
-            hs.get(TestAccessMode.setOpaque).invokeExact((short)2);
-            short x = (short) hs.get(TestAccessMode.getOpaque).invokeExact();
+            hs.get(TestAccessMode.SET_OPAQUE).invokeExact((short)2);
+            short x = (short) hs.get(TestAccessMode.GET_OPAQUE).invokeExact();
             assertEquals(x, (short)2, "setOpaque short value");
         }
 
@@ -212,25 +212,25 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
     }
 
     static void testStaticFieldUnsupported(Handles hs) throws Throwable {
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
             checkUOE(am, () -> {
                 boolean r = (boolean) hs.get(am).invokeExact((short)1, (short)2);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndExchange)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
             checkUOE(am, () -> {
                 short r = (short) hs.get(am).invokeExact((short)1, (short)2);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
             checkUOE(am, () -> {
                 short r = (short) hs.get(am).invokeExact((short)1);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndAdd)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
             checkUOE(am, () -> {
                 short r = (short) hs.get(am).invokeExact((short)1);
             });
@@ -244,30 +244,30 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
         for (int i = 0; i < array.length; i++) {
             // Plain
             {
-                hs.get(TestAccessMode.set).invokeExact(array, i, (short)1);
-                short x = (short) hs.get(TestAccessMode.get).invokeExact(array, i);
+                hs.get(TestAccessMode.SET).invokeExact(array, i, (short)1);
+                short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, (short)1, "get short value");
             }
 
 
             // Volatile
             {
-                hs.get(TestAccessMode.setVolatile).invokeExact(array, i, (short)2);
-                short x = (short) hs.get(TestAccessMode.getVolatile).invokeExact(array, i);
+                hs.get(TestAccessMode.SET_VOLATILE).invokeExact(array, i, (short)2);
+                short x = (short) hs.get(TestAccessMode.GET_VOLATILE).invokeExact(array, i);
                 assertEquals(x, (short)2, "setVolatile short value");
             }
 
             // Lazy
             {
-                hs.get(TestAccessMode.setRelease).invokeExact(array, i, (short)1);
-                short x = (short) hs.get(TestAccessMode.getAcquire).invokeExact(array, i);
+                hs.get(TestAccessMode.SET_RELEASE).invokeExact(array, i, (short)1);
+                short x = (short) hs.get(TestAccessMode.GET_ACQUIRE).invokeExact(array, i);
                 assertEquals(x, (short)1, "setRelease short value");
             }
 
             // Opaque
             {
-                hs.get(TestAccessMode.setOpaque).invokeExact(array, i, (short)2);
-                short x = (short) hs.get(TestAccessMode.getOpaque).invokeExact(array, i);
+                hs.get(TestAccessMode.SET_OPAQUE).invokeExact(array, i, (short)2);
+                short x = (short) hs.get(TestAccessMode.GET_OPAQUE).invokeExact(array, i);
                 assertEquals(x, (short)2, "setOpaque short value");
             }
 
@@ -279,25 +279,25 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
         short[] array = new short[10];
 
         final int i = 0;
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
             checkUOE(am, () -> {
                 boolean r = (boolean) hs.get(am).invokeExact(array, i, (short)1, (short)2);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndExchange)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
             checkUOE(am, () -> {
                 short r = (short) hs.get(am).invokeExact(array, i, (short)1, (short)2);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
             checkUOE(am, () -> {
                 short r = (short) hs.get(am).invokeExact(array, i, (short)1);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndAdd)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
             checkUOE(am, () -> {
                 short o = (short) hs.get(am).invokeExact(array, i, (short)1);
             });
@@ -310,13 +310,13 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
         for (int i : new int[]{-1, Integer.MIN_VALUE, 10, 11, Integer.MAX_VALUE}) {
             final int ci = i;
 
-            for (TestAccessMode am : testAccessModesOfType(TestAccessType.get)) {
+            for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET)) {
                 checkIOOBE(am, () -> {
                     short x = (short) hs.get(am).invokeExact(array, ci);
                 });
             }
 
-            for (TestAccessMode am : testAccessModesOfType(TestAccessType.set)) {
+            for (TestAccessMode am : testAccessModesOfType(TestAccessType.SET)) {
                 checkIOOBE(am, () -> {
                     hs.get(am).invokeExact(array, ci, (short)1);
                 });

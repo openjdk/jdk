@@ -197,14 +197,51 @@ define add_native_source
     $1_$2_THIS_FILE = -DTHIS_FILE='"$$(<F)"'
   endif
 
+  ifeq ($$($1_$(notdir $2)_OPTIMIZATION), )
+    $1_$(notdir $2)_OPT_CFLAGS := $$($1_OPT_CFLAGS)
+    $1_$(notdir $2)_OPT_CXXFLAGS := $$($1_OPT_CXXFLAGS)
+  else
+    ifeq (NONE, $$($1_$(notdir $2)_OPTIMIZATION))
+      $1_$(notdir $2)_OPT_CFLAGS := $(C_O_FLAG_NONE)
+      $1_$(notdir $2)_OPT_CXXFLAGS := $(CXX_O_FLAG_NONE)
+    else ifeq (LOW, $$($1_$(notdir $2)_OPTIMIZATION))
+      $1_$(notdir $2)_OPT_CFLAGS := $(C_O_FLAG_NORM)
+      $1_$(notdir $2)_OPT_CXXFLAGS := $(CXX_O_FLAG_NORM)
+    else ifeq (HIGH, $$($1_$(notdir $2)_OPTIMIZATION))
+      $1_$(notdir $2)_OPT_CFLAGS := $(C_O_FLAG_HI)
+      $1_$(notdir $2)_OPT_CXXFLAGS := $(CXX_O_FLAG_HI)
+    else ifeq (HIGHEST, $$($1_$(notdir $2)_OPTIMIZATION))
+      $1_$(notdir $2)_OPT_CFLAGS := $(C_O_FLAG_HIGHEST)
+      $1_$(notdir $2)_OPT_CXXFLAGS := $(CXX_O_FLAG_HIGHEST)
+    else ifeq (HIGHEST_JVM, $$($1_$(notdir $2)_OPTIMIZATION))
+      $1_$(notdir $2)_OPT_CFLAGS := $(C_O_FLAG_HIGHEST_JVM)
+      $1_$(notdir $2)_OPT_CXXFLAGS := $(CXX_O_FLAG_HIGHEST_JVM)
+    else ifeq (SIZE, $$($1_$(notdir $2)_OPTIMIZATION))
+      $1_$(notdir $2)_OPT_CFLAGS := $(C_O_FLAG_SIZE)
+      $1_$(notdir $2)_OPT_CXXFLAGS := $(CXX_O_FLAG_SIZE)
+    else
+      $$(error Unknown value for OPTIMIZATION: $$($1_$(notdir $2)_OPTIMIZATION))
+    endif
+  endif
+
+  ifneq ($$($1_PRECOMPILED_HEADER), )
+    ifeq ($$(filter $$(notdir $2), $$($1_PRECOMPILED_HEADER_EXCLUDE)), )
+      $1_$2_USE_PCH_FLAGS := $$($1_USE_PCH_FLAGS)
+    endif
+  endif
+
   ifneq (,$$(filter %.c,$2))
     # Compile as a C file
-    $1_$2_FLAGS=$(CFLAGS_CCACHE) $4 $$($1_$(notdir $2)_CFLAGS) $$($1_$2_THIS_FILE) -c
+    $1_$2_FLAGS=$(CFLAGS_CCACHE) $$($1_$2_USE_PCH_FLAGS) $4 \
+        $$($1_$(notdir $2)_OPT_CFLAGS) \
+        $$($1_$(notdir $2)_CFLAGS) $$($1_$2_THIS_FILE) -c
     $1_$2_COMP=$5
     $1_$2_DEP_FLAG:=$(C_FLAG_DEPS)
   else ifneq (,$$(filter %.m,$2))
     # Compile as an Objective-C file
-    $1_$2_FLAGS=-x objective-c $(CFLAGS_CCACHE) $4 $$($1_$(notdir $2)_CFLAGS) $$($1_$2_THIS_FILE) -c
+    $1_$2_FLAGS=-x objective-c $(CFLAGS_CCACHE) $$($1_$2_USE_PCH_FLAGS) $4 \
+        $$($1_$(notdir $2)_OPT_CFLAGS) \
+        $$($1_$(notdir $2)_CFLAGS) $$($1_$2_THIS_FILE) -c
     $1_$2_COMP=$5
     $1_$2_DEP_FLAG:=$(C_FLAG_DEPS)
   else ifneq (,$$(filter %.s %.S,$2))
@@ -214,7 +251,9 @@ define add_native_source
     $1_$2_DEP_FLAG:=
   else ifneq (,$$(filter %.cpp,$2)$$(filter %.cc,$2)$$(filter %.mm,$2))
     # Compile as a C++ or Objective-C++ file
-    $1_$2_FLAGS=$(CFLAGS_CCACHE) $6 $$($1_$(notdir $2)_CXXFLAGS) $$($1_$2_THIS_FILE) -c
+    $1_$2_FLAGS=$(CFLAGS_CCACHE) $$($1_$2_USE_PCH_FLAGS) $6 \
+        $$($1_$(notdir $2)_OPT_CXXFLAGS) \
+        $$($1_$(notdir $2)_CXXFLAGS) $$($1_$2_THIS_FILE) -c
     $1_$2_COMP=$7
     $1_$2_DEP_FLAG:=$(CXX_FLAG_DEPS)
   else
@@ -245,8 +284,10 @@ define add_native_source
       endif
     endif
 
-    ifneq ($$($1_$(notdir $2)_CFLAGS)$$($1_$(notdir $2)_CXXFLAGS), )
-      $1_$2_VARDEPS := $$($1_$(notdir $2)_CFLAGS) $$($1_$(notdir $2)_CXXFLAGS)
+    ifneq ($$(strip $$($1_$(notdir $2)_CFLAGS) $$($1_$(notdir $2)_CXXFLAGS) \
+        $$($1_$(notdir $2)_OPTIMIZATION)), )
+      $1_$2_VARDEPS := $$($1_$(notdir $2)_CFLAGS) $$($1_$(notdir $2)_CXXFLAGS) \
+          $$($1_$(notdir $2)_OPT_CFLAGS) $$($1_$(notdir $2)_OPT_CXXFLAGS)
       $1_$2_VARDEPS_FILE := $$(call DependOnVariable, $1_$2_VARDEPS, \
           $$(patsubst %$(OBJ_SUFFIX),%.vardeps,$$($1_$2_OBJ)))
     endif
@@ -323,7 +364,7 @@ endef
 #       mapfile for the output symbols file
 #   CC the compiler to use, default is $(CC)
 #   LD the linker to use, default is $(LD)
-#   OPTIMIZATION sets optimization level to NONE, LOW, HIGH, HIGHEST
+#   OPTIMIZATION sets optimization level to NONE, LOW, HIGH, HIGHEST, HIGHEST_JVM, SIZE
 #   DISABLED_WARNINGS_<toolchain> Disable the given warnings for the specified toolchain
 #   DISABLED_WARNINGS_C_<toolchain> Disable the given warnings for the specified toolchain
 #       when compiling C code
@@ -331,7 +372,11 @@ endef
 #       toolchain when compiling C++ code
 #   STRIP_SYMBOLS Set to true to strip the final binary if the toolchain allows for it
 #   DEBUG_SYMBOLS Set to false to disable generation of debug symbols
+#   CFLAGS_DEBUG_SYMBOLS Overrides the default cflags for enabling debug symbols
+#   CXXFLAGS_DEBUG_SYMBOLS Overrides the default cxxflags for enabling debug symbols
 #   STRIPFLAGS Optionally change the flags given to the strip command
+#   PRECOMPILED_HEADER Header file to use as precompiled header
+#   PRECOMPILED_HEADER_EXCLUDE List of source files that should not use PCH
 SetupNativeCompilation = $(NamedParamsMacroTemplate)
 define SetupNativeCompilationBody
 
@@ -556,8 +601,10 @@ define SetupNativeCompilationBody
   endif
 
   ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), true)
-    $1_EXTRA_CFLAGS += $(CFLAGS_DEBUG_SYMBOLS)
-    $1_EXTRA_CXXFLAGS += $(CXXFLAGS_DEBUG_SYMBOLS)
+    $$(call SetIfEmpty, $1_CFLAGS_DEBUG_SYMBOLS, $(CFLAGS_DEBUG_SYMBOLS))
+    $$(call SetIfEmpty, $1_CXXFLAGS_DEBUG_SYMBOLS, $(CXXFLAGS_DEBUG_SYMBOLS))
+    $1_EXTRA_CFLAGS += $$($1_CFLAGS_DEBUG_SYMBOLS)
+    $1_EXTRA_CXXFLAGS += $$($1_CXXFLAGS_DEBUG_SYMBOLS)
   endif
 
   ifneq (,$$($1_REORDER))
@@ -597,17 +644,23 @@ define SetupNativeCompilationBody
   endif
 
   ifeq (NONE, $$($1_OPTIMIZATION))
-    $1_EXTRA_CFLAGS += $(C_O_FLAG_NONE)
-    $1_EXTRA_CXXFLAGS += $(CXX_O_FLAG_NONE)
+    $1_OPT_CFLAGS := $(C_O_FLAG_NONE)
+    $1_OPT_CXXFLAGS := $(CXX_O_FLAG_NONE)
   else ifeq (LOW, $$($1_OPTIMIZATION))
-    $1_EXTRA_CFLAGS += $(C_O_FLAG_NORM)
-    $1_EXTRA_CXXFLAGS += $(CXX_O_FLAG_NORM)
+    $1_OPT_CFLAGS := $(C_O_FLAG_NORM)
+    $1_OPT_CXXFLAGS := $(CXX_O_FLAG_NORM)
   else ifeq (HIGH, $$($1_OPTIMIZATION))
-    $1_EXTRA_CFLAGS += $(C_O_FLAG_HI)
-    $1_EXTRA_CXXFLAGS += $(CXX_O_FLAG_HI)
+    $1_OPT_CFLAGS := $(C_O_FLAG_HI)
+    $1_OPT_CXXFLAGS := $(CXX_O_FLAG_HI)
   else ifeq (HIGHEST, $$($1_OPTIMIZATION))
-    $1_EXTRA_CFLAGS += $(C_O_FLAG_HIGHEST)
-    $1_EXTRA_CXXFLAGS += $(CXX_O_FLAG_HIGHEST)
+    $1_OPT_CFLAGS := $(C_O_FLAG_HIGHEST)
+    $1_OPT_CXXFLAGS := $(CXX_O_FLAG_HIGHEST)
+  else ifeq (HIGHEST_JVM, $$($1_OPTIMIZATION))
+    $1_OPT_CFLAGS := $(C_O_FLAG_HIGHEST_JVM)
+    $1_OPT_CXXFLAGS := $(CXX_O_FLAG_HIGHEST_JVM)
+  else ifeq (SIZE, $$($1_OPTIMIZATION))
+    $1_OPT_CFLAGS := $(C_O_FLAG_SIZE)
+    $1_OPT_CXXFLAGS := $(CXX_O_FLAG_SIZE)
   else ifneq (, $$($1_OPTIMIZATION))
     $$(error Unknown value for OPTIMIZATION: $$($1_OPTIMIZATION))
   endif
@@ -618,10 +671,64 @@ define SetupNativeCompilationBody
   # lines for all object files in this setup. This includes at least all the
   # variables used in the call to add_native_source below.
   $1_COMPILE_VARDEPS := $$($1_CFLAGS) $$($1_EXTRA_CFLAGS) $$($1_SYSROOT_CFLAGS) \
-      $$($1_CXXFLAGS) $$($1_EXTRA_CXXFLAGS) \
+      $$($1_CXXFLAGS) $$($1_EXTRA_CXXFLAGS) $$($1_OPT_CFLAGS) $$($1_OPT_CXXFLAGS) \
       $$($1_CC) $$($1_CXX) $$($1_AS) $$($1_ASFLAGS)
   $1_COMPILE_VARDEPS_FILE := $$(call DependOnVariable, $1_COMPILE_VARDEPS, \
       $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).comp.vardeps)
+
+  ifneq ($$($1_PRECOMPILED_HEADER), )
+    ifeq ($(USE_PRECOMPILED_HEADER), 1)
+      ifeq ($(TOOLCHAIN_TYPE), microsoft)
+        $1_PCH_FILE := $$($1_OBJECT_DIR)/$1.pch
+        $1_GENERATED_PCH_SRC := $$($1_OBJECT_DIR)/$1_pch.cpp
+        $1_GENERATED_PCH_OBJ := $$($1_OBJECT_DIR)/$1_pch.obj
+
+        $$(eval $$(call add_native_source,$1,$$($1_GENERATED_PCH_SRC), \
+            $$($1_OBJECT_DIR),,, \
+            $$($1_CXXFLAGS) $$($1_EXTRA_CXXFLAGS) $$($1_SYSROOT_CFLAGS) \
+                -Fp$$($1_PCH_FILE) -Yc$$(notdir $$($1_PRECOMPILED_HEADER)), \
+            $$($1_CXX),,no_this_file))
+
+        $1_USE_PCH_FLAGS := \
+            -Fp$$($1_PCH_FILE) -Yu$$(notdir $$($1_PRECOMPILED_HEADER))
+
+        $$($1_ALL_OBJS): $$($1_GENERATED_PCH_OBJ)
+
+        # Explicitly add the pch obj file first to ease comparing to old
+        # hotspot build.
+        $1_ALL_OBJS := $$($1_GENERATED_PCH_OBJ) $$($1_ALL_OBJS)
+
+        $$($1_GENERATED_PCH_SRC):
+		$(ECHO) "#include \"$$(notdir $$($1_PRECOMPILED_HEADER))\"" > $$@
+
+      else ifneq ($(findstring $(TOOLCHAIN_TYPE), gcc clang), )
+        ifeq ($(TOOLCHAIN_TYPE), gcc)
+          $1_PCH_FILE := $$($1_OBJECT_DIR)/precompiled/$$(notdir $$($1_PRECOMPILED_HEADER)).gch
+          $1_USE_PCH_FLAGS := -I$$($1_OBJECT_DIR)/precompiled
+        else ifeq ($(TOOLCHAIN_TYPE), clang)
+          $1_PCH_FILE := $$($1_OBJECT_DIR)/precompiled/$$(notdir $$($1_PRECOMPILED_HEADER)).pch
+          $1_USE_PCH_FLAGS := -include-pch $$($1_PCH_FILE)
+        endif
+        $1_PCH_DEP := $$($1_PCH_FILE).d
+        $1_PCH_DEP_TARGETS := $$($1_PCH_FILE).d.targets
+
+        -include $$($1_PCH_DEP)
+        -include $$($1_PCH_DEP_TARGETS)
+
+        $$($1_PCH_FILE): $$($1_PRECOMPILED_HEADER) $$($1_COMPILE_VARDEPS_FILE)
+		$$(call LogInfo, Generating precompiled header)
+		$$(call MakeDir, $$(@D))
+		$$(call ExecuteWithLog, $$@, \
+		    $$($1_CC) $$($1_CFLAGS) $$($1_EXTRA_CFLAGS) $$($1_SYSROOT_CFLAGS) \
+		    $$($1_OPT_CFLAGS) \
+		    -x c++-header -c $(C_FLAG_DEPS) $$($1_PCH_DEP) $$< -o $$@)
+		$(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_PCH_DEP) > $$($1_PCH_DEP_TARGETS)
+
+        $$($1_ALL_OBJS): $$($1_PCH_FILE)
+
+      endif
+    endif
+  endif
 
   # Now call add_native_source for each source file we are going to compile.
   $$(foreach p,$$($1_SRCS), \

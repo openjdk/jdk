@@ -188,6 +188,12 @@ inline Method** frame::interpreter_frame_method_addr() const {
   return (Method**)addr_at(interpreter_frame_method_offset);
 }
 
+// Mirror
+
+inline oop* frame::interpreter_frame_mirror_addr() const {
+  return (oop*)addr_at(interpreter_frame_mirror_offset);
+}
+
 // top of expression stack
 inline intptr_t* frame::interpreter_frame_tos_address() const {
   intptr_t* last_sp = interpreter_frame_last_sp();

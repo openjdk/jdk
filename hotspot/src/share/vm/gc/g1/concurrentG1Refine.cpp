@@ -25,9 +25,10 @@
 #include "precompiled.hpp"
 #include "gc/g1/concurrentG1Refine.hpp"
 #include "gc/g1/concurrentG1RefineThread.hpp"
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1HotCardCache.hpp"
+#include "gc/g1/g1YoungRemSetSamplingThread.hpp"
+#include "logging/log.hpp"
 #include "runtime/java.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/pair.hpp"
@@ -111,8 +112,7 @@ static Thresholds calc_thresholds(size_t green_zone,
                     green_zone + deactivate_offset);
 }
 
-ConcurrentG1Refine::ConcurrentG1Refine(G1CollectedHeap* g1h,
-                                       size_t green_zone,
+ConcurrentG1Refine::ConcurrentG1Refine(size_t green_zone,
                                        size_t yellow_zone,
                                        size_t red_zone,
                                        size_t min_yellow_zone_size) :
@@ -122,8 +122,7 @@ ConcurrentG1Refine::ConcurrentG1Refine(G1CollectedHeap* g1h,
   _green_zone(green_zone),
   _yellow_zone(yellow_zone),
   _red_zone(red_zone),
-  _min_yellow_zone_size(min_yellow_zone_size),
-  _hot_card_cache(g1h)
+  _min_yellow_zone_size(min_yellow_zone_size)
 {
   assert_zone_constraints_gyr(green_zone, yellow_zone, red_zone);
 }
@@ -170,8 +169,7 @@ static size_t calc_init_red_zone(size_t green, size_t yellow) {
   return MIN2(yellow + size, max_red_zone);
 }
 
-ConcurrentG1Refine* ConcurrentG1Refine::create(G1CollectedHeap* g1h,
-                                               CardTableEntryClosure* refine_closure,
+ConcurrentG1Refine* ConcurrentG1Refine::create(CardTableEntryClosure* refine_closure,
                                                jint* ecode) {
   size_t min_yellow_zone_size = calc_min_yellow_zone_size();
   size_t green_zone = calc_init_green_zone();
@@ -185,8 +183,7 @@ ConcurrentG1Refine* ConcurrentG1Refine::create(G1CollectedHeap* g1h,
             "min yellow size: " SIZE_FORMAT,
             green_zone, yellow_zone, red_zone, min_yellow_zone_size);
 
-  ConcurrentG1Refine* cg1r = new ConcurrentG1Refine(g1h,
-                                                    green_zone,
+  ConcurrentG1Refine* cg1r = new ConcurrentG1Refine(green_zone,
                                                     yellow_zone,
                                                     red_zone,
                                                     min_yellow_zone_size);
@@ -238,10 +235,6 @@ ConcurrentG1Refine* ConcurrentG1Refine::create(G1CollectedHeap* g1h,
 
   *ecode = JNI_OK;
   return cg1r;
-}
-
-void ConcurrentG1Refine::init(G1RegionToSpaceMapper* card_counts_storage) {
-  _hot_card_cache.initialize(card_counts_storage);
 }
 
 void ConcurrentG1Refine::stop() {

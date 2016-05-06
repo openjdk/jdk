@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -706,9 +706,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     @Override
-    public boolean rejectFocusRequest(CausedFocusEvent.Cause cause) {
+    public boolean rejectFocusRequest(FocusEvent.Cause cause) {
         // Cross-app activation requests are not allowed.
-        if (cause != CausedFocusEvent.Cause.MOUSE_EVENT &&
+        if (cause != FocusEvent.Cause.MOUSE_EVENT &&
             !((LWCToolkit)Toolkit.getDefaultToolkit()).isApplicationActive())
         {
             focusLogger.fine("the app is inactive, so the request is rejected");
@@ -738,12 +738,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     public void updateFocusableWindowState() {
         final boolean isFocusable = isNativelyFocusableWindow();
         setStyleBits(SHOULD_BECOME_KEY | SHOULD_BECOME_MAIN, isFocusable); // set both bits at once
-    }
-
-    @Override
-    public Graphics transformGraphics(Graphics g) {
-        // is this where we can inject a transform for HiDPI?
-        return g;
     }
 
     @Override

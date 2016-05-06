@@ -73,8 +73,8 @@ final class StatusResponseManager {
                     DEFAULT_CACHE_LIFETIME));
         cacheLifetime = life > 0 ? life : 0;
 
-        String uriStr = AccessController.doPrivileged(
-                new GetPropertyAction("jdk.tls.stapling.responderURI"));
+        String uriStr =
+                GetPropertyAction.getProperty("jdk.tls.stapling.responderURI");
         URI tmpURI;
         try {
             tmpURI = ((uriStr != null && !uriStr.isEmpty()) ?

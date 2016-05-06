@@ -2261,18 +2261,18 @@ public:
     rf(Vn, 5), rf(Rd, 0);
   }
 
-#define INSN(NAME, opc, opc2) \
-  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, int shift){         \
-    starti;                                                                             \
-    /* The encodings for the immh:immb fields (bits 22:16) are                          \
-     *   0001 xxx       8B/16B, shift = xxx                                             \
-     *   001x xxx       4H/8H,  shift = xxxx                                            \
-     *   01xx xxx       2S/4S,  shift = xxxxx                                           \
-     *   1xxx xxx       1D/2D,  shift = xxxxxx (1D is RESERVED)                         \
-     */                                                                                 \
-    assert((1 << ((T>>1)+3)) > shift, "Invalid Shift value");                           \
-    f(0, 31), f(T & 1, 30), f(opc, 29), f(0b011110, 28, 23),                            \
-    f((1 << ((T>>1)+3))|shift, 22, 16); f(opc2, 15, 10), rf(Vn, 5), rf(Vd, 0);          \
+#define INSN(NAME, opc, opc2)                                           \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, int shift){ \
+    starti;                                                             \
+    /* The encodings for the immh:immb fields (bits 22:16) are          \
+     *   0001 xxx       8B/16B, shift = xxx                             \
+     *   001x xxx       4H/8H,  shift = xxxx                            \
+     *   01xx xxx       2S/4S,  shift = xxxxx                           \
+     *   1xxx xxx       1D/2D,  shift = xxxxxx (1D is RESERVED)         \
+     */                                                                 \
+    assert((1 << ((T>>1)+3)) > shift, "Invalid Shift value");           \
+    f(0, 31), f(T & 1, 30), f(opc, 29), f(0b011110, 28, 23),            \
+    f((1 << ((T>>1)+3))|shift, 22, 16); f(opc2, 15, 10), rf(Vn, 5), rf(Vd, 0); \
   }
 
   INSN(shl,  0, 0b010101);
@@ -2362,6 +2362,24 @@ public:
     f(((1 << (T >> 1)) | (index << ((T >> 1) + 1))), 20, 16);
     f(0b000001, 15, 10), rf(Vn, 5), rf(Vd, 0);
   }
+
+  // AdvSIMD ZIP/UZP/TRN
+#define INSN(NAME, opcode)                                              \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \
+    starti;                                                             \
+    f(0, 31), f(0b001110, 29, 24), f(0, 21), f(0b001110, 15, 10);       \
+    rf(Vm, 16), rf(Vn, 5), rf(Vd, 0);                                   \
+    f(T & 1, 30), f(T >> 1, 23, 22);                                    \
+  }
+
+  INSN(uzp1, 0b001);
+  INSN(trn1, 0b010);
+  INSN(zip1, 0b011);
+  INSN(uzp2, 0b101);
+  INSN(trn2, 0b110);
+  INSN(zip2, 0b111);
+
+#undef INSN
 
   // CRC32 instructions
 #define INSN(NAME, c, sf, sz)                                             \

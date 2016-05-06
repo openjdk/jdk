@@ -36,7 +36,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import sun.misc.Unsafe; // for ADDRESS_SIZE
+import jdk.internal.misc.Unsafe; // for ADDRESS_SIZE
 import sun.hotspot.WhiteBox;
 
 public class TestShrinkAuxiliaryData {
@@ -52,6 +52,7 @@ public class TestShrinkAuxiliaryData {
         "-Xlog:gc=debug",
         "-XX:+UnlockDiagnosticVMOptions",
         "-XX:+WhiteBoxAPI",
+        "-XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED",
         "-Xbootclasspath/a:.",
     };
 

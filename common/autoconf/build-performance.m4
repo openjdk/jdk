@@ -364,6 +364,9 @@ AC_DEFUN_ONCE([BPERF_SETUP_PRECOMPILED_HEADERS],
   elif test "x$ICECC" != "x"; then
     AC_MSG_RESULT([no, does not work effectively with icecc])
     USE_PRECOMPILED_HEADER=0
+  elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+    AC_MSG_RESULT([no, does not work with Solaris Studio])
+    USE_PRECOMPILED_HEADER=0
   else
     AC_MSG_RESULT([yes])
   fi
@@ -454,7 +457,7 @@ AC_DEFUN_ONCE([BPERF_SETUP_SMART_JAVAC],
   AC_MSG_RESULT([$ENABLE_JAVAC_SERVER])
   AC_SUBST(ENABLE_JAVAC_SERVER)
 
-  if test "x$ENABLE_JAVAC_SERVER" = "xyes" || "x$ENABLE_SJAVAC" = "xyes"; then
+  if test "x$ENABLE_JAVAC_SERVER" = "xyes" || test "x$ENABLE_SJAVAC" = "xyes"; then
     # When using a server javac, the small client instances do not need much
     # resources.
     JAVA_FLAGS_JAVAC="$JAVA_FLAGS_SMALL"

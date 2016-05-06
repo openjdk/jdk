@@ -36,6 +36,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import com.sun.jdi.*;
 import java.io.EOFException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,11 +57,19 @@ class ExecutionControl {
     private ObjectInputStream in;
     private ObjectOutputStream out;
     private final JShell proc;
+    private final String remoteVMOptions;
 
-    ExecutionControl(JDIEnv env, SnippetMaps maps, JShell proc) {
+    ExecutionControl(JDIEnv env, SnippetMaps maps, JShell proc, List<String> extraRemoteVMOptions) {
         this.env = env;
         this.maps = maps;
         this.proc = proc;
+        StringBuilder sb = new StringBuilder();
+        extraRemoteVMOptions.stream()
+                .forEach(s -> {
+                    sb.append(" ");
+                    sb.append(s);
+                });
+        this.remoteVMOptions = sb.toString();
     }
 
     void launch() throws IOException {
@@ -94,7 +103,7 @@ class ExecutionControl {
     }
 
 
-    boolean commandLoad(List<ClassInfo> cil) {
+    boolean commandLoad(Collection<ClassInfo> cil) {
         try {
             out.writeInt(CMD_LOAD);
             out.writeInt(cil.size());
@@ -110,7 +119,7 @@ class ExecutionControl {
         }
     }
 
-    String commandInvoke(String classname) throws EvalException, UnresolvedReferenceException {
+    String commandInvoke(String classname) throws JShellException {
         try {
             synchronized (STOP_LOCK) {
                 userCodeRunning = true;
@@ -122,7 +131,7 @@ class ExecutionControl {
                 String result = in.readUTF();
                 return result;
             }
-        } catch (IOException | ClassNotFoundException ex) {
+        } catch (IOException | RuntimeException ex) {
             if (!env.connection().isRunning()) {
                 env.shutdown();
             } else {
@@ -204,7 +213,7 @@ class ExecutionControl {
         }
     }
 
-    private boolean readAndReportExecutionResult() throws IOException, ClassNotFoundException, EvalException, UnresolvedReferenceException {
+    private boolean readAndReportExecutionResult() throws IOException, JShellException {
         int ok = in.readInt();
         switch (ok) {
             case RESULT_SUCCESS:
@@ -224,7 +233,7 @@ class ExecutionControl {
             case RESULT_CORRALLED: {
                 int id = in.readInt();
                 StackTraceElement[] elems = readStackTrace();
-                Snippet si = maps.getSnippet(id);
+                Snippet si = maps.getSnippetDeadOrAlive(id);
                 throw new UnresolvedReferenceException((DeclarationSnippet) si, elems);
             }
             case RESULT_KILLED: {
@@ -256,11 +265,9 @@ class ExecutionControl {
         //        Locale.getDefault());
 
         String connectorName = "com.sun.jdi.CommandLineLaunch";
-        String classPath = System.getProperty("java.class.path");
-        String javaArgs = "-classpath " + classPath;
         Map<String, String> argumentName2Value = new HashMap<>();
         argumentName2Value.put("main", "jdk.internal.jshell.remote.RemoteAgent " + port);
-        argumentName2Value.put("options", javaArgs);
+        argumentName2Value.put("options", remoteVMOptions);
 
         boolean launchImmediately = true;
         int traceFlags = 0;// VirtualMachine.TRACE_SENDS | VirtualMachine.TRACE_EVENTS;

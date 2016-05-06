@@ -77,7 +77,7 @@ public class BaseAction {
                 throw new Error("TESTBUG: incorrect argument: "+ args[1]);
             }
         }
-        int pid;
+        long pid;
         try {
             pid = ProcessTools.getProcessId();
         } catch (Exception e) {

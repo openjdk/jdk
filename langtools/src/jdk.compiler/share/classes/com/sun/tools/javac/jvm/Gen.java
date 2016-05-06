@@ -203,7 +203,7 @@ public class Gen extends JCTree.Visitor {
      */
     void emitMinusOne(int tc) {
         if (tc == LONGcode) {
-            items.makeImmediateItem(syms.longType, new Long(-1)).load();
+            items.makeImmediateItem(syms.longType, Long.valueOf(-1)).load();
         } else {
             code.emitop0(iconst_m1);
         }
@@ -1086,17 +1086,19 @@ public class Gen extends JCTree.Visitor {
                 genStat(body, loopEnv, CRT_STATEMENT | CRT_FLOW_TARGET);
                 code.resolve(loopEnv.info.cont);
                 genStats(step, loopEnv);
-                CondItem c;
-                if (cond != null) {
-                    code.statBegin(cond.pos);
+                if (code.isAlive()) {
+                    CondItem c;
+                    if (cond != null) {
+                        code.statBegin(cond.pos);
+                        Assert.check(code.state.stacksize == 0);
+                        c = genCond(TreeInfo.skipParens(cond), CRT_FLOW_CONTROLLER);
+                    } else {
+                        c = items.makeCondItem(goto_);
+                    }
+                    code.resolve(c.jumpTrue(), startpc);
                     Assert.check(code.state.stacksize == 0);
-                    c = genCond(TreeInfo.skipParens(cond), CRT_FLOW_CONTROLLER);
-                } else {
-                    c = items.makeCondItem(goto_);
+                    code.resolve(c.falseJumps);
                 }
-                code.resolve(c.jumpTrue(), startpc);
-                Assert.check(code.state.stacksize == 0);
-                code.resolve(c.falseJumps);
             }
             Chain exit = loopEnv.info.exit;
             if (exit != null) {
@@ -1647,6 +1649,7 @@ public class Gen extends JCTree.Visitor {
 
     public void visitConditional(JCConditional tree) {
         Chain thenExit = null;
+        code.statBegin(tree.cond.pos);
         CondItem c = genCond(tree.cond, CRT_FLOW_CONTROLLER);
         Chain elseChain = c.jumpFalse();
         if (!c.isFalse()) {

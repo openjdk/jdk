@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8149991
- * @summary safepointcleanup=info should have output from the code
+ * @summary safepoint+cleanup=info should have output from the code
  * @library /testlibrary
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -38,7 +38,7 @@ import jdk.test.lib.ProcessTools;
 public class SafepointCleanupTest {
     static void analyzeOutputOn(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("[safepointcleanup]");
+        output.shouldContain("[safepoint,cleanup]");
         output.shouldContain("deflating idle monitors");
         output.shouldContain("updating inline caches");
         output.shouldContain("compilation policy safepoint handler");
@@ -49,12 +49,12 @@ public class SafepointCleanupTest {
 
     static void analyzeOutputOff(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldNotContain("[safepointcleanup]");
+        output.shouldNotContain("[safepoint,cleanup]");
         output.shouldHaveExitValue(0);
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:safepointcleanup=info",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:safepoint+cleanup=info",
                                                                   InnerClass.class.getName());
         analyzeOutputOn(pb);
 
@@ -62,7 +62,7 @@ public class SafepointCleanupTest {
                                                    InnerClass.class.getName());
         analyzeOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:safepointcleanup=off",
+        pb = ProcessTools.createJavaProcessBuilder("-Xlog:safepoint+cleanup=off",
                                                    InnerClass.class.getName());
         analyzeOutputOff(pb);
 

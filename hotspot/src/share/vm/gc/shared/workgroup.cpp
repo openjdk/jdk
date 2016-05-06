@@ -255,7 +255,15 @@ AbstractGangWorker* WorkGang::allocate_worker(uint worker_id) {
 }
 
 void WorkGang::run_task(AbstractGangTask* task) {
-  _dispatcher->coordinator_execute_on_workers(task, active_workers());
+  run_task(task, active_workers());
+}
+
+void WorkGang::run_task(AbstractGangTask* task, uint num_workers) {
+  guarantee(num_workers <= active_workers(),
+            "Trying to execute task %s with %u workers which is more than the amount of active workers %u.",
+            task->name(), num_workers, active_workers());
+  guarantee(num_workers > 0, "Trying to execute task %s with zero workers", task->name());
+  _dispatcher->coordinator_execute_on_workers(task, num_workers);
 }
 
 AbstractGangWorker::AbstractGangWorker(AbstractWorkGang* gang, uint id) {

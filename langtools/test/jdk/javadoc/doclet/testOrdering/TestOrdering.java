@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8039410 8042601 8042829 8049393 8050031
+ * @bug 8039410 8042601 8042829 8049393 8050031 8155061
  * @summary test to determine if members are ordered correctly
  * @author ksrini
  * @library ../lib/
@@ -72,6 +72,8 @@ public class TestOrdering extends JavadocTester {
         checkOrder("pkg1/class-use/UsedClass.html", expectedInnerClassContructors);
         checkOrder("pkg1/ImplementsOrdering.html", expectedImplementsOrdering);
         checkOrder("pkg1/OverrideOrdering.html", expectedOverrideOrdering);
+        checkOrder("allclasses-noframe.html", expectedAllClasses);
+        checkOrder("allclasses-frame.html", expectedAllClasses);
     }
 
     enum ListOrder { NONE, REVERSE, SHUFFLE };
@@ -179,6 +181,22 @@ public class TestOrdering extends JavadocTester {
     };
     String[] composeTestVectors() {
         List<String> testList = new ArrayList<>();
+
+        testList.addAll(Arrays.asList(expectedPackageOrdering));
+
+        for (String x : expectedMethodOrdering) {
+            testList.add(x);
+            for (int i = 0; i < MAX_PACKAGES; i++) {
+                String wpkg = "add" + i;
+                testList.add(wpkg + "/" + x);
+                String dpkg = wpkg;
+                for (int j = 1; j < MAX_SUBPACKAGES_DEPTH; j++) {
+                    dpkg = dpkg + "/" + "add";
+                    testList.add(dpkg + "/" + x);
+                }
+            }
+        }
+
         for (String x : expectedEnumOrdering) {
             testList.add(x.replace("REPLACE_ME", "&lt;Unnamed&gt;"));
             for (int i = 0; i < MAX_PACKAGES; i++) {
@@ -194,20 +212,9 @@ public class TestOrdering extends JavadocTester {
 
         testList.addAll(Arrays.asList(expectedFieldOrdering));
 
-        for (String x : expectedMethodOrdering) {
-            testList.add(x);
-            for (int i = 0; i < MAX_PACKAGES; i++) {
-                String wpkg = "add" + i;
-                testList.add(wpkg + "/" + x);
-                String dpkg = wpkg;
-                for (int j = 1; j < MAX_SUBPACKAGES_DEPTH; j++) {
-                    dpkg = dpkg + "/" + "add";
-                    testList.add(dpkg + "/" + x);
-                }
-            }
-        }
         return testList.toArray(new String[testList.size()]);
     }
+
     void checkExecutableMemberOrdering(String usePage) {
         String contents = readFile(usePage);
         // check constructors
@@ -309,6 +316,22 @@ public class TestOrdering extends JavadocTester {
         return in.replace("/", ".");
     }
 
+    final String expectedAllClasses[] = {
+        "pkg1/A.html\" title=\"class in pkg1",
+        "pkg1/A.C.html\" title=\"class in pkg1",
+        "pkg1/B.html\" title=\"class in pkg1",
+        "pkg1/B.A.html\" title=\"class in pkg1",
+        "pkg1/C1.html\" title=\"class in pkg1",
+        "pkg1/C2.html\" title=\"class in pkg1",
+        "pkg1/C3.html\" title=\"class in pkg1",
+        "pkg1/C4.html\" title=\"class in pkg1",
+        "pkg1/ImplementsOrdering.html\" title=\"interface in pkg1",
+        "pkg1/MethodOrder.html\" title=\"class in pkg1",
+        "pkg1/OverrideOrdering.html\" title=\"class in pkg1",
+        "pkg1/UsedClass.html\" title=\"class in pkg1"
+
+    };
+
     final String expectedInnerClassContructors[] = {
         "../../pkg1/A.html#A-pkg1.UsedClass-",
         "../../pkg1/B.A.html#A-pkg1.UsedClass-",
@@ -342,12 +365,33 @@ public class TestOrdering extends JavadocTester {
         "../../pkg1/MethodOrder.html#m-java.util.Collection-",
         "../../pkg1/MethodOrder.html#m-java.util.List-"
     };
+
     final String expectedClassUseWithTypeParams[] = {
         "../../pkg1/MethodOrder.html#tpm-pkg1.UsedClass-",
         "../../pkg1/MethodOrder.html#tpm-pkg1.UsedClass-pkg1.UsedClass-",
         "../../pkg1/MethodOrder.html#tpm-pkg1.UsedClass-pkg1.UsedClass:A-",
         "../../pkg1/MethodOrder.html#tpm-pkg1.UsedClass-java.lang.String-"
     };
+
+    final String expectedPackageOrdering[] = {
+        "\"add0/package-summary.html\">add0</a> - package add0",
+        "\"add0/add/package-summary.html\">add0.add</a> - package add0.add",
+        "\"add0/add/add/package-summary.html\">add0.add.add</a> - package add0.add.add",
+        "\"add0/add/add/add/package-summary.html\">add0.add.add.add</a> - package add0.add.add.add",
+        "\"add1/package-summary.html\">add1</a> - package add1",
+        "\"add1/add/package-summary.html\">add1.add</a> - package add1.add",
+        "\"add1/add/add/package-summary.html\">add1.add.add</a> - package add1.add.add",
+        "\"add1/add/add/add/package-summary.html\">add1.add.add.add</a> - package add1.add.add.add",
+        "\"add2/package-summary.html\">add2</a> - package add2",
+        "\"add2/add/package-summary.html\">add2.add</a> - package add2.add",
+        "\"add2/add/add/package-summary.html\">add2.add.add</a> - package add2.add.add",
+        "\"add2/add/add/add/package-summary.html\">add2.add.add.add</a> - package add2.add.add.add",
+        "\"add3/package-summary.html\">add3</a> - package add3",
+        "\"add3/add/package-summary.html\">add3.add</a> - package add3.add",
+        "\"add3/add/add/package-summary.html\">add3.add.add</a> - package add3.add.add",
+        "\"add3/add/add/add/package-summary.html\">add3.add.add.add</a> - package add3.add.add.add"
+    };
+
     final String expectedMethodOrdering[] = {
         "Add.html#add--",
         "Add.html#add-double-",
@@ -361,10 +405,12 @@ public class TestOrdering extends JavadocTester {
         "Add.html#add-java.lang.Double-",
         "Add.html#add-java.lang.Integer-"
     };
+
     final String expectedEnumOrdering[] = {
         "Add.add.html\" title=\"enum in REPLACE_ME\"",
         "Add.ADD.html\" title=\"enum in REPLACE_ME\""
     };
+
     final String expectedFieldOrdering[] = {
         "Add.html#addadd\"",
         "add0/add/add/add/Add.html#addadd\"",
@@ -418,10 +464,12 @@ public class TestOrdering extends JavadocTester {
         "add3/add/Add.html#ADDADD\"",
         "add3/Add.html#ADDADD\""
     };
+
     final String expectedPackageTreeOrdering[] = {
         "<a href=\"../../add0/add/Add.add.html\" title=\"enum in add0.add\">",
         "<a href=\"../../add0/add/Add.ADD.html\" title=\"enum in add0.add\">"
     };
+
     final String expectedOverviewOrdering[] = {
         "<a href=\"Add.add.html\" title=\"enum in &lt;Unnamed&gt;\">",
         "<a href=\"add0/Add.add.html\" title=\"enum in add0\">",
@@ -458,6 +506,7 @@ public class TestOrdering extends JavadocTester {
         "<a href=\"add3/add/add/Add.ADD.html\" title=\"enum in add3.add.add\">",
         "<a href=\"add3/add/add/add/Add.ADD.html\" title=\"enum in add3.add.add.add\">",
     };
+
     final static String expectedOverviewFrameOrdering[] = {
         "<a href=\"package-frame.html\" target=\"packageFrame\">&lt;unnamed package&gt;</a>",
         "<a href=\"add0/package-frame.html\" target=\"packageFrame\">add0</a>",
@@ -477,11 +526,13 @@ public class TestOrdering extends JavadocTester {
         "<a href=\"add3/add/add/package-frame.html\" target=\"packageFrame\">add3.add.add</a>",
         "<a href=\"add3/add/add/add/package-frame.html\" target=\"packageFrame\">add3.add.add.add</a></li>"
     };
+
     final static String expectedImplementsOrdering[] = {
         "<dd><code>close</code>&nbsp;in interface&nbsp;<code>java.lang.AutoCloseable</code></dd>",
         "<dd><code>close</code>&nbsp;in interface&nbsp;<code>java.nio.channels.Channel</code></dd>",
         "<dd><code>close</code>&nbsp;in interface&nbsp;<code>java.io.Closeable</code></dd>"
     };
+
     final static String expectedOverrideOrdering[] = {
         "<dd><code>iterator</code>&nbsp;in interface&nbsp;<code>java.util.Collection&lt;",
         "<dd><code>iterator</code>&nbsp;in interface&nbsp;<code>java.lang.Iterable&lt;"

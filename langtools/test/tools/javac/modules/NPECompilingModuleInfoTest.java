@@ -45,7 +45,7 @@ public class NPECompilingModuleInfoTest extends ModuleTestBase {
     }
 
     @Test
-    void testCompileNoError(Path base) throws Exception {
+    public void testCompileNoError(Path base) throws Exception {
         Path mod = base.resolve("mod");
         tb.writeJavaFiles(mod, "module mod { exports pkg; }");
         Path pkg = mod.resolve("pkg");

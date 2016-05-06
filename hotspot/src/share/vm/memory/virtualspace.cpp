@@ -1083,6 +1083,12 @@ class TestReservedSpace : AllStatic {
     test_log("test_reserved_space3(%p, %p, %d)",
         (void*)(uintptr_t)size, (void*)(uintptr_t)alignment, maybe_large);
 
+    if (size < alignment) {
+      // Tests might set -XX:LargePageSizeInBytes=<small pages> and cause unexpected input arguments for this test.
+      assert((size_t)os::vm_page_size() == os::large_page_size(), "Test needs further refinement");
+      return;
+    }
+
     assert(is_size_aligned(size, os::vm_allocation_granularity()), "Must be at least AG aligned");
     assert(is_size_aligned(size, alignment), "Must be at least aligned against alignment");
 

@@ -24,110 +24,112 @@
  */
 package jdk.internal.jimage;
 
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 
 /**
  * @implNote This class needs to maintain JDK 8 source compatibility.
  *
  * It is used internally in the JDK to implement jimage/jrtfs access,
- * but also compiled and delivered as part of the jrtfs.jar to support access
+ * but also compiled and delivered as part of the jrt-fs.jar to support access
  * to the jimage file provided by the shipped JDK by tools running on JDK 8.
  */
 class ImageBufferCache {
-    private static final int MAX_FREE_BUFFERS = 3;
+    private static final int MAX_CACHED_BUFFERS = 3;
     private static final int LARGE_BUFFER = 0x10000;
-    private static final ThreadLocal<ArrayList<ImageBufferCache>>
-            threadLocal = new ThreadLocal<>();
+    private static final ThreadLocal<BufferReference[]> CACHE =
+        new ThreadLocal<BufferReference[]>() {
+            @Override
+            protected BufferReference[] initialValue() {
+                // 1 extra slot to simplify logic of releaseBuffer()
+                return new BufferReference[MAX_CACHED_BUFFERS + 1];
+            }
+        };
 
-    private final ByteBuffer buffer;
-    private boolean isUsed;
+    private static ByteBuffer allocateBuffer(long size) {
+        return ByteBuffer.allocateDirect((int)((size + 0xFFF) & ~0xFFF));
+    }
 
     static ByteBuffer getBuffer(long size) {
         if (size < 0 || Integer.MAX_VALUE < size) {
             throw new IndexOutOfBoundsException("size");
         }
 
-        ByteBuffer buffer = null;
+        ByteBuffer result = null;
 
         if (size > LARGE_BUFFER) {
-            buffer = ByteBuffer.allocateDirect((int)((size + 0xFFF) & ~0xFFF));
+            result = allocateBuffer(size);
         } else {
-            ArrayList<ImageBufferCache> buffers = threadLocal.get();
+            BufferReference[] cache = CACHE.get();
 
-            if (buffers == null) {
-                buffers = new ArrayList<>(MAX_FREE_BUFFERS);
-                threadLocal.set(buffers);
-            }
+            // buffers are ordered by decreasing capacity
+            // cache[MAX_CACHED_BUFFERS] is always null
+            for (int i = MAX_CACHED_BUFFERS - 1; i >= 0; i--) {
+                BufferReference reference = cache[i];
 
-            int i = 0, j = buffers.size();
-            for (ImageBufferCache imageBuffer : buffers) {
-                if (size <= imageBuffer.capacity()) {
-                    j = i;
+                if (reference != null) {
+                    ByteBuffer buffer = reference.get();
 
-                    if (!imageBuffer.isUsed) {
-                        imageBuffer.isUsed = true;
-                        buffer = imageBuffer.buffer;
-
+                    if (buffer != null && size <= buffer.capacity()) {
+                        cache[i] = null;
+                        result = buffer;
+                        result.rewind();
                         break;
                     }
-                } else {
-                    break;
                 }
-
-                i++;
             }
 
-            if (buffer == null) {
-                ImageBufferCache imageBuffer = new ImageBufferCache((int)size);
-                buffers.add(j, imageBuffer);
-                buffer = imageBuffer.buffer;
+            if (result == null) {
+                result = allocateBuffer(size);
             }
         }
 
-        buffer.rewind();
-        buffer.limit((int)size);
+        result.limit((int)size);
 
-        return buffer;
+        return result;
     }
 
     static void releaseBuffer(ByteBuffer buffer) {
-        ArrayList<ImageBufferCache> buffers = threadLocal.get();
-
-        if (buffers == null) {
-            return;
-        }
-
         if (buffer.capacity() > LARGE_BUFFER) {
             return;
         }
 
-        int i = 0, j = buffers.size();
-        for (ImageBufferCache imageBuffer : buffers) {
-            if (!imageBuffer.isUsed) {
-                j = Math.min(j, i);
-            }
+        BufferReference[] cache = CACHE.get();
 
-            if (imageBuffer.buffer == buffer) {
-                imageBuffer.isUsed = false;
-                j = Math.min(j, i);
-
-                break;
+        // expunge cleared BufferRef(s)
+        for (int i = 0; i < MAX_CACHED_BUFFERS; i++) {
+            BufferReference reference = cache[i];
+            if (reference != null && reference.get() == null) {
+                cache[i] = null;
             }
         }
 
-        if (buffers.size() > MAX_FREE_BUFFERS && j != buffers.size()) {
-            buffers.remove(j);
+        // insert buffer back with new BufferRef wrapping it
+        cache[MAX_CACHED_BUFFERS] = new BufferReference(buffer);
+        Arrays.sort(cache, DECREASING_CAPACITY_NULLS_LAST);
+        // squeeze the smallest one out
+        cache[MAX_CACHED_BUFFERS] = null;
+    }
+
+    private static Comparator<BufferReference> DECREASING_CAPACITY_NULLS_LAST =
+        new Comparator<BufferReference>() {
+            @Override
+            public int compare(BufferReference br1, BufferReference br2) {
+                return Integer.compare(br2 == null ? 0 : br2.capacity,
+                                       br1 == null ? 0 : br1.capacity);
+            }
+        };
+
+    private static class BufferReference extends WeakReference<ByteBuffer> {
+        // saved capacity so that DECREASING_CAPACITY_NULLS_LAST comparator
+        // is stable in the presence of GC clearing the WeakReference concurrently
+        final int capacity;
+
+        BufferReference(ByteBuffer buffer) {
+            super(buffer);
+            capacity = buffer.capacity();
         }
-    }
-
-    private ImageBufferCache(int needed) {
-        this.buffer = ByteBuffer.allocateDirect((needed + 0xFFF) & ~0xFFF);
-        this.isUsed = true;
-        this.buffer.limit(needed);
-    }
-
-    private long capacity() {
-        return buffer.capacity();
     }
 }

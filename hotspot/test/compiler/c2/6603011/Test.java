@@ -25,6 +25,7 @@
  * @test
  * @bug 6603011
  * @summary long/int division by constant
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @run main/othervm -Xcomp -Xbatch -XX:-Inline Test
  */

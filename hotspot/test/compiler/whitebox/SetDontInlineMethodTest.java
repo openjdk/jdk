@@ -27,6 +27,7 @@ import compiler.whitebox.CompilerWhiteBoxTest;
  * @test SetDontInlineMethodTest
  * @bug 8006683 8007288 8022832
  * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build SetDontInlineMethodTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

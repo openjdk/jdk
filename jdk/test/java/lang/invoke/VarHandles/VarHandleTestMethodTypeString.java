@@ -374,6 +374,32 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
         });
 
 
+        // WeakCompareAndSetVolatile
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            boolean r = vh.weakCompareAndSetVolatile(null, "foo", "foo");
+        });
+        checkCCE(() -> { // receiver reference class
+            boolean r = vh.weakCompareAndSetVolatile(Void.class, "foo", "foo");
+        });
+        checkCCE(() -> { // expected reference class
+            boolean r = vh.weakCompareAndSetVolatile(recv, Void.class, "foo");
+        });
+        checkCCE(() -> { // actual reference class
+            boolean r = vh.weakCompareAndSetVolatile(recv, "foo", Void.class);
+        });
+        checkWMTE(() -> { // receiver primitive class
+            boolean r = vh.weakCompareAndSetVolatile(0, "foo", "foo");
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            boolean r = vh.weakCompareAndSetVolatile();
+        });
+        checkWMTE(() -> { // >
+            boolean r = vh.weakCompareAndSetVolatile(recv, "foo", "foo", Void.class);
+        });
+
+
         // WeakCompareAndSetAcquire
         // Incorrect argument types
         checkNPE(() -> { // null receiver
@@ -557,7 +583,7 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
     }
 
     static void testInstanceFieldWrongMethodType(VarHandleTestMethodTypeString recv, Handles hs) throws Throwable {
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.get)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET)) {
             // Incorrect argument types
             checkNPE(() -> { // null receiver
                 String x = (String) hs.get(am, methodType(String.class, Void.class)).
@@ -591,7 +617,7 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.set)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.SET)) {
             // Incorrect argument types
             checkNPE(() -> { // null receiver
                 hs.get(am, methodType(void.class, Void.class, String.class)).
@@ -620,7 +646,7 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
             // Incorrect argument types
             checkNPE(() -> { // null receiver
                 boolean r = (boolean) hs.get(am, methodType(boolean.class, Void.class, String.class, String.class)).
@@ -653,7 +679,7 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndExchange)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
             checkNPE(() -> { // null receiver
                 String x = (String) hs.get(am, methodType(String.class, Void.class, String.class, String.class)).
                     invoke(null, "foo", "foo");
@@ -694,7 +720,7 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
             checkNPE(() -> { // null receiver
                 String x = (String) hs.get(am, methodType(String.class, Void.class, String.class)).
                     invoke(null, "foo");
@@ -878,6 +904,23 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
         });
 
 
+        // WeakCompareAndSetVolatile
+        // Incorrect argument types
+        checkCCE(() -> { // expected reference class
+            boolean r = vh.weakCompareAndSetVolatile(Void.class, "foo");
+        });
+        checkCCE(() -> { // actual reference class
+            boolean r = vh.weakCompareAndSetVolatile("foo", Void.class);
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            boolean r = vh.weakCompareAndSetVolatile();
+        });
+        checkWMTE(() -> { // >
+            boolean r = vh.weakCompareAndSetVolatile("foo", "foo", Void.class);
+        });
+
+
         // WeakCompareAndSetAcquire
         // Incorrect argument types
         checkCCE(() -> { // expected reference class
@@ -1009,7 +1052,7 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
     static void testStaticFieldWrongMethodType(Handles hs) throws Throwable {
         int i = 0;
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.get)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET)) {
             // Incorrect return type
             checkCCE(() -> { // reference class
                 Void x = (Void) hs.get(am, methodType(Void.class)).
@@ -1026,7 +1069,7 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.set)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.SET)) {
             checkCCE(() -> { // value reference class
                 hs.get(am, methodType(void.class, Class.class)).
                     invoke(Void.class);
@@ -1041,7 +1084,7 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
                     invoke("foo", Void.class);
             });
         }
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
             // Incorrect argument types
             checkCCE(() -> { // expected reference class
                 boolean r = (boolean) hs.get(am, methodType(boolean.class, Class.class, String.class)).
@@ -1062,7 +1105,7 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndExchange)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
             // Incorrect argument types
             checkCCE(() -> { // expected reference class
                 String x = (String) hs.get(am, methodType(String.class, Class.class, String.class)).
@@ -1092,7 +1135,7 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
             // Incorrect argument types
             checkCCE(() -> { // value reference class
                 String x = (String) hs.get(am, methodType(String.class, Class.class)).
@@ -1407,6 +1450,35 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
         });
 
 
+        // WeakCompareAndSetVolatile
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            boolean r = vh.weakCompareAndSetVolatile(null, 0, "foo", "foo");
+        });
+        checkCCE(() -> { // receiver reference class
+            boolean r = vh.weakCompareAndSetVolatile(Void.class, 0, "foo", "foo");
+        });
+        checkCCE(() -> { // expected reference class
+            boolean r = vh.weakCompareAndSetVolatile(array, 0, Void.class, "foo");
+        });
+        checkCCE(() -> { // actual reference class
+            boolean r = vh.weakCompareAndSetVolatile(array, 0, "foo", Void.class);
+        });
+        checkWMTE(() -> { // receiver primitive class
+            boolean r = vh.weakCompareAndSetVolatile(0, 0, "foo", "foo");
+        });
+        checkWMTE(() -> { // index reference class
+            boolean r = vh.weakCompareAndSetVolatile(array, Void.class, "foo", "foo");
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            boolean r = vh.weakCompareAndSetVolatile();
+        });
+        checkWMTE(() -> { // >
+            boolean r = vh.weakCompareAndSetVolatile(array, 0, "foo", "foo", Void.class);
+        });
+
+
         // WeakCompareAndSetAcquire
         // Incorrect argument types
         checkNPE(() -> { // null receiver
@@ -1611,7 +1683,7 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
         String[] array = new String[10];
         Arrays.fill(array, "foo");
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.get)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET)) {
             // Incorrect argument types
             checkNPE(() -> { // null array
                 String x = (String) hs.get(am, methodType(String.class, Void.class, int.class)).
@@ -1649,7 +1721,7 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.set)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.SET)) {
             // Incorrect argument types
             checkNPE(() -> { // null array
                 hs.get(am, methodType(void.class, Void.class, int.class, String.class)).
@@ -1681,7 +1753,7 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
                     invoke(array, 0, "foo", Void.class);
             });
         }
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
             // Incorrect argument types
             checkNPE(() -> { // null receiver
                 boolean r = (boolean) hs.get(am, methodType(boolean.class, Void.class, int.class, String.class, String.class)).
@@ -1718,7 +1790,7 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndExchange)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
             // Incorrect argument types
             checkNPE(() -> { // null receiver
                 String x = (String) hs.get(am, methodType(String.class, Void.class, int.class, String.class, String.class)).
@@ -1764,7 +1836,7 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
             // Incorrect argument types
             checkNPE(() -> { // null array
                 String x = (String) hs.get(am, methodType(String.class, Void.class, int.class, String.class)).

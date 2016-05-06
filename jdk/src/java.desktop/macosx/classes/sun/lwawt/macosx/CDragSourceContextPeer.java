@@ -44,7 +44,6 @@ import sun.awt.dnd.*;
 import sun.lwawt.LWComponentPeer;
 import sun.lwawt.LWWindowPeer;
 import sun.lwawt.PlatformWindow;
-import sun.misc.ManagedLocalsThread;
 
 
 public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
@@ -181,7 +180,7 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
                     }
                 }
             };
-            new ManagedLocalsThread(dragRunnable).start();
+            new Thread(null, dragRunnable, "Drag", 0, false).start();
         } catch (Exception e) {
             final long nativeDragSource = getNativeContext();
             setNativeContext(0);

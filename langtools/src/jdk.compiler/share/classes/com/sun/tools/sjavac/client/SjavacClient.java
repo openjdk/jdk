@@ -26,23 +26,20 @@
 package com.sun.tools.sjavac.client;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Reader;
-import java.io.Writer;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
-import java.util.stream.Stream;
 
+import com.sun.tools.javac.main.Main;
+import com.sun.tools.javac.main.Main.Result;
 import com.sun.tools.sjavac.Log;
 import com.sun.tools.sjavac.Util;
 import com.sun.tools.sjavac.options.OptionHelper;
@@ -116,8 +113,8 @@ public class SjavacClient implements Sjavac {
     }
 
     @Override
-    public int compile(String[] args) {
-        int result = -1;
+    public Result compile(String[] args) {
+        Result result = null;
         try (Socket socket = tryConnect()) {
             PrintWriter out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -150,22 +147,28 @@ public class SjavacClient implements Sjavac {
                 }
 
                 if (type.equals(SjavacServer.LINE_TYPE_RC)) {
-                    result = Integer.parseInt(content);
+                    result = Main.Result.valueOf(content);
                 }
             }
         } catch (PortFileInaccessibleException e) {
             Log.error("Port file inaccessible.");
-            result = CompilationSubResult.ERROR_FATAL;
+            result = Result.ERROR;
         } catch (IOException ioe) {
             Log.error("IOException caught during compilation: " + ioe.getMessage());
             Log.debug(ioe);
-            result = CompilationSubResult.ERROR_FATAL;
+            result = Result.ERROR;
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt(); // Restore interrupt
             Log.error("Compilation interrupted.");
             Log.debug(ie);
-            result = CompilationSubResult.ERROR_FATAL;
+            result = Result.ERROR;
         }
+
+        if (result == null) {
+            // No LINE_TYPE_RC was found.
+            result = Result.ERROR;
+        }
+
         return result;
     }
 

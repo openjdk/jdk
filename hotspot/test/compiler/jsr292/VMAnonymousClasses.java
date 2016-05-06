@@ -26,13 +26,13 @@
  * @bug 8058828
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
- * @run main/bootclasspath -Xbatch VMAnonymousClasses
+ * @run main/bootclasspath/othervm -Xbatch VMAnonymousClasses
  */
 
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;

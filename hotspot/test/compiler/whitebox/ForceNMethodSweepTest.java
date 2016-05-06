@@ -36,6 +36,7 @@ import compiler.whitebox.CompilerWhiteBoxTest;
  * @test
  * @bug 8059624 8064669 8153265
  * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build ForceNMethodSweepTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

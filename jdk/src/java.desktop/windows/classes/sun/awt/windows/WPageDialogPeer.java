@@ -25,8 +25,6 @@
 
 package sun.awt.windows;
 
-import sun.misc.ManagedLocalsThread;
-
 final class WPageDialogPeer extends WPrintDialogPeer {
 
     WPageDialogPeer(WPageDialog target) {
@@ -53,6 +51,6 @@ final class WPageDialogPeer extends WPrintDialogPeer {
             }
             ((WPrintDialog)target).setVisible(false);
         };
-        new ManagedLocalsThread(runnable).start();
+        new Thread(null, runnable, "PageDialog", 0, false).start();
     }
 }

@@ -667,7 +667,9 @@ public enum Option {
             }
             return false;
         }
-    };
+    },
+
+    MULTIRELEASE("-multi-release", "opt.arg.multi-release", "opt.multi-release", HIDDEN, FILEMANAGER);
 
     /** The kind of an Option. This is used by the -help and -X options. */
     public enum OptionKind {

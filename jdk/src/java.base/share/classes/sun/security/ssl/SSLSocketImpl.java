@@ -209,6 +209,12 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
     Collection<SNIMatcher>      sniMatchers =
                                     Collections.<SNIMatcher>emptyList();
 
+    // Is the serverNames set to empty with SSLParameters.setServerNames()?
+    private boolean             noSniExtension = false;
+
+    // Is the sniMatchers set to empty with SSLParameters.setSNIMatchers()?
+    private boolean             noSniMatcher = false;
+
     // Configured application protocol values
     String[] applicationProtocols = new String[0];
 
@@ -642,6 +648,11 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
         }
 
         super.connect(endpoint, timeout);
+
+        if (host == null || host.length() == 0) {
+            useImplicitHost(false);
+        }
+
         doneConnect();
     }
 
@@ -2098,41 +2109,62 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
         outputRecord.setVersion(protocolVersion);
     }
 
+    //
+    // ONLY used by ClientHandshaker for the server hostname during handshaking
+    //
     synchronized String getHost() {
         // Note that the host may be null or empty for localhost.
         if (host == null || host.length() == 0) {
-            if (!trustNameService) {
-                // If the local name service is not trustworthy, reverse host
-                // name resolution should not be performed for endpoint
-                // identification.  Use the application original specified
-                // hostname or IP address instead.
-                host = getOriginalHostname(getInetAddress());
-            } else {
-                host = getInetAddress().getHostName();
-            }
+            useImplicitHost(true);
         }
 
         return host;
     }
 
     /*
-     * Get the original application specified hostname.
+     * Try to set and use the implicit specified hostname
      */
-    private static String getOriginalHostname(InetAddress inetAddress) {
-        /*
-         * Get the original hostname via jdk.internal.misc.SharedSecrets.
-         */
-        JavaNetInetAddressAccess jna = SharedSecrets.getJavaNetInetAddressAccess();
-        String originalHostname = jna.getOriginalHostName(inetAddress);
+    private synchronized void useImplicitHost(boolean noSniUpdate) {
 
-        /*
-         * If no application specified hostname, use the IP address.
-         */
-        if (originalHostname == null || originalHostname.length() == 0) {
-            originalHostname = inetAddress.getHostAddress();
+        // Note: If the local name service is not trustworthy, reverse
+        // host name resolution should not be performed for endpoint
+        // identification.  Use the application original specified
+        // hostname or IP address instead.
+
+        // Get the original hostname via jdk.internal.misc.SharedSecrets
+        InetAddress inetAddress = getInetAddress();
+        if (inetAddress == null) {      // not connected
+            return;
         }
 
-        return originalHostname;
+        JavaNetInetAddressAccess jna =
+                SharedSecrets.getJavaNetInetAddressAccess();
+        String originalHostname = jna.getOriginalHostName(inetAddress);
+        if ((originalHostname != null) &&
+                (originalHostname.length() != 0)) {
+
+            host = originalHostname;
+            if (!noSniUpdate && serverNames.isEmpty() && !noSniExtension) {
+                serverNames =
+                        Utilities.addToSNIServerNameList(serverNames, host);
+
+                if (!roleIsServer &&
+                        (handshaker != null) && !handshaker.started()) {
+                    handshaker.setSNIServerNames(serverNames);
+                }
+            }
+
+            return;
+        }
+
+        // No explicitly specified hostname, no server name indication.
+        if (!trustNameService) {
+            // The local name service is not trustworthy, use IP address.
+            host = inetAddress.getHostAddress();
+        } else {
+            // Use the underlying reverse host name resolution service.
+            host = getInetAddress().getHostName();
+        }
     }
 
     // ONLY used by HttpsClient to setup the URI specified hostname
@@ -2144,6 +2176,10 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
         this.host = host;
         this.serverNames =
             Utilities.addToSNIServerNameList(this.serverNames, this.host);
+
+        if (!roleIsServer && (handshaker != null) && !handshaker.started()) {
+            handshaker.setSNIServerNames(serverNames);
+        }
     }
 
     /**
@@ -2533,8 +2569,21 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
         // the super implementation does not handle the following parameters
         params.setEndpointIdentificationAlgorithm(identificationProtocol);
         params.setAlgorithmConstraints(algorithmConstraints);
-        params.setSNIMatchers(sniMatchers);
-        params.setServerNames(serverNames);
+
+        if (sniMatchers.isEmpty() && !noSniMatcher) {
+            // 'null' indicates none has been set
+            params.setSNIMatchers(null);
+        } else {
+            params.setSNIMatchers(sniMatchers);
+        }
+
+        if (serverNames.isEmpty() && !noSniExtension) {
+            // 'null' indicates none has been set
+            params.setServerNames(null);
+        } else {
+            params.setServerNames(serverNames);
+        }
+
         params.setUseCipherSuitesOrder(preferLocalCipherSuites);
         params.setMaximumPacketSize(maximumPacketSize);
         params.setApplicationProtocols(applicationProtocols);
@@ -2568,11 +2617,13 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
 
         List<SNIServerName> sniNames = params.getServerNames();
         if (sniNames != null) {
+            noSniExtension = sniNames.isEmpty();
             serverNames = sniNames;
         }
 
         Collection<SNIMatcher> matchers = params.getSNIMatchers();
         if (matchers != null) {
+            noSniMatcher = matchers.isEmpty();
             sniMatchers = matchers;
         }
 

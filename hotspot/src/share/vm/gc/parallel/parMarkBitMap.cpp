@@ -59,10 +59,8 @@ ParMarkBitMap::initialize(MemRegion covered_region)
     _region_start = covered_region.start();
     _region_size = covered_region.word_size();
     BitMap::bm_word_t* map = (BitMap::bm_word_t*)_virtual_space->reserved_low_addr();
-    _beg_bits.set_map(map);
-    _beg_bits.set_size(bits / 2);
-    _end_bits.set_map(map + words / 2);
-    _end_bits.set_size(bits / 2);
+    _beg_bits = BitMapView(map,             bits / 2);
+    _end_bits = BitMapView(map + words / 2, bits / 2);
     return true;
   }
 

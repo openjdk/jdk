@@ -26,6 +26,7 @@
 #include "logging/logConfiguration.hpp"
 #include "logging/logFileOutput.hpp"
 #include "memory/allocation.inline.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/os.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/defaultStream.hpp"
@@ -187,14 +188,15 @@ bool LogFileOutput::parse_options(const char* options, outputStream* errstream) 
       }
       _file_count = static_cast<uint>(value);
     } else if (strcmp(FileSizeOptionKey, key) == 0) {
-      size_t value = parse_value(value_str);
-      if (value == SIZE_MAX || value > SIZE_MAX / K) {
+      julong value;
+      success = Arguments::atojulong(value_str, &value);
+      if (!success || (value > SIZE_MAX)) {
         errstream->print_cr("Invalid option: %s must be in range [0, "
-                            SIZE_FORMAT "]", FileSizeOptionKey, SIZE_MAX / K);
+                            SIZE_FORMAT "]", FileSizeOptionKey, SIZE_MAX);
         success = false;
         break;
       }
-      _rotate_size = value * K;
+      _rotate_size = static_cast<size_t>(value);
     } else {
       errstream->print_cr("Invalid option '%s' for log file output.", key);
       success = false;
@@ -252,7 +254,7 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
 
   if (_file_count == 0 && is_regular_file(_file_name)) {
     log_trace(logging)("Truncating log file");
-    os::ftruncate(os::fileno(_stream), 0);
+    os::ftruncate(os::get_fileno(_stream), 0);
   }
 
   return true;

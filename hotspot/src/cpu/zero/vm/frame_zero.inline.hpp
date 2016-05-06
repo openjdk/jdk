@@ -115,6 +115,10 @@ inline Method** frame::interpreter_frame_method_addr() const {
   return &(get_interpreterState()->_method);
 }
 
+inline oop* frame::interpreter_frame_mirror_addr() const {
+  return &(get_interpreterState()->_mirror);
+}
+
 inline intptr_t* frame::interpreter_frame_mdp_addr() const {
   return (intptr_t*) &(get_interpreterState()->_mdx);
 }

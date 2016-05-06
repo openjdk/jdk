@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.loader
  *          java.desktop
  * @library /testlibrary

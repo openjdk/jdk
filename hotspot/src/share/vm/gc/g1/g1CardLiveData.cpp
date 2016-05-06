@@ -60,7 +60,7 @@ G1CardLiveData::bm_word_t* G1CardLiveData::allocate_large_bitmap(size_t size_in_
 }
 
 void G1CardLiveData::free_large_bitmap(bm_word_t* bitmap, size_t size_in_bits) {
-  MmapArrayAllocator<bm_word_t, mtGC>::free(bitmap, size_in_bits / BitsPerWord);
+  MmapArrayAllocator<bm_word_t, mtGC>::free(bitmap, BitMap::calc_size_in_words(size_in_bits));
 }
 
 void G1CardLiveData::initialize(size_t max_capacity, uint num_max_regions) {
@@ -95,8 +95,8 @@ size_t G1CardLiveData::live_card_bitmap_size_in_bits() const {
 // information.
 class G1CardLiveDataHelper VALUE_OBJ_CLASS_SPEC {
 private:
-  BitMap _region_bm;
-  BitMap _card_bm;
+  BitMapView _region_bm;
+  BitMapView _card_bm;
 
   // The card number of the bottom of the G1 heap.
   // Used in biasing indices into accounting card bitmaps.
@@ -393,11 +393,11 @@ void G1CardLiveData::finalize(WorkGang* workers, G1CMBitMap* mark_bitmap) {
 }
 
 class G1ClearCardLiveDataTask : public AbstractGangTask {
-  BitMap _bitmap;
-  size_t _num_chunks;
-  size_t _cur_chunk;
+  BitMapView _bitmap;
+  size_t     _num_chunks;
+  size_t     _cur_chunk;
 public:
-  G1ClearCardLiveDataTask(BitMap bitmap, size_t num_tasks) :
+  G1ClearCardLiveDataTask(const BitMapView& bitmap, size_t num_tasks) :
     AbstractGangTask("G1 Clear Card Live Data"),
     _bitmap(bitmap),
     _num_chunks(num_tasks),
@@ -424,9 +424,12 @@ void G1CardLiveData::clear(WorkGang* workers) {
   guarantee(Universe::is_fully_initialized(), "Should not call this during initialization.");
 
   size_t const num_chunks = align_size_up(live_cards_bm().size_in_bytes(), G1ClearCardLiveDataTask::chunk_size()) / G1ClearCardLiveDataTask::chunk_size();
+  uint const num_workers = (uint)MIN2(num_chunks, (size_t)workers->active_workers());
 
   G1ClearCardLiveDataTask cl(live_cards_bm(), num_chunks);
-  workers->run_task(&cl);
+
+  log_debug(gc, ergo)("Running %s using %u workers for " SIZE_FORMAT " work units.", cl.name(), num_workers, num_chunks);
+  workers->run_task(&cl, num_workers);
 
   // The region live bitmap is always very small, even for huge heaps. Clear
   // directly.

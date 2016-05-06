@@ -237,6 +237,10 @@ void PSPromotionManager::register_preserved_marks(PreservedMarks* preserved_mark
   _preserved_marks = preserved_marks;
 }
 
+void PSPromotionManager::restore_preserved_marks() {
+  _preserved_marks_set->restore(PSScavenge::gc_task_manager());
+}
+
 void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
   totally_drain = totally_drain || _totally_drain;
 

@@ -489,7 +489,7 @@ public class Arrrghs extends TestHelper {
             return;
         }
 
-        TestResult tr = null;
+        TestResult tr;
 
         // a missing class
         createJar("MIA", new File("some.jar"), new File("Foo"),
@@ -592,7 +592,7 @@ public class Arrrghs extends TestHelper {
         if (!isEnglishLocale()) { // only english version
             return;
         }
-        TestResult tr = null;
+        TestResult tr;
         // a missing class
         createJar("MIA", new File("some.jar"), new File("Foo"),
                 (String[])null);

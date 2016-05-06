@@ -52,9 +52,9 @@ public class TestCaseTry {
         o = "";
     }
 
-    @AliveRange(varName="o", bytecodeStart=22, bytecodeLength=38)
-    @AliveRange(varName="o", bytecodeStart=103, bytecodeLength=3)
-    @AliveRange(varName="o", bytecodeStart=110, bytecodeLength=1)
+    @AliveRange(varName="o", bytecodeStart=22, bytecodeLength=13)
+    @AliveRange(varName="o", bytecodeStart=53, bytecodeLength=3)
+    @AliveRange(varName="o", bytecodeStart=60, bytecodeLength=1)
     void m3() {
         Object o;
         try (BufferedReader br =
@@ -65,8 +65,8 @@ public class TestCaseTry {
         o = "";
     }
 
-    @AliveRange(varName="o", bytecodeStart=12, bytecodeLength=96)
-    @AliveRange(varName="o", bytecodeStart=112, bytecodeLength=1)
+    @AliveRange(varName="o", bytecodeStart=12, bytecodeLength=46)
+    @AliveRange(varName="o", bytecodeStart=62, bytecodeLength=1)
     void m4() {
         String o;
         try (BufferedReader br =

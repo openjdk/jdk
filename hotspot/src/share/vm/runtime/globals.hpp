@@ -1253,7 +1253,7 @@ public:
   product(intx, MonitorBound, 0, "Bound Monitor population")                \
           range(0, max_jint)                                                \
                                                                             \
-  product(bool, MonitorInUseLists, false, "Track Monitors for Deflation")   \
+  product(bool, MonitorInUseLists, true, "Track Monitors for Deflation")    \
                                                                             \
   experimental(intx, SyncFlags, 0, "(Unsafe, Unstable) "                    \
                "Experimental Sync flags")                                   \
@@ -2221,11 +2221,11 @@ public:
           "Adaptive size policy maximum GC pause time goal in millisecond, "\
           "or (G1 Only) the maximum GC time per MMU time slice")            \
           range(1, max_uintx - 1)                                           \
-          constraint(MaxGCPauseMillisConstraintFunc,AfterMemoryInit)        \
+          constraint(MaxGCPauseMillisConstraintFunc,AfterErgo)              \
                                                                             \
   product(uintx, GCPauseIntervalMillis, 0,                                  \
           "Time slice for MMU specification")                               \
-          constraint(GCPauseIntervalMillisConstraintFunc,AfterMemoryInit)   \
+          constraint(GCPauseIntervalMillisConstraintFunc,AfterErgo)         \
                                                                             \
   product(uintx, MaxGCMinorPauseMillis, max_uintx,                          \
           "Adaptive size policy maximum GC minor pause time goal "          \
@@ -3847,9 +3847,9 @@ public:
                                                                             \
   /* Properties for Java libraries  */                                      \
                                                                             \
-  product(size_t, MaxDirectMemorySize, 0,                                   \
+  product(uint64_t, MaxDirectMemorySize, 0,                                 \
           "Maximum total size of NIO direct-buffer allocations")            \
-          range(0, (size_t)SIZE_MAX)                                        \
+          range(0, max_jlong)                                               \
                                                                             \
   /* Flags used for temporary code during development  */                   \
                                                                             \

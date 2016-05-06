@@ -177,8 +177,8 @@ void G1MonitoringSupport::recalculate_sizes() {
   // values we read here are possible (i.e., at a STW phase at the end
   // of a GC).
 
-  uint young_list_length = g1->young_list()->length();
-  uint survivor_list_length = g1->young_list()->survivor_length();
+  uint young_list_length = g1->young_regions_count();
+  uint survivor_list_length = g1->survivor_regions_count();
   assert(young_list_length >= survivor_list_length, "invariant");
   uint eden_list_length = young_list_length - survivor_list_length;
   // Max length includes any potential extensions to the young gen
@@ -237,7 +237,7 @@ void G1MonitoringSupport::recalculate_eden_size() {
   // When a new eden region is allocated, only the eden_used size is
   // affected (since we have recalculated everything else at the last GC).
 
-  uint young_region_num = g1h()->young_list()->length();
+  uint young_region_num = g1h()->young_regions_count();
   if (young_region_num > _young_region_num) {
     uint diff = young_region_num - _young_region_num;
     _eden_used += (size_t) diff * HeapRegion::GrainBytes;

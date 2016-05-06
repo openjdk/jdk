@@ -43,7 +43,12 @@ define_pd_global(intx,  CodeEntryAlignment,   32);
 define_pd_global(intx,  OptoLoopAlignment,    16);
 define_pd_global(intx,  InlineFrequencyCount, 100);
 define_pd_global(intx,  InlineSmallCode,      1000);
-define_pd_global(intx,  InitArrayShortSize,   -1); // not used
+
+// not used, but must satisfy following constraints:
+// 1.) <VALUE> must be in the allowed range for intx *and*
+// 2.) <VALUE> % BytesPerLong == 0 so as to not
+//     violate the constraint verifier on JVM start-up.
+define_pd_global(intx,  InitArrayShortSize,   0);
 
 #define DEFAULT_STACK_YELLOW_PAGES (2)
 #define DEFAULT_STACK_RED_PAGES (1)

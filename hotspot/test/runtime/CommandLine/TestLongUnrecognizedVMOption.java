@@ -26,6 +26,7 @@
  * @bug 8129786
  * @summary Verify that JVM correctly processes very long unrecognized VM option
  * @library /testlibrary
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @run main TestLongUnrecognizedVMOption
  */
