@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ public class XpatchVisibility {
                                                            "p2" + File.separator + "Vis2_B.class"));
 
       new OutputAnalyzer(ProcessTools.createJavaProcessBuilder(
-              "-Xpatch:mods2",
+              "-Xpatch:java.base=mods2/java.base",
               "-XaddExports:java.base/p2=ALL-UNNAMED",
               "Vis2_A")
           .start()).shouldHaveExitValue(0);
