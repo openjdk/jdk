@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import sun.util.logging.PlatformLogger;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.awt.AWTAccessor;
-import sun.awt.CausedFocusEvent;
 import sun.awt.TimedWindowEvent;
 
 /**
@@ -165,13 +164,13 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                                    boolean clearOnFailure)
     {
         if (toFocus != vetoedComponent && toFocus.isShowing() && toFocus.canBeFocusOwner() &&
-            toFocus.requestFocus(false, CausedFocusEvent.Cause.ROLLBACK))
+            toFocus.requestFocus(false, FocusEvent.Cause.ROLLBACK))
         {
             return true;
         } else {
             Component nextFocus = toFocus.getNextFocusCandidate();
             if (nextFocus != null && nextFocus != vetoedComponent &&
-                nextFocus.requestFocusInWindow(CausedFocusEvent.Cause.ROLLBACK))
+                nextFocus.requestFocusInWindow(FocusEvent.Cause.ROLLBACK))
             {
                 return true;
             } else if (clearOnFailure) {
@@ -431,13 +430,13 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                                        tempLost, toFocus);
                     }
                     if (tempLost != null) {
-                        tempLost.requestFocusInWindow(CausedFocusEvent.Cause.ACTIVATION);
+                        tempLost.requestFocusInWindow(FocusEvent.Cause.ACTIVATION);
                     }
 
                     if (toFocus != null && toFocus != tempLost) {
                         // If there is a component which requested focus when this window
                         // was inactive it expects to receive focus after activation.
-                        toFocus.requestFocusInWindow(CausedFocusEvent.Cause.ACTIVATION);
+                        toFocus.requestFocusInWindow(FocusEvent.Cause.ACTIVATION);
                     }
                 }
 
@@ -490,8 +489,6 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
 
             case FocusEvent.FOCUS_GAINED: {
                 FocusEvent fe = (FocusEvent)e;
-                CausedFocusEvent.Cause cause = (fe instanceof CausedFocusEvent) ?
-                    ((CausedFocusEvent)fe).getCause() : CausedFocusEvent.Cause.UNKNOWN;
                 Component oldFocusOwner = getGlobalFocusOwner();
                 Component newFocusOwner = fe.getComponent();
                 if (oldFocusOwner == newFocusOwner) {
@@ -509,10 +506,10 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                 if (oldFocusOwner != null) {
                     boolean isEventDispatched =
                         sendMessage(oldFocusOwner,
-                                    new CausedFocusEvent(oldFocusOwner,
+                                    new FocusEvent(oldFocusOwner,
                                                    FocusEvent.FOCUS_LOST,
                                                    fe.isTemporary(),
-                                                   newFocusOwner, cause));
+                                                   newFocusOwner, fe.getCause()));
                     // Failed to dispatch, clear by ourselves
                     if (!isEventDispatched) {
                         setGlobalFocusOwner(null);
@@ -552,7 +549,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                     // Refuse focus on a disabled component if the focus event
                     // isn't of UNKNOWN reason (i.e. not a result of a direct request
                     // but traversal, activation or system generated).
-                    (newFocusOwner.isEnabled() || cause.equals(CausedFocusEvent.Cause.UNKNOWN))))
+                    (newFocusOwner.isEnabled() || fe.getCause().equals(FocusEvent.Cause.UNKNOWN))))
                 {
                     // we should not accept focus on such component, so reject it.
                     dequeueKeyEvents(-1, newFocusOwner);
@@ -601,10 +598,10 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                 Component realOppositeComponent = this.realOppositeComponentWR.get();
                 if (realOppositeComponent != null &&
                     realOppositeComponent != fe.getOppositeComponent()) {
-                    fe = new CausedFocusEvent(newFocusOwner,
+                    fe = new FocusEvent(newFocusOwner,
                                         FocusEvent.FOCUS_GAINED,
                                         fe.isTemporary(),
-                                        realOppositeComponent, cause);
+                                        realOppositeComponent, fe.getCause());
                     ((AWTEvent) fe).isPosted = true;
                 }
                 return typeAheadAssertions(newFocusOwner, fe);
@@ -729,10 +726,10 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                         oppositeComp = oppositeWindow;
                     }
                     sendMessage(currentFocusOwner,
-                                new CausedFocusEvent(currentFocusOwner,
+                                new FocusEvent(currentFocusOwner,
                                                FocusEvent.FOCUS_LOST,
                                                true,
-                                               oppositeComp, CausedFocusEvent.Cause.ACTIVATION));
+                                               oppositeComp, FocusEvent.Cause.ACTIVATION));
                 }
 
                 setGlobalFocusedWindow(null);

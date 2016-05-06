@@ -33,17 +33,19 @@ class RedirectFilter implements HeaderFilter {
     HttpRequestImpl requestImpl;
     HttpRequest request;
     HttpClientImpl client;
+    HttpClient.Redirect policy;
     String method;
     final static int DEFAULT_MAX_REDIRECTS = 5;
     URI uri;
 
     final static int max_redirects = Utils.getIntegerNetProperty(
-            "sun.net.httpclient.redirects.retrylimit", DEFAULT_MAX_REDIRECTS
+            "java.net.httpclient.redirects.retrylimit", DEFAULT_MAX_REDIRECTS
     );
 
     @Override
     public void request(HttpRequestImpl r) throws IOException {
         this.request = r;
+        this.policy = request.followRedirects();
         this.client = r.getClient();
         this.method = r.method();
         this.requestImpl = r;
@@ -61,7 +63,7 @@ class RedirectFilter implements HeaderFilter {
      */
     private HttpRequestImpl handleResponse(HttpResponseImpl r) {
         int rcode = r.statusCode();
-        if (rcode == 200) {
+        if (rcode == 200 || policy == HttpClient.Redirect.NEVER) {
             return null;
         }
         if (rcode >= 300 && rcode <= 399) {
@@ -79,6 +81,7 @@ class RedirectFilter implements HeaderFilter {
 
     private URI getRedirectedURI(HttpHeaders headers) {
         URI redirectedURI;
+        String ss = headers.firstValue("Location").orElse("Not present");
         redirectedURI = headers.firstValue("Location")
                 .map((s) -> URI.create(s))
                 .orElseThrow(() -> new UncheckedIOException(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ import javax.accessibility.*;
 import sun.awt.AWTAccessor;
 import sun.awt.AWTPermissions;
 import sun.awt.AppContext;
-import sun.awt.CausedFocusEvent;
 import sun.awt.DebugSettings;
 import sun.awt.SunToolkit;
 import sun.awt.util.IdentityArrayList;
@@ -2599,7 +2598,7 @@ public class Window extends Container implements Accessible {
                 {
                     Component toFocus =
                         KeyboardFocusManager.getMostRecentFocusOwner(owner);
-                    if (toFocus != null && toFocus.requestFocus(false, CausedFocusEvent.Cause.ACTIVATION)) {
+                    if (toFocus != null && toFocus.requestFocus(false, FocusEvent.Cause.ACTIVATION)) {
                         return;
                     }
                 }

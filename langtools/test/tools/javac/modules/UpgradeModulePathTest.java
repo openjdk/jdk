@@ -28,7 +28,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask toolbox.ModuleBuilder ModuleTestBase
  * @run main UpgradeModulePathTest
  */
 
@@ -36,6 +36,7 @@ import java.io.File;
 import java.nio.file.Path;
 
 import toolbox.JavacTask;
+import toolbox.ModuleBuilder;
 import toolbox.Task;
 import toolbox.ToolBox;
 
@@ -47,15 +48,15 @@ public class UpgradeModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void simpleUsage(Path base) throws Exception {
+    public void simpleUsage(Path base) throws Exception {
         final Path module = base.resolve("modules");
-        new ModuleBuilder("m1")
+        new ModuleBuilder(tb, "m1")
                 .exports("pkg1")
                 .classes("package pkg1; public class E { }")
                 .build(module);
 
         final Path upgradeModule = base.resolve("upgradeModule");
-        new ModuleBuilder("m1")
+        new ModuleBuilder(tb, "m1")
                 .exports("pkg2")
                 .classes("package pkg2; public class E { }")
                 .build(upgradeModule);
@@ -73,15 +74,15 @@ public class UpgradeModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void onlyUpgradeModulePath(Path base) throws Exception {
+    public void onlyUpgradeModulePath(Path base) throws Exception {
         final Path module = base.resolve("modules");
-        new ModuleBuilder("m1")
+        new ModuleBuilder(tb, "m1")
                 .exports("pkg1")
                 .classes("package pkg1; public class E { }")
                 .build(module);
 
         final Path upgradeModule = base.resolve("upgradeModule");
-        new ModuleBuilder("m1")
+        new ModuleBuilder(tb, "m1")
                 .exports("pkg2")
                 .classes("package pkg2; public class E { }")
                 .build(upgradeModule);
@@ -98,15 +99,15 @@ public class UpgradeModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void withModuleSourcePath(Path base) throws Exception {
+    public void withModuleSourcePath(Path base) throws Exception {
         final Path module = base.resolve("modules");
-        new ModuleBuilder("m1")
+        new ModuleBuilder(tb, "m1")
                 .exports("pkg1")
                 .classes("package pkg1; public class E { }")
                 .build(module);
 
         final Path upgradeModule = base.resolve("upgradeModule");
-        new ModuleBuilder("m1")
+        new ModuleBuilder(tb, "m1")
                 .exports("pkg2")
                 .classes("package pkg2; public class E { }")
                 .build(upgradeModule);
@@ -115,7 +116,7 @@ public class UpgradeModulePathTest extends ModuleTestBase {
         tb.writeJavaFiles(s.resolve("m3"), "module m3 { }");
 
         final Path upgradeModule3 = base.resolve("upgradeModule");
-        new ModuleBuilder("m3")
+        new ModuleBuilder(tb, "m3")
                 .exports("pkg3")
                 .classes("package pkg3; public class E { }")
                 .build(upgradeModule);
@@ -135,15 +136,15 @@ public class UpgradeModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void sameUpgradeAndModulePath(Path base) throws Exception {
+    public void sameUpgradeAndModulePath(Path base) throws Exception {
         final Path module = base.resolve("modules");
-        new ModuleBuilder("m1")
+        new ModuleBuilder(tb, "m1")
                 .exports("pkg1")
                 .classes("package pkg1; public class E { }")
                 .build(module);
 
         final Path upgradeModule = base.resolve("upgradeModule");
-        new ModuleBuilder("m1")
+        new ModuleBuilder(tb, "m1")
                 .exports("pkg2")
                 .classes("package pkg2; public class E { }")
                 .build(upgradeModule);
@@ -161,9 +162,9 @@ public class UpgradeModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void dummyFileInUpgradeModulePath(Path base) throws Exception {
+    public void dummyFileInUpgradeModulePath(Path base) throws Exception {
         final Path module = base.resolve("modules");
-        new ModuleBuilder("m1")
+        new ModuleBuilder(tb, "m1")
                 .exports("pkg1")
                 .classes("package pkg1; public class E { }")
                 .build(module);
@@ -189,24 +190,24 @@ public class UpgradeModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void severalUpgradeModules(Path base) throws Exception {
+    public void severalUpgradeModules(Path base) throws Exception {
         final Path module = base.resolve("modules");
-        new ModuleBuilder("m1")
+        new ModuleBuilder(tb, "m1")
                 .exports("pkg1")
                 .classes("package pkg1; public class A { }")
                 .build(module);
 
-        new ModuleBuilder("m2")
+        new ModuleBuilder(tb, "m2")
                 .exports("pkg2")
                 .classes("package pkg2; public class B { }")
                 .build(module);
 
         Path upgradeModule = base.resolve("upgradeModule");
-        new ModuleBuilder("m2")
+        new ModuleBuilder(tb, "m2")
                 .exports("pkg2")
                 .classes("package pkg2; public class BC { }")
                 .build(upgradeModule);
-        new ModuleBuilder("m3")
+        new ModuleBuilder(tb, "m3")
                 .exports("pkg3")
                 .classes("package pkg3; public class DC { }")
                 .build(upgradeModule);
@@ -240,21 +241,21 @@ public class UpgradeModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    void severalUpgradeModulePathsLastWin(Path base) throws Exception {
+    public void severalUpgradeModulePathsLastWin(Path base) throws Exception {
         final Path module = base.resolve("modules");
-        new ModuleBuilder("m1")
+        new ModuleBuilder(tb, "m1")
                 .exports("pkg1")
                 .classes("package pkg1; public class E { }")
                 .build(module);
 
         final Path upgradeModule1 = base.resolve("upgradeModule1");
-        new ModuleBuilder("m1")
+        new ModuleBuilder(tb, "m1")
                 .exports("pkg2")
                 .classes("package pkg2; public class EC1 { }")
                 .build(upgradeModule1);
 
         final Path upgradeModule2 = base.resolve("upgradeModule2");
-        new ModuleBuilder("m1")
+        new ModuleBuilder(tb, "m1")
                 .exports("pkg2")
                 .classes("package pkg2; public class EC2 { }")
                 .build(upgradeModule2);

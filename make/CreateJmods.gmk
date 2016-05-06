@@ -64,9 +64,25 @@ ifneq ($(CLASSES_DIR), )
   DEPS += $(call CacheFind, $(CLASSES_DIR))
 endif
 
-# Add dependencies on other jmod files
-DEPS += $(patsubst %, $(IMAGES_OUTPUTDIR)/jmods/%.jmod, \
-    $(call FindDepsForModule, $(MODULE)))
+# Add dependencies on other jmod files. Only java.base needs access to other
+# jmods.
+ifeq ($(MODULE), java.base)
+  DEPS += $(patsubst %, $(IMAGES_OUTPUTDIR)/jmods/%.jmod, \
+      $(filter-out java.base, $(call FindAllModules)))
+
+  # TODO: find modules that directly and indrectly on upgradeable modules
+  EXCLUDE_HASH_MODULES := $(UPGRADEABLE_MODULES) \
+    java.se.ee \
+    jdk.rmic \
+    jdk.xml.bind \
+    jdk.xml.ws \
+    #
+
+  EXCLUDE_PATTERN := $(strip $(subst $(SPACE),|,$(strip $(EXCLUDE_HASH_MODULES))))
+
+  JMOD_FLAGS += --modulepath $(IMAGES_OUTPUTDIR)/jmods \
+    		--hash-modules '^(?!$(EXCLUDE_PATTERN))'
+endif
 
 # TODO: What about headers?
 # Create jmods in a temp dir and then move them into place to keep the
@@ -80,8 +96,7 @@ $(IMAGES_OUTPUTDIR)/jmods/$(MODULE).jmod: $(DEPS)
             --os-name $(REQUIRED_OS_NAME) \
             --os-arch $(OPENJDK_TARGET_CPU_LEGACY) \
             --os-version $(REQUIRED_OS_VERSION) \
-	    --modulepath $(IMAGES_OUTPUTDIR)/jmods\
-            --hash-dependencies '.*' \
+	        --modulepath $(IMAGES_OUTPUTDIR)/jmods\
             --exclude '**{_the.*,*.diz,*.debuginfo,*.dSYM/**,*.pdb,*.map}' \
 	    $(JMOD_FLAGS) $(SUPPORT_OUTPUTDIR)/jmods/$(notdir $@)
 	$(MV) $(SUPPORT_OUTPUTDIR)/jmods/$(notdir $@) $@

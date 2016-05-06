@@ -191,7 +191,7 @@ public class LineNumberTestBase extends TestBase {
         CONDITION("int res = \n" +
                 "testField == 2 ?\n" +
                 "10\n" +
-                ":9;", 1, 3, 4), // see issue https://bugs.openjdk.java.net/browse/JDK-8050993
+                ":9;", 2, 3, 4),
         TRY("try{\n" +
                 "    --testField;\n" +
                 "}\n" +

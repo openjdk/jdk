@@ -120,7 +120,7 @@ public class UIDefaults extends Hashtable<Object,Object>
         Object[] uiDefaults = {
              "Font", new Font("Dialog", Font.BOLD, 12),
             "Color", Color.red,
-             "five", new Integer(5)
+             "five", Integer.valueOf(5)
         }
         UIDefaults myDefaults = new UIDefaults(uiDefaults);
      * </pre>

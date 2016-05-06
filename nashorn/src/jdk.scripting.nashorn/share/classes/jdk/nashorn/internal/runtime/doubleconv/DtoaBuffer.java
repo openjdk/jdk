@@ -176,6 +176,8 @@ public class DtoaBuffer {
                     buffer.append('0');
                 }
                 buffer.append(chars, 0, length);
+            } else {
+                decimalPoint = 1;
             }
         } else if (decimalPoint >= length) {
             // large integer, add trailing zeroes

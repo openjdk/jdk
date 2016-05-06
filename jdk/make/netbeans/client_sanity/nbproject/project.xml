@@ -6,7 +6,7 @@
             <name>SanityTests</name>
             <source-roots>
                 <root id="src.src3.dir" name="lib\jemmy\src"/>
-                <root id="src.src4.dir" name="lib\Jemmy2Ext\src"/>
+                <root id="src.src4.dir" name="lib\Extensions\src"/>
                 <root id="src.src2.dir" name="lib\SwingSet3\src"/>
                 <root id="src.src.dir" name="SwingSet\src"/>
             </source-roots>

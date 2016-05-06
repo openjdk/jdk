@@ -36,12 +36,18 @@ public abstract class Diag {
     // Simplified view on compiler Diagnostic.
 
     /**
+     * In-package creation only.
+     */
+    Diag() {
+    }
+
+    /**
      * Used to signal that no position is available.
      */
     public final static long NOPOS = Diagnostic.NOPOS;
 
     /**
-     * Is this diagnostic and error (as opposed to a warning or note)
+     * Is this diagnostic an error (as opposed to a warning or note)
      * @return true if this diagnostic is an error
      */
     public abstract boolean isError();

@@ -21,10 +21,10 @@
  * questions.
  */
 
+import org.jtregext.GuiTestListener;
 import com.sun.swingset3.demos.optionpane.OptionPaneDemo;
 import static com.sun.swingset3.demos.optionpane.OptionPaneDemo.*;
 import javax.swing.UIManager;
-import static org.jemmy2ext.JemmyExt.*;
 import static org.testng.AssertJUnit.*;
 import org.testng.annotations.Test;
 import org.netbeans.jemmy.ClassReference;
@@ -34,6 +34,7 @@ import org.netbeans.jemmy.operators.JDialogOperator;
 import org.netbeans.jemmy.operators.JFrameOperator;
 import org.netbeans.jemmy.operators.JLabelOperator;
 import org.netbeans.jemmy.operators.JTextFieldOperator;
+import org.testng.annotations.Listeners;
 
 
 /*
@@ -43,12 +44,13 @@ import org.netbeans.jemmy.operators.JTextFieldOperator;
  *          and choosing different options in them.
  *
  * @library /sanity/client/lib/jemmy/src
- * @library /sanity/client/lib/Jemmy2Ext/src
+ * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.optionpane.OptionPaneDemo
  * @run testng OptionPaneDemoTest
  */
+@Listeners(GuiTestListener.class)
 public class OptionPaneDemoTest {
 
     public static final String SOME_TEXT_TO_TYPE = "I am some text";
@@ -59,21 +61,20 @@ public class OptionPaneDemoTest {
     public static final String TEXT_TO_TYPE = "Hooray! I'm a textField";
     public static final String NO = "No";
     public static final String YES = "Yes";
-    public static final String SELECT_AN__OPTION = UIManager.getString("OptionPane.titleText");
+    public static final String SELECT_AN_OPTION = UIManager.getString("OptionPane.titleText");
 
     @Test
     public void test() throws Exception {
-        captureDebugInfoOnFail(() -> {
-            new ClassReference(OptionPaneDemo.class.getCanonicalName()).startApplication();
 
-            JFrameOperator frame = new JFrameOperator(DEMO_TITLE);
+        new ClassReference(OptionPaneDemo.class.getCanonicalName()).startApplication();
 
-            showInputDialog(frame);
-            showWarningDialog(frame);
-            showMessageDialog(frame);
-            showComponentDialog(frame);
-            showConfirmationDialog(frame);
-        });
+        JFrameOperator frame = new JFrameOperator(DEMO_TITLE);
+
+        showInputDialog(frame);
+        showWarningDialog(frame);
+        showMessageDialog(frame);
+        showComponentDialog(frame);
+        showConfirmationDialog(frame);
     }
 
     public void showInputDialog(JFrameOperator jfo) throws Exception {
@@ -286,7 +287,7 @@ public class OptionPaneDemoTest {
         {
             new JButtonOperator(jfo, CONFIRM_BUTTON).pushNoBlock();
 
-            JDialogOperator jdo = new JDialogOperator(SELECT_AN__OPTION);
+            JDialogOperator jdo = new JDialogOperator(SELECT_AN_OPTION);
             new JButtonOperator(jdo, YES).pushNoBlock();
 
             JDialogOperator jdo1 = new JDialogOperator(MESSAGE);
@@ -306,7 +307,7 @@ public class OptionPaneDemoTest {
         {
             new JButtonOperator(jfo, CONFIRM_BUTTON).pushNoBlock();
 
-            JDialogOperator jdo = new JDialogOperator(SELECT_AN__OPTION);
+            JDialogOperator jdo = new JDialogOperator(SELECT_AN_OPTION);
             new JButtonOperator(jdo, NO).pushNoBlock();
 
             JDialogOperator jdo1 = new JDialogOperator(MESSAGE);
@@ -326,7 +327,7 @@ public class OptionPaneDemoTest {
         {
             new JButtonOperator(jfo, CONFIRM_BUTTON).pushNoBlock();
 
-            JDialogOperator jdo = new JDialogOperator(SELECT_AN__OPTION);
+            JDialogOperator jdo = new JDialogOperator(SELECT_AN_OPTION);
 
             assertTrue("Show Confirmation Dialog Cancel Option", jdo.isShowing());
 
