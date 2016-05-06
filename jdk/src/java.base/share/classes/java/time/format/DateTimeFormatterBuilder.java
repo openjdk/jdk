@@ -1527,12 +1527,9 @@ public final class DateTimeFormatterBuilder {
      *    ss      2      appendValue(ChronoField.SECOND_OF_MINUTE, 2)
      *
      *    S..S    1..n   appendFraction(ChronoField.NANO_OF_SECOND, n, n, false)
-     *    A       1      appendValue(ChronoField.MILLI_OF_DAY)
-     *    A..A    2..n   appendValue(ChronoField.MILLI_OF_DAY, n)
-     *    n       1      appendValue(ChronoField.NANO_OF_SECOND)
-     *    n..n    2..n   appendValue(ChronoField.NANO_OF_SECOND, n)
-     *    N       1      appendValue(ChronoField.NANO_OF_DAY)
-     *    N..N    2..n   appendValue(ChronoField.NANO_OF_DAY, n)
+     *    A..A    1..n   appendValue(ChronoField.MILLI_OF_DAY, n, 19, SignStyle.NOT_NEGATIVE)
+     *    n..n    1..n   appendValue(ChronoField.NANO_OF_SECOND, n, 19, SignStyle.NOT_NEGATIVE)
+     *    N..N    1..n   appendValue(ChronoField.NANO_OF_DAY, n, 19, SignStyle.NOT_NEGATIVE)
      * </pre>
      * <p>
      * <b>Zone ID</b>: Pattern letters to output {@code ZoneId}.
@@ -1849,6 +1846,11 @@ public final class DateTimeFormatterBuilder {
                 break;
             case 'g':
                 appendValue(field, count, 19, SignStyle.NORMAL);
+                break;
+            case 'A':
+            case 'n':
+            case 'N':
+                appendValue(field, count, 19, SignStyle.NOT_NEGATIVE);
                 break;
             default:
                 if (count == 1) {
