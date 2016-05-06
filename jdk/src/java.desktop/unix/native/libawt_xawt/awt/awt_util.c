@@ -29,7 +29,6 @@
 
 #include "awt_p.h"
 #include "color.h"
-#include <X11/IntrinsicP.h>
 #include <X11/Xatom.h>
 #include <X11/Xmd.h>
 #include <X11/Xutil.h>

@@ -846,14 +846,46 @@ public class SwingUtilities implements SwingConstants
     }
 
     /**
+     * Check whether MouseEvent contains speficied mouse button or
+     * mouse button down mask based on MouseEvent ID.
+     *
+     * @param anEvent  a MouseEvent object
+     * @param mouseButton mouse button type
+     * @param mouseButtonDownMask mouse button down mask event modifier
+     *
+     * @return true if the anEvent contains speficied mouseButton or
+     * mouseButtonDownMask based on MouseEvent ID.
+     */
+    private static boolean checkMouseButton(MouseEvent anEvent,
+                                            int mouseButton,
+                                            int mouseButtonDownMask)
+    {
+        switch (anEvent.getID()) {
+        case MouseEvent.MOUSE_PRESSED:
+        case MouseEvent.MOUSE_RELEASED:
+        case MouseEvent.MOUSE_CLICKED:
+            return (anEvent.getButton() == mouseButton);
+
+        case MouseEvent.MOUSE_ENTERED:
+        case MouseEvent.MOUSE_EXITED:
+        case MouseEvent.MOUSE_DRAGGED:
+            return ((anEvent.getModifiersEx() & mouseButtonDownMask) != 0);
+
+        default:
+            return ((anEvent.getModifiersEx() & mouseButtonDownMask) != 0 ||
+                    anEvent.getButton() == mouseButton);
+        }
+    }
+
+    /**
      * Returns true if the mouse event specifies the left mouse button.
      *
      * @param anEvent  a MouseEvent object
      * @return true if the left mouse button was active
      */
     public static boolean isLeftMouseButton(MouseEvent anEvent) {
-         return ((anEvent.getModifiersEx() & InputEvent.BUTTON1_DOWN_MASK) != 0 ||
-                 anEvent.getButton() == MouseEvent.BUTTON1);
+        return checkMouseButton(anEvent, MouseEvent.BUTTON1,
+                                InputEvent.BUTTON1_DOWN_MASK);
     }
 
     /**
@@ -863,8 +895,8 @@ public class SwingUtilities implements SwingConstants
      * @return true if the middle mouse button was active
      */
     public static boolean isMiddleMouseButton(MouseEvent anEvent) {
-        return ((anEvent.getModifiersEx() & InputEvent.BUTTON2_DOWN_MASK) != 0 ||
-                anEvent.getButton() == MouseEvent.BUTTON2);
+        return checkMouseButton(anEvent, MouseEvent.BUTTON2,
+                                InputEvent.BUTTON2_DOWN_MASK);
     }
 
     /**
@@ -874,8 +906,8 @@ public class SwingUtilities implements SwingConstants
      * @return true if the right mouse button was active
      */
     public static boolean isRightMouseButton(MouseEvent anEvent) {
-        return ((anEvent.getModifiersEx() & InputEvent.BUTTON3_DOWN_MASK) != 0 ||
-                anEvent.getButton() == MouseEvent.BUTTON3);
+        return checkMouseButton(anEvent, MouseEvent.BUTTON3,
+                                InputEvent.BUTTON3_DOWN_MASK);
     }
 
     /**

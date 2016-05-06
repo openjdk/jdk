@@ -47,7 +47,7 @@ public class DuplicateClassTest extends ModuleTestBase {
     }
 
     @Test
-    void testSimple(Path base) throws Exception {
+    public void testSimple(Path base) throws Exception {
         Path m1 = base.resolve("m1");
         Path m2 = base.resolve("m2");
         tb.writeJavaFiles(m1,

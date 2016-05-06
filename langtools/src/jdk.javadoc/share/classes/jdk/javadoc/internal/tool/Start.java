@@ -66,6 +66,7 @@ import jdk.javadoc.doclet.Doclet.Option;
 import jdk.javadoc.doclet.DocletEnvironment;
 
 import static com.sun.tools.javac.main.Option.*;
+
 /**
  * Main program of Javadoc.
  * Previously named "Main".
@@ -79,6 +80,12 @@ import static com.sun.tools.javac.main.Option.*;
  * @author Neal Gafter (rewrite)
  */
 public class Start extends ToolOption.Helper {
+
+    private static final Class<?> OldStdDoclet =
+            com.sun.tools.doclets.standard.Standard.class;
+
+    private static final Class<?> StdDoclet =
+            jdk.javadoc.internal.doclets.standard.Standard.class;
     /** Context for this invocation. */
     private final Context context;
 
@@ -193,18 +200,26 @@ public class Start extends ToolOption.Helper {
         if (foot != null)
             messager.notice(foot);
 
-        if (exit) exit();
+        if (exit)
+            throw new Messager.ExitJavadoc();
     }
 
-    /**
-     * Exit
-     */
-    private void exit() {
-        messager.exit();
-    }
 
     /**
-     * Main program - external wrapper
+     * Main program - external wrapper. In order to maintain backward
+     * CLI  compatibility, we dispatch to the old tool or the old doclet's
+     * Start mechanism, based on the options present on the command line
+     * with the following precedence:
+     *   1. presence of -Xold, dispatch to old tool
+     *   2. doclet variant, if old, dispatch to old Start
+     *   3. taglet variant, if old, dispatch to old Start
+     *
+     * Thus the presence of -Xold switches the tool, soon after command files
+     * if any, are expanded, this is performed here, noting that the messager
+     * is available at this point in time.
+     * The doclet/taglet tests are performed in the begin method, further on,
+     * this is to minimize argument processing and most importantly the impact
+     * of class loader creation, needed to detect the doclet/taglet class variants.
      */
     int begin(String... argv) {
         // Preprocess @file arguments
@@ -212,14 +227,18 @@ public class Start extends ToolOption.Helper {
             argv = CommandLine.parse(argv);
         } catch (FileNotFoundException e) {
             messager.error("main.cant.read", e.getMessage());
-            exit();
+            throw new Messager.ExitJavadoc();
         } catch (IOException e) {
             e.printStackTrace(System.err);
-            exit();
+            throw new Messager.ExitJavadoc();
         }
 
-        List<String> argList = Arrays.asList(argv);
-        boolean ok = begin(argList, Collections.<JavaFileObject> emptySet());
+        if (argv.length > 0 && "-Xold".equals(argv[0])) {
+            messager.warning("main.legacy_api");
+            String[] nargv = Arrays.copyOfRange(argv, 1, argv.length);
+            return com.sun.tools.javadoc.Main.execute(nargv);
+        }
+        boolean ok = begin(Arrays.asList(argv), Collections.<JavaFileObject> emptySet());
         return ok ? 0 : 1;
     }
 
@@ -231,11 +250,11 @@ public class Start extends ToolOption.Helper {
         List<String> opts = new ArrayList<>();
         for (String opt: options)
             opts.add(opt);
+
         return begin(opts, fileObjects);
     }
 
     private boolean begin(List<String> options, Iterable<? extends JavaFileObject> fileObjects) {
-
         fileManager = context.get(JavaFileManager.class);
         if (fileManager == null) {
             JavacFileManager.preRegister(context);
@@ -244,20 +263,21 @@ public class Start extends ToolOption.Helper {
                 ((BaseFileManager) fileManager).autoClose = true;
             }
         }
-        // locale and doclet needs to be determined first
+        // locale, doclet and maybe taglet, needs to be determined first
         docletClass = preProcess(fileManager, options);
-
         if (jdk.javadoc.doclet.Doclet.class.isAssignableFrom(docletClass)) {
             // no need to dispatch to old, safe to init now
             initMessager();
             messager.setLocale(locale);
             try {
-                doclet = (Doclet) docletClass.newInstance();
+                @SuppressWarnings("deprecation")
+                Object o = docletClass.newInstance();
+                doclet = (Doclet) o;
             } catch (InstantiationException | IllegalAccessException exc) {
                 exc.printStackTrace();
                 if (!apiMode) {
                     error("main.could_not_instantiate_class", docletClass);
-                    messager.exit();
+                    throw new Messager.ExitJavadoc();
                 }
                 throw new ClientCodeException(exc);
             }
@@ -267,6 +287,7 @@ public class Start extends ToolOption.Helper {
                         = new com.sun.tools.javadoc.Start(context);
                 return ostart.begin(docletClass, options, fileObjects);
             }
+            warn("main.legacy_api");
             String[] array = options.toArray(new String[options.size()]);
             return com.sun.tools.javadoc.Main.execute(array) == 0;
         }
@@ -309,27 +330,6 @@ public class Start extends ToolOption.Helper {
             messager.flush();
         }
         return !failed;
-    }
-
-    /**
-     * Ensures that the module of the given class is readable to this
-     * module.
-     * @param targetClass class in module to be made readable
-     */
-    private void ensureReadable(Class<?> targetClass) {
-        try {
-            Method getModuleMethod = Class.class.getMethod("getModule");
-            Object thisModule = getModuleMethod.invoke(this.getClass());
-            Object targetModule = getModuleMethod.invoke(targetClass);
-
-            Class<?> moduleClass = getModuleMethod.getReturnType();
-            Method addReadsMethod = moduleClass.getMethod("addReads", moduleClass);
-            addReadsMethod.invoke(thisModule, targetModule);
-        } catch (NoSuchMethodException e) {
-            // ignore
-        } catch (Exception e) {
-            throw new InternalError(e);
-        }
     }
 
     /**
@@ -459,6 +459,11 @@ public class Start extends ToolOption.Helper {
         String userDocletPath = null;
         String userDocletName = null;
 
+        // taglet specifying arguments, since tagletpath is a doclet
+        // functionality, assume they are repeated and inspect all.
+        List<File> userTagletPath = new ArrayList<>();
+        List<String> userTagletNames = new ArrayList<>();
+
         // Step 1: loop through the args, set locale early on, if found.
         for (int i = 0 ; i < argv.size() ; i++) {
             String arg = argv.get(i);
@@ -470,7 +475,7 @@ public class Start extends ToolOption.Helper {
                 oneArg(argv, i++);
                 if (userDocletName != null) {
                     usageError("main.more_than_one_doclet_specified_0_and_1",
-                               userDocletName, argv.get(i));
+                            userDocletName, argv.get(i));
                 }
                 if (docletName != null) {
                     usageError("main.more_than_one_doclet_specified_0_and_1",
@@ -484,13 +489,20 @@ public class Start extends ToolOption.Helper {
                 } else {
                     userDocletPath += File.pathSeparator + argv.get(i);
                 }
+            } else if ("-taglet".equals(arg)) {
+                userTagletNames.add(argv.get(i + 1));
+            } else if ("-tagletpath".equals(arg)) {
+                for (String pathname : argv.get(i + 1).split(File.pathSeparator)) {
+                    userTagletPath.add(new File(pathname));
+                }
             }
         }
-        // Step 2: a doclet has already been provided,
-        // nothing more to do.
+
+        // Step 2: a doclet is provided, nothing more to do.
         if (docletClass != null) {
             return docletClass;
         }
+
         // Step 3: doclet name specified ? if so find a ClassLoader,
         // and load it.
         if (userDocletName != null) {
@@ -506,38 +518,78 @@ public class Start extends ToolOption.Helper {
                     try {
                         ((StandardJavaFileManager)fileManager).setLocation(DOCLET_PATH, paths);
                     } catch (IOException ioe) {
-                        panic("main.doclet_no_classloader_found", ioe);
-                        return null; // keep compiler happy
+                        error("main.doclet_could_not_set_location", paths);
+                        throw new Messager.ExitJavadoc();
                     }
                 }
                 cl = fileManager.getClassLoader(DOCLET_PATH);
                 if (cl == null) {
                     // despite doclet specified on cmdline no classloader found!
-                    panic("main.doclet_no_classloader_found", userDocletName);
-                    return null; // keep compiler happy
-                }
-                try {
-                    Class<?> klass = cl.loadClass(userDocletName);
-                    ensureReadable(klass);
-                    return klass;
-                } catch (ClassNotFoundException cnfe) {
-                    panic("main.doclet_class_not_found", userDocletName);
-                    return null; // keep compiler happy
+                    error("main.doclet_no_classloader_found", userDocletName);
+                    throw new Messager.ExitJavadoc();
                 }
             }
+            try {
+                Class<?> klass = cl.loadClass(userDocletName);
+                return klass;
+            } catch (ClassNotFoundException cnfe) {
+                error("main.doclet_class_not_found", userDocletName);
+                throw new Messager.ExitJavadoc();
+            }
         }
-        // Step 4: we have a doclet, try loading it, otherwise
-        // return back the standard doclet
+
+        // Step 4: we have a doclet, try loading it
         if (docletName != null) {
             try {
                 return Class.forName(docletName, true, getClass().getClassLoader());
             } catch (ClassNotFoundException cnfe) {
-                panic("main.doclet_class_not_found", userDocletName);
-                return null; // happy compiler, should not happen
+                error("main.doclet_class_not_found", userDocletName);
+                throw new Messager.ExitJavadoc();
             }
-        } else {
-            return jdk.javadoc.internal.doclets.standard.Standard.class;
         }
+
+        // Step 5: we don't have a doclet specified, do we have taglets ?
+        if (!userTagletNames.isEmpty() && hasOldTaglet(userTagletNames, userTagletPath)) {
+            // found a bogey, return the old doclet
+            return OldStdDoclet;
+        }
+
+        // finally
+        return StdDoclet;
+    }
+
+    /*
+     * This method returns true iff it finds a legacy taglet, but for
+     * all other conditions including errors it returns false, allowing
+     * nature to take its own course.
+     */
+    private boolean hasOldTaglet(List<String> tagletNames, List<File> tagletPaths) {
+        if (!fileManager.hasLocation(TAGLET_PATH)) {
+            try {
+                ((StandardJavaFileManager) fileManager).setLocation(TAGLET_PATH, tagletPaths);
+            } catch (IOException ioe) {
+                error("main.doclet_could_not_set_location", tagletPaths);
+                throw new Messager.ExitJavadoc();
+            }
+        }
+        ClassLoader cl = fileManager.getClassLoader(TAGLET_PATH);
+        if (cl == null) {
+            // no classloader found!
+            error("main.doclet_no_classloader_found", tagletNames.get(0));
+            throw new Messager.ExitJavadoc();
+        }
+        for (String tagletName : tagletNames) {
+            try {
+                Class<?> klass = cl.loadClass(tagletName);
+                if (com.sun.tools.doclets.Taglet.class.isAssignableFrom(klass)) {
+                    return true;
+                }
+            } catch (ClassNotFoundException cnfe) {
+                error("main.doclet_class_not_found", tagletName);
+                throw new Messager.ExitJavadoc();
+            }
+        }
+        return false;
     }
 
     private void parseArgs(List<String> args, List<String> javaNames) {
@@ -595,14 +647,12 @@ public class Start extends ToolOption.Helper {
         usage(true);
     }
 
-    // a terminal call, will not return
-    void panic(String key, Object... args) {
-        error(key, args);
-        messager.exit();
-    }
-
     void error(String key, Object... args) {
         messager.error(key, args);
+    }
+
+    void warn(String key, Object... args)  {
+        messager.warning(key, args);
     }
 
     /**

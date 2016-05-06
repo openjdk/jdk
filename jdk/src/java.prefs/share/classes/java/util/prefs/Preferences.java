@@ -238,10 +238,11 @@ public abstract class Preferences {
             // dependent on the invoking thread.
             // Checking AllPermission also seems wrong.
             try {
-                return (PreferencesFactory)
-                    Class.forName(factoryName, false,
-                                  ClassLoader.getSystemClassLoader())
+                @SuppressWarnings("deprecation")
+                Object result =Class.forName(factoryName, false,
+                                             ClassLoader.getSystemClassLoader())
                     .newInstance();
+                return (PreferencesFactory)result;
             } catch (Exception ex) {
                 try {
                     // workaround for javaws, plugin,
@@ -250,11 +251,12 @@ public abstract class Preferences {
                     if (sm != null) {
                         sm.checkPermission(new java.security.AllPermission());
                     }
-                    return (PreferencesFactory)
-                        Class.forName(factoryName, false,
-                                      Thread.currentThread()
-                                      .getContextClassLoader())
+                    @SuppressWarnings("deprecation")
+                    Object result = Class.forName(factoryName, false,
+                                                  Thread.currentThread()
+                                                  .getContextClassLoader())
                         .newInstance();
+                    return (PreferencesFactory) result;
                 } catch (Exception e) {
                     throw new InternalError(
                         "Can't instantiate Preferences factory "
@@ -299,9 +301,10 @@ public abstract class Preferences {
             platformFactory = "java.util.prefs.FileSystemPreferencesFactory";
         }
         try {
-            return (PreferencesFactory)
-                Class.forName(platformFactory, false,
-                              Preferences.class.getClassLoader()).newInstance();
+            @SuppressWarnings("deprecation")
+            Object result = Class.forName(platformFactory, false,
+                                          Preferences.class.getClassLoader()).newInstance();
+            return (PreferencesFactory) result;
         } catch (Exception e) {
             throw new InternalError(
                 "Can't instantiate platform default Preferences factory "

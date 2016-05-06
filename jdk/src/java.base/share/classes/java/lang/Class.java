@@ -470,7 +470,7 @@ public final class Class<T> implements java.io.Serializable,
      * expression with an empty argument list.  The class is initialized if it
      * has not already been initialized.
      *
-     * <p>Note that this method propagates any exception thrown by the
+     * @deprecated This method propagates any exception thrown by the
      * nullary constructor, including a checked exception.  Use of
      * this method effectively bypasses the compile-time exception
      * checking that would otherwise be performed by the compiler.
@@ -500,6 +500,7 @@ public final class Class<T> implements java.io.Serializable,
      *          of this class.
      */
     @CallerSensitive
+    @Deprecated(since="9")
     public T newInstance()
         throws InstantiationException, IllegalAccessException
     {

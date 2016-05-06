@@ -81,7 +81,6 @@ class SynthSplitPaneDivider extends BasicSplitPaneDivider {
 
         context.getPainter().paintSplitPaneDividerForeground(context, g, 0, 0,
                 getWidth(), getHeight(), splitPane.getOrientation());
-        context.dispose();
 
         // super.paint(g2);
         for (int counter = 0; counter < getComponentCount(); counter++) {

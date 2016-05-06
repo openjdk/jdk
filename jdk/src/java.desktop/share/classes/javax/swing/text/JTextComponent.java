@@ -2580,7 +2580,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
          * @param e the DocumentEvent
          */
         public void insertUpdate(DocumentEvent e) {
-            final Integer pos = new Integer (e.getOffset());
+            final Integer pos = e.getOffset();
             if (SwingUtilities.isEventDispatchThread()) {
                 firePropertyChange(ACCESSIBLE_TEXT_PROPERTY, null, pos);
             } else {
@@ -2602,7 +2602,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
          * @param e the DocumentEvent
          */
         public void removeUpdate(DocumentEvent e) {
-            final Integer pos = new Integer (e.getOffset());
+            final Integer pos = e.getOffset();
             if (SwingUtilities.isEventDispatchThread()) {
                 firePropertyChange(ACCESSIBLE_TEXT_PROPERTY, null, pos);
             } else {
@@ -2624,7 +2624,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
          * @param e the DocumentEvent
          */
         public void changedUpdate(DocumentEvent e) {
-            final Integer pos = new Integer (e.getOffset());
+            final Integer pos = e.getOffset();
             if (SwingUtilities.isEventDispatchThread()) {
                 firePropertyChange(ACCESSIBLE_TEXT_PROPERTY, null, pos);
             } else {

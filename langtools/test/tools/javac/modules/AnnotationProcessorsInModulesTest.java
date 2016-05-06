@@ -156,7 +156,7 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
     Path classes;
 
     @Test
-    void testUseOnlyOneProcessor(Path base) throws Exception {
+    public void testUseOnlyOneProcessor(Path base) throws Exception {
         initialization(base);
         String log = new JavacTask(tb)
                 .options("-processormodulepath", processorCompiledModules.toString(),
@@ -172,7 +172,7 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
     }
 
     @Test
-    void testAnnotationProcessorExecutionOrder(Path base) throws Exception {
+    public void testAnnotationProcessorExecutionOrder(Path base) throws Exception {
         initialization(base);
         List<String> log = new JavacTask(tb)
                 .options("-processormodulepath", processorCompiledModules.toString(),
@@ -202,7 +202,7 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
     }
 
     @Test
-    void testErrorOutputIfOneProcessorNameIsIncorrect(Path base) throws Exception {
+    public void testErrorOutputIfOneProcessorNameIsIncorrect(Path base) throws Exception {
         initialization(base);
         String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-processormodulepath", processorCompiledModules.toString(),
@@ -218,7 +218,7 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
     }
 
     @Test
-    void testOptionsExclusion(Path base) throws Exception {
+    public void testOptionsExclusion(Path base) throws Exception {
         initialization(base);
         List<String> log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-processormodulepath", processorCompiledModules.toString(),

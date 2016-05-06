@@ -28,18 +28,18 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
 
-/**
- * Used to implement WebSocket. Each RawChannel corresponds to
- * a TCP connection (SocketChannel) but is connected to a Selector
- * and an ExecutorService for invoking the send and receive callbacks
- * Also includes SSL processing.
- */
-class RawChannel implements ByteChannel, GatheringByteChannel {
+//
+// Used to implement WebSocket. Each RawChannel corresponds to a TCP connection
+// (SocketChannel) but is connected to a Selector and an ExecutorService for
+// invoking the send and receive callbacks. Also includes SSL processing.
+//
+final class RawChannel implements ByteChannel, GatheringByteChannel {
 
     private final HttpClientImpl client;
     private final HttpConnection connection;
-    private boolean closed;
+    private volatile boolean closed;
 
     private interface RawEvent {
 
@@ -49,8 +49,6 @@ class RawChannel implements ByteChannel, GatheringByteChannel {
         /** called when event occurs. */
         void handle();
     }
-
-    interface BlockingEvent extends RawEvent { }
 
     interface NonBlockingEvent extends RawEvent { }
 
@@ -64,39 +62,40 @@ class RawChannel implements ByteChannel, GatheringByteChannel {
         private final RawEvent re;
 
         RawAsyncEvent(RawEvent re) {
+            super(AsyncEvent.BLOCKING); // BLOCKING & !REPEATING
             this.re = re;
         }
 
+        RawAsyncEvent(RawEvent re, int flags) {
+            super(flags);
+            this.re = re;
+        }
+
+        @Override
         public SelectableChannel channel() {
             return connection.channel();
         }
 
         // must return the selector interest op flags OR'd
+        @Override
         public int interestOps() {
             return re.interestOps();
         }
 
         // called when event occurs
+        @Override
         public void handle() {
             re.handle();
         }
 
-        public void abort() {}
+        @Override
+        public void abort() { }
     }
 
-    private class BlockingRawAsyncEvent extends RawAsyncEvent
-            implements AsyncEvent.Blocking {
-
-        BlockingRawAsyncEvent(RawEvent re) {
-            super(re);
-        }
-    }
-
-    private class NonBlockingRawAsyncEvent extends RawAsyncEvent
-            implements AsyncEvent.NonBlocking {
+    private class NonBlockingRawAsyncEvent extends RawAsyncEvent {
 
         NonBlockingRawAsyncEvent(RawEvent re) {
-            super(re);
+            super(re, 0); // !BLOCKING & !REPEATING
         }
     }
 
@@ -105,17 +104,24 @@ class RawChannel implements ByteChannel, GatheringByteChannel {
      * (i.e. register new event for each callback)
      */
     public void registerEvent(RawEvent event) throws IOException {
-        if (event instanceof BlockingEvent) {
-            client.registerEvent(new BlockingRawAsyncEvent(event));
-        } else if (event instanceof NonBlockingEvent) {
-            client.registerEvent(new NonBlockingRawAsyncEvent(event));
-        } else {
+        if (!(event instanceof NonBlockingEvent)) {
             throw new InternalError();
+        }
+        if ((event.interestOps() & SelectionKey.OP_READ) != 0
+                && connection.buffer.hasRemaining()) {
+            // FIXME: a hack to deal with leftovers from previous reads into an
+            // internal buffer (works in conjunction with change in
+            // java.net.http.PlainHttpConnection.readImpl(java.nio.ByteBuffer)
+            connection.channel().configureBlocking(false);
+            event.handle();
+        } else {
+            client.registerEvent(new NonBlockingRawAsyncEvent(event));
         }
     }
 
     @Override
     public int read(ByteBuffer dst) throws IOException {
+        assert !connection.channel().isBlocking();
         return connection.read(dst);
     }
 

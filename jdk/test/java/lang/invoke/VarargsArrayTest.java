@@ -37,7 +37,7 @@ import com.oracle.testlibrary.jsr292.CodeCacheOverflowProcessor;
  * @library /lib/testlibrary /lib/testlibrary/jsr292
  * @compile/module=java.base java/lang/invoke/MethodHandleHelper.java
  * @run main/bootclasspath VarargsArrayTest
- * @run main/bootclasspath -DVarargsArrayTest.MAX_ARITY=255 -DVarargsArrayTest.START_ARITY=250
+ * @run main/bootclasspath/othervm -DVarargsArrayTest.MAX_ARITY=255 -DVarargsArrayTest.START_ARITY=250
  *                         VarargsArrayTest
  */
 

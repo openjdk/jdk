@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test 8151754
  * @summary Testing start-up options.
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -34,6 +34,7 @@
  */
 
 import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -47,6 +48,7 @@ import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 @Test
 public class StartOptionTest {
@@ -55,9 +57,24 @@ public class StartOptionTest {
     private ByteArrayOutputStream err;
 
     private JShellTool getShellTool() {
-        return new JShellTool(null, new PrintStream(out), new PrintStream(err), null, null, null,
-                              null, new ReplToolTesting.MemoryPreferences(),
-                              Locale.ROOT);
+        class NoOutputAllowedStream extends OutputStream {
+            private final String label;
+            NoOutputAllowedStream(String label) {
+               this.label = label;
+            }
+            @Override
+            public void write(int b) { fail("Unexpected output to: " + label); }
+        }
+        return new JShellTool(
+                new TestingInputStream(),
+                new PrintStream(out),
+                new PrintStream(err),
+                new PrintStream(new NoOutputAllowedStream("console")),
+                new TestingInputStream(),
+                new PrintStream(new NoOutputAllowedStream("userout")),
+                new PrintStream(new NoOutputAllowedStream("usererr")),
+                new ReplToolTesting.MemoryPreferences(),
+                Locale.ROOT);
     }
 
     private String getOutput() {
@@ -130,6 +147,12 @@ public class StartOptionTest {
             start("", "Conflicting -classpath option.", cp, ".", "-classpath", ".");
             start("", "Argument to -classpath missing.", cp);
         }
+    }
+
+    @Test
+    public void testNegFeedbackOption() throws Exception {
+        start("", "Argument to -feedback missing. Mode required.", "-feedback");
+        start("", "Does not match any current feedback mode: blorp -- -feedback blorp", "-feedback", "blorp");
     }
 
     @Test

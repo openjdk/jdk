@@ -26,7 +26,7 @@
  * @bug 8132734
  * @summary Test the System properties for JarFile that support multi-release jar files
  * @library /lib/testlibrary/java/util/jar
- * @build Compiler JarBuilder CreateMultiReleaseTestJars
+ * @build Compiler JarBuilder CreateMultiReleaseTestJars SimpleHttpServer
  * @run testng MultiReleaseJarHttpProperties
  * @run testng/othervm -Djdk.util.jar.version=0 MultiReleaseJarHttpProperties
  * @run testng/othervm -Djdk.util.jar.version=8 MultiReleaseJarHttpProperties
@@ -42,8 +42,6 @@
  * @run testng/othervm -Djdk.util.jar.enableMultiRelease=false MultiReleaseJarHttpProperties
  * @run testng/othervm -Djdk.util.jar.enableMultiRelease=force MultiReleaseJarHttpProperties
  */
-
-import com.sun.net.httpserver.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -73,7 +71,7 @@ public class MultiReleaseJarHttpProperties extends MultiReleaseJarProperties {
     @Override
     protected void initializeClassLoader() throws Exception {
         URL[] urls = new URL[]{
-                new URL("http://localhost:" + server.getPort() + "/multi-release-jar")
+                new URL("http://localhost:" + server.getPort() + "/multi-release.jar")
         };
         cldr = new URLClassLoader(urls);
         // load any class, Main is convenient and in the root entries
@@ -112,45 +110,3 @@ public class MultiReleaseJarHttpProperties extends MultiReleaseJarProperties {
         getResource(rootClass, resource);
     }
 }
-
-/**
- * Extremely simple server that only performs one task.  The server listens for
- * requests on the ephemeral port.  If it sees a request that begins with
- * "/multi-release-jar", it consumes the request and returns a stream of bytes
- * representing the jar file multi-release.jar found in "userdir".
- */
-class SimpleHttpServer {
-    private static final String userdir = System.getProperty("user.dir", ".");
-    private static final Path multirelease = Paths.get(userdir, "multi-release.jar");
-
-    private final HttpServer server;
-
-    public SimpleHttpServer() throws IOException {
-        server = HttpServer.create();
-    }
-
-    public void start() throws IOException {
-        server.bind(new InetSocketAddress(0), 0);
-        server.createContext("/multi-release-jar", t -> {
-            try (InputStream is = t.getRequestBody()) {
-                is.readAllBytes();  // probably not necessary to consume request
-                byte[] bytes = Files.readAllBytes(multirelease);
-                t.sendResponseHeaders(200, bytes.length);
-                try (OutputStream os = t.getResponseBody()) {
-                    os.write(bytes);
-                }
-            }
-        });
-        server.setExecutor(null); // creates a default executor
-        server.start();
-    }
-
-    public void stop() {
-        server.stop(0);
-    }
-
-    int getPort() {
-        return server.getAddress().getPort();
-    }
-}
-

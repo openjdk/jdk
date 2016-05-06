@@ -374,6 +374,32 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         });
 
 
+        // WeakCompareAndSetVolatile
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            boolean r = vh.weakCompareAndSetVolatile(null, 1, 1);
+        });
+        checkCCE(() -> { // receiver reference class
+            boolean r = vh.weakCompareAndSetVolatile(Void.class, 1, 1);
+        });
+        checkWMTE(() -> { // expected reference class
+            boolean r = vh.weakCompareAndSetVolatile(recv, Void.class, 1);
+        });
+        checkWMTE(() -> { // actual reference class
+            boolean r = vh.weakCompareAndSetVolatile(recv, 1, Void.class);
+        });
+        checkWMTE(() -> { // receiver primitive class
+            boolean r = vh.weakCompareAndSetVolatile(0, 1, 1);
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            boolean r = vh.weakCompareAndSetVolatile();
+        });
+        checkWMTE(() -> { // >
+            boolean r = vh.weakCompareAndSetVolatile(recv, 1, 1, Void.class);
+        });
+
+
         // WeakCompareAndSetAcquire
         // Incorrect argument types
         checkNPE(() -> { // null receiver
@@ -972,6 +998,23 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         });
 
 
+        // WeakCompareAndSetVolatile
+        // Incorrect argument types
+        checkWMTE(() -> { // expected reference class
+            boolean r = vh.weakCompareAndSetVolatile(Void.class, 1);
+        });
+        checkWMTE(() -> { // actual reference class
+            boolean r = vh.weakCompareAndSetVolatile(1, Void.class);
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            boolean r = vh.weakCompareAndSetVolatile();
+        });
+        checkWMTE(() -> { // >
+            boolean r = vh.weakCompareAndSetVolatile(1, 1, Void.class);
+        });
+
+
         // WeakCompareAndSetAcquire
         // Incorrect argument types
         checkWMTE(() -> { // expected reference class
@@ -1563,6 +1606,35 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         });
         checkWMTE(() -> { // >
             boolean r = vh.weakCompareAndSet(array, 0, 1, 1, Void.class);
+        });
+
+
+        // WeakCompareAndSetVolatile
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            boolean r = vh.weakCompareAndSetVolatile(null, 0, 1, 1);
+        });
+        checkCCE(() -> { // receiver reference class
+            boolean r = vh.weakCompareAndSetVolatile(Void.class, 0, 1, 1);
+        });
+        checkWMTE(() -> { // expected reference class
+            boolean r = vh.weakCompareAndSetVolatile(array, 0, Void.class, 1);
+        });
+        checkWMTE(() -> { // actual reference class
+            boolean r = vh.weakCompareAndSetVolatile(array, 0, 1, Void.class);
+        });
+        checkWMTE(() -> { // receiver primitive class
+            boolean r = vh.weakCompareAndSetVolatile(0, 0, 1, 1);
+        });
+        checkWMTE(() -> { // index reference class
+            boolean r = vh.weakCompareAndSetVolatile(array, Void.class, 1, 1);
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            boolean r = vh.weakCompareAndSetVolatile();
+        });
+        checkWMTE(() -> { // >
+            boolean r = vh.weakCompareAndSetVolatile(array, 0, 1, 1, Void.class);
         });
 
 

@@ -550,7 +550,7 @@ public class DocEnv {
         // Messager should be replaced by a more general
         // compilation environment.  This can probably
         // subsume DocEnv as well.
-        messager.exit();
+        throw new Messager.ExitJavadoc();
     }
 
     /**

@@ -88,7 +88,6 @@ public class SynthOptionPaneUI extends BasicOptionPaneUI implements
                 installKeyboardActions();
             }
         }
-        context.dispose();
     }
 
     /**
@@ -99,7 +98,6 @@ public class SynthOptionPaneUI extends BasicOptionPaneUI implements
         SynthContext context = getContext(optionPane, ENABLED);
 
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
     }
 
@@ -125,7 +123,6 @@ public class SynthOptionPaneUI extends BasicOptionPaneUI implements
             SynthContext context = getContext(optionPane, ENABLED);
             optionPane.add(Box.createVerticalStrut(context.getStyle().
                        getInt(context, "OptionPane.separatorPadding", 6)));
-            context.dispose();
         }
         optionPane.add(createButtonArea());
         optionPane.applyComponentOrientation(optionPane.getComponentOrientation());
@@ -167,7 +164,6 @@ public class SynthOptionPaneUI extends BasicOptionPaneUI implements
         context.getPainter().paintOptionPaneBackground(context,
                           g, 0, 0, c.getWidth(), c.getHeight());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -184,7 +180,6 @@ public class SynthOptionPaneUI extends BasicOptionPaneUI implements
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -259,7 +254,6 @@ public class SynthOptionPaneUI extends BasicOptionPaneUI implements
         SynthContext context = getContext(optionPane, ENABLED);
         cons.anchor = context.getStyle().getInt(context,
                       "OptionPane.messageAnchor", GridBagConstraints.CENTER);
-        context.dispose();
 
         cons.insets = new Insets(0,0,3,0);
 

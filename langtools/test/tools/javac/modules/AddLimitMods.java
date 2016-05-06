@@ -79,7 +79,7 @@ public class AddLimitMods extends ModuleTestBase {
     }
 
     @Test
-    void testManual(Path base) throws Exception {
+    public void testManual(Path base) throws Exception {
         Path moduleSrc = base.resolve("module-src");
         Path m1 = moduleSrc.resolve("m1");
 
@@ -176,7 +176,7 @@ public class AddLimitMods extends ModuleTestBase {
     }
 
     @Test
-    void testAllModulePath(Path base) throws Exception {
+    public void testAllModulePath(Path base) throws Exception {
         if (Files.isDirectory(base))
             tb.cleanDirectory(base);
 
@@ -284,7 +284,7 @@ public class AddLimitMods extends ModuleTestBase {
     }
 
     @Test
-    void testRuntime2Compile(Path base) throws Exception {
+    public void testRuntime2Compile(Path base) throws Exception {
         Path classpathSrc = base.resolve("classpath-src");
         Path classpathOut = base.resolve("classpath-out");
 

@@ -39,10 +39,11 @@ class HttpRequestBuilderImpl extends HttpRequest.Builder {
     private HttpClient.Version version;
     private final HttpClientImpl client;
     private ProxySelector proxy;
-    private long timeval = 0;
+    private long timeval;
 
     public HttpRequestBuilderImpl(HttpClientImpl client, URI uri) {
         this.client = client;
+        checkURI(uri);
         this.uri = uri;
         this.version = client.version();
         this.userHeaders = new HttpHeadersImpl();
@@ -58,8 +59,15 @@ class HttpRequestBuilderImpl extends HttpRequest.Builder {
     @Override
     public HttpRequestBuilderImpl uri(URI uri) {
         Objects.requireNonNull(uri);
+        checkURI(uri);
         this.uri = uri;
         return this;
+    }
+
+    private static void checkURI(URI uri) {
+        String scheme = uri.getScheme().toLowerCase();
+        if (!scheme.equals("https") && !scheme.equals("http"))
+            throw new IllegalArgumentException("invalid URI scheme");
     }
 
     @Override

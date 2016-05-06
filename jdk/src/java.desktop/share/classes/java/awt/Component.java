@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,6 @@ import sun.awt.AWTAccessor;
 import sun.awt.ConstrainableGraphics;
 import sun.awt.SubRegionShowable;
 import sun.awt.SunToolkit;
-import sun.awt.CausedFocusEvent;
 import sun.awt.EmbeddedFrame;
 import sun.awt.dnd.SunDropTargetEvent;
 import sun.awt.im.CompositionArea;
@@ -878,7 +877,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
             {
                 comp.setGraphicsConfiguration(gc);
             }
-            public boolean requestFocus(Component comp, CausedFocusEvent.Cause cause) {
+            public boolean requestFocus(Component comp, FocusEvent.Cause cause) {
                 return comp.requestFocus(cause);
             }
             public boolean canBeFocusOwner(Component comp) {
@@ -7538,7 +7537,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         requestFocusHelper(false, true);
     }
 
-    boolean requestFocus(CausedFocusEvent.Cause cause) {
+    boolean requestFocus(FocusEvent.Cause cause) {
         return requestFocusHelper(false, true, cause);
     }
 
@@ -7605,7 +7604,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         return requestFocusHelper(temporary, true);
     }
 
-    boolean requestFocus(boolean temporary, CausedFocusEvent.Cause cause) {
+    boolean requestFocus(boolean temporary, FocusEvent.Cause cause) {
         return requestFocusHelper(temporary, true, cause);
     }
     /**
@@ -7656,7 +7655,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         return requestFocusHelper(false, false);
     }
 
-    boolean requestFocusInWindow(CausedFocusEvent.Cause cause) {
+    boolean requestFocusInWindow(FocusEvent.Cause cause) {
         return requestFocusHelper(false, false, cause);
     }
 
@@ -7721,18 +7720,18 @@ public abstract class Component implements ImageObserver, MenuContainer,
         return requestFocusHelper(temporary, false);
     }
 
-    boolean requestFocusInWindow(boolean temporary, CausedFocusEvent.Cause cause) {
+    boolean requestFocusInWindow(boolean temporary, FocusEvent.Cause cause) {
         return requestFocusHelper(temporary, false, cause);
     }
 
     final boolean requestFocusHelper(boolean temporary,
                                      boolean focusedWindowChangeAllowed) {
-        return requestFocusHelper(temporary, focusedWindowChangeAllowed, CausedFocusEvent.Cause.UNKNOWN);
+        return requestFocusHelper(temporary, focusedWindowChangeAllowed, FocusEvent.Cause.UNKNOWN);
     }
 
     final boolean requestFocusHelper(boolean temporary,
                                      boolean focusedWindowChangeAllowed,
-                                     CausedFocusEvent.Cause cause)
+                                     FocusEvent.Cause cause)
     {
         // 1) Check if the event being dispatched is a system-generated mouse event.
         AWTEvent currentEvent = EventQueue.getCurrentEvent();
@@ -7820,7 +7819,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
     private boolean isRequestFocusAccepted(boolean temporary,
                                            boolean focusedWindowChangeAllowed,
-                                           CausedFocusEvent.Cause cause)
+                                           FocusEvent.Cause cause)
     {
         if (!isFocusable() || !isVisible()) {
             if (focusLog.isLoggable(PlatformLogger.Level.FINEST)) {
@@ -7867,7 +7866,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
             return true;
         }
 
-        if (CausedFocusEvent.Cause.ACTIVATION == cause) {
+        if (FocusEvent.Cause.ACTIVATION == cause) {
             // we shouldn't call RequestFocusController in case we are
             // in activation.  We do request focus on component which
             // has got temporary focus lost and then on component which is
@@ -7899,7 +7898,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     private static class DummyRequestFocusController implements RequestFocusController {
         public boolean acceptRequestFocus(Component from, Component to,
                                           boolean temporary, boolean focusedWindowChangeAllowed,
-                                          CausedFocusEvent.Cause cause)
+                                          FocusEvent.Cause cause)
         {
             return true;
         }
@@ -7983,7 +7982,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         Component toFocus = getNextFocusCandidate();
         boolean res = false;
         if (toFocus != null && !toFocus.isFocusOwner() && toFocus != this) {
-            res = toFocus.requestFocusInWindow(CausedFocusEvent.Cause.TRAVERSAL_FORWARD);
+            res = toFocus.requestFocusInWindow(FocusEvent.Cause.TRAVERSAL_FORWARD);
         }
         if (clearOnFailure && !res) {
             if (focusLog.isLoggable(PlatformLogger.Level.FINER)) {
@@ -8063,7 +8062,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 toFocus = policy.getDefaultComponent(rootAncestor);
             }
             if (toFocus != null) {
-                res = toFocus.requestFocusInWindow(CausedFocusEvent.Cause.TRAVERSAL_BACKWARD);
+                res = toFocus.requestFocusInWindow(FocusEvent.Cause.TRAVERSAL_BACKWARD);
             }
         }
         if (clearOnFailure && !res) {
@@ -8108,7 +8107,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
             KeyboardFocusManager.getCurrentKeyboardFocusManager().
                 setGlobalCurrentFocusCycleRootPriv(fcr);
-            rootAncestor.requestFocus(CausedFocusEvent.Cause.TRAVERSAL_UP);
+            rootAncestor.requestFocus(FocusEvent.Cause.TRAVERSAL_UP);
         } else {
             Window window = getContainingWindow();
 
@@ -8118,7 +8117,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 if (toFocus != null) {
                     KeyboardFocusManager.getCurrentKeyboardFocusManager().
                         setGlobalCurrentFocusCycleRootPriv(window);
-                    toFocus.requestFocus(CausedFocusEvent.Cause.TRAVERSAL_UP);
+                    toFocus.requestFocus(FocusEvent.Cause.TRAVERSAL_UP);
                 }
             }
         }

@@ -58,7 +58,7 @@ public class HelloWorldTest extends ModuleTestBase {
         + HELLO_WORLD;
 
     @Test
-    void testLegacyMode(Path base) throws Exception {
+    public void testLegacyMode(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, HELLO_WORLD);
 
@@ -85,7 +85,7 @@ public class HelloWorldTest extends ModuleTestBase {
     }
 
     @Test
-    void testUnnamedModule(Path base) throws Exception {
+    public void testUnnamedModule(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, HELLO_WORLD);
 
@@ -101,7 +101,7 @@ public class HelloWorldTest extends ModuleTestBase {
     }
 
     @Test
-    void testSingleModule(Path base) throws Exception {
+    public void testSingleModule(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeFile(src.resolve("module-info.java"), "module m { }");
         tb.writeJavaFiles(src, PKG_HELLO_WORLD);
@@ -121,7 +121,7 @@ public class HelloWorldTest extends ModuleTestBase {
     }
 
     @Test
-    void testModuleSourcePath(Path base) throws Exception {
+    public void testModuleSourcePath(Path base) throws Exception {
         Path src = base.resolve("src");
         Path src_m1 = src.resolve("m1");
         tb.writeFile(src_m1.resolve("module-info.java"), "module m1 { }");

@@ -128,7 +128,7 @@ class Exchange {
         }
     }
 
-    HttpResponseImpl responseImpl0(HttpConnection connection)
+    private HttpResponseImpl responseImpl0(HttpConnection connection)
         throws IOException, InterruptedException
     {
         exchImpl = ExchangeImpl.get(this, connection);
@@ -136,7 +136,7 @@ class Exchange {
             request.addSystemHeader("Expect", "100-Continue");
             exchImpl.sendHeadersOnly();
             HttpResponseImpl resp = exchImpl.getResponse();
-            logResponse(resp);
+            Utils.logResponse(resp);
             if (resp.statusCode() != 100) {
                 return resp;
             }
@@ -145,7 +145,7 @@ class Exchange {
         } else {
             exchImpl.sendRequest();
             HttpResponseImpl resp = exchImpl.getResponse();
-            logResponse(resp);
+            Utils.logResponse(resp);
             return checkForUpgrade(resp, exchImpl);
         }
     }
@@ -163,9 +163,7 @@ class Exchange {
         }
         SecurityException e = securityCheck(acc);
         if (e != null) {
-            CompletableFuture<HttpResponseImpl> cf = new CompletableFuture<>();
-            cf.completeExceptionally(e);
-            return cf;
+            return CompletableFuture.failedFuture(e);
         }
         if (permissions.size() > 0) {
             return AccessController.doPrivileged(
@@ -182,9 +180,7 @@ class Exchange {
         try {
             exchImpl = ExchangeImpl.get(this, connection);
         } catch (IOException | InterruptedException e) {
-            CompletableFuture<HttpResponseImpl> cf = new CompletableFuture<>();
-            cf.completeExceptionally(e);
-            return cf;
+            return CompletableFuture.failedFuture(e);
         }
         if (request.expectContinue()) {
             request.addSystemHeader("Expect", "100-Continue");
@@ -200,23 +196,19 @@ class Exchange {
                             return exchImpl.sendBodyAsync()
                                 .thenCompose(exchImpl::getResponseAsync)
                                 .thenApply((r) -> {
-                                    logResponse(r);
+                                    Utils.logResponse(r);
                                     return r;
                                 });
                         } else {
                             Exchange.this.response = r1;
-                            logResponse(r1);
+                            Utils.logResponse(r1);
                             return CompletableFuture.completedFuture(r1);
                         }
                     });
         } else {
             return exchImpl
-                .sendHeadersAsync()
-                .thenCompose((Void v) -> {
-                    // send body and get response at same time
-                    return exchImpl.sendBodyAsync()
-                                   .thenCompose(exchImpl::getResponseAsync);
-                })
+                .sendRequestAsync()
+                .thenCompose(exchImpl::getResponseAsync)
                 .thenCompose((HttpResponseImpl r1) -> {
                     int rcode = r1.statusCode();
                     CompletableFuture<HttpResponseImpl> cf =
@@ -225,13 +217,13 @@ class Exchange {
                         return cf;
                     } else {
                         Exchange.this.response = r1;
-                        logResponse(r1);
+                        Utils.logResponse(r1);
                         return CompletableFuture.completedFuture(r1);
                     }
                 })
                 .thenApply((HttpResponseImpl response) -> {
                     this.response = response;
-                    logResponse(response);
+                    Utils.logResponse(response);
                     return response;
                 });
         }
@@ -254,9 +246,9 @@ class Exchange {
                                                  client.client2(),
                                                  this)
                         .thenCompose((Http2Connection c) -> {
+                            c.putConnection();
                             Stream s = c.getStream(1);
                             exchImpl = s;
-                            c.putConnection();
                             return s.getResponseAsync(null);
                         })
                 );
@@ -294,21 +286,6 @@ class Exchange {
     }
 
 
-    private void logResponse(HttpResponseImpl r) {
-        if (!Log.requests())
-            return;
-        StringBuilder sb = new StringBuilder();
-        String method = r.request().method();
-        URI uri = r.uri();
-        String uristring = uri == null ? "" : uri.toString();
-        sb.append('(')
-          .append(method)
-          .append(" ")
-          .append(uristring)
-          .append(") ")
-          .append(Integer.toString(r.statusCode()));
-        Log.logResponse(sb.toString());
-    }
 
     <T> CompletableFuture<T> responseBodyAsync(HttpResponse.BodyProcessor<T> processor) {
         return exchImpl.responseBodyAsync(processor);
@@ -352,9 +329,9 @@ class Exchange {
         }
 
         String method = request.method();
-        HttpHeadersImpl userHeaders = request.getUserHeaders();
+        HttpHeaders userHeaders = request.getUserHeaders();
         URI u = getURIForSecurityCheck();
-        URLPermission p = Utils.getPermission(u, method, userHeaders.directMap());
+        URLPermission p = Utils.getPermission(u, method, userHeaders.map());
 
         try {
             assert acc != null;

@@ -194,9 +194,9 @@ public final class ScriptRunnable extends AbstractScriptRunnable implements ITes
             pb.redirectError(errorFileHandle);
             final Process process = pb.start();
 
-            process.waitFor();
+            final int exitCode = process.waitFor();
 
-            if (errorFileHandle.length() > 0) {
+            if (exitCode != 0 || errorFileHandle.length() > 0) {
                 if (expectRunFailure) {
                     return;
                 }
