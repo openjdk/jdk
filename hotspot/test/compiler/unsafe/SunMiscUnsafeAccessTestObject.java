@@ -154,6 +154,7 @@ public class SunMiscUnsafeAccessTestObject {
             assertEquals(x, "bar", "failing compareAndSwap Object value");
         }
 
+        UNSAFE.putObject(base, offset, "bar");
 
         // Compare set and get
         {

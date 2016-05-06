@@ -302,7 +302,19 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
             $type$ x = UNSAFE.get$Type$(base, offset);
             assertEquals(x, $value2$, "weakCompareAndSwapRelease $type$");
         }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwap$Type$Volatile(base, offset, $value2$, $value1$);
+            }
+            assertEquals(success, true, "weakCompareAndSwapVolatile $type$");
+            $type$ x = UNSAFE.get$Type$(base, offset);
+            assertEquals(x, $value1$, "weakCompareAndSwapVolatile $type$");
+        }
+
 #end[JdkInternalMisc]
+        UNSAFE.put$Type$(base, offset, $value2$);
 
         // Compare set and get
         {

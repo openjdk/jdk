@@ -670,12 +670,15 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_weakCompareAndSwapObject:         return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Relaxed);
   case vmIntrinsics::_weakCompareAndSwapObjectAcquire:  return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Acquire);
   case vmIntrinsics::_weakCompareAndSwapObjectRelease:  return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Release);
+  case vmIntrinsics::_weakCompareAndSwapObjectVolatile: return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Volatile);
   case vmIntrinsics::_weakCompareAndSwapInt:            return inline_unsafe_load_store(T_INT,    LS_cmp_swap_weak, Relaxed);
   case vmIntrinsics::_weakCompareAndSwapIntAcquire:     return inline_unsafe_load_store(T_INT,    LS_cmp_swap_weak, Acquire);
   case vmIntrinsics::_weakCompareAndSwapIntRelease:     return inline_unsafe_load_store(T_INT,    LS_cmp_swap_weak, Release);
+  case vmIntrinsics::_weakCompareAndSwapIntVolatile:    return inline_unsafe_load_store(T_INT,    LS_cmp_swap_weak, Volatile);
   case vmIntrinsics::_weakCompareAndSwapLong:           return inline_unsafe_load_store(T_LONG,   LS_cmp_swap_weak, Relaxed);
   case vmIntrinsics::_weakCompareAndSwapLongAcquire:    return inline_unsafe_load_store(T_LONG,   LS_cmp_swap_weak, Acquire);
   case vmIntrinsics::_weakCompareAndSwapLongRelease:    return inline_unsafe_load_store(T_LONG,   LS_cmp_swap_weak, Release);
+  case vmIntrinsics::_weakCompareAndSwapLongVolatile:   return inline_unsafe_load_store(T_LONG,   LS_cmp_swap_weak, Volatile);
 
   case vmIntrinsics::_compareAndExchangeObjectVolatile: return inline_unsafe_load_store(T_OBJECT, LS_cmp_exchange,  Volatile);
   case vmIntrinsics::_compareAndExchangeObjectAcquire:  return inline_unsafe_load_store(T_OBJECT, LS_cmp_exchange,  Acquire);
