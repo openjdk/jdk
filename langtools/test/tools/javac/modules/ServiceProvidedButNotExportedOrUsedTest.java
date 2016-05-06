@@ -49,7 +49,7 @@ public class ServiceProvidedButNotExportedOrUsedTest extends ModuleTestBase {
     }
 
     @Test
-    void testWarning(Path base) throws Exception {
+    public void testWarning(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { provides p1.C1 with p2.C2; }",
@@ -76,7 +76,7 @@ public class ServiceProvidedButNotExportedOrUsedTest extends ModuleTestBase {
     }
 
     @Test
-    void testImplementationMustBeInSameModuleAsProvidesDirective(Path base) throws Exception {
+    public void testImplementationMustBeInSameModuleAsProvidesDirective(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("m1"),
                 "module m1 { exports p1; }",

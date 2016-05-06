@@ -68,20 +68,13 @@ public final class ImagePluginConfiguration {
     private ImagePluginConfiguration() {
     }
 
-    public static ImagePluginStack parseConfiguration(Jlink.PluginsConfiguration plugins)
-            throws Exception {
-        return parseConfiguration(plugins, null);
-    }
-
     /*
      * Create a stack of plugins from a a configuration.
-     *
      */
-    public static ImagePluginStack parseConfiguration(Jlink.PluginsConfiguration pluginsConfiguration,
-            String bom)
+    public static ImagePluginStack parseConfiguration(Jlink.PluginsConfiguration pluginsConfiguration)
             throws Exception {
         if (pluginsConfiguration == null) {
-            return new ImagePluginStack(bom);
+            return new ImagePluginStack();
         }
         Map<Plugin.CATEGORY, List<Plugin>> plugins = new LinkedHashMap<>();
         for (Plugin.CATEGORY cat : CATEGORIES_ORDER) {
@@ -150,7 +143,7 @@ public final class ImagePluginConfiguration {
                 }
 
                 @Override
-                public void storeFiles(Pool files, String bom) {
+                public void storeFiles(Pool files) {
                     throw new PluginException("No directory setup to store files");
                 }
             };
@@ -158,6 +151,6 @@ public final class ImagePluginConfiguration {
 
         PluginContext ctxt = pluginsConfiguration.getPluginContext();
         return new ImagePluginStack(builder, transformerPlugins,
-                lastSorter, postProcessingPlugins, ctxt, bom);
+                lastSorter, postProcessingPlugins, ctxt);
     }
 }

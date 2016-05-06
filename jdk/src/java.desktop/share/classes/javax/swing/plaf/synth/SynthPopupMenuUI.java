@@ -77,7 +77,6 @@ public class SynthPopupMenuUI extends BasicPopupMenuUI
                 installKeyboardActions();
             }
         }
-        context.dispose();
     }
 
     /**
@@ -97,7 +96,6 @@ public class SynthPopupMenuUI extends BasicPopupMenuUI
         SynthContext context = getContext(popupMenu, ENABLED);
 
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
 
         if (popupMenu.getLayout() instanceof UIResource) {
@@ -150,7 +148,6 @@ public class SynthPopupMenuUI extends BasicPopupMenuUI
         context.getPainter().paintPopupMenuBackground(context,
                           g, 0, 0, c.getWidth(), c.getHeight());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -167,7 +164,6 @@ public class SynthPopupMenuUI extends BasicPopupMenuUI
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**

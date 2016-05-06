@@ -399,7 +399,9 @@ public final class ResourceManager {
                 className = parser.nextToken() + classSuffix;
                 try {
                     // System.out.println("loading " + className);
-                    factory = helper.loadClass(className, loader).newInstance();
+                    @SuppressWarnings("deprecation") // Class.newInstance
+                    Object tmp = helper.loadClass(className, loader).newInstance();
+                    factory = tmp;
                 } catch (InstantiationException e) {
                     NamingException ne =
                         new NamingException("Cannot instantiate " + className);

@@ -47,7 +47,7 @@ public class AbstractOrInnerClassServiceImplTest extends ModuleTestBase {
     }
 
     @Test
-    void testAbstractServiceImpl(Path base) throws Exception {
+    public void testAbstractServiceImpl(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { provides p1.Service with p2.Impl; }",
@@ -68,7 +68,7 @@ public class AbstractOrInnerClassServiceImplTest extends ModuleTestBase {
     }
 
     @Test
-    void testInnerClassServiceImpl(Path base) throws Exception {
+    public void testInnerClassServiceImpl(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { provides p1.Service with p2.Outer.Inner; }",
@@ -89,7 +89,7 @@ public class AbstractOrInnerClassServiceImplTest extends ModuleTestBase {
     }
 
     @Test
-    void testInnerInterfaceServiceImpl(Path base) throws Exception {
+    public void testInnerInterfaceServiceImpl(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { provides p1.Service with p2.Outer.Inner; }",

@@ -88,7 +88,6 @@ public class SynthTextAreaUI extends BasicTextAreaUI implements SynthUI {
         getComponent().removeFocusListener(handler);
 
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
         super.uninstallDefaults();
     }
@@ -107,7 +106,6 @@ public class SynthTextAreaUI extends BasicTextAreaUI implements SynthUI {
                 installKeyboardActions();
             }
         }
-        context.dispose();
     }
 
     /**
@@ -142,7 +140,6 @@ public class SynthTextAreaUI extends BasicTextAreaUI implements SynthUI {
         context.getPainter().paintTextAreaBackground(context,
                           g, 0, 0, c.getWidth(), c.getHeight());
         paint(context, g);
-        context.dispose();
     }
 
     /**

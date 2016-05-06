@@ -29,8 +29,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.module.ModuleDescriptor;
-import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Layer;
@@ -85,7 +83,7 @@ import jdk.internal.reflect.Reflection;
  * and deployed as a named module must have an appropriate <i>uses</i> clause
  * in its <i>module descriptor</i> to declare that the module uses
  * implementations of the service. A corresponding requirement is that a
- * provider deployed as a named modules must have an appropriate
+ * provider deployed as a named module must have an appropriate
  * <i>provides</i> clause in its module descriptor to declare that the module
  * provides an implementation of the service. The <i>uses</i> and
  * <i>provides</i> allow consumers of a service to be <i>linked</i> to
@@ -550,35 +548,29 @@ public final class ServiceLoader<S>
     /**
      * Implements lazy service provider lookup of service providers that
      * are provided by modules in a module Layer.
-     *
-     * For now, this iterator examines all modules in each Layer. This will
-     * be replaced once we decide on how the service-use graph is exposed
-     * in the module API.
      */
     private class LayerLookupIterator
         extends RestrictedIterator<S>
     {
         final String serviceName;
         Layer currentLayer;
-        Iterator<ModuleDescriptor> descriptorIterator;
-        Iterator<String> providersIterator;
-
-        Module nextModule;
-        String nextProvider;
+        Iterator<ServiceProvider> iterator;
+        ServiceProvider nextProvider;
 
         LayerLookupIterator() {
             serviceName = service.getName();
             currentLayer = layer;
 
             // need to get us started
-            descriptorIterator = descriptors(layer, serviceName);
+            iterator = providers(currentLayer, serviceName);
         }
 
-        Iterator<ModuleDescriptor> descriptors(Layer layer, String service) {
-            return layer.modules().stream()
-                    .map(Module::getDescriptor)
-                    .filter(d -> d.provides().get(service) != null)
-                    .iterator();
+        Iterator<ServiceProvider> providers(Layer layer, String service) {
+            ServicesCatalog catalog = SharedSecrets
+                    .getJavaLangReflectModuleAccess()
+                    .getServicesCatalog(layer);
+
+            return catalog.findServices(serviceName).iterator();
         }
 
         @Override
@@ -591,21 +583,9 @@ public final class ServiceLoader<S>
             while (true) {
 
                 // next provider
-                if (providersIterator != null && providersIterator.hasNext()) {
-                    nextProvider = providersIterator.next();
+                if (iterator != null && iterator.hasNext()) {
+                    nextProvider = iterator.next();
                     return true;
-                }
-
-                // next descriptor
-                if (descriptorIterator.hasNext()) {
-                    ModuleDescriptor descriptor = descriptorIterator.next();
-
-                    nextModule = currentLayer.findModule(descriptor.name()).get();
-
-                    Provides provides = descriptor.provides().get(serviceName);
-                    providersIterator = provides.providers().iterator();
-
-                    continue;
                 }
 
                 // next layer
@@ -614,7 +594,7 @@ public final class ServiceLoader<S>
                     return false;
 
                 currentLayer = parent;
-                descriptorIterator = descriptors(currentLayer, serviceName);
+                iterator = providers(currentLayer, serviceName);
             }
         }
 
@@ -623,13 +603,14 @@ public final class ServiceLoader<S>
             if (!hasNextService())
                 throw new NoSuchElementException();
 
-            assert nextModule != null && nextProvider != null;
-
-            String cn = nextProvider;
+            ServiceProvider provider = nextProvider;
             nextProvider = null;
 
+            Module module = provider.module();
+            String cn = provider.providerName();
+
             // attempt to load the provider
-            Class<?> c = loadClassInModule(nextModule, cn);
+            Class<?> c = loadClassInModule(module, cn);
             if (c == null)
                 fail(service, "Provider " + cn  + " not found");
             if (!service.isAssignableFrom(c))
@@ -830,7 +811,9 @@ public final class ServiceLoader<S>
             }
             S p = null;
             try {
-                p = service.cast(c.newInstance());
+                @SuppressWarnings("deprecation")
+                Object tmp = c.newInstance();
+                p = service.cast(tmp);
             } catch (Throwable x) {
                 fail(service,
                      "Provider " + cn + " could not be instantiated",

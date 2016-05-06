@@ -123,7 +123,9 @@ public class ToolProvider {
     private static <T> T getSystemTool(Class<T> clazz, String moduleName, String className) {
         if (useLegacy) {
             try {
-                return Class.forName(className, true, ClassLoader.getSystemClassLoader()).asSubclass(clazz).newInstance();
+                @SuppressWarnings("deprecation")
+                T result = Class.forName(className, true, ClassLoader.getSystemClassLoader()).asSubclass(clazz).newInstance();
+                return result;
             } catch (ReflectiveOperationException e) {
                 throw new Error(e);
             }

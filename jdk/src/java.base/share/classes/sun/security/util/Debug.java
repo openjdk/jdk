@@ -43,10 +43,10 @@ public class Debug {
     private static String args;
 
     static {
-        args = GetPropertyAction.getProperty("java.security.debug");
+        args = GetPropertyAction.privilegedGetProperty("java.security.debug");
 
-        String args2 =
-                GetPropertyAction.getProperty("java.security.auth.debug");
+        String args2 = GetPropertyAction
+                .privilegedGetProperty("java.security.auth.debug");
 
         if (args == null) {
             args = args2;

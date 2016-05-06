@@ -118,9 +118,14 @@ public class GetIntegerAction
      * if no security manager is present. This is unsafe for inclusion in a
      * public API but allowable here since this class is now encapsulated.
      *
+     * Note that this method performs a privileged action using caller-provided
+     * inputs. The caller of this method should take care to ensure that the
+     * inputs are not tainted and the returned property is not made accessible
+     * to untrusted code if it contains sensitive information.
+     *
      * @param theProp the name of the system property.
      */
-    public static Integer getProperty(String theProp) {
+    public static Integer privilegedGetProperty(String theProp) {
         if (System.getSecurityManager() == null) {
             return Integer.getInteger(theProp);
         } else {
@@ -134,10 +139,16 @@ public class GetIntegerAction
      * if no security manager is present. This is unsafe for inclusion in a
      * public API but allowable here since this class is now encapsulated.
      *
+     * Note that this method performs a privileged action using caller-provided
+     * inputs. The caller of this method should take care to ensure that the
+     * inputs are not tainted and the returned property is not made accessible
+     * to untrusted code if it contains sensitive information.
+     *
      * @param theProp the name of the system property.
      * @param defaultVal the default value.
      */
-    public static Integer getProperty(String theProp, int defaultVal) {
+    public static Integer privilegedGetProperty(String theProp,
+            int defaultVal) {
         Integer value;
         if (System.getSecurityManager() == null) {
             value = Integer.getInteger(theProp);

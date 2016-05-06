@@ -94,9 +94,10 @@ public abstract class AsynchronousChannelProvider {
             if (cn == null)
                 return null;
             try {
-                Class<?> c = Class.forName(cn, true,
-                                           ClassLoader.getSystemClassLoader());
-                return (AsynchronousChannelProvider)c.newInstance();
+                @SuppressWarnings("deprecation")
+                Object tmp = Class.forName(cn, true,
+                                           ClassLoader.getSystemClassLoader()).newInstance();
+                return (AsynchronousChannelProvider)tmp;
             } catch (ClassNotFoundException x) {
                 throw new ServiceConfigurationError(null, x);
             } catch (IllegalAccessException x) {

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ include GendataPolicyJars.gmk
 GENDATA_UNINAME := $(JDK_OUTPUTDIR)/modules/java.base/java/lang/uniName.dat
 
 $(GENDATA_UNINAME): $(JDK_TOPDIR)/make/data/unicodedata/UnicodeData.txt $(BUILD_TOOLS_JDK)
-	$(MKDIR) -p $(@D)
+	$(call MakeDir, $(@D))
 	$(TOOL_CHARACTERNAME) $< $@
 
 TARGETS += $(GENDATA_UNINAME)
@@ -51,7 +51,7 @@ TARGETS += $(GENDATA_UNINAME)
 GENDATA_CURDATA := $(JDK_OUTPUTDIR)/modules/java.base/java/util/currency.data
 
 $(GENDATA_CURDATA): $(JDK_TOPDIR)/make/data/currency/CurrencyData.properties $(BUILD_TOOLS_JDK)
-	$(MKDIR) -p $(@D)
+	$(call MakeDir, $(@D))
 	$(RM) $@
 	$(TOOL_GENERATECURRENCYDATA) -o $@.tmp < $<
 	$(MV) $@.tmp $@
@@ -67,10 +67,10 @@ GENDATA_JAVA_SECURITY := $(SUPPORT_OUTPUTDIR)/modules_conf/java.base/security/ja
 # RESTRICTED_PKGS_SRC is optionally set in custom extension for this makefile
 
 $(GENDATA_JAVA_SECURITY): $(BUILD_TOOLS) $(GENDATA_JAVA_SECURITY_SRC) $(RESTRICTED_PKGS_SRC)
-	$(ECHO) "Generating java.security"
-	$(MKDIR) -p $(@D)
+	$(call LogInfo, Generating java.security)
+	$(call MakeDir, $(@D))
 	$(TOOL_MAKEJAVASECURITY) $(GENDATA_JAVA_SECURITY_SRC) $@ $(OPENJDK_TARGET_OS) \
-		$(OPENJDK_TARGET_CPU_ARCH) $(RESTRICTED_PKGS_SRC) || exit 1
+	    $(OPENJDK_TARGET_CPU_ARCH) $(RESTRICTED_PKGS_SRC)
 
 TARGETS += $(GENDATA_JAVA_SECURITY)
 
@@ -78,7 +78,7 @@ TARGETS += $(GENDATA_JAVA_SECURITY)
 
 $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/classlist: \
     $(JDK_TOPDIR)/make/data/classlist/classlist.$(OPENJDK_TARGET_OS)
-	$(MKDIR) -p $(@D)
+	$(call MakeDir, $(@D))
 	$(RM) $@ $@.tmp
 	$(TOOL_ADDJSUM) $< $@.tmp
 	$(MV) $@.tmp $@

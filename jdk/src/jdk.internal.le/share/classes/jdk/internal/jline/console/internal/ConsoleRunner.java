@@ -61,6 +61,7 @@ public class ConsoleRunner
         List<Completer> completorList = new ArrayList<Completer>();
 
         for (StringTokenizer tok = new StringTokenizer(completors, ","); tok.hasMoreTokens();) {
+            @SuppressWarnings("deprecation")
             Object obj = Class.forName(tok.nextToken()).newInstance();
             completorList.add((Completer) obj);
         }

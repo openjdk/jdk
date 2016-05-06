@@ -47,120 +47,179 @@ public class AddModsTest {
     private static final String TEST_SRC = System.getProperty("test.src");
 
     private static final Path SRC_DIR = Paths.get(TEST_SRC, "src");
-    private static final Path MODS_DIR = Paths.get("mods");
+    private static final Path MODS1_DIR = Paths.get("mods1");
+    private static final Path MODS2_DIR = Paths.get("mods2");
 
-    // the module name of the library module
-    private static final String LIB_MODULE = "lib";
+    // test module / main class
+    private static final String TEST_MODULE = "test";
+    private static final String TEST_MAIN_CLASS = "test.Main";
+    private static final String TEST_MID = TEST_MODULE + "/" + TEST_MAIN_CLASS;
 
-    // application source directory
-    private static final String APP_SRC = "app";
-
-    // application is compiled to classes
-    private static final Path CLASSES_DIR = Paths.get("classes");
-
-    // application main class
-    private static final String MAIN_CLASS = "app.Main";
+    // logger module
+    private static final String LOGGER_MODULE = "logger";
 
 
     @BeforeTest
     public void compile() throws Exception {
-
-        // javac -d mods/$LIB_MODULE src/$LIB_MODULE/**
+        // javac -d mods1/test src/test/**
         boolean compiled = CompilerUtils.compile(
-            SRC_DIR.resolve(LIB_MODULE),
-            MODS_DIR.resolve(LIB_MODULE)
+            SRC_DIR.resolve(TEST_MODULE),
+            MODS1_DIR.resolve(TEST_MODULE)
         );
-        assertTrue(compiled, "library module did not compile");
+        assertTrue(compiled, "test did not compile");
 
-        // javac -d classes -mp mods src/$APP_DIR/**
-        compiled = CompilerUtils.compile(
-            SRC_DIR.resolve(APP_SRC),
-            CLASSES_DIR,
-            "-mp", MODS_DIR.toString(),
-            "-addmods", LIB_MODULE
+        // javac -d mods1/logger src/logger/**
+        compiled= CompilerUtils.compile(
+            SRC_DIR.resolve(LOGGER_MODULE),
+            MODS2_DIR.resolve(LOGGER_MODULE)
         );
-        assertTrue(compiled, "app did not compile");
+        assertTrue(compiled, "test did not compile");
     }
 
 
     /**
-     * Basic test of -addmods ALL-SYSTEM, using the output of -listmods to
-     * check that the a sample of the system modules are resolved.
+     * Basic test of -addmods ALL-DEFAULT. Module java.sql should be
+     * resolved and the types in that module should be visible.
+     */
+    public void testAddDefaultModules1() throws Exception {
+
+        // java -addmods ALL-DEFAULT -mp mods1 -m test ...
+        int exitValue
+            = executeTestJava("-mp", MODS1_DIR.toString(),
+                              "-addmods", "ALL-DEFAULT",
+                              "-m", TEST_MID,
+                              "java.sql.Connection")
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .getExitValue();
+
+        assertTrue(exitValue == 0);
+    }
+
+    /**
+     * Basic test of -addmods ALL-DEFAULT. Module java.annotations.common
+     * should not resolved and so the types in that module should not be
+     * visible.
+     */
+    public void testAddDefaultModules2() throws Exception {
+
+        // java -addmods ALL-DEFAULT -mp mods1 -m test ...
+        int exitValue
+            = executeTestJava("-mp", MODS1_DIR.toString(),
+                              "-addmods", "ALL-DEFAULT",
+                              "-m", TEST_MID,
+                              "javax.annotation.Generated")
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .shouldContain("ClassNotFoundException")
+                .getExitValue();
+
+        assertTrue(exitValue != 0);
+    }
+
+    /**
+     * Basic test of -addmods ALL-SYSTEM. All system modules should be resolved
+     * and thus all types in those modules should be visible.
      */
     public void testAddSystemModules() throws Exception {
 
-        executeTestJava("-addmods", "ALL-SYSTEM",
-                        "-listmods",
-                        "-m", "java.base")
-            .outputTo(System.out)
-            .errorTo(System.out)
-            .shouldContain("java.sql")
-            .shouldContain("java.corba");
+        // java -addmods ALL-SYSTEM -mp mods1 -m test ...
+        int exitValue
+            = executeTestJava("-mp", MODS1_DIR.toString(),
+                              "-addmods", "ALL-SYSTEM",
+                              "-m", TEST_MID,
+                              "java.sql.Connection",
+                              "javax.annotation.Generated")
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .getExitValue();
 
-        // no exit value to check as -m java.base will likely fail
+        assertTrue(exitValue == 0);
     }
 
 
     /**
-     * Run application on class path that makes use of module on the
-     * application module path. Uses {@code -addmods lib}
+     * Run test on class path to load a type in a module on the application
+     * module path, uses {@code -addmods logger}.
      */
     public void testRunWithAddMods() throws Exception {
 
-        // java -mp mods -addmods lib -cp classes app.Main
+        // java -mp mods -addmods logger -cp classes test.Main
+        String classpath = MODS1_DIR.resolve(TEST_MODULE).toString();
+        String modulepath = MODS2_DIR.toString();
         int exitValue
-            = executeTestJava("-mp", MODS_DIR.toString(),
-                              "-addmods", LIB_MODULE,
-                              "-cp", CLASSES_DIR.toString(),
-                              MAIN_CLASS)
+            = executeTestJava("-mp", modulepath,
+                              "-addmods", LOGGER_MODULE,
+                              "-cp", classpath,
+                              TEST_MAIN_CLASS,
+                              "logger.Logger")
                 .outputTo(System.out)
                 .errorTo(System.out)
                 .getExitValue();
 
         assertTrue(exitValue == 0);
-
     }
 
+     /**
+      * Run application on class path that makes use of module on the
+      * application module path. Does not use -addmods and so should
+      * fail at run-time.
+      */
+     public void testRunMissingAddMods() throws Exception {
+
+         // java -mp mods -cp classes test.Main
+         String classpath = MODS1_DIR.resolve(TEST_MODULE).toString();
+         String modulepath = MODS1_DIR.toString();
+         int exitValue
+             = executeTestJava("-mp", modulepath,
+                               "-cp", classpath,
+                               TEST_MAIN_CLASS,
+                               "logger.Logger")
+                 .outputTo(System.out)
+                 .errorTo(System.out)
+                 .shouldContain("ClassNotFoundException")
+                 .getExitValue();
+
+         assertTrue(exitValue != 0);
+     }
+
+
     /**
-     * Run application on class path that makes use of module on the
-     * application module path. Uses {@code -addmods ALL-MODULE-PATH}.
+     * Run test on class path to load a type in a module on the application
+     * module path, uses {@code -addmods ALL-MODULE-PATH}.
      */
     public void testAddAllModulePath() throws Exception {
 
-        // java -mp mods -addmods lib -cp classes app.Main
+        // java -mp mods -addmods ALL-MODULE-PATH -cp classes test.Main
+        String classpath = MODS1_DIR.resolve(TEST_MODULE).toString();
+        String modulepath = MODS1_DIR.toString();
         int exitValue
-            = executeTestJava("-mp", MODS_DIR.toString(),
+            = executeTestJava("-mp", modulepath,
                               "-addmods", "ALL-MODULE-PATH",
-                              "-cp", CLASSES_DIR.toString(),
-                              MAIN_CLASS)
+                              "-cp", classpath,
+                              TEST_MAIN_CLASS)
                 .outputTo(System.out)
                 .errorTo(System.out)
                 .getExitValue();
 
         assertTrue(exitValue == 0);
-
     }
 
 
     /**
-     * Run application on class path that makes use of module on the
-     * application module path. Does not use -addmods and so will
-     * fail at run-time.
+     * Test {@code -addmods ALL-MODULE-PATH} without {@code -modulepath}.
      */
-    public void testRunMissingAddMods() throws Exception {
+    public void testAddAllModulePathWithNoModulePath() throws Exception {
 
-        // java -mp mods -cp classes app.Main
+        // java -addmods ALL-MODULE-PATH -version
         int exitValue
-            = executeTestJava("-mp", MODS_DIR.toString(),
-                              "-cp", CLASSES_DIR.toString(),
-                              MAIN_CLASS)
+            = executeTestJava("-addmods", "ALL-MODULE-PATH",
+                              "-version")
                 .outputTo(System.out)
                 .errorTo(System.out)
                 .getExitValue();
 
-        // CNFE or other error/exception
-        assertTrue(exitValue != 0);
-
+        assertTrue(exitValue == 0);
     }
 
 
@@ -169,18 +228,17 @@ public class AddModsTest {
      */
     public void testRunWithBadAddMods() throws Exception {
 
-        // java -mp mods -addmods,DoesNotExist lib -cp classes app.Main
+        // java -mp mods -addmods DoesNotExist -m test ...
         int exitValue
-            = executeTestJava("-mp", MODS_DIR.toString(),
-                              "-addmods", LIB_MODULE + ",DoesNotExist",
-                              "-cp", CLASSES_DIR.toString(),
-                              MAIN_CLASS)
+            = executeTestJava("-mp", MODS1_DIR.toString(),
+                              "-addmods", "DoesNotExist",
+                              "-m", TEST_MID)
                 .outputTo(System.out)
                 .errorTo(System.out)
+                .shouldContain("DoesNotExist")
                 .getExitValue();
 
         assertTrue(exitValue != 0);
-
     }
 
 }

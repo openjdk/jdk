@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -903,7 +903,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     @Override
     public boolean requestFocus(Component lightweightChild, boolean temporary,
                                 boolean focusedWindowChangeAllowed, long time,
-                                CausedFocusEvent.Cause cause)
+                                FocusEvent.Cause cause)
     {
         if (focusLog.isLoggable(PlatformLogger.Level.FINEST)) {
             focusLog.finest("lightweightChild=" + lightweightChild + ", temporary=" + temporary +
@@ -1278,7 +1278,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
         assert (e.getSource() == target);
 
         if (!target.isFocusOwner() && LWKeyboardFocusManagerPeer.shouldFocusOnClick(target)) {
-            LWKeyboardFocusManagerPeer.requestFocusFor(target, CausedFocusEvent.Cause.MOUSE_EVENT);
+            LWKeyboardFocusManagerPeer.requestFocusFor(target, FocusEvent.Cause.MOUSE_EVENT);
         }
     }
 

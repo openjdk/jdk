@@ -48,7 +48,7 @@ public class AutomaticModules extends ModuleTestBase {
     }
 
     @Test
-    void testSimple(Path base) throws Exception {
+    public void testSimple(Path base) throws Exception {
         Path legacySrc = base.resolve("legacy-src");
         tb.writeJavaFiles(legacySrc,
                           "package api; import java.awt.event.ActionListener; public abstract class Api implements ActionListener {}");
@@ -98,7 +98,7 @@ public class AutomaticModules extends ModuleTestBase {
     }
 
     @Test
-    void testUnnamedModule(Path base) throws Exception {
+    public void testUnnamedModule(Path base) throws Exception {
         Path legacySrc = base.resolve("legacy-src");
         tb.writeJavaFiles(legacySrc,
                           "package api; public abstract class Api { public void run(CharSequence str) { } private void run(base.Base base) { } }",
@@ -156,7 +156,7 @@ public class AutomaticModules extends ModuleTestBase {
     }
 
     @Test
-    void testModuleInfoFromClassFileDependsOnAutomatic(Path base) throws Exception {
+    public void testModuleInfoFromClassFileDependsOnAutomatic(Path base) throws Exception {
         Path automaticSrc = base.resolve("automaticSrc");
         tb.writeJavaFiles(automaticSrc, "package api; public class Api {}");
         Path automaticClasses = base.resolve("automaticClasses");

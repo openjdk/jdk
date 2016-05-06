@@ -95,20 +95,20 @@ class Feedback {
         return mode.getContinuationPrompt(nextId);
     }
 
-    public boolean setFeedback(JShellTool tool, ArgTokenizer at) {
-        return new Setter(tool, at).setFeedback();
+    public boolean setFeedback(MessageHandler messageHandler, ArgTokenizer at) {
+        return new Setter(messageHandler, at).setFeedback();
     }
 
-    public boolean setFormat(JShellTool tool, ArgTokenizer at) {
-        return new Setter(tool, at).setFormat();
+    public boolean setFormat(MessageHandler messageHandler, ArgTokenizer at) {
+        return new Setter(messageHandler, at).setFormat();
     }
 
-    public boolean setNewMode(JShellTool tool, ArgTokenizer at) {
-        return new Setter(tool, at).setNewMode();
+    public boolean setNewMode(MessageHandler messageHandler, ArgTokenizer at) {
+        return new Setter(messageHandler, at).setNewMode();
     }
 
-    public boolean setPrompt(JShellTool tool, ArgTokenizer at) {
-        return new Setter(tool, at).setPrompt();
+    public boolean setPrompt(MessageHandler messageHandler, ArgTokenizer at) {
+        return new Setter(messageHandler, at).setPrompt();
     }
 
     {
@@ -529,26 +529,26 @@ class Feedback {
     private class Setter {
 
         private final ArgTokenizer at;
-        private final JShellTool tool;
+        private final MessageHandler messageHandler;
         boolean valid = true;
 
-        Setter(JShellTool tool, ArgTokenizer at) {
-            this.tool = tool;
+        Setter(MessageHandler messageHandler, ArgTokenizer at) {
+            this.messageHandler = messageHandler;
             this.at = at;
         }
 
         void fluff(String format, Object... args) {
-            tool.fluff(format, args);
+            messageHandler.fluff(format, args);
         }
 
-        void fluffmsg(String format, Object... args) {
-            tool.fluffmsg(format, args);
+        void fluffmsg(String messageKey, Object... args) {
+            messageHandler.fluffmsg(messageKey, args);
         }
 
         void errorat(String messageKey, Object... args) {
             Object[] a2 = Arrays.copyOf(args, args.length + 2);
-            a2[args.length] = "/set " + at.whole();
-            tool.errormsg(messageKey, a2);
+            a2[args.length] = at.whole();
+            messageHandler.errormsg(messageKey, a2);
         }
 
         // For /set prompt <mode> "<prompt>" "<continuation-prompt>"

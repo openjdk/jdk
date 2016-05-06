@@ -207,9 +207,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     };
 
     static {
-        Properties props = GetPropertyAction.getProperties();
-        maxRedirects = GetIntegerAction.getProperty("http.maxRedirects",
-                        defaultmaxRedirects);
+        Properties props = GetPropertyAction.privilegedGetProperties();
+        maxRedirects = GetIntegerAction.privilegedGetProperty(
+                "http.maxRedirects", defaultmaxRedirects);
         version = props.getProperty("java.version");
         String agent = props.getProperty("http.agent");
         if (agent == null) {
@@ -225,14 +225,14 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
         enableESBuffer = Boolean.parseBoolean(
                 props.getProperty("sun.net.http.errorstream.enableBuffering"));
-        timeout4ESBuffer = GetIntegerAction
-                .getProperty("sun.net.http.errorstream.timeout", 300);
+        timeout4ESBuffer = GetIntegerAction.privilegedGetProperty(
+                "sun.net.http.errorstream.timeout", 300);
         if (timeout4ESBuffer <= 0) {
             timeout4ESBuffer = 300; // use the default
         }
 
-        bufSize4ES = GetIntegerAction
-                .getProperty("sun.net.http.errorstream.bufferSize", 4096);
+        bufSize4ES = GetIntegerAction.privilegedGetProperty(
+                "sun.net.http.errorstream.bufferSize", 4096);
         if (bufSize4ES <= 0) {
             bufSize4ES = 4096; // use the default
         }

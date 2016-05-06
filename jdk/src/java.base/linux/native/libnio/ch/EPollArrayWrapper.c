@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ iepoll(int epfd, struct epoll_event *events, int numfds, jlong timeout)
     start = t.tv_sec * 1000 + t.tv_usec / 1000;
 
     for (;;) {
-        int res = epoll_wait(epfd, events, numfds, timeout);
+        int res = epoll_wait(epfd, events, numfds, remaining);
         if (res < 0 && errno == EINTR) {
             if (remaining >= 0) {
                 gettimeofday(&t, NULL);

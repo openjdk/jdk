@@ -43,19 +43,20 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import toolbox.JavacTask;
+import toolbox.TestRunner;
 import toolbox.ToolBox;
 
 /**
  * Base class for module tests.
  */
-public class ModuleTestBase {
+public class ModuleTestBase extends TestRunner {
     protected ToolBox tb;
-    protected PrintStream out;
     private int errors;
 
-    /** Marker annotation for test methods to be invoked by runTests. */
-    @Retention(RetentionPolicy.RUNTIME)
-    @interface Test { }
+    ModuleTestBase() {
+        super(System.err);
+        tb = new ToolBox();
+    }
 
     /**
      * Run all methods annotated with @Test, and throw an exception if any
@@ -63,47 +64,12 @@ public class ModuleTestBase {
      *
      * @throws Exception if any errors occurred
      */
-    void runTests() throws Exception {
-        if (tb == null)
-            tb = new ToolBox();
-        out = System.err;
-
-        for (Method m: getClass().getDeclaredMethods()) {
-            Annotation a = m.getAnnotation(Test.class);
-            if (a != null) {
-                try {
-                    out.println("Running test " + m.getName());
-                    Path baseDir = Paths.get(m.getName());
-                    m.invoke(this, new Object[] { baseDir });
-                } catch (InvocationTargetException e) {
-                    Throwable cause = e.getCause();
-                    error("Exception: " + e.getCause());
-                    cause.printStackTrace(out);
-                }
-                out.println();
-            }
-        }
-        if (errors > 0)
-            throw new Exception(errors + " errors occurred");
+    protected void runTests() throws Exception {
+        runTests(m -> new Object[] { Paths.get(m.getName()) });
     }
 
-    // move to ToolBox?
-    // change returntyp to List<Path> -- means updating ToolBox methods
     Path[] findJavaFiles(Path... paths) throws IOException {
-        Set<Path> files = new TreeSet<>();
-        for (Path p : paths) {
-            Files.walkFileTree(p, new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                        throws IOException {
-                    if (file.getFileName().toString().endsWith(".java")) {
-                        files.add(file);
-                    }
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-        }
-        return files.toArray(new Path[files.size()]);
+        return tb.findJavaFiles(paths);
     }
 
     void error(String message) {
@@ -111,79 +77,4 @@ public class ModuleTestBase {
         errors++;
     }
 
-    public class ModuleBuilder {
-
-        private final String name;
-        private String requires = "";
-        private String exports = "";
-        private String uses = "";
-        private String provides = "";
-        private String modulePath = "";
-        private List<String> content = new ArrayList<>();
-
-        public ModuleBuilder(String name) {
-            this.name = name;
-        }
-
-        public ModuleBuilder requiresPublic(String requires, Path... modulePath) {
-            return requires("public " + requires, modulePath);
-        }
-
-        public ModuleBuilder requires(String requires, Path... modulePath) {
-            this.requires += "    requires " + requires + ";\n";
-            this.modulePath += Arrays.stream(modulePath)
-                    .map(Path::toString)
-                    .collect(Collectors.joining(File.pathSeparator));
-            return this;
-        }
-
-        public ModuleBuilder exportsTo(String pkg, String module) {
-            return exports(pkg + " to " + module);
-        }
-
-        public ModuleBuilder exports(String pkg) {
-            this.exports += "    exports " + pkg + ";\n";
-            return this;
-        }
-
-        public ModuleBuilder uses(String uses) {
-            this.uses += "    uses " + uses + ";\n";
-            return this;
-        }
-
-        public ModuleBuilder provides(String service, String implementation) {
-            this.provides += "    provides " + service + " with " + implementation + ";\n";
-            return this;
-        }
-
-        public ModuleBuilder classes(String... content) {
-            this.content.addAll(Arrays.asList(content));
-            return this;
-        }
-
-        public Path write(Path where) throws IOException {
-            Files.createDirectories(where);
-            List<String> sources = new ArrayList<>();
-            sources.add("module " + name + "{"
-                    + requires
-                    + exports
-                    + uses
-                    + provides
-                    + "}");
-            sources.addAll(content);
-            Path moduleSrc = where.resolve(name + "/src");
-            tb.writeJavaFiles(moduleSrc, sources.toArray(new String[]{}));
-            return moduleSrc;
-        }
-
-        public void build(Path where) throws IOException {
-            Path moduleSrc = write(where);
-            new JavacTask(tb)
-                    .outdir(where.resolve(name))
-                    .options("-mp", modulePath)
-                    .files(findJavaFiles(moduleSrc))
-                    .run()
-                    .writeAll();
-        }
-    }
 }

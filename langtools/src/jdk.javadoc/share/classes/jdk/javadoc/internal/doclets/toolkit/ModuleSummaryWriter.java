@@ -74,6 +74,14 @@ public interface ModuleSummaryWriter {
     public abstract Content getSummaryTree(Content summaryContentTree);
 
     /**
+     * Adds the module description.
+     *
+     * @param moduleContentTree the content tree to which the module description
+     *                           will be added
+     */
+    public abstract void addModuleDescription(Content moduleContentTree);
+
+    /**
      * Adds the table of packages to the documentation tree.
      *
      * @param packages the set of packages that should be added.

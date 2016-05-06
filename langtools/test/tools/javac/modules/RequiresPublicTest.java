@@ -47,7 +47,7 @@ public class RequiresPublicTest extends ModuleTestBase {
     }
 
     @Test
-    void testJavaSE_OK(Path base) throws Exception {
+    public void testJavaSE_OK(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { requires java.se; }",
@@ -66,7 +66,7 @@ public class RequiresPublicTest extends ModuleTestBase {
     }
 
     @Test
-    void testJavaSE_Fail(Path base) throws Exception {
+    public void testJavaSE_Fail(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { requires java.se; }",
@@ -90,7 +90,7 @@ public class RequiresPublicTest extends ModuleTestBase {
     }
 
     @Test
-    void testComplex_OK(Path base) throws Exception {
+    public void testComplex_OK(Path base) throws Exception {
         Path src = getComplexSrc(base, "", "");
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
@@ -104,7 +104,7 @@ public class RequiresPublicTest extends ModuleTestBase {
     }
 
     @Test
-    void testComplex_Fail(Path base) throws Exception {
+    public void testComplex_Fail(Path base) throws Exception {
         Path src = getComplexSrc(base,
                 "import p5.C5; import p6.C6; import p7.C7;\n",
                 "C5 c5; C6 c6; C7 c7;\n");

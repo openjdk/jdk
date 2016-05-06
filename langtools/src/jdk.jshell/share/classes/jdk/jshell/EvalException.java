@@ -40,7 +40,7 @@ package jdk.jshell;
  * empty string.
  */
 @SuppressWarnings("serial")             // serialVersionUID intentionally omitted
-public class EvalException extends Exception {
+public class EvalException extends JShellException {
     private final String exceptionClass;
 
     EvalException(String message, String exceptionClass, StackTraceElement[] stackElements) {
