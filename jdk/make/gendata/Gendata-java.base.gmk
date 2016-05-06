@@ -75,14 +75,3 @@ $(GENDATA_JAVA_SECURITY): $(BUILD_TOOLS) $(GENDATA_JAVA_SECURITY_SRC) $(RESTRICT
 TARGETS += $(GENDATA_JAVA_SECURITY)
 
 ################################################################################
-
-$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/classlist: \
-    $(JDK_TOPDIR)/make/data/classlist/classlist.$(OPENJDK_TARGET_OS)
-	$(call MakeDir, $(@D))
-	$(RM) $@ $@.tmp
-	$(TOOL_ADDJSUM) $< $@.tmp
-	$(MV) $@.tmp $@
-
-TARGETS += $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/classlist
-
-################################################################################
