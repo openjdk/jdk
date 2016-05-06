@@ -261,7 +261,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_getLength();
   bool inline_array_copyOf(bool is_copyOfRange);
   bool inline_array_equals(StrIntrinsicNode::ArgEnc ae);
-  bool inline_objects_checkIndex();
+  bool inline_preconditions_checkIndex();
   void copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, bool is_array, bool card_mark);
   bool inline_native_clone(bool is_virtual);
   bool inline_native_Reflection_getCallerClass();
@@ -714,7 +714,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_copyOfRange:              return inline_array_copyOf(true);
   case vmIntrinsics::_equalsB:                  return inline_array_equals(StrIntrinsicNode::LL);
   case vmIntrinsics::_equalsC:                  return inline_array_equals(StrIntrinsicNode::UU);
-  case vmIntrinsics::_Objects_checkIndex:       return inline_objects_checkIndex();
+  case vmIntrinsics::_Preconditions_checkIndex: return inline_preconditions_checkIndex();
   case vmIntrinsics::_clone:                    return inline_native_clone(intrinsic()->is_virtual());
 
   case vmIntrinsics::_allocateUninitializedArray: return inline_unsafe_newArray(true);
@@ -1141,7 +1141,7 @@ bool LibraryCallKit::inline_hasNegatives() {
   return true;
 }
 
-bool LibraryCallKit::inline_objects_checkIndex() {
+bool LibraryCallKit::inline_preconditions_checkIndex() {
   Node* index = argument(0);
   Node* length = argument(1);
   if (too_many_traps(Deoptimization::Reason_intrinsic) || too_many_traps(Deoptimization::Reason_range_check)) {
