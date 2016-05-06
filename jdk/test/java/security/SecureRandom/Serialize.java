@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,73 @@ import java.io.*;
 
 public class Serialize {
 
-    public static void main(String args[]) throws IOException {
+    public static void main(String args[]) throws Exception {
+        for (String alg: new String[]{
+                "SHA1PRNG", "DRBG", "Hash_DRBG", "HMAC_DRBG", "CTR_DRBG",
+                "Hash_DRBG,SHA-512,192,pr_and_reseed"}) {
 
-        FileOutputStream fos = new FileOutputStream("t.tmp");
-        ObjectOutputStream oos = new ObjectOutputStream(fos);
+            System.out.println("Testing " + alg);
+            SecureRandom s1;
 
-        SecureRandom secRandom = new SecureRandom();
+            // A SecureRandom can be s11ned and des11ned at any time.
 
-        // serialize and write out
-        oos.writeObject(secRandom);
-        oos.flush();
-        oos.close();
+            // Brand new.
+            s1 = getInstance(alg);
+            revive(s1).nextInt();
+            if (alg.contains("DRBG")) {
+                revive(s1).reseed();
+            }
+
+            // Used
+            s1 = getInstance(alg);
+            s1.nextInt();    // state set
+            revive(s1).nextInt();
+            if (alg.contains("DRBG")) {
+                revive(s1).reseed();
+            }
+
+            // Automatically reseeded
+            s1 = getInstance(alg);
+            if (alg.contains("DRBG")) {
+                s1.reseed();
+            }
+            revive(s1).nextInt();
+            if (alg.contains("DRBG")) {
+                revive(s1).reseed();
+            }
+
+            // Manually seeded
+            s1 = getInstance(alg);
+            s1.setSeed(1L);
+            revive(s1).nextInt();
+            if (alg.contains("DRBG")) {
+                revive(s1).reseed();
+            }
+        }
+    }
+
+    private static SecureRandom getInstance(String alg) throws Exception {
+        if (alg.equals("SHA1PRNG") || alg.equals("DRBG")) {
+            return SecureRandom.getInstance(alg);
+        } else {
+            String old = Security.getProperty("securerandom.drbg.config");
+            try {
+                Security.setProperty("securerandom.drbg.config", alg);
+                return SecureRandom.getInstance("DRBG");
+            } finally {
+                Security.setProperty("securerandom.drbg.config", old);
+            }
+        }
+    }
+
+    private static SecureRandom revive(SecureRandom oldOne) throws Exception {
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        new ObjectOutputStream(bout).writeObject(oldOne);
+        SecureRandom newOne = (SecureRandom) new ObjectInputStream(
+                new ByteArrayInputStream(bout.toByteArray())).readObject();
+        if (!oldOne.toString().equals(newOne.toString())) {
+            throw new Exception(newOne + " is not " + oldOne);
+        }
+        return newOne;
     }
 }
