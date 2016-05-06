@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -746,17 +746,17 @@ public class TestDateTimeFormatterBuilder {
             {"SSS", "Fraction(NanoOfSecond,3,3)"},
             {"SSSSSSSSS", "Fraction(NanoOfSecond,9,9)"},
 
-            {"A", "Value(MilliOfDay)"},
-            {"AA", "Value(MilliOfDay,2)"},
-            {"AAA", "Value(MilliOfDay,3)"},
+            {"A", "Value(MilliOfDay,1,19,NOT_NEGATIVE)"},
+            {"AA", "Value(MilliOfDay,2,19,NOT_NEGATIVE)"},
+            {"AAA", "Value(MilliOfDay,3,19,NOT_NEGATIVE)"},
 
-            {"n", "Value(NanoOfSecond)"},
-            {"nn", "Value(NanoOfSecond,2)"},
-            {"nnn", "Value(NanoOfSecond,3)"},
+            {"n", "Value(NanoOfSecond,1,19,NOT_NEGATIVE)"},
+            {"nn", "Value(NanoOfSecond,2,19,NOT_NEGATIVE)"},
+            {"nnn", "Value(NanoOfSecond,3,19,NOT_NEGATIVE)"},
 
-            {"N", "Value(NanoOfDay)"},
-            {"NN", "Value(NanoOfDay,2)"},
-            {"NNN", "Value(NanoOfDay,3)"},
+            {"N", "Value(NanoOfDay,1,19,NOT_NEGATIVE)"},
+            {"NN", "Value(NanoOfDay,2,19,NOT_NEGATIVE)"},
+            {"NNN", "Value(NanoOfDay,3,19,NOT_NEGATIVE)"},
 
             {"z", "ZoneText(SHORT)"},
             {"zz", "ZoneText(SHORT)"},

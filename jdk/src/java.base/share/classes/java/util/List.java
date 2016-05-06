@@ -765,7 +765,7 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of() {
-        return Collections.emptyList();
+        return new ImmutableCollections.List0<>();
     }
 
     /**
@@ -781,7 +781,7 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of(E e1) {
-        return Collections.singletonList(Objects.requireNonNull(e1));
+        return new ImmutableCollections.List1<>(e1);
     }
 
     /**
@@ -798,9 +798,7 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of(E e1, E e2) {
-        return Collections.unmodifiableList(
-            Arrays.asList(Objects.requireNonNull(e1),
-                          Objects.requireNonNull(e2)));
+        return new ImmutableCollections.List2<>(e1, e2);
     }
 
     /**
@@ -818,10 +816,7 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of(E e1, E e2, E e3) {
-        return Collections.unmodifiableList(
-            Arrays.asList(Objects.requireNonNull(e1),
-                          Objects.requireNonNull(e2),
-                          Objects.requireNonNull(e3)));
+        return new ImmutableCollections.ListN<>(e1, e2, e3);
     }
 
     /**
@@ -840,11 +835,7 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of(E e1, E e2, E e3, E e4) {
-        return Collections.unmodifiableList(
-            Arrays.asList(Objects.requireNonNull(e1),
-                          Objects.requireNonNull(e2),
-                          Objects.requireNonNull(e3),
-                          Objects.requireNonNull(e4)));
+        return new ImmutableCollections.ListN<>(e1, e2, e3, e4);
     }
 
     /**
@@ -864,12 +855,7 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of(E e1, E e2, E e3, E e4, E e5) {
-        return Collections.unmodifiableList(
-            Arrays.asList(Objects.requireNonNull(e1),
-                          Objects.requireNonNull(e2),
-                          Objects.requireNonNull(e3),
-                          Objects.requireNonNull(e4),
-                          Objects.requireNonNull(e5)));
+        return new ImmutableCollections.ListN<>(e1, e2, e3, e4, e5);
     }
 
     /**
@@ -890,13 +876,8 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6) {
-        return Collections.unmodifiableList(
-            Arrays.asList(Objects.requireNonNull(e1),
-                          Objects.requireNonNull(e2),
-                          Objects.requireNonNull(e3),
-                          Objects.requireNonNull(e4),
-                          Objects.requireNonNull(e5),
-                          Objects.requireNonNull(e6)));
+        return new ImmutableCollections.ListN<>(e1, e2, e3, e4, e5,
+                                                e6);
     }
 
     /**
@@ -918,14 +899,8 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7) {
-        return Collections.unmodifiableList(
-            Arrays.asList(Objects.requireNonNull(e1),
-                          Objects.requireNonNull(e2),
-                          Objects.requireNonNull(e3),
-                          Objects.requireNonNull(e4),
-                          Objects.requireNonNull(e5),
-                          Objects.requireNonNull(e6),
-                          Objects.requireNonNull(e7)));
+        return new ImmutableCollections.ListN<>(e1, e2, e3, e4, e5,
+                                                e6, e7);
     }
 
     /**
@@ -948,15 +923,8 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8) {
-        return Collections.unmodifiableList(
-            Arrays.asList(Objects.requireNonNull(e1),
-                          Objects.requireNonNull(e2),
-                          Objects.requireNonNull(e3),
-                          Objects.requireNonNull(e4),
-                          Objects.requireNonNull(e5),
-                          Objects.requireNonNull(e6),
-                          Objects.requireNonNull(e7),
-                          Objects.requireNonNull(e8)));
+        return new ImmutableCollections.ListN<>(e1, e2, e3, e4, e5,
+                                                e6, e7, e8);
     }
 
     /**
@@ -980,16 +948,8 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8, E e9) {
-        return Collections.unmodifiableList(
-            Arrays.asList(Objects.requireNonNull(e1),
-                          Objects.requireNonNull(e2),
-                          Objects.requireNonNull(e3),
-                          Objects.requireNonNull(e4),
-                          Objects.requireNonNull(e5),
-                          Objects.requireNonNull(e6),
-                          Objects.requireNonNull(e7),
-                          Objects.requireNonNull(e8),
-                          Objects.requireNonNull(e9)));
+        return new ImmutableCollections.ListN<>(e1, e2, e3, e4, e5,
+                                                e6, e7, e8, e9);
     }
 
     /**
@@ -1014,17 +974,8 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8, E e9, E e10) {
-        return Collections.unmodifiableList(
-            Arrays.asList(Objects.requireNonNull(e1),
-                          Objects.requireNonNull(e2),
-                          Objects.requireNonNull(e3),
-                          Objects.requireNonNull(e4),
-                          Objects.requireNonNull(e5),
-                          Objects.requireNonNull(e6),
-                          Objects.requireNonNull(e7),
-                          Objects.requireNonNull(e8),
-                          Objects.requireNonNull(e9),
-                          Objects.requireNonNull(e10)));
+        return new ImmutableCollections.ListN<>(e1, e2, e3, e4, e5,
+                                                e6, e7, e8, e9, e10);
     }
 
     /**
@@ -1055,10 +1006,16 @@ public interface List<E> extends Collection<E> {
     @SafeVarargs
     @SuppressWarnings("varargs")
     static <E> List<E> of(E... elements) {
-        elements = elements.clone(); // throws NPE if es is null
-        for (E e : elements) {
-            Objects.requireNonNull(e);
+        Objects.requireNonNull(elements);
+        switch (elements.length) {
+            case 0:
+                return new ImmutableCollections.List0<>();
+            case 1:
+                return new ImmutableCollections.List1<>(elements[0]);
+            case 2:
+                return new ImmutableCollections.List2<>(elements[0], elements[1]);
+            default:
+                return new ImmutableCollections.ListN<>(elements);
         }
-        return Collections.unmodifiableList(Arrays.asList(elements));
     }
 }
