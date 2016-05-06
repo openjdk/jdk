@@ -234,6 +234,18 @@ public class JdkInternalMiscUnsafeAccessTestObject {
             assertEquals(x, "bar", "weakCompareAndSwapRelease Object");
         }
 
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapObjectVolatile(base, offset, "bar", "foo");
+            }
+            assertEquals(success, true, "weakCompareAndSwapVolatile Object");
+            Object x = UNSAFE.getObject(base, offset);
+            assertEquals(x, "foo", "weakCompareAndSwapVolatile Object");
+        }
+
+        UNSAFE.putObject(base, offset, "bar");
+
         // Compare set and get
         {
             Object o = UNSAFE.getAndSetObject(base, offset, "foo");
