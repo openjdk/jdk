@@ -1559,13 +1559,13 @@ public class HotSpotVMConfig {
 
     @HotSpotVMAddress(name = "os::javaTimeMillis") @Stable public long javaTimeMillisAddress;
     @HotSpotVMAddress(name = "os::javaTimeNanos") @Stable public long javaTimeNanosAddress;
-    @HotSpotVMAddress(name = "SharedRuntime::dsin") @Stable public long arithmeticSinAddress;
-    @HotSpotVMAddress(name = "SharedRuntime::dcos") @Stable public long arithmeticCosAddress;
-    @HotSpotVMAddress(name = "SharedRuntime::dtan") @Stable public long arithmeticTanAddress;
-    @HotSpotVMAddress(name = "SharedRuntime::dexp") @Stable public long arithmeticExpAddress;
-    @HotSpotVMAddress(name = "SharedRuntime::dlog") @Stable public long arithmeticLogAddress;
-    @HotSpotVMAddress(name = "SharedRuntime::dlog10") @Stable public long arithmeticLog10Address;
-    @HotSpotVMAddress(name = "SharedRuntime::dpow") @Stable public long arithmeticPowAddress;
+    @HotSpotVMField(name = "CompilerToVM::Data::dsin", type = "address", get = HotSpotVMField.Type.VALUE) @Stable public long arithmeticSinAddress;
+    @HotSpotVMField(name = "CompilerToVM::Data::dcos", type = "address", get = HotSpotVMField.Type.VALUE) @Stable public long arithmeticCosAddress;
+    @HotSpotVMField(name = "CompilerToVM::Data::dtan", type = "address", get = HotSpotVMField.Type.VALUE) @Stable public long arithmeticTanAddress;
+    @HotSpotVMField(name = "CompilerToVM::Data::dexp", type = "address", get = HotSpotVMField.Type.VALUE) @Stable public long arithmeticExpAddress;
+    @HotSpotVMField(name = "CompilerToVM::Data::dlog", type = "address", get = HotSpotVMField.Type.VALUE) @Stable public long arithmeticLogAddress;
+    @HotSpotVMField(name = "CompilerToVM::Data::dlog10", type = "address", get = HotSpotVMField.Type.VALUE) @Stable public long arithmeticLog10Address;
+    @HotSpotVMField(name = "CompilerToVM::Data::dpow", type = "address", get = HotSpotVMField.Type.VALUE) @Stable public long arithmeticPowAddress;
 
     @HotSpotVMFlag(name = "JVMCICounterSize") @Stable public int jvmciCountersSize;
 
