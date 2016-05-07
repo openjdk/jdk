@@ -650,6 +650,7 @@ JNIEXPORT jint JNICALL Java_com_oracle_security_ucrypto_NativeCipher_nativeFinal
   unsigned char *bufIn;
   unsigned char *bufOut;
   int outLen, rv = 0;
+  jint rc;
 
   context = (crypto_ctx_t *) contextID;
 
@@ -668,21 +669,19 @@ JNIEXPORT jint JNICALL Java_com_oracle_security_ucrypto_NativeCipher_nativeFinal
   }
   rv = CipherFinal(context, encrypt, bufOut, 0, &outLen);
   if (rv) {
-    free(context);
-    if (outLen != 0) {
-      free(bufOut);
-    }
-    return -rv;
+    rc = -rv;
   } else {
-    if (bufOut != NULL && outLen != 0) {
+    if (outLen > 0) {
       (*env)->SetByteArrayRegion(env, out, outOfs, outLen, (jbyte *)bufOut);
-      free(bufOut);
     }
-    free(context);
-    return outLen;
+    rc = outLen;
   }
+  free(context);
+  if (bufOut != (unsigned char *)(&outLen)) {
+    free(bufOut);
+  }
+  return rc;
 }
-
 
 /*
  * Class:     com_oracle_security_ucrypto_NativeKey
