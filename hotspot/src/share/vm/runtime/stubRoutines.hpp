@@ -111,7 +111,6 @@ class StubRoutines: AllStatic {
   static address _throw_NullPointerException_at_call_entry;
   static address _throw_StackOverflowError_entry;
   static address _throw_delayed_StackOverflowError_entry;
-  static address _handler_for_unsafe_access_entry;
 
   static address _atomic_xchg_entry;
   static address _atomic_xchg_ptr_entry;
@@ -287,10 +286,6 @@ class StubRoutines: AllStatic {
   static address throw_NullPointerException_at_call_entry(){ return _throw_NullPointerException_at_call_entry; }
   static address throw_StackOverflowError_entry()          { return _throw_StackOverflowError_entry; }
   static address throw_delayed_StackOverflowError_entry()  { return _throw_delayed_StackOverflowError_entry; }
-
-  // Exceptions during unsafe access - should throw Java exception rather
-  // than crash.
-  static address handler_for_unsafe_access()               { return _handler_for_unsafe_access_entry; }
 
   static address atomic_xchg_entry()                       { return _atomic_xchg_entry; }
   static address atomic_xchg_ptr_entry()                   { return _atomic_xchg_ptr_entry; }

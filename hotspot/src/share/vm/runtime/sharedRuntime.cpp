@@ -1762,6 +1762,21 @@ methodHandle SharedRuntime::reresolve_call_site(JavaThread *thread, TRAPS) {
   return callee_method;
 }
 
+address SharedRuntime::handle_unsafe_access(JavaThread* thread, address next_pc) {
+  // The faulting unsafe accesses should be changed to throw the error
+  // synchronously instead. Meanwhile the faulting instruction will be
+  // skipped over (effectively turning it into a no-op) and an
+  // asynchronous exception will be raised which the thread will
+  // handle at a later point. If the instruction is a load it will
+  // return garbage.
+
+  // Request an async exception.
+  thread->set_pending_unsafe_access_error();
+
+  // Return address of next instruction to execute.
+  return next_pc;
+}
+
 #ifdef ASSERT
 void SharedRuntime::check_member_name_argument_is_last_argument(const methodHandle& method,
                                                                 const BasicType* sig_bt,

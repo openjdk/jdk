@@ -379,7 +379,7 @@ print_initial_summary_data(ParallelCompactData& summary_data,
 }
 
 void ParallelCompact_test() {
-  if (!UseParallelGC) {
+  if (!UseParallelOldGC) {
     return;
   }
   // Check that print_generic_summary_data() does not print the

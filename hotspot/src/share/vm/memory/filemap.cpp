@@ -881,7 +881,7 @@ bool FileMapInfo::FileMapHeader::validate() {
     return false;
   }
 
-  if (Arguments::patch_dirs() != NULL) {
+  if (Arguments::get_xpatchprefix() != NULL) {
     FileMapInfo::fail_continue("The shared archive file cannot be used with -Xpatch.");
     return false;
   }

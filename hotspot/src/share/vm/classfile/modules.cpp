@@ -133,68 +133,31 @@ static PackageEntry* get_package_entry_by_name(Symbol* package,
   return NULL;
 }
 
-// Check if -Xpatch:<dirs> was specified.  If so, prepend each <dir>/module_name,
-// if it exists, to bootpath so boot loader can find the class files.  Also, if
-// using exploded modules, append <java.home>/modules/module_name, if it exists,
-// to bootpath so that its class files can be found by the boot loader.
-static void add_to_boot_loader_list(char *module_name, TRAPS) {
-  // java.base should be handled by argument parsing.
+// If using exploded build, append <java.home>/modules/module_name, if it exists,
+// to the system boot class path in order for the boot loader to locate class files.
+static void add_to_exploded_build_list(char *module_name, TRAPS) {
+  assert(!ClassLoader::has_jimage(), "Exploded build not applicable");
+  // java.base is handled by os::set_boot_path
   assert(strcmp(module_name, "java.base") != 0, "Unexpected java.base module name");
+
   char file_sep = os::file_separator()[0];
   size_t module_len = strlen(module_name);
 
-  // If -Xpatch is set then add <patch-dir>/module_name paths.
-  char** patch_dirs = Arguments::patch_dirs();
-  if (patch_dirs != NULL) {
-    int dir_count = Arguments::patch_dirs_count();
-    for (int x = 0; x < dir_count; x++) {
-      // Really shouldn't be NULL, but check can't hurt
-      if (patch_dirs[x] != NULL) {
-        size_t len = strlen(patch_dirs[x]);
-        if (len != 0) { // Ignore empty strings.
-          len = len + module_len + 2;
-          char* prefix_path = NEW_C_HEAP_ARRAY(char, len, mtInternal);
-          jio_snprintf(prefix_path, len, "%s%c%s", patch_dirs[x], file_sep, module_name);
-
-          // See if Xpatch module path exists.
-          struct stat st;
-          if ((os::stat(prefix_path, &st) != 0)) {
-            FREE_C_HEAP_ARRAY(char, prefix_path);
-          } else {
-            {
-              HandleMark hm;
-              Handle loader_lock = Handle(THREAD, SystemDictionary::system_loader_lock());
-              ObjectLocker ol(loader_lock, THREAD);
-              ClassLoader::prepend_to_list(prefix_path);
-            }
-            log_info(class, load)("opened: -Xpatch %s", prefix_path);
-          }
-        }
-      }
-    }
-  }
-
-  // If "modules" jimage does not exist then assume exploded form
-  // ${java.home}/modules/<module-name>
-  char* path = NULL;
-  if (!ClassLoader::has_jimage()) {
-    const char* home = Arguments::get_java_home();
-    size_t len = strlen(home) + module_len + 32;
-    path = NEW_C_HEAP_ARRAY(char, len, mtInternal);
-    jio_snprintf(path, len, "%s%cmodules%c%s", home, file_sep, file_sep, module_name);
-    struct stat st;
-    // See if exploded module path exists.
-    if ((os::stat(path, &st) != 0)) {
-      FREE_C_HEAP_ARRAY(char, path);
-      path = NULL;
-    }
+  const char* home = Arguments::get_java_home();
+  size_t len = strlen(home) + module_len + 32;
+  char* path = NEW_C_HEAP_ARRAY(char, len, mtInternal);
+  jio_snprintf(path, len, "%s%cmodules%c%s", home, file_sep, file_sep, module_name);
+  struct stat st;
+  // See if exploded module path exists
+  if ((os::stat(path, &st) != 0)) {
+    FREE_C_HEAP_ARRAY(char, path);
+    path = NULL;
   }
 
   if (path != NULL) {
     HandleMark hm;
     Handle loader_lock = Handle(THREAD, SystemDictionary::system_loader_lock());
     ObjectLocker ol(loader_lock, THREAD);
-
     log_info(class, load)("opened: %s", path);
     ClassLoader::add_to_list(path);
   }
@@ -498,13 +461,12 @@ void Modules::define_module(jobject module, jstring version,
     }
   }
 
-  if (loader == NULL && !Universe::is_module_initialized()) {
-    // Now that the module is defined, if it is in the bootloader, make sure that
-    // its classes can be found.  Check if -Xpatch:<path> was specified.  If
-    // so prepend <path>/module_name, if it exists, to bootpath.  Also, if using
-    // exploded modules, prepend <java.home>/modules/module_name, if it exists,
-    // to bootpath.
-    add_to_boot_loader_list(module_name, CHECK);
+  // If the module is defined to the boot loader and an exploded build is being
+  // used, prepend <java.home>/modules/modules_name, if it exists, to the system boot class path.
+  if (loader == NULL &&
+      !Universe::is_module_initialized() &&
+      !ClassLoader::has_jimage()) {
+    add_to_exploded_build_list(module_name, CHECK);
   }
 }
 

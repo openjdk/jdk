@@ -433,14 +433,14 @@ inline static bool checkPollingPage(address pc, address fault, address* stub) {
   return false;
 }
 
-inline static bool checkByteBuffer(address pc, address* stub) {
+inline static bool checkByteBuffer(address pc, address npc, address* stub) {
   // BugId 4454115: A read from a MappedByteBuffer can fault
   // here if the underlying file has been truncated.
   // Do not crash the VM in such a case.
   CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
   CompiledMethod* nm = cb->as_compiled_method_or_null();
   if (nm != NULL && nm->has_unsafe_access()) {
-    *stub = StubRoutines::handler_for_unsafe_access();
+    *stub = SharedRuntime::handle_unsafe_access(thread, npc);
     return true;
   }
   return false;
@@ -613,7 +613,7 @@ JVM_handle_linux_signal(int sig,
     if (sig == SIGBUS &&
         thread->thread_state() == _thread_in_vm &&
         thread->doing_unsafe_access()) {
-      stub = StubRoutines::handler_for_unsafe_access();
+      stub = SharedRuntime::handle_unsafe_access(thread, npc);
     }
 
     if (thread->thread_state() == _thread_in_Java) {
@@ -625,7 +625,7 @@ JVM_handle_linux_signal(int sig,
           break;
         }
 
-        if ((sig == SIGBUS) && checkByteBuffer(pc, &stub)) {
+        if ((sig == SIGBUS) && checkByteBuffer(pc, npc, &stub)) {
           break;
         }
 

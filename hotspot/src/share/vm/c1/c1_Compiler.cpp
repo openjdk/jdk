@@ -198,20 +198,6 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_putLongVolatile:
   case vmIntrinsics::_putFloatVolatile:
   case vmIntrinsics::_putDoubleVolatile:
-  case vmIntrinsics::_getByte_raw:
-  case vmIntrinsics::_getShort_raw:
-  case vmIntrinsics::_getChar_raw:
-  case vmIntrinsics::_getInt_raw:
-  case vmIntrinsics::_getLong_raw:
-  case vmIntrinsics::_getFloat_raw:
-  case vmIntrinsics::_getDouble_raw:
-  case vmIntrinsics::_putByte_raw:
-  case vmIntrinsics::_putShort_raw:
-  case vmIntrinsics::_putChar_raw:
-  case vmIntrinsics::_putInt_raw:
-  case vmIntrinsics::_putLong_raw:
-  case vmIntrinsics::_putFloat_raw:
-  case vmIntrinsics::_putDouble_raw:
   case vmIntrinsics::_getShortUnaligned:
   case vmIntrinsics::_getCharUnaligned:
   case vmIntrinsics::_getIntUnaligned:

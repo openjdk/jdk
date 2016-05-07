@@ -825,17 +825,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // The following routine generates a subroutine to throw an asynchronous
-  // UnknownError when an unsafe access gets a fault that could not be
-  // reasonably prevented by the programmer.  (Example: SIGBUS/OBJERR.)
-  //
-  address generate_handler_for_unsafe_access() {
-    StubCodeMark mark(this, "StubRoutines", "handler_for_unsafe_access");
-    address start = __ function_entry();
-    __ unimplemented("StubRoutines::handler_for_unsafe_access", 93);
-    return start;
-  }
-
 #if !defined(PRODUCT)
   // Wrapper which calls oopDesc::is_oop_or_null()
   // Only called by MacroAssembler::verify_oop
@@ -3110,8 +3099,6 @@ class StubGenerator: public StubCodeGenerator {
     // Handle IncompatibleClassChangeError in itable stubs.
     StubRoutines::_throw_IncompatibleClassChangeError_entry= generate_throw_exception("IncompatibleClassChangeError throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_IncompatibleClassChangeError),  false);
     StubRoutines::_throw_NullPointerException_at_call_entry= generate_throw_exception("NullPointerException at call throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_NullPointerException_at_call), false);
-
-    StubRoutines::_handler_for_unsafe_access_entry         = generate_handler_for_unsafe_access();
 
     // support for verify_oop (must happen after universe_init)
     StubRoutines::_verify_oop_subroutine_entry             = generate_verify_oop();
