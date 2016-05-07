@@ -84,8 +84,6 @@ const char*  Arguments::_java_vendor_url_bug    = DEFAULT_VENDOR_URL_BUG;
 const char*  Arguments::_sun_java_launcher      = DEFAULT_JAVA_LAUNCHER;
 int    Arguments::_sun_java_launcher_pid        = -1;
 bool   Arguments::_sun_java_launcher_is_altjvm  = false;
-int    Arguments::_patch_dirs_count          = 0;
-char** Arguments::_patch_dirs                = NULL;
 int    Arguments::_bootclassloader_append_index = -1;
 
 // These parameters are reset in method parse_vm_init_args()
@@ -112,6 +110,7 @@ SystemProperty *Arguments::_java_home = NULL;
 SystemProperty *Arguments::_java_class_path = NULL;
 SystemProperty *Arguments::_jdk_boot_class_path_append = NULL;
 
+GrowableArray<ModuleXPatchPath*> *Arguments::_xpatchprefix = NULL;
 PathString *Arguments::_system_boot_class_path = NULL;
 
 char* Arguments::_ext_dirs = NULL;
@@ -579,204 +578,6 @@ static bool verify_special_jvm_flags() {
   return success;
 }
 #endif
-
-// Constructs the system boot class path from the following components, in order:
-//
-//     prefix           // from -Xpatch:...
-//     base             // from os::get_system_properties()
-//     suffix           // from -Xbootclasspath/a:...
-//
-// This could be AllStatic, but it isn't needed after argument processing is
-// complete. After argument processing, the combined components are copied
-// to Arguments::_system_boot_class_path via a call to Arguments::set_sysclasspath.
-class ArgumentBootClassPath: public StackObj {
-public:
-  ArgumentBootClassPath(const char* base);
-  ~ArgumentBootClassPath();
-
-  inline void set_base(const char* base);
-  inline void add_prefix(const char* prefix);
-  inline void add_suffix_to_prefix(const char* suffix);
-  inline void add_suffix(const char* suffix);
-  inline void reset_path(const char* base);
-
-  inline const char* get_base()     const { return _items[_bcp_base]; }
-  inline const char* get_prefix()   const { return _items[_bcp_prefix]; }
-  inline const char* get_suffix()   const { return _items[_bcp_suffix]; }
-
-  // Combine all the components into a single c-heap-allocated string; caller
-  // must free the string if/when no longer needed.
-  char* combined_path();
-
-private:
-  // Utility routines.
-  static char* add_to_path(const char* path, const char* str, bool prepend);
-  static char* add_jars_to_path(char* path, const char* directory);
-
-  inline void reset_item_at(int index);
-
-  // Array indices for the items that make up the sysclasspath.  All except the
-  // base are allocated in the C heap and freed by this class.
-  enum {
-    _bcp_prefix,        // was -Xpatch:...
-    _bcp_base,          // the default system boot class path
-    _bcp_suffix,        // from -Xbootclasspath/a:...
-    _bcp_nitems         // the number of items, must be last.
-  };
-
-  const char* _items[_bcp_nitems];
-};
-
-ArgumentBootClassPath::ArgumentBootClassPath(const char* base) {
-  memset(_items, 0, sizeof(_items));
-  _items[_bcp_base] = base;
-}
-
-ArgumentBootClassPath::~ArgumentBootClassPath() {
-  // Free everything except the base.
-  for (int i = 0; i < _bcp_nitems; ++i) {
-    if (i != _bcp_base) reset_item_at(i);
-  }
-}
-
-inline void ArgumentBootClassPath::set_base(const char* base) {
-  _items[_bcp_base] = base;
-}
-
-inline void ArgumentBootClassPath::add_prefix(const char* prefix) {
-  _items[_bcp_prefix] = add_to_path(_items[_bcp_prefix], prefix, true);
-}
-
-inline void ArgumentBootClassPath::add_suffix_to_prefix(const char* suffix) {
-  _items[_bcp_prefix] = add_to_path(_items[_bcp_prefix], suffix, false);
-}
-
-inline void ArgumentBootClassPath::add_suffix(const char* suffix) {
-  _items[_bcp_suffix] = add_to_path(_items[_bcp_suffix], suffix, false);
-}
-
-inline void ArgumentBootClassPath::reset_item_at(int index) {
-  assert(index < _bcp_nitems && index != _bcp_base, "just checking");
-  if (_items[index] != NULL) {
-    FREE_C_HEAP_ARRAY(char, _items[index]);
-    _items[index] = NULL;
-  }
-}
-
-inline void ArgumentBootClassPath::reset_path(const char* base) {
-  // Clear the prefix and suffix.
-  reset_item_at(_bcp_prefix);
-  reset_item_at(_bcp_suffix);
-  set_base(base);
-}
-
-//------------------------------------------------------------------------------
-
-
-// Combine the bootclasspath elements, some of which may be null, into a single
-// c-heap-allocated string.
-char* ArgumentBootClassPath::combined_path() {
-  assert(_items[_bcp_base] != NULL, "empty default sysclasspath");
-
-  size_t lengths[_bcp_nitems];
-  size_t total_len = 0;
-
-  const char separator = *os::path_separator();
-
-  // Get the lengths.
-  int i;
-  for (i = 0; i < _bcp_nitems; ++i) {
-    if (i == _bcp_suffix) {
-      // Record index of boot loader's append path.
-      Arguments::set_bootclassloader_append_index((int)total_len);
-    }
-    if (_items[i] != NULL) {
-      lengths[i] = strlen(_items[i]);
-      // Include space for the separator char (or a NULL for the last item).
-      total_len += lengths[i] + 1;
-    }
-  }
-  assert(total_len > 0, "empty sysclasspath not allowed");
-
-  // Copy the _items to a single string.
-  char* cp = NEW_C_HEAP_ARRAY(char, total_len, mtArguments);
-  char* cp_tmp = cp;
-  for (i = 0; i < _bcp_nitems; ++i) {
-    if (_items[i] != NULL) {
-      memcpy(cp_tmp, _items[i], lengths[i]);
-      cp_tmp += lengths[i];
-      *cp_tmp++ = separator;
-    }
-  }
-  *--cp_tmp = '\0';     // Replace the extra separator.
-  return cp;
-}
-
-// Note:  path must be c-heap-allocated (or NULL); it is freed if non-null.
-char*
-ArgumentBootClassPath::add_to_path(const char* path, const char* str, bool prepend) {
-  char *cp;
-
-  assert(str != NULL, "just checking");
-  if (path == NULL) {
-    size_t len = strlen(str) + 1;
-    cp = NEW_C_HEAP_ARRAY(char, len, mtArguments);
-    memcpy(cp, str, len);                       // copy the trailing null
-  } else {
-    const char separator = *os::path_separator();
-    size_t old_len = strlen(path);
-    size_t str_len = strlen(str);
-    size_t len = old_len + str_len + 2;
-
-    if (prepend) {
-      cp = NEW_C_HEAP_ARRAY(char, len, mtArguments);
-      char* cp_tmp = cp;
-      memcpy(cp_tmp, str, str_len);
-      cp_tmp += str_len;
-      *cp_tmp = separator;
-      memcpy(++cp_tmp, path, old_len + 1);      // copy the trailing null
-      FREE_C_HEAP_ARRAY(char, path);
-    } else {
-      cp = REALLOC_C_HEAP_ARRAY(char, path, len, mtArguments);
-      char* cp_tmp = cp + old_len;
-      *cp_tmp = separator;
-      memcpy(++cp_tmp, str, str_len + 1);       // copy the trailing null
-    }
-  }
-  return cp;
-}
-
-// Scan the directory and append any jar or zip files found to path.
-// Note:  path must be c-heap-allocated (or NULL); it is freed if non-null.
-char* ArgumentBootClassPath::add_jars_to_path(char* path, const char* directory) {
-  DIR* dir = os::opendir(directory);
-  if (dir == NULL) return path;
-
-  char dir_sep[2] = { '\0', '\0' };
-  size_t directory_len = strlen(directory);
-  const char fileSep = *os::file_separator();
-  if (directory[directory_len - 1] != fileSep) dir_sep[0] = fileSep;
-
-  /* Scan the directory for jars/zips, appending them to path. */
-  struct dirent *entry;
-  char *dbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(directory), mtArguments);
-  while ((entry = os::readdir(dir, (dirent *) dbuf)) != NULL) {
-    const char* name = entry->d_name;
-    const char* ext = name + strlen(name) - 4;
-    bool isJarOrZip = ext > name &&
-      (os::file_name_strcmp(ext, ".jar") == 0 ||
-       os::file_name_strcmp(ext, ".zip") == 0);
-    if (isJarOrZip) {
-      char* jarpath = NEW_C_HEAP_ARRAY(char, directory_len + 2 + strlen(name), mtArguments);
-      sprintf(jarpath, "%s%s%s", directory, dir_sep, name);
-      path = add_to_path(path, jarpath, false);
-      FREE_C_HEAP_ARRAY(char, jarpath);
-    }
-  }
-  FREE_C_HEAP_ARRAY(char, dbuf);
-  os::closedir(dir);
-  return path;
-}
 
 // Parses a size specification string.
 bool Arguments::atojulong(const char *s, julong* result) {
@@ -2724,9 +2525,7 @@ Arguments::ArgsRange Arguments::parse_memory_size(const char* s,
 jint Arguments::parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
                                    const JavaVMInitArgs *java_options_args,
                                    const JavaVMInitArgs *cmd_line_args) {
-  // For components of the system classpath.
-  ArgumentBootClassPath bcp(Arguments::get_sysclasspath());
-  bool bcp_assembly_required = false;
+  bool xpatch_javabase = false;
 
   // Save default settings for some mode flags
   Arguments::_AlwaysCompileLoopMethods = AlwaysCompileLoopMethods;
@@ -2743,29 +2542,26 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
 
   // Parse args structure generated from JAVA_TOOL_OPTIONS environment
   // variable (if present).
-  jint result = parse_each_vm_init_arg(
-      java_tool_options_args, &bcp, &bcp_assembly_required, Flag::ENVIRON_VAR);
+  jint result = parse_each_vm_init_arg(java_tool_options_args, &xpatch_javabase, Flag::ENVIRON_VAR);
   if (result != JNI_OK) {
     return result;
   }
 
   // Parse args structure generated from the command line flags.
-  result = parse_each_vm_init_arg(cmd_line_args, &bcp, &bcp_assembly_required,
-                                  Flag::COMMAND_LINE);
+  result = parse_each_vm_init_arg(cmd_line_args, &xpatch_javabase, Flag::COMMAND_LINE);
   if (result != JNI_OK) {
     return result;
   }
 
   // Parse args structure generated from the _JAVA_OPTIONS environment
   // variable (if present) (mimics classic VM)
-  result = parse_each_vm_init_arg(
-      java_options_args, &bcp, &bcp_assembly_required, Flag::ENVIRON_VAR);
+  result = parse_each_vm_init_arg(java_options_args, &xpatch_javabase, Flag::ENVIRON_VAR);
   if (result != JNI_OK) {
     return result;
   }
 
   // Do final processing now that all arguments have been parsed
-  result = finalize_vm_init_args(&bcp, bcp_assembly_required);
+  result = finalize_vm_init_args();
   if (result != JNI_OK) {
     return result;
   }
@@ -2818,10 +2614,7 @@ bool valid_jdwp_agent(char *name, bool is_path) {
   return false;
 }
 
-jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
-                                       ArgumentBootClassPath* bcp_p,
-                                       bool* bcp_assembly_required_p,
-                                       Flag::Flags origin) {
+jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* xpatch_javabase, Flag::Flags origin) {
   // For match_option to return remaining or value part of option string
   const char* tail;
 
@@ -2877,8 +2670,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         return JNI_EINVAL;
     // -bootclasspath/a:
     } else if (match_option(option, "-Xbootclasspath/a:", &tail)) {
-      bcp_p->add_suffix(tail);
-      *bcp_assembly_required_p = true;
+      Arguments::set_bootclassloader_append_index((int)strlen(Arguments::get_sysclasspath())+1);
+      Arguments::append_sysclasspath(tail);
     // -bootclasspath/p:
     } else if (match_option(option, "-Xbootclasspath/p:", &tail)) {
         jio_fprintf(defaultStream::output_stream(),
@@ -2938,9 +2731,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       if (tail != NULL) {
         char *options = strcpy(NEW_C_HEAP_ARRAY(char, strlen(tail) + 1, mtArguments), tail);
         add_init_agent("instrument", options, false);
-        // java agents need module java.instrument. Also -addmods ALL-SYSTEM because
-        // the java agent is in the unmamed module of the application class loader
-        if (!Arguments::append_to_addmods_property("java.instrument,ALL-SYSTEM")) {
+        // java agents need module java.instrument
+        if (!Arguments::append_to_addmods_property("java.instrument")) {
           return JNI_ENOMEM;
         }
       }
@@ -3218,37 +3010,30 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         return JNI_ERR;
 #endif
       }
-      if (match_option(option, "-Djdk.launcher.patch.0=", &tail)) {
-        // -Xpatch
-        int dir_count;
-        char** patch_dirs = os::split_path(tail, &dir_count);
-        if (patch_dirs == NULL) {
-          jio_fprintf(defaultStream::output_stream(),
-            "Bad value for -Xpatch.\n");
+      if (match_option(option, "-Djdk.launcher.patch.", &tail)) {
+        // -Djdk.launcher.patch.#=<module>=<file>(<pathsep><file>)*
+        // The number, #, specified will be increasing with each -Xpatch
+        // specified on the command line.
+        // Pick up module name, following the -D property's equal sign.
+        const char* property_equal = strchr(tail, '=');
+        if (property_equal == NULL) {
+          jio_fprintf(defaultStream::output_stream(), "Missing '=' in -Xpatch specification\n");
           return JNI_ERR;
-        }
-        set_patch_dirs(patch_dirs);
-        set_patch_dirs_count(dir_count);
-
-        // Create a path for each patch dir consisting of dir/java.base.
-        char file_sep = os::file_separator()[0];
-        for (int x = 0; x < dir_count; x++) {
-          // Really shouldn't be NULL, but check can't hurt
-          if (patch_dirs[x] != NULL) {
-            size_t len = strlen(patch_dirs[x]);
-            if (len != 0) { // Ignore empty strings.
-              len += 11; // file_sep + "java.base" + null terminator.
-              char* dir = NEW_C_HEAP_ARRAY(char, len, mtArguments);
-              jio_snprintf(dir, len, "%s%cjava.base", patch_dirs[x], file_sep);
-
-              // See if Xpatch module path exists.
-              struct stat st;
-              if ((os::stat(dir, &st) == 0)) {
-                bcp_p->add_prefix(dir);
-                *bcp_assembly_required_p = true;
-              }
-              FREE_C_HEAP_ARRAY(char, dir);
-            }
+        } else {
+          // Find the equal sign between the module name and the path specification
+          const char* module_equal = strchr(property_equal + 1, '=');
+          if (module_equal == NULL) {
+            jio_fprintf(defaultStream::output_stream(), "Bad value for -Xpatch, no module name specified\n");
+            return JNI_ERR;
+          } else {
+            // Pick out the module name, in between the two equal signs
+            size_t module_len = module_equal - property_equal - 1;
+            char* module_name = NEW_C_HEAP_ARRAY(char, module_len+1, mtArguments);
+            memcpy(module_name, property_equal + 1, module_len);
+            *(module_name + module_len) = '\0';
+            // The path piece begins one past the module_equal sign
+            Arguments::add_xpatchprefix(module_name, module_equal + 1, xpatch_javabase);
+            FREE_C_HEAP_ARRAY(char, module_name);
           }
         }
       }
@@ -3511,6 +3296,27 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
   return JNI_OK;
 }
 
+void Arguments::add_xpatchprefix(const char* module_name, const char* path, bool* xpatch_javabase) {
+  // For java.base check for duplicate -Xpatch options being specified on the command line.
+  // This check is only required for java.base, all other duplicate module specifications
+  // will be checked during module system initialization.  The module system initialization
+  // will throw an ExceptionInInitializerError if this situation occurs.
+  if (strcmp(module_name, "java.base") == 0) {
+    if (*xpatch_javabase) {
+      vm_exit_during_initialization("Cannot specify java.base more than once to -Xpatch");
+    } else {
+      *xpatch_javabase = true;
+    }
+  }
+
+  // Create GrowableArray lazily, only if -Xpatch has been specified
+  if (_xpatchprefix == NULL) {
+    _xpatchprefix = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<ModuleXPatchPath*>(10, true);
+  }
+
+  _xpatchprefix->push(new ModuleXPatchPath(module_name, path));
+}
+
 // Set property jdk.boot.class.path.append to the contents of the bootclasspath
 // that follows either the jimage file or exploded module directories.  The
 // property will contain -Xbootclasspath/a and/or jvmti appended additions.
@@ -3609,7 +3415,7 @@ static int check_non_empty_dirs(const char* path) {
   return nonEmptyDirs;
 }
 
-jint Arguments::finalize_vm_init_args(ArgumentBootClassPath* bcp_p, bool bcp_assembly_required) {
+jint Arguments::finalize_vm_init_args() {
   // check if the default lib/endorsed directory exists; if so, error
   char path[JVM_MAXPATHLEN];
   const char* fileSep = os::file_separator();
@@ -3645,17 +3451,7 @@ jint Arguments::finalize_vm_init_args(ArgumentBootClassPath* bcp_p, bool bcp_ass
     return JNI_ERR;
   }
 
-  if (bcp_assembly_required) {
-    // Assemble the bootclasspath elements into the final path.
-    char *combined_path = bcp_p->combined_path();
-    Arguments::set_sysclasspath(combined_path);
-    FREE_C_HEAP_ARRAY(char, combined_path);
-  } else {
-    // At this point in sysclasspath processing anything
-    // added would be considered in the boot loader's append path.
-    // Record this index, including +1 for the file separator character.
-    Arguments::set_bootclassloader_append_index(((int)strlen(Arguments::get_sysclasspath()))+1);
-  }
+  Arguments::set_bootclassloader_append_index(((int)strlen(Arguments::get_sysclasspath()))+1);
 
   // This must be done after all arguments have been processed.
   // java_compiler() true means set to "NONE" or empty.
@@ -3702,6 +3498,12 @@ jint Arguments::finalize_vm_init_args(ArgumentBootClassPath* bcp_p, bool bcp_ass
 #ifndef TIERED
   // Tiered compilation is undefined.
   UNSUPPORTED_OPTION(TieredCompilation);
+#endif
+
+#if INCLUDE_JVMCI
+  if (EnableJVMCI && !append_to_addmods_property("jdk.vm.ci")) {
+    return JNI_ENOMEM;
+  }
 #endif
 
   // If we are running in a headless jre, force java.awt.headless property
@@ -4005,7 +3807,7 @@ jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_
 
 void Arguments::set_shared_spaces_flags() {
   if (DumpSharedSpaces) {
-    if (Arguments::patch_dirs() != NULL) {
+    if (Arguments::get_xpatchprefix() != NULL) {
       vm_exit_during_initialization(
         "Cannot use the following option when dumping the shared archive", "-Xpatch");
     }

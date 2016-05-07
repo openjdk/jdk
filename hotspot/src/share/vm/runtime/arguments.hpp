@@ -41,17 +41,15 @@ extern "C" {
   typedef jint (JNICALL *vfprintf_hook_t)(FILE *fp, const char *format, va_list args)  ATTRIBUTE_PRINTF(2, 0);
 }
 
-// Forward declarations
-class ArgumentBootClassPath;
-
-// PathString is used as the underlying value container for a
-// SystemProperty and for the string that represents the system
-// boot class path, Arguments::_system_boot_class_path.
+// PathString is used as:
+//  - the underlying value for a SystemProperty
+//  - the path portion of an -Xpatch module/path pair
+//  - the string that represents the system boot class path, Arguments::_system_boot_class_path.
 class PathString : public CHeapObj<mtArguments> {
  protected:
-  char*           _value;
+  char* _value;
  public:
-  char* value() const                       { return _value; }
+  char* value() const { return _value; }
 
   bool set_value(const char *value) {
     if (_value != NULL) {
@@ -92,7 +90,6 @@ class PathString : public CHeapObj<mtArguments> {
     }
   }
 
-  // Constructor
   PathString(const char* value) {
     if (value == NULL) {
       _value = NULL;
@@ -101,6 +98,43 @@ class PathString : public CHeapObj<mtArguments> {
       strcpy(_value, value);
     }
   }
+
+  ~PathString() {
+    if (_value != NULL) {
+      FreeHeap(_value);
+      _value = NULL;
+    }
+  }
+};
+
+// ModuleXPatchPath records the module/path pair as specified to -Xpatch.
+class ModuleXPatchPath : public CHeapObj<mtInternal> {
+private:
+  char* _module_name;
+  PathString* _path;
+public:
+  ModuleXPatchPath(const char* module_name, const char* path) {
+    assert(module_name != NULL && path != NULL, "Invalid module name or path value");
+    size_t len = strlen(module_name) + 1;
+    _module_name = AllocateHeap(len, mtInternal);
+    strncpy(_module_name, module_name, len); // copy the trailing null
+    _path =  new PathString(path);
+  }
+
+  ~ModuleXPatchPath() {
+    if (_module_name != NULL) {
+      FreeHeap(_module_name);
+      _module_name = NULL;
+    }
+    if (_path != NULL) {
+      delete _path;
+      _path = NULL;
+    }
+  }
+
+  inline void set_path(const char* path) { _path->set_value(path); }
+  inline const char* module_name() const { return _module_name; }
+  inline char* path_string() const { return _path->value(); }
 };
 
 // Element describing System and User (-Dkey=value flags) defined property.
@@ -114,7 +148,7 @@ class SystemProperty : public PathString {
   SystemProperty* _next;
   bool            _internal;
   bool            _writeable;
-  bool writeable()   { return _writeable; }
+  bool writeable() { return _writeable; }
 
  public:
   // Accessors
@@ -314,10 +348,19 @@ class Arguments : AllStatic {
   static SystemProperty *_java_class_path;
   static SystemProperty *_jdk_boot_class_path_append;
 
+  // -Xpatch:module=<file>(<pathsep><file>)*
+  // Each element contains the associated module name, path
+  // string pair as specified to -Xpatch.
+  static GrowableArray<ModuleXPatchPath*>* _xpatchprefix;
+
   // The constructed value of the system class path after
   // argument processing and JVMTI OnLoad additions via
   // calls to AddToBootstrapClassLoaderSearch.  This is the
   // final form before ClassLoader::setup_bootstrap_search().
+  // Note: since -Xpatch is a module name/path pair, the system
+  // boot class path string no longer contains the "prefix" to
+  // the boot class path base piece as it did when
+  // -Xbootclasspath/p was supported.
   static PathString *_system_boot_class_path;
 
   // temporary: to emit warning if the default ext dirs are not empty.
@@ -372,12 +415,6 @@ class Arguments : AllStatic {
   // Used when setting up the bootstrap search path in order to
   // mark the boot loader's append path observability boundary.
   static int _bootclassloader_append_index;
-
-  // -Xpatch flag
-  static char** _patch_dirs;
-  static int _patch_dirs_count;
-  static void set_patch_dirs(char** dirs) { _patch_dirs = dirs; }
-  static void set_patch_dirs_count(int count) { _patch_dirs_count = count; }
 
   // -Xdebug flag
   static bool _xdebug_mode;
@@ -465,8 +502,8 @@ class Arguments : AllStatic {
   static jint parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
                                  const JavaVMInitArgs *java_options_args,
                                  const JavaVMInitArgs *cmd_line_args);
-  static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, ArgumentBootClassPath* bcp_p, bool* bcp_assembly_required_p, Flag::Flags origin);
-  static jint finalize_vm_init_args(ArgumentBootClassPath* bcp_p, bool bcp_assembly_required);
+  static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* xpatch_javabase, Flag::Flags origin);
+  static jint finalize_vm_init_args();
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore, const char* option_type);
 
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore) {
@@ -637,12 +674,11 @@ class Arguments : AllStatic {
     return _bootclassloader_append_index;
   }
   static void set_bootclassloader_append_index(int value) {
-    _bootclassloader_append_index = value;
+    // Set only if the index has not been set yet
+    if (_bootclassloader_append_index == -1) {
+      _bootclassloader_append_index = value;
+    }
   }
-
-  // -Xpatch
-  static char** patch_dirs()             { return _patch_dirs; }
-  static int patch_dirs_count()          { return _patch_dirs_count; }
 
   // -Xrun
   static AgentLibrary* libraries()          { return _libraryList.first(); }
@@ -701,8 +737,8 @@ class Arguments : AllStatic {
   static void set_library_path(const char *value) { _java_library_path->set_value(value); }
   static void set_ext_dirs(char *value)     { _ext_dirs = os::strdup_check_oom(value); }
 
-  // Set up of the underlying system boot class path
-  static void set_jdkbootclasspath_append();
+  // Set up the underlying pieces of the system boot class path
+  static void add_xpatchprefix(const char *module_name, const char *path, bool* xpatch_javabase);
   static void set_sysclasspath(const char *value) {
     _system_boot_class_path->set_value(value);
     set_jdkbootclasspath_append();
@@ -711,11 +747,15 @@ class Arguments : AllStatic {
     _system_boot_class_path->append_value(value);
     set_jdkbootclasspath_append();
   }
+  static void set_jdkbootclasspath_append();
 
-  static char* get_java_home() { return _java_home->value(); }
-  static char* get_dll_dir() { return _sun_boot_library_path->value(); }
+  static GrowableArray<ModuleXPatchPath*>* get_xpatchprefix() { return _xpatchprefix; }
   static char* get_sysclasspath() { return _system_boot_class_path->value(); }
-  static char* get_ext_dirs()        { return _ext_dirs;  }
+  static char* get_jdk_boot_class_path_append() { return _jdk_boot_class_path_append->value(); }
+
+  static char* get_java_home()    { return _java_home->value(); }
+  static char* get_dll_dir()      { return _sun_boot_library_path->value(); }
+  static char* get_ext_dirs()     { return _ext_dirs;  }
   static char* get_appclasspath() { return _java_class_path->value(); }
   static void  fix_appclasspath();
 

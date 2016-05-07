@@ -142,11 +142,28 @@ public:
   JImageFile* jimage() const { return _jimage; }
   ClassPathImageEntry(JImageFile* jimage, const char* name);
   ~ClassPathImageEntry();
-  void name_to_package(const char* name, char* package, int length);
   ClassFileStream* open_stream(const char* name, TRAPS);
 
   // Debugging
   NOT_PRODUCT(void compile_the_world(Handle loader, TRAPS);)
+};
+
+// ModuleClassPathList contains a linked list of ClassPathEntry's
+// that have been specified for a specific module.  Currently,
+// the only way to specify a module/path pair is via the -Xpatch
+// command line option.
+class ModuleClassPathList : public CHeapObj<mtClass> {
+private:
+  Symbol* _module_name;
+  // First and last entries of class path entries for a specific module
+  ClassPathEntry* _module_first_entry;
+  ClassPathEntry* _module_last_entry;
+public:
+  Symbol* module_name() const { return _module_name; }
+  ClassPathEntry* module_first_entry() const { return _module_first_entry; }
+  ModuleClassPathList(Symbol* module_name);
+  ~ModuleClassPathList();
+  void add_to_list(ClassPathEntry* new_entry);
 };
 
 class SharedPathsMiscInfo;
@@ -195,21 +212,31 @@ class ClassLoader: AllStatic {
   static PerfCounter* _isUnsyncloadClass;
   static PerfCounter* _load_instance_class_failCounter;
 
-  // First entry in linked list of ClassPathEntry instances.
-  // This consists of entries made up by:
-  //   - boot loader modules
-  //     [-Xpatch]; exploded build | modules;
-  //   - boot loader append path
-  //     [-Xbootclasspath/a]; [jvmti appended entries]
+  // The boot class path consists of 3 ordered pieces:
+  //  1. the module/path pairs specified to -Xpatch
+  //    -Xpatch:<module>=<file>(<pathsep><file>)*
+  //  2. the base piece
+  //    [exploded build | jimage]
+  //  3. boot loader append path
+  //    [-Xbootclasspath/a]; [jvmti appended entries]
+  //
+  // The boot loader must obey this order when attempting
+  // to load a class.
+
+  // Contains the module/path pairs specified to -Xpatch
+  static GrowableArray<ModuleClassPathList*>* _xpatch_entries;
+
+  // Contains the ClassPathEntry instances that include
+  // both the base piece and the boot loader append path.
   static ClassPathEntry* _first_entry;
   // Last entry in linked list of ClassPathEntry instances
   static ClassPathEntry* _last_entry;
   static int _num_entries;
 
-  // Pointer into the linked list of ClassPathEntry instances.
   // Marks the start of:
   //   - the boot loader's append path
   //     [-Xbootclasspath/a]; [jvmti appended entries]
+  // within the linked list of ClassPathEntry instances.
   static ClassPathEntry* _first_append_entry;
 
   static const char* _shared_archive;
@@ -325,11 +352,11 @@ class ClassLoader: AllStatic {
     return _load_instance_class_failCounter;
   }
 
-  // Sets _has_jimage to TRUE if "modules" jimage file exists
-  static void set_has_jimage(bool val) {
-    _has_jimage = val;
-  }
+  // Set up the module/path pairs as specified to -Xpatch
+  static void setup_xpatch_entries();
 
+  // Sets _has_jimage to TRUE if "modules" jimage file exists
+  static void set_has_jimage();
   static bool has_jimage() { return _has_jimage; }
 
   // Create the ModuleEntry for java.base
@@ -415,6 +442,9 @@ class ClassLoader: AllStatic {
   static void prepend_to_list(const char* apath);
 
   static bool string_ends_with(const char* str, const char* str_to_find);
+
+  // obtain package name from a fully qualified class name
+  static const char* package_from_name(const char* class_name);
 
   static bool is_jrt(const char* name) { return string_ends_with(name, MODULES_IMAGE_NAME); }
 

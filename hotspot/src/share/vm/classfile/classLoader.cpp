@@ -140,9 +140,10 @@ PerfCounter*    ClassLoader::_unsafe_defineClassCallCounter = NULL;
 PerfCounter*    ClassLoader::_isUnsyncloadClass = NULL;
 PerfCounter*    ClassLoader::_load_instance_class_failCounter = NULL;
 
-ClassPathEntry* ClassLoader::_first_entry         = NULL;
-ClassPathEntry* ClassLoader::_last_entry          = NULL;
-int             ClassLoader::_num_entries         = 0;
+GrowableArray<ModuleClassPathList*>* ClassLoader::_xpatch_entries = NULL;
+ClassPathEntry* ClassLoader::_first_entry        = NULL;
+ClassPathEntry* ClassLoader::_last_entry         = NULL;
+int             ClassLoader::_num_entries        = 0;
 ClassPathEntry* ClassLoader::_first_append_entry = NULL;
 bool            ClassLoader::_has_jimage = false;
 #if INCLUDE_CDS
@@ -179,6 +180,44 @@ bool ClassLoader::string_ends_with(const char* str, const char* str_to_find) {
   return (strncmp(str + (str_len - str_to_find_len), str_to_find, str_to_find_len) == 0);
 }
 
+// Used to obtain the package name from a fully qualified class name.
+// It is the responsibility of the caller to establish ResourceMark.
+const char* ClassLoader::package_from_name(const char* class_name) {
+  const char* last_slash = strrchr(class_name, '/');
+  if (last_slash == NULL) {
+    // No package name
+    return NULL;
+  }
+  int length = last_slash - class_name;
+
+  // A class name could have just the slash character in the name,
+  // resulting in a negative length.
+  if (length <= 0) {
+    // No package name
+    return NULL;
+  }
+
+  // drop name after last slash (including slash)
+  // Ex., "java/lang/String.class" => "java/lang"
+  char* pkg_name = NEW_RESOURCE_ARRAY(char, length + 1);
+  strncpy(pkg_name, class_name, length);
+  *(pkg_name+length) = '\0';
+
+  return (const char *)pkg_name;
+}
+
+// Given a fully qualified class name, find its defining package in the class loader's
+// package entry table.
+static PackageEntry* get_package_entry(const char* class_name, ClassLoaderData* loader_data, TRAPS) {
+  ResourceMark rm(THREAD);
+  const char *pkg_name = ClassLoader::package_from_name(class_name);
+  if (pkg_name == NULL) {
+    return NULL;
+  }
+  PackageEntryTable* pkgEntryTable = loader_data->packages();
+  TempNewSymbol pkg_symbol = SymbolTable::new_symbol(pkg_name, CHECK_NULL);
+  return pkgEntryTable->lookup_only(pkg_symbol);
+}
 
 ClassPathDirEntry::ClassPathDirEntry(const char* dir) : ClassPathEntry() {
   char* copy = NEW_C_HEAP_ARRAY(char, strlen(dir)+1, mtClass);
@@ -281,8 +320,7 @@ u1* ClassPathZipEntry::open_entry(const char* name, jint* filesize, bool nul_ter
 #if INCLUDE_CDS
 u1* ClassPathZipEntry::open_versioned_entry(const char* name, jint* filesize, TRAPS) {
   u1* buffer = NULL;
-  if (!_is_boot_append) {
-    assert(DumpSharedSpaces, "Should be called only for non-boot entries during dump time");
+  if (DumpSharedSpaces) {
     // We presume default is multi-release enabled
     const char* multi_ver = Arguments::get_property("jdk.util.jar.enableMultiRelease");
     const char* verstr = Arguments::get_property("jdk.util.jar.version");
@@ -402,31 +440,6 @@ ClassPathImageEntry::~ClassPathImageEntry() {
   }
 }
 
-void ClassPathImageEntry::name_to_package(const char* name, char* buffer, int length) {
-  const char *pslash = strrchr(name, '/');
-  if (pslash == NULL) {
-    buffer[0] = '\0';
-    return;
-  }
-  int len = pslash - name;
-#if INCLUDE_CDS
-  if (len <= 0 && DumpSharedSpaces) {
-    buffer[0] = '\0';
-    return;
-  }
-#endif
-  assert(len > 0, "Bad length for package name");
-  if (len >= length) {
-    buffer[0] = '\0';
-    return;
-  }
-  // drop name after last slash (including slash)
-  // Ex., "java/lang/String.class" => "java/lang"
-  strncpy(buffer, name, len);
-  // ensure string termination (strncpy does not guarantee)
-  buffer[len] = '\0';
-}
-
 // For a class in a named module, look it up in the jimage file using this syntax:
 //    /<module-name>/<package-name>/<base-class>
 //
@@ -439,15 +452,10 @@ ClassFileStream* ClassPathImageEntry::open_stream(const char* name, TRAPS) {
   JImageLocationRef location = (*JImageFindResource)(_jimage, "", get_jimage_version_string(), name, &size);
 
   if (location == 0) {
-    char package[JIMAGE_MAX_PATH];
-    name_to_package(name, package, JIMAGE_MAX_PATH);
+    ResourceMark rm;
+    const char* pkg_name = ClassLoader::package_from_name(name);
 
-#if INCLUDE_CDS
-    if (package[0] == '\0' && DumpSharedSpaces) {
-      return NULL;
-    }
-#endif
-    if (package[0] != '\0') {
+    if (pkg_name != NULL) {
       if (!Universe::is_module_initialized()) {
         location = (*JImageFindResource)(_jimage, "java.base", get_jimage_version_string(), name, &size);
 #if INCLUDE_CDS
@@ -455,7 +463,7 @@ ClassFileStream* ClassPathImageEntry::open_stream(const char* name, TRAPS) {
         // modules defined for other class loaders.  So, for now, get their module
         // names from the "modules" jimage file.
         if (DumpSharedSpaces && location == 0) {
-          const char* module_name = (*JImagePackageToModule)(_jimage, package);
+          const char* module_name = (*JImagePackageToModule)(_jimage, pkg_name);
           if (module_name != NULL) {
             location = (*JImageFindResource)(_jimage, module_name, get_jimage_version_string(), name, &size);
           }
@@ -463,13 +471,7 @@ ClassFileStream* ClassPathImageEntry::open_stream(const char* name, TRAPS) {
 #endif
 
       } else {
-        // Get boot class loader's package entry table
-        PackageEntryTable* pkgEntryTable =
-          ClassLoaderData::the_null_class_loader_data()->packages();
-        // Get package's package entry
-        TempNewSymbol pkg_symbol = SymbolTable::new_symbol(package, CHECK_NULL);
-        PackageEntry* package_entry = pkgEntryTable->lookup_only(pkg_symbol);
-
+        PackageEntry* package_entry = get_package_entry(name, ClassLoaderData::the_null_class_loader_data(), THREAD);
         if (package_entry != NULL) {
           ResourceMark rm;
           // Get the module name
@@ -541,6 +543,33 @@ void ClassLoader::exit_with_path_failure(const char* error, const char* message)
   vm_exit_during_initialization(error, message);
 }
 #endif
+
+ModuleClassPathList::ModuleClassPathList(Symbol* module_name) {
+  _module_name = module_name;
+  _module_first_entry = NULL;
+  _module_last_entry = NULL;
+}
+
+ModuleClassPathList::~ModuleClassPathList() {
+  // Clean out each ClassPathEntry on list
+  ClassPathEntry* e = _module_first_entry;
+  while (e != NULL) {
+    ClassPathEntry* next_entry = e->next();
+    delete e;
+    e = next_entry;
+  }
+}
+
+void ModuleClassPathList::add_to_list(ClassPathEntry* new_entry) {
+  if (new_entry != NULL) {
+    if (_module_last_entry == NULL) {
+      _module_first_entry = _module_last_entry = new_entry;
+    } else {
+      _module_last_entry->set_next(new_entry);
+      _module_last_entry = new_entry;
+    }
+  }
+}
 
 void ClassLoader::trace_class_path(const char* msg, const char* name) {
   if (log_is_enabled(Info, class, path)) {
@@ -618,6 +647,61 @@ bool ClassLoader::check_shared_paths_misc_info(void *buf, int size) {
   return result;
 }
 #endif
+
+// Construct the array of module/path pairs as specified to -Xpatch
+// for the boot loader to search ahead of the jimage, if the class being
+// loaded is defined to a module that has been specified to -Xpatch.
+void ClassLoader::setup_xpatch_entries() {
+  Thread* THREAD = Thread::current();
+  GrowableArray<ModuleXPatchPath*>* xpatch_args = Arguments::get_xpatchprefix();
+  int num_of_entries = xpatch_args->length();
+
+  // Set up the boot loader's xpatch_entries list
+  _xpatch_entries = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<ModuleClassPathList*>(num_of_entries, true);
+
+  for (int i = 0; i < num_of_entries; i++) {
+    const char* module_name = (xpatch_args->at(i))->module_name();
+    Symbol* const module_sym = SymbolTable::lookup(module_name, (int)strlen(module_name), CHECK);
+    assert(module_sym != NULL, "Failed to obtain Symbol for module name");
+    ModuleClassPathList* module_cpl = new ModuleClassPathList(module_sym);
+
+    char* class_path = (xpatch_args->at(i))->path_string();
+    int len = (int)strlen(class_path);
+    int end = 0;
+    // Iterate over the module's class path entries
+    for (int start = 0; start < len; start = end) {
+      while (class_path[end] && class_path[end] != os::path_separator()[0]) {
+        end++;
+      }
+      EXCEPTION_MARK;
+      ResourceMark rm(THREAD);
+      char* path = NEW_RESOURCE_ARRAY(char, end - start + 1);
+      strncpy(path, &class_path[start], end - start);
+      path[end - start] = '\0';
+
+      struct stat st;
+      if (os::stat(path, &st) == 0) {
+        // File or directory found
+        Thread* THREAD = Thread::current();
+        ClassPathEntry* new_entry = create_class_path_entry(path, &st, false, false, CHECK);
+        // If the path specification is valid, enter it into this module's list
+        if (new_entry != NULL) {
+          module_cpl->add_to_list(new_entry);
+        }
+      }
+
+      while (class_path[end] == os::path_separator()[0]) {
+        end++;
+      }
+    }
+
+    // Record the module into the list of -Xpatch entries only if
+    // valid ClassPathEntrys have been created
+    if (module_cpl->module_first_entry() != NULL) {
+      _xpatch_entries->push(module_cpl);
+    }
+  }
+}
 
 void ClassLoader::setup_search_path(const char *class_path, bool bootstrap_search) {
   int offset = 0;
@@ -850,8 +934,29 @@ bool ClassLoader::update_class_path_entry_list(const char *path,
 }
 
 void ClassLoader::print_bootclasspath() {
-  ClassPathEntry* e = _first_entry;
+  ClassPathEntry* e;
   tty->print("[bootclasspath= ");
+
+  // Print -Xpatch module/path specifications first
+  if (_xpatch_entries != NULL) {
+    ResourceMark rm;
+    int num_of_entries = _xpatch_entries->length();
+    for (int i = 0; i < num_of_entries; i++) {
+      ModuleClassPathList* mpl = _xpatch_entries->at(i);
+      tty->print("%s=", mpl->module_name()->as_C_string());
+      e = mpl->module_first_entry();
+      while (e != NULL) {
+        tty->print("%s", e->name());
+        e = e->next();
+        if (e != NULL) {
+          tty->print("%s", os::path_separator());
+        }
+      }
+      tty->print(" ;");
+    }
+  }
+
+  e = _first_entry;
   while (e != NULL) {
     tty->print("%s ;", e->name());
     e = e->next();
@@ -945,6 +1050,7 @@ void ClassLoader::initialize_module_loader_map(JImageFile* jimage) {
     return; // only needed for CDS dump time
   }
 
+  ResourceMark rm;
   jlong size;
   JImageLocationRef location = (*JImageFindResource)(jimage, "java.base", get_jimage_version_string(), MODULE_LOADER_MAP, &size);
   if (location == 0) {
@@ -989,7 +1095,6 @@ void ClassLoader::initialize_module_loader_map(JImageFile* jimage) {
     begin_ptr = ++end_ptr;
     end_ptr = strchr(begin_ptr, '\n');
   }
-  FREE_RESOURCE_ARRAY(u1, buffer, size);
 }
 #endif
 
@@ -1110,8 +1215,7 @@ s2 ClassLoader::module_to_classloader(const char* module_name) {
   return APP_LOADER;
 }
 
-s2 ClassLoader::classloader_type(Symbol* class_name, ClassPathEntry* e,
-                                     int classpath_index, TRAPS) {
+s2 ClassLoader::classloader_type(Symbol* class_name, ClassPathEntry* e, int classpath_index, TRAPS) {
   assert(DumpSharedSpaces, "Only used for CDS dump time");
 
   // obtain the classloader type based on the class name.
@@ -1160,12 +1264,11 @@ const char* ClassLoader::file_name_for_class_name(const char* class_name,
 }
 
 instanceKlassHandle ClassLoader::load_class(Symbol* name, bool search_append_only, TRAPS) {
-
   assert(name != NULL, "invariant");
   assert(THREAD->is_Java_thread(), "must be a JavaThread");
 
-  ResourceMark rm;
-  HandleMark hm;
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
 
   const char* const class_name = name->as_C_string();
 
@@ -1181,30 +1284,101 @@ instanceKlassHandle ClassLoader::load_class(Symbol* name, bool search_append_onl
   // Lookup stream for parsing .class file
   ClassFileStream* stream = NULL;
   s2 classpath_index = 0;
+  ClassPathEntry* e = NULL;
 
   // If DumpSharedSpaces is true, boot loader visibility boundaries are set
-  // to be _first_entry to the end (all path entries).
+  // to be _first_entry to the end (all path entries). No -Xpatch entries are
+  // included since CDS and AppCDS are not supported if -Xpatch is specified.
   //
   // If search_append_only is true, boot loader visibility boundaries are
-  // set to be _fist_append_entry to the end. This includes:
+  // set to be _first_append_entry to the end. This includes:
   //   [-Xbootclasspath/a]; [jvmti appended entries]
   //
   // If both DumpSharedSpaces and search_append_only are false, boot loader
   // visibility boundaries are set to be _first_entry to the entry before
   // the _first_append_entry.  This would include:
-  //   [-Xpatch:<dirs>];  [exploded build | modules]
+  //   [-Xpatch:<module>=<file>(<pathsep><file>)*];  [exploded build | jimage]
   //
   // DumpSharedSpaces and search_append_only are mutually exclusive and cannot
   // be true at the same time.
-  ClassPathEntry* e = (search_append_only ? _first_append_entry : _first_entry);
-  ClassPathEntry* last_e =
-      (search_append_only || DumpSharedSpaces ? NULL : _first_append_entry);
+  assert(!(DumpSharedSpaces && search_append_only), "DumpSharedSpaces and search_append_only are both true");
 
-  {
+  // Load Attempt #1: -Xpatch
+  // Determine the class' defining module.  If it appears in the _xpatch_entries,
+  // attempt to load the class from those locations specific to the module.
+  // Note: The -Xpatch entries are never searched if the boot loader's
+  //       visibility boundary is limited to only searching the append entries.
+  if (_xpatch_entries != NULL && !search_append_only && !DumpSharedSpaces) {
+    // Find the module in the boot loader's module entry table
+    PackageEntry* pkg_entry = get_package_entry(class_name, ClassLoaderData::the_null_class_loader_data(), THREAD);
+    ModuleEntry* mod_entry = (pkg_entry != NULL) ? pkg_entry->module() : NULL;
+
+    // If the module system has not defined java.base yet, then
+    // classes loaded are assumed to be defined to java.base.
+    // When java.base is eventually defined by the module system,
+    // all packages of classes that have been previously loaded
+    // are verified in ModuleEntryTable::verify_javabase_packages().
+    if (!Universe::is_module_initialized() &&
+        !ModuleEntryTable::javabase_defined() &&
+        mod_entry == NULL) {
+      mod_entry = ModuleEntryTable::javabase_module();
+    }
+
+    // The module must be a named module
+    if (mod_entry != NULL && mod_entry->is_named()) {
+      int num_of_entries = _xpatch_entries->length();
+      const Symbol* class_module_name = mod_entry->name();
+
+      // Loop through all the xpatch entries looking for module
+      for (int i = 0; i < num_of_entries; i++) {
+        ModuleClassPathList* module_cpl = _xpatch_entries->at(i);
+        Symbol* module_cpl_name = module_cpl->module_name();
+
+        if (module_cpl_name->fast_compare(class_module_name) == 0) {
+          // Class' module has been located, attempt to load
+          // the class from the module's ClassPathEntry list.
+          e = module_cpl->module_first_entry();
+          while (e != NULL) {
+            stream = e->open_stream(file_name, CHECK_NULL);
+            // No context.check is required since both CDS
+            // and AppCDS are turned off if -Xpatch is specified.
+            if (NULL != stream) {
+              break;
+            }
+            e = e->next();
+          }
+          // If the module was located in the xpatch entries, break out
+          // even if the class was not located successfully from that module's
+          // ClassPathEntry list. There will not be another valid entry for
+          // that module in the _xpatch_entries array.
+          break;
+        }
+      }
+    }
+  }
+
+  // Load Attempt #2: [exploded build | jimage]
+  if (!search_append_only && (NULL == stream)) {
+    e = _first_entry;
+    while ((e != NULL) && (e != _first_append_entry)) {
+      stream = e->open_stream(file_name, CHECK_NULL);
+      if (!context.check(stream, classpath_index)) {
+        return NULL;
+      }
+      if (NULL != stream) {
+        break;
+      }
+      e = e->next();
+      ++classpath_index;
+    }
+  }
+
+  // Load Attempt #3: [-Xbootclasspath/a]; [jvmti appended entries]
+  if ((search_append_only || DumpSharedSpaces) && (NULL == stream)) {
+    // For the boot loader append path search, must calculate
+    // the starting classpath_index prior to attempting to
+    // load the classfile.
     if (search_append_only) {
-      // For the boot loader append path search, must calculate
-      // the starting classpath_index prior to attempting to
-      // load the classfile.
       ClassPathEntry *tmp_e = _first_entry;
       while ((tmp_e != NULL) && (tmp_e != _first_append_entry)) {
         tmp_e = tmp_e->next();
@@ -1212,11 +1386,8 @@ instanceKlassHandle ClassLoader::load_class(Symbol* name, bool search_append_onl
       }
     }
 
-    // Attempt to load the classfile from either:
-    //   - [-Xpatch:dir]; exploded build | modules
-    //     or
-    //   - [-Xbootclasspath/a]; [jvmti appended entries]
-    while ((e != NULL) && (e != last_e)) {
+    e = _first_append_entry;
+    while (e != NULL) {
       stream = e->open_stream(file_name, CHECK_NULL);
       if (!context.check(stream, classpath_index)) {
         return NULL;
@@ -1386,8 +1557,21 @@ int ClassLoader::compute_Object_vtable() {
 }
 
 
-void classLoader_init() {
+void classLoader_init1() {
   ClassLoader::initialize();
+}
+
+// Complete the ClassPathEntry setup for the boot loader
+void classLoader_init2() {
+  // Setup the list of module/path pairs for -Xpatch processing
+  // This must be done after the SymbolTable is created in order
+  // to use fast_compare on module names instead of a string compare.
+  if (Arguments::get_xpatchprefix() != NULL) {
+    ClassLoader::setup_xpatch_entries();
+  }
+
+  // Determine if this is an exploded build
+  ClassLoader::set_has_jimage();
 }
 
 
@@ -1433,17 +1617,19 @@ void ClassLoader::create_javabase() {
     }
     ModuleEntryTable::set_javabase_module(jb_module);
   }
+}
 
-  // When looking for the jimage file, only
-  // search the boot loader's module path which
-  // can consist of [-Xpatch]; exploded build | modules
-  // Do not search the boot loader's append path.
+void ClassLoader::set_has_jimage() {
+  // Determine if this is an exploded build. When looking for
+  // the jimage file, only search the piece of the boot
+  // loader's boot class path which contains [exploded build | jimage].
+  // Do not search the boot loader's xpatch entries or append path.
   ClassPathEntry* e = _first_entry;
   ClassPathEntry* last_e = _first_append_entry;
   while ((e != NULL) && (e != last_e)) {
     JImageFile *jimage = e->jimage();
     if (jimage != NULL && e->is_jrt()) {
-      set_has_jimage(true);
+      _has_jimage = true;
 #if INCLUDE_CDS
       ClassLoader::initialize_module_loader_map(jimage);
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,8 @@ public class Xpatch2Dirs {
              "mods2/java.desktop");
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-             "-Xpatch:mods" + File.pathSeparator + "mods2",
+             "-Xpatch:java.naming=mods/java.naming",
+             "-Xpatch:java.desktop=mods2/java.desktop",
              "Xpatch2DirsMain", "javax.naming.spi.NamingManager", "java.beans.Encoder");
 
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
