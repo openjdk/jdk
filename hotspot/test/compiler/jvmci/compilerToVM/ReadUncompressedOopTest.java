@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8136421
+ * @ignore 8155216
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @library / /testlibrary /test/lib/
  * @library ../common/patches
