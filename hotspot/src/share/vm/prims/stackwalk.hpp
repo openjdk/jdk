@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,21 +29,31 @@
 #include "oops/oop.hpp"
 #include "runtime/vframe.hpp"
 
-class StackWalkAnchor : public StackObj {
+//
+// JavaFrameStream is used by StackWalker to iterate through Java stack frames
+// on the given JavaThread.
+//
+class JavaFrameStream : public StackObj {
 private:
   enum {
     magic_pos = 0
   };
 
   JavaThread*           _thread;
-  vframeStream          _vfst;
+  javaVFrame*           _jvf;
   jlong                 _anchor;
 public:
-  StackWalkAnchor(JavaThread* thread)
-    : _thread(thread), _vfst(thread), _anchor(0L) {}
+  JavaFrameStream(JavaThread* thread, RegisterMap* rm)
+    : _thread(thread), _anchor(0L) {
+    _jvf = _thread->last_java_vframe(rm);
+  }
 
-  vframeStream&   vframe_stream()         { return _vfst; }
-  JavaThread*     thread()                { return _thread; }
+  javaVFrame*     java_frame()        { return _jvf; }
+  void            next()              { _jvf = _jvf->java_sender(); }
+  bool            at_end()            { return _jvf == NULL; }
+
+  Method* method()                    { return _jvf->method(); }
+  int bci()                           { return _jvf->bci(); }
 
   void setup_magic_on_entry(objArrayHandle frames_array);
   bool check_magic(objArrayHandle frames_array);
@@ -57,12 +67,12 @@ public:
     return (jlong) castable_address(this);
   }
 
-  static StackWalkAnchor* from_current(JavaThread* thread, jlong anchor, objArrayHandle frames_array);
+  static JavaFrameStream* from_current(JavaThread* thread, jlong magic, objArrayHandle frames_array);
 };
 
 class StackWalk : public AllStatic {
 private:
-  static int fill_in_frames(jlong mode, vframeStream& vfst,
+  static int fill_in_frames(jlong mode, JavaFrameStream& stream,
                             int max_nframes, int start_index,
                             objArrayHandle frames_array,
                             int& end_index, TRAPS);
