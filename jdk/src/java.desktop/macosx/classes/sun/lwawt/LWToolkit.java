@@ -404,6 +404,10 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
     public final PrintJob getPrintJob(Frame frame, String doctitle,
                                       JobAttributes jobAttributes,
                                       PageAttributes pageAttributes) {
+        if (frame == null) {
+            throw new NullPointerException("frame must not be null");
+        }
+
         if (GraphicsEnvironment.isHeadless()) {
             throw new IllegalArgumentException();
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,19 +40,7 @@ public class AlgorithmDecomposer {
     private static final Pattern pattern =
             Pattern.compile("with|and|(?<!padd)in", Pattern.CASE_INSENSITIVE);
 
-    /**
-     * Decompose the standard algorithm name into sub-elements.
-     * <p>
-     * For example, we need to decompose "SHA1WithRSA" into "SHA1" and "RSA"
-     * so that we can check the "SHA1" and "RSA" algorithm constraints
-     * separately.
-     * <p>
-     * Please override the method if need to support more name pattern.
-     */
-    public Set<String> decompose(String algorithm) {
-        if (algorithm == null || algorithm.length() == 0) {
-            return new HashSet<>();
-        }
+    private static Set<String> decomposeImpl(String algorithm) {
 
         // algorithm/mode/padding
         String[] transTockens = transPattern.split(algorithm);
@@ -79,6 +67,24 @@ public class AlgorithmDecomposer {
                 elements.add(token);
             }
         }
+        return elements;
+    }
+
+    /**
+     * Decompose the standard algorithm name into sub-elements.
+     * <p>
+     * For example, we need to decompose "SHA1WithRSA" into "SHA1" and "RSA"
+     * so that we can check the "SHA1" and "RSA" algorithm constraints
+     * separately.
+     * <p>
+     * Please override the method if need to support more name pattern.
+     */
+    public Set<String> decompose(String algorithm) {
+        if (algorithm == null || algorithm.length() == 0) {
+            return new HashSet<>();
+        }
+
+        Set<String> elements = decomposeImpl(algorithm);
 
         // In Java standard algorithm name specification, for different
         // purpose, the SHA-1 and SHA-2 algorithm names are different. For
@@ -130,4 +136,40 @@ public class AlgorithmDecomposer {
         return elements;
     }
 
+    private static void hasLoop(Set<String> elements, String find, String replace) {
+        if (elements.contains(find)) {
+            if (!elements.contains(replace)) {
+                elements.add(replace);
+            }
+            elements.remove(find);
+        }
+    }
+
+    /*
+     * This decomposes a standard name into sub-elements with a consistent
+     * message digest algorithm name to avoid overly complicated checking.
+     */
+    public static Set<String> decomposeOneHash(String algorithm) {
+        if (algorithm == null || algorithm.length() == 0) {
+            return new HashSet<>();
+        }
+
+        Set<String> elements = decomposeImpl(algorithm);
+
+        hasLoop(elements, "SHA-1", "SHA1");
+        hasLoop(elements, "SHA-224", "SHA224");
+        hasLoop(elements, "SHA-256", "SHA256");
+        hasLoop(elements, "SHA-384", "SHA384");
+        hasLoop(elements, "SHA-512", "SHA512");
+
+        return elements;
+    }
+
+    /*
+     * The provided message digest algorithm name will return a consistent
+     * naming scheme.
+     */
+    public static String hashName(String algorithm) {
+        return algorithm.replace("-", "");
+    }
 }

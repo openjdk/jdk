@@ -56,7 +56,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     }
 
     @Test
-    void testSourcePathConflict(Path base) throws Exception {
+    public void testSourcePathConflict(Path base) throws Exception {
         Path sp = base.resolve("src");
         Path msp = base.resolve("srcmodules");
 
@@ -74,7 +74,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     }
 
     @Test
-    void testUnnormalizedPath1(Path base) throws Exception {
+    public void testUnnormalizedPath1(Path base) throws Exception {
         Path src = base.resolve("src");
         Path src_m1 = src.resolve("m1");
         tb.writeJavaFiles(src_m1, "module m1 { }");
@@ -91,7 +91,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     }
 
     @Test
-    void testUnnormalizedPath2(Path base) throws Exception {
+    public void testUnnormalizedPath2(Path base) throws Exception {
         Path src = base.resolve("src");
         Path src_m1 = src.resolve("m1");
         tb.writeJavaFiles(src_m1, "module m1 { }");
@@ -115,7 +115,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     }
 
     @Test
-    void regularBraces(Path base) throws Exception {
+    public void regularBraces(Path base) throws Exception {
         generateModules(base, "src1", "src2/inner_dir");
 
         final Path modules = base.resolve("modules");
@@ -136,7 +136,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     }
 
     @Test
-    void mismatchedBraces(Path base) throws Exception {
+    public void mismatchedBraces(Path base) throws Exception {
         final List<String> sourcePaths = Arrays.asList(
                 "{",
                 "}",
@@ -165,7 +165,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     }
 
     @Test
-    void deepBraces(Path base) throws Exception {
+    public void deepBraces(Path base) throws Exception {
         String[] modulePaths = {"src/src1",
                 "src/src2",
                 "src/src3",
@@ -197,7 +197,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     }
 
     @Test
-    void fileInPath(Path base) throws Exception {
+    public void fileInPath(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("kettle$"), "module kettle$ { }", "package electric; class Heater { }");
         tb.writeFile(base.resolve("dummy.txt"), "");
@@ -218,7 +218,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     }
 
     @Test
-    void noAlternative(Path base) throws Exception {
+    public void noAlternative(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("kettle$"), "module kettle$ { }", "package electric; class Heater { }");
 
@@ -238,7 +238,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     }
 
     @Test
-    void noChoice(Path base) throws Exception {
+    public void noChoice(Path base) throws Exception {
         tb.writeJavaFiles(base.resolve("kettle$"), "module kettle$ { }", "package electric; class Heater { }");
 
         final Path modules = base.resolve("modules");
@@ -257,7 +257,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     }
 
     @Test
-    void nestedModules(Path src) throws Exception {
+    public void nestedModules(Path src) throws Exception {
         Path carModule = src.resolve("car");
         tb.writeJavaFiles(carModule, "module car { }", "package light; class Headlight { }");
         tb.writeJavaFiles(carModule.resolve("engine"), "module engine { }", "package flat; class Piston { }");
@@ -277,7 +277,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     }
 
     @Test
-    void relativePaths(Path base) throws Exception {
+    public void relativePaths(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("kettle"), "module kettle { }", "package electric; class Heater { }");
 
@@ -296,7 +296,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     }
 
     @Test
-    void duplicatePaths(Path base) throws Exception {
+    public void duplicatePaths(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("m1"), "module m1 { }", "package a; class A { }");
 
@@ -315,7 +315,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     }
 
     @Test
-    void notExistentPaths(Path base) throws Exception {
+    public void notExistentPaths(Path base) throws Exception {
         tb.writeJavaFiles(base.resolve("m1"), "module m1 { requires m0; }", "package a; class A { }");
 
         final Path modules = base.resolve("modules");
@@ -334,7 +334,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     }
 
     @Test
-    void notExistentPathShouldBeSkipped(Path base) throws Exception {
+    public void notExistentPathShouldBeSkipped(Path base) throws Exception {
         tb.writeJavaFiles(base.resolve("m1"), "module m1 { }", "package a; class A { }");
 
         final Path modules = base.resolve("modules");
@@ -352,7 +352,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     }
 
     @Test
-    void commas(Path base) throws Exception {
+    public void commas(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("m1"), "module m1 { }", "package a; class A { }");
 
@@ -371,7 +371,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     }
 
     @Test
-    void asterisk(Path base) throws Exception {
+    public void asterisk(Path base) throws Exception {
         tb.writeJavaFiles(base.resolve("kettle").resolve("classes"), "module kettle { }",
                 "package electric; class Heater { }");
 
@@ -391,7 +391,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     }
 
     @Test
-    void asteriskInDifferentSets(Path base) throws Exception {
+    public void asteriskInDifferentSets(Path base) throws Exception {
         Path src = base.resolve("src");
         final Path module = src.resolve("kettle");
         tb.writeJavaFiles(module.resolve("classes"), "module kettle { }", "package electric; class Heater { }");
@@ -417,7 +417,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     }
 
     @Test
-    void asteriskIllegalUse(Path base) throws Exception {
+    public void asteriskIllegalUse(Path base) throws Exception {
         final List<String> sourcePaths = Arrays.asList(
                 "*",
                 "**",

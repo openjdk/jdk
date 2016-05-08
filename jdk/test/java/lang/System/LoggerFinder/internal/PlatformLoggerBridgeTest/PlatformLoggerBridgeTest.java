@@ -49,6 +49,7 @@ import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.util.stream.Stream;
 import sun.util.logging.PlatformLogger;
+import java.lang.reflect.Module;
 
 /**
  * @test
@@ -94,7 +95,7 @@ public class PlatformLoggerBridgeTest {
         try {
             // Preload classes before the security manager is on.
             providerClass = ClassLoader.getSystemClassLoader().loadClass("PlatformLoggerBridgeTest$LogProducerFinder");
-            ((LoggerFinder)providerClass.newInstance()).getLogger("foo", providerClass);
+            ((LoggerFinder)providerClass.newInstance()).getLogger("foo", providerClass.getModule());
         } catch (Exception ex) {
             throw new ExceptionInInitializerError(ex);
         }
@@ -415,7 +416,7 @@ public class PlatformLoggerBridgeTest {
         }
 
         @Override
-        public Logger getLogger(String name, Class<?> caller) {
+        public Logger getLogger(String name, Module caller) {
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(LOGGERFINDER_PERMISSION);
@@ -598,7 +599,7 @@ public class PlatformLoggerBridgeTest {
         allowControl.get().set(true);
         try {
            sysSink = LogProducerFinder.LoggerImpl.class.cast(
-                        provider.getLogger("foo", Thread.class));
+                        provider.getLogger("foo", Thread.class.getModule()));
         } finally {
             allowControl.get().set(old);
         }

@@ -651,7 +651,7 @@ public class KullaTesting {
                 DiagCheck.DIAG_WARNING, DiagCheck.DIAG_IGNORE, mainInfo, updates);
         SnippetEvent e = events.get(0);
         List<Diag> diagnostics = getState().diagnostics(e.snippet());
-        assertDiagnostic(input, diagnostics.get(0), expectedDiagnostic);
+        if (expectedDiagnostic != null) assertDiagnostic(input, diagnostics.get(0), expectedDiagnostic);
         return e.snippet();
     }
 

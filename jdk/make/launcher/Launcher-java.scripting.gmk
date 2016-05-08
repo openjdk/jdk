@@ -27,4 +27,5 @@ include LauncherCommon.gmk
 
 $(eval $(call SetupBuildLauncher, jrunscript, \
     MAIN_CLASS := com.sun.tools.script.shell.Main, \
+    JAVA_ARGS := -addmods ALL-DEFAULT, \
 ))

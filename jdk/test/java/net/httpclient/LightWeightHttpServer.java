@@ -22,10 +22,10 @@
  */
 
 /**
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.SimpleSSLContext ProxyServer
- * @compile ../../../com/sun/net/httpserver/LogFilter.java
- * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
+ * library /lib/testlibrary/ /
+ * build jdk.testlibrary.SimpleSSLContext ProxyServer EchoHandler
+ * compile ../../../com/sun/net/httpserver/LogFilter.java
+ * compile ../../../com/sun/net/httpserver/FileServerHandler.java
  */
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpContext;

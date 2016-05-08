@@ -60,8 +60,10 @@ jint ParallelScavengeHeap::initialize() {
 
   ReservedSpace heap_rs = Universe::reserve_heap(heap_size, _collector_policy->heap_alignment());
 
-  os::trace_page_sizes("ps main", _collector_policy->min_heap_byte_size(),
-                       heap_size, generation_alignment(),
+  os::trace_page_sizes("Heap",
+                       _collector_policy->min_heap_byte_size(),
+                       heap_size,
+                       generation_alignment(),
                        heap_rs.base(),
                        heap_rs.size());
 

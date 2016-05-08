@@ -2187,43 +2187,19 @@ void java_lang_StackTraceElement::fill_in(Handle element,
 }
 
 Method* java_lang_StackFrameInfo::get_method(Handle stackFrame, InstanceKlass* holder, TRAPS) {
-  if (MemberNameInStackFrame) {
-    Handle mname(THREAD, stackFrame->obj_field(_memberName_offset));
-    Method* method = (Method*)java_lang_invoke_MemberName::vmtarget(mname());
-    // we should expand MemberName::name when Throwable uses StackTrace
-    // MethodHandles::expand_MemberName(mname, MethodHandles::_suppress_defc|MethodHandles::_suppress_type, CHECK_NULL);
-    return method;
-  } else {
-    short mid       = stackFrame->short_field(_mid_offset);
-    short version   = stackFrame->short_field(_version_offset);
-    return holder->method_with_orig_idnum(mid, version);
-  }
-}
-
-Symbol* java_lang_StackFrameInfo::get_file_name(Handle stackFrame, InstanceKlass* holder) {
-  if (MemberNameInStackFrame) {
-    return holder->source_file_name();
-  } else {
-    short version = stackFrame->short_field(_version_offset);
-    return Backtrace::get_source_file_name(holder, version);
-  }
+  Handle mname(THREAD, stackFrame->obj_field(_memberName_offset));
+  Method* method = (Method*)java_lang_invoke_MemberName::vmtarget(mname());
+  // we should expand MemberName::name when Throwable uses StackTrace
+  // MethodHandles::expand_MemberName(mname, MethodHandles::_suppress_defc|MethodHandles::_suppress_type, CHECK_NULL);
+  return method;
 }
 
 void java_lang_StackFrameInfo::set_method_and_bci(Handle stackFrame, const methodHandle& method, int bci) {
   // set Method* or mid/cpref
-  if (MemberNameInStackFrame) {
-    oop mname = stackFrame->obj_field(_memberName_offset);
-    InstanceKlass* ik = method->method_holder();
-    CallInfo info(method(), ik);
-    MethodHandles::init_method_MemberName(mname, info);
-  } else {
-    int mid = method->orig_method_idnum();
-    int cpref = method->name_index();
-    assert((jushort)mid == mid,        "mid should be short");
-    assert((jushort)cpref == cpref,    "cpref should be short");
-    java_lang_StackFrameInfo::set_mid(stackFrame(),     (short)mid);
-    java_lang_StackFrameInfo::set_cpref(stackFrame(),   (short)cpref);
-  }
+  oop mname = stackFrame->obj_field(_memberName_offset);
+  InstanceKlass* ik = method->method_holder();
+  CallInfo info(method(), ik);
+  MethodHandles::init_method_MemberName(mname, info);
   // set bci
   java_lang_StackFrameInfo::set_bci(stackFrame(), bci);
   // method may be redefined; store the version
@@ -2232,52 +2208,23 @@ void java_lang_StackFrameInfo::set_method_and_bci(Handle stackFrame, const metho
   java_lang_StackFrameInfo::set_version(stackFrame(), (short)version);
 }
 
-void java_lang_StackFrameInfo::fill_methodInfo(Handle stackFrame, TRAPS) {
+void java_lang_StackFrameInfo::to_stack_trace_element(Handle stackFrame, Handle stack_trace_element, TRAPS) {
   ResourceMark rm(THREAD);
-  oop k = stackFrame->obj_field(_declaringClass_offset);
-  InstanceKlass* holder = InstanceKlass::cast(java_lang_Class::as_Klass(k));
+  Handle k (THREAD, stackFrame->obj_field(_declaringClass_offset));
+  InstanceKlass* holder = InstanceKlass::cast(java_lang_Class::as_Klass(k()));
   Method* method = java_lang_StackFrameInfo::get_method(stackFrame, holder, CHECK);
-  int bci = stackFrame->int_field(_bci_offset);
 
-  // The method can be NULL if the requested class version is gone
-  Symbol* sym = (method != NULL) ? method->name() : NULL;
-  if (MemberNameInStackFrame) {
-    assert(sym != NULL, "MemberName must have method name");
-  } else {
-      // The method can be NULL if the requested class version is gone
-    if (sym == NULL) {
-      short cpref   = stackFrame->short_field(_cpref_offset);
-      sym = holder->constants()->symbol_at(cpref);
-    }
-  }
-
-  // set method name
-  oop methodname = StringTable::intern(sym, CHECK);
-  java_lang_StackFrameInfo::set_methodName(stackFrame(), methodname);
-
-  // set file name and line number
-  Symbol* source = get_file_name(stackFrame, holder);
-  if (source != NULL) {
-    oop filename = StringTable::intern(source, CHECK);
-    java_lang_StackFrameInfo::set_fileName(stackFrame(), filename);
-  }
-
-  // if the method has been redefined, the bci is no longer applicable
   short version = stackFrame->short_field(_version_offset);
-  if (version_matches(method, version)) {
-    int line_number = Backtrace::get_line_number(method, bci);
-    java_lang_StackFrameInfo::set_lineNumber(stackFrame(), line_number);
-  }
+  short bci = stackFrame->short_field(_bci_offset);
+  int cpref = method->name_index();
+  java_lang_StackTraceElement::fill_in(stack_trace_element, holder, method, version, bci, cpref, CHECK);
 }
 
 void java_lang_StackFrameInfo::compute_offsets() {
   Klass* k = SystemDictionary::StackFrameInfo_klass();
   compute_offset(_declaringClass_offset, k, vmSymbols::declaringClass_name(),  vmSymbols::class_signature());
   compute_offset(_memberName_offset,     k, vmSymbols::memberName_name(),  vmSymbols::object_signature());
-  compute_offset(_bci_offset,            k, vmSymbols::bci_name(),         vmSymbols::int_signature());
-  compute_offset(_methodName_offset,     k, vmSymbols::methodName_name(),  vmSymbols::string_signature());
-  compute_offset(_fileName_offset,       k, vmSymbols::fileName_name(),    vmSymbols::string_signature());
-  compute_offset(_lineNumber_offset,     k, vmSymbols::lineNumber_name(),  vmSymbols::int_signature());
+  compute_offset(_bci_offset,            k, vmSymbols::bci_name(),         vmSymbols::short_signature());
   STACKFRAMEINFO_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
 }
 
@@ -3690,12 +3637,7 @@ int java_lang_StackTraceElement::moduleVersion_offset;
 int java_lang_StackFrameInfo::_declaringClass_offset;
 int java_lang_StackFrameInfo::_memberName_offset;
 int java_lang_StackFrameInfo::_bci_offset;
-int java_lang_StackFrameInfo::_methodName_offset;
-int java_lang_StackFrameInfo::_fileName_offset;
-int java_lang_StackFrameInfo::_lineNumber_offset;
-int java_lang_StackFrameInfo::_mid_offset;
 int java_lang_StackFrameInfo::_version_offset;
-int java_lang_StackFrameInfo::_cpref_offset;
 int java_lang_LiveStackFrameInfo::_monitors_offset;
 int java_lang_LiveStackFrameInfo::_locals_offset;
 int java_lang_LiveStackFrameInfo::_operands_offset;
@@ -3741,32 +3683,12 @@ void java_lang_StackFrameInfo::set_declaringClass(oop element, oop value) {
   element->obj_field_put(_declaringClass_offset, value);
 }
 
-void java_lang_StackFrameInfo::set_mid(oop element, short value) {
-  element->short_field_put(_mid_offset, value);
-}
-
 void java_lang_StackFrameInfo::set_version(oop element, short value) {
   element->short_field_put(_version_offset, value);
 }
 
-void java_lang_StackFrameInfo::set_cpref(oop element, short value) {
-  element->short_field_put(_cpref_offset, value);
-}
-
 void java_lang_StackFrameInfo::set_bci(oop element, int value) {
   element->int_field_put(_bci_offset, value);
-}
-
-void java_lang_StackFrameInfo::set_fileName(oop element, oop value) {
-  element->obj_field_put(_fileName_offset, value);
-}
-
-void java_lang_StackFrameInfo::set_methodName(oop element, oop value) {
-  element->obj_field_put(_methodName_offset, value);
-}
-
-void java_lang_StackFrameInfo::set_lineNumber(oop element, int value) {
-  element->int_field_put(_lineNumber_offset, value);
 }
 
 void java_lang_LiveStackFrameInfo::set_monitors(oop element, oop value) {

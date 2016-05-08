@@ -28,7 +28,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask toolbox.ModuleBuilder ModuleTestBase
  * @run main PackageConflictTest
  */
 
@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import toolbox.JavacTask;
+import toolbox.ModuleBuilder;
 import toolbox.Task;
 import toolbox.ToolBox;
 
@@ -48,7 +49,7 @@ public class PackageConflictTest extends ModuleTestBase {
     }
 
     @Test
-    void testSimple(Path base) throws Exception {
+    public void testSimple(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "package java.util; public class MyList { }");
@@ -68,7 +69,7 @@ public class PackageConflictTest extends ModuleTestBase {
     }
 
     @Test
-    void testDisjoint(Path base) throws Exception {
+    public void testDisjoint(Path base) throws Exception {
         Path m1 = base.resolve("m1");
         Path m2 = base.resolve("m2");
         tb.writeJavaFiles(m1,
@@ -89,7 +90,7 @@ public class PackageConflictTest extends ModuleTestBase {
     }
 
     @Test
-    void testConflictInDependencies(Path base) throws Exception {
+    public void testConflictInDependencies(Path base) throws Exception {
         Path m1 = base.resolve("m1");
         Path m2 = base.resolve("m2");
         Path m3 = base.resolve("m3");
@@ -123,13 +124,13 @@ public class PackageConflictTest extends ModuleTestBase {
     }
 
     @Test
-    void testSimple2(Path base) throws Exception {
+    public void testSimple2(Path base) throws Exception {
         Path modules = base.resolve("modules");
-        new ModuleBuilder("N")
+        new ModuleBuilder(tb, "N")
                 .exports("pack")
                 .classes("package pack; public class A { }")
                 .build(modules);
-        new ModuleBuilder("M")
+        new ModuleBuilder(tb, "M")
                 .requires("N")
                 .classes("package pack; public class B { pack.A f; }")
                 .write(modules);
@@ -147,14 +148,14 @@ public class PackageConflictTest extends ModuleTestBase {
     }
 
     @Test
-    void testPrivateConflict(Path base) throws Exception {
+    public void testPrivateConflict(Path base) throws Exception {
         Path modules = base.resolve("modules");
-        new ModuleBuilder("N")
+        new ModuleBuilder(tb, "N")
                 .exports("publ")
                 .classes("package pack; public class A { }")
                 .classes("package publ; public class B { }")
                 .write(modules);
-        new ModuleBuilder("M")
+        new ModuleBuilder(tb, "M")
                 .requires("N")
                 .classes("package pack; public class C { publ.B b; }")
                 .write(modules);
@@ -173,14 +174,14 @@ public class PackageConflictTest extends ModuleTestBase {
     }
 
     @Test
-    void testPrivateConflictOnModulePath(Path base) throws Exception {
+    public void testPrivateConflictOnModulePath(Path base) throws Exception {
         Path modules = base.resolve("modules");
-        new ModuleBuilder("N")
+        new ModuleBuilder(tb, "N")
                 .exports("publ")
                 .classes("package pack; public class A { }")
                 .classes("package publ; public class B { }")
                 .build(modules);
-        new ModuleBuilder("M")
+        new ModuleBuilder(tb, "M")
                 .requires("N")
                 .classes("package pack; public class C { publ.B b; }")
                 .write(modules);
@@ -199,17 +200,17 @@ public class PackageConflictTest extends ModuleTestBase {
     }
 
     @Test
-    void testRequiresConflictExports(Path base) throws Exception {
+    public void testRequiresConflictExports(Path base) throws Exception {
         Path modules = base.resolve("modules");
-        new ModuleBuilder("M")
+        new ModuleBuilder(tb, "M")
                 .exports("pack")
                 .classes("package pack; public class A { }")
                 .build(modules);
-        new ModuleBuilder("N")
+        new ModuleBuilder(tb, "N")
                 .exports("pack")
                 .classes("package pack; public class B { }")
                 .build(modules);
-        new ModuleBuilder("K")
+        new ModuleBuilder(tb, "K")
                 .requires("M")
                 .requires("N")
                 .classes("package pkg; public class C { pack.A a; pack.B b; }")
@@ -231,18 +232,18 @@ public class PackageConflictTest extends ModuleTestBase {
     }
 
     @Test
-    void testQulifiedExportsToDifferentModules(Path base) throws Exception {
+    public void testQulifiedExportsToDifferentModules(Path base) throws Exception {
         Path modules = base.resolve("modules");
-        new ModuleBuilder("U").write(modules);
-        new ModuleBuilder("M")
+        new ModuleBuilder(tb, "U").write(modules);
+        new ModuleBuilder(tb, "M")
                 .exports("pkg to U")
                 .classes("package pkg; public class A { public static boolean flagM; }")
                 .write(modules);
-        new ModuleBuilder("N")
+        new ModuleBuilder(tb, "N")
                 .exports("pkg to K")
                 .classes("package pkg; public class A { public static boolean flagN; }")
                 .write(modules);
-        ModuleBuilder moduleK = new ModuleBuilder("K");
+        ModuleBuilder moduleK = new ModuleBuilder(tb, "K");
         moduleK.requires("M")
                 .requires("N")
                 .classes("package p; public class DependsOnN { boolean f = pkg.A.flagN; } ")

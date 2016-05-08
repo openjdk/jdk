@@ -52,7 +52,7 @@ public class SubpackageTest extends ModuleTestBase {
     }
 
     @Test // based on JDK-8075435
-    void testUnnamedModule(Path base) throws Exception {
+    public void testUnnamedModule(Path base) throws Exception {
         Path libsrc = base.resolve("lib/src");
         tb.writeJavaFiles(libsrc,
             "package p; public class E extends Error { }");
@@ -83,7 +83,7 @@ public class SubpackageTest extends ModuleTestBase {
     }
 
     @Test
-    void testSimpleMulti(Path base) throws Exception {
+    public void testSimpleMulti(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("mp"),
                 "module mp { exports p; }",

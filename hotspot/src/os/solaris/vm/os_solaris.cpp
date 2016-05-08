@@ -161,6 +161,7 @@ address os::Solaris::handler_end;    // end pc of thr_sighndlrinfo
 
 address os::Solaris::_main_stack_base = NULL;  // 4352906 workaround
 
+os::Solaris::pthread_setname_np_func_t os::Solaris::_pthread_setname_np = NULL;
 
 // "default" initializers for missing libc APIs
 extern "C" {
@@ -441,8 +442,15 @@ static bool assign_distribution(processorid_t* id_array,
 }
 
 void os::set_native_thread_name(const char *name) {
-  // Not yet implemented.
-  return;
+  if (Solaris::_pthread_setname_np != NULL) {
+    // Only the first 31 bytes of 'name' are processed by pthread_setname_np
+    // but we explicitly copy into a size-limited buffer to avoid any
+    // possible overflow.
+    char buf[32];
+    snprintf(buf, sizeof(buf), "%s", name);
+    buf[sizeof(buf) - 1] = '\0';
+    Solaris::_pthread_setname_np(pthread_self(), buf);
+  }
 }
 
 bool os::distribute_processes(uint length, uint* distribution) {
@@ -1819,6 +1827,19 @@ int os::stat(const char *path, struct stat *sbuf) {
   return ::stat(pathbuf, sbuf);
 }
 
+static inline time_t get_mtime(const char* filename) {
+  struct stat st;
+  int ret = os::stat(filename, &st);
+  assert(ret == 0, "failed to stat() file '%s': %s", filename, strerror(errno));
+  return st.st_mtime;
+}
+
+int os::compare_file_modified_times(const char* file1, const char* file2) {
+  time_t t1 = get_mtime(file1);
+  time_t t2 = get_mtime(file2);
+  return t1 - t2;
+}
+
 static bool _print_ascii_file(const char* filename, outputStream* st) {
   int fd = ::open(filename, O_RDONLY);
   if (fd == -1) {
@@ -2754,13 +2775,13 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
     pd_unmap_memory(addr, bytes);
   }
 
-  if (PrintMiscellaneous && Verbose) {
+  if (log_is_enabled(Warning, os)) {
     char buf[256];
     buf[0] = '\0';
     if (addr == NULL) {
       jio_snprintf(buf, sizeof(buf), ": %s", os::strerror(err));
     }
-    warning("attempt_reserve_memory_at: couldn't reserve " SIZE_FORMAT " bytes at "
+    log_info(os)("attempt_reserve_memory_at: couldn't reserve " SIZE_FORMAT " bytes at "
             PTR_FORMAT ": reserve_memory_helper returned " PTR_FORMAT
             "%s", bytes, requested_addr, addr, buf);
   }
@@ -2790,9 +2811,7 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
           assert(i > 0, "gap adjustment code problem");
           have_adjusted_gap = true;  // adjust the gap only once, just in case
           gap = actual_gap;
-          if (PrintMiscellaneous && Verbose) {
-            warning("attempt_reserve_memory_at: adjusted gap to 0x%lx", gap);
-          }
+          log_info(os)("attempt_reserve_memory_at: adjusted gap to 0x%lx", gap);
           unmap_memory(base[i], bytes);
           unmap_memory(base[i-1], size[i-1]);
           i-=2;
@@ -2824,8 +2843,8 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
       } else {
         size_t bottom_overlap = base[i] + bytes - requested_addr;
         if (bottom_overlap >= 0 && bottom_overlap < bytes) {
-          if (PrintMiscellaneous && Verbose && bottom_overlap == 0) {
-            warning("attempt_reserve_memory_at: possible alignment bug");
+          if (bottom_overlap == 0) {
+            log_info(os)("attempt_reserve_memory_at: possible alignment bug");
           }
           unmap_memory(requested_addr, bottom_overlap);
           size[i] = bytes - bottom_overlap;
@@ -4355,8 +4374,8 @@ static pset_getloadavg_type pset_getloadavg_ptr = NULL;
 void init_pset_getloadavg_ptr(void) {
   pset_getloadavg_ptr =
     (pset_getloadavg_type)dlsym(RTLD_DEFAULT, "pset_getloadavg");
-  if (PrintMiscellaneous && Verbose && pset_getloadavg_ptr == NULL) {
-    warning("pset_getloadavg function not found");
+  if (pset_getloadavg_ptr == NULL) {
+    log_warning(os)("pset_getloadavg function not found");
   }
 }
 
@@ -4412,6 +4431,13 @@ void os::init(void) {
   // the minimum of what the OS supports (thr_min_stack()), and
   // enough to allow the thread to get to user bytecode execution.
   Solaris::min_stack_allowed = MAX2(thr_min_stack(), Solaris::min_stack_allowed);
+
+  // retrieve entry point for pthread_setname_np
+  void * handle = dlopen("libc.so.1", RTLD_LAZY);
+  if (handle != NULL) {
+    Solaris::_pthread_setname_np =
+        (Solaris::pthread_setname_np_func_t)dlsym(handle, "pthread_setname_np");
+  }
 }
 
 // To install functions for atexit system call
@@ -4439,25 +4465,13 @@ jint os::init_2(void) {
   }
 
   os::set_polling_page(polling_page);
-
-#ifndef PRODUCT
-  if (Verbose && PrintMiscellaneous) {
-    tty->print("[SafePoint Polling address: " INTPTR_FORMAT "]\n",
-               (intptr_t)polling_page);
-  }
-#endif
+  log_info(os)("SafePoint Polling address: " INTPTR_FORMAT, p2i(polling_page));
 
   if (!UseMembar) {
     address mem_serialize_page = (address)Solaris::mmap_chunk(NULL, page_size, MAP_PRIVATE, PROT_READ | PROT_WRITE);
     guarantee(mem_serialize_page != NULL, "mmap Failed for memory serialize page");
     os::set_memory_serialize_page(mem_serialize_page);
-
-#ifndef PRODUCT
-    if (Verbose && PrintMiscellaneous) {
-      tty->print("[Memory Serialize  Page address: " INTPTR_FORMAT "]\n",
-                 (intptr_t)mem_serialize_page);
-    }
-#endif
+    log_info(os)("Memory Serialize Page address: " INTPTR_FORMAT, p2i(mem_serialize_page));
   }
 
   // Check minimum allowable stack size for thread creation and to initialize
@@ -4537,16 +4551,12 @@ jint os::init_2(void) {
     struct rlimit nbr_files;
     int status = getrlimit(RLIMIT_NOFILE, &nbr_files);
     if (status != 0) {
-      if (PrintMiscellaneous && (Verbose || WizardMode)) {
-        perror("os::init_2 getrlimit failed");
-      }
+      log_info(os)("os::init_2 getrlimit failed: %s", os::strerror(errno));
     } else {
       nbr_files.rlim_cur = nbr_files.rlim_max;
       status = setrlimit(RLIMIT_NOFILE, &nbr_files);
       if (status != 0) {
-        if (PrintMiscellaneous && (Verbose || WizardMode)) {
-          perror("os::init_2 setrlimit failed");
-        }
+        log_info(os)("os::init_2 setrlimit failed: %s", os::strerror(errno));
       }
     }
   }

@@ -26,6 +26,8 @@
  * @bug 6445367
  * @summary make sure serialization works
  * @author Andreas Sterbenz
+ * @compile -addmods java.smartcardio Serialize.java
+ * @run main/othervm -addmods java.smartcardio Serialize
  */
 
 import java.io.*;

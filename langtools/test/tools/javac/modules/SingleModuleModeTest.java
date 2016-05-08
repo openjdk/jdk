@@ -59,7 +59,7 @@ public class SingleModuleModeTest extends ModuleTestBase{
     }
 
     @Test
-    void testTooManyModules(Path base) throws Exception {
+    public void testTooManyModules(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("m1"), "module m1 { }");
         tb.writeJavaFiles(src.resolve("m2"), "module m2 { }");
@@ -76,7 +76,7 @@ public class SingleModuleModeTest extends ModuleTestBase{
     }
 
     @Test
-    void testImplicitModuleSource(Path base) throws Exception {
+    public void testImplicitModuleSource(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { }",
@@ -90,7 +90,7 @@ public class SingleModuleModeTest extends ModuleTestBase{
     }
 
     @Test
-    void testImplicitModuleClass(Path base) throws Exception {
+    public void testImplicitModuleClass(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { }",
@@ -112,7 +112,7 @@ public class SingleModuleModeTest extends ModuleTestBase{
     }
 
     @Test
-    void testImplicitModuleClassAP(Path base) throws Exception {
+    public void testImplicitModuleClassAP(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { uses java.lang.Runnable; }",
@@ -137,7 +137,7 @@ public class SingleModuleModeTest extends ModuleTestBase{
     }
 
     @Test
-    void testImplicitModuleSourceAP(Path base) throws Exception {
+    public void testImplicitModuleSourceAP(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { uses java.lang.Runnable; }",

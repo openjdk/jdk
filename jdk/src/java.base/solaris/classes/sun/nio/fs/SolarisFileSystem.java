@@ -42,7 +42,7 @@ class SolarisFileSystem extends UnixFileSystem {
         super(provider, dir);
 
         // check os.version
-        String osversion = GetPropertyAction.getProperty("os.version");
+        String osversion = GetPropertyAction.privilegedGetProperty("os.version");
         String[] vers = Util.split(osversion, '.');
         assert vers.length >= 2;
         int majorVersion = Integer.parseInt(vers[0]);

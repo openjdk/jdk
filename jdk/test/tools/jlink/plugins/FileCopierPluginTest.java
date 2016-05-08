@@ -101,9 +101,8 @@ public class FileCopierPluginTest {
 
         }
         Path root = new File(".").toPath();
-        DefaultImageBuilder imgbuilder = new DefaultImageBuilder(false,
-                root);
-        imgbuilder.storeFiles(pool, "");
+        DefaultImageBuilder imgbuilder = new DefaultImageBuilder(root);
+        imgbuilder.storeFiles(pool);
 
         if (lic.exists()) {
             File license = new File(root.toFile(), "LICENSE");

@@ -55,7 +55,7 @@ public class ModulesAndClassPathTest extends ModuleTestBase {
     }
 
     @Test
-    void testModulesAndClassPath(Path base) throws Exception {
+    public void testModulesAndClassPath(Path base) throws Exception {
         Path jar = prepareTestJar(base);
 
         Path moduleSrc = base.resolve("module-src");
@@ -106,7 +106,7 @@ public class ModulesAndClassPathTest extends ModuleTestBase {
     }
 
     @Test
-    void testImplicitSourcePathModuleInfo(Path base) throws Exception {
+    public void testImplicitSourcePathModuleInfo(Path base) throws Exception {
         Path jar = prepareTestJar(base);
 
         Path moduleSrc = base.resolve("module-src");
@@ -139,7 +139,7 @@ public class ModulesAndClassPathTest extends ModuleTestBase {
     }
 
     @Test
-    void testModuleInfoFromOutput(Path base) throws Exception {
+    public void testModuleInfoFromOutput(Path base) throws Exception {
         Path jar = prepareTestJar(base);
 
         Path moduleSrc = base.resolve("module-src");
@@ -221,7 +221,7 @@ public class ModulesAndClassPathTest extends ModuleTestBase {
     }
 
     @Test
-    void testClassOutputVisibleForIncrementalCompilation(Path base) throws Exception {
+    public void testClassOutputVisibleForIncrementalCompilation(Path base) throws Exception {
         Path moduleSrc = base.resolve("module-src");
         Path m1 = moduleSrc.resolve("m1");
 

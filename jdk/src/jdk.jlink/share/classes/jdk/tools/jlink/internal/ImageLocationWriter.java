@@ -61,24 +61,32 @@ public final class ImageLocationWriter extends ImageLocation {
         String baseName;
         String extensionName = "";
 
-        int offset = fullName.indexOf('/', 1);
-        if (fullName.length() >= 2 && fullName.charAt(0) == '/' && offset != -1) {
-            moduleName = fullName.substring(1, offset);
-            fullName = fullName.substring(offset + 1);
-        }
-
-        offset = fullName.lastIndexOf('/');
-        if (1 < offset) {
-            parentName = fullName.substring(0, offset);
-            fullName = fullName.substring(offset + 1);
-        }
-
-        offset = fullName.lastIndexOf('.');
-        if (offset != -1) {
-            baseName = fullName.substring(0, offset);
-            extensionName = fullName.substring(offset + 1);
+        if (fullName.startsWith("/modules/")) {
+            moduleName = "modules";
+            baseName = fullName.substring("/modules/".length());
+        } else if ( fullName.startsWith("/packages/")) {
+            moduleName = "packages";
+            baseName = fullName.substring("/packages/".length());
         } else {
-            baseName = fullName;
+            int offset = fullName.indexOf('/', 1);
+            if (fullName.length() >= 2 && fullName.charAt(0) == '/' && offset != -1) {
+                moduleName = fullName.substring(1, offset);
+                fullName = fullName.substring(offset + 1);
+            }
+
+            offset = fullName.lastIndexOf('/');
+            if (1 < offset) {
+                parentName = fullName.substring(0, offset);
+                fullName = fullName.substring(offset + 1);
+            }
+
+            offset = fullName.lastIndexOf('.');
+            if (offset != -1) {
+                baseName = fullName.substring(0, offset);
+                extensionName = fullName.substring(offset + 1);
+            } else {
+                baseName = fullName;
+            }
         }
 
         return new ImageLocationWriter(strings)

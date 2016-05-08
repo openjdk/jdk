@@ -36,9 +36,13 @@
  * @modules java.management
  * @build jdk.testlibrary.* ResetPeakMemoryUsage MemoryUtil RunUtil
  * @run main ResetPeakMemoryUsage
+ * @requires vm.opt.ExplicitGCInvokesConcurrent != "true"
+ * @requires vm.opt.ExplicitGCInvokesConcurrentAndUnloadsClasses != "true"
+ * @requires vm.opt.DisableExplicitGC != "true"
  */
 
 import java.lang.management.*;
+import java.lang.ref.WeakReference;
 import java.util.*;
 
 public class ResetPeakMemoryUsage {
@@ -100,6 +104,7 @@ public class ResetPeakMemoryUsage {
         printMemoryUsage(usage0, peak0);
 
         obj = new Object[largeArraySize];
+        WeakReference<Object> weakRef = new WeakReference<>(obj);
 
         MemoryUsage usage1 = mpool.getUsage();
         MemoryUsage peak1 = mpool.getPeakUsage();
@@ -124,7 +129,11 @@ public class ResetPeakMemoryUsage {
         // The object is now garbage and do a GC
         // memory usage should drop
         obj = null;
-        mbean.gc();
+
+        //This will cause sure shot GC unlike Runtime.gc() invoked by mbean.gc()
+        while(weakRef.get() != null) {
+            mbean.gc();
+        }
 
         MemoryUsage usage2 = mpool.getUsage();
         MemoryUsage peak2 = mpool.getPeakUsage();

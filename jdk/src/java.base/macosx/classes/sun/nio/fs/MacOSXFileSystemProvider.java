@@ -46,8 +46,8 @@ public class MacOSXFileSystemProvider extends BsdFileSystemProvider {
 
     @Override
     FileTypeDetector getFileTypeDetector() {
-        Path userMimeTypes = Paths.get(
-            GetPropertyAction.getProperty("user.home"), ".mime.types");
+        Path userMimeTypes = Paths.get(GetPropertyAction
+                .privilegedGetProperty("user.home"), ".mime.types");
 
         return chain(new MimeTypesFileTypeDetector(userMimeTypes),
                      new UTIFileTypeDetector());

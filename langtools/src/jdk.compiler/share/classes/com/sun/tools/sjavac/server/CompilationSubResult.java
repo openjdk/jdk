@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.sun.tools.javac.main.Main.Result;
 import com.sun.tools.sjavac.pubapi.PubApi;
 
 /**
@@ -44,10 +45,7 @@ public class CompilationSubResult implements Serializable {
 
     static final long serialVersionUID = 46739181113L;
 
-    // Return code constants
-    public final static int ERROR_FATAL = -1;
-
-    public int returnCode;
+    public Result result;
     public Map<String, Set<URI>> packageArtifacts = new HashMap<>();
     public Map<String, Map<String, Set<String>>> packageDependencies = new HashMap<>();
     public Map<String, Map<String, Set<String>>> packageCpDependencies = new HashMap<>();
@@ -56,11 +54,11 @@ public class CompilationSubResult implements Serializable {
     public String stdout = "";
     public String stderr = "";
 
-    public CompilationSubResult(int returnCode) {
-        this.returnCode = returnCode;
+    public CompilationSubResult(Result result) {
+        this.result = result;
     }
 
-    public void setReturnCode(int returnCode) {
-        this.returnCode = returnCode;
+    public void setResult(Result result) {
+        this.result = result;
     }
 }

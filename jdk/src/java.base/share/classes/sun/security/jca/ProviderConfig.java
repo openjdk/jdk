@@ -185,7 +185,9 @@ final class ProviderConfig {
                     try {
                         Class<?> c = Class.forName("apple.security.AppleProvider");
                         if (Provider.class.isAssignableFrom(c)) {
-                            return (Provider) c.newInstance();
+                            @SuppressWarnings("deprecation")
+                            Object tmp = c.newInstance();
+                            return (Provider) tmp;
                         } else {
                             return null;
                         }
@@ -386,6 +388,7 @@ final class ProviderConfig {
 
                 Provider p = AccessController.doPrivileged
                     (new PrivilegedExceptionAction<Provider>() {
+                    @SuppressWarnings("deprecation") // Class.newInstance
                     public Provider run() throws Exception {
                         return (Provider) provClass.newInstance();
                     }

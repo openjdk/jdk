@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.lang.module.ModuleReference;
 import java.lang.reflect.Layer;
 import java.lang.reflect.Module;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -67,7 +68,7 @@ public class BootLoader {
     }
 
     // ServiceCatalog for the boot class loader
-    private static final ServicesCatalog SERVICES_CATALOG = new ServicesCatalog();
+    private static final ServicesCatalog SERVICES_CATALOG = ServicesCatalog.create();
 
     // ClassLoaderValue map for boot class loader
     private static final ConcurrentHashMap<?, ?> CLASS_LOADER_VALUE_MAP =
@@ -184,9 +185,9 @@ public class BootLoader {
 
         /**
          * Define the {@code Package} with the given name. The specified
-         * location is a jrt URL to a named module in the run-time image, a
-         * file path to a module in an exploded run-time image, or the file
-         * path to an enty on the boot class path (java agent Boot-Class-Path
+         * location is a jrt URL to a named module in the run-time image,
+         * a file URL to a module in an exploded run-time image, or a file
+         * path to an entry on the boot class path (java agent Boot-Class-Path
          * or -Xbootclasspath/a.
          *
          * <p> If the given location is a JAR file containing a manifest,
@@ -194,7 +195,9 @@ public class BootLoader {
          * the manifest, if present.
          *
          * @param name     package name
-         * @param location location where the package is (jrt URL or file path)
+         * @param location location where the package is (jrt URL or file URL
+         *                 for a named module in the run-time or exploded image;
+         *                 a file path for a package from -Xbootclasspath/a)
          */
         static Package definePackage(String name, String location) {
             Module module = findModule(location);
@@ -222,9 +225,9 @@ public class BootLoader {
             if (location.startsWith("jrt:/")) {
                 // named module in runtime image ("jrt:/".length() == 5)
                 mn = location.substring(5, location.length());
-            } else {
+            } else if (location.startsWith("file:/")) {
                 // named module in exploded image
-                Path path = Paths.get(location);
+                Path path = Paths.get(URI.create(location));
                 Path modulesDir = Paths.get(JAVA_HOME, "modules");
                 if (path.startsWith(modulesDir)) {
                     mn = path.getFileName().toString();

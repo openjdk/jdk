@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import javax.lang.model.element.Modifier;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 class DocCommentGenerator {
 
@@ -99,14 +101,25 @@ class DocCommentGenerator {
         LITERAL("@literal", "Use < and > brackets instead of &lt; and &gt; escapes."),
         CODE("@code", "(i) -> new Abc<Object>((i > 0) ? (i << 1) : 0)"),
         LINK("@link", ""),
-        VALUE("@value", "");
+        VALUE("@value", ""),
+        INDEX("@index", "", true);
 
         String tagName;
         String tagValue;
+        boolean counted;
+        Map<String, Integer> counters;
 
         InlineTag(String tagName, String tagValue) {
+            this(tagName, tagValue, false);
+        }
+
+        InlineTag(String tagName, String tagValue, boolean counted) {
             this.tagName = tagName;
             this.tagValue = tagValue;
+            this.counted = counted;
+            if (counted) {
+                counters = new HashMap<>();
+            }
         }
 
         public String toString() {
@@ -114,9 +127,14 @@ class DocCommentGenerator {
         }
 
         public String value(String value) {
+            String name = ((tagValue.length() != 0) ? " " + tagValue : "")
+                   + ((value.length() != 0) ? " " + value : "");
+            if (counted && !counters.containsKey(name)) {
+                counters.put(name, 0);
+            }
             return "{" + tagName
-                   + ((tagValue.length() != 0) ? " " + tagValue : "")
-                   + ((value.length() != 0) ? " " + value : "")
+                   + name
+                   + (counted ? "_" + counters.put(name, counters.get(name) + 1) : "")
                    + "}";
         }
     }
@@ -179,7 +197,8 @@ class DocCommentGenerator {
     //
 
     public String getPackageComment() {
-        return Text.LOREMIPSUM
+        return InlineTag.INDEX.value("PackageCommentLabel") + " "
+               + Text.LOREMIPSUM
                + "\n <p>" + Text.LIEUROPANLINGUES
                + "\n" + Text.CODE
                + "\n" + LinkTag.nextLink()
@@ -192,7 +211,9 @@ class DocCommentGenerator {
     static int serialValIdx = 0;
 
     public String getBaseComment(JCClassDecl baseDecl, boolean toplevel) {
-        String buildComment = Text.LIEUROPANLINGUES + "\n";
+        String buildComment = InlineTag.INDEX.value("BaseCommentLabel") + " ";
+
+        buildComment += Text.LIEUROPANLINGUES + "\n";
 
         buildComment += "<p>It is possible to see inlined code:\n"
                         + InlineTag.CODE
@@ -237,8 +258,9 @@ class DocCommentGenerator {
     }
 
     public String getConstComment() {
-        String buildComment = Text.NOWISTHETIME + " " + Text.BROWNFOX + "\n";
+        String buildComment = InlineTag.INDEX.value("ConstCommentLabel") + " ";
 
+        buildComment += Text.NOWISTHETIME + " " + Text.BROWNFOX + "\n";
         buildComment += LinkTag.nextLink() + "\n";
         buildComment += LinkTag.nextSee() + "\n";
         buildComment += Tag.SINCE + "\n";
@@ -249,8 +271,9 @@ class DocCommentGenerator {
     public String getFieldComment(JCClassDecl baseDecl,
                                   JCVariableDecl varDecl,
                                   boolean isFxStyle) {
-        String buildComment = Text.BROWNFOX + "<p>" + Text.NOWISTHETIME + "\n";
+        String buildComment = InlineTag.INDEX.value("FieldCommentLabel") + " ";
 
+        buildComment += Text.BROWNFOX + "<p>" + Text.NOWISTHETIME + "\n";
         Set<Modifier> mods = varDecl.getModifiers().getFlags();
         String varName = varDecl.getName().toString();
 
@@ -299,7 +322,9 @@ class DocCommentGenerator {
     public String getMethodComment(JCClassDecl baseDecl,
                                    JCMethodDecl methodDecl,
                                    boolean isFxStyle) {
-        String buildComment = Text.BROWNFOX + "\n<p>" + Text.THISPANGRAM + "\n";
+        String buildComment = InlineTag.INDEX.value("MethodCommentLabel") + " ";
+
+        buildComment += Text.BROWNFOX + "\n<p>" + Text.THISPANGRAM + "\n";
 
         buildComment += "<p>" + LinkTag.nextLink() + "\n";
 

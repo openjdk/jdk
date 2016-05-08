@@ -1364,25 +1364,16 @@ class Backtrace: AllStatic {
 // Interface to java.lang.StackFrameInfo objects
 
 #define STACKFRAMEINFO_INJECTED_FIELDS(macro)                      \
-  macro(java_lang_StackFrameInfo, mid,     short_signature, false) \
-  macro(java_lang_StackFrameInfo, version, short_signature, false) \
-  macro(java_lang_StackFrameInfo, cpref,   short_signature, false)
+  macro(java_lang_StackFrameInfo, version, short_signature, false)
 
 class java_lang_StackFrameInfo: AllStatic {
 private:
   static int _declaringClass_offset;
   static int _memberName_offset;
   static int _bci_offset;
-  static int _methodName_offset;
-  static int _fileName_offset;
-  static int _lineNumber_offset;
-
-  static int _mid_offset;
   static int _version_offset;
-  static int _cpref_offset;
 
   static Method* get_method(Handle stackFrame, InstanceKlass* holder, TRAPS);
-  static Symbol* get_file_name(Handle stackFrame, InstanceKlass* holder);
 
 public:
   // Setters
@@ -1390,18 +1381,11 @@ public:
   static void set_method_and_bci(Handle stackFrame, const methodHandle& method, int bci);
   static void set_bci(oop info, int value);
 
-  // set method info in an instance of StackFrameInfo
-  static void fill_methodInfo(Handle info, TRAPS);
-  static void set_methodName(oop info, oop value);
-  static void set_fileName(oop info, oop value);
-  static void set_lineNumber(oop info, int value);
-
-  // these injected fields are only used if -XX:-MemberNameInStackFrame set
-  static void set_mid(oop info, short value);
   static void set_version(oop info, short value);
-  static void set_cpref(oop info, short value);
 
   static void compute_offsets();
+
+  static void to_stack_trace_element(Handle stackFrame, Handle stack_trace_element, TRAPS);
 
   // Debugging
   friend class JavaClasses;

@@ -67,8 +67,9 @@ public abstract class FtpClientProvider {
             return false;
         }
         try {
-            Class<?> c = Class.forName(cm, true, null);
-            provider = (FtpClientProvider) c.newInstance();
+            @SuppressWarnings("deprecation")
+            Object o = Class.forName(cm, true, null).newInstance();
+            provider = (FtpClientProvider)o;
             return true;
         } catch (ClassNotFoundException |
                  IllegalAccessException |

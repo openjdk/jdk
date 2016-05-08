@@ -30,12 +30,10 @@
  * @build Wrapper
  * @run main Wrapper PooledExecution
  */
-import java.io.PrintWriter;
-import java.io.Writer;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.sun.tools.sjavac.Log;
+import com.sun.tools.javac.main.Main.Result;
 import com.sun.tools.sjavac.comp.PooledSjavac;
 import com.sun.tools.sjavac.server.Sjavac;
 
@@ -111,7 +109,7 @@ public class PooledExecution {
             AtomicInteger activeRequests = new AtomicInteger(0);
 
             @Override
-            public int compile(String[] args) {
+            public Result compile(String[] args) {
                 leftToStart.countDown();
                 int numActiveRequests = activeRequests.incrementAndGet();
                 System.out.printf("Left to start: %2d / Currently active: %2d%n",
@@ -125,7 +123,7 @@ public class PooledExecution {
                 }
                 activeRequests.decrementAndGet();
                 System.out.println("Task completed");
-                return 0;
+                return Result.OK;
             }
 
             @Override

@@ -21,6 +21,7 @@
  * questions.
  */
 
+import org.jtregext.GuiTestListener;
 import com.sun.swingset3.demos.splitpane.SplitPaneDemo;
 import static com.sun.swingset3.demos.splitpane.SplitPaneDemo.*;
 import java.awt.event.KeyEvent;
@@ -35,6 +36,7 @@ import org.netbeans.jemmy.operators.JRadioButtonOperator;
 import org.netbeans.jemmy.operators.JSplitPaneOperator;
 import org.netbeans.jemmy.operators.JTextFieldOperator;
 import static org.jemmy2ext.JemmyExt.*;
+import org.testng.annotations.Listeners;
 
 /*
  * @test
@@ -44,39 +46,39 @@ import static org.jemmy2ext.JemmyExt.*;
  *          and changing the divider orientation.
  *
  * @library /sanity/client/lib/jemmy/src
- * @library /sanity/client/lib/Jemmy2Ext/src
+ * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.splitpane.SplitPaneDemo
  * @run testng SplitPaneDemoTest
  */
+@Listeners(GuiTestListener.class)
 public class SplitPaneDemoTest {
 
     @Test
     public void test() throws Exception {
-        captureDebugInfoOnFail(() -> {
-            new ClassReference(SplitPaneDemo.class.getCanonicalName()).startApplication();
 
-            JFrameOperator frame = new JFrameOperator(DEMO_TITLE);
+        new ClassReference(SplitPaneDemo.class.getCanonicalName()).startApplication();
 
-            JSplitPaneOperator splitPane = new JSplitPaneOperator(frame);
+        JFrameOperator frame = new JFrameOperator(DEMO_TITLE);
 
-            // Toggle OneTouch Expandable
-            checkOneTouch(frame, splitPane, true);
-            checkOneTouch(frame, splitPane, false);
+        JSplitPaneOperator splitPane = new JSplitPaneOperator(frame);
 
-            // Check changing divider size to minimum and maximum values
-            changeDividerSize(frame, splitPane, 50);
-            changeDividerSize(frame, splitPane, 6);
+        // Toggle OneTouch Expandable
+        checkOneTouch(frame, splitPane, true);
+        checkOneTouch(frame, splitPane, false);
 
-            // Check moving the divider
-            checkDividerMoves(frame, splitPane, false);
-            checkDividerMoves(frame, splitPane, true);
+        // Check changing divider size to minimum and maximum values
+        changeDividerSize(frame, splitPane, 50);
+        changeDividerSize(frame, splitPane, 6);
 
-            // Check different minumum Day/Night sizes
-            changeMinimumSizes(frame, splitPane, 100);
-            changeMinimumSizes(frame, splitPane, 0);
-        });
+        // Check moving the divider
+        checkDividerMoves(frame, splitPane, false);
+        checkDividerMoves(frame, splitPane, true);
+
+        // Check different minumum Day/Night sizes
+        changeMinimumSizes(frame, splitPane, 100);
+        changeMinimumSizes(frame, splitPane, 0);
     }
 
     // Check for different day and night minimum size

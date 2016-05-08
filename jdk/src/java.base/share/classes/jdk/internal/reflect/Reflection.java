@@ -343,8 +343,8 @@ public class Reflection {
 
     private static void printStackTraceIfNeeded(Throwable e) {
         if (!printStackWhenAccessFailsSet && VM.initLevel() >= 1) {
-            String s = GetPropertyAction
-                    .getProperty("sun.reflect.debugModuleAccessChecks");
+            String s = GetPropertyAction.privilegedGetProperty(
+                    "sun.reflect.debugModuleAccessChecks");
             printStackWhenAccessFails =
                     (s != null && !s.equalsIgnoreCase("false"));
             printStackWhenAccessFailsSet = true;

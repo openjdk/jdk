@@ -278,7 +278,7 @@ public class FtpURLConnection extends URLConnection {
 
         if (user == null) {
             user = "anonymous";
-            Properties props = GetPropertyAction.getProperties();
+            Properties props = GetPropertyAction.privilegedGetProperties();
             String vers = props.getProperty("java.version");
             password = props.getProperty("ftp.protocol.user",
                     "Java" + vers + "@");

@@ -25,6 +25,7 @@
 
 package com.sun.tools.sjavac.server;
 
+import com.sun.tools.javac.main.Main;
 import com.sun.tools.sjavac.Log;
 import com.sun.tools.sjavac.Util;
 
@@ -100,10 +101,10 @@ public class RequestHandler extends Thread {
             checkInternalErrorLog();
 
             // Perform compilation
-            int rc = sjavac.compile(args);
+            Main.Result rc = sjavac.compile(args);
 
             // Send return code back to client
-            out.println(LINE_TYPE_RC + ":" + rc);
+            out.println(LINE_TYPE_RC + ":" + rc.name());
 
             // Check for internal errors again.
             checkInternalErrorLog();

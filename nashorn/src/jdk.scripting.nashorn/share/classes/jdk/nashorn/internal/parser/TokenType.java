@@ -82,7 +82,7 @@ public enum TokenType {
     ASSIGN         (BINARY,  "=",     2, false),
     EQ             (BINARY,  "==",    9, true),
     EQ_STRICT      (BINARY,  "===",   9, true),
-    BIND           (BINARY,  "=>",    9, true),
+    ARROW          (BINARY,  "=>",    2, true),
     GT             (BINARY,  ">",    10, true),
     GE             (BINARY,  ">=",   10, true),
     SAR            (BINARY,  ">>",   11, true),
@@ -100,6 +100,7 @@ public enum TokenType {
     OR             (BINARY,  "||",    4, true),
     RBRACE         (BRACKET, "}"),
     BIT_NOT        (UNARY,   "~",     14, false),
+    ELLIPSIS       (UNARY,   "..."),
 
     // ECMA 7.6.1.1 Keywords, 7.6.1.2 Future Reserved Words.
     // All other Java keywords are commented out.
@@ -190,7 +191,10 @@ public enum TokenType {
 
     COMMALEFT      (IR,       null),
     DECPOSTFIX     (IR,       null),
-    INCPOSTFIX     (IR,       null);
+    INCPOSTFIX     (IR,       null),
+    SPREAD_ARGUMENT(IR,       null),
+    SPREAD_ARRAY   (IR,       null),
+    YIELD_STAR     (IR,       null);
 
     /** Next token kind in token lookup table. */
     private TokenType next;
@@ -250,7 +254,6 @@ public enum TokenType {
     public boolean isOperator(final boolean noIn) {
         return kind == BINARY && (!noIn || this != IN) && precedence != 0;
     }
-
 
     public int getLength() {
         assert name != null : "Token name not set";
