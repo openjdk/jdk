@@ -794,6 +794,52 @@ public class TCKDateTimeFormatterBuilder {
         DateTimeFormatter df = new DateTimeFormatterBuilder().appendPattern("g").toFormatter();
          assertEquals(LocalDate.of(y, m, d).format(df), expected);
     }
+    //----------------------------------------------------------------------
+    @DataProvider(name="dayOfYearFieldValues")
+    Object[][] data_dayOfYearFieldValues() {
+        return new Object[][] {
+                {2016, 1, 1, "D", "1"},
+                {2016, 1, 31, "D", "31"},
+                {2016, 1, 1, "DD", "01"},
+                {2016, 1, 31, "DD", "31"},
+                {2016, 4, 9, "DD", "100"},
+                {2016, 1, 1, "DDD", "001"},
+                {2016, 1, 31, "DDD", "031"},
+                {2016, 4, 9, "DDD", "100"},
+        };
+    }
+
+    @Test(dataProvider="dayOfYearFieldValues")
+    public void test_dayOfYearFieldValues(int y, int m, int d, String pattern, String expected) throws Exception {
+        DateTimeFormatter df = new DateTimeFormatterBuilder().appendPattern(pattern).toFormatter();
+        assertEquals(LocalDate.of(y, m, d).format(df), expected);
+    }
+
+    @DataProvider(name="dayOfYearFieldAdjacentParsingValues")
+    Object[][] data_dayOfYearFieldAdjacentParsingValues() {
+        return new Object[][] {
+            {"20160281015", LocalDateTime.of(2016, 1, 28, 10, 15)},
+            {"20161001015", LocalDateTime.of(2016, 4, 9, 10, 15)},
+        };
+    }
+
+    @Test(dataProvider="dayOfYearFieldAdjacentParsingValues")
+    public void test_dayOfYearFieldAdjacentValueParsing(String input, LocalDateTime expected) {
+        DateTimeFormatter df = new DateTimeFormatterBuilder().appendPattern("yyyyDDDHHmm").toFormatter();
+        LocalDateTime actual = LocalDateTime.parse(input, df);
+        assertEquals(actual, expected);
+    }
+
+    @Test(expectedExceptions = DateTimeParseException.class)
+    public void test_dayOfYearFieldInvalidValue() {
+        DateTimeFormatter.ofPattern("DDD").parse("1234");
+    }
+
+    @Test(expectedExceptions = DateTimeParseException.class)
+    public void test_dayOfYearFieldInvalidAdacentValueParsingPattern() {
+        // patterns D and DD will not take part in adjacent value parsing
+        DateTimeFormatter.ofPattern("yyyyDDHHmmss").parse("201610123456");
+    }
 
     //-----------------------------------------------------------------------
     @DataProvider(name="secondsPattern")
