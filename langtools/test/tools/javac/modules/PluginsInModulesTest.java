@@ -127,7 +127,7 @@ public class PluginsInModulesTest extends ModuleTestBase {
     Path classes;
 
     @Test
-    void testUseOnlyOneProcessor(Path base) throws Exception {
+    public void testUseOnlyOneProcessor(Path base) throws Exception {
         initialization(base);
         List<String> log = new JavacTask(tb)
                 .options("-processormodulepath", processorCompiledModules.toString(),

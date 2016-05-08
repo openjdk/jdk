@@ -113,6 +113,10 @@ class WindowsWatchService
         // completion key (used to map I/O completion to WatchKey)
         private int completionKey;
 
+        // flag indicates that ReadDirectoryChangesW failed
+        // and overlapped I/O operation wasn't started
+        private boolean errorStartingOverlapped;
+
         WindowsWatchKey(Path dir,
                         AbstractWatchService watcher,
                         FileKey fileKey)
@@ -175,6 +179,14 @@ class WindowsWatchService
             return completionKey;
         }
 
+        void setErrorStartingOverlapped(boolean value) {
+            errorStartingOverlapped = value;
+        }
+
+        boolean isErrorStartingOverlapped() {
+            return errorStartingOverlapped;
+        }
+
         // Invalidate the key, assumes that resources have been released
         void invalidate() {
             ((WindowsWatchService)watcher()).poller.releaseResources(this);
@@ -182,6 +194,7 @@ class WindowsWatchService
             buffer = null;
             countAddress = 0;
             overlappedAddress = 0;
+            errorStartingOverlapped = false;
         }
 
         @Override
@@ -455,11 +468,13 @@ class WindowsWatchService
          * resources.
          */
         private void releaseResources(WindowsWatchKey key) {
-            try {
-                CancelIo(key.handle());
-                GetOverlappedResult(key.handle(), key.overlappedAddress());
-            } catch (WindowsException expected) {
-                // expected as I/O operation has been cancelled
+            if (!key.isErrorStartingOverlapped()) {
+                try {
+                    CancelIo(key.handle());
+                    GetOverlappedResult(key.handle(), key.overlappedAddress());
+                } catch (WindowsException expected) {
+                    // expected as I/O operation has been cancelled
+                }
             }
             CloseHandle(key.handle());
             closeAttachedEvent(key.overlappedAddress());
@@ -628,6 +643,7 @@ class WindowsWatchService
                     } catch (WindowsException x) {
                         // no choice but to cancel key
                         criticalError = true;
+                        key.setErrorStartingOverlapped(true);
                     }
                 }
                 if (criticalError) {

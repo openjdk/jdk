@@ -38,7 +38,7 @@ package jdk.jshell;
  * empty string.
  */
 @SuppressWarnings("serial")             // serialVersionUID intentionally omitted
-public class UnresolvedReferenceException extends Exception {
+public class UnresolvedReferenceException extends JShellException {
 
     final DeclarationSnippet snippet;
 

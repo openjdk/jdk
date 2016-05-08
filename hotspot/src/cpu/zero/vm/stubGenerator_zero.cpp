@@ -40,7 +40,6 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "stack_zero.inline.hpp"
-#include "utilities/top.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif

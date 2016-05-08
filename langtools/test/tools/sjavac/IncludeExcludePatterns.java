@@ -33,6 +33,7 @@
  * @run main Wrapper IncludeExcludePatterns
  */
 
+import com.sun.tools.javac.main.Main.Result;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.sjavac.server.Sjavac;
 
@@ -131,7 +132,7 @@ public class IncludeExcludePatterns extends SjavacBase {
         int rc = compile((Object[]) args.split(" "));
 
         // Compilation should always pass in these tests
-        Assert.check(rc == Sjavac.RC_OK, "Compilation failed unexpectedly.");
+        Assert.check(rc == Result.OK.exitCode, "Compilation failed unexpectedly.");
 
         // The resulting .class files should correspond to the visible source files
         Set<Path> result = allFilesInDir(BIN);

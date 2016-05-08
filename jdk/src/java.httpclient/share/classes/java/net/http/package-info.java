@@ -24,11 +24,11 @@
  */
 
 /**
- * <h2>High level HTTP API</h2>
- * This provides a high-level client interface to HTTP (versions 1.1 and 2).
- * Synchronous and asynchronous (via
- * {@link java.util.concurrent.CompletableFuture}) modes are provided. The main
- * classes defined are:
+ * <h2>High level HTTP and WebSocket API</h2>
+ * This provides a high-level client interfaces to HTTP (versions 1.1 and 2)
+ * and WebSocket. Synchronous and asynchronous (via {@link
+ * java.util.concurrent.CompletableFuture}) modes are provided for HTTP.
+ * WebSocket works in asynchronous mode only. The main types defined are:
  * <ul>
  *    <li>{@link java.net.http.HttpClient}</li>
  *    <li>{@link java.net.http.HttpRequest}</li>

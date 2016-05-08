@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -159,11 +159,7 @@ JVM_handle_bsd_signal(int sig,
     if (os::Bsd::chained_handler(sig, info, ucVoid)) {
       return true;
     } else {
-      if (PrintMiscellaneous && (WizardMode || Verbose)) {
-        char buf[64];
-        warning("Ignoring %s - see bugs 4229104 or 646499219",
-                os::exception_name(sig, buf, sizeof(buf)));
-      }
+      // Ignoring SIGPIPE/SIGXFSZ - see bugs 4229104 or 6499219
       return true;
     }
   }

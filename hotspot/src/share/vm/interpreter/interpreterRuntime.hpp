@@ -31,8 +31,7 @@
 #include "oops/method.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/thread.inline.hpp"
-#include "utilities/top.hpp"
+#include "runtime/thread.hpp"
 
 // The InterpreterRuntime is called by the interpreter for everything
 // that cannot/should not be dealt with in assembly and needs C support.
@@ -90,8 +89,6 @@ class InterpreterRuntime: AllStatic {
 
   // Quicken instance-of and check-cast bytecodes
   static void    quicken_io_cc(JavaThread* thread);
-
-  static address check_ReservedStackAccess_annotated_methods(JavaThread* thread);
 
   // Exceptions thrown by the interpreter
   static void    throw_AbstractMethodError(JavaThread* thread);

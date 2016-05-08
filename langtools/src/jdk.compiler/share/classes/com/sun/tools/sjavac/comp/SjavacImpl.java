@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.Main;
+import com.sun.tools.javac.main.Main.Result;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.sjavac.JavacState;
 import com.sun.tools.sjavac.Log;
@@ -69,36 +70,36 @@ import javax.tools.JavaFileManager;
 public class SjavacImpl implements Sjavac {
 
     @Override
-    public int compile(String[] args) {
+    public Result compile(String[] args) {
         Options options;
         try {
             options = Options.parseArgs(args);
         } catch (IllegalArgumentException e) {
             Log.error(e.getMessage());
-            return RC_FATAL;
+            return Result.CMDERR;
         }
 
         if (!validateOptions(options))
-            return RC_FATAL;
+            return Result.CMDERR;
 
         if (srcDstOverlap(options.getSources(), options.getDestDir())) {
-            return RC_FATAL;
+            return Result.CMDERR;
         }
 
         if (!createIfMissing(options.getDestDir()))
-            return RC_FATAL;
+            return Result.ERROR;
 
         Path stateDir = options.getStateDir();
         if (stateDir != null && !createIfMissing(options.getStateDir()))
-            return RC_FATAL;
+            return Result.ERROR;
 
         Path gensrc = options.getGenSrcDir();
         if (gensrc != null && !createIfMissing(gensrc))
-            return RC_FATAL;
+            return Result.ERROR;
 
         Path hdrdir = options.getHeaderDir();
         if (hdrdir != null && !createIfMissing(hdrdir))
-            return RC_FATAL;
+            return Result.ERROR;
 
         if (stateDir == null) {
             // Prepare context. Direct logging to our byte array stream.
@@ -113,7 +114,7 @@ public class SjavacImpl implements Sjavac {
                                              .filter(arg -> !arg.startsWith(Option.SERVER.arg))
                                              .toArray(String[]::new);
             // Compile
-            Main.Result result = new Main("javac", printWriter).compile(passThroughArgs, context);
+            Result result = new Main("javac", printWriter).compile(passThroughArgs, context);
 
             // Process compiler output (which is always errors)
             printWriter.flush();
@@ -128,7 +129,7 @@ public class SjavacImpl implements Sjavac {
                     throw new UncheckedIOException(es);
                 }
             }
-            return result.exitCode;
+            return result;
 
         } else {
             // Load the prev build state database.
@@ -166,7 +167,7 @@ public class SjavacImpl implements Sjavac {
 
                 if (sources.isEmpty()) {
                     Log.error("Found nothing to compile!");
-                    return RC_FATAL;
+                    return Result.ERROR;
                 }
 
 
@@ -292,15 +293,15 @@ public class SjavacImpl implements Sjavac {
                     javac_state.removeSuperfluousArtifacts(recently_compiled);
                 }
 
-                return rc[0] ? RC_OK : RC_FATAL;
+                return rc[0] ? Result.OK : Result.ERROR;
             } catch (ProblemException e) {
                 // For instance make file list mismatch.
                 Log.error(e.getMessage());
                 Log.debug(e);
-                return RC_FATAL;
+                return Result.ERROR;
             } catch (Exception e) {
                 Log.error(e);
-                return RC_FATAL;
+                return Result.ERROR;
             }
         }
     }

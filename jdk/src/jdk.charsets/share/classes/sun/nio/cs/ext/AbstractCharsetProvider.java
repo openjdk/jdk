@@ -148,6 +148,7 @@ public class AbstractCharsetProvider
                                        true,
                                        this.getClass().getClassLoader());
 
+            @SuppressWarnings("deprecation")
             Charset cs = (Charset)c.newInstance();
             cache.put(csn, new SoftReference<Charset>(cs));
             return cs;

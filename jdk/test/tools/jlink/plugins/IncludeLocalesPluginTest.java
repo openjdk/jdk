@@ -36,6 +36,7 @@ import tests.Result;
 
 /*
  * @test
+ * @bug 8152143 8152704 8155649
  * @summary IncludeLocalesPlugin tests
  * @author Naoto Sato
  * @library ../../lib
@@ -55,15 +56,17 @@ public class IncludeLocalesPluginTest {
     private final static String moduleName = "IncludeLocalesTest";
     private static Helper helper;
     private final static int INCLUDE_LOCALES_OPTION = 0;
-    private final static int EXPECTED_LOCATIONS     = 1;
-    private final static int UNEXPECTED_PATHS       = 2;
-    private final static int AVAILABLE_LOCALES      = 3;
-    private final static int ERROR_MESSAGE          = 4;
+    private final static int ADDMODS_OPTION         = 1;
+    private final static int EXPECTED_LOCATIONS     = 2;
+    private final static int UNEXPECTED_PATHS       = 3;
+    private final static int AVAILABLE_LOCALES      = 4;
+    private final static int ERROR_MESSAGE          = 5;
 
     private final static Object[][] testData = {
         // without --include-locales option: should include all locales
         {
             "",
+            "jdk.localedata",
             List.of(
                 "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",
                 "/jdk.localedata/sun/text/resources/ext/FormatData_ja.class",
@@ -144,6 +147,7 @@ public class IncludeLocalesPluginTest {
         // All English/Japanese locales
         {
             "--include-locales=en,ja",
+            "jdk.localedata",
             List.of(
                 "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",
                 "/jdk.localedata/sun/text/resources/ext/FormatData_ja.class",
@@ -174,6 +178,7 @@ public class IncludeLocalesPluginTest {
         // All locales in India
         {
             "--include-locales=*-IN",
+            "jdk.localedata",
             List.of(
                 "/jdk.localedata/sun/text/resources/ext/FormatData_en_IN.class",
                 "/jdk.localedata/sun/text/resources/ext/FormatData_hi_IN.class",
@@ -201,7 +206,9 @@ public class IncludeLocalesPluginTest {
         },
 
         // Thai
-        {"--include-locales=th",
+        {
+            "--include-locales=th",
+            "jdk.localedata",
             List.of(
                 "/jdk.localedata/sun/text/resources/LineBreakIteratorData_th",
                 "/jdk.localedata/sun/text/resources/thai_dict",
@@ -221,7 +228,9 @@ public class IncludeLocalesPluginTest {
         },
 
         // Hong Kong
-        {"--include-locales=zh-HK",
+        {
+            "--include-locales=zh-HK",
+            "jdk.localedata",
             List.of(
                 "/jdk.localedata/sun/text/resources/ext/FormatData_zh.class",
                 "/jdk.localedata/sun/text/resources/ext/FormatData_zh_HK.class",
@@ -244,7 +253,9 @@ public class IncludeLocalesPluginTest {
         },
 
         // Norwegian
-        {"--include-locales=nb,nn,no",
+        {
+            "--include-locales=nb,nn,no",
+            "jdk.localedata",
             List.of(
                 "/jdk.localedata/sun/text/resources/ext/FormatData_no.class",
                 "/jdk.localedata/sun/text/resources/ext/FormatData_no_NO.class",
@@ -268,7 +279,9 @@ public class IncludeLocalesPluginTest {
         },
 
         // Hebrew/Indonesian/Yiddish
-        {"--include-locales=he,id,yi",
+        {
+            "--include-locales=he,id,yi",
+            "jdk.localedata",
             List.of(
                 "/jdk.localedata/sun/text/resources/ext/FormatData_in.class",
                 "/jdk.localedata/sun/text/resources/ext/FormatData_in_ID.class",
@@ -294,7 +307,9 @@ public class IncludeLocalesPluginTest {
         },
 
         // Error case: No matching locales
-        {"--include-locales=xyz",
+        {
+            "--include-locales=xyz",
+            "jdk.localedata",
             null,
             null,
             null,
@@ -304,12 +319,26 @@ public class IncludeLocalesPluginTest {
         },
 
         // Error case: Invalid argument
-        {"--include-locales=en,zh_HK",
+        {
+            "--include-locales=en,zh_HK",
+            "jdk.localedata",
             null,
             null,
             null,
             new PluginException(String.format(
                 PluginsResourceBundle.getMessage("include-locales.invalidtag"), "zh_HK"))
+                .getMessage(),
+        },
+
+        // Error case: jdk.localedata is not added
+        {
+            "--include-locales=en-US",
+            "java.base",
+            null,
+            null,
+            null,
+            new PluginException(
+                PluginsResourceBundle.getMessage("include-locales.localedatanotfound"))
                 .getMessage(),
         },
     };
@@ -328,7 +357,7 @@ public class IncludeLocalesPluginTest {
             Result result = JImageGenerator.getJLinkTask()
                     .modulePath(helper.defaultModulePath())
                     .output(helper.createNewImageDir(moduleName))
-                    .addMods("jdk.localedata")
+                    .addMods((String)data[ADDMODS_OPTION])
                     .option((String)data[INCLUDE_LOCALES_OPTION])
                     .call();
 

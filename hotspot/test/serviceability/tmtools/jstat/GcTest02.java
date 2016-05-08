@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import utils.*;
  * @library ../share
  * @build common.*
  * @build utils.*
- * @run main/othervm -XX:+UsePerfData -Xms128M -XX:MaxMetaspaceSize=128M GcTest02
+ * @run main/othervm -XX:+UsePerfData -Xmx128M -XX:MaxMetaspaceSize=128M GcTest02
  */
 
 public class GcTest02 {
@@ -57,11 +57,5 @@ public class GcTest02 {
 
         // Assert that space has been utilized acordingly
         JstatResults.assertSpaceUtilization(measurement2, targetMemoryUsagePercent);
-    }
-
-    private static void assertThat(boolean result, String message) {
-        if (!result) {
-            throw new RuntimeException(message);
-        };
     }
 }

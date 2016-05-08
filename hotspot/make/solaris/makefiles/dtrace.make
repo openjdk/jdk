@@ -270,7 +270,7 @@ $(DTRACE.o): $(DTRACE).d $(DTraced_Files)
 	@echo $(LOG_INFO) Compiling $(DTRACE).d
 
 	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -G -xlazyload -o $@ -s $(DTRACE).d \
-     $(DTraced_Files) ||\
+     $(sort $(DTraced_Files)) ||\
   STATUS=$$?;\
   if [ x"$$STATUS" = x"1" ]; then \
       if [ x`uname -r` = x"5.10" -a \

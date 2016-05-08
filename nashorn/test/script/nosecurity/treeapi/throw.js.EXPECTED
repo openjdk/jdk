@@ -80,7 +80,7 @@
       "properties": [
         {
           "getter": "null",
-          "endPosition": "97",
+          "endPosition": "105",
           "kind": "PROPERTY",
           "setter": "null",
           "value": {

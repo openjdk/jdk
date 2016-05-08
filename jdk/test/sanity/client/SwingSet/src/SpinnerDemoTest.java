@@ -21,6 +21,7 @@
  * questions.
  */
 
+import org.jtregext.GuiTestListener;
 import com.sun.swingset3.demos.spinner.SpinnerDemo;
 import static com.sun.swingset3.demos.spinner.SpinnerDemo.DEMO_TITLE;
 import java.text.DecimalFormat;
@@ -30,7 +31,7 @@ import org.netbeans.jemmy.ClassReference;
 import org.netbeans.jemmy.operators.JFrameOperator;
 import org.netbeans.jemmy.operators.JSpinnerOperator;
 import org.netbeans.jemmy.operators.JTextFieldOperator;
-import static org.jemmy2ext.JemmyExt.captureDebugInfoOnFail;
+import org.testng.annotations.Listeners;
 
 /*
  * @test
@@ -39,12 +40,13 @@ import static org.jemmy2ext.JemmyExt.captureDebugInfoOnFail;
  *          the spinner button and checking text field value.
  *
  * @library /sanity/client/lib/jemmy/src
- * @library /sanity/client/lib/Jemmy2Ext/src
+ * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.spinner.SpinnerDemo
  * @run testng SpinnerDemoTest
  */
+@Listeners(GuiTestListener.class)
 public class SpinnerDemoTest {
 
     private static final int SPINNERS_COUNT = 9;
@@ -52,16 +54,14 @@ public class SpinnerDemoTest {
 
     @Test
     public void test() throws Exception {
-        captureDebugInfoOnFail(() -> {
-            new ClassReference(SpinnerDemo.class.getCanonicalName()).startApplication();
+        new ClassReference(SpinnerDemo.class.getCanonicalName()).startApplication();
 
-            JFrameOperator frame = new JFrameOperator(DEMO_TITLE);
+        JFrameOperator frame = new JFrameOperator(DEMO_TITLE);
 
-            // Check changing different spinners
-            for (int i = 0; i < SPINNERS_COUNT; i++) {
-                changeValues(frame, i);
-            }
-        });
+        // Check changing different spinners
+        for (int i = 0; i < SPINNERS_COUNT; i++) {
+            changeValues(frame, i);
+        }
     }
 
     private void changeValues(JFrameOperator jfo, int spinnerIndex) throws Exception {

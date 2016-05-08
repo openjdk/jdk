@@ -218,11 +218,10 @@ public class PKCS8Key implements PrivateKey {
                 }
             }
 
-            Object      inst = null;
+            @SuppressWarnings("deprecation")
+            Object      inst = (keyClass != null) ? keyClass.newInstance() : null;
             PKCS8Key    result;
 
-            if (keyClass != null)
-                inst = keyClass.newInstance();
             if (inst instanceof PKCS8Key) {
                 result = (PKCS8Key) inst;
                 result.algid = algid;

@@ -65,7 +65,7 @@ public class QueryBeforeEnter extends ModuleTestBase {
     }
 
     @Test
-    void testEmpty(Path base) throws Exception {
+    public void testEmpty(Path base) throws Exception {
         JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
         com.sun.source.util.JavacTask task =
             (com.sun.source.util.JavacTask) javaCompiler.getTask(null, null, null, null, null, null);
@@ -75,7 +75,7 @@ public class QueryBeforeEnter extends ModuleTestBase {
     }
 
     @Test
-    void testUnnamed(Path base) throws Exception {
+    public void testUnnamed(Path base) throws Exception {
         Path moduleSrc = base.resolve("module-src");
         Path m1 = moduleSrc.resolve("m1");
 
@@ -151,7 +151,7 @@ public class QueryBeforeEnter extends ModuleTestBase {
     }
 
     @Test
-    void testSingleNamed(Path base) throws Exception {
+    public void testSingleNamed(Path base) throws Exception {
         Path moduleSrc = base.resolve("module-src");
         Path m1 = moduleSrc.resolve("m1");
 
@@ -226,7 +226,7 @@ public class QueryBeforeEnter extends ModuleTestBase {
     }
 
     @Test
-    void testMultiModule(Path base) throws Exception {
+    public void testMultiModule(Path base) throws Exception {
         Path modulePathSrc = base.resolve("module-path-src");
         Path m1 = modulePathSrc.resolve("m1");
 
@@ -311,7 +311,7 @@ public class QueryBeforeEnter extends ModuleTestBase {
     }
 
     @Test
-    void testTooSoon(Path base) throws Exception {
+    public void testTooSoon(Path base) throws Exception {
         Path src = base.resolve("src");
 
         tb.writeJavaFiles(src,

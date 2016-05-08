@@ -78,7 +78,8 @@ final class StackStreamFactory {
      * Performance work and extensive testing is needed to replace the
      * VM built-in backtrace filled in Throwable with the StackWalker.
      */
-    final static boolean isDebug = getProperty("stackwalk.debug", false);
+    final static boolean isDebug =
+            "true".equals(GetPropertyAction.privilegedGetProperty("stackwalk.debug"));
 
     static <T> StackFrameTraverser<T>
         makeStackTraverser(StackWalker walker, Function<? super Stream<StackFrame>, ? extends T> function)
@@ -988,11 +989,4 @@ final class StackStreamFactory {
                 c.getName().startsWith("java.lang.invoke.LambdaForm");
     }
 
-    private static boolean getProperty(String key, boolean value) {
-        String s = GetPropertyAction.getProperty(key);
-        if (s != null) {
-            return Boolean.parseBoolean(s);
-        }
-        return value;
-    }
 }

@@ -364,8 +364,8 @@ public class DefaultLoggerFinderTest {
 
         Logger appLogger1 = null;
         try {
-            appLogger1 = provider.getLogger("foo", DefaultLoggerFinderTest.class);
-            loggerDescMap.put(appLogger1, "provider.getApplicationLogger(\"foo\")");
+            appLogger1 = provider.getLogger("foo", DefaultLoggerFinderTest.class.getModule());
+            loggerDescMap.put(appLogger1, "provider.getLogger(\"foo\", DefaultLoggerFinderTest.class.getModule())");
             if (!hasRequiredPermissions) {
                 throw new RuntimeException("Managed to obtain a logger without permission");
             }
@@ -380,8 +380,8 @@ public class DefaultLoggerFinderTest {
             boolean old = allowControl.get().get();
             allowControl.get().set(true);
             try {
-                appLogger1 =provider.getLogger("foo", DefaultLoggerFinderTest.class);
-                loggerDescMap.put(appLogger1, "provider.getApplicationLogger(\"foo\")");
+                appLogger1 =provider.getLogger("foo", DefaultLoggerFinderTest.class.getModule());
+                loggerDescMap.put(appLogger1, "provider.getLogger(\"foo\", DefaultLoggerFinderTest.class.getModule())");
             } finally {
                 allowControl.get().set(old);
             }
@@ -389,8 +389,8 @@ public class DefaultLoggerFinderTest {
 
         Logger sysLogger1 = null;
         try {
-            sysLogger1 = provider.getLogger("foo", Thread.class);
-            loggerDescMap.put(sysLogger1, "provider.getSystemLogger(\"foo\")");
+            sysLogger1 = provider.getLogger("foo", Thread.class.getModule());
+            loggerDescMap.put(sysLogger1, "provider.getLogger(\"foo\", Thread.class.getModule())");
             if (!hasRequiredPermissions) {
                 throw new RuntimeException("Managed to obtain a system logger without permission");
             }
@@ -405,8 +405,8 @@ public class DefaultLoggerFinderTest {
             boolean old = allowControl.get().get();
             allowControl.get().set(true);
             try {
-                sysLogger1 = provider.getLogger("foo", Thread.class);
-                loggerDescMap.put(sysLogger1, "provider.getSystemLogger(\"foo\")");
+                sysLogger1 = provider.getLogger("foo", Thread.class.getModule());
+                loggerDescMap.put(sysLogger1, "provider.getLogger(\"foo\", Thread.class.getModule())");
             } finally {
                 allowControl.get().set(old);
             }
@@ -417,8 +417,8 @@ public class DefaultLoggerFinderTest {
 
         Logger appLogger2 = null;
         try {
-            appLogger2 = provider.getLocalizedLogger("foo", loggerBundle, DefaultLoggerFinderTest.class);
-            loggerDescMap.put(appLogger2, "provider.getLocalizedApplicationLogger(\"foo\", loggerBundle)");
+            appLogger2 = provider.getLocalizedLogger("foo", loggerBundle, DefaultLoggerFinderTest.class.getModule());
+            loggerDescMap.put(appLogger2, "provider.getLocalizedLogger(\"foo\", loggerBundle, DefaultLoggerFinderTest.class.getModule())");
             if (!hasRequiredPermissions) {
                 throw new RuntimeException("Managed to obtain a logger without permission");
             }
@@ -433,8 +433,8 @@ public class DefaultLoggerFinderTest {
             boolean old = allowControl.get().get();
             allowControl.get().set(true);
             try {
-                appLogger2 = provider.getLocalizedLogger("foo", loggerBundle, DefaultLoggerFinderTest.class);
-                loggerDescMap.put(appLogger2, "provider.getLocalizedApplicationLogger(\"foo\", loggerBundle)");
+                appLogger2 = provider.getLocalizedLogger("foo", loggerBundle, DefaultLoggerFinderTest.class.getModule());
+                loggerDescMap.put(appLogger2, "provider.getLocalizedLogger(\"foo\", loggerBundle, DefaultLoggerFinderTest.class.getModule())");
             } finally {
                 allowControl.get().set(old);
             }
@@ -442,8 +442,8 @@ public class DefaultLoggerFinderTest {
 
         Logger sysLogger2 = null;
         try {
-            sysLogger2 = provider.getLocalizedLogger("foo", loggerBundle, Thread.class);
-            loggerDescMap.put(sysLogger2, "provider.getLocalizedSystemLogger(\"foo\", loggerBundle)");
+            sysLogger2 = provider.getLocalizedLogger("foo", loggerBundle, Thread.class.getModule());
+            loggerDescMap.put(sysLogger2, "provider.getLocalizedLogger(\"foo\", loggerBundle, Thread.class.getModule())");
             if (!hasRequiredPermissions) {
                 throw new RuntimeException("Managed to obtain a system logger without permission");
             }
@@ -458,8 +458,8 @@ public class DefaultLoggerFinderTest {
             boolean old = allowControl.get().get();
             allowControl.get().set(true);
             try {
-                sysLogger2 = provider.getLocalizedLogger("foo", loggerBundle, Thread.class);
-                loggerDescMap.put(sysLogger2, "provider.getLocalizedSystemLogger(\"foo\", loggerBundle)");
+                sysLogger2 = provider.getLocalizedLogger("foo", loggerBundle, Thread.class.getModule());
+                loggerDescMap.put(sysLogger2, "provider.getLocalizedLogger(\"foo\", loggerBundle, Thread.class.getModule())");
             } finally {
                 allowControl.get().set(old);
             }

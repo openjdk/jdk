@@ -222,20 +222,17 @@ inline int Backtrace::get_line_number(const methodHandle& method, int bci) {
   return line_number;
 }
 
-/*
- * Returns the source file name of a given InstanceKlass and version
- */
 inline Symbol* Backtrace::get_source_file_name(InstanceKlass* holder, int version) {
-  // Find the specific ik version that contains this source_file_name_index
-  // via the previous versions list, but use the current version's
-  // constant pool to look it up.  The previous version's index has been
-  // merged for the current constant pool.
-  InstanceKlass* ik = holder->get_klass_version(version);
-  // This version has been cleaned up.
-  if (ik == NULL) return NULL;
-  int source_file_name_index = ik->source_file_name_index();
-  return (source_file_name_index == 0) ?
-      (Symbol*)NULL : holder->constants()->symbol_at(source_file_name_index);
+  // RedefineClasses() currently permits redefine operations to
+  // happen in parallel using a "last one wins" philosophy. That
+  // spec laxness allows the constant pool entry associated with
+  // the source_file_name_index for any older constant pool version
+  // to be unstable so we shouldn't try to use it.
+  if (holder->constants()->version() != version) {
+    return NULL;
+  } else {
+    return holder->source_file_name();
+  }
 }
 
 #endif // SHARE_VM_CLASSFILE_JAVACLASSES_INLINE_HPP

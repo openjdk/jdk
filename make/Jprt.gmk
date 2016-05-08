@@ -108,7 +108,9 @@ SRC_JDK_MACOSX_BUNDLE_DIR := $(JDK_MACOSX_BUNDLE_DIR)
 SRC_JRE_MACOSX_BUNDLE_DIR := $(JRE_MACOSX_BUNDLE_DIR)
 
 # Bundle up the images
-bundles: all
+JPRT_TARGET ?= default
+ifeq ($(JPRT_TARGET), default)
+  bundles: $(JPRT_TARGET)
 	@$(call TargetEnter)
 	$(MKDIR) -p $(BUILD_OUTPUT)/bundles
 	$(CD) $(SRC_JDK_IMAGE_DIR) && $(ZIP) -y -q -r \
@@ -128,9 +130,24 @@ bundles: all
 	      $(BUILD_OUTPUT)/bundles/$(SYMBOLS_IMAGE_SUBDIR).zip . ; \
 	fi
 	@$(call TargetExit)
+else
+  # Just fake the bundles
+  bundles: $(JPRT_TARGET)
+	@$(call TargetEnter)
+	$(MKDIR) -p $(BUILD_OUTPUT)/bundles
+	$(CD) $(TOPDIR) &&  $(ZIP) -y -q -r \
+	    $(BUILD_OUTPUT)/bundles/$(JDK_IMAGE_SUBDIR).zip README
+	$(CD) $(TOPDIR) &&  $(ZIP) -y -q -r \
+	    $(BUILD_OUTPUT)/bundles/$(JRE_IMAGE_SUBDIR).zip README
+	$(CD) $(TOPDIR) &&  $(ZIP) -y -q -r \
+	    $(BUILD_OUTPUT)/bundles/$(TEST_IMAGE_SUBDIR).zip README
+	$(CD) $(TOPDIR) &&  $(ZIP) -y -q -r \
+	    $(BUILD_OUTPUT)/bundles/modules.zip README
+	@$(call TargetExit)
+endif
 
 # Copy images to one unified location regardless of platform etc.
-final-images: all
+final-images: $(JPRT_TARGET)
 	@$(call TargetEnter)
 	$(RM) -r $(BUILD_OUTPUT)/final-images
 	$(MKDIR) -p $(BUILD_OUTPUT)/final-images/$(JDK_IMAGE_SUBDIR)

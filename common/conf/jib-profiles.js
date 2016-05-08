@@ -212,14 +212,17 @@ var getJibProfiles = function (input) {
  * @returns Common values
  */
 var getJibProfilesCommon = function (input) {
-    var common = {
-        dependencies: ["boot_jdk", "gnumake", "jtreg"],
-        configure_args: ["--with-default-make-target=all", "--enable-jtreg-failure-handler"],
-        configure_args_32bit: ["--with-target-bits=32", "--with-jvm-variants=client,server"],
-        configure_args_debug: ["--enable-debug"],
-        configure_args_slowdebug: ["--with-debug-level=slowdebug"],
-        organization: "jpg.infra.builddeps"
-    };
+    var common = {};
+
+    common.dependencies = ["boot_jdk", "gnumake", "jtreg"],
+    common.default_make_targets = ["product-images", "test-image"],
+    common.default_make_targets_debug = common.default_make_targets;
+    common.default_make_targets_slowdebug = common.default_make_targets;
+    common.configure_args = ["--enable-jtreg-failure-handler"],
+    common.configure_args_32bit = ["--with-target-bits=32", "--with-jvm-variants=client,server"],
+    common.configure_args_debug = ["--enable-debug"],
+    common.configure_args_slowdebug = ["--with-debug-level=slowdebug"],
+    common.organization = "jpg.infra.builddeps"
 
     return common;
 };
@@ -242,7 +245,7 @@ var getJibProfilesProfiles = function (input, common) {
             target_cpu: "x64",
             dependencies: concat(common.dependencies, "devkit"),
             configure_args: concat(common.configure_args, "--with-zlib=system"),
-            make_args: common.make_args
+            default_make_targets: concat(common.default_make_targets, "docs-image")
         },
 
         "linux-x86": {
@@ -252,7 +255,7 @@ var getJibProfilesProfiles = function (input, common) {
             dependencies: concat(common.dependencies, "devkit"),
             configure_args: concat(common.configure_args, common.configure_args_32bit,
                 "--with-zlib=system"),
-            make_args: common.make_args
+            default_make_targets: common.default_make_targets
         },
 
         "macosx-x64": {
@@ -260,7 +263,7 @@ var getJibProfilesProfiles = function (input, common) {
             target_cpu: "x64",
             dependencies: concat(common.dependencies, "devkit"),
             configure_args: concat(common.configure_args, "--with-zlib=system"),
-            make_args: common.make_args
+            default_make_targets: common.default_make_targets
         },
 
         "solaris-x64": {
@@ -268,7 +271,7 @@ var getJibProfilesProfiles = function (input, common) {
             target_cpu: "x64",
             dependencies: concat(common.dependencies, "devkit", "cups"),
             configure_args: concat(common.configure_args, "--with-zlib=system"),
-            make_args: common.make_args
+            default_make_targets: common.default_make_targets
         },
 
         "solaris-sparcv9": {
@@ -276,15 +279,15 @@ var getJibProfilesProfiles = function (input, common) {
             target_cpu: "sparcv9",
             dependencies: concat(common.dependencies, "devkit", "cups"),
             configure_args: concat(common.configure_args, "--with-zlib=system"),
-            make_args: common.make_args
+            default_make_targets: common.default_make_targets
         },
 
         "windows-x64": {
             target_os: "windows",
             target_cpu: "x64",
             dependencies: concat(common.dependencies, "devkit", "freetype"),
-            configure_args: common.configure_args,
-            make_args: common.make_args
+            configure_args: concat(common.configure_args),
+            default_make_targets: common.default_make_targets
         },
 
         "windows-x86": {
@@ -293,7 +296,7 @@ var getJibProfilesProfiles = function (input, common) {
             build_cpu: "x64",
             dependencies: concat(common.dependencies, "devkit", "freetype"),
             configure_args: concat(common.configure_args, common.configure_args_32bit),
-            make_args: common.make_args
+            default_make_targets: common.default_make_targets
         }
     };
     profiles = concatObjects(profiles, mainProfiles);
@@ -306,14 +309,15 @@ var getJibProfilesProfiles = function (input, common) {
     // implementation builds.
     var openOnlyProfiles = generateOpenOnlyProfiles(common, mainProfiles);
     // The open only profiles on linux are used for reference builds and should
-    // produce the compact profile images by default.
+    // produce the compact profile images by default. This adds "profiles" as an
+    // extra default target.
     var openOnlyProfilesExtra = {
         "linux-x64-open": {
-            configure_args: ["--with-default-make-target=all profiles"],
+            default_make_targets: "profiles"
         },
 
         "linux-x86-open": {
-            configure_args: ["--with-default-make-target=all profiles"],
+            default_make_targets: "profiles"
         }
     };
     var openOnlyProfiles = concatObjects(openOnlyProfiles, openOnlyProfilesExtra);
@@ -336,6 +340,7 @@ var getJibProfilesProfiles = function (input, common) {
 
     // Generate the missing platform attributes
     profiles = generatePlatformAttributes(profiles);
+    profiles = generateDefaultMakeTargetsConfigureArg(common, profiles);
     return profiles;
 };
 
@@ -469,6 +474,8 @@ var generateDebugProfiles = function (common, profiles) {
         var debugProfile = profile + "-debug";
         newProfiles[debugProfile] = clone(profiles[profile]);
         newProfiles[debugProfile].debug_level = "fastdebug";
+        newProfiles[debugProfile].default_make_targets
+            = common.default_make_targets_debug;
         newProfiles[debugProfile].labels
             = concat(newProfiles[debugProfile].labels || [], "debug"),
             newProfiles[debugProfile].configure_args
@@ -492,6 +499,8 @@ var generateSlowdebugProfiles = function (common, profiles) {
         var debugProfile = profile + "-slowdebug";
         newProfiles[debugProfile] = clone(profiles[profile]);
         newProfiles[debugProfile].debug_level = "slowdebug";
+        newProfiles[debugProfile].default_make_targets
+            = common.default_make_targets_slowdebug;
         newProfiles[debugProfile].labels
             = concat(newProfiles[debugProfile].labels || [], "slowdebug"),
             newProfiles[debugProfile].configure_args
@@ -522,6 +531,39 @@ var generateOpenOnlyProfiles = function (common, profiles) {
     }
     return newProfiles;
 };
+
+/**
+ * The default_make_targets attribute on a profile is not a real Jib attribute.
+ * This function rewrites that attribute into the corresponding configure arg.
+ * Calling this function multiple times on the same profiles object is safe.
+ *
+ * @param common Common values
+ * @param profiles Profiles map to rewrite profiles for
+ * @returns {{}} New map of profiles with the make targets converted
+ */
+var generateDefaultMakeTargetsConfigureArg = function (common, profiles) {
+    var ret = concatObjects(profiles, {});
+    for (var profile in ret) {
+        if (ret[profile]["default_make_targets"] != null) {
+            var targetsString = concat(ret[profile].default_make_targets).join(" ");
+            // Iterate over all configure args and see if --with-default-make-target
+            // is already there and change it, otherwise add it.
+            var found = false;
+            for (var arg in ret[profile].configure_args) {
+                if (arg.startsWith("--with-default-make-target")) {
+                    found = true;
+                    arg.replace(/=.*/, "=" + targetsString);
+                }
+            }
+            if (!found) {
+                ret[profile].configure_args = concat(
+                    ret[profile].configure_args,
+                    "--with-default-make-target=" + targetsString);
+            }
+        }
+    }
+    return ret;
+}
 
 /**
  * Deep clones an object tree.

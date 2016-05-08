@@ -157,7 +157,7 @@ public class SmtpClient extends TransferProtocolClient {
         }
         try {
             String s;
-            mailhost = GetPropertyAction.getProperty("mail.host");
+            mailhost = GetPropertyAction.privilegedGetProperty("mail.host");
             if (mailhost != null) {
                 openServer(mailhost);
                 return;
@@ -183,7 +183,7 @@ public class SmtpClient extends TransferProtocolClient {
         setConnectTimeout(to);
         try {
             String s;
-            mailhost = GetPropertyAction.getProperty("mail.host");
+            mailhost = GetPropertyAction.privilegedGetProperty("mail.host");
             if (mailhost != null) {
                 openServer(mailhost);
                 return;

@@ -28,8 +28,6 @@ package jdk.jshell;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import static jdk.jshell.Util.REPL_CLASS_PREFIX;
-import static jdk.jshell.Util.asLetters;
 
 /**
  * A Snippet represents a snippet of Java source code as passed to
@@ -503,7 +501,6 @@ public abstract class Snippet {
     private final SubKind subkind;
 
     private int seq;
-    private String className;
     private String id;
     private OuterWrap outer;
     private Status status;
@@ -615,7 +612,6 @@ public abstract class Snippet {
 
     final void setSequenceNumber(int seq) {
         this.seq = seq;
-        this.className = REPL_CLASS_PREFIX + key().index() + asLetters(seq);
     }
 
     void setOuterWrap(OuterWrap outer) {
@@ -653,7 +649,11 @@ public abstract class Snippet {
     }
 
     String className() {
-        return className;
+        return outer.className();
+    }
+
+    String classFullName() {
+        return outer.classFullName();
     }
 
     /**

@@ -25,34 +25,38 @@
 
 package java.lang.invoke;
 
-import java.lang.reflect.*;
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Arrays;
-import java.util.Objects;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyAccess;
 import sun.invoke.util.Wrapper;
-import jdk.internal.reflect.CallerSensitive;
-import jdk.internal.reflect.Reflection;
 import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
-import java.lang.invoke.LambdaForm.BasicType;
 
-import static java.lang.invoke.MethodHandleImpl.Intrinsic;
-import static java.lang.invoke.MethodHandleNatives.Constants.*;
+import java.lang.invoke.LambdaForm.BasicType;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ReflectPermission;
+import java.nio.ByteOrder;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Opcodes;
-
+import static java.lang.invoke.MethodHandleImpl.Intrinsic;
+import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
 import static java.lang.invoke.MethodType.methodType;
 
@@ -741,10 +745,13 @@ public class MethodHandles {
             if (name.startsWith("java.lang.invoke."))
                 throw newIllegalArgumentException("illegal lookupClass: "+lookupClass);
 
-            // For caller-sensitive MethodHandles.lookup()
-            // disallow lookup more restricted packages
+            // For caller-sensitive MethodHandles.lookup() disallow lookup from
+            // restricted packages.  This a fragile and blunt approach.
+            // TODO replace with a more formal and less fragile mechanism
+            // that does not bluntly restrict classes under packages within
+            // java.base from looking up MethodHandles or VarHandles.
             if (allowedModes == ALL_MODES && lookupClass.getClassLoader() == null) {
-                if (name.startsWith("java.") ||
+                if ((name.startsWith("java.") && !name.startsWith("java.util.concurrent.")) ||
                         (name.startsWith("sun.") && !name.startsWith("sun.invoke."))) {
                     throw newIllegalArgumentException("illegal lookupClass: " + lookupClass);
                 }
@@ -1003,6 +1010,9 @@ assertEquals("[x, y, z]", pb.command().toString());
          * @throws NullPointerException if any argument is null
          */
         public MethodHandle findConstructor(Class<?> refc, MethodType type) throws NoSuchMethodException, IllegalAccessException {
+            if (refc.isArray()) {
+                throw new NoSuchMethodException("no constructor for array class: " + refc.getName());
+            }
             String name = "<init>";
             MemberName ctor = resolveOrFail(REF_newInvokeSpecial, refc, name, type);
             return getDirectConstructor(refc, ctor);
@@ -2214,6 +2224,27 @@ return mh1;
     }
 
     /**
+     * Produces a method handle constructing arrays of a desired type.
+     * The return type of the method handle will be the array type.
+     * The type of its sole argument will be {@code int}, which specifies the size of the array.
+     * @param arrayClass an array type
+     * @return a method handle which can create arrays of the given type
+     * @throws NullPointerException if the argument is {@code null}
+     * @throws IllegalArgumentException if {@code arrayClass} is not an array type
+     * @see java.lang.reflect.Array#newInstance(Class, int)
+     * @since 9
+     */
+    public static
+    MethodHandle arrayConstructor(Class<?> arrayClass) throws IllegalArgumentException {
+        if (!arrayClass.isArray()) {
+            throw newIllegalArgumentException("not an array class: " + arrayClass.getName());
+        }
+        MethodHandle ani = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_Array_newInstance).
+                bindTo(arrayClass.getComponentType());
+        return ani.asType(ani.type().changeReturnType(arrayClass));
+    }
+
+    /**
      * Produces a method handle giving read access to elements of an array.
      * The type of the method handle will have a return type of the array's
      * element type.  Its first argument will be the array type,
@@ -2337,13 +2368,12 @@ return mh1;
      *
      * @param viewArrayClass the view array class, with a component type of
      * type {@code T}
-     * @param bigEndian true if the endianness of the view array elements, as
-     * stored in the underlying {@code byte} array, is big endian, otherwise
-     * little endian
+     * @param byteOrder the endianness of the view array elements, as
+     * stored in the underlying {@code byte} array
      * @return a VarHandle giving access to elements of a {@code byte[]} array
      * viewed as if elements corresponding to the components type of the view
      * array class
-     * @throws NullPointerException if viewArrayClass is null
+     * @throws NullPointerException if viewArrayClass or byteOrder is null
      * @throws IllegalArgumentException if viewArrayClass is not an array type
      * @throws UnsupportedOperationException if the component type of
      * viewArrayClass is not supported as a variable type
@@ -2351,8 +2381,10 @@ return mh1;
      */
     public static
     VarHandle byteArrayViewVarHandle(Class<?> viewArrayClass,
-                                     boolean bigEndian) throws IllegalArgumentException {
-        return VarHandles.byteArrayViewHandle(viewArrayClass, bigEndian);
+                                     ByteOrder byteOrder) throws IllegalArgumentException {
+        Objects.requireNonNull(byteOrder);
+        return VarHandles.byteArrayViewHandle(viewArrayClass,
+                                              byteOrder == ByteOrder.BIG_ENDIAN);
     }
 
     /**
@@ -2422,14 +2454,13 @@ return mh1;
      *
      * @param viewArrayClass the view array class, with a component type of
      * type {@code T}
-     * @param bigEndian true if the endianness of the view array elements, as
-     * stored in the underlying {@code ByteBuffer}, is big endian, otherwise
-     * little endian (Note this overrides the endianness of a
-     * {@code ByteBuffer})
+     * @param byteOrder the endianness of the view array elements, as
+     * stored in the underlying {@code ByteBuffer} (Note this overrides the
+     * endianness of a {@code ByteBuffer})
      * @return a VarHandle giving access to elements of a {@code ByteBuffer}
      * viewed as if elements corresponding to the components type of the view
      * array class
-     * @throws NullPointerException if viewArrayClass is null
+     * @throws NullPointerException if viewArrayClass or byteOrder is null
      * @throws IllegalArgumentException if viewArrayClass is not an array type
      * @throws UnsupportedOperationException if the component type of
      * viewArrayClass is not supported as a variable type
@@ -2437,8 +2468,10 @@ return mh1;
      */
     public static
     VarHandle byteBufferViewVarHandle(Class<?> viewArrayClass,
-                                      boolean bigEndian) throws IllegalArgumentException {
-        return VarHandles.makeByteBufferViewHandle(viewArrayClass, bigEndian);
+                                      ByteOrder byteOrder) throws IllegalArgumentException {
+        Objects.requireNonNull(byteOrder);
+        return VarHandles.makeByteBufferViewHandle(viewArrayClass,
+                                                   byteOrder == ByteOrder.BIG_ENDIAN);
     }
 
 
@@ -4476,12 +4509,24 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * @since 9
      */
     public static MethodHandle countedLoop(MethodHandle start, MethodHandle end, MethodHandle init, MethodHandle body) {
-        MethodHandle returnVar = dropArguments(init == null || init.type().returnType() == void.class ?
-                zero(void.class) : identity(init.type().returnType()), 0, int.class, int.class);
+        Class<?> resultType;
+        MethodHandle actualInit;
+        if (init == null) {
+            resultType = body == null ? void.class : body.type().returnType();
+            actualInit = empty(methodType(resultType));
+        } else {
+            resultType = init.type().returnType();
+            actualInit = init;
+        }
+        MethodHandle defaultResultHandle = resultType == void.class ? zero(void.class) : identity(resultType);
+        MethodHandle actualBody = body == null ? dropArguments(defaultResultHandle, 0, int.class) : body;
+        MethodHandle returnVar = dropArguments(defaultResultHandle, 0, int.class, int.class);
+        MethodHandle actualEnd = end == null ? constant(int.class, 0) : end;
         MethodHandle[] indexVar = {start, MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_countedLoopStep)};
-        MethodHandle[] loopLimit = {end, null, MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_countedLoopPred), returnVar};
-        MethodHandle[] bodyClause = {init,
-                filterArgument(dropArguments(body, 1, int.class), 0,
+        MethodHandle[] loopLimit = {actualEnd, null,
+                MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_countedLoopPred), returnVar};
+        MethodHandle[] bodyClause = {actualInit,
+                filterArgument(dropArguments(actualBody, 1, int.class), 0,
                         MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_decrementCounter))};
         return loop(indexVar, loopLimit, bodyClause);
     }
@@ -4572,17 +4617,24 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      */
     public static MethodHandle iteratedLoop(MethodHandle iterator, MethodHandle init, MethodHandle body) {
         checkIteratedLoop(iterator, body);
-        final boolean voidInit = init == null || init.type().returnType() == void.class;
+        Class<?> resultType = init == null ?
+                body == null ? void.class : body.type().returnType() :
+                init.type().returnType();
+        boolean voidResult = resultType == void.class;
 
-        MethodHandle initit = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_initIterator);
-        MethodHandle initIterator = iterator == null ?
-                initit.asType(initit.type().changeParameterType(0, body.type().parameterType(voidInit ? 1 : 2))) :
-                iterator;
-        Class<?> itype = initIterator.type().returnType();
+        MethodHandle initIterator;
+        if (iterator == null) {
+            MethodHandle initit = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_initIterator);
+            initIterator = initit.asType(initit.type().changeParameterType(0,
+                    body.type().parameterType(voidResult ? 1 : 2)));
+        } else {
+            initIterator = iterator.asType(iterator.type().changeReturnType(Iterator.class));
+        }
+
         Class<?> ttype = body.type().parameterType(0);
 
         MethodHandle returnVar =
-                dropArguments(voidInit ? zero(void.class) : identity(init.type().returnType()), 0, itype);
+                dropArguments(voidResult ? zero(void.class) : identity(resultType), 0, Iterator.class);
         MethodHandle initnx = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_iterateNext);
         MethodHandle nextVal = initnx.asType(initnx.type().changeReturnType(ttype));
 

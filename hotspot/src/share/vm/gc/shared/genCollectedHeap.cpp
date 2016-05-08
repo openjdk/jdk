@@ -167,6 +167,14 @@ char* GenCollectedHeap::allocate(size_t alignment,
          SIZE_FORMAT, total_reserved, alignment);
 
   *heap_rs = Universe::reserve_heap(total_reserved, alignment);
+
+  os::trace_page_sizes("Heap",
+                       collector_policy()->min_heap_byte_size(),
+                       total_reserved,
+                       alignment,
+                       heap_rs->base(),
+                       heap_rs->size());
+
   return heap_rs->base();
 }
 

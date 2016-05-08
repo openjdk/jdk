@@ -26,10 +26,11 @@
 package jdk.jshell;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -77,12 +78,14 @@ public class JShell implements AutoCloseable {
 
     final SnippetMaps maps;
     final KeyMap keyMap;
+    final OuterWrapMap outerMap;
     final TaskFactory taskFactory;
     final InputStream in;
     final PrintStream out;
     final PrintStream err;
     final Supplier<String> tempVariableNameGenerator;
     final BiFunction<Snippet, Integer, String> idGenerator;
+    final List<String> extraRemoteVMOptions;
 
     private int nextKeyIndex = 1;
 
@@ -104,10 +107,11 @@ public class JShell implements AutoCloseable {
         this.err = b.err;
         this.tempVariableNameGenerator = b.tempVariableNameGenerator;
         this.idGenerator = b.idGenerator;
+        this.extraRemoteVMOptions = b.extraRemoteVMOptions;
 
         this.maps = new SnippetMaps(this);
-        maps.setPackageName("REPL");
         this.keyMap = new KeyMap(this);
+        this.outerMap = new OuterWrapMap(this);
         this.taskFactory = new TaskFactory(this);
         this.eval = new Eval(this);
         this.classTracker = new ClassTracker(this);
@@ -138,6 +142,7 @@ public class JShell implements AutoCloseable {
         PrintStream err = System.err;
         Supplier<String> tempVariableNameGenerator = null;
         BiFunction<Snippet, Integer, String> idGenerator = null;
+        List<String> extraRemoteVMOptions = new ArrayList<>();
 
         Builder() { }
 
@@ -259,6 +264,18 @@ public class JShell implements AutoCloseable {
          */
         public Builder idGenerator(BiFunction<Snippet, Integer, String> generator) {
             this.idGenerator = generator;
+            return this;
+        }
+
+        /**
+         * Set additional VM options for launching the VM.
+         *
+         * @param options The options for the remote VM.
+         * @return the <code>Builder</code> instance (for use in chained
+         * initialization).
+         */
+        public Builder remoteVMOptions(String... options) {
+            this.extraRemoteVMOptions.addAll(Arrays.asList(options));
             return this;
         }
 
@@ -563,7 +580,7 @@ public class JShell implements AutoCloseable {
             throw new IllegalArgumentException(
                     messageFormat("jshell.exc.var.not.valid",  snippet, snippet.status()));
         }
-        String value = executionControl().commandVarValue(maps.classFullName(snippet), snippet.name());
+        String value = executionControl().commandVarValue(snippet.classFullName(), snippet.name());
         return expunge(value);
     }
 
@@ -620,10 +637,10 @@ public class JShell implements AutoCloseable {
 
     ExecutionControl executionControl() {
         if (executionControl == null) {
-            this.executionControl = new ExecutionControl(new JDIEnv(this), maps, this);
+            this.executionControl = new ExecutionControl(new JDIEnv(this), maps, this, extraRemoteVMOptions);
             try {
                 executionControl.launch();
-            } catch (IOException ex) {
+            } catch (Throwable ex) {
                 throw new InternalError("Launching JDI execution engine threw: " + ex.getMessage(), ex);
             }
         }

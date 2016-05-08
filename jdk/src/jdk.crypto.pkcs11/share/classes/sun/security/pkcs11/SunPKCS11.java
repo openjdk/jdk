@@ -1446,7 +1446,9 @@ public final class SunPKCS11 extends AuthProvider {
                             }
                             return null;
                         }
-                        return (CallbackHandler)c.newInstance();
+                        @SuppressWarnings("deprecation")
+                        Object result = c.newInstance();
+                        return (CallbackHandler)result;
                     }
                 });
                 // save it
