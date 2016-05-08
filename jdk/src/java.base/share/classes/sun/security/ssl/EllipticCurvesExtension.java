@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,10 @@ import java.util.Map;
 
 import javax.net.ssl.SSLProtocolException;
 
-final class SupportedEllipticCurvesExtension extends HelloExtension {
+final class EllipticCurvesExtension extends HelloExtension {
 
     // the extension value to send in the ClientHello message
-    static final SupportedEllipticCurvesExtension DEFAULT;
+    static final EllipticCurvesExtension DEFAULT;
 
     private static final boolean fips;
 
@@ -56,17 +56,17 @@ final class SupportedEllipticCurvesExtension extends HelloExtension {
                 23, 1, 3, 19, 21, 6, 7, 9, 10, 24, 11, 12, 25, 13, 14,
             };
         }
-        DEFAULT = new SupportedEllipticCurvesExtension(ids);
+        DEFAULT = new EllipticCurvesExtension(ids);
     }
 
     private final int[] curveIds;
 
-    private SupportedEllipticCurvesExtension(int[] curveIds) {
+    private EllipticCurvesExtension(int[] curveIds) {
         super(ExtensionType.EXT_ELLIPTIC_CURVES);
         this.curveIds = curveIds;
     }
 
-    SupportedEllipticCurvesExtension(HandshakeInStream s, int len)
+    EllipticCurvesExtension(HandshakeInStream s, int len)
             throws IOException {
         super(ExtensionType.EXT_ELLIPTIC_CURVES);
         int k = s.getInt16();
