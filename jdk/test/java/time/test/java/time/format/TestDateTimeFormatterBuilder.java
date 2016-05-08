@@ -684,7 +684,7 @@ public class TestDateTimeFormatterBuilder {
             {"LLLLL", "Text(MonthOfYear,NARROW_STANDALONE)"},
 
             {"D", "Value(DayOfYear)"},
-            {"DD", "Value(DayOfYear,2)"},
+            {"DD", "Value(DayOfYear,2,3,NOT_NEGATIVE)"},
             {"DDD", "Value(DayOfYear,3)"},
 
             {"d", "Value(DayOfMonth)"},
@@ -782,7 +782,7 @@ public class TestDateTimeFormatterBuilder {
             {"xxxxx", "Offset(+HH:MM:ss,'+00:00')"},  // LDML
 
             {"ppH", "Pad(Value(HourOfDay),2)"},
-            {"pppDD", "Pad(Value(DayOfYear,2),3)"},
+            {"pppDD", "Pad(Value(DayOfYear,2,3,NOT_NEGATIVE),3)"},
 
             {"yyyy[-MM[-dd", "Value(YearOfEra,4,19,EXCEEDS_PAD)['-'Value(MonthOfYear,2)['-'Value(DayOfMonth,2)]]"},
             {"yyyy[-MM[-dd]]", "Value(YearOfEra,4,19,EXCEEDS_PAD)['-'Value(MonthOfYear,2)['-'Value(DayOfMonth,2)]]"},

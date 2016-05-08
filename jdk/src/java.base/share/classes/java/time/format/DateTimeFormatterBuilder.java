@@ -1488,7 +1488,7 @@ public final class DateTimeFormatterBuilder {
      *    d       1      appendValue(ChronoField.DAY_OF_MONTH)
      *    dd      2      appendValue(ChronoField.DAY_OF_MONTH, 2)
      *    D       1      appendValue(ChronoField.DAY_OF_YEAR)
-     *    DD      2      appendValue(ChronoField.DAY_OF_YEAR, 2)
+     *    DD      2      appendValue(ChronoField.DAY_OF_YEAR, 2, 3, SignStyle.NOT_NEGATIVE)
      *    DDD     3      appendValue(ChronoField.DAY_OF_YEAR, 3)
      *    F       1      appendValue(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH)
      *    g..g    1..n   appendValue(JulianFields.MODIFIED_JULIAN_DAY, n, 19, SignStyle.NORMAL)
@@ -1838,8 +1838,8 @@ public final class DateTimeFormatterBuilder {
             case 'D':
                 if (count == 1) {
                     appendValue(field);
-                } else if (count <= 3) {
-                    appendValue(field, count);
+                } else if (count == 2 || count == 3) {
+                    appendValue(field, count, 3, SignStyle.NOT_NEGATIVE);
                 } else {
                     throw new IllegalArgumentException("Too many pattern letters: " + cur);
                 }
