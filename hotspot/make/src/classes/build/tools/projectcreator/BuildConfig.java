@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  *
  */
 
+package build.tools.projectcreator;
+
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -37,7 +39,7 @@ class BuildConfig {
         if (ci == null) {
             String comp = (String)getField(null, "CompilerVersion");
             try {
-                ci = (CompilerInterface)Class.forName("CompilerInterface" + comp).newInstance();
+                ci = (CompilerInterface)Class.forName("build.tools.projectcreator.CompilerInterface" + comp).newInstance();
             } catch (Exception cnfe) {
                 System.err.println("Cannot find support for compiler " + comp);
                 throw new RuntimeException(cnfe.toString());
@@ -66,6 +68,8 @@ class BuildConfig {
         String buildSpace = getFieldString(null, "BuildSpace");
         String outDir = buildBase;
         String jdkTargetRoot = getFieldString(null, "JdkTargetRoot");
+        String makeBinary = getFieldString(null, "MakeBinary");
+        String makeOutput = expandFormat(getFieldString(null, "MakeOutput"));
 
         put("Id", flavourBuild);
         put("OutputDir", outDir);
@@ -74,6 +78,8 @@ class BuildConfig {
         put("BuildSpace", buildSpace);
         put("OutputDll", outDir + Util.sep + outDll);
         put("JdkTargetRoot", jdkTargetRoot);
+        put("MakeBinary", makeBinary);
+        put("MakeOutput", makeOutput);
 
         context = new String [] {flavourBuild, flavour, build, null};
     }
@@ -148,9 +154,11 @@ class BuildConfig {
         String relativeAltSrcInclude =
             getFieldString(null, "RelativeAltSrcInclude");
         Vector<String> v = getFieldVector(null, "AltRelativeInclude");
-        for (String pathPart : v) {
-            if (path.contains(relativeAltSrcInclude + Util.sep + pathPart))  {
-                return true;
+        if (v != null) {
+            for (String pathPart : v) {
+                if (path.contains(relativeAltSrcInclude + Util.sep + pathPart))  {
+                    return true;
+                }
             }
         }
         return false;
@@ -360,8 +368,7 @@ class BuildConfig {
 
     static boolean appliesToTieredBuild(String cfg) {
         return (cfg != null &&
-                (cfg.startsWith("compiler1") ||
-                 cfg.startsWith("compiler2")));
+                cfg.startsWith("server"));
     }
 
     // Filters out the IgnoreFile and IgnorePaths since they are
@@ -372,7 +379,7 @@ class BuildConfig {
 
     static String getTieredBuildCfg(String cfg) {
         assert appliesToTieredBuild(cfg) : "illegal configuration " + cfg;
-        return "tiered" + cfg.substring(9);
+        return "server";
     }
 
     static Object getField(String cfg, String field) {
@@ -524,7 +531,7 @@ class C1DebugConfig extends GenericDebugNonKernelConfig {
     }
 
     C1DebugConfig() {
-        initNames("compiler1", "debug", "jvm.dll");
+        initNames("client", "debug", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }
@@ -535,7 +542,7 @@ class C1FastDebugConfig extends GenericDebugNonKernelConfig {
     }
 
     C1FastDebugConfig() {
-        initNames("compiler1", "fastdebug", "jvm.dll");
+        initNames("client", "fastdebug", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }
@@ -546,7 +553,7 @@ class TieredDebugConfig extends GenericDebugNonKernelConfig {
     }
 
     TieredDebugConfig() {
-        initNames("tiered", "debug", "jvm.dll");
+        initNames("server", "debug", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }
@@ -557,7 +564,7 @@ class TieredFastDebugConfig extends GenericDebugNonKernelConfig {
     }
 
     TieredFastDebugConfig() {
-        initNames("tiered", "fastdebug", "jvm.dll");
+        initNames("server", "fastdebug", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }
@@ -576,14 +583,14 @@ abstract class ProductConfig extends BuildConfig {
 
 class C1ProductConfig extends ProductConfig {
     C1ProductConfig() {
-        initNames("compiler1", "product", "jvm.dll");
+        initNames("client", "product", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }
 
 class TieredProductConfig extends ProductConfig {
     TieredProductConfig() {
-        initNames("tiered", "product", "jvm.dll");
+        initNames("server", "product", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }
