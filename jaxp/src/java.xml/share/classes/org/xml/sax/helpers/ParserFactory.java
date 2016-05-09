@@ -30,8 +30,6 @@
 
 package org.xml.sax.helpers;
 
-import org.xml.sax.Parser;
-
 
 /**
  * Java-specific class for dynamically loading SAX parsers.
@@ -65,6 +63,8 @@ import org.xml.sax.Parser;
  * @author David Megginson
  * @version 2.0.1 (sax2r2)
  */
+@SuppressWarnings( "deprecation" )
+@Deprecated(since="5")
 public class ParserFactory {
     private static SecuritySupport ss = new SecuritySupport();
 
@@ -97,7 +97,7 @@ public class ParserFactory {
      * @see #makeParser(java.lang.String)
      * @see org.xml.sax.Parser
      */
-    public static Parser makeParser ()
+    public static org.xml.sax.Parser makeParser ()
         throws ClassNotFoundException,
         IllegalAccessException,
         InstantiationException,
@@ -134,14 +134,13 @@ public class ParserFactory {
      * @see #makeParser()
      * @see org.xml.sax.Parser
      */
-    public static Parser makeParser (String className)
+    public static org.xml.sax.Parser makeParser (String className)
         throws ClassNotFoundException,
         IllegalAccessException,
         InstantiationException,
         ClassCastException
     {
-        return (Parser) NewInstance.newInstance (
-                ss.getContextClassLoader(), className);
+        return NewInstance.newInstance (org.xml.sax.Parser.class, ss.getClassLoader(), className);
     }
 
 }
