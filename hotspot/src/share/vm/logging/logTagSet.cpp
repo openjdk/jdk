@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "logging/logDecorations.hpp"
 #include "logging/logLevel.hpp"
+#include "logging/logMessageBuffer.hpp"
 #include "logging/logOutput.hpp"
 #include "logging/logTag.hpp"
 #include "logging/logTagSet.hpp"
@@ -71,6 +72,13 @@ void LogTagSet::log(LogLevelType level, const char* msg) {
   LogDecorations decorations(level, *this, _decorators);
   for (LogOutputList::Iterator it = _output_list.iterator(level); it != _output_list.end(); it++) {
     (*it)->write(decorations, msg);
+  }
+}
+
+void LogTagSet::log(const LogMessageBuffer& msg) {
+  LogDecorations decorations(LogLevel::Invalid, *this, _decorators);
+  for (LogOutputList::Iterator it = _output_list.iterator(msg.least_detailed_level()); it != _output_list.end(); it++) {
+    (*it)->write(msg.iterator(it.level(), decorations));
   }
 }
 

@@ -4661,6 +4661,14 @@ int os::available(int fd, jlong *bytes) {
   }
 }
 
+void os::flockfile(FILE* fp) {
+  _lock_file(fp);
+}
+
+void os::funlockfile(FILE* fp) {
+  _unlock_file(fp);
+}
+
 // This code is a copy of JDK's nonSeekAvailable
 // from src/windows/hpi/src/sys_api_md.c
 

@@ -278,6 +278,24 @@ int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
   return written;
 }
 
+int LogFileOutput::write(LogMessageBuffer::Iterator msg_iterator) {
+  if (_stream == NULL) {
+    // An error has occurred with this output, avoid writing to it.
+    return 0;
+  }
+
+  _rotation_semaphore.wait();
+  int written = LogFileStreamOutput::write(msg_iterator);
+  _current_size += written;
+
+  if (should_rotate()) {
+    rotate();
+  }
+  _rotation_semaphore.signal();
+
+  return written;
+}
+
 void LogFileOutput::archive() {
   assert(_archive_name != NULL && _archive_name_len > 0, "Rotation must be configured before using this function.");
   int ret = jio_snprintf(_archive_name, _archive_name_len, "%s.%0*u",

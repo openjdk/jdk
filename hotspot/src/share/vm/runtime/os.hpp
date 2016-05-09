@@ -521,6 +521,8 @@ class os: AllStatic {
   static int fsync(int fd);
   static int available(int fd, jlong *bytes);
   static int get_fileno(FILE* fp);
+  static void flockfile(FILE* fp);
+  static void funlockfile(FILE* fp);
 
   static int compare_file_modified_times(const char* file1, const char* file2);
 

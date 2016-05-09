@@ -327,6 +327,14 @@ FILE* os::open(int fd, const char* mode) {
   return ::fdopen(fd, mode);
 }
 
+void os::flockfile(FILE* fp) {
+  ::flockfile(fp);
+}
+
+void os::funlockfile(FILE* fp) {
+  ::funlockfile(fp);
+}
+
 // Builds a platform dependent Agent_OnLoad_<lib_name> function name
 // which is used to find statically linked in agents.
 // Parameters:

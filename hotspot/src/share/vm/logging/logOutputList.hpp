@@ -113,6 +113,10 @@ class LogOutputList VALUE_OBJ_CLASS_SPEC {
     bool operator!=(const LogOutputNode *ref) const {
       return _current != ref;
     }
+
+    LogLevelType level() const {
+      return _current->_level;
+    }
   };
 
   Iterator iterator(LogLevelType level = LogLevel::Last) {

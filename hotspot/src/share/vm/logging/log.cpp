@@ -32,6 +32,8 @@
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logFileOutput.hpp"
+#include "logging/logMessage.hpp"
+#include "logging/logMessageBuffer.hpp"
 #include "logging/logOutput.hpp"
 #include "logging/logTagLevelExpression.hpp"
 #include "logging/logTagSet.hpp"
@@ -52,6 +54,102 @@ void Test_log_tag_combinations_limit() {
       "Combination limit (" SIZE_FORMAT ") not sufficient "
       "for configuring all available tag sets (" SIZE_FORMAT ")",
       LogTagLevelExpression::MaxCombinations, LogTagSet::ntagsets());
+}
+
+// Read a complete line from fp and return it as a resource allocated string.
+// Returns NULL on EOF.
+static char* read_line(FILE* fp) {
+  assert(fp != NULL, "bad fp");
+  int buflen = 512;
+  char* buf = NEW_RESOURCE_ARRAY(char, buflen);
+  long pos = ftell(fp);
+
+  char* ret = fgets(buf, buflen, fp);
+  while (ret != NULL && buf[strlen(buf) - 1] != '\n' && !feof(fp)) {
+    // retry with a larger buffer
+    buf = REALLOC_RESOURCE_ARRAY(char, buf, buflen, buflen * 2);
+    buflen *= 2;
+    // rewind to beginning of line
+    fseek(fp, pos, SEEK_SET);
+    // retry read with new buffer
+    ret = fgets(buf, buflen, fp);
+  }
+  return ret;
+}
+
+static bool file_contains_substrings_in_order(const char* filename, const char* substrs[]) {
+  FILE* fp = fopen(filename, "r");
+  assert(fp != NULL, "error opening file %s: %s", filename, strerror(errno));
+
+  size_t idx = 0;
+  while (substrs[idx] != NULL) {
+    ResourceMark rm;
+    char* line = read_line(fp);
+    if (line == NULL) {
+      break;
+    }
+    for (char* match = strstr(line, substrs[idx]); match != NULL;) {
+      size_t match_len = strlen(substrs[idx]);
+      idx++;
+      if (substrs[idx] == NULL) {
+        break;
+      }
+      match = strstr(match + match_len, substrs[idx]);
+    }
+  }
+
+  fclose(fp);
+  return substrs[idx] == NULL;
+}
+
+static bool file_contains_substring(const char* filename, const char* substr) {
+  const char* strs[] = {substr, NULL};
+  return file_contains_substrings_in_order(filename, strs);
+}
+
+static size_t number_of_lines_with_substring_in_file(const char* filename,
+                                                     const char* substr) {
+  FILE* fp = fopen(filename, "r");
+  assert(fp != NULL, "error opening file %s: %s", filename, strerror(errno));
+
+  size_t ret = 0;
+  for (;;) {
+    ResourceMark rm;
+    char* line = read_line(fp);
+    if (line == NULL) {
+      break;
+    }
+    if (strstr(line, substr) != NULL) {
+      ret++;
+    }
+  }
+
+  fclose(fp);
+  return ret;
+}
+
+static bool file_exists(const char* filename) {
+  struct stat st;
+  return os::stat(filename, &st) == 0;
+}
+
+static void delete_file(const char* filename) {
+  if (!file_exists(filename)) {
+    return;
+  }
+  int ret = remove(filename);
+  assert(ret == 0, "failed to remove file '%s': %s", filename, strerror(errno));
+}
+
+static void create_directory(const char* name) {
+  assert(!file_exists(name), "can't create directory: %s already exists", name);
+  bool failed;
+#ifdef _WINDOWS
+  failed = !CreateDirectory(name, NULL);
+#else
+  failed = mkdir(name, 0777);
+#endif
+  assert(!failed, "failed to create directory %s", name);
 }
 
 class TestLogFile {
@@ -139,60 +237,6 @@ void Test_configure_stdout() {
   assert_str_eq("all=off", stdoutput->config_string());
 }
 
-static size_t number_of_lines_with_substring_in_file(const char* filename,
-                                                     const char* substr) {
-  ResourceMark rm;
-  size_t ret = 0;
-  FILE* fp = fopen(filename, "r");
-  assert(fp != NULL, "error opening file %s: %s", filename, strerror(errno));
-
-  int buflen = 512;
-  char* buf = NEW_RESOURCE_ARRAY(char, buflen);
-  long pos = 0;
-
-  while (fgets(buf, buflen, fp) != NULL) {
-    if (buf[strlen(buf) - 1] != '\n' && !feof(fp)) {
-      // retry with a larger buffer
-      buf = REALLOC_RESOURCE_ARRAY(char, buf, buflen, buflen * 2);
-      buflen *= 2;
-      // rewind to beginning of line
-      fseek(fp, pos, SEEK_SET);
-      continue;
-    }
-    pos = ftell(fp);
-    if (strstr(buf, substr) != NULL) {
-      ret++;
-    }
-  }
-
-  fclose(fp);
-  return ret;
-}
-
-static bool file_exists(const char* filename) {
-  struct stat st;
-  return os::stat(filename, &st) == 0;
-}
-
-static void delete_file(const char* filename) {
-  if (!file_exists(filename)) {
-    return;
-  }
-  int ret = remove(filename);
-  assert(ret == 0, "failed to remove file '%s': %s", filename, strerror(errno));
-}
-
-static void create_directory(const char* name) {
-  assert(!file_exists(name), "can't create directory: %s already exists", name);
-  bool failed;
-#ifdef _WINDOWS
-  failed = !CreateDirectory(name, NULL);
-#else
-  failed = mkdir(name, 0777);
-#endif
-  assert(!failed, "failed to create directory %s", name);
-}
-
 static const char* ExpectedLine = "a (hopefully) unique log line for testing";
 
 static void init_file(const char* filename, const char* options = "") {
@@ -263,6 +307,253 @@ void Test_log_file_startup_truncation() {
   delete_file(filename);
   delete_file(archived_filename);
 }
+
+class LogMessageTest {
+ private:
+  static Log(logging) _log;
+  static const char* _level_filename[];
+
+  static void test_level_inclusion();
+  static void test_long_message();
+  static void test_message_with_many_lines();
+  static void test_line_order();
+  static void test_prefixing();
+  static void test_scoped_messages();
+  static void test_scoped_flushing();
+  static void test_scoped_reset();
+
+ public:
+  static void test();
+};
+
+const char* LogMessageTest::_level_filename[] = {
+  NULL, // LogLevel::Off
+#define LOG_LEVEL(name, printname) "multiline-" #printname ".log",
+  LOG_LEVEL_LIST
+#undef LOG_LEVEL
+};
+
+void Test_multiline_logging() {
+  LogMessageTest::test();
+}
+
+void LogMessageTest::test() {
+  ResourceMark rm;
+
+  for (int i = 0; i < LogLevel::Count; i++) {
+    char buf[32];
+    // Attempt to remove possibly pre-existing log files
+    remove(_level_filename[i]);
+
+    jio_snprintf(buf, sizeof(buf), "logging=%s", LogLevel::name(static_cast<LogLevelType>(i)));
+    bool success = LogConfiguration::parse_log_arguments(_level_filename[i], buf,
+                                                         NULL, NULL, _log.error_stream());
+    assert(success, "unable to configure logging to file '%s'", _level_filename[i]);
+  }
+
+  test_level_inclusion();
+  test_line_order();
+  test_long_message();
+  test_message_with_many_lines();
+  test_prefixing();
+  test_scoped_messages();
+  test_scoped_flushing();
+  test_scoped_reset();
+
+  // Stop logging to the files and remove them.
+  for (int i = 0; i < LogLevel::Count; i++) {
+    LogConfiguration::parse_log_arguments(_level_filename[i], "all=off", NULL, NULL, _log.error_stream());
+    remove(_level_filename[i]);
+  }
+}
+
+// Verify that messages with multiple levels are written
+// to outputs configured for all the corresponding levels
+void LogMessageTest::test_level_inclusion() {
+  const size_t message_count = 10;
+  LogMessageBuffer msg[message_count];
+
+  struct {
+    int message_number;
+    LogLevelType level;
+  } lines[] = {
+    { 0, LogLevel::Error },
+    { 1, LogLevel::Info },
+    { 2, LogLevel::Info }, { 2, LogLevel::Debug },
+    { 3, LogLevel::Info }, { 3, LogLevel::Warning },
+    { 4, LogLevel::Debug }, { 4, LogLevel::Warning },
+    { 5, LogLevel::Trace }, { 5, LogLevel::Debug },
+    { 6, LogLevel::Warning }, { 6, LogLevel::Error },
+    { 7, LogLevel::Trace }, { 7, LogLevel::Info }, { 7, LogLevel::Debug },
+    { 8, LogLevel::Trace }, { 8, LogLevel::Debug }, { 8, LogLevel::Info },
+    { 8, LogLevel::Warning }, { 8, LogLevel::Error},
+    { 9, LogLevel::Trace }
+  };
+
+  // Fill in messages with the above lines
+  for (size_t i = 0; i < ARRAY_SIZE(lines); i++) {
+    switch (lines[i].level) {
+#define LOG_LEVEL(name, printname) \
+    case LogLevel::name: \
+      msg[lines[i].message_number].printname("msg[%d]: " #printname, lines[i].message_number); \
+      break;
+LOG_LEVEL_LIST
+#undef LOG_LEVEL
+    }
+  }
+
+  for (size_t i = 0; i < message_count; i++) {
+    _log.write(msg[i]);
+  }
+
+  // Verify that lines are written to the expected log files
+  for (size_t i = 0; i < ARRAY_SIZE(lines); i++) {
+    char expected[256];
+    jio_snprintf(expected, sizeof(expected), "msg[%d]: %s",
+                 lines[i].message_number, LogLevel::name(lines[i].level));
+    for (int level = lines[i].level; level > 0; level--) {
+      assert(file_contains_substring(_level_filename[level], expected),
+      "line #" SIZE_FORMAT " missing from log file '%s'", i, _level_filename[level]);
+    }
+    for (int level = lines[i].level + 1; level < LogLevel::Count; level++) {
+      assert(!file_contains_substring(_level_filename[level], expected),
+      "line #" SIZE_FORMAT " erroneously included in log file '%s'", i, _level_filename[level]);
+    }
+  }
+}
+
+// Verify that messages are logged in the order they are added to the log message
+void LogMessageTest::test_line_order() {
+  LogMessageBuffer msg;
+  msg.info("info line").error("error line").trace("trace line")
+      .error("another error").warning("warning line").debug("debug line");
+  _log.write(msg);
+
+  const char* expected[] = { "info line", "error line", "trace line",
+                             "another error", "warning line", "debug line", NULL };
+  assert(file_contains_substrings_in_order(_level_filename[LogLevel::Trace], expected),
+         "output missing or in incorrect order");
+}
+
+void LogMessageTest::test_long_message() {
+  // Write 10K bytes worth of log data
+  LogMessageBuffer msg;
+  const size_t size = 10 * K;
+  const char* start_marker = "#start#";
+  const char* end_marker = "#the end#";
+  char* data = NEW_C_HEAP_ARRAY(char, size, mtLogging);
+
+  // fill buffer with start_marker...some data...end_marker
+  sprintf(data, "%s", start_marker);
+  for (size_t i = strlen(start_marker); i < size; i++) {
+    data[i] = '0' + (i % 10);
+  }
+  sprintf(data + size - strlen(end_marker) - 1, "%s", end_marker);
+
+  msg.trace("%s", data); // Adds a newline, making the message exactly 10K in length.
+  _log.write(msg);
+
+  const char* expected[] = { start_marker, "0123456789", end_marker, NULL };
+  assert(file_contains_substrings_in_order(_level_filename[LogLevel::Trace], expected),
+         "unable to print long line");
+  FREE_C_HEAP_ARRAY(char, data);
+}
+
+void LogMessageTest::test_message_with_many_lines() {
+  const size_t lines = 100;
+  const size_t line_length = 16;
+
+  LogMessageBuffer msg;
+  for (size_t i = 0; i < lines; i++) {
+    msg.info("Line #" SIZE_FORMAT, i);
+  }
+  _log.write(msg);
+
+  char expected_lines_data[lines][line_length];
+  const char* expected_lines[lines + 1];
+  for (size_t i = 0; i < lines; i++) {
+    jio_snprintf(&expected_lines_data[i][0], line_length, "Line #" SIZE_FORMAT, i);
+    expected_lines[i] = expected_lines_data[i];
+  }
+  expected_lines[lines] = NULL;
+
+  assert(file_contains_substrings_in_order(_level_filename[LogLevel::Trace], expected_lines),
+         "couldn't find all lines in multiline message");
+}
+
+static size_t dummy_prefixer(char* buf, size_t len) {
+  static int i = 0;
+  const char* prefix = "some prefix: ";
+  const size_t prefix_len = strlen(prefix);
+  if (len < prefix_len) {
+    return prefix_len;
+  }
+  jio_snprintf(buf, len, "%s", prefix);
+  return prefix_len;
+}
+
+void LogMessageTest::test_prefixing() {
+  LogMessageBuffer msg;
+  msg.set_prefix(dummy_prefixer);
+  for (int i = 0; i < 3; i++) {
+    msg.info("test %d", i);
+  }
+  msg.set_prefix(NULL);
+  msg.info("test 3");
+  _log.write(msg);
+
+  const char* expected[] = {
+    "] some prefix: test 0",
+    "] some prefix: test 1",
+    "] some prefix: test 2",
+    "] test 3",
+    NULL
+  };
+  assert(file_contains_substrings_in_order(_level_filename[LogLevel::Trace], expected), "error in prefixed output");
+}
+
+void LogMessageTest::test_scoped_messages() {
+  {
+    LogMessage(logging) msg;
+    msg.info("scoped info");
+    msg.warning("scoped warn");
+    assert(!file_contains_substring(_level_filename[LogLevel::Info], "scoped info"),
+           "scoped log message written prematurely");
+  }
+  assert(file_contains_substring(_level_filename[LogLevel::Info], "scoped info"),
+         "missing output from scoped log message");
+  assert(file_contains_substring(_level_filename[LogLevel::Warning], "scoped warn"),
+         "missing output from scoped log message");
+}
+
+void LogMessageTest::test_scoped_flushing() {
+  {
+    LogMessage(logging) msg;
+    msg.info("manual flush info");
+    msg.flush();
+    assert(file_contains_substring(_level_filename[LogLevel::Info], "manual flush info"),
+           "missing output from manually flushed scoped log message");
+  }
+  const char* tmp[] = {"manual flush info", "manual flush info", NULL};
+  assert(!file_contains_substrings_in_order(_level_filename[LogLevel::Info], tmp),
+         "log file contains duplicate lines from single scoped log message");
+}
+
+void LogMessageTest::test_scoped_reset() {
+  {
+    LogMessage(logging) msg, partial;
+    msg.info("%s", "info reset msg");
+    msg.reset();
+    partial.info("%s", "info reset msg");
+    partial.reset();
+    partial.trace("%s", "trace reset msg");
+  }
+  assert(!file_contains_substring(_level_filename[LogLevel::Info], "info reset msg"),
+         "reset message written anyway");
+  assert(file_contains_substring(_level_filename[LogLevel::Trace], "trace reset msg"),
+         "missing message from partially reset scoped log message");
+}
+
 
 static int Test_logconfiguration_subscribe_triggered = 0;
 
