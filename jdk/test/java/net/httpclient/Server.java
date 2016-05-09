@@ -21,8 +21,6 @@
  * questions.
  */
 
-//package javaapplication16;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -32,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -44,13 +43,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Server extends Thread {
 
     ServerSocket ss;
-    List<Connection> sockets;
+    private final List<Connection> sockets;
+    private final List<Connection> removals;
+    private final List<Connection> additions;
     AtomicInteger counter = new AtomicInteger(0);
 
     // waits up to 20 seconds for something to happen
     // dont use this unless certain activity coming.
     public Connection activity() {
         for (int i = 0; i < 80 * 100; i++) {
+            doRemovalsAndAdditions();
             for (Connection c : sockets) {
                 if (c.poll()) {
                     return c;
@@ -59,9 +61,24 @@ public class Server extends Thread {
             try {
                 Thread.sleep(250);
             } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
         return null;
+    }
+
+    private void doRemovalsAndAdditions() {
+        if (removals.isEmpty() && additions.isEmpty())
+            return;
+        Iterator<Connection> i = removals.iterator();
+        while (i.hasNext())
+            sockets.remove(i.next());
+        removals.clear();
+
+        i = additions.iterator();
+        while (i.hasNext())
+            sockets.add(i.next());
+        additions.clear();
     }
 
     // clears all current connections on Server.
@@ -84,7 +101,6 @@ public class Server extends Thread {
             incoming = new ArrayBlockingQueue<>(100);
             setName("Server-Connection");
             setDaemon(true);
-            start();
         }
         final Socket socket;
         final int id;
@@ -210,16 +226,17 @@ public class Server extends Thread {
             try {
                 socket.close();
             } catch (IOException e) {}
-            sockets.remove(this);
+            removals.add(this);
         }
     }
 
     Server(int port) throws IOException {
         ss = new ServerSocket(port);
         sockets = Collections.synchronizedList(new LinkedList<>());
+        removals = Collections.synchronizedList(new LinkedList<>());
+        additions = Collections.synchronizedList(new LinkedList<>());
         setName("Test-Server");
         setDaemon(true);
-        start();
     }
 
     Server() throws IOException {
@@ -238,6 +255,7 @@ public class Server extends Thread {
         try {
             ss.close();
         } catch (IOException e) {
+            e.printStackTrace();
         }
         for (Connection c : sockets) {
             c.close();
@@ -250,8 +268,10 @@ public class Server extends Thread {
             try {
                 Socket s = ss.accept();
                 Connection c = new Connection(s);
-                sockets.add(c);
+                c.start();
+                additions.add(c);
             } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
