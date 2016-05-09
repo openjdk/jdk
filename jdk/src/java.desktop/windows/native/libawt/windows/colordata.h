@@ -33,6 +33,7 @@ typedef struct _ColorData {
     char* img_oda_blue;
     unsigned char* img_clr_tbl;
     int *pGrayInverseLutData;
+    int representsPrimaries;
 } ColorData;
 
 #define CANFREE(pData) (pData)

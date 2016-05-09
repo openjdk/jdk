@@ -396,7 +396,7 @@ class Invokers {
         LambdaForm lform = new LambdaForm(name + ":VarHandle_invoke_MT_" + shortenSignature(basicTypeSignature(mtype)),
                                           ARG_LIMIT + 1, names);
 
-        lform.prepare();
+        lform.compileToBytecode();
         return lform;
     }
 
@@ -448,7 +448,7 @@ class Invokers {
         LambdaForm lform = new LambdaForm(name + ":VarHandle_exactInvoker" + shortenSignature(basicTypeSignature(mtype)),
                                           ARG_LIMIT, names);
 
-        lform.prepare();
+        lform.compileToBytecode();
         return lform;
     }
 
@@ -497,44 +497,33 @@ class Invokers {
 
     /*non-public*/ static
     @ForceInline
-    MethodHandle checkVarHandleGenericType(VarHandle vh, VarHandle.AccessDescriptor vad) {
-        MethodType expected = vad.symbolicMethodType;
-        MethodType actual = VarHandle.AccessType.getMethodType(vad.type, vh);
-
-        MemberName mn = VarHandle.AccessMode.getMemberName(vad.mode, vh.vform);
-        if (mn == null)
-            throw vh.unsupported();
-        // TODO the following MH is not constant, cache in stable field array
-        // on VarForm?
-        MethodHandle mh = DirectMethodHandle.make(mn);
-        if (actual == expected) {
+    MethodHandle checkVarHandleGenericType(VarHandle handle, VarHandle.AccessDescriptor ad) {
+        // Test for exact match on invoker types
+        // TODO match with erased types and add cast of return value to lambda form
+        MethodHandle mh = handle.getMethodHandle(ad.mode);
+        if (mh.type() == ad.symbolicMethodTypeInvoker) {
             return mh;
         }
         else {
-            // Adapt to the actual (which should never fail since mh's method
-            // type is in the basic form), then to the expected (which my fail
-            // if the symbolic type descriptor does not match)
-            // TODO optimize for the case of actual.erased() == expected.erased()
-            return mh.asType(actual.insertParameterTypes(0, VarHandle.class)).
-                    asType(expected.insertParameterTypes(0, VarHandle.class));
+            return mh.asType(ad.symbolicMethodTypeInvoker);
         }
     }
 
     /*non-public*/ static
     @ForceInline
-    void checkVarHandleExactType(VarHandle vh, VarHandle.AccessDescriptor vad) {
-        MethodType expected = vad.symbolicMethodType;
-        MethodType actual = VarHandle.AccessType.getMethodType(vad.type, vh);
-        if (actual != expected)
-            throw newWrongMethodTypeException(expected, actual);
+    void checkVarHandleExactType(VarHandle handle, VarHandle.AccessDescriptor ad) {
+        MethodType erasedTarget = handle.vform.methodType_table[ad.type];
+        MethodType erasedSymbolic = ad.symbolicMethodTypeErased;
+        if (erasedTarget != erasedSymbolic)
+            throw newWrongMethodTypeException(erasedTarget, erasedSymbolic);
     }
 
     /*non-public*/ static
     @ForceInline
-    MemberName getVarHandleMemberName(VarHandle vh, VarHandle.AccessDescriptor vad) {
-        MemberName mn = VarHandle.AccessMode.getMemberName(vad.mode, vh.vform);
+    MemberName getVarHandleMemberName(VarHandle handle, VarHandle.AccessDescriptor ad) {
+        MemberName mn = handle.vform.memberName_table[ad.mode];
         if (mn == null) {
-            throw vh.unsupported();
+            throw handle.unsupported();
         }
         return mn;
     }

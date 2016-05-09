@@ -749,6 +749,7 @@ ColorData
     img_oda_blue pointer byte
     pGrayInverseLutData pointer int
     screendata int
+    representsPrimaries int
 
 AwtGraphicsConfigData
     awt_depth int

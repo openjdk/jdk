@@ -30,8 +30,8 @@
 GtkApi* gtk2_load(JNIEnv *env, const char* lib_name);
 GtkApi* gtk3_load(JNIEnv *env, const char* lib_name);
 
-gboolean gtk2_check(const char* lib_name, int flags);
-gboolean gtk3_check(const char* lib_name, int flags);
+gboolean gtk2_check(const char* lib_name, gboolean load);
+gboolean gtk3_check(const char* lib_name, gboolean load);
 
 GtkApi *gtk;
 
@@ -40,7 +40,7 @@ typedef struct {
     const char* name;
     const char* vname;
     GtkApi* (*load)(JNIEnv *env, const char* lib_name);
-    gboolean (*check)(const char* lib_name, int flags);
+    gboolean (*check)(const char* lib_name, gboolean load);
 } GtkLib;
 
 static GtkLib libs[] = {
@@ -70,10 +70,10 @@ static GtkLib libs[] = {
 static GtkLib* get_loaded() {
     GtkLib* lib = libs;
     while(!gtk && lib->version) {
-        if (lib->check(lib->vname, RTLD_NOLOAD)) {
+        if (lib->check(lib->vname, /* load = */FALSE)) {
             return lib;
         }
-        if (lib->check(lib->name, RTLD_NOLOAD)) {
+        if (lib->check(lib->name, /* load = */FALSE)) {
             return lib;
         }
         lib++;
@@ -130,14 +130,14 @@ gboolean gtk_load(JNIEnv *env, GtkVersion version, gboolean verbose) {
     return gtk != NULL;
 }
 
-static gboolean check_version(GtkVersion version, int flags) {
+static gboolean check_version(GtkVersion version) {
     GtkLib* lib = libs;
     while (lib->version) {
         if (version == GTK_ANY || lib->version == version) {
-            if (lib->check(lib->vname, flags)) {
+            if (lib->check(lib->vname, /* load = */TRUE)) {
                 return TRUE;
             }
-            if (lib->check(lib->name, flags)) {
+            if (lib->check(lib->name, /* load = */TRUE)) {
                 return TRUE;
             }
         }
@@ -150,9 +150,6 @@ gboolean gtk_check_version(GtkVersion version) {
     if (gtk) {
         return TRUE;
     }
-    if (check_version(version, RTLD_NOLOAD)) {
-        return TRUE;
-    }
-    return check_version(version, RTLD_LAZY | RTLD_LOCAL);
+    return check_version(version);
 }
 

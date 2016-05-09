@@ -41,17 +41,22 @@ final class VarHandle$Type$s {
 #end[Object]
 
         FieldInstanceReadOnly(Class<?> receiverType, long fieldOffset{#if[Object]?, Class<?> fieldType}) {
-            this(receiverType, fieldOffset{#if[Object]?, fieldType}, FieldInstanceReadOnly.class);
+            this(receiverType, fieldOffset{#if[Object]?, fieldType}, FieldInstanceReadOnly.FORM);
         }
 
         protected FieldInstanceReadOnly(Class<?> receiverType, long fieldOffset{#if[Object]?, Class<?> fieldType},
-                                        Class<? extends FieldInstanceReadOnly> handle) {
-            super(VarForm.createFromStatic(handle), receiverType, {#if[Object]?fieldType:$type$.class});
+                                        VarForm form) {
+            super(form);
             this.fieldOffset = fieldOffset;
             this.receiverType = receiverType;
 #if[Object]
             this.fieldType = fieldType;
 #end[Object]
+        }
+
+        @Override
+        final MethodType accessModeTypeUncached(AccessMode accessMode) {
+            return accessMode.at.accessModeType(receiverType, {#if[Object]?fieldType:$type$.class});
         }
 
         @ForceInline
@@ -77,12 +82,14 @@ final class VarHandle$Type$s {
             return UNSAFE.get$Type$Acquire(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                  handle.fieldOffset);
         }
+
+        static final VarForm FORM = new VarForm(FieldInstanceReadOnly.class, Object.class, $type$.class);
     }
 
-    static class FieldInstanceReadWrite extends FieldInstanceReadOnly {
+    static final class FieldInstanceReadWrite extends FieldInstanceReadOnly {
 
         FieldInstanceReadWrite(Class<?> receiverType, long fieldOffset{#if[Object]?, Class<?> fieldType}) {
-            super(receiverType, fieldOffset{#if[Object]?, fieldType}, FieldInstanceReadWrite.class);
+            super(receiverType, fieldOffset{#if[Object]?, fieldType}, FieldInstanceReadWrite.FORM);
         }
 
         @ForceInline
@@ -202,6 +209,8 @@ final class VarHandle$Type$s {
                                        value) + value;
         }
 #end[AtomicAdd]
+
+        static final VarForm FORM = new VarForm(FieldInstanceReadWrite.class, Object.class, $type$.class);
     }
 
 
@@ -213,17 +222,22 @@ final class VarHandle$Type$s {
 #end[Object]
 
         FieldStaticReadOnly(Object base, long fieldOffset{#if[Object]?, Class<?> fieldType}) {
-            this(base, fieldOffset{#if[Object]?, fieldType}, FieldStaticReadOnly.class);
+            this(base, fieldOffset{#if[Object]?, fieldType}, FieldStaticReadOnly.FORM);
         }
 
         protected FieldStaticReadOnly(Object base, long fieldOffset{#if[Object]?, Class<?> fieldType},
-                                      Class<? extends FieldStaticReadOnly> handle) {
-            super(VarForm.createFromStatic(handle), null, {#if[Object]?fieldType:$type$.class});
+                                      VarForm form) {
+            super(form);
             this.base = base;
             this.fieldOffset = fieldOffset;
 #if[Object]
             this.fieldType = fieldType;
 #end[Object]
+        }
+
+        @Override
+        final MethodType accessModeTypeUncached(AccessMode accessMode) {
+            return accessMode.at.accessModeType(null, {#if[Object]?fieldType:$type$.class});
         }
 
         @ForceInline
@@ -249,12 +263,14 @@ final class VarHandle$Type$s {
             return UNSAFE.get$Type$Acquire(handle.base,
                                  handle.fieldOffset);
         }
+
+        static final VarForm FORM = new VarForm(FieldStaticReadOnly.class, null, $type$.class);
     }
 
-    static class FieldStaticReadWrite extends FieldStaticReadOnly {
+    static final class FieldStaticReadWrite extends FieldStaticReadOnly {
 
         FieldStaticReadWrite(Object base, long fieldOffset{#if[Object]?, Class<?> fieldType}) {
-            super(base, fieldOffset{#if[Object]?, fieldType}, FieldStaticReadWrite.class);
+            super(base, fieldOffset{#if[Object]?, fieldType}, FieldStaticReadWrite.FORM);
         }
 
         @ForceInline
@@ -375,6 +391,8 @@ final class VarHandle$Type$s {
                                        value) + value;
         }
 #end[AtomicAdd]
+
+        static final VarForm FORM = new VarForm(FieldStaticReadWrite.class, null, $type$.class);
     }
 
 
@@ -387,14 +405,18 @@ final class VarHandle$Type$s {
 #end[Object]
 
         Array(int abase, int ashift{#if[Object]?, Class<?> arrayType}) {
-            super(VarForm.createFromStatic(Array.class),
-                  {#if[Object]?arrayType:$type$[].class}, {#if[Object]?arrayType.getComponentType():$type$.class}, int.class);
+            super(Array.FORM);
             this.abase = abase;
             this.ashift = ashift;
 #if[Object]
             this.arrayType = {#if[Object]?arrayType:$type$[].class};
             this.componentType = arrayType.getComponentType();
 #end[Object]
+        }
+
+        @Override
+        final MethodType accessModeTypeUncached(AccessMode accessMode) {
+            return accessMode.at.accessModeType({#if[Object]?arrayType:$type$[].class}, {#if[Object]?arrayType.getComponentType():$type$.class}, int.class);
         }
 
         @ForceInline
@@ -630,5 +652,7 @@ final class VarHandle$Type$s {
                     value) + value;
         }
 #end[AtomicAdd]
+
+        static final VarForm FORM = new VarForm(Array.class, {#if[Object]?Object[].class:$type$[].class}, {#if[Object]?Object.class:$type$.class}, int.class);
     }
 }

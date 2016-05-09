@@ -933,10 +933,8 @@ final class ClientHandshaker extends Handshaker {
                         ECParameterSpec params =
                             ((ECPublicKey)publicKey).getParams();
                         int index =
-                            SupportedEllipticCurvesExtension.getCurveIndex(
-                                params);
-                        if (!SupportedEllipticCurvesExtension.isSupported(
-                                index)) {
+                            EllipticCurvesExtension.getCurveIndex(params);
+                        if (!EllipticCurvesExtension.isSupported(index)) {
                             publicKey = null;
                         }
                     }

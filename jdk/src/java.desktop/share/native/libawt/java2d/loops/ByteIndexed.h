@@ -43,7 +43,7 @@ typedef jubyte  ByteIndexedDataType;
     jint *PREFIX ## Lut;
 
 #define DeclareByteIndexedStoreVars(PREFIX) \
-    int PREFIX ## XDither, PREFIX ## YDither; \
+    int PREFIX ## XDither, PREFIX ## YDither, PREFIX ## RepPrims; \
     char *PREFIX ## rerr, *PREFIX ## gerr, *PREFIX ## berr; \
     unsigned char *PREFIX ## InvLut;
 
@@ -70,6 +70,7 @@ typedef jubyte  ByteIndexedDataType;
     do { \
         SetByteIndexedStoreVarsYPos(PREFIX, pRasInfo, (pRasInfo)->bounds.y1); \
         PREFIX ## InvLut = (pRasInfo)->invColorTable; \
+        PREFIX ## RepPrims = (pRasInfo)->representsPrimaries; \
     } while (0)
 
 #define InitByteIndexedStoreVarsX(PREFIX, pRasInfo) \
@@ -168,9 +169,14 @@ typedef jubyte  ByteIndexedBmDataType;
 
 #define StoreByteIndexedFrom3ByteRgb(pRas, PREFIX, x, r, g, b) \
     do { \
-        r += PREFIX ## rerr[PREFIX ## XDither]; \
-        g += PREFIX ## gerr[PREFIX ## XDither]; \
-        b += PREFIX ## berr[PREFIX ## XDither]; \
+        if (!(((r == 0) || (r == 255)) && \
+              ((g == 0) || (g == 255)) && \
+              ((b == 0) || (b == 255)) && \
+              PREFIX ## RepPrims)) { \
+            r += PREFIX ## rerr[PREFIX ## XDither]; \
+            g += PREFIX ## gerr[PREFIX ## XDither]; \
+            b += PREFIX ## berr[PREFIX ## XDither]; \
+        } \
         ByteClamp3Components(r, g, b); \
         (pRas)[x] = SurfaceData_InvColorMap(PREFIX ## InvLut, r, g, b); \
     } while (0)

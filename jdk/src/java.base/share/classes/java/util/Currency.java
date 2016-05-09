@@ -546,6 +546,33 @@ public final class Currency implements Serializable {
     }
 
     /**
+     * Returns the 3 digit ISO 4217 numeric code of this currency as a {@code String}.
+     * Unlike {@link getNumericCode()}, which returns the numeric code as {@code int},
+     * this method always returns the numeric code as a 3 digit string.
+     * e.g. a numeric value of 32 would be returned as "032",
+     * and a numeric value of 6 would be returned as "006".
+     *
+     * @return the 3 digit ISO 4217 numeric code of this currency as a {@code String}
+     * @since 9
+     */
+    public String getNumericCodeAsString() {
+        /* numeric code could be returned as a 3 digit string simply by using
+           String.format("%03d",numericCode); which uses regex to parse the format,
+           "%03d" in this case. Parsing a regex gives an extra performance overhead,
+           so String.format() approach is avoided in this scenario.
+        */
+        if (numericCode < 100) {
+            StringBuilder sb = new StringBuilder();
+            sb.append('0');
+            if (numericCode < 10) {
+                sb.append('0');
+            }
+            return sb.append(numericCode).toString();
+        }
+        return String.valueOf(numericCode);
+    }
+
+    /**
      * Gets the name that is suitable for displaying this currency for
      * the default {@link Locale.Category#DISPLAY DISPLAY} locale.
      * If there is no suitable display name found
@@ -788,3 +815,4 @@ public final class Currency implements Serializable {
         }
     }
 }
+

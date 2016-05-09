@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1668,31 +1668,83 @@ void NAME_SOLID_DRAWGLYPHLIST(DST)(SurfaceDataRasInfo *pRasInfo, \
         } \
     } while (0);
 
+/*
+ * Antialiased glyph drawing results in artifacts around the character edges
+ * when text is drawn ontop of translucent background color. The standard
+ * blending equation for two colors:
+ * destColor = srcColor * glyphAlpha + destColor * (1 - glyphAlpha)
+ * works only when srcColor and destColor are opaque. For translucent srcColor
+ * and destColor, the respective alpha components in each color will influence
+ * the visibility of the color and the visibility of the color below it. Hence
+ * the equation for blending is given as:
+ * resA = srcAlpha + dstAlpha * (1 - srcAlpha)
+ * resCol = (srcColor * srcAlpha + destColor * destAlpha * (1- srcAlpha))/resA
+ * In addition, srcAlpha is multiplied with the glyphAlpha- that indicates the
+ * grayscale mask value of the glyph being drawn. The combined result provides
+ * smooth antialiased text on the buffer without any artifacts. Since the
+ * logic is executed for every pixel in a glyph, the implementation is further
+ * optimized to reduce computation and improve execution time.
+ */
 #define GlyphListAABlend4ByteArgb(DST, GLYPH_PIXELS, PIXEL_INDEX, DST_PTR, \
                                   FG_PIXEL, PREFIX, SRC_PREFIX) \
-   do { \
-        DeclareAlphaVarFor4ByteArgb(dstA) \
-        DeclareCompVarsFor4ByteArgb(dst) \
+    do { \
+        DeclareAlphaVarFor4ByteArgb(resA) \
+        DeclareCompVarsFor4ByteArgb(res) \
         jint mixValSrc = GLYPH_PIXELS[PIXEL_INDEX]; \
         if (mixValSrc) { \
-            if (mixValSrc < 255) { \
-                jint mixValDst = 255 - mixValSrc; \
-                Load ## DST ## To4ByteArgb(DST_PTR, pix, PIXEL_INDEX, \
-                                           dstA, dstR, dstG, dstB); \
-                dstA = MUL8(dstA, mixValDst) + \
-                       MUL8(SRC_PREFIX ## A, mixValSrc); \
-                MultMultAddAndStore4ByteArgbComps(dst, mixValDst, dst, \
-                                                  mixValSrc, SRC_PREFIX); \
-                if (!(DST ## IsOpaque) && \
-                    !(DST ## IsPremultiplied) && dstA && dstA < 255) { \
-                    DivideAndStore4ByteArgbComps(dst, dst, dstA); \
+            if (mixValSrc != 0xff) { \
+                PromoteByteAlphaFor4ByteArgb(mixValSrc); \
+                resA = MultiplyAlphaFor4ByteArgb(mixValSrc, SRC_PREFIX ## A); \
+            } else { \
+                resA = SRC_PREFIX ## A; \
+            } \
+            if (resA != MaxValFor4ByteArgb) { \
+                DeclareAndInvertAlphaVarFor4ByteArgb(dstF, resA) \
+                DeclareAndClearAlphaVarFor4ByteArgb(dstA) \
+                DeclareCompVarsFor4ByteArgb(dst) \
+                DeclareCompVarsFor4ByteArgb(tmp) \
+                MultiplyAndStore4ByteArgbComps(res, resA, SRC_PREFIX); \
+                if (!(DST ## IsPremultiplied)) { \
+                    Load ## DST ## To4ByteArgb(DST_PTR, pix, PIXEL_INDEX, \
+                                               dstA, dstR, dstG, dstB); \
+                    Store4ByteArgbCompsUsingOp(tmp, =, dst); \
+                } else { \
+                    Declare ## DST ## AlphaLoadData(DstPix) \
+                    jint pixelOffset = PIXEL_INDEX * (DST ## PixelStride); \
+                    DST ## DataType *pixelAddress = PtrAddBytes(DST_PTR, \
+                                                                pixelOffset); \
+                    LoadAlphaFrom ## DST ## For4ByteArgb(pixelAddress, \
+                                                         DstPix, \
+                                                         dst); \
+                    Postload4ByteArgbFrom ## DST(pixelAddress, \
+                                                 DstPix, \
+                                                 tmp); \
                 } \
-                Store ## DST ## From4ByteArgbComps(DST_PTR, pix, \
-                                                   PIXEL_INDEX, dst); \
+                if (dstA) { \
+                    DeclareAlphaVarFor4ByteArgb(blendF) \
+                    dstA = MultiplyAlphaFor4ByteArgb(dstF, dstA); \
+                    resA += dstA; \
+                    blendF = SrcOver ## DST ## BlendFactor(dstF, dstA); \
+                    if (blendF != MaxValFor4ByteArgb) { \
+                        MultiplyAndStore4ByteArgbComps(tmp, \
+                                                       blendF, \
+                                                       tmp); \
+                    } \
+                    Store4ByteArgbCompsUsingOp(res, +=, tmp); \
+                } \
             } else { \
                 Store ## DST ## PixelData(DST_PTR, PIXEL_INDEX, \
                                           FG_PIXEL, PREFIX); \
+                break; \
             } \
+            if (!(DST ## IsOpaque) && \
+                !(DST ## IsPremultiplied) && resA && \
+                resA < MaxValFor4ByteArgb) \
+            { \
+                DivideAndStore4ByteArgbComps(res, res, resA); \
+            } \
+            Store ## DST ## From4ByteArgbComps(DST_PTR, pix, \
+                                               PIXEL_INDEX, res); \
         } \
     } while (0);
 
