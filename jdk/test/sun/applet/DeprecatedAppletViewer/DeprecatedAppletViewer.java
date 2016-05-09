@@ -32,7 +32,8 @@ import java.io.PrintStream;
  */
 public final class DeprecatedAppletViewer {
 
-    private static final String TEXT = "AppletViewer is deprecated.";
+    private static final String TEXT
+            = "Warning: Applet API and AppletViewer are deprecated.";
 
     public static void main(final String[] args) {
         final PrintStream old = System.err;
