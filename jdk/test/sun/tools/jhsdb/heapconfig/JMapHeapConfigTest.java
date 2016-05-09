@@ -36,9 +36,9 @@ import jdk.testlibrary.Platform;
  * @test
  * @bug 8042397
  * @summary Unit test for jmap utility test heap configuration reader
+ * @modules jdk.hotspot.agent/sun.jvm.hotspot
  * @library /test/lib/share/classes
  * @library /lib/testlibrary
- * @modules java.management
  * @build jdk.testlibrary.*
  * @build jdk.test.lib.apps.*
  * @build JMapHeapConfigTest TmtoolTestScenario
@@ -149,7 +149,7 @@ public class JMapHeapConfigTest {
         }
         cmd.add("-XX:+PrintFlagsFinal");
 
-        TmtoolTestScenario tmt = TmtoolTestScenario.create("jmap", "-heap");
+        TmtoolTestScenario tmt = TmtoolTestScenario.create("jmap", "--heap");
         int exitcode = tmt.launch(cmd);
         if (exitcode != 0) {
             throw new RuntimeException("Test FAILED jmap exits with non zero exit code " + exitcode);
