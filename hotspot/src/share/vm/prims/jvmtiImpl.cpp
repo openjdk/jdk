@@ -303,11 +303,10 @@ void JvmtiBreakpoint::each_method_version_do(method_action meth_act) {
       if (method->is_running_emcp() &&
           method->name() == m_name &&
           method->signature() == m_signature) {
-        RC_TRACE(0x00000800, ("%sing breakpoint in %s(%s)",
-          meth_act == &Method::set_breakpoint ? "sett" : "clear",
-          method->name()->as_C_string(),
-          method->signature()->as_C_string()));
-
+        ResourceMark rm;
+        log_debug(redefine, class, breakpoint)
+          ("%sing breakpoint in %s(%s)", meth_act == &Method::set_breakpoint ? "sett" : "clear",
+           method->name()->as_C_string(), method->signature()->as_C_string());
         (method->*meth_act)(_bci);
         break;
       }

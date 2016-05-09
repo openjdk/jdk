@@ -46,7 +46,6 @@
 #include "oops/oop.inline.hpp"
 #include "prims/forte.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/arguments.hpp"
@@ -603,27 +602,18 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread *thread, Symbol* n
 }
 
 // The interpreter code to call this tracing function is only
-// called/generated when TraceRedefineClasses has the right bits
-// set. Since obsolete methods are never compiled, we don't have
+// called/generated when UL is on for redefine, class and has the right level
+// and tags. Since obsolete methods are never compiled, we don't have
 // to modify the compilers to generate calls to this function.
 //
 JRT_LEAF(int, SharedRuntime::rc_trace_method_entry(
     JavaThread* thread, Method* method))
-  assert(RC_TRACE_IN_RANGE(0x00001000, 0x00002000), "wrong call");
-
   if (method->is_obsolete()) {
     // We are calling an obsolete method, but this is not necessarily
     // an error. Our method could have been redefined just after we
     // fetched the Method* from the constant pool.
-
-    // RC_TRACE macro has an embedded ResourceMark
-    RC_TRACE_WITH_THREAD(0x00001000, thread,
-                         ("calling obsolete method '%s'",
-                          method->name_and_sig_as_C_string()));
-    if (RC_TRACE_ENABLED(0x00002000)) {
-      // this option is provided to debug calls to obsolete methods
-      guarantee(false, "faulting at call to an obsolete method.");
-    }
+    ResourceMark rm;
+    log_trace(redefine, class, obsolete)("calling obsolete method '%s'", method->name_and_sig_as_C_string());
   }
   return 0;
 JRT_END

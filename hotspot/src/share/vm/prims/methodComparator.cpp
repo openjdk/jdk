@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
-#include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/methodComparator.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -39,10 +38,12 @@ bool MethodComparator::methods_EMCP(Method* old_method, Method* new_method) {
   if (old_method->code_size() != new_method->code_size())
     return false;
   if (check_stack_and_locals_size(old_method, new_method) != 0) {
-    // RC_TRACE macro has an embedded ResourceMark
-    RC_TRACE(0x00800000, ("Methods %s non-comparable with diagnosis %d",
-      old_method->name()->as_C_string(),
-      check_stack_and_locals_size(old_method, new_method)));
+    if (log_is_enabled(Debug, redefine, class, methodcomparator)) {
+      ResourceMark rm;
+      log_debug(redefine, class, methodcomparator)
+        ("Methods %s non-comparable with diagnosis %d",
+         old_method->name()->as_C_string(), check_stack_and_locals_size(old_method, new_method));
+    }
     return false;
   }
 
