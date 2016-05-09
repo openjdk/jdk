@@ -435,6 +435,9 @@ AC_DEFUN([BOOTJDK_CHECK_BUILD_JDK],
       elif test ! -x "$BUILD_JDK/bin/jlink"; then
         AC_MSG_NOTICE([Potential Build JDK found at $BUILD_JDK did not contain bin/jlink; ignoring])
         BUILD_JDK_FOUND=no
+      elif test ! -x "$BUILD_JDK/bin/jmod"; then
+        AC_MSG_NOTICE([Potential Build JDK found at $BUILD_JDK did not contain bin/jmod; ignoring])
+        BUILD_JDK_FOUND=no
       elif test ! -x "$BUILD_JDK/bin/javac"; then
         # Do we have a bin/javac?
         AC_MSG_NOTICE([Potential Build JDK found at $BUILD_JDK did not contain bin/javac; ignoring])
@@ -499,6 +502,11 @@ AC_DEFUN([BOOTJDK_SETUP_BUILD_JDK],
       AC_MSG_RESULT([yes, will use output dir])
     fi
   fi
+
+  JMOD="$BUILD_JDK/bin/jmod"
+  JLINK="$BUILD_JDK/bin/jlink"
+  AC_SUBST(JMOD)
+  AC_SUBST(JLINK)
 
   if test "x$BUILD_JDK_FOUND" != "xyes"; then
     AC_MSG_CHECKING([for Build JDK])
