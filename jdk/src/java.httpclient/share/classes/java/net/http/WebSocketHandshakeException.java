@@ -22,20 +22,45 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package java.net.http;
 
 /**
- * <h2>High level HTTP and WebSocket API</h2>
- * This provides a high-level client interfaces to HTTP (versions 1.1 and 2)
- * and WebSocket. Synchronous and asynchronous (via {@link
- * java.util.concurrent.CompletableFuture}) modes are provided for HTTP.
- * WebSocket works in asynchronous mode only. The main types defined are:
- * <ul>
- *    <li>{@link java.net.http.HttpClient}</li>
- *    <li>{@link java.net.http.HttpRequest}</li>
- *    <li>{@link java.net.http.HttpResponse}</li>
- *    <li>{@link java.net.http.WebSocket}</li>
- * </ul>
+ * An exception used to signal the opening handshake failed.
  *
  * @since 9
  */
-package java.net.http;
+public final class WebSocketHandshakeException extends Exception {
+
+    private static final long serialVersionUID = 1L;
+    private final transient HttpResponse response;
+
+    WebSocketHandshakeException(HttpResponse response) {
+        this(null, response);
+    }
+
+    WebSocketHandshakeException(String message, HttpResponse response) {
+        super(statusCodeOrFullMessage(message, response));
+        this.response = response;
+    }
+
+    /**
+     * // FIXME: terrible toString (+ not always status should be displayed I guess)
+     */
+    private static String statusCodeOrFullMessage(String m, HttpResponse response) {
+        return (m == null || m.isEmpty())
+                ? String.valueOf(response.statusCode())
+                : response.statusCode() + ": " + m;
+    }
+
+    /**
+     * Returns a HTTP response from the server.
+     *
+     * <p> The value may be unavailable ({@code null}) if this exception has
+     * been serialized and then read back in.
+     *
+     * @return server response
+     */
+    public HttpResponse getResponse() {
+        return response;
+    }
+}
