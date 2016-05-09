@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-/**
- * <h2>High level HTTP and WebSocket API</h2>
- * This provides a high-level client interfaces to HTTP (versions 1.1 and 2)
- * and WebSocket. Synchronous and asynchronous (via {@link
- * java.util.concurrent.CompletableFuture}) modes are provided for HTTP.
- * WebSocket works in asynchronous mode only. The main types defined are:
- * <ul>
- *    <li>{@link java.net.http.HttpClient}</li>
- *    <li>{@link java.net.http.HttpRequest}</li>
- *    <li>{@link java.net.http.HttpResponse}</li>
- *    <li>{@link java.net.http.WebSocket}</li>
- * </ul>
- *
- * @since 9
- */
 package java.net.http;
+
+import java.net.http.WebSocket.CloseCode;
+import java.net.http.WebSocket.MessagePart;
+import java.nio.ByteBuffer;
+
+interface WSMessageConsumer {
+
+    void onText(MessagePart part, WSDisposableText data);
+
+    void onBinary(MessagePart part, WSShared<ByteBuffer> data);
+
+    void onPing(WSShared<ByteBuffer> data);
+
+    void onPong(WSShared<ByteBuffer> data);
+
+    void onClose(CloseCode code, CharSequence reason);
+}
