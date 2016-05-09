@@ -2905,6 +2905,8 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
       }
     }
 #endif
+    // platform dependent reshaping of the address expression
+    reshape_address(n->as_AddP());
     break;
   }
 
