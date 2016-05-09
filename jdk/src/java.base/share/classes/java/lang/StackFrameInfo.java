@@ -29,21 +29,20 @@ import jdk.internal.misc.SharedSecrets;
 
 import static java.lang.StackWalker.Option.*;
 import java.lang.StackWalker.StackFrame;
-import java.lang.reflect.Module;
 import java.util.Optional;
 import java.util.OptionalInt;
 
 class StackFrameInfo implements StackFrame {
-    private final static JavaLangInvokeAccess jlInvokeAccess =
+    private final static JavaLangInvokeAccess JLIA =
         SharedSecrets.getJavaLangInvokeAccess();
 
     // Footprint improvement: MemberName::clazz can replace
     // StackFrameInfo::declaringClass.
 
-    final StackWalker walker;
-    final Class<?> declaringClass;
-    final Object memberName;
-    final short bci;
+    private final StackWalker walker;
+    private final Class<?> declaringClass;
+    private final Object memberName;
+    private final short bci;
     private volatile StackTraceElement ste;
 
     /*
@@ -54,8 +53,16 @@ class StackFrameInfo implements StackFrame {
         this.walker = walker;
         this.declaringClass = null;
         this.bci = -1;
-        this.memberName = jlInvokeAccess.newMemberName();
+        this.memberName = JLIA.newMemberName();
     }
+
+    // package-private called by StackStreamFactory to skip
+    // the capability check
+    Class<?> declaringClass() {
+        return declaringClass;
+    }
+
+    // ----- implementation of StackFrame methods
 
     @Override
     public String getClassName() {
@@ -70,31 +77,39 @@ class StackFrameInfo implements StackFrame {
 
     @Override
     public String getMethodName() {
-        return jlInvokeAccess.getName(memberName);
+        return JLIA.getName(memberName);
     }
 
     @Override
-    public final Optional<String> getFileName() {
-        StackTraceElement ste = toStackTraceElement();
-        return ste.getFileName() != null ? Optional.of(ste.getFileName()) : Optional.empty();
+    public int getByteCodeIndex() {
+        return bci;
     }
 
     @Override
-    public final OptionalInt getLineNumber() {
-        StackTraceElement ste = toStackTraceElement();
-        return ste.getLineNumber() > 0 ? OptionalInt.of(ste.getLineNumber()) : OptionalInt.empty();
+    public String getFileName() {
+        if (isNativeMethod())
+            return null;
+
+        return toStackTraceElement().getFileName();
     }
 
     @Override
-    public final boolean isNativeMethod() {
-        StackTraceElement ste = toStackTraceElement();
-        return ste.isNativeMethod();
+    public int getLineNumber() {
+        if (isNativeMethod())
+            return -2;
+
+        return toStackTraceElement().getLineNumber();
+    }
+
+
+    @Override
+    public boolean isNativeMethod() {
+        return JLIA.isNative(memberName);
     }
 
     @Override
     public String toString() {
-        StackTraceElement ste = toStackTraceElement();
-        return ste.toString();
+        return toStackTraceElement().toString();
     }
 
     /**

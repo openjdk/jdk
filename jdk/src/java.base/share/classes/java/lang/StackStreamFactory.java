@@ -492,7 +492,7 @@ final class StackStreamFactory {
 
             @Override
             final Class<?> at(int index) {
-                return stackFrames[index].declaringClass;
+                return stackFrames[index].declaringClass();
             }
         }
 
@@ -761,7 +761,7 @@ final class StackStreamFactory {
 
             @Override
             final Class<?> at(int index) {
-                return stackFrames[index].declaringClass;
+                return stackFrames[index].declaringClass();
             }
         }
 

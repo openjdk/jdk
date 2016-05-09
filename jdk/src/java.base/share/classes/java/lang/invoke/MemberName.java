@@ -25,6 +25,8 @@
 
 package java.lang.invoke;
 
+import jdk.internal.misc.JavaLangInvokeAccess;
+import jdk.internal.misc.SharedSecrets;
 import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.VerifyAccess;
 
@@ -1143,14 +1145,24 @@ import java.util.Objects;
     }
 
     static {
-        // Allow privileged classes outside of java.lang
-        jdk.internal.misc.SharedSecrets.setJavaLangInvokeAccess(new jdk.internal.misc.JavaLangInvokeAccess() {
+        // StackFrameInfo stores Member and this provides the shared secrets
+        // for stack walker to access MemberName information.
+        SharedSecrets.setJavaLangInvokeAccess(new JavaLangInvokeAccess() {
+            @Override
             public Object newMemberName() {
                 return new MemberName();
             }
+
+            @Override
             public String getName(Object mname) {
                 MemberName memberName = (MemberName)mname;
                 return memberName.getName();
+            }
+
+            @Override
+            public boolean isNative(Object mname) {
+                MemberName memberName = (MemberName)mname;
+                return memberName.isNative();
             }
         });
     }
