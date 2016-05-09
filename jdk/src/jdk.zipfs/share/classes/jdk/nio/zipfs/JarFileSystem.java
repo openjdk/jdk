@@ -52,10 +52,10 @@ class JarFileSystem extends ZipFileSystem {
     private Function<byte[],byte[]> lookup;
 
     @Override
-    Entry getEntry(byte[] path) throws IOException {
+    IndexNode getInode(byte[] path) {
         // check for an alias to a versioned entry
         byte[] versionedPath = lookup.apply(path);
-        return versionedPath == null ? super.getEntry(path) : super.getEntry(versionedPath);
+        return versionedPath == null ? super.getInode(path) : super.getInode(versionedPath);
     }
 
     JarFileSystem(ZipFileSystemProvider provider, Path zfpath, Map<String,?> env)
@@ -87,7 +87,7 @@ class JarFileSystem extends ZipFileSystem {
     }
 
     private boolean isMultiReleaseJar() {
-        try (InputStream is = newInputStream(getBytes("META-INF/MANIFEST.MF"))) {
+        try (InputStream is = newInputStream(getBytes("/META-INF/MANIFEST.MF"))) {
             return (new Manifest(is)).getMainAttributes()
                     .containsKey(new Attributes.Name("Multi-Release"));
             // fixme change line above after JarFile integration to contain Attributes.Name.MULTI_RELEASE
@@ -108,7 +108,7 @@ class JarFileSystem extends ZipFileSystem {
      */
     private Function<byte[],byte[]> createVersionedLinks(int version) {
         HashMap<IndexNode,byte[]> aliasMap = new HashMap<>();
-        getVersionMap(version, getInode(getBytes("META-INF/versions"))).values()
+        getVersionMap(version, getInode(getBytes("/META-INF/versions"))).values()
                 .forEach(versionNode -> {   // for each META-INF/versions/{n} directory
                     // put all the leaf inodes, i.e. entries, into the alias map
                     // possibly shadowing lower versioned entries
@@ -176,7 +176,7 @@ class JarFileSystem extends ZipFileSystem {
      *   returns foo/bar.class
      */
     private byte[] getRootName(IndexNode prefix, IndexNode inode) {
-        int offset = prefix.name.length;
+        int offset = prefix.name.length - 1;
         byte[] fullName = inode.name;
         return Arrays.copyOfRange(fullName, offset, fullName.length);
     }

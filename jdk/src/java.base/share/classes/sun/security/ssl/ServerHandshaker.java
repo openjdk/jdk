@@ -94,7 +94,7 @@ final class ServerHandshaker extends Handshaker {
     // we remember it for the RSA premaster secret version check
     private ProtocolVersion clientRequestedVersion;
 
-    private SupportedEllipticCurvesExtension supportedCurves;
+    private EllipticCurvesExtension supportedCurves;
 
     // the preferable signature algorithm used by ServerKeyExchange message
     SignatureAndHashAlgorithm preferableSignatureAlgorithm;
@@ -741,7 +741,7 @@ final class ServerHandshaker extends Handshaker {
                 throw new SSLException("Client did not resume a session");
             }
 
-            supportedCurves = (SupportedEllipticCurvesExtension)
+            supportedCurves = (EllipticCurvesExtension)
                         mesg.extensions.get(ExtensionType.EXT_ELLIPTIC_CURVES);
 
             // We only need to handle the "signature_algorithm" extension
@@ -1577,7 +1577,7 @@ final class ServerHandshaker extends Handshaker {
             // if the client sent the supported curves extension, pick the
             // first one that we support;
             for (int curveId : supportedCurves.curveIds()) {
-                if (SupportedEllipticCurvesExtension.isSupported(curveId)) {
+                if (EllipticCurvesExtension.isSupported(curveId)) {
                     index = curveId;
                     break;
                 }
@@ -1588,9 +1588,9 @@ final class ServerHandshaker extends Handshaker {
             }
         } else {
             // pick our preference
-            index = SupportedEllipticCurvesExtension.DEFAULT.curveIds()[0];
+            index = EllipticCurvesExtension.DEFAULT.curveIds()[0];
         }
-        String oid = SupportedEllipticCurvesExtension.getCurveOid(index);
+        String oid = EllipticCurvesExtension.getCurveOid(index);
         ecdh = new ECDHCrypt(oid, sslContext.getSecureRandom());
         return true;
     }
@@ -1633,15 +1633,15 @@ final class ServerHandshaker extends Handshaker {
             return false;
         }
         // For ECC certs, check whether we support the EC domain parameters.
-        // If the client sent a SupportedEllipticCurves ClientHello extension,
+        // If the client sent a EllipticCurves ClientHello extension,
         // check against that too.
         if (keyAlgorithm.equals("EC")) {
             if (publicKey instanceof ECPublicKey == false) {
                 return false;
             }
             ECParameterSpec params = ((ECPublicKey)publicKey).getParams();
-            int index = SupportedEllipticCurvesExtension.getCurveIndex(params);
-            if (SupportedEllipticCurvesExtension.isSupported(index) == false) {
+            int index = EllipticCurvesExtension.getCurveIndex(params);
+            if (!EllipticCurvesExtension.isSupported(index)) {
                 return false;
             }
             if ((supportedCurves != null) && !supportedCurves.contains(index)) {

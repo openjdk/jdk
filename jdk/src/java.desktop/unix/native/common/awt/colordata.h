@@ -44,6 +44,7 @@ typedef struct _ColorData {
     char* img_oda_blue;
     int *pGrayInverseLutData;
     int screendata;
+    int representsPrimaries;
 } ColorData;
 
 

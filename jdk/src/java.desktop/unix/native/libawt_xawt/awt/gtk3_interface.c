@@ -87,13 +87,25 @@ static void* dl_symbol(const char* name)
     return result;
 }
 
-gboolean gtk3_check(const char* lib_name, int flags)
+gboolean gtk3_check(const char* lib_name, gboolean load)
 {
     if (gtk3_libhandle != NULL) {
         /* We've already successfully opened the GTK libs, so return true. */
         return TRUE;
     } else {
-        return dlopen(lib_name, flags) != NULL;
+#ifdef RTLD_NOLOAD
+        void *lib = dlopen(lib_name, RTLD_LAZY | RTLD_NOLOAD);
+        if (!load || lib != NULL) {
+            return lib != NULL;
+        }
+#else
+#ifdef _AIX
+        /* On AIX we could implement this with the help of loadquery(L_GETINFO, ..)  */
+        /* (see reload_table() in hotspot/src/os/aix/vm/loadlib_aix.cpp) but it is   */
+        /* probably not worth it because most AIX servers don't have GTK libs anyway */
+#endif
+#endif
+        return dlopen(lib_name, RTLD_LAZY | RTLD_LOCAL) != NULL;
     }
 }
 

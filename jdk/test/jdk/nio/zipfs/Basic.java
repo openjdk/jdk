@@ -42,7 +42,7 @@ import java.util.Map;
 
 /**
  * @test
- * @bug 8038500 8040059
+ * @bug 8038500 8040059 8150366 8150496
  * @summary Basic test for zip provider
  *
  * @run main Basic
@@ -155,7 +155,8 @@ public class Basic {
             indent();
             System.out.print(file.getFileName());
             if (attrs.isRegularFile())
-                System.out.format(" (%d)", attrs.size());
+                System.out.format("%n%s%n", attrs);
+
             System.out.println();
             return FileVisitResult.CONTINUE;
         }

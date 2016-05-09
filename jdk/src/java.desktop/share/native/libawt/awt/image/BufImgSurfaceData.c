@@ -231,12 +231,14 @@ static void BufImg_GetRasInfo(JNIEnv *env,
         pRasInfo->redErrTable = NULL;
         pRasInfo->grnErrTable = NULL;
         pRasInfo->bluErrTable = NULL;
+        pRasInfo->representsPrimaries = 0;
     } else {
         pRasInfo->invColorTable = bipriv->cData->img_clr_tbl;
         pRasInfo->redErrTable = bipriv->cData->img_oda_red;
         pRasInfo->grnErrTable = bipriv->cData->img_oda_green;
         pRasInfo->bluErrTable = bipriv->cData->img_oda_blue;
         pRasInfo->invGrayTable = bipriv->cData->pGrayInverseLutData;
+        pRasInfo->representsPrimaries = bipriv->cData->representsPrimaries;
     }
 }
 
@@ -257,6 +259,59 @@ static void BufImg_Release(JNIEnv *env,
         (*env)->ReleasePrimitiveArrayCritical(env, bisdo->lutarray,
                                               bipriv->lutbase, JNI_ABORT);
     }
+}
+
+static int calculatePrimaryColorsApproximation(int* cmap, unsigned char* cube, int cube_size) {
+    int i, j, k;
+    int index, value, color;
+    // values calculated from cmap
+    int r, g, b;
+    // maximum positive/negative variation allowed for r, g, b values for primary colors
+    int delta = 5;
+    // get the primary color cmap indices from corner of inverse color table
+    for (i = 0; i < cube_size; i += (cube_size - 1)) {
+        for (j = 0; j < cube_size; j += (cube_size - 1)) {
+            for (k = 0; k < cube_size; k += (cube_size - 1)) {
+                // calculate inverse color table index
+                index = i + cube_size * (j + cube_size * k);
+                // get value present in corners of inverse color table
+                value = cube[index];
+                // use the corner values as index for cmap
+                color = cmap[value];
+                // extract r,g,b values from cmap value
+                r = ((color) >> 16) & 0xff;
+                g = ((color) >> 8) & 0xff;
+                b = color & 0xff;
+                /*
+                 * If i/j/k value is 0 optimum value of b/g/r should be 0 but we allow
+                 * maximum positive variation of 5. If i/j/k value is 31 optimum value
+                 * of b/g/r should be 255 but we allow maximum negative variation of 5.
+                 */
+                if (i == 0) {
+                    if (b > delta)
+                        return 0;
+                } else {
+                    if (b < (255 - delta))
+                        return 0;
+                }
+                if (j == 0) {
+                    if (g > delta)
+                        return 0;
+                } else {
+                    if (g < (255 - delta))
+                        return 0;
+                }
+                if (k == 0) {
+                    if (r > delta)
+                        return 0;
+                } else {
+                    if (r < (255 - delta))
+                        return 0;
+                }
+            }
+        }
+    }
+    return 1;
 }
 
 static ColorData *BufImg_SetupICM(JNIEnv *env,
@@ -298,6 +353,7 @@ static ColorData *BufImg_SetupICM(JNIEnv *env,
         }
 
         cData->img_clr_tbl = initCubemap(pRgb, bisdo->lutsize, 32);
+        cData->representsPrimaries = calculatePrimaryColorsApproximation(pRgb, cData->img_clr_tbl, 32);
         if (allGray == JNI_TRUE) {
             initInverseGrayLut(pRgb, bisdo->lutsize, cData);
         }

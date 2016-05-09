@@ -658,6 +658,28 @@ class JarFile extends ZipFile {
         return vze == null ? ze : vze;
     }
 
+    /**
+     * Returns the real name of a {@code JarEntry}.  If this {@code JarFile} is
+     * a multi-release jar file and is configured to be processed as such, the
+     * name returned by this method is the path name of the versioned entry
+     * that the {@code JarEntry} represents, rather than the path name of the
+     * base entry that {@link JarEntry#getName()} returns.  If the
+     * {@code JarEntry} does not represent a versioned entry, or the
+     * jar file is not a multi-release jar file or {@code JarFile} is not
+     * configured for processing a multi-release jar file, this method returns
+     * the same name that {@link JarEntry#getName()} returns.
+     *
+     * @param entry the JarEntry
+     * @return the real name of the JarEntry
+     * @since 9
+     */
+    String getRealName(JarEntry entry) {
+        if (entry instanceof JarFileEntry) {
+            return ((JarFileEntry)entry).realName();
+        }
+        return entry.getName();
+    }
+
     private class JarFileEntry extends JarEntry {
         final private String name;
 
@@ -684,7 +706,7 @@ class JarFile extends ZipFile {
                 throw new RuntimeException(e);
             }
             if (certs == null && jv != null) {
-                certs = jv.getCerts(JarFile.this, reifiedEntry());
+                certs = jv.getCerts(JarFile.this, realEntry());
             }
             return certs == null ? null : certs.clone();
         }
@@ -695,16 +717,19 @@ class JarFile extends ZipFile {
                 throw new RuntimeException(e);
             }
             if (signers == null && jv != null) {
-                signers = jv.getCodeSigners(JarFile.this, reifiedEntry());
+                signers = jv.getCodeSigners(JarFile.this, realEntry());
             }
             return signers == null ? null : signers.clone();
         }
-        JarFileEntry reifiedEntry() {
+        JarFileEntry realEntry() {
             if (isMultiRelease()) {
                 String entryName = super.getName();
                 return entryName.equals(this.name) ? this : new JarFileEntry(entryName, this);
             }
             return this;
+        }
+        String realName() {
+            return super.getName();
         }
 
         @Override
@@ -876,11 +901,11 @@ class JarFile extends ZipFile {
     private JarEntry verifiableEntry(ZipEntry ze) {
         if (ze instanceof JarFileEntry) {
             // assure the name and entry match for verification
-            return ((JarFileEntry)ze).reifiedEntry();
+            return ((JarFileEntry)ze).realEntry();
         }
         ze = getJarEntry(ze.getName());
         if (ze instanceof JarFileEntry) {
-            return ((JarFileEntry)ze).reifiedEntry();
+            return ((JarFileEntry)ze).realEntry();
         }
         return (JarEntry)ze;
     }

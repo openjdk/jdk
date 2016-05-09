@@ -41,4 +41,5 @@ public interface JavaUtilJarAccess {
     public Enumeration<JarEntry> entries2(JarFile jar);
     public void setEagerValidation(JarFile jar, boolean eager);
     public List<Object> getManifestDigests(JarFile jar);
+    public String getRealName(JarFile jar, JarEntry entry);
 }

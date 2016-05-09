@@ -47,15 +47,15 @@ public class PathOps {
     private Path path;
     private Exception exc;
 
-    private PathOps(String s) {
+    private PathOps(String first, String... more) {
         out.println();
-        input = s;
+        input = first;
         try {
-            path = fs.getPath(s);
-            out.format("%s -> %s", s, path);
+            path = fs.getPath(first, more);
+            out.format("%s -> %s", first, path);
         } catch (Exception x) {
             exc = x;
-            out.format("%s -> %s", s, x);
+            out.format("%s -> %s", first, x);
         }
         out.println();
     }
@@ -179,6 +179,13 @@ public class PathOps {
         return this;
     }
 
+    PathOps resolveSibling(String other, String expected) {
+        out.format("test resolveSibling %s\n", other);
+        checkPath();
+        check(path.resolveSibling(other), expected);
+        return this;
+    }
+
     PathOps relativize(String other, String expected) {
         out.format("test relativize %s\n", other);
         checkPath();
@@ -224,6 +231,10 @@ public class PathOps {
         return new PathOps(s);
     }
 
+    static PathOps test(String first, String... more) {
+        return new PathOps(first, more);
+    }
+
     // -- PathOpss --
 
     static void header(String s) {
@@ -234,6 +245,26 @@ public class PathOps {
 
     static void doPathOpTests() {
         header("Path operations");
+
+        // construction
+        test("/")
+            .string("/");
+        test("/", "")
+            .string("/");
+        test("/", "foo")
+            .string("/foo");
+        test("/", "/foo")
+            .string("/foo");
+        test("/", "foo/")
+            .string("/foo");
+        test("foo", "bar", "gus")
+            .string("foo/bar/gus");
+        test("")
+            .string("");
+        test("", "/")
+            .string("/");
+        test("", "foo", "", "bar", "", "/gus")
+            .string("foo/bar/gus");
 
         // all components
         test("/a/b/c")
@@ -323,7 +354,6 @@ public class PathOps {
             .ends("foo/bar/")
             .ends("foo/bar");
 
-
         // elements
         test("a/b/c")
             .element(0,"a")
@@ -343,16 +373,57 @@ public class PathOps {
         // resolve
         test("/tmp")
             .resolve("foo", "/tmp/foo")
-            .resolve("/foo", "/foo");
+            .resolve("/foo", "/foo")
+            .resolve("", "/tmp");
         test("tmp")
             .resolve("foo", "tmp/foo")
+            .resolve("/foo", "/foo")
+            .resolve("", "tmp");
+        test("")
+            .resolve("", "")
+            .resolve("foo", "foo")
             .resolve("/foo", "/foo");
+
+        // resolveSibling
+        test("foo")
+            .resolveSibling("bar", "bar")
+            .resolveSibling("/bar", "/bar")
+            .resolveSibling("", "");
+        test("foo/bar")
+            .resolveSibling("gus", "foo/gus")
+            .resolveSibling("/gus", "/gus")
+            .resolveSibling("", "foo");
+        test("/foo")
+            .resolveSibling("gus", "/gus")
+            .resolveSibling("/gus", "/gus")
+            .resolveSibling("", "/");
+        test("/foo/bar")
+            .resolveSibling("gus", "/foo/gus")
+            .resolveSibling("/gus", "/gus")
+            .resolveSibling("", "/foo");
+        test("")
+            .resolveSibling("foo", "foo")
+            .resolveSibling("/foo", "/foo")
+            .resolve("", "");
 
         // relativize
         test("/a/b/c")
             .relativize("/a/b/c", "")
             .relativize("/a/b/c/d/e", "d/e")
-            .relativize("/a/x", "../../x");
+            .relativize("/a/x", "../../x")
+            .relativize("/x", "../../../x");
+        test("a/b/c")
+            .relativize("a/b/c/d", "d")
+            .relativize("a/x", "../../x")
+            .relativize("x", "../../../x")
+            .relativize("", "../../..");
+        test("")
+            .relativize("a", "a")
+            .relativize("a/b/c", "a/b/c")
+            .relativize("", "");
+        test("/")
+            .relativize("/a", "a")
+            .relativize("/a/c", "a/c");
 
         // normalize
         test("/")

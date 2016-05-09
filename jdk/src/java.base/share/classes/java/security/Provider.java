@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,8 +142,35 @@ public abstract class Provider extends Properties {
             Constructor<?> con = clazz.getConstructor();
             return con.newInstance();
         } else {
-            Constructor<?> con = clazz.getConstructor(ctrParamClz);
-            return con.newInstance(ctorParamObj);
+            // Looking for the constructor with a params first and fallback
+            // to one without if not found. This is to support the enhanced
+            // SecureRandom where both styles of constructors are supported.
+            // Before jdk9, there was no params support (only getInstance(alg))
+            // and an impl only had the params-less constructor. Since jdk9,
+            // there is getInstance(alg,params) and an impl can contain
+            // an Impl(params) constructor.
+            try {
+                Constructor<?> con = clazz.getConstructor(ctrParamClz);
+                return con.newInstance(ctorParamObj);
+            } catch (NoSuchMethodException nsme) {
+                // For pre-jdk9 SecureRandom implementations, they only
+                // have params-less constructors which still works when
+                // the input ctorParamObj is null.
+                //
+                // For other primitives using params, ctorParamObj should not
+                // be null and nsme is thrown, just like before.
+                if (ctorParamObj == null) {
+                    try {
+                        Constructor<?> con = clazz.getConstructor();
+                        return con.newInstance();
+                    } catch (NoSuchMethodException nsme2) {
+                        nsme.addSuppressed(nsme2);
+                        throw nsme;
+                    }
+                } else {
+                    throw nsme;
+                }
+            }
         }
     }
 
@@ -1384,7 +1411,8 @@ public abstract class Provider extends Properties {
         addEngine("KeyPairGenerator",                   false, null);
         addEngine("KeyStore",                           false, null);
         addEngine("MessageDigest",                      false, null);
-        addEngine("SecureRandom",                       false, null);
+        addEngine("SecureRandom",                       false,
+                "java.security.SecureRandomParameters");
         addEngine("Signature",                          true,  null);
         addEngine("CertificateFactory",                 false, null);
         addEngine("CertPathBuilder",                    false, null);
@@ -1678,6 +1706,7 @@ public abstract class Provider extends Properties {
                         }
                     }
                 }
+                // constructorParameter can be null if not provided
                 return newInstanceUtil(getImplClass(), ctrParamClz, constructorParameter);
             } catch (NoSuchAlgorithmException e) {
                 throw e;
