@@ -899,6 +899,8 @@ LANGTOOLS_TOPDIR
 EXTERNAL_BUILDJDK
 BUILD_JDK
 CREATE_BUILDJDK
+JLINK
+JMOD
 BOOT_JDK_BITS
 JAVAC_FLAGS
 BOOT_JDK_MODULAR
@@ -5071,7 +5073,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1462574627
+DATE_WHEN_GENERATED=1462806878
 
 ###############################################################################
 #
@@ -30198,6 +30200,10 @@ $as_echo "$as_me: Potential Build JDK found at $BUILD_JDK did not contain bin/ja
         { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Build JDK found at $BUILD_JDK did not contain bin/jlink; ignoring" >&5
 $as_echo "$as_me: Potential Build JDK found at $BUILD_JDK did not contain bin/jlink; ignoring" >&6;}
         BUILD_JDK_FOUND=no
+      elif test ! -x "$BUILD_JDK/bin/jmod"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Build JDK found at $BUILD_JDK did not contain bin/jmod; ignoring" >&5
+$as_echo "$as_me: Potential Build JDK found at $BUILD_JDK did not contain bin/jmod; ignoring" >&6;}
+        BUILD_JDK_FOUND=no
       elif test ! -x "$BUILD_JDK/bin/javac"; then
         # Do we have a bin/javac?
         { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Build JDK found at $BUILD_JDK did not contain bin/javac; ignoring" >&5
@@ -30385,6 +30391,11 @@ $as_echo_n "checking for Build JDK... " >&6; }
 $as_echo "yes, will use output dir" >&6; }
     fi
   fi
+
+  JMOD="$BUILD_JDK/bin/jmod"
+  JLINK="$BUILD_JDK/bin/jlink"
+
+
 
   if test "x$BUILD_JDK_FOUND" != "xyes"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Build JDK" >&5
