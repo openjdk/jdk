@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,16 +195,16 @@ class StealMarkingTask : public GCTask {
 };
 
 //
-// StealRegionCompactionTask
+// CompactionWithStealingTask
 //
 // This task is used to distribute work to idle threads.
 //
 
-class StealRegionCompactionTask : public GCTask {
+class CompactionWithStealingTask : public GCTask {
  private:
    ParallelTaskTerminator* const _terminator;
  public:
-  StealRegionCompactionTask(ParallelTaskTerminator* t);
+  CompactionWithStealingTask(ParallelTaskTerminator* t);
 
   char* name() { return (char *)"steal-region-task"; }
   ParallelTaskTerminator* terminator() { return _terminator; }
