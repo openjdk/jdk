@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  *
  */
+
+package build.tools.projectcreator;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -71,6 +73,7 @@ public class WinGammaPlatformVC10 extends WinGammaPlatform {
 
         startTag("PropertyGroup", "Label", "Globals");
         tagData("ProjectGuid", "{8822CB5C-1C41-41C2-8493-9F6E1994338B}");
+        tagData("Keyword", "MakeFileProj");
         tag("SccProjectName");
         tag("SccLocalPath");
         endTag();
@@ -79,9 +82,8 @@ public class WinGammaPlatformVC10 extends WinGammaPlatform {
 
         for (BuildConfig cfg : allConfigs) {
             startTag(cfg, "PropertyGroup", "Label", "Configuration");
-            tagData("ConfigurationType", "DynamicLibrary");
-            tagData("UseOfMfc", "false");
-            tagData("PlatformToolset", "v120");
+            tagData("ConfigurationType", "Makefile");
+            tagData("UseDebugLibraries", "true");
             endTag();
         }
 
@@ -111,6 +113,14 @@ public class WinGammaPlatformVC10 extends WinGammaPlatform {
             tag(cfg, "CodeAnalysisRules");
             tag(cfg, "CodeAnalysisRuleAssemblies");
         }
+        for (BuildConfig cfg : allConfigs) {
+            tagData(cfg, "NMakeBuildCommandLine", cfg.get("MakeBinary") + " -f ../../Makefile import-hotspot LOG=info");
+            tagData(cfg, "NMakeReBuildCommandLine", cfg.get("MakeBinary") + " -f ../../Makefile clean-hotspot import-hotspot LOG=info");
+            tagData(cfg, "NMakeCleanCommandLine", cfg.get("MakeBinary") + " -f ../../Makefile clean-hotspot LOG=info");
+            tagData(cfg, "NMakeOutput", cfg.get("MakeOutput") + Util.sep + "jvm.dll");
+            tagData(cfg, "NMakePreprocessorDefinitions", Util.join(";", cfg.getDefines()));
+            tagData(cfg, "NMakeIncludeSearchPath", Util.join(";", cfg.getIncludes()));
+        }
         endTag();
 
         for (BuildConfig cfg : allConfigs) {
@@ -121,11 +131,6 @@ public class WinGammaPlatformVC10 extends WinGammaPlatform {
 
             startTag("Link");
             tagV(cfg.getV("LinkerFlags"));
-            endTag();
-
-            startTag("PreLinkEvent");
-            tagData("Message", BuildConfig.getFieldString(null, "PrelinkDescription"));
-            tagData("Command", cfg.expandFormat(BuildConfig.getFieldString(null, "PrelinkCommand").replace("\t", "\r\n")));
             endTag();
 
             endTag();
@@ -162,18 +167,13 @@ public class WinGammaPlatformVC10 extends WinGammaPlatform {
         for (BuildConfig cfg : allConfigs) {
             startTag(cfg, "PropertyGroup");
             tagData("LocalDebuggerCommand", cfg.get("JdkTargetRoot") + "\\bin\\java.exe");
-            // The JVM loads some libraries using a path relative to
-            // itself because it expects to be in a JRE or a JDK. The java
-            // launcher's '-XXaltjvm=' option allows the JVM to be outside
-            // the JRE or JDK so '-Dsun.java.launcher.is_altjvm=true'
-            // forces a fake JAVA_HOME relative path to be used to
-            // find the other libraries. The '-XX:+PauseAtExit' option
+            // Since we run "make hotspot-import", we get the correct jvm.dll by java.exe.
+            // The '-XX:+PauseAtExit' option
             // causes the VM to wait for key press before exiting; this
             // allows any stdout or stderr messages to be seen before
             // the cmdtool exits.
-            tagData("LocalDebuggerCommandArguments", "-XXaltjvm=$(TargetDir) "
-                    + "-Dsun.java.launcher.is_altjvm=true "
-                    + "-XX:+UnlockDiagnosticVMOptions -XX:+PauseAtExit");
+            tagData("LocalDebuggerCommandArguments",
+                    "-XX:+UnlockDiagnosticVMOptions -XX:+PauseAtExit");
             tagData("LocalDebuggerEnvironment", "JAVA_HOME=" + cfg.get("JdkTargetRoot"));
             endTag();
         }
@@ -209,11 +209,6 @@ public class WinGammaPlatformVC10 extends WinGammaPlatform {
            tagData("UniqueIdentifier", "{" + uuid.toString() + "}");
            endTag();
         }
-        startTag("Filter", "Include", "Resource Files");
-        UUID uuid = UUID.randomUUID();
-        tagData("UniqueIdentifier", "{" + uuid.toString() + "}");
-        tagData("Extensions", "ico;cur;bmp;dlg;rc2;rct;bin;cnt;rtf;gif;jpg;jpeg;jpe");
-        endTag();
         endTag();
 
         //TODO - do I need to split cpp and hpp files?
