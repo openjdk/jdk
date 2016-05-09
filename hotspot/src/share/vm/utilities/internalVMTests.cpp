@@ -81,6 +81,7 @@ void InternalVMTests::run() {
   run_unit_test(Test_log_file_startup_rotation);
   run_unit_test(Test_log_file_startup_truncation);
   run_unit_test(Test_invalid_log_file);
+  run_unit_test(Test_multiline_logging);
   run_unit_test(DirectivesParser_test);
   run_unit_test(Test_TempNewSymbol);
 #if INCLUDE_VM_STRUCTS

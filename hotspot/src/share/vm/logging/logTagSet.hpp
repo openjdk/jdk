@@ -31,6 +31,8 @@
 #include "logging/logTag.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+class LogMessageBuffer;
+
 // The tagset represents a combination of tags that occur in a log call somewhere.
 // Tagsets are created automatically by the LogTagSetMappings and should never be
 // instantiated directly somewhere else.
@@ -110,6 +112,7 @@ class LogTagSet VALUE_OBJ_CLASS_SPEC {
     return _output_list.is_level(level);
   }
   void log(LogLevelType level, const char* msg);
+  void log(const LogMessageBuffer& msg);
 
   ATTRIBUTE_PRINTF(3, 4)
   void write(LogLevelType level, const char* fmt, ...);
