@@ -420,6 +420,7 @@ static AliasedLoggingFlag const aliased_logging_flags[] = {
   { "TraceMonitorInflation",     LogLevel::Debug, true,  LOG_TAGS(monitorinflation) },
   { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LOG_TAGS(safepoint, cleanup) },
   { "TraceJVMTIObjectTagging",   LogLevel::Debug, true,  LOG_TAGS(jvmti, objecttagging) },
+  { "TraceRedefineClasses",      LogLevel::Info,  false, LOG_TAGS(redefine, class) },
   { NULL,                        LogLevel::Off,   false, LOG_TAGS(_NO_TAG) }
 };
 
@@ -804,7 +805,9 @@ void log_deprecated_flag(const char* name, bool on, AliasedLoggingFlag alf) {
     }
     strncat(tagset_buffer, LogTag::name(tagSet[i]), max_tagset_len - strlen(tagset_buffer));
   }
-
+  if (!alf.exactMatch) {
+      strncat(tagset_buffer, "*", max_tagset_len - strlen(tagset_buffer));
+  }
   log_warning(arguments)("-XX:%s%s is deprecated. Will use -Xlog:%s=%s instead.",
                          (on) ? "+" : "-",
                          name,
@@ -865,6 +868,11 @@ bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
     Flag* flag;
 
     // this scanf pattern matches both strings (handled here) and numbers (handled later))
+    AliasedLoggingFlag alf = catch_logging_aliases(name, true);
+    if (alf.alias_name != NULL) {
+      LogConfiguration::configure_stdout(alf.level, alf.exactMatch, alf.tag0, alf.tag1, alf.tag2, alf.tag3, alf.tag4, alf.tag5);
+      return true;
+    }
     real_name = handle_aliases_and_deprecation(name, warn_if_deprecated);
     if (real_name == NULL) {
       return false;
