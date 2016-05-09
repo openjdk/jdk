@@ -884,22 +884,31 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                 }
 
                 {
-                    boolean r = vh.weakCompareAndSet(array, i, VALUE_1, VALUE_2);
-                    assertEquals(r, true, "weakCompareAndSet $type$");
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSet(array, i, VALUE_1, VALUE_2);
+                    }
+                    assertEquals(success, true, "weakCompareAndSet $type$");
                     $type$ x = ($type$) vh.get(array, i);
                     assertEquals(x, VALUE_2, "weakCompareAndSet $type$ value");
                 }
 
                 {
-                    boolean r = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_1);
-                    assertEquals(r, true, "weakCompareAndSetAcquire $type$");
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_1);
+                    }
+                    assertEquals(success, true, "weakCompareAndSetAcquire $type$");
                     $type$ x = ($type$) vh.get(array, i);
                     assertEquals(x, VALUE_1, "weakCompareAndSetAcquire $type$");
                 }
 
                 {
-                    boolean r = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_2);
-                    assertEquals(r, true, "weakCompareAndSetRelease $type$");
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_2);
+                    }
+                    assertEquals(success, true, "weakCompareAndSetRelease $type$");
                     $type$ x = ($type$) vh.get(array, i);
                     assertEquals(x, VALUE_2, "weakCompareAndSetRelease $type$");
                 }
@@ -1037,22 +1046,31 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                 }
 
                 {
-                    boolean r = vh.weakCompareAndSet(array, i, VALUE_1, VALUE_2);
-                    assertEquals(r, true, "weakCompareAndSet $type$");
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSet(array, i, VALUE_1, VALUE_2);
+                    }
+                    assertEquals(success, true, "weakCompareAndSet $type$");
                     $type$ x = ($type$) vh.get(array, i);
                     assertEquals(x, VALUE_2, "weakCompareAndSet $type$ value");
                 }
 
                 {
-                    boolean r = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_1);
-                    assertEquals(r, true, "weakCompareAndSetAcquire $type$");
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_1);
+                    }
+                    assertEquals(success, true, "weakCompareAndSetAcquire $type$");
                     $type$ x = ($type$) vh.get(array, i);
                     assertEquals(x, VALUE_1, "weakCompareAndSetAcquire $type$");
                 }
 
                 {
-                    boolean r = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_2);
-                    assertEquals(r, true, "weakCompareAndSetRelease $type$");
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_2);
+                    }
+                    assertEquals(success, true, "weakCompareAndSetRelease $type$");
                     $type$ x = ($type$) vh.get(array, i);
                     assertEquals(x, VALUE_2, "weakCompareAndSetRelease $type$");
                 }
