@@ -44,7 +44,7 @@ import java.io.File;
 public class Test8028623 {
 
   public static int \u00CB = 1;
-  public static String dumpFile = "heap.out";
+  public static String dumpFile = "heap.bin";
 
   public static void main (String[] args) {
 
@@ -56,9 +56,10 @@ public class Test8028623 {
             return;
         }
         long pid = ProcessTools.getProcessId();
-        JDKToolLauncher jmap = JDKToolLauncher.create("jmap")
-                                              .addToolArg("-F")
-                                              .addToolArg("-dump:live,format=b,file=" + dumpFile)
+        JDKToolLauncher jmap = JDKToolLauncher.create("jhsdb")
+                                              .addToolArg("jmap")
+                                              .addToolArg("--binaryheap")
+                                              .addToolArg("--pid")
                                               .addToolArg(Long.toString(pid));
         ProcessBuilder pb = new ProcessBuilder(jmap.getCommand());
         OutputBuffer output = ProcessTools.getOutput(pb);
