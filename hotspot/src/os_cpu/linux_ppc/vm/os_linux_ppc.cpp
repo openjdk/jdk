@@ -366,11 +366,9 @@ JVM_handle_linux_signal(int sig,
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
         CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
         if (nm != NULL && nm->has_unsafe_access()) {
-          // We don't really need a stub here! Just set the pending exeption and
-          // continue at the next instruction after the faulting read. Returning
-          // garbage from this read is ok.
-          thread->set_pending_unsafe_access_error();
-          os::Linux::ucontext_set_pc(uc, pc + 4);
+          address next_pc = pc + 4;
+          next_pc = SharedRuntime::handle_unsafe_access(thread, next_pc);
+          os::Linux::ucontext_set_pc(uc, next_pc);
           return true;
         }
       }
@@ -385,10 +383,8 @@ JVM_handle_linux_signal(int sig,
       }
       else if (thread->thread_state() == _thread_in_vm &&
                sig == SIGBUS && thread->doing_unsafe_access()) {
-        // We don't really need a stub here! Just set the pending exeption and
-        // continue at the next instruction after the faulting read. Returning
-        // garbage from this read is ok.
-        thread->set_pending_unsafe_access_error();
+        address next_pc = pc + 4;
+        next_pc = SharedRuntime::handle_unsafe_access(thread, next_pc);
         os::Linux::ucontext_set_pc(uc, pc + 4);
         return true;
       }
