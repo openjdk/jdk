@@ -1057,7 +1057,8 @@ void ClassLoader::initialize_module_loader_map(JImageFile* jimage) {
     vm_exit_during_initialization(
       "Cannot find ModuleLoaderMap location from modules jimage.", NULL);
   }
-  char* buffer = NEW_RESOURCE_ARRAY(char, size);
+  char* buffer = NEW_RESOURCE_ARRAY(char, size + 1);
+  buffer[size] = '\0';
   jlong read = (*JImageGetResource)(jimage, location, buffer, size);
   if (read != size) {
     vm_exit_during_initialization(
