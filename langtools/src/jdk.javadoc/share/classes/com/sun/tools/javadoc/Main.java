@@ -27,6 +27,8 @@ package com.sun.tools.javadoc;
 
 import java.io.PrintWriter;
 
+import com.sun.tools.javadoc.main.Start;
+
 /**
  * Provides external entry points (tool and programmatic)
  * for the javadoc program.
