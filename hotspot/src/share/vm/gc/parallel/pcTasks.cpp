@@ -220,13 +220,13 @@ void StealMarkingTask::do_it(GCTaskManager* manager, uint which) {
 }
 
 //
-// StealRegionCompactionTask
+// CompactionWithStealingTask
 //
 
-StealRegionCompactionTask::StealRegionCompactionTask(ParallelTaskTerminator* t):
+CompactionWithStealingTask::CompactionWithStealingTask(ParallelTaskTerminator* t):
   _terminator(t) {}
 
-void StealRegionCompactionTask::do_it(GCTaskManager* manager, uint which) {
+void CompactionWithStealingTask::do_it(GCTaskManager* manager, uint which) {
   assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   ParCompactionManager* cm =

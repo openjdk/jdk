@@ -2371,7 +2371,7 @@ void PSParallelCompact::enqueue_region_stealing_tasks(
   // Once a thread has drained it's stack, it should try to steal regions from
   // other threads.
   for (uint j = 0; j < parallel_gc_threads; j++) {
-    q->enqueue(new StealRegionCompactionTask(terminator_ptr));
+    q->enqueue(new CompactionWithStealingTask(terminator_ptr));
   }
 }
 
