@@ -53,33 +53,22 @@ import jdk.test.lib.ProcessTools;
  */
 
 public class JMapHProfLargeHeapTest {
-    private static final String HEAP_DUMP_FILE_NAME = "heap.hprof";
+    private static final String HEAP_DUMP_FILE_NAME = "heap.bin";
+    private static final String HPROF_HEADER_1_0_1 = "JAVA PROFILE 1.0.1";
     private static final String HPROF_HEADER_1_0_2 = "JAVA PROFILE 1.0.2";
     private static final long M = 1024L;
     private static final long G = 1024L * M;
 
     public static void main(String[] args) throws Exception {
-        // If we are on MacOSX, test if JMap tool is signed, otherwise return
-        // since test will fail with privilege error.
-        if (Platform.isOSX()) {
-            String jmapToolPath = JDKToolFinder.getTestJDKTool("jmap");
-            ProcessBuilder codesignProcessBuilder = new ProcessBuilder(
-                    "codesign", "-v", jmapToolPath);
-            Process codesignProcess = codesignProcessBuilder.start();
-            OutputAnalyzer analyser = new OutputAnalyzer(codesignProcess);
-            try {
-                analyser.shouldNotContain("code object is not signed at all");
-                System.out.println("Signed jmap found at: " + jmapToolPath);
-            } catch (Exception e) {
-                // Abort since we can't know if the test will work
-                System.out
-                        .println("Test aborted since we are on MacOSX and the jmap tool is not signed.");
-                return;
-            }
+        if (!Platform.shouldSAAttach()) {
+            System.out.println("SA attach not expected to work - test skipped.");
+            return;
         }
 
         // All heap dumps should create 1.0.2 file format
-        testHProfFileFormat("-Xmx1g", 22 * M, HPROF_HEADER_1_0_2);
+        // Hotspot internal heapdumper always use HPROF_HEADER_1_0_2 format,
+        // but SA heapdumper still use HPROF_HEADER_1_0_1 for small heaps
+        testHProfFileFormat("-Xmx1g", 22 * M, HPROF_HEADER_1_0_1);
 
         /**
          * This test was deliberately commented out since the test system lacks
@@ -110,9 +99,10 @@ public class JMapHProfLargeHeapTest {
             System.out.println("Extracted pid: " + pid);
 
             JDKToolLauncher jMapLauncher = JDKToolLauncher
-                    .createUsingTestJDK("jmap");
-            jMapLauncher.addToolArg("-dump:format=b,file=" + pid + "-"
-                    + HEAP_DUMP_FILE_NAME);
+                    .createUsingTestJDK("jhsdb");
+            jMapLauncher.addToolArg("jmap");
+            jMapLauncher.addToolArg("--binaryheap");
+            jMapLauncher.addToolArg("--pid");
             jMapLauncher.addToolArg(String.valueOf(pid));
 
             ProcessBuilder jMapProcessBuilder = new ProcessBuilder(
@@ -123,12 +113,11 @@ public class JMapHProfLargeHeapTest {
             Process jMapProcess = jMapProcessBuilder.start();
             OutputAnalyzer analyzer = new OutputAnalyzer(jMapProcess);
             analyzer.shouldHaveExitValue(0);
-            analyzer.shouldContain(pid + "-" + HEAP_DUMP_FILE_NAME);
-            analyzer.shouldContain("Heap dump file created");
+            analyzer.shouldContain(HEAP_DUMP_FILE_NAME);
 
             largeHeapProc.getOutputStream().write('\n');
 
-            File dumpFile = new File(pid + "-" + HEAP_DUMP_FILE_NAME);
+            File dumpFile = new File(HEAP_DUMP_FILE_NAME);
             Asserts.assertTrue(dumpFile.exists(), "Heap dump file not found.");
 
             try (Reader reader = new BufferedReader(new FileReader(dumpFile))) {
