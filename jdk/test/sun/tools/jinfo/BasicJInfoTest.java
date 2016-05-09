@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -29,41 +27,58 @@ import jdk.testlibrary.JDKToolLauncher;
 import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.ProcessTools;
 
-/**
- *  The helper class for running jinfo utility.
+/*
+ * @test
+ * @summary Unit test for jinfo utility
+ * @library /lib/testlibrary
+ * @build jdk.testlibrary.*
+ * @run main BasicJInfoTest
  */
-public final class JInfoHelper {
+public class BasicJInfoTest {
 
-    /**
-     * Print configuration information for the current process
-     *
-     * @param toolArgs List of jinfo options
-     */
-    public static OutputAnalyzer jinfo(String... toolArgs) throws Exception {
-        return jinfo(true, toolArgs);
+    private static ProcessBuilder processBuilder = new ProcessBuilder();
+
+    public static void main(String[] args) throws Exception {
+        testJinfoNoArgs();
+        testJinfoFlags();
+        testJinfoProps();
+        testJinfoFlagInvalid();
     }
 
-    /**
-     * Print usage information
-     *
-     * @param toolArgs List of jinfo options
-     */
-    public static OutputAnalyzer jinfoNoPid(String... toolArgs) throws Exception {
-        return jinfo(false, toolArgs);
+    private static void testJinfoNoArgs() throws Exception {
+        OutputAnalyzer output = jinfo();
+        output.shouldContain("-XX");
+        output.shouldContain("test.jdk=");
+        output.shouldHaveExitValue(0);
     }
 
-    private static OutputAnalyzer jinfo(boolean toPid, String... toolArgs) throws Exception {
+    private static void testJinfoFlagInvalid() throws Exception {
+        OutputAnalyzer output = jinfo("-flag");
+        output.shouldHaveExitValue(1);
+    }
+
+    private static void testJinfoFlags() throws Exception {
+        OutputAnalyzer output = jinfo("-flags");
+        output.shouldContain("-XX");
+        output.shouldHaveExitValue(0);
+    }
+
+    private static void testJinfoProps() throws Exception {
+        OutputAnalyzer output = jinfo("-props");
+        output.shouldContain("test.jdk=");
+        output.shouldHaveExitValue(0);
+    }
+
+    private static OutputAnalyzer jinfo(String... toolArgs) throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jinfo");
         if (toolArgs != null) {
             for (String toolArg : toolArgs) {
                 launcher.addToolArg(toolArg);
             }
         }
-        if (toPid) {
-            launcher.addToolArg(Long.toString(ProcessTools.getProcessId()));
-        }
+        launcher.addToolArg(Long.toString(ProcessTools.getProcessId()));
 
-        ProcessBuilder processBuilder = new ProcessBuilder(launcher.getCommand());
+        processBuilder.command(launcher.getCommand());
         System.out.println(Arrays.toString(processBuilder.command().toArray()).replace(",", ""));
         OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
         System.out.println(output.getOutput());

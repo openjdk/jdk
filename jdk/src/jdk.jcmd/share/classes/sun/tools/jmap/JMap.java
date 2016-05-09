@@ -28,12 +28,11 @@ package sun.tools.jmap;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.AttachNotSupportedException;
 import sun.tools.attach.HotSpotVirtualMachine;
-import jdk.internal.vm.agent.spi.ToolProvider;
-import jdk.internal.vm.agent.spi.ToolProviderFinder;
 
 /*
  * This class is the main class for the JMap utility. It parses its arguments
@@ -44,34 +43,18 @@ import jdk.internal.vm.agent.spi.ToolProviderFinder;
  */
 public class JMap {
 
-    // Options handled by the attach mechanism
-    private static String HISTO_OPTION = "-histo";
-    private static String LIVE_HISTO_OPTION = "-histo:live";
-    private static String DUMP_OPTION_PREFIX = "-dump:";
-
-    // These options imply the use of a SA tool
-    private static String SA_TOOL_OPTIONS =
-      "-heap|-heap:format=b|-clstats|-finalizerinfo";
-
-    // The -F (force) option is currently not passed through to SA
-    private static String FORCE_SA_OPTION = "-F";
-
-    // Default option (if nothing provided)
-    private static String DEFAULT_OPTION = "-pmap";
-
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             usage(1); // no arguments
         }
 
-        // used to indicate if we should use SA
-        boolean useSA = false;
+        checkForUnsupportedOptions(args);
 
-        // the chosen option (-heap, -dump:*, ... )
+        // the chosen option
         String option = null;
 
         // First iterate over the options (arguments starting with -).  There should be
-        // one (but maybe two if -F is also used).
+        // one.
         int optionCount = 0;
         while (optionCount < args.length) {
             String arg = args[optionCount];
@@ -80,8 +63,6 @@ public class JMap {
             }
             if (arg.equals("-help") || arg.equals("-h")) {
                 usage(0);
-            } else if (arg.equals(FORCE_SA_OPTION)) {
-                useSA = true;
             } else {
                 if (option != null) {
                     usage(1);  // option already specified
@@ -93,123 +74,95 @@ public class JMap {
 
         // if no option provided then use default.
         if (option == null) {
-            option = DEFAULT_OPTION;
-        }
-        if (option.matches(SA_TOOL_OPTIONS)) {
-            useSA = true;
+            usage(0);
         }
 
-        // Next we check the parameter count. For the SA tools there are
-        // one or two parameters. For the built-in -dump option there is
-        // only one parameter (the process-id)
+        // Next we check the parameter count.
         int paramCount = args.length - optionCount;
-        if (paramCount == 0 || paramCount > 2) {
+        if (paramCount != 1) {
             usage(1);
         }
 
-        if (optionCount == 0 || paramCount != 1) {
-            useSA = true;
+        String pid = args[1];
+        // Here we handle the built-in options
+        // As more options are added we should create an abstract tool class and
+        // have a table to map the options
+        if (option.equals("-histo")) {
+            histo(pid, "");
+        } else if (option.startsWith("-histo:")) {
+            histo(pid, option.substring("-histo:".length()));
+        } else if (option.startsWith("-dump:")) {
+            dump(pid, option.substring("-dump:".length()));
+        } else if (option.equals("-finalizerinfo")) {
+            executeCommandForPid(pid, "jcmd", "GC.finalizer_info");
+        } else if (option.equals("-clstats")) {
+            executeCommandForPid(pid, "jcmd", "GC.class_stats");
         } else {
-            // the parameter for the -dump option is a process-id.
-            // If it doesn't parse to a number then it must be SA
-            // debug server
-            if (!args[optionCount].matches("[0-9]+")) {
-                useSA = true;
-            }
-        }
-
-
-        // at this point we know if we are executing an SA tool or a built-in
-        // option.
-
-        if (useSA) {
-            // parameters (<pid> or <exe> <core>)
-            String params[] = new String[paramCount];
-            for (int i=optionCount; i<args.length; i++ ){
-                params[i-optionCount] = args[i];
-            }
-            runTool(option, params);
-
-        } else {
-            String pid = args[1];
-            // Here we handle the built-in options
-            // As more options are added we should create an abstract tool class and
-            // have a table to map the options
-            if (option.equals(HISTO_OPTION)) {
-                histo(pid, false);
-            } else if (option.equals(LIVE_HISTO_OPTION)) {
-                histo(pid, true);
-            } else if (option.startsWith(DUMP_OPTION_PREFIX)) {
-                dump(pid, option);
-            } else {
-                usage(1);
-            }
+          usage(1);
         }
     }
 
-    // Invoke SA tool  with the given arguments
-    private static void runTool(String option, String args[]) throws Exception {
-        String[][] tools = {
-            { "-pmap",          "pmap"             },
-            { "-heap",          "heapSummary"      },
-            { "-heap:format=b", "heapDumper"       },
-            { "-histo",         "objectHistogram"  },
-            { "-clstats",       "classLoaderStats" },
-            { "-finalizerinfo", "finalizerInfo"    },
-        };
+    private static void executeCommandForPid(String pid, String command, Object ... args)
+        throws AttachNotSupportedException, IOException,
+               UnsupportedEncodingException {
+        VirtualMachine vm = VirtualMachine.attach(pid);
 
-        String name = null;
+        // Cast to HotSpotVirtualMachine as this is an
+        // implementation specific method.
+        HotSpotVirtualMachine hvm = (HotSpotVirtualMachine) vm;
+        try (InputStream in = hvm.executeCommand(command, args)) {
+          // read to EOF and just print output
+          byte b[] = new byte[256];
+          int n;
+          do {
+              n = in.read(b);
+              if (n > 0) {
+                  String s = new String(b, 0, n, "UTF-8");
+                  System.out.print(s);
+              }
+          } while (n > 0);
+        }
+        vm.detach();
+    }
 
-        // -dump option needs to be handled in a special way
-        if (option.startsWith(DUMP_OPTION_PREFIX)) {
-            // first check that the option can be parsed
-            String fn = parseDumpOptions(option);
-            if (fn == null) {
-                usage(1);
-            }
+    private static void histo(String pid, String options)
+        throws AttachNotSupportedException, IOException,
+               UnsupportedEncodingException {
+        String liveopt = "-all";
+        if (options.equals("") || options.equals("all")) {
+            //  pass
+        }
+        else if (options.equals("live")) {
+            liveopt = "-live";
+        }
+        else {
+            usage(1);
+        }
 
-            // tool for heap dumping
-            name = "heapDumper";
+        // inspectHeap is not the same as jcmd GC.class_histogram
+        executeCommandForPid(pid, "inspectheap", liveopt);
+    }
 
-            // HeapDumper -f <file>
-            args = prepend(fn, args);
-            args = prepend("-f", args);
-        } else {
-            int i=0;
-            while (i < tools.length) {
-                if (option.equals(tools[i][0])) {
-                    name = tools[i][1];
-                    break;
+    private static void dump(String pid, String options)
+        throws AttachNotSupportedException, IOException,
+               UnsupportedEncodingException {
+
+        String subopts[] = options.split(",");
+        String filename = null;
+        String liveopt = "-all";
+
+        for (int i = 0; i < subopts.length; i++) {
+            String subopt = subopts[i];
+            if (subopt.equals("live")) {
+                liveopt = "-live";
+            } else if (subopt.startsWith("file=")) {
+                // file=<file> - check that <file> is specified
+                if (subopt.length() > 5) {
+                    filename = subopt.substring(5);
                 }
-                i++;
             }
         }
-        if (name == null) {
-            usage(1);   // no mapping to tool
-        }
 
-        // Tool not available on this platform.
-        ToolProvider tool = ToolProviderFinder.find(name);
-        if (tool == null) {
-            usage(1);
-        }
-
-        // invoke the main method with the arguments
-        tool.run(args);
-    }
-
-    private static final String LIVE_OBJECTS_OPTION = "-live";
-    private static final String ALL_OBJECTS_OPTION = "-all";
-    private static void histo(String pid, boolean live) throws IOException {
-        VirtualMachine vm = attach(pid);
-        InputStream in = ((HotSpotVirtualMachine)vm).
-            heapHisto(live ? LIVE_OBJECTS_OPTION : ALL_OBJECTS_OPTION);
-        drain(vm, in);
-    }
-
-    private static void dump(String pid, String options) throws IOException {
-        // parse the options to get the dump filename
-        String filename = parseDumpOptions(options);
         if (filename == null) {
             usage(1);  // invalid options or no filename
         }
@@ -219,156 +172,76 @@ public class JMap {
         // working directory rather than the directory where jmap
         // is executed.
         filename = new File(filename).getCanonicalPath();
-
-        // dump live objects only or not
-        boolean live = isDumpLiveObjects(options);
-
-        VirtualMachine vm = attach(pid);
-        System.out.println("Dumping heap to " + filename + " ...");
-        InputStream in = ((HotSpotVirtualMachine)vm).
-            dumpHeap((Object)filename,
-                     (live ? LIVE_OBJECTS_OPTION : ALL_OBJECTS_OPTION));
-        drain(vm, in);
+        // dumpHeap is not the same as jcmd GC.heap_dump
+        executeCommandForPid(pid, "dumpheap", filename, liveopt);
     }
 
-    // Parse the options to the -dump option. Valid options are format=b and
-    // file=<file>. Returns <file> if provided. Returns null if <file> not
-    // provided, or invalid option.
-    private static String parseDumpOptions(String arg) {
-        assert arg.startsWith(DUMP_OPTION_PREFIX);
+    private static void checkForUnsupportedOptions(String[] args) {
+        // Check arguments for -F, -m, and non-numeric value
+        // and warn the user that SA is not supported anymore
 
-        String filename = null;
+        int paramCount = 0;
 
-        // options are separated by comma (,)
-        String options[] = arg.substring(DUMP_OPTION_PREFIX.length()).split(",");
+        for (String s : args) {
+            if (s.equals("-F")) {
+                SAOptionError("-F option used");
+            }
 
-        for (int i=0; i<options.length; i++) {
-            String option = options[i];
+            if (s.equals("-heap")) {
+                SAOptionError("-heap option used");
+            }
 
-            if (option.equals("format=b")) {
-                // ignore format (not needed at this time)
-            } else if (option.equals("live")) {
-                // a valid suboption
-            } else {
+            /* Reimplemented using jcmd, output format is different
+               from original one
 
-                // file=<file> - check that <file> is specified
-                if (option.startsWith("file=")) {
-                    filename = option.substring(5);
-                    if (filename.length() == 0) {
-                        return null;
-                    }
-                } else {
-                    return null;  // option not recognized
+            if (s.equals("-clstats")) {
+                warnSA("-clstats option used");
+            }
+
+            if (s.equals("-finalizerinfo")) {
+                warnSA("-finalizerinfo option used");
+            }
+            */
+
+            if (! s.startsWith("-")) {
+                if (! s.matches("[0-9]+")) {
+                    SAOptionError("non PID argument");
                 }
+                paramCount += 1;
             }
         }
-        return filename;
-    }
 
-    private static boolean isDumpLiveObjects(String arg) {
-        // options are separated by comma (,)
-        String options[] = arg.substring(DUMP_OPTION_PREFIX.length()).split(",");
-        for (String suboption : options) {
-            if (suboption.equals("live")) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // Attach to <pid>, existing if we fail to attach
-    private static VirtualMachine attach(String pid) {
-        try {
-            return VirtualMachine.attach(pid);
-        } catch (Exception x) {
-            String msg = x.getMessage();
-            if (msg != null) {
-                System.err.println(pid + ": " + msg);
-            } else {
-                x.printStackTrace();
-            }
-            if ((x instanceof AttachNotSupportedException) && haveSA()) {
-                System.err.println("The -F option can be used when the " +
-                  "target process is not responding");
-            }
-            System.exit(1);
-            return null; // keep compiler happy
+        if (paramCount > 1) {
+            SAOptionError("More than one non-option argument");
         }
     }
 
-    // Read the stream from the target VM until EOF, then detach
-    private static void drain(VirtualMachine vm, InputStream in) throws IOException {
-        // read to EOF and just print output
-        byte b[] = new byte[256];
-        int n;
-        do {
-            n = in.read(b);
-            if (n > 0) {
-                String s = new String(b, 0, n, "UTF-8");
-                System.out.print(s);
-            }
-        } while (n > 0);
-        in.close();
-        vm.detach();
-    }
-
-    // return a new string array with arg as the first element
-    private static String[] prepend(String arg, String args[]) {
-        String[] newargs = new String[args.length+1];
-        newargs[0] = arg;
-        System.arraycopy(args, 0, newargs, 1, args.length);
-        return newargs;
-    }
-
-    // returns true if SA is available
-    private static boolean haveSA() {
-        return ToolProviderFinder.find("heapSummary") != null;
+    private static void SAOptionError(String msg) {
+        System.err.println("Error: " + msg);
+        System.err.println("Cannot connect to core dump or remote debug server. Use jhsdb jmap instead");
+        System.exit(1);
     }
 
     // print usage message
     private static void usage(int exit) {
         System.err.println("Usage:");
-        if (haveSA()) {
-            System.err.println("    jmap [option] <pid>");
-            System.err.println("        (to connect to running process)");
-            System.err.println("    jmap [option] <executable <core>");
-            System.err.println("        (to connect to a core file)");
-            System.err.println("    jmap [option] [server_id@]<remote server IP or hostname>");
-            System.err.println("        (to connect to remote debug server)");
-            System.err.println("");
-            System.err.println("where <option> is one of:");
-            System.err.println("    <none>               to print same info as Solaris pmap");
-            System.err.println("    -heap                to print java heap summary");
-            System.err.println("    -histo[:live]        to print histogram of java object heap; if the \"live\"");
-            System.err.println("                         suboption is specified, only count live objects");
-            System.err.println("    -clstats             to print class loader statistics");
-            System.err.println("    -finalizerinfo       to print information on objects awaiting finalization");
-            System.err.println("    -dump:<dump-options> to dump java heap in hprof binary format");
-            System.err.println("                         dump-options:");
-            System.err.println("                           live         dump only live objects; if not specified,");
-            System.err.println("                                        all objects in the heap are dumped.");
-            System.err.println("                           format=b     binary format");
-            System.err.println("                           file=<file>  dump heap to <file>");
-            System.err.println("                         Example: jmap -dump:live,format=b,file=heap.bin <pid>");
-            System.err.println("    -F                   force. Use with -dump:<dump-options> <pid> or -histo");
-            System.err.println("                         to force a heap dump or histogram when <pid> does not");
-            System.err.println("                         respond. The \"live\" suboption is not supported");
-            System.err.println("                         in this mode.");
-            System.err.println("    -h | -help           to print this help message");
-            System.err.println("    -J<flag>             to pass <flag> directly to the runtime system");
-        } else {
-            System.err.println("    jmap -histo <pid>");
-            System.err.println("      (to connect to running process and print histogram of java object heap");
-            System.err.println("    jmap -dump:<dump-options> <pid>");
-            System.err.println("      (to connect to running process and dump java heap)");
-            System.err.println("");
-            System.err.println("    dump-options:");
-            System.err.println("      format=b     binary default");
-            System.err.println("      file=<file>  dump heap to <file>");
-            System.err.println("");
-            System.err.println("    Example:       jmap -dump:format=b,file=heap.bin <pid>");
-        }
-
+        System.err.println("    jmap -clstats <pid>");
+        System.err.println("        to connect to running process and print class loader statistics");
+        System.err.println("    jmap -finalizerinfo <pid>");
+        System.err.println("        to connect to running process and print information on objects awaiting finalization");
+        System.err.println("    jmap -histo[:live] <pid>");
+        System.err.println("        to connect to running process and print histogram of java object heap");
+        System.err.println("        if the \"live\" suboption is specified, only count live objects");
+        System.err.println("    jmap -dump:<dump-options> <pid>");
+        System.err.println("        to connect to running process and dump java heap");
+        System.err.println("");
+        System.err.println("    dump-options:");
+        System.err.println("      live         dump only live objects; if not specified,");
+        System.err.println("                   all objects in the heap are dumped.");
+        System.err.println("      format=b     binary format");
+        System.err.println("      file=<file>  dump heap to <file>");
+        System.err.println("");
+        System.err.println("    Example: jmap -dump:live,format=b,file=heap.bin <pid>");
         System.exit(exit);
     }
 }
