@@ -79,7 +79,14 @@ define_pd_global(bool, CompactStrings, true);
 define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
 
 // Platform dependent flag handling: flags only defined on this platform.
-#define ARCH_FLAGS(develop, product, diagnostic, experimental, notproduct, range, constraint)  \
+#define ARCH_FLAGS(develop, \
+                   product, \
+                   diagnostic, \
+                   experimental, \
+                   notproduct, \
+                   range, \
+                   constraint, \
+                   writeable)  \
                                                                             \
   /* Load poll address from thread. This is used to implement per-thread */ \
   /* safepoints on platforms != IA64. */                                    \

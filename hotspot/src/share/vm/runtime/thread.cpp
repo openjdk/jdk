@@ -60,6 +60,7 @@
 #include "runtime/atomic.inline.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/commandLineFlagConstraintList.hpp"
+#include "runtime/commandLineFlagWriteableList.hpp"
 #include "runtime/commandLineFlagRangeList.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fprofiler.hpp"
@@ -3543,6 +3544,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (!constraint_result) {
     return JNI_EINVAL;
   }
+
+  CommandLineFlagWriteableList::mark_startup();
 
   if (PauseAtStartup) {
     os::pause();

@@ -280,6 +280,12 @@ struct Flag {
     VIOLATES_CONSTRAINT,
     // there is no flag with the given name
     INVALID_FLAG,
+    // the flag can only be set only on command line during invocation of the VM
+    COMMAND_LINE_ONLY,
+    // the flag may only be set once
+    SET_ONLY_ONCE,
+    // the flag is not writable in this combination of product/debug build
+    CONSTANT,
     // other, unspecified error related to setting the flag
     ERR_OTHER
   };
@@ -316,44 +322,44 @@ struct Flag {
   static const char* get_size_t_default_range_str();
   static const char* get_double_default_range_str();
 
-  void check_writable();
+  Flag::Error check_writable(bool changed);
 
   bool is_bool() const;
   bool get_bool() const;
-  void set_bool(bool value);
+  Flag::Error set_bool(bool value);
 
   bool is_int() const;
   int get_int() const;
-  void set_int(int value);
+  Flag::Error set_int(int value);
 
   bool is_uint() const;
   uint get_uint() const;
-  void set_uint(uint value);
+  Flag::Error set_uint(uint value);
 
   bool is_intx() const;
   intx get_intx() const;
-  void set_intx(intx value);
+  Flag::Error set_intx(intx value);
 
   bool is_uintx() const;
   uintx get_uintx() const;
-  void set_uintx(uintx value);
+  Flag::Error set_uintx(uintx value);
 
   bool is_uint64_t() const;
   uint64_t get_uint64_t() const;
-  void set_uint64_t(uint64_t value);
+  Flag::Error set_uint64_t(uint64_t value);
 
   bool is_size_t() const;
   size_t get_size_t() const;
-  void set_size_t(size_t value);
+  Flag::Error set_size_t(size_t value);
 
   bool is_double() const;
   double get_double() const;
-  void set_double(double value);
+  Flag::Error set_double(double value);
 
   bool is_ccstr() const;
   bool ccstr_accumulates() const;
   ccstr get_ccstr() const;
-  void set_ccstr(ccstr value);
+  Flag::Error set_ccstr(ccstr value);
 
   Flags get_origin();
   void set_origin(Flags origin);
@@ -621,8 +627,31 @@ public:
 // constraint is a macro that will expand to custom function call
 //    for constraint checking if provided - see commandLineFlagConstraintList.hpp
 //
+// writeable is a macro that controls if and how the value can change during the runtime
+//
+// writeable(Always) is optional and allows the flag to have its value changed
+//    without any limitations at any time
+//
+// writeable(Once) flag value's can be only set once during the lifetime of VM
+//
+// writeable(CommandLineOnly) flag value's can be only set from command line
+//    (multiple times allowed)
+//
 
-#define RUNTIME_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, manageable, product_rw, lp64_product, range, constraint) \
+
+#define RUNTIME_FLAGS(develop, \
+                      develop_pd, \
+                      product, \
+                      product_pd, \
+                      diagnostic, \
+                      experimental, \
+                      notproduct, \
+                      manageable, \
+                      product_rw, \
+                      lp64_product, \
+                      range, \
+                      constraint, \
+                      writeable) \
                                                                             \
   lp64_product(bool, UseCompressedOops, false,                              \
           "Use 32-bit object references in 64-bit VM. "                     \
@@ -4185,6 +4214,8 @@ public:
 // Only materialize src code for contraint checking when required, ignore otherwise
 #define IGNORE_CONSTRAINT(func,type)
 
+#define IGNORE_WRITEABLE(type)
+
 RUNTIME_FLAGS(DECLARE_DEVELOPER_FLAG, \
               DECLARE_PD_DEVELOPER_FLAG, \
               DECLARE_PRODUCT_FLAG, \
@@ -4196,7 +4227,8 @@ RUNTIME_FLAGS(DECLARE_DEVELOPER_FLAG, \
               DECLARE_PRODUCT_RW_FLAG, \
               DECLARE_LP64_PRODUCT_FLAG, \
               IGNORE_RANGE, \
-              IGNORE_CONSTRAINT)
+              IGNORE_CONSTRAINT, \
+              IGNORE_WRITEABLE)
 
 RUNTIME_OS_FLAGS(DECLARE_DEVELOPER_FLAG, \
                  DECLARE_PD_DEVELOPER_FLAG, \
@@ -4205,7 +4237,8 @@ RUNTIME_OS_FLAGS(DECLARE_DEVELOPER_FLAG, \
                  DECLARE_DIAGNOSTIC_FLAG, \
                  DECLARE_NOTPRODUCT_FLAG, \
                  IGNORE_RANGE, \
-                 IGNORE_CONSTRAINT)
+                 IGNORE_CONSTRAINT, \
+                 IGNORE_WRITEABLE)
 
 ARCH_FLAGS(DECLARE_DEVELOPER_FLAG, \
            DECLARE_PRODUCT_FLAG, \
@@ -4213,7 +4246,8 @@ ARCH_FLAGS(DECLARE_DEVELOPER_FLAG, \
            DECLARE_EXPERIMENTAL_FLAG, \
            DECLARE_NOTPRODUCT_FLAG, \
            IGNORE_RANGE, \
-           IGNORE_CONSTRAINT)
+           IGNORE_CONSTRAINT, \
+           IGNORE_WRITEABLE)
 
 // Extensions
 

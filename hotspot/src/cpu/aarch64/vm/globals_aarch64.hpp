@@ -85,7 +85,14 @@ define_pd_global(intx, InlineSmallCode,          1000);
 
 #ifdef BUILTIN_SIM
 #define UseBuiltinSim           true
-#define ARCH_FLAGS(develop, product, diagnostic, experimental, notproduct, range, constraint) \
+#define ARCH_FLAGS(develop, \
+                   product, \
+                   diagnostic, \
+                   experimental, \
+                   notproduct, \
+                   range, \
+                   constraint, \
+                   writeable) \
                                                                         \
   product(bool, NotifySimulator, UseBuiltinSim,                         \
          "tell the AArch64 sim where we are in method code")            \
@@ -117,7 +124,14 @@ define_pd_global(intx, InlineSmallCode,          1000);
 #define NotifySimulator         false
 #define UseSimulatorCache       false
 #define DisableBCCheck          true
-#define ARCH_FLAGS(develop, product, diagnostic, experimental, notproduct, range, constraint) \
+#define ARCH_FLAGS(develop, \
+                   product, \
+                   diagnostic, \
+                   experimental, \
+                   notproduct, \
+                   range, \
+                   constraint, \
+                   writeable) \
                                                                         \
   product(bool, NearCpool, true,                                        \
          "constant pool is close to instructions")                      \

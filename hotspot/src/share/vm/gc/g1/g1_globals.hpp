@@ -31,7 +31,18 @@
 // Defines all globals flags used by the garbage-first compiler.
 //
 
-#define G1_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, manageable, product_rw, range, constraint) \
+#define G1_FLAGS(develop, \
+                 develop_pd, \
+                 product, \
+                 product_pd, \
+                 diagnostic, \
+                 experimental, \
+                 notproduct, \
+                 manageable, \
+                 product_rw, \
+                 range, \
+                 constraint, \
+                 writeable) \
                                                                             \
   product(bool, G1UseAdaptiveIHOP, true,                                    \
           "Adaptively adjust the initiating heap occupancy from the "       \
@@ -317,6 +328,7 @@ G1_FLAGS(DECLARE_DEVELOPER_FLAG, \
          DECLARE_MANAGEABLE_FLAG, \
          DECLARE_PRODUCT_RW_FLAG, \
          IGNORE_RANGE, \
-         IGNORE_CONSTRAINT)
+         IGNORE_CONSTRAINT, \
+         IGNORE_WRITEABLE)
 
 #endif // SHARE_VM_GC_G1_G1_GLOBALS_HPP
