@@ -103,6 +103,7 @@ suite = {
       "sourceDirs" : ["src"],
       "dependencies" : [
         "jdk.vm.ci.code",
+        "jdk.vm.ci.services",
       ],
       "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "1.8",

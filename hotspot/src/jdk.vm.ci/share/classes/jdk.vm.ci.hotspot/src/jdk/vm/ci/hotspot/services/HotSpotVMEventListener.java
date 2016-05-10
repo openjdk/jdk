@@ -20,19 +20,48 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.hotspot;
+package jdk.vm.ci.hotspot.services;
 
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
+import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.meta.JVMCIMetaAccessContext;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.services.JVMCIPermission;
 
-public interface HotSpotVMEventListener {
+/**
+ * Service-provider class for responding to VM events and for creating
+ * {@link JVMCIMetaAccessContext}s.
+ */
+public abstract class HotSpotVMEventListener {
+
+    private static Void checkPermission() {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new JVMCIPermission());
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unused")
+    HotSpotVMEventListener(Void ignore) {
+    }
+
+    /**
+     * Initializes a new instance of this class.
+     *
+     * @throws SecurityException if a security manager has been installed and it denies
+     *             {@link JVMCIPermission}
+     */
+    protected HotSpotVMEventListener() {
+        this(checkPermission());
+    }
 
     /**
      * Notifies this client that the VM is shutting down.
      */
-    default void notifyShutdown() {
+    public void notifyShutdown() {
     }
 
     /**
@@ -42,7 +71,7 @@ public interface HotSpotVMEventListener {
      * @param installedCode
      * @param compiledCode
      */
-    default void notifyInstall(HotSpotCodeCacheProvider hotSpotCodeCacheProvider, InstalledCode installedCode, CompiledCode compiledCode) {
+    public void notifyInstall(HotSpotCodeCacheProvider hotSpotCodeCacheProvider, InstalledCode installedCode, CompiledCode compiledCode) {
     }
 
     /**
@@ -50,10 +79,10 @@ public interface HotSpotVMEventListener {
      * metadata. It a custom one isn't created then the default implementation will be a single
      * context with globally shared instances of {@link ResolvedJavaType} that are never released.
      *
-     * @param hotSpotJVMCIRuntime
+     * @param runtime the runtime instance that will use the returned context
      * @return a custom context or null
      */
-    default JVMCIMetaAccessContext createMetaAccessContext(HotSpotJVMCIRuntime hotSpotJVMCIRuntime) {
+    public JVMCIMetaAccessContext createMetaAccessContext(HotSpotJVMCIRuntime runtime) {
         return null;
     }
 }

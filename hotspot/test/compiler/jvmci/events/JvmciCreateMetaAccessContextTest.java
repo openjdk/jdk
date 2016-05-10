@@ -38,7 +38,7 @@
  * @run main jdk.test.lib.FileInstaller ../common/services/ ./META-INF/services/
  * @run main jdk.test.lib.FileInstaller
  *     ./JvmciCreateMetaAccessContextTest.config
- *     ./META-INF/services/jdk.vm.ci.hotspot.HotSpotVMEventListener
+ *     ./META-INF/services/jdk.vm.ci.hotspot.services.HotSpotVMEventListener
  * @run main ClassFileInstaller
  *     compiler.jvmci.common.JVMCIHelpers$EmptyHotspotCompiler
  *     compiler.jvmci.common.JVMCIHelpers$EmptyCompilerFactory
@@ -57,13 +57,13 @@
 package compiler.jvmci.events;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import jdk.vm.ci.hotspot.HotSpotVMEventListener;
+import jdk.vm.ci.hotspot.services.HotSpotVMEventListener;
 import jdk.vm.ci.hotspot.MetaAccessWrapper;
 import jdk.vm.ci.meta.JVMCIMetaAccessContext;
 import jdk.test.lib.Asserts;
 
 public class JvmciCreateMetaAccessContextTest
-        implements HotSpotVMEventListener {
+        extends HotSpotVMEventListener {
     private static final boolean PROVIDE_NULL_CONTEXT = Boolean.getBoolean(
             "compiler.jvmci.events.JvmciCreateMetaAccessContextTest"
                     + ".providenull");
