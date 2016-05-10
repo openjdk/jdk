@@ -52,6 +52,11 @@ UNIQ      = uniq
 WC        = wc
 ZIP       = zip
 
+define NEWLINE
+
+
+endef
+
 # Get OS name from uname (Cygwin inexplicably adds _NT-5.1)
 UNAME_S := $(shell $(UNAME) -s | $(CUT) -f1 -d_)
 ifeq ($(UNAME_S), SunOS)
@@ -427,6 +432,20 @@ PHONY_LIST += hotspot_servertest servertest
 
 ################################################################
 
+# Run the native gtest tests from the test image
+
+hotspot_gtest:
+	$(foreach v, $(JVM_VARIANTS), \
+	  $(MAKE) hotspot_gtest$v $(NEWLINE) )
+
+hotspot_gtestserver hotspot_gtestclient hotspot_gtestminimal: hotspot_gtest%:
+	$(TESTNATIVE_DIR)/hotspot/gtest/$*/gtestLauncher \
+	    -jdk $(shell $(GETMIXEDPATH) "$(PRODUCT_HOME)")
+
+PHONY_LIST += hotspot_gtest hotspot_gtestserver hotspot_gtestclient \
+    hotspot_gtestminimal
+
+################################################################
 # Phony targets (e.g. these are not filenames)
 .PHONY: all clean prep $(PHONY_LIST)
 

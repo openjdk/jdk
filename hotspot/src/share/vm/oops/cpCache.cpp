@@ -25,12 +25,12 @@
 #include "precompiled.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/rewriter.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/cpCache.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -438,17 +438,14 @@ bool ConstantPoolCacheEntry::adjust_method_entry(Method* old_method,
       // match old_method so need an update
       // NOTE: can't use set_f2_as_vfinal_method as it asserts on different values
       _f2 = (intptr_t)new_method;
-      if (RC_TRACE_IN_RANGE(0x00100000, 0x00400000)) {
+      if (log_is_enabled(Info, redefine, class, update)) {
+        ResourceMark rm;
         if (!(*trace_name_printed)) {
-          // RC_TRACE_MESG macro has an embedded ResourceMark
-          RC_TRACE_MESG(("adjust: name=%s",
-            old_method->method_holder()->external_name()));
+          log_info(redefine, class, update)("adjust: name=%s", old_method->method_holder()->external_name());
           *trace_name_printed = true;
         }
-        // RC_TRACE macro has an embedded ResourceMark
-        RC_TRACE(0x00400000, ("cpc vf-entry update: %s(%s)",
-          new_method->name()->as_C_string(),
-          new_method->signature()->as_C_string()));
+        log_debug(redefine, class, update, constantpool)
+          ("cpc vf-entry update: %s(%s)", new_method->name()->as_C_string(), new_method->signature()->as_C_string());
       }
       return true;
     }
@@ -465,17 +462,14 @@ bool ConstantPoolCacheEntry::adjust_method_entry(Method* old_method,
 
   if (_f1 == old_method) {
     _f1 = new_method;
-    if (RC_TRACE_IN_RANGE(0x00100000, 0x00400000)) {
+    if (log_is_enabled(Info, redefine, class, update)) {
+      ResourceMark rm;
       if (!(*trace_name_printed)) {
-        // RC_TRACE_MESG macro has an embedded ResourceMark
-        RC_TRACE_MESG(("adjust: name=%s",
-          old_method->method_holder()->external_name()));
+        log_info(redefine, class, update)("adjust: name=%s", old_method->method_holder()->external_name());
         *trace_name_printed = true;
       }
-      // RC_TRACE macro has an embedded ResourceMark
-      RC_TRACE(0x00400000, ("cpc entry update: %s(%s)",
-        new_method->name()->as_C_string(),
-        new_method->signature()->as_C_string()));
+      log_debug(redefine, class, update, constantpool)
+        ("cpc entry update: %s(%s)", new_method->name()->as_C_string(), new_method->signature()->as_C_string());
     }
     return true;
   }

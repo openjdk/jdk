@@ -53,7 +53,6 @@
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
-#include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodComparator.hpp"
 #include "runtime/atomic.inline.hpp"
@@ -2574,17 +2573,17 @@ void InstanceKlass::adjust_default_methods(InstanceKlass* holder, bool* trace_na
       assert(old_method != new_method, "sanity check");
 
       default_methods()->at_put(index, new_method);
-      if (RC_TRACE_IN_RANGE(0x00100000, 0x00400000)) {
+      if (log_is_enabled(Info, redefine, class, update)) {
+        ResourceMark rm;
         if (!(*trace_name_printed)) {
-          // RC_TRACE_MESG macro has an embedded ResourceMark
-          RC_TRACE_MESG(("adjust: klassname=%s default methods from name=%s",
-                         external_name(),
-                         old_method->method_holder()->external_name()));
+          log_info(redefine, class, update)
+            ("adjust: klassname=%s default methods from name=%s",
+             external_name(), old_method->method_holder()->external_name());
           *trace_name_printed = true;
         }
-        RC_TRACE(0x00100000, ("default method update: %s(%s) ",
-                              new_method->name()->as_C_string(),
-                              new_method->signature()->as_C_string()));
+        log_debug(redefine, class, update, vtables)
+          ("default method update: %s(%s) ",
+           new_method->name()->as_C_string(), new_method->signature()->as_C_string());
       }
     }
   }
@@ -3353,8 +3352,8 @@ void InstanceKlass::purge_previous_versions(InstanceKlass* ik) {
     ClassLoaderData* loader_data = ik->class_loader_data();
     assert(loader_data != NULL, "should never be null");
 
-    // RC_TRACE macro has an embedded ResourceMark
-    RC_TRACE(0x00000200, ("purge: %s: previous versions", ik->external_name()));
+    ResourceMark rm;
+    log_trace(redefine, class, iklass, purge)("%s: previous versions", ik->external_name());
 
     // previous versions are linked together through the InstanceKlass
     InstanceKlass* pv_node = ik->previous_versions();
@@ -3372,8 +3371,7 @@ void InstanceKlass::purge_previous_versions(InstanceKlass* ik) {
         // are executing.  Unlink this previous_version.
         // The previous version InstanceKlass is on the ClassLoaderData deallocate list
         // so will be deallocated during the next phase of class unloading.
-        RC_TRACE(0x00000200, ("purge: previous version " INTPTR_FORMAT " is dead",
-                              p2i(pv_node)));
+        log_trace(redefine, class, iklass, purge)("previous version " INTPTR_FORMAT " is dead", p2i(pv_node));
         // For debugging purposes.
         pv_node->set_is_scratch_class();
         pv_node->class_loader_data()->add_to_deallocate_list(pv_node);
@@ -3383,8 +3381,7 @@ void InstanceKlass::purge_previous_versions(InstanceKlass* ik) {
         version++;
         continue;
       } else {
-        RC_TRACE(0x00000200, ("purge: previous version " INTPTR_FORMAT " is alive",
-                              p2i(pv_node)));
+        log_trace(redefine, class, iklass, purge)("previous version " INTPTR_FORMAT " is alive", p2i(pv_node));
         assert(pvcp->pool_holder() != NULL, "Constant pool with no holder");
         guarantee (!loader_data->is_unloading(), "unloaded classes can't be on the stack");
         live_count++;
@@ -3396,8 +3393,7 @@ void InstanceKlass::purge_previous_versions(InstanceKlass* ik) {
       // longer running.
       Array<Method*>* method_refs = pv_node->methods();
       if (method_refs != NULL) {
-        RC_TRACE(0x00000200, ("purge: previous methods length=%d",
-          method_refs->length()));
+        log_trace(redefine, class, iklass, purge)("previous methods length=%d", method_refs->length());
         for (int j = 0; j < method_refs->length(); j++) {
           Method* method = method_refs->at(j);
 
@@ -3409,11 +3405,9 @@ void InstanceKlass::purge_previous_versions(InstanceKlass* ik) {
           } else {
             assert (method->is_obsolete() || method->is_running_emcp(),
                     "emcp method cannot run after emcp bit is cleared");
-            // RC_TRACE macro has an embedded ResourceMark
-            RC_TRACE(0x00000200,
+            log_trace(redefine, class, iklass, purge)
               ("purge: %s(%s): prev method @%d in version @%d is alive",
-              method->name()->as_C_string(),
-              method->signature()->as_C_string(), j, version));
+               method->name()->as_C_string(), method->signature()->as_C_string(), j, version);
           }
         }
       }
@@ -3422,9 +3416,9 @@ void InstanceKlass::purge_previous_versions(InstanceKlass* ik) {
       pv_node = pv_node->previous_versions();
       version++;
     }
-    RC_TRACE(0x00000200,
-      ("purge: previous version stats: live=%d, deleted=%d", live_count,
-      deleted_count));
+    log_trace(redefine, class, iklass, purge)
+      ("previous version stats: live=%d, deleted=%d",
+       live_count, deleted_count);
   }
 }
 
@@ -3459,9 +3453,9 @@ void InstanceKlass::mark_newly_obsolete_methods(Array<Method*>* old_methods,
                 method->signature() == m_signature) {
               // The current RedefineClasses() call has made all EMCP
               // versions of this method obsolete so mark it as obsolete
-              RC_TRACE(0x00000400,
-                ("add: %s(%s): flush obsolete method @%d in version @%d",
-                m_name->as_C_string(), m_signature->as_C_string(), k, j));
+              log_trace(redefine, class, iklass, add)
+                ("%s(%s): flush obsolete method @%d in version @%d",
+                 m_name->as_C_string(), m_signature->as_C_string(), k, j);
 
               method->set_is_obsolete();
               break;
@@ -3493,9 +3487,9 @@ void InstanceKlass::add_previous_version(instanceKlassHandle scratch_class,
   assert(Thread::current()->is_VM_thread(),
          "only VMThread can add previous versions");
 
-  // RC_TRACE macro has an embedded ResourceMark
-  RC_TRACE(0x00000400, ("adding previous version ref for %s, EMCP_cnt=%d",
-    scratch_class->external_name(), emcp_method_count));
+  ResourceMark rm;
+  log_trace(redefine, class, iklass, add)
+    ("adding previous version ref for %s, EMCP_cnt=%d", scratch_class->external_name(), emcp_method_count);
 
   // Clean out old previous versions
   purge_previous_versions(this);
@@ -3511,7 +3505,7 @@ void InstanceKlass::add_previous_version(instanceKlassHandle scratch_class,
   // we don't need to add this as a previous version.
   ConstantPool* cp_ref = scratch_class->constants();
   if (!cp_ref->on_stack()) {
-    RC_TRACE(0x00000400, ("add: scratch class not added; no methods are running"));
+    log_trace(redefine, class, iklass, add)("scratch class not added; no methods are running");
     // For debugging purposes.
     scratch_class->set_is_scratch_class();
     scratch_class->class_loader_data()->add_to_deallocate_list(scratch_class());
@@ -3534,17 +3528,17 @@ void InstanceKlass::add_previous_version(instanceKlassHandle scratch_class,
         // method may exit.   If so, we would set a breakpoint in a method that
         // is never reached, but this won't be noticeable to the programmer.
         old_method->set_running_emcp(true);
-        RC_TRACE(0x00000400, ("add: EMCP method %s is on_stack " INTPTR_FORMAT,
-                              old_method->name_and_sig_as_C_string(), p2i(old_method)));
+        log_trace(redefine, class, iklass, add)
+          ("EMCP method %s is on_stack " INTPTR_FORMAT, old_method->name_and_sig_as_C_string(), p2i(old_method));
       } else if (!old_method->is_obsolete()) {
-        RC_TRACE(0x00000400, ("add: EMCP method %s is NOT on_stack " INTPTR_FORMAT,
-                              old_method->name_and_sig_as_C_string(), p2i(old_method)));
+        log_trace(redefine, class, iklass, add)
+          ("EMCP method %s is NOT on_stack " INTPTR_FORMAT, old_method->name_and_sig_as_C_string(), p2i(old_method));
       }
     }
   }
 
   // Add previous version if any methods are still running.
-  RC_TRACE(0x00000400, ("add: scratch class added; one of its methods is on_stack"));
+  log_trace(redefine, class, iklass, add)("scratch class added; one of its methods is on_stack");
   assert(scratch_class->previous_versions() == NULL, "shouldn't have a previous version");
   scratch_class->link_previous_versions(previous_versions());
   link_previous_versions(scratch_class());

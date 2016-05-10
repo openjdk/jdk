@@ -52,7 +52,8 @@ void SuspendibleThreadSet_init() NOT_ALL_GCS_RETURN;
 // Initialization done by Java thread in init_globals()
 void management_init();
 void bytecodes_init();
-void classLoader_init();
+void classLoader_init1();
+void classLoader_init2(); // note: ClassLoader need 2-phase init
 void compilationPolicy_init();
 void codeCache_init();
 void VM_Version_init();
@@ -102,7 +103,7 @@ jint init_globals() {
   HandleMark hm;
   management_init();
   bytecodes_init();
-  classLoader_init();
+  classLoader_init1();
   compilationPolicy_init();
   codeCache_init();
   CodeCacheExtensions::initialize();
@@ -116,6 +117,7 @@ jint init_globals() {
   if (status != JNI_OK)
     return status;
 
+  classLoader_init2();  // after SymbolTable creation, set up -Xpatch entries
   CodeCacheExtensions::complete_step(CodeCacheExtensionsSteps::Universe);
   interpreter_init();  // before any methods loaded
   CodeCacheExtensions::complete_step(CodeCacheExtensionsSteps::Interpreter);

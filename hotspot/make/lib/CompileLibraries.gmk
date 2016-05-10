@@ -37,6 +37,10 @@ include lib/CompileDtracePreJvm.gmk
 include lib/CompileJvm.gmk
 include lib/CompileDtracePostJvm.gmk
 
+ifeq ($(BUILD_GTEST), true)
+  include lib/CompileGtest.gmk
+endif
+
 all: $(TARGETS)
 
 .PHONY: all

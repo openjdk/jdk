@@ -47,6 +47,12 @@
 
 // Check core dump limit and report possible place where core can be found
 void os::check_dump_limit(char* buffer, size_t bufferSize) {
+  if (!FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !CreateCoredumpOnCrash) {
+    jio_snprintf(buffer, bufferSize, "CreateCoredumpOnCrash is disabled from command line");
+    VMError::record_coredump_status(buffer, false);
+    return;
+  }
+
   int n;
   struct rlimit rlim;
   bool success;

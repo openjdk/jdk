@@ -36,10 +36,10 @@
 #include "compiler/directivesParser.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/bytecode.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
@@ -2001,15 +2001,18 @@ bool nmethod::is_evol_dependent_on(Klass* dependee) {
       Method* method = deps.method_argument(0);
       for (int j = 0; j < dependee_methods->length(); j++) {
         if (dependee_methods->at(j) == method) {
-          // RC_TRACE macro has an embedded ResourceMark
-          RC_TRACE(0x01000000,
-            ("Found evol dependency of nmethod %s.%s(%s) compile_id=%d on method %s.%s(%s)",
-            _method->method_holder()->external_name(),
-            _method->name()->as_C_string(),
-            _method->signature()->as_C_string(), compile_id(),
-            method->method_holder()->external_name(),
-            method->name()->as_C_string(),
-            method->signature()->as_C_string()));
+          if (log_is_enabled(Debug, redefine, class, nmethod)) {
+            ResourceMark rm;
+            log_debug(redefine, class, nmethod)
+              ("Found evol dependency of nmethod %s.%s(%s) compile_id=%d on method %s.%s(%s)",
+               _method->method_holder()->external_name(),
+               _method->name()->as_C_string(),
+               _method->signature()->as_C_string(),
+               compile_id(),
+               method->method_holder()->external_name(),
+               method->name()->as_C_string(),
+               method->signature()->as_C_string());
+          }
           if (TraceDependencies || LogCompilation)
             deps.log_dependency(dependee);
           return true;

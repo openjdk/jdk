@@ -32,23 +32,28 @@
 // (The tags 'all', 'disable' and 'help' are special tags that can
 // not be used in log calls, and should not be listed below.)
 #define LOG_TAG_LIST \
-  LOG_TAG(alloc) \
+  LOG_TAG(add) \
   LOG_TAG(age) \
+  LOG_TAG(alloc) \
   LOG_TAG(arguments) \
+  LOG_TAG(annotation) \
   LOG_TAG(barrier) \
   LOG_TAG(biasedlocking) \
   LOG_TAG(bot) \
+  LOG_TAG(breakpoint) \
   LOG_TAG(census) \
   LOG_TAG(class) \
   LOG_TAG(classhisto) \
   LOG_TAG(cleanup) \
   LOG_TAG(compaction) \
   LOG_TAG(constraints) \
+  LOG_TAG(constantpool) \
   LOG_TAG(coops) \
   LOG_TAG(cpu) \
   LOG_TAG(cset) \
   LOG_TAG(data) \
   LOG_TAG(defaultmethods) \
+  LOG_TAG(dump) \
   LOG_TAG(ergo) \
   LOG_TAG(exceptions) \
   LOG_TAG(exit) \
@@ -57,6 +62,7 @@
   LOG_TAG(heap) \
   LOG_TAG(humongous) \
   LOG_TAG(ihop) \
+  LOG_TAG(iklass) \
   LOG_TAG(init) \
   LOG_TAG(itables) \
   LOG_TAG(jni) \
@@ -65,13 +71,20 @@
   LOG_TAG(load) /* Trace all classes loaded */ \
   LOG_TAG(loader) \
   LOG_TAG(logging) \
+  LOG_TAG(mark) \
   LOG_TAG(marking) \
+  LOG_TAG(methodcomparator) \
+  LOG_TAG(metadata) \
   LOG_TAG(metaspace) \
   LOG_TAG(mmu) \
   LOG_TAG(modules) \
   LOG_TAG(monitorinflation) \
   LOG_TAG(monitormismatch) \
+  LOG_TAG(nmethod) \
+  LOG_TAG(normalize) \
   LOG_TAG(objecttagging) \
+  LOG_TAG(obsolete) \
+  LOG_TAG(oopmap) \
   LOG_TAG(os) \
   LOG_TAG(pagesize) \
   LOG_TAG(path) \
@@ -81,9 +94,11 @@
   LOG_TAG(preorder) /* Trace all classes loaded in order referenced (not loaded) */ \
   LOG_TAG(protectiondomain) /* "Trace protection domain verification" */ \
   LOG_TAG(ref) \
+  LOG_TAG(redefine) \
   LOG_TAG(refine) \
   LOG_TAG(region) \
   LOG_TAG(remset) \
+  LOG_TAG(purge) \
   LOG_TAG(resolve) \
   LOG_TAG(safepoint) \
   LOG_TAG(scavenge) \
@@ -95,6 +110,8 @@
   LOG_TAG(stats) \
   LOG_TAG(stringdedup) \
   LOG_TAG(stringtable) \
+  LOG_TAG(stackmap) \
+  LOG_TAG(subclass) \
   LOG_TAG(survivor) \
   LOG_TAG(sweep) \
   LOG_TAG(task) \
@@ -102,6 +119,8 @@
   LOG_TAG(thread) \
   LOG_TAG(tlab) \
   LOG_TAG(time) \
+  LOG_TAG(timer) \
+  LOG_TAG(update) \
   LOG_TAG(unload) /* Trace unloading of classes */ \
   LOG_TAG(verification) \
   LOG_TAG(verify) \

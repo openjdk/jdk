@@ -120,9 +120,9 @@ public class GetSysPkgTest {
         getPkg("java/nio/charset", "jrt:/java.base");
 
         // Test a package in a module not owned by boot loader.
-        Class clss = Class.forName("javax.activation.DataHandler");
+        Class clss = Class.forName("jdk.nio.zipfs.ZipPath");
         if (clss == null)
-            throw new RuntimeException("Could not find class javax.activation.DataHandler");
+            throw new RuntimeException("Could not find class jdk.nio.zipfs.ZipPath");
         getPkg("javax/activation", null);       // Not owned by boot loader
 
         // Test a package not in jimage file.

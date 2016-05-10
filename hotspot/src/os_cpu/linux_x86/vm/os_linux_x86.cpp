@@ -420,7 +420,8 @@ JVM_handle_linux_signal(int sig,
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
         CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
         if (nm != NULL && nm->has_unsafe_access()) {
-          stub = StubRoutines::handler_for_unsafe_access();
+          address next_pc = Assembler::locate_next_instruction(pc);
+          stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
         }
       }
       else
@@ -469,7 +470,8 @@ JVM_handle_linux_signal(int sig,
     } else if (thread->thread_state() == _thread_in_vm &&
                sig == SIGBUS && /* info->si_code == BUS_OBJERR && */
                thread->doing_unsafe_access()) {
-        stub = StubRoutines::handler_for_unsafe_access();
+        address next_pc = Assembler::locate_next_instruction(pc);
+        stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
     }
 
     // jni_fast_Get<Primitive>Field can trap at certain pc's if a GC kicks in

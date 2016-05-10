@@ -112,6 +112,8 @@ class AbstractWorkGang : public CHeapObj<mtInternal> {
   uint _total_workers;
   // The currently active workers in this gang.
   uint _active_workers;
+  // The count of created workers in the gang.
+  uint _created_workers;
   // Printing support.
   const char* _name;
 
@@ -120,22 +122,31 @@ class AbstractWorkGang : public CHeapObj<mtInternal> {
   const bool _are_GC_task_threads;
   const bool _are_ConcurrentGC_threads;
 
+  void set_thread(uint worker_id, AbstractGangWorker* worker) {
+    _workers[worker_id] = worker;
+  }
+
  public:
   AbstractWorkGang(const char* name, uint workers, bool are_GC_task_threads, bool are_ConcurrentGC_threads) :
       _name(name),
       _total_workers(workers),
       _active_workers(UseDynamicNumberOfGCThreads ? 1U : workers),
+      _created_workers(0),
       _are_GC_task_threads(are_GC_task_threads),
       _are_ConcurrentGC_threads(are_ConcurrentGC_threads)
   { }
 
   // Initialize workers in the gang.  Return true if initialization succeeded.
-  bool initialize_workers();
+  void initialize_workers();
 
   bool are_GC_task_threads()      const { return _are_GC_task_threads; }
   bool are_ConcurrentGC_threads() const { return _are_ConcurrentGC_threads; }
 
   uint total_workers() const { return _total_workers; }
+
+  uint created_workers() const {
+    return _created_workers;
+  }
 
   virtual uint active_workers() const {
     assert(_active_workers <= _total_workers,
@@ -144,21 +155,28 @@ class AbstractWorkGang : public CHeapObj<mtInternal> {
            "Unless dynamic should use total workers");
     return _active_workers;
   }
+
   void set_active_workers(uint v) {
     assert(v <= _total_workers,
            "Trying to set more workers active than there are");
     _active_workers = MIN2(v, _total_workers);
+    add_workers(false /* exit_on_failure */);
     assert(v != 0, "Trying to set active workers to 0");
-    _active_workers = MAX2(1U, _active_workers);
     assert(UseDynamicNumberOfGCThreads || _active_workers == _total_workers,
            "Unless dynamic should use total workers");
     log_info(gc, task)("GC Workers: using %d out of %d", _active_workers, _total_workers);
   }
 
+  // Add GC workers as needed.
+  void add_workers(bool initializing);
+
   // Return the Ith worker.
   AbstractGangWorker* worker(uint i) const;
 
   void threads_do(ThreadClosure* tc) const;
+
+  // Create a GC worker and install it into the work gang.
+  virtual AbstractGangWorker* install_worker(uint which);
 
   // Debugging.
   const char* name() const { return _name; }

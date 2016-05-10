@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  *
  */
+
+package build.tools.projectcreator;
 
 import java.io.File;
 import java.io.IOException;
@@ -317,6 +319,18 @@ public abstract class WinGammaPlatform {
                               HsArgHandler.STRING
                               ),
 
+               new HsArgRule("-makeBinary",
+                              "MakeBinary",
+                              null,
+                              HsArgHandler.STRING
+                              ),
+
+               new HsArgRule("-makeOutput",
+                              "MakeOutput",
+                              null,
+                              HsArgHandler.STRING
+                              ),
+
               new HsArgRule("-platformName",
                               "PlatformName",
                               null,
@@ -552,10 +566,6 @@ public abstract class WinGammaPlatform {
             BuildConfig.getField(null, "ProjectFileName") == null ||
             BuildConfig.getField(null, "CompilerVersion") == null) {
             usage();
-        }
-
-        if (BuildConfig.getField(null, "UseToGeneratePch") == null) {
-            throw new RuntimeException("ERROR: need to specify one file to compute PCH, with -useToGeneratePch flag");
         }
 
         BuildConfig.putField(null, "PlatformObject", this);
