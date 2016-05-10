@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,8 @@ JVMCI_FLAGS(MATERIALIZE_DEVELOPER_FLAG, \
             MATERIALIZE_EXPERIMENTAL_FLAG, \
             MATERIALIZE_NOTPRODUCT_FLAG,
             IGNORE_RANGE, \
-            IGNORE_CONSTRAINT)
+            IGNORE_CONSTRAINT, \
+            IGNORE_WRITEABLE)
 
 #define JVMCI_IGNORE_FLAG_FOUR_PARAM(type, name, value, doc)
 #define JVMCI_IGNORE_FLAG_THREE_PARAM(type, name, doc)
@@ -91,7 +92,8 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
                 JVMCI_IGNORE_FLAG_FOUR_PARAM, \
                 JVMCI_IGNORE_FLAG_FOUR_PARAM, \
                 IGNORE_RANGE, \
-                IGNORE_CONSTRAINT)
+                IGNORE_CONSTRAINT, \
+                IGNORE_WRITEABLE)
   }
 
   // Check consistency of experimental flags if UnlockExperimentalVMOptions is
@@ -105,7 +107,8 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
                 JVMCI_EXPERIMENTAL_FLAG_VALUE_CHANGED_CHECK_CODE, \
                 JVMCI_IGNORE_FLAG_FOUR_PARAM, \
                 IGNORE_RANGE, \
-                IGNORE_CONSTRAINT)
+                IGNORE_CONSTRAINT, \
+                IGNORE_WRITEABLE)
   }
 
 #ifndef PRODUCT
@@ -129,7 +132,8 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
               JVMCI_IGNORE_FLAG_FOUR_PARAM, \
               JVMCI_NOTPRODUCT_FLAG_VALUE_CHANGED_CHECK_CODE, \
               IGNORE_RANGE, \
-              IGNORE_CONSTRAINT)
+              IGNORE_CONSTRAINT, \
+              IGNORE_WRITEABLE)
 
 #undef EMIT_FLAG_VALUE_CHANGED_CHECK_CODE
 #undef JVMCI_DEVELOP_FLAG_VALUE_CHANGED_CHECK_CODE
@@ -167,7 +171,8 @@ void JVMCIGlobals::print_jvmci_args_inconsistency_error_message() {
                 JVMCI_IGNORE_FLAG_FOUR_PARAM, \
                 JVMCI_IGNORE_FLAG_FOUR_PARAM, \
                 IGNORE_RANGE, \
-                IGNORE_CONSTRAINT)
+                IGNORE_CONSTRAINT, \
+                IGNORE_WRITEABLE)
   }
 
   if (UnlockExperimentalVMOptions || !FLAG_IS_DEFAULT(UnlockExperimentalVMOptions)) {
@@ -179,7 +184,8 @@ void JVMCIGlobals::print_jvmci_args_inconsistency_error_message() {
                 JVMCI_EXPERIMENTAL_FLAG_CHECK_PRINT_ERR_MSG_CODE, \
                 JVMCI_IGNORE_FLAG_FOUR_PARAM, \
                 IGNORE_RANGE, \
-                IGNORE_CONSTRAINT)
+                IGNORE_CONSTRAINT, \
+                IGNORE_WRITEABLE)
   }
 
 #ifndef PRODUCT
@@ -203,7 +209,8 @@ void JVMCIGlobals::print_jvmci_args_inconsistency_error_message() {
               JVMCI_IGNORE_FLAG_FOUR_PARAM, \
               JVMCI_NOTPRODUCT_FLAG_CHECK_PRINT_ERR_MSG_CODE, \
               IGNORE_RANGE, \
-              IGNORE_CONSTRAINT)
+              IGNORE_CONSTRAINT, \
+              IGNORE_WRITEABLE)
 
 #undef EMIT_CHECK_PRINT_ERR_MSG_CODE
 #undef JVMCI_DEVELOP_FLAG_CHECK_PRINT_ERR_MSG_CODE

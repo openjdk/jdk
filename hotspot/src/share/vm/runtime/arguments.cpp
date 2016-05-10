@@ -42,6 +42,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/arguments_ext.hpp"
 #include "runtime/commandLineFlagConstraintList.hpp"
+#include "runtime/commandLineFlagWriteableList.hpp"
 #include "runtime/commandLineFlagRangeList.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
@@ -4081,9 +4082,10 @@ bool Arguments::handle_deprecated_print_gc_flags() {
 jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   assert(verify_special_jvm_flags(), "deprecated and obsolete flag table inconsistent");
 
-  // Initialize ranges and constraints
+  // Initialize ranges, constraints and writeables
   CommandLineFlagRangeList::init();
   CommandLineFlagConstraintList::init();
+  CommandLineFlagWriteableList::init();
 
   // If flag "-XX:Flags=flags-file" is used it will be the first option to be processed.
   const char* hotspotrc = ".hotspotrc";
