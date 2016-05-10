@@ -26,10 +26,11 @@
 package sun.tools.jstack;
 
 import java.io.InputStream;
+import java.util.Collection;
 
 import com.sun.tools.attach.VirtualMachine;
-import com.sun.tools.attach.AttachNotSupportedException;
 import sun.tools.attach.HotSpotVirtualMachine;
+import sun.tools.common.ProcessArgumentMatcher;
 
 /*
  * This class is the main class for the JStack utility. It parses its arguments
@@ -74,14 +75,21 @@ public class JStack {
         }
 
         // pass -l to thread dump operation to get extra lock info
-        String pid = args[optionCount];
+        String pidArg = args[optionCount];
         String params[];
         if (locks) {
             params = new String[] { "-l" };
         } else {
             params = new String[0];
         }
-        runThreadDump(pid, params);
+        ProcessArgumentMatcher ap = new ProcessArgumentMatcher(pidArg, JStack.class);
+        Collection<String> pids = ap.getPids();
+        for (String pid : pids) {
+            if (pids.size() > 1) {
+                System.out.println("Pid:" + pid);
+            }
+            runThreadDump(pid, params);
+        }
     }
 
     // Attach to pid and perform a thread dump
@@ -133,9 +141,6 @@ public class JStack {
             }
 
             if (! s.startsWith("-")) {
-                if (! s.matches("[0-9]+")) {
-                    SAOptionError("non PID argument");
-                }
                 paramCount += 1;
             }
         }
