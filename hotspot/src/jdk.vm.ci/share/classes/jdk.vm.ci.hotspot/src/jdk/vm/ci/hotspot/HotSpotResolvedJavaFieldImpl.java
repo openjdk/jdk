@@ -210,6 +210,15 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField, HotSpotP
     }
 
     @Override
+    public Annotation[] getDeclaredAnnotations() {
+        Field javaField = toJava();
+        if (javaField != null) {
+            return javaField.getDeclaredAnnotations();
+        }
+        return new Annotation[0];
+    }
+
+    @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
         Field javaField = toJava();
         if (javaField != null) {
