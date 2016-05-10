@@ -40,7 +40,7 @@ class DefaultDatagramSocketImplFactory {
     static {
         String prefix = null;
         try {
-            prefix = GetPropertyAction.getProperty("impl.prefix", null);
+            prefix = GetPropertyAction.privilegedGetProperty("impl.prefix");
             if (prefix != null)
                 prefixImplClass = Class.forName("java.net."+prefix+"DatagramSocketImpl");
         } catch (Exception e) {
@@ -61,7 +61,9 @@ class DefaultDatagramSocketImplFactory {
         throws SocketException {
         if (prefixImplClass != null) {
             try {
-                return (DatagramSocketImpl)prefixImplClass.newInstance();
+                @SuppressWarnings("deprecation")
+                DatagramSocketImpl result = (DatagramSocketImpl)prefixImplClass.newInstance();
+                return result;
             } catch (Exception e) {
                 throw new SocketException("can't instantiate DatagramSocketImpl");
             }

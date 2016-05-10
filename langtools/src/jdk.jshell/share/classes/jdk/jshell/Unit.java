@@ -440,7 +440,7 @@ final class Unit {
                 : msi.parameterTypes();
     }
 
-    SnippetEvent event(String value, Exception exception) {
+    SnippetEvent event(String value, JShellException exception) {
         boolean wasSignatureChanged = sigChanged();
         state.debug(DBG_EVNT, "Snippet: %s id: %s before: %s status: %s sig: %b cause: %s\n",
                 si, si.id(), prevStatus, si.status(), wasSignatureChanged, causalSnippet);

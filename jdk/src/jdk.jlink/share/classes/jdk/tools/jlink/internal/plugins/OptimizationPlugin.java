@@ -273,7 +273,7 @@ public final class OptimizationPlugin extends AsmPlugin {
             } else if (s.equals(FORNAME_REMOVAL)) {
                 optimizers.add(new ForNameFolding());
             } else {
-                throw new PluginException("Unknown optimization");
+                throw new IllegalArgumentException("Unknown optimization: " + s);
             }
         }
         String f = config.get(LOG);

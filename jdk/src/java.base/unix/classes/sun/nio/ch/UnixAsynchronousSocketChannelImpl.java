@@ -46,8 +46,8 @@ class UnixAsynchronousSocketChannelImpl
 
     private static final boolean disableSynchronousRead;
     static {
-        String propValue = GetPropertyAction
-                .getProperty("sun.nio.ch.disableSynchronousRead", "false");
+        String propValue = GetPropertyAction.privilegedGetProperty(
+            "sun.nio.ch.disableSynchronousRead", "false");
         disableSynchronousRead = (propValue.length() == 0) ?
             true : Boolean.valueOf(propValue);
     }

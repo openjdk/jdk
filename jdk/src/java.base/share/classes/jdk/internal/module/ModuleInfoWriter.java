@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,28 +49,22 @@ public final class ModuleInfoWriter {
      * Writes the given module descriptor to a module-info.class file,
      * returning it in a byte array.
      */
-    private static byte[] toModuleInfo(ModuleDescriptor descriptor) {
+    private static byte[] toModuleInfo(ModuleDescriptor md) {
 
         ClassWriter cw = new ClassWriter(0);
 
-        String name = descriptor.name().replace('.', '/') + "/module-info";
+        String name = md.name().replace('.', '/') + "/module-info";
         cw.visit(Opcodes.V1_8, ACC_MODULE, name, null, null, null);
 
-        cw.visitAttribute(new ModuleAttribute(descriptor));
-        cw.visitAttribute(new ConcealedPackagesAttribute(descriptor.conceals()));
-
-        Optional<Version> oversion = descriptor.version();
-        if (oversion.isPresent())
-            cw.visitAttribute(new VersionAttribute(oversion.get()));
-
-        Optional<String> omain = descriptor.mainClass();
-        if (omain.isPresent())
-            cw.visitAttribute(new MainClassAttribute(omain.get()));
+        cw.visitAttribute(new ModuleAttribute(md));
+        cw.visitAttribute(new ConcealedPackagesAttribute(md.conceals()));
+        md.version().ifPresent(v -> cw.visitAttribute(new VersionAttribute(v)));
+        md.mainClass().ifPresent(mc -> cw.visitAttribute(new MainClassAttribute(mc)));
 
         // write the TargetPlatform attribute if have any of OS name/arch/version
-        String osName = descriptor.osName().orElse(null);
-        String osArch = descriptor.osArch().orElse(null);
-        String osVersion = descriptor.osVersion().orElse(null);
+        String osName = md.osName().orElse(null);
+        String osArch = md.osArch().orElse(null);
+        String osVersion = md.osVersion().orElse(null);
         if (osName != null || osArch != null || osVersion != null) {
             cw.visitAttribute(new TargetPlatformAttribute(osName,
                                                           osArch,

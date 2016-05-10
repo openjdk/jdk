@@ -82,7 +82,9 @@ public class TerminalFactory
                 }
                 else {
                     try {
-                        t = (Terminal) Thread.currentThread().getContextClassLoader().loadClass(type).newInstance();
+                        @SuppressWarnings("deprecation")
+                        Object o = Thread.currentThread().getContextClassLoader().loadClass(type).newInstance();
+                        t = (Terminal) o;
                     }
                     catch (Exception e) {
                         throw new IllegalArgumentException(MessageFormat.format("Invalid terminal type: {0}", type), e);

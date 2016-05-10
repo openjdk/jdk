@@ -386,7 +386,7 @@ public final class CStrike extends PhysicalStrike {
             if (generalCache == null) {
                 return 0L;
             }
-            final Long value = generalCache.get(new Integer(index));
+            final Long value = generalCache.get(Integer.valueOf(index));
             if (value == null) {
                 return 0L;
             }
@@ -415,7 +415,7 @@ public final class CStrike extends PhysicalStrike {
                 generalCache = new HashMap<Integer, Long>();
             }
 
-            generalCache.put(new Integer(index), Long.valueOf(value));
+            generalCache.put(Integer.valueOf(index), Long.valueOf(value));
         }
 
         public synchronized void dispose() {
@@ -526,7 +526,7 @@ public final class CStrike extends PhysicalStrike {
             }
 
             if (generalCache == null) return 0;
-            final Float value = generalCache.get(new Integer(index));
+            final Float value = generalCache.get(Integer.valueOf(index));
             if (value == null) return 0;
             return value.floatValue();
         }
@@ -553,7 +553,7 @@ public final class CStrike extends PhysicalStrike {
                 generalCache = new HashMap<Integer, Float>();
             }
 
-            generalCache.put(new Integer(index), new Float(value));
+            generalCache.put(Integer.valueOf(index), Float.valueOf(value));
         }
 
         private static class SparseBitShiftingTwoLayerArray {

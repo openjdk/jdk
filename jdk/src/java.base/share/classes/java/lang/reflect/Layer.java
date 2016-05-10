@@ -27,6 +27,7 @@ package java.lang.reflect;
 
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.module.ResolvedModule;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,6 +42,8 @@ import java.util.stream.Collectors;
 import jdk.internal.loader.Loader;
 import jdk.internal.loader.LoaderPool;
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.module.ServicesCatalog;
+import jdk.internal.module.ServicesCatalog.ServiceProvider;
 import sun.security.util.SecurityConstants;
 
 
@@ -549,4 +552,55 @@ public final class Layer {
     public static Layer boot() {
         return SharedSecrets.getJavaLangAccess().getBootLayer();
     }
+
+
+    /**
+     * Returns the ServicesCatalog for this Layer, creating it if not
+     * already created.
+     */
+    ServicesCatalog getServicesCatalog() {
+        ServicesCatalog servicesCatalog = this.servicesCatalog;
+        if (servicesCatalog != null)
+            return servicesCatalog;
+
+        Map<String, Set<ServiceProvider>> map = new HashMap<>();
+        for (Module m : nameToModule.values()) {
+            ModuleDescriptor descriptor = m.getDescriptor();
+            for (Provides provides : descriptor.provides().values()) {
+                String service = provides.service();
+                Set<ServiceProvider> providers
+                    = map.computeIfAbsent(service, k -> new HashSet<>());
+                for (String pn : provides.providers()) {
+                    providers.add(new ServiceProvider(m, pn));
+                }
+            }
+        }
+
+        ServicesCatalog catalog = new ServicesCatalog() {
+            @Override
+            public void register(Module module) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public Set<ServiceProvider> findServices(String service) {
+                Set<ServiceProvider> providers = map.get(service);
+                if (providers == null) {
+                    return Collections.emptySet();
+                } else {
+                    return Collections.unmodifiableSet(providers);
+                }
+            }
+        };
+
+        synchronized (this) {
+            servicesCatalog = this.servicesCatalog;
+            if (servicesCatalog == null) {
+                this.servicesCatalog = servicesCatalog = catalog;
+            }
+        }
+
+        return servicesCatalog;
+    }
+
+    private volatile ServicesCatalog servicesCatalog;
 }

@@ -103,6 +103,16 @@ public class JavacTask extends AbstractTask<JavacTask> {
     }
 
     /**
+     * Sets the classpath.
+     * @param classpath the classpath
+     * @return this task object
+     */
+    public JavacTask classpath(List<Path> classpath) {
+        this.classpath = classpath;
+        return this;
+    }
+
+    /**
      * Sets the sourcepath.
      * @param sourcepath the sourcepath
      * @return this task object
@@ -122,6 +132,16 @@ public class JavacTask extends AbstractTask<JavacTask> {
      */
     public JavacTask sourcepath(Path... sourcepath) {
         this.sourcepath = Arrays.asList(sourcepath);
+        return this;
+    }
+
+    /**
+     * Sets the sourcepath.
+     * @param sourcepath the sourcepath
+     * @return this task object
+     */
+    public JavacTask sourcepath(List<Path> sourcepath) {
+        this.sourcepath = sourcepath;
         return this;
     }
 
@@ -182,6 +202,18 @@ public class JavacTask extends AbstractTask<JavacTask> {
      */
     public JavacTask files(Path... files) {
         this.files = Stream.of(files)
+                .map(Path::toString)
+                .collect(Collectors.toList());
+        return this;
+    }
+
+    /**
+     * Sets the files to be compiled or analyzed.
+     * @param files the files
+     * @return this task object
+     */
+    public JavacTask files(List<Path> files) {
+        this.files = files.stream()
                 .map(Path::toString)
                 .collect(Collectors.toList());
         return this;

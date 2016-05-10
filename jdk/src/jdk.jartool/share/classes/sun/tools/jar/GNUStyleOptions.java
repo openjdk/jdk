@@ -136,10 +136,10 @@ class GNUStyleOptions {
                     jartool.moduleVersion = Version.parse(arg);
                 }
             },
-            new Option(true, OptionType.CREATE_UPDATE, "--hash-dependencies") {
+            new Option(true, OptionType.CREATE_UPDATE, "--hash-modules") {
                 void process(Main jartool, String opt, String arg) throws BadArgs {
                     try {
-                        jartool.dependenciesToHash = Pattern.compile(arg);
+                        jartool.modulesToHash = Pattern.compile(arg);
                     } catch (PatternSyntaxException e) {
                         throw new BadArgs("err.badpattern", arg).showUsage(true);
                     }

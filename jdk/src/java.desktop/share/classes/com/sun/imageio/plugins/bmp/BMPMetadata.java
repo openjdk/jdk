@@ -128,7 +128,7 @@ public class BMPMetadata extends IIOMetadata implements BMPConstants {
         addChildNode(root, "BMPVersion", bmpVersion);
         addChildNode(root, "Width", width);
         addChildNode(root, "Height", height);
-        addChildNode(root, "BitsPerPixel", new Short(bitsPerPixel));
+        addChildNode(root, "BitsPerPixel", Short.valueOf(bitsPerPixel));
         addChildNode(root, "Compression", compression);
         addChildNode(root, "ImageSize", imageSize);
 
@@ -172,12 +172,12 @@ public class BMPMetadata extends IIOMetadata implements BMPConstants {
                 red = palette[j++] & 0xff;
                 green = palette[j++] & 0xff;
                 blue = palette[j++] & 0xff;
-                addChildNode(entry, "Red", new Byte((byte)red));
-                addChildNode(entry, "Green", new Byte((byte)green));
-                addChildNode(entry, "Blue", new Byte((byte)blue));
+                addChildNode(entry, "Red", Byte.valueOf((byte)red));
+                addChildNode(entry, "Green", Byte.valueOf((byte)green));
+                addChildNode(entry, "Blue", Byte.valueOf((byte)blue));
                 if (numComps == 4)
                     addChildNode(entry, "Alpha",
-                                 new Byte((byte)(palette[j++] & 0xff)));
+                                 Byte.valueOf((byte)(palette[j++] & 0xff)));
             }
         }
 
@@ -284,9 +284,9 @@ public class BMPMetadata extends IIOMetadata implements BMPConstants {
 
     private void addXYZPoints(IIOMetadataNode root, String name, double x, double y, double z) {
         IIOMetadataNode node = addChildNode(root, name, null);
-        addChildNode(node, "X", new Double(x));
-        addChildNode(node, "Y", new Double(y));
-        addChildNode(node, "Z", new Double(z));
+        addChildNode(node, "X", Double.valueOf(x));
+        addChildNode(node, "Y", Double.valueOf(y));
+        addChildNode(node, "Z", Double.valueOf(z));
     }
 
     private IIOMetadataNode addChildNode(IIOMetadataNode root,

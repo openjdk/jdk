@@ -51,10 +51,10 @@ import java.io.Serializable;
  * range zero to one hundred, with
  * fifty as the initial value, one could write:
  * <pre>
- * Integer value = new Integer(50);
- * Integer min = new Integer(0);
- * Integer max = new Integer(100);
- * Integer step = new Integer(1);
+ * Integer value = Integer.valueOf(50);
+ * Integer min = Integer.valueOf(0);
+ * Integer max = Integer.valueOf(100);
+ * Integer step = Integer.valueOf(1);
  * SpinnerNumberModel model = new SpinnerNumberModel(value, min, max, step);
  * int fifty = model.getNumber().intValue();
  * </pre>
@@ -175,7 +175,8 @@ public class SpinnerNumberModel extends AbstractSpinnerModel implements Serializ
      *     <code>minimum &lt;= value &lt;= maximum</code>
      */
     public SpinnerNumberModel(double value, double minimum, double maximum, double stepSize) {
-        this(new Double(value), new Double(minimum), new Double(maximum), new Double(stepSize));
+        this(Double.valueOf(value), Double.valueOf(minimum),
+             Double.valueOf(maximum), Double.valueOf(stepSize));
     }
 
 
@@ -337,10 +338,10 @@ public class SpinnerNumberModel extends AbstractSpinnerModel implements Serializ
         if ((value instanceof Float) || (value instanceof Double)) {
             double v = value.doubleValue() + (stepSize.doubleValue() * (double)dir);
             if (value instanceof Double) {
-                newValue = new Double(v);
+                newValue = Double.valueOf(v);
             }
             else {
-                newValue = new Float(v);
+                newValue = Float.valueOf((float)v);
             }
         } else {
             long v = value.longValue() + (stepSize.longValue() * (long)dir);

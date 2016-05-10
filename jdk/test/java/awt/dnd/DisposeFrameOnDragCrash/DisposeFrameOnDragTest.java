@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,17 +56,24 @@ public class DisposeFrameOnDragTest {
             }
         });
 
-        Util.waitForIdle(null);
+        Robot testRobot = null;
         try {
-            Point loc = textArea.getLocationOnScreen();
-            Util.drag(new Robot(),
-                    new Point((int) loc.x + 3, (int) loc.y + 3),
-                    new Point((int) loc.x + 40, (int) loc.y + 40),
-                    InputEvent.BUTTON1_MASK);
-        } catch (AWTException ex) {
-            throw new RuntimeException("Could not initiate a drag operation");
+            testRobot = new Robot();
+        } catch(AWTException ex) {
+            throw new RuntimeException("Error while creating Robot");
         }
-        Util.waitForIdle(null);
+
+        Util.waitForIdle(testRobot);
+
+        Point loc = textArea.getLocationOnScreen();
+        Util.drag(testRobot,
+                new Point((int) loc.x + 3, (int) loc.y + 3),
+                new Point((int) loc.x + 40, (int) loc.y + 40),
+                InputEvent.BUTTON1_MASK);
+
+        Util.waitForIdle(testRobot);
+
+        testRobot.delay(200);
     }
 
     private static void constructTestUI() {

@@ -136,8 +136,9 @@ public class RowSetProvider {
                 }
                 // getFactoryClass takes care of adding the read edge if
                 // necessary
-                Class<?> c = getFactoryClass(factoryClassName, null, false);
-                factory = (RowSetFactory) c.newInstance();
+                @SuppressWarnings("deprecation")
+                Object o = getFactoryClass(factoryClassName, null, false).newInstance();
+                factory = (RowSetFactory) o;
             }
         } catch (Exception e) {
             throw new SQLException( "RowSetFactory: " + factoryClassName +
@@ -202,6 +203,7 @@ public class RowSetProvider {
             // getFactoryClass takes care of adding the read edge if
             // necessary
             Class<?> providerClass = getFactoryClass(factoryClassName, cl, false);
+            @SuppressWarnings("deprecation")
             RowSetFactory instance = (RowSetFactory) providerClass.newInstance();
             if (debug) {
                 trace("Created new instance of " + providerClass +

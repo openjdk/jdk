@@ -41,6 +41,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -49,6 +50,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -315,7 +317,7 @@ public class ToolBox {
      * Reads the lines of a file.
      * The file is read using the default character encoding.
      * @param path the file to be read
-     * @return the lines of the file.
+     * @return the lines of the file
      * @throws IOException if an error occurred while reading the file
      */
     public List<String> readAllLines(String path) throws IOException {
@@ -326,7 +328,7 @@ public class ToolBox {
      * Reads the lines of a file.
      * The file is read using the default character encoding.
      * @param path the file to be read
-     * @return the lines of the file.
+     * @return the lines of the file
      * @throws IOException if an error occurred while reading the file
      */
     public List<String> readAllLines(Path path) throws IOException {
@@ -348,7 +350,7 @@ public class ToolBox {
      * Reads the lines of a file using the given encoding.
      * @param path the file to be read
      * @param encoding the encoding to be used to read the file
-     * @return the lines of the file.
+     * @return the lines of the file
      * @throws IOException if an error occurred while reading the file
      */
     public List<String> readAllLines(Path path, String encoding) throws IOException {
@@ -357,6 +359,30 @@ public class ToolBox {
 
     private Charset getCharset(String encoding) {
         return (encoding == null) ? Charset.defaultCharset() : Charset.forName(encoding);
+    }
+
+    /**
+     * Find .java files in one or more directories.
+     * <p>Similar to the shell "find" command: {@code find paths -name \*.java}.
+     * @param paths the directories in which to search for .java files
+     * @return the .java files found
+     * @throws IOException if an error occurred while searching for files
+     */
+    public Path[] findJavaFiles(Path... paths) throws IOException {
+        Set<Path> files = new TreeSet<>();  // use TreeSet to force a consistent order
+        for (Path p : paths) {
+            Files.walkFileTree(p, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                        throws IOException {
+                    if (file.getFileName().toString().endsWith(".java")) {
+                        files.add(file);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        }
+        return files.toArray(new Path[files.size()]);
     }
 
     /**

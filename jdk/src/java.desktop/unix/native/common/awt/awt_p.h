@@ -41,13 +41,6 @@
 #include <string.h>
 #include <unistd.h>
 #ifndef HEADLESS
-#include <X11/Intrinsic.h>
-#include <X11/IntrinsicP.h>
-#include <X11/Shell.h>
-#include <X11/StringDefs.h>
-#include <X11/Xatom.h>
-#include <X11/keysym.h>
-#include <X11/keysymdef.h>
 #include <X11/extensions/Xrender.h>
 #endif /* !HEADLESS */
 #include "awt.h"

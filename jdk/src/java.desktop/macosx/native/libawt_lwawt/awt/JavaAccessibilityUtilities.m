@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,9 @@ NSString *getJavaRole(JNIEnv *env, jobject axComponent, jobject component)
     jobject axRole = JNFCallStaticObjectMethod(env, sjm_getAccessibleRole, axComponent, component); // AWT_THREADING Safe (AWTRunLoopMode)
     if (axRole == NULL) return @"unknown";
 
-    return JNFJavaToNSString(env, axRole);
+    NSString* str = JNFJavaToNSString(env, axRole);
+    (*env)->DeleteLocalRef(env, axRole);
+    return str;
 }
 
 jobject getAxSelection(JNIEnv *env, jobject axContext, jobject component)
@@ -126,21 +128,27 @@ BOOL isVertical(JNIEnv *env, jobject axContext, jobject component)
 {
     static JNF_STATIC_MEMBER_CACHE(jm_VERTICAL, sjc_AccessibleState, "VERTICAL", "Ljavax/accessibility/AccessibleState;");
     jobject axVertState = JNFGetStaticObjectField(env, jm_VERTICAL);
-    return containsAxState(env, axContext, axVertState, component);
+    BOOL vertical = containsAxState(env, axContext, axVertState, component);
+    (*env)->DeleteLocalRef(env, axVertState);
+    return vertical;
 }
 
 BOOL isHorizontal(JNIEnv *env, jobject axContext, jobject component)
 {
     static JNF_STATIC_MEMBER_CACHE(jm_HORIZONTAL, sjc_AccessibleState, "HORIZONTAL", "Ljavax/accessibility/AccessibleState;");
     jobject axHorizState = JNFGetStaticObjectField(env, jm_HORIZONTAL);
-    return containsAxState(env, axContext, axHorizState, component);
+    BOOL horizontal = containsAxState(env, axContext, axHorizState, component);
+    (*env)->DeleteLocalRef(env, axHorizState);
+    return horizontal;
 }
 
 BOOL isShowing(JNIEnv *env, jobject axContext, jobject component)
 {
     static JNF_STATIC_MEMBER_CACHE(jm_SHOWING, sjc_AccessibleState, "SHOWING", "Ljavax/accessibility/AccessibleState;");
     jobject axVisibleState = JNFGetStaticObjectField(env, jm_SHOWING);
-    return containsAxState(env, axContext, axVisibleState, component);
+    BOOL showing = containsAxState(env, axContext, axVisibleState, component);
+    (*env)->DeleteLocalRef(env, axVisibleState);
+    return showing;
 }
 
 NSPoint getAxComponentLocationOnScreen(JNIEnv *env, jobject axComponent, jobject component)

@@ -35,7 +35,9 @@
 #include "debug_util.h"
 
 #if !defined(HEADLESS) && !defined(MACOSX)
-#include <X11/Intrinsic.h>
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+typedef char Boolean;
 #endif /* !HEADLESS && !MACOSX */
 
 

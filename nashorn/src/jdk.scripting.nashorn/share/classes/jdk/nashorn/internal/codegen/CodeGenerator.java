@@ -4310,7 +4310,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      * @param ident identifier for block or function where applicable
      */
     private void printSymbols(final Block block, final FunctionNode function, final String ident) {
-        if (compiler.getScriptEnvironment()._print_symbols || function.getFlag(FunctionNode.IS_PRINT_SYMBOLS)) {
+        if (compiler.getScriptEnvironment()._print_symbols || function.getDebugFlag(FunctionNode.DEBUG_PRINT_SYMBOLS)) {
             final PrintWriter out = compiler.getScriptEnvironment().getErr();
             out.println("[BLOCK in '" + ident + "']");
             if (!block.printSymbols(out)) {

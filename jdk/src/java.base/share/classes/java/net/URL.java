@@ -1198,8 +1198,9 @@ public final class URL implements java.io.Serializable {
         public URLStreamHandler createURLStreamHandler(String protocol) {
             String name = PREFIX + "." + protocol + ".Handler";
             try {
-                Class<?> c = Class.forName(name);
-                return (URLStreamHandler)c.newInstance();
+                @SuppressWarnings("deprecation")
+                Object o = Class.forName(name).newInstance();
+                return (URLStreamHandler)o;
             } catch (ClassNotFoundException x) {
                 // ignore
             } catch (Exception e) {
@@ -1212,7 +1213,7 @@ public final class URL implements java.io.Serializable {
 
     private static URLStreamHandler lookupViaProperty(String protocol) {
         String packagePrefixList =
-                GetPropertyAction.getProperty(protocolPathProp);
+                GetPropertyAction.privilegedGetProperty(protocolPathProp);
         if (packagePrefixList == null) {
             // not set
             return null;
@@ -1234,7 +1235,9 @@ public final class URL implements java.io.Serializable {
                     }
                 }
                 if (cls != null) {
-                    handler = (URLStreamHandler)cls.newInstance();
+                    @SuppressWarnings("deprecation")
+                    Object tmp = cls.newInstance();
+                    handler = (URLStreamHandler)tmp;
                 }
             } catch (Exception e) {
                 // any number of exceptions can get thrown here

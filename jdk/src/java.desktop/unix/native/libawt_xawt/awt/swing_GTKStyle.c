@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,11 @@
  */
 
 #include <stdlib.h>
-#include "gtk2_interface.h"
+#include <stdio.h>
+#include "gtk_interface.h"
 #include "com_sun_java_swing_plaf_gtk_GTKStyle.h"
+
+const char *getStrFor(JNIEnv *env, jstring val);
 
 /*
  * Class:     com_sun_java_swing_plaf_gtk_GTKStyle
@@ -37,9 +40,9 @@ Java_com_sun_java_swing_plaf_gtk_GTKStyle_nativeGetXThickness(
     JNIEnv *env, jclass klass, jint widget_type)
 {
     jint ret;
-    fp_gdk_threads_enter();
-    ret = gtk2_get_xthickness(env, widget_type);
-    fp_gdk_threads_leave();
+    gtk->gdk_threads_enter();
+    ret = gtk->get_xthickness(env, widget_type);
+    gtk->gdk_threads_leave();
     return ret;
 }
 
@@ -53,9 +56,9 @@ Java_com_sun_java_swing_plaf_gtk_GTKStyle_nativeGetYThickness(
     JNIEnv *env, jclass klass, jint widget_type)
 {
     jint ret;
-    fp_gdk_threads_enter();
-    ret = gtk2_get_ythickness(env, widget_type);
-    fp_gdk_threads_leave();
+    gtk->gdk_threads_enter();
+    ret = gtk->get_ythickness(env, widget_type);
+    gtk->gdk_threads_leave();
     return ret;
 }
 
@@ -70,9 +73,9 @@ Java_com_sun_java_swing_plaf_gtk_GTKStyle_nativeGetColorForState(
     jint state_type, jint type_id)
 {
     jint ret;
-    fp_gdk_threads_enter();
-    ret = gtk2_get_color_for_state(env, widget_type, state_type, type_id);
-    fp_gdk_threads_leave();
+    gtk->gdk_threads_enter();
+    ret = gtk->get_color_for_state(env, widget_type, state_type, type_id);
+    gtk->gdk_threads_leave();
     return ret;
 }
 
@@ -86,9 +89,9 @@ Java_com_sun_java_swing_plaf_gtk_GTKStyle_nativeGetClassValue(
     JNIEnv *env, jclass klass, jint widget_type, jstring key)
 {
     jobject ret;
-    fp_gdk_threads_enter();
-    ret = gtk2_get_class_value(env, widget_type, key);
-    fp_gdk_threads_leave();
+    gtk->gdk_threads_enter();
+    ret = gtk->get_class_value(env, widget_type, getStrFor(env, key));
+    gtk->gdk_threads_leave();
     return ret;
 }
 
@@ -102,8 +105,8 @@ Java_com_sun_java_swing_plaf_gtk_GTKStyle_nativeGetPangoFontName(
     JNIEnv *env, jclass klass, jint widget_type)
 {
     jstring ret;
-    fp_gdk_threads_enter();
-    ret = gtk2_get_pango_font_name(env, widget_type);
-    fp_gdk_threads_leave();
+    gtk->gdk_threads_enter();
+    ret = gtk->get_pango_font_name(env, widget_type);
+    gtk->gdk_threads_leave();
     return ret;
 }
