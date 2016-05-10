@@ -273,7 +273,7 @@ void G1CMRootRegions::prepare_for_scan() {
 
   // Currently, only survivors can be root regions.
   _claimed_survivor_index = 0;
-  _scan_in_progress = true;
+  _scan_in_progress = _survivors->regions()->is_nonempty();
   _should_abort = false;
 }
 
