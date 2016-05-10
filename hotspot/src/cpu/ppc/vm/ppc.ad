@@ -817,6 +817,16 @@ source_hpp %{
 
 source %{
 
+// Should the Matcher clone shifts on addressing modes, expecting them
+// to be subsumed into complex addressing expressions or compute them
+// into registers?
+bool Matcher::clone_address_expressions(AddPNode* m, Matcher::MStack& mstack, VectorSet& address_visited) {
+  return clone_base_plus_offset_address(m, mstack, address_visited);
+}
+
+void Compile::reshape_address(AddPNode* addp) {
+}
+
 // Optimize load-acquire.
 //
 // Check if acquire is unnecessary due to following operation that does
@@ -2156,11 +2166,6 @@ const int Matcher::float_cmove_cost() { return ConditionalMoveLimit; }
 
 // Power6 requires postalloc expand (see block.cpp for description of postalloc expand).
 const bool Matcher::require_postalloc_expand = true;
-
-// Should the Matcher clone shifts on addressing modes, expecting them to
-// be subsumed into complex addressing expressions or compute them into
-// registers? True for Intel but false for most RISCs.
-const bool Matcher::clone_shift_expressions = false;
 
 // Do we need to mask the count passed to shift instructions or does
 // the cpu only look at the lower 5/6 bits anyway?

@@ -68,6 +68,7 @@ public class UseSHASpecificTestCaseForUnsupportedCPU
                     "%s option should be disabled on unsupported CPU"
                         + " even if all UseSHA*Intrinsics options were enabled.",
                     SHAOptionsBase.USE_SHA_OPTION),
+                SHAOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
                 CommandLineOptionTest.prepareBooleanFlag(
                         SHAOptionsBase.USE_SHA1_INTRINSICS_OPTION, true),
                 CommandLineOptionTest.prepareBooleanFlag(
@@ -84,6 +85,7 @@ public class UseSHASpecificTestCaseForUnsupportedCPU
                         + " and %s was enabled as well",
                     SHAOptionsBase.USE_SHA_OPTION,
                     SHAOptionsBase.USE_SHA_OPTION),
+                SHAOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
                 CommandLineOptionTest.prepareBooleanFlag(
                         SHAOptionsBase.USE_SHA_OPTION, true),
                 CommandLineOptionTest.prepareBooleanFlag(
