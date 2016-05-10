@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,16 @@
 // Defines all globals flags used by the server compiler.
 //
 
-#define C2_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, range, constraint) \
+#define C2_FLAGS(develop, \
+                 develop_pd, \
+                 product, \
+                 product_pd, \
+                 diagnostic, \
+                 experimental, \
+                 notproduct, \
+                 range, \
+                 constraint, \
+                 writeable) \
                                                                             \
   develop(bool, StressLCM, false,                                           \
           "Randomize instruction scheduling in LCM")                        \
@@ -758,6 +767,7 @@ C2_FLAGS(DECLARE_DEVELOPER_FLAG, \
          DECLARE_EXPERIMENTAL_FLAG, \
          DECLARE_NOTPRODUCT_FLAG, \
          IGNORE_RANGE, \
-         IGNORE_CONSTRAINT)
+         IGNORE_CONSTRAINT, \
+         IGNORE_WRITEABLE)
 
 #endif // SHARE_VM_OPTO_C2_GLOBALS_HPP
