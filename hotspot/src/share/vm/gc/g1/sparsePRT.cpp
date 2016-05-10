@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/heapRegion.hpp"
+#include "gc/g1/heapRegionBounds.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/sparsePRT.hpp"
 #include "gc/shared/cardTableModRefBS.hpp"
@@ -32,46 +33,54 @@
 #include "runtime/atomic.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 
-void SparsePRTEntry::init(RegionIdx_t region_ind) {
-  _region_ind = region_ind;
-  _next_index = NullEntry;
+// Check that the size of the SparsePRTEntry is evenly divisible by the maximum
+// member type to avoid SIGBUS when accessing them.
+STATIC_ASSERT(sizeof(SparsePRTEntry) % sizeof(int) == 0);
 
-  for (int i = 0; i < cards_num(); i++) {
-    _cards[i] = NullEntry;
-  }
+void SparsePRTEntry::init(RegionIdx_t region_ind) {
+  // Check that the card array element type can represent all cards in the region.
+  // Choose a large SparsePRTEntry::card_elem_t (e.g. CardIdx_t) if required.
+  assert(((size_t)1 << (sizeof(SparsePRTEntry::card_elem_t) * BitsPerByte)) *
+         G1SATBCardTableModRefBS::card_size >= HeapRegionBounds::max_size(), "precondition");
+  assert(G1RSetSparseRegionEntries > 0, "precondition");
+  _region_ind = region_ind;
+  _next_index = RSHashTable::NullEntry;
+  _next_null = 0;
 }
 
 bool SparsePRTEntry::contains_card(CardIdx_t card_index) const {
-  for (int i = 0; i < cards_num(); i++) {
-    if (_cards[i] == card_index) return true;
+  for (int i = 0; i < num_valid_cards(); i++) {
+    if (card(i) == card_index) {
+      return true;
+    }
   }
   return false;
 }
 
-int SparsePRTEntry::num_valid_cards() const {
-  int sum = 0;
-  for (int i = 0; i < cards_num(); i++) {
-    sum += (_cards[i] != NullEntry);
-  }
-  return sum;
-}
-
 SparsePRTEntry::AddCardResult SparsePRTEntry::add_card(CardIdx_t card_index) {
-  for (int i = 0; i < cards_num(); i++) {
-    CardIdx_t c = _cards[i];
-    if (c == card_index) return found;
-    if (c == NullEntry) { _cards[i] = card_index; return added; }
+  for (int i = 0; i < num_valid_cards(); i++) {
+    if (card(i) == card_index) {
+      return found;
+    }
   }
+  if (num_valid_cards() < cards_num() - 1) {
+    _cards[_next_null] = (card_elem_t)card_index;
+    _next_null++;
+    return added;
+   }
   // Otherwise, we're full.
   return overflow;
 }
 
-void SparsePRTEntry::copy_cards(CardIdx_t* cards) const {
-  memcpy(cards, _cards, cards_num() * sizeof(CardIdx_t));
+void SparsePRTEntry::copy_cards(card_elem_t* cards) const {
+  memcpy(cards, _cards, cards_num() * sizeof(card_elem_t));
 }
 
 void SparsePRTEntry::copy_cards(SparsePRTEntry* e) const {
-  copy_cards(&e->_cards[0]);
+  copy_cards(e->_cards);
+  assert(_next_null >= 0, "invariant");
+  assert(_next_null <= cards_num(), "invariant");
+  e->_next_null = _next_null;
 }
 
 // ----------------------------------------------------------------------
@@ -125,16 +134,6 @@ bool RSHashTable::add_card(RegionIdx_t region_ind, CardIdx_t card_index) {
   if (res == SparsePRTEntry::added) _occupied_cards++;
   assert(e->num_valid_cards() > 0, "Postcondition");
   return res != SparsePRTEntry::overflow;
-}
-
-bool RSHashTable::get_cards(RegionIdx_t region_ind, CardIdx_t* cards) {
-  SparsePRTEntry* entry = get_entry(region_ind);
-  if (entry == NULL) {
-    return false;
-  }
-  // Otherwise...
-  entry->copy_cards(cards);
-  return true;
 }
 
 SparsePRTEntry* RSHashTable::get_entry(RegionIdx_t region_ind) const {
@@ -218,17 +217,16 @@ void RSHashTable::add_entry(SparsePRTEntry* e) {
 }
 
 CardIdx_t RSHashTableIter::find_first_card_in_list() {
-  CardIdx_t res;
   while (_bl_ind != RSHashTable::NullEntry) {
-    res = _rsht->entry(_bl_ind)->card(0);
-    if (res != SparsePRTEntry::NullEntry) {
-      return res;
+    SparsePRTEntry* sparse_entry = _rsht->entry(_bl_ind);
+    if (sparse_entry->num_valid_cards() > 0) {
+      return sparse_entry->card(0);
     } else {
-      _bl_ind = _rsht->entry(_bl_ind)->next_index();
+      _bl_ind = sparse_entry->next_index();
     }
   }
   // Otherwise, none found:
-  return SparsePRTEntry::NullEntry;
+  return NoCardFound;
 }
 
 size_t RSHashTableIter::compute_card_ind(CardIdx_t ci) {
@@ -237,20 +235,22 @@ size_t RSHashTableIter::compute_card_ind(CardIdx_t ci) {
 
 bool RSHashTableIter::has_next(size_t& card_index) {
   _card_ind++;
-  CardIdx_t ci;
-  if (_card_ind < SparsePRTEntry::cards_num() &&
-      ((ci = _rsht->entry(_bl_ind)->card(_card_ind)) !=
-       SparsePRTEntry::NullEntry)) {
-    card_index = compute_card_ind(ci);
-    return true;
+  if (_bl_ind >= 0) {
+    SparsePRTEntry* e = _rsht->entry(_bl_ind);
+    if (_card_ind < e->num_valid_cards()) {
+      CardIdx_t ci = e->card(_card_ind);
+      card_index = compute_card_ind(ci);
+      return true;
+    }
   }
+
   // Otherwise, must find the next valid entry.
   _card_ind = 0;
 
   if (_bl_ind != RSHashTable::NullEntry) {
       _bl_ind = _rsht->entry(_bl_ind)->next_index();
-      ci = find_first_card_in_list();
-      if (ci != SparsePRTEntry::NullEntry) {
+      CardIdx_t ci = find_first_card_in_list();
+      if (ci != NoCardFound) {
         card_index = compute_card_ind(ci);
         return true;
       }
@@ -259,8 +259,8 @@ bool RSHashTableIter::has_next(size_t& card_index) {
   _tbl_ind++;
   while ((size_t)_tbl_ind < _rsht->capacity()) {
     _bl_ind = _rsht->_buckets[_tbl_ind];
-    ci = find_first_card_in_list();
-    if (ci != SparsePRTEntry::NullEntry) {
+    CardIdx_t ci = find_first_card_in_list();
+    if (ci != NoCardFound) {
       card_index = compute_card_ind(ci);
       return true;
     }
@@ -387,10 +387,6 @@ bool SparsePRT::add_card(RegionIdx_t region_id, CardIdx_t card_index) {
     expand();
   }
   return _next->add_card(region_id, card_index);
-}
-
-bool SparsePRT::get_cards(RegionIdx_t region_id, CardIdx_t* cards) {
-  return _next->get_cards(region_id, cards);
 }
 
 SparsePRTEntry* SparsePRT::get_entry(RegionIdx_t region_id) {
