@@ -25,13 +25,14 @@
 
 package sun.tools.jinfo;
 
-import java.util.Arrays;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 
 import com.sun.tools.attach.VirtualMachine;
 
 import sun.tools.attach.HotSpotVirtualMachine;
+import sun.tools.common.ProcessArgumentMatcher;
 
 /*
  * This class is the main class for the JInfo utility. It parses its arguments
@@ -82,28 +83,49 @@ final public class JInfo {
 
         // Next we check the parameter count. -flag allows extra parameters
         int paramCount = args.length - optionCount;
-        if ((doFlag && paramCount != 2) || (paramCount != 1)) {
+        if ((doFlag && paramCount != 2) || ((!doFlag && paramCount != 1))) {
             usage(1);
         }
 
         if (!doFlag && !doFlags && !doSysprops) {
             // Print flags and sysporps if no options given
-            sysprops(args[optionCount]);
-            System.out.println();
-            flags(args[optionCount]);
-            System.out.println();
-            commandLine(args[optionCount]);
+            ProcessArgumentMatcher ap = new ProcessArgumentMatcher(args[optionCount], JInfo.class);
+            Collection<String> pids = ap.getPids();
+            for (String pid : pids) {
+                if (pids.size() > 1) {
+                    System.out.println("Pid:" + pid);
+                }
+                sysprops(pid);
+                System.out.println();
+                flags(pid);
+                System.out.println();
+                commandLine(pid);
+            }
         }
 
         if (doFlag) {
-            flag(args[optionCount+1], args[optionCount]);
-        }
-        else {
-            if (doFlags) {
-                flags(args[optionCount]);
+            ProcessArgumentMatcher ap = new ProcessArgumentMatcher(args[optionCount+1], JInfo.class);
+            Collection<String> pids = ap.getPids();
+            for (String pid : pids) {
+                if (pids.size() > 1) {
+                    System.out.println("Pid:" + pid);
+                }
+                flag(pid, args[optionCount]);
             }
-            else if (doSysprops) {
-                sysprops(args[optionCount]);
+        }
+        else if (doFlags || doSysprops) {
+            ProcessArgumentMatcher ap = new ProcessArgumentMatcher(args[optionCount], JInfo.class);
+            Collection<String> pids = ap.getPids();
+            for (String pid : pids) {
+                if (pids.size() > 1) {
+                    System.out.println("Pid:" + pid);
+                }
+                if (doFlags) {
+                    flags(pid);
+                }
+                else if (doSysprops) {
+                    sysprops(pid);
+                }
             }
         }
     }
@@ -193,24 +215,23 @@ final public class JInfo {
     private static void checkForUnsupportedOptions(String[] args) {
         // Check arguments for -F, and non-numeric value
         // and warn the user that SA is not supported anymore
-
+        int maxCount = 1;
         int paramCount = 0;
 
         for (String s : args) {
             if (s.equals("-F")) {
                 SAOptionError("-F option used");
             }
-
+            if (s.equals("-flag")) {
+                maxCount = 2;
+            }
             if (! s.startsWith("-")) {
-                if (! s.matches("[0-9]+")) {
-                   SAOptionError("non PID argument");
-                }
                 paramCount += 1;
             }
         }
 
-        if (paramCount > 1) {
-            SAOptionError("More than one non-option argument");
+        if (paramCount > maxCount) {
+            SAOptionError("More than " + maxCount + " non-option argument");
         }
     }
 

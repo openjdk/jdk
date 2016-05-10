@@ -29,10 +29,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.Collection;
 
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.AttachNotSupportedException;
 import sun.tools.attach.HotSpotVirtualMachine;
+import sun.tools.common.ProcessArgumentMatcher;
 
 /*
  * This class is the main class for the JMap utility. It parses its arguments
@@ -83,22 +85,29 @@ public class JMap {
             usage(1);
         }
 
-        String pid = args[1];
+        String pidArg = args[1];
         // Here we handle the built-in options
         // As more options are added we should create an abstract tool class and
         // have a table to map the options
-        if (option.equals("-histo")) {
-            histo(pid, "");
-        } else if (option.startsWith("-histo:")) {
-            histo(pid, option.substring("-histo:".length()));
-        } else if (option.startsWith("-dump:")) {
-            dump(pid, option.substring("-dump:".length()));
-        } else if (option.equals("-finalizerinfo")) {
-            executeCommandForPid(pid, "jcmd", "GC.finalizer_info");
-        } else if (option.equals("-clstats")) {
-            executeCommandForPid(pid, "jcmd", "GC.class_stats");
-        } else {
-          usage(1);
+        ProcessArgumentMatcher ap = new ProcessArgumentMatcher(pidArg, JMap.class);
+        Collection<String> pids = ap.getPids();
+        for (String pid : pids) {
+            if (pids.size() > 1) {
+                System.out.println("Pid:" + pid);
+            }
+            if (option.equals("-histo")) {
+                histo(pid, "");
+            } else if (option.startsWith("-histo:")) {
+                histo(pid, option.substring("-histo:".length()));
+            } else if (option.startsWith("-dump:")) {
+                dump(pid, option.substring("-dump:".length()));
+            } else if (option.equals("-finalizerinfo")) {
+                executeCommandForPid(pid, "jcmd", "GC.finalizer_info");
+            } else if (option.equals("-clstats")) {
+                executeCommandForPid(pid, "jcmd", "GC.class_stats");
+            } else {
+              usage(1);
+            }
         }
     }
 
@@ -204,9 +213,6 @@ public class JMap {
             */
 
             if (! s.startsWith("-")) {
-                if (! s.matches("[0-9]+")) {
-                    SAOptionError("non PID argument");
-                }
                 paramCount += 1;
             }
         }
