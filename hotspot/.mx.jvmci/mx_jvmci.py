@@ -194,7 +194,7 @@ To build hotspot and import it into the JDK: "mx make hotspot import-hotspot"
         # JDK9 must be bootstrapped with a JDK8
         compliance = mx.JavaCompliance('8')
         jdk8 = mx.get_jdk(compliance.exactMatch, versionDescription=compliance.value)
-        cmd = ['sh', 'configure', '--with-debug-level=' + _vm.debugLevel, '--with-native-debug-symbols=none', '--disable-precompiled-headers',
+        cmd = ['sh', 'configure', '--with-debug-level=' + _vm.debugLevel, '--with-native-debug-symbols=external', '--disable-precompiled-headers',
                '--with-jvm-variants=' + _vm.jvmVariant, '--disable-warnings-as-errors', '--with-boot-jdk=' + jdk8.home]
         mx.run(cmd, cwd=_jdkSourceRoot)
     cmd = [mx.gmake_cmd(), 'CONF=' + _vm.debugLevel]
