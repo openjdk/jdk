@@ -153,20 +153,33 @@ $(JVM_OUTPUTDIR)/symbols: $(SYMBOLS_SRC)
 ################################################################################
 # Finally convert the symbol list into a platform-specific mapfile
 
-$(JVM_MAPFILE): $(JVM_OUTPUTDIR)/symbols
-	$(call LogInfo, Creating mapfile)
-	$(RM) $@
-        ifeq ($(OPENJDK_TARGET_OS), macosx)
-          # On macosx, we need to add a leading underscore
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  # On macosx, we need to add a leading underscore
+  define create-mapfile-work
 	  $(AWK) '{ if ($$0 ~ ".") { print "  _" $$0 } }'  < $^ > $@.tmp
-        else ifeq ($(OPENJDK_TARGET_OS), windows)
-          # On windows, add an 'EXPORTS' header
+  endef
+else ifeq ($(OPENJDK_TARGET_OS), windows)
+  # On windows, add an 'EXPORTS' header
+  define create-mapfile-work
 	  $(ECHO) "EXPORTS" > $@.tmp
 	  $(AWK) '{ if ($$0 ~ ".") { print "  " $$0 } }'  < $^ >> $@.tmp
-        else
-          # Assume standard linker script
+  endef
+else
+  # Assume standard linker script
+  define create-mapfile-work
 	  $(PRINTF) "SUNWprivate_1.1 { \n  global: \n" > $@.tmp
 	  $(AWK) '{ if ($$0 ~ ".") { print "    " $$0 ";" } }' < $^ >> $@.tmp
 	  $(PRINTF) "  local: \n    *; \n }; \n" >> $@.tmp
-        endif
+  endef
+endif
+
+define create-mapfile
+	$(call LogInfo, Creating mapfile)
+	$(call MakeDir, $(@D))
+	$(call create-mapfile-work)
+	$(RM) $@
 	$(MV) $@.tmp $@
+endef
+
+$(JVM_MAPFILE): $(JVM_OUTPUTDIR)/symbols
+	$(call create-mapfile)

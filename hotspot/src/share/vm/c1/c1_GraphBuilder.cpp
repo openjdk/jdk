@@ -3465,20 +3465,6 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee) {
   case vmIntrinsics::_putLongVolatile    : append_unsafe_put_obj(callee, T_LONG,    true); return;
   case vmIntrinsics::_putFloatVolatile   : append_unsafe_put_obj(callee, T_FLOAT,   true); return;
   case vmIntrinsics::_putDoubleVolatile  : append_unsafe_put_obj(callee, T_DOUBLE,  true); return;
-  case vmIntrinsics::_getByte_raw        : append_unsafe_get_raw(callee, T_BYTE  ); return;
-  case vmIntrinsics::_getShort_raw       : append_unsafe_get_raw(callee, T_SHORT ); return;
-  case vmIntrinsics::_getChar_raw        : append_unsafe_get_raw(callee, T_CHAR  ); return;
-  case vmIntrinsics::_getInt_raw         : append_unsafe_get_raw(callee, T_INT   ); return;
-  case vmIntrinsics::_getLong_raw        : append_unsafe_get_raw(callee, T_LONG  ); return;
-  case vmIntrinsics::_getFloat_raw       : append_unsafe_get_raw(callee, T_FLOAT ); return;
-  case vmIntrinsics::_getDouble_raw      : append_unsafe_get_raw(callee, T_DOUBLE); return;
-  case vmIntrinsics::_putByte_raw        : append_unsafe_put_raw(callee, T_BYTE  ); return;
-  case vmIntrinsics::_putShort_raw       : append_unsafe_put_raw(callee, T_SHORT ); return;
-  case vmIntrinsics::_putChar_raw        : append_unsafe_put_raw(callee, T_CHAR  ); return;
-  case vmIntrinsics::_putInt_raw         : append_unsafe_put_raw(callee, T_INT   ); return;
-  case vmIntrinsics::_putLong_raw        : append_unsafe_put_raw(callee, T_LONG  ); return;
-  case vmIntrinsics::_putFloat_raw       : append_unsafe_put_raw(callee, T_FLOAT ); return;
-  case vmIntrinsics::_putDouble_raw      : append_unsafe_put_raw(callee, T_DOUBLE);  return;
   case vmIntrinsics::_compareAndSwapLong:
   case vmIntrinsics::_compareAndSwapInt:
   case vmIntrinsics::_compareAndSwapObject: append_unsafe_CAS(callee); return;

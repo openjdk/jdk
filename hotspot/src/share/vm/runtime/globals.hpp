@@ -1418,10 +1418,6 @@ public:
   product(bool, StressLdcRewrite, false,                                    \
           "Force ldc -> ldc_w rewrite during RedefineClasses")              \
                                                                             \
-  product(uintx, TraceRedefineClasses, 0,                                   \
-          "Trace level for JVMTI RedefineClasses")                          \
-          range(0, 0xFFFFFFFF)                                              \
-                                                                            \
   /* change to false by default sometime after Mustang */                   \
   product(bool, VerifyMergedCPBytecodes, true,                              \
           "Verify bytecodes after RedefineClasses constant pool merging")   \
@@ -2069,6 +2065,9 @@ public:
                                                                             \
   notproduct(bool, VerboseInternalVMTests, false,                           \
           "Turn on logging for internal VM tests.")                         \
+                                                                            \
+  product(bool, ExecutingUnitTests, false,                                  \
+          "Whether the JVM is running unit tests or not")                   \
                                                                             \
   product_pd(bool, UseTLAB, "Use thread-local object allocation")           \
                                                                             \

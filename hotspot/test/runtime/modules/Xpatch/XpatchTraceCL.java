@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8069469
- * @summary Make sure -XX:+TraceClassLoading works properly with "modules" jimage,
+ * @summary Make sure -Xlog:classload=info works properly with "modules" jimage,
             -Xpatch, and with -Xbootclasspath/a
  * @modules java.base/jdk.internal.misc
  * @library /testlibrary
@@ -45,24 +45,23 @@ public class XpatchTraceCL {
                         "    } "                                    +
                         "}";
 
-        // Test -XX:+TraceClassLoading output for -Xpatch
+        // Test -Xlog:classload=info output for -Xpatch
         ClassFileInstaller.writeClassToDisk("javax/naming/spi/NamingManager",
              InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager", source, "-Xmodule:java.naming"),
              "mods/java.naming");
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xpatch:mods",
-             "-XX:+TraceClassLoading", "XpatchMain", "javax.naming.spi.NamingManager");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xpatch:java.naming=mods/java.naming",
+             "-Xlog:class+load=info", "XpatchMain", "javax.naming.spi.NamingManager");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         // "modules" jimage case.
         output.shouldContain("[class,load] java.lang.Thread source: jrt:/java.base");
         // -Xpatch case.
-        output.shouldContain("[class,load] javax.naming.spi.NamingManager source: mods" +
-            File.separator + "java.naming");
+        output.shouldContain("[class,load] javax.naming.spi.NamingManager source: mods/java.naming");
         // -cp case.
         output.shouldContain("[class,load] XpatchMain source: file");
 
-        // Test -XX:+TraceClassLoading output for -Xbootclasspath/a
+        // Test -Xlog:classload=info output for -Xbootclasspath/a
         source = "package XpatchTraceCL_pkg; "                 +
                  "public class ItIsI { "                          +
                  "    static { "                                  +
@@ -75,7 +74,7 @@ public class XpatchTraceCL {
              "xbcp");
 
         pb = ProcessTools.createJavaProcessBuilder("-Xbootclasspath/a:xbcp",
-             "-XX:+TraceClassLoading", "XpatchMain", "XpatchTraceCL_pkg.ItIsI");
+             "-Xlog:class+load=info", "XpatchMain", "XpatchTraceCL_pkg.ItIsI");
         output = new OutputAnalyzer(pb.start());
         // -Xbootclasspath/a case.
         output.shouldContain("[class,load] XpatchTraceCL_pkg.ItIsI source: xbcp");

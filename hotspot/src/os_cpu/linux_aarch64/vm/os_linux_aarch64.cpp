@@ -226,23 +226,6 @@ extern "C" void FetchNPFI () ;
 extern "C" void FetchNResume () ;
 #endif
 
-// An operation in Unsafe has faulted.  We're going to return to the
-// instruction after the faulting load or store.  We also set
-// pending_unsafe_access_error so that at some point in the future our
-// user will get a helpful message.
-static address handle_unsafe_access(JavaThread* thread, address pc) {
-  // pc is the instruction which we must emulate
-  // doing a no-op is fine:  return garbage from the load
-  // therefore, compute npc
-  address npc = pc + NativeCall::instruction_size;
-
-  // request an async exception
-  thread->set_pending_unsafe_access_error();
-
-  // return address of next instruction to execute
-  return npc;
-}
-
 extern "C" JNIEXPORT int
 JVM_handle_linux_signal(int sig,
                         siginfo_t* info,
@@ -387,7 +370,8 @@ JVM_handle_linux_signal(int sig,
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
         CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
         if (nm != NULL && nm->has_unsafe_access()) {
-          stub = handle_unsafe_access(thread, pc);
+          address next_pc = pc + NativeCall::instruction_size;
+          stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
         }
       }
       else
@@ -408,7 +392,8 @@ JVM_handle_linux_signal(int sig,
     } else if (thread->thread_state() == _thread_in_vm &&
                sig == SIGBUS && /* info->si_code == BUS_OBJERR && */
                thread->doing_unsafe_access()) {
-        stub = handle_unsafe_access(thread, pc);
+      address next_pc = pc + NativeCall::instruction_size;
+      stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
     }
 
     // jni_fast_Get<Primitive>Field can trap at certain pc's if a GC kicks in
