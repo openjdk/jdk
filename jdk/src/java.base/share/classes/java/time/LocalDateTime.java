@@ -665,7 +665,7 @@ public final class LocalDateTime
      * The {@link #isSupported(TemporalField) supported fields} will return valid
      * values based on this date-time, except {@code NANO_OF_DAY}, {@code MICRO_OF_DAY},
      * {@code EPOCH_DAY} and {@code PROLEPTIC_MONTH} which are too large to fit in
-     * an {@code int} and throw a {@code UnsupportedTemporalTypeException}.
+     * an {@code int} and throw an {@code UnsupportedTemporalTypeException}.
      * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method

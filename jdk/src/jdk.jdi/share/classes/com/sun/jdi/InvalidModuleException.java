@@ -36,14 +36,14 @@ public class InvalidModuleException extends RuntimeException {
     private static final long serialVersionUID = 7907359387320658039L;
 
     /**
-     * Constructs a {@code InvalidModuleException} with no detail message.
+     * Constructs an {@code InvalidModuleException} with no detail message.
      */
     public InvalidModuleException() {
         super();
     }
 
     /**
-     * Constructs a {@code InvalidModuleException} with the given detail
+     * Constructs an {@code InvalidModuleException} with the given detail
      * message.
      *
      * @param msg

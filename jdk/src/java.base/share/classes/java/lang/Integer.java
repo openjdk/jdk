@@ -1221,13 +1221,13 @@ public final class Integer extends Number implements Comparable<Integer> {
     }
 
     /**
-     * Returns a hash code for a {@code int} value; compatible with
+     * Returns a hash code for an {@code int} value; compatible with
      * {@code Integer.hashCode()}.
      *
      * @param value the value to hash
      * @since 1.8
      *
-     * @return a hash code value for a {@code int} value.
+     * @return a hash code value for an {@code int} value.
      */
     public static int hashCode(int value) {
         return value;
@@ -1596,7 +1596,7 @@ public final class Integer extends Number implements Comparable<Integer> {
     @Native public static final int SIZE = 32;
 
     /**
-     * The number of bytes used to represent a {@code int} value in two's
+     * The number of bytes used to represent an {@code int} value in two's
      * complement binary form.
      *
      * @since 1.8

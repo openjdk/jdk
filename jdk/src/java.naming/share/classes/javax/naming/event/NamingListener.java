@@ -40,7 +40,7 @@ package javax.naming.event;
   * from the {@code EventContext} with which it has registered.
   *<p>
   * For example, suppose a listener implements {@code ObjectChangeListener} and
-  * registers with a {@code EventContext}.
+  * registers with an {@code EventContext}.
   * Then, if the connection to the server is subsequently broken,
   * the listener will receive a {@code NamingExceptionEvent} and may
   * take some corrective action, such as notifying the user of the application.

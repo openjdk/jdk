@@ -4586,7 +4586,7 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
      * Retrieves the column id as {@code int} array that was set using
      * {@code setMatchColumn(int [])} for this rowset.
      *
-     * @return a {@code int} array object that contains the column ids
+     * @return an {@code int} array object that contains the column ids
      *         for the rowset which has this as the match columns.
      *
      * @throws SQLException if an error occurs or column index is not set
