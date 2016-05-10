@@ -42,6 +42,7 @@ import jdk.vm.ci.code.CompilationRequestResult;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.hotspot.services.HotSpotJVMCICompilerFactory;
 import jdk.vm.ci.hotspot.services.HotSpotVMEventListener;
 import jdk.vm.ci.inittimer.InitTimer;
 import jdk.vm.ci.inittimer.SuppressFBWarnings;
@@ -52,6 +53,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
 import jdk.vm.ci.runtime.JVMCICompiler;
+import jdk.vm.ci.runtime.services.JVMCICompilerFactory;
 import jdk.vm.ci.services.Services;
 import jdk.internal.misc.VM;
 
@@ -204,13 +206,25 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider, H
     protected final HotSpotVMConfig config;
     private final JVMCIBackend hostBackend;
 
+    private final JVMCICompilerFactory compilerFactory;
+    private final HotSpotJVMCICompilerFactory hsCompilerFactory;
     private volatile JVMCICompiler compiler;
     protected final JVMCIMetaAccessContext metaAccessContext;
+
+    /**
+     * Stores the result of {@link HotSpotJVMCICompilerFactory#getCompilationLevelAdjustment} so
+     * that it can be read from the VM.
+     */
+    @SuppressWarnings("unused") private final int compilationLevelAdjustment;
 
     private final Map<Class<? extends Architecture>, JVMCIBackend> backends = new HashMap<>();
 
     private final Iterable<HotSpotVMEventListener> vmEventListeners;
 
+    /**
+     * Stores the result of {@link HotSpotJVMCICompilerFactory#getTrivialPrefixes()} so that it can
+     * be read from the VM.
+     */
     @SuppressWarnings("unused") private final String[] trivialPrefixes;
 
     @SuppressWarnings("try")
@@ -259,7 +273,16 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider, H
             printConfig(config, compilerToVm);
         }
 
-        trivialPrefixes = HotSpotJVMCICompilerConfig.getCompilerFactory().getTrivialPrefixes();
+        compilerFactory = HotSpotJVMCICompilerConfig.getCompilerFactory();
+        if (compilerFactory instanceof HotSpotJVMCICompilerFactory) {
+            hsCompilerFactory = (HotSpotJVMCICompilerFactory) compilerFactory;
+            trivialPrefixes = hsCompilerFactory.getTrivialPrefixes();
+            compilationLevelAdjustment = hsCompilerFactory.getCompilationLevelAdjustment(config);
+        } else {
+            hsCompilerFactory = null;
+            trivialPrefixes = null;
+            compilationLevelAdjustment = 0;
+        }
     }
 
     private JVMCIBackend registerBackend(JVMCIBackend backend) {
@@ -289,7 +312,7 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider, H
         if (compiler == null) {
             synchronized (this) {
                 if (compiler == null) {
-                    compiler = HotSpotJVMCICompilerConfig.getCompilerFactory().createCompiler(this);
+                    compiler = compilerFactory.createCompiler(this);
                 }
             }
         }
@@ -326,6 +349,14 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider, H
 
     public Map<Class<? extends Architecture>, JVMCIBackend> getJVMCIBackends() {
         return Collections.unmodifiableMap(backends);
+    }
+
+    /**
+     * Called from the VM.
+     */
+    @SuppressWarnings({"unused"})
+    private int adjustCompilationLevel(Class<?> declaringClass, String name, String signature, boolean isOsr, int level) {
+        return hsCompilerFactory.adjustCompilationLevel(config, declaringClass, name, signature, isOsr, level);
     }
 
     /**
