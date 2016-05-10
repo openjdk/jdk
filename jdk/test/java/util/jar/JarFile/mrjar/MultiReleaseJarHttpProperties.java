@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
  * @bug 8132734
  * @summary Test the System properties for JarFile that support multi-release jar files
  * @library /lib/testlibrary/java/util/jar
+ * @modules jdk.jartool
+ *          jdk.compiler
+ *          jdk.httpserver
  * @build Compiler JarBuilder CreateMultiReleaseTestJars SimpleHttpServer
  * @run testng MultiReleaseJarHttpProperties
  * @run testng/othervm -Djdk.util.jar.version=0 MultiReleaseJarHttpProperties
