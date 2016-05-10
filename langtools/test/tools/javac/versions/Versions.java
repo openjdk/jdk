@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,16 +61,14 @@ public class Versions {
 
     void run() {
 
-        String jdk9cv = "52.0";  // class version.change when ./dev pushed to 53
-
         String TC = "";
         System.out.println("Version.java: Starting");
 
-        check("52.0");
-        check("52.0", "-source 1.6");
-        check("52.0", "-source 1.7");
-        check("52.0", "-source 1.8");
-        check(jdk9cv, "-source 1.9");
+        check("53.0");
+        check("53.0", "-source 1.6");
+        check("53.0", "-source 1.7");
+        check("53.0", "-source 1.8");
+        check("53.0", "-source 1.9");
 
         check_source_target("50.0", "6", "6");
         check_source_target("51.0", "6", "7");
@@ -78,10 +76,10 @@ public class Versions {
         check_source_target("52.0", "6", "8");
         check_source_target("52.0", "7", "8");
         check_source_target("52.0", "8", "8");
-        check_source_target(jdk9cv, "6", "9");
-        check_source_target(jdk9cv, "7", "9");
-        check_source_target(jdk9cv, "8", "9");
-        check_source_target(jdk9cv, "9", "9");
+        check_source_target("53.0", "6", "9");
+        check_source_target("53.0", "7", "9");
+        check_source_target("53.0", "8", "9");
+        check_source_target("53.0", "9", "9");
 
         checksrc16("-source 1.6");
         checksrc16("-source 6");
