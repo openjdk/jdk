@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,11 @@ class RSHashTable : public CHeapObj<mtGC> {
     NullEntry = -1
   };
 
+  // Inverse maximum hash table occupancy used.
+  static float TableOccupancyFactor;
+
+  size_t _num_entries;
+
   size_t _capacity;
   size_t _capacity_mask;
   size_t _occupied_entries;
@@ -136,6 +141,8 @@ public:
   RSHashTable(size_t capacity);
   ~RSHashTable();
 
+  bool should_expand() const { return _occupied_entries == _num_entries; }
+
   // Attempts to ensure that the given card_index in the given region is in
   // the sparse table.  If successful (because the card was already
   // present, or because it was successfully added) returns "true".
@@ -161,8 +168,13 @@ public:
   size_t occupied_entries() const { return _occupied_entries; }
   size_t occupied_cards() const   { return _occupied_cards;   }
   size_t mem_size() const;
+  // The number of SparsePRTEntry instances available.
+  size_t num_entries() const { return _num_entries; }
 
-  SparsePRTEntry* entry(int i) const { return (SparsePRTEntry*)((char*)_entries + SparsePRTEntry::size() * i); }
+  SparsePRTEntry* entry(int i) const {
+    assert(i >= 0 && (size_t)i < _num_entries, "precondition");
+    return (SparsePRTEntry*)((char*)_entries + SparsePRTEntry::size() * i);
+  }
 
   void print();
 };

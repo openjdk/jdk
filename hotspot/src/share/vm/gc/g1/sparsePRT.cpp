@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,13 +76,17 @@ void SparsePRTEntry::copy_cards(SparsePRTEntry* e) const {
 
 // ----------------------------------------------------------------------
 
+float RSHashTable::TableOccupancyFactor = 0.5f;
+
 RSHashTable::RSHashTable(size_t capacity) :
   _capacity(capacity), _capacity_mask(capacity-1),
   _occupied_entries(0), _occupied_cards(0),
-  _entries((SparsePRTEntry*)NEW_C_HEAP_ARRAY(char, SparsePRTEntry::size() * capacity, mtGC)),
+  _entries(NULL),
   _buckets(NEW_C_HEAP_ARRAY(int, capacity, mtGC)),
   _free_list(NullEntry), _free_region(0)
 {
+  _num_entries = (capacity * TableOccupancyFactor) + 1;
+  _entries = (SparsePRTEntry*)NEW_C_HEAP_ARRAY(char, _num_entries * SparsePRTEntry::size(), mtGC);
   clear();
 }
 
@@ -107,7 +111,7 @@ void RSHashTable::clear() {
                 "_capacity too large");
 
   // This will put -1 == NullEntry in the key field of all entries.
-  memset(_entries, NullEntry, _capacity * SparsePRTEntry::size());
+  memset(_entries, NullEntry, _num_entries * SparsePRTEntry::size());
   memset(_buckets, NullEntry, _capacity * sizeof(int));
   _free_list = NullEntry;
   _free_region = 0;
@@ -174,7 +178,6 @@ RSHashTable::entry_for_region_ind_create(RegionIdx_t region_ind) {
   SparsePRTEntry* res = get_entry(region_ind);
   if (res == NULL) {
     int new_ind = alloc_entry();
-    assert(0 <= new_ind && (size_t)new_ind < capacity(), "There should be room.");
     res = entry(new_ind);
     res->init(region_ind);
     // Insert at front.
@@ -192,7 +195,7 @@ int RSHashTable::alloc_entry() {
     res = _free_list;
     _free_list = entry(res)->next_index();
     return res;
-  } else if ((size_t) _free_region+1 < capacity()) {
+  } else if ((size_t)_free_region < _num_entries) {
     res = _free_region;
     _free_region++;
     return res;
@@ -275,7 +278,7 @@ bool RSHashTable::contains_card(RegionIdx_t region_index, CardIdx_t card_index) 
 
 size_t RSHashTable::mem_size() const {
   return sizeof(RSHashTable) +
-    capacity() * (SparsePRTEntry::size() + sizeof(int));
+    _num_entries * (SparsePRTEntry::size() + sizeof(int));
 }
 
 // ----------------------------------------------------------------------
@@ -380,7 +383,7 @@ size_t SparsePRT::mem_size() const {
 }
 
 bool SparsePRT::add_card(RegionIdx_t region_id, CardIdx_t card_index) {
-  if (_next->occupied_entries() * 2 > _next->capacity()) {
+  if (_next->should_expand()) {
     expand();
   }
   return _next->add_card(region_id, card_index);
@@ -427,7 +430,7 @@ void SparsePRT::cleanup() {
 void SparsePRT::expand() {
   RSHashTable* last = _next;
   _next = new RSHashTable(last->capacity() * 2);
-  for (size_t i = 0; i < last->capacity(); i++) {
+  for (size_t i = 0; i < last->num_entries(); i++) {
     SparsePRTEntry* e = last->entry((int)i);
     if (e->valid_entry()) {
       _next->add_entry(e);
