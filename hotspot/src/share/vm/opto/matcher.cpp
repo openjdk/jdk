@@ -963,44 +963,6 @@ static void match_alias_type(Compile* C, Node* n, Node* m) {
 }
 #endif
 
-
-//------------------------------MStack-----------------------------------------
-// State and MStack class used in xform() and find_shared() iterative methods.
-enum Node_State { Pre_Visit,  // node has to be pre-visited
-                      Visit,  // visit node
-                 Post_Visit,  // post-visit node
-             Alt_Post_Visit   // alternative post-visit path
-                };
-
-class MStack: public Node_Stack {
-  public:
-    MStack(int size) : Node_Stack(size) { }
-
-    void push(Node *n, Node_State ns) {
-      Node_Stack::push(n, (uint)ns);
-    }
-    void push(Node *n, Node_State ns, Node *parent, int indx) {
-      ++_inode_top;
-      if ((_inode_top + 1) >= _inode_max) grow();
-      _inode_top->node = parent;
-      _inode_top->indx = (uint)indx;
-      ++_inode_top;
-      _inode_top->node = n;
-      _inode_top->indx = (uint)ns;
-    }
-    Node *parent() {
-      pop();
-      return node();
-    }
-    Node_State state() const {
-      return (Node_State)index();
-    }
-    void set_state(Node_State ns) {
-      set_index((uint)ns);
-    }
-};
-
-
 //------------------------------xform------------------------------------------
 // Given a Node in old-space, Match him (Label/Reduce) to produce a machine
 // Node in new-space.  Given a new-space Node, recursively walk his children.
@@ -2046,37 +2008,22 @@ bool Matcher::is_bmi_pattern(Node *n, Node *m) {
 }
 #endif // X86
 
-// A method-klass-holder may be passed in the inline_cache_reg
-// and then expanded into the inline_cache_reg and a method_oop register
-//   defined in ad_<arch>.cpp
-
-// Check for shift by small constant as well
-static bool clone_shift(Node* shift, Matcher* matcher, MStack& mstack, VectorSet& address_visited) {
-  if (shift->Opcode() == Op_LShiftX && shift->in(2)->is_Con() &&
-      shift->in(2)->get_int() <= 3 &&
-      // Are there other uses besides address expressions?
-      !matcher->is_visited(shift)) {
-    address_visited.set(shift->_idx); // Flag as address_visited
-    mstack.push(shift->in(2), Visit);
-    Node *conv = shift->in(1);
-#ifdef _LP64
-    // Allow Matcher to match the rule which bypass
-    // ConvI2L operation for an array index on LP64
-    // if the index value is positive.
-    if (conv->Opcode() == Op_ConvI2L &&
-        conv->as_Type()->type()->is_long()->_lo >= 0 &&
-        // Are there other uses besides address expressions?
-        !matcher->is_visited(conv)) {
-      address_visited.set(conv->_idx); // Flag as address_visited
-      mstack.push(conv->in(1), Pre_Visit);
-    } else
-#endif
-      mstack.push(conv, Pre_Visit);
+bool Matcher::clone_base_plus_offset_address(AddPNode* m, Matcher::MStack& mstack, VectorSet& address_visited) {
+  Node *off = m->in(AddPNode::Offset);
+  if (off->is_Con()) {
+    address_visited.test_set(m->_idx); // Flag as address_visited
+    mstack.push(m->in(AddPNode::Address), Pre_Visit);
+    // Clone X+offset as it also folds into most addressing expressions
+    mstack.push(off, Visit);
+    mstack.push(m->in(AddPNode::Base), Pre_Visit);
     return true;
   }
   return false;
 }
 
+// A method-klass-holder may be passed in the inline_cache_reg
+// and then expanded into the inline_cache_reg and a method_oop register
+//   defined in ad_<arch>.cpp
 
 //------------------------------find_shared------------------------------------
 // Set bits if Node is shared or otherwise a root
@@ -2251,40 +2198,9 @@ void Matcher::find_shared( Node *n ) {
           // But they should be marked as shared if there are other uses
           // besides address expressions.
 
-          Node *off = m->in(AddPNode::Offset);
-          if (off->is_Con()) {
-            address_visited.test_set(m->_idx); // Flag as address_visited
-            Node *adr = m->in(AddPNode::Address);
-
-            // Intel, ARM and friends can handle 2 adds in addressing mode
-            if( clone_shift_expressions && adr->is_AddP() &&
-                // AtomicAdd is not an addressing expression.
-                // Cheap to find it by looking for screwy base.
-                !adr->in(AddPNode::Base)->is_top() &&
-                // Are there other uses besides address expressions?
-                !is_visited(adr) ) {
-              address_visited.set(adr->_idx); // Flag as address_visited
-              Node *shift = adr->in(AddPNode::Offset);
-              if (!clone_shift(shift, this, mstack, address_visited)) {
-                mstack.push(shift, Pre_Visit);
-              }
-              mstack.push(adr->in(AddPNode::Address), Pre_Visit);
-              mstack.push(adr->in(AddPNode::Base), Pre_Visit);
-            } else {  // Sparc, Alpha, PPC and friends
-              mstack.push(adr, Pre_Visit);
-            }
-
-            // Clone X+offset as it also folds into most addressing expressions
-            mstack.push(off, Visit);
-            mstack.push(m->in(AddPNode::Base), Pre_Visit);
-            continue; // for(int i = ...)
-          } else if (clone_shift_expressions &&
-                     clone_shift(off, this, mstack, address_visited)) {
-              address_visited.test_set(m->_idx); // Flag as address_visited
-              mstack.push(m->in(AddPNode::Address), Pre_Visit);
-              mstack.push(m->in(AddPNode::Base), Pre_Visit);
-              continue;
-          } // if( off->is_Con() )
+          if (clone_address_expressions(m->as_AddP(), mstack, address_visited)) {
+            continue;
+          }
         }   // if( mem_op &&
         mstack.push(m, Pre_Visit);
       }     // for(int i = ...)
