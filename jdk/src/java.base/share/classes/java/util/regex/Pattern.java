@@ -469,7 +469,7 @@ import java.util.stream.StreamSupport;
  *
  *   <li> A line-separator character&nbsp;(<code>'&#92;u2028'</code>), or
  *
- *   <li> A paragraph-separator character&nbsp;(<code>'&#92;u2029</code>).
+ *   <li> A paragraph-separator character&nbsp;(<code>'&#92;u2029'</code>).
  *
  * </ul>
  * <p>If {@link #UNIX_LINES} mode is activated, then the only line terminators

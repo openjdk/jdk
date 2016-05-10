@@ -903,7 +903,7 @@ class Field extends AccessibleObject implements Member {
      * Sets the value of a field as an {@code int} on the specified object.
      * This method is equivalent to
      * {@code set(obj, iObj)},
-     * where {@code iObj} is a {@code Integer} object and
+     * where {@code iObj} is an {@code Integer} object and
      * {@code iObj.intValue() == i}.
      *
      * @param obj the object whose field should be modified

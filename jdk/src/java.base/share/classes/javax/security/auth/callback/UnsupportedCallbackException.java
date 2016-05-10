@@ -40,7 +40,7 @@ public class UnsupportedCallbackException extends Exception {
     private Callback callback;
 
     /**
-     * Constructs a {@code UnsupportedCallbackException}
+     * Constructs an {@code UnsupportedCallbackException}
      * with no detail message.
      *
      * @param callback the unrecognized {@code Callback}.

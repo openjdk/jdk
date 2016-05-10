@@ -144,7 +144,7 @@ public class ProtectionDomain {
     /**
      * Creates a new ProtectionDomain with the given CodeSource and
      * Permissions. If the permissions object is not null, then
-     *  {@code setReadOnly())} will be called on the passed in
+     *  {@code setReadOnly()} will be called on the passed in
      * Permissions object. The only permissions granted to this domain
      * are the ones specified; the current Policy will not be consulted.
      *

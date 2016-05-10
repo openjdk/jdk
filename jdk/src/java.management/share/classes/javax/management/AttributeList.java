@@ -148,7 +148,7 @@ public class AttributeList extends ArrayList<Object> {
      * <p>If this method has ever been called on a given
      * {@code AttributeList} instance, a subsequent attempt to add
      * an object to that instance which is not an {@code Attribute}
-     * will fail with a {@code IllegalArgumentException}. For compatibility
+     * will fail with an {@code IllegalArgumentException}. For compatibility
      * reasons, an {@code AttributeList} on which this method has never
      * been called does allow objects other than {@code Attribute}s to
      * be added.</p>
