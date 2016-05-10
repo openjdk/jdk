@@ -26,4 +26,5 @@ module xmlprovider2 {
 
     provides javax.xml.datatype.DatatypeFactory with xp2.DatatypeFactoryImpl;
     provides javax.xml.stream.XMLEventFactory with xp2.XMLEventFactoryImpl;
+    provides org.xml.sax.XMLReader with xp2.XMLReaderImpl;
 }
