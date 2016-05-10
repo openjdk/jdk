@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 package jdk.vm.ci.services;
 
+import java.lang.reflect.Module;
 import java.util.Formatter;
 import java.util.Iterator;
 import java.util.ServiceConfigurationError;
@@ -36,10 +37,51 @@ public final class Services {
     }
 
     /**
+     * Performs any required security checks and dynamic reconfiguration to allow the module of a
+     * given class to access the classes in the JVMCI module.
+     *
+     * Note: This API uses {@link Class} instead of {@link Module} to provide backwards
+     * compatibility for JVMCI clients compiled against a JDK release earlier than 9.
+     *
+     * @param requestor a class requesting access to the JVMCI module for its module
+     * @throws SecurityException if a security manager is present and it denies
+     *             {@link JVMCIPermission}
+     */
+    public static void exportJVMCITo(Class<?> requestor) {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new JVMCIPermission());
+        }
+        Module jvmci = Services.class.getModule();
+        Module requestorModule = requestor.getModule();
+        if (jvmci != requestorModule) {
+            for (String pkg : jvmci.getPackages()) {
+                // Export all JVMCI packages dynamically instead
+                // of requiring a long list of -XaddExports
+                // options on the JVM command line.
+                if (!jvmci.isExported(pkg, requestorModule)) {
+                    jvmci.addExports(pkg, requestorModule);
+                }
+            }
+        }
+    }
+
+    /**
      * Gets an {@link Iterable} of the JVMCI providers available for a given service.
+     *
+     * @throws SecurityException if a security manager is present and it denies
+     *             {@link JVMCIPermission}
      */
     public static <S> Iterable<S> load(Class<S> service) {
-        return ServiceLoader.load(service);
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new JVMCIPermission());
+        }
+        Module jvmci = Services.class.getModule();
+        jvmci.addUses(service);
+
+        // Restrict JVMCI clients to be on the class path or module path
+        return ServiceLoader.load(service, ClassLoader.getSystemClassLoader());
     }
 
     /**
@@ -48,9 +90,18 @@ public final class Services {
      * @param service the service whose provider is being requested
      * @param required specifies if an {@link InternalError} should be thrown if no provider of
      *            {@code service} is available
+     * @throws SecurityException if a security manager is present and it denies
+     *             {@link JVMCIPermission}
      */
     public static <S> S loadSingle(Class<S> service, boolean required) {
-        Iterable<S> providers = ServiceLoader.load(service);
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new JVMCIPermission());
+        }
+        Module jvmci = Services.class.getModule();
+        jvmci.addUses(service);
+        // Restrict JVMCI clients to be on the class path or module path
+        Iterable<S> providers = ServiceLoader.load(service, ClassLoader.getSystemClassLoader());
         S singleProvider = null;
         try {
             for (Iterator<S> it = providers.iterator(); it.hasNext();) {

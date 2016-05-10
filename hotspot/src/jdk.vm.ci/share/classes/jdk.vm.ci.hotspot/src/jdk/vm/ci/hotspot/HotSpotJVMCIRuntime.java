@@ -42,6 +42,7 @@ import jdk.vm.ci.code.CompilationRequestResult;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.hotspot.services.HotSpotVMEventListener;
 import jdk.vm.ci.inittimer.InitTimer;
 import jdk.vm.ci.inittimer.SuppressFBWarnings;
 import jdk.vm.ci.meta.JVMCIMetaAccessContext;
