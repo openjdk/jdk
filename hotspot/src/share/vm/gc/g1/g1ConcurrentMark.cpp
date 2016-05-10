@@ -273,7 +273,7 @@ void G1CMRootRegions::prepare_for_scan() {
 
   // Currently, only survivors can be root regions.
   _claimed_survivor_index = 0;
-  _scan_in_progress = true;
+  _scan_in_progress = _survivors->regions()->is_nonempty();
   _should_abort = false;
 }
 
@@ -292,6 +292,10 @@ HeapRegion* G1CMRootRegions::claim_next() {
     return survivor_regions->at(claimed_index);
   }
   return NULL;
+}
+
+uint G1CMRootRegions::num_root_regions() const {
+  return (uint)_survivors->regions()->length();
 }
 
 void G1CMRootRegions::notify_scan_done() {
@@ -912,15 +916,16 @@ uint G1ConcurrentMark::calc_parallel_marking_threads() {
     n_conc_workers = max_parallel_marking_threads();
   } else {
     n_conc_workers =
-      AdaptiveSizePolicy::calc_default_active_workers(
-                                   max_parallel_marking_threads(),
-                                   1, /* Minimum workers */
-                                   parallel_marking_threads(),
-                                   Threads::number_of_non_daemon_threads());
+      AdaptiveSizePolicy::calc_default_active_workers(max_parallel_marking_threads(),
+                                                      1, /* Minimum workers */
+                                                      parallel_marking_threads(),
+                                                      Threads::number_of_non_daemon_threads());
     // Don't scale down "n_conc_workers" by scale_parallel_threads() because
     // that scaling has already gone into "_max_parallel_marking_threads".
   }
-  assert(n_conc_workers > 0, "Always need at least 1");
+  assert(n_conc_workers > 0 && n_conc_workers <= max_parallel_marking_threads(),
+         "Calculated number of workers must be larger than zero and at most the maximum %u, but is %u",
+         max_parallel_marking_threads(), n_conc_workers);
   return n_conc_workers;
 }
 
@@ -947,7 +952,7 @@ private:
 
 public:
   G1CMRootRegionScanTask(G1ConcurrentMark* cm) :
-    AbstractGangTask("Root Region Scan"), _cm(cm) { }
+    AbstractGangTask("G1 Root Region Scan"), _cm(cm) { }
 
   void work(uint worker_id) {
     assert(Thread::current()->is_ConcurrentGC_thread(),
@@ -969,14 +974,17 @@ void G1ConcurrentMark::scan_root_regions() {
   if (root_regions()->scan_in_progress()) {
     assert(!has_aborted(), "Aborting before root region scanning is finished not supported.");
 
-    _parallel_marking_threads = calc_parallel_marking_threads();
+    _parallel_marking_threads = MIN2(calc_parallel_marking_threads(),
+                                     // We distribute work on a per-region basis, so starting
+                                     // more threads than that is useless.
+                                     root_regions()->num_root_regions());
     assert(parallel_marking_threads() <= max_parallel_marking_threads(),
            "Maximum number of marking threads exceeded");
-    uint active_workers = MAX2(1U, parallel_marking_threads());
 
     G1CMRootRegionScanTask task(this);
-    _parallel_workers->set_active_workers(active_workers);
-    _parallel_workers->run_task(&task);
+    log_debug(gc, ergo)("Running %s using %u workers for %u work units.",
+                        task.name(), _parallel_marking_threads, root_regions()->num_root_regions());
+    _parallel_workers->run_task(&task, _parallel_marking_threads);
 
     // It's possible that has_aborted() is true here without actually
     // aborting the survivor scan earlier. This is OK as it's
