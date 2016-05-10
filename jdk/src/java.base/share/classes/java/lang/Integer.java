@@ -1790,9 +1790,8 @@ public final class Integer extends Number implements Comparable<Integer> {
         i = (i & 0x55555555) << 1 | (i >>> 1) & 0x55555555;
         i = (i & 0x33333333) << 2 | (i >>> 2) & 0x33333333;
         i = (i & 0x0f0f0f0f) << 4 | (i >>> 4) & 0x0f0f0f0f;
-        i = (i << 24) | ((i & 0xff00) << 8) |
-            ((i >>> 8) & 0xff00) | (i >>> 24);
-        return i;
+
+        return reverseBytes(i);
     }
 
     /**
@@ -1820,10 +1819,10 @@ public final class Integer extends Number implements Comparable<Integer> {
      */
     @HotSpotIntrinsicCandidate
     public static int reverseBytes(int i) {
-        return ((i >>> 24)           ) |
-               ((i >>   8) &   0xFF00) |
-               ((i <<   8) & 0xFF0000) |
-               ((i << 24));
+        return (i << 24)            |
+               ((i & 0xff00) << 8)  |
+               ((i >>> 8) & 0xff00) |
+               (i >>> 24);
     }
 
     /**
