@@ -39,6 +39,7 @@ import javax.swing.table.*;
 
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.types.*;
 
 import sun.jvm.hotspot.ui.action.*;
 
@@ -55,8 +56,18 @@ public class JavaThreadsPanel extends SAPanel implements ActionListener {
     private JavaThreadsTableModel dataModel;
     private StatusBar statusBar;
     private JTable     threadTable;
-    private java.util.List cachedThreads = new ArrayList();
+    private java.util.List<CachedThread> cachedThreads = new ArrayList();
+    private static AddressField crashThread;
 
+
+    static {
+        VM.registerVMInitializedObserver(
+                            (o, a) -> initialize(VM.getVM().getTypeDataBase()));
+    }
+
+    private static void initialize(TypeDataBase db) {
+        crashThread = db.lookupType("VMError").getAddressField("_thread");
+    }
 
     /** Constructor assumes the threads panel is created while the VM is
         suspended. Subsequent resume and suspend operations of the VM
@@ -437,21 +448,14 @@ public class JavaThreadsPanel extends SAPanel implements ActionListener {
      * @return a flag which indicates if crashes were encountered.
      */
     private boolean fireShowThreadCrashes() {
-        boolean crash = false;
-        for (Iterator iter = cachedThreads.iterator(); iter.hasNext(); ) {
-            JavaThread t = (JavaThread) ((CachedThread) iter.next()).getThread();
-            sun.jvm.hotspot.runtime.Frame tmpFrame = t.getCurrentFrameGuess();
-            RegisterMap tmpMap = t.newRegisterMap(false);
-            while ((tmpFrame != null) && (!tmpFrame.isFirstFrame())) {
-                if (tmpFrame.isSignalHandlerFrameDbg()) {
-                    showThreadStackMemory(t);
-                    crash = true;
-                    break;
-                }
-                tmpFrame = tmpFrame.sender(tmpMap);
-            }
-        }
-        return crash;
+        Optional<JavaThread> crashed =
+                         cachedThreads.stream()
+                                      .map(t -> t.getThread())
+                                      .filter(t -> t.getAddress().equals(
+                                                        crashThread.getValue()))
+                                      .findAny();
+        crashed.ifPresent(this::showThreadStackMemory);
+        return crashed.isPresent();
     }
 
     private void cache() {

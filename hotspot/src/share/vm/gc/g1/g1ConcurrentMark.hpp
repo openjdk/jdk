@@ -248,6 +248,9 @@ public:
   // all have been claimed.
   HeapRegion* claim_next();
 
+  // The number of root regions to scan.
+  uint num_root_regions() const;
+
   void cancel_scan();
 
   // Flag that we're done with root region scanning and notify anyone
