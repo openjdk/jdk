@@ -217,7 +217,7 @@ void emit_constraint_double(const char* name, CommandLineFlagConstraintFunc_doub
 #define EMIT_CONSTRAINT_LP64_PRODUCT_FLAG(type, name, value, doc) ); emit_constraint_##type(#name
 
 // Generate func argument to pass into emit_constraint_xxx functions
-#define EMIT_CONSTRAINT_CHECK(func, type)                               , func, CommandLineFlagConstraint::type
+#define EMIT_CONSTRAINT_CHECK(func, type)                         , func, CommandLineFlagConstraint::type
 
 // the "name" argument must be a string literal
 #define INITIAL_CONSTRAINTS_SIZE 72
@@ -239,7 +239,8 @@ void CommandLineFlagConstraintList::init(void) {
                                         EMIT_CONSTRAINT_PRODUCT_RW_FLAG,
                                         EMIT_CONSTRAINT_LP64_PRODUCT_FLAG,
                                         IGNORE_RANGE,
-                                        EMIT_CONSTRAINT_CHECK));
+                                        EMIT_CONSTRAINT_CHECK,
+                                        IGNORE_WRITEABLE));
 
   EMIT_CONSTRAINTS_FOR_GLOBALS_EXT
 
@@ -249,7 +250,8 @@ void CommandLineFlagConstraintList::init(void) {
                                      EMIT_CONSTRAINT_EXPERIMENTAL_FLAG,
                                      EMIT_CONSTRAINT_NOTPRODUCT_FLAG,
                                      IGNORE_RANGE,
-                                     EMIT_CONSTRAINT_CHECK));
+                                     EMIT_CONSTRAINT_CHECK,
+                                     IGNORE_WRITEABLE));
 
 
 #ifdef COMPILER1
@@ -260,7 +262,8 @@ void CommandLineFlagConstraintList::init(void) {
                                    EMIT_CONSTRAINT_DIAGNOSTIC_FLAG,
                                    EMIT_CONSTRAINT_NOTPRODUCT_FLAG,
                                    IGNORE_RANGE,
-                                   EMIT_CONSTRAINT_CHECK));
+                                   EMIT_CONSTRAINT_CHECK,
+                                   IGNORE_WRITEABLE));
 #endif // COMPILER1
 
 #ifdef COMPILER2
@@ -272,7 +275,8 @@ void CommandLineFlagConstraintList::init(void) {
                                    EMIT_CONSTRAINT_EXPERIMENTAL_FLAG,
                                    EMIT_CONSTRAINT_NOTPRODUCT_FLAG,
                                    IGNORE_RANGE,
-                                   EMIT_CONSTRAINT_CHECK));
+                                   EMIT_CONSTRAINT_CHECK,
+                                   IGNORE_WRITEABLE));
 #endif // COMPILER2
 
 #if INCLUDE_ALL_GCS
@@ -286,7 +290,8 @@ void CommandLineFlagConstraintList::init(void) {
                                    EMIT_CONSTRAINT_MANAGEABLE_FLAG,
                                    EMIT_CONSTRAINT_PRODUCT_RW_FLAG,
                                    IGNORE_RANGE,
-                                   EMIT_CONSTRAINT_CHECK));
+                                   EMIT_CONSTRAINT_CHECK,
+                                   IGNORE_WRITEABLE));
 #endif // INCLUDE_ALL_GCS
 }
 
