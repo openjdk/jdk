@@ -1365,6 +1365,12 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
      static_field(java_lang_Class,             _oop_size_offset,                              int)                                   \
      static_field(java_lang_Class,             _static_oop_field_count_offset,                int)                                   \
                                                                                                                                      \
+  /******************/                                                                                                               \
+  /* VMError fields */                                                                                                               \
+  /******************/                                                                                                               \
+                                                                                                                                     \
+     static_field(VMError,                     _thread,                                       Thread*)                               \
+                                                                                                                                     \
   /************************/                                                                                                         \
   /* Miscellaneous fields */                                                                                                         \
   /************************/                                                                                                         \
@@ -2214,6 +2220,12 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /*************/                                                         \
                                                                           \
   declare_toplevel_type(Arguments)                                        \
+                                                                          \
+  /***********/                                                           \
+  /* VMError */                                                           \
+  /***********/                                                           \
+                                                                          \
+  declare_toplevel_type(VMError)                                          \
                                                                           \
   /***************/                                                       \
   /* Other types */                                                       \

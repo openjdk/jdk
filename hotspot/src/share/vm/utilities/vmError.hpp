@@ -33,6 +33,7 @@ class VM_ReportJavaOutOfMemory;
 class VMError : public AllStatic {
   friend class VM_ReportJavaOutOfMemory;
   friend class Decoder;
+  friend class VMStructs;
 
   static int         _id;               // Solaris/Linux signals: 0 - SIGRTMAX
                                         // Windows exceptions: 0xCxxxxxxx system errors
