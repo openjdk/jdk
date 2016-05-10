@@ -1449,6 +1449,7 @@ void JavaThread::initialize() {
   _pending_deoptimization = -1;
   _pending_failed_speculation = NULL;
   _pending_transfer_to_interpreter = false;
+  _adjusting_comp_level = false;
   _jvmci._alternate_call_target = NULL;
   assert(_jvmci._implicit_exception_pc == NULL, "must be");
   if (JVMCICounterSize > 0) {

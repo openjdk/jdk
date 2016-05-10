@@ -33,7 +33,7 @@ class JVMCIJavaClasses : AllStatic {
   static void compute_offsets(TRAPS);
 };
 
-/* This macro defines the structure of the CompilationResult - classes.
+/* This macro defines the structure of the JVMCI classes accessed from VM code.
  * It will generate classes with accessors similar to javaClasses.hpp, but with specializations for oops, Handles and jni handles.
  *
  * The public interface of these classes will look like this:
@@ -219,7 +219,7 @@ class JVMCIJavaClasses : AllStatic {
     boolean_field(HotSpotObjectConstantImpl, compressed)                                                                                                       \
   end_class                                                                                                                                                    \
   start_class(HotSpotMetaspaceConstantImpl)                                                                                                                    \
-    oop_field(HotSpotMetaspaceConstantImpl, metaspaceObject, "Ljdk/vm/ci/hotspot/MetaspaceWrapperObject;")                                            \
+    oop_field(HotSpotMetaspaceConstantImpl, metaspaceObject, "Ljdk/vm/ci/hotspot/MetaspaceWrapperObject;")                                                     \
     boolean_field(HotSpotMetaspaceConstantImpl, compressed)                                                                                                    \
   end_class                                                                                                                                                    \
   start_class(HotSpotSentinelConstant)                                                                                                                         \
@@ -279,24 +279,25 @@ class JVMCIJavaClasses : AllStatic {
     objArrayOop_field(HotSpotStackFrameReference, locals, "[Ljava/lang/Object;")                                                                               \
     typeArrayOop_field(HotSpotStackFrameReference, localIsVirtual, "[Z")                                                                                       \
   end_class                                                                                                                                                    \
-  start_class(HotSpotMetaData) \
-    typeArrayOop_field(HotSpotMetaData, pcDescBytes, "[B") \
-    typeArrayOop_field(HotSpotMetaData, scopesDescBytes, "[B") \
-    typeArrayOop_field(HotSpotMetaData, relocBytes, "[B") \
-    typeArrayOop_field(HotSpotMetaData, exceptionBytes, "[B") \
-    typeArrayOop_field(HotSpotMetaData, oopMaps, "[B") \
-    objArrayOop_field(HotSpotMetaData, metadata, "[Ljava/lang/String;") \
-  end_class \
-  start_class(HotSpotOopMap) \
-    int_field(HotSpotOopMap, offset) \
-    int_field(HotSpotOopMap, count) \
-    typeArrayOop_field(HotSpotOopMap, data, "[B") \
+  start_class(HotSpotMetaData)                                                                                                                                 \
+    typeArrayOop_field(HotSpotMetaData, pcDescBytes, "[B")                                                                                                     \
+    typeArrayOop_field(HotSpotMetaData, scopesDescBytes, "[B")                                                                                                 \
+    typeArrayOop_field(HotSpotMetaData, relocBytes, "[B")                                                                                                      \
+    typeArrayOop_field(HotSpotMetaData, exceptionBytes, "[B")                                                                                                  \
+    typeArrayOop_field(HotSpotMetaData, oopMaps, "[B")                                                                                                         \
+    objArrayOop_field(HotSpotMetaData, metadata, "[Ljava/lang/String;")                                                                                        \
+  end_class                                                                                                                                                    \
+  start_class(HotSpotOopMap)                                                                                                                                   \
+    int_field(HotSpotOopMap, offset)                                                                                                                           \
+    int_field(HotSpotOopMap, count)                                                                                                                            \
+    typeArrayOop_field(HotSpotOopMap, data, "[B")                                                                                                              \
   end_class                                                                                                                                                    \
   start_class(HotSpotConstantPool)                                                                                                                             \
     long_field(HotSpotConstantPool, metaspaceConstantPool)                                                                                                     \
   end_class                                                                                                                                                    \
   start_class(HotSpotJVMCIRuntime)                                                                                                                             \
     objArrayOop_field(HotSpotJVMCIRuntime, trivialPrefixes, "[Ljava/lang/String;")                                                                             \
+    int_field(HotSpotJVMCIRuntime, compilationLevelAdjustment)                                                                                                 \
   end_class                                                                                                                                                    \
   /* end*/
 
@@ -309,7 +310,7 @@ class name : AllStatic {                                                        
         assert(obj->is_a(SystemDictionary::name##_klass()), "wrong class, " #name " expected, found %s", obj->klass()->external_name());                       \
         assert(offset != 0, "must be valid offset");                                                                                                           \
     }                                                                                                                                                          \
-    static void compute_offsets(TRAPS);                                                                                                                             \
+    static void compute_offsets(TRAPS);                                                                                                                        \
   public:                                                                                                                                                      \
     static InstanceKlass* klass() { return SystemDictionary::name##_klass(); }
 

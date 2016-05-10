@@ -68,7 +68,13 @@ public:
   // Initialization
   virtual void initialize();
 
+  /**
+   * Initialize the compile queue with the methods in java.lang.Object and
+   * then wait until the queue is empty.
+   */
   void bootstrap();
+
+  bool is_bootstrapping() const { return _bootstrapping; }
 
   // Compilation entry point for methods
   virtual void compile_method(ciEnv* env, ciMethod* target, int entry_bci, DirectiveSet* directive);
