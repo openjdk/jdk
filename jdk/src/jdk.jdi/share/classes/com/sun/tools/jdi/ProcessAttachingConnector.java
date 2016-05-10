@@ -128,7 +128,9 @@ public class ProcessAttachingConnector
             if (lib.equals("dt_shmem")) {
                 try {
                     Class<?> c = Class.forName("com.sun.tools.jdi.SharedMemoryTransportService");
-                    ts = (TransportService)c.newInstance();
+                    @SuppressWarnings("deprecation")
+                    Object tmp = c.newInstance();
+                    ts = (TransportService)tmp;
                 } catch (Exception x) { }
             }
         }

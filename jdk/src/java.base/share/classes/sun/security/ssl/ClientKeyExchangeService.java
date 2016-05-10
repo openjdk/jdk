@@ -50,7 +50,7 @@ public interface ClientKeyExchangeService {
                 providers = new HashMap<>();
 
         static {
-            String path = GetPropertyAction.getProperty("java.home");
+            String path = GetPropertyAction.privilegedGetProperty("java.home");
             ServiceLoader<ClientKeyExchangeService> sc =
                     AccessController.doPrivileged(
                             (PrivilegedAction<ServiceLoader<ClientKeyExchangeService>>)

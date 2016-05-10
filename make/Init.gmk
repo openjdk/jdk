@@ -268,8 +268,13 @@ else # HAS_SPEC=true
   ##############################################################################
 
   MAIN_TARGETS := $(SEQUENTIAL_TARGETS) $(PARALLEL_TARGETS) $(COMPARE_BUILD_MAKE)
+  # If building the default target, add what they are to the description.
+  DESCRIPTION_TARGETS := $(strip $(MAIN_TARGETS))
+  ifeq ($(DESCRIPTION_TARGETS), default)
+    DESCRIPTION_TARGETS += ($(DEFAULT_MAKE_TARGET))
+  endif
   TARGET_DESCRIPTION := target$(if $(word 2, $(MAIN_TARGETS)),s) \
-      '$(strip $(MAIN_TARGETS))' in configuration '$(CONF_NAME)'
+      '$(strip $(DESCRIPTION_TARGETS))' in configuration '$(CONF_NAME)'
 
   # MAKEOVERRIDES is automatically set and propagated by Make to sub-Make calls.
   # We need to clear it of the init-specific variables. The user-specified

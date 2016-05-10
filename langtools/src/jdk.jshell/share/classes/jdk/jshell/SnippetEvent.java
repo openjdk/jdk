@@ -44,7 +44,7 @@ public class SnippetEvent {
 
     SnippetEvent(Snippet snippet, Status previousStatus, Status status,
             boolean isSignatureChange, Snippet causeSnippet,
-            String value, Exception exception) {
+            String value, JShellException exception) {
         this.snippet = snippet;
         this.previousStatus = previousStatus;
         this.status = status;
@@ -60,7 +60,7 @@ public class SnippetEvent {
     private final boolean isSignatureChange;
     private final Snippet causeSnippet;
     private final String value;
-    private final Exception exception;
+    private final JShellException exception;
 
     /**
      * The Snippet which has changed
@@ -121,7 +121,7 @@ public class SnippetEvent {
      * during execution, otherwise <code>null</code>.
      * @return the exception or <code>null</code>.
      */
-    public Exception exception() {
+    public JShellException exception() {
         return exception;
     }
 

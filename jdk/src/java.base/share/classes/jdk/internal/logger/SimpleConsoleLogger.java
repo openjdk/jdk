@@ -56,7 +56,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
 
     static Level getDefaultLevel() {
         String levelName = GetPropertyAction
-                .getProperty("jdk.system.logger.level", "INFO");
+                .privilegedGetProperty("jdk.system.logger.level", "INFO");
         try {
             return Level.valueOf(levelName);
         } catch (IllegalArgumentException iae) {
@@ -426,7 +426,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
         static private final String[] skips;
         static {
             String additionalPkgs =
-                    GetPropertyAction.getProperty("jdk.logger.packages");
+                    GetPropertyAction.privilegedGetProperty("jdk.logger.packages");
             skips = additionalPkgs == null ? new String[0] : additionalPkgs.split(",");
         }
 
@@ -485,7 +485,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
             //    jdk/test/java/lang/invoke/lambda/LogGeneratedClassesTest.java
             // to fail - because that test has a testcase which somehow references
             // PlatformLogger and counts the number of generated lambda classes.
-            String format = GetPropertyAction.getProperty(key);
+            String format = GetPropertyAction.privilegedGetProperty(key);
 
             if (format == null && defaultPropertyGetter != null) {
                 format = defaultPropertyGetter.apply(key);

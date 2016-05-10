@@ -67,7 +67,6 @@ jvmtiError invoker_requestInvoke(jbyte invokeType, jbyte options, jint id,
 jboolean invoker_doInvoke(jthread thread);
 
 void invoker_completeInvokeRequest(jthread thread);
-jboolean invoker_isPending(jthread thread);
 jboolean invoker_isEnabled(jthread thread);
 void invoker_detach(InvokeRequest *request);
 

@@ -142,10 +142,11 @@ public interface ModuleReader extends Closeable {
      * @see ClassLoader#defineClass(String, ByteBuffer, java.security.ProtectionDomain)
      */
     default Optional<ByteBuffer> read(String name) throws IOException {
-        Optional<InputStream> in = open(name);
-        if (in.isPresent()) {
-            byte[] bytes = in.get().readAllBytes();
-            return Optional.of(ByteBuffer.wrap(bytes));
+        Optional<InputStream> oin = open(name);
+        if (oin.isPresent()) {
+            try (InputStream in = oin.get()) {
+                return Optional.of(ByteBuffer.wrap(in.readAllBytes()));
+            }
         } else {
             return Optional.empty();
         }

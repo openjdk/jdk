@@ -30,16 +30,14 @@ import java.net.URI;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpResponse.MultiProcessor;
 import java.util.concurrent.CompletableFuture;
-import java.net.SocketPermission;
 import java.security.AccessControlContext;
 import java.security.AccessController;
-import java.util.Set;
 import static java.net.http.HttpRedirectImpl.getRedirects;
 import java.util.Locale;
 
 class HttpRequestImpl extends HttpRequest {
 
-    private final HttpHeadersImpl userHeaders;
+    private final ImmutableHeaders userHeaders;
     private final HttpHeadersImpl systemHeaders;
     private final URI uri;
     private InetSocketAddress authority; // only used when URI not specified
@@ -56,6 +54,7 @@ class HttpRequestImpl extends HttpRequest {
     private boolean receiving;
     private AccessControlContext acc;
     private final long timeval;
+    private Stream.PushGroup<?> pushGroup;
 
     public HttpRequestImpl(HttpClientImpl client,
                            String method,
@@ -63,8 +62,8 @@ class HttpRequestImpl extends HttpRequest {
         this.client = client;
         this.method = method == null? "GET" : method;
         this.userHeaders = builder.headers() == null ?
-                new HttpHeadersImpl() : builder.headers();
-        dropDisallowedHeaders();
+                new ImmutableHeaders() :
+                new ImmutableHeaders(builder.headers(), Utils.ALLOWED_HEADERS);
         this.followRedirects = getRedirects(builder.followRedirects() == null ?
                 client.followRedirects() : builder.followRedirects());
         this.systemHeaders = new HttpHeadersImpl();
@@ -90,15 +89,13 @@ class HttpRequestImpl extends HttpRequest {
                            HttpRequestImpl other) {
         this.client = client;
         this.method = method == null? "GET" : method;
-        this.userHeaders = other.userHeaders == null ?
-                new HttpHeadersImpl() : other.userHeaders;
-        dropDisallowedHeaders();
+        this.userHeaders = other.userHeaders;
         this.followRedirects = getRedirects(other.followRedirects() == null ?
                 client.followRedirects() : other.followRedirects());
         this.systemHeaders = other.systemHeaders;
         this.uri = uri;
         this.expectContinue = other.expectContinue;
-        this.secure = other.secure;
+        this.secure = uri.getScheme().toLowerCase(Locale.US).equals("https");
         this.requestProcessor = other.requestProcessor;
         this.proxy = other.proxy;
         this.version = other.version;
@@ -115,7 +112,7 @@ class HttpRequestImpl extends HttpRequest {
         this.method = method;
         this.followRedirects = getRedirects(client.followRedirects());
         this.systemHeaders = new HttpHeadersImpl();
-        this.userHeaders = new HttpHeadersImpl();
+        this.userHeaders = new ImmutableHeaders();
         this.uri = null;
         this.proxy = null;
         this.requestProcessor = HttpRequest.noBody();
@@ -132,16 +129,52 @@ class HttpRequestImpl extends HttpRequest {
         return client;
     }
 
+    /**
+     * Creates a HttpRequestImpl from the given set of Headers and the associated
+     * "parent" request. Fields not taken from the headers are taken from the
+     * parent.
+     */
+    static HttpRequestImpl createPushRequest(HttpRequestImpl parent,
+            HttpHeadersImpl headers) throws IOException {
+
+        return new HttpRequestImpl(parent, headers);
+    }
+
+    // only used for push requests
+    private HttpRequestImpl(HttpRequestImpl parent, HttpHeadersImpl headers) throws IOException {
+        this.method = headers.firstValue(":method")
+                .orElseThrow(() -> new IOException("No method in Push Promise"));
+        String path = headers.firstValue(":path")
+                .orElseThrow(() -> new IOException("No path in Push Promise"));
+        String scheme = headers.firstValue(":scheme")
+                .orElseThrow(() -> new IOException("No scheme in Push Promise"));
+        String authority = headers.firstValue(":authority")
+                .orElseThrow(() -> new IOException("No authority in Push Promise"));
+        StringBuilder sb = new StringBuilder();
+        sb.append(scheme).append("://").append(authority).append(path);
+        this.uri = URI.create(sb.toString());
+
+        this.client = parent.client;
+        this.userHeaders = new ImmutableHeaders(headers, Utils.ALLOWED_HEADERS);
+        this.followRedirects = parent.followRedirects;
+        this.systemHeaders = parent.systemHeaders;
+        this.expectContinue = parent.expectContinue;
+        this.secure = parent.secure;
+        this.requestProcessor = parent.requestProcessor;
+        this.proxy = parent.proxy;
+        this.version = parent.version;
+        this.acc = parent.acc;
+        this.exchange = parent.exchange;
+        this.timeval = parent.timeval;
+    }
 
     @Override
     public String toString() {
-        return (uri == null ? "" : uri.toString()) + "/" + method + "("
-                + hashCode() + ")";
+        return (uri == null ? "" : uri.toString()) + " " + method;
     }
 
     @Override
     public HttpHeaders headers() {
-        userHeaders.makeUnmodifiable();
         return userHeaders;
     }
 
@@ -154,26 +187,15 @@ class HttpRequestImpl extends HttpRequest {
         systemHeaders.setHeader("HTTP2-Settings", h2client.getSettingsString());
     }
 
-    private static final Set<String>  DISALLOWED_HEADERS_SET = Set.of(
-        "authorization", "connection", "cookie", "content-length",
-        "date", "expect", "from", "host", "origin", "proxy-authorization",
-        "referer", "user-agent", "upgrade", "via", "warning");
-
-
-    // we silently drop headers that are disallowed
-    private void dropDisallowedHeaders() {
-        Set<String> hdrnames = userHeaders.directMap().keySet();
-
-        hdrnames.removeIf((s) ->
-              DISALLOWED_HEADERS_SET.contains(s.toLowerCase())
-        );
-    }
-
     private synchronized void receiving() {
         if (receiving) {
             throw new IllegalStateException("already receiving response");
         }
         receiving = true;
+    }
+
+    synchronized Stream.PushGroup<?> pushGroup() {
+        return pushGroup;
     }
 
     /*
@@ -200,10 +222,25 @@ class HttpRequestImpl extends HttpRequest {
             .thenApply((r) -> (HttpResponse)r);
     }
 
-    public <U> CompletableFuture<U>
-    sendAsyncMulti(HttpResponse.MultiProcessor<U> rspproc) {
-        // To change body of generated methods, choose Tools | Templates.
-        throw new UnsupportedOperationException("Not supported yet.");
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public synchronized <U> CompletableFuture<U>
+    multiResponseAsync(MultiProcessor<U> rspproc) {
+        if (System.getSecurityManager() != null) {
+            acc = AccessController.getContext();
+        }
+        this.pushGroup = new Stream.PushGroup<>(rspproc, this);
+        CompletableFuture<HttpResponse> cf = pushGroup.mainResponse();
+        responseAsync()
+            .whenComplete((HttpResponse r, Throwable t) -> {
+                if (r != null)
+                    cf.complete(r);
+                else
+                    cf.completeExceptionally(t);
+                pushGroup.pushError(t);
+            });
+        return (CompletableFuture<U>)pushGroup.groupResult();
     }
 
     @Override
@@ -255,7 +292,7 @@ class HttpRequestImpl extends HttpRequest {
     @Override
     public URI uri() { return uri; }
 
-    HttpHeadersImpl getUserHeaders() { return userHeaders; }
+    HttpHeaders getUserHeaders() { return userHeaders; }
 
     HttpHeadersImpl getSystemHeaders() { return systemHeaders; }
 
@@ -275,11 +312,4 @@ class HttpRequestImpl extends HttpRequest {
     }
 
     long timeval() { return timeval; }
-
-    @Override
-    public <U> CompletableFuture<U>
-    multiResponseAsync(MultiProcessor<U> rspproc) {
-        //To change body of generated methods, choose Tools | Templates.
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
 }

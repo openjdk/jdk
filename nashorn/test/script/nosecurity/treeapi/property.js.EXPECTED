@@ -1,7 +1,7 @@
 [
   {
     "getter": "null",
-    "endPosition": "17",
+    "endPosition": "22",
     "kind": "PROPERTY",
     "setter": "null",
     "value": {
@@ -20,7 +20,7 @@
   },
   {
     "getter": "null",
-    "endPosition": "31",
+    "endPosition": "38",
     "kind": "PROPERTY",
     "setter": "null",
     "value": {
@@ -45,7 +45,7 @@
   },
   {
     "getter": "null",
-    "endPosition": "46",
+    "endPosition": "61",
     "kind": "PROPERTY",
     "setter": "null",
     "value": {
@@ -72,7 +72,7 @@
   },
   {
     "getter": "null",
-    "endPosition": "69",
+    "endPosition": "72",
     "kind": "PROPERTY",
     "setter": "null",
     "value": {

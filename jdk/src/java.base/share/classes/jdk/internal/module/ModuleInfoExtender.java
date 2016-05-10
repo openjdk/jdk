@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.module.Hasher.DependencyHashes;
 
 import static jdk.internal.module.ClassFileAttributes.*;
 
@@ -69,7 +68,7 @@ public final class ModuleInfoExtender {
     private String osVersion;
 
     // the hashes for the Hashes attribute
-    private DependencyHashes hashes;
+    private ModuleHashes hashes;
 
     private ModuleInfoExtender(InputStream in) {
         this.in = in;
@@ -113,10 +112,10 @@ public final class ModuleInfoExtender {
 
     /**
      * The Hashes attribute will be emitted to the module-info with
-     * the hashes encapsulated in the given {@code DependencyHashes}
+     * the hashes encapsulated in the given {@code ModuleHashes}
      * object.
      */
-    public ModuleInfoExtender hashes(DependencyHashes hashes) {
+    public ModuleInfoExtender hashes(ModuleHashes hashes) {
         this.hashes = hashes;
         return this;
     }

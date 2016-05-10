@@ -35,7 +35,7 @@ import java.util.Objects;
 class ConnectionPool {
 
     static final long KEEP_ALIVE = Utils.getIntegerNetProperty(
-            "sun.net.httpclient.keepalive.timeout", 1200); // seconds
+            "java.net.httpclient.keepalive.timeout", 1200); // seconds
 
     // Pools of idle connections
 

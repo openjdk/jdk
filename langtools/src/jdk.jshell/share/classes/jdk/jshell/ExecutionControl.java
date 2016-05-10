@@ -57,11 +57,19 @@ class ExecutionControl {
     private ObjectInputStream in;
     private ObjectOutputStream out;
     private final JShell proc;
+    private final String remoteVMOptions;
 
-    ExecutionControl(JDIEnv env, SnippetMaps maps, JShell proc) {
+    ExecutionControl(JDIEnv env, SnippetMaps maps, JShell proc, List<String> extraRemoteVMOptions) {
         this.env = env;
         this.maps = maps;
         this.proc = proc;
+        StringBuilder sb = new StringBuilder();
+        extraRemoteVMOptions.stream()
+                .forEach(s -> {
+                    sb.append(" ");
+                    sb.append(s);
+                });
+        this.remoteVMOptions = sb.toString();
     }
 
     void launch() throws IOException {
@@ -111,7 +119,7 @@ class ExecutionControl {
         }
     }
 
-    String commandInvoke(String classname) throws EvalException, UnresolvedReferenceException {
+    String commandInvoke(String classname) throws JShellException {
         try {
             synchronized (STOP_LOCK) {
                 userCodeRunning = true;
@@ -205,7 +213,7 @@ class ExecutionControl {
         }
     }
 
-    private boolean readAndReportExecutionResult() throws IOException, EvalException, UnresolvedReferenceException {
+    private boolean readAndReportExecutionResult() throws IOException, JShellException {
         int ok = in.readInt();
         switch (ok) {
             case RESULT_SUCCESS:
@@ -257,11 +265,9 @@ class ExecutionControl {
         //        Locale.getDefault());
 
         String connectorName = "com.sun.jdi.CommandLineLaunch";
-        String classPath = System.getProperty("java.class.path");
-        String javaArgs = "-classpath " + classPath;
         Map<String, String> argumentName2Value = new HashMap<>();
         argumentName2Value.put("main", "jdk.internal.jshell.remote.RemoteAgent " + port);
-        argumentName2Value.put("options", javaArgs);
+        argumentName2Value.put("options", remoteVMOptions);
 
         boolean launchImmediately = true;
         int traceFlags = 0;// VirtualMachine.TRACE_SENDS | VirtualMachine.TRACE_EVENTS;

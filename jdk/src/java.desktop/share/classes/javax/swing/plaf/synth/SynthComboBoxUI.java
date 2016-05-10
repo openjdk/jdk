@@ -144,7 +144,6 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
             forceOpaque = style.getBoolean(context,
                     "ComboBox.forceOpaque", false);
         }
-        context.dispose();
 
         if(listBox != null) {
             SynthLookAndFeel.updateStyles(listBox);
@@ -182,7 +181,6 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
         SynthContext context = getContext(comboBox, ENABLED);
 
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
     }
 
@@ -323,7 +321,6 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
         context.getPainter().paintComboBoxBackground(context, g, 0, 0,
                                                   c.getWidth(), c.getHeight());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -340,7 +337,6 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**

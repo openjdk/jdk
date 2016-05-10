@@ -242,7 +242,6 @@ public class TagletManager {
             }
 
             customTagClass = tagClassLoader.loadClass(classname);
-            ensureReadable(customTagClass);
 
             Method meth = customTagClass.getMethod("register",
                                                    Map.class);
@@ -267,27 +266,6 @@ public class TagletManager {
             message.error("doclet.Error_taglet_not_registered", exc.getClass().getName(), classname);
         }
 
-    }
-
-    /**
-     * Ensures that the module of the given class is readable to this
-     * module.
-     * @param targetClass class in module to be made readable
-     */
-    private void ensureReadable(Class<?> targetClass) {
-        try {
-            Method getModuleMethod = Class.class.getMethod("getModule");
-            Object thisModule = getModuleMethod.invoke(this.getClass());
-            Object targetModule = getModuleMethod.invoke(targetClass);
-
-            Class<?> moduleClass = getModuleMethod.getReturnType();
-            Method addReadsMethod = moduleClass.getMethod("addReads", moduleClass);
-            addReadsMethod.invoke(thisModule, targetModule);
-        } catch (NoSuchMethodException e) {
-            // ignore
-        } catch (Exception e) {
-            throw new InternalError(e);
-        }
     }
 
     /**

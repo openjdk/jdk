@@ -48,7 +48,7 @@ public class ServiceInStaticClassErrorTest extends ModuleTestBase {
     }
 
     @Test
-    void testError(Path base) throws Exception {
+    public void testError(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { provides p1.I with p1.Outer.A; }",

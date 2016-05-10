@@ -70,6 +70,7 @@ import jdk.tools.jlink.plugin.Plugin;
  * ## Should use jdk.joptsimple some day.
  */
 public class JlinkTask {
+    private static final boolean DEBUG = Boolean.getBoolean("jlink.debug");
 
     private static <T extends Throwable> void fail(Class<T> type,
             String format,
@@ -142,9 +143,6 @@ public class JlinkTask {
             }
             task.options.packagedModulesPath = path;
         }, true, "--keep-packaged-modules"),
-        new Option<JlinkTask>(false, (task, opt, arg) -> {
-            task.options.genbom = true;
-        }, true, "--genbom"),
         new Option<JlinkTask>(true, (task, opt, arg) -> {
             task.options.saveoptsfile = arg;
         }, "--saveopts"),
@@ -175,7 +173,6 @@ public class JlinkTask {
 
     static class OptionsValues {
         boolean help;
-        boolean genbom;
         String  saveoptsfile;
         boolean version;
         boolean fullVersion;
@@ -219,33 +216,29 @@ public class JlinkTask {
             }
 
             return EXIT_OK;
-        } catch (UncheckedIOException | PluginException | IOException | ResolutionException e) {
+        } catch (UncheckedIOException | PluginException | IllegalArgumentException |
+                 IOException | ResolutionException e) {
             log.println(taskHelper.getMessage("error.prefix") + " " + e.getMessage());
-            log.println(taskHelper.getMessage("main.usage.summary", PROGNAME));
+            if (DEBUG) {
+                e.printStackTrace(log);
+            }
             return EXIT_ERROR;
         } catch (BadArgs e) {
             taskHelper.reportError(e.key, e.args);
             if (e.showUsage) {
                 log.println(taskHelper.getMessage("main.usage.summary", PROGNAME));
             }
+            if (DEBUG) {
+                e.printStackTrace(log);
+            }
             return EXIT_CMDERR;
         } catch (Throwable x) {
-            log.println(taskHelper.getMessage("main.msg.bug"));
+            log.println(taskHelper.getMessage("error.prefix") + " " + x.getMessage());
             x.printStackTrace(log);
             return EXIT_ABNORMAL;
         } finally {
             log.flush();
         }
-    }
-
-    private static Map<String, Path> modulesToPath(Configuration cf) {
-        Map<String, Path> modPaths = new HashMap<>();
-        for (ResolvedModule resolvedModule : cf.modules()) {
-            ModuleReference mref = resolvedModule.reference();
-            URI uri = mref.location().get();
-            modPaths.put(mref.descriptor().name(), Paths.get(uri));
-        }
-        return modPaths;
     }
 
     /*
@@ -275,8 +268,7 @@ public class JlinkTask {
                                       null);
 
         // Then create the Plugin Stack
-        ImagePluginStack stack = ImagePluginConfiguration.parseConfiguration(plugins,
-                genBOMContent(config, plugins));
+        ImagePluginStack stack = ImagePluginConfiguration.parseConfiguration(plugins);
 
         //Ask the stack to proceed;
         stack.operate(imageProvider);
@@ -297,7 +289,7 @@ public class JlinkTask {
     }
 
     private void postProcessOnly(Path existingImage) throws Exception {
-        PluginsConfiguration config = taskHelper.getPluginsConfig(null, false);
+        PluginsConfiguration config = taskHelper.getPluginsConfig(null);
         ExecutableImage img = DefaultImageBuilder.getExecutableImage(existingImage);
         if (img == null) {
             throw taskHelper.newBadArgs("err.existing.image.invalid");
@@ -327,8 +319,7 @@ public class JlinkTask {
 
         // Then create the Plugin Stack
         ImagePluginStack stack = ImagePluginConfiguration.
-                parseConfiguration(taskHelper.getPluginsConfig(options.output, options.genbom),
-                        genBOMContent());
+                parseConfiguration(taskHelper.getPluginsConfig(options.output));
 
         //Ask the stack to proceed
         stack.operate(imageProvider);
@@ -358,6 +349,15 @@ public class JlinkTask {
         return finder;
     }
 
+
+    private static Path toPathLocation(ResolvedModule m) {
+        Optional<URI> ouri = m.reference().location();
+        if (!ouri.isPresent())
+            throw new InternalError(m + " does not have a location");
+        URI uri = ouri.get();
+        return Paths.get(uri);
+    }
+
     private static ImageProvider createImageProvider(ModuleFinder finder,
                                                      Set<String> addMods,
                                                      Set<String> limitMods,
@@ -374,7 +374,8 @@ public class JlinkTask {
                                  ModuleFinder.empty(),
                                  addMods);
 
-        Map<String, Path> mods = modulesToPath(cf);
+        Map<String, Path> mods = cf.modules().stream()
+            .collect(Collectors.toMap(ResolvedModule::name, JlinkTask::toPathLocation));
         return new ImageHelper(cf, mods, order, retainModulesPath);
     }
 
@@ -399,20 +400,14 @@ public class JlinkTask {
             map.put(mref.descriptor().name(), mref);
         });
 
+        // add the other modules
+        otherMods.stream()
+            .map(finder::find)
+            .flatMap(Optional::stream)
+            .forEach(mref -> map.putIfAbsent(mref.descriptor().name(), mref));
+
         // set of modules that are observable
         Set<ModuleReference> mrefs = new HashSet<>(map.values());
-
-        // add the other modules
-        for (String mod : otherMods) {
-            Optional<ModuleReference> omref = finder.find(mod);
-            if (omref.isPresent()) {
-                ModuleReference mref = omref.get();
-                map.putIfAbsent(mod, mref);
-                mrefs.add(mref);
-            } else {
-                // no need to fail
-            }
-        }
 
         return new ModuleFinder() {
             @Override

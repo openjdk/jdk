@@ -44,6 +44,7 @@ import java.util.function.Supplier;
 import jdk.internal.jimage.ImageLocation;
 import jdk.internal.jimage.ImageReader;
 import jdk.internal.jimage.ImageReaderFactory;
+import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.SystemModules;
 import jdk.internal.module.ModulePatcher;
 import jdk.internal.perf.PerfCounter;
@@ -101,13 +102,16 @@ class SystemModuleFinder implements ModuleFinder {
         for (int i = 0; i < n; i++) {
             String mn = moduleNames[i];
             ModuleDescriptor md;
+            String hash;
             if (fastLoad) {
                 md = descriptors[i];
+                hash = SystemModules.MODULES_TO_HASH[i];
             } else {
                 // fallback to read module-info.class
                 // if fast loading of ModuleDescriptors is disabled
                 ImageLocation location = imageReader.findLocation(mn, "module-info.class");
                 md = ModuleDescriptor.read(imageReader.getResourceBuffer(location));
+                hash = null;
             }
             if (!md.name().equals(mn))
                 throw new InternalError();
@@ -123,7 +127,8 @@ class SystemModuleFinder implements ModuleFinder {
                 }
             };
 
-            ModuleReference mref = new ModuleReference(md, uri, readerSupplier);
+            ModuleReference mref =
+                new ModuleReference(md, uri, readerSupplier, hashSupplier(hash));
 
             // may need a reference to a patched module if -Xpatch specified
             mref = ModulePatcher.interposeIfNeeded(mref);
@@ -140,6 +145,18 @@ class SystemModuleFinder implements ModuleFinder {
         nameToModule = map;
 
         initTime.addElapsedTimeFrom(t0);
+    }
+
+    private static ModuleHashes.HashSupplier hashSupplier(String hash) {
+        if (hash == null)
+            return null;
+
+        return new ModuleHashes.HashSupplier() {
+            @Override
+            public String generate(String algorithm) {
+                return hash;
+            }
+        };
     }
 
     SystemModuleFinder() { }
