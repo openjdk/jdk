@@ -20,23 +20,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.hotspot.events;
-
-import jdk.vm.ci.common.JVMCIError;
+package jdk.vm.ci.hotspot.services;
 
 /**
  * An empty implementation for {@link EventProvider}. This implementation is used when no logging is
  * requested.
  */
-public final class EmptyEventProvider implements EventProvider {
+final class EmptyEventProvider extends EventProvider {
 
+    EmptyEventProvider() {
+        super(null);
+    }
+
+    static InternalError shouldNotReachHere() {
+        throw new InternalError("should not reach here");
+    }
+
+    @Override
     public CompilationEvent newCompilationEvent() {
         return new EmptyCompilationEvent();
     }
 
-    public static class EmptyCompilationEvent implements CompilationEvent {
+    static class EmptyCompilationEvent implements CompilationEvent {
         public void commit() {
-            throw JVMCIError.shouldNotReachHere();
+            throw shouldNotReachHere();
         }
 
         public boolean shouldWrite() {
@@ -51,41 +58,42 @@ public final class EmptyEventProvider implements EventProvider {
         }
 
         public void setMethod(String method) {
-            throw JVMCIError.shouldNotReachHere();
+            throw shouldNotReachHere();
         }
 
         public void setCompileId(int compileId) {
-            throw JVMCIError.shouldNotReachHere();
+            throw shouldNotReachHere();
         }
 
         public void setCompileLevel(int compileLevel) {
-            throw JVMCIError.shouldNotReachHere();
+            throw shouldNotReachHere();
         }
 
         public void setSucceeded(boolean succeeded) {
-            throw JVMCIError.shouldNotReachHere();
+            throw shouldNotReachHere();
         }
 
         public void setIsOsr(boolean isOsr) {
-            throw JVMCIError.shouldNotReachHere();
+            throw shouldNotReachHere();
         }
 
         public void setCodeSize(int codeSize) {
-            throw JVMCIError.shouldNotReachHere();
+            throw shouldNotReachHere();
         }
 
         public void setInlinedBytes(int inlinedBytes) {
-            throw JVMCIError.shouldNotReachHere();
+            throw shouldNotReachHere();
         }
     }
 
+    @Override
     public CompilerFailureEvent newCompilerFailureEvent() {
         return new EmptyCompilerFailureEvent();
     }
 
-    public static class EmptyCompilerFailureEvent implements CompilerFailureEvent {
+    static class EmptyCompilerFailureEvent implements CompilerFailureEvent {
         public void commit() {
-            throw JVMCIError.shouldNotReachHere();
+            throw shouldNotReachHere();
         }
 
         public boolean shouldWrite() {
@@ -94,11 +102,11 @@ public final class EmptyEventProvider implements EventProvider {
         }
 
         public void setCompileId(int compileId) {
-            throw JVMCIError.shouldNotReachHere();
+            throw shouldNotReachHere();
         }
 
         public void setMessage(String message) {
-            throw JVMCIError.shouldNotReachHere();
+            throw shouldNotReachHere();
         }
     }
 
