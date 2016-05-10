@@ -744,6 +744,11 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     @Override
+    public Annotation[] getDeclaredAnnotations() {
+        return mirror().getDeclaredAnnotations();
+    }
+
+    @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
         return mirror().getAnnotation(annotationClass);
     }

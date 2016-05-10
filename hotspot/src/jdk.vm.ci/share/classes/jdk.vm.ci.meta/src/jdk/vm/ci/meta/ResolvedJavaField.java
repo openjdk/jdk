@@ -22,14 +22,14 @@
  */
 package jdk.vm.ci.meta;
 
-import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Modifier;
 
 /**
  * Represents a reference to a resolved Java field. Fields, like methods and types, are resolved
  * through {@link ConstantPool constant pools}.
  */
-public interface ResolvedJavaField extends JavaField, ModifiersProvider {
+public interface ResolvedJavaField extends JavaField, ModifiersProvider, AnnotatedElement {
 
     /**
      * {@inheritDoc}
@@ -59,22 +59,6 @@ public interface ResolvedJavaField extends JavaField, ModifiersProvider {
      * this field.
      */
     ResolvedJavaType getDeclaringClass();
-
-    /**
-     * Returns all annotations of this field. If no annotations are present, an array of length 0 is
-     * returned.
-     */
-    Annotation[] getAnnotations();
-
-    /**
-     * Returns the annotation for the specified type of this field, if such an annotation is
-     * present.
-     *
-     * @param annotationClass the Class object corresponding to the annotation type
-     * @return this element's annotation for the specified annotation type if present on this field,
-     *         else {@code null}
-     */
-    <T extends Annotation> T getAnnotation(Class<T> annotationClass);
 
     /**
      * Returns an object representing the unique location identity of this resolved Java field.
