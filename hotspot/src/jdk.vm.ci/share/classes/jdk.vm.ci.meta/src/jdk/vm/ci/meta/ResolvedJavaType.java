@@ -22,7 +22,7 @@
  */
 package jdk.vm.ci.meta;
 
-import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 
@@ -31,7 +31,7 @@ import jdk.vm.ci.meta.Assumptions.AssumptionResult;
  * thereof. Types, like fields and methods, are resolved through {@link ConstantPool constant pools}
  * .
  */
-public interface ResolvedJavaType extends JavaType, ModifiersProvider {
+public interface ResolvedJavaType extends JavaType, ModifiersProvider, AnnotatedElement {
     /**
      * Checks whether this type has a finalizer method.
      *
@@ -282,22 +282,6 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider {
      * is, for a single JVM execution the same order is returned each time this method is called.
      */
     ResolvedJavaField[] getStaticFields();
-
-    /**
-     * Returns all annotations of this class. If no annotations are present, an array of length 0 is
-     * returned.
-     */
-    Annotation[] getAnnotations();
-
-    /**
-     * Returns the annotation for the specified type of this class, if such an annotation is
-     * present.
-     *
-     * @param annotationClass the Class object corresponding to the annotation type
-     * @return this element's annotation for the specified annotation type if present on this class,
-     *         else {@code null}
-     */
-    <T extends Annotation> T getAnnotation(Class<T> annotationClass);
 
     /**
      * Returns the instance field of this class (or one of its super classes) at the given offset,
