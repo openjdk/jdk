@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,6 @@ import jdk.vm.ci.meta.ModifiersProvider;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.TrustedInterface;
 
 import org.junit.Test;
 
@@ -837,16 +836,6 @@ public class TestResolvedJavaType extends TypeUniverse {
             assertFalse(enclc == null ^ enclt == null);
             if (enclc != null) {
                 assertEquals(enclt, metaAccess.lookupJavaType(enclc));
-            }
-        }
-    }
-
-    @Test
-    public void isTrustedInterfaceTypeTest() {
-        for (Class<?> c : classes) {
-            ResolvedJavaType type = metaAccess.lookupJavaType(c);
-            if (TrustedInterface.class.isAssignableFrom(c)) {
-                assertTrue(type.isTrustedInterfaceType());
             }
         }
     }

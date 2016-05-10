@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.TrustedInterface;
 import jdk.vm.ci.runtime.JVMCI;
 
 import org.junit.Test;
@@ -116,8 +115,8 @@ public class TypeUniverse {
                         byte[].class, short[].class, char[].class, int[].class, float[].class, long[].class, double[].class, Object[].class, Class[].class, List[].class, boolean[][].class,
                         byte[][].class, short[][].class, char[][].class, int[][].class, float[][].class, long[][].class, double[][].class, Object[][].class, Class[][].class, List[][].class,
                         ClassLoader.class, String.class, Serializable.class, Cloneable.class, Test.class, TestMetaAccessProvider.class, List.class, Collection.class, Map.class, Queue.class,
-                        HashMap.class, LinkedHashMap.class, IdentityHashMap.class, AbstractCollection.class, AbstractList.class, ArrayList.class, TrustedInterface.class, InnerClass.class,
-                        InnerStaticClass.class, InnerStaticFinalClass.class, PrivateInnerClass.class, ProtectedInnerClass.class};
+                        HashMap.class, LinkedHashMap.class, IdentityHashMap.class, AbstractCollection.class, AbstractList.class, ArrayList.class, InnerClass.class, InnerStaticClass.class,
+                        InnerStaticFinalClass.class, PrivateInnerClass.class, ProtectedInnerClass.class};
         for (Class<?> c : initialClasses) {
             addClass(c);
         }
