@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,12 +344,6 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider {
      * Returns the {@code <clinit>} method for this class if there is one.
      */
     ResolvedJavaMethod getClassInitializer();
-
-    /**
-     * Returns true if this type represents an interface and it should be trusted even in places
-     * where the JVM verifier would not give any guarantees other than {@link Object}.
-     */
-    boolean isTrustedInterfaceType();
 
     default ResolvedJavaMethod findMethod(String name, Signature signature) {
         for (ResolvedJavaMethod method : getDeclaredMethods()) {
