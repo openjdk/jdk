@@ -37,10 +37,6 @@ BUILD_TOOLS_JDK := $(call SetupJavaCompilationCompileTarget, \
 
 ################################################################################
 
-# Add a checksum ("jsum") to the end of a text file. Prevents trivial tampering with class lists.
-TOOL_ADDJSUM = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
-    build.tools.addjsum.AddJsum
-
 ifeq ($(BOOT_JDK_MODULAR), true)
   COMPILEFONTCONFIG_ADD_EXPORTS := -XaddExports:java.desktop/sun.awt=ALL-UNNAMED
 endif
