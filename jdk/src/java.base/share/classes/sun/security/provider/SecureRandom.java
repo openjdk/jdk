@@ -156,6 +156,7 @@ implements java.io.Serializable {
             }
         }
         state = digest.digest(seed);
+        remCount = 0;
     }
 
     private static void updateState(byte[] state, byte[] output) {
