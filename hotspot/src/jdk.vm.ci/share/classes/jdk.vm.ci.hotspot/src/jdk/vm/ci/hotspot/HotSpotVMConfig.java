@@ -31,6 +31,7 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import jdk.internal.vm.annotation.Stable;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspotvmconfig.HotSpotVMAddress;
 import jdk.vm.ci.hotspotvmconfig.HotSpotVMConstant;

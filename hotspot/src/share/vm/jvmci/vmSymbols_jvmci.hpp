@@ -96,8 +96,7 @@
   template(fromMetaspace_name,                                    "fromMetaspace")                                         \
   template(method_fromMetaspace_signature,                        "(J)Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethod;")      \
   template(constantPool_fromMetaspace_signature,                  "(J)Ljdk/vm/ci/hotspot/HotSpotConstantPool;")            \
-  template(klass_fromMetaspace_signature,                         "(Ljava/lang/Class;)Ljdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl;") \
-  template(jdk_vm_ci_hotspot_Stable_signature,                    "Ljdk/vm/ci/hotspot/Stable;")
+  template(klass_fromMetaspace_signature,                         "(Ljava/lang/Class;)Ljdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl;")
 #endif
 
 #endif // SHARE_VM_JVMCI_VMSYMBOLS_JVMCI_HPP
