@@ -40,7 +40,7 @@ module jdk.jlink {
     provides jdk.tools.jlink.plugin.TransformerPlugin with jdk.tools.jlink.internal.plugins.ExcludeFilesPlugin;
     provides jdk.tools.jlink.plugin.TransformerPlugin with jdk.tools.jlink.internal.plugins.SystemModuleDescriptorPlugin;
     provides jdk.tools.jlink.plugin.TransformerPlugin with jdk.tools.jlink.internal.plugins.StripNativeCommandsPlugin;
-    provides jdk.tools.jlink.plugin.TransformerPlugin with jdk.tools.jlink.internal.plugins.SortResourcesPlugin;
+    provides jdk.tools.jlink.plugin.TransformerPlugin with jdk.tools.jlink.internal.plugins.OrderResourcesPlugin;
     provides jdk.tools.jlink.plugin.TransformerPlugin with jdk.tools.jlink.internal.plugins.DefaultCompressPlugin;
     provides jdk.tools.jlink.plugin.TransformerPlugin with jdk.tools.jlink.internal.plugins.OptimizationPlugin;
     provides jdk.tools.jlink.plugin.TransformerPlugin with jdk.tools.jlink.internal.plugins.ExcludeVMPlugin;
