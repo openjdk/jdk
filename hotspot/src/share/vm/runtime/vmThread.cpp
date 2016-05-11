@@ -226,16 +226,12 @@ void VMThread::create() {
   }
 }
 
-
 VMThread::VMThread() : NamedThread() {
   set_name("VM Thread");
 }
 
 void VMThread::destroy() {
-  if (_vm_thread != NULL) {
-    delete _vm_thread;
-    _vm_thread = NULL;      // VM thread is gone
-  }
+  _vm_thread = NULL;      // VM thread is gone
 }
 
 void VMThread::run() {
@@ -308,9 +304,9 @@ void VMThread::run() {
     _terminate_lock->notify();
   }
 
-  // Deletion must be done synchronously by the JNI DestroyJavaVM thread
-  // so that the VMThread deletion completes before the main thread frees
-  // up the CodeHeap.
+  // We are now racing with the VM termination being carried out in
+  // another thread, so we don't "delete this". Numerous threads don't
+  // get deleted when the VM terminates
 
 }
 

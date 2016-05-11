@@ -409,8 +409,8 @@ struct tm* os::localtime_pd(const time_t* clock, struct tm* res) {
 
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 
-// Thread start routine for all new Java threads
-static unsigned __stdcall java_start(Thread* thread) {
+// Thread start routine for all newly created threads
+static unsigned __stdcall thread_native_entry(Thread* thread) {
   // Try to randomize the cache line index of hot stack frames.
   // This helps when threads of the same stack traces evict each other's
   // cache lines. The threads can be either from the same JVM instance, or
@@ -457,6 +457,15 @@ static unsigned __stdcall java_start(Thread* thread) {
   // which frees the CodeHeap containing the Atomic::add code
   if (thread != VMThread::vm_thread() && VMThread::vm_thread() != NULL) {
     Atomic::dec_ptr((intptr_t*)&os::win32::_os_thread_count);
+  }
+
+  // If a thread has not deleted itself ("delete this") as part of its
+  // termination sequence, we have to ensure thread-local-storage is
+  // cleared before we actually terminate. No threads should ever be
+  // deleted asynchronously with respect to their termination.
+  if (Thread::current_or_null_safe() != NULL) {
+    assert(Thread::current_or_null_safe() == thread, "current thread is wrong");
+    thread->clear_thread_current();
   }
 
   // Thread must not return from exit_process_or_thread(), but if it does,
@@ -631,7 +640,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   HANDLE thread_handle =
     (HANDLE)_beginthreadex(NULL,
                            (unsigned)stack_size,
-                           (unsigned (__stdcall *)(void*)) java_start,
+                           (unsigned (__stdcall *)(void*)) thread_native_entry,
                            thread,
                            initflag,
                            &thread_id);
@@ -670,6 +679,12 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 // Free Win32 resources related to the OSThread
 void os::free_thread(OSThread* osthread) {
   assert(osthread != NULL, "osthread not set");
+
+  // We are told to free resources of the argument thread,
+  // but we can only really operate on the current thread.
+  assert(Thread::current()->osthread() == osthread,
+         "os::free_thread but not current thread");
+
   CloseHandle(osthread->thread_handle());
   CloseHandle(osthread->interrupt_event());
   delete osthread;
