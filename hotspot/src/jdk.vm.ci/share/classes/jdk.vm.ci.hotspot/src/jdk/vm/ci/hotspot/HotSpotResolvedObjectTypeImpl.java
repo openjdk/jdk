@@ -469,7 +469,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         return result;
     }
 
-    public synchronized HotSpotResolvedJavaField createField(String fieldName, JavaType type, long offset, int rawFlags) {
+    synchronized HotSpotResolvedJavaField createField(String fieldName, JavaType type, long offset, int rawFlags) {
         HotSpotResolvedJavaField result = null;
 
         final int flags = rawFlags & ModifiersProvider.jvmFieldModifiers();
@@ -489,7 +489,12 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             fieldCache.put(id, result);
         } else {
             assert result.getName().equals(fieldName);
-            // assert result.getType().equals(type);
+            /*
+             * Comparing the types directly is too strict, because the type in the cache could be
+             * resolved while the incoming type is unresolved. The name comparison is sufficient
+             * because the type will always be resolved in the context of the holder.
+             */
+            assert result.getType().getName().equals(type.getName());
             assert result.offset() == offset;
             assert result.getModifiers() == flags;
         }
