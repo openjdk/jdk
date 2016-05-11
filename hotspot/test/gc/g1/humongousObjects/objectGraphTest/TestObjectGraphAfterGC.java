@@ -59,6 +59,9 @@ import java.util.stream.Collectors;
  *        gc.g1.humongousObjects.objectGraphTest.GC
  *        gc.g1.humongousObjects.objectGraphTest.ObjectGraph
  *        gc.g1.humongousObjects.objectGraphTest.TestObjectGraphAfterGC
+ *
+ * @ignore 8156755
+ *
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  *
