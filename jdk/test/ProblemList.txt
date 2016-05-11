@@ -386,6 +386,7 @@ com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8141370 linux-i5
 # core_tools
 
 tools/jimage/JImageTest.java                                    8150975 linux-i586,windows-i586
+tools/jlink/plugins/SorterPluginTest.java                       generic-all
 
 ############################################################################
 
