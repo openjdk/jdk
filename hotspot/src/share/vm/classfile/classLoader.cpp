@@ -320,7 +320,7 @@ u1* ClassPathZipEntry::open_entry(const char* name, jint* filesize, bool nul_ter
 #if INCLUDE_CDS
 u1* ClassPathZipEntry::open_versioned_entry(const char* name, jint* filesize, TRAPS) {
   u1* buffer = NULL;
-  if (DumpSharedSpaces) {
+  if (DumpSharedSpaces && !_is_boot_append) {
     // We presume default is multi-release enabled
     const char* multi_ver = Arguments::get_property("jdk.util.jar.enableMultiRelease");
     const char* verstr = Arguments::get_property("jdk.util.jar.version");
