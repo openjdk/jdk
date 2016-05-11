@@ -37,6 +37,7 @@
 #include "logging/logOutput.hpp"
 #include "logging/logTagLevelExpression.hpp"
 #include "logging/logTagSet.hpp"
+#include "logging/logTagSetDescriptions.hpp"
 #include "logging/logStream.inline.hpp"
 #include "memory/resourceArea.hpp"
 
@@ -1174,4 +1175,28 @@ void Test_invalid_log_file() {
   remove(target_name);
 }
 
+// Ensure -Xlog:help and LogConfiguration::describe contain tagset descriptions
+void Test_logtagset_descriptions() {
+  for (LogTagSetDescription* d = tagset_descriptions; d->tagset != NULL; d++) {
+    char expected[1024];
+    d->tagset->label(expected, sizeof(expected), "+");
+    jio_snprintf(expected + strlen(expected),
+                 sizeof(expected) - strlen(expected),
+                 ": %s", d->descr);
+
+    ResourceMark rm;
+    stringStream ss;
+    LogConfiguration::describe(&ss);
+    assert(strstr(ss.as_string(), expected) != NULL,
+           "missing log tag set descriptions in LogConfiguration::describe");
+
+    TestLogFile file("log_tagset_descriptions");
+    FILE* fp = fopen(file.name(), "w+");
+    assert(fp != NULL, "File open error");
+    LogConfiguration::print_command_line_help(fp);
+    fclose(fp);
+    assert(number_of_lines_with_substring_in_file(file.name(), expected) > 0,
+           "missing log tag set descriptions in -Xlog:help output");
+  }
+}
 #endif // PRODUCT

@@ -39,17 +39,17 @@ class LogMessageBuffer;
 class LogTagSet VALUE_OBJ_CLASS_SPEC {
  private:
   static LogTagSet* _list;
-  static size_t     _ntagsets;
+  static size_t _ntagsets;
 
-  LogTagSet* const  _next;
-  size_t            _ntags;
-  LogTagType        _tag[LogTag::MaxTags];
+  LogTagSet* const _next;
+  size_t _ntags;
+  LogTagType _tag[LogTag::MaxTags];
 
-  LogOutputList     _output_list;
-  LogDecorators     _decorators;
+  LogOutputList _output_list;
+  LogDecorators _decorators;
 
   typedef size_t (*PrefixWriter)(char* buf, size_t size);
-  PrefixWriter      _write_prefix;
+  PrefixWriter _write_prefix;
 
   // Keep constructor private to prevent incorrect instantiations of this class.
   // Only LogTagSetMappings can create/contain instances of this class.
@@ -62,6 +62,9 @@ class LogTagSet VALUE_OBJ_CLASS_SPEC {
   friend class LogTagSetMapping;
 
  public:
+  static void describe_tagsets(outputStream* out);
+  static void list_all_tagsets(outputStream* out);
+
   static LogTagSet* first() {
     return _list;
   }

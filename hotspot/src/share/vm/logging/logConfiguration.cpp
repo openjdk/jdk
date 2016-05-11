@@ -29,6 +29,7 @@
 #include "logging/logDiagnosticCommand.hpp"
 #include "logging/logFileOutput.hpp"
 #include "logging/logOutput.hpp"
+#include "logging/logStream.hpp"
 #include "logging/logTagLevelExpression.hpp"
 #include "logging/logTagSet.hpp"
 #include "memory/allocation.inline.hpp"
@@ -75,11 +76,17 @@ bool ConfigurationLock::current_thread_has_lock() {
 void LogConfiguration::post_initialize() {
   LogDiagnosticCommand::registerCommand();
   Log(logging) log;
-  log.info("Log configuration fully initialized.");
-  log_develop_info(logging)("Develop logging is available.");
-  if (log.is_trace()) {
-    ResourceMark rm;
-    describe(log.trace_stream());
+  if (log.is_info()) {
+    log.info("Log configuration fully initialized.");
+    log_develop_info(logging)("Develop logging is available.");
+    if (log.is_debug()) {
+      LogStream debug_stream(log.debug());
+      describe(&debug_stream);
+      if (log.is_trace()) {
+        LogStream trace_stream(log.trace());
+        LogTagSet::list_all_tagsets(&trace_stream);
+      }
+    }
   }
 }
 
@@ -402,6 +409,7 @@ void LogConfiguration::describe_available(outputStream* out){
   }
   out->cr();
 
+  LogTagSet::describe_tagsets(out);
 }
 
 void LogConfiguration::describe_current_configuration(outputStream* out){
@@ -449,7 +457,10 @@ void LogConfiguration::print_command_line_help(FILE* out) {
   }
   jio_fprintf(out, "\n Specifying 'all' instead of a tag combination matches all tag combinations.\n\n");
 
-  jio_fprintf(out, "Available log outputs:\n"
+  fileStream stream(out, false);
+  LogTagSet::describe_tagsets(&stream);
+
+  jio_fprintf(out, "\nAvailable log outputs:\n"
               " stdout, stderr, file=<filename>\n"
               " Specifying %%p and/or %%t in the filename will expand to the JVM's PID and startup timestamp, respectively.\n\n"
 
