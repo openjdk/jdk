@@ -187,7 +187,8 @@ module java.base {
         jdk.scripting.nashorn,
         jdk.unsupported;
     exports jdk.internal.vm.annotation to
-        jdk.unsupported;
+        jdk.unsupported,
+        jdk.vm.ci;
     exports jdk.internal.util.jar to
         jdk.jartool;
     exports jdk.internal.vm to
