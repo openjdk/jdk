@@ -44,6 +44,7 @@
 #include "trace/tracing.hpp"
 #include "utilities/ticks.hpp"
 
+class AddPNode;
 class Block;
 class Bundle;
 class C2Compiler;
@@ -578,6 +579,8 @@ class Compile : public Phase {
   relocInfo*            _scratch_locs_memory;   // For temporary code buffers.
   int                   _scratch_const_size;    // For temporary code buffers.
   bool                  _in_scratch_emit_size;  // true when in scratch_emit_size.
+
+  void reshape_address(AddPNode* n);
 
  public:
   // Accessors

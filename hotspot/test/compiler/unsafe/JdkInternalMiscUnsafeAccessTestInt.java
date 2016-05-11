@@ -281,6 +281,18 @@ public class JdkInternalMiscUnsafeAccessTestInt {
             assertEquals(x, 2, "weakCompareAndSwapRelease int");
         }
 
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapIntVolatile(base, offset, 2, 1);
+            }
+            assertEquals(success, true, "weakCompareAndSwapVolatile int");
+            int x = UNSAFE.getInt(base, offset);
+            assertEquals(x, 1, "weakCompareAndSwapVolatile int");
+        }
+
+        UNSAFE.putInt(base, offset, 2);
+
         // Compare set and get
         {
             int o = UNSAFE.getAndSetInt(base, offset, 1);
