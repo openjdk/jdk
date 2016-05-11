@@ -78,6 +78,7 @@ void InternalVMTests::run() {
   run_unit_test(Test_log_prefix);
   run_unit_test(Test_log_big);
   run_unit_test(Test_logtagset_duplicates);
+  run_unit_test(Test_logtagset_descriptions);
   run_unit_test(Test_log_file_startup_rotation);
   run_unit_test(Test_log_file_startup_truncation);
   run_unit_test(Test_invalid_log_file);
