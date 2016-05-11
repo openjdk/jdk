@@ -123,10 +123,10 @@ public interface ConstantReflectionProvider {
     JavaConstant boxPrimitive(JavaConstant source);
 
     /**
-     * Converts the given {@link JavaKind#Object object} constant to a
-     * {@link JavaKind#isPrimitive() primitive} constant, according to the Java unboxing rules.
-     * Returns {@code null} if the source is is not an object constant that can be unboxed, or the
-     * unboxed value is not available at this point.
+     * Converts the given {@link JavaKind#Object object} constant to a {@link JavaKind#isPrimitive()
+     * primitive} constant, according to the Java unboxing rules. Returns {@code null} if the source
+     * is is not an object constant that can be unboxed, or the unboxed value is not available at
+     * this point.
      */
     JavaConstant unboxPrimitive(JavaConstant source);
 

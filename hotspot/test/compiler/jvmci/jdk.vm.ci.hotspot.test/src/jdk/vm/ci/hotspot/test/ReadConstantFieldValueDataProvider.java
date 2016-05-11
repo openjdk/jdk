@@ -39,7 +39,6 @@ import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.meta.JavaConstant;
 import org.testng.annotations.DataProvider;
 
-
 public class ReadConstantFieldValueDataProvider {
 
     @DataProvider(name = "readConstantFieldValueDataProvider")
@@ -56,32 +55,32 @@ public class ReadConstantFieldValueDataProvider {
         // Testing instance final non-default fields
         INSTANCE_FINAL_FIELDS_MAP.entrySet().stream().forEach((field) -> {
             cfgSet.add(new Object[]{field.getKey(),
-                    DUMMY_CLASS_CONSTANT,
-                    field.getValue(),
-                    "instance final field"});
+                            DUMMY_CLASS_CONSTANT,
+                            field.getValue(),
+                            "instance final field"});
         });
         // Testing instance final default fields.
         boolean trustDefFinal = HotSpotJVMCIRuntime.Option.TrustFinalDefaultFields.getBoolean();
         INSTANCE_FINAL_DEFAULT_FIELDS_MAP.entrySet().stream().forEach((field) -> {
             JavaConstant expected = trustDefFinal ? field.getValue() : null;
             cfgSet.add(new Object[]{field.getKey(),
-                    DUMMY_CLASS_CONSTANT,
-                    expected,
-                    "instance final default field"});
+                            DUMMY_CLASS_CONSTANT,
+                            expected,
+                            "instance final default field"});
         });
         // Testing instance stable non-default fields
         INSTANCE_STABLE_FIELDS_MAP.entrySet().stream().forEach((field) -> {
             cfgSet.add(new Object[]{field.getKey(),
-                    DUMMY_CLASS_CONSTANT,
-                    field.getValue(),
-                    "instance stable field"});
+                            DUMMY_CLASS_CONSTANT,
+                            field.getValue(),
+                            "instance stable field"});
         });
         // Testing instance stable default fields
         INSTANCE_STABLE_DEFAULT_FIELDS_MAP.entrySet().stream().forEach((field) -> {
             cfgSet.add(new Object[]{field.getKey(),
-                    DUMMY_CLASS_CONSTANT,
-                    null,
-                    "instance stable default field"});
+                            DUMMY_CLASS_CONSTANT,
+                            null,
+                            "instance stable default field"});
         });
         // Testing regular instance fields
         INSTANCE_FIELDS_MAP.entrySet().stream().forEach((field) -> {

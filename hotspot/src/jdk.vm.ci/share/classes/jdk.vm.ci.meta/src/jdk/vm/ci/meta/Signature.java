@@ -84,8 +84,8 @@ public interface Signature {
     }
 
     /**
-     * Gets the <a
-     * href="http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.3.3">method
+     * Gets the
+     * <a href="http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.3.3">method
      * descriptor</a> corresponding to this signature. For example:
      *
      * <pre>

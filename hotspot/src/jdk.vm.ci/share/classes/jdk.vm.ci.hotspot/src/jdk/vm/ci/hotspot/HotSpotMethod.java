@@ -32,7 +32,7 @@ import java.util.Formatter;
 import jdk.vm.ci.meta.JavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
-abstract class HotSpotMethod implements JavaMethod, Formattable /* , JavaMethodContex */{
+abstract class HotSpotMethod implements JavaMethod, Formattable /* , JavaMethodContex */ {
 
     public static String applyFormattingFlagsAndWidth(String s, int flags, int width) {
         if (flags == 0 && width < 0) {
