@@ -1008,11 +1008,6 @@ C2V_VMENTRY(void, invalidateInstalledCode, (JNIEnv*, jobject, jobject installed_
   nmethod::invalidate_installed_code(installed_code_handle, CHECK);
 C2V_END
 
-C2V_VMENTRY(jobject, readUncompressedOop, (JNIEnv*, jobject, jlong addr))
-  oop ret = oopDesc::load_decode_heap_oop((oop*)(address)addr);
-  return JNIHandles::make_local(THREAD, ret);
-C2V_END
-
 C2V_VMENTRY(jlongArray, collectCounters, (JNIEnv*, jobject))
   typeArrayOop arrayOop = oopFactory::new_longArray(JVMCICounterSize, CHECK_NULL);
   JavaThread::collect_counters(arrayOop);
@@ -1469,7 +1464,6 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getLocalVariableTableLength",                  CC "(" HS_RESOLVED_METHOD ")I",                                                       FN_PTR(getLocalVariableTableLength)},
   {CC "reprofile",                                    CC "(" HS_RESOLVED_METHOD ")V",                                                       FN_PTR(reprofile)},
   {CC "invalidateInstalledCode",                      CC "(" INSTALLED_CODE ")V",                                                           FN_PTR(invalidateInstalledCode)},
-  {CC "readUncompressedOop",                          CC "(J)" OBJECT,                                                                      FN_PTR(readUncompressedOop)},
   {CC "collectCounters",                              CC "()[J",                                                                            FN_PTR(collectCounters)},
   {CC "allocateCompileId",                            CC "(" HS_RESOLVED_METHOD "I)I",                                                      FN_PTR(allocateCompileId)},
   {CC "isMature",                                     CC "(" METASPACE_METHOD_DATA ")Z",                                                    FN_PTR(isMature)},

@@ -135,7 +135,7 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider, Ho
         if (base == null) {
             assert !compressed;
             displacement += asRawPointer(baseConstant);
-            ret = runtime.getCompilerToVM().readUncompressedOop(displacement);
+            ret = UNSAFE.getUncompressedObject(displacement);
         } else {
             assert runtime.getConfig().useCompressedOops == compressed;
             ret = UNSAFE.getObject(base, displacement);
