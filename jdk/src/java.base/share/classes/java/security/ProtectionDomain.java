@@ -139,8 +139,6 @@ public class ProtectionDomain {
      */
     final Key key = new Key();
 
-    private static final Debug debug = Debug.getInstance("domain");
-
     /**
      * Creates a new ProtectionDomain with the given CodeSource and
      * Permissions. If the permissions object is not null, then
@@ -338,6 +336,13 @@ public class ProtectionDomain {
             " "+pc+"\n";
     }
 
+    /*
+     * holder class for the static field "debug" to delay its initialization
+     */
+    private static class DebugHolder {
+        private static final Debug debug = Debug.getInstance("domain");
+    }
+
     /**
      * Return true (merge policy permissions) in the following cases:
      *
@@ -359,7 +364,7 @@ public class ProtectionDomain {
         if (sm == null) {
             return true;
         } else {
-            if (debug != null) {
+            if (DebugHolder.debug != null) {
                 if (sm.getClass().getClassLoader() == null &&
                     Policy.getPolicyNoCheck().getClass().getClassLoader()
                                                                 == null) {
