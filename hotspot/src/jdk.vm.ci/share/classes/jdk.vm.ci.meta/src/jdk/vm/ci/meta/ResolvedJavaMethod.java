@@ -94,8 +94,8 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
     }
 
     /**
-     * Checks that the method is a <a
-     * href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6">varargs</a>
+     * Checks that the method is a
+     * <a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6">varargs</a>
      * method.
      *
      * @return whether the method is a varargs method
@@ -105,8 +105,8 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
     }
 
     /**
-     * Checks that the method is a <a
-     * href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6">bridge</a>
+     * Checks that the method is a
+     * <a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6">bridge</a>
      * method.
      *
      * @return whether the method is a bridge method
@@ -332,8 +332,8 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
     SpeculationLog getSpeculationLog();
 
     /**
-     * Determines if the method identified by its holder and name is a <a
-     * href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-2.html#jvms-2.9">signature
+     * Determines if the method identified by its holder and name is a
+     * <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-2.html#jvms-2.9">signature
      * polymorphic</a> method.
      */
     static boolean isSignaturePolymorphic(JavaType holder, String name, MetaAccessProvider metaAccess) {

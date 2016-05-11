@@ -48,69 +48,67 @@ import jdk.vm.ci.meta.ResolvedJavaField;
 public class ReadConstantArrayElementDataProvider {
 
     // Non-stable array fields names mapped to their base offsets and index scale
-    private static final List<ArrayFieldParams> NON_STABLE_ARRAY_NAMES
-            = new LinkedList<>();
+    private static final List<ArrayFieldParams> NON_STABLE_ARRAY_NAMES = new LinkedList<>();
 
     static {
         NON_STABLE_ARRAY_NAMES.add(
-                new ArrayFieldParams("booleanArrayWithValues", Unsafe.ARRAY_BOOLEAN_BASE_OFFSET,
-                             Unsafe.ARRAY_BOOLEAN_INDEX_SCALE));
+                        new ArrayFieldParams("booleanArrayWithValues", Unsafe.ARRAY_BOOLEAN_BASE_OFFSET,
+                                        Unsafe.ARRAY_BOOLEAN_INDEX_SCALE));
         NON_STABLE_ARRAY_NAMES.add(new ArrayFieldParams("byteArrayWithValues",
-                                                Unsafe.ARRAY_BYTE_BASE_OFFSET,
-                                                Unsafe.ARRAY_BYTE_INDEX_SCALE));
+                        Unsafe.ARRAY_BYTE_BASE_OFFSET,
+                        Unsafe.ARRAY_BYTE_INDEX_SCALE));
         NON_STABLE_ARRAY_NAMES.add(new ArrayFieldParams("shortArrayWithValues",
-                                                Unsafe.ARRAY_SHORT_BASE_OFFSET,
-                                                Unsafe.ARRAY_SHORT_INDEX_SCALE));
+                        Unsafe.ARRAY_SHORT_BASE_OFFSET,
+                        Unsafe.ARRAY_SHORT_INDEX_SCALE));
         NON_STABLE_ARRAY_NAMES.add(new ArrayFieldParams("charArrayWithValues",
-                                                Unsafe.ARRAY_CHAR_BASE_OFFSET,
-                                                Unsafe.ARRAY_CHAR_INDEX_SCALE));
+                        Unsafe.ARRAY_CHAR_BASE_OFFSET,
+                        Unsafe.ARRAY_CHAR_INDEX_SCALE));
         NON_STABLE_ARRAY_NAMES.add(new ArrayFieldParams("intArrayWithValues",
-                                                Unsafe.ARRAY_INT_BASE_OFFSET,
-                                                Unsafe.ARRAY_INT_INDEX_SCALE));
+                        Unsafe.ARRAY_INT_BASE_OFFSET,
+                        Unsafe.ARRAY_INT_INDEX_SCALE));
         NON_STABLE_ARRAY_NAMES.add(new ArrayFieldParams("longArrayWithValues",
-                                                Unsafe.ARRAY_LONG_BASE_OFFSET,
-                                                Unsafe.ARRAY_LONG_INDEX_SCALE));
+                        Unsafe.ARRAY_LONG_BASE_OFFSET,
+                        Unsafe.ARRAY_LONG_INDEX_SCALE));
         NON_STABLE_ARRAY_NAMES.add(new ArrayFieldParams("floatArrayWithValues",
-                                                Unsafe.ARRAY_FLOAT_BASE_OFFSET,
-                                                Unsafe.ARRAY_FLOAT_INDEX_SCALE));
+                        Unsafe.ARRAY_FLOAT_BASE_OFFSET,
+                        Unsafe.ARRAY_FLOAT_INDEX_SCALE));
         NON_STABLE_ARRAY_NAMES.add(new ArrayFieldParams("doubleArrayWithValues",
-                                                Unsafe.ARRAY_DOUBLE_BASE_OFFSET,
-                                                Unsafe.ARRAY_DOUBLE_INDEX_SCALE));
+                        Unsafe.ARRAY_DOUBLE_BASE_OFFSET,
+                        Unsafe.ARRAY_DOUBLE_INDEX_SCALE));
         NON_STABLE_ARRAY_NAMES.add(new ArrayFieldParams("objectArrayWithValues",
-                                                Unsafe.ARRAY_BOOLEAN_BASE_OFFSET,
-                                                Unsafe.ARRAY_BOOLEAN_INDEX_SCALE));
+                        Unsafe.ARRAY_BOOLEAN_BASE_OFFSET,
+                        Unsafe.ARRAY_BOOLEAN_INDEX_SCALE));
         NON_STABLE_ARRAY_NAMES.add(new ArrayFieldParams("booleanArrayArrayWithValues",
-                                                Unsafe.ARRAY_OBJECT_BASE_OFFSET,
-                                                Unsafe.ARRAY_OBJECT_INDEX_SCALE));
+                        Unsafe.ARRAY_OBJECT_BASE_OFFSET,
+                        Unsafe.ARRAY_OBJECT_INDEX_SCALE));
         NON_STABLE_ARRAY_NAMES.add(new ArrayFieldParams("byteArrayArrayWithValues",
-                                                Unsafe.ARRAY_OBJECT_BASE_OFFSET,
-                                                Unsafe.ARRAY_OBJECT_INDEX_SCALE));
+                        Unsafe.ARRAY_OBJECT_BASE_OFFSET,
+                        Unsafe.ARRAY_OBJECT_INDEX_SCALE));
         NON_STABLE_ARRAY_NAMES.add(new ArrayFieldParams("shortArrayArrayWithValues",
-                                                Unsafe.ARRAY_OBJECT_BASE_OFFSET,
-                                                Unsafe.ARRAY_OBJECT_INDEX_SCALE));
+                        Unsafe.ARRAY_OBJECT_BASE_OFFSET,
+                        Unsafe.ARRAY_OBJECT_INDEX_SCALE));
         NON_STABLE_ARRAY_NAMES.add(new ArrayFieldParams("charArrayArrayWithValues",
-                                                Unsafe.ARRAY_OBJECT_BASE_OFFSET,
-                                                Unsafe.ARRAY_OBJECT_INDEX_SCALE));
+                        Unsafe.ARRAY_OBJECT_BASE_OFFSET,
+                        Unsafe.ARRAY_OBJECT_INDEX_SCALE));
         NON_STABLE_ARRAY_NAMES.add(new ArrayFieldParams("intArrayArrayWithValues",
-                                                Unsafe.ARRAY_OBJECT_BASE_OFFSET,
-                                                Unsafe.ARRAY_OBJECT_INDEX_SCALE));
+                        Unsafe.ARRAY_OBJECT_BASE_OFFSET,
+                        Unsafe.ARRAY_OBJECT_INDEX_SCALE));
         NON_STABLE_ARRAY_NAMES.add(new ArrayFieldParams("longArrayArrayWithValues",
-                                                Unsafe.ARRAY_OBJECT_BASE_OFFSET,
-                                                Unsafe.ARRAY_OBJECT_INDEX_SCALE));
+                        Unsafe.ARRAY_OBJECT_BASE_OFFSET,
+                        Unsafe.ARRAY_OBJECT_INDEX_SCALE));
         NON_STABLE_ARRAY_NAMES.add(new ArrayFieldParams("floatArrayArrayWithValues",
-                                                Unsafe.ARRAY_OBJECT_BASE_OFFSET,
-                                                Unsafe.ARRAY_OBJECT_INDEX_SCALE));
+                        Unsafe.ARRAY_OBJECT_BASE_OFFSET,
+                        Unsafe.ARRAY_OBJECT_INDEX_SCALE));
         NON_STABLE_ARRAY_NAMES.add(new ArrayFieldParams("doubleArrayArrayWithValues",
-                                                Unsafe.ARRAY_OBJECT_BASE_OFFSET,
-                                                Unsafe.ARRAY_OBJECT_INDEX_SCALE));
+                        Unsafe.ARRAY_OBJECT_BASE_OFFSET,
+                        Unsafe.ARRAY_OBJECT_INDEX_SCALE));
         NON_STABLE_ARRAY_NAMES.add(new ArrayFieldParams("objectArrayArrayWithValues",
-                                                Unsafe.ARRAY_OBJECT_BASE_OFFSET,
-                                                Unsafe.ARRAY_OBJECT_INDEX_SCALE));
+                        Unsafe.ARRAY_OBJECT_BASE_OFFSET,
+                        Unsafe.ARRAY_OBJECT_INDEX_SCALE));
     }
 
     // Stable array fields names mapped to their base offsets and index scale
-    private static final List<ArrayFieldParams> STABLE_ARRAY_NAMES
-            = new LinkedList<>();
+    private static final List<ArrayFieldParams> STABLE_ARRAY_NAMES = new LinkedList<>();
 
     static {
         NON_STABLE_ARRAY_NAMES.stream().forEach((entry) -> {
@@ -118,7 +116,7 @@ public class ReadConstantArrayElementDataProvider {
             char firstChar = nsFieldName.charAt(0);
             char newFirstChar = Character.toUpperCase(firstChar);
             String sFieldName = nsFieldName.replaceFirst("" + firstChar,
-                                                         "" + newFirstChar);
+                            "" + newFirstChar);
             sFieldName = "stable" + sFieldName;
             STABLE_ARRAY_NAMES.add(new ArrayFieldParams(sFieldName, entry.offsetBase, entry.scale));
         });
@@ -131,33 +129,31 @@ public class ReadConstantArrayElementDataProvider {
             NON_STABLE_ARRAY_NAMES.stream().forEach((entry) -> {
                 String fieldName = entry.name;
                 cfgSet.add(new Object[]{
-                        readFieldValue(fieldName),
-                        i,
-                        null,
-                        "array field \"" + fieldName + "\" for index " + i});
+                                readFieldValue(fieldName),
+                                i,
+                                null,
+                                "array field \"" + fieldName + "\" for index " + i});
             });
             STABLE_ARRAY_NAMES.stream().forEach((entry) -> {
                 String fieldName = entry.name;
                 cfgSet.add(new Object[]{
-                        readFieldValue(fieldName),
-                        i,
-                        i == 0 ? getJavaConstant(fieldName) : null,
-                        "array field \"" + fieldName + "\" for index " + i});
+                                readFieldValue(fieldName),
+                                i,
+                                i == 0 ? getJavaConstant(fieldName) : null,
+                                "array field \"" + fieldName + "\" for index " + i});
             });
         }
-        Stream<Map.Entry<ResolvedJavaField, JavaConstant>> arraysStream1
-                = Stream.concat(ARRAYS_MAP.entrySet().stream(),
-                                ARRAY_ARRAYS_MAP.entrySet().stream());
-        Stream<Map.Entry<ResolvedJavaField, JavaConstant>> arraysStream2
-                = Stream.concat(STABLE_ARRAYS_MAP.entrySet().stream(),
-                                STABLE_ARRAY_ARRAYS_MAP.entrySet().stream());
+        Stream<Map.Entry<ResolvedJavaField, JavaConstant>> arraysStream1 = Stream.concat(ARRAYS_MAP.entrySet().stream(),
+                        ARRAY_ARRAYS_MAP.entrySet().stream());
+        Stream<Map.Entry<ResolvedJavaField, JavaConstant>> arraysStream2 = Stream.concat(STABLE_ARRAYS_MAP.entrySet().stream(),
+                        STABLE_ARRAY_ARRAYS_MAP.entrySet().stream());
         Stream.concat(arraysStream1, arraysStream2).forEach((array) -> {
             for (int i : new int[]{-1, 2}) {
                 cfgSet.add(new Object[]{
-                        array.getValue(),
-                        i,
-                        null,
-                        "array field \"" + array.getKey() + "\" for index " + i});
+                                array.getValue(),
+                                i,
+                                null,
+                                "array field \"" + array.getKey() + "\" for index " + i});
             }
         });
         cfgSet.add(new Object[]{null, 0, null, "null"});
@@ -180,10 +176,10 @@ public class ReadConstantArrayElementDataProvider {
                 String fieldName = entry.name;
                 long offset = (long) (entry.offsetBase + i * entry.scale);
                 cfgSet.add(new Object[]{
-                        readFieldValue(fieldName),
-                        offset,
-                        null,
-                        "array field \"" + fieldName + "\" for offset " + offset});
+                                readFieldValue(fieldName),
+                                offset,
+                                null,
+                                "array field \"" + fieldName + "\" for offset " + offset});
             });
         }
         // Testing stable arrays. Result should be null in all cases except "offset = base + 0"
@@ -192,10 +188,10 @@ public class ReadConstantArrayElementDataProvider {
                 String fieldName = entry.name;
                 long offset = (long) Math.ceil(entry.offsetBase + i * entry.scale);
                 cfgSet.add(new Object[]{
-                        readFieldValue(fieldName),
-                        offset,
-                        null,
-                        "array field \"" + fieldName + "\" for offset " + offset});
+                                readFieldValue(fieldName),
+                                offset,
+                                null,
+                                "array field \"" + fieldName + "\" for offset " + offset});
             });
         }
         // Testing stable arrays "offset = base + 0". Result should be non-null
@@ -203,10 +199,10 @@ public class ReadConstantArrayElementDataProvider {
             String fieldName = entry.name;
             long offset = (long) entry.offsetBase;
             cfgSet.add(new Object[]{
-                    readFieldValue(fieldName),
-                    offset,
-                    getJavaConstant(fieldName),
-                    "array field \"" + fieldName + "\" for offset " + offset});
+                            readFieldValue(fieldName),
+                            offset,
+                            getJavaConstant(fieldName),
+                            "array field \"" + fieldName + "\" for offset " + offset});
         });
         // Testing null as array
         cfgSet.add(new Object[]{null, 0, null, "null"});
@@ -225,7 +221,7 @@ public class ReadConstantArrayElementDataProvider {
 
     private static JavaConstant readFieldValue(String fieldName) {
         return CONSTANT_REFLECTION_PROVIDER.readFieldValue(getResolvedJavaField(DummyClass.class, fieldName),
-                                                           DUMMY_CLASS_CONSTANT);
+                        DUMMY_CLASS_CONSTANT);
     }
 
     private static JavaConstant getJavaConstant(String fieldName) {
@@ -281,10 +277,10 @@ public class ReadConstantArrayElementDataProvider {
         public final int offsetBase;
         public final int scale;
 
-       ArrayFieldParams(String name, int offsetBase, int scale) {
-           this.name = name;
-           this.offsetBase = offsetBase;
-           this.scale = scale;
-       }
+        ArrayFieldParams(String name, int offsetBase, int scale) {
+            this.name = name;
+            this.offsetBase = offsetBase;
+            this.scale = scale;
+        }
     }
 }

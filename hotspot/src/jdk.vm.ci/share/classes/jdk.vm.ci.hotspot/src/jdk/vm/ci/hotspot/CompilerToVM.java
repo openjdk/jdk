@@ -246,8 +246,8 @@ final class CompilerToVM {
     native void resolveInvokeDynamicInPool(HotSpotConstantPool constantPool, int cpi);
 
     /**
-     * Ensures that the type referenced by the entry for a <a
-     * href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-2.html#jvms-2.9">signature
+     * Ensures that the type referenced by the entry for a
+     * <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-2.html#jvms-2.9">signature
      * polymorphic</a> method at index {@code cpi} in {@code constantPool} is loaded and
      * initialized.
      *

@@ -152,7 +152,8 @@ public class HotSpotMetaAccessProvider implements MetaAccessProvider, HotSpotPro
         int actionValue = convertDeoptAction(action);
         int reasonValue = convertDeoptReason(reason);
         int debugValue = debugId & intMaskRight(config.deoptimizationDebugIdBits);
-        JavaConstant c = JavaConstant.forInt(~((debugValue << config.deoptimizationDebugIdShift) | (reasonValue << config.deoptimizationReasonShift) | (actionValue << config.deoptimizationActionShift)));
+        JavaConstant c = JavaConstant.forInt(
+                        ~((debugValue << config.deoptimizationDebugIdShift) | (reasonValue << config.deoptimizationReasonShift) | (actionValue << config.deoptimizationActionShift)));
         assert c.asInt() < 0;
         return c;
     }

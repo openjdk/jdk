@@ -38,32 +38,32 @@ public class UnboxPrimitiveDataProvider {
         LinkedList<Object[]> cfgSet = new LinkedList<>();
         // Testing boolean
         cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(
-                (Boolean) true), JavaConstant.forBoolean(true)});
+                        (Boolean) true), JavaConstant.forBoolean(true)});
         cfgSet.add(new Object[]{JavaConstant.forBoolean(true), null});
         cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject((Boolean) false),
-                JavaConstant.forBoolean(false)});
+                        JavaConstant.forBoolean(false)});
         cfgSet.add(new Object[]{JavaConstant.forBoolean(false), null});
         for (byte number : new byte[]{-128, 0, 1, 127}) {
             // Testing boxed primitives
             cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(Byte.valueOf(number)),
-                    JavaConstant.forByte(number)});
+                            JavaConstant.forByte(number)});
             cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(Short.valueOf(number)),
-                    JavaConstant.forShort(number)});
+                            JavaConstant.forShort(number)});
             cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(Integer.valueOf(number)),
-                    JavaConstant.forInt(number)});
+                            JavaConstant.forInt(number)});
             cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(Long.valueOf(number)),
-                    JavaConstant.forLong(number)});
+                            JavaConstant.forLong(number)});
             if (number >= 0) {
                 cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(
-                        Character.valueOf((char) number)),
-                        JavaConstant.forChar((char) number)});
+                                Character.valueOf((char) number)),
+                                JavaConstant.forChar((char) number)});
             }
             cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(
-                    Float.valueOf(number * 1.1f)),
-                    JavaConstant.forFloat(number * 1.1f)});
+                            Float.valueOf(number * 1.1f)),
+                            JavaConstant.forFloat(number * 1.1f)});
             cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(
-                    Double.valueOf(number * 1.1)),
-                    JavaConstant.forDouble(number * 1.1)});
+                            Double.valueOf(number * 1.1)),
+                            JavaConstant.forDouble(number * 1.1)});
             // Testing non-boxed primitives (should result in returning of "null")
             cfgSet.add(new Object[]{JavaConstant.forByte(number), null});
             cfgSet.add(new Object[]{JavaConstant.forShort(number), null});
@@ -75,23 +75,23 @@ public class UnboxPrimitiveDataProvider {
         }
         // Testing boxed primitives with max values
         cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(Short.MAX_VALUE),
-                JavaConstant.forShort(Short.MAX_VALUE)});
+                        JavaConstant.forShort(Short.MAX_VALUE)});
         cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(Integer.MAX_VALUE),
-                JavaConstant.forInt(Integer.MAX_VALUE)});
+                        JavaConstant.forInt(Integer.MAX_VALUE)});
         cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(Long.MAX_VALUE),
-                JavaConstant.forLong(Long.MAX_VALUE)});
+                        JavaConstant.forLong(Long.MAX_VALUE)});
         cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(Character.MAX_VALUE),
-                JavaConstant.forChar(Character.MAX_VALUE)});
+                        JavaConstant.forChar(Character.MAX_VALUE)});
         cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(Float.MAX_VALUE),
-                JavaConstant.forFloat(Float.MAX_VALUE)});
+                        JavaConstant.forFloat(Float.MAX_VALUE)});
         cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(Double.MAX_VALUE),
-                JavaConstant.forDouble(Double.MAX_VALUE)});
+                        JavaConstant.forDouble(Double.MAX_VALUE)});
         // Non-primitives testing
         cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(
-                DUMMY_CLASS_INSTANCE.objectField), null});
+                        DUMMY_CLASS_INSTANCE.objectField), null});
         cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(
-                DUMMY_CLASS_INSTANCE.booleanArrayWithValues),
-                null});
+                        DUMMY_CLASS_INSTANCE.booleanArrayWithValues),
+                        null});
         // Null testing
         cfgSet.add(new Object[]{JavaConstant.NULL_POINTER, null});
         cfgSet.add(new Object[]{null, null});

@@ -56,8 +56,8 @@ public class TargetDescription {
     public final JavaKind wordJavaKind;
 
     /**
-     * The stack alignment requirement of the platform. For example, from Appendix D of <a
-     * href="http://www.intel.com/Assets/PDF/manual/248966.pdf">Intel 64 and IA-32 Architectures
+     * The stack alignment requirement of the platform. For example, from Appendix D of
+     * <a href="http://www.intel.com/Assets/PDF/manual/248966.pdf">Intel 64 and IA-32 Architectures
      * Optimization Reference Manual</a>:
      *
      * <pre>
