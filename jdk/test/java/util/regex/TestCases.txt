@@ -139,6 +139,71 @@ false 0
 aaabbbcccdefg
 true defg 0
 
+// Negation with nested char class and intersection
+[^[c]]
+c
+false 0
+
+[^[a-z]]
+e
+false 0
+
+[^[a-z][A-Z]]
+E
+false 0
+
+[^a-d[0-9][m-p]]
+e
+true e 0
+
+[^a-d[0-9][m-p]]
+8
+false 0
+
+[^[a-c]&&[d-f]]
+z
+true z 0
+
+[^a-c&&d-f]
+a
+true a 0
+
+[^a-m&&m-z]
+m
+false 0
+
+[^a-m&&m-z&&a-c]
+m
+true m 0
+
+[^a-cd-f&&[d-f]]
+c
+true c 0
+
+[^[a-c][d-f]&&abc]
+a
+false 0
+
+[^[a-c][d-f]&&abc]
+d
+true d 0
+
+[^[a-c][d-f]&&abc[def]]
+a
+false 0
+
+[^[a-c][d-f]&&abc[def]]
+e
+false 0
+
+[^[a-c]&&[b-d]&&[c-e]]
+a
+true a 0
+
+[^[a-c]&&[b-d]&&[c-e]]
+c
+false 0
+
 // Making sure a ^ not in first position matches literal ^
 [abc^b]
 b
