@@ -28,6 +28,7 @@ import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 
+import jdk.internal.vm.annotation.Stable;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
 import jdk.vm.ci.meta.JavaType;

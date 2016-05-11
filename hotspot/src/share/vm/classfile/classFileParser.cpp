@@ -2004,13 +2004,6 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
       if (!privileged)              break;  // only allow in privileged code
       return _method_HotSpotIntrinsicCandidate;
     }
-#if INCLUDE_JVMCI
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_vm_ci_hotspot_Stable_signature): {
-      if (_location != _in_field)   break;  // only allow for fields
-      if (!privileged)              break;  // only allow in privileged code
-      return _field_Stable;
-    }
-#endif
     case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_Stable_signature): {
       if (_location != _in_field)   break;  // only allow for fields
       if (!privileged)              break;  // only allow in privileged code
