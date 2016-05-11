@@ -96,6 +96,7 @@ class WorkerThread;
 //       - GangWorker
 //       - GCTaskThread
 //   - JavaThread
+//     - various subclasses eg CompilerThread, ServiceThread
 //   - WatcherThread
 
 class Thread: public ThreadShadow {
@@ -314,8 +315,7 @@ class Thread: public ThreadShadow {
 
   // Manage Thread::current()
   void initialize_thread_current();
-  private:
-  void clear_thread_current(); // needed for detaching JNI threads
+  void clear_thread_current(); // TLS cleanup needed before threads terminate
 
   public:
   // thread entry point
@@ -742,6 +742,11 @@ class WatcherThread: public Thread {
 
   // Constructor
   WatcherThread();
+
+  // No destruction allowed
+  ~WatcherThread() {
+    guarantee(false, "WatcherThread deletion must fix the race with VM termination");
+  }
 
   // Tester
   bool is_Watcher_thread() const                 { return true; }

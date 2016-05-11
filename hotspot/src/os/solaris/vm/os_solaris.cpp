@@ -725,8 +725,8 @@ extern "C" void breakpoint() {
 
 static thread_t main_thread;
 
-// Thread start routine for all new Java threads
-extern "C" void* java_start(void* thread_addr) {
+// Thread start routine for all newly created threads
+extern "C" void* thread_native_entry(void* thread_addr) {
   // Try to randomize the cache line index of hot stack frames.
   // This helps when threads of the same stack traces evict each other's
   // cache lines. The threads can be either from the same JVM instance, or
@@ -795,6 +795,15 @@ extern "C" void* java_start(void* thread_addr) {
   }
 
   log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ").", os::current_thread_id());
+
+  // If a thread has not deleted itself ("delete this") as part of its
+  // termination sequence, we have to ensure thread-local-storage is
+  // cleared before we actually terminate. No threads should ever be
+  // deleted asynchronously with respect to their termination.
+  if (Thread::current_or_null_safe() != NULL) {
+    assert(Thread::current_or_null_safe() == thread, "current thread is wrong");
+    thread->clear_thread_current();
+  }
 
   if (UseDetachedThreads) {
     thr_exit(NULL);
@@ -1009,7 +1018,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   osthread->set_lwp_id(-1);
   osthread->set_thread_id(-1);
 
-  status = thr_create(NULL, stack_size, java_start, thread, flags, &tid);
+  status = thr_create(NULL, stack_size, thread_native_entry, thread, flags, &tid);
 
   char buf[64];
   if (status == 0) {
@@ -1221,18 +1230,15 @@ void os::initialize_thread(Thread* thr) {
 void os::free_thread(OSThread* osthread) {
   assert(osthread != NULL, "os::free_thread but osthread not set");
 
-
   // We are told to free resources of the argument thread,
   // but we can only really operate on the current thread.
-  // The main thread must take the VMThread down synchronously
-  // before the main thread exits and frees up CodeHeap
-  guarantee((Thread::current()->osthread() == osthread
-             || (osthread == VMThread::vm_thread()->osthread())), "os::free_thread but not current thread");
-  if (Thread::current()->osthread() == osthread) {
-    // Restore caller's signal mask
-    sigset_t sigmask = osthread->caller_sigmask();
-    pthread_sigmask(SIG_SETMASK, &sigmask, NULL);
-  }
+  assert(Thread::current()->osthread() == osthread,
+         "os::free_thread but not current thread");
+
+  // Restore caller's signal mask
+  sigset_t sigmask = osthread->caller_sigmask();
+  pthread_sigmask(SIG_SETMASK, &sigmask, NULL);
+
   delete osthread;
 }
 
