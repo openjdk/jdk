@@ -59,11 +59,4 @@ public interface ResolvedJavaField extends JavaField, ModifiersProvider, Annotat
      * this field.
      */
     ResolvedJavaType getDeclaringClass();
-
-    /**
-     * Returns an object representing the unique location identity of this resolved Java field.
-     *
-     * @return the location identity of the field
-     */
-    LocationIdentity getLocationIdentity();
 }
