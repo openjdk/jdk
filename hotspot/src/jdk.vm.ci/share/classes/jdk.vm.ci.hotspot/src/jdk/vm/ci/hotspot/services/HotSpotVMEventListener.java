@@ -75,6 +75,12 @@ public abstract class HotSpotVMEventListener {
     }
 
     /**
+     * Notify on completion of a bootstrap.
+     */
+    public void notifyBootstrapFinished() {
+    }
+
+    /**
      * Create a custom {@link JVMCIMetaAccessContext} to be used for managing the lifetime of loaded
      * metadata. It a custom one isn't created then the default implementation will be a single
      * context with globally shared instances of {@link ResolvedJavaType} that are never released.
