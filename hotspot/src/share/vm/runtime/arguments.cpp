@@ -3899,6 +3899,13 @@ jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_
 
 void Arguments::set_shared_spaces_flags() {
   if (DumpSharedSpaces) {
+    if (FailOverToOldVerifier) {
+      // Don't fall back to the old verifier on verification failure. If a
+      // class fails verification with the split verifier, it might fail the
+      // CDS runtime verifier constraint check. In that case, we don't want
+      // to share the class. We only archive classes that pass the split verifier.
+      FLAG_SET_DEFAULT(FailOverToOldVerifier, false);
+    }
 
     if (RequireSharedSpaces) {
       warning("Cannot dump shared archive while using shared archive");
