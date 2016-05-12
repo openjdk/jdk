@@ -27,7 +27,6 @@ package sun.security.provider;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.security.*;
@@ -68,11 +67,6 @@ public class CtrDrbg extends AbstractDrbg {
 
     private static int alg2strength(String algorithm) {
         switch (algorithm.toUpperCase(Locale.ROOT)) {
-            case "TDEA":
-            case "3KEYTDEA":
-            case "3 KEY TDEA":
-            case "DESEDE":
-                return 112;
             case "AES-128":
                 return 128;
             case "AES-192":
@@ -120,16 +114,6 @@ public class CtrDrbg extends AbstractDrbg {
             this.securityStrength = tryStrength;
         }
         switch (algorithm.toUpperCase(Locale.ROOT)) {
-            case "TDEA":
-            case "3KEYTDEA":
-            case "3 KEY TDEA":
-            case "DESEDE":
-                algorithm = "DESede";
-                this.keyAlg = "DESede";
-                this.cipherAlg = "DESede/ECB/NoPadding";
-                this.blockLen = 64 / 8;
-                this.keyLen = 168 / 8;
-                break;
             case "AES-128":
             case "AES-192":
             case "AES-256":
@@ -224,7 +208,7 @@ public class CtrDrbg extends AbstractDrbg {
                 // Step 2.1. Increment
                 addOne(v, ctrLen);
                 // Step 2.2. Block_Encrypt
-                cipher.init(Cipher.ENCRYPT_MODE, getKey(keyAlg, k));
+                cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(k, keyAlg));
                 // Step 2.3. Encrypt into right position, no need to cat
                 cipher.doFinal(v, 0, blockLen, temp, i * blockLen);
             }
@@ -316,7 +300,7 @@ public class CtrDrbg extends AbstractDrbg {
 
         for (int i = 0; i * blockLen < seedLen; i++) {
             try {
-                cipher.init(Cipher.ENCRYPT_MODE, getKey(keyAlg, k));
+                cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(k, keyAlg));
                 int tailLen = temp.length - blockLen*i;
                 if (tailLen > blockLen) {
                     tailLen = blockLen;
@@ -340,7 +324,7 @@ public class CtrDrbg extends AbstractDrbg {
                 inputBlock[j] ^= chain[j];
             }
             try {
-                cipher.init(Cipher.ENCRYPT_MODE, getKey(keyAlg, k));
+                cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(k, keyAlg));
                 chain = cipher.doFinal(inputBlock);
             } catch (GeneralSecurityException e) {
                 throw new InternalError(e);
@@ -456,7 +440,7 @@ public class CtrDrbg extends AbstractDrbg {
             addOne(v, ctrLen);
             try {
                 // Step 4.2. Encrypt
-                cipher.init(Cipher.ENCRYPT_MODE, getKey(keyAlg, k));
+                cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(k, keyAlg));
                 byte[] out = cipher.doFinal(v);
 
                 // Step 4.3 and 5. Cat bytes and leftmost
@@ -477,43 +461,6 @@ public class CtrDrbg extends AbstractDrbg {
         //status();
 
         // Step 8. Return
-    }
-
-    private static void des7to8(
-            byte[] key56, int off56, byte[] key64, int off64) {
-        key64[off64 + 0] = (byte)
-                (key56[off56 + 0] & 0xFE); // << 0
-        key64[off64 + 1] = (byte)
-                ((key56[off56 + 0] << 7) | ((key56[off56 + 1] & 0xFF) >>> 1));
-        key64[off64 + 2] = (byte)
-                ((key56[off56 + 1] << 6) | ((key56[off56 + 2] & 0xFF) >>> 2));
-        key64[off64 + 3] = (byte)
-                ((key56[off56 + 2] << 5) | ((key56[off56 + 3] & 0xFF) >>> 3));
-        key64[off64 + 4] = (byte)
-                ((key56[off56 + 3] << 4) | ((key56[off56 + 4] & 0xFF) >>> 4));
-        key64[off64 + 5] = (byte)
-                ((key56[off56 + 4] << 3) | ((key56[off56 + 5] & 0xFF) >>> 5));
-        key64[off64 + 6] = (byte)
-                ((key56[off56 + 5] << 2) | ((key56[off56 + 6] & 0xFF) >>> 6));
-        key64[off64 + 7] = (byte)
-                (key56[off56 + 6] << 1);
-
-        for (int i = 0; i < 8; i++) {
-            // if even # bits, make uneven, XOR with 1 (uneven & 1)
-            // for uneven # bits, make even, XOR with 0 (even & 1)
-            key64[off64 + i] ^= Integer.bitCount(key64[off64 + i] ^ 1) & 1;
-        }
-    }
-
-    private static SecretKey getKey(String keyAlg, byte[] k) {
-        if (keyAlg.equals("DESede")) {
-            byte[] k2 = new byte[24];
-            des7to8(k, 0, k2, 0);
-            des7to8(k, 7, k2, 8);
-            des7to8(k, 14, k2, 16);
-            k = k2;
-        }
-        return new SecretKeySpec(k, keyAlg);
     }
 
     private void readObject(java.io.ObjectInputStream s)
