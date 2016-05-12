@@ -32,7 +32,6 @@ import jdk.internal.vm.annotation.Stable;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
 import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.LocationIdentity;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ModifiersProvider;
 import jdk.vm.ci.meta.ResolvedJavaField;
@@ -52,43 +51,6 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField, HotSpotP
      * This value contains all flags as stored in the VM including internal ones.
      */
     private final int modifiers;
-    private final LocationIdentity locationIdentity = new FieldLocationIdentity(this);
-
-    public static class FieldLocationIdentity extends LocationIdentity {
-        HotSpotResolvedJavaField inner;
-
-        FieldLocationIdentity(HotSpotResolvedJavaFieldImpl inner) {
-            this.inner = inner;
-        }
-
-        @Override
-        public boolean isImmutable() {
-            return false;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj instanceof FieldLocationIdentity) {
-                FieldLocationIdentity fieldLocationIdentity = (FieldLocationIdentity) obj;
-                return inner.equals(fieldLocationIdentity.inner);
-
-            }
-            return false;
-        }
-
-        @Override
-        public int hashCode() {
-            return inner.hashCode();
-        }
-
-        @Override
-        public String toString() {
-            return inner.getName();
-        }
-    }
 
     HotSpotResolvedJavaFieldImpl(HotSpotResolvedObjectTypeImpl holder, String name, JavaType type, long offset, int modifiers) {
         this.holder = holder;
@@ -304,9 +266,5 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField, HotSpotP
                 throw new JVMCIError(e);
             }
         }
-    }
-
-    public LocationIdentity getLocationIdentity() {
-        return locationIdentity;
     }
 }
