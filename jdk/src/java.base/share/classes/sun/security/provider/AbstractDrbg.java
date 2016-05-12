@@ -51,12 +51,9 @@ import static java.security.DrbgParameters.Capability.*;
  * configuration is eagerly called to set up parameters, and instantiation
  * is lazily called only when nextBytes or reseed is called.
  * <p>
- * Synchronized keyword should be added to all externally callable engine
- * methods including {@link #engineReseed}, {@link #engineSetSeed}, and
- * {@link #engineNextBytes} (but not {@link #engineGenerateSeed}).
- * Internal methods like {@link #configure} and {@link #instantiateAlgorithm}
- * are not synchronized. They will either be called in a constructor or
- * in another synchronized method.
+ * SecureRandom methods like reseed and nextBytes are not thread-safe.
+ * An implementation is required to protect shared access to instantiate states
+ * (instantiated, nonce) and DRBG states (v, c, key, reseedCounter).
  */
 public abstract class AbstractDrbg extends SecureRandomSpi {
 
@@ -78,8 +75,10 @@ public abstract class AbstractDrbg extends SecureRandomSpi {
      * Reseed counter of a DRBG instance. A mechanism should increment it
      * after each random bits generation and reset it in reseed. A mechanism
      * does <em>not</em> need to compare it to {@link #reseedInterval}.
+     *
+     * Volatile, will be used in a double checked locking.
      */
-    protected transient int reseedCounter = 0;
+    protected transient volatile int reseedCounter = 0;
 
     // Mech features. If not same as below, must be redefined in constructor.
 
@@ -383,9 +382,14 @@ public abstract class AbstractDrbg extends SecureRandomSpi {
             instantiateIfNecessary(null);
 
             // Step 7: Auto reseed
+            // Double checked locking, safe because reseedCounter is volatile
             if (reseedCounter > reseedInterval || pr) {
-                reseedAlgorithm(getEntropyInput(pr), ai);
-                ai = null;
+                synchronized (this) {
+                    if (reseedCounter > reseedInterval || pr) {
+                        reseedAlgorithm(getEntropyInput(pr), ai);
+                        ai = null;
+                    }
+                }
             }
 
             // Step 8, 10: Generate_algorithm
@@ -615,8 +619,7 @@ public abstract class AbstractDrbg extends SecureRandomSpi {
      * @throws IllegalArgumentException if {@code params} is
      *         inappropriate for this SecureRandom.
      */
-    protected final synchronized void configure(
-            SecureRandomParameters params) {
+    protected final void configure(SecureRandomParameters params) {
         if (debug != null) {
             debug.println(this, "configure " + this + " with " + params);
         }
