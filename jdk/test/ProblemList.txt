@@ -212,6 +212,8 @@ sun/security/tools/keytool/standard.sh                          7041639 solaris-
 
 sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
 
+sun/security/mscapi/ShortRSAKey1024.sh                          8153948 windows-all
+
 java/security/Security/ClassLoaderDeadlock/Deadlock2.sh         8062758 generic-all
 
 sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-all
