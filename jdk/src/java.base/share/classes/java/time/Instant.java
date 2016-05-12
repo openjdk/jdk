@@ -799,33 +799,33 @@ public final class Instant
      * The supported fields behave as follows:
      * <ul>
      * <li>{@code NANOS} -
-     *  Returns a {@code Instant} with the specified number of nanoseconds added.
+     *  Returns an {@code Instant} with the specified number of nanoseconds added.
      *  This is equivalent to {@link #plusNanos(long)}.
      * <li>{@code MICROS} -
-     *  Returns a {@code Instant} with the specified number of microseconds added.
+     *  Returns an {@code Instant} with the specified number of microseconds added.
      *  This is equivalent to {@link #plusNanos(long)} with the amount
      *  multiplied by 1,000.
      * <li>{@code MILLIS} -
-     *  Returns a {@code Instant} with the specified number of milliseconds added.
+     *  Returns an {@code Instant} with the specified number of milliseconds added.
      *  This is equivalent to {@link #plusNanos(long)} with the amount
      *  multiplied by 1,000,000.
      * <li>{@code SECONDS} -
-     *  Returns a {@code Instant} with the specified number of seconds added.
+     *  Returns an {@code Instant} with the specified number of seconds added.
      *  This is equivalent to {@link #plusSeconds(long)}.
      * <li>{@code MINUTES} -
-     *  Returns a {@code Instant} with the specified number of minutes added.
+     *  Returns an {@code Instant} with the specified number of minutes added.
      *  This is equivalent to {@link #plusSeconds(long)} with the amount
      *  multiplied by 60.
      * <li>{@code HOURS} -
-     *  Returns a {@code Instant} with the specified number of hours added.
+     *  Returns an {@code Instant} with the specified number of hours added.
      *  This is equivalent to {@link #plusSeconds(long)} with the amount
      *  multiplied by 3,600.
      * <li>{@code HALF_DAYS} -
-     *  Returns a {@code Instant} with the specified number of half-days added.
+     *  Returns an {@code Instant} with the specified number of half-days added.
      *  This is equivalent to {@link #plusSeconds(long)} with the amount
      *  multiplied by 43,200 (12 hours).
      * <li>{@code DAYS} -
-     *  Returns a {@code Instant} with the specified number of days added.
+     *  Returns an {@code Instant} with the specified number of days added.
      *  This is equivalent to {@link #plusSeconds(long)} with the amount
      *  multiplied by 86,400 (24 hours).
      * </ul>
@@ -958,7 +958,7 @@ public final class Instant
     /**
      * Returns a copy of this instant with the specified amount subtracted.
      * <p>
-     * This returns a {@code Instant}, based on this one, with the amount
+     * This returns an {@code Instant}, based on this one, with the amount
      * in terms of the unit subtracted. If it is not possible to subtract the amount,
      * because the unit is not supported or for some other reason, an exception is thrown.
      * <p>

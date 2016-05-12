@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ class Compiler {
         // so do it the old fashioned way
         // options = Arrays.asList("-release", String.valueOf(release));
         String target = String.valueOf(release);
-        options = Arrays.asList("-source", target, "-target", target);
+        options = Arrays.asList("-source", target, "-target", target, "-classpath", "");
         return this;
     }
 
@@ -53,7 +53,9 @@ class Compiler {
         Map<String,ClassFileObject> cfos = createClassFileObjects();
         JavaCompiler jc = ToolProvider.getSystemJavaCompiler();
         JavaFileManager jfm = new CustomFileManager(jc.getStandardFileManager(null, null, null), cfos);
-        jc.getTask(null, jfm, null, options, null, cunits).call();
+        if(!jc.getTask(null, jfm, null, options, null, cunits).call()) {
+            throw new RuntimeException("Compilation failed");
+        }
         return createOutput(cfos);
     }
 

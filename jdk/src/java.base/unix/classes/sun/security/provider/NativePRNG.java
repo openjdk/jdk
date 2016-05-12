@@ -469,7 +469,8 @@ public final class NativePRNG extends SecureRandomSpi {
                     try {
                         seedOut.write(seed);
                     } catch (IOException e) {
-                        throw new ProviderException("setSeed() failed", e);
+                        // Ignored. On Mac OS X, /dev/urandom can be opened
+                        // for write, but actual write is not permitted.
                     }
                 }
                 getMixRandom().engineSetSeed(seed);

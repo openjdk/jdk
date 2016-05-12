@@ -206,16 +206,15 @@ securerandom.strongAlgorithms=NativePRNGBlocking:SUN,DRBG:SUN
 #     "Hash_DRBG" | "HMAC_DRBG" | "CTR_DRBG"
 #
 #   // The DRBG algorithm name. The "SHA-***" names are for Hash_DRBG and
-#   // HMAC_DRBG, default "SHA-256". "3KeyTDEA" and "AES-***" names are for
-#   // CTR_DRBG, default "AES-128" when using the limited cryptographic
-#   // or "AES-256" when using the unlimited.
+#   // HMAC_DRBG, default "SHA-256". The "AES-***" names are for CTR_DRBG,
+#   // default "AES-128" when using the limited cryptographic or "AES-256"
+#   // when using the unlimited.
 #   algorithm_name:
-#     "SHA-1" | "SHA-224" | "SHA-512/224" | "SHA-256" |
+#     "SHA-224" | "SHA-512/224" | "SHA-256" |
 #     "SHA-512/256" | "SHA-384" | "SHA-512" |
-#     "3KeyTDEA" | "AES-128" | "AES-192" | "AES-256"
+#     "AES-128" | "AES-192" | "AES-256"
 #
-#   // Security strength requested. Default "128", or "112"
-#   // if mech_name is CTR_DRBG and algorithm_name is "3KeyTDEA"
+#   // Security strength requested. Default "128"
 #   strength:
 #     "112" | "128" | "192" | "256"
 #
@@ -234,7 +233,7 @@ securerandom.strongAlgorithms=NativePRNGBlocking:SUN,DRBG:SUN
 #     "use_df" | "no_df"
 #
 # Examples,
-#   securerandom.drbg.config=Hash_DRBG,SHA-1,112,none
+#   securerandom.drbg.config=Hash_DRBG,SHA-224,112,none
 #   securerandom.drbg.config=CTR_DRBG,AES-256,192,pr_and_reseed,use_df
 #
 # The default value is an empty string, which is equivalent to
