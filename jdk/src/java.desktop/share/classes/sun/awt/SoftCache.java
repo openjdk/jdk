@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.misc;
+package sun.awt;
 
 import java.lang.ref.SoftReference;
 import java.lang.ref.ReferenceQueue;
