@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collection;
 
 import static javax.tools.FileManagerUtils.*;
 
@@ -176,7 +177,8 @@ public interface StandardJavaFileManager extends JavaFileManager {
     /**
      * Returns file objects representing the given paths.
      *
-     * <p>The default implementation converts each path to a file and calls
+     * @implSpec
+     * The default implementation converts each path to a file and calls
      * {@link #getJavaFileObjectsFromFiles getJavaObjectsFromFiles}.
      * IllegalArgumentException will be thrown if any of the paths
      * cannot be converted to a file.
@@ -280,10 +282,21 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * Associates the given search path with the given location.  Any
      * previous value will be discarded.
      *
-     * <p>The default implementation converts each path to a file and calls
+     * @apiNote
+     * The type of the {@code paths} parameter is a {@code Collection}
+     * and not {@code Iterable}. This is to prevent the possibility of
+     * accidentally calling the method with a single {@code Path} as
+     * the second argument, because although {@code Path} implements
+     * {@code Iterable<Path>}, it would almost never be correct to call
+     * this method with a single {@code Path} and have it be treated as
+     * an {@code Iterable} of its components.
+     *
+     *
+     * @implSpec
+     * The default implementation converts each path to a file and calls
      * {@link #getJavaFileObjectsFromFiles getJavaObjectsFromFiles}.
      * IllegalArgumentException will be thrown if any of the paths
-     * cannot be converted to a file.</p>
+     * cannot be converted to a file.
      *
      * @param location a location
      * @param paths a list of paths, if {@code null} use the default
@@ -297,8 +310,8 @@ public interface StandardJavaFileManager extends JavaFileManager {
      *
      * @since 9
      */
-    default void setLocationFromPaths(Location location, Iterable<? extends Path> paths)
-        throws IOException {
+    default void setLocationFromPaths(Location location, Collection<? extends Path> paths)
+            throws IOException {
         setLocation(location, asFiles(paths));
     }
 
@@ -319,6 +332,11 @@ public interface StandardJavaFileManager extends JavaFileManager {
     /**
      * Returns the search path associated with the given location.
      *
+     * @implSpec
+     * The default implementation calls {@link #getLocation getLocation}
+     * and then returns an {@code Iterable} formed by calling {@code toPath()}
+     * on each {@code File} returned from {@code getLocation}.
+     *
      * @param location a location
      * @return a list of paths or {@code null} if this location has no
      * associated search path
@@ -337,8 +355,9 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * {@link java.nio.file.Path Path} object. In such cases, this method may be
      * used to access that object.
      *
-     * <p>The default implementation throws {@link UnsupportedOperationException}
-     * for all files.</p>
+     * @implSpec
+     * The default implementation throws {@link UnsupportedOperationException}
+     * for all files.
      *
      * @param file a file object
      * @return a path representing the same underlying file system artifact
@@ -351,4 +370,36 @@ public interface StandardJavaFileManager extends JavaFileManager {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Factory to create {@code Path} objects from strings.
+     *
+     * @since 9
+     */
+    interface PathFactory {
+        /**
+         * Converts a path string, or a sequence of strings that when joined form a path string, to a Path.
+         *
+         * @param first  the path string or initial part of the path string
+         * @param more   additional strings to be joined to form the path string
+         * @return       the resulting {@code Path}
+         */
+        Path getPath(String first, String... more);
+    }
+
+     /**
+      * Specify a factory that can be used to generate a path from a string, or series of strings.
+      *
+      * If this method is not called, a factory whose {@code getPath} method is
+      * equivalent to calling
+      * {@link java.nio.file.Paths#get(String, String...) java.nio.file.Paths.get(first, more)}
+      * will be used.
+      *
+      * @implSpec
+      * The default implementation of this method ignores the factory that is provided.
+      *
+      * @param f  the factory
+      *
+      * @since 9
+      */
+    default void setPathFactory(PathFactory f) { }
 }

@@ -86,6 +86,8 @@ endif
 # Default JTREG to run
 ifdef JPRT_JTREG_HOME
   JTREG_HOME = $(JPRT_JTREG_HOME)
+else ifdef JT_HOME
+  JTREG_HOME = $(JT_HOME)
 else
   JTREG_HOME = $(SLASH_JAVA)/re/jtreg/4.1-jigsaw/nightly/binaries/jtreg/
 endif
@@ -113,10 +115,12 @@ endif
 #
 # JT_JAVA is the version of java used to run jtreg/JCK. 
 #
-ifdef JPRT_JAVA_HOME
-  JT_JAVA = $(JPRT_JAVA_HOME)
-else
-  JT_JAVA = $(SLASH_JAVA)/re/jdk/1.9.0/archive/fcs/binaries/$(PLATFORM)-$(ARCH)
+ifndef JT_JAVA
+  ifdef JPRT_JAVA_HOME
+    JT_JAVA = $(JPRT_JAVA_HOME)
+  else
+    JT_JAVA = $(SLASH_JAVA)/re/jdk/1.9.0/archive/fcs/binaries/$(PLATFORM)-$(ARCH)
+  endif
 endif
 
 # Default JDK to test
@@ -147,6 +151,10 @@ ifdef TESTBOOTCLASSPATH
   JCK_OPTIONS += \
 	-vmoptions:-Xbootclasspath/p:$(TESTBOOTCLASSPATH) \
 	-refvmoptions:-Xbootclasspath/p:$(TESTBOOTCLASSPATH)
+endif
+
+ifdef EXTRA_JTREG_OPTIONS
+  JTREG_OPTIONS += $(EXTRA_JTREG_OPTIONS)
 endif
 
 # Concurrency is the number of tests that can execute at once.
@@ -262,6 +270,12 @@ javah:		JTREG_TESTDIRS = tools/javah
 javap:		JTREG_TESTDIRS = tools/javap
 jdeps:		JTREG_TESTDIRS = tools/jdeps
 
+# a way to select jtreg tests from outside
+ifdef TEST_SELECTION
+  JTREG_TESTDIRS = $(TEST_SELECTION)
+endif
+
+
 # Run jtreg tests
 #
 # JTREG_HOME
@@ -290,13 +304,13 @@ jtreg-tests: check-jtreg FRC
 	  -J-Xmx512m \
 	  -vmoption:-Xmx768m \
 	  -a -ignore:quiet $(if $(JTREG_VERBOSE),-v:$(JTREG_VERBOSE)) \
-          -r:$(JTREG_OUTPUT_DIR)/JTreport \
-          -w:$(JTREG_OUTPUT_DIR)/JTwork \
-          -jdk:$(TESTJAVA) \
-          $(JAVA_ARGS:%=-vmoption:%) \
-          $(JTREG_EXCLUSIONS) \
+	  -r:$(JTREG_OUTPUT_DIR)/JTreport \
+	  -w:$(JTREG_OUTPUT_DIR)/JTwork \
+	  -jdk:$(TESTJAVA) \
+	  $(JAVA_ARGS:%=-vmoption:%) \
+	  $(JTREG_EXCLUSIONS) \
 	  $(JTREG_OPTIONS) \
-          $(JTREG_TESTDIRS) \
+	  $(JTREG_TESTDIRS) \
 	|| ( $(call EXIT_IF_FATAL,$(FATAL_JTREG_EXIT)) ; \
 	    echo $$status > $(JTREG_OUTPUT_DIR)/status.txt \
 	)

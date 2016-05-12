@@ -224,6 +224,19 @@ public class PackageTreeWriter extends AbstractTreeWriter {
     }
 
     /**
+     * Get the module link.
+     *
+     * @return a content tree for the module link
+     */
+    @Override
+    protected Content getNavLinkModule() {
+        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
+                moduleLabel);
+        Content li = HtmlTree.LI(linkContent);
+        return li;
+    }
+
+    /**
      * Get link to the package summary page for the package of this tree.
      *
      * @return a content tree for the package link
