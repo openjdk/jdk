@@ -50,7 +50,7 @@ import jdk.testlibrary.CompilerUtils;
  * @library /javax/xml/jaxp/libs
  * @build jdk.testlibrary.*
  * @run testng LayerModularXMLParserTest
- * @bug 8078820
+ * @bug 8078820 8156119
  * @summary Tests JAXP lib works with layer and TCCL
  */
 
@@ -75,7 +75,7 @@ public class LayerModularXMLParserTest {
      * services provided by provider2
      */
     private static final String[] services2 = { "javax.xml.datatype.DatatypeFactory",
-            "javax.xml.stream.XMLEventFactory" };
+            "javax.xml.stream.XMLEventFactory", "org.xml.sax.XMLReader" };
 
     /*
      * Compiles all modules used by the test
