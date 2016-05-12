@@ -267,10 +267,9 @@ public abstract class AbstractDrbg extends SecureRandomSpi {
      * {@code DEFAULT_STRENGTH} is 128) for HashDRBG:
      * <pre>
      * requested             effective
-     * (SHA-1, -1)           (SHA-1,128)
-     * (SHA-1, 112)          (SHA-1,112)
-     * (SHA-1, 192)          IAE
+     * (SHA-224, 256)        IAE
      * (SHA-256, -1)         (SHA-256,128)
+     * (SHA-256, 112)        (SHA-256,112)
      * (SHA-256, 128)        (SHA-256,128)
      * (SHA-3, -1)           IAE
      * (null, -1)            (SHA-256,128)
