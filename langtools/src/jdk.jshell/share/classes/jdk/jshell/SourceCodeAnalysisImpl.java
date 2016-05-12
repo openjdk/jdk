@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1045,7 +1045,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
         public SourceCache(AnalyzeTask originalTask) {
             this.originalTask = originalTask;
-            Iterable<? extends Path> sources = findSources();
+            List<Path> sources = findSources();
             if (sources.iterator().hasNext()) {
                 StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null);
                 try {
@@ -1145,9 +1145,9 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         }
     }
 
-    private Iterable<? extends Path> availableSources;
+    private List<Path> availableSources;
 
-    private Iterable<? extends Path> findSources() {
+    private List<Path> findSources() {
         if (availableSources != null) {
             return availableSources;
         }

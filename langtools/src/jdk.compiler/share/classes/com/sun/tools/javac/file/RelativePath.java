@@ -26,10 +26,8 @@
 package com.sun.tools.javac.file;
 
 import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -58,13 +56,8 @@ public abstract class RelativePath implements Comparable<RelativePath> {
     public abstract String basename();
 
     public Path resolveAgainst(Path directory) throws /*unchecked*/ InvalidPathException {
-        if (directory == null) {
-            String sep = FileSystems.getDefault().getSeparator();
-            return Paths.get(path.replace("/", sep));
-        } else {
-            String sep = directory.getFileSystem().getSeparator();
-            return directory.resolve(path.replace("/", sep));
-        }
+        String sep = directory.getFileSystem().getSeparator();
+        return directory.resolve(path.replace("/", sep));
     }
 
     public Path resolveAgainst(FileSystem fs) throws /*unchecked*/ InvalidPathException {

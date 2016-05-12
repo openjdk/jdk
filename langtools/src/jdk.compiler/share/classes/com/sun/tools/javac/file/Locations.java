@@ -68,6 +68,7 @@ import javax.lang.model.SourceVersion;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardJavaFileManager.PathFactory;
 import javax.tools.StandardLocation;
 
 import com.sun.tools.javac.code.Lint;
@@ -121,7 +122,9 @@ public class Locations {
 
     private ModuleNameReader moduleNameReader;
 
-    static final Path javaHome = Paths.get(System.getProperty("java.home"));
+    private PathFactory pathFactory = Paths::get;
+
+    static final Path javaHome = FileSystems.getDefault().getPath(System.getProperty("java.home"));
     static final Path thisSystemModules = javaHome.resolve("lib").resolve("modules");
 
     Map<Path, FileSystem> fileSystems = new LinkedHashMap<>();
@@ -129,6 +132,10 @@ public class Locations {
 
     Locations() {
         initHandlers();
+    }
+
+    Path getPath(String first, String... more) {
+        return pathFactory.getPath(first, more);
     }
 
     public void close() throws IOException {
@@ -155,6 +162,10 @@ public class Locations {
         this.fsInfo = fsInfo;
     }
 
+    void setPathFactory(PathFactory f) {
+        pathFactory = f;
+    }
+
     boolean isDefaultBootClassPath() {
         BootClassPathLocationHandler h
                 = (BootClassPathLocationHandler) getHandler(PLATFORM_CLASS_PATH);
@@ -167,7 +178,7 @@ public class Locations {
      * @param searchPath The search path to be split
      * @return The elements of the path
      */
-    private static Iterable<Path> getPathEntries(String searchPath) {
+    private Iterable<Path> getPathEntries(String searchPath) {
         return getPathEntries(searchPath, null);
     }
 
@@ -181,7 +192,7 @@ public class Locations {
      * empty path elements
      * @return The elements of the path
      */
-    private static Iterable<Path> getPathEntries(String searchPath, Path emptyPathDefault) {
+    private Iterable<Path> getPathEntries(String searchPath, Path emptyPathDefault) {
         ListBuffer<Path> entries = new ListBuffer<>();
         for (String s: searchPath.split(Pattern.quote(File.pathSeparator), -1)) {
             if (s.isEmpty()) {
@@ -189,7 +200,7 @@ public class Locations {
                     entries.add(emptyPathDefault);
                 }
             } else {
-                entries.add(Paths.get(s));
+                entries.add(getPath(s));
             }
         }
         return entries;
@@ -465,7 +476,7 @@ public class Locations {
             // need to decide how best to report issue for benefit of
             // direct API call on JavaFileManager.handleOption(specifies IAE)
             // vs. command line decoding.
-            outputDir = (value == null) ? null : Paths.get(value);
+            outputDir = (value == null) ? null : getPath(value);
             return true;
         }
 
@@ -606,7 +617,7 @@ public class Locations {
         protected SearchPath createPath() {
             return new SearchPath()
                     .expandJarClassPaths(true) // Only search user jars for Class-Paths
-                    .emptyPathDefault(Paths.get("."));  // Empty path elt ==> current directory
+                    .emptyPathDefault(getPath("."));  // Empty path elt ==> current directory
         }
 
         private void lazy() {
@@ -791,7 +802,7 @@ public class Locations {
             paths.addAll(modules);
 
             for (String s : files.split(Pattern.quote(File.pathSeparator))) {
-                paths.add(Paths.get(s));
+                paths.add(getPath(s));
             }
 
             return paths;
@@ -1170,12 +1181,12 @@ public class Locations {
             for (String seg: segments) {
                 int markStart = seg.indexOf(MARKER);
                 if (markStart == -1) {
-                    add(map, Paths.get(seg), null);
+                    add(map, getPath(seg), null);
                 } else {
                     if (markStart == 0 || !isSeparator(seg.charAt(markStart - 1))) {
                         throw new IllegalArgumentException("illegal use of " + MARKER + " in " + seg);
                     }
-                    Path prefix = Paths.get(seg.substring(0, markStart - 1));
+                    Path prefix = getPath(seg.substring(0, markStart - 1));
                     Path suffix;
                     int markEnd = markStart + MARKER.length();
                     if (markEnd == seg.length()) {
@@ -1184,7 +1195,7 @@ public class Locations {
                             || seg.indexOf(MARKER, markEnd) != -1) {
                         throw new IllegalArgumentException("illegal use of " + MARKER + " in " + seg);
                     } else {
-                        suffix = Paths.get(seg.substring(markEnd + 1));
+                        suffix = getPath(seg.substring(markEnd + 1));
                     }
                     add(map, prefix, suffix);
                 }
@@ -1331,13 +1342,13 @@ public class Locations {
     }
 
     private class SystemModulesLocationHandler extends BasicLocationHandler {
-        private Path javaHome;
+        private Path systemJavaHome;
         private Path modules;
         private Map<String, ModuleLocationHandler> systemModules;
 
         SystemModulesLocationHandler() {
             super(StandardLocation.SYSTEM_MODULES, Option.SYSTEM);
-            javaHome = Paths.get(System.getProperty("java.home"));
+            systemJavaHome = Locations.javaHome;
         }
 
         @Override
@@ -1347,11 +1358,11 @@ public class Locations {
             }
 
             if (value == null) {
-                javaHome = Paths.get(System.getProperty("java.home"));
+                systemJavaHome = Locations.javaHome;
             } else if (value.equals("none")) {
-                javaHome = null;
+                systemJavaHome = null;
             } else {
-                update(Paths.get(value));
+                update(getPath(value));
             }
 
             modules = null;
@@ -1360,13 +1371,13 @@ public class Locations {
 
         @Override
         Collection<Path> getPaths() {
-            return (javaHome == null) ? null : Collections.singleton(javaHome);
+            return (systemJavaHome == null) ? null : Collections.singleton(systemJavaHome);
         }
 
         @Override
         void setPaths(Iterable<? extends Path> files) throws IOException {
             if (files == null) {
-                javaHome = null;
+                systemJavaHome = null;
             } else {
                 Iterator<? extends Path> pathIter = files.iterator();
                 if (!pathIter.hasNext()) {
@@ -1386,16 +1397,15 @@ public class Locations {
         }
 
         private void update(Path p) {
-            if (!isCurrentPlatform(p) && !Files.exists(p.resolve("jrt-fs.jar")) && !Files.exists(javaHome.resolve("modules")))
+            if (!isCurrentPlatform(p) && !Files.exists(p.resolve("jrt-fs.jar")) && !Files.exists(systemJavaHome.resolve("modules")))
                 throw new IllegalArgumentException(p.toString());
-            javaHome = p;
+            systemJavaHome = p;
             modules = null;
         }
 
         private boolean isCurrentPlatform(Path p) {
-            Path jh = Paths.get(System.getProperty("java.home"));
             try {
-                return Files.isSameFile(p, jh);
+                return Files.isSameFile(p, Locations.javaHome);
             } catch (IOException ex) {
                 throw new IllegalArgumentException(p.toString(), ex);
             }
@@ -1421,7 +1431,7 @@ public class Locations {
                 return;
             }
 
-            if (javaHome == null) {
+            if (systemJavaHome == null) {
                 systemModules = Collections.emptyMap();
                 return;
             }
@@ -1431,15 +1441,15 @@ public class Locations {
                     URI jrtURI = URI.create("jrt:/");
                     FileSystem jrtfs;
 
-                    if (isCurrentPlatform(javaHome)) {
+                    if (isCurrentPlatform(systemJavaHome)) {
                         jrtfs = FileSystems.getFileSystem(jrtURI);
                     } else {
                         try {
                             Map<String, String> attrMap =
-                                    Collections.singletonMap("java.home", javaHome.toString());
+                                    Collections.singletonMap("java.home", systemJavaHome.toString());
                             jrtfs = FileSystems.newFileSystem(jrtURI, attrMap);
                         } catch (ProviderNotFoundException ex) {
-                            URL javaHomeURL = javaHome.resolve("jrt-fs.jar").toUri().toURL();
+                            URL javaHomeURL = systemJavaHome.resolve("jrt-fs.jar").toUri().toURL();
                             ClassLoader currentLoader = Locations.class.getClassLoader();
                             URLClassLoader fsLoader =
                                     new URLClassLoader(new URL[] {javaHomeURL}, currentLoader);
@@ -1454,7 +1464,7 @@ public class Locations {
 
                     modules = jrtfs.getPath("/modules");
                 } catch (FileSystemNotFoundException | ProviderNotFoundException e) {
-                    modules = javaHome.resolve("modules");
+                    modules = systemJavaHome.resolve("modules");
                     if (!Files.exists(modules))
                         throw new IOException("can't find system classes", e);
                 }
