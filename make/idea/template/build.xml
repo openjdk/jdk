@@ -1,0 +1,126 @@
+<!-- importing.xml -->
+<project name="jdk" basedir="..">
+
+    <script language="javascript" classpath=".idea/classes">
+        var JdkLogger = Java.type("idea.JdkIdeaAntLogger");
+        new JdkLogger(project)
+    </script>
+
+     <!-- java.marker is set to a marker file to check for within a Java install dir.
+         The best file to check for across Solaris/Linux/Windows/MacOS is one of the
+         executables; regrettably, that is OS-specific. -->
+    <condition property="java.marker" value="bin/java">
+        <os family="unix"/>
+    </condition>
+    <condition property="java.marker" value="bin/java.exe">
+        <os family="windows"/>
+    </condition>
+
+    <property name="test.dir" value="${basedir}/jdk/test"/>
+
+    <macrodef name="call-make">
+            <attribute name="dir"/>
+            <attribute name="args"/>
+            <sequential>
+                <exec executable="make" dir="@{dir}" failonerror="true">
+                    <arg line="@{args}"/>
+                    <env key="CLASSPATH" value = ""/>
+                </exec>
+            </sequential>
+        </macrodef>
+
+    <macrodef name="exec-target">
+        <attribute name="antfile" default="${ant.file}" />
+        <attribute name="target" />
+        <sequential>
+            <java classname="org.apache.tools.ant.Main" fork="true" spawn="true">
+                <arg value="-f"/>
+                <arg value="@{antfile}"/>  
+                <arg value="-Dboot.java.home=${boot.java.home}"/>
+                <arg value="-Dbuild.target.dir=${build.target.dir}"/>
+                <arg value="-Djtreg.home=${jtreg.home}"/>
+                <arg value="-Djtreg.tests=${jtreg.tests}"/>
+                <arg value="-Djtreg.jpda.jvmargs=${jtreg.jpda.jvmargs}"/>
+                <arg value="@{target}"/>
+                <classpath>           
+                    <pathelement path="${java.class.path}"/>
+                </classpath>
+            </java>
+        </sequential>
+    </macrodef>
+
+    <target name="post-make" depends="build-module"/>
+
+    <!--
+        **** Global JDK Build Targets
+    -->
+
+    <target name="clean" depends="-do-configure">
+        <echo message="base = ${basedir}"/>
+        <call-make dir = "${build.target.dir}" args = "clean"/>
+    </target>
+    
+    <target name="-do-configure">
+        <echo message="base = ${basedir}"/>
+        <fail message="Not part of a full JDK forest">
+            <condition>
+                <not>
+                    <available file="${basedir}/configure" />
+                </not>
+            </condition>
+        </fail>
+        <exec executable="sh" dir="${basedir}" failonerror="true">
+            <arg line="configure --with-boot-jdk=${boot.java.home}"/>
+        </exec>
+    </target>
+
+    <target name="images">
+        <call-make dir = "${build.target.dir}" args = "images"/>
+    </target>
+
+    <target name="jimages">
+        <call-make dir = "${build.target.dir}" args = "jimages"/>
+    </target>
+
+    <target name="check-env">
+        <exec executable="env" dir="${basedir}"/>
+    </target>
+
+    <target name="build-module">
+        <call-make dir = "${build.target.dir}" args = "${module.name}"/>
+    </target>
+
+    <target name="-check-boot.java.home" depends="-def-check">
+        <check name="bootstrap java" property="boot.java.home" marker="${java.marker}"/>
+    </target>
+
+    <target name="-def-check">
+        <macrodef name="check">
+            <attribute name="name"/>
+            <attribute name="property"/>
+            <attribute name="marker" default=""/>
+            <sequential>
+                <fail message="Cannot locate @{name}: please set @{property} to its location">
+                    <condition>
+                        <not>
+                            <isset property="@{property}"/>
+                        </not>
+                    </condition>
+                </fail>
+                <fail message="@{name} is not installed in ${@{property}}">
+                    <condition>
+                        <and>
+                            <not>
+                                <equals arg1="@{marker}" arg2=""/>
+                            </not>
+                            <not>
+                                <available file="${@{property}}/@{marker}"/>
+                            </not>
+                        </and>
+                    </condition>
+                </fail>
+            </sequential>
+        </macrodef>
+    </target>
+</project>
+
