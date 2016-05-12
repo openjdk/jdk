@@ -109,7 +109,7 @@ public abstract class PathFileObject implements JavaFileObject {
         private DirectoryFileObject(BaseFileManager fileManager, Path path,
                 Path userPackageRootDir, RelativePath relativePath) {
             super(fileManager, path);
-            this.userPackageRootDir = userPackageRootDir;
+            this.userPackageRootDir = Objects.requireNonNull(userPackageRootDir);
             this.relativePath = relativePath;
         }
 
