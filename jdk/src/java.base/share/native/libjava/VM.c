@@ -36,7 +36,7 @@ static JNINativeMethod methods[] = {
 };
 
 JNIEXPORT jobject JNICALL
-Java_jdk_internal_misc_VM_latestUserDefinedLoader(JNIEnv *env, jclass cls) {
+Java_jdk_internal_misc_VM_latestUserDefinedLoader0(JNIEnv *env, jclass cls) {
     return JVM_LatestUserDefinedLoader(env);
 }
 
