@@ -232,16 +232,4 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider, Ho
         HotSpotResolvedJavaMethodImpl method = runtime.getCompilerToVM().getResolvedJavaMethod(baseObject, displacement);
         return HotSpotMetaspaceConstantImpl.forMetaspaceObject(method, false);
     }
-
-    @Override
-    public Constant readSymbolConstant(Constant base, long displacement) {
-        int bits = runtime.getConfig().symbolPointerSize * Byte.SIZE;
-        long pointer = readRawValue(base, displacement, bits);
-        if (pointer == 0) {
-            return JavaConstant.NULL_POINTER;
-        } else {
-            String symbol = runtime.getCompilerToVM().getSymbol(pointer);
-            return new HotSpotSymbol(symbol, pointer).asConstant();
-        }
-    }
 }

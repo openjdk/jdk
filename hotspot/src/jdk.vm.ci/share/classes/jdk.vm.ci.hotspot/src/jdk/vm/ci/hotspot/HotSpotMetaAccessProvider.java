@@ -78,15 +78,6 @@ public class HotSpotMetaAccessProvider implements MetaAccessProvider, HotSpotPro
         return new HotSpotSignature(runtime, signature);
     }
 
-    public HotSpotSymbol lookupSymbol(String symbol) {
-        long pointer = runtime.getCompilerToVM().lookupSymbol(symbol);
-        if (pointer == 0) {
-            return null;
-        } else {
-            return new HotSpotSymbol(symbol, pointer);
-        }
-    }
-
     /**
      * {@link Field} object of {@link Method#slot}.
      */
