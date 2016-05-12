@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -402,6 +402,12 @@ public final class IsoFields {
                 long moy = temporal.getLong(MONTH_OF_YEAR);
                 return ((moy + 2) / 3);
             }
+            public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
+                if (isSupportedBy(temporal) == false) {
+                    throw new UnsupportedTemporalTypeException("Unsupported field: QuarterOfYear");
+                }
+                return super.rangeRefinedBy(temporal);
+            }
             @SuppressWarnings("unchecked")
             @Override
             public <R extends Temporal> R adjustInto(R temporal, long newValue) {
@@ -528,6 +534,12 @@ public final class IsoFields {
                     throw new UnsupportedTemporalTypeException("Unsupported field: WeekBasedYear");
                 }
                 return getWeekBasedYear(LocalDate.from(temporal));
+            }
+            public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
+                if (isSupportedBy(temporal) == false) {
+                    throw new UnsupportedTemporalTypeException("Unsupported field: WeekBasedYear");
+                }
+                return super.rangeRefinedBy(temporal);
             }
             @SuppressWarnings("unchecked")
             @Override

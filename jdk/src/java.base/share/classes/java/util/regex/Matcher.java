@@ -178,6 +178,14 @@ public final class Matcher implements MatchResult {
     int[] locals;
 
     /**
+     * Storage used by top greedy Loop node to store a specific hash set to
+     * keep the beginning index of the failed repetition match. The nodes
+     * themselves are stateless, so they rely on this field to hold state
+     * during a match.
+     */
+    IntHashSet[] localsPos;
+
+    /**
      * Boolean indicating whether or not more input could change
      * the results of the last match.
      *
@@ -239,6 +247,7 @@ public final class Matcher implements MatchResult {
         int parentGroupCount = Math.max(parent.capturingGroupCount, 10);
         groups = new int[parentGroupCount * 2];
         locals = new int[parent.localCount];
+        localsPos = new IntHashSet[parent.localTCNCount];
 
         // Put fields into initial states
         reset();
@@ -375,6 +384,7 @@ public final class Matcher implements MatchResult {
             groups[i] = -1;
         for (int i = 0; i < locals.length; i++)
             locals[i] = -1;
+        localsPos = new IntHashSet[parentPattern.localTCNCount];
         modCount++;
         return this;
     }
@@ -397,6 +407,10 @@ public final class Matcher implements MatchResult {
             groups[i] = -1;
         for(int i=0; i<locals.length; i++)
             locals[i] = -1;
+        for (int i = 0; i < localsPos.length; i++) {
+            if (localsPos[i] != null)
+                localsPos[i].clear();
+        }
         lastAppendPosition = 0;
         from = 0;
         to = getTextLength();
@@ -1706,6 +1720,10 @@ public final class Matcher implements MatchResult {
         this.oldLast = oldLast < 0 ? from : oldLast;
         for (int i = 0; i < groups.length; i++)
             groups[i] = -1;
+        for (int i = 0; i < localsPos.length; i++) {
+            if (localsPos[i] != null)
+                localsPos[i].clear();
+        }
         acceptMode = NOANCHOR;
         boolean result = parentPattern.root.match(this, from, text);
         if (!result)
@@ -1729,6 +1747,10 @@ public final class Matcher implements MatchResult {
         this.oldLast = oldLast < 0 ? from : oldLast;
         for (int i = 0; i < groups.length; i++)
             groups[i] = -1;
+        for (int i = 0; i < localsPos.length; i++) {
+            if (localsPos[i] != null)
+                localsPos[i].clear();
+        }
         acceptMode = anchor;
         boolean result = parentPattern.matchRoot.match(this, from, text);
         if (!result)

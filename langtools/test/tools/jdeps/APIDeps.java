@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,11 +65,9 @@ public class APIDeps {
         for (String s : testModules.split("\\s+")) {
             if (s.isEmpty()) continue;
             if (s.indexOf('/') != -1)
-                addExports.add(s.trim() + "=ALL-UNNAMED");
+                addExports.add("-XaddExports:" + s.trim() + "=ALL-UNNAMED");
         }
-        if (addExports.size() > 0) {
-            options.add(addExports.stream().collect(Collectors.joining(",", "-XaddExports:", "")));
-        }
+        options.addAll(addExports);
 
         for (String dir : srcDirs) {
             Path source = testsrc.resolve(dir);

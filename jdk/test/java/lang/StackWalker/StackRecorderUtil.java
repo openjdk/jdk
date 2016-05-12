@@ -100,8 +100,8 @@ public class StackRecorderUtil implements Iterable<StackRecorderUtil.TestFrame> 
             }
             if (!Objects.equals(ste.getClassName(), sf.getClassName())
                 || !Objects.equals(ste.getMethodName(), sf.getMethodName())
-                || !Objects.equals(ste.getFileName(), sf.getFileName().orElse(null))
-                || !Objects.equals(ste.getLineNumber(), sf.getLineNumber().orElse(-1))
+                || !Objects.equals(ste.getFileName(), sf.getFileName())
+                || !Objects.equals(ste.getLineNumber(), sf.getLineNumber())
                 || !Objects.equals(ste.isNativeMethod(), sf.isNativeMethod())) {
                 throw new RuntimeException("StackFrame and StackTraceElement differ: " +
                         "sf=" + sf + ", ste=" + ste);

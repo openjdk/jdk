@@ -348,25 +348,35 @@ ALL_TARGETS += docs-javadoc docs-jvmtidoc zip-docs
 ################################################################################
 # Cross compilation support
 
-ifeq ($(CREATE_BUILDJDK), true)
+ifeq ($(CREATING_BUILDJDK), true)
   # This target is only called by the recursive call below.
-  create-buildjdk-compile-hotspot-helper: hotspot
-  create-buildjdk-compile-modules-helper: jdk.jlink-launchers java.base-copy \
-      jdk.jdeps-launchers
+  create-buildjdk-interim-image-helper: interim-image jdk.jlink-launchers \
+      java.base-copy jdk.jdeps-launchers
 endif
 
 create-buildjdk-copy:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f CreateBuildJdkCopy.gmk)
 
-create-buildjdk-compile-hotspot create-buildjdk-compile-modules:
+create-buildjdk-interim-image:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Main.gmk \
 	    $@-helper \
 	    SPEC=$(dir $(SPEC))buildjdk-spec.gmk \
 	    HOTSPOT_SPEC=$(dir $(SPEC))buildjdk-spec.gmk \
 	    CREATING_BUILDJDK=true)
 
-ALL_TARGETS += create-buildjdk-copy create-buildjdk-compile-hotspot \
-    create-buildjdk-compile-modules
+ALL_TARGETS += create-buildjdk-copy create-buildjdk-interim-image
+
+################################################################################
+# The interim-image is a small jlinked image that is used to generate artifacts 
+# at build time for use when linking the real images.
+
+interim-image:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f InterimImage.gmk)
+
+generate-classlist:
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f GenerateClasslist.gmk)
+
+ALL_TARGETS += interim-image generate-classlist
 
 ################################################################################
 # Build tests
@@ -522,10 +532,11 @@ else
   $(foreach m, $(RMIC_MODULES), $(eval $m-rmic: $m-java))
 
   # Declare dependencies from <module>-lib to <module>-java
-  # Skip modules that do not have java source. When creating a BUILD_JDK, the
-  # java compilation has already been done by the normal build and copied in.
+  # Skip modules that do not have java source.
+  # When creating a BUILDJDK, the java compilation has already been done by the
+  # normal build and copied in.
   ifneq ($(CREATING_BUILDJDK), true)
-  $(foreach m, $(filter $(JAVA_MODULES), $(LIBS_MODULES)), $(eval $m-libs: $m-java))
+    $(foreach m, $(filter $(JAVA_MODULES), $(LIBS_MODULES)), $(eval $m-libs: $m-java))
   endif
 
   # Declare dependencies from all other <module>-lib to java.base-lib
@@ -562,13 +573,21 @@ else
   $(foreach m, $(GENDATA_MODULES), $(eval $m-strip: $m-gendata))
   $(foreach m, $(COPY_MODULES), $(eval $m-strip: $m-copy))
 
-  # Declare dependencies between jmod targets
-  $(foreach m, $(JMOD_MODULES), \
-      $(eval $m-jmod: $(addsuffix -jmod, $(call FindDepsForModule,$m))))
+  # Declare dependencies between jmod targets. Only java.base jmod needs access
+  # to the other jmods to be built.
+  # When creating a BUILDJDK, we don't need to add hashes to java.base, thus
+  # we don't need to depend on all other jmods
+  ifneq ($(CREATING_BUILDJDK), true)
+    java.base-jmod: $(filter-out java.base-jmod, $(JMOD_TARGETS))
+  endif
 
   # Declare dependencies from <module>-jmod to all other module targets
   $(foreach m, $(STRIP_MODULES), $(eval $m-jmod: $m-strip))
-  $(foreach m, $(JAVA_MODULES), $(eval $m-jmod: $m-java))
+  # When creating a BUILDJDK, the java compilation has already been done by the
+  # normal build and copied in.
+  ifneq ($(CREATING_BUILDJDK), true)
+    $(foreach m, $(JAVA_MODULES), $(eval $m-jmod: $m-java))
+  endif
   $(foreach m, $(GENDATA_MODULES), $(eval $m-jmod: $m-gendata))
   $(foreach m, $(RMIC_MODULES), $(eval $m-jmod: $m-rmic))
   $(foreach m, $(LIBS_MODULES), $(eval $m-jmod: $m-libs))
@@ -577,10 +596,18 @@ else
 
   # Jmods cannot be created until we have the jlink tool ready to run, which requires
   # all java modules to be compiled and jdk.jlink-launchers.
-  $(JMOD_TARGETS): java java.base-libs jdk.jlink-launchers
+  $(JMOD_TARGETS): java.base-libs jdk.jlink-launchers
+  # When creating a BUILDJDK, the java compilation has already been done by the
+  # normal build and copied in.
+  ifneq ($(CREATING_BUILDJDK), true)
+    $(JMOD_TARGETS): java
+  endif
 
   ifeq ($(CREATE_BUILDJDK), true)
-    $(JMOD_TARGETS): create-buildjdk
+    # Avoid calling create-buildjdk from within a create-buildjdk call
+    ifneq ($(CREATING_BUILDJDK), true)
+      $(JMOD_TARGETS): create-buildjdk
+    endif
   endif
 
   zip-security: java.base-java java.security.jgss-java java.security.jgss-libs \
@@ -590,7 +617,18 @@ else
 
   jrtfs-jar: interim-langtools
 
-  jimages: jmods zip-source source-tips demos samples jrtfs-jar
+  ifeq ($(CREATE_BUILDJDK), true)
+    # If creating a buildjdk, the interim image needs to be based on that.
+    generate-classlist: create-buildjdk
+  else ifeq ($(EXTERNAL_BUILDJDK), false)
+    # If an external buildjdk has been provided, we skip generating an
+    # interim-image and just use the external buildjdk for generating
+    # classlist.
+    generate-classlist: interim-image
+  endif
+  generate-classlist: buildtools-jdk
+
+  jimages: jmods zip-source source-tips demos samples jrtfs-jar generate-classlist
 
   profiles: jmods zip-source source-tips jrtfs-jar
 
@@ -606,9 +644,12 @@ else
 
   test: jimages test-image
 
-  create-buildjdk-copy: jdk.jlink-java java.base-gendata
+  create-buildjdk-copy: jdk.jlink-java java.base-gendata \
+      $(addsuffix -java, $(INTERIM_IMAGE_MODULES))
 
-  create-buildjdk-compile-modules: create-buildjdk-copy create-buildjdk-compile-hotspot
+  create-buildjdk-interim-image: create-buildjdk-copy
+
+  interim-image: $(addsuffix -jmod, $(INTERIM_IMAGE_MODULES))
 
   test-make: clean-test-make
 
@@ -682,8 +723,7 @@ samples: samples-jdk
 # The "exploded image" is a locally runnable JDK in $(BUILD_OUTPUT)/jdk.
 exploded-image: $(ALL_MODULES)
 
-create-buildjdk: create-buildjdk-compile-modules create-buildjdk-copy \
-    create-buildjdk-compile-hotspot
+create-buildjdk: create-buildjdk-copy create-buildjdk-interim-image
 
 mac-bundles: mac-bundles-jdk
 
@@ -694,10 +734,14 @@ mac-bundles: mac-bundles-jdk
 # (and possibly other, more specific versions)
 product-images: jimages demos samples zip-security exploded-image
 
-# When cross compiling and building a partial BUILDJDK for the build host,
-# the summary generation cannot be run.
+# The module summary cannot be run when:
+# * Cross compiling and building a partial BUILDJDK for the build host
+# * An external buildjdk has been supplied since it may not match the
+#   module selection of the target jdk
 ifneq ($(CREATE_BUILDJDK), true)
-  product-images: generate-summary
+  ifeq ($(EXTERNAL_BUILDJDK), false)
+    product-images: generate-summary
+  endif
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)

@@ -278,10 +278,13 @@ public class DrbgCavp {
                                                     ps)),
                                     "SUN");
                         } catch (NoSuchAlgorithmException iae) {
+                            // We don't support SHA-1 and 3KeyTDEA. AES-192 or
                             // AES-256 might not be available. This is OK.
-                            if ((algorithm.equals("AES-192")
+                            if (algorithm.equals("SHA-1") ||
+                                    algorithm.equals("3KeyTDEA") ||
+                                    ((algorithm.equals("AES-192")
                                     || algorithm.equals("AES-256"))
-                                    && AES_LIMIT == 128) {
+                                    && AES_LIMIT == 128)) {
                                 hd = null;
                             } else {
                                 throw iae;

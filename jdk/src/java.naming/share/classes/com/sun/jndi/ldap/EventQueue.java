@@ -78,7 +78,7 @@ final class EventQueue implements Runnable {
      *        {@code UnsolicitedNotificationEvent}.
      * If it is a subclass of {@code NamingEvent}, all listeners must implement
      * the corresponding subinterface of {@code NamingListener}.
-     * For example, for a {@code ObjectAddedEvent}, all listeners <em>must</em>
+     * For example, for an {@code ObjectAddedEvent}, all listeners <em>must</em>
      * implement the {@code ObjectAddedListener} interface.
      * <em>The current implementation does not check this before dispatching
      * the event.</em>

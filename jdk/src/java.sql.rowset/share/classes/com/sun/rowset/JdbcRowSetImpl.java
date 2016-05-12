@@ -3799,7 +3799,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * Retrieves the column id as {@code int} array that was set using
      * {@code setMatchColumn(int [])} for this rowset.
      *
-     * @return a {@code int} array object that contains the column ids
+     * @return an {@code int} array object that contains the column ids
      *         for the rowset which has this as the match columns.
      *
      * @throws SQLException if an error occurs or column index is not set
@@ -6226,7 +6226,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
 
    /**
-    * Sets the designated parameter to a {@code InputStream} object.  The inputstream must contain  the number
+    * Sets the designated parameter to an {@code InputStream} object.  The inputstream must contain  the number
     * of characters specified by length otherwise a {@code SQLException} will be
     * generated when the {@code PreparedStatement} is executed.
     * This method differs from the {@code setBinaryStream (int, InputStream, int)}
@@ -6256,7 +6256,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
    }
 
  /**
-    * Sets the designated parameter to a {@code InputStream} object.
+    * Sets the designated parameter to an {@code InputStream} object.
     * This method differs from the {@code setBinaryStream (int, InputStream)}
     * This method differs from the {@code setBinaryStream (int, InputStream)}
     * method because it informs the driver that the parameter value should be
@@ -6287,7 +6287,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
    }
 
    /**
-    * Sets the designated parameter to a {@code InputStream} object.  The {@code inputstream} must contain  the number
+    * Sets the designated parameter to an {@code InputStream} object.  The {@code inputstream} must contain  the number
     * of characters specified by length, otherwise a {@code SQLException} will be
     * generated when the {@code CallableStatement} is executed.
     * This method differs from the {@code setBinaryStream (int, InputStream, int)}
@@ -6336,7 +6336,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
    }
 
    /**
-    * Sets the designated parameter to a {@code InputStream} object.
+    * Sets the designated parameter to an {@code InputStream} object.
     * This method differs from the {@code setBinaryStream (int, InputStream)}
     * method because it informs the driver that the parameter value should be
     * sent to the server as a {@code BLOB}.  When the {@code setBinaryStream} method is used,

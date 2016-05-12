@@ -146,6 +146,7 @@ compiler.err.package.empty.or.not.found
 compiler.err.package.in.other.module
 compiler.err.processorpath.no.processormodulepath
 compiler.err.service.definition.is.inner
+compiler.err.service.definition.is.enum
 compiler.err.service.implementation.doesnt.have.a.no.args.constructor
 compiler.err.service.implementation.is.abstract
 compiler.err.service.implementation.is.inner

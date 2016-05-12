@@ -4676,7 +4676,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @return this {@code BigInteger} converted to an {@code int}.
      * @throws ArithmeticException if the value of {@code this} will
-     * not exactly fit in a {@code int}.
+     * not exactly fit in an {@code int}.
      * @see BigInteger#intValue
      * @since  1.8
      */

@@ -267,7 +267,7 @@ public interface Comparator<T> {
 
     /**
      * Returns a lexicographic-order comparator with a function that
-     * extracts a {@code int} sort key.
+     * extracts an {@code int} sort key.
      *
      * @implSpec This default implementation behaves as if {@code
      *           thenComparing(comparingInt(keyExtractor))}.

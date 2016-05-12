@@ -10,7 +10,7 @@
     <!-- javac -->
     <configuration default="false" name="javac" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="com.sun.tools.javac.Main" />
-      <option name="VM_PARAMETERS" value="-Xpatch:build@FILE_SEP@modules" />
+      <option name="VM_PARAMETERS" value="@XPATCH@" />
       <option name="PROGRAM_PARAMETERS" value="" />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
@@ -30,7 +30,7 @@
     <!-- javadoc -->
     <configuration default="false" name="javadoc" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="com.sun.tools.javadoc.Main" />
-      <option name="VM_PARAMETERS" value="-Xpatch:build@FILE_SEP@modules" />
+      <option name="VM_PARAMETERS" value="@XPATCH@" />
       <option name="PROGRAM_PARAMETERS" value="" />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
@@ -50,7 +50,7 @@
     <!-- javap -->
     <configuration default="false" name="javap" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="com.sun.tools.javap.Main" />
-      <option name="VM_PARAMETERS" value="-Xpatch:build@FILE_SEP@modules" />
+      <option name="VM_PARAMETERS" value="@XPATCH@" />
       <option name="PROGRAM_PARAMETERS" value="" />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
@@ -70,7 +70,7 @@
     <!-- javah -->
     <configuration default="false" name="javah" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="com.sun.tools.javah.Main" />
-      <option name="VM_PARAMETERS" value="-Xpatch:build@FILE_SEP@modules" />
+      <option name="VM_PARAMETERS" value="@XPATCH@" />
       <option name="PROGRAM_PARAMETERS" value="" />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
@@ -90,7 +90,7 @@
     <!-- sjavac -->
     <configuration default="false" name="sjavac" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="com.sun.tools.sjavac.Main" />
-      <option name="VM_PARAMETERS" value="-Xpatch:build@FILE_SEP@modules" />
+      <option name="VM_PARAMETERS" value="@XPATCH@" />
       <option name="PROGRAM_PARAMETERS" value="" />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
@@ -111,7 +111,7 @@
     <configuration default="false" name="jshell" type="Application" factoryName="Application">
       <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
       <option name="MAIN_CLASS_NAME" value="jdk.internal.jshell.tool.JShellTool" />
-      <option name="VM_PARAMETERS" value="-Xpatch:build@FILE_SEP@modules -XaddExports:jdk.jshell/jdk.internal.jshell.tool=ALL-UNNAMED" />
+      <option name="VM_PARAMETERS" value="@XPATCH@ -XaddExports:jdk.jshell/jdk.internal.jshell.tool=ALL-UNNAMED" />
       <option name="PROGRAM_PARAMETERS" value="" />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />

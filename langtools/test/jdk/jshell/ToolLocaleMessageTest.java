@@ -32,6 +32,7 @@
  *          jdk.jshell/jdk.internal.jshell.tool
  * @build KullaTesting TestingInputStream toolbox.ToolBox Compiler
  * @run testng ToolLocaleMessageTest
+ * @key intermittent
  */
 
 import java.util.Locale;

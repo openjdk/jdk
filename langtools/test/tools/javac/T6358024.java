@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,10 +69,10 @@ public class T6358024 extends AbstractProcessor {
 
         JavacTool tool = JavacTool.create();
         List<String> flags = new ArrayList<String>();
-        flags.add("-XaddExports:"
-                + "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED,"
-                + "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED,"
-                + "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED");
+        flags.addAll(Arrays.asList(
+                "-XaddExports:jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+                "-XaddExports:jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+                "-XaddExports:jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"));
         for (Option opt: opts) {
             flags.add(opt.name);
             for (Object arg : opt.args)

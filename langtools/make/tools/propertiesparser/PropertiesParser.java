@@ -28,24 +28,10 @@ package propertiesparser;
 import propertiesparser.parser.MessageFile;
 import propertiesparser.gen.ClassGenerator;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.lang.RuntimeException;
-import java.lang.Throwable;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.io.PrintStream;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 /** Translates a .properties file into a .java file containing an enum-like Java class
  *  which defines static factory methods for all resource keys in a given resource file. <P>
@@ -64,11 +50,15 @@ public class PropertiesParser {
     }
 
     public static void main(String[] args) {
-        PropertiesParser pp = new PropertiesParser(msg -> System.out.println(msg));
-        boolean ok = pp.run(args);
+        boolean ok = run(args, System.out);
         if ( !ok ) {
             System.exit(1);
         }
+    }
+
+    public static boolean run(String[] args, PrintStream out) {
+        PropertiesParser pp = new PropertiesParser(msg -> out.println(msg));
+        return pp.run(args);
     }
 
     public static interface Logger {
