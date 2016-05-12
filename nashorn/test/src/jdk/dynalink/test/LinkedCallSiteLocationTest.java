@@ -71,7 +71,7 @@ public class LinkedCallSiteLocationTest {
     }
 
     private static int getLineNumber() {
-        return StackWalker.getInstance().walk(s -> s.skip(1).findFirst().get().getLineNumber().getAsInt());
+        return StackWalker.getInstance().walk(s -> s.skip(1).findFirst().get().getLineNumber());
     }
 
     public static class TestClass1 {
