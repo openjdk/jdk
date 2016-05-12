@@ -51,8 +51,10 @@ public class CompressedClassSpaceSizeInJmapHeap {
 
         String pid = Long.toString(ProcessTools.getProcessId());
 
-        JDKToolLauncher jmap = JDKToolLauncher.create("jmap")
-                                              .addToolArg("-heap")
+        JDKToolLauncher jmap = JDKToolLauncher.create("jhsdb")
+                                              .addToolArg("jmap")
+                                              .addToolArg("--heap")
+                                              .addToolArg("--pid")
                                               .addToolArg(pid);
         ProcessBuilder pb = new ProcessBuilder(jmap.getCommand());
 
