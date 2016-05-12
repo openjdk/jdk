@@ -1221,13 +1221,13 @@ public final class Integer extends Number implements Comparable<Integer> {
     }
 
     /**
-     * Returns a hash code for a {@code int} value; compatible with
+     * Returns a hash code for an {@code int} value; compatible with
      * {@code Integer.hashCode()}.
      *
      * @param value the value to hash
      * @since 1.8
      *
-     * @return a hash code value for a {@code int} value.
+     * @return a hash code value for an {@code int} value.
      */
     public static int hashCode(int value) {
         return value;
@@ -1596,7 +1596,7 @@ public final class Integer extends Number implements Comparable<Integer> {
     @Native public static final int SIZE = 32;
 
     /**
-     * The number of bytes used to represent a {@code int} value in two's
+     * The number of bytes used to represent an {@code int} value in two's
      * complement binary form.
      *
      * @since 1.8
@@ -1790,9 +1790,8 @@ public final class Integer extends Number implements Comparable<Integer> {
         i = (i & 0x55555555) << 1 | (i >>> 1) & 0x55555555;
         i = (i & 0x33333333) << 2 | (i >>> 2) & 0x33333333;
         i = (i & 0x0f0f0f0f) << 4 | (i >>> 4) & 0x0f0f0f0f;
-        i = (i << 24) | ((i & 0xff00) << 8) |
-            ((i >>> 8) & 0xff00) | (i >>> 24);
-        return i;
+
+        return reverseBytes(i);
     }
 
     /**
@@ -1820,10 +1819,10 @@ public final class Integer extends Number implements Comparable<Integer> {
      */
     @HotSpotIntrinsicCandidate
     public static int reverseBytes(int i) {
-        return ((i >>> 24)           ) |
-               ((i >>   8) &   0xFF00) |
-               ((i <<   8) & 0xFF0000) |
-               ((i << 24));
+        return (i << 24)            |
+               ((i & 0xff00) << 8)  |
+               ((i >>> 8) & 0xff00) |
+               (i >>> 24);
     }
 
     /**

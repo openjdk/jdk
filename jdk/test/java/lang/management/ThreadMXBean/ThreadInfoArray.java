@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @author  Mandy Chung
  * @author  Jaroslav Bachorik
  *
- * @modules java.management
+ * @modules jdk.management
  * @build ThreadInfoArray
  * @run main ThreadInfoArray
  */

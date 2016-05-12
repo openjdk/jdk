@@ -194,7 +194,7 @@ public class MarshalInputStream extends ObjectInputStream {
         /*
          * Unless we were told to skip this consideration, choose the
          * "default loader" to simulate the default ObjectInputStream
-         * resolveClass mechanism (that is, choose the first non-null
+         * resolveClass mechanism (that is, choose the first non-platform
          * loader on the execution stack) to maximize the likelihood of
          * type compatibility with calling code.  (This consideration
          * is skipped during server parameter unmarshalling using the 1.2
@@ -268,8 +268,9 @@ public class MarshalInputStream extends ObjectInputStream {
     }
 
     /*
-     * Returns the first non-null class loader up the execution stack, or null
-     * if only code from the null class loader is on the stack.
+     * Returns the first non-platform class loader up the execution stack,
+     * or platform class loader if only code from the platform class loader or null
+     * is on the stack.
      */
     private static ClassLoader latestUserDefinedLoader() {
         return jdk.internal.misc.VM.latestUserDefinedLoader();

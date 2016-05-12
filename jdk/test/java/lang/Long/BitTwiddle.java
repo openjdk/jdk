@@ -58,6 +58,21 @@ public class BitTwiddle {
 
         for (int i = 0; i < N; i++) {
             long x = rnd.nextLong();
+
+            String expected = new StringBuilder()
+                .append(leftpad(toBinaryString(x), 64))
+                .reverse().toString();
+
+            String actual = leftpad(toBinaryString(reverse(x)), 64);
+
+            if (!expected.equals(actual)) {
+                throw new RuntimeException("reverse: \n" +
+                        expected + " \n" + actual);
+            }
+        }
+
+        for (int i = 0; i < N; i++) {
+            long x = rnd.nextLong();
             if (highestOneBit(x) != reverse(lowestOneBit(reverse(x))))
                 throw new RuntimeException("g: " + toHexString(x));
         }
@@ -135,5 +150,13 @@ public class BitTwiddle {
             if (bitCount(x) != bitCount(reverseBytes(x)))
                 throw new RuntimeException("z: " + toHexString(x));
         }
+    }
+
+    private static String leftpad(String s, int width) {
+        String r = s;
+        for (int c = 0; c < width - s.length(); c++) {
+            r = "0" + r;
+        }
+        return r;
     }
 }

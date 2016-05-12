@@ -481,7 +481,7 @@ public final class OffsetTime
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@link #isSupported(TemporalField) supported fields} will return valid
      * values based on this time, except {@code NANO_OF_DAY} and {@code MICRO_OF_DAY}
-     * which are too large to fit in an {@code int} and throw a {@code UnsupportedTemporalTypeException}.
+     * which are too large to fit in an {@code int} and throw an {@code UnsupportedTemporalTypeException}.
      * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
