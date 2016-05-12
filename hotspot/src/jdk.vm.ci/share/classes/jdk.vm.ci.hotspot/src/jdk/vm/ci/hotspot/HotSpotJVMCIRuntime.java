@@ -382,6 +382,18 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider, H
     }
 
     /**
+     * Notify on completion of a bootstrap.
+     *
+     * Called from the VM.
+     */
+    @SuppressWarnings({"unused"})
+    private void bootstrapFinished() throws Exception {
+        for (HotSpotVMEventListener vmEventListener : vmEventListeners) {
+            vmEventListener.notifyBootstrapFinished();
+        }
+    }
+
+    /**
      * Notify on successful install into the CodeCache.
      *
      * @param hotSpotCodeCacheProvider

@@ -127,6 +127,8 @@ class JVMCIRuntime: public AllStatic {
 
   static void shutdown(TRAPS);
 
+  static void bootstrap_finished(TRAPS);
+
   static bool shutdown_called() {
     return _shutdown_called;
   }

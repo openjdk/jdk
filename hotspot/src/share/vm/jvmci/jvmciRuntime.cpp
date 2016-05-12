@@ -867,6 +867,15 @@ if (HAS_PENDING_EXCEPTION) { \
 #undef CHECK_RETURN
 }
 
+void JVMCIRuntime::bootstrap_finished(TRAPS) {
+  HandleMark hm(THREAD);
+  Handle receiver = get_HotSpotJVMCIRuntime(CHECK);
+  JavaValue result(T_VOID);
+  JavaCallArguments args;
+  args.push_oop(receiver);
+  JavaCalls::call_special(&result, receiver->klass(), vmSymbols::bootstrapFinished_method_name(), vmSymbols::void_method_signature(), &args, CHECK);
+}
+
 bool JVMCIRuntime::treat_as_trivial(Method* method) {
   if (_HotSpotJVMCIRuntime_initialized) {
     for (int i = 0; i < _trivial_prefixes_count; i++) {
