@@ -480,11 +480,6 @@ final class CompilerToVM {
     native String getSymbol(long metaspaceSymbol);
 
     /**
-     * Lookup a VMSymbol from a String.
-     */
-    native long lookupSymbol(String symbol);
-
-    /**
      * Looks for the next Java stack frame matching an entry in {@code methods}.
      *
      * @param frame the starting point of the search, where {@code null} refers to the topmost frame
