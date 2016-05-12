@@ -1140,7 +1140,7 @@ public abstract class Configuration {
          */
         @Override
         public String toString() {
-            String opt = name + " " + parameters;
+            String opt = name + (name.endsWith(":") ? "" : " ") + parameters;
             int optlen = opt.length();
             int spaces = 32 - optlen;
             StringBuffer sb = new StringBuffer("  -").append(opt);

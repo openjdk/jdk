@@ -33,7 +33,6 @@
 import java.io.File;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.stream.StreamSupport;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -42,14 +41,12 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.tools.*;
-import javax.tools.JavaFileManager.Location;
 
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.model.JavacElements;
 
 import static javax.tools.StandardLocation.CLASS_PATH;
 import static javax.tools.StandardLocation.PLATFORM_CLASS_PATH;
-import static javax.tools.StandardLocation.SYSTEM_MODULES;
 import static javax.tools.JavaFileObject.Kind.CLASS;
 
 
@@ -67,11 +64,13 @@ public class Main {
     static JavacTask javac;
     static Elements elements;
 
+    static List<String> addmods_ALL_SYSTEM = Arrays.asList("-addmods", "ALL-SYSTEM");
+
     public static void main(String[] args) throws Exception {
         JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
             fm.setLocation(CLASS_PATH, Collections.<File>emptyList());
-            JavacTask javac = (JavacTask)tool.getTask(null, fm, null, null, null, null);
+            JavacTask javac = (JavacTask)tool.getTask(null, fm, null, addmods_ALL_SYSTEM, null, null);
             Elements elements = javac.getElements();
 
             final Map<String, Set<String>> packages = new LinkedHashMap<>();
@@ -109,11 +108,12 @@ public class Main {
             javac = null;
             elements = null;
 
-            javac = (JavacTask)tool.getTask(null, fm, null, null, null, null);
+            javac = (JavacTask)tool.getTask(null, fm, null, addmods_ALL_SYSTEM, null, null);
             elements = javac.getElements();
 
             for (Entry<String, Set<String>> module2Packages : packages.entrySet()) {
                 ModuleElement me = elements.getModuleElement(module2Packages.getKey());
+                me.getClass();
                 for (String name : module2Packages.getValue()) {
                     PackageElement pe = ((JavacElements) elements).getPackageElement(me, name);
                     for (Element e : pe.getEnclosedElements()) {

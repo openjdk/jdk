@@ -132,9 +132,8 @@ public class TestClose implements TaskListener {
                         new MemFile("AnnoProc.java", annoProc),
                         new MemFile("Callback.java", callback));
                 List<String> options = Arrays.asList(
-                        "-XaddExports:"
-                        + "jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED,"
-                        + "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+                        "-XaddExports:jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
+                        "-XaddExports:jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
                         "-XDaccessInternalAPI");
                 JavacTask task = tool.getTask(null, fm, null, options, null, files);
                 check(task.call());

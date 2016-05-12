@@ -43,7 +43,7 @@ import toolbox.ToolBox;
 public class ToolProviderTest1 {
     public static void main(String... args) throws Exception {
         if (args.length > 0) {
-            System.err.println(Class.forName(args[0], true, null));
+            System.err.println(Class.forName(args[0], true, ClassLoader.getSystemClassLoader()));
             return;
         }
 

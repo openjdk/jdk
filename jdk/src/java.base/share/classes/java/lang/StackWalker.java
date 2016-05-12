@@ -127,6 +127,20 @@ public final class StackWalker {
         public Class<?> getDeclaringClass();
 
         /**
+         * Returns the index to the code array of the {@code Code} attribute
+         * containing the execution point represented by this stack frame.
+         * The code array gives the actual bytes of Java Virtual Machine code
+         * that implement the method.
+         *
+         * @return the index to the code array of the {@code Code} attribute
+         *         containing the execution point represented by this stack frame,
+         *         or a negative number if the method is native.
+         *
+         * @jvms 4.7.3 The {@code Code} Attribute
+         */
+        public int getByteCodeIndex();
+
+        /**
          * Returns the name of the source file containing the execution point
          * represented by this stack frame.  Generally, this corresponds
          * to the {@code SourceFile} attribute of the relevant {@code class}
@@ -135,12 +149,12 @@ public final class StackWalker {
          * other than a file, such as an entry in a source repository.
          *
          * @return the name of the file containing the execution point
-         *         represented by this stack frame, or empty {@code Optional}
-         *         is unavailable.
+         *         represented by this stack frame, or {@code null} if
+         *         this information is unavailable.
          *
          * @jvms 4.7.10 The {@code SourceFile} Attribute
          */
-        public Optional<String> getFileName();
+        public String getFileName();
 
         /**
          * Returns the line number of the source line containing the execution
@@ -150,12 +164,12 @@ public final class StackWalker {
          * Specification</cite>.
          *
          * @return the line number of the source line containing the execution
-         *         point represented by this stack frame, or empty
-         *         {@code Optional} if this information is unavailable.
+         *         point represented by this stack frame, or a negative number if
+         *         this information is unavailable.
          *
          * @jvms 4.7.12 The {@code LineNumberTable} Attribute
          */
-        public OptionalInt getLineNumber();
+        public int getLineNumber();
 
         /**
          * Returns {@code true} if the method containing the execution point

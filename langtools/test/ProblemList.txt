@@ -95,5 +95,6 @@ tools/sjavac/IncCompileWithChanges.java                                         
 #
 # jdeps 
 
-tools/jdeps/modules/GenModuleInfo.java                                          8152502    windows-all    fails to clean up files
+tools/jdeps/modules/GenModuleInfo.java                                          8152502,8153481    generic-all    fails to clean up files, java.util.HashMap$Node cannot be cast to java.util.HashMap$TreeNode
+tools/jdeps/modules/ModuleTest.java                                             8153481    generic-all    java.util.HashMap$Node cannot be cast to java.util.HashMap$TreeNode
 

@@ -35,10 +35,6 @@ import java.util.Set;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
 
-/**
- *
- * @author jdenise
- */
 public class PluginOrderingGraph {
 
     static class Node {

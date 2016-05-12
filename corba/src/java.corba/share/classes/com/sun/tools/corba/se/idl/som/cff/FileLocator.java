@@ -222,7 +222,8 @@ public abstract class FileLocator extends Object {
 
     /**
      * locateFileInClassPath returns a DataInputStream that can be used
-     * to read the requested file.  The CLASSPATH is used to locate the file.
+     * to read the requested file.  The resource is located in the java.corba
+     * module or if not found, then the CLASSPATH is searched.
      *
      * @param fileName The name of the file to locate.  The file name
      * may be qualified with a partial path name, using '/' as the separator
@@ -237,6 +238,12 @@ public abstract class FileLocator extends Object {
      */
     public static DataInputStream locateFileInClassPath (String fileName)
         throws FileNotFoundException, IOException {
+
+        // The resource should be in the java.corba module
+        InputStream in = FileLocator.class.getResourceAsStream("/" + fileName);
+        if (in != null) {
+            return new DataInputStream(in);
+        }
 
         boolean notFound = true;
         StringTokenizer st;

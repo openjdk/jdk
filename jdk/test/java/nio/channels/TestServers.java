@@ -340,7 +340,7 @@ public class TestServers {
      * exactly matches the RFC - the only purpose of this server is to have
      * something that responds to nio tests...
      */
-    static final class EchoServer extends AbstractTcpServer {
+    static class EchoServer extends AbstractTcpServer {
 
         public EchoServer() {
             this(0L);
@@ -396,6 +396,21 @@ public class TestServers {
             final EchoServer echoServer = new EchoServer(linger);
             echoServer.start();
             return echoServer;
+        }
+    }
+
+    /**
+     * A small TCP Server that accept connections but does not response to any input.
+     */
+    static final class NoResponseServer extends EchoServer {
+        public NoResponseServer() {
+            super(Long.MAX_VALUE);
+        }
+
+        public static NoResponseServer startNewServer() throws IOException {
+            final NoResponseServer noResponseServer = new NoResponseServer();
+            noResponseServer.start();
+            return noResponseServer;
         }
     }
 

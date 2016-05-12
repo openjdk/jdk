@@ -1627,8 +1627,7 @@ class SecurityManager {
      * @deprecated This method relies on the caller being at a stack depth
      *             of 4 which is error-prone and cannot be enforced by the runtime.
      *             Users of this method should instead invoke {@link #checkPermission}
-     *             directly.  This method will be changed in a future release
-     *             to check the permission {@code java.security.AllPermission}.
+     *             directly.
      *             This method is subject to removal in a future version of Java SE.
      *
      * @see java.lang.reflect.Member

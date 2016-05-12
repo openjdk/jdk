@@ -83,6 +83,17 @@
     <property name="build.jtreg" location="${build.dir}/jtreg"/>
     <property name="build.prevsrc" location="${build.dir}/prevsrc"/>
 
+    <pathconvert property="modules.names" pathsep=",">
+        <globmapper from="${src.dir}/*" to="*" />
+        <dirset dir="${src.dir}" includes="*.*"/>
+    </pathconvert>
+
+    <pathconvert property="xpatch.rest" pathsep=" -Xpatch:">
+        <regexpmapper from="${file.separator}([^${file.separator}]+)$" to="\1=${build.modules}${file.separator}\1" />
+        <dirset dir="${src.dir}" includes="*.*"/>
+    </pathconvert>
+
+    <property name="xpatch.cmd" value="-Xpatch:${xpatch.rest}"/>
 
     <!-- java.marker is set to a marker file to check for within a Java install dir.
          The best file to check for across Solaris/Linux/Windows/MacOS is one of the
@@ -190,7 +201,7 @@
             <arg line="-source ${javac.source} -target ${javac.target}" />
             <arg value="-d" />
             <arg value="${build.modules}" />
-            <arg line="${javac.opts} -modulesourcepath ${src.dir}${file.separator}*${file.separator}share${file.separator}classes:${build.gensrc} -m java.compiler,jdk.compiler,jdk.javadoc,jdk.jdeps,jdk.jshell" />
+            <arg line="${javac.opts} -modulesourcepath ${src.dir}${file.separator}*${file.separator}share${file.separator}classes:${build.gensrc} -m ${modules.names}" />
         </exec>
         <delete>
             <fileset dir="${build.modules}" includes="**/module-info.class"/>
@@ -229,7 +240,7 @@
         <replace file=".idea/ant.xml" token="@IDEA_JTREG_HOME@" value="${idea.jtreg.home}"/>
         <replace file=".idea/ant.xml" token="@IDEA_TARGET_JDK@" value="${idea.target.jdk}"/>
         <replace file=".idea/workspace.xml" token="@IDEA_TARGET_JDK@" value="${idea.target.jdk}"/>
-        <replace file=".idea/workspace.xml" token="@FILE_SEP@" value="${file.separator}"/>
+        <replace file=".idea/workspace.xml" token="@XPATCH@" value="${xpatch.cmd}"/>
         <replace file=".idea/workspace.xml" token="@PATH_SEP@" value="${path.separator}"/>
         <mkdir dir=".idea/classes"/>
         <javac srcdir="make/intellij/src"
@@ -285,6 +296,7 @@
             <attribute name="bin.dir" default="${build.bin}"/>
             <attribute name="java" default="${launcher.java}"/>
             <attribute name="main.class" default="${tool.@{name}.main.class}"/>
+            <attribute name="xpatch" default="${xpatch.cmd}"/>
             <sequential>
                 <mkdir dir="@{bin.dir}"/>
                 <copy file="${make.dir}/launcher.sh-template" tofile="@{bin.dir}/@{name}">
@@ -292,6 +304,7 @@
                         <filter token="PROGRAM" value="@{main.class}"/>
                         <filter token="TARGET_JAVA" value="@{java}"/>
                         <filter token="PS" value="${path.separator}"/>
+                        <filter token="XPATCH" value="${xpatch.cmd}"/>
                     </filterset>
                 </copy>
                 <chmod file="@{bin.dir}/@{name}" perm="ugo+rx"/>
@@ -330,7 +343,7 @@
                     jdk="@{jdk}"
                     agentvm="@{agentvm}" verbose="@{verbose}"
                     failonerror="false" resultproperty="jtreg.@{name}.result"
-                    vmoptions="${coverage.options} @{extra.jvmargs} -Xpatch:@{build.modules}">
+                    vmoptions="${coverage.options} @{extra.jvmargs} ${xpatch.cmd}">
                     <arg value="-debug:@{jpda.jvmargs}"/>
                     <arg line="@{keywords}"/>
                     <arg line="@{options}"/>

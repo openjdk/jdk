@@ -29,7 +29,7 @@
  * @build java.base/java.lang.invoke.MethodHandleHelper
  * @build sun.hotspot.WhiteBox
  * @build compiler.jsr292.NonInlinedCall.InvokeTest
- * @run main/bootclasspath -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                         -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                         -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1
  *                         compiler.jsr292.NonInlinedCall.InvokeTest

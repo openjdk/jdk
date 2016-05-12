@@ -33,6 +33,7 @@
  *    <li>{@link java.net.http.HttpClient}</li>
  *    <li>{@link java.net.http.HttpRequest}</li>
  *    <li>{@link java.net.http.HttpResponse}</li>
+ *    <li>{@link java.net.http.WebSocket}</li>
  * </ul>
  *
  * @since 9

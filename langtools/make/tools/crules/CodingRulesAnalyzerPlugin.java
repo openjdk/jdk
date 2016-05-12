@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,13 @@ import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Log;
 
+/*
+ * This code must be run in a context that provides
+ * access to the following javac internal packages:
+ *      com.sun.tools.javac.api
+ *      com.sun.tools.javac.tree
+ *      com.sun.tools.javac.util
+ */
 public class CodingRulesAnalyzerPlugin implements Plugin {
 
     protected Log log;
@@ -55,11 +62,6 @@ public class CodingRulesAnalyzerPlugin implements Plugin {
 
     @DefinedBy(Api.COMPILER_TREE)
     public void init(JavacTask task, String... args) {
-        addExports("jdk.compiler",
-                "com.sun.tools.javac.api",
-                "com.sun.tools.javac.code",
-                "com.sun.tools.javac.tree",
-                "com.sun.tools.javac.util");
         BasicJavacTask impl = (BasicJavacTask)task;
         Context context = impl.getContext();
         log = Log.instance(context);

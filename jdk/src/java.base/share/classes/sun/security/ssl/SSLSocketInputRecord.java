@@ -123,7 +123,7 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
                  */
                 //
                 // Short header is using here.  We reverse the code here
-                // in case it it used in the future.
+                // in case it is used in the future.
                 //
                 // int mask = (isShort ? 0x7F : 0x3F);
                 // len = ((byteZero & mask) << 8) +

@@ -4711,7 +4711,7 @@ public class Parser extends AbstractParser implements Loggable {
         expect(ARROW);
 
         final long functionToken = Token.recast(startToken, ARROW);
-        final IdentNode name = new IdentNode(functionToken, Token.descPosition(functionToken), "=>:" + functionLine);
+        final IdentNode name = new IdentNode(functionToken, Token.descPosition(functionToken), NameCodec.encode("=>:") + functionLine);
         final ParserContextFunctionNode functionNode = createParserContextFunctionNode(name, functionToken, FunctionNode.Kind.ARROW, functionLine, null);
         functionNode.setFlag(FunctionNode.IS_ANONYMOUS);
 
