@@ -350,7 +350,7 @@ public class CtrDrbg extends AbstractDrbg {
     }
 
     @Override
-    protected void reseedAlgorithm(
+    protected synchronized void reseedAlgorithm(
             byte[] ei,
             byte[] additionalInput) {
         if (usedf) {
