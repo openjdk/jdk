@@ -328,6 +328,7 @@ public class TestResolvedJavaType extends TypeUniverse {
             } else {
                 assertTrue(leafConcreteSubtype.getResult().equals(expected));
             }
+            assertTrue(!type.isLeaf() || leafConcreteSubtype.isAssumptionFree());
         }
 
         if (!type.isArray()) {
@@ -372,8 +373,10 @@ public class TestResolvedJavaType extends TypeUniverse {
 
         ResolvedJavaType a1a = metaAccess.lookupJavaType(Abstract1[].class);
         checkConcreteSubtype(a1a, null);
+        ResolvedJavaType i1a = metaAccess.lookupJavaType(Interface1[].class);
+        checkConcreteSubtype(i1a, null);
         ResolvedJavaType c1a = metaAccess.lookupJavaType(Concrete1[].class);
-        checkConcreteSubtype(c1a, null);
+        checkConcreteSubtype(c1a, c1a);
         ResolvedJavaType f1a = metaAccess.lookupJavaType(Final1[].class);
         checkConcreteSubtype(f1a, f1a);
 

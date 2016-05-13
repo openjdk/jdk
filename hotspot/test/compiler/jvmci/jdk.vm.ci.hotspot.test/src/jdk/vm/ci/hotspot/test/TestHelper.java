@@ -157,47 +157,6 @@ public class TestHelper {
                                         DUMMY_CLASS_INSTANCE.stableObjectField));
     }
 
-    public static final Map<ResolvedJavaField, JavaConstant> INSTANCE_STABLE_DEFAULT_FIELDS_MAP = new HashMap<>();
-
-    static {
-        INSTANCE_STABLE_DEFAULT_FIELDS_MAP.put(getResolvedJavaField(DummyClass.class,
-                        "stableDefaultBooleanField"),
-                        JavaConstant.forBoolean(
-                                        DUMMY_CLASS_INSTANCE.stableDefaultBooleanField));
-        INSTANCE_STABLE_DEFAULT_FIELDS_MAP.put(getResolvedJavaField(DummyClass.class,
-                        "stableDefaultByteField"),
-                        JavaConstant.forByte(
-                                        DUMMY_CLASS_INSTANCE.stableDefaultByteField));
-        INSTANCE_STABLE_DEFAULT_FIELDS_MAP.put(getResolvedJavaField(DummyClass.class,
-                        "stableDefaultShortField"),
-                        JavaConstant.forShort(
-                                        DUMMY_CLASS_INSTANCE.stableDefaultShortField));
-        INSTANCE_STABLE_DEFAULT_FIELDS_MAP.put(getResolvedJavaField(DummyClass.class,
-                        "stableDefaultCharField"),
-                        JavaConstant.forChar(
-                                        DUMMY_CLASS_INSTANCE.stableDefaultCharField));
-        INSTANCE_STABLE_DEFAULT_FIELDS_MAP.put(getResolvedJavaField(DummyClass.class,
-                        "stableDefaultIntField"),
-                        JavaConstant.forInt(
-                                        DUMMY_CLASS_INSTANCE.stableDefaultIntField));
-        INSTANCE_STABLE_DEFAULT_FIELDS_MAP.put(getResolvedJavaField(DummyClass.class,
-                        "stableDefaultLongField"),
-                        JavaConstant.forLong(
-                                        DUMMY_CLASS_INSTANCE.stableDefaultLongField));
-        INSTANCE_STABLE_DEFAULT_FIELDS_MAP.put(getResolvedJavaField(DummyClass.class,
-                        "stableDefaultFloatField"),
-                        JavaConstant.forFloat(
-                                        DUMMY_CLASS_INSTANCE.stableDefaultFloatField));
-        INSTANCE_STABLE_DEFAULT_FIELDS_MAP.put(getResolvedJavaField(DummyClass.class,
-                        "stableDefaultDoubleField"),
-                        JavaConstant.forDouble(
-                                        DUMMY_CLASS_INSTANCE.stableDefaultDoubleField));
-        INSTANCE_STABLE_DEFAULT_FIELDS_MAP.put(getResolvedJavaField(DummyClass.class,
-                        "stableDefaultObjectField"),
-                        CONSTANT_REFLECTION_PROVIDER.forObject(
-                                        DUMMY_CLASS_INSTANCE.stableDefaultObjectField));
-    }
-
     public static final Map<ResolvedJavaField, JavaConstant> STATIC_FIELDS_MAP = new HashMap<>();
 
     static {
