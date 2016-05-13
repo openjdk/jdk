@@ -423,20 +423,6 @@ final class CompilerToVM {
     native long getLocalVariableTableStart(HotSpotResolvedJavaMethodImpl method);
 
     /**
-     * Reads an object pointer within a VM data structure. That is, any {@link HotSpotVMField} whose
-     * {@link HotSpotVMField#type() type} is {@code "oop"} (e.g.,
-     * {@code ArrayKlass::_component_mirror}, {@code Klass::_java_mirror},
-     * {@code JavaThread::_threadObj}).
-     *
-     * Note that {@link Unsafe#getObject(Object, long)} cannot be used for this since it does a
-     * {@code narrowOop} read if the VM is using compressed oops whereas oops within VM data
-     * structures are (currently) always uncompressed.
-     *
-     * @param address address of an oop field within a VM data structure
-     */
-    native Object readUncompressedOop(long address);
-
-    /**
      * Determines if {@code method} should not be inlined or compiled.
      */
     native void doNotInlineOrCompile(HotSpotResolvedJavaMethodImpl method);
