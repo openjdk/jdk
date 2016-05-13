@@ -770,13 +770,20 @@ define SetupNativeCompilationBody
 		$$(call ExecuteWithLog, $$@, \
 		    $$($1_RC) $$($1_RC_FLAGS) $$($1_SYSROOT_CFLAGS) $(CC_OUT_OPTION)$$@ \
 		    $$($1_VERSIONINFO_RESOURCE))
-                # Windows RC compiler does not support -showIncludes, so we mis-use CL for this.
+                # Windows RC compiler does not support -showIncludes, so we mis-use CL
+                # for this. Filter out RC specific arguments that are unknown to CL.
+                # For some unknown reason, in this case CL actually outputs the show
+                # includes to stderr so need to redirect it to hide the output from the
+                # main log.
 		$$(call ExecuteWithLog, $$($1_RES_DEP).obj, \
-		    $$($1_CC) $$($1_RC_FLAGS) $$($1_SYSROOT_CFLAGS) -showIncludes -nologo -TC \
-		    $(CC_OUT_OPTION)$$($1_RES_DEP).obj -P -Fi$$($1_RES_DEP).pp \
-		    $$($1_VERSIONINFO_RESOURCE)) > $$($1_RES_DEP).raw 2>&1 || true ; \
+		    $$($1_CC) $$(filter-out -l%, $$($1_RC_FLAGS)) \
+		        $$($1_SYSROOT_CFLAGS) -showIncludes -nologo -TC \
+		        $(CC_OUT_OPTION)$$($1_RES_DEP).obj -P -Fi$$($1_RES_DEP).pp \
+		        $$($1_VERSIONINFO_RESOURCE)) 2>&1 \
+		    | $(GREP) -v -e "^Note: including file:" \
+		        -e "^$$(notdir $$($1_VERSIONINFO_RESOURCE))$$$$" || test "$$$$?" = "1" ; \
 		$(ECHO) $$($1_RES): \\ > $$($1_RES_DEP) ; \
-		$(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_RES_DEP).raw >> $$($1_RES_DEP) ; \
+		$(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_RES_DEP).obj.log >> $$($1_RES_DEP) ; \
 		$(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_RES_DEP) > $$($1_RES_DEP_TARGETS)
     endif
   endif
