@@ -308,6 +308,7 @@ import java.util.Set;
  *   N       nano-of-day                 number            1234000000
  *
  *   V       time-zone ID                zone-id           America/Los_Angeles; Z; -08:30
+ *   v       generic time-zone name      zone-name         Pacific Time; PT
  *   z       time-zone name              zone-name         Pacific Standard Time; PST
  *   O       localized zone-offset       offset-O          GMT+8; GMT+08:00; UTC-08:00
  *   X       zone-offset 'Z' for zero    offset-X          Z; -08; -0830; -08:30; -083015; -08:30:15
@@ -365,9 +366,17 @@ import java.util.Set;
  * letters throws {@code IllegalArgumentException}.
  * <p>
  * <b>Zone names</b>: This outputs the display name of the time-zone ID. If the
- * count of letters is one, two or three, then the short name is output. If the
- * count of letters is four, then the full name is output. Five or more letters
- * throws {@code IllegalArgumentException}.
+ * pattern letter is 'z' the output is the daylight savings aware zone name.
+ * If there is insufficient information to determine whether DST applies,
+ * the name ignoring daylight savings time will be used.
+ * If the count of letters is one, two or three, then the short name is output.
+ * If the count of letters is four, then the full name is output.
+ * Five or more letters throws {@code IllegalArgumentException}.
+ * <p>
+ * If the pattern letter is 'v' the output provides the zone name ignoring
+ * daylight savings time. If the count of letters is one, then the short name is output.
+ * If the count of letters is four, then the full name is output.
+ * Two, three and five or more letters throw {@code IllegalArgumentException}.
  * <p>
  * <b>Offset X and x</b>: This formats the offset based on the number of pattern
  * letters. One letter outputs just the hour, such as '+01', unless the minute
