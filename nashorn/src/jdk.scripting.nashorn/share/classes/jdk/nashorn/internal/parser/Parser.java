@@ -1827,7 +1827,7 @@ public class Parser extends AbstractParser implements Loggable {
 
     /**
      * ExpressionStatement :
-     *      Expression ; // [lookahead ~( or  function )]
+     *      Expression ; // [lookahead ~({ or  function )]
      *
      * See 12.4
      *
