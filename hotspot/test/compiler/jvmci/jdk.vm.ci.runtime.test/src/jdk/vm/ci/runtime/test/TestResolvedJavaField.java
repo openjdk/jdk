@@ -37,7 +37,6 @@ package jdk.vm.ci.runtime.test;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.lang.annotation.Annotation;
@@ -45,11 +44,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
@@ -98,35 +95,6 @@ public class TestResolvedJavaField extends FieldUniverse {
                     Annotation actual = e.getValue().getAnnotation(expected.annotationType());
                     assertEquals(expected, actual);
                 }
-            }
-        }
-    }
-
-    static class ReadConstantValueTestConstants {
-        String stringField = "field";
-        final String constantStringField = "constantField";
-
-        static final Object CONST1 = new ReadConstantValueTestConstants();
-        static final Object CONST2 = null;
-        static final Object CONST3 = new String();
-    }
-
-    @Test
-    public void readConstantValueTest() throws NoSuchFieldException {
-        ResolvedJavaField field = metaAccess.lookupJavaField(ReadConstantValueTestConstants.class.getDeclaredField("stringField"));
-        List<ConstantValue> receiverConstants = readConstants(ReadConstantValueTestConstants.class);
-        for (ConstantValue receiver : receiverConstants) {
-            JavaConstant value = constantReflection.readConstantFieldValue(field, receiver.value);
-            assertNull(value);
-        }
-
-        ResolvedJavaField constField = metaAccess.lookupJavaField(ReadConstantValueTestConstants.class.getDeclaredField("constantStringField"));
-        for (ConstantValue receiver : receiverConstants) {
-            JavaConstant value = constantReflection.readConstantFieldValue(constField, receiver.value);
-            if (value != null) {
-                Object expected = "constantField";
-                String actual = ((ReadConstantValueTestConstants) receiver.boxed).constantStringField;
-                assertTrue(actual + " != " + expected, actual == expected);
             }
         }
     }

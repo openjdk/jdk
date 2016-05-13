@@ -183,7 +183,7 @@ public class TypeUniverse {
                     if (boxed instanceof JavaConstant) {
                         res.add(new ConstantValue(javaField.format("%H.%n"), (JavaConstant) boxed, boxed));
                     } else {
-                        JavaConstant value = constantReflection.readConstantFieldValue(javaField, null);
+                        JavaConstant value = constantReflection.readFieldValue(javaField, null);
                         if (value != null) {
                             res.add(new ConstantValue(javaField.format("%H.%n"), value, boxed));
                             if (boxed instanceof Object[]) {
