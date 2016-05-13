@@ -95,14 +95,12 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider, H
      */
     public enum Option {
         Compiler(String.class, null, "Selects the system compiler."),
-        ImplicitStableValues(boolean.class, true, "Mark well-known stable fields as such."),
         // Note: The following one is not used (see InitTimer.ENABLED).
         InitTimer(boolean.class, false, "Specifies if initialization timing is enabled."),
         PrintConfig(boolean.class, false, "Prints all HotSpotVMConfig fields."),
         PrintFlags(boolean.class, false, "Prints all JVMCI flags and exits."),
         ShowFlags(boolean.class, false, "Prints all JVMCI flags and continues."),
-        TraceMethodDataFilter(String.class, null, ""),
-        TrustFinalDefaultFields(boolean.class, true, "Determines whether to treat final fields with default values as constant.");
+        TraceMethodDataFilter(String.class, null, "");
 
         /**
          * The prefix for system properties that are JVMCI options.

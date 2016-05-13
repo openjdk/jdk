@@ -22,7 +22,6 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 
 import java.lang.annotation.Annotation;
@@ -32,7 +31,6 @@ import jdk.internal.vm.annotation.Stable;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
 import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.LocationIdentity;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ModifiersProvider;
 import jdk.vm.ci.meta.ResolvedJavaField;
@@ -52,43 +50,6 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField, HotSpotP
      * This value contains all flags as stored in the VM including internal ones.
      */
     private final int modifiers;
-    private final LocationIdentity locationIdentity = new FieldLocationIdentity(this);
-
-    public static class FieldLocationIdentity extends LocationIdentity {
-        HotSpotResolvedJavaField inner;
-
-        FieldLocationIdentity(HotSpotResolvedJavaFieldImpl inner) {
-            this.inner = inner;
-        }
-
-        @Override
-        public boolean isImmutable() {
-            return false;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj instanceof FieldLocationIdentity) {
-                FieldLocationIdentity fieldLocationIdentity = (FieldLocationIdentity) obj;
-                return inner.equals(fieldLocationIdentity.inner);
-
-            }
-            return false;
-        }
-
-        @Override
-        public int hashCode() {
-            return inner.hashCode();
-        }
-
-        @Override
-        public String toString() {
-            return inner.getName();
-        }
-    }
 
     HotSpotResolvedJavaFieldImpl(HotSpotResolvedObjectTypeImpl holder, String name, JavaType type, long offset, int modifiers) {
         this.holder = holder;
@@ -191,14 +152,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField, HotSpotP
      * @return true if field has {@link Stable} annotation, false otherwise
      */
     public boolean isStable() {
-        if ((config().jvmAccFieldStable & modifiers) != 0) {
-            return true;
-        }
-        assert getAnnotation(Stable.class) == null;
-        if (Option.ImplicitStableValues.getBoolean() && isImplicitStableField()) {
-            return true;
-        }
-        return false;
+        return (config().jvmAccFieldStable & modifiers) != 0;
     }
 
     @Override
@@ -243,70 +197,5 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField, HotSpotP
         } catch (NoSuchFieldException | NoClassDefFoundError e) {
             return null;
         }
-    }
-
-    private boolean isArray() {
-        JavaType fieldType = getType();
-        return fieldType instanceof ResolvedJavaType && ((ResolvedJavaType) fieldType).isArray();
-    }
-
-    private boolean isImplicitStableField() {
-        if (isSyntheticEnumSwitchMap()) {
-            return true;
-        }
-        if (isWellKnownImplicitStableField()) {
-            return true;
-        }
-        return false;
-    }
-
-    public boolean isDefaultStable() {
-        assert this.isStable();
-        if (isSyntheticEnumSwitchMap()) {
-            return true;
-        }
-        return false;
-    }
-
-    private boolean isSyntheticEnumSwitchMap() {
-        if (isSynthetic() && isStatic() && isArray()) {
-            if (isFinal() && name.equals("$VALUES") || name.equals("ENUM$VALUES")) {
-                // generated int[] field for EnumClass::values()
-                return true;
-            } else if (name.startsWith("$SwitchMap$") || name.startsWith("$SWITCH_TABLE$")) {
-                // javac and ecj generate a static field in an inner class for a switch on an enum
-                // named $SwitchMap$p$k$g$EnumClass and $SWITCH_TABLE$p$k$g$EnumClass, respectively
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean isWellKnownImplicitStableField() {
-        return WellKnownImplicitStableField.test(this);
-    }
-
-    static class WellKnownImplicitStableField {
-        /**
-         * @return {@code true} if the field is a well-known stable field.
-         */
-        public static boolean test(HotSpotResolvedJavaField field) {
-            return field.equals(STRING_VALUE_FIELD);
-        }
-
-        private static final ResolvedJavaField STRING_VALUE_FIELD;
-
-        static {
-            try {
-                MetaAccessProvider metaAccess = runtime().getHostJVMCIBackend().getMetaAccess();
-                STRING_VALUE_FIELD = metaAccess.lookupJavaField(String.class.getDeclaredField("value"));
-            } catch (SecurityException | NoSuchFieldException e) {
-                throw new JVMCIError(e);
-            }
-        }
-    }
-
-    public LocationIdentity getLocationIdentity() {
-        return locationIdentity;
     }
 }

@@ -108,11 +108,4 @@ final class HotSpotMetaspaceConstantImpl implements HotSpotMetaspaceConstant, VM
         }
         return null;
     }
-
-    public HotSpotSymbol asSymbol() {
-        if (metaspaceObject instanceof HotSpotSymbol) {
-            return (HotSpotSymbol) metaspaceObject;
-        }
-        return null;
-    }
 }
