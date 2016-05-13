@@ -61,8 +61,8 @@ testMethodName(function() { throw new Error() }, "L:59");
 var f = (function() {
     return function() { a.b.c; };
 })();
-testMethodName(f, "f$L:62");
+testMethodName(f, "f#L:62");
 
 testMethodName((function() {
     return function() { return a.b.c; };
-})(), "L:66$L:67");
+})(), "L:66#L:67");

@@ -534,7 +534,7 @@ public class Parser extends AbstractParser implements Loggable {
 
         final ParserContextFunctionNode parentFunction = lc.getCurrentFunction();
         if (parentFunction != null && !parentFunction.isProgram()) {
-            sb.append(parentFunction.getName()).append('$');
+            sb.append(parentFunction.getName()).append(CompilerConstants.NESTED_FUNCTION_SEPARATOR.symbolName());
         }
 
         assert ident.getName() != null;
