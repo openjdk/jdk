@@ -40,6 +40,7 @@ import static org.testng.Assert.*;
 
 abstract class VarHandleBaseTest {
     static final int ITERS = Integer.getInteger("iters", 1);
+    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 10);
 
     interface ThrowingRunnable {
         void run() throws Throwable;
