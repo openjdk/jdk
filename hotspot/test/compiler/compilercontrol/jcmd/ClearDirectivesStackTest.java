@@ -25,6 +25,7 @@
  * @test
  * @bug 8137167
  * @summary Tests clear JCMD command
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib /compiler/testlibrary ../share /
  * @build compiler.compilercontrol.jcmd.ClearDirectivesStackTest
  *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox

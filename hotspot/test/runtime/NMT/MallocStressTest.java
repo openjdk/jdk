@@ -74,7 +74,7 @@ public class MallocStressTest {
         whiteBox = WhiteBox.getWhiteBox();
 
         // Grab my own PID
-        String pid = Integer.toString(ProcessTools.getProcessId());
+        String pid = Long.toString(ProcessTools.getProcessId());
         ProcessBuilder pb = new ProcessBuilder();
 
         AllocThread[]   alloc_threads = new AllocThread[256];

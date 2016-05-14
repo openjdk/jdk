@@ -27,6 +27,7 @@
  * @bug 8021879
  * @requires vm.gc=="null" | vm.gc=="G1"
  * @summary Verify that the flag G1HeapRegionSize is updated properly
+ * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
  * @library /testlibrary
  * @run main TestG1HeapRegionSize

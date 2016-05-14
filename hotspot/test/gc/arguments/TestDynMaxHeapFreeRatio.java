@@ -31,6 +31,7 @@ import jdk.test.lib.DynamicVMOption;
  * @bug 8028391
  * @summary Verify that MaxHeapFreeRatio flag is manageable
  * @library /testlibrary
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @run main TestDynMaxHeapFreeRatio
  * @run main/othervm -XX:MinHeapFreeRatio=0 -XX:MaxHeapFreeRatio=100 TestDynMaxHeapFreeRatio

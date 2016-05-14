@@ -25,6 +25,7 @@
  * @test
  * @bug 8137167
  * @summary Tests CompileCommand=log
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib /compiler/testlibrary ../share /
  * @build compiler.compilercontrol.commandfile.LogTest
  *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox

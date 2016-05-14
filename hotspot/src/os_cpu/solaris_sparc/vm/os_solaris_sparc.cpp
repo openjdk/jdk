@@ -441,7 +441,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
 
     if (thread->thread_state() == _thread_in_vm) {
       if (sig == SIGBUS && info->si_code == BUS_OBJERR && thread->doing_unsafe_access()) {
-        stub = StubRoutines::handler_for_unsafe_access();
+        stub = SharedRuntime::handle_unsafe_access(thread, npc);
       }
     }
 
@@ -478,9 +478,9 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
-        nmethod* nm = cb->is_nmethod() ? (nmethod*)cb : NULL;
+        CompiledMethod* nm = cb->as_compiled_method_or_null();
         if (nm != NULL && nm->has_unsafe_access()) {
-          stub = StubRoutines::handler_for_unsafe_access();
+          stub = SharedRuntime::handle_unsafe_access(thread, npc);
         }
       }
 

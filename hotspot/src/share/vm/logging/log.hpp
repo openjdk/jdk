@@ -32,6 +32,8 @@
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 
+class LogMessageBuffer;
+
 //
 // Logging macros
 //
@@ -137,6 +139,10 @@ class LogImpl VALUE_OBJ_CLASS_SPEC {
     vwrite(level, fmt, args);
     va_end(args);
   }
+
+  static void write(const LogMessageBuffer& msg) {
+    LogTagSetMapping<T0, T1, T2, T3, T4>::tagset().log(msg);
+  };
 
   template <LogLevelType Level>
   ATTRIBUTE_PRINTF(1, 2)

@@ -31,14 +31,15 @@
 #include "utilities/globalDefinitions.hpp"
 
 class G1CollectedHeap;
-class G1CollectorPolicy;
 class G1CollectorState;
 class G1GCPhaseTimes;
+class G1Policy;
+class G1SurvivorRegions;
 class HeapRegion;
 
 class G1CollectionSet VALUE_OBJ_CLASS_SPEC {
   G1CollectedHeap* _g1;
-  G1CollectorPolicy* _policy;
+  G1Policy* _policy;
 
   CollectionSetChooser* _cset_chooser;
 
@@ -104,19 +105,17 @@ class G1CollectionSet VALUE_OBJ_CLASS_SPEC {
   // See the comment for _inc_recorded_rs_lengths_diffs.
   double _inc_predicted_elapsed_time_ms_diffs;
 
+  uint _inc_region_length;
+
   G1CollectorState* collector_state();
   G1GCPhaseTimes* phase_times();
 
   double predict_region_elapsed_time_ms(HeapRegion* hr);
 
+  void verify_young_cset_indices() const NOT_DEBUG_RETURN;
 public:
-  G1CollectionSet(G1CollectedHeap* g1h);
+  G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy);
   ~G1CollectionSet();
-
-  void set_policy(G1CollectorPolicy* g1p) {
-    assert(_policy == NULL, "should only initialize once");
-    _policy = g1p;
-  }
 
   CollectionSetChooser* cset_chooser();
 
@@ -152,6 +151,7 @@ public:
   void clear_incremental() {
     _inc_head = NULL;
     _inc_tail = NULL;
+    _inc_region_length = 0;
   }
 
   // Stop adding regions to the incremental collection set
@@ -176,7 +176,7 @@ public:
   // Choose a new collection set.  Marks the chosen regions as being
   // "in_collection_set", and links them together.  The head and number of
   // the collection set are available via access methods.
-  double finalize_young_part(double target_pause_time_ms);
+  double finalize_young_part(double target_pause_time_ms, G1SurvivorRegions* survivors);
   void finalize_old_part(double time_remaining_ms);
 
   // Add old region "hr" to the CSet.

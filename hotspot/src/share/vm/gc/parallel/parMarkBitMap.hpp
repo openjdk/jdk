@@ -182,8 +182,8 @@ private:
 
   HeapWord*       _region_start;
   size_t          _region_size;
-  BitMap          _beg_bits;
-  BitMap          _end_bits;
+  BitMapView      _beg_bits;
+  BitMapView      _end_bits;
   PSVirtualSpace* _virtual_space;
   size_t          _reserved_byte_size;
 };

@@ -40,7 +40,7 @@ public class PerfCounters {
 
     static {
         try {
-            String pid = Integer.toString(ProcessTools.getProcessId());
+            String pid = Long.toString(ProcessTools.getProcessId());
             VmIdentifier vmId = new VmIdentifier(pid);
             MonitoredHost host = MonitoredHost.getMonitoredHost(vmId);
             vm = host.getMonitoredVm(vmId);

@@ -40,6 +40,45 @@ class MachOper;
 //---------------------------Matcher-------------------------------------------
 class Matcher : public PhaseTransform {
   friend class VMStructs;
+
+public:
+
+  // State and MStack class used in xform() and find_shared() iterative methods.
+  enum Node_State { Pre_Visit,  // node has to be pre-visited
+                    Visit,  // visit node
+                    Post_Visit,  // post-visit node
+                    Alt_Post_Visit   // alternative post-visit path
+  };
+
+  class MStack: public Node_Stack {
+  public:
+    MStack(int size) : Node_Stack(size) { }
+
+    void push(Node *n, Node_State ns) {
+      Node_Stack::push(n, (uint)ns);
+    }
+    void push(Node *n, Node_State ns, Node *parent, int indx) {
+      ++_inode_top;
+      if ((_inode_top + 1) >= _inode_max) grow();
+      _inode_top->node = parent;
+      _inode_top->indx = (uint)indx;
+      ++_inode_top;
+      _inode_top->node = n;
+      _inode_top->indx = (uint)ns;
+    }
+    Node *parent() {
+      pop();
+      return node();
+    }
+    Node_State state() const {
+      return (Node_State)index();
+    }
+    void set_state(Node_State ns) {
+      set_index((uint)ns);
+    }
+  };
+
+private:
   // Private arena of State objects
   ResourceArea _states_arena;
 
@@ -273,6 +312,9 @@ public:
   // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
   static const bool match_rule_supported_vector(int opcode, int vlen);
 
+  // Some microarchitectures have mask registers used on vectors
+  static const bool has_predicated_vectors(void);
+
   // Some uarchs have different sized float register resources
   static const int float_pressure(int default_pressure_threshold);
 
@@ -408,7 +450,9 @@ public:
   // Should the Matcher clone shifts on addressing modes, expecting them to
   // be subsumed into complex addressing expressions or compute them into
   // registers?  True for Intel but false for most RISCs
-  static const bool clone_shift_expressions;
+  bool clone_address_expressions(AddPNode* m, MStack& mstack, VectorSet& address_visited);
+  // Clone base + offset address expression
+  bool clone_base_plus_offset_address(AddPNode* m, MStack& mstack, VectorSet& address_visited);
 
   static bool narrow_oop_use_complex_address();
   static bool narrow_klass_use_complex_address();
@@ -484,6 +528,9 @@ public:
   // of the count for 32/64 bit ints? If not we need to do the masking
   // ourselves.
   static const bool need_masked_shift_count;
+
+  // Whether code generation need accurate ConvI2L types.
+  static const bool convi2l_type_required;
 
   // This routine is run whenever a graph fails to match.
   // If it returns, the compiler should bailout to interpreter without error.

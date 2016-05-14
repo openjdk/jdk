@@ -249,7 +249,7 @@ print_generic_summary_data(ParallelCompactData& summary_data,
   const size_t last = summary_data.addr_to_region_idx(end_addr);
   HeapWord* pdest = 0;
 
-  while (i <= last) {
+  while (i < last) {
     ParallelCompactData::RegionData* c = summary_data.region(i);
     if (c->data_size() != 0 || c->destination() != pdest) {
       print_generic_summary_region(i, c);
@@ -376,6 +376,33 @@ print_initial_summary_data(ParallelCompactData& summary_data,
     space = space_info[id].space();
     print_generic_summary_data(summary_data, space->bottom(), space->top());
   } while (++id < PSParallelCompact::last_space_id);
+}
+
+void ParallelCompact_test() {
+  if (!UseParallelOldGC) {
+    return;
+  }
+  // Check that print_generic_summary_data() does not print the
+  // end region by placing a bad value in the destination of the
+  // end region.  The end region should not be printed because it
+  // corresponds to the space after the end of the heap.
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
+  ParCompactionManager* const vmthread_cm =
+    ParCompactionManager::manager_array(ParallelGCThreads);
+  HeapWord* begin_heap =
+    (HeapWord*) heap->old_gen()->virtual_space()->low_boundary();
+  HeapWord* end_heap =
+    (HeapWord*) heap->young_gen()->virtual_space()->high_boundary();
+
+  size_t end_index =
+    PSParallelCompact::summary_data().addr_to_region_idx(end_heap);
+  ParallelCompactData::RegionData* c = PSParallelCompact::summary_data().region(end_index);
+
+  // Initialize the end region with a bad destination.
+  c->set_destination(begin_heap - 1);
+
+  print_generic_summary_data(PSParallelCompact::summary_data(),
+    begin_heap, end_heap);
 }
 #endif  // #ifndef PRODUCT
 
@@ -1902,7 +1929,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     ParCompactionManager* const cm =
       ParCompactionManager::manager_array(int(i));
     assert(cm->marking_stack()->is_empty(),       "should be empty");
-    assert(ParCompactionManager::region_list(int(i))->is_empty(), "should be empty");
+    assert(cm->region_stack()->is_empty(), "Region stack " SIZE_FORMAT " is not empty", i);
   }
 #endif // ASSERT
 
@@ -2148,8 +2175,7 @@ void PSParallelCompact::adjust_roots(ParCompactionManager* cm) {
   // General strong roots.
   Universe::oops_do(&oop_closure);
   JNIHandles::oops_do(&oop_closure);   // Global (strong) JNI handles
-  CLDToOopClosure adjust_from_cld(&oop_closure);
-  Threads::oops_do(&oop_closure, &adjust_from_cld, NULL);
+  Threads::oops_do(&oop_closure, NULL);
   ObjectSynchronizer::oops_do(&oop_closure);
   FlatProfiler::oops_do(&oop_closure);
   Management::oops_do(&oop_closure);
@@ -2212,7 +2238,7 @@ public:
   }
 };
 
-void PSParallelCompact::enqueue_region_draining_tasks(GCTaskQueue* q,
+void PSParallelCompact::prepare_region_draining_tasks(GCTaskQueue* q,
                                                       uint parallel_gc_threads)
 {
   GCTraceTime(Trace, gc, phases) tm("Drain Task Setup", &_gc_timer);
@@ -2220,28 +2246,11 @@ void PSParallelCompact::enqueue_region_draining_tasks(GCTaskQueue* q,
   // Find the threads that are active
   unsigned int which = 0;
 
-  const uint task_count = MAX2(parallel_gc_threads, 1U);
-  for (uint j = 0; j < task_count; j++) {
-    q->enqueue(new DrainStacksCompactionTask(j));
-    ParCompactionManager::verify_region_list_empty(j);
-    // Set the region stacks variables to "no" region stack values
-    // so that they will be recognized and needing a region stack
-    // in the stealing tasks if they do not get one by executing
-    // a draining stack.
-    ParCompactionManager* cm = ParCompactionManager::manager_array(j);
-    cm->set_region_stack(NULL);
-    cm->set_region_stack_index((uint)max_uintx);
-  }
-  ParCompactionManager::reset_recycled_stack_index();
-
   // Find all regions that are available (can be filled immediately) and
   // distribute them to the thread stacks.  The iteration is done in reverse
   // order (high to low) so the regions will be removed in ascending order.
 
   const ParallelCompactData& sd = PSParallelCompact::summary_data();
-
-  // A region index which corresponds to the tasks created above.
-  // "which" must be 0 <= which < task_count
 
   which = 0;
   // id + 1 is used to test termination so unsigned  can
@@ -2258,12 +2267,11 @@ void PSParallelCompact::enqueue_region_draining_tasks(GCTaskQueue* q,
 
     for (size_t cur = end_region - 1; cur + 1 > beg_region; --cur) {
       if (sd.region(cur)->claim_unsafe()) {
-        ParCompactionManager::region_list_push(which, cur);
+        ParCompactionManager* cm = ParCompactionManager::manager_array(which);
+        cm->region_stack()->push(cur);
         region_logger.handle(cur);
         // Assign regions to tasks in round-robin fashion.
-        if (++which == task_count) {
-          assert(which <= parallel_gc_threads,
-            "Inconsistent number of workers");
+        if (++which == parallel_gc_threads) {
           which = 0;
         }
       }
@@ -2362,10 +2370,8 @@ void PSParallelCompact::enqueue_region_stealing_tasks(
 
   // Once a thread has drained it's stack, it should try to steal regions from
   // other threads.
-  if (parallel_gc_threads > 1) {
-    for (uint j = 0; j < parallel_gc_threads; j++) {
-      q->enqueue(new StealRegionCompactionTask(terminator_ptr));
-    }
+  for (uint j = 0; j < parallel_gc_threads; j++) {
+    q->enqueue(new CompactionWithStealingTask(terminator_ptr));
   }
 }
 
@@ -2422,7 +2428,7 @@ void PSParallelCompact::compact() {
   ParallelTaskTerminator terminator(active_gc_threads, qset);
 
   GCTaskQueue* q = GCTaskQueue::create();
-  enqueue_region_draining_tasks(q, active_gc_threads);
+  prepare_region_draining_tasks(q, active_gc_threads);
   enqueue_dense_prefix_tasks(q, active_gc_threads);
   enqueue_region_stealing_tasks(q, &terminator, active_gc_threads);
 

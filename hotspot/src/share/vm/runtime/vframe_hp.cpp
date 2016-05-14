@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,7 +196,7 @@ BasicLock* compiledVFrame::resolve_monitor_lock(Location location) const {
 GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
   // Natives has no scope
   if (scope() == NULL) {
-    nmethod* nm = code();
+    CompiledMethod* nm = code();
     Method* method = nm->method();
     assert(method->is_native(), "");
     if (!method->is_synchronized()) {
@@ -240,13 +240,13 @@ GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
 }
 
 
-compiledVFrame::compiledVFrame(const frame* fr, const RegisterMap* reg_map, JavaThread* thread, nmethod* nm)
+compiledVFrame::compiledVFrame(const frame* fr, const RegisterMap* reg_map, JavaThread* thread, CompiledMethod* nm)
 : javaVFrame(fr, reg_map, thread) {
   _scope  = NULL;
   // Compiled method (native stub or Java code)
   // native wrappers have no scope data, it is implied
-  if (!nm->is_native_method()) {
-    _scope  = nm->scope_desc_at(_fr.pc());
+  if (!nm->is_compiled() || !nm->as_compiled_method()->is_native_method()) {
+      _scope  = nm->scope_desc_at(_fr.pc());
   }
 }
 
@@ -264,15 +264,15 @@ bool compiledVFrame::is_top() const {
 }
 
 
-nmethod* compiledVFrame::code() const {
-  return CodeCache::find_nmethod(_fr.pc());
+CompiledMethod* compiledVFrame::code() const {
+  return CodeCache::find_compiled(_fr.pc());
 }
 
 
 Method* compiledVFrame::method() const {
   if (scope() == NULL) {
     // native nmethods have no scope the method is implied
-    nmethod* nm = code();
+    nmethod* nm = code()->as_nmethod();
     assert(nm->is_native_method(), "must be native");
     return nm->method();
   }
@@ -289,7 +289,7 @@ int compiledVFrame::bci() const {
 int compiledVFrame::raw_bci() const {
   if (scope() == NULL) {
     // native nmethods have no scope the method/bci is implied
-    nmethod* nm = code();
+    nmethod* nm = code()->as_nmethod();
     assert(nm->is_native_method(), "must be native");
     return 0;
   }
@@ -299,7 +299,7 @@ int compiledVFrame::raw_bci() const {
 bool compiledVFrame::should_reexecute() const {
   if (scope() == NULL) {
     // native nmethods have no scope the method/bci is implied
-    nmethod* nm = code();
+    nmethod* nm = code()->as_nmethod();
     assert(nm->is_native_method(), "must be native");
     return false;
   }
@@ -310,7 +310,7 @@ vframe* compiledVFrame::sender() const {
   const frame f = fr();
   if (scope() == NULL) {
     // native nmethods have no scope the method/bci is implied
-    nmethod* nm = code();
+    nmethod* nm = code()->as_nmethod();
     assert(nm->is_native_method(), "must be native");
     return vframe::sender();
   } else {

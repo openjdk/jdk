@@ -33,6 +33,7 @@ import sun.hotspot.WhiteBox;
  * @summary Checks that objects larger than half a region are allocated as humongous
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build sun.hotspot.WhiteBox
  *        gc.testlibrary.Helpers

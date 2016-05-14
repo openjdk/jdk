@@ -24,10 +24,10 @@
 
 #include "precompiled.hpp"
 #include "interpreter/oopMapCache.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
 
@@ -469,10 +469,12 @@ void OopMapCache::flush_obsolete_entries() {
     if (!_array[i].is_empty() && _array[i].method()->is_old()) {
       // Cache entry is occupied by an old redefined method and we don't want
       // to pin it down so flush the entry.
-      RC_TRACE(0x08000000, ("flush: %s(%s): cached entry @%d",
-        _array[i].method()->name()->as_C_string(),
-        _array[i].method()->signature()->as_C_string(), i));
-
+      if (log_is_enabled(Debug, redefine, class, oopmap)) {
+        ResourceMark rm;
+        log_debug(redefine, class, oopmap)
+          ("flush: %s(%s): cached entry @%d",
+           _array[i].method()->name()->as_C_string(), _array[i].method()->signature()->as_C_string(), i);
+      }
       _array[i].flush();
     }
 }

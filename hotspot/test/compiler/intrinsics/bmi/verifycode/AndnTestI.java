@@ -31,7 +31,7 @@
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/bootclasspath/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                         -XX:+IgnoreUnrecognizedVMOptions -XX:+UseBMI1Instructions AndnTestI
+ *                                 -XX:+IgnoreUnrecognizedVMOptions -XX:+UseBMI1Instructions AndnTestI
  */
 
 import java.lang.reflect.Method;
