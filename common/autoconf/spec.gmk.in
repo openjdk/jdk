@@ -232,6 +232,9 @@ JVM_FEATURES_custom := @JVM_FEATURES_custom@
 VALID_JVM_FEATURES := @VALID_JVM_FEATURES@
 VALID_JVM_VARIANTS := @VALID_JVM_VARIANTS@
 
+# Control wether Hotspot builds gtest tests
+BUILD_GTEST := true
+
 # Control use of precompiled header in hotspot libjvm build
 USE_PRECOMPILED_HEADER := @USE_PRECOMPILED_HEADER@
 
@@ -685,6 +688,7 @@ USE_EXTERNAL_LIBZ:=@USE_EXTERNAL_LIBZ@
 LIBZIP_CAN_USE_MMAP:=@LIBZIP_CAN_USE_MMAP@
 MSVCR_DLL:=@MSVCR_DLL@
 MSVCP_DLL:=@MSVCP_DLL@
+STLPORT_LIB:=@STLPORT_LIB@
 
 ####################################################
 #

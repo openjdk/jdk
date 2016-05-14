@@ -228,16 +228,12 @@ ALL_TARGETS += $(LAUNCHER_TARGETS)
 # Build hotspot target
 
 ifeq ($(BUILD_HOTSPOT),true)
-  hotspot:
-        ifeq ($(USE_NEW_HOTSPOT_BUILD), true)
-	  +($(CD) $(HOTSPOT_TOPDIR)/makefiles && $(MAKE) $(MAKE_ARGS) -f BuildHotspot.gmk)
-        else
-	  +($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f HotspotWrapper.gmk)
-        endif
+hotspot:
+	+($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f BuildHotspot.gmk)
 endif
 
 hotspot-ide-project:
-	+($(CD) $(HOTSPOT_TOPDIR)/makefiles && $(MAKE) $(MAKE_ARGS) -f ide/CreateVSProject.gmk)
+	+($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f ide/CreateVSProject.gmk)
 
 ALL_TARGETS += hotspot hotspot-ide-project
 
@@ -402,6 +398,11 @@ test-image-jdk-jtreg-native:
 	+($(CD) $(JDK_TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f JtregNative.gmk \
 	    test-image-jdk-jtreg-native)
 
+ifeq ($(BUILD_GTEST), true)
+  test-image-hotspot-gtest:
+	+($(CD) $(HOTSPOT_TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f GtestImage.gmk)
+endif
+
 build-test-lib:
 	+($(CD) $(TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f BuildTestLib.gmk)
 
@@ -425,7 +426,7 @@ endif
 ALL_TARGETS += prepare-test-image build-test-hotspot-jtreg-native \
     test-image-hotspot-jtreg-native build-test-jdk-jtreg-native \
     test-image-jdk-jtreg-native build-test-lib build-test-failure-handler \
-    test-failure-handler test-image-failure-handler
+    test-failure-handler test-image-failure-handler test-image-hotspot-gtest
 
 ################################################################################
 # Run tests
@@ -669,6 +670,8 @@ else
 
   test-image-jdk-jtreg-native: build-test-jdk-jtreg-native
 
+  test-image-hotspot-gtest: hotspot
+
   test-hotspot-internal: exploded-image
 
   test-hotspot-jtreg: jimages test-image
@@ -753,7 +756,7 @@ docs-image: docs-javadoc docs-jvmtidoc
 
 # This target builds the test image
 test-image: prepare-test-image test-image-hotspot-jtreg-native \
-    test-image-jdk-jtreg-native test-image-failure-handler
+    test-image-jdk-jtreg-native test-image-failure-handler test-image-hotspot-gtest
 
 # all-images is the top-most target, it builds all our deliverables ("images").
 all-images: product-images test-image docs-image
