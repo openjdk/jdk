@@ -198,6 +198,7 @@ public final class Scenario {
                 = new HashMap<>();
         private final JcmdStateBuilder jcmdStateBuilder;
         private final List<JcmdCommand> jcmdCommands = new ArrayList<>();
+        private boolean logCommandMet = false;
 
         public Builder() {
             addFlag("-Xmixed");
@@ -215,6 +216,9 @@ public final class Scenario {
         public void add(CompileCommand compileCommand) {
             String[] vmOptions = compileCommand.command.vmOpts;
             Collections.addAll(vmopts, vmOptions);
+            if (compileCommand.command == Command.LOG) {
+                logCommandMet = true;
+            }
             if (compileCommand.type == Type.JCMD) {
                 jcmdStateBuilder.add((JcmdCommand) compileCommand);
                 jcmdCommands.add((JcmdCommand) compileCommand);
@@ -294,6 +298,18 @@ public final class Scenario {
                 isValid &= builder.isValid();
             }
             options.addAll(jcmdStateBuilder.getOptions());
+
+            /*
+             * Update final states if LogCompilation is enabled and
+             * there is no any log command, then all methods should be logged
+             */
+            boolean isLogComp = vmopts.stream()
+                    .anyMatch(opt -> opt.contains("-XX:+LogCompilation"));
+            if (isLogComp && !logCommandMet) {
+                finalStates.entrySet()
+                        .forEach(entry -> entry.getValue().setLog(true));
+            }
+
             return new Scenario(isValid, options, finalStates, ccList,
                     jcmdCommands, directives);
         }

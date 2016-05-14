@@ -88,7 +88,7 @@ LinearScan::LinearScan(IR* ir, LIRGenerator* gen, FrameMap* frame_map)
  , _has_info(0)
  , _has_call(0)
  , _scope_value_cache(0) // initialized later with correct length
- , _interval_in_loop(0, 0) // initialized later with correct length
+ , _interval_in_loop(0)  // initialized later with correct length
  , _cached_blocks(*ir->linear_scan_order())
 #ifdef X86
  , _fpu_stack_allocator(NULL)
@@ -496,8 +496,8 @@ void LinearScan::number_instructions() {
   }
 
   // initialize with correct length
-  _lir_ops = LIR_OpArray(num_instructions);
-  _block_of_op = BlockBeginArray(num_instructions);
+  _lir_ops = LIR_OpArray(num_instructions, num_instructions, NULL);
+  _block_of_op = BlockBeginArray(num_instructions, num_instructions, NULL);
 
   int op_id = 0;
   int idx = 0;
@@ -524,8 +524,8 @@ void LinearScan::number_instructions() {
   assert(idx == num_instructions, "must match");
   assert(idx * 2 == op_id, "must match");
 
-  _has_call = BitMap(num_instructions); _has_call.clear();
-  _has_info = BitMap(num_instructions); _has_info.clear();
+  _has_call.initialize(num_instructions);
+  _has_info.initialize(num_instructions);
 }
 
 
@@ -568,8 +568,8 @@ void LinearScan::compute_local_live_sets() {
   for (int i = 0; i < num_blocks; i++) {
     BlockBegin* block = block_at(i);
 
-    BitMap live_gen(live_size);  live_gen.clear();
-    BitMap live_kill(live_size); live_kill.clear();
+    ResourceBitMap live_gen(live_size);  live_gen.clear();
+    ResourceBitMap live_kill(live_size); live_kill.clear();
 
     if (block->is_set(BlockBegin::exception_entry_flag)) {
       // Phi functions at the begin of an exception handler are
@@ -715,8 +715,8 @@ void LinearScan::compute_local_live_sets() {
 
     block->set_live_gen (live_gen);
     block->set_live_kill(live_kill);
-    block->set_live_in  (BitMap(live_size)); block->live_in().clear();
-    block->set_live_out (BitMap(live_size)); block->live_out().clear();
+    block->set_live_in  (ResourceBitMap(live_size)); block->live_in().clear();
+    block->set_live_out (ResourceBitMap(live_size)); block->live_out().clear();
 
     TRACE_LINEAR_SCAN(4, tty->print("live_gen  B%d ", block->block_id()); print_bitmap(block->live_gen()));
     TRACE_LINEAR_SCAN(4, tty->print("live_kill B%d ", block->block_id()); print_bitmap(block->live_kill()));
@@ -741,7 +741,7 @@ void LinearScan::compute_global_live_sets() {
   bool change_occurred;
   bool change_occurred_in_block;
   int  iteration_count = 0;
-  BitMap live_out(live_set_size()); live_out.clear(); // scratch set for calculations
+  ResourceBitMap live_out(live_set_size()); live_out.clear(); // scratch set for calculations
 
   // Perform a backward dataflow analysis to compute live_out and live_in for each block.
   // The loop is executed until a fixpoint is reached (no changes in an iteration)
@@ -775,7 +775,7 @@ void LinearScan::compute_global_live_sets() {
 
         if (!block->live_out().is_same(live_out)) {
           // A change occurred.  Swap the old and new live out sets to avoid copying.
-          BitMap temp = block->live_out();
+          ResourceBitMap temp = block->live_out();
           block->set_live_out(live_out);
           live_out = temp;
 
@@ -787,7 +787,7 @@ void LinearScan::compute_global_live_sets() {
       if (iteration_count == 0 || change_occurred_in_block) {
         // live_in(block) is the union of live_gen(block) with (live_out(block) & !live_kill(block))
         // note: live_in has to be computed only in first iteration or if live_out has changed!
-        BitMap live_in = block->live_in();
+        ResourceBitMap live_in = block->live_in();
         live_in.set_from(block->live_out());
         live_in.set_difference(block->live_kill());
         live_in.set_union(block->live_gen());
@@ -826,7 +826,7 @@ void LinearScan::compute_global_live_sets() {
 #endif
 
   // check that the live_in set of the first block is empty
-  BitMap live_in_args(ir()->start()->live_in().size());
+  ResourceBitMap live_in_args(ir()->start()->live_in().size());
   live_in_args.clear();
   if (!ir()->start()->live_in().is_same(live_in_args)) {
 #ifdef ASSERT
@@ -1317,7 +1317,7 @@ void LinearScan::build_intervals() {
     assert(block_to   == instructions->at(instructions->length() - 1)->id(), "must be");
 
     // Update intervals for registers live at the end of this block;
-    BitMap live = block->live_out();
+    ResourceBitMap live = block->live_out();
     int size = (int)live.size();
     for (int number = (int)live.get_next_one_offset(0, size); number < size; number = (int)live.get_next_one_offset(number + 1, size)) {
       assert(live.at(number), "should not stop here otherwise");
@@ -1717,7 +1717,7 @@ void LinearScan::resolve_collect_mappings(BlockBegin* from_block, BlockBegin* to
 
   const int num_regs = num_virtual_regs();
   const int size = live_set_size();
-  const BitMap live_at_edge = to_block->live_in();
+  const ResourceBitMap live_at_edge = to_block->live_in();
 
   // visit all registers where the live_at_edge bit is set
   for (int r = (int)live_at_edge.get_next_one_offset(0, size); r < size; r = (int)live_at_edge.get_next_one_offset(r + 1, size)) {
@@ -1774,8 +1774,8 @@ void LinearScan::resolve_data_flow() {
 
   int num_blocks = block_count();
   MoveResolver move_resolver(this);
-  BitMap block_completed(num_blocks);  block_completed.clear();
-  BitMap already_resolved(num_blocks); already_resolved.clear();
+  ResourceBitMap block_completed(num_blocks);  block_completed.clear();
+  ResourceBitMap already_resolved(num_blocks); already_resolved.clear();
 
   int i;
   for (i = 0; i < num_blocks; i++) {
@@ -2507,7 +2507,8 @@ LocationValue*         _illegal_value = new (ResourceObj::C_HEAP, mtCompiler) Lo
 void LinearScan::init_compute_debug_info() {
   // cache for frequently used scope values
   // (cpu registers and stack slots)
-  _scope_value_cache = ScopeValueArray((LinearScan::nof_cpu_regs + frame_map()->argcount() + max_spills()) * 2, NULL);
+  int cache_size = (LinearScan::nof_cpu_regs + frame_map()->argcount() + max_spills()) * 2;
+  _scope_value_cache = ScopeValueArray(cache_size, cache_size, NULL);
 }
 
 MonitorValue* LinearScan::location_for_monitor_index(int monitor_index) {
@@ -3042,7 +3043,7 @@ void LinearScan::assign_reg_num(LIR_OpList* instructions, IntervalWalker* iw) {
         insert_point++;
       }
     }
-    instructions->truncate(insert_point);
+    instructions->trunc_to(insert_point);
   }
 }
 
@@ -3396,7 +3397,7 @@ void LinearScan::verify_constants() {
 
   for (int i = 0; i < num_blocks; i++) {
     BlockBegin* block = block_at(i);
-    BitMap live_at_edge = block->live_in();
+    ResourceBitMap live_at_edge = block->live_in();
 
     // visit all registers where the live_at_edge bit is set
     for (int r = (int)live_at_edge.get_next_one_offset(0, size); r < size; r = (int)live_at_edge.get_next_one_offset(r + 1, size)) {
@@ -3446,7 +3447,7 @@ class RegisterVerifier: public StackObj {
   RegisterVerifier(LinearScan* allocator)
     : _allocator(allocator)
     , _work_list(16)
-    , _saved_states(BlockBegin::number_of_blocks(), NULL)
+    , _saved_states(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), NULL)
   { }
 
   void verify(BlockBegin* start);
@@ -3748,7 +3749,7 @@ void MoveResolver::verify_before_resolve() {
   }
 
 
-  BitMap used_regs(LinearScan::nof_regs + allocator()->frame_map()->argcount() + allocator()->max_spills());
+  ResourceBitMap used_regs(LinearScan::nof_regs + allocator()->frame_map()->argcount() + allocator()->max_spills());
   used_regs.clear();
   if (!_multiple_reads_allowed) {
     for (i = 0; i < _mapping_from.length(); i++) {
@@ -4452,7 +4453,7 @@ Interval* Interval::split(int split_pos) {
     new_use_pos_and_kinds.append(_use_pos_and_kinds.at(i));
   }
 
-  _use_pos_and_kinds.truncate(start_idx + 2);
+  _use_pos_and_kinds.trunc_to(start_idx + 2);
   result->_use_pos_and_kinds = _use_pos_and_kinds;
   _use_pos_and_kinds = new_use_pos_and_kinds;
 
@@ -5540,7 +5541,7 @@ void LinearScanWalker::split_and_spill_intersecting_intervals(int reg, int regHi
     IntervalList* processed = _spill_intervals[reg];
     for (int i = 0; i < _spill_intervals[regHi]->length(); i++) {
       Interval* it = _spill_intervals[regHi]->at(i);
-      if (processed->find_from_end(it) == -1) {
+      if (processed->find(it) == -1) {
         remove_from_list(it);
         split_and_spill_interval(it);
       }
@@ -6211,7 +6212,7 @@ void ControlFlowOptimizer::delete_empty_blocks(BlockList* code) {
       _original_preds.clear();
       for (j = block->number_of_preds() - 1; j >= 0; j--) {
         BlockBegin* pred = block->pred_at(j);
-        if (_original_preds.index_of(pred) == -1) {
+        if (_original_preds.find(pred) == -1) {
           _original_preds.append(pred);
         }
       }
@@ -6231,7 +6232,7 @@ void ControlFlowOptimizer::delete_empty_blocks(BlockList* code) {
     }
     old_pos++;
   }
-  code->truncate(new_pos);
+  code->trunc_to(new_pos);
 
   DEBUG_ONLY(verify(code));
 }
@@ -6256,7 +6257,7 @@ void ControlFlowOptimizer::delete_unnecessary_jumps(BlockList* code) {
           TRACE_LINEAR_SCAN(3, tty->print_cr("Deleting unconditional branch at end of block B%d", block->block_id()));
 
           // delete last branch instruction
-          instructions->truncate(instructions->length() - 1);
+          instructions->trunc_to(instructions->length() - 1);
 
         } else {
           LIR_Op* prev_op = instructions->at(instructions->length() - 2);
@@ -6295,7 +6296,7 @@ void ControlFlowOptimizer::delete_unnecessary_jumps(BlockList* code) {
                 prev_branch->change_block(last_branch->block());
                 prev_branch->negate_cond();
                 prev_cmp->set_condition(prev_branch->cond());
-                instructions->truncate(instructions->length() - 1);
+                instructions->trunc_to(instructions->length() - 1);
                 // if we do change the condition, we have to change the cmove as well
                 if (prev_cmove != NULL) {
                   prev_cmove->set_condition(prev_branch->cond());
@@ -6316,7 +6317,7 @@ void ControlFlowOptimizer::delete_unnecessary_jumps(BlockList* code) {
 
 void ControlFlowOptimizer::delete_jumps_to_return(BlockList* code) {
 #ifdef ASSERT
-  BitMap return_converted(BlockBegin::number_of_blocks());
+  ResourceBitMap return_converted(BlockBegin::number_of_blocks());
   return_converted.clear();
 #endif
 
@@ -6378,19 +6379,19 @@ void ControlFlowOptimizer::verify(BlockList* code) {
       LIR_OpBranch* op_branch = instructions->at(j)->as_OpBranch();
 
       if (op_branch != NULL) {
-        assert(op_branch->block() == NULL || code->index_of(op_branch->block()) != -1, "branch target not valid");
-        assert(op_branch->ublock() == NULL || code->index_of(op_branch->ublock()) != -1, "branch target not valid");
+        assert(op_branch->block() == NULL || code->find(op_branch->block()) != -1, "branch target not valid");
+        assert(op_branch->ublock() == NULL || code->find(op_branch->ublock()) != -1, "branch target not valid");
       }
     }
 
     for (j = 0; j < block->number_of_sux() - 1; j++) {
       BlockBegin* sux = block->sux_at(j);
-      assert(code->index_of(sux) != -1, "successor not valid");
+      assert(code->find(sux) != -1, "successor not valid");
     }
 
     for (j = 0; j < block->number_of_preds() - 1; j++) {
       BlockBegin* pred = block->pred_at(j);
-      assert(code->index_of(pred) != -1, "successor not valid");
+      assert(code->find(pred) != -1, "successor not valid");
     }
   }
 }

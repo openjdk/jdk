@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "gc/g1/collectionSetChooser.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 

@@ -25,12 +25,13 @@
  * @test
  * @bug 8077504
  * @summary Unsafe load can loose control dependency and cause crash
+ * @modules java.base/jdk.internal.misc
  * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestUnsafeLoadControl
  *
  */
 
 import java.lang.reflect.Field;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 public class TestUnsafeLoadControl {
 

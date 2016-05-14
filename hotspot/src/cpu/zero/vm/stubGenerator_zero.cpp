@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010, 2015 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -261,10 +261,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_atomic_add_entry          = ShouldNotCallThisStub();
     StubRoutines::_atomic_add_ptr_entry      = ShouldNotCallThisStub();
     StubRoutines::_fence_entry               = ShouldNotCallThisStub();
-
-    // amd64 does this here, sparc does it in generate_all()
-    StubRoutines::_handler_for_unsafe_access_entry =
-      ShouldNotCallThisStub();
   }
 
   void generate_all() {

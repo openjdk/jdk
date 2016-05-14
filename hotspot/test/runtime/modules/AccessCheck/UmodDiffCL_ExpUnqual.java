@@ -28,6 +28,7 @@
  * @summary class p1.c1 defined in an unnamed module tries to access p2.c2 defined in m2.
  *          Access allowed, an unnamed module can read all modules and p2 in module m2
  *          which is exported unqualifiedly.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @compile myloaders/MyDiffClassLoader.java
  * @compile p2/c2.java

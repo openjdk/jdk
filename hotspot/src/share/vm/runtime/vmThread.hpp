@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,12 @@ class VMThread: public NamedThread {
   // Constructor
   VMThread();
 
+  // No destruction allowed
+  ~VMThread() {
+    guarantee(false, "VMThread deletion must fix the race with VM termination");
+  }
+
+
   // Tester
   bool is_VM_thread() const                      { return true; }
   bool is_GC_thread() const                      { return true; }
@@ -126,7 +132,7 @@ class VMThread: public NamedThread {
   static VMThread* vm_thread()                    { return _vm_thread; }
 
   // GC support
-  void oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf);
+  void oops_do(OopClosure* f, CodeBlobClosure* cf);
 
   void verify();
 

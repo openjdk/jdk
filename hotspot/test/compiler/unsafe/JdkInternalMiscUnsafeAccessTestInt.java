@@ -40,6 +40,7 @@ import static org.testng.Assert.*;
 
 public class JdkInternalMiscUnsafeAccessTestInt {
     static final int ITERS = Integer.getInteger("iters", 1);
+    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 10);
 
     static final jdk.internal.misc.Unsafe UNSAFE;
 
@@ -251,25 +252,46 @@ public class JdkInternalMiscUnsafeAccessTestInt {
         }
 
         {
-            boolean r = UNSAFE.weakCompareAndSwapInt(base, offset, 1, 2);
-            assertEquals(r, true, "weakCompareAndSwap int");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapInt(base, offset, 1, 2);
+            }
+            assertEquals(success, true, "weakCompareAndSwap int");
             int x = UNSAFE.getInt(base, offset);
             assertEquals(x, 2, "weakCompareAndSwap int value");
         }
 
         {
-            boolean r = UNSAFE.weakCompareAndSwapIntAcquire(base, offset, 2, 1);
-            assertEquals(r, true, "weakCompareAndSwapAcquire int");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapIntAcquire(base, offset, 2, 1);
+            }
+            assertEquals(success, true, "weakCompareAndSwapAcquire int");
             int x = UNSAFE.getInt(base, offset);
             assertEquals(x, 1, "weakCompareAndSwapAcquire int");
         }
 
         {
-            boolean r = UNSAFE.weakCompareAndSwapIntRelease(base, offset, 1, 2);
-            assertEquals(r, true, "weakCompareAndSwapRelease int");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapIntRelease(base, offset, 1, 2);
+            }
+            assertEquals(success, true, "weakCompareAndSwapRelease int");
             int x = UNSAFE.getInt(base, offset);
             assertEquals(x, 2, "weakCompareAndSwapRelease int");
         }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapIntVolatile(base, offset, 2, 1);
+            }
+            assertEquals(success, true, "weakCompareAndSwapVolatile int");
+            int x = UNSAFE.getInt(base, offset);
+            assertEquals(x, 1, "weakCompareAndSwapVolatile int");
+        }
+
+        UNSAFE.putInt(base, offset, 2);
 
         // Compare set and get
         {
@@ -286,7 +308,7 @@ public class JdkInternalMiscUnsafeAccessTestInt {
             int o = UNSAFE.getAndAddInt(base, offset, 2);
             assertEquals(o, 1, "getAndAdd int");
             int x = UNSAFE.getInt(base, offset);
-            assertEquals(x, 1 + 2, "weakCompareAndSwapRelease int");
+            assertEquals(x, 1 + 2, "getAndAdd int");
         }
     }
 
@@ -299,5 +321,4 @@ public class JdkInternalMiscUnsafeAccessTestInt {
         }
     }
 }
-
 

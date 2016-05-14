@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,8 +251,9 @@ int generateJvmOffsets(GEN_variant gen_variant) {
 
   GEN_OFFS(CodeBlob, _name);
   GEN_OFFS(CodeBlob, _header_size);
-  GEN_OFFS(CodeBlob, _content_offset);
-  GEN_OFFS(CodeBlob, _code_offset);
+  GEN_OFFS(CodeBlob, _content_begin);
+  GEN_OFFS(CodeBlob, _code_begin);
+  GEN_OFFS(CodeBlob, _code_end);
   GEN_OFFS(CodeBlob, _data_offset);
   GEN_OFFS(CodeBlob, _frame_size);
   printf("\n");
@@ -260,10 +261,10 @@ int generateJvmOffsets(GEN_variant gen_variant) {
   GEN_OFFS(nmethod, _method);
   GEN_OFFS(nmethod, _dependencies_offset);
   GEN_OFFS(nmethod, _metadata_offset);
-  GEN_OFFS(nmethod, _scopes_data_offset);
+  GEN_OFFS(nmethod, _scopes_data_begin);
   GEN_OFFS(nmethod, _scopes_pcs_offset);
   GEN_OFFS(nmethod, _handler_table_offset);
-  GEN_OFFS(nmethod, _deoptimize_offset);
+  GEN_OFFS(nmethod, _deopt_handler_begin);
   GEN_OFFS(nmethod, _orig_pc_offset);
 
   GEN_OFFS(PcDesc, _pc_offset);

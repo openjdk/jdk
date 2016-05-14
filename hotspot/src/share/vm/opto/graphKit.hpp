@@ -910,6 +910,8 @@ class GraphKit : public Phase {
   void add_predicate(int nargs = 0);
   void add_predicate_impl(Deoptimization::DeoptReason reason, int nargs);
 
+  Node* make_constant_from_field(ciField* field, Node* obj);
+
   // Produce new array node of stable type
   Node* cast_array_to_stable(Node* ary, const TypeAryPtr* ary_type);
 };

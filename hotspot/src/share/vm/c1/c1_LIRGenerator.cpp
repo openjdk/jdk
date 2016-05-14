@@ -150,7 +150,7 @@ PhiResolver::~PhiResolver() {
   int i;
   // resolve any cycles in moves from and to virtual registers
   for (i = virtual_operands().length() - 1; i >= 0; i --) {
-    ResolveNode* node = virtual_operands()[i];
+    ResolveNode* node = virtual_operands().at(i);
     if (!node->visited()) {
       _loop = NULL;
       move(NULL, node);
@@ -161,7 +161,7 @@ PhiResolver::~PhiResolver() {
 
   // generate move for move from non virtual register to abitrary destination
   for (i = other_operands().length() - 1; i >= 0; i --) {
-    ResolveNode* node = other_operands()[i];
+    ResolveNode* node = other_operands().at(i);
     for (int j = node->no_of_destinations() - 1; j >= 0; j --) {
       emit_move(node->operand(), node->destination_at(j)->operand());
     }
@@ -177,7 +177,7 @@ ResolveNode* PhiResolver::create_node(LIR_Opr opr, bool source) {
     assert(node == NULL || node->operand() == opr, "");
     if (node == NULL) {
       node = new ResolveNode(opr);
-      vreg_table()[vreg_num] = node;
+      vreg_table().at_put(vreg_num, node);
     }
     // Make sure that all virtual operands show up in the list when
     // they are used as the source of a move.
@@ -3161,7 +3161,9 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_fullFence :
     if (os::is_MP()) __ membar();
     break;
-
+  case vmIntrinsics::_onSpinWait:
+    __ on_spin_wait();
+    break;
   case vmIntrinsics::_Reference_get:
     do_Reference_get(x);
     break;
@@ -3170,6 +3172,15 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
     do_update_CRC32(x);
+    break;
+
+  case vmIntrinsics::_updateBytesCRC32C:
+  case vmIntrinsics::_updateDirectByteBufferCRC32C:
+    do_update_CRC32C(x);
+    break;
+
+  case vmIntrinsics::_vectorizedMismatch:
+    do_vectorizedMismatch(x);
     break;
 
   default: ShouldNotReachHere(); break;

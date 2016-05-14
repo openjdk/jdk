@@ -42,10 +42,22 @@ public class GetModule {
 
     public static void main(String[] args) {
         Module module;
+        Module javaBaseModule;
+
+        // Module for primitive type, should be "java.base"
+        java.lang.Integer primitive_int = 1;
+        try {
+            javaBaseModule = (Module)callGetModule(primitive_int.getClass());
+            if (!javaBaseModule.getName().equals("java.base")) {
+                throw new RuntimeException("Unexpected module name for primitive type: " +
+                                           javaBaseModule.getName());
+            }
+        } catch(Throwable e) {
+            throw new RuntimeException("Unexpected exception for Integer: " + e.toString());
+        }
 
         // Module for array of primitives, should be "java.base"
         int[] int_array = {1, 2, 3};
-        Module javaBaseModule;
         try {
             javaBaseModule = (Module)callGetModule(int_array.getClass());
             if (!javaBaseModule.getName().equals("java.base")) {
@@ -56,7 +68,19 @@ public class GetModule {
             throw new RuntimeException("Unexpected exception for [I: " + e.toString());
         }
 
-        // Module for java.lang.String
+        // Module for multi-dimensional array of primitives, should be "java.base"
+        int[][] multi_int_array = { {1, 2, 3}, {4, 5, 6} };
+        try {
+            javaBaseModule = (Module)callGetModule(multi_int_array.getClass());
+            if (!javaBaseModule.getName().equals("java.base")) {
+                throw new RuntimeException("Unexpected module name for multi-dimensional array of primitives: " +
+                                           javaBaseModule.getName());
+            }
+        } catch(Throwable e) {
+            throw new RuntimeException("Unexpected exception for multi-dimensional Integer array: " + e.toString());
+        }
+
+        // Module for java.lang.String, should be "java.base"
         java.lang.String str = "abc";
         try {
             module = (Module)callGetModule(str.getClass());
@@ -66,6 +90,30 @@ public class GetModule {
             }
         } catch(Throwable e) {
             throw new RuntimeException("Unexpected exception for String: " + e.toString());
+        }
+
+        // Module for array of java.lang.Strings, should be "java.base"
+        java.lang.String[] str_array = {"a", "b", "c"};
+        try {
+            javaBaseModule = (Module)callGetModule(str_array.getClass());
+            if (!javaBaseModule.getName().equals("java.base")) {
+                throw new RuntimeException("Unexpected module name for array of Strings: " +
+                                           javaBaseModule.getName());
+            }
+        } catch(Throwable e) {
+            throw new RuntimeException("Unexpected exception for String array: " + e.toString());
+        }
+
+        // Module for multi-dimensional array of java.lang.Strings, should be "java.base"
+        java.lang.String[][] multi_str_array = { {"a", "b", "c"}, {"d", "e", "f"} };
+        try {
+            javaBaseModule = (Module)callGetModule(multi_str_array.getClass());
+            if (!javaBaseModule.getName().equals("java.base")) {
+                throw new RuntimeException("Unexpected module name for multi-dimensional array of Strings: " +
+                                           javaBaseModule.getName());
+            }
+        } catch(Throwable e) {
+            throw new RuntimeException("Unexpected exception for multidimensional String array: " + e.toString());
         }
 
         // Module for java.lang.management.LockInfo

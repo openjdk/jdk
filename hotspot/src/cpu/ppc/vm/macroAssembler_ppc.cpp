@@ -3118,6 +3118,14 @@ void MacroAssembler::load_klass(Register dst, Register src) {
   }
 }
 
+void MacroAssembler::load_mirror(Register mirror, Register method) {
+  const int mirror_offset = in_bytes(Klass::java_mirror_offset());
+  ld(mirror, in_bytes(Method::const_offset()), method);
+  ld(mirror, in_bytes(ConstMethod::constants_offset()), mirror);
+  ld(mirror, ConstantPool::pool_holder_offset_in_bytes(), mirror);
+  ld(mirror, mirror_offset, mirror);
+}
+
 // Clear Array
 // Kills both input registers. tmp == R0 is allowed.
 void MacroAssembler::clear_memory_doubleword(Register base_ptr, Register cnt_dwords, Register tmp) {

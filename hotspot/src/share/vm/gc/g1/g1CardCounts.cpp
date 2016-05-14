@@ -25,8 +25,6 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1CardCounts.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectorPolicy.hpp"
-#include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/shared/cardTableModRefBS.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/copy.hpp"

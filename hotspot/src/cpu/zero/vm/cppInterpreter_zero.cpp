@@ -221,9 +221,16 @@ void CppInterpreter::main_loop(int recurse, TRAPS) {
   // Push our result
   for (int i = 0; i < result_slots; i++) {
     // Adjust result to smaller
-    intptr_t res = result[-i];
+    union {
+      intptr_t res;
+      jint res_jint;
+    };
+    res = result[-i];
     if (result_slots == 1) {
-      res = narrow(method->result_type(), res);
+      BasicType t = method->result_type();
+      if (is_subword_type(t)) {
+        res_jint = (jint)narrow(t, res_jint);
+      }
     }
     stack->push(res);
   }
@@ -748,6 +755,7 @@ InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
 
   istate->set_locals(locals);
   istate->set_method(method);
+  istate->set_mirror(method->method_holder()->java_mirror());
   istate->set_self_link(istate);
   istate->set_prev_link(NULL);
   istate->set_thread(thread);

@@ -25,6 +25,7 @@
  * @test
  * @bug 8137167
  * @summary Tests directive json parser
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib ../share /
  * @run driver compiler.compilercontrol.parser.DirectiveParserTest
  */

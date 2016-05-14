@@ -50,11 +50,11 @@ class BlockListBuilder VALUE_OBJ_CLASS_SPEC {
   BlockList*   _bci2block;             // mapping from bci to blocks for GraphBuilder
 
   // fields used by mark_loops
-  BitMap       _active;                // for iteration of control flow graph
-  BitMap       _visited;               // for iteration of control flow graph
-  intArray     _loop_map;              // caches the information if a block is contained in a loop
-  int          _next_loop_index;       // next free loop number
-  int          _next_block_number;     // for reverse postorder numbering of blocks
+  ResourceBitMap _active;              // for iteration of control flow graph
+  ResourceBitMap _visited;             // for iteration of control flow graph
+  intArray       _loop_map;            // caches the information if a block is contained in a loop
+  int            _next_loop_index;     // next free loop number
+  int            _next_block_number;   // for reverse postorder numbering of blocks
 
   // accessors
   Compilation*  compilation() const              { return _compilation; }
@@ -227,7 +227,7 @@ void BlockListBuilder::set_leaders() {
   // Without it, backward branches could jump to a bci where no block was created
   // during bytecode iteration. This would require the creation of a new block at the
   // branch target and a modification of the successor lists.
-  BitMap bci_block_start = method()->bci_block_start();
+  const BitMap& bci_block_start = method()->bci_block_start();
 
   ciBytecodeStream s(method());
   while (s.next() != ciBytecodeStream::EOBC()) {
@@ -355,15 +355,19 @@ void BlockListBuilder::set_leaders() {
 void BlockListBuilder::mark_loops() {
   ResourceMark rm;
 
-  _active = BitMap(BlockBegin::number_of_blocks());         _active.clear();
-  _visited = BitMap(BlockBegin::number_of_blocks());        _visited.clear();
-  _loop_map = intArray(BlockBegin::number_of_blocks(), 0);
+  _active.initialize(BlockBegin::number_of_blocks());
+  _visited.initialize(BlockBegin::number_of_blocks());
+  _loop_map = intArray(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), 0);
   _next_loop_index = 0;
   _next_block_number = _blocks.length();
 
   // recursively iterate the control flow graph
   mark_loops(_bci2block->at(0), false);
   assert(_next_block_number >= 0, "invalid block numbers");
+
+  // Remove dangling Resource pointers before the ResourceMark goes out-of-scope.
+  _active.resize(0);
+  _visited.resize(0);
 }
 
 void BlockListBuilder::make_loop_header(BlockBegin* block) {
@@ -1366,7 +1370,7 @@ void GraphBuilder::lookup_switch() {
   } else {
     // collect successors & keys
     BlockList* sux = new BlockList(l + 1, NULL);
-    intArray* keys = new intArray(l, 0);
+    intArray* keys = new intArray(l, l, 0);
     int i;
     bool has_bb = false;
     for (i = 0; i < l; i++) {
@@ -1563,6 +1567,8 @@ void GraphBuilder::method_return(Value x) {
 }
 
 Value GraphBuilder::make_constant(ciConstant field_value, ciField* field) {
+  if (!field_value.is_valid())  return NULL;
+
   BasicType field_type = field_value.basic_type();
   ValueType* value = as_ValueType(field_value);
 
@@ -1630,9 +1636,8 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
     case Bytecodes::_getstatic: {
       // check for compile-time constants, i.e., initialized static final fields
       Value constant = NULL;
-      if (field->is_constant() && !PatchALot) {
+      if (field->is_static_constant() && !PatchALot) {
         ciConstant field_value = field->constant_value();
-        // Stable static fields are checked for non-default values in ciField::initialize_from().
         assert(!field->is_stable() || !field_value.is_null_or_zero(),
                "stable static w/ default value shouldn't be a constant");
         constant = make_constant(field_value, field);
@@ -1665,31 +1670,18 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
       Value constant = NULL;
       obj = apop();
       ObjectType* obj_type = obj->type()->as_ObjectType();
-      if (obj_type->is_constant() && !PatchALot) {
+      if (field->is_constant() && obj_type->is_constant() && !PatchALot) {
         ciObject* const_oop = obj_type->constant_value();
         if (!const_oop->is_null_object() && const_oop->is_loaded()) {
-          if (field->is_constant()) {
-            ciConstant field_value = field->constant_value_of(const_oop);
-            if (FoldStableValues && field->is_stable() && field_value.is_null_or_zero()) {
-              // Stable field with default value can't be constant.
-              constant = NULL;
-            } else {
-              constant = make_constant(field_value, field);
-            }
-          } else {
-            // For CallSite objects treat the target field as a compile time constant.
-            if (const_oop->is_call_site()) {
+          ciConstant field_value = field->constant_value_of(const_oop);
+          if (field_value.is_valid()) {
+            constant = make_constant(field_value, field);
+            // For CallSite objects add a dependency for invalidation of the optimization.
+            if (field->is_call_site_target()) {
               ciCallSite* call_site = const_oop->as_call_site();
-              if (field->is_call_site_target()) {
-                ciMethodHandle* target = call_site->get_target();
-                if (target != NULL) {  // just in case
-                  ciConstant field_val(T_OBJECT, target);
-                  constant = new Constant(as_ValueType(field_val));
-                  // Add a dependence for invalidation of the optimization.
-                  if (!call_site->is_constant_call_site()) {
-                    dependency_recorder()->assert_call_site_target_value(call_site, target);
-                  }
-                }
+              if (!call_site->is_constant_call_site()) {
+                ciMethodHandle* target = field_value.as_object()->as_method_handle();
+                dependency_recorder()->assert_call_site_target_value(call_site, target);
               }
             }
           }
@@ -1772,7 +1764,7 @@ void GraphBuilder::check_args_for_profiling(Values* obj_args, int expected) {
   bool ignored_will_link;
   ciSignature* declared_signature = NULL;
   ciMethod* real_target = method()->get_method_at_bci(bci(), ignored_will_link, &declared_signature);
-  assert(expected == obj_args->length() || real_target->is_method_handle_intrinsic(), "missed on arg?");
+  assert(expected == obj_args->max_length() || real_target->is_method_handle_intrinsic(), "missed on arg?");
 #endif
 }
 
@@ -1783,7 +1775,7 @@ Values* GraphBuilder::collect_args_for_profiling(Values* args, ciMethod* target,
   if (obj_args == NULL) {
     return NULL;
   }
-  int s = obj_args->size();
+  int s = obj_args->max_length();
   // if called through method handle invoke, some arguments may have been popped
   for (int i = start, j = 0; j < s && i < args->length(); i++) {
     if (args->at(i)->type()->is_object_kind()) {
@@ -1804,24 +1796,13 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   const Bytecodes::Code bc_raw = stream()->cur_bc_raw();
   assert(declared_signature != NULL, "cannot be null");
 
-  // we have to make sure the argument size (incl. the receiver)
-  // is correct for compilation (the call would fail later during
-  // linkage anyway) - was bug (gri 7/28/99)
-  {
-    // Use raw to get rewritten bytecode.
-    const bool is_invokestatic = bc_raw == Bytecodes::_invokestatic;
-    const bool allow_static =
-          is_invokestatic ||
-          bc_raw == Bytecodes::_invokehandle ||
-          bc_raw == Bytecodes::_invokedynamic;
-    if (target->is_loaded()) {
-      if (( target->is_static() && !allow_static) ||
-          (!target->is_static() &&  is_invokestatic)) {
-        BAILOUT("will cause link error");
-      }
-    }
-  }
   ciInstanceKlass* klass = target->holder();
+
+  // Make sure there are no evident problems with linking the instruction.
+  bool is_resolved = true;
+  if (klass->is_loaded() && !target->is_loaded()) {
+    is_resolved = false; // method not found
+  }
 
   // check if CHA possible: if so, change the code to invoke_special
   ciInstanceKlass* calling_klass = method()->holder();
@@ -1866,10 +1847,6 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     apush(arg);
   }
 
-  // NEEDS_CLEANUP
-  // I've added the target->is_loaded() test below but I don't really understand
-  // how klass->is_loaded() can be true and yet target->is_loaded() is false.
-  // this happened while running the JCK invokevirtual tests under doit.  TKR
   ciMethod* cha_monomorphic_target = NULL;
   ciMethod* exact_target = NULL;
   Value better_receiver = NULL;
@@ -1993,12 +1970,11 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   }
 
   // check if we could do inlining
-  if (!PatchALot && Inline && klass->is_loaded() &&
+  if (!PatchALot && Inline && is_resolved &&
+      klass->is_loaded() && target->is_loaded() &&
       (klass->is_initialized() || klass->is_interface() && target->holder()->is_initialized())
-      && target->is_loaded()
       && !patch_for_appendix) {
     // callee is known => check if we have static binding
-    assert(target->is_loaded(), "callee must be known");
     if (code == Bytecodes::_invokestatic  ||
         code == Bytecodes::_invokespecial ||
         code == Bytecodes::_invokevirtual && target->is_final_method() ||
@@ -2055,7 +2031,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   // Currently only supported on Sparc.
   // The UseInlineCaches only controls dispatch to invokevirtuals for
   // loaded classes which we weren't able to statically bind.
-  if (!UseInlineCaches && is_loaded && code == Bytecodes::_invokevirtual
+  if (!UseInlineCaches && is_resolved && is_loaded && code == Bytecodes::_invokevirtual
       && !target->can_be_statically_bound()) {
     // Find a vtable index if one is available
     // For arrays, callee_holder is Object. Resolving the call with
@@ -2068,35 +2044,37 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   }
 #endif
 
-  if (recv != NULL &&
-      (code == Bytecodes::_invokespecial ||
-       !is_loaded || target->is_final())) {
-    // invokespecial always needs a NULL check.  invokevirtual where
-    // the target is final or where it's not known that whether the
-    // target is final requires a NULL check.  Otherwise normal
-    // invokevirtual will perform the null check during the lookup
-    // logic or the unverified entry point.  Profiling of calls
-    // requires that the null check is performed in all cases.
-    null_check(recv);
-  }
+  if (is_resolved) {
+    // invokespecial always needs a NULL check. invokevirtual where the target is
+    // final or where it's not known whether the target is final requires a NULL check.
+    // Otherwise normal invokevirtual will perform the null check during the lookup
+    // logic or the unverified entry point.  Profiling of calls requires that
+    // the null check is performed in all cases.
+    bool do_null_check = (recv != NULL) &&
+        (code == Bytecodes::_invokespecial || !is_loaded || target->is_final() || (is_profiling() && profile_calls()));
 
-  if (is_profiling()) {
-    if (recv != NULL && profile_calls()) {
+    if (do_null_check) {
       null_check(recv);
     }
-    // Note that we'd collect profile data in this method if we wanted it.
-    compilation()->set_would_profile(true);
 
-    if (profile_calls()) {
-      assert(cha_monomorphic_target == NULL || exact_target == NULL, "both can not be set");
-      ciKlass* target_klass = NULL;
-      if (cha_monomorphic_target != NULL) {
-        target_klass = cha_monomorphic_target->holder();
-      } else if (exact_target != NULL) {
-        target_klass = exact_target->holder();
+    if (is_profiling()) {
+      // Note that we'd collect profile data in this method if we wanted it.
+      compilation()->set_would_profile(true);
+
+      if (profile_calls()) {
+        assert(cha_monomorphic_target == NULL || exact_target == NULL, "both can not be set");
+        ciKlass* target_klass = NULL;
+        if (cha_monomorphic_target != NULL) {
+          target_klass = cha_monomorphic_target->holder();
+        } else if (exact_target != NULL) {
+          target_klass = exact_target->holder();
+        }
+        profile_call(target, recv, target_klass, collect_args_for_profiling(args, NULL, false), false);
       }
-      profile_call(target, recv, target_klass, collect_args_for_profiling(args, NULL, false), false);
     }
+  } else {
+    // No need in null check or profiling: linkage error will be thrown at runtime
+    // during resolution.
   }
 
   Invoke* result = new Invoke(code, result_type, recv, args, vtable_index, target, state_before);
@@ -2220,7 +2198,7 @@ void GraphBuilder::new_multi_array(int dimensions) {
   ciKlass* klass = stream()->get_klass(will_link);
   ValueStack* state_before = !klass->is_loaded() || PatchALot ? copy_state_before() : copy_state_exhandling();
 
-  Values* dims = new Values(dimensions, NULL);
+  Values* dims = new Values(dimensions, dimensions, NULL);
   // fill in all dimensions
   int i = dimensions;
   while (i-- > 0) dims->at_put(i, ipop());
@@ -3102,7 +3080,7 @@ void GraphBuilder::setup_osr_entry_block() {
   Value local;
 
   // find all the locals that the interpreter thinks contain live oops
-  const BitMap live_oops = method()->live_local_oops_at_bci(osr_bci);
+  const ResourceBitMap live_oops = method()->live_local_oops_at_bci(osr_bci);
 
   // compute the offset into the locals so that we can treat the buffer
   // as if the locals were still in the interpreter frame
@@ -3487,20 +3465,6 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee) {
   case vmIntrinsics::_putLongVolatile    : append_unsafe_put_obj(callee, T_LONG,    true); return;
   case vmIntrinsics::_putFloatVolatile   : append_unsafe_put_obj(callee, T_FLOAT,   true); return;
   case vmIntrinsics::_putDoubleVolatile  : append_unsafe_put_obj(callee, T_DOUBLE,  true); return;
-  case vmIntrinsics::_getByte_raw        : append_unsafe_get_raw(callee, T_BYTE  ); return;
-  case vmIntrinsics::_getShort_raw       : append_unsafe_get_raw(callee, T_SHORT ); return;
-  case vmIntrinsics::_getChar_raw        : append_unsafe_get_raw(callee, T_CHAR  ); return;
-  case vmIntrinsics::_getInt_raw         : append_unsafe_get_raw(callee, T_INT   ); return;
-  case vmIntrinsics::_getLong_raw        : append_unsafe_get_raw(callee, T_LONG  ); return;
-  case vmIntrinsics::_getFloat_raw       : append_unsafe_get_raw(callee, T_FLOAT ); return;
-  case vmIntrinsics::_getDouble_raw      : append_unsafe_get_raw(callee, T_DOUBLE); return;
-  case vmIntrinsics::_putByte_raw        : append_unsafe_put_raw(callee, T_BYTE  ); return;
-  case vmIntrinsics::_putShort_raw       : append_unsafe_put_raw(callee, T_SHORT ); return;
-  case vmIntrinsics::_putChar_raw        : append_unsafe_put_raw(callee, T_CHAR  ); return;
-  case vmIntrinsics::_putInt_raw         : append_unsafe_put_raw(callee, T_INT   ); return;
-  case vmIntrinsics::_putLong_raw        : append_unsafe_put_raw(callee, T_LONG  ); return;
-  case vmIntrinsics::_putFloat_raw       : append_unsafe_put_raw(callee, T_FLOAT ); return;
-  case vmIntrinsics::_putDouble_raw      : append_unsafe_put_raw(callee, T_DOUBLE);  return;
   case vmIntrinsics::_compareAndSwapLong:
   case vmIntrinsics::_compareAndSwapInt:
   case vmIntrinsics::_compareAndSwapObject: append_unsafe_CAS(callee); return;
@@ -3823,9 +3787,9 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
       int start = 0;
       Values* obj_args = args_list_for_profiling(callee, start, has_receiver);
       if (obj_args != NULL) {
-        int s = obj_args->size();
+        int s = obj_args->max_length();
         // if called through method handle invoke, some arguments may have been popped
-        for (int i = args_base+start, j = 0; j < obj_args->size() && i < state()->stack_size(); ) {
+        for (int i = args_base+start, j = 0; j < obj_args->max_length() && i < state()->stack_size(); ) {
           Value v = state()->stack_at_inc(i);
           if (v->type()->is_object_kind()) {
             obj_args->push(v);
@@ -4142,7 +4106,7 @@ void GraphBuilder::push_scope_for_jsr(BlockBegin* jsr_continuation, int jsr_dest
   // properly clone all blocks in jsr region as well as exception
   // handlers containing rets
   BlockList* new_bci2block = new BlockList(bci2block()->length());
-  new_bci2block->push_all(bci2block());
+  new_bci2block->appendAll(bci2block());
   data->set_bci2block(new_bci2block);
   data->set_scope(scope());
   data->setup_jsr_xhandlers();

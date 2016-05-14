@@ -232,7 +232,7 @@ class CompileBroker: AllStatic {
                                           int                 comp_level,
                                           const methodHandle& hot_method,
                                           int                 hot_count,
-                                          const char*         comment,
+                                          CompileTask::CompileReason compile_reason,
                                           bool                blocking);
   static void wait_for_completion(CompileTask* task);
 #if INCLUDE_JVMCI
@@ -251,7 +251,7 @@ class CompileBroker: AllStatic {
                                   int comp_level,
                                   const methodHandle& hot_method,
                                   int hot_count,
-                                  const char* comment,
+                                  CompileTask::CompileReason compile_reason,
                                   bool blocking,
                                   Thread* thread);
 
@@ -289,14 +289,15 @@ public:
                                  int comp_level,
                                  const methodHandle& hot_method,
                                  int hot_count,
-                                 const char* comment, Thread* thread);
+                                 CompileTask::CompileReason compile_reason,
+                                 Thread* thread);
 
   static nmethod* compile_method(const methodHandle& method,
                                    int osr_bci,
                                    int comp_level,
                                    const methodHandle& hot_method,
                                    int hot_count,
-                                   const char* comment,
+                                   CompileTask::CompileReason compile_reason,
                                    DirectiveSet* directive,
                                    Thread* thread);
 

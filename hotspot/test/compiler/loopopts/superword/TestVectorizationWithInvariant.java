@@ -23,12 +23,13 @@
  */
 
 import jdk.test.lib.*;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * @test
  * @bug 8078497
  * @summary Tests correct alignment of vectors with loop invariant offset.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @run main TestVectorizationWithInvariant
  */

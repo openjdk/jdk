@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public class UsageThresholdIncreasedTest {
 
     protected void runTest() {
         long headerSize = CodeCacheUtils.getHeaderSize(btype);
-        long allocationUnit = CodeCacheUtils.MIN_ALLOCATION - headerSize;
+        long allocationUnit = Math.max(0, CodeCacheUtils.MIN_ALLOCATION - headerSize);
         MemoryPoolMXBean bean = btype.getMemoryPool();
         long initialCount = bean.getUsageThresholdCount();
         long initialSize = bean.getUsage().getUsed();
