@@ -25,6 +25,7 @@
 package java.lang.invoke;
 
 import jdk.internal.misc.Unsafe;
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.nio.ByteBuffer;
@@ -81,7 +82,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
 
         @ForceInline
         static int index(byte[] ba, int index) {
-            return Objects.checkIndex(index, ba.length - ALIGN, null);
+            return Preconditions.checkIndex(index, ba.length - ALIGN, null);
         }
 
         @ForceInline
@@ -307,14 +308,14 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
 
         @ForceInline
         static int index(ByteBuffer bb, int index) {
-            return Objects.checkIndex(index, UNSAFE.getInt(bb, BUFFER_LIMIT) - ALIGN, null);
+            return Preconditions.checkIndex(index, UNSAFE.getInt(bb, BUFFER_LIMIT) - ALIGN, null);
         }
 
         @ForceInline
         static int indexRO(ByteBuffer bb, int index) {
             if (UNSAFE.getBoolean(bb, BYTE_BUFFER_IS_READ_ONLY))
                 throw new ReadOnlyBufferException();
-            return Objects.checkIndex(index, UNSAFE.getInt(bb, BUFFER_LIMIT) - ALIGN, null);
+            return Preconditions.checkIndex(index, UNSAFE.getInt(bb, BUFFER_LIMIT) - ALIGN, null);
         }
 
         @ForceInline

@@ -100,11 +100,13 @@ public class TmtoolTestScenario {
                 theApp = LingeredApp.startApp(vmArgsExtended);
 
                 System.out.println("Starting " + toolName + " against " + theApp.getPid());
-                JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK(toolName);
+                JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");
+                launcher.addToolArg(toolName);
 
                 for (String cmd : toolArgs) {
                     launcher.addToolArg(cmd);
                 }
+                launcher.addToolArg("--pid");
                 launcher.addToolArg(Long.toString(theApp.getPid()));
 
                 ProcessBuilder processBuilder = new ProcessBuilder(launcher.getCommand());
