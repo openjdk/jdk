@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,84 +33,41 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.security.*;
 
 /**
- * MessageDigest implementation class using native Ucrypto API.
- * This class currently supports: MD5, SHA-2 (224, 256, 384, 512)
- * and SHA-3 (224, 256, 384, 512) digests
+ * MessageDigest implementation class for libMD API. This class currently supports
+ * MD5, SHA1, SHA256, SHA384, and SHA512
  *
  * @since 9
  */
-abstract class NativeDigest extends MessageDigestSpi {
+public abstract class NativeDigestMD extends MessageDigestSpi
+        implements Cloneable {
 
-    public static final class MD5 extends NativeDigest {
-        public MD5() {
-            super(UcryptoMech.CRYPTO_MD5, 16);
-        }
-    }
-    public static final class SHA1 extends NativeDigest {
-        public SHA1() {
-            super(UcryptoMech.CRYPTO_SHA1, 20);
-        }
-    }
-    public static final class SHA224 extends NativeDigest {
-        public SHA224() {
-            super(UcryptoMech.CRYPTO_SHA224, 28);
-        }
-    }
-    public static final class SHA256 extends NativeDigest {
-        public SHA256() {
-            super(UcryptoMech.CRYPTO_SHA256, 32);
-        }
-    }
-    public static final class SHA384 extends NativeDigest {
-        public SHA384() {
-            super(UcryptoMech.CRYPTO_SHA384, 48);
-        }
-    }
-    public static final class SHA512 extends NativeDigest {
-        public SHA512() {
-            super(UcryptoMech.CRYPTO_SHA512, 64);
-        }
-    }
-    public static final class SHA3_224 extends NativeDigest {
-        public SHA3_224() {
-            super(UcryptoMech.CRYPTO_SHA3_224, 28);
-        }
-    }
-    public static final class SHA3_256 extends NativeDigest {
-        public SHA3_256() {
-            super(UcryptoMech.CRYPTO_SHA3_256, 32);
-        }
-    }
-    public static final class SHA3_384 extends NativeDigest {
-        public SHA3_384() {
-            super(UcryptoMech.CRYPTO_SHA3_384, 48);
-        }
-    }
-    public static final class SHA3_512 extends NativeDigest {
-        public SHA3_512() {
-            super(UcryptoMech.CRYPTO_SHA3_512, 64);
-        }
-    }
+    private static final int MECH_MD5 = 1;
+    private static final int MECH_SHA1 = 2;
+    private static final int MECH_SHA256 = 3;
+    private static final int MECH_SHA224 = 4;
+    private static final int MECH_SHA384 = 5;
+    private static final int MECH_SHA512 = 6;
 
     private final int digestLen;
-    private final UcryptoMech mech;
+    private final int mech;
 
     // field for ensuring native memory is freed
     private DigestContextRef pCtxt = null;
 
-    private static class DigestContextRef extends PhantomReference<NativeDigest>
+    private static class DigestContextRef extends PhantomReference<NativeDigestMD>
         implements Comparable<DigestContextRef> {
 
-        private static ReferenceQueue<NativeDigest> refQueue =
-            new ReferenceQueue<NativeDigest>();
+        private static ReferenceQueue<NativeDigestMD> refQueue =
+            new ReferenceQueue<NativeDigestMD>();
 
         // Needed to keep these references from being GC'ed until when their
         // referents are GC'ed so we can do post-mortem processing
         private static Set<DigestContextRef> refList =
             new ConcurrentSkipListSet<DigestContextRef>();
+            //            Collections.synchronizedSortedSet(new TreeSet<DigestContextRef>());
 
         private final long id;
-        private final UcryptoMech mech;
+        private final int mech;
 
         private static void drainRefQueueBounded() {
             while (true) {
@@ -120,7 +77,7 @@ abstract class NativeDigest extends MessageDigestSpi {
             }
         }
 
-        DigestContextRef(NativeDigest nc, long id, UcryptoMech mech) {
+        DigestContextRef(NativeDigestMD nc, long id, int mech) {
             super(nc, refQueue);
             this.id = id;
             this.mech = mech;
@@ -141,22 +98,18 @@ abstract class NativeDigest extends MessageDigestSpi {
             refList.remove(this);
             try {
                 if (needFree) {
-                    UcryptoProvider.debug("Resource: free Digest Ctxt " +
-                        this.id);
-                    NativeDigest.nativeFree(mech.value(), id);
-                } else {
-                    UcryptoProvider.debug("Resource: discard Digest Ctxt " +
-                        this.id);
-                }
+                    UcryptoProvider.debug("Resource: free Digest Ctxt " + this.id);
+                    NativeDigestMD.nativeFree(mech, id);
+                } else UcryptoProvider.debug("Resource: stop tracking Digest Ctxt " + this.id);
             } finally {
                 this.clear();
             }
         }
     }
 
-    NativeDigest(UcryptoMech mech, int digestLen) {
-        this.mech = mech;
+    NativeDigestMD(int mech, int digestLen) {
         this.digestLen = digestLen;
+        this.mech = mech;
     }
 
     // see JCA spec
@@ -200,10 +153,10 @@ abstract class NativeDigest extends MessageDigestSpi {
         }
 
         if (pCtxt == null) {
-            pCtxt = new DigestContextRef(this, nativeInit(mech.value()), mech);
+            pCtxt = new DigestContextRef(this, nativeInit(mech), mech);
         }
         try {
-            int status = nativeDigest(mech.value(), pCtxt.id, out, ofs, digestLen);
+            int status = nativeDigest(mech, pCtxt.id, out, ofs, digestLen);
             if (status != 0) {
                 throw new DigestException("Internal error: " + status);
             }
@@ -230,16 +183,21 @@ abstract class NativeDigest extends MessageDigestSpi {
                 + len + ". in.length: " + in.length);
         }
         if (pCtxt == null) {
-            pCtxt = new DigestContextRef(this, nativeInit(mech.value()), mech);
+            pCtxt = new DigestContextRef(this, nativeInit(mech), mech);
         }
-        nativeUpdate(mech.value(), pCtxt.id, in, ofs, len);
+        nativeUpdate(mech, pCtxt.id, in, ofs, len);
     }
 
     /**
      * Clone this digest.
      */
     public synchronized Object clone() throws CloneNotSupportedException {
-        throw new CloneNotSupportedException("Clone is not supported");
+        NativeDigestMD copy = (NativeDigestMD) super.clone();
+        // re-work the fields that cannot be copied over
+        if (pCtxt != null) {
+            copy.pCtxt = new DigestContextRef(this, nativeClone(mech, pCtxt.id), mech);
+        }
+        return copy;
     }
 
     // return pointer to the context
@@ -248,6 +206,41 @@ abstract class NativeDigest extends MessageDigestSpi {
     protected static final native int nativeUpdate(int mech, long pCtxt, byte[] in, int ofs, int inLen);
     // return status code; always 0
     protected static final native int nativeDigest(int mech, long pCtxt, byte[] out, int ofs, int digestLen);
+    // return pointer to the duplicated context
+    protected static final native long nativeClone(int mech, long pCtxt);
     // free the specified context
     private static final native void nativeFree(int mech, long id);
+
+
+    public static final class MD5 extends NativeDigestMD {
+        public MD5() {
+            super(MECH_MD5, 16);
+        }
+    }
+
+    public static final class SHA1 extends NativeDigestMD {
+        public SHA1() {
+            super(MECH_SHA1, 20);
+        }
+    }
+
+    public static final class SHA256 extends NativeDigestMD {
+        public SHA256() {
+            super(MECH_SHA256, 32);
+        }
+    }
+
+
+    public static final class SHA384 extends NativeDigestMD {
+        public SHA384() {
+            super(MECH_SHA384, 48);
+        }
+    }
+
+
+    public static final class SHA512 extends NativeDigestMD {
+        public SHA512() {
+            super(MECH_SHA512, 64);
+        }
+    }
 }
