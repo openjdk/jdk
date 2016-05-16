@@ -31,7 +31,6 @@
 // -- This file was mechanically generated: Do not edit! -- //
 
 import java.nio.*;
-import java.lang.reflect.Method;
 
 
 public class BasicShort
@@ -60,7 +59,6 @@ public class BasicShort
 
     private static void relGet(ShortBuffer b) {
         int n = b.capacity();
-        short v;
         for (int i = 0; i < n; i++)
             ck(b, (long)b.get(), (long)((short)ic(i)));
         b.rewind();
@@ -68,7 +66,6 @@ public class BasicShort
 
     private static void relGet(ShortBuffer b, int start) {
         int n = b.remaining();
-        short v;
         for (int i = start; i < n; i++)
             ck(b, (long)b.get(), (long)((short)ic(i)));
         b.rewind();
@@ -76,7 +73,6 @@ public class BasicShort
 
     private static void absGet(ShortBuffer b) {
         int n = b.capacity();
-        short v;
         for (int i = 0; i < n; i++)
             ck(b, (long)b.get(), (long)((short)ic(i)));
         b.rewind();
@@ -86,8 +82,9 @@ public class BasicShort
         int n = b.capacity();
         short[] a = new short[n + 7];
         b.get(a, 7, n);
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < n; i++) {
             ck(b, (long)a[i + 7], (long)((short)ic(i)));
+        }
     }
 
     private static void relPut(ShortBuffer b) {
@@ -435,10 +432,40 @@ public class BasicShort
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     private static void fail(String problem,
                              ShortBuffer xb, ShortBuffer yb,
                              short x, short y) {
         fail(problem + String.format(": x=%s y=%s", x, y), xb, yb);
+    }
+
+    private static void catchIllegalArgument(Buffer b, Runnable thunk) {
+        tryCatch(b, IllegalArgumentException.class, thunk);
+    }
+
+    private static void catchReadOnlyBuffer(Buffer b, Runnable thunk) {
+        tryCatch(b, ReadOnlyBufferException.class, thunk);
+    }
+
+    private static void catchIndexOutOfBounds(Buffer b, Runnable thunk) {
+        tryCatch(b, IndexOutOfBoundsException.class, thunk);
+    }
+
+    private static void catchIndexOutOfBounds(short[] t, Runnable thunk) {
+        tryCatch(t, IndexOutOfBoundsException.class, thunk);
     }
 
     private static void tryCatch(Buffer b, Class<?> ex, Runnable thunk) {
@@ -452,11 +479,12 @@ public class BasicShort
                 fail(x.getMessage() + " not expected");
             }
         }
-        if (!caught)
+        if (!caught) {
             fail(ex.getName() + " not thrown", b);
+        }
     }
 
-    private static void tryCatch(short [] t, Class<?> ex, Runnable thunk) {
+    private static void tryCatch(short[] t, Class<?> ex, Runnable thunk) {
         tryCatch(ShortBuffer.wrap(t), ex, thunk);
     }
 
@@ -521,8 +549,6 @@ public class BasicShort
 
 
 
-
-
         // Compact
 
         relPut(b);
@@ -537,38 +563,14 @@ public class BasicShort
         b.limit(b.capacity() / 2);
         b.position(b.limit());
 
-        tryCatch(b, BufferUnderflowException.class, new Runnable() {
-                public void run() {
-                    b.get();
-                }});
-
-        tryCatch(b, BufferOverflowException.class, new Runnable() {
-                public void run() {
-                    b.put((short)42);
-                }});
-
-        // The index must be non-negative and lesss than the buffer's limit.
-        tryCatch(b, IndexOutOfBoundsException.class, new Runnable() {
-                public void run() {
-                    b.get(b.limit());
-                }});
-        tryCatch(b, IndexOutOfBoundsException.class, new Runnable() {
-                public void run() {
-                    b.get(-1);
-                }});
-
-        tryCatch(b, IndexOutOfBoundsException.class, new Runnable() {
-                public void run() {
-                    b.put(b.limit(), (short)42);
-                }});
-
-        tryCatch(b, InvalidMarkException.class, new Runnable() {
-                public void run() {
-                    b.position(0);
-                    b.mark();
-                    b.compact();
-                    b.reset();
-                }});
+        tryCatch(b, BufferUnderflowException.class, () -> b.get());
+        tryCatch(b, BufferOverflowException.class, () -> b.put((short)42));
+        // The index must be non-negative and less than the buffer's limit.
+        catchIndexOutOfBounds(b, () -> b.get(b.limit()));
+        catchIndexOutOfBounds(b, () -> b.get(-1));
+        catchIndexOutOfBounds(b, () -> b.put(b.limit(), (short)42));
+        tryCatch(b, InvalidMarkException.class,
+                () -> b.position(0).mark().compact().reset());
 
         try {
             b.position(b.limit() + 1);
@@ -635,13 +637,16 @@ public class BasicShort
 
 
 
-        short v;
         b.flip();
         ck(b, b.get(), 0);
         ck(b, b.get(), (short)-1);
         ck(b, b.get(), 1);
         ck(b, b.get(), Short.MAX_VALUE);
         ck(b, b.get(), Short.MIN_VALUE);
+
+
+
+
 
 
 
@@ -683,14 +688,15 @@ public class BasicShort
 
 
 
-                    )
+                    ) {
                     out.println("[" + i + "] " + x + " != " + y);
+                }
             }
             fail("Identical buffers not equal", b, b2);
         }
-        if (b.compareTo(b2) != 0)
+        if (b.compareTo(b2) != 0) {
             fail("Comparison to identical buffer != 0", b, b2);
-
+        }
         b.limit(b.limit() + 1);
         b.position(b.limit() - 1);
         b.put((short)99);
@@ -714,7 +720,7 @@ public class BasicShort
             if (xb.compareTo(xb) != 0) {
                 fail("compareTo not reflexive", xb, xb, x, x);
             }
-            if (! xb.equals(xb)) {
+            if (!xb.equals(xb)) {
                 fail("equals not reflexive", xb, xb, x, x);
             }
             for (short y : VALUES) {
@@ -765,9 +771,10 @@ public class BasicShort
 
         if (!sb.equals(sb2))
             fail("Sliced slices do not match", sb, sb2);
-        if ((sb.hasArray()) && (sb.arrayOffset() != sb2.arrayOffset()))
+        if ((sb.hasArray()) && (sb.arrayOffset() != sb2.arrayOffset())) {
             fail("Array offsets do not match: "
                  + sb.arrayOffset() + " != " + sb2.arrayOffset(), sb, sb2);
+        }
 
 
 
@@ -808,87 +815,17 @@ public class BasicShort
             fail("Buffer not equal to read-only view", b, rb);
         show(level + 1, rb);
 
-        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
-                public void run() {
-                    relPut(rb);
-                }});
-
-        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
-                public void run() {
-                    absPut(rb);
-                }});
-
-        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
-                public void run() {
-                    bulkPutArray(rb);
-                }});
-
-        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
-                public void run() {
-                    bulkPutBuffer(rb);
-                }});
+        catchReadOnlyBuffer(b, () -> relPut(rb));
+        catchReadOnlyBuffer(b, () -> absPut(rb));
+        catchReadOnlyBuffer(b, () -> bulkPutArray(rb));
+        catchReadOnlyBuffer(b, () -> bulkPutBuffer(rb));
 
         // put(ShortBuffer) should not change source position
         final ShortBuffer src = ShortBuffer.allocate(1);
-        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
-                public void run() {
-                    rb.put(src);
-                 }});
+        catchReadOnlyBuffer(b, () -> rb.put(src));
         ck(src, src.position(), 0);
 
-        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
-                public void run() {
-                    rb.compact();
-                }});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        catchReadOnlyBuffer(b, () -> rb.compact());
 
 
 
@@ -916,21 +853,11 @@ public class BasicShort
 
 
         if (rb.getClass().getName().startsWith("java.nio.Heap")) {
-
-            tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
-                    public void run() {
-                        rb.array();
-                    }});
-
-            tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
-                    public void run() {
-                        rb.arrayOffset();
-                    }});
-
-            if (rb.hasArray())
-                fail("Read-only heap buffer's backing array is accessible",
-                     rb);
-
+            catchReadOnlyBuffer(b, () -> rb.array());
+            catchReadOnlyBuffer(b, () -> rb.arrayOffset());
+            if (rb.hasArray()) {
+                fail("Read-only heap buffer's backing array is accessible", rb);
+            }
         }
 
         // Bulk puts from read-only buffers
@@ -1001,47 +928,6 @@ public class BasicShort
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     public static void test(final short [] ba) {
         int offset = 47;
         int length = 900;
@@ -1052,40 +938,21 @@ public class BasicShort
         ck(b, b.limit(), offset + length);
 
         // The offset must be non-negative and no larger than <array.length>.
-        tryCatch(ba, IndexOutOfBoundsException.class, new Runnable() {
-                public void run() {
-                    ShortBuffer.wrap(ba, -1, ba.length);
-                }});
-        tryCatch(ba, IndexOutOfBoundsException.class, new Runnable() {
-                public void run() {
-                    ShortBuffer.wrap(ba, ba.length + 1, ba.length);
-                }});
-        tryCatch(ba, IndexOutOfBoundsException.class, new Runnable() {
-                public void run() {
-                    ShortBuffer.wrap(ba, 0, -1);
-                }});
-        tryCatch(ba, IndexOutOfBoundsException.class, new Runnable() {
-                public void run() {
-                    ShortBuffer.wrap(ba, 0, ba.length + 1);
-                }});
+        catchIndexOutOfBounds(ba, () -> ShortBuffer.wrap(ba, -1, ba.length));
+        catchIndexOutOfBounds(ba, () -> ShortBuffer.wrap(ba, ba.length + 1, ba.length));
+        catchIndexOutOfBounds(ba, () -> ShortBuffer.wrap(ba, 0, -1));
+        catchIndexOutOfBounds(ba, () -> ShortBuffer.wrap(ba, 0, ba.length + 1));
 
         // A NullPointerException will be thrown if the array is null.
-        tryCatch(ba, NullPointerException.class, new Runnable() {
-                public void run() {
-                    ShortBuffer.wrap((short []) null, 0, 5);
-                }});
-        tryCatch(ba, NullPointerException.class, new Runnable() {
-                public void run() {
-                    ShortBuffer.wrap((short []) null);
-                }});
+        tryCatch(ba, NullPointerException.class,
+                () -> ShortBuffer.wrap((short []) null, 0, 5));
+        tryCatch(ba, NullPointerException.class,
+                () -> ShortBuffer.wrap((short []) null));
     }
 
     private static void testAllocate() {
         // An IllegalArgumentException will be thrown for negative capacities.
-        tryCatch((Buffer) null, IllegalArgumentException.class, new Runnable() {
-                public void run() {
-                    ShortBuffer.allocate(-1);
-                }});
+        catchIllegalArgument((Buffer) null, () -> ShortBuffer.allocate(-1));
         try {
             ShortBuffer.allocate(-1);
         } catch (IllegalArgumentException e) {
@@ -1094,9 +961,6 @@ public class BasicShort
                      + " attempt to allocate negative capacity buffer");
             }
         }
-
-
-
 
 
 
