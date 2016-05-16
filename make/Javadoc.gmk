@@ -1437,7 +1437,6 @@ $(DYNALINKAPI_OPTIONS_FILE):
 	  $(call OptionPair,-windowtitle,$(DYNALINKAPI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
 	  $(call OptionPair,-header,$(DYNALINKAPI_HEADER)$(DRAFT_HEADER)) ; \
 	  $(call OptionPair,-bottom,$(DYNALINKAPI_BOTTOM)$(DRAFT_BOTTOM)) ; \
-	  $(call OptionTrip,-group,$(DYNALINKAPI_GROUPNAME),$(DYNALINKAPI_REGEXP)); \
 	  $(call OptionTrip,-linkoffline,$(DYNALINKAPI2COREAPI),$(COREAPI_DOCSDIR)/); \
 	) >> $@
 
