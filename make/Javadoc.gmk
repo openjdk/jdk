@@ -1634,9 +1634,7 @@ JLINK_PLUGIN_DOCTITLE := JLink Plugin API - EXPERIMENTAL
 JLINK_PLUGIN_WINDOWTITLE := JLink Plugin API - EXPERIMENTAL
 JLINK_PLUGIN_HEADER := <strong>JLink Plugin API - EXPERIMENTAL</strong>
 JLINK_PLUGIN_BOTTOM := $(call CommonBottom,$(JLINK_PLUGIN_FIRST_COPYRIGHT_YEAR))
-JLINK_PLUGIN_PKGS = jdk.tools.jlink \
-    jdk.tools.jlink.builder \
-    jdk.tools.jlink.plugin
+JLINK_PLUGIN_PKGS = jdk.tools.jlink.plugin
 
 JLINK_PLUGIN_INDEX_HTML = $(JLINK_PLUGIN_DOCDIR)/index.html
 JLINK_PLUGIN_OPTIONS_FILE = $(DOCSTMPDIR)/jlinkplugins.options
