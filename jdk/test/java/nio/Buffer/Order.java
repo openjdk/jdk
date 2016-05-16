@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,24 +39,24 @@ public class Order {
 
     static void ck(ByteOrder ord, ByteOrder expected) {
         if (ord != expected)
-            throw new RuntimeException("Got " + ord
-                                       + ", expected " + expected);
+            throw new RuntimeException("Got " + ord + ", expected " + expected);
     }
 
-    static void ckViews(ByteBuffer bb, ByteOrder ord) {
+    private static void ckViews(ByteBuffer bb) {
         ck(bb.asCharBuffer().order(), bb.order());
+        ck(bb.asShortBuffer().order(), bb.order());
         ck(bb.asIntBuffer().order(), bb.order());
         ck(bb.asLongBuffer().order(), bb.order());
         ck(bb.asFloatBuffer().order(), bb.order());
         ck(bb.asDoubleBuffer().order(), bb.order());
     }
 
-    static void ckByteBuffer(ByteBuffer bb) {
-        ckViews(bb, bb.order());
+    private static void ckByteBuffer(ByteBuffer bb) {
+        ckViews(bb);
         bb.order(be);
-        ckViews(bb, be);
+        ckViews(bb);
         bb.order(le);
-        ckViews(bb, le);
+        ckViews(bb);
 
         if (bb.hasArray()) {
             byte[] array = bb.array();
@@ -74,6 +74,8 @@ public class Order {
         ck(ByteBuffer.allocateDirect(LENGTH).order(), be);
         ck(ByteBuffer.allocate(LENGTH).order(be).order(), be);
         ck(ByteBuffer.allocate(LENGTH).order(le).order(), le);
+        ck(ByteBuffer.allocateDirect(LENGTH).order(be).order(), be);
+        ck(ByteBuffer.allocateDirect(LENGTH).order(le).order(), le);
 
         ckByteBuffer(ByteBuffer.allocate(LENGTH));
         ckByteBuffer(ByteBuffer.allocateDirect(LENGTH));
@@ -85,5 +87,4 @@ public class Order {
         OrderFloat.ckFloatBuffer();
         OrderDouble.ckDoubleBuffer();
     }
-
 }
