@@ -52,8 +52,5 @@ public class OrderFloat extends Order {
         buf = FloatBuffer.allocate(LENGTH);
         ck(buf.order(), nord);
         ckFloatBuffer(buf, nord);
-
-        ckFloatBuffer(ByteBuffer.allocate(LENGTH).asFloatBuffer(), be);
-        ckFloatBuffer(ByteBuffer.allocateDirect(LENGTH).asFloatBuffer(), be);
     }
 }
