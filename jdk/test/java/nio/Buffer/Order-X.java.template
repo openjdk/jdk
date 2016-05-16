@@ -52,8 +52,5 @@ public class Order$Type$ extends Order {
         buf = $Type$Buffer.allocate(LENGTH);
         ck(buf.order(), nord);
         ck$Type$Buffer(buf, nord);
-
-        ck$Type$Buffer(ByteBuffer.allocate(LENGTH).as$Type$Buffer(), be);
-        ck$Type$Buffer(ByteBuffer.allocateDirect(LENGTH).as$Type$Buffer(), be);
     }
 }
