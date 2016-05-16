@@ -52,8 +52,5 @@ public class OrderLong extends Order {
         buf = LongBuffer.allocate(LENGTH);
         ck(buf.order(), nord);
         ckLongBuffer(buf, nord);
-
-        ckLongBuffer(ByteBuffer.allocate(LENGTH).asLongBuffer(), be);
-        ckLongBuffer(ByteBuffer.allocateDirect(LENGTH).asLongBuffer(), be);
     }
 }
