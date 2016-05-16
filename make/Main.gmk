@@ -433,25 +433,28 @@ ALL_TARGETS += prepare-test-image build-test-hotspot-jtreg-native \
 
 # Run tests specified by $(TEST), or the default test set.
 test:
-	$(call RunTests, $(TEST))
+	$(call RunTests, $(TEST), $(JDK_IMAGE_DIR))
 
 test-hotspot-jtreg:
-	$(call RunTests, "hotspot_all")
+	$(call RunTests, "hotspot_all", $(JDK_IMAGE_DIR))
 
 test-hotspot-jtreg-native:
-	$(call RunTests, "hotspot_native_sanity")
+	$(call RunTests, "hotspot_native_sanity", $(JDK_IMAGE_DIR))
 
 test-hotspot-internal:
-	$(call RunTests, "hotspot_internal")
+	$(call RunTests, "hotspot_internal", $(JDK_OUTPUTDIR))
+
+test-hotspot-gtest:
+	$(call RunTests, "hotspot_gtest", $(JDK_OUTPUTDIR))
 
 test-jdk-jtreg-native:
-	$(call RunTests, "jdk_native_sanity")
+	$(call RunTests, "jdk_native_sanity", $(JDK_IMAGE_DIR))
 
 test-make:
 	($(CD) $(SRC_ROOT)/test/make && $(MAKE) $(MAKE_ARGS) -f TestMake.gmk $(TEST_TARGET))
 
 ALL_TARGETS += test test-hotspot-jtreg test-hotspot-jtreg-native \
-    test-hotspot-internal test-jdk-jtreg-native test-make
+    test-hotspot-internal test-hotspot-gtest test-jdk-jtreg-native test-make
 
 ################################################################################
 # Bundles
@@ -689,6 +692,8 @@ else
   test-hotspot-internal: exploded-image
 
   test-hotspot-jtreg: jimages test-image
+
+  test-hotspot-gtest: exploded-image test-image-hotspot-gtest
 
   install: product-images
 
