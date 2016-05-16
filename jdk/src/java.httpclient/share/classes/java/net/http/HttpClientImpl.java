@@ -35,6 +35,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -155,6 +156,15 @@ class HttpClientImpl extends HttpClient implements BufferHandler {
         selmgr.register(exchange);
     }
 
+    /**
+     * Only used from RawChannel to disconnect the channel from
+     * the selector
+     */
+    void cancelRegistration(SocketChannel s) {
+        selmgr.cancel(s);
+    }
+
+
     Http2ClientImpl client2() {
         return client2;
     }
@@ -217,6 +227,13 @@ class HttpClientImpl extends HttpClient implements BufferHandler {
 
         synchronized void register(AsyncEvent e) throws IOException {
             registrations.add(e);
+            selector.wakeup();
+        }
+
+        synchronized void cancel(SocketChannel e) {
+            SelectionKey key = e.keyFor(selector);
+            if (key != null)
+                key.cancel();
             selector.wakeup();
         }
 
