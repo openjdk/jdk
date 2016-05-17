@@ -107,7 +107,7 @@ public class ToolReloadTest extends ReplToolTesting {
                         "-: /drop A\n"),
                 a -> assertCommandCheckOutput(a, "/vars", assertVariables()),
                 a -> assertCommandCheckOutput(a, "/methods", assertMethods()),
-                a -> assertCommandCheckOutput(a, "/classes", assertClasses()),
+                a -> assertCommandCheckOutput(a, "/types", assertClasses()),
                 a -> assertCommandCheckOutput(a, "/imports", assertImports())
         );
     }
@@ -124,7 +124,7 @@ public class ToolReloadTest extends ReplToolTesting {
                         "|  Restarting and restoring state."),
                 a -> assertCommandCheckOutput(a, "/vars", assertVariables()),
                 a -> assertCommandCheckOutput(a, "/methods", assertMethods()),
-                a -> assertCommandCheckOutput(a, "/classes", assertClasses()),
+                a -> assertCommandCheckOutput(a, "/types", assertClasses()),
                 a -> assertCommandCheckOutput(a, "/imports", assertImports())
         );
     }

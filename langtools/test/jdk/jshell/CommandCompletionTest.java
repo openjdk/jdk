@@ -53,7 +53,7 @@ public class CommandCompletionTest extends ReplToolTesting {
 
     public void testCommand() {
         assertCompletion("/deb|", false);
-        assertCompletion("/c|", false, "/classes ", "/classpath ");
+        assertCompletion("/re|", false, "/reload ", "/reset ");
         assertCompletion("/h|", false, "/help ", "/history ");
     }
 
