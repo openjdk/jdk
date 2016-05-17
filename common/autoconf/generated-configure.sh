@@ -4900,6 +4900,8 @@ TOOLCHAIN_MINIMUM_VERSION_xlc=""
 
 # Prepare the system so that TOOLCHAIN_CHECK_COMPILER_VERSION can be called.
 # Must have CC_VERSION_NUMBER and CXX_VERSION_NUMBER.
+# $1 - optional variable prefix for compiler and version variables (BUILD_)
+# $2 - optional variable prefix for comparable variable (OPENJDK_BUILD_)
 
 
 # Check if the configured compiler (C and C++) is of a specific version or
@@ -4909,6 +4911,7 @@ TOOLCHAIN_MINIMUM_VERSION_xlc=""
 #   VERSION:   The version string to check against the found version
 #   IF_AT_LEAST:   block to run if the compiler is at least this version (>=)
 #   IF_OLDER_THAN:   block to run if the compiler is older than this version (<)
+#   PREFIX:   Optional variable prefix for compiler to compare version for (OPENJDK_BUILD_)
 
 
 
@@ -5073,7 +5076,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1462806878
+DATE_WHEN_GENERATED=1462970869
 
 ###############################################################################
 #
@@ -34795,19 +34798,19 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
   if test "x$CC_VERSION_NUMBER" != "x$CXX_VERSION_NUMBER"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C and C++ compiler has different version numbers, $CC_VERSION_NUMBER vs $CXX_VERSION_NUMBER." >&5
-$as_echo "$as_me: WARNING: C and C++ compiler has different version numbers, $CC_VERSION_NUMBER vs $CXX_VERSION_NUMBER." >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C and C++ compiler have different version numbers, $CC_VERSION_NUMBER vs $CXX_VERSION_NUMBER." >&5
+$as_echo "$as_me: WARNING: C and C++ compiler have different version numbers, $CC_VERSION_NUMBER vs $CXX_VERSION_NUMBER." >&2;}
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: This typically indicates a broken setup, and is not supported" >&5
 $as_echo "$as_me: WARNING: This typically indicates a broken setup, and is not supported" >&2;}
   fi
 
   # We only check CC_VERSION_NUMBER since we assume CXX_VERSION_NUMBER is equal.
-  if  [[ "$CC_VERSION_NUMBER" =~ (.*\.){3} ]] ; then
+  if  [[ "[$]CC_VERSION_NUMBER" =~ (.*\.){3} ]] ; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C compiler version number has more than three parts (X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&5
 $as_echo "$as_me: WARNING: C compiler version number has more than three parts (X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
   fi
 
-  if  [[  "$CC_VERSION_NUMBER" =~ [0-9]{6} ]] ; then
+  if  [[  "[$]CC_VERSION_NUMBER" =~ [0-9]{6} ]] ; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C compiler version number has a part larger than 99999: $CC_VERSION_NUMBER. Comparisons might be wrong." >&5
 $as_echo "$as_me: WARNING: C compiler version number has a part larger than 99999: $CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
   fi
@@ -34816,6 +34819,13 @@ $as_echo "$as_me: WARNING: C compiler version number has a part larger than 9999
 
 
   if test "x$TOOLCHAIN_MINIMUM_VERSION" != x; then
+
+
+
+
+
+
+
 
 
 
@@ -34885,6 +34895,8 @@ $as_echo "$as_me: WARNING: You are using $TOOLCHAIN_TYPE older than $TOOLCHAIN_M
 
 
   fi
+
+
 
 
 
@@ -46475,6 +46487,268 @@ $as_echo "$as_me: Rewriting BUILD_STRIP to \"$new_complete\"" >&6;}
     BUILD_LDCXX="$BUILD_CXX"
 
     PATH="$OLDPATH"
+
+
+  COMPILER=$BUILD_CC
+  COMPILER_NAME=BuildC
+
+  if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+    # cc -V output typically looks like
+    #     cc: Sun C 5.12 Linux_i386 2011/11/16
+    COMPILER_VERSION_OUTPUT=`$COMPILER -V 2>&1`
+    # Check that this is likely to be the Solaris Studio cc.
+    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.*: Sun $COMPILER_NAME" > /dev/null
+    if test $? -ne 0; then
+      ALT_VERSION_OUTPUT=`$COMPILER --version 2>&1`
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&5
+$as_echo "$as_me: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The result from running with -V was: \"$COMPILER_VERSION_OUTPUT\"" >&5
+$as_echo "$as_me: The result from running with -V was: \"$COMPILER_VERSION_OUTPUT\"" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The result from running with --version was: \"$ALT_VERSION_OUTPUT\"" >&5
+$as_echo "$as_me: The result from running with --version was: \"$ALT_VERSION_OUTPUT\"" >&6;}
+      as_fn_error $? "A $TOOLCHAIN_TYPE compiler is required. Try setting --with-tools-dir." "$LINENO" 5
+    fi
+    # Remove usage instructions (if present), and
+    # collapse compiler output into a single line
+    COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT | \
+        $SED -e 's/ *[Uu]sage:.*//'`
+    COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
+        $SED -e "s/^.*[ ,\t]$COMPILER_NAME[ ,\t]\([1-9]\.[0-9][0-9]*\).*/\1/"`
+  elif test  "x$TOOLCHAIN_TYPE" = xxlc; then
+    # xlc -qversion output typically looks like
+    #     IBM XL C/C++ for AIX, V11.1 (5724-X13)
+    #     Version: 11.01.0000.0015
+    COMPILER_VERSION_OUTPUT=`$COMPILER -qversion 2>&1`
+    # Check that this is likely to be the IBM XL C compiler.
+    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "IBM XL C" > /dev/null
+    if test $? -ne 0; then
+      ALT_VERSION_OUTPUT=`$COMPILER --version 2>&1`
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&5
+$as_echo "$as_me: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The result from running with -qversion was: \"$COMPILER_VERSION_OUTPUT\"" >&5
+$as_echo "$as_me: The result from running with -qversion was: \"$COMPILER_VERSION_OUTPUT\"" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The result from running with --version was: \"$ALT_VERSION_OUTPUT\"" >&5
+$as_echo "$as_me: The result from running with --version was: \"$ALT_VERSION_OUTPUT\"" >&6;}
+      as_fn_error $? "A $TOOLCHAIN_TYPE compiler is required. Try setting --with-tools-dir." "$LINENO" 5
+    fi
+    # Collapse compiler output into a single line
+    COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT`
+    COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
+        $SED -e 's/^.*, V\([1-9][0-9.]*\).*$/\1/'`
+  elif test  "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    # There is no specific version flag, but all output starts with a version string.
+    # First line typically looks something like:
+    # Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.40219.01 for 80x86
+    COMPILER_VERSION_OUTPUT=`$COMPILER 2>&1 | $HEAD -n 1 | $TR -d '\r'`
+    # Check that this is likely to be Microsoft CL.EXE.
+    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "Microsoft.*Compiler" > /dev/null
+    if test $? -ne 0; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&5
+$as_echo "$as_me: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The result from running it was: \"$COMPILER_VERSION_OUTPUT\"" >&5
+$as_echo "$as_me: The result from running it was: \"$COMPILER_VERSION_OUTPUT\"" >&6;}
+      as_fn_error $? "A $TOOLCHAIN_TYPE compiler is required. Try setting --with-tools-dir." "$LINENO" 5
+    fi
+    # Collapse compiler output into a single line
+    COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT`
+    COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
+        $SED -e 's/^.*ersion.\([1-9][0-9.]*\) .*$/\1/'`
+  elif test  "x$TOOLCHAIN_TYPE" = xgcc; then
+    # gcc --version output typically looks like
+    #     gcc (Ubuntu/Linaro 4.8.1-10ubuntu9) 4.8.1
+    #     Copyright (C) 2013 Free Software Foundation, Inc.
+    #     This is free software; see the source for copying conditions.  There is NO
+    #     warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    COMPILER_VERSION_OUTPUT=`$COMPILER --version 2>&1`
+    # Check that this is likely to be GCC.
+    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "Free Software Foundation" > /dev/null
+    if test $? -ne 0; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&5
+$as_echo "$as_me: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The result from running with --version was: \"$COMPILER_VERSION\"" >&5
+$as_echo "$as_me: The result from running with --version was: \"$COMPILER_VERSION\"" >&6;}
+      as_fn_error $? "A $TOOLCHAIN_TYPE compiler is required. Try setting --with-tools-dir." "$LINENO" 5
+    fi
+    # Remove Copyright and legalese from version string, and
+    # collapse into a single line
+    COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT | \
+        $SED -e 's/ *Copyright .*//'`
+    COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
+        $SED -e 's/^.* \([1-9]\.[0-9.]*\)[^0-9.].*$/\1/'`
+  elif test  "x$TOOLCHAIN_TYPE" = xclang; then
+    # clang --version output typically looks like
+    #    Apple LLVM version 5.0 (clang-500.2.79) (based on LLVM 3.3svn)
+    #    clang version 3.3 (tags/RELEASE_33/final)
+    # or
+    #    Debian clang version 3.2-7ubuntu1 (tags/RELEASE_32/final) (based on LLVM 3.2)
+    #    Target: x86_64-pc-linux-gnu
+    #    Thread model: posix
+    COMPILER_VERSION_OUTPUT=`$COMPILER --version 2>&1`
+    # Check that this is likely to be clang
+    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "clang" > /dev/null
+    if test $? -ne 0; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&5
+$as_echo "$as_me: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The result from running with --version was: \"$COMPILER_VERSION_OUTPUT\"" >&5
+$as_echo "$as_me: The result from running with --version was: \"$COMPILER_VERSION_OUTPUT\"" >&6;}
+      as_fn_error $? "A $TOOLCHAIN_TYPE compiler is required. Try setting --with-tools-dir." "$LINENO" 5
+    fi
+    # Collapse compiler output into a single line
+    COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT`
+    COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
+        $SED -e 's/^.* version \([1-9][0-9.]*\).*$/\1/'`
+  else
+      as_fn_error $? "Unknown toolchain type $TOOLCHAIN_TYPE." "$LINENO" 5
+  fi
+  # This sets CC_VERSION_NUMBER or CXX_VERSION_NUMBER. (This comment is a grep marker)
+  BUILD_CC_VERSION_NUMBER="$COMPILER_VERSION_NUMBER"
+  # This sets CC_VERSION_STRING or CXX_VERSION_STRING. (This comment is a grep marker)
+  BUILD_CC_VERSION_STRING="$COMPILER_VERSION_STRING"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Using $TOOLCHAIN_TYPE $COMPILER_NAME compiler version $COMPILER_VERSION_NUMBER [$COMPILER_VERSION_STRING]" >&5
+$as_echo "$as_me: Using $TOOLCHAIN_TYPE $COMPILER_NAME compiler version $COMPILER_VERSION_NUMBER [$COMPILER_VERSION_STRING]" >&6;}
+
+
+  COMPILER=$BUILD_CXX
+  COMPILER_NAME=BuildC++
+
+  if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+    # cc -V output typically looks like
+    #     cc: Sun C 5.12 Linux_i386 2011/11/16
+    COMPILER_VERSION_OUTPUT=`$COMPILER -V 2>&1`
+    # Check that this is likely to be the Solaris Studio cc.
+    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.*: Sun $COMPILER_NAME" > /dev/null
+    if test $? -ne 0; then
+      ALT_VERSION_OUTPUT=`$COMPILER --version 2>&1`
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&5
+$as_echo "$as_me: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The result from running with -V was: \"$COMPILER_VERSION_OUTPUT\"" >&5
+$as_echo "$as_me: The result from running with -V was: \"$COMPILER_VERSION_OUTPUT\"" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The result from running with --version was: \"$ALT_VERSION_OUTPUT\"" >&5
+$as_echo "$as_me: The result from running with --version was: \"$ALT_VERSION_OUTPUT\"" >&6;}
+      as_fn_error $? "A $TOOLCHAIN_TYPE compiler is required. Try setting --with-tools-dir." "$LINENO" 5
+    fi
+    # Remove usage instructions (if present), and
+    # collapse compiler output into a single line
+    COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT | \
+        $SED -e 's/ *[Uu]sage:.*//'`
+    COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
+        $SED -e "s/^.*[ ,\t]$COMPILER_NAME[ ,\t]\([1-9]\.[0-9][0-9]*\).*/\1/"`
+  elif test  "x$TOOLCHAIN_TYPE" = xxlc; then
+    # xlc -qversion output typically looks like
+    #     IBM XL C/C++ for AIX, V11.1 (5724-X13)
+    #     Version: 11.01.0000.0015
+    COMPILER_VERSION_OUTPUT=`$COMPILER -qversion 2>&1`
+    # Check that this is likely to be the IBM XL C compiler.
+    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "IBM XL C" > /dev/null
+    if test $? -ne 0; then
+      ALT_VERSION_OUTPUT=`$COMPILER --version 2>&1`
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&5
+$as_echo "$as_me: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The result from running with -qversion was: \"$COMPILER_VERSION_OUTPUT\"" >&5
+$as_echo "$as_me: The result from running with -qversion was: \"$COMPILER_VERSION_OUTPUT\"" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The result from running with --version was: \"$ALT_VERSION_OUTPUT\"" >&5
+$as_echo "$as_me: The result from running with --version was: \"$ALT_VERSION_OUTPUT\"" >&6;}
+      as_fn_error $? "A $TOOLCHAIN_TYPE compiler is required. Try setting --with-tools-dir." "$LINENO" 5
+    fi
+    # Collapse compiler output into a single line
+    COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT`
+    COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
+        $SED -e 's/^.*, V\([1-9][0-9.]*\).*$/\1/'`
+  elif test  "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    # There is no specific version flag, but all output starts with a version string.
+    # First line typically looks something like:
+    # Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.40219.01 for 80x86
+    COMPILER_VERSION_OUTPUT=`$COMPILER 2>&1 | $HEAD -n 1 | $TR -d '\r'`
+    # Check that this is likely to be Microsoft CL.EXE.
+    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "Microsoft.*Compiler" > /dev/null
+    if test $? -ne 0; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&5
+$as_echo "$as_me: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The result from running it was: \"$COMPILER_VERSION_OUTPUT\"" >&5
+$as_echo "$as_me: The result from running it was: \"$COMPILER_VERSION_OUTPUT\"" >&6;}
+      as_fn_error $? "A $TOOLCHAIN_TYPE compiler is required. Try setting --with-tools-dir." "$LINENO" 5
+    fi
+    # Collapse compiler output into a single line
+    COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT`
+    COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
+        $SED -e 's/^.*ersion.\([1-9][0-9.]*\) .*$/\1/'`
+  elif test  "x$TOOLCHAIN_TYPE" = xgcc; then
+    # gcc --version output typically looks like
+    #     gcc (Ubuntu/Linaro 4.8.1-10ubuntu9) 4.8.1
+    #     Copyright (C) 2013 Free Software Foundation, Inc.
+    #     This is free software; see the source for copying conditions.  There is NO
+    #     warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    COMPILER_VERSION_OUTPUT=`$COMPILER --version 2>&1`
+    # Check that this is likely to be GCC.
+    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "Free Software Foundation" > /dev/null
+    if test $? -ne 0; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&5
+$as_echo "$as_me: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The result from running with --version was: \"$COMPILER_VERSION\"" >&5
+$as_echo "$as_me: The result from running with --version was: \"$COMPILER_VERSION\"" >&6;}
+      as_fn_error $? "A $TOOLCHAIN_TYPE compiler is required. Try setting --with-tools-dir." "$LINENO" 5
+    fi
+    # Remove Copyright and legalese from version string, and
+    # collapse into a single line
+    COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT | \
+        $SED -e 's/ *Copyright .*//'`
+    COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
+        $SED -e 's/^.* \([1-9]\.[0-9.]*\)[^0-9.].*$/\1/'`
+  elif test  "x$TOOLCHAIN_TYPE" = xclang; then
+    # clang --version output typically looks like
+    #    Apple LLVM version 5.0 (clang-500.2.79) (based on LLVM 3.3svn)
+    #    clang version 3.3 (tags/RELEASE_33/final)
+    # or
+    #    Debian clang version 3.2-7ubuntu1 (tags/RELEASE_32/final) (based on LLVM 3.2)
+    #    Target: x86_64-pc-linux-gnu
+    #    Thread model: posix
+    COMPILER_VERSION_OUTPUT=`$COMPILER --version 2>&1`
+    # Check that this is likely to be clang
+    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "clang" > /dev/null
+    if test $? -ne 0; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&5
+$as_echo "$as_me: The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler." >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The result from running with --version was: \"$COMPILER_VERSION_OUTPUT\"" >&5
+$as_echo "$as_me: The result from running with --version was: \"$COMPILER_VERSION_OUTPUT\"" >&6;}
+      as_fn_error $? "A $TOOLCHAIN_TYPE compiler is required. Try setting --with-tools-dir." "$LINENO" 5
+    fi
+    # Collapse compiler output into a single line
+    COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT`
+    COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
+        $SED -e 's/^.* version \([1-9][0-9.]*\).*$/\1/'`
+  else
+      as_fn_error $? "Unknown toolchain type $TOOLCHAIN_TYPE." "$LINENO" 5
+  fi
+  # This sets CC_VERSION_NUMBER or CXX_VERSION_NUMBER. (This comment is a grep marker)
+  BUILD_CXX_VERSION_NUMBER="$COMPILER_VERSION_NUMBER"
+  # This sets CC_VERSION_STRING or CXX_VERSION_STRING. (This comment is a grep marker)
+  BUILD_CXX_VERSION_STRING="$COMPILER_VERSION_STRING"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Using $TOOLCHAIN_TYPE $COMPILER_NAME compiler version $COMPILER_VERSION_NUMBER [$COMPILER_VERSION_STRING]" >&5
+$as_echo "$as_me: Using $TOOLCHAIN_TYPE $COMPILER_NAME compiler version $COMPILER_VERSION_NUMBER [$COMPILER_VERSION_STRING]" >&6;}
+
+
+  if test "x$BUILD_CC_VERSION_NUMBER" != "x$BUILD_CXX_VERSION_NUMBER"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C and C++ compiler have different version numbers, $BUILD_CC_VERSION_NUMBER vs $BUILD_CXX_VERSION_NUMBER." >&5
+$as_echo "$as_me: WARNING: C and C++ compiler have different version numbers, $BUILD_CC_VERSION_NUMBER vs $BUILD_CXX_VERSION_NUMBER." >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: This typically indicates a broken setup, and is not supported" >&5
+$as_echo "$as_me: WARNING: This typically indicates a broken setup, and is not supported" >&2;}
+  fi
+
+  # We only check CC_VERSION_NUMBER since we assume CXX_VERSION_NUMBER is equal.
+  if  [[ "[$]BUILD_CC_VERSION_NUMBER" =~ (.*\.){3} ]] ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C compiler version number has more than three parts (X.Y.Z): $BUILD_CC_VERSION_NUMBER. Comparisons might be wrong." >&5
+$as_echo "$as_me: WARNING: C compiler version number has more than three parts (X.Y.Z): $BUILD_CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
+  fi
+
+  if  [[  "[$]BUILD_CC_VERSION_NUMBER" =~ [0-9]{6} ]] ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C compiler version number has a part larger than 99999: $BUILD_CC_VERSION_NUMBER. Comparisons might be wrong." >&5
+$as_echo "$as_me: WARNING: C compiler version number has a part larger than 99999: $BUILD_CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
+  fi
+
+  OPENJDK_BUILD_COMPARABLE_ACTUAL_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$BUILD_CC_VERSION_NUMBER"`
+
   else
     # If we are not cross compiling, use the normal target compilers for
     # building the build platform executables.
@@ -49135,6 +49409,18 @@ $as_echo "$supports" >&6; }
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
     # Execute function body
 
   # Need to assign to a variable since m4 is blocked from modifying parts in [].
@@ -49711,6 +49997,8 @@ $as_echo "$supports" >&6; }
 
 
 
+
+
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     JVM_CFLAGS="$JVM_CFLAGS -D_GNU_SOURCE"
 
@@ -49948,6 +50236,18 @@ $as_echo "$supports" >&6; }
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
     # Execute function body
 
   # Need to assign to a variable since m4 is blocked from modifying parts in [].
@@ -49975,6 +50275,8 @@ $as_echo "$supports" >&6; }
     :
 
   fi
+
+
 
 
 
@@ -50453,6 +50755,18 @@ $as_echo "$supports" >&6; }
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
     # Execute function body
 
   # Need to assign to a variable since m4 is blocked from modifying parts in [].
@@ -50469,13 +50783,15 @@ $as_echo "$supports" >&6; }
   # Version comparison method inspired by http://stackoverflow.com/a/24067243
   COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$REFERENCE_VERSION"`
 
-  if test $COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
+  if test $OPENJDK_BUILD_COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
     :
 
   else
     :
 
   fi
+
+
 
 
 
@@ -50725,6 +51041,18 @@ $as_echo "$supports" >&6; }
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
     # Execute function body
 
   # Need to assign to a variable since m4 is blocked from modifying parts in [].
@@ -50741,7 +51069,7 @@ $as_echo "$supports" >&6; }
   # Version comparison method inspired by http://stackoverflow.com/a/24067243
   COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$REFERENCE_VERSION"`
 
-  if test $COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
+  if test $OPENJDK_BUILD_COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
     :
 
             # These flags either do not work or give spurious warnings prior to gcc 4.8.
@@ -50752,6 +51080,8 @@ $as_echo "$supports" >&6; }
     :
 
   fi
+
+
 
 
 
@@ -51918,9 +52248,15 @@ $as_echo "$supports" >&6; }
         DISABLE_WARNING_PREFIX=
       fi
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
-      # Repeate the check for the BUILD_CC
+      # Repeate the check for the BUILD_CC and BUILD_CXX. Need to also reset
+      # CFLAGS since any target specific flags will likely not work with the
+      # build compiler
       CC_OLD="$CC"
+      CXX_OLD="$CXX"
       CC="$BUILD_CC"
+      CXX="$BUILD_CXX"
+      CFLAGS_OLD="$CFLAGS"
+      CFLAGS=""
 
 
 
@@ -52198,6 +52534,8 @@ $as_echo "$supports" >&6; }
         BUILD_CC_DISABLE_WARNING_PREFIX=
       fi
       CC="$CC_OLD"
+      CXX="$CXX_OLD"
+      CFLAGS="$CFLAGS_OLD"
       ;;
     clang)
       DISABLE_WARNING_PREFIX="-Wno-"

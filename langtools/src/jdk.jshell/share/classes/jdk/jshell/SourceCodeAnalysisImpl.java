@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,13 @@ import com.sun.source.tree.Scope;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.Tree.Kind;
 import com.sun.source.tree.VariableTree;
+import com.sun.source.util.JavacTask;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
+import com.sun.source.util.Trees;
 import com.sun.tools.javac.api.JavacScope;
+import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
@@ -119,8 +122,12 @@ import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Types;
+import javax.tools.JavaCompiler;
 import javax.tools.JavaFileManager.Location;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
+import javax.tools.ToolProvider;
 
 import static jdk.jshell.Util.REPL_DOESNOTMATTER_CLASS_NAME;
 
@@ -932,6 +939,12 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         }
     }
 
+    //tweaked by tests to disable reading parameter names from classfiles so that tests using
+    //JDK's classes are stable for both release and fastdebug builds:
+    private final String[] keepParameterNames = new String[] {
+        "-XDsave-parameter-names=true"
+    };
+
     private String documentationImpl(String code, int cursor) {
         code = code.substring(0, cursor);
         if (code.trim().isEmpty()) { //TODO: comment handling
@@ -942,7 +955,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             return null;
 
         OuterWrap codeWrap = proc.outerMap.wrapInTrialClass(Wrap.methodWrap(code));
-        AnalyzeTask at = proc.taskFactory.new AnalyzeTask(codeWrap);
+        AnalyzeTask at = proc.taskFactory.new AnalyzeTask(codeWrap, keepParameterNames);
         SourcePositions sp = at.trees().getSourcePositions();
         CompilationUnitTree topLevel = at.firstCuTree();
         TreePath tp = pathFor(topLevel, sp, codeWrap.snippetIndexToWrapIndex(cursor));
@@ -983,9 +996,11 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                         .collect(Collectors.toList());
         }
 
-        return Util.stream(candidates)
-                .map(method -> Util.expunge(element2String(method.fst)))
-                .collect(joining("\n"));
+        try (SourceCache sourceCache = new SourceCache(at)) {
+            return Util.stream(candidates)
+                    .map(method -> Util.expunge(element2String(sourceCache, method.fst)))
+                    .collect(joining("\n"));
+        }
     }
 
     private boolean isEmptyArgumentsContext(List<? extends ExpressionTree> arguments) {
@@ -996,19 +1011,173 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         return false;
     }
 
-    private String element2String(Element el) {
+    private String element2String(SourceCache sourceCache, Element el) {
+        try {
+            if (hasSyntheticParameterNames(el)) {
+                el = sourceCache.getSourceMethod(el);
+            }
+        } catch (IOException ex) {
+            proc.debug(ex, "SourceCodeAnalysisImpl.element2String(..., " + el + ")");
+        }
+
+        return Util.expunge(elementHeader(el));
+    }
+
+    private boolean hasSyntheticParameterNames(Element el) {
+        if (el.getKind() != ElementKind.CONSTRUCTOR && el.getKind() != ElementKind.METHOD)
+            return false;
+
+        ExecutableElement ee = (ExecutableElement) el;
+
+        if (ee.getParameters().isEmpty())
+            return false;
+
+        return ee.getParameters()
+                 .stream()
+                 .allMatch(param -> param.getSimpleName().toString().startsWith("arg"));
+    }
+
+    private final class SourceCache implements AutoCloseable {
+        private final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        private final Map<String, Map<String, Element>> topLevelName2Signature2Method = new HashMap<>();
+        private final AnalyzeTask originalTask;
+        private final StandardJavaFileManager fm;
+
+        public SourceCache(AnalyzeTask originalTask) {
+            this.originalTask = originalTask;
+            List<Path> sources = findSources();
+            if (sources.iterator().hasNext()) {
+                StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null);
+                try {
+                    fm.setLocationFromPaths(StandardLocation.SOURCE_PATH, sources);
+                } catch (IOException ex) {
+                    proc.debug(ex, "SourceCodeAnalysisImpl.SourceCache.<init>(...)");
+                    fm = null;
+                }
+                this.fm = fm;
+            } else {
+                //don't waste time if there are no sources
+                this.fm = null;
+            }
+        }
+
+        public Element getSourceMethod(Element method) throws IOException {
+            if (fm == null)
+                return method;
+
+            TypeElement type = topLevelType(method);
+
+            if (type == null)
+                return method;
+
+            String binaryName = originalTask.task.getElements().getBinaryName(type).toString();
+
+            Map<String, Element> cache = topLevelName2Signature2Method.get(binaryName);
+
+            if (cache == null) {
+                topLevelName2Signature2Method.put(binaryName, cache = createMethodCache(binaryName));
+            }
+
+            String handle = elementHeader(method, false);
+
+            return cache.getOrDefault(handle, method);
+        }
+
+        private TypeElement topLevelType(Element el) {
+            while (el != null && el.getEnclosingElement().getKind() != ElementKind.PACKAGE) {
+                el = el.getEnclosingElement();
+            }
+
+            return el != null && (el.getKind().isClass() || el.getKind().isInterface()) ? (TypeElement) el : null;
+        }
+
+        private Map<String, Element> createMethodCache(String binaryName) throws IOException {
+            Pair<JavacTask, CompilationUnitTree> source = findSource(binaryName);
+
+            if (source == null)
+                return Collections.emptyMap();
+
+            Map<String, Element> signature2Method = new HashMap<>();
+            Trees trees = Trees.instance(source.fst);
+
+            new TreePathScanner<Void, Void>() {
+                @Override @DefinedBy(Api.COMPILER_TREE)
+                public Void visitMethod(MethodTree node, Void p) {
+                    Element currentMethod = trees.getElement(getCurrentPath());
+
+                    if (currentMethod != null) {
+                        signature2Method.put(elementHeader(currentMethod, false), currentMethod);
+                    }
+
+                    return null;
+                }
+            }.scan(source.snd, null);
+
+            return signature2Method;
+        }
+
+        private Pair<JavacTask, CompilationUnitTree> findSource(String binaryName) throws IOException {
+            JavaFileObject jfo = fm.getJavaFileForInput(StandardLocation.SOURCE_PATH,
+                                                        binaryName,
+                                                        JavaFileObject.Kind.SOURCE);
+
+            if (jfo == null)
+                return null;
+
+            List<JavaFileObject> jfos = Arrays.asList(jfo);
+            JavacTaskImpl task = (JavacTaskImpl) compiler.getTask(null, fm, d -> {}, null, null, jfos);
+            Iterable<? extends CompilationUnitTree> cuts = task.parse();
+
+            task.enter();
+
+            return Pair.of(task, cuts.iterator().next());
+        }
+
+        @Override
+        public void close() {
+            try {
+                if (fm != null) {
+                    fm.close();
+                }
+            } catch (IOException ex) {
+                proc.debug(ex, "SourceCodeAnalysisImpl.SourceCache.close()");
+            }
+        }
+    }
+
+    private List<Path> availableSources;
+
+    private List<Path> findSources() {
+        if (availableSources != null) {
+            return availableSources;
+        }
+        List<Path> result = new ArrayList<>();
+        Path home = Paths.get(System.getProperty("java.home"));
+        Path srcZip = home.resolve("src.zip");
+        if (!Files.isReadable(srcZip))
+            srcZip = home.getParent().resolve("src.zip");
+        if (Files.isReadable(srcZip))
+            result.add(srcZip);
+        return availableSources = result;
+    }
+
+    private String elementHeader(Element el) {
+        return elementHeader(el, true);
+    }
+
+    private String elementHeader(Element el, boolean includeParameterNames) {
         switch (el.getKind()) {
             case ANNOTATION_TYPE: case CLASS: case ENUM: case INTERFACE:
                 return ((TypeElement) el).getQualifiedName().toString();
             case FIELD:
-                return element2String(el.getEnclosingElement()) + "." + el.getSimpleName() + ":" + el.asType();
+                return elementHeader(el.getEnclosingElement()) + "." + el.getSimpleName() + ":" + el.asType();
             case ENUM_CONSTANT:
-                return element2String(el.getEnclosingElement()) + "." + el.getSimpleName();
+                return elementHeader(el.getEnclosingElement()) + "." + el.getSimpleName();
             case EXCEPTION_PARAMETER: case LOCAL_VARIABLE: case PARAMETER: case RESOURCE_VARIABLE:
                 return el.getSimpleName() + ":" + el.asType();
             case CONSTRUCTOR: case METHOD:
                 StringBuilder header = new StringBuilder();
-                header.append(element2String(el.getEnclosingElement()));
+                header.append(elementHeader(el.getEnclosingElement()));
                 if (el.getKind() == ElementKind.METHOD) {
                     header.append(".");
                     header.append(el.getSimpleName());
@@ -1026,8 +1195,10 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                     } else {
                         header.append(p.asType());
                     }
-                    header.append(" ");
-                    header.append(p.getSimpleName());
+                    if (includeParameterNames) {
+                        header.append(" ");
+                        header.append(p.getSimpleName());
+                    }
                     sep = ", ";
                 }
                 header.append(")");

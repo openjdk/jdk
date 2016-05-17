@@ -174,10 +174,8 @@ public abstract class NashornException extends RuntimeException {
                 String methodName = st.getMethodName();
                 if (methodName.equals(CompilerConstants.PROGRAM.symbolName())) {
                     methodName = "<program>";
-                }
-
-                if (methodName.contains(CompilerConstants.ANON_FUNCTION_PREFIX.symbolName())) {
-                    methodName = "<anonymous>";
+                } else {
+                    methodName = stripMethodName(methodName);
                 }
 
                 filtered.add(new StackTraceElement(className, methodName,
@@ -185,6 +183,22 @@ public abstract class NashornException extends RuntimeException {
             }
         }
         return filtered.toArray(new StackTraceElement[0]);
+    }
+
+    private static String stripMethodName(final String methodName) {
+        String name = methodName;
+
+        final int nestedSeparator = name.lastIndexOf(CompilerConstants.NESTED_FUNCTION_SEPARATOR.symbolName());
+        if (nestedSeparator >= 0) {
+            name = name.substring(nestedSeparator + 1);
+        }
+
+        final int idSeparator = name.indexOf(CompilerConstants.ID_FUNCTION_SEPARATOR.symbolName());
+        if (idSeparator >= 0) {
+            name = name.substring(0, idSeparator);
+        }
+
+        return name.contains(CompilerConstants.ANON_FUNCTION_PREFIX.symbolName()) ? "<anonymous>" : name;
     }
 
     /**

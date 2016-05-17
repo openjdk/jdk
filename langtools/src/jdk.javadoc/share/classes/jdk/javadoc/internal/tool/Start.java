@@ -283,8 +283,8 @@ public class Start extends ToolOption.Helper {
             }
         } else {
             if (this.apiMode) {
-                com.sun.tools.javadoc.Start ostart
-                        = new com.sun.tools.javadoc.Start(context);
+                com.sun.tools.javadoc.main.Start ostart
+                        = new com.sun.tools.javadoc.main.Start(context);
                 return ostart.begin(docletClass, options, fileObjects);
             }
             warn("main.legacy_api");

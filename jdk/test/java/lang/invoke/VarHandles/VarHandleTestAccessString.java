@@ -27,6 +27,7 @@
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 VarHandleTestAccessString
  * @run testng/othervm -Diters=20000                         VarHandleTestAccessString
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  VarHandleTestAccessString
+ * @run testng/othervm -Diters=20000 -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false VarHandleTestAccessString
  */
 
 import org.testng.annotations.BeforeClass;

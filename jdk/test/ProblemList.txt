@@ -228,6 +228,8 @@ sun/security/pkcs11/Cipher/TestSymmCiphersNoPad.java            8077138,8023434 
 sun/security/pkcs11/KeyAgreement/TestDH.java                    8077138,8023434 windows-all
 sun/security/pkcs11/KeyAgreement/TestInterop.java               8077138,8023434 windows-all
 sun/security/pkcs11/KeyAgreement/TestShort.java                 8077138,8023434 windows-all
+sun/security/pkcs11/KeyAgreement/SupportedDHKeys.java           8154910 windows-all
+sun/security/pkcs11/KeyAgreement/UnsupportedDHKeys.java         8154910 windows-all
 sun/security/pkcs11/KeyGenerator/DESParity.java                 8077138,8023434 windows-all
 sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java          8077138,8023434 windows-all
 sun/security/pkcs11/KeyPairGenerator/TestDH2048.java            8077138,8023434 windows-all

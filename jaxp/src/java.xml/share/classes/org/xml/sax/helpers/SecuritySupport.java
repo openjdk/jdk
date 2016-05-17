@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,72 +37,56 @@ import java.security.*;
  */
 class SecuritySupport  {
 
-
-    ClassLoader getContextClassLoader() throws SecurityException{
-        return (ClassLoader)
-                AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-                ClassLoader cl = null;
-                //try {
-                cl = Thread.currentThread().getContextClassLoader();
-                //} catch (SecurityException ex) { }
-
-                if (cl == null)
-                    cl = ClassLoader.getSystemClassLoader();
-
-                return cl;
+    /**
+     * Returns the current thread's context class loader, or the system class loader
+     * if the context class loader is null.
+     * @return the current thread's context class loader, or the system class loader
+     * @throws SecurityException
+     */
+    ClassLoader getClassLoader() throws SecurityException{
+        return AccessController.doPrivileged((PrivilegedAction<ClassLoader>)() -> {
+            ClassLoader cl = Thread.currentThread().getContextClassLoader();
+            if (cl == null) {
+                cl = ClassLoader.getSystemClassLoader();
             }
+
+            return cl;
         });
     }
 
     String getSystemProperty(final String propName) {
-        return (String)
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    return System.getProperty(propName);
-                }
-            });
+        return AccessController.doPrivileged((PrivilegedAction<String>)()
+                -> System.getProperty(propName));
     }
 
     FileInputStream getFileInputStream(final File file)
         throws FileNotFoundException
     {
         try {
-            return (FileInputStream)
-                AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                    public Object run() throws FileNotFoundException {
-                        return new FileInputStream(file);
-                    }
-                });
+            return AccessController.doPrivileged((PrivilegedExceptionAction<FileInputStream>)() ->
+                    new FileInputStream(file));
         } catch (PrivilegedActionException e) {
             throw (FileNotFoundException)e.getException();
         }
     }
 
-    InputStream getResourceAsStream(final ClassLoader cl,
-                                           final String name)
+
+    InputStream getResourceAsStream(final ClassLoader cl, final String name)
     {
-        return (InputStream)
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    InputStream ris;
-                    if (cl == null) {
-                        ris = SecuritySupport.class.getResourceAsStream(name);
-                    } else {
-                        ris = cl.getResourceAsStream(name);
-                    }
-                    return ris;
-                }
-            });
+        return AccessController.doPrivileged((PrivilegedAction<InputStream>) () -> {
+            InputStream ris;
+            if (cl == null) {
+                ris = SecuritySupport.class.getResourceAsStream(name);
+            } else {
+                ris = cl.getResourceAsStream(name);
+            }
+            return ris;
+        });
     }
 
     boolean doesFileExist(final File f) {
-    return ((Boolean)
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    return new Boolean(f.exists());
-                }
-            })).booleanValue();
+        return (AccessController.doPrivileged((PrivilegedAction<Boolean>)() ->
+                new Boolean(f.exists())));
     }
 
 }

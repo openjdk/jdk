@@ -841,6 +841,28 @@ public class TypeEnter implements Completer {
             super(CompletionCause.MEMBERS_PHASE, null);
         }
 
+        private boolean completing;
+        private List<Env<AttrContext>> todo = List.nil();
+
+        @Override
+        protected void doCompleteEnvs(List<Env<AttrContext>> envs) {
+            todo = todo.prependList(envs);
+            if (completing) {
+                return ; //the top-level invocation will handle all envs
+            }
+            boolean prevCompleting = completing;
+            completing = true;
+            try {
+                while (todo.nonEmpty()) {
+                    Env<AttrContext> head = todo.head;
+                    todo = todo.tail;
+                    super.doCompleteEnvs(List.of(head));
+                }
+            } finally {
+                completing = prevCompleting;
+            }
+        }
+
         @Override
         protected void runPhase(Env<AttrContext> env) {
             JCClassDecl tree = env.enclClass;

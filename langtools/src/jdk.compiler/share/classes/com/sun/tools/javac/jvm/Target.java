@@ -60,8 +60,8 @@ public enum Target {
     /** JDK 8. */
     JDK1_8("1.8", 52, 0),
 
-    /** JDK 9, initially an alias for 8. */
-    JDK1_9("1.9", 52, 0);
+    /** JDK 9. */
+    JDK1_9("1.9", 53, 0);
 
     private static final Context.Key<Target> targetKey = new Context.Key<>();
 
