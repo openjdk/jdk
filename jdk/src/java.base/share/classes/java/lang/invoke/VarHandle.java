@@ -1475,11 +1475,11 @@ public abstract class VarHandle {
         TypesAndInvokers tis = getTypesAndInvokers();
         MethodHandle mh = tis.methodHandle_table[mode];
         if (mh == null) {
-            mh = tis.methodHandle_table[mode] = getMethodHandleUncached(tis, mode);
+            mh = tis.methodHandle_table[mode] = getMethodHandleUncached(mode);
         }
         return mh;
     }
-    private final MethodHandle getMethodHandleUncached(TypesAndInvokers tis, int mode) {
+    private final MethodHandle getMethodHandleUncached(int mode) {
         MethodType mt = accessModeType(AccessMode.values()[mode]).
                 insertParameterTypes(0, VarHandle.class);
         MemberName mn = vform.getMemberName(mode);

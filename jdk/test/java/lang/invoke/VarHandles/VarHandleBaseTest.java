@@ -211,7 +211,6 @@ abstract class VarHandleBaseTest {
     }
 
     static MethodHandle findVirtual(VarHandle vh, TestAccessMode tam, MethodType mt) {
-        mt = vh.accessModeType(tam.toAccessMode());
         MethodHandle mh;
         try {
             mh = MethodHandles.publicLookup().
@@ -221,36 +220,26 @@ abstract class VarHandleBaseTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        return bind(vh, tam, mh, mt);
+        return bind(vh, mh, mt);
     }
 
-    static MethodHandle varHandleInvokerWithAccessModeType(VarHandle vh, TestAccessMode tam, MethodType mt) {
-        mt = vh.accessModeType(tam.toAccessMode());
+    static MethodHandle varHandleInvoker(VarHandle vh, TestAccessMode tam, MethodType mt) {
         MethodHandle mh = MethodHandles.varHandleInvoker(
                 tam.toAccessMode(),
                 mt);
 
-        return bind(vh, tam, mh, mt);
+        return bind(vh, mh, mt);
     }
 
-    static MethodHandle varHandleInvokerWithSymbolicTypeDescriptor(VarHandle vh, TestAccessMode tam, MethodType mt) {
-        MethodHandle mh = MethodHandles.varHandleInvoker(
-                tam.toAccessMode(),
-                mt);
-
-        return bind(vh, tam, mh, mt);
-    }
-
-    static MethodHandle varHandleExactInvokerWithAccessModeType(VarHandle vh, TestAccessMode tam, MethodType mt) {
-        mt = vh.accessModeType(tam.toAccessMode());
+    static MethodHandle varHandleExactInvoker(VarHandle vh, TestAccessMode tam, MethodType mt) {
         MethodHandle mh = MethodHandles.varHandleExactInvoker(
                 tam.toAccessMode(),
                 mt);
 
-        return bind(vh, tam, mh, mt);
+        return bind(vh, mh, mt);
     }
 
-    private static MethodHandle bind(VarHandle vh, TestAccessMode testAccessMode, MethodHandle mh, MethodType emt) {
+    private static MethodHandle bind(VarHandle vh, MethodHandle mh, MethodType emt) {
         assertEquals(mh.type(), emt.insertParameterTypes(0, VarHandle.class),
                      "MethodHandle type differs from access mode type");
 
@@ -268,33 +257,30 @@ abstract class VarHandleBaseTest {
     enum VarHandleToMethodHandle {
         VAR_HANDLE_TO_METHOD_HANDLE(
                 "VarHandle.toMethodHandle",
+                true,
                 VarHandleBaseTest::toMethodHandle),
         METHOD_HANDLES_LOOKUP_FIND_VIRTUAL(
                 "Lookup.findVirtual",
+                false,
                 VarHandleBaseTest::findVirtual),
-        METHOD_HANDLES_VAR_HANDLE_INVOKER_WITH_ACCESS_MODE_TYPE(
-                "MethodHandles.varHandleInvoker(accessModeType)",
-                VarHandleBaseTest::varHandleInvokerWithAccessModeType),
-        METHOD_HANDLES_VAR_HANDLE_INVOKER_WITH_SYMBOLIC_TYPE_DESCRIPTOR(
-                "MethodHandles.varHandleInvoker(symbolicTypeDescriptor)",
-                VarHandleBaseTest::varHandleInvokerWithSymbolicTypeDescriptor),
-        METHOD_HANDLES_VAR_HANDLE_EXACT_INVOKER_WITH_ACCESS_MODE_TYPE(
-                "MethodHandles.varHandleExactInvoker(accessModeType)",
-                VarHandleBaseTest::varHandleExactInvokerWithAccessModeType);
+        METHOD_HANDLES_VAR_HANDLE_INVOKER(
+                "MethodHandles.varHandleInvoker",
+                false,
+                VarHandleBaseTest::varHandleInvoker),
+        METHOD_HANDLES_VAR_HANDLE_EXACT_INVOKER(
+                "MethodHandles.varHandleExactInvoker",
+                true,
+                VarHandleBaseTest::varHandleExactInvoker);
 
         final String desc;
+        final boolean isExact;
         final TriFunction<VarHandle, TestAccessMode, MethodType, MethodHandle> f;
-        final boolean exact;
 
-        VarHandleToMethodHandle(String desc, TriFunction<VarHandle, TestAccessMode, MethodType, MethodHandle> f) {
-            this(desc, f, false);
-        }
-
-        VarHandleToMethodHandle(String desc, TriFunction<VarHandle, TestAccessMode, MethodType, MethodHandle> f,
-                                boolean exact) {
+        VarHandleToMethodHandle(String desc, boolean isExact,
+                                TriFunction<VarHandle, TestAccessMode, MethodType, MethodHandle> f) {
             this.desc = desc;
             this.f = f;
-            this.exact = exact;
+            this.isExact = isExact;
         }
 
         MethodHandle apply(VarHandle vh, TestAccessMode am, MethodType mt) {
@@ -363,6 +349,15 @@ abstract class VarHandleBaseTest {
             return amToHandle.computeIfAbsent(
                     amt, k -> f.apply(vh, am, mt));
         }
+
+        Class<? extends Throwable> getWMTEOOrOther(Class<? extends Throwable> c) {
+            return f.isExact ? WrongMethodTypeException.class : c;
+        }
+
+        void checkWMTEOrCCE(ThrowingRunnable r) {
+            checkWithThrowable(getWMTEOOrOther(ClassCastException.class), null, r);
+        }
+
     }
 
     interface AccessTestAction<T> {

@@ -27,6 +27,7 @@
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 VarHandleTestAccessShort
  * @run testng/othervm -Diters=20000                         VarHandleTestAccessShort
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  VarHandleTestAccessShort
+ * @run testng/othervm -Diters=20000 -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false VarHandleTestAccessShort
  */
 
 import org.testng.annotations.BeforeClass;
@@ -293,6 +294,10 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
+            short r = (short) vh.getAndSet(recv, (short)1);
+        });
+
+        checkUOE(() -> {
             short o = (short) vh.getAndAdd(recv, (short)1);
         });
 
@@ -379,6 +384,10 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
+            short r = (short) vh.getAndSet((short)1);
+        });
+
+        checkUOE(() -> {
             short o = (short) vh.getAndAdd((short)1);
         });
 
@@ -455,6 +464,10 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
+            short r = (short) vh.getAndSet(recv, (short)1);
+        });
+
+        checkUOE(() -> {
             short o = (short) vh.getAndAdd(recv, (short)1);
         });
 
@@ -528,6 +541,10 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
 
         checkUOE(() -> {
             boolean r = vh.weakCompareAndSetRelease((short)1, (short)2);
+        });
+
+        checkUOE(() -> {
+            short r = (short) vh.getAndSet((short)1);
         });
 
         checkUOE(() -> {
@@ -611,6 +628,10 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
 
         checkUOE(() -> {
             boolean r = vh.weakCompareAndSetRelease(array, i, (short)1, (short)2);
+        });
+
+        checkUOE(() -> {
+            short r = (short) vh.getAndSet(array, i, (short)1);
         });
 
         checkUOE(() -> {

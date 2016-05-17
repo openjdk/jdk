@@ -27,6 +27,7 @@
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 VarHandleTestAccess$Type$
  * @run testng/othervm -Diters=20000                         VarHandleTestAccess$Type$
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  VarHandleTestAccess$Type$
+ * @run testng/othervm -Diters=20000 -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false VarHandleTestAccess$Type$
  */
 
 import org.testng.annotations.BeforeClass;
@@ -309,6 +310,10 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         checkUOE(() -> {
             boolean r = vh.weakCompareAndSetRelease(recv, $value1$, $value2$);
         });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.getAndSet(recv, $value1$);
+        });
 #end[CAS]
 
 #if[!AtomicAdd]
@@ -398,6 +403,10 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
 
         checkUOE(() -> {
             boolean r = vh.weakCompareAndSetRelease($value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.getAndSet($value1$);
         });
 #end[CAS]
 
@@ -586,6 +595,10 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         checkUOE(() -> {
             boolean r = vh.weakCompareAndSetRelease(recv, $value1$, $value2$);
         });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.getAndSet(recv, $value1$);
+        });
 #end[CAS]
 
 #if[!AtomicAdd]
@@ -772,6 +785,10 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
 
         checkUOE(() -> {
             boolean r = vh.weakCompareAndSetRelease($value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.getAndSet($value1$);
         });
 #end[CAS]
 
@@ -966,6 +983,10 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
 
         checkUOE(() -> {
             boolean r = vh.weakCompareAndSetRelease(array, i, $value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.getAndSet(array, i, $value1$);
         });
 #end[CAS]
 
