@@ -190,6 +190,7 @@ class InstanceKlass: public Klass {
   // _is_marked_dependent can be set concurrently, thus cannot be part of the
   // _misc_flags.
   bool            _is_marked_dependent;  // used for marking during flushing and deoptimization
+  bool            _is_being_redefined;   // used for locking redefinition
 
   // The low two bits of _misc_flags contains the kind field.
   // This can be used to quickly discriminate among the four kinds of
@@ -694,6 +695,10 @@ class InstanceKlass: public Klass {
   }
 
 #if INCLUDE_JVMTI
+  // Redefinition locking.  Class can only be redefined by one thread at a time.
+  bool is_being_redefined() const          { return _is_being_redefined; }
+  void set_is_being_redefined(bool value)  { _is_being_redefined = value; }
+
   // RedefineClasses() support for previous versions:
   void add_previous_version(instanceKlassHandle ikh, int emcp_method_count);
 
