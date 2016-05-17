@@ -1019,7 +1019,7 @@ public class JShellTool implements MessageHandler {
                 EMPTY_COMPLETION_PROVIDER));
         registerCommand(new Command("/set",
                 arg -> cmdSet(arg),
-                new FixedCompletionProvider("format", "feedback", "prompt", "newmode", "start", "editor")));
+                new FixedCompletionProvider(SET_SUBCOMMANDS)));
         registerCommand(new Command("/?",
                 "help.quest",
                 arg -> cmdHelp(arg),
@@ -1094,7 +1094,7 @@ public class JShellTool implements MessageHandler {
     // --- Command implementations ---
 
     private static final String[] SET_SUBCOMMANDS = new String[]{
-        "format", "feedback", "newmode", "prompt", "editor", "start"};
+        "format", "truncation", "feedback", "newmode", "prompt", "editor", "start"};
 
     final boolean cmdSet(String arg) {
         ArgTokenizer at = new ArgTokenizer("/set ", arg.trim());
@@ -1105,6 +1105,8 @@ public class JShellTool implements MessageHandler {
         switch (which) {
             case "format":
                 return feedback.setFormat(this, at);
+            case "truncation":
+                return feedback.setTruncation(this, at);
             case "feedback":
                 return feedback.setFeedback(this, at);
             case "newmode":

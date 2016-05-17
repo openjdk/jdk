@@ -47,6 +47,9 @@ class Feedback {
     // Patern for substituted fields within a customized format string
     private static final Pattern FIELD_PATTERN = Pattern.compile("\\{(.*?)\\}");
 
+    // Internal field name for truncation length
+    private static final String TRUNCATION_FIELD = "<truncation>";
+
     // Current mode
     private Mode mode = new Mode("", false); // initial value placeholder during start-up
 
@@ -101,6 +104,10 @@ class Feedback {
 
     public boolean setFormat(MessageHandler messageHandler, ArgTokenizer at) {
         return new Setter(messageHandler, at).setFormat();
+    }
+
+    public boolean setTruncation(MessageHandler messageHandler, ArgTokenizer at) {
+        return new Setter(messageHandler, at).setTruncation();
     }
 
     public boolean setNewMode(MessageHandler messageHandler, ArgTokenizer at) {
@@ -251,13 +258,42 @@ class Feedback {
             return sb.toString();
         }
 
+        // Compute the display output given full context and values
         String format(FormatCase fc, FormatAction fa, FormatWhen fw,
                     FormatResolve fr, FormatUnresolved fu, FormatErrors fe,
                     String name, String type, String value, String unresolved, List<String> errorLines) {
+            // Convert the context into a bit representation used as selectors for store field formats
             long bits = bits(fc, fa, fw, fr, fu, fe);
             String fname = name==null? "" : name;
             String ftype = type==null? "" : type;
-            String fvalue = value==null? "" : value;
+            // Compute the representation of value
+            String fvalue;
+            if (value==null) {
+                fvalue = "";
+            } else {
+                // Retrieve the truncation length
+                String truncField = format(TRUNCATION_FIELD, bits);
+                if (truncField.isEmpty()) {
+                    // No truncation set, use whole value
+                    fvalue = value;
+                } else {
+                    // Convert truncation length to int
+                    // this is safe since it has been tested before it is set
+                    int trunc = Integer.parseUnsignedInt(truncField);
+                    if (value.length() > trunc) {
+                        if (trunc <= 5) {
+                            // Very short truncations have no room for "..."
+                            fvalue = value.substring(0, trunc);
+                        } else {
+                            // Normal truncation, make total length equal truncation length
+                            fvalue = value.substring(0, trunc - 4) + " ...";
+                        }
+                    } else {
+                        // Within truncation length, use whole value
+                        fvalue = value;
+                    }
+                }
+            }
             String funresolved = unresolved==null? "" : unresolved;
             String errors = errorLines.stream()
                     .map(el -> String.format(
@@ -619,7 +655,32 @@ class Feedback {
                 errorat("jshell.err.feedback.expected.field");
                 valid = false;
             }
-            String format = valid? nextFormat() : null;
+            String format = valid ? nextFormat() : null;
+            return installFormat(m, field, format, "/help /set format");
+        }
+
+        // For /set truncation <mode> <length> <selector>...
+        boolean setTruncation() {
+            Mode m = nextMode();
+            String length = at.next();
+            if (length == null) {
+                errorat("jshell.err.truncation.expected.length");
+                valid = false;
+            } else {
+                try {
+                    // Assure that integer format is correct
+                    Integer.parseUnsignedInt(length);
+                } catch (NumberFormatException ex) {
+                    errorat("jshell.err.truncation.length.not.integer", length);
+                    valid = false;
+                }
+            }
+            // install length into an internal format field
+            return installFormat(m, TRUNCATION_FIELD, length, "/help /set truncation");
+        }
+
+        // install the format of a field under parsed selectors
+        boolean installFormat(Mode m, String field, String format, String help) {
             String slRaw;
             List<SelectorList> slList = new ArrayList<>();
             while (valid && (slRaw = at.next()) != null) {
@@ -629,8 +690,10 @@ class Feedback {
             }
             if (valid) {
                 if (slList.isEmpty()) {
+                    // No selectors specified, then always the format
                     m.set(field, ALWAYS, format);
                 } else {
+                    // Set the format of the field for specified selector
                     slList.stream()
                             .forEach(sl -> m.set(field,
                                 sl.cases.getSet(), sl.actions.getSet(), sl.whens.getSet(),
@@ -638,7 +701,7 @@ class Feedback {
                                 format));
                 }
             } else {
-                fluffmsg("jshell.msg.see", "/help /set format");
+                fluffmsg("jshell.msg.see", help);
             }
             return valid;
         }

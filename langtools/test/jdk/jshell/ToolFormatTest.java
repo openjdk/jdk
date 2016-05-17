@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8148316 8148317 8151755 8152246 8153551
+ * @bug 8148316 8148317 8151755 8152246 8153551 8154812
  * @summary Tests for output customization
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -155,6 +155,29 @@ public class ToolFormatTest extends ReplToolTesting {
         }
     }
 
+    public void testSetTruncation() {
+        try {
+            test(
+                    (a) -> assertCommandOutputStartsWith(a, "/set feedback normal", ""),
+                    (a) -> assertCommand(a, "String s = java.util.stream.IntStream.range(65, 74)"+
+                            ".mapToObj(i -> \"\"+(char)i).reduce((a,b) -> a + b + a).get()",
+                            "s ==> \"ABACABADABACABAEABACABADABACABAFABACABADABACABAEABACABADABACABAGABACABADABA ..."),
+                    (a) -> assertCommandOutputStartsWith(a, "/set newmode test quiet", ""),
+                    (a) -> assertCommandOutputStartsWith(a, "/set feedback test", ""),
+                    (a) -> assertCommand(a, "/set format test display '{type}:{value}' primary", ""),
+                    (a) -> assertCommand(a, "/set truncation test 20", ""),
+                    (a) -> assertCommand(a, "/set trunc test 10 varvalue", ""),
+                    (a) -> assertCommand(a, "/set trunc test 3 assignment", ""),
+                    (a) -> assertCommand(a, "String r = s", "String:\"ABACABADABACABA ..."),
+                    (a) -> assertCommand(a, "r", "String:\"ABACA ..."),
+                    (a) -> assertCommand(a, "r=s", "String:\"AB")
+            );
+        } finally {
+            assertCommandCheckOutput(false, "/set feedback normal", s -> {
+            });
+        }
+    }
+
     public void testShowFeedbackModes() {
         test(
                 (a) -> assertCommandOutputContains(a, "/set feedback", "normal")
@@ -225,6 +248,12 @@ public class ToolFormatTest extends ReplToolTesting {
                     (a) -> assertCommandOutputStartsWith(a, "/set format te fld 'aaa' import-import",
                             "ERROR: Selector kind in multiple sections of"),
                     (a) -> assertCommandOutputStartsWith(a, "/set format te fld 'aaa' import,added",
+                            "ERROR: Different selector kinds in same sections of"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set trunc te 20x",
+                            "ERROR: Truncation length must be an integer: 20x"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set trunc te",
+                            "ERROR: Expected truncation length"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set truncation te 111 import,added",
                             "ERROR: Different selector kinds in same sections of"),
                     (a) -> assertCommandOutputStartsWith(a, "/set newmode",
                             "ERROR: Expected new feedback mode"),
