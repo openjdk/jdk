@@ -105,6 +105,7 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
@@ -445,12 +446,22 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
             assertEquals(x, "bar", "weakCompareAndSetRelease String");
         }
 
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetVolatile(recv, "bar", "foo");
+            }
+            assertEquals(success, true, "weakCompareAndSetVolatile String");
+            String x = (String) vh.get(recv);
+            assertEquals(x, "foo", "weakCompareAndSetVolatile String value");
+        }
+
         // Compare set and get
         {
-            String o = (String) vh.getAndSet(recv, "foo");
-            assertEquals(o, "bar", "getAndSet String");
+            String o = (String) vh.getAndSet(recv, "bar");
+            assertEquals(o, "foo", "getAndSet String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "foo", "getAndSet String value");
+            assertEquals(x, "bar", "getAndSet String value");
         }
 
     }
@@ -586,12 +597,22 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
             assertEquals(x, "bar", "weakCompareAndSetRelease String");
         }
 
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetRelease("bar", "foo");
+            }
+            assertEquals(success, true, "weakCompareAndSetVolatile String");
+            String x = (String) vh.get();
+            assertEquals(x, "foo", "weakCompareAndSetVolatile String");
+        }
+
         // Compare set and get
         {
-            String o = (String) vh.getAndSet( "foo");
-            assertEquals(o, "bar", "getAndSet String");
+            String o = (String) vh.getAndSet("bar");
+            assertEquals(o, "foo", "getAndSet String");
             String x = (String) vh.get();
-            assertEquals(x, "foo", "getAndSet String value");
+            assertEquals(x, "bar", "getAndSet String value");
         }
 
     }
@@ -730,12 +751,22 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
                 assertEquals(x, "bar", "weakCompareAndSetRelease String");
             }
 
+            {
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = vh.weakCompareAndSetVolatile(array, i, "bar", "foo");
+                }
+                assertEquals(success, true, "weakCompareAndSetVolatile String");
+                String x = (String) vh.get(array, i);
+                assertEquals(x, "foo", "weakCompareAndSetVolatile String");
+            }
+
             // Compare set and get
             {
-                String o = (String) vh.getAndSet(array, i, "foo");
-                assertEquals(o, "bar", "getAndSet String");
+                String o = (String) vh.getAndSet(array, i, "bar");
+                assertEquals(o, "foo", "getAndSet String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "foo", "getAndSet String value");
+                assertEquals(x, "bar", "getAndSet String value");
             }
 
         }
@@ -811,6 +842,10 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
 
             checkIOOBE(() -> {
                 boolean r = vh.weakCompareAndSet(array, ci, "foo", "bar");
+            });
+
+            checkIOOBE(() -> {
+                boolean r = vh.weakCompareAndSetVolatile(array, ci, "foo", "bar");
             });
 
             checkIOOBE(() -> {
