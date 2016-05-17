@@ -27,6 +27,7 @@
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 VarHandleTestAccessFloat
  * @run testng/othervm -Diters=20000                         VarHandleTestAccessFloat
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  VarHandleTestAccessFloat
+ * @run testng/othervm -Diters=20000 -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false VarHandleTestAccessFloat
  */
 
 import org.testng.annotations.BeforeClass;
@@ -293,6 +294,10 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
+            float r = (float) vh.getAndSet(recv, 1.0f);
+        });
+
+        checkUOE(() -> {
             float o = (float) vh.getAndAdd(recv, 1.0f);
         });
 
@@ -379,6 +384,10 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
+            float r = (float) vh.getAndSet(1.0f);
+        });
+
+        checkUOE(() -> {
             float o = (float) vh.getAndAdd(1.0f);
         });
 
@@ -455,6 +464,10 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
+            float r = (float) vh.getAndSet(recv, 1.0f);
+        });
+
+        checkUOE(() -> {
             float o = (float) vh.getAndAdd(recv, 1.0f);
         });
 
@@ -528,6 +541,10 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
 
         checkUOE(() -> {
             boolean r = vh.weakCompareAndSetRelease(1.0f, 2.0f);
+        });
+
+        checkUOE(() -> {
+            float r = (float) vh.getAndSet(1.0f);
         });
 
         checkUOE(() -> {
@@ -611,6 +628,10 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
 
         checkUOE(() -> {
             boolean r = vh.weakCompareAndSetRelease(array, i, 1.0f, 2.0f);
+        });
+
+        checkUOE(() -> {
+            float r = (float) vh.getAndSet(array, i, 1.0f);
         });
 
         checkUOE(() -> {
