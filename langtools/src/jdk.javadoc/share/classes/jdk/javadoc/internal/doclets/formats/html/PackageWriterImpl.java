@@ -376,6 +376,19 @@ public class PackageWriterImpl extends HtmlDocletWriter
     }
 
     /**
+     * Get the module link.
+     *
+     * @return a content tree for the module link
+     */
+    @Override
+    protected Content getNavLinkModule() {
+        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
+                moduleLabel);
+        Content li = HtmlTree.LI(linkContent);
+        return li;
+    }
+
+    /**
      * Highlight "Package" in the navigation bar, as this is the package page.
      *
      * @return a content tree for the package link

@@ -87,7 +87,7 @@ hotspot_%:
 #
 # Invocation:
 #
-# make jtreg_tests TESTDIRS=<test-dirs>
+# make jtreg_tests TESTDIRS=<test-dirs> TEST_SELECTION=<path to test or jtreg group> TEST_OUTPUT_DIR=<path>
 #
 # where <test-dirs> is something like '../<component>/test/runtime',
 # <component> in turn being one of the top level directories (for

@@ -32,8 +32,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import jdk.tools.jlink.plugin.TransformerPlugin;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleDataType;
+import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.internal.Utils;
 
 /**
@@ -51,9 +51,9 @@ public final class ExcludeFilesPlugin implements TransformerPlugin {
     }
 
     @Override
-    public void visit(Pool in, Pool out) {
-        in.visit((file) -> {
-            if (!file.getType().equals(ModuleDataType.CLASS_OR_RESOURCE)) {
+    public void visit(ModulePool in, ModulePool out) {
+        in.transformAndCopy((file) -> {
+            if (!file.getType().equals(ModuleEntry.Type.CLASS_OR_RESOURCE)) {
                 file = predicate.test(file.getPath()) ? file : null;
             }
             return file;
@@ -61,9 +61,9 @@ public final class ExcludeFilesPlugin implements TransformerPlugin {
     }
 
     @Override
-    public Set<PluginType> getType() {
-        Set<PluginType> set = new HashSet<>();
-        set.add(CATEGORY.FILTER);
+    public Set<Category> getType() {
+        Set<Category> set = new HashSet<>();
+        set.add(Category.FILTER);
         return Collections.unmodifiableSet(set);
     }
 

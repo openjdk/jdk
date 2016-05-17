@@ -268,6 +268,17 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     }
 
     /**
+     * Get this module link.
+     *
+     * @return a content tree for the module link
+     */
+    @Override
+    protected Content getNavLinkModule() {
+        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, moduleLabel);
+        return li;
+    }
+
+    /**
      * Get "PREV MODULE" link in the navigation bar.
      *
      * @return a content tree for the previous link
