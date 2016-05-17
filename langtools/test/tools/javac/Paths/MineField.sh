@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 #
 # @test
-# @bug 4758537 4809833
+# @bug 4758537 4809833 8149599
 # @summary Test that javac and java find files in similar ways
 # @author Martin Buchholz
 #
@@ -49,13 +49,32 @@
 # - Only for the user classpath is an empty string value equivalent to "."
 # - Specifying a bootclasspath on the command line obliterates any
 #   previous -Xbootclasspath/p: or -Xbootclasspath/a: command line flags.
+#
+# JDK 9 update:
+#   java: The java launcher does not support any of the following:
+#       * -Xbootclasspath/p: -Xbootclasspath:
+#       * -endorseddirs -Djava.endorsed.dirs
+#       * -extdirs -Djava.ext.dirs
+#       All test cases exercising these features have been removed.
+#   javac: The following features are only supported when compiling
+#       for older releases:
+#       * -Xbootclasspath/p: -Xbootclasspath: -bootclasspath -Xbootclasspath/a:
+#       * -endorseddirs -Djava.endorsed.dirs
+#       * -extdirs -Djava.ext.dirs
+#       All test cases exercising these features have been modified to
+#       use -source 8 -target 8.  In addition, javac test cases involving
+#       use of the runtime properties java.endorsed.dirs and java.extdirs
+#       (by means of -J-Dname=value) have been removed.
+#       Although the primary purpose of the test cases in this file is to
+#       compare javac and java behavior, some tests remain for javac for
+#       which there is no java equivalent. However, the cases remain as useful
+#       test cases for javac handling of the paths involved.
+
 #----------------------------------------------------------------
 
 . ${TESTSRC-.}/Util.sh
 
 set -u
-
-# BCP=`DefaultBootClassPath`
 
 #----------------------------------------------------------------
 # Prepare the "Minefield"
@@ -64,6 +83,7 @@ Cleanup() {
     Sys rm -rf GooSrc GooJar GooZip GooClass
     Sys rm -rf BadSrc BadJar BadZip BadClass
     Sys rm -rf OneDir *.class Main.java MANIFEST.MF
+    Sys rm -f java-lang.jar
 }
 
 Cleanup
@@ -88,215 +108,95 @@ CheckFiles BadZip/Lib.zip BadJar/Lib.jar BadSrc/Lib.java
 
 echo 'public class Main {public static void main(String[] a) {Lib.f();}}' > Main.java
 
+# Create a jar file that is good enough to put on the javac boot class path (i.e. contains java.lang.**)
+Sys "$jimage" extract --dir modules ${TESTJAVA}/lib/modules
+Sys "$jar" cf java-lang.jar -C modules/java.base java/lang
+Sys rm -rf modules
+
 #----------------------------------------------------------------
 # Verify that javac class search order is the same as java's
 #----------------------------------------------------------------
-# Failure "$javac" ${TESTTOOLVMOPTS} \
-#     -Xbootclasspath/p:"BadClass" \
-#     -J-Djava.endorsed.dirs="GooJar" \
-#     Main.java
-# Success "$javac" ${TESTTOOLVMOPTS} \
-#     -Xbootclasspath/p:"GooClass${PS}BadJar/Lib.jar" \
-#     -J-Djava.endorsed.dirs="BadJar${PS}GooZip" \
-#     Main.java
-# Failure "$java" ${TESTVMOPTS} \
-#     -Xbootclasspath/p:"BadClass" \
-#     -Djava.endorsed.dirs="GooJar" \
-#     Main
-# Success "$java" ${TESTVMOPTS} \
-#     -Xbootclasspath/p:"GooClass${PS}BadJar/Lib.jar" \
-#     -Djava.endorsed.dirs="BadJar${PS}GooZip" \
-#     Main
+Failure "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} \
+    -Xbootclasspath/p:"GooClass" \
+    -bootclasspath "java-lang.jar${PS}BadZip/Lib.zip" \
+    Main.java
+Success "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} \
+    -Xbootclasspath/p:"BadClass${PS}GooClass" \
+    -bootclasspath "java-lang.jar${PS}GooZip/Lib.zip${PS}BadClass" \
+    Main.java
+Success "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} \
+    -Xbootclasspath/p:"BadJar/Lib.jar" \
+    -Xbootclasspath:"java-lang.jar${PS}GooClass" \
+    Main.java
 
 #----------------------------------------------------------------
-# Failure "$javac" ${TESTTOOLVMOPTS} \
-#     -Xbootclasspath/p:"GooClass" \
-#     -bootclasspath "$BCP${PS}BadZip/Lib.zip" \
-#     Main.java
-# Success "$javac" ${TESTTOOLVMOPTS} \
-#     -Xbootclasspath/p:"BadClass${PS}GooClass" \
-#     -bootclasspath "$BCP${PS}GooZip/Lib.zip${PS}BadClass" \
-#     Main.java
-# Success "$javac" ${TESTTOOLVMOPTS} \
-#     -Xbootclasspath/p:"BadJar/Lib.jar" \
-#     -Xbootclasspath:"$BCP${PS}GooClass" \
-#     Main.java
-# Failure "$java" ${TESTVMOPTS} \
-#     -Xbootclasspath/p:"GooClass" \
-#     -Xbootclasspath:"$BCP${PS}BadZip/Lib.zip" \
-#     Main
-# Success "$java" ${TESTVMOPTS} \
-#     -Xbootclasspath/p:"BadClass${PS}GooClass" \
-#     -Xbootclasspath:"$BCP${PS}GooZip/Lib.zip${PS}BadClass" \
-#     Main
+Failure "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} \
+    -bootclasspath "java-lang.jar${PS}GooZip/Lib.zip" \
+    -Xbootclasspath/p:"BadClass" \
+    Main.java
+Success "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} \
+    -bootclasspath "java-lang.jar${PS}BadZip/Lib.zip" \
+    -Xbootclasspath/p:"GooClass${PS}BadJar/Lib.jar" \
+    Main.java
 
 #----------------------------------------------------------------
-# Failure "$javac" ${TESTTOOLVMOPTS} \
-#     -bootclasspath "$BCP${PS}GooZip/Lib.zip" \
-#     -Xbootclasspath/p:"BadClass" \
-#     Main.java
-# Success "$javac" ${TESTTOOLVMOPTS} \
-#     -bootclasspath "$BCP${PS}BadZip/Lib.zip" \
-#     -Xbootclasspath/p:"GooClass${PS}BadJar/Lib.jar" \
-#     Main.java
-# Failure "$java" ${TESTVMOPTS} \
-#     -Xbootclasspath:"$BCP${PS}GooClass" \
-#     -Xbootclasspath/p:"BadClass" \
-#     Main
-# Success "$java" ${TESTVMOPTS} \
-#     -Xbootclasspath:"$BCP${PS}BadClass" \
-#     -Xbootclasspath/p:"GooClass${PS}BadJar/Lib.jar" \
-#     Main
-
-#----------------------------------------------------------------
-Failure "$javac" ${TESTTOOLVMOPTS} \
+Failure "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} \
     -Xbootclasspath/p:"BadClass" \
     -Xbootclasspath/a:"GooClass" \
     Main.java
-Success "$javac" ${TESTTOOLVMOPTS} \
+Success "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} \
     -Xbootclasspath/p:"GooClass${PS}BadClass" \
     -Xbootclasspath/a:"BadClass" \
     Main.java
-Failure "$java" ${TESTVMOPTS} \
-    -Xbootclasspath/p:"BadClass" \
-    -Xbootclasspath/a:"GooClass" \
-    Main
 Success "$java" ${TESTVMOPTS} \
-    -Xbootclasspath/p:"GooClass${PS}BadClass" \
-    -Xbootclasspath/a:"BadClass" \
+    -Xbootclasspath/a:"GooClass" \
     Main
 
 #----------------------------------------------------------------
-# Failure "$javac" ${TESTTOOLVMOPTS} \
-#     -Xbootclasspath/p:"GooClass" \
-#     -J-Djava.endorsed.dirs="BadZip" \
-#     -bootclasspath "GooClass${PS}$BCP" \
-#     Main.java
-# Success "$javac" ${TESTTOOLVMOPTS} \
-#     -Xbootclasspath/p:"BadClass" \
-#     -J-Djava.endorsed.dirs="BadClass${PS}GooZip${PS}BadJar" \
-#     -bootclasspath "BadClass${PS}$BCP" \
-#     Main.java
-# Failure "$java" ${TESTVMOPTS} \
-#     -Xbootclasspath/p:"GooClass" \
-#     -Djava.endorsed.dirs="BadZip" \
-#     -Xbootclasspath:"GooClass${PS}$BCP" \
-#     Main
-# Success "$java" ${TESTVMOPTS} \
-#     -Xbootclasspath/p:"BadClass" \
-#     -Djava.endorsed.dirs="BadClass${PS}GooZip${PS}BadJar" \
-#     -Xbootclasspath:"BadClass${PS}$BCP" \
-#     Main
+Failure "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} \
+    -Xbootclasspath/p:"GooClass" \
+    -Xbootclasspath:"BadClass${PS}java-lang.jar" \
+    -Xbootclasspath/a:"GooClass" \
+    Main.java
+Success "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} \
+    -Xbootclasspath/p:"BadClass" \
+    -Xbootclasspath:"GooClass${PS}BadClass${PS}java-lang.jar" \
+    -Xbootclasspath/a:"BadClass" \
+    Main.java
 
 #----------------------------------------------------------------
-# Failure "$javac" ${TESTTOOLVMOPTS} \
-#     -Xbootclasspath/p:"GooClass" \
-#     -Xbootclasspath:"BadClass${PS}$BCP" \
-#     -Xbootclasspath/a:"GooClass" \
-#     Main.java
-# Success "$javac" ${TESTTOOLVMOPTS} \
-#     -Xbootclasspath/p:"BadClass" \
-#     -Xbootclasspath:"GooClass${PS}BadClass${PS}$BCP" \
-#     -Xbootclasspath/a:"BadClass" \
-#     Main.java
-# Failure "$java" ${TESTVMOPTS} \
-#     -Xbootclasspath/p:"GooClass" \
-#     -Xbootclasspath:"BadClass${PS}$BCP" \
-#     -Xbootclasspath/a:"GooClass" \
-#     Main
-# Success "$java" ${TESTVMOPTS} \
-#     -Xbootclasspath/p:"BadClass" \
-#     -Xbootclasspath:"GooClass${PS}BadClass${PS}$BCP" \
-#     -Xbootclasspath/a:"BadClass" \
-#     Main
+Success "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} \
+    -endorseddirs "BadClass${PS}GooZip${PS}BadJar" \
+    -Xbootclasspath:"BadClass${PS}java-lang.jar" \
+    Main.java
+Success "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} \
+    -Djava.endorsed.dirs="BadClass${PS}GooZip${PS}BadJar" \
+    -Xbootclasspath:"BadClass${PS}java-lang.jar" \
+    Main.java
 
 #----------------------------------------------------------------
-# Failure "$javac" ${TESTTOOLVMOPTS} \
-#     -J-Djava.endorsed.dirs="BadZip" \
-#     -Xbootclasspath:"GooClass${PS}$BCP" \
-#     Main.java
-# Success "$javac" ${TESTTOOLVMOPTS} \
-#     -endorseddirs "BadClass${PS}GooZip${PS}BadJar" \
-#     -Xbootclasspath:"BadClass${PS}$BCP" \
-#     Main.java
-# Success "$javac" ${TESTTOOLVMOPTS} \
-#     -Djava.endorsed.dirs="BadClass${PS}GooZip${PS}BadJar" \
-#     -Xbootclasspath:"BadClass${PS}$BCP" \
-#     Main.java
-# Success "$javac" ${TESTTOOLVMOPTS} \
-#     -J-Djava.endorsed.dirs="BadClass${PS}GooZip${PS}BadJar" \
-#     -Xbootclasspath:"BadClass${PS}$BCP" \
-#     Main.java
-# Failure "$java" ${TESTVMOPTS} \
-#     -Djava.endorsed.dirs="BadZip" \
-#     -Xbootclasspath:"GooClass${PS}$BCP" \
-#     Main
-# Success "$java" ${TESTVMOPTS} \
-#     -Djava.endorsed.dirs="BadClass${PS}GooZip${PS}BadJar" \
-#     -Xbootclasspath:"BadClass${PS}$BCP" \
-#     Main
-
-#----------------------------------------------------------------
-Failure "$javac" ${TESTTOOLVMOPTS} \
+Failure "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} \
     -Xbootclasspath/a:"BadClass" \
     -extdirs "GooZip" \
     Main.java
-Success "$javac" ${TESTTOOLVMOPTS} \
+Success "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} \
     -Xbootclasspath/a:"GooClass${PS}BadClass" \
     -extdirs "BadZip" \
     Main.java
-# Failure "$java" ${TESTVMOPTS} \
-#     -Xbootclasspath/a:"BadClass" \
-#     -Djava.ext.dirs="GooZip" \
-#     Main
-# Success "$java" ${TESTVMOPTS} \
-#     -Xbootclasspath/a:"GooClass${PS}BadClass" \
-#     -Djava.ext.dirs="BadZip" \
-#     Main
 
 #----------------------------------------------------------------
-# Failure "$javac" ${TESTTOOLVMOPTS} \
-#     -bootclasspath "$BCP${PS}BadJar/Lib.jar" \
-#     -J-Djava.ext.dir="GooJar" \
-#     Main.java
-# Success "$javac" ${TESTTOOLVMOPTS} \
-#     -bootclasspath "$BCP${PS}GooJar/Lib.jar${PS}BadClass" \
-#     -J-Djava.ext.dir="BadJar" \
-#     Main.java
-# Failure "$java" ${TESTVMOPTS} \
-#     -Xbootclasspath:"$BCP${PS}BadJar/Lib.jar" \
-#     -Djava.ext.dirs="GooJar" \
-#     Main
-# Success "$java" ${TESTVMOPTS} \
-#     -Xbootclasspath:"$BCP${PS}GooJar/Lib.jar${PS}BadClass" \
-#     -Djava.ext.dirs="BadJar" \
-#     Main
-
-#----------------------------------------------------------------
-Failure "$javac" ${TESTTOOLVMOPTS} \
+Failure "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} \
     -extdirs "GooClass${PS}BadZip" \
     -cp "GooZip/Lib.zip" \
     Main.java
-Success "$javac" ${TESTTOOLVMOPTS} \
+Success "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} \
     -extdirs "BadClass${PS}GooZip${PS}BadJar" \
     -cp "BadZip/Lib.zip" \
     Main.java
-Success "$javac" ${TESTTOOLVMOPTS} \
+Success "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} \
     -Djava.ext.dirs="GooZip${PS}BadJar" \
     -classpath "BadZip/Lib.zip" \
     Main.java
-# Success "$javac" ${TESTTOOLVMOPTS} \
-#     -J-Djava.ext.dirs="GooZip${PS}BadJar" \
-#     -classpath "BadZip/Lib.zip" \
-#     Main.java
-# Failure "$java" ${TESTVMOPTS} \
-#     -Djava.ext.dirs="GooClass${PS}BadZip" \
-#     -cp "GooZip/Lib.zip${PS}." \
-#     Main
-# Success "$java" ${TESTVMOPTS} \
-#     -Djava.ext.dirs="GooZip${PS}BadJar" \
-#     -cp "BadZip/Lib.zip${PS}." \
-#     Main
 
 #----------------------------------------------------------------
 Failure "$javac" ${TESTTOOLVMOPTS} -classpath "BadClass${PS}GooClass" Main.java
@@ -338,45 +238,32 @@ In GooClass Success "$javac" ${TESTTOOLVMOPTS} -cp "..${PS}${PS}/xyzzy" ../Main.
 In GooClass Success "$java" ${TESTVMOPTS}  -cp "..${PS}${PS}/xyzzy" Main
 
 # All other empty path elements are ignored.
-In GooJar Failure "$javac" ${TESTTOOLVMOPTS} -extdirs "" -cp ".." ../Main.java
-# In GooJar Failure "$java" ${TESTVMOPTS} -Djava.ext.dirs="" -cp ".." Main
+In GooJar Failure "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} -extdirs "" -cp ".." ../Main.java
 
-In GooJar Failure "$javac" ${TESTTOOLVMOPTS} -extdirs        "${PS}" -cp ".." ../Main.java
-In GooJar Failure "$javac" ${TESTTOOLVMOPTS} -Djava.ext.dirs="${PS}" -cp ".." ../Main.java
-# In GooJar Failure "$java" ${TESTVMOPTS}  -Djava.ext.dirs="${PS}" -cp ".." Main
+In GooJar Failure "$javac" -source 8 -targt 8 ${TESTTOOLVMOPTS} -extdirs        "${PS}" -cp ".." ../Main.java
+In GooJar Failure "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} -Djava.ext.dirs="${PS}" -cp ".." ../Main.java
 
-In GooJar Success "$javac" ${TESTTOOLVMOPTS} -extdirs        "." -cp ".." ../Main.java
-In GooJar Success "$javac" ${TESTTOOLVMOPTS} -Djava.ext.dirs="." -cp ".." ../Main.java
-# In GooJar Success "$java" ${TESTVMOPTS}  -Djava.ext.dirs="." -cp ".." Main
+In GooJar Success "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} -extdirs        "." -cp ".." ../Main.java
+In GooJar Success "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} -Djava.ext.dirs="." -cp ".." ../Main.java
 
-# In GooJar Failure "$javac" ${TESTTOOLVMOPTS} -J-Djava.endorsed.dirs="" -cp ".." ../Main.java
-In GooJar Failure "$javac" ${TESTTOOLVMOPTS}   -Djava.endorsed.dirs="" -cp ".." ../Main.java
-# In GooJar Failure "$java" ${TESTVMOPTS}    -Djava.endorsed.dirs="" -cp ".." Main
+In GooJar Failure "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS}   -Djava.endorsed.dirs="" -cp ".." ../Main.java
 
-# In GooJar Failure "$javac" ${TESTTOOLVMOPTS} -J-Djava.endorsed.dirs="${PS}" -cp ".." ../Main.java
-In GooJar Failure "$javac" ${TESTTOOLVMOPTS}   -endorseddirs        "${PS}" -cp ".." ../Main.java
-# In GooJar Failure "$java" ${TESTVMOPTS}    -Djava.endorsed.dirs="${PS}" -cp ".." Main
+In GooJar Failure "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS}   -endorseddirs        "${PS}" -cp ".." ../Main.java
 
-# In GooJar Success "$javac" ${TESTTOOLVMOPTS} -J-Djava.endorsed.dirs="." -cp ".." ../Main.java
-In GooJar Success "$javac" ${TESTTOOLVMOPTS}   -Djava.endorsed.dirs="." -cp ".." ../Main.java
-# In GooJar Success "$java" ${TESTVMOPTS}    -Djava.endorsed.dirs="." -cp ".." Main
+In GooJar Success "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS}   -Djava.endorsed.dirs="." -cp ".." ../Main.java
 
-In GooClass Failure "$javac" ${TESTTOOLVMOPTS} -Xbootclasspath/p: -cp ".." ../Main.java
-In GooClass Failure "$java" ${TESTVMOPTS}  -Xbootclasspath/p: -cp ".." Main
+In GooClass Failure "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} -Xbootclasspath/p: -cp ".." ../Main.java
 
-In GooClass Success "$javac" ${TESTTOOLVMOPTS} -Xbootclasspath/p:. -cp ".." ../Main.java
-In GooClass Success "$java" ${TESTVMOPTS}  -Xbootclasspath/p:. -cp ".." Main
+In GooClass Success "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} -Xbootclasspath/p:. -cp ".." ../Main.java
 
-# In GooClass Failure "$javac" ${TESTTOOLVMOPTS} -Xbootclasspath:"$BCP" -cp ".." ../Main.java
-# In GooClass Failure "$java" ${TESTVMOPTS}  -Xbootclasspath:"$BCP" -cp ".." Main
+In GooClass Failure "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} -Xbootclasspath:"../java-lang.jar" -cp ".." ../Main.java
 
-# In GooClass Success "$javac" ${TESTTOOLVMOPTS} -Xbootclasspath:"$BCP${PS}." -cp ".." ../Main.java
-# In GooClass Success "$java" ${TESTVMOPTS}  -Xbootclasspath:"$BCP${PS}." -cp ".." Main
+In GooClass Success "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} -Xbootclasspath:"../java-lang.jar${PS}." -cp ".." ../Main.java
 
-In GooClass Failure "$javac" ${TESTTOOLVMOPTS} -Xbootclasspath/a: -cp ".." ../Main.java
+In GooClass Failure "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} -Xbootclasspath/a: -cp ".." ../Main.java
 In GooClass Failure "$java" ${TESTVMOPTS}  -Xbootclasspath/a: -cp ".." Main
 
-In GooClass Success "$javac" ${TESTTOOLVMOPTS} -Xbootclasspath/a:. -cp ".." ../Main.java
+In GooClass Success "$javac" -source 8 -target 8 ${TESTTOOLVMOPTS} -Xbootclasspath/a:. -cp ".." ../Main.java
 In GooClass Success "$java" ${TESTVMOPTS}  -Xbootclasspath/a:. -cp ".." Main
 
 Cleanup
