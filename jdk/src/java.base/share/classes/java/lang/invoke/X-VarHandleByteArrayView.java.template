@@ -234,8 +234,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         @ForceInline
         static boolean weakCompareAndSetVolatile(ArrayHandle handle, Object oba, int index, $type$ expected, $type$ value) {
             byte[] ba = (byte[]) oba;
-            // TODO defer to strong form until new Unsafe method is added
-            return UNSAFE.compareAndSwap$RawType$(
+            return UNSAFE.weakCompareAndSwap$RawType$Volatile(
                     ba,
                     address(ba, index(ba, index)),
                     convEndian(handle.be, expected), convEndian(handle.be, value));
@@ -467,8 +466,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         @ForceInline
         static boolean weakCompareAndSetVolatile(ByteBufferHandle handle, Object obb, int index, $type$ expected, $type$ value) {
             ByteBuffer bb = (ByteBuffer) obb;
-            // TODO defer to strong form until new Unsafe method is added
-            return UNSAFE.compareAndSwap$RawType$(
+            return UNSAFE.weakCompareAndSwap$RawType$Volatile(
                     UNSAFE.getObject(bb, BYTE_BUFFER_HB),
                     address(bb, indexRO(bb, index)),
                     convEndian(handle.be, expected), convEndian(handle.be, value));
