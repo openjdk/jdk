@@ -60,11 +60,11 @@ public class CommandCompletionTest extends ReplToolTesting {
     public void testList() {
         test(false, new String[] {"-nostartup"},
                 a -> assertCompletion(a, "/l|", false, "/list "),
-                a -> assertCompletion(a, "/list |", false, "all ", "history ", "start "),
-                a -> assertCompletion(a, "/list h|", false, "history "),
+                a -> assertCompletion(a, "/list |", false, "-all ", "-history ", "-start "),
+                a -> assertCompletion(a, "/list -h|", false, "-history "),
                 a -> assertCompletion(a, "/list q|", false),
                 a -> assertVariable(a, "int", "xray"),
-                a -> assertCompletion(a, "/list |", false, "1", "all ", "history ", "start ", "xray"),
+                a -> assertCompletion(a, "/list |", false, "-all ", "-history ", "-start ", "1", "xray"),
                 a -> assertCompletion(a, "/list x|", false, "xray")
         );
     }
@@ -108,7 +108,7 @@ public class CommandCompletionTest extends ReplToolTesting {
         Compiler compiler = new Compiler();
         assertCompletion("/s|", false, "/save ", "/set ");
         List<String> p1 = listFiles(Paths.get(""));
-        Collections.addAll(p1, "all ", "history ", "start ");
+        Collections.addAll(p1, "-all ", "-history ", "-start ");
         FileSystems.getDefault().getRootDirectories().forEach(s -> p1.add(s.toString()));
         Collections.sort(p1);
         assertCompletion("/save |", false, p1.toArray(new String[p1.size()]));
@@ -116,7 +116,7 @@ public class CommandCompletionTest extends ReplToolTesting {
         List<String> p2 = listFiles(classDir);
         assertCompletion("/save " + classDir + "/|",
                 false, p2.toArray(new String[p2.size()]));
-        assertCompletion("/save all " + classDir + "/|",
+        assertCompletion("/save -all " + classDir + "/|",
                 false, p2.toArray(new String[p2.size()]));
     }
 

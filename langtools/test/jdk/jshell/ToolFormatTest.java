@@ -43,7 +43,7 @@ public class ToolFormatTest extends ReplToolTesting {
     public void testSetFormat() {
         try {
             test(
-                    (a) -> assertCommandOutputStartsWith(a, "/set newmode test command", "|  Created new feedback mode: test"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set newmode test -command", "|  Created new feedback mode: test"),
                     (a) -> assertCommand(a, "/set format test pre '$ '", ""),
                     (a) -> assertCommand(a, "/set format test post ''", ""),
                     (a) -> assertCommand(a, "/set format test act 'ADD' added", ""),
@@ -82,7 +82,7 @@ public class ToolFormatTest extends ReplToolTesting {
 
     public void testSetFormatSelector() {
         List<ReplTest> tests = new ArrayList<>();
-        tests.add((a) -> assertCommandOutputStartsWith(a, "/set newmode ate quiet",
+        tests.add((a) -> assertCommandOutputStartsWith(a, "/set newmode ate -quiet",
                             "|  Created new feedback mode: ate"));
         tests.add((a) -> assertCommand(a, "/set feedback ate", ""));
         StringBuilder sb = new StringBuilder();
@@ -162,7 +162,7 @@ public class ToolFormatTest extends ReplToolTesting {
                     (a) -> assertCommand(a, "String s = java.util.stream.IntStream.range(65, 74)"+
                             ".mapToObj(i -> \"\"+(char)i).reduce((a,b) -> a + b + a).get()",
                             "s ==> \"ABACABADABACABAEABACABADABACABAFABACABADABACABAEABACABADABACABAGABACABADABA ..."),
-                    (a) -> assertCommandOutputStartsWith(a, "/set newmode test quiet", ""),
+                    (a) -> assertCommandOutputStartsWith(a, "/set newmode test -quiet", ""),
                     (a) -> assertCommandOutputStartsWith(a, "/set feedback test", ""),
                     (a) -> assertCommand(a, "/set format test display '{type}:{value}' primary", ""),
                     (a) -> assertCommand(a, "/set truncation test 20", ""),
@@ -187,11 +187,11 @@ public class ToolFormatTest extends ReplToolTesting {
     public void testSetNewModeQuiet() {
         try {
             test(
-                    (a) -> assertCommandOutputStartsWith(a, "/set newmode nmq quiet normal", "|  Created new feedback mode: nmq"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set newmode nmq -quiet normal", "|  Created new feedback mode: nmq"),
                     (a) -> assertCommand(a, "/set feedback nmq", ""),
-                    (a) -> assertCommand(a, "/se ne nmq2 q nor", ""),
+                    (a) -> assertCommand(a, "/se ne nmq2 -q nor", ""),
                     (a) -> assertCommand(a, "/se fee nmq2", ""),
-                    (a) -> assertCommand(a, "/set newmode nmc command normal", ""),
+                    (a) -> assertCommand(a, "/set newmode nmc -command normal", ""),
                     (a) -> assertCommandOutputStartsWith(a, "/set feedback nmc", "|  Feedback mode: nmc"),
                     (a) -> assertCommandOutputStartsWith(a, "/set newmode nm", "|  Created new feedback mode: nm"),
                     (a) -> assertCommandOutputStartsWith(a, "/set feedback nm", "|  Feedback mode: nm"),
@@ -206,15 +206,15 @@ public class ToolFormatTest extends ReplToolTesting {
     public void testSetError() {
         try {
             test(
-                    (a) -> assertCommandOutputStartsWith(a, "/set newmode tee command foo",
+                    (a) -> assertCommandOutputStartsWith(a, "/set newmode tee -command foo",
                             "|  Does not match any current feedback mode: foo"),
                     (a) -> assertCommandOutputStartsWith(a, "/set newmode tee flurb",
-                            "|  Specify either 'command' or 'quiet'"),
+                            "|  Specify either '-command' or '-quiet'"),
                     (a) -> assertCommandOutputStartsWith(a, "/set newmode te2",
                             "|  Created new feedback mode: te2"),
-                    (a) -> assertCommandOutputStartsWith(a, "/set newmode te2 command",
+                    (a) -> assertCommandOutputStartsWith(a, "/set newmode te2 -command",
                             "|  Expected a new feedback mode name. 'te2' is a known feedback mode"),
-                    (a) -> assertCommandOutputStartsWith(a, "/set newmode te command normal",
+                    (a) -> assertCommandOutputStartsWith(a, "/set newmode te -command normal",
                             "|  Created new feedback mode: te"),
                     (a) -> assertCommand(a, "/set format te errorpre 'ERROR: '", ""),
                     (a) -> assertCommandOutputStartsWith(a, "/set feedback te",
@@ -260,8 +260,8 @@ public class ToolFormatTest extends ReplToolTesting {
                     (a) -> assertCommandOutputStartsWith(a, "/set newmode te",
                             "ERROR: Expected a new feedback mode name"),
                     (a) -> assertCommandOutputStartsWith(a, "/set newmode x xyz",
-                            "ERROR: Specify either 'command' or 'quiet'"),
-                    (a) -> assertCommandOutputStartsWith(a, "/set newmode x quiet y",
+                            "ERROR: Specify either '-command' or '-quiet'"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set newmode x -quiet y",
                             "ERROR: Does not match any current feedback mode"),
                     (a) -> assertCommandOutputStartsWith(a, "/set prompt",
                             "ERROR: Expected a feedback mode"),

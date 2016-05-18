@@ -403,13 +403,13 @@ public class ToolBasicTest extends ReplToolTesting {
                     (a) -> assertCommand(a, "int a;", null),
                     (a) -> assertCommand(a, "()", null, null, null, "", ""),
                     (a) -> assertClass(a, "class A { public String toString() { return \"A\"; } }", "class", "A"),
-                    (a) -> assertCommandCheckOutput(a, "/list all", (out) ->
+                    (a) -> assertCommandCheckOutput(a, "/list -all", (out) ->
                             output.addAll(Stream.of(out.split("\n"))
                                     .filter(str -> !str.isEmpty())
                                     .map(str -> str.substring(str.indexOf(':') + 2))
                                     .filter(str -> !str.startsWith("/"))
                                     .collect(Collectors.toList()))),
-                    (a) -> assertCommand(a, "/save all " + path.toString(), "")
+                    (a) -> assertCommand(a, "/save -all " + path.toString(), "")
             );
             assertEquals(Files.readAllLines(path), output);
         }
@@ -472,7 +472,7 @@ public class ToolBasicTest extends ReplToolTesting {
     public void testStartSave() throws IOException {
         Compiler compiler = new Compiler();
         Path startSave = compiler.getPath("startSave.txt");
-        test(a -> assertCommand(a, "/save start " + startSave.toString(), null));
+        test(a -> assertCommand(a, "/save -start " + startSave.toString(), null));
         List<String> lines = Files.lines(startSave)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
