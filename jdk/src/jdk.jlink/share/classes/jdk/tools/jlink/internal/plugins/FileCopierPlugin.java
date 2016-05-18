@@ -41,10 +41,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import jdk.tools.jlink.internal.ModuleEntryImpl;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
-import jdk.tools.jlink.plugin.Pool.ModuleDataType;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 import jdk.tools.jlink.internal.Utils;
 
@@ -68,12 +68,12 @@ public class FileCopierPlugin implements TransformerPlugin {
     /**
      * Symbolic link to another path.
      */
-    public static abstract class SymImageFile extends Pool.ModuleData {
+    public static abstract class SymImageFile extends ModuleEntryImpl {
 
         private final String targetPath;
 
         public SymImageFile(String targetPath, String module, String path,
-                Pool.ModuleDataType type, InputStream stream, long size) {
+                ModuleEntry.Type type, InputStream stream, long size) {
             super(module, path, type, stream, size);
             this.targetPath = targetPath;
         }
@@ -86,7 +86,7 @@ public class FileCopierPlugin implements TransformerPlugin {
     private static final class SymImageFileImpl extends SymImageFile {
 
         public SymImageFileImpl(String targetPath, Path file, String module,
-                String path, ModuleDataType type) {
+                String path, ModuleEntry.Type type) {
             super(targetPath, module, path, type, newStream(file), length(file));
         }
     }
@@ -110,11 +110,11 @@ public class FileCopierPlugin implements TransformerPlugin {
     private static final class DirectoryCopy implements FileVisitor<Path> {
 
         private final Path source;
-        private final Pool pool;
+        private final ModulePool pool;
         private final String targetDir;
         private final List<SymImageFile> symlinks = new ArrayList<>();
 
-        DirectoryCopy(Path source, Pool pool, String targetDir) {
+        DirectoryCopy(Path source, ModulePool pool, String targetDir) {
             this.source = source;
             this.pool = pool;
             this.targetDir = targetDir;
@@ -148,7 +148,7 @@ public class FileCopierPlugin implements TransformerPlugin {
                 }
                 SymImageFileImpl impl = new SymImageFileImpl(symTarget.toString(),
                         file, path, Objects.requireNonNull(file.getFileName()).toString(),
-                        Pool.ModuleDataType.OTHER);
+                        ModuleEntry.Type.OTHER);
                 symlinks.add(impl);
             } else {
                 addFile(pool, file, path);
@@ -172,14 +172,14 @@ public class FileCopierPlugin implements TransformerPlugin {
         }
     }
 
-    private static void addFile(Pool pool, Path file, String path)
+    private static void addFile(ModulePool pool, Path file, String path)
             throws IOException {
         Objects.requireNonNull(pool);
         Objects.requireNonNull(file);
         Objects.requireNonNull(path);
-        ModuleData impl = Pool.newImageFile(FAKE_MODULE,
+        ModuleEntry impl = ModuleEntry.create(FAKE_MODULE,
                 "/" + FAKE_MODULE + "/other/" + path,
-                Pool.ModuleDataType.OTHER, newStream(file), length(file));
+                ModuleEntry.Type.OTHER, newStream(file), length(file));
         try {
             pool.add(impl);
         } catch (Exception ex) {
@@ -188,9 +188,9 @@ public class FileCopierPlugin implements TransformerPlugin {
     }
 
     @Override
-    public Set<PluginType> getType() {
-        Set<PluginType> set = new HashSet<>();
-        set.add(CATEGORY.TRANSFORMER);
+    public Set<Category> getType() {
+        Set<Category> set = new HashSet<>();
+        set.add(Category.TRANSFORMER);
         return Collections.unmodifiableSet(set);
     }
 
@@ -239,8 +239,8 @@ public class FileCopierPlugin implements TransformerPlugin {
     }
 
     @Override
-    public void visit(Pool in, Pool out) {
-        in.visit((file) -> {
+    public void visit(ModulePool in, ModulePool out) {
+        in.transformAndCopy((file) -> {
             return file;
         }, out);
 

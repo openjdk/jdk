@@ -24,34 +24,33 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import java.lang.module.ModuleDescriptor;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.Properties;
-
+import java.util.Set;
+import java.util.function.Function;
 import jdk.tools.jlink.internal.Utils;
-import jdk.tools.jlink.plugin.ExecutableImage;
-import jdk.tools.jlink.plugin.PluginContext;
-import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.PostProcessorPlugin;
+import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.Plugin.Category;
+import jdk.tools.jlink.plugin.Plugin.State;
+import jdk.tools.jlink.plugin.TransformerPlugin;
 
 /**
  * This plugin adds/deletes information for 'release' file.
  */
-public final class ReleaseInfoPlugin implements PostProcessorPlugin {
+public final class ReleaseInfoPlugin implements TransformerPlugin {
     // option name
     public static final String NAME = "release-info";
     public static final String KEYS = "keys";
+    private final Map<String, String> release = new HashMap<>();
 
     @Override
-    public Set<PluginType> getType() {
-        return Collections.singleton(CATEGORY.PROCESSOR);
+    public Set<Category> getType() {
+        return Collections.singleton(Category.METAINFO_ADDER);
     }
 
     @Override
@@ -65,8 +64,8 @@ public final class ReleaseInfoPlugin implements PostProcessorPlugin {
     }
 
     @Override
-    public Set<STATE> getState() {
-        return EnumSet.of(STATE.FUNCTIONAL);
+    public Set<State> getState() {
+        return EnumSet.of(State.FUNCTIONAL);
     }
 
     @Override
@@ -80,49 +79,49 @@ public final class ReleaseInfoPlugin implements PostProcessorPlugin {
     }
 
     @Override
-    public void configure(Map<String, String> config, PluginContext ctx) {
-        Properties release = ctx != null? ctx.getReleaseProperties() : null;
-        if (release != null) {
-            String operation = config.get(NAME);
-            switch (operation) {
-                case "add": {
-                    // leave it to open-ended! source, java_version, java_full_version
-                    // can be passed via this option like:
-                    //
-                    //     --release-info add:build_type=fastdebug,source=openjdk,java_version=9
-                    // and put whatever value that was passed in command line.
+    public void configure(Map<String, String> config) {
+        String operation = config.get(NAME);
+        switch (operation) {
+            case "add": {
+                // leave it to open-ended! source, java_version, java_full_version
+                // can be passed via this option like:
+                //
+                //     --release-info add:build_type=fastdebug,source=openjdk,java_version=9
+                // and put whatever value that was passed in command line.
 
-                    config.keySet().stream().
-                        filter(s -> !NAME.equals(s)).
-                        forEach(s -> release.put(s, config.get(s)));
-                }
-                break;
-
-                case "del": {
-                    // --release-info del:keys=openjdk,java_version
-                    String[] keys = Utils.listParser.apply(config.get(KEYS));
-                    for (String k : keys) {
-                        release.remove(k);
-                    }
-                }
-                break;
-
-                default: {
-                    // --release-info <file>
-                    try (FileInputStream fis = new FileInputStream(operation)) {
-                        release.load(fis);
-                    } catch (IOException exp) {
-                        throw new RuntimeException(exp);
-                    }
-                }
-                break;
+                config.keySet().stream().
+                    filter(s -> !NAME.equals(s)).
+                    forEach(s -> release.put(s, config.get(s)));
             }
+            break;
+
+            case "del": {
+                // --release-info del:keys=openjdk,java_version
+                String[] keys = Utils.listParser.apply(config.get(KEYS));
+                for (String k : keys) {
+                    release.remove(k);
+                }
+            }
+            break;
+
+            default: {
+                // --release-info <file>
+                Properties props = new Properties();
+                try (FileInputStream fis = new FileInputStream(operation)) {
+                    props.load(fis);
+                } catch (IOException exp) {
+                    throw new RuntimeException(exp);
+                }
+                props.forEach((k, v) -> release.put(k.toString(), v.toString()));
+            }
+            break;
         }
     }
 
     @Override
-    public List<String> process(ExecutableImage image) {
-        // Nothing to do! Release info copied already during configure!
-        return Collections.emptyList();
+    public void visit(ModulePool in, ModulePool out) {
+        in.transformAndCopy(Function.identity(), out);
+        out.getReleaseProperties().putAll(in.getReleaseProperties());
+        out.getReleaseProperties().putAll(release);
     }
 }

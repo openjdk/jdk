@@ -462,9 +462,13 @@ class ZipFile implements ZipConstants, Closeable {
 
     private class ZipEntryIterator implements Enumeration<ZipEntry>, Iterator<ZipEntry> {
         private int i = 0;
+        private final int entryCount;
 
         public ZipEntryIterator() {
-            ensureOpen();
+            synchronized (ZipFile.this) {
+                ensureOpen();
+                this.entryCount = zsrc.total;
+            }
         }
 
         public boolean hasMoreElements() {
@@ -472,10 +476,7 @@ class ZipFile implements ZipConstants, Closeable {
         }
 
         public boolean hasNext() {
-            synchronized (ZipFile.this) {
-                ensureOpen();
-                return i < zsrc.total;
-            }
+            return i < entryCount;
         }
 
         public ZipEntry nextElement() {
@@ -485,7 +486,7 @@ class ZipFile implements ZipConstants, Closeable {
         public ZipEntry next() {
             synchronized (ZipFile.this) {
                 ensureOpen();
-                if (i >= zsrc.total) {
+                if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
                 // each "entry" has 3 ints in table entries
@@ -526,34 +527,34 @@ class ZipFile implements ZipConstants, Closeable {
     /* Checks ensureOpen() before invoke this method */
     private ZipEntry getZipEntry(String name, int pos) {
         byte[] cen = zsrc.cen;
-        ZipEntry e = new ZipEntry();
         int nlen = CENNAM(cen, pos);
         int elen = CENEXT(cen, pos);
         int clen = CENCOM(cen, pos);
-        e.flag = CENFLG(cen, pos);  // get the flag first
-        if (name != null) {
-            e.name = name;
-        } else {
-            if (!zc.isUTF8() && (e.flag & EFS) != 0) {
-                e.name = zc.toStringUTF8(cen, pos + CENHDR, nlen);
+        int flag = CENFLG(cen, pos);
+        if (name == null) {
+            if (!zc.isUTF8() && (flag & EFS) != 0) {
+                name = zc.toStringUTF8(cen, pos + CENHDR, nlen);
             } else {
-                e.name = zc.toString(cen, pos + CENHDR, nlen);
+                name = zc.toString(cen, pos + CENHDR, nlen);
             }
         }
+        ZipEntry e = new ZipEntry(name);
+        e.flag = flag;
         e.xdostime = CENTIM(cen, pos);
         e.crc = CENCRC(cen, pos);
         e.size = CENLEN(cen, pos);
         e.csize = CENSIZ(cen, pos);
         e.method = CENHOW(cen, pos);
         if (elen != 0) {
-            e.setExtra0(Arrays.copyOfRange(cen, pos + CENHDR + nlen,
-                                           pos + CENHDR + nlen + elen), true);
+            int start = pos + CENHDR + nlen;
+            e.setExtra0(Arrays.copyOfRange(cen, start, start + elen), true);
         }
         if (clen != 0) {
-            if (!zc.isUTF8() && (e.flag & EFS) != 0) {
-                e.comment = zc.toStringUTF8(cen, pos + CENHDR + nlen + elen, clen);
+            int start = pos + CENHDR + nlen + elen;
+            if (!zc.isUTF8() && (flag & EFS) != 0) {
+                e.comment = zc.toStringUTF8(cen, start, clen);
             } else {
-                e.comment = zc.toString(cen, pos + CENHDR + nlen + elen, clen);
+                e.comment = zc.toString(cen, start, clen);
             }
         }
         return e;
@@ -817,7 +818,7 @@ class ZipFile implements ZipConstants, Closeable {
         );
     }
 
-    /*
+    /**
      * Returns an array of strings representing the names of all entries
      * that begin with "META-INF/" (case ignored). This method is used
      * in JarFile, via SharedSecrets, as an optimization when looking up
@@ -827,14 +828,14 @@ class ZipFile implements ZipConstants, Closeable {
     private String[] getMetaInfEntryNames() {
         synchronized (this) {
             ensureOpen();
-            if (zsrc.metanames.size() == 0) {
+            if (zsrc.metanames == null) {
                 return null;
             }
-            String[] names = new String[zsrc.metanames.size()];
+            String[] names = new String[zsrc.metanames.length];
             byte[] cen = zsrc.cen;
             for (int i = 0; i < names.length; i++) {
-                int pos = zsrc.metanames.get(i);
-                names[i] = new String(cen, pos + CENHDR,  CENNAM(cen, pos),
+                int pos = zsrc.metanames[i];
+                names[i] = new String(cen, pos + CENHDR, CENNAM(cen, pos),
                                       StandardCharsets.UTF_8);
             }
             return names;
@@ -850,7 +851,7 @@ class ZipFile implements ZipConstants, Closeable {
         private long locpos;                 // position of first LOC header (usually 0)
         private byte[] comment;              // zip file comment
                                              // list of meta entries in META-INF dir
-        private ArrayList<Integer> metanames = new ArrayList<>();
+        private int[] metanames;
         private final boolean startsWithLoc; // true, if zip file starts with LOCSIG (usually true)
 
         // A Hashmap for all entries.
@@ -1159,7 +1160,7 @@ class ZipFile implements ZipConstants, Closeable {
             int next = -1;
 
             // list for all meta entries
-            metanames = new ArrayList<>();
+            ArrayList<Integer> metanamesList = null;
 
             // Iterate through the entries in the central directory
             int i = 0;
@@ -1194,13 +1195,21 @@ class ZipFile implements ZipConstants, Closeable {
                 idx = addEntry(idx, hash, next, pos);
                 // Adds name to metanames.
                 if (isMetaName(cen, pos + CENHDR, nlen)) {
-                    metanames.add(pos);
+                    if (metanamesList == null)
+                        metanamesList = new ArrayList<>(4);
+                    metanamesList.add(pos);
                 }
                 // skip ext and comment
                 pos += (CENHDR + nlen + elen + clen);
                 i++;
             }
             total = i;
+            if (metanamesList != null) {
+                metanames = new int[metanamesList.size()];
+                for (int j = 0, len = metanames.length; j < len; j++) {
+                    metanames[j] = metanamesList.get(j);
+                }
+            }
             if (pos + ENDHDR != cen.length) {
                 zerror("invalid CEN header (bad header size)");
             }
@@ -1265,30 +1274,23 @@ class ZipFile implements ZipConstants, Closeable {
             }
         }
 
-        private static byte[] metainf = new byte[] {
-            'M', 'E', 'T', 'A', '-', 'I' , 'N', 'F', '/',
-        };
-
-        /*
-         * Returns true if the specified entry's name begins with the string
-         * "META-INF/" irrespective of case.
+        /**
+         * Returns true if the bytes represent a non-directory name
+         * beginning with "META-INF/", disregarding ASCII case.
          */
-        private static boolean isMetaName(byte[] name,  int off, int len) {
-            if (len < 9 || (name[off] != 'M' && name[off] != 'm')) {  //  sizeof("META-INF/") - 1
-                return false;
-            }
-            off++;
-            for (int i = 1; i < metainf.length; i++) {
-                byte c = name[off++];
-                // Avoid toupper; it's locale-dependent
-                if (c >= 'a' && c <= 'z') {
-                    c += 'A' - 'a';
-                }
-                if (metainf[i] != c) {
-                    return false;
-                }
-            }
-            return true;
+        private static boolean isMetaName(byte[] name, int off, int len) {
+            // Use the "oldest ASCII trick in the book"
+            return len > 9                     // "META-INF/".length()
+                && name[off + len - 1] != '/'  // non-directory
+                && (name[off++] | 0x20) == 'm'
+                && (name[off++] | 0x20) == 'e'
+                && (name[off++] | 0x20) == 't'
+                && (name[off++] | 0x20) == 'a'
+                && (name[off++]       ) == '-'
+                && (name[off++] | 0x20) == 'i'
+                && (name[off++] | 0x20) == 'n'
+                && (name[off++] | 0x20) == 'f'
+                && (name[off]         ) == '/';
         }
 
         /*

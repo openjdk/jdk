@@ -26,6 +26,7 @@
 package java.lang.invoke;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
@@ -33,7 +34,6 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -1475,11 +1475,11 @@ public abstract class VarHandle {
         TypesAndInvokers tis = getTypesAndInvokers();
         MethodHandle mh = tis.methodHandle_table[mode];
         if (mh == null) {
-            mh = tis.methodHandle_table[mode] = getMethodHandleUncached(tis, mode);
+            mh = tis.methodHandle_table[mode] = getMethodHandleUncached(mode);
         }
         return mh;
     }
-    private final MethodHandle getMethodHandleUncached(TypesAndInvokers tis, int mode) {
+    private final MethodHandle getMethodHandleUncached(int mode) {
         MethodType mt = accessModeType(AccessMode.values()[mode]).
                 insertParameterTypes(0, VarHandle.class);
         MemberName mn = vform.getMemberName(mode);
@@ -1501,7 +1501,7 @@ public abstract class VarHandle {
     }
 
     static final BiFunction<String, List<Integer>, ArrayIndexOutOfBoundsException>
-            AIOOBE_SUPPLIER = Objects.outOfBoundsExceptionFormatter(
+            AIOOBE_SUPPLIER = Preconditions.outOfBoundsExceptionFormatter(
             new Function<String, ArrayIndexOutOfBoundsException>() {
                 @Override
                 public ArrayIndexOutOfBoundsException apply(String s) {

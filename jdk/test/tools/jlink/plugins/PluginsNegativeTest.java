@@ -26,6 +26,7 @@
  * @summary Negative test for ImagePluginStack.
  * @author Andrei Eremeev
  * @modules jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink
  * @run main/othervm PluginsNegativeTest
  */
 import java.lang.reflect.Layer;
@@ -39,11 +40,12 @@ import java.util.Set;
 import jdk.tools.jlink.internal.ImagePluginConfiguration;
 import jdk.tools.jlink.internal.PluginRepository;
 import jdk.tools.jlink.internal.ImagePluginStack;
-import jdk.tools.jlink.internal.PoolImpl;
+import jdk.tools.jlink.internal.ModulePoolImpl;
 import jdk.tools.jlink.Jlink;
 import jdk.tools.jlink.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.plugin.Plugin;
-import jdk.tools.jlink.plugin.Pool;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 
 public class PluginsNegativeTest {
@@ -96,8 +98,8 @@ public class PluginsNegativeTest {
         plugins.add(createPlugin("plugin"));
         ImagePluginStack stack = ImagePluginConfiguration.parseConfiguration(new PluginsConfiguration(plugins,
                 null, null));
-        PoolImpl inResources = new PoolImpl();
-        inResources.add(Pool.newResource("/aaa/bbb/A", new byte[10]));
+        ModulePoolImpl inResources = new ModulePoolImpl();
+        inResources.add(ModuleEntry.create("/aaa/bbb/A", new byte[10]));
         try {
             stack.visitResources(inResources);
             throw new AssertionError("Exception expected when output resource is empty");
@@ -110,8 +112,8 @@ public class PluginsNegativeTest {
         plugins.add(createPlugin("plugin"));
         ImagePluginStack stack = ImagePluginConfiguration.parseConfiguration(new PluginsConfiguration(plugins,
                 null, null));
-        PoolImpl inResources = new PoolImpl();
-        PoolImpl outResources = (PoolImpl) stack.visitResources(inResources);
+        ModulePoolImpl inResources = new ModulePoolImpl();
+        ModulePoolImpl outResources = (ModulePoolImpl) stack.visitResources(inResources);
         if (!outResources.isEmpty()) {
             throw new AssertionError("Output resource is not empty");
         }
@@ -126,7 +128,7 @@ public class PluginsNegativeTest {
         }
 
         @Override
-        public void visit(Pool inResources, Pool outResources) {
+        public void visit(ModulePool inResources, ModulePool outResources) {
             // do nothing
         }
 
@@ -136,9 +138,9 @@ public class PluginsNegativeTest {
         }
 
         @Override
-        public Set<PluginType> getType() {
-            Set<PluginType> set = new HashSet<>();
-            set.add(CATEGORY.TRANSFORMER);
+        public Set<Category> getType() {
+            Set<Category> set = new HashSet<>();
+            set.add(Category.TRANSFORMER);
             return Collections.unmodifiableSet(set);
         }
 

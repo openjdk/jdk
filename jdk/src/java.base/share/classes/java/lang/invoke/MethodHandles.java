@@ -2245,6 +2245,20 @@ return mh1;
     }
 
     /**
+     * Produces a method handle returning the length of an array.
+     * The type of the method handle will have {@code int} as return type,
+     * and its sole argument will be the array type.
+     * @param arrayClass an array type
+     * @return a method handle which can retrieve the length of an array of the given array type
+     * @throws NullPointerException if the argument is {@code null}
+     * @throws IllegalArgumentException if arrayClass is not an array type
+     */
+    public static
+    MethodHandle arrayLength(Class<?> arrayClass) throws IllegalArgumentException {
+        return MethodHandleImpl.makeArrayElementAccessor(arrayClass, MethodHandleImpl.ArrayAccess.LENGTH);
+    }
+
+    /**
      * Produces a method handle giving read access to elements of an array.
      * The type of the method handle will have a return type of the array's
      * element type.  Its first argument will be the array type,
@@ -2256,7 +2270,7 @@ return mh1;
      */
     public static
     MethodHandle arrayElementGetter(Class<?> arrayClass) throws IllegalArgumentException {
-        return MethodHandleImpl.makeArrayElementAccessor(arrayClass, false);
+        return MethodHandleImpl.makeArrayElementAccessor(arrayClass, MethodHandleImpl.ArrayAccess.GET);
     }
 
     /**
@@ -2271,7 +2285,7 @@ return mh1;
      */
     public static
     MethodHandle arrayElementSetter(Class<?> arrayClass) throws IllegalArgumentException {
-        return MethodHandleImpl.makeArrayElementAccessor(arrayClass, true);
+        return MethodHandleImpl.makeArrayElementAccessor(arrayClass, MethodHandleImpl.ArrayAccess.SET);
     }
 
     /**

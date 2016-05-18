@@ -39,7 +39,7 @@ import jdk.tools.jlink.Jlink.JlinkConfiguration;
 import jdk.tools.jlink.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.builder.DefaultImageBuilder;
 import jdk.tools.jlink.plugin.ExecutableImage;
-import jdk.tools.jlink.plugin.Pool;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.PostProcessorPlugin;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 import jdk.tools.jlink.internal.plugins.DefaultCompressPlugin;
@@ -56,6 +56,8 @@ import tests.JImageGenerator;
  * @library ../lib
  * @modules java.base/jdk.internal.jimage
  *          jdk.jdeps/com.sun.tools.classfile
+ *          jdk.jlink/jdk.tools.jlink
+ *          jdk.jlink/jdk.tools.jlink.builder
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.internal.plugins
  *          jdk.jlink/jdk.tools.jmod
@@ -88,9 +90,9 @@ public class IntegrationTest {
         }
 
         @Override
-        public Set<PluginType> getType() {
-            Set<PluginType> set = new HashSet<>();
-            set.add(CATEGORY.PROCESSOR);
+        public Set<Category> getType() {
+            Set<Category> set = new HashSet<>();
+            set.add(Category.PROCESSOR);
             return Collections.unmodifiableSet(set);
         }
 
@@ -128,18 +130,18 @@ public class IntegrationTest {
         }
 
         @Override
-        public void visit(Pool in, Pool out) {
+        public void visit(ModulePool in, ModulePool out) {
             System.err.println(NAME + index);
             ordered.add(index);
-            in.visit((file) -> {
+            in.transformAndCopy((file) -> {
                 return file;
             }, out);
         }
 
         @Override
-        public Set<PluginType> getType() {
-            Set<PluginType> set = new HashSet<>();
-            set.add(CATEGORY.TRANSFORMER);
+        public Set<Category> getType() {
+            Set<Category> set = new HashSet<>();
+            set.add(Category.TRANSFORMER);
             return Collections.unmodifiableSet(set);
         }
 

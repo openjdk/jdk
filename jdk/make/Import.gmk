@@ -112,7 +112,7 @@ $(BASE_INSTALL_LIBRARIES_HERE)/server/%$(SHARED_LIBRARY_SUFFIX): $(BASE_INSTALL_
 	$(LN) -s ../$(@F) $@
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-  $(BASE_INSTALL_LIBRARIES_HERE)/server/%.dSYM : $(BASE_INSTALL_LIBRARIES_HERE)/%.dSYM
+  $(BASE_INSTALL_LIBRARIES_HERE)/server/%.dSYM:
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../$(@F) $@

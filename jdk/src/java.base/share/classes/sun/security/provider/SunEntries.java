@@ -211,6 +211,25 @@ final class SunEntries {
         map.put("Alg.Alias.MessageDigest.OID.2.16.840.1.101.3.4.2.6",
                 "SHA-512/256");
 
+        map.put("MessageDigest.SHA3-224", "sun.security.provider.SHA3$SHA224");
+        map.put("Alg.Alias.MessageDigest.2.16.840.1.101.3.4.2.7", "SHA3-224");
+        map.put("Alg.Alias.MessageDigest.OID.2.16.840.1.101.3.4.2.7",
+                "SHA3-224");
+
+        map.put("MessageDigest.SHA3-256", "sun.security.provider.SHA3$SHA256");
+        map.put("Alg.Alias.MessageDigest.2.16.840.1.101.3.4.2.8", "SHA3-256");
+        map.put("Alg.Alias.MessageDigest.OID.2.16.840.1.101.3.4.2.8",
+                "SHA3-256");
+        map.put("MessageDigest.SHA3-384", "sun.security.provider.SHA3$SHA384");
+        map.put("Alg.Alias.MessageDigest.2.16.840.1.101.3.4.2.9", "SHA3-384");
+        map.put("Alg.Alias.MessageDigest.OID.2.16.840.1.101.3.4.2.9",
+                "SHA3-384");
+        map.put("MessageDigest.SHA3-512", "sun.security.provider.SHA3$SHA512");
+        map.put("Alg.Alias.MessageDigest.2.16.840.1.101.3.4.2.10", "SHA3-512");
+        map.put("Alg.Alias.MessageDigest.OID.2.16.840.1.101.3.4.2.10",
+                "SHA3-512");
+
+
         /*
          * Algorithm Parameter Generator engines
          */

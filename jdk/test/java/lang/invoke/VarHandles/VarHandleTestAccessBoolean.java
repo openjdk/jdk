@@ -27,6 +27,7 @@
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 VarHandleTestAccessBoolean
  * @run testng/othervm -Diters=20000                         VarHandleTestAccessBoolean
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  VarHandleTestAccessBoolean
+ * @run testng/othervm -Diters=20000 -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false VarHandleTestAccessBoolean
  */
 
 import org.testng.annotations.BeforeClass;
@@ -293,6 +294,10 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
+            boolean r = (boolean) vh.getAndSet(recv, true);
+        });
+
+        checkUOE(() -> {
             boolean o = (boolean) vh.getAndAdd(recv, true);
         });
 
@@ -379,6 +384,10 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
+            boolean r = (boolean) vh.getAndSet(true);
+        });
+
+        checkUOE(() -> {
             boolean o = (boolean) vh.getAndAdd(true);
         });
 
@@ -455,6 +464,10 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
+            boolean r = (boolean) vh.getAndSet(recv, true);
+        });
+
+        checkUOE(() -> {
             boolean o = (boolean) vh.getAndAdd(recv, true);
         });
 
@@ -528,6 +541,10 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
 
         checkUOE(() -> {
             boolean r = vh.weakCompareAndSetRelease(true, false);
+        });
+
+        checkUOE(() -> {
+            boolean r = (boolean) vh.getAndSet(true);
         });
 
         checkUOE(() -> {
@@ -611,6 +628,10 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
 
         checkUOE(() -> {
             boolean r = vh.weakCompareAndSetRelease(array, i, true, false);
+        });
+
+        checkUOE(() -> {
+            boolean r = (boolean) vh.getAndSet(array, i, true);
         });
 
         checkUOE(() -> {
