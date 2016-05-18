@@ -31,7 +31,7 @@ import jdk.test.lib.jittester.functions.ConstructorDefinitionBlock;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class ConstructorDefinitionBlockFactory extends Factory {
+class ConstructorDefinitionBlockFactory extends Factory<ConstructorDefinitionBlock> {
     private final long complexityLimit;
     private final int statementLimit;
     private final int operatorLimit;
@@ -53,7 +53,7 @@ class ConstructorDefinitionBlockFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public ConstructorDefinitionBlock produce() throws ProductionFailedException {
         IRNodeBuilder builder = new IRNodeBuilder()
                 .setOwnerKlass(ownerClass)
                 .setStatementLimit(statementLimit)

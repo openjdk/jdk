@@ -33,7 +33,7 @@ import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class CastOperatorFactory extends OperatorFactory {
+class CastOperatorFactory extends OperatorFactory<CastOperator> {
     private final Type resultType;
     private final Type ownerClass;
 
@@ -45,12 +45,12 @@ class CastOperatorFactory extends OperatorFactory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public CastOperator produce() throws ProductionFailedException {
         ArrayList<Type> argType = new ArrayList<>(TypeList.getAll());
         PseudoRandom.shuffle(argType);
         for (Type type : argType) {
             try {
-                ExpressionFactory expressionFactory = new IRNodeBuilder()
+                Factory<IRNode> expressionFactory = new IRNodeBuilder()
                         .setComplexityLimit(complexityLimit - 1)
                         .setOperatorLimit(operatorLimit - 1)
                         .setOwnerKlass((TypeKlass) ownerClass)
@@ -59,14 +59,11 @@ class CastOperatorFactory extends OperatorFactory {
                         .setResultType(type)
                         .getExpressionFactory();
                 SymbolTable.push();
-                if (type.equals(resultType)) {
-                    IRNode expr = expressionFactory.produce();
-                    SymbolTable.merge();
-                    return expr;
-                } else if ((!exceptionSafe || exceptionSafe && !(type instanceof TypeKlass))
-                        && type.canExplicitlyCastTo(resultType)) {
+                if (type.equals(resultType) ||
+                        ((!exceptionSafe || exceptionSafe && !(type instanceof TypeKlass))
+                            && type.canExplicitlyCastTo(resultType))) {
                     // In safe mode we cannot explicitly cast an object, because it may throw.
-                    IRNode castOperator = new CastOperator(resultType, expressionFactory.produce());
+                    CastOperator castOperator = new CastOperator(resultType, expressionFactory.produce());
                     SymbolTable.merge();
                     return castOperator;
                 }
