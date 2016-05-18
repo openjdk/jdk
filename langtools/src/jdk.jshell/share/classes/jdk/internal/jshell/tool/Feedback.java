@@ -600,7 +600,7 @@ class Feedback {
             return valid;
         }
 
-        // For /set newmode <new-mode> [command|quiet [<old-mode>]]
+        // For /set newmode <new-mode> [-command|-quiet [<old-mode>]]
         boolean setNewMode() {
             String umode = at.next();
             if (umode == null) {
@@ -611,8 +611,8 @@ class Feedback {
                 errorat("jshell.err.feedback.expected.mode.name", umode);
                 valid = false;
             }
-            String[] fluffOpt = at.next("command", "quiet");
-            boolean fluff = fluffOpt == null || fluffOpt.length != 1 || "command".equals(fluffOpt[0]);
+            String[] fluffOpt = at.next("-command", "-quiet");
+            boolean fluff = fluffOpt == null || fluffOpt.length != 1 || "-command".equals(fluffOpt[0]);
             if (fluffOpt != null && fluffOpt.length != 1) {
                 errorat("jshell.err.feedback.command.quiet");
                 valid = false;

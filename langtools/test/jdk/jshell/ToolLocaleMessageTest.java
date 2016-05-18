@@ -76,7 +76,7 @@ public class ToolLocaleMessageTest extends ReplToolTesting {
     public void testSample() {
         try {
             testLocale(
-                    (a) -> assertCommandOK(a, "/set newmode test command normal", "test"),
+                    (a) -> assertCommandOK(a, "/set newmode test -command normal", "test"),
                     (a) -> assertCommandOK(a, "/set format test errorpre 'ERROR: '"),
                     (a) -> assertCommandOK(a, "/set feedback test", "test"),
 
@@ -101,7 +101,7 @@ public class ToolLocaleMessageTest extends ReplToolTesting {
     public void testCommand() {
         try {
             testLocale(
-                    (a) -> assertCommandOK(a, "/set newmode test command normal", "test"),
+                    (a) -> assertCommandOK(a, "/set newmode test -command normal", "test"),
                     (a) -> assertCommandOK(a, "/set format test errorpre 'ERROR: '"),
                     (a) -> assertCommandOK(a, "/set feedback test", "test"),
 
@@ -134,13 +134,13 @@ public class ToolLocaleMessageTest extends ReplToolTesting {
 
     public void testHelp() {
         testLocale(
-                (a) -> assertCommandOK(a, "/help", "/list", "/save", "/set", "[restore]"),
-                (a) -> assertCommandOK(a, "/help /list", "start", "all"),
+                (a) -> assertCommandOK(a, "/help", "/list", "/save", "/set", "[-restore]"),
+                (a) -> assertCommandOK(a, "/help /list", "-start", "-all"),
                 (a) -> assertCommandOK(a, "/help /edit", "/set editor"),
                 (a) -> assertCommandOK(a, "/help /drop", "/drop"),
-                (a) -> assertCommandOK(a, "/help /save", "all", "start"),
+                (a) -> assertCommandOK(a, "/help /save", "-all", "-start"),
                 (a) -> assertCommandOK(a, "/help /open", "/open"),
-                (a) -> assertCommandOK(a, "/help /reload", "restore"),
+                (a) -> assertCommandOK(a, "/help /reload", "-restore"),
                 (a) -> assertCommandOK(a, "/help /help", "intro"),
                 (a) -> assertCommandOK(a, "/help /set", "newmode"),
                 (a) -> assertCommandOK(a, "/help /?", "intro"),
@@ -156,11 +156,11 @@ public class ToolLocaleMessageTest extends ReplToolTesting {
     public void testFeedbackError() {
         try {
             testLocale(
-                    (a) -> assertCommandOK(a, "/set newmode tee command foo", "foo"),
-                    (a) -> assertCommandOK(a, "/set newmode tee flurb", "command", "quiet"),
+                    (a) -> assertCommandOK(a, "/set newmode tee -command foo", "foo"),
+                    (a) -> assertCommandOK(a, "/set newmode tee flurb", "-command", "-quiet"),
                     (a) -> assertCommandOK(a, "/set newmode te2", "te2"),
-                    (a) -> assertCommandOK(a, "/set newmode te2 command", "te2"),
-                    (a) -> assertCommandOK(a, "/set newmode te command normal", "te"),
+                    (a) -> assertCommandOK(a, "/set newmode te2 -command", "te2"),
+                    (a) -> assertCommandOK(a, "/set newmode te -command normal", "te"),
                     (a) -> assertCommandOK(a, "/set format te errorpre 'ERROR: '"),
                     (a) -> assertCommandOK(a, "/set feedback te"),
 
@@ -182,7 +182,7 @@ public class ToolLocaleMessageTest extends ReplToolTesting {
                     (a) -> assertCommandFail(a, "/set newmode"),
                     (a) -> assertCommandFail(a, "/set newmode te"),
                     (a) -> assertCommandFail(a, "/set newmode x xyz"),
-                    (a) -> assertCommandFail(a, "/set newmode x quiet y"),
+                    (a) -> assertCommandFail(a, "/set newmode x -quiet y"),
                     (a) -> assertCommandFail(a, "/set prompt"),
                     (a) -> assertCommandFail(a, "/set prompt te"),
                     (a) -> assertCommandFail(a, "/set prompt te aaa xyz", "aaa"),

@@ -284,7 +284,7 @@ public class ToolSimpleTest extends ReplToolTesting {
                 (a) -> assertHelp(a, "/?", "/list", "/help", "/exit", "intro"),
                 (a) -> assertHelp(a, "/help", "/list", "/help", "/exit", "intro"),
                 (a) -> assertHelp(a, "/help short", "shortcuts", "<tab>"),
-                (a) -> assertHelp(a, "/? /li", "/list all", "snippets"),
+                (a) -> assertHelp(a, "/? /li", "/list -all", "snippets"),
                 (a) -> assertHelp(a, "/help /help", "/help <command>")
         );
     }
@@ -314,15 +314,15 @@ public class ToolSimpleTest extends ReplToolTesting {
         List<String> startVarList = new ArrayList<>(START_UP);
         startVarList.add("int aardvark");
         test(
-                a -> assertCommandCheckOutput(a, "/list all",
+                a -> assertCommandCheckOutput(a, "/list -all",
                         s -> checkLineToList(s, START_UP)),
                 a -> assertCommandOutputStartsWith(a, "/list " + arg,
                         "|  No applicable definition or id found named: " + arg),
                 a -> assertVariable(a, "int", "aardvark"),
                 a -> assertCommandOutputContains(a, "/list aardvark", "aardvark"),
-                a -> assertCommandCheckOutput(a, "/list start",
+                a -> assertCommandCheckOutput(a, "/list -start",
                         s -> checkLineToList(s, START_UP)),
-                a -> assertCommandCheckOutput(a, "/list all",
+                a -> assertCommandCheckOutput(a, "/list -all",
                         s -> checkLineToList(s, startVarList)),
                 a -> assertCommandCheckOutput(a, "/list printf",
                         s -> assertTrue(s.contains("void printf"))),
@@ -335,7 +335,7 @@ public class ToolSimpleTest extends ReplToolTesting {
         String arg = "qqqq";
         List<String> startVarList = new ArrayList<>();
         test(
-                a -> assertCommandCheckOutput(a, "/vars all",
+                a -> assertCommandCheckOutput(a, "/vars -all",
                         s -> checkLineToList(s, startVarList)),
                 a -> assertCommandOutputStartsWith(a, "/vars " + arg,
                         "|  No applicable definition or id found named: " + arg),
@@ -344,9 +344,9 @@ public class ToolSimpleTest extends ReplToolTesting {
                 a -> assertVariable(a, "int", "a"),
                 a -> assertVariable(a, "double", "a", "1", "1.0"),
                 a -> assertCommandOutputStartsWith(a, "/vars aardvark", "|    int aardvark = 0"),
-                a -> assertCommandCheckOutput(a, "/vars start",
+                a -> assertCommandCheckOutput(a, "/vars -start",
                         s -> checkLineToList(s, startVarList)),
-                a -> assertCommandOutputStartsWith(a, "/vars all",
+                a -> assertCommandOutputStartsWith(a, "/vars -all",
                         "|    int aardvark = 0\n|    int a = "),
                 a -> assertCommandOutputStartsWith(a, "/vars printf",
                         "|  No applicable definition or id found named: printf"),
@@ -359,9 +359,9 @@ public class ToolSimpleTest extends ReplToolTesting {
         String arg = "qqqq";
         List<String> startMethodList = new ArrayList<>(START_UP_CMD_METHOD);
         test(
-                a -> assertCommandCheckOutput(a, "/methods all",
+                a -> assertCommandCheckOutput(a, "/methods -all",
                         s -> checkLineToList(s, startMethodList)),
-                a -> assertCommandCheckOutput(a, "/methods start",
+                a -> assertCommandCheckOutput(a, "/methods -start",
                         s -> checkLineToList(s, startMethodList)),
                 a -> assertCommandCheckOutput(a, "/methods printf",
                         s -> checkLineToList(s, startMethodList)),
@@ -377,7 +377,7 @@ public class ToolSimpleTest extends ReplToolTesting {
                         "|  No applicable definition or id found named: " + arg),
                 a -> assertCommandOutputStartsWith(a, "/methods aardvark",
                         "|  No applicable definition or id found named: aardvark"),
-                a -> assertCommandCheckOutput(a, "/methods start",
+                a -> assertCommandCheckOutput(a, "/methods -start",
                         s -> checkLineToList(s, startMethodList)),
                 a -> assertCommandCheckOutput(a, "/methods printf",
                         s -> checkLineToList(s, startMethodList)),
@@ -393,16 +393,16 @@ public class ToolSimpleTest extends ReplToolTesting {
         String arg = "qqqq";
         List<String> startTypeList = new ArrayList<>();
         test(
-                a -> assertCommandCheckOutput(a, "/types all",
+                a -> assertCommandCheckOutput(a, "/types -all",
                         s -> checkLineToList(s, startTypeList)),
-                a -> assertCommandCheckOutput(a, "/types start",
+                a -> assertCommandCheckOutput(a, "/types -start",
                         s -> checkLineToList(s, startTypeList)),
                 a -> assertCommandOutputStartsWith(a, "/types " + arg,
                         "|  No applicable definition or id found named: " + arg),
                 a -> assertVariable(a, "int", "aardvark"),
                 (a) -> assertClass(a, "class A { }", "class", "A"),
                 (a) -> assertClass(a, "interface A { }", "interface", "A"),
-                a -> assertCommandOutputStartsWith(a, "/types all",
+                a -> assertCommandOutputStartsWith(a, "/types -all",
                         "|    class A\n" +
                         "|    interface A"),
                 (a) -> assertClass(a, "enum E { }", "enum", "E"),
@@ -417,7 +417,7 @@ public class ToolSimpleTest extends ReplToolTesting {
                         "|    @interface B"),
                 a -> assertCommandOutputStartsWith(a, "/types " + arg,
                         "|  No applicable definition or id found named: " + arg),
-                a -> assertCommandCheckOutput(a, "/types start",
+                a -> assertCommandCheckOutput(a, "/types -start",
                         s -> checkLineToList(s, startTypeList))
         );
     }

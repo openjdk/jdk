@@ -113,7 +113,7 @@ public class JShellTool implements MessageHandler {
     private static final String LINE_SEP = System.getProperty("line.separator");
     private static final Pattern LINEBREAK = Pattern.compile("\\R");
     private static final Pattern HISTORY_ALL_START_FILENAME = Pattern.compile(
-            "((?<cmd>(all|history|start))(\\z|\\p{javaWhitespace}+))?(?<filename>.*)");
+            "((?<cmd>(-all|-history|-start))(\\z|\\p{javaWhitespace}+))?(?<filename>.*)");
     private static final String RECORD_SEPARATOR = "\u241E";
     private static final String RB_NAME_PREFIX  = "jdk.internal.jshell.tool.resources";
     private static final String VERSION_RB_NAME = RB_NAME_PREFIX + ".version";
@@ -879,8 +879,8 @@ public class JShellTool implements MessageHandler {
     }
 
     private static final CompletionProvider EMPTY_COMPLETION_PROVIDER = new FixedCompletionProvider();
-    private static final CompletionProvider KEYWORD_COMPLETION_PROVIDER = new FixedCompletionProvider("all ", "start ", "history ");
-    private static final CompletionProvider RELOAD_OPTIONS_COMPLETION_PROVIDER = new FixedCompletionProvider("restore", "quiet");
+    private static final CompletionProvider KEYWORD_COMPLETION_PROVIDER = new FixedCompletionProvider("-all ", "-start ", "-history ");
+    private static final CompletionProvider RELOAD_OPTIONS_COMPLETION_PROVIDER = new FixedCompletionProvider("-restore", "-quiet");
     private static final CompletionProvider FILE_COMPLETION_PROVIDER = fileCompletions(p -> true);
     private final Map<String, Command> commands = new LinkedHashMap<>();
     private void registerCommand(Command cmd) {
@@ -1389,7 +1389,7 @@ public class JShellTool implements MessageHandler {
      *
      * @param snippets the base list of possible snippets
      * @param arg the user's argument to the command, maybe be the empty string
-     * @param allowAll if true, allow the use of 'all' and 'start'
+     * @param allowAll if true, allow the use of '-all' and '-start'
      * @return a Stream of referenced snippets or null if no matches to specific arg
      */
     private <T extends Snippet> Stream<T> argToSnippets(List<T> snippets, String arg, boolean allowAll) {
@@ -1403,15 +1403,15 @@ public class JShellTool implements MessageHandler {
      * @param snippets the base list of possible snippets
      * @param defFilter the filter to apply to the arguments if no argument
      * @param arg the user's argument to the command, maybe be the empty string
-     * @param allowAll if true, allow the use of 'all' and 'start'
+     * @param allowAll if true, allow the use of '-all' and '-start'
      * @return a Stream of referenced snippets or null if no matches to specific arg
      */
     private <T extends Snippet> Stream<T> argToSnippets(List<T> snippets,
             Predicate<Snippet> defFilter, String arg, boolean allowAll) {
-        if (allowAll && arg.equals("all")) {
+        if (allowAll && arg.equals("-all")) {
             // all snippets including start-up, failed, and overwritten
             return snippets.stream();
-        } else if (allowAll && arg.equals("start")) {
+        } else if (allowAll && arg.equals("-start")) {
             // start-up snippets
             return snippets.stream()
                     .filter(this::inStartUp);
@@ -1436,8 +1436,8 @@ public class JShellTool implements MessageHandler {
 
     /**
      * Convert a user argument to a Stream of snippets referenced by that
-     * argument, printing an informative message if no matches. Allow 'all' and
-     * 'start'.
+     * argument, printing an informative message if no matches. Allow '-all' and
+     * '-start'.
      *
      * @param snippets the base list of possible snippets
      * @param defFilter the filter to apply to the arguments if no argument
@@ -1595,7 +1595,7 @@ public class JShellTool implements MessageHandler {
     }
 
     private boolean cmdList(String arg) {
-        if (arg.equals("history")) {
+        if (arg.equals("-history")) {
             return cmdHistory();
         }
         Stream<Snippet> stream = argToSnippetsWithMessage(state.snippets(),
@@ -1672,13 +1672,13 @@ public class JShellTool implements MessageHandler {
         Iterable<String> history = replayableHistory;
         boolean echo = true;
         if (arg.length() > 0) {
-            if ("restore".startsWith(arg)) {
+            if ("-restore".startsWith(arg)) {
                 if (replayableHistoryPrevious == null) {
                     errormsg("jshell.err.reload.no.previous");
                     return false;
                 }
                 history = replayableHistoryPrevious;
-            } else if ("quiet".startsWith(arg)) {
+            } else if ("-quiet".startsWith(arg)) {
                 echo = false;
             } else {
                 errormsg("jshell.err.arg", "/reload", arg);
@@ -1705,13 +1705,13 @@ public class JShellTool implements MessageHandler {
         boolean saveStart = false;
         String cmd = mat.group("cmd");
         if (cmd != null) switch (cmd) {
-            case "all":
-                saveAll = "all";
+            case "-all":
+                saveAll = "-all";
                 break;
-            case "history":
+            case "-history":
                 useHistory = true;
                 break;
-            case "start":
+            case "-start":
                 saveStart = true;
                 break;
         }
