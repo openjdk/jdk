@@ -95,12 +95,12 @@ class Invokers {
 
     /*non-public*/ MethodHandle varHandleMethodInvoker(VarHandle.AccessMode ak) {
         // TODO cache invoker
-        return makeVarHandleMethodInvoker(ak);
+        return makeVarHandleMethodInvoker(ak, false);
     }
 
     /*non-public*/ MethodHandle varHandleMethodExactInvoker(VarHandle.AccessMode ak) {
         // TODO cache invoker
-        return makeVarHandleMethodExactInvoker(ak);
+        return makeVarHandleMethodInvoker(ak, true);
     }
 
     private MethodHandle cachedInvoker(int idx) {
@@ -127,26 +127,11 @@ class Invokers {
         return invoker;
     }
 
-    private MethodHandle makeVarHandleMethodInvoker(VarHandle.AccessMode ak) {
+    private MethodHandle makeVarHandleMethodInvoker(VarHandle.AccessMode ak, boolean isExact) {
         MethodType mtype = targetType;
         MethodType invokerType = mtype.insertParameterTypes(0, VarHandle.class);
 
-        LambdaForm lform = varHandleMethodGenericInvokerHandleForm(ak.methodName(), mtype);
-        VarHandle.AccessDescriptor ad = new VarHandle.AccessDescriptor(mtype, ak.at.ordinal(), ak.ordinal());
-        MethodHandle invoker = BoundMethodHandle.bindSingle(invokerType, lform, ad);
-
-        invoker = invoker.withInternalMemberName(MemberName.makeVarHandleMethodInvoke(ak.methodName(), mtype), false);
-        assert(checkVarHandleInvoker(invoker));
-
-        maybeCompileToBytecode(invoker);
-        return invoker;
-    }
-
-    private MethodHandle makeVarHandleMethodExactInvoker(VarHandle.AccessMode ak) {
-        MethodType mtype = targetType;
-        MethodType invokerType = mtype.insertParameterTypes(0, VarHandle.class);
-
-        LambdaForm lform = varHandleMethodExactInvokerHandleForm(ak.methodName(), mtype);
+        LambdaForm lform = varHandleMethodInvokerHandleForm(ak.methodName(), mtype, isExact);
         VarHandle.AccessDescriptor ad = new VarHandle.AccessDescriptor(mtype, ak.at.ordinal(), ak.ordinal());
         MethodHandle invoker = BoundMethodHandle.bindSingle(invokerType, lform, ad);
 
@@ -400,59 +385,7 @@ class Invokers {
         return lform;
     }
 
-    private static LambdaForm varHandleMethodExactInvokerHandleForm(String name, MethodType mtype) {
-        // TODO Cache form?
-
-        final int THIS_MH      = 0;
-        final int CALL_VH      = THIS_MH + 1;
-        final int ARG_BASE     = CALL_VH + 1;
-        final int ARG_LIMIT = ARG_BASE + mtype.parameterCount();
-        int nameCursor = ARG_LIMIT;
-        final int VAD_ARG      = nameCursor++;
-        final int CHECK_TYPE   = nameCursor++;
-        final int GET_MEMBER   = nameCursor++;
-        final int LINKER_CALL  = nameCursor++;
-
-        MethodType invokerFormType = mtype.insertParameterTypes(0, VarHandle.class)
-                .basicType()
-                .appendParameterTypes(MemberName.class);
-
-        MemberName linker = new MemberName(MethodHandle.class, "linkToStatic", invokerFormType, REF_invokeStatic);
-        try {
-            linker = MemberName.getFactory().resolveOrFail(REF_invokeStatic, linker, null, NoSuchMethodException.class);
-        } catch (ReflectiveOperationException ex) {
-            throw newInternalError(ex);
-        }
-
-        Name[] names = new Name[LINKER_CALL + 1];
-        names[THIS_MH] = argument(THIS_MH, BasicType.basicType(Object.class));
-        names[CALL_VH] = argument(CALL_VH, BasicType.basicType(Object.class));
-        for (int i = 0; i < mtype.parameterCount(); i++) {
-            names[ARG_BASE + i] = argument(ARG_BASE + i, BasicType.basicType(mtype.parameterType(i)));
-        }
-
-        BoundMethodHandle.SpeciesData speciesData = BoundMethodHandle.speciesData_L();
-        names[THIS_MH] = names[THIS_MH].withConstraint(speciesData);
-
-        NamedFunction getter = speciesData.getterFunction(0);
-        names[VAD_ARG] = new Name(getter, names[THIS_MH]);
-
-        Object[] outArgs = Arrays.copyOfRange(names, CALL_VH, ARG_LIMIT + 1, Object[].class);
-
-        names[CHECK_TYPE] = new Name(NF_checkVarHandleExactType, names[CALL_VH], names[VAD_ARG]);
-
-        names[GET_MEMBER] = new Name(NF_getVarHandleMemberName, names[CALL_VH], names[VAD_ARG]);
-        outArgs[outArgs.length - 1] = names[GET_MEMBER];
-
-        names[LINKER_CALL] = new Name(linker, outArgs);
-        LambdaForm lform = new LambdaForm(name + ":VarHandle_exactInvoker" + shortenSignature(basicTypeSignature(mtype)),
-                                          ARG_LIMIT, names);
-
-        lform.compileToBytecode();
-        return lform;
-    }
-
-    private static LambdaForm varHandleMethodGenericInvokerHandleForm(String name, MethodType mtype) {
+    private static LambdaForm varHandleMethodInvokerHandleForm(String name, MethodType mtype, boolean isExact) {
         // TODO Cache form?
 
         final int THIS_MH      = 0;
@@ -477,8 +410,11 @@ class Invokers {
         NamedFunction getter = speciesData.getterFunction(0);
         names[VAD_ARG] = new Name(getter, names[THIS_MH]);
 
-        names[CHECK_TYPE] = new Name(NF_checkVarHandleGenericType, names[CALL_VH], names[VAD_ARG]);
-
+        if (isExact) {
+            names[CHECK_TYPE] = new Name(NF_checkVarHandleExactType, names[CALL_VH], names[VAD_ARG]);
+        } else {
+            names[CHECK_TYPE] = new Name(NF_checkVarHandleGenericType, names[CALL_VH], names[VAD_ARG]);
+        }
         Object[] outArgs = new Object[ARG_LIMIT];
         outArgs[0] = names[CHECK_TYPE];
         for (int i = 1; i < ARG_LIMIT; i++) {
@@ -488,7 +424,8 @@ class Invokers {
         MethodType outCallType = mtype.insertParameterTypes(0, VarHandle.class)
                 .basicType();
         names[LINKER_CALL] = new Name(outCallType, outArgs);
-        LambdaForm lform = new LambdaForm(name + ":VarHandle_invoker" + shortenSignature(basicTypeSignature(mtype)),
+        String debugName = isExact ? ":VarHandle_exactInvoker" : ":VarHandle_invoker";
+        LambdaForm lform = new LambdaForm(name + debugName + shortenSignature(basicTypeSignature(mtype)),
                                           ARG_LIMIT, names);
 
         lform.prepare();
@@ -511,21 +448,13 @@ class Invokers {
 
     /*non-public*/ static
     @ForceInline
-    void checkVarHandleExactType(VarHandle handle, VarHandle.AccessDescriptor ad) {
-        MethodType erasedTarget = handle.vform.methodType_table[ad.type];
-        MethodType erasedSymbolic = ad.symbolicMethodTypeErased;
-        if (erasedTarget != erasedSymbolic)
-            throw newWrongMethodTypeException(erasedTarget, erasedSymbolic);
-    }
-
-    /*non-public*/ static
-    @ForceInline
-    MemberName getVarHandleMemberName(VarHandle handle, VarHandle.AccessDescriptor ad) {
-        MemberName mn = handle.vform.memberName_table[ad.mode];
-        if (mn == null) {
-            throw handle.unsupported();
+    MethodHandle checkVarHandleExactType(VarHandle handle, VarHandle.AccessDescriptor ad) {
+        MethodHandle mh = handle.getMethodHandle(ad.mode);
+        MethodType mt = mh.type();
+        if (mt != ad.symbolicMethodTypeInvoker) {
+            throw newWrongMethodTypeException(mt, ad.symbolicMethodTypeInvoker);
         }
-        return mn;
+        return mh;
     }
 
     /*non-public*/ static
@@ -649,8 +578,7 @@ class Invokers {
         NF_getCallSiteTarget,
         NF_checkCustomized,
         NF_checkVarHandleGenericType,
-        NF_checkVarHandleExactType,
-        NF_getVarHandleMemberName;
+        NF_checkVarHandleExactType;
     static {
         try {
             NamedFunction nfs[] = {
@@ -666,8 +594,6 @@ class Invokers {
                         .getDeclaredMethod("checkVarHandleGenericType", VarHandle.class, VarHandle.AccessDescriptor.class)),
                 NF_checkVarHandleExactType = new NamedFunction(Invokers.class
                         .getDeclaredMethod("checkVarHandleExactType", VarHandle.class, VarHandle.AccessDescriptor.class)),
-                NF_getVarHandleMemberName = new NamedFunction(Invokers.class
-                        .getDeclaredMethod("getVarHandleMemberName", VarHandle.class, VarHandle.AccessDescriptor.class))
             };
             // Each nf must be statically invocable or we get tied up in our bootstraps.
             assert(InvokerBytecodeGenerator.isStaticallyInvocable(nfs));

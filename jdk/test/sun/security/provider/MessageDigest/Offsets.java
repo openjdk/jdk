@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,10 @@ public class Offsets {
         test("SHA-256", 0, 64, 0, 128);
         test("SHA-384", 0, 128, 0, 256);
         test("SHA-512", 0, 128, 0, 256);
+        test("SHA3-224", 0, 64, 0, 128);
+        test("SHA3-256", 0, 64, 0, 128);
+        test("SHA3-384", 0, 128, 0, 256);
+        test("SHA3-512", 0, 128, 0, 256);
     }
 
 }

@@ -29,8 +29,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 
 /**
@@ -49,23 +49,23 @@ public final class HelloPlugin implements TransformerPlugin {
     }
 
     @Override
-    public void visit(Pool inResources, Pool outResources) {
+    public void visit(ModulePool inResources, ModulePool outResources) {
         try {
             System.out.println("Hello!!!!!!!!!!");
             File f = new File(OUTPUT_FILE);
             f.createNewFile();
-            for (ModuleData res : inResources.getContent()) {
+            inResources.entries().forEach(res -> {
                 outResources.add(res);
-            }
+            });
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
     }
 
     @Override
-    public Set<PluginType> getType() {
-        Set<PluginType> set = new HashSet<>();
-        set.add(CATEGORY.TRANSFORMER);
+    public Set<Category> getType() {
+        Set<Category> set = new HashSet<>();
+        set.add(Category.TRANSFORMER);
         return Collections.unmodifiableSet(set);
     }
 

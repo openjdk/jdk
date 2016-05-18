@@ -36,11 +36,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import jdk.tools.jlink.internal.PoolImpl;
+import java.util.stream.Collectors;
 
+import jdk.tools.jlink.internal.ModulePoolImpl;
 import jdk.tools.jlink.internal.plugins.OrderResourcesPlugin;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 
 public class OrderResourcesPluginTest {
@@ -50,52 +51,52 @@ public class OrderResourcesPluginTest {
     }
 
     public void test() throws Exception {
-        ModuleData[] array = {
-                Pool.newResource("/module1/toto1.class", new byte[0]),
-                Pool.newResource("/module2/toto2.class", new byte[0]),
-                Pool.newResource("/module3/toto3.class", new byte[0]),
-                Pool.newResource("/module3/toto3/module-info.class", new byte[0]),
-                Pool.newResource("/zazou/toto.class", new byte[0]),
-                Pool.newResource("/module4/zazou.class", new byte[0]),
-                Pool.newResource("/module5/toto5.class", new byte[0]),
-                Pool.newResource("/module6/toto6/module-info.class", new byte[0])
+        ModuleEntry[] array = {
+                ModuleEntry.create("/module1/toto1.class", new byte[0]),
+                ModuleEntry.create("/module2/toto2.class", new byte[0]),
+                ModuleEntry.create("/module3/toto3.class", new byte[0]),
+                ModuleEntry.create("/module3/toto3/module-info.class", new byte[0]),
+                ModuleEntry.create("/zazou/toto.class", new byte[0]),
+                ModuleEntry.create("/module4/zazou.class", new byte[0]),
+                ModuleEntry.create("/module5/toto5.class", new byte[0]),
+                ModuleEntry.create("/module6/toto6/module-info.class", new byte[0])
         };
 
-        ModuleData[] sorted = {
-                Pool.newResource("/zazou/toto.class", new byte[0]),
-                Pool.newResource("/module3/toto3/module-info.class", new byte[0]),
-                Pool.newResource("/module6/toto6/module-info.class", new byte[0]),
-                Pool.newResource("/module1/toto1.class", new byte[0]),
-                Pool.newResource("/module2/toto2.class", new byte[0]),
-                Pool.newResource("/module3/toto3.class", new byte[0]),
-                Pool.newResource("/module4/zazou.class", new byte[0]),
-                Pool.newResource("/module5/toto5.class", new byte[0])
+        ModuleEntry[] sorted = {
+                ModuleEntry.create("/zazou/toto.class", new byte[0]),
+                ModuleEntry.create("/module3/toto3/module-info.class", new byte[0]),
+                ModuleEntry.create("/module6/toto6/module-info.class", new byte[0]),
+                ModuleEntry.create("/module1/toto1.class", new byte[0]),
+                ModuleEntry.create("/module2/toto2.class", new byte[0]),
+                ModuleEntry.create("/module3/toto3.class", new byte[0]),
+                ModuleEntry.create("/module4/zazou.class", new byte[0]),
+                ModuleEntry.create("/module5/toto5.class", new byte[0])
         };
 
-        ModuleData[] sorted2 = {
-            Pool.newResource("/module5/toto5.class", new byte[0]),
-            Pool.newResource("/module6/toto6/module-info.class", new byte[0]),
-            Pool.newResource("/module4/zazou.class", new byte[0]),
-            Pool.newResource("/module3/toto3.class", new byte[0]),
-            Pool.newResource("/module3/toto3/module-info.class", new byte[0]),
-            Pool.newResource("/module1/toto1.class", new byte[0]),
-            Pool.newResource("/module2/toto2.class", new byte[0]),
-            Pool.newResource("/zazou/toto.class", new byte[0])
+        ModuleEntry[] sorted2 = {
+            ModuleEntry.create("/module5/toto5.class", new byte[0]),
+            ModuleEntry.create("/module6/toto6/module-info.class", new byte[0]),
+            ModuleEntry.create("/module4/zazou.class", new byte[0]),
+            ModuleEntry.create("/module3/toto3.class", new byte[0]),
+            ModuleEntry.create("/module3/toto3/module-info.class", new byte[0]),
+            ModuleEntry.create("/module1/toto1.class", new byte[0]),
+            ModuleEntry.create("/module2/toto2.class", new byte[0]),
+            ModuleEntry.create("/zazou/toto.class", new byte[0])
         };
 
-        Pool resources = new PoolImpl();
-        for (ModuleData r : array) {
+        ModulePool resources = new ModulePoolImpl();
+        for (ModuleEntry r : array) {
             resources.add(r);
         }
 
         {
-            Pool out = new PoolImpl();
+            ModulePool out = new ModulePoolImpl();
             Map<String, String> config = new HashMap<>();
             config.put(OrderResourcesPlugin.NAME, "/zazou/*,*/module-info.class");
             TransformerPlugin p = new OrderResourcesPlugin();
             p.configure(config);
             p.visit(resources, out);
-            check(out.getContent(), sorted);
+            check(out.entries().collect(Collectors.toList()), sorted);
         }
 
         {
@@ -112,26 +113,26 @@ public class OrderResourcesPluginTest {
             }
             Files.write(order.toPath(), builder.toString().getBytes());
 
-            Pool out = new PoolImpl();
+            ModulePool out = new ModulePoolImpl();
             Map<String, String> config = new HashMap<>();
             config.put(OrderResourcesPlugin.NAME, "@" + order.getAbsolutePath());
             TransformerPlugin p = new OrderResourcesPlugin();
             p.configure(config);
             p.visit(resources, out);
-            check(out.getContent(), sorted2);
+            check(out.entries().collect(Collectors.toList()), sorted2);
 
         }
     }
 
-    private void check(Collection<ModuleData> outResources,
-            ModuleData[] sorted) {
+    private void check(Collection<ModuleEntry> outResources,
+            ModuleEntry[] sorted) {
         if (outResources.size() != sorted.length) {
             throw new AssertionError("Wrong number of resources:\n"
                     + "expected: " + Arrays.toString(sorted) + ",\n"
                     + "     got: " + outResources);
         }
         int i = 0;
-        for (ModuleData r : outResources) {
+        for (ModuleEntry r : outResources) {
             System.err.println("Resource: " + r);
             if (!sorted[i].getPath().equals(r.getPath())) {
                 throw new AssertionError("Resource not properly sorted, difference at: " + i + "\n"

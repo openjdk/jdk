@@ -329,6 +329,7 @@ public abstract class Configuration {
     public abstract MessageRetriever getDocletSpecificMsg();
 
     public CommentUtils cmtUtils;
+    public SortedSet<ModuleElement> modules;
 
     /**
      * A sorted set of packages specified on the command-line merged with a
@@ -395,6 +396,8 @@ public abstract class Configuration {
                 s.add(p);
             }
         }
+        modules = new TreeSet<>(utils.makeModuleComparator());
+        modules.addAll(modulePackages.keySet());
         showModules = (modulePackages.size() > 1);
     }
 
