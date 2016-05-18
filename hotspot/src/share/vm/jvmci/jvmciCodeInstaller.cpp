@@ -219,9 +219,8 @@ narrowKlass CodeInstaller::record_narrow_metadata_reference(Handle constant, TRA
 #endif
 
 Location::Type CodeInstaller::get_oop_type(Handle value) {
-  Handle lirKind = Value::lirKind(value);
-  Handle platformKind = LIRKind::platformKind(lirKind);
-  assert(LIRKind::referenceMask(lirKind) == 1, "unexpected referenceMask");
+  Handle valueKind = Value::valueKind(value);
+  Handle platformKind = ValueKind::platformKind(valueKind);
 
   if (platformKind == word_kind()) {
     return Location::oop;

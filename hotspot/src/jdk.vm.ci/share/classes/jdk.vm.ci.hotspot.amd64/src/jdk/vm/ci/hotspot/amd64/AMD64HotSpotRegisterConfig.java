@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,19 +56,20 @@ import jdk.vm.ci.code.RegisterAttributes;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.code.ValueKindFactory;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.LIRKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;
+import jdk.vm.ci.meta.ValueKind;
 
 public class AMD64HotSpotRegisterConfig implements RegisterConfig {
 
-    private final Architecture architecture;
+    private final TargetDescription target;
 
     private final Register[] allocatable;
 
@@ -96,7 +97,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
     public Register[] filterAllocatableRegisters(PlatformKind kind, Register[] registers) {
         ArrayList<Register> list = new ArrayList<>();
         for (Register reg : registers) {
-            if (architecture.canStoreValue(reg.getRegisterCategory(), kind)) {
+            if (target.arch.canStoreValue(reg.getRegisterCategory(), kind)) {
                 list.add(reg);
             }
         }
@@ -145,13 +146,13 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
         return registers;
     }
 
-    public AMD64HotSpotRegisterConfig(Architecture architecture, HotSpotVMConfig config) {
-        this(architecture, config, initAllocatable(architecture, config.useCompressedOops));
+    public AMD64HotSpotRegisterConfig(TargetDescription target, HotSpotVMConfig config) {
+        this(target, config, initAllocatable(target.arch, config.useCompressedOops));
         assert callerSaved.length >= allocatable.length;
     }
 
-    public AMD64HotSpotRegisterConfig(Architecture architecture, HotSpotVMConfig config, Register[] allocatable) {
-        this.architecture = architecture;
+    public AMD64HotSpotRegisterConfig(TargetDescription target, HotSpotVMConfig config, Register[] allocatable) {
+        this.target = target;
         this.maxFrameSize = config.maxFrameSize;
 
         if (config.windowsOs) {
@@ -173,7 +174,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
         callerSaved = callerSaveSet.toArray(new Register[callerSaveSet.size()]);
 
         allAllocatableAreCallerSaved = true;
-        attributesMap = RegisterAttributes.createMap(this, architecture.getRegisters());
+        attributesMap = RegisterAttributes.createMap(this, target.arch.getRegisters());
     }
 
     @Override
@@ -197,14 +198,14 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
     }
 
     @Override
-    public CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] parameterTypes, TargetDescription target) {
+    public CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] parameterTypes, ValueKindFactory<?> valueKindFactory) {
         HotSpotCallingConventionType hotspotType = (HotSpotCallingConventionType) type;
         if (type == HotSpotCallingConventionType.NativeCall) {
-            return callingConvention(nativeGeneralParameterRegisters, returnType, parameterTypes, hotspotType, target);
+            return callingConvention(nativeGeneralParameterRegisters, returnType, parameterTypes, hotspotType, valueKindFactory);
         }
         // On x64, parameter locations are the same whether viewed
         // from the caller or callee perspective
-        return callingConvention(javaGeneralParameterRegisters, returnType, parameterTypes, hotspotType, target);
+        return callingConvention(javaGeneralParameterRegisters, returnType, parameterTypes, hotspotType, valueKindFactory);
     }
 
     @Override
@@ -227,7 +228,8 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
         }
     }
 
-    private CallingConvention callingConvention(Register[] generalParameterRegisters, JavaType returnType, JavaType[] parameterTypes, HotSpotCallingConventionType type, TargetDescription target) {
+    private CallingConvention callingConvention(Register[] generalParameterRegisters, JavaType returnType, JavaType[] parameterTypes, HotSpotCallingConventionType type,
+                    ValueKindFactory<?> valueKindFactory) {
         AllocatableValue[] locations = new AllocatableValue[parameterTypes.length];
 
         int currentGeneral = 0;
@@ -247,14 +249,14 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
                 case Object:
                     if (currentGeneral < generalParameterRegisters.length) {
                         Register register = generalParameterRegisters[currentGeneral++];
-                        locations[i] = register.asValue(target.getLIRKind(kind));
+                        locations[i] = register.asValue(valueKindFactory.getValueKind(kind));
                     }
                     break;
                 case Float:
                 case Double:
                     if (currentXMM < xmmParameterRegisters.length) {
                         Register register = xmmParameterRegisters[currentXMM++];
-                        locations[i] = register.asValue(target.getLIRKind(kind));
+                        locations[i] = register.asValue(valueKindFactory.getValueKind(kind));
                     }
                     break;
                 default:
@@ -262,14 +264,14 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
             }
 
             if (locations[i] == null) {
-                LIRKind lirKind = target.getLIRKind(kind);
-                locations[i] = StackSlot.get(lirKind, currentStackOffset, !type.out);
-                currentStackOffset += Math.max(lirKind.getPlatformKind().getSizeInBytes(), target.wordSize);
+                ValueKind<?> valueKind = valueKindFactory.getValueKind(kind);
+                locations[i] = StackSlot.get(valueKind, currentStackOffset, !type.out);
+                currentStackOffset += Math.max(valueKind.getPlatformKind().getSizeInBytes(), target.wordSize);
             }
         }
 
         JavaKind returnKind = returnType == null ? JavaKind.Void : returnType.getJavaKind();
-        AllocatableValue returnLocation = returnKind == JavaKind.Void ? Value.ILLEGAL : getReturnRegister(returnKind).asValue(target.getLIRKind(returnKind.getStackKind()));
+        AllocatableValue returnLocation = returnKind == JavaKind.Void ? Value.ILLEGAL : getReturnRegister(returnKind).asValue(valueKindFactory.getValueKind(returnKind.getStackKind()));
         return new CallingConvention(currentStackOffset, returnLocation, locations);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import jdk.vm.ci.code.CallingConvention.Type;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.ValueKind;
 
 /**
  * A register configuration binds roles and {@linkplain RegisterAttributes attributes} to physical
@@ -56,9 +57,9 @@ public interface RegisterConfig {
      * @param type the type of calling convention being requested
      * @param returnType the return type (can be null for methods returning {@code void})
      * @param parameterTypes the types of the arguments of the call
-     * @param target the target platform
+     * @param valueKindFactory the factory to create custom {@link ValueKind ValueKinds}
      */
-    CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] parameterTypes, TargetDescription target);
+    CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] parameterTypes, ValueKindFactory<?> valueKindFactory);
 
     /**
      * Gets the ordered set of registers that are can be used to pass parameters according to a
