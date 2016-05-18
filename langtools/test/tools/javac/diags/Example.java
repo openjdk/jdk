@@ -63,6 +63,8 @@ class Example implements Comparable<Example> {
         procFiles = new ArrayList<File>();
         supportFiles = new ArrayList<File>();
         srcPathFiles = new ArrayList<File>();
+        moduleSourcePathFiles = new ArrayList<File>();
+        additionalFiles = new ArrayList<File>();
 
         findFiles(file, srcFiles);
         for (File f: srcFiles) {
@@ -81,13 +83,23 @@ class Example implements Comparable<Example> {
                 else if (files == srcFiles && c.getName().equals("sourcepath")) {
                     srcPathDir = c;
                     findFiles(c, srcPathFiles);
+                } else if (files == srcFiles && c.getName().equals("modulesourcepath")) {
+                    moduleSourcePathDir = c;
+                    findFiles(c, moduleSourcePathFiles);
+                } else if (files == srcFiles && c.getName().equals("additional")) {
+                    additionalFilesDir = c;
+                    findFiles(c, additionalFiles);
                 } else if (files == srcFiles && c.getName().equals("support"))
                     findFiles(c, supportFiles);
                 else
                     findFiles(c, files);
             }
-        } else if (f.isFile() && f.getName().endsWith(".java")) {
-            files.add(f);
+        } else if (f.isFile()) {
+                if (f.getName().endsWith(".java")) {
+                    files.add(f);
+                } else if (f.getName().equals("modulesourcepath")) {
+                    moduleSourcePathDir = f;
+                }
         }
     }
 
@@ -228,14 +240,27 @@ class Example implements Comparable<Example> {
             }
         }
 
+        List<File> files = srcFiles;
+
         if (srcPathDir != null) {
             opts.add("-sourcepath");
             opts.add(srcPathDir.getPath());
         }
 
+        if (moduleSourcePathDir != null) {
+            opts.add("-modulesourcepath");
+            opts.add(moduleSourcePathDir.getPath());
+            files = moduleSourcePathFiles;
+        }
+
+        if (additionalFiles.size() > 0) {
+            List<String> sOpts = Arrays.asList("-d", classesDir.getPath());
+            new Jsr199Compiler(verbose).run(null, null, false, sOpts, additionalFiles);
+        }
+
         try {
             Compiler c = Compiler.getCompiler(runOpts, verbose);
-            c.run(out, keys, raw, opts, srcFiles);
+            c.run(out, keys, raw, opts, files);
         } catch (IllegalArgumentException e) {
             if (out != null) {
                 out.println("Invalid value for run tag: " + runOpts);
@@ -298,7 +323,11 @@ class Example implements Comparable<Example> {
     List<File> srcFiles;
     List<File> procFiles;
     File srcPathDir;
+    File moduleSourcePathDir;
+    File additionalFilesDir;
     List<File> srcPathFiles;
+    List<File> moduleSourcePathFiles;
+    List<File> additionalFiles;
     List<File> supportFiles;
     File infoFile;
     private List<String> runOpts;
