@@ -42,7 +42,7 @@ import javax.net.ssl.SSLServerSocketFactory;
  * Http2Handler on additional threads. All threads
  * obtained from the supplied ExecutorService.
  */
-public class Http2TestServer {
+public class Http2TestServer implements AutoCloseable {
     final ServerSocket server;
     boolean secure;
     SettingsFrame serverSettings, clientSettings;
@@ -154,6 +154,11 @@ public class Http2TestServer {
                 }
             }
         });
+    }
+
+    @Override
+    public void close() throws Exception {
+        stop();
     }
 
 }
