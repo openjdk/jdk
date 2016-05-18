@@ -62,6 +62,15 @@ public interface JavaType {
     }
 
     /**
+     * Checks whether this type is an array class.
+     *
+     * @return {@code true} if this type is an array class
+     */
+    default boolean isArray() {
+        return getComponentType() != null;
+    }
+
+    /**
      * For array types, gets the type of the components, or {@code null} if this is not an array
      * type. This method is analogous to {@link Class#getComponentType()}.
      */

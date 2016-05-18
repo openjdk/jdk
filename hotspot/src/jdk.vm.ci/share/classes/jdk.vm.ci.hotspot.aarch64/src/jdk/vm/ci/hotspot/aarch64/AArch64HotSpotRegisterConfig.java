@@ -196,11 +196,6 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
     }
 
     @Override
-    public Register getRegisterForRole(int index) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] parameterTypes, ValueKindFactory<?> valueKindFactory) {
         HotSpotCallingConventionType hotspotType = (HotSpotCallingConventionType) type;
         if (type == HotSpotCallingConventionType.NativeCall) {

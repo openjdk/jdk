@@ -39,7 +39,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 /**
  * Represents a field in a HotSpot type.
  */
-class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField, HotSpotProxified {
+class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
 
     private final HotSpotResolvedObjectTypeImpl holder;
     private final String name;

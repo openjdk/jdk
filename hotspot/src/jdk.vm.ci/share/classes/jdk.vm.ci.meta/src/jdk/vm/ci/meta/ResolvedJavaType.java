@@ -62,13 +62,6 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     boolean isInstanceClass();
 
     /**
-     * Checks whether this type is an array class.
-     *
-     * @return {@code true} if this type is an array class
-     */
-    boolean isArray();
-
-    /**
      * Checks whether this type is primitive.
      *
      * @return {@code true} if this type is primitive
@@ -135,14 +128,6 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
      * @return {@code true} if the object is an instance of this type
      */
     boolean isInstance(JavaConstant obj);
-
-    /**
-     * Returns this type if it is an exact type otherwise returns null. This type is exact if it is
-     * void, primitive, final, or an array of a final or primitive type.
-     *
-     * @return this type if it is exact; {@code null} otherwise
-     */
-    ResolvedJavaType asExactType();
 
     /**
      * Gets the super class of this type. If this type represents either the {@code Object} class,

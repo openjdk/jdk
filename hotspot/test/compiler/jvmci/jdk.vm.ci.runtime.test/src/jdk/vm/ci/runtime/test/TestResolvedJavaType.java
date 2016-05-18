@@ -183,34 +183,6 @@ public class TestResolvedJavaType extends TypeUniverse {
         }
     }
 
-    private static Class<?> asExactClass(Class<?> c) {
-        if (c.isArray()) {
-            if (asExactClass(c.getComponentType()) != null) {
-                return c;
-            }
-        } else {
-            if (c.isPrimitive() || Modifier.isFinal(c.getModifiers())) {
-                return c;
-            }
-        }
-        return null;
-    }
-
-    @Test
-    public void asExactTypeTest() {
-        for (Class<?> c : classes) {
-            ResolvedJavaType type = metaAccess.lookupJavaType(c);
-            ResolvedJavaType exactType = type.asExactType();
-            Class<?> expected = asExactClass(c);
-            if (expected == null) {
-                assertTrue("exact(" + c.getName() + ") != null", exactType == null);
-            } else {
-                assertNotNull(exactType);
-                assertTrue(exactType.equals(metaAccess.lookupJavaType(expected)));
-            }
-        }
-    }
-
     @Test
     public void getSuperclassTest() {
         for (Class<?> c : classes) {

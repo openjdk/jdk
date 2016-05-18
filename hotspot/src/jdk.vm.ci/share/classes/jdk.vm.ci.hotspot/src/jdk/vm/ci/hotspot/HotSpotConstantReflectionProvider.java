@@ -39,7 +39,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 /**
  * HotSpot implementation of {@link ConstantReflectionProvider}.
  */
-public class HotSpotConstantReflectionProvider implements ConstantReflectionProvider, HotSpotProxified {
+public class HotSpotConstantReflectionProvider implements ConstantReflectionProvider {
 
     protected final HotSpotJVMCIRuntimeProvider runtime;
     protected final HotSpotMethodHandleAccessProvider methodHandleAccess;

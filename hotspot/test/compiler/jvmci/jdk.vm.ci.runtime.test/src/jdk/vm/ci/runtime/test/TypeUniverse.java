@@ -58,8 +58,6 @@ import org.junit.Test;
 
 import jdk.internal.misc.Unsafe;
 
-//JaCoCo Exclude
-
 /**
  * Context for type related tests.
  */

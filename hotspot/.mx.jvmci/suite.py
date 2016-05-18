@@ -1,5 +1,5 @@
 suite = {
-  "mxversion" : "5.6.16",
+  "mxversion" : "5.23.1",
   "name" : "jvmci",
   "url" : "http://openjdk.java.net/projects/graal",
   "developer" : {
@@ -36,13 +36,6 @@ suite = {
       "urls" : ["http://central.maven.org/maven2/org/testng/testng/6.9.10/testng-6.9.10.jar"],
       "sha1" : "6feb3e964aeb7097aff30c372aac3ec0f8d87ede",
     },
-
-    # Stubs for classes introduced in JDK9 that allow compilation with a JDK8 javac and Eclipse.
-    # The "path" and "sha1" attributes are added when mx_jvmci is loaded
-    # (see mx_jvmci._update_JDK9_STUBS_library()).
-    "JDK9_STUBS" : {
-        "license" : "GPLv2-CPE",
-     },
   },
 
   "projects" : {
@@ -52,7 +45,7 @@ suite = {
     "jdk.vm.ci.services" : {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "sourceDirs" : ["src"],
-      "javaCompliance" : "1.8",
+      "javaCompliance" : "9",
       "workingSets" : "API,JVMCI",
     },
 
@@ -62,7 +55,7 @@ suite = {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "1.8",
+      "javaCompliance" : "9",
       "workingSets" : "API,JVMCI",
     },
 
@@ -70,7 +63,7 @@ suite = {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "1.8",
+      "javaCompliance" : "9",
       "workingSets" : "API,JVMCI",
     },
 
@@ -79,7 +72,7 @@ suite = {
       "sourceDirs" : ["src"],
       "dependencies" : ["jdk.vm.ci.meta"],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "1.8",
+      "javaCompliance" : "9",
       "workingSets" : "API,JVMCI",
     },
 
@@ -94,7 +87,7 @@ suite = {
         "jdk.vm.ci.hotspot",
       ],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "1.8",
+      "javaCompliance" : "9",
       "workingSets" : "API,JVMCI",
     },
 
@@ -106,7 +99,7 @@ suite = {
         "jdk.vm.ci.services",
       ],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "1.8",
+      "javaCompliance" : "9",
       "workingSets" : "API,JVMCI",
     },
 
@@ -119,16 +112,8 @@ suite = {
         "jdk.vm.ci.runtime",
       ],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "1.8",
+      "javaCompliance" : "9",
       "workingSets" : "API,JVMCI",
-    },
-
-    "jdk.vm.ci.inittimer" : {
-      "subDir" : "src/jdk.vm.ci/share/classes",
-      "sourceDirs" : ["src"],
-      "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "1.8",
-      "workingSets" : "JVMCI",
     },
 
     # ------------- JVMCI:HotSpot -------------
@@ -138,7 +123,7 @@ suite = {
       "sourceDirs" : ["src"],
       "dependencies" : ["jdk.vm.ci.code"],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "1.8",
+      "javaCompliance" : "9",
       "workingSets" : "JVMCI,AArch64",
     },
 
@@ -147,7 +132,7 @@ suite = {
       "sourceDirs" : ["src"],
       "dependencies" : ["jdk.vm.ci.code"],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "1.8",
+      "javaCompliance" : "9",
       "workingSets" : "JVMCI,AMD64",
     },
 
@@ -156,7 +141,7 @@ suite = {
       "sourceDirs" : ["src"],
       "dependencies" : ["jdk.vm.ci.code"],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "1.8",
+      "javaCompliance" : "9",
       "workingSets" : "JVMCI,SPARC",
     },
 
@@ -166,13 +151,15 @@ suite = {
       "dependencies" : [
         "jdk.vm.ci.hotspotvmconfig",
         "jdk.vm.ci.common",
-        "jdk.vm.ci.inittimer",
         "jdk.vm.ci.runtime",
         "jdk.vm.ci.services",
-        "JDK9_STUBS",
+      ],
+      "imports" : [
+        "jdk.internal.misc",
+        "jdk.internal.org.objectweb.asm",
       ],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "1.8",
+      "javaCompliance" : "9",
       "workingSets" : "JVMCI",
     },
 
@@ -184,7 +171,7 @@ suite = {
         "jdk.vm.ci.hotspot",
       ],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "1.8",
+      "javaCompliance" : "9",
       "workingSets" : "API,JVMCI",
     },
 
@@ -192,7 +179,7 @@ suite = {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "1.8",
+      "javaCompliance" : "9",
       "workingSets" : "JVMCI,HotSpot",
     },
 
@@ -204,7 +191,7 @@ suite = {
         "jdk.vm.ci.hotspot",
       ],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "1.8",
+      "javaCompliance" : "9",
       "workingSets" : "JVMCI,HotSpot,AArch64",
     },
 
@@ -216,7 +203,7 @@ suite = {
         "jdk.vm.ci.hotspot",
       ],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "1.8",
+      "javaCompliance" : "9",
       "workingSets" : "JVMCI,HotSpot,AMD64",
     },
 
@@ -228,7 +215,7 @@ suite = {
         "jdk.vm.ci.hotspot",
       ],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "1.8",
+      "javaCompliance" : "9",
       "workingSets" : "JVMCI,HotSpot,SPARC",
     },
 
@@ -250,7 +237,6 @@ suite = {
     "JVMCI_API" : {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "dependencies" : [
-        "jdk.vm.ci.inittimer",
         "jdk.vm.ci.runtime",
         "jdk.vm.ci.common",
         "jdk.vm.ci.aarch64",
@@ -292,32 +278,6 @@ suite = {
         "JVMCI_API",
       ],
       "exclude" : ["mx:JUNIT"],
-    },
-
-    # This exists to have a monolithic jvmci.jar file which simplifies
-    # using the -Xoverride option in JDK9.
-    "JVMCI" : {
-      "subDir" : "src/jdk.vm.ci/share/classes",
-      "overlaps" : [
-        "JVMCI_API",
-        "JVMCI_SERVICES",
-        "JVMCI_HOTSPOT",
-        "JVMCI_HOTSPOTVMCONFIG",
-      ],
-      "dependencies" : [
-        "jdk.vm.ci.services",
-        "jdk.vm.ci.inittimer",
-        "jdk.vm.ci.runtime",
-        "jdk.vm.ci.common",
-        "jdk.vm.ci.aarch64",
-        "jdk.vm.ci.amd64",
-        "jdk.vm.ci.sparc",
-        "jdk.vm.ci.hotspotvmconfig",
-        "jdk.vm.ci.hotspot.aarch64",
-        "jdk.vm.ci.hotspot.amd64",
-        "jdk.vm.ci.hotspot.sparc",
-      ],
-      "exclude" : ["JDK9_STUBS"]
     },
   },
 }

@@ -40,7 +40,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 /**
  * Implementation of {@link JavaType} for primitive HotSpot types.
  */
-public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType implements HotSpotProxified {
+public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType {
 
     private final JavaKind kind;
 
@@ -55,7 +55,7 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
      * @param kind the Kind to create the mirror for
      */
     public HotSpotResolvedPrimitiveType(JavaKind kind) {
-        super(String.valueOf(Character.toUpperCase(kind.getTypeChar())));
+        super(String.valueOf(kind.getTypeChar()));
         this.kind = kind;
         assert mirror().isPrimitive() : mirror() + " not a primitive type";
     }
@@ -81,11 +81,6 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     @Override
     public ResolvedJavaType getComponentType() {
         return null;
-    }
-
-    @Override
-    public ResolvedJavaType asExactType() {
-        return this;
     }
 
     @Override

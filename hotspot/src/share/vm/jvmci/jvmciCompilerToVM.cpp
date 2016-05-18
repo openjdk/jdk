@@ -781,13 +781,11 @@ C2V_VMENTRY(jint, getMetadata, (JNIEnv *jniEnv, jobject, jobject target, jobject
   Handle compiled_code_handle = JNIHandles::resolve(compiled_code);
   Handle metadata_handle = JNIHandles::resolve(metadata);
 
-  HotSpotOopMap::klass()->initialize(thread);
-
   CodeMetadata code_metadata;
   CodeBlob *cb = NULL;
   CodeInstaller installer;
 
-  JVMCIEnv::CodeInstallResult result = installer.gather_metadata(target_handle, compiled_code_handle, code_metadata, CHECK_0); //cb, pc_descs, nr_pc_descs, scopes_descs, scopes_size, reloc_buffer);
+  JVMCIEnv::CodeInstallResult result = installer.gather_metadata(target_handle, compiled_code_handle, code_metadata, CHECK_0);
   if (result != JVMCIEnv::ok) {
     return result;
   }

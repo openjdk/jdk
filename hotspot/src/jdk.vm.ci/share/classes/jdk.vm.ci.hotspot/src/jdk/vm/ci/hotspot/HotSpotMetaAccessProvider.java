@@ -52,7 +52,7 @@ import jdk.vm.ci.meta.Signature;
 /**
  * HotSpot implementation of {@link MetaAccessProvider}.
  */
-public class HotSpotMetaAccessProvider implements MetaAccessProvider, HotSpotProxified {
+public class HotSpotMetaAccessProvider implements MetaAccessProvider {
 
     protected final HotSpotJVMCIRuntimeProvider runtime;
 
@@ -308,7 +308,6 @@ public class HotSpotMetaAccessProvider implements MetaAccessProvider, HotSpotPro
                 return 0;
             } else {
                 if (lookupJavaType.isArray()) {
-                    // TODO(tw): Add compressed pointer support.
                     int length = Array.getLength(((HotSpotObjectConstantImpl) constant).object());
                     ResolvedJavaType elementType = lookupJavaType.getComponentType();
                     JavaKind elementKind = elementType.getJavaKind();

@@ -38,9 +38,9 @@ public class UnboxPrimitiveDataProvider {
         LinkedList<Object[]> cfgSet = new LinkedList<>();
         // Testing boolean
         cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(
-                        (Boolean) true), JavaConstant.forBoolean(true)});
+                        true), JavaConstant.forBoolean(true)});
         cfgSet.add(new Object[]{JavaConstant.forBoolean(true), null});
-        cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject((Boolean) false),
+        cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(false),
                         JavaConstant.forBoolean(false)});
         cfgSet.add(new Object[]{JavaConstant.forBoolean(false), null});
         for (byte number : new byte[]{-128, 0, 1, 127}) {

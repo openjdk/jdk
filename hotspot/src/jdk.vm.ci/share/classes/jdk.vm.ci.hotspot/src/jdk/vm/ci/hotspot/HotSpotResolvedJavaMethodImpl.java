@@ -46,11 +46,8 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaMethod;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.LineNumberTable;
-import jdk.vm.ci.meta.LineNumberTableImpl;
 import jdk.vm.ci.meta.Local;
-import jdk.vm.ci.meta.LocalImpl;
 import jdk.vm.ci.meta.LocalVariableTable;
-import jdk.vm.ci.meta.LocalVariableTableImpl;
 import jdk.vm.ci.meta.ModifiersProvider;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -62,7 +59,7 @@ import jdk.vm.ci.meta.TriState;
 /**
  * Implementation of {@link JavaMethod} for resolved HotSpot methods.
  */
-final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSpotResolvedJavaMethod, HotSpotProxified, MetaspaceWrapperObject {
+final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSpotResolvedJavaMethod, MetaspaceWrapperObject {
 
     /**
      * Reference to metaspace Method object.
@@ -571,7 +568,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
             line[i] = (int) values[i * 2 + 1];
         }
 
-        return new LineNumberTableImpl(line, bci);
+        return new LineNumberTable(line, bci);
     }
 
     @Override
@@ -596,13 +593,13 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
             String localName = getConstantPool().lookupUtf8(nameCpIndex);
             String localType = getConstantPool().lookupUtf8(typeCpIndex);
 
-            locals[i] = new LocalImpl(localName, runtime().lookupType(localType, holder, false), startBci, endBci, slot);
+            locals[i] = new Local(localName, runtime().lookupType(localType, holder, false), startBci, endBci, slot);
 
             // Go to the next LocalVariableTableElement
             localVariableTableElement += config.localVariableTableElementSize;
         }
 
-        return new LocalVariableTableImpl(locals);
+        return new LocalVariableTable(locals);
     }
 
     /**
