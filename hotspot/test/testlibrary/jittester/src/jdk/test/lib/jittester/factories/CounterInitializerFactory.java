@@ -24,20 +24,20 @@
 package jdk.test.lib.jittester.factories;
 
 import java.util.List;
+
 import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.LiteralInitializer;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.SymbolTable;
 import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.TypeList;
-import jdk.test.lib.jittester.utils.TypeUtil;
 import jdk.test.lib.jittester.VariableInfo;
+import jdk.test.lib.jittester.utils.TypeUtil;
 import jdk.test.lib.jittester.loops.CounterInitializer;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeInt;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class CounterInitializerFactory extends SafeFactory {
+class CounterInitializerFactory extends SafeFactory<CounterInitializer> {
     private final int counterValue;
     private final TypeKlass ownerClass;
 
@@ -47,9 +47,9 @@ class CounterInitializerFactory extends SafeFactory {
     }
 
     @Override
-    protected IRNode sproduce() throws ProductionFailedException {
-        List<Type> types = TypeUtil.getMoreCapaciousThan(TypeList.getBuiltIn(), new TypeInt());
-        types.add(new TypeInt());
+    protected CounterInitializer sproduce() throws ProductionFailedException {
+        List<Type> types = TypeUtil.getMoreCapaciousThan(TypeList.getBuiltIn(), TypeList.INT);
+        types.add(TypeList.INT);
         final Type selectedType = PseudoRandom.randomElement(types);
         IRNode init = new LiteralInitializer(counterValue, selectedType);
         String resultName = "var_" + SymbolTable.getNextVariableNumber();

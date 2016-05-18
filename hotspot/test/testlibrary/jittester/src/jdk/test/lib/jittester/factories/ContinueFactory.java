@@ -24,12 +24,11 @@
 package jdk.test.lib.jittester.factories;
 
 import jdk.test.lib.jittester.Continue;
-import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.ProductionFailedException;
 
-class ContinueFactory extends Factory {
+class ContinueFactory extends Factory<Continue> {
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public Continue produce() throws ProductionFailedException {
         return new Continue();
     }
 }

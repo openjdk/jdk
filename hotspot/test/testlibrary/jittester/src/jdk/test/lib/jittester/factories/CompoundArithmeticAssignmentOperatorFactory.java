@@ -30,8 +30,8 @@ import jdk.test.lib.jittester.OperatorKind;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.TypeList;
+import jdk.test.lib.jittester.VariableBase;
 import jdk.test.lib.jittester.utils.TypeUtil;
-import jdk.test.lib.jittester.types.TypeBoolean;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
@@ -43,11 +43,11 @@ class CompoundArithmeticAssignmentOperatorFactory extends BinaryOperatorFactory 
 
     @Override
     protected boolean isApplicable(Type resultType) {
-        return TypeList.isBuiltIn(resultType) && !resultType.equals(new TypeBoolean());
+        return TypeList.isBuiltIn(resultType) && !resultType.equals(TypeList.BOOLEAN);
     }
 
     @Override
-    protected Pair<Type, Type> generateTypes() throws ProductionFailedException {
+    protected Pair<Type, Type> generateTypes() {
         return new Pair<>(resultType, PseudoRandom.randomElement(
                 TypeUtil.getExplicitlyCastable(TypeList.getBuiltIn(), resultType)));
     }
@@ -66,13 +66,13 @@ class CompoundArithmeticAssignmentOperatorFactory extends BinaryOperatorFactory 
                 .setResultType(rightType)
                 .getExpressionFactory()
                 .produce();
-        IRNode leftExpr = builder.setComplexityLimit(leftComplexityLimit)
+        VariableBase leftExpr = builder.setComplexityLimit(leftComplexityLimit)
                 .setOperatorLimit(leftOperatorLimit)
                 .setResultType(leftType)
                 .setIsConstant(false)
                 .setIsInitialized(true)
                 .getVariableFactory()
                 .produce();
-        return new BinaryOperator(opKind, leftExpr, rightExpr);
+        return new BinaryOperator(opKind, resultType, leftExpr, rightExpr);
     }
 }
