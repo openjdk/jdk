@@ -91,6 +91,19 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
     }
 
     /**
+     * Get the module link.
+     *
+     * @return a content tree for the module link
+     */
+    @Override
+    protected Content getNavLinkModule() {
+        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(annotationType),
+                moduleLabel);
+        Content li = HtmlTree.LI(linkContent);
+        return li;
+    }
+
+    /**
      * Get this package link.
      *
      * @return a content tree for the package link

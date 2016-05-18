@@ -24,6 +24,7 @@
 /**
  * @test
  * @library /lib/testlibrary
+ * @modules jdk.compiler
  * @build LayerAndLoadersTest CompilerUtils ModuleUtils
  * @run testng LayerAndLoadersTest
  * @summary Tests for java.lang.reflect.Layer@createWithXXX methods

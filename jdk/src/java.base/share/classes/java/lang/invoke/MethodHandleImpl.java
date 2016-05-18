@@ -66,25 +66,28 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
     /// Factory methods to create method handles:
 
-    static MethodHandle makeArrayElementAccessor(Class<?> arrayClass, boolean isSetter) {
-        if (arrayClass == Object[].class)
-            return (isSetter ? ArrayAccessor.OBJECT_ARRAY_SETTER : ArrayAccessor.OBJECT_ARRAY_GETTER);
+    static MethodHandle makeArrayElementAccessor(Class<?> arrayClass, ArrayAccess access) {
+        if (arrayClass == Object[].class) {
+            return ArrayAccess.objectAccessor(access);
+        }
         if (!arrayClass.isArray())
             throw newIllegalArgumentException("not an array: "+arrayClass);
         MethodHandle[] cache = ArrayAccessor.TYPED_ACCESSORS.get(arrayClass);
-        int cacheIndex = (isSetter ? ArrayAccessor.SETTER_INDEX : ArrayAccessor.GETTER_INDEX);
+        int cacheIndex = ArrayAccess.cacheIndex(access);
         MethodHandle mh = cache[cacheIndex];
         if (mh != null)  return mh;
-        mh = ArrayAccessor.getAccessor(arrayClass, isSetter);
-        MethodType correctType = ArrayAccessor.correctType(arrayClass, isSetter);
+        mh = ArrayAccessor.getAccessor(arrayClass, access);
+        MethodType correctType = ArrayAccessor.correctType(arrayClass, access);
         if (mh.type() != correctType) {
             assert(mh.type().parameterType(0) == Object[].class);
-            assert((isSetter ? mh.type().parameterType(2) : mh.type().returnType()) == Object.class);
-            assert(isSetter || correctType.parameterType(0).getComponentType() == correctType.returnType());
+            /* if access == SET */ assert(access != ArrayAccess.SET || mh.type().parameterType(2) == Object.class);
+            /* if access == GET */ assert(access != ArrayAccess.GET ||
+                    (mh.type().returnType() == Object.class &&
+                     correctType.parameterType(0).getComponentType() == correctType.returnType()));
             // safe to view non-strictly, because element type follows from array type
             mh = mh.viewAsType(correctType, false);
         }
-        mh = makeIntrinsic(mh, (isSetter ? Intrinsic.ARRAY_STORE : Intrinsic.ARRAY_LOAD));
+        mh = makeIntrinsic(mh, ArrayAccess.intrinsic(access));
         // Atomically update accessor cache.
         synchronized(cache) {
             if (cache[cacheIndex] == null) {
@@ -97,9 +100,52 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         return mh;
     }
 
+    enum ArrayAccess {
+        GET, SET, LENGTH;
+
+        // As ArrayAccess and ArrayAccessor have a circular dependency, the ArrayAccess properties cannot be stored in
+        // final fields.
+
+        static String opName(ArrayAccess a) {
+            switch (a) {
+                case GET: return "getElement";
+                case SET: return "setElement";
+                case LENGTH: return "length";
+            }
+            throw new AssertionError();
+        }
+
+        static MethodHandle objectAccessor(ArrayAccess a) {
+            switch (a) {
+                case GET: return ArrayAccessor.OBJECT_ARRAY_GETTER;
+                case SET: return ArrayAccessor.OBJECT_ARRAY_SETTER;
+                case LENGTH: return ArrayAccessor.OBJECT_ARRAY_LENGTH;
+            }
+            throw new AssertionError();
+        }
+
+        static int cacheIndex(ArrayAccess a) {
+            switch (a) {
+                case GET: return ArrayAccessor.GETTER_INDEX;
+                case SET: return ArrayAccessor.SETTER_INDEX;
+                case LENGTH: return ArrayAccessor.LENGTH_INDEX;
+            }
+            throw new AssertionError();
+        }
+
+        static Intrinsic intrinsic(ArrayAccess a) {
+            switch (a) {
+                case GET: return Intrinsic.ARRAY_LOAD;
+                case SET: return Intrinsic.ARRAY_STORE;
+                case LENGTH: return Intrinsic.ARRAY_LENGTH;
+            }
+            throw new AssertionError();
+        }
+    }
+
     static final class ArrayAccessor {
-        /// Support for array element access
-        static final int GETTER_INDEX = 0, SETTER_INDEX = 1, INDEX_LIMIT = 2;
+        /// Support for array element and length access
+        static final int GETTER_INDEX = 0, SETTER_INDEX = 1, LENGTH_INDEX = 2, INDEX_LIMIT = 3;
         static final ClassValue<MethodHandle[]> TYPED_ACCESSORS
                 = new ClassValue<MethodHandle[]>() {
                     @Override
@@ -107,14 +153,16 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                         return new MethodHandle[INDEX_LIMIT];
                     }
                 };
-        static final MethodHandle OBJECT_ARRAY_GETTER, OBJECT_ARRAY_SETTER;
+        static final MethodHandle OBJECT_ARRAY_GETTER, OBJECT_ARRAY_SETTER, OBJECT_ARRAY_LENGTH;
         static {
             MethodHandle[] cache = TYPED_ACCESSORS.get(Object[].class);
-            cache[GETTER_INDEX] = OBJECT_ARRAY_GETTER = makeIntrinsic(getAccessor(Object[].class, false), Intrinsic.ARRAY_LOAD);
-            cache[SETTER_INDEX] = OBJECT_ARRAY_SETTER = makeIntrinsic(getAccessor(Object[].class, true),  Intrinsic.ARRAY_STORE);
+            cache[GETTER_INDEX] = OBJECT_ARRAY_GETTER = makeIntrinsic(getAccessor(Object[].class, ArrayAccess.GET),    Intrinsic.ARRAY_LOAD);
+            cache[SETTER_INDEX] = OBJECT_ARRAY_SETTER = makeIntrinsic(getAccessor(Object[].class, ArrayAccess.SET),    Intrinsic.ARRAY_STORE);
+            cache[LENGTH_INDEX] = OBJECT_ARRAY_LENGTH = makeIntrinsic(getAccessor(Object[].class, ArrayAccess.LENGTH), Intrinsic.ARRAY_LENGTH);
 
             assert(InvokerBytecodeGenerator.isStaticallyInvocable(ArrayAccessor.OBJECT_ARRAY_GETTER.internalMemberName()));
             assert(InvokerBytecodeGenerator.isStaticallyInvocable(ArrayAccessor.OBJECT_ARRAY_SETTER.internalMemberName()));
+            assert(InvokerBytecodeGenerator.isStaticallyInvocable(ArrayAccessor.OBJECT_ARRAY_LENGTH.internalMemberName()));
         }
 
         static int     getElementI(int[]     a, int i)            { return              a[i]; }
@@ -137,31 +185,47 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         static void    setElementC(char[]    a, int i, char    x) {              a[i] = x; }
         static void    setElementL(Object[]  a, int i, Object  x) {              a[i] = x; }
 
-        static String name(Class<?> arrayClass, boolean isSetter) {
+        static int     lengthI(int[]     a)                       { return a.length; }
+        static int     lengthJ(long[]    a)                       { return a.length; }
+        static int     lengthF(float[]   a)                       { return a.length; }
+        static int     lengthD(double[]  a)                       { return a.length; }
+        static int     lengthZ(boolean[] a)                       { return a.length; }
+        static int     lengthB(byte[]    a)                       { return a.length; }
+        static int     lengthS(short[]   a)                       { return a.length; }
+        static int     lengthC(char[]    a)                       { return a.length; }
+        static int     lengthL(Object[]  a)                       { return a.length; }
+
+        static String name(Class<?> arrayClass, ArrayAccess access) {
             Class<?> elemClass = arrayClass.getComponentType();
             if (elemClass == null)  throw newIllegalArgumentException("not an array", arrayClass);
-            return (!isSetter ? "getElement" : "setElement") + Wrapper.basicTypeChar(elemClass);
+            return ArrayAccess.opName(access) + Wrapper.basicTypeChar(elemClass);
         }
-        static MethodType type(Class<?> arrayClass, boolean isSetter) {
+        static MethodType type(Class<?> arrayClass, ArrayAccess access) {
             Class<?> elemClass = arrayClass.getComponentType();
             Class<?> arrayArgClass = arrayClass;
             if (!elemClass.isPrimitive()) {
                 arrayArgClass = Object[].class;
                 elemClass = Object.class;
             }
-            return !isSetter ?
-                    MethodType.methodType(elemClass,  arrayArgClass, int.class) :
-                    MethodType.methodType(void.class, arrayArgClass, int.class, elemClass);
+            switch (access) {
+                case GET:    return MethodType.methodType(elemClass,  arrayArgClass, int.class);
+                case SET:    return MethodType.methodType(void.class, arrayArgClass, int.class, elemClass);
+                case LENGTH: return MethodType.methodType(int.class,  arrayArgClass);
+            }
+            throw new IllegalStateException("should not reach here");
         }
-        static MethodType correctType(Class<?> arrayClass, boolean isSetter) {
+        static MethodType correctType(Class<?> arrayClass, ArrayAccess access) {
             Class<?> elemClass = arrayClass.getComponentType();
-            return !isSetter ?
-                    MethodType.methodType(elemClass,  arrayClass, int.class) :
-                    MethodType.methodType(void.class, arrayClass, int.class, elemClass);
+            switch (access) {
+                case GET:    return MethodType.methodType(elemClass,  arrayClass, int.class);
+                case SET:    return MethodType.methodType(void.class, arrayClass, int.class, elemClass);
+                case LENGTH: return MethodType.methodType(int.class,  arrayClass);
+            }
+            throw new IllegalStateException("should not reach here");
         }
-        static MethodHandle getAccessor(Class<?> arrayClass, boolean isSetter) {
-            String     name = name(arrayClass, isSetter);
-            MethodType type = type(arrayClass, isSetter);
+        static MethodHandle getAccessor(Class<?> arrayClass, ArrayAccess access) {
+            String     name = name(arrayClass, access);
+            MethodType type = type(arrayClass, access);
             try {
                 return IMPL_LOOKUP.findStatic(ArrayAccessor.class, name, type);
             } catch (ReflectiveOperationException ex) {
@@ -1282,6 +1346,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         NEW_ARRAY,
         ARRAY_LOAD,
         ARRAY_STORE,
+        ARRAY_LENGTH,
         IDENTITY,
         ZERO,
         NONE // no intrinsic associated

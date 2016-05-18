@@ -313,18 +313,8 @@ public final class ScriptRuntime {
         }
     }
 
-    /**
-     * Returns an iterator over property values used in the {@code for each...in} statement. Aside from built-in JS
-     * objects, it also operates on Java arrays, any {@link Iterable}, as well as on {@link Map} objects, iterating over
-     * map values.
-     * @param obj object to iterate on.
-     * @return iterator over the object's property values.
-     */
-    public static Iterator<?> toValueIterator(final Object obj) {
-        if (obj instanceof ScriptObject) {
-            return ((ScriptObject)obj).valueIterator();
-        }
-
+    // value Iterator for important Java objects - arrays, maps, iterables.
+    private static Iterator<?> iteratorForJavaArrayOrList(final Object obj) {
         if (obj != null && obj.getClass().isArray()) {
             final Object array  = obj;
             final int    length = Array.getLength(obj);
@@ -352,16 +342,36 @@ public final class ScriptRuntime {
             };
         }
 
+        if (obj instanceof Iterable) {
+            return ((Iterable<?>)obj).iterator();
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns an iterator over property values used in the {@code for each...in} statement. Aside from built-in JS
+     * objects, it also operates on Java arrays, any {@link Iterable}, as well as on {@link Map} objects, iterating over
+     * map values.
+     * @param obj object to iterate on.
+     * @return iterator over the object's property values.
+     */
+    public static Iterator<?> toValueIterator(final Object obj) {
+        if (obj instanceof ScriptObject) {
+            return ((ScriptObject)obj).valueIterator();
+        }
+
         if (obj instanceof JSObject) {
             return ((JSObject)obj).values().iterator();
         }
 
-        if (obj instanceof Map) {
-            return ((Map<?,?>)obj).values().iterator();
+        final Iterator<?> itr = iteratorForJavaArrayOrList(obj);
+        if (itr != null) {
+            return itr;
         }
 
-        if (obj instanceof Iterable) {
-            return ((Iterable<?>)obj).iterator();
+        if (obj instanceof Map) {
+            return ((Map<?,?>)obj).values().iterator();
         }
 
         final Object wrapped = Global.instance().wrapAsObject(obj);
@@ -380,6 +390,14 @@ public final class ScriptRuntime {
      * @return iterator based on the ECMA 6 Iterator interface.
      */
     public static Iterator<?> toES6Iterator(final Object obj) {
+        // if not a ScriptObject, try convenience iterator for Java objects!
+        if (!(obj instanceof ScriptObject)) {
+            final Iterator<?> itr = iteratorForJavaArrayOrList(obj);
+            if (itr != null) {
+                return itr;
+            }
+        }
+
         final Global global = Global.instance();
         final Object iterator = AbstractIterator.getIterator(Global.toObject(obj), global);
 

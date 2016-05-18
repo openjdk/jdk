@@ -27,6 +27,7 @@
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 VarHandleTestByteArrayAsChar
  * @run testng/othervm -Diters=20000                         VarHandleTestByteArrayAsChar
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  VarHandleTestByteArrayAsChar
+ * @run testng/othervm -Diters=20000 -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false VarHandleTestByteArrayAsChar
  */
 
 import org.testng.annotations.DataProvider;
@@ -50,7 +51,7 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
 
     static final char VALUE_2 = (char)0x1112;
 
-    static final char VALUE_3 = (char)0x2122;
+    static final char VALUE_3 = (char)0xFFFE;
 
 
     @Override
@@ -253,6 +254,10 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
             checkROBE(() -> {
                 vh.setOpaque(array, ci, VALUE_1);
             });
+            checkUOE(() -> {
+                boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
+            });
+
             checkUOE(() -> {
                 char r = (char) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
             });

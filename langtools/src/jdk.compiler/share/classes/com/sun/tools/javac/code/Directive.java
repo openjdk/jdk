@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,9 @@ public abstract class Directive implements ModuleElement.Directive {
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public java.util.List<? extends ModuleElement> getTargetModules() {
-            return Collections.unmodifiableList(modules);
+            return modules == null
+                    ? null
+                    : Collections.unmodifiableList(modules);
         }
 
         @Override

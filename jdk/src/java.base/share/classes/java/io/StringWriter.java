@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,11 @@ public class StringWriter extends Writer {
      * @param  cbuf  Array of characters
      * @param  off   Offset from which to start writing characters
      * @param  len   Number of characters to write
+     *
+     * @throws  IndexOutOfBoundsException
+     *          If {@code off} is negative, or {@code len} is negative,
+     *          or {@code off + len} is negative or greater than the length
+     *          of the given array
      */
     public void write(char cbuf[], int off, int len) {
         if ((off < 0) || (off > cbuf.length) || (len < 0) ||
@@ -107,6 +112,11 @@ public class StringWriter extends Writer {
      * @param  str  String to be written
      * @param  off  Offset from which to start writing characters
      * @param  len  Number of characters to write
+     *
+     * @throws  IndexOutOfBoundsException
+     *          If {@code off} is negative, or {@code len} is negative,
+     *          or {@code off + len} is negative or greater than the length
+     *          of the given string
      */
     public void write(String str, int off, int len)  {
         buf.append(str, off, off + len);
