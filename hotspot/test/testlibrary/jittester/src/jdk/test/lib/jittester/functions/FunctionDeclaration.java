@@ -32,7 +32,9 @@ public class FunctionDeclaration extends IRNode {
 
     public FunctionDeclaration(FunctionInfo functionInfo,
             ArrayList<ArgumentDeclaration> argumentsDeclaration) {
+        super(functionInfo.type);
         this.functionInfo = functionInfo;
+        this.owner = functionInfo.owner;
         addChildren(argumentsDeclaration);
     }
 
