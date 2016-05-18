@@ -72,7 +72,6 @@ BOOT_MODULES += \
 
 # to be deprivileged
 BOOT_MODULES += \
-    java.scripting \
     java.sql.rowset \
     java.smartcardio \
     jdk.naming.rmi \
@@ -102,6 +101,7 @@ PLATFORM_MODULES += \
 
 PLATFORM_MODULES += \
     java.compiler \
+    java.scripting \
     jdk.accessibility \
     jdk.charsets \
     jdk.crypto.ec \
