@@ -713,6 +713,12 @@ jdk.tls.disabledAlgorithms=SSLv3, RC4, MD5withRSA, DH keySize < 1024
 # See SSL/TLS specifications and "Java Cryptography Architecture Standard
 # Algorithm Name Documentation" for information about the algorithm names.
 #
+# Note: If a legacy algorithm is also restricted through the
+# jdk.tls.disabledAlgorithms property or the
+# java.security.AlgorithmConstraints API (See
+# javax.net.ssl.SSLParameters.setAlgorithmConstraints()),
+# then the algorithm is completely disabled and will not be negotiated.
+#
 # Note: This property is currently used by Oracle's JSSE implementation.
 # It is not guaranteed to be examined and used by other implementations.
 # There is no guarantee the property will continue to exist or be of the
