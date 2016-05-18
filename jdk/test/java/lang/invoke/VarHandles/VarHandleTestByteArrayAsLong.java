@@ -51,7 +51,7 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
 
     static final long VALUE_2 = 0x1112131415161718L;
 
-    static final long VALUE_3 = 0x2122232425262728L;
+    static final long VALUE_3 = 0xFFFEFDFCFBFAF9F8L;
 
 
     @Override

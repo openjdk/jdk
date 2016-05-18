@@ -51,7 +51,7 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
 
     static final char VALUE_2 = (char)0x1112;
 
-    static final char VALUE_3 = (char)0x2122;
+    static final char VALUE_3 = (char)0xFFFE;
 
 
     @Override

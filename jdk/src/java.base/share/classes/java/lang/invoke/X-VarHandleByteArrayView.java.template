@@ -271,22 +271,33 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
 #if[AtomicAdd]
 
         @ForceInline
-        static $type$ getAndAdd(ArrayHandle handle, Object oba, int index, $type$ value) {
+        static $type$ getAndAdd(ArrayHandle handle, Object oba, int index, $type$ delta) {
             byte[] ba = (byte[]) oba;
-            return convEndian(handle.be,
-                              UNSAFE.getAndAdd$RawType$(
-                                      ba,
-                                      address(ba, index(ba, index)),
-                                      convEndian(handle.be, value)));
+            if (handle.be == BE) {
+                return UNSAFE.getAndAdd$RawType$(
+                        ba,
+                        address(ba, index(ba, index)),
+                        delta);
+            } else {
+                return getAndAddConvEndianWithCAS(ba, index, delta);
+            }
         }
 
         @ForceInline
-        static $type$ addAndGet(ArrayHandle handle, Object oba, int index, $type$ value) {
-            byte[] ba = (byte[]) oba;
-            return convEndian(handle.be, UNSAFE.getAndAdd$RawType$(
-                    ba,
-                    address(ba, index(ba, index)),
-                    convEndian(handle.be, value))) + value;
+        static $type$ getAndAddConvEndianWithCAS(byte[] ba, int index, $type$ delta) {
+            $type$ nativeExpectedValue, expectedValue;
+            long offset = address(ba, index(ba, index));
+            do {
+                nativeExpectedValue = UNSAFE.get$RawType$Volatile(ba, offset);
+                expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
+            } while (!UNSAFE.weakCompareAndSwap$RawType$Volatile(ba, offset,
+                    nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue + delta)));
+            return expectedValue;
+        }
+
+        @ForceInline
+        static $type$ addAndGet(ArrayHandle handle, Object oba, int index, $type$ delta) {
+            return getAndAdd(handle, oba, index, delta) + delta;
         }
 #end[AtomicAdd]
 
@@ -503,23 +514,34 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
 #if[AtomicAdd]
 
         @ForceInline
-        static $type$ getAndAdd(ByteBufferHandle handle, Object obb, int index, $type$ value) {
+        static $type$ getAndAdd(ByteBufferHandle handle, Object obb, int index, $type$ delta) {
             ByteBuffer bb = (ByteBuffer) obb;
-            return convEndian(handle.be,
-                              UNSAFE.getAndAdd$RawType$(
-                                      UNSAFE.getObject(bb, BYTE_BUFFER_HB),
-                                      address(bb, indexRO(bb, index)),
-                                      convEndian(handle.be, value)));
+            if (handle.be == BE) {
+                return UNSAFE.getAndAdd$RawType$(
+                        UNSAFE.getObject(bb, BYTE_BUFFER_HB),
+                        address(bb, indexRO(bb, index)),
+                        delta);
+            } else {
+                return getAndAddConvEndianWithCAS(bb, index, delta);
+            }
         }
 
         @ForceInline
-        static $type$ addAndGet(ByteBufferHandle handle, Object obb, int index, $type$ value) {
-            ByteBuffer bb = (ByteBuffer) obb;
-            return convEndian(handle.be,
-                              UNSAFE.getAndAdd$RawType$(
-                                      UNSAFE.getObject(bb, BYTE_BUFFER_HB),
-                                      address(bb, indexRO(bb, index)),
-                                      convEndian(handle.be, value))) + value;
+        static $type$ getAndAddConvEndianWithCAS(ByteBuffer bb, int index, $type$ delta) {
+            $type$ nativeExpectedValue, expectedValue;
+            Object base = UNSAFE.getObject(bb, BYTE_BUFFER_HB);
+            long offset = address(bb, indexRO(bb, index));
+            do {
+                nativeExpectedValue = UNSAFE.get$RawType$Volatile(base, offset);
+                expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
+            } while (!UNSAFE.weakCompareAndSwap$RawType$Volatile(base, offset,
+                    nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue + delta)));
+            return expectedValue;
+        }
+
+        @ForceInline
+        static $type$ addAndGet(ByteBufferHandle handle, Object obb, int index, $type$ delta) {
+            return getAndAdd(handle, obb, index, delta) + delta;
         }
 #end[AtomicAdd]
 
