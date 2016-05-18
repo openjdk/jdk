@@ -27,6 +27,7 @@ import jdk.test.lib.jittester.visitors.Visitor;
 
 public class Declaration extends IRNode {
     public Declaration(IRNode declarationExpr) {
+        super(declarationExpr.getResultType());
         addChild(declarationExpr);
     }
 

@@ -31,7 +31,7 @@ import jdk.test.lib.jittester.Rule;
 import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.types.TypeKlass;
 
-class DeclarationFactory extends Factory {
+class DeclarationFactory extends Factory<Declaration> {
     private final int operatorLimit;
     private final long complexityLimit;
     private final boolean isLocal;
@@ -48,29 +48,42 @@ class DeclarationFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
-        Rule rule = new Rule("declaration");
+    public Declaration produce() throws ProductionFailedException {
+        Rule<IRNode> rule = new Rule<>("declaration");
         IRNodeBuilder builder = new IRNodeBuilder().setOwnerKlass(ownerClass)
-                .setResultType(TypeList.getVoid())
+                .setResultType(TypeList.VOID)
                 .setIsLocal(isLocal)
                 .setComplexityLimit(complexityLimit)
                 .setOperatorLimit(operatorLimit)
                 .setIsLocal(isLocal)
                 .setExceptionSafe(exceptionSafe);
-        rule.add("decl", builder.setIsStatic(false).getVariableDeclarationFactory());
-        rule.add("decl_and_init", builder.setIsConstant(false)
-                .setIsStatic(false).getVariableInitializationFactory());
+        rule.add("decl", builder
+                .setIsStatic(false)
+                .getVariableDeclarationFactory());
+        rule.add("decl_and_init", builder
+                .setIsConstant(false)
+                .setIsStatic(false)
+                .getVariableInitializationFactory());
         if (!ProductionParams.disableFinalVariables.value()) {
-            rule.add("const_decl_and_init", builder.setIsConstant(true)
-                    .setIsStatic(false).getVariableInitializationFactory());
+            rule.add("const_decl_and_init", builder
+                    .setIsConstant(true)
+                    .setIsStatic(false)
+                    .getVariableInitializationFactory());
         }
         if (!isLocal && !ProductionParams.disableStatic.value()) {
-            rule.add("static_decl", builder.setIsStatic(true).getVariableDeclarationFactory());
-            rule.add("static_decl_and_init", builder.setIsConstant(false)
-                    .setIsStatic(true).getVariableInitializationFactory());
+            rule.add("static_decl", builder
+                    .setIsConstant(false)
+                    .setIsStatic(true)
+                    .getVariableDeclarationFactory());
+            rule.add("static_decl_and_init", builder
+                    .setIsConstant(false)
+                    .setIsStatic(true)
+                    .getVariableInitializationFactory());
             if (!ProductionParams.disableFinalVariables.value()) {
-                rule.add("static_const_decl_and_init", builder.setIsConstant(true)
-                        .setIsStatic(true).getVariableInitializationFactory());
+                rule.add("static_const_decl_and_init", builder
+                        .setIsConstant(true)
+                        .setIsStatic(true)
+                        .getVariableInitializationFactory());
             }
         }
         return new Declaration(rule.produce());
