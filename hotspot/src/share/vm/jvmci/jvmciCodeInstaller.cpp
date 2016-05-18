@@ -495,7 +495,7 @@ JVMCIEnv::CodeInstallResult CodeInstaller::gather_metadata(Handle target, Handle
     return result;
   }
 
-  _debug_recorder->pcs_size(); // ehm, create the sentinel record
+  _debug_recorder->pcs_size(); // create the sentinel record
 
   assert(_debug_recorder->pcs_length() >= 2, "must be at least 2");
 

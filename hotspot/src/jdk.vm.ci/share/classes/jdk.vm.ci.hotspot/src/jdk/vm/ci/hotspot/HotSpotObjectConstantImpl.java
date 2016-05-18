@@ -28,7 +28,6 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 
-import jdk.vm.ci.inittimer.SuppressFBWarnings;
 import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
@@ -39,7 +38,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * Represents a constant non-{@code null} object reference, within the compiler and across the
  * compiler/runtime interface.
  */
-final class HotSpotObjectConstantImpl implements HotSpotObjectConstant, HotSpotProxified {
+final class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
 
     static JavaConstant forObject(Object object) {
         return forObject(object, false);

@@ -56,7 +56,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 /**
  * Implementation of {@link JavaType} for resolved non-primitive HotSpot classes.
  */
-final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implements HotSpotResolvedObjectType, HotSpotProxified, MetaspaceWrapperObject {
+final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implements HotSpotResolvedObjectType, MetaspaceWrapperObject {
 
     /**
      * The Java class this type represents.
@@ -127,9 +127,9 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
      */
     long getMetaspaceKlass() {
         if (HotSpotJVMCIRuntime.getHostWordKind() == JavaKind.Long) {
-            return UNSAFE.getLong(javaClass, (long) config().klassOffset);
+            return UNSAFE.getLong(javaClass, config().klassOffset);
         }
-        return UNSAFE.getInt(javaClass, (long) config().klassOffset) & 0xFFFFFFFFL;
+        return UNSAFE.getInt(javaClass, config().klassOffset) & 0xFFFFFFFFL;
     }
 
     public long getMetaspacePointer() {
@@ -316,11 +316,6 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
                 t2 = t2.getSupertype();
             }
         }
-    }
-
-    @Override
-    public HotSpotResolvedObjectType asExactType() {
-        return isLeaf() ? this : null;
     }
 
     @Override

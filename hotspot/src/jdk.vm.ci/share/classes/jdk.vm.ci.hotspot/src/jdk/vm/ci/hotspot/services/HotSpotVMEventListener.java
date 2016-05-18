@@ -25,14 +25,10 @@ package jdk.vm.ci.hotspot.services;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import jdk.vm.ci.meta.JVMCIMetaAccessContext;
-import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.services.JVMCIPermission;
 
 /**
- * Service-provider class for responding to VM events and for creating
- * {@link JVMCIMetaAccessContext}s.
+ * Service-provider class for responding to VM events.
  */
 public abstract class HotSpotVMEventListener {
 
@@ -78,17 +74,5 @@ public abstract class HotSpotVMEventListener {
      * Notify on completion of a bootstrap.
      */
     public void notifyBootstrapFinished() {
-    }
-
-    /**
-     * Create a custom {@link JVMCIMetaAccessContext} to be used for managing the lifetime of loaded
-     * metadata. It a custom one isn't created then the default implementation will be a single
-     * context with globally shared instances of {@link ResolvedJavaType} that are never released.
-     *
-     * @param runtime the runtime instance that will use the returned context
-     * @return a custom context or null
-     */
-    public JVMCIMetaAccessContext createMetaAccessContext(HotSpotJVMCIRuntime runtime) {
-        return null;
     }
 }

@@ -22,7 +22,7 @@
  */
 package jdk.vm.ci.hotspot.aarch64;
 
-import static jdk.vm.ci.inittimer.InitTimer.timer;
+import static jdk.vm.ci.common.InitTimer.timer;
 
 import java.util.EnumSet;
 
@@ -31,6 +31,7 @@ import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.code.stack.StackIntrospection;
+import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
 import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
 import jdk.vm.ci.hotspot.HotSpotJVMCIBackendFactory;
@@ -38,7 +39,6 @@ import jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.hotspot.HotSpotStackIntrospection;
 import jdk.vm.ci.hotspot.HotSpotVMConfig;
-import jdk.vm.ci.inittimer.InitTimer;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.runtime.JVMCIBackend;
 

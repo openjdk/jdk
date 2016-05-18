@@ -63,15 +63,15 @@ BasicType JVMCIRuntime::kindToBasicType(Handle kind, TRAPS) {
   }
   jchar ch = JavaKind::typeChar(kind);
   switch(ch) {
-    case 'z': return T_BOOLEAN;
-    case 'b': return T_BYTE;
-    case 's': return T_SHORT;
-    case 'c': return T_CHAR;
-    case 'i': return T_INT;
-    case 'f': return T_FLOAT;
-    case 'j': return T_LONG;
-    case 'd': return T_DOUBLE;
-    case 'a': return T_OBJECT;
+    case 'Z': return T_BOOLEAN;
+    case 'B': return T_BYTE;
+    case 'S': return T_SHORT;
+    case 'C': return T_CHAR;
+    case 'I': return T_INT;
+    case 'F': return T_FLOAT;
+    case 'J': return T_LONG;
+    case 'D': return T_DOUBLE;
+    case 'A': return T_OBJECT;
     case '-': return T_ILLEGAL;
     default:
       JVMCI_ERROR_(T_ILLEGAL, "unexpected Kind: %c", ch);
@@ -574,14 +574,14 @@ JRT_LEAF(void, JVMCIRuntime::log_primitive(JavaThread* thread, jchar typeChar, j
   } uu;
   uu.l = value;
   switch (typeChar) {
-    case 'z': tty->print(value == 0 ? "false" : "true"); break;
-    case 'b': tty->print("%d", (jbyte) value); break;
-    case 'c': tty->print("%c", (jchar) value); break;
-    case 's': tty->print("%d", (jshort) value); break;
-    case 'i': tty->print("%d", (jint) value); break;
-    case 'f': tty->print("%f", uu.f); break;
-    case 'j': tty->print(JLONG_FORMAT, value); break;
-    case 'd': tty->print("%lf", uu.d); break;
+    case 'Z': tty->print(value == 0 ? "false" : "true"); break;
+    case 'B': tty->print("%d", (jbyte) value); break;
+    case 'C': tty->print("%c", (jchar) value); break;
+    case 'S': tty->print("%d", (jshort) value); break;
+    case 'I': tty->print("%d", (jint) value); break;
+    case 'F': tty->print("%f", uu.f); break;
+    case 'J': tty->print(JLONG_FORMAT, value); break;
+    case 'D': tty->print("%lf", uu.d); break;
     default: assert(false, "unknown typeChar"); break;
   }
   if (newline) {

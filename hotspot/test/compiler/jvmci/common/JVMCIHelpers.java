@@ -41,12 +41,18 @@ public class JVMCIHelpers {
         // just empty, using default interface methods
     }
 
+    public static class EmptyCompilationRequestResult implements CompilationRequestResult {
+        @Override
+        public Object getFailure() {
+            return "no compiler configured";
+        }
+    }
     public static class EmptyHotspotCompiler implements JVMCICompiler {
 
         @Override
         public CompilationRequestResult compileMethod(CompilationRequest request) {
             // do nothing
-            return CompilationRequestResult.failure("no compiler configured", true);
+            return new EmptyCompilationRequestResult();
         }
     }
 

@@ -22,7 +22,6 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static jdk.vm.ci.common.UnsafeUtil.readCString;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
@@ -31,6 +30,7 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspotvmconfig.HotSpotVMAddress;
@@ -39,9 +39,6 @@ import jdk.vm.ci.hotspotvmconfig.HotSpotVMData;
 import jdk.vm.ci.hotspotvmconfig.HotSpotVMField;
 import jdk.vm.ci.hotspotvmconfig.HotSpotVMFlag;
 import jdk.vm.ci.hotspotvmconfig.HotSpotVMType;
-import jdk.internal.misc.Unsafe;
-
-//JaCoCo Exclude
 
 /**
  * Used to access native configuration details.
@@ -107,6 +104,27 @@ public class HotSpotVMConfig {
     @Override
     public String toString() {
         return getClass().getSimpleName();
+    }
+
+    /**
+     * Reads a {@code '\0'} terminated C string from native memory and converts it to a
+     * {@link String}.
+     *
+     * @return a Java string
+     */
+    private static String readCString(Unsafe unsafe, long address) {
+        if (address == 0) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0;; i++) {
+            char c = (char) unsafe.getByte(address + i);
+            if (c == 0) {
+                break;
+            }
+            sb.append(c);
+        }
+        return sb.toString();
     }
 
     /**

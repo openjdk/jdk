@@ -47,7 +47,8 @@ public interface RegisterConfig {
     }
 
     /**
-     * Gets the register to which {@link Register#Frame} and {@link Register#CallerFrame} are bound.
+     * Gets the register used as the frame pointer. Spill slots and outgoing stack-based arguments
+     * are addressed relative to this register.
      */
     Register getFrameRegister();
 
@@ -105,14 +106,6 @@ public interface RegisterConfig {
      *         number is i
      */
     RegisterAttributes[] getAttributesMap();
-
-    /**
-     * Gets the register corresponding to a runtime-defined role.
-     *
-     * @param id the identifier of a runtime-defined register role
-     * @return the register playing the role specified by {@code id}
-     */
-    Register getRegisterForRole(int id);
 
     /**
      * Determines if all {@link #getAllocatableRegisters() allocatable} registers are

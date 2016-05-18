@@ -59,8 +59,6 @@ public interface HotSpotResolvedObjectType extends ResolvedJavaType {
 
     HotSpotResolvedObjectType findLeastCommonAncestor(ResolvedJavaType otherType);
 
-    HotSpotResolvedObjectType asExactType();
-
     default boolean isPrimitive() {
         return false;
     }

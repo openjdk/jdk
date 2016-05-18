@@ -172,15 +172,15 @@ void JVMCICompiler::compile_method(const methodHandle& method, int entry_bci, JV
   } else {
     oop result_object = (oop) result.get_jobject();
     if (result_object != NULL) {
-      oop failure_message = CompilationRequestResult::failureMessage(result_object);
+      oop failure_message = HotSpotCompilationRequestResult::failureMessage(result_object);
       if (failure_message != NULL) {
         const char* failure_reason = java_lang_String::as_utf8_string(failure_message);
-        env->set_failure(failure_reason, CompilationRequestResult::retry(result_object) != 0);
+        env->set_failure(failure_reason, HotSpotCompilationRequestResult::retry(result_object) != 0);
       } else {
         if (env->task()->code() == NULL) {
           env->set_failure("no nmethod produced", true);
         } else {
-          env->task()->set_num_inlined_bytecodes(CompilationRequestResult::inlinedBytecodes(result_object));
+          env->task()->set_num_inlined_bytecodes(HotSpotCompilationRequestResult::inlinedBytecodes(result_object));
           Atomic::inc(&_methods_compiled);
         }
       }

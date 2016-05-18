@@ -20,12 +20,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.inittimer;
+package jdk.vm.ci.hotspot;
 
 /**
  * Used to suppress <a href="http://findbugs.sourceforge.net">FindBugs</a> warnings.
  */
-public @interface SuppressFBWarnings {
+@interface SuppressFBWarnings {
     /**
      * The set of FindBugs
      * <a href="http://findbugs.sourceforge.net/bugDescriptions.html">warnings</a> that are to be
