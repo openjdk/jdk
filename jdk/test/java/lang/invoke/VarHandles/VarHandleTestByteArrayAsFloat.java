@@ -51,7 +51,7 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
 
     static final float VALUE_2 = 0x11121314;
 
-    static final float VALUE_3 = 0x21222324;
+    static final float VALUE_3 = 0xFFFEFDFC;
 
 
     @Override
