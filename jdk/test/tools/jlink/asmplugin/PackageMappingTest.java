@@ -48,8 +48,8 @@ import jdk.tools.jlink.internal.plugins.asm.AsmModulePool;
 import jdk.tools.jlink.internal.plugins.asm.AsmPool.ResourceFile;
 import jdk.tools.jlink.internal.plugins.asm.AsmPool.WritableResourcePool;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 
 public class PackageMappingTest extends AsmPluginTestBase {
 
@@ -72,7 +72,7 @@ public class PackageMappingTest extends AsmPluginTestBase {
             new PackageMappingPlugin(newFiles, true)
         };
         for (TestPlugin p : plugins) {
-            Pool pool = p.visit(getPool());
+            ModulePool pool = p.visit(getPool());
             p.test(getPool(), pool);
         }
     }
@@ -105,12 +105,12 @@ public class PackageMappingTest extends AsmPluginTestBase {
         }
 
         @Override
-        public void test(Pool inResources, Pool outResources) {
+        public void test(ModulePool inResources, ModulePool outResources) {
             Set<String> in = getPools().getGlobalPool().getResourceFiles().stream()
-                    .map(ModuleData::getPath)
+                    .map(ModuleEntry::getPath)
                     .collect(Collectors.toSet());
             Set<String> out = extractResources(outResources).stream()
-                    .map(ModuleData::getPath)
+                    .map(ModuleEntry::getPath)
                     .collect(Collectors.toSet());
             in.addAll(PackageMappingTest.this.newFiles);
             if (!Objects.equals(in, out)) {

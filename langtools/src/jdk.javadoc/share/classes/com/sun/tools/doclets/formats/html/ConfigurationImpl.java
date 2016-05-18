@@ -40,7 +40,7 @@ import com.sun.tools.doclint.DocLint;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.StringUtils;
-import com.sun.tools.javadoc.RootDocImpl;
+import com.sun.tools.javadoc.main.RootDocImpl;
 
 /**
  * Configure the output based on the command line options.

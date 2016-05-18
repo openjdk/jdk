@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8154119
+ * @bug 8154119 8154262
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -41,46 +41,58 @@ public class TestModules extends JavadocTester {
 
     @Test
     void test1() {
-        javadoc("-d", "out",
+        javadoc("-d", "out", "-use",
                 "-modulesourcepath", testSrc,
                 "-addmods", "module1,module2",
                 "testpkgmdl1", "testpkgmdl2");
         checkExit(Exit.OK);
         testDescription(true);
         testNoDescription(false);
+        testModuleLink();
     }
 
     @Test
     void test2() {
-        javadoc("-d", "out-html5", "-html5",
+        javadoc("-d", "out-html5", "-html5", "-use",
                 "-modulesourcepath", testSrc,
                 "-addmods", "module1,module2",
                 "testpkgmdl1", "testpkgmdl2");
         checkExit(Exit.OK);
         testHtml5Description(true);
         testHtml5NoDescription(false);
+        testModuleLink();
     }
 
     @Test
     void test3() {
-        javadoc("-d", "out-nocomment", "-nocomment",
+        javadoc("-d", "out-nocomment", "-nocomment", "-use",
                 "-modulesourcepath", testSrc,
                 "-addmods", "module1,module2",
                 "testpkgmdl1", "testpkgmdl2");
         checkExit(Exit.OK);
         testDescription(false);
         testNoDescription(true);
+        testModuleLink();
     }
 
     @Test
     void test4() {
-        javadoc("-d", "out-html5-nocomment", "-nocomment", "-html5",
+        javadoc("-d", "out-html5-nocomment", "-nocomment", "-html5", "-use",
                 "-modulesourcepath", testSrc,
                 "-addmods", "module1,module2",
                 "testpkgmdl1", "testpkgmdl2");
         checkExit(Exit.OK);
         testHtml5Description(false);
         testHtml5NoDescription(true);
+        testModuleLink();
+    }
+
+    @Test
+    void test5() {
+        javadoc("-d", "out-nomodule", "-use",
+                "-sourcepath", testSrc,
+                "testpkgnomodule");
+        checkExit(Exit.OK);
     }
 
     void testDescription(boolean found) {
@@ -141,5 +153,38 @@ public class TestModules extends JavadocTester {
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\">\n"
                 + "<table class=\"overviewSummary\">");
+    }
+
+    void testModuleLink() {
+        checkOutput("overview-summary.html", true,
+                "<li>Module</li>");
+        checkOutput("module1-summary.html", true,
+                "<li class=\"navBarCell1Rev\">Module</li>");
+        checkOutput("module2-summary.html", true,
+                "<li class=\"navBarCell1Rev\">Module</li>");
+        checkOutput("testpkgmdl1/package-summary.html", true,
+                "<li><a href=\"../module1-summary.html\">Module</a></li>");
+        checkOutput("testpkgmdl1/TestClassInModule1.html", true,
+                "<li><a href=\"../module1-summary.html\">Module</a></li>");
+        checkOutput("testpkgmdl1/class-use/TestClassInModule1.html", true,
+                "<li><a href=\"../../module1-summary.html\">Module</a></li>");
+        checkOutput("testpkgmdl2/package-summary.html", true,
+                "<li><a href=\"../module2-summary.html\">Module</a></li>");
+        checkOutput("testpkgmdl2/TestClassInModule2.html", true,
+                "<li><a href=\"../module2-summary.html\">Module</a></li>");
+        checkOutput("testpkgmdl2/class-use/TestClassInModule2.html", true,
+                "<li><a href=\"../../module2-summary.html\">Module</a></li>");
+    }
+
+    void testNoModuleLink() {
+        checkOutput("testpkgnomodule/package-summary.html", true,
+                "<ul class=\"navList\" title=\"Navigation\">\n"
+                + "<li><a href=\"../testpkgnomodule/package-summary.html\">Package</a></li>");
+        checkOutput("testpkgnomodule/TestClassNoModule.html", true,
+                "<ul class=\"navList\" title=\"Navigation\">\n"
+                + "<li><a href=\"../testpkgnomodule/package-summary.html\">Package</a></li>");
+        checkOutput("testpkgnomodule/class-use/TestClassNoModule.html", true,
+                "<ul class=\"navList\" title=\"Navigation\">\n"
+                + "<li><a href=\"../../testpkgnomodule/package-summary.html\">Package</a></li>");
     }
 }

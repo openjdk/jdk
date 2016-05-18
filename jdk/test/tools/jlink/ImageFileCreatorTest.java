@@ -39,7 +39,7 @@ import jdk.tools.jlink.internal.ImageFileCreator;
 import jdk.tools.jlink.internal.ImagePluginStack;
 import jdk.tools.jlink.plugin.ExecutableImage;
 import jdk.tools.jlink.builder.ImageBuilder;
-import jdk.tools.jlink.plugin.Pool;
+import jdk.tools.jlink.plugin.ModulePool;
 
 
 /*
@@ -47,6 +47,7 @@ import jdk.tools.jlink.plugin.Pool;
  * @summary ImageFileCreator class test
  * @author Jean-Francois Denise
  * @modules jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink.builder
  *          java.base/jdk.internal.jimage
  * @run main/othervm -verbose:gc -Xmx1g ImageFileCreatorTest
  */
@@ -214,7 +215,7 @@ public class ImageFileCreatorTest {
             }
 
             @Override
-            public void storeFiles(Pool content) {
+            public void storeFiles(ModulePool content) {
             }
         };
 

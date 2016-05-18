@@ -27,6 +27,7 @@
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 VarHandleTestAccess$Type$
  * @run testng/othervm -Diters=20000                         VarHandleTestAccess$Type$
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  VarHandleTestAccess$Type$
+ * @run testng/othervm -Diters=20000 -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false VarHandleTestAccess$Type$
  */
 
 import org.testng.annotations.BeforeClass;
@@ -309,6 +310,10 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         checkUOE(() -> {
             boolean r = vh.weakCompareAndSetRelease(recv, $value1$, $value2$);
         });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.getAndSet(recv, $value1$);
+        });
 #end[CAS]
 
 #if[!AtomicAdd]
@@ -398,6 +403,10 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
 
         checkUOE(() -> {
             boolean r = vh.weakCompareAndSetRelease($value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.getAndSet($value1$);
         });
 #end[CAS]
 
@@ -504,29 +513,41 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         }
 
         {
-            boolean r = vh.weakCompareAndSet(recv, $value1$, $value2$);
-            assertEquals(r, true, "weakCompareAndSet $type$");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSet(recv, $value1$, $value2$);
+            }
+            assertEquals(success, true, "weakCompareAndSet $type$");
             $type$ x = ($type$) vh.get(recv);
             assertEquals(x, $value2$, "weakCompareAndSet $type$ value");
         }
 
         {
-            boolean r = vh.weakCompareAndSetAcquire(recv, $value2$, $value1$);
-            assertEquals(r, true, "weakCompareAndSetAcquire $type$");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetAcquire(recv, $value2$, $value1$);
+            }
+            assertEquals(success, true, "weakCompareAndSetAcquire $type$");
             $type$ x = ($type$) vh.get(recv);
             assertEquals(x, $value1$, "weakCompareAndSetAcquire $type$");
         }
 
         {
-            boolean r = vh.weakCompareAndSetRelease(recv, $value1$, $value2$);
-            assertEquals(r, true, "weakCompareAndSetRelease $type$");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetRelease(recv, $value1$, $value2$);
+            }
+            assertEquals(success, true, "weakCompareAndSetRelease $type$");
             $type$ x = ($type$) vh.get(recv);
             assertEquals(x, $value2$, "weakCompareAndSetRelease $type$");
         }
 
         {
-            boolean r = vh.weakCompareAndSetVolatile(recv, $value2$, $value1$);
-            assertEquals(r, true, "weakCompareAndSetVolatile $type$");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetVolatile(recv, $value2$, $value1$);
+            }
+            assertEquals(success, true, "weakCompareAndSetVolatile $type$");
             $type$ x = ($type$) vh.get(recv);
             assertEquals(x, $value1$, "weakCompareAndSetVolatile $type$ value");
         }
@@ -585,6 +606,10 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
 
         checkUOE(() -> {
             boolean r = vh.weakCompareAndSetRelease(recv, $value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.getAndSet(recv, $value1$);
         });
 #end[CAS]
 
@@ -691,36 +716,48 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         }
 
         {
-            boolean r = (boolean) vh.weakCompareAndSet($value1$, $value2$);
-            assertEquals(r, true, "weakCompareAndSet $type$");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSet($value1$, $value2$);
+            }
+            assertEquals(success, true, "weakCompareAndSet $type$");
             $type$ x = ($type$) vh.get();
             assertEquals(x, $value2$, "weakCompareAndSet $type$ value");
         }
 
         {
-            boolean r = (boolean) vh.weakCompareAndSetAcquire($value2$, $value1$);
-            assertEquals(r, true, "weakCompareAndSetAcquire $type$");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetAcquire($value2$, $value1$);
+            }
+            assertEquals(success, true, "weakCompareAndSetAcquire $type$");
             $type$ x = ($type$) vh.get();
             assertEquals(x, $value1$, "weakCompareAndSetAcquire $type$");
         }
 
         {
-            boolean r = (boolean) vh.weakCompareAndSetRelease($value1$, $value2$);
-            assertEquals(r, true, "weakCompareAndSetRelease $type$");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetRelease($value1$, $value2$);
+            }
+            assertEquals(success, true, "weakCompareAndSetRelease $type$");
             $type$ x = ($type$) vh.get();
             assertEquals(x, $value2$, "weakCompareAndSetRelease $type$");
         }
 
         {
-            boolean r = (boolean) vh.weakCompareAndSetVolatile($value2$, $value1$);
-            assertEquals(r, true, "weakCompareAndSetVolatile $type$");
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetRelease($value2$, $value1$);
+            }
+            assertEquals(success, true, "weakCompareAndSetVolatile $type$");
             $type$ x = ($type$) vh.get();
-            assertEquals(x, $value1$, "weakCompareAndSetVolatile $type$ value");
+            assertEquals(x, $value1$, "weakCompareAndSetVolatile $type$");
         }
 
         // Compare set and get
         {
-            $type$ o = ($type$) vh.getAndSet( $value2$);
+            $type$ o = ($type$) vh.getAndSet($value2$);
             assertEquals(o, $value1$, "getAndSet $type$");
             $type$ x = ($type$) vh.get();
             assertEquals(x, $value2$, "getAndSet $type$ value");
@@ -772,6 +809,10 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
 
         checkUOE(() -> {
             boolean r = vh.weakCompareAndSetRelease($value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.getAndSet($value1$);
         });
 #end[CAS]
 
@@ -881,31 +922,43 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             }
 
             {
-                boolean r = vh.weakCompareAndSet(array, i, $value1$, $value2$);
-                assertEquals(r, true, "weakCompareAndSet $type$");
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = vh.weakCompareAndSet(array, i, $value1$, $value2$);
+                }
+                assertEquals(success, true, "weakCompareAndSet $type$");
                 $type$ x = ($type$) vh.get(array, i);
                 assertEquals(x, $value2$, "weakCompareAndSet $type$ value");
             }
 
             {
-                boolean r = vh.weakCompareAndSetAcquire(array, i, $value2$, $value1$);
-                assertEquals(r, true, "weakCompareAndSetAcquire $type$");
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = vh.weakCompareAndSetAcquire(array, i, $value2$, $value1$);
+                }
+                assertEquals(success, true, "weakCompareAndSetAcquire $type$");
                 $type$ x = ($type$) vh.get(array, i);
                 assertEquals(x, $value1$, "weakCompareAndSetAcquire $type$");
             }
 
             {
-                boolean r = vh.weakCompareAndSetRelease(array, i, $value1$, $value2$);
-                assertEquals(r, true, "weakCompareAndSetRelease $type$");
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = vh.weakCompareAndSetRelease(array, i, $value1$, $value2$);
+                }
+                assertEquals(success, true, "weakCompareAndSetRelease $type$");
                 $type$ x = ($type$) vh.get(array, i);
                 assertEquals(x, $value2$, "weakCompareAndSetRelease $type$");
             }
 
             {
-                boolean r = vh.weakCompareAndSetVolatile(array, i, $value2$, $value1$);
-                assertEquals(r, true, "weakCompareAndSetVolatile $type$");
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = vh.weakCompareAndSetVolatile(array, i, $value2$, $value1$);
+                }
+                assertEquals(success, true, "weakCompareAndSetVolatile $type$");
                 $type$ x = ($type$) vh.get(array, i);
-                assertEquals(x, $value1$, "weakCompareAndSetVolatile $type$ value");
+                assertEquals(x, $value1$, "weakCompareAndSetVolatile $type$");
             }
 
             // Compare set and get
@@ -966,6 +1019,10 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
 
         checkUOE(() -> {
             boolean r = vh.weakCompareAndSetRelease(array, i, $value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.getAndSet(array, i, $value1$);
         });
 #end[CAS]
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
 
 include LauncherCommon.gmk
 
-JAVA_RC_FLAGS += -i $(JDK_TOPDIR)/src/java.base/windows/native/common
+JAVA_RC_FLAGS += -I $(JDK_TOPDIR)/src/java.base/windows/native/common
 ifdef OPENJDK
-  JAVA_RC_FLAGS += -i "$(JDK_TOPDIR)/src/java.base/windows/native/launcher/icons"
+  JAVA_RC_FLAGS += -I $(JDK_TOPDIR)/src/java.base/windows/native/launcher/icons
 else
-  JAVA_RC_FLAGS += -i "$(JDK_TOPDIR)/src/closed/java.base/windows/native/launcher/icons"
+  JAVA_RC_FLAGS += -I $(JDK_TOPDIR)/src/closed/java.base/windows/native/launcher/icons
 endif
 
 ################################################################################

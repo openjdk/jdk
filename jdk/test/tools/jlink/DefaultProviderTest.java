@@ -33,7 +33,7 @@ import java.util.Set;
 import jdk.tools.jlink.internal.PluginRepository;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.Pool;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 import tests.Helper;
 
@@ -65,26 +65,26 @@ public class DefaultProviderTest {
         private boolean enabled = true;
 
         @Override
-        public Set<PluginType> getType() {
-            Set<PluginType> set = new HashSet<>();
-            set.add(CATEGORY.TRANSFORMER);
+        public Set<Category> getType() {
+            Set<Category> set = new HashSet<>();
+            set.add(Category.TRANSFORMER);
             return Collections.unmodifiableSet(set);
         }
 
         @Override
-        public Set<STATE> getState() {
-             return enabled ? EnumSet.of(STATE.AUTO_ENABLED, STATE.FUNCTIONAL)
-                : EnumSet.of(STATE.DISABLED);
+        public Set<State> getState() {
+             return enabled ? EnumSet.of(State.AUTO_ENABLED, State.FUNCTIONAL)
+                : EnumSet.of(State.DISABLED);
         }
 
         @Override
-        public void visit(Pool in, Pool out) {
+        public void visit(ModulePool in, ModulePool out) {
             if (!enabled) {
                 throw new PluginException(NAME + " was set");
             }
 
             DefaultProviderTest.isNewPluginsCalled = true;
-            in.visit((Pool.ModuleData content) -> {
+            in.transformAndCopy(content -> {
                 return content;
             }, out);
         }

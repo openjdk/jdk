@@ -4864,7 +4864,7 @@
   "kind": "COMPILATION_UNIT",
   "sourceElements": [
     {
-      "endPosition": "1242",
+      "endPosition": "1222",
       "kind": "FUNCTION",
       "name": "Parser",
       "body": {
@@ -5419,7 +5419,7 @@
         },
         "startPosition": "1809"
       },
-      "endPosition": "1973",
+      "endPosition": "1901",
       "kind": "EXPRESSION_STATEMENT",
       "startPosition": "1809"
     },
@@ -6310,7 +6310,7 @@
       "startPosition": "1974"
     },
     {
-      "endPosition": "3767",
+      "endPosition": "3726",
       "kind": "FUNCTION",
       "name": "processFiles",
       "body": {

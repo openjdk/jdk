@@ -28,22 +28,17 @@ import java.io.DataOutputStream;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Properties;
 import jdk.tools.jlink.plugin.ExecutableImage;
 import jdk.tools.jlink.builder.ImageBuilder;
 import jdk.tools.jlink.Jlink;
 import jdk.tools.jlink.plugin.Plugin;
-import jdk.tools.jlink.plugin.PluginContext;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.Plugin.CATEGORY;
-import jdk.tools.jlink.plugin.Pool;
+import jdk.tools.jlink.plugin.Plugin.Category;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.PostProcessorPlugin;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 
@@ -52,17 +47,18 @@ import jdk.tools.jlink.plugin.TransformerPlugin;
  */
 public final class ImagePluginConfiguration {
 
-    private static final List<Plugin.CATEGORY> CATEGORIES_ORDER = new ArrayList<>();
+    private static final List<Plugin.Category> CATEGORIES_ORDER = new ArrayList<>();
 
     static {
-        CATEGORIES_ORDER.add(Plugin.CATEGORY.FILTER);
-        CATEGORIES_ORDER.add(Plugin.CATEGORY.TRANSFORMER);
-        CATEGORIES_ORDER.add(Plugin.CATEGORY.MODULEINFO_TRANSFORMER);
-        CATEGORIES_ORDER.add(Plugin.CATEGORY.SORTER);
-        CATEGORIES_ORDER.add(Plugin.CATEGORY.COMPRESSOR);
-        CATEGORIES_ORDER.add(Plugin.CATEGORY.VERIFIER);
-        CATEGORIES_ORDER.add(Plugin.CATEGORY.PROCESSOR);
-        CATEGORIES_ORDER.add(Plugin.CATEGORY.PACKAGER);
+        CATEGORIES_ORDER.add(Plugin.Category.FILTER);
+        CATEGORIES_ORDER.add(Plugin.Category.TRANSFORMER);
+        CATEGORIES_ORDER.add(Plugin.Category.MODULEINFO_TRANSFORMER);
+        CATEGORIES_ORDER.add(Plugin.Category.SORTER);
+        CATEGORIES_ORDER.add(Plugin.Category.COMPRESSOR);
+        CATEGORIES_ORDER.add(Plugin.Category.METAINFO_ADDER);
+        CATEGORIES_ORDER.add(Plugin.Category.VERIFIER);
+        CATEGORIES_ORDER.add(Plugin.Category.PROCESSOR);
+        CATEGORIES_ORDER.add(Plugin.Category.PACKAGER);
     }
 
     private ImagePluginConfiguration() {
@@ -76,8 +72,8 @@ public final class ImagePluginConfiguration {
         if (pluginsConfiguration == null) {
             return new ImagePluginStack();
         }
-        Map<Plugin.CATEGORY, List<Plugin>> plugins = new LinkedHashMap<>();
-        for (Plugin.CATEGORY cat : CATEGORIES_ORDER) {
+        Map<Plugin.Category, List<Plugin>> plugins = new LinkedHashMap<>();
+        for (Plugin.Category cat : CATEGORIES_ORDER) {
             plugins.put(cat, new ArrayList<>());
         }
 
@@ -89,7 +85,7 @@ public final class ImagePluginConfiguration {
                         + " added more than once to stack ");
             }
             seen.add(plug.getName());
-            CATEGORY category = Utils.getCategory(plug);
+            Category category = Utils.getCategory(plug);
             if (category == null) {
                 throw new PluginException("Invalid category for "
                         + plug.getName());
@@ -100,10 +96,10 @@ public final class ImagePluginConfiguration {
 
         List<TransformerPlugin> transformerPlugins = new ArrayList<>();
         List<PostProcessorPlugin> postProcessingPlugins = new ArrayList<>();
-        for (Entry<Plugin.CATEGORY, List<Plugin>> entry : plugins.entrySet()) {
+        for (Entry<Plugin.Category, List<Plugin>> entry : plugins.entrySet()) {
             // Sort according to plugin constraints
             List<Plugin> orderedPlugins = PluginOrderingGraph.sort(entry.getValue());
-            CATEGORY category = entry.getKey();
+            Category category = entry.getKey();
             for (Plugin p : orderedPlugins) {
                 if (Utils.isPostProcessor(category)) {
                     @SuppressWarnings("unchecked")
@@ -143,14 +139,13 @@ public final class ImagePluginConfiguration {
                 }
 
                 @Override
-                public void storeFiles(Pool files) {
+                public void storeFiles(ModulePool files) {
                     throw new PluginException("No directory setup to store files");
                 }
             };
         }
 
-        PluginContext ctxt = pluginsConfiguration.getPluginContext();
         return new ImagePluginStack(builder, transformerPlugins,
-                lastSorter, postProcessingPlugins, ctxt);
+                lastSorter, postProcessingPlugins);
     }
 }

@@ -55,8 +55,8 @@ import jdk.tools.jlink.internal.plugins.asm.AsmPool.ResourceFile;
 import jdk.tools.jlink.internal.plugins.asm.AsmPool.WritableClassPool;
 import jdk.tools.jlink.internal.plugins.asm.AsmPool.WritableResourcePool;
 import jdk.tools.jlink.internal.plugins.asm.AsmPools;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 
 public class AddForgetResourcesTest extends AsmPluginTestBase {
 
@@ -82,7 +82,7 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
                 new ComboPlugin()
         };
         for (TestPlugin p : plugins) {
-            Pool out = p.visit(getPool());
+            ModulePool out = p.visit(getPool());
             p.test(getPool(), out);
         }
     }
@@ -124,7 +124,7 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
             AsmGlobalPool globalPool = pools.getGlobalPool();
             WritableClassPool transformedClasses = globalPool.getTransformedClasses();
             expected = globalPool.getClasses().size();
-            for (ModuleData res : globalPool.getClasses()) {
+            for (ModuleEntry res : globalPool.getClasses()) {
                 ClassReader reader = globalPool.getClassReader(res);
                 String className = reader.getClassName();
                 if (!className.endsWith("module-info")) {
@@ -137,14 +137,14 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
         }
 
         @Override
-        public void test(Pool inResources, Pool outResources) {
-            Collection<ModuleData> inClasses = extractClasses(inResources);
-            Collection<ModuleData> outClasses = extractClasses(outResources);
+        public void test(ModulePool inResources, ModulePool outResources) {
+            Collection<ModuleEntry> inClasses = extractClasses(inResources);
+            Collection<ModuleEntry> outClasses = extractClasses(outResources);
             if (expected != outClasses.size()) {
                 throw new AssertionError("Classes were not added. Expected: " + expected
                         + ", got: " + outClasses.size());
             }
-            for (ModuleData in : inClasses) {
+            for (ModuleEntry in : inClasses) {
                 String path = in.getPath();
                 if (!outClasses.contains(in)) {
                     throw new AssertionError("Class not found: " + path);
@@ -153,7 +153,7 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
                     continue;
                 }
                 String modifiedPath = path.replace(".class", SUFFIX + ".class");
-                if (!outClasses.contains(Pool.newResource(modifiedPath, new byte[0]))) {
+                if (!outClasses.contains(ModuleEntry.create(modifiedPath, new byte[0]))) {
                     throw new AssertionError("Class not found: " + modifiedPath);
                 }
             }
@@ -166,7 +166,7 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
         public void visit() {
             AsmPools pools = getPools();
             AsmGlobalPool globalPool = pools.getGlobalPool();
-            for (ModuleData res : globalPool.getResourceFiles()) {
+            for (ModuleEntry res : globalPool.getResourceFiles()) {
                 String path = res.getPath();
                 String moduleName = getModule(path);
                 AsmModulePool modulePool = pools.getModulePool(moduleName);
@@ -177,20 +177,20 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
         }
 
         @Override
-        public void test(Pool in, Pool out) throws Exception {
-            Collection<ModuleData> inResources = extractResources(in);
-            Collection<ModuleData> outResources = extractResources(out);
+        public void test(ModulePool in, ModulePool out) throws Exception {
+            Collection<ModuleEntry> inResources = extractResources(in);
+            Collection<ModuleEntry> outResources = extractResources(out);
             if (2 * inResources.size() != outResources.size()) {
                 throw new AssertionError("Classes were not added. Expected: " + (2 * inResources.size())
                         + ", got: " + outResources.size());
             }
-            for (ModuleData r : inResources) {
+            for (ModuleEntry r : inResources) {
                 String path = r.getPath();
                 if (!outResources.contains(r)) {
                     throw new AssertionError("Class not found: " + path);
                 }
                 String modifiedPath = path + SUFFIX;
-                if (!outResources.contains(Pool.newResource(modifiedPath, new byte[0]))) {
+                if (!outResources.contains(ModuleEntry.create(modifiedPath, new byte[0]))) {
                     throw new AssertionError("Class not found: " + modifiedPath);
                 }
             }
@@ -204,7 +204,7 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
             AsmPools pools = getPools();
             AsmGlobalPool globalPool = pools.getGlobalPool();
             WritableClassPool transformedClasses = globalPool.getTransformedClasses();
-            for (ModuleData res : globalPool.getClasses()) {
+            for (ModuleEntry res : globalPool.getClasses()) {
                 ClassReader reader = globalPool.getClassReader(res);
                 ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_FRAMES);
                 reader.accept(new AddMethodClassVisitor(writer), ClassReader.EXPAND_FRAMES);
@@ -213,14 +213,14 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
         }
 
         @Override
-        public void test(Pool inResources, Pool outResources) throws Exception {
-            Collection<ModuleData> inClasses = extractClasses(inResources);
-            Collection<ModuleData> outClasses = extractClasses(outResources);
+        public void test(ModulePool inResources, ModulePool outResources) throws Exception {
+            Collection<ModuleEntry> inClasses = extractClasses(inResources);
+            Collection<ModuleEntry> outClasses = extractClasses(outResources);
             if (inClasses.size() != outClasses.size()) {
                 throw new AssertionError("Number of classes. Expected: " + (inClasses.size())
                         + ", got: " + outClasses.size());
             }
-            for (ModuleData out : outClasses) {
+            for (ModuleEntry out : outClasses) {
                 String path = out.getPath();
                 if (!inClasses.contains(out)) {
                     throw new AssertionError("Class not found: " + path);
@@ -248,7 +248,7 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
         public void visit() {
             AsmPools pools = getPools();
             AsmGlobalPool globalPool = pools.getGlobalPool();
-            for (ModuleData res : globalPool.getResourceFiles()) {
+            for (ModuleEntry res : globalPool.getResourceFiles()) {
                 String path = res.getPath();
                 AsmModulePool modulePool = pools.getModulePool(getModule(path));
                 modulePool.getTransformedResourceFiles().addResourceFile(new ResourceFile(removeModule(path),
@@ -257,14 +257,14 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
         }
 
         @Override
-        public void test(Pool in, Pool out) throws Exception {
-            Collection<ModuleData> inResources = extractResources(in);
-            Collection<ModuleData> outResources = extractResources(out);
+        public void test(ModulePool in, ModulePool out) throws Exception {
+            Collection<ModuleEntry> inResources = extractResources(in);
+            Collection<ModuleEntry> outResources = extractResources(out);
             if (inResources.size() != outResources.size()) {
                 throw new AssertionError("Number of resources. Expected: " + inResources.size()
                         + ", got: " + outResources.size());
             }
-            for (ModuleData r : outResources) {
+            for (ModuleEntry r : outResources) {
                 String path = r.getPath();
                 if (!inResources.contains(r)) {
                     throw new AssertionError("Resource not found: " + path);
@@ -287,7 +287,7 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
             AsmGlobalPool globalPool = pools.getGlobalPool();
             WritableClassPool transformedClasses = globalPool.getTransformedClasses();
             int i = 0;
-            for (ModuleData res : globalPool.getClasses()) {
+            for (ModuleEntry res : globalPool.getClasses()) {
                 String path = removeModule(res.getPath());
                 String className = path.replace(".class", "");
                 if ((i & 1) == 0 && !className.endsWith("module-info")) {
@@ -300,8 +300,8 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
         }
 
         @Override
-        public void test(Pool inResources, Pool outResources) throws Exception {
-            Collection<ModuleData> outClasses = extractClasses(outResources);
+        public void test(ModulePool inResources, ModulePool outResources) throws Exception {
+            Collection<ModuleEntry> outClasses = extractClasses(outResources);
             if (expected != outClasses.size()) {
                 throw new AssertionError("Number of classes. Expected: " + expected +
                         ", got: " + outClasses.size());
@@ -318,7 +318,7 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
             AsmPools pools = getPools();
             AsmGlobalPool globalPool = pools.getGlobalPool();
             int i = 0;
-            for (ModuleData res : globalPool.getResourceFiles()) {
+            for (ModuleEntry res : globalPool.getResourceFiles()) {
                 String path = res.getPath();
                 if (!path.contains("META-INF/services")) {
                     if ((i & 1) == 0) {
@@ -335,8 +335,8 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
         }
 
         @Override
-        public void test(Pool in, Pool out) throws Exception {
-            Collection<ModuleData> outResources = extractResources(out);
+        public void test(ModulePool in, ModulePool out) throws Exception {
+            Collection<ModuleEntry> outResources = extractResources(out);
             if (expectedAmount != outResources.size()) {
                 throw new AssertionError("Number of classes. Expected: " + expectedAmount
                         + ", got: " + outResources.size());
@@ -354,7 +354,7 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
             AsmGlobalPool globalPool = pools.getGlobalPool();
             WritableClassPool transformedClasses = globalPool.getTransformedClasses();
             int i = 0;
-            for (ModuleData res : globalPool.getClasses()) {
+            for (ModuleEntry res : globalPool.getClasses()) {
                 ClassReader reader = globalPool.getClassReader(res);
                 String className = reader.getClassName();
                 ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_FRAMES);
@@ -374,8 +374,8 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
         }
 
         @Override
-        public void test(Pool inResources, Pool outResources) throws Exception {
-            Collection<ModuleData> outClasses = extractClasses(outResources);
+        public void test(ModulePool inResources, ModulePool outResources) throws Exception {
+            Collection<ModuleEntry> outClasses = extractClasses(outResources);
             if (expected != outClasses.size()) {
                 throw new AssertionError("Number of classes. Expected: " + expected
                         + ", got: " + outClasses.size());
@@ -392,7 +392,7 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
             AsmPools pools = getPools();
             AsmGlobalPool globalPool = pools.getGlobalPool();
             int i = 0;
-            for (ModuleData res : globalPool.getResourceFiles()) {
+            for (ModuleEntry res : globalPool.getResourceFiles()) {
                 String path = res.getPath();
                 String moduleName = getModule(path);
                 if (!path.contains("META-INF")) {
@@ -412,8 +412,8 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
         }
 
         @Override
-        public void test(Pool inResources, Pool out) throws Exception {
-            Collection<ModuleData> outResources = extractResources(out);
+        public void test(ModulePool inResources, ModulePool out) throws Exception {
+            Collection<ModuleEntry> outResources = extractResources(out);
             if (expectedAmount != outResources.size()) {
                 throw new AssertionError("Number of classes. Expected: " + expectedAmount
                         + ", got: " + outResources.size());
@@ -446,7 +446,7 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
         }
 
         @Override
-        public void test(Pool inResources, Pool outResources) throws Exception {
+        public void test(ModulePool inResources, ModulePool outResources) throws Exception {
             if (!isVisitCalled()) {
                 throw new AssertionError("Resources not visited");
             }
@@ -455,7 +455,7 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
                 throw new AssertionError("Number of transformed classes not equal to expected");
             }
             // Check that only renamed classes and resource files are in the result.
-            for (ModuleData r : outResources.getContent()) {
+            outResources.entries().forEach(r -> {
                 String resourceName = r.getPath();
                 if (resourceName.endsWith(".class") && !resourceName.endsWith("module-info.class")) {
                     if (!resourceName.endsWith(SUFFIX + ".class")) {
@@ -467,7 +467,7 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
                         throw new AssertionError("Resource file not renamed " + resourceName);
                     }
                 }
-            }
+            });
         }
 
         private void renameResources() throws IOException {
@@ -476,7 +476,7 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
             for (Map.Entry<String, List<String>> mod : MODULES.entrySet()) {
                 String moduleName = mod.getKey();
                 AsmModulePool modulePool = pools.getModulePool(moduleName);
-                for (ModuleData res : modulePool.getResourceFiles()) {
+                for (ModuleEntry res : modulePool.getResourceFiles()) {
                     ResourceFile resFile = modulePool.getResourceFile(res);
                     if (resFile.getPath().startsWith("META-INF/services/")) {
                         String newContent = new String(resFile.getContent()) + SUFFIX;
@@ -492,7 +492,7 @@ public class AddForgetResourcesTest extends AsmPluginTestBase {
             AsmPools pools = getPools();
             AsmGlobalPool globalPool = pools.getGlobalPool();
             WritableClassPool transformedClasses = globalPool.getTransformedClasses();
-            for (ModuleData res : globalPool.getClasses()) {
+            for (ModuleEntry res : globalPool.getClasses()) {
                 if (res.getPath().endsWith("module-info.class")) {
                     continue;
                 }

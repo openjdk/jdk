@@ -552,57 +552,60 @@ public class AlgorithmId implements Serializable, DerEncoder {
             return AlgorithmId.sha512WithECDSA_oid;
         }
 
-        // See if any of the installed providers supply a mapping from
-        // the given algorithm name to an OID string
-        String oidString;
-        if (!initOidTable) {
-            Provider[] provs = Security.getProviders();
-            for (int i=0; i<provs.length; i++) {
-                for (Enumeration<Object> enum_ = provs[i].keys();
-                     enum_.hasMoreElements(); ) {
-                    String alias = (String)enum_.nextElement();
-                    String upperCaseAlias = alias.toUpperCase(Locale.ENGLISH);
-                    int index;
-                    if (upperCaseAlias.startsWith("ALG.ALIAS") &&
-                            (index=upperCaseAlias.indexOf("OID.", 0)) != -1) {
-                        index += "OID.".length();
-                        if (index == alias.length()) {
-                            // invalid alias entry
-                            break;
-                        }
-                        if (oidTable == null) {
-                            oidTable = new HashMap<>();
-                        }
-                        oidString = alias.substring(index);
-                        String stdAlgName = provs[i].getProperty(alias);
-                        if (stdAlgName != null) {
-                            stdAlgName = stdAlgName.toUpperCase(Locale.ENGLISH);
-                        }
-                        if (stdAlgName != null &&
-                                oidTable.get(stdAlgName) == null) {
-                            oidTable.put(stdAlgName,
-                                         new ObjectIdentifier(oidString));
-                        }
-                    }
-                }
-            }
-
-            if (oidTable == null) {
-                oidTable = Collections.<String,ObjectIdentifier>emptyMap();
-            }
-            initOidTable = true;
-        }
-
-        return oidTable.get(name.toUpperCase(Locale.ENGLISH));
+        return oidTable().get(name.toUpperCase(Locale.ENGLISH));
     }
 
     private static ObjectIdentifier oid(int ... values) {
         return ObjectIdentifier.newInternal(values);
     }
 
-    private static boolean initOidTable = false;
-    private static Map<String,ObjectIdentifier> oidTable;
+    private static volatile Map<String,ObjectIdentifier> oidTable;
     private static final Map<ObjectIdentifier,String> nameTable;
+
+    /** Returns the oidTable, lazily initializing it on first access. */
+    private static Map<String,ObjectIdentifier> oidTable()
+        throws IOException {
+        // Double checked locking; safe because oidTable is volatile
+        Map<String,ObjectIdentifier> tab;
+        if ((tab = oidTable) == null) {
+            synchronized (AlgorithmId.class) {
+                if ((tab = oidTable) == null)
+                    oidTable = tab = computeOidTable();
+            }
+        }
+        return tab;
+    }
+
+    /** Collects the algorithm names from the installed providers. */
+    private static HashMap<String,ObjectIdentifier> computeOidTable()
+        throws IOException {
+        HashMap<String,ObjectIdentifier> tab = new HashMap<>();
+        for (Provider provider : Security.getProviders()) {
+            for (Object key : provider.keySet()) {
+                String alias = (String)key;
+                String upperCaseAlias = alias.toUpperCase(Locale.ENGLISH);
+                int index;
+                if (upperCaseAlias.startsWith("ALG.ALIAS") &&
+                    (index=upperCaseAlias.indexOf("OID.", 0)) != -1) {
+                    index += "OID.".length();
+                    if (index == alias.length()) {
+                        // invalid alias entry
+                        break;
+                    }
+                    String oidString = alias.substring(index);
+                    String stdAlgName = provider.getProperty(alias);
+                    if (stdAlgName != null) {
+                        stdAlgName = stdAlgName.toUpperCase(Locale.ENGLISH);
+                    }
+                    if (stdAlgName != null &&
+                        tab.get(stdAlgName) == null) {
+                        tab.put(stdAlgName, new ObjectIdentifier(oidString));
+                    }
+                }
+            }
+        }
+        return tab;
+    }
 
     /*****************************************************************/
 

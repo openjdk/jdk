@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -492,7 +492,7 @@ public class ClientCodeWrapper {
         }
 
         @Override @DefinedBy(Api.COMPILER)
-        public void setLocationFromPaths(Location location, Iterable<? extends Path> paths) throws IOException {
+        public void setLocationFromPaths(Location location, Collection<? extends Path> paths) throws IOException {
             try {
                 ((StandardJavaFileManager)clientJavaFileManager).setLocationFromPaths(location, paths);
             } catch (ClientCodeException e) {
@@ -528,6 +528,17 @@ public class ClientCodeWrapper {
         public Path asPath(FileObject file) {
             try {
                 return ((StandardJavaFileManager)clientJavaFileManager).asPath(file);
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (RuntimeException | Error e) {
+                throw new ClientCodeException(e);
+            }
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
+        public void setPathFactory(PathFactory f) {
+            try {
+                ((StandardJavaFileManager)clientJavaFileManager).setPathFactory(f);
             } catch (ClientCodeException e) {
                 throw e;
             } catch (RuntimeException | Error e) {

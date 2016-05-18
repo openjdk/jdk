@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,20 +42,32 @@ static const char SHA2_UPDATE[]                  = "SHA2Update";
 static const char SHA2_FINAL[]                   = "SHA2Final";
 static const char UCRYPTO_VERSION[]              = "ucrypto_version";
 static const char UCRYPTO_GET_MECHLIST[]         = "ucrypto_get_mechlist";
+
 static const char UCRYPTO_ENCRYPT_INIT[]         = "ucrypto_encrypt_init";
 static const char UCRYPTO_ENCRYPT_UPDATE[]       = "ucrypto_encrypt_update";
 static const char UCRYPTO_ENCRYPT_FINAL[]        = "ucrypto_encrypt_final";
 static const char UCRYPTO_ENCRYPT[]              = "ucrypto_encrypt";
+
 static const char UCRYPTO_DECRYPT_INIT[]         = "ucrypto_decrypt_init";
 static const char UCRYPTO_DECRYPT_UPDATE[]       = "ucrypto_decrypt_update";
 static const char UCRYPTO_DECRYPT_FINAL[]        = "ucrypto_decrypt_final";
 static const char UCRYPTO_DECRYPT[]              = "ucrypto_decrypt";
+
 static const char UCRYPTO_SIGN_INIT[]            = "ucrypto_sign_init";
 static const char UCRYPTO_SIGN_UPDATE[]          = "ucrypto_sign_update";
 static const char UCRYPTO_SIGN_FINAL[]           = "ucrypto_sign_final";
+
 static const char UCRYPTO_VERIFY_INIT[]          = "ucrypto_verify_init";
 static const char UCRYPTO_VERIFY_UPDATE[]        = "ucrypto_verify_update";
 static const char UCRYPTO_VERIFY_FINAL[]         = "ucrypto_verify_final";
+
+static const char UCRYPTO_DIGEST_INIT[]          = "ucrypto_digest_init";
+static const char UCRYPTO_DIGEST_UPDATE[]        = "ucrypto_digest_update";
+static const char UCRYPTO_DIGEST_FINAL[]         = "ucrypto_digest_final";
+
+static const char UCRYPTO_FREE_CONTEXT[]         = "ucrypto_free_context";
+
+static const char UCRYPTO_STRERROR[]             = "ucrypto_strerror";
 
 /**
  * Initialize native T4 crypto function pointers
@@ -73,28 +85,6 @@ jboolean* loadNative() {
     return NULL;
   }
 
-  lib = dlopen("libmd.so", RTLD_NOW);
-  if (lib != NULL) {
-    ftab->md5Init = (MD5INIT_FN_PTR) dlsym(lib, MD5_INIT);
-    ftab->md5Update = (MD5UPDATE_FN_PTR) dlsym(lib, MD5_UPDATE);
-    ftab->md5Final = (MD5FINAL_FN_PTR) dlsym(lib, MD5_FINAL);
-    ftab->sha1Init = (SHA1INIT_FN_PTR) dlsym(lib, SHA1_INIT);
-    ftab->sha1Update = (SHA1UPDATE_FN_PTR) dlsym(lib, SHA1_UPDATE);
-    ftab->sha1Final = (SHA1FINAL_FN_PTR) dlsym(lib, SHA1_FINAL);
-    ftab->sha2Init = (SHA2INIT_FN_PTR) dlsym(lib, SHA2_INIT);
-    ftab->sha2Update = (SHA2UPDATE_FN_PTR) dlsym(lib, SHA2_UPDATE);
-    ftab->sha2Final = (SHA2FINAL_FN_PTR) dlsym(lib, SHA2_FINAL);
-    if (ftab->md5Init != NULL && ftab->md5Update != NULL &&
-        ftab->md5Final != NULL && ftab->sha1Init != NULL &&
-        ftab->sha1Update != NULL && ftab->sha1Final != NULL &&
-        ftab->sha2Init != NULL && ftab->sha2Update != NULL &&
-        ftab->sha2Final != NULL) {
-      buf[0] = JNI_TRUE;
-    } else {
-      dlclose(lib);
-    }
-  }
-
   lib = dlopen("libsoftcrypto.so", RTLD_NOW);
   if (lib != NULL) {
     // These APIs aren't available for v0 lib on Solaris 10
@@ -102,7 +92,6 @@ jboolean* loadNative() {
       dlsym(lib, UCRYPTO_VERSION);
     ftab->ucryptoGetMechList = (UCRYPTO_GET_MECHLIST_FN_PTR)
       dlsym(lib, UCRYPTO_GET_MECHLIST);
-    //??
     ftab->ucryptoSignInit = (UCRYPTO_SIGN_INIT_FN_PTR)
       dlsym(lib, UCRYPTO_SIGN_INIT);
     ftab->ucryptoSignUpdate = (UCRYPTO_SIGN_UPDATE_FN_PTR)
@@ -115,6 +104,21 @@ jboolean* loadNative() {
       dlsym(lib, UCRYPTO_VERIFY_UPDATE);
     ftab->ucryptoVerifyFinal = (UCRYPTO_VERIFY_FINAL_FN_PTR)
       dlsym(lib, UCRYPTO_VERIFY_FINAL);
+
+    // These APS are added starting S12
+    ftab->ucryptoDigestInit = (UCRYPTO_DIGEST_INIT_FN_PTR)
+      dlsym(lib, UCRYPTO_DIGEST_INIT);
+    ftab->ucryptoDigestUpdate = (UCRYPTO_DIGEST_UPDATE_FN_PTR)
+      dlsym(lib, UCRYPTO_DIGEST_UPDATE);
+    ftab->ucryptoDigestFinal = (UCRYPTO_DIGEST_FINAL_FN_PTR)
+      dlsym(lib, UCRYPTO_DIGEST_FINAL);
+
+    ftab->ucryptoFreeContext = (UCRYPTO_FREE_CONTEXT_FN_PTR)
+      dlsym(lib, UCRYPTO_FREE_CONTEXT);
+
+    ftab->ucryptoStrerror = (UCRYPTO_STRERROR_FN_PTR)
+      dlsym(lib, UCRYPTO_STRERROR);
+
 
     // These should be avilable for all libsoftcrypto libs
     ftab->ucryptoEncryptInit = (UCRYPTO_ENCRYPT_INIT_FN_PTR)
@@ -146,6 +150,34 @@ jboolean* loadNative() {
       buf[1] = JNI_TRUE;
     } else {
       dlclose(lib);
+    }
+
+    // proceed with libmd when libucrypto does not support digest operations
+    if (ftab->ucryptoDigestInit == NULL ||
+        ftab->ucryptoDigestUpdate == NULL ||
+        ftab->ucryptoDigestFinal == NULL) {
+
+      lib = dlopen("libmd.so", RTLD_NOW);
+      if (lib != NULL) {
+        ftab->md5Init = (MD5INIT_FN_PTR) dlsym(lib, MD5_INIT);
+        ftab->md5Update = (MD5UPDATE_FN_PTR) dlsym(lib, MD5_UPDATE);
+        ftab->md5Final = (MD5FINAL_FN_PTR) dlsym(lib, MD5_FINAL);
+        ftab->sha1Init = (SHA1INIT_FN_PTR) dlsym(lib, SHA1_INIT);
+        ftab->sha1Update = (SHA1UPDATE_FN_PTR) dlsym(lib, SHA1_UPDATE);
+        ftab->sha1Final = (SHA1FINAL_FN_PTR) dlsym(lib, SHA1_FINAL);
+        ftab->sha2Init = (SHA2INIT_FN_PTR) dlsym(lib, SHA2_INIT);
+        ftab->sha2Update = (SHA2UPDATE_FN_PTR) dlsym(lib, SHA2_UPDATE);
+        ftab->sha2Final = (SHA2FINAL_FN_PTR) dlsym(lib, SHA2_FINAL);
+        if (ftab->md5Init != NULL && ftab->md5Update != NULL &&
+            ftab->md5Final != NULL && ftab->sha1Init != NULL &&
+            ftab->sha1Update != NULL && ftab->sha1Final != NULL &&
+            ftab->sha2Init != NULL && ftab->sha2Update != NULL &&
+            ftab->sha2Final != NULL) {
+          buf[0] = JNI_TRUE;
+        } else {
+          dlclose(lib);
+        }
+      }
     }
   }
 
