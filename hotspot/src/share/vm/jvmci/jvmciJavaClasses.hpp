@@ -230,12 +230,11 @@ class JVMCIJavaClasses : AllStatic {
     static_oop_field(JavaKind, Int, "Ljdk/vm/ci/meta/JavaKind;");                                                                                              \
     static_oop_field(JavaKind, Long, "Ljdk/vm/ci/meta/JavaKind;");                                                                                             \
   end_class                                                                                                                                                    \
-  start_class(LIRKind)                                                                                                                                         \
-    oop_field(LIRKind, platformKind, "Ljdk/vm/ci/meta/PlatformKind;")                                                                                          \
-    int_field(LIRKind, referenceMask)                                                                                                                          \
+  start_class(ValueKind)                                                                                                                                       \
+    oop_field(ValueKind, platformKind, "Ljdk/vm/ci/meta/PlatformKind;")                                                                                        \
   end_class                                                                                                                                                    \
   start_class(Value)                                                                                                                                           \
-    oop_field(Value, lirKind, "Ljdk/vm/ci/meta/LIRKind;")                                                                                                      \
+    oop_field(Value, valueKind, "Ljdk/vm/ci/meta/ValueKind;")                                                                                                  \
     static_oop_field(Value, ILLEGAL, "Ljdk/vm/ci/meta/AllocatableValue;");                                                                                     \
   end_class                                                                                                                                                    \
   start_class(RegisterValue)                                                                                                                                   \

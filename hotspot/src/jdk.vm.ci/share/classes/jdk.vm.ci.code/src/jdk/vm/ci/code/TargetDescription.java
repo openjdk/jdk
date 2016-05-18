@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,8 @@
 package jdk.vm.ci.code;
 
 import static jdk.vm.ci.meta.MetaUtil.identityHashCodeString;
+
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.LIRKind;
-import jdk.vm.ci.meta.PlatformKind;
 
 /**
  * Represents the target machine for a compiler, including the CPU architecture, the size of
@@ -117,14 +116,5 @@ public class TargetDescription {
     @Override
     public String toString() {
         return identityHashCodeString(this);
-    }
-
-    public LIRKind getLIRKind(JavaKind javaKind) {
-        PlatformKind platformKind = arch.getPlatformKind(javaKind);
-        if (javaKind.isObject()) {
-            return LIRKind.reference(platformKind);
-        } else {
-            return LIRKind.value(platformKind);
-        }
     }
 }

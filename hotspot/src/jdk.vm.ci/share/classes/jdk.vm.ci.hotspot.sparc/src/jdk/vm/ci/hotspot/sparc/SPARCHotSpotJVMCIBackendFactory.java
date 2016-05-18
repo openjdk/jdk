@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,7 @@ public class SPARCHotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
         TargetDescription target = createTarget(runtime.getConfig());
 
         HotSpotMetaAccessProvider metaAccess = new HotSpotMetaAccessProvider(runtime);
-        RegisterConfig regConfig = new SPARCHotSpotRegisterConfig(target.arch, runtime.getConfig());
+        RegisterConfig regConfig = new SPARCHotSpotRegisterConfig(target, runtime.getConfig());
         HotSpotCodeCacheProvider codeCache = createCodeCache(runtime, target, regConfig);
         HotSpotConstantReflectionProvider constantReflection = new HotSpotConstantReflectionProvider(runtime);
         StackIntrospection stackIntrospection = new HotSpotStackIntrospection(runtime);

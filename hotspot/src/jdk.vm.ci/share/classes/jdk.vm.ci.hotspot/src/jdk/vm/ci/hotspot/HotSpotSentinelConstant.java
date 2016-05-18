@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@ package jdk.vm.ci.hotspot;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.LIRKind;
+import jdk.vm.ci.meta.ValueKind;
 import jdk.vm.ci.meta.VMConstant;
 import jdk.vm.ci.meta.Value;
 
@@ -32,8 +32,8 @@ public final class HotSpotSentinelConstant extends Value implements JavaConstant
 
     private final JavaKind javaKind;
 
-    public HotSpotSentinelConstant(LIRKind lirKind, JavaKind javaKind) {
-        super(lirKind);
+    public HotSpotSentinelConstant(ValueKind<?> valueKind, JavaKind javaKind) {
+        super(valueKind);
         this.javaKind = javaKind;
     }
 

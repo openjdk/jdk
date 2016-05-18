@@ -83,7 +83,7 @@
   do_klass(NullConstant_klass,                           jdk_vm_ci_meta_NullConstant,                           Jvmci) \
   do_klass(ExceptionHandler_klass,                       jdk_vm_ci_meta_ExceptionHandler,                       Jvmci) \
   do_klass(JavaKind_klass,                               jdk_vm_ci_meta_JavaKind,                               Jvmci) \
-  do_klass(LIRKind_klass,                                jdk_vm_ci_meta_LIRKind,                                Jvmci) \
+  do_klass(ValueKind_klass,                              jdk_vm_ci_meta_ValueKind,                              Jvmci) \
   do_klass(Value_klass,                                  jdk_vm_ci_meta_Value,                                  Jvmci)
 #endif
 

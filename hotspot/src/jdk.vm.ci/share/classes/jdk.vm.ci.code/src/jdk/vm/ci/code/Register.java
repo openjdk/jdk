@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,7 @@
  */
 package jdk.vm.ci.code;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.LIRKind;
+import jdk.vm.ci.meta.ValueKind;
 
 /**
  * Represents a target machine register.
@@ -144,17 +143,17 @@ public final class Register implements Comparable<Register> {
      * @param kind the specified kind
      * @return the {@link RegisterValue}
      */
-    public RegisterValue asValue(LIRKind kind) {
+    public RegisterValue asValue(ValueKind<?> kind) {
         return new RegisterValue(kind, this);
     }
 
     /**
      * Gets this register as a {@linkplain RegisterValue value} with no particular kind.
      *
-     * @return a {@link RegisterValue} with {@link JavaKind#Illegal} kind.
+     * @return a {@link RegisterValue} with {@link ValueKind#Illegal} kind.
      */
     public RegisterValue asValue() {
-        return asValue(LIRKind.Illegal);
+        return asValue(ValueKind.Illegal);
     }
 
     /**

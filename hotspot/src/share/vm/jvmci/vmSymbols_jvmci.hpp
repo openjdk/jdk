@@ -56,7 +56,7 @@
   template(jdk_vm_ci_meta_NullConstant,                           "jdk/vm/ci/meta/NullConstant")                           \
   template(jdk_vm_ci_meta_ExceptionHandler,                       "jdk/vm/ci/meta/ExceptionHandler")                       \
   template(jdk_vm_ci_meta_JavaKind,                               "jdk/vm/ci/meta/JavaKind")                               \
-  template(jdk_vm_ci_meta_LIRKind,                                "jdk/vm/ci/meta/LIRKind")                                \
+  template(jdk_vm_ci_meta_ValueKind,                              "jdk/vm/ci/meta/ValueKind")                              \
   template(jdk_vm_ci_meta_Value,                                  "jdk/vm/ci/meta/Value")                                  \
   template(jdk_vm_ci_meta_Assumptions_ConcreteSubtype,            "jdk/vm/ci/meta/Assumptions$ConcreteSubtype")            \
   template(jdk_vm_ci_meta_Assumptions_LeafType,                   "jdk/vm/ci/meta/Assumptions$LeafType")                   \

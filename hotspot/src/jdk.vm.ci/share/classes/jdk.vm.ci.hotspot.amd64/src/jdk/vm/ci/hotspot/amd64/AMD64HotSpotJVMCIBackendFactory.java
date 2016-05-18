@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,7 @@ public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
     }
 
     protected RegisterConfig createRegisterConfig(HotSpotJVMCIRuntimeProvider runtime, TargetDescription target) {
-        return new AMD64HotSpotRegisterConfig(target.arch, runtime.getConfig());
+        return new AMD64HotSpotRegisterConfig(target, runtime.getConfig());
     }
 
     protected HotSpotCodeCacheProvider createCodeCache(HotSpotJVMCIRuntimeProvider runtime, TargetDescription target, RegisterConfig regConfig) {
