@@ -113,7 +113,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
             // Some languages won't have a notion of manipulating collections. Exposing "length" on arrays as an
             // explicit property is beneficial for them.
             // REVISIT: is it maybe a code smell that StandardOperation.GET_LENGTH is not needed?
-            setPropertyGetter("length", MethodHandles.arrayLength(clazz), ValidationType.IS_ARRAY);
+            setPropertyGetter("length", MethodHandles.arrayLength(clazz), ValidationType.EXACT_CLASS);
         } else if(List.class.isAssignableFrom(clazz)) {
             setPropertyGetter("length", GET_COLLECTION_LENGTH, ValidationType.INSTANCE_OF);
         }
@@ -544,7 +544,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         // Otherwise, create a binding based on the actual type of the argument with an appropriate guard.
         if(clazz.isArray()) {
             return new GuardedInvocationComponent(MethodHandles.arrayLength(clazz).asType(callSiteType),
-                    Guards.isArray(0, callSiteType), ValidationType.IS_ARRAY);
+                    Guards.isArray(0, callSiteType), ValidationType.EXACT_CLASS);
         } if(Collection.class.isAssignableFrom(clazz)) {
             return new GuardedInvocationComponent(GET_COLLECTION_LENGTH.asType(callSiteType), Guards.asType(
                     COLLECTION_GUARD, callSiteType), Collection.class, ValidationType.INSTANCE_OF);
