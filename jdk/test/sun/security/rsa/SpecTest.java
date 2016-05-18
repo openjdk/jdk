@@ -24,7 +24,6 @@
 /**
  * @test
  * @bug 8044199 8137231
- * @key intermittent
  * @summary Check same KeyPair's private key and public key have same modulus.
  * also check public key's public exponent equals to given spec's public
  * exponent. Only key size 1024 is tested with RSAKeyGenParameterSpec.F0 (3).
