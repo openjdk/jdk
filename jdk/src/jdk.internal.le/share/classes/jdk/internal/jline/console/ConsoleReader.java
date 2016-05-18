@@ -2498,6 +2498,12 @@ public class ConsoleReader
                     //ignore
                 }
 
+                if (o instanceof Runnable) {
+                    ((Runnable) o).run();
+                    sb.setLength(0);
+                    continue;
+                }
+
                 // Search mode.
                 //
                 // Note that we have to do this first, because if there is a command
