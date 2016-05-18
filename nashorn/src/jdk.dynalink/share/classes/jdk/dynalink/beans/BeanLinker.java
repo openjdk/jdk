@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
             // Some languages won't have a notion of manipulating collections. Exposing "length" on arrays as an
             // explicit property is beneficial for them.
             // REVISIT: is it maybe a code smell that StandardOperation.GET_LENGTH is not needed?
-            setPropertyGetter("length", GET_ARRAY_LENGTH, ValidationType.IS_ARRAY);
+            setPropertyGetter("length", MethodHandles.arrayLength(clazz), ValidationType.IS_ARRAY);
         } else if(List.class.isAssignableFrom(clazz)) {
             setPropertyGetter("length", GET_COLLECTION_LENGTH, ValidationType.INSTANCE_OF);
         }
@@ -518,9 +518,6 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
                 gic.getValidatorClass(), gic.getValidationType());
     }
 
-    private static final MethodHandle GET_ARRAY_LENGTH = Lookup.PUBLIC.findStatic(Array.class, "getLength",
-            MethodType.methodType(int.class, Object.class));
-
     private static final MethodHandle GET_COLLECTION_LENGTH = Lookup.PUBLIC.findVirtual(Collection.class, "size",
             MethodType.methodType(int.class));
 
@@ -537,7 +534,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         // Thing is, it'd be quite stupid of a call site creator to go though invokedynamic when it knows in advance
         // they're dealing with an array, collection, or map, but hey...
         if(declaredType.isArray()) {
-            return new GuardedInvocationComponent(GET_ARRAY_LENGTH.asType(callSiteType));
+            return new GuardedInvocationComponent(MethodHandles.arrayLength(declaredType).asType(callSiteType));
         } else if(Collection.class.isAssignableFrom(declaredType)) {
             return new GuardedInvocationComponent(GET_COLLECTION_LENGTH.asType(callSiteType));
         } else if(Map.class.isAssignableFrom(declaredType)) {
@@ -546,8 +543,8 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
 
         // Otherwise, create a binding based on the actual type of the argument with an appropriate guard.
         if(clazz.isArray()) {
-            return new GuardedInvocationComponent(GET_ARRAY_LENGTH.asType(callSiteType), Guards.isArray(0,
-                    callSiteType), ValidationType.IS_ARRAY);
+            return new GuardedInvocationComponent(MethodHandles.arrayLength(clazz).asType(callSiteType),
+                    Guards.isArray(0, callSiteType), ValidationType.IS_ARRAY);
         } if(Collection.class.isAssignableFrom(clazz)) {
             return new GuardedInvocationComponent(GET_COLLECTION_LENGTH.asType(callSiteType), Guards.asType(
                     COLLECTION_GUARD, callSiteType), Collection.class, ValidationType.INSTANCE_OF);
