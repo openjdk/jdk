@@ -145,6 +145,12 @@ java/lang/management/MemoryMXBean/LowMemoryTest.java            8130339 generic-
 
 ############################################################################
 
+# jdk_io
+
+java/io/pathNames/GeneralWin32.java                             8156595 windows-all
+
+############################################################################
+
 # jdk_jmx
 
 com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
@@ -328,6 +334,8 @@ tools/pack200/Pack200Test.java                                  8059906,8151901 
 tools/launcher/FXLauncherTest.java                              8068049 linux-all,macosx-all
 
 tools/pack200/Pack200Props.java                                 8155857 generic-all
+
+tools/pack200/TestNormal.java                                   8156807 windows-all
 
 ############################################################################
 
