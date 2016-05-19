@@ -61,7 +61,7 @@ import javax.lang.model.util.Elements;
 import javax.tools.FileObject;
 import jdk.jshell.MemoryFileManager.SourceMemoryJavaFileObject;
 import jdk.jshell.ClassTracker.ClassInfo;
-import jdk.Version;
+import java.lang.Runtime.Version;
 
 /**
  * The primary interface to the compiler API.  Parsing, analysis, and
