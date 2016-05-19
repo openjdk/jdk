@@ -576,7 +576,8 @@ public final class System {
      * <tr><th>Key</th>
      *     <th>Description of Associated Value</th></tr>
      * <tr><td><code>java.version</code></td>
-     *     <td>Java Runtime Environment version</td></tr>
+     *     <td>Java Runtime Environment version which may be interpreted
+     *     as a {@link Runtime.Version}</td></tr>
      * <tr><td><code>java.vendor</code></td>
      *     <td>Java Runtime Environment vendor</td></tr>
      * <tr><td><code>java.vendor.url</code></td>
@@ -584,19 +585,22 @@ public final class System {
      * <tr><td><code>java.home</code></td>
      *     <td>Java installation directory</td></tr>
      * <tr><td><code>java.vm.specification.version</code></td>
-     *     <td>Java Virtual Machine specification version</td></tr>
+     *     <td>Java Virtual Machine specification version which may be
+     *     interpreted as a {@link Runtime.Version}</td></tr>
      * <tr><td><code>java.vm.specification.vendor</code></td>
      *     <td>Java Virtual Machine specification vendor</td></tr>
      * <tr><td><code>java.vm.specification.name</code></td>
      *     <td>Java Virtual Machine specification name</td></tr>
      * <tr><td><code>java.vm.version</code></td>
-     *     <td>Java Virtual Machine implementation version</td></tr>
+     *     <td>Java Virtual Machine implementation version which may be
+     *     interpreted as a {@link Runtime.Version}</td></tr>
      * <tr><td><code>java.vm.vendor</code></td>
      *     <td>Java Virtual Machine implementation vendor</td></tr>
      * <tr><td><code>java.vm.name</code></td>
      *     <td>Java Virtual Machine implementation name</td></tr>
      * <tr><td><code>java.specification.version</code></td>
-     *     <td>Java Runtime Environment specification  version</td></tr>
+     *     <td>Java Runtime Environment specification version which may be
+     *     interpreted as a {@link Runtime.Version}</td></tr>
      * <tr><td><code>java.specification.vendor</code></td>
      *     <td>Java Runtime Environment specification  vendor</td></tr>
      * <tr><td><code>java.specification.name</code></td>

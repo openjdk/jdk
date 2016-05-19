@@ -23,12 +23,13 @@
 
 /*
  * @test
- * @summary Unit test for jdk.Version.
- * @bug 8072379
+ * @summary Unit test for java.lang.Runtime.Version.
+ * @bug 8072379 8144062
  */
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.Runtime.Version;
 import java.math.BigInteger;
 import java.util.stream.Collectors;
 import java.util.Arrays;
@@ -36,7 +37,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import jdk.Version;
 import static java.lang.System.out;
 
 public class Basic {
@@ -116,8 +116,8 @@ public class Basic {
         tryCatch("1.4142+-",   IAE);
         tryCatch("2.9979+-%",  IAE);
 
-        //// Test for current()
-        testCurrent();
+        //// Test for Runtime.version()
+        testVersion();
 
         //// Test for equals{IgnoreOpt}?(), hashCode(), compareTo{IgnoreOpt}?()
         // compare: after "<" == -1, equal == 0, before ">" == 1
@@ -219,18 +219,19 @@ public class Basic {
             pass();
     }
 
-    private static void testCurrent() {
-        Version current = Version.current();
-        String javaVer = System.getProperty("java.version");
+    private static void testVersion() {
+        Version current = Runtime.version();
+        String javaVer = System.getProperty("java.runtime.version");
 
-        // java.version == $VNUM(\-$PRE)
-        String [] ver = javaVer.split("-");
+        // java.runtime.version == $VNUM(\-$PRE)?(\+$BUILD)?(-$OPT)?
+        String [] jv  = javaVer.split("\\+");
+        String [] ver = jv[0].split("-");
         List<Integer> javaVerVNum
             = Arrays.stream(ver[0].split("\\."))
             .map(v -> Integer.parseInt(v))
             .collect(Collectors.toList());
         if (!javaVerVNum.equals(current.version())) {
-            fail("testCurrent() version()", javaVerVNum.toString(),
+            fail("Runtime.version()", javaVerVNum.toString(),
                  current.version().toString());
         } else {
             pass();
