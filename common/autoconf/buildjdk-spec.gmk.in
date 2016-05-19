@@ -134,8 +134,9 @@ ifeq ($(JVM_INTERPRETER), cpp)
 endif
 
 HOTSPOT_MAKE_ARGS := product docs export_product
-# Control wether Hotspot runs Queens test after building
-TEST_IN_BUILD := false
+
+# Control wether Hotspot builds gtest tests
+BUILD_GTEST := false
 
 USE_PRECOMPILED_HEADER := @USE_PRECOMPILED_HEADER@
 
