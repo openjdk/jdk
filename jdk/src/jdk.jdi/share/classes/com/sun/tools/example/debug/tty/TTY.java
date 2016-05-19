@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,16 @@ public class TTY implements EventNotifier {
      * The name of this tool.
      */
     private static final String progname = "jdb";
+
+    private volatile boolean shuttingDown = false;
+
+    public void setShuttingDown(boolean s) {
+       shuttingDown = s;
+    }
+
+    public boolean isShuttingDown() {
+        return shuttingDown;
+    }
 
     @Override
     public void vmStartEvent(VMStartEvent se)  {
@@ -750,7 +760,13 @@ public class TTY implements EventNotifier {
             while (true) {
                 String ln = in.readLine();
                 if (ln == null) {
-                    MessageOutput.println("Input stream closed.");
+                    /*
+                     *  Jdb is being shutdown because debuggee exited, ignore any 'null'
+                     *  returned by readLine() during shutdown. JDK-8154144.
+                     */
+                    if (!isShuttingDown()) {
+                        MessageOutput.println("Input stream closed.");
+                    }
                     ln = "quit";
                 }
 

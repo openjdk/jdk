@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,13 +50,21 @@ public final class CompilerUtils {
      *
      * @return true if the compilation is successful
      *
-     * @throws IOException if there is an I/O error scanning the source tree or
-     *                     creating the destination directory
+     * @throws IOException
+     *         if there is an I/O error scanning the source tree or
+     *         creating the destination directory
+     * @throws UnsupportedOperationException
+     *         if there is no system java compiler
      */
     public static boolean compile(Path source, Path destination, String ... options)
         throws IOException
     {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        if (compiler == null) {
+            // no compiler available
+            throw new UnsupportedOperationException("Unable to get system java compiler. " +
+                "Perhaps, jdk.compiler module is not available.");
+        }
         StandardJavaFileManager jfm = compiler.getStandardFileManager(null, null, null);
 
         List<Path> sources

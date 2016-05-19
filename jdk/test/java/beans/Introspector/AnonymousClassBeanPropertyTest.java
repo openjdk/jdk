@@ -33,7 +33,7 @@ import java.util.Arrays;
 
 /**
  * @test
- * @bug 8132973 8132732 8155013
+ * @bug 8132973 8132732 8155013 8154958
  * @summary Some check for BeanProperty annotation
  * @author a.stepanov
  * @run main AnonymousClassBeanPropertyTest
@@ -61,6 +61,10 @@ public class AnonymousClassBeanPropertyTest {
 
 
     // ---------- test cases (interfaces) ----------
+
+    public interface IPublic {
+        double getX();
+    }
 
     private interface IGet {
         double getX();
@@ -113,6 +117,10 @@ public class AnonymousClassBeanPropertyTest {
         void setX(double a[]);
     }
 
+    private interface IIs {
+        boolean isX();
+    }
+
 
     // ---------- checks ----------
 
@@ -124,7 +132,7 @@ public class AnonymousClassBeanPropertyTest {
         return ok;
     }
 
-    private static boolean checkInfo(Class<?> c, String what) {
+    private static boolean checkInfo(Class<?> c, String what, boolean checkVals) {
 
         BeanInfo i;
         try { i = Introspector.getBeanInfo(c, Object.class); }
@@ -153,6 +161,8 @@ public class AnonymousClassBeanPropertyTest {
         ok &= check("required", (boolean) d.getValue("required"), REQUIRED);
         ok &= check("visualUpdate",
             (boolean) d.getValue("visualUpdate"), UPDATE);
+
+        if (!checkVals) { return ok; }
 
         Object vals[] = (Object[]) d.getValue("enumerationValues");
         if (vals == null) {
@@ -210,8 +220,10 @@ public class AnonymousClassBeanPropertyTest {
             (boolean) d.getValue("visualUpdate"), !UPDATE);
 
         Object vals[] = (Object[]) d.getValue("enumerationValues");
-        if (vals != null || vals.length > 0) {
-            System.out.println("non-empty enumerationValues");
+        if (vals != null && vals.length > 0) {
+            System.out.println("non-empty enumerationValues:");
+            for (Object v: vals) { System.out.print(v.toString()); }
+            System.out.println();
             return false;
         }
 
@@ -225,6 +237,31 @@ public class AnonymousClassBeanPropertyTest {
     public static void main(String[] args) {
 
         boolean passed = true, ok, ok2;
+
+        //----------------------------------------------------------------------
+
+        // TODO: please uncomment/update after 8154958 fix
+        /*
+        IPublic testPublic = new IPublic() {
+            @BeanProperty(
+                description  = DESCRIPTION,
+                bound        = BOUND,
+                expert       = EXPERT,
+                hidden       = HIDDEN,
+                preferred    = PREFERRED,
+                required     = REQUIRED,
+                visualUpdate = UPDATE,
+                enumerationValues = {V_NAME})
+            @Override
+            public double getX() { return X; }
+
+            public void addPropertyChangeListener(PropertyChangeListener l)    {}
+            public void removePropertyChangeListener(PropertyChangeListener l) {}
+        };
+        ok = checkInfo(testPublic.getClass(), "IPublic", true);
+        System.out.println("OK = " + ok);
+        passed = passed && ok;
+        */
 
         //----------------------------------------------------------------------
 
@@ -244,7 +281,7 @@ public class AnonymousClassBeanPropertyTest {
             public void addPropertyChangeListener(PropertyChangeListener l)    {}
             public void removePropertyChangeListener(PropertyChangeListener l) {}
         };
-        ok = checkInfo(testGet.getClass(), "IGet");
+        ok = checkInfo(testGet.getClass(), "IGet", true);
         System.out.println("OK = " + ok);
         passed = passed && ok;
 
@@ -269,7 +306,7 @@ public class AnonymousClassBeanPropertyTest {
             public void addPropertyChangeListener(PropertyChangeListener l)    {}
             public void removePropertyChangeListener(PropertyChangeListener l) {}
         };
-        ok = checkInfo(testSet.getClass(), "ISet");
+        ok = checkInfo(testSet.getClass(), "ISet", true);
         System.out.println("OK = " + ok);
         passed = passed && ok;
 
@@ -294,7 +331,7 @@ public class AnonymousClassBeanPropertyTest {
             public void addPropertyChangeListener(PropertyChangeListener l)    {}
             public void removePropertyChangeListener(PropertyChangeListener l) {}
         };
-        ok = checkInfo(testGetByIndex.getClass(), "IGetByIndex");
+        ok = checkInfo(testGetByIndex.getClass(), "IGetByIndex", true);
         System.out.println("OK = " + ok);
         passed = passed && ok;
 
@@ -319,7 +356,7 @@ public class AnonymousClassBeanPropertyTest {
             public void addPropertyChangeListener(PropertyChangeListener l)    {}
             public void removePropertyChangeListener(PropertyChangeListener l) {}
         };
-        ok = checkInfo(testSetByIndex.getClass(), "ISetByIndex");
+        ok = checkInfo(testSetByIndex.getClass(), "ISetByIndex", true);
         System.out.println("OK = " + ok);
         passed = passed && ok;
 
@@ -346,7 +383,7 @@ public class AnonymousClassBeanPropertyTest {
             public void addPropertyChangeListener(PropertyChangeListener l)    {}
             public void removePropertyChangeListener(PropertyChangeListener l) {}
         };
-        ok = checkInfo(testGetArray.getClass(), "IGetArray");
+        ok = checkInfo(testGetArray.getClass(), "IGetArray", true);
         System.out.println("OK = " + ok);
         passed = passed && ok;
         */
@@ -374,7 +411,7 @@ public class AnonymousClassBeanPropertyTest {
             public void addPropertyChangeListener(PropertyChangeListener l)    {}
             public void removePropertyChangeListener(PropertyChangeListener l) {}
         };
-        ok = checkInfo(testSetArray.getClass(), "ISetArray");
+        ok = checkInfo(testSetArray.getClass(), "ISetArray", true);
         System.out.println("OK = " + ok);
         passed = passed && ok;
         */
@@ -402,7 +439,7 @@ public class AnonymousClassBeanPropertyTest {
             public void addPropertyChangeListener(PropertyChangeListener l)    {}
             public void removePropertyChangeListener(PropertyChangeListener l) {}
         };
-        ok = checkInfo(testGetBoth_1.getClass(), "IGetBoth-1");
+        ok = checkInfo(testGetBoth_1.getClass(), "IGetBoth-1", true);
         System.out.println("OK = " + ok);
         passed = passed && ok;
 
@@ -429,7 +466,7 @@ public class AnonymousClassBeanPropertyTest {
             public void addPropertyChangeListener(PropertyChangeListener l)    {}
             public void removePropertyChangeListener(PropertyChangeListener l) {}
         };
-        ok = checkInfo(testGetBoth_2.getClass(), "IGetBoth-2");
+        ok = checkInfo(testGetBoth_2.getClass(), "IGetBoth-2", true);
         System.out.println("OK = " + ok);
         passed = passed && ok;
         */
@@ -465,11 +502,11 @@ public class AnonymousClassBeanPropertyTest {
             public void addPropertyChangeListener(PropertyChangeListener l)    {}
             public void removePropertyChangeListener(PropertyChangeListener l) {}
         };
-        ok = checkInfo(testGetBoth_3.getClass(), "IGetBoth-3");
+        ok = checkInfo(testGetBoth_3.getClass(), "IGetBoth-3", true);
         System.out.println("OK = " + ok);
         ok2 = checkAlternativeInfo(testGetBoth_3.getClass(), "IGetBoth-3");
         System.out.println("OK = " + ok2);
-        passed = passed && ok && ok2;
+        passed = passed && (ok || ok2);
         */
 
         //----------------------------------------------------------------------
@@ -495,7 +532,7 @@ public class AnonymousClassBeanPropertyTest {
             public void addPropertyChangeListener(PropertyChangeListener l)    {}
             public void removePropertyChangeListener(PropertyChangeListener l) {}
         };
-        ok = checkInfo(testSetBoth_1.getClass(), "ISetBoth-1");
+        ok = checkInfo(testSetBoth_1.getClass(), "ISetBoth-1", true);
         System.out.println("OK = " + ok);
         passed = passed && ok;
 
@@ -522,7 +559,7 @@ public class AnonymousClassBeanPropertyTest {
             public void addPropertyChangeListener(PropertyChangeListener l)    {}
             public void removePropertyChangeListener(PropertyChangeListener l) {}
         };
-        ok = checkInfo(testSetBoth_2.getClass(), "ISetBoth-2");
+        ok = checkInfo(testSetBoth_2.getClass(), "ISetBoth-2", true);
         System.out.println("OK = " + ok);
         passed = passed && ok;
         */
@@ -558,11 +595,11 @@ public class AnonymousClassBeanPropertyTest {
             public void addPropertyChangeListener(PropertyChangeListener l)    {}
             public void removePropertyChangeListener(PropertyChangeListener l) {}
         };
-        ok = checkInfo(testSetBoth_3.getClass(), "ISetBoth-3");
+        ok = checkInfo(testSetBoth_3.getClass(), "ISetBoth-3", true);
         System.out.println("OK = " + ok);
         ok2 = checkAlternativeInfo(testSetBoth_3.getClass(), "ISetBoth-3");
         System.out.println("OK = " + ok2);
-        passed = passed && ok && ok2;
+        passed = passed && (ok || ok2);
         */
 
         //----------------------------------------------------------------------
@@ -588,7 +625,7 @@ public class AnonymousClassBeanPropertyTest {
             public void addPropertyChangeListener(PropertyChangeListener l)    {}
             public void removePropertyChangeListener(PropertyChangeListener l) {}
         };
-        ok = checkInfo(testGetSet_1.getClass(), "IGetSet-1");
+        ok = checkInfo(testGetSet_1.getClass(), "IGetSet-1", true);
         System.out.println("OK = " + ok);
         passed = passed && ok;
 
@@ -614,7 +651,7 @@ public class AnonymousClassBeanPropertyTest {
             public void addPropertyChangeListener(PropertyChangeListener l)    {}
             public void removePropertyChangeListener(PropertyChangeListener l) {}
         };
-        ok = checkInfo(testGetSet_2.getClass(), "IGetSet-2");
+        ok = checkInfo(testGetSet_2.getClass(), "IGetSet-2", true);
         System.out.println("OK = " + ok);
         passed = passed && ok;
 
@@ -649,11 +686,11 @@ public class AnonymousClassBeanPropertyTest {
             public void addPropertyChangeListener(PropertyChangeListener l)    {}
             public void removePropertyChangeListener(PropertyChangeListener l) {}
         };
-        ok = checkInfo(testGetSet_3.getClass(), "IGetSet-3");
+        ok = checkInfo(testGetSet_3.getClass(), "IGetSet-3", true);
         System.out.println("OK = " + ok);
         ok2 = checkAlternativeInfo(testGetSet_3.getClass(), "IGetSet-3");
         System.out.println("OK = " + ok2);
-        passed = passed && ok && ok2;
+        passed = passed && (ok || ok2);
         */
 
         //----------------------------------------------------------------------
@@ -679,7 +716,7 @@ public class AnonymousClassBeanPropertyTest {
             public void addPropertyChangeListener(PropertyChangeListener l)    {}
             public void removePropertyChangeListener(PropertyChangeListener l) {}
         };
-        ok = checkInfo(testGetSetByIndex_1.getClass(), "IGetSetByIndex-1");
+        ok = checkInfo(testGetSetByIndex_1.getClass(), "IGetSetByIndex-1", true);
         System.out.println("OK = " + ok);
         passed = passed && ok;
 
@@ -705,7 +742,7 @@ public class AnonymousClassBeanPropertyTest {
             public void addPropertyChangeListener(PropertyChangeListener l)    {}
             public void removePropertyChangeListener(PropertyChangeListener l) {}
         };
-        ok = checkInfo(testGetSetByIndex_2.getClass(), "IGetSetByIndex-2");
+        ok = checkInfo(testGetSetByIndex_2.getClass(), "IGetSetByIndex-2", true);
         System.out.println("OK = " + ok);
         passed = passed && ok;
 
@@ -744,12 +781,12 @@ public class AnonymousClassBeanPropertyTest {
             public void addPropertyChangeListener(PropertyChangeListener l)    {}
             public void removePropertyChangeListener(PropertyChangeListener l) {}
         };
-        ok = checkInfo(testGetSetByIndex_3.getClass(), "IGetSetByIndex-3");
+        ok = checkInfo(testGetSetByIndex_3.getClass(), "IGetSetByIndex-3", true);
         System.out.println("OK = " + ok);
         ok2 = checkAlternativeInfo(
             testGetSetByIndex_3.getClass(), "IGetSetByIndex-3");
         System.out.println("OK = " + ok2);
-        passed = passed && ok && ok2;
+        passed = passed && (ok || ok2);
         */
 
         //----------------------------------------------------------------------
@@ -781,7 +818,7 @@ public class AnonymousClassBeanPropertyTest {
             public void addPropertyChangeListener(PropertyChangeListener l)    {}
             public void removePropertyChangeListener(PropertyChangeListener l) {}
         };
-        ok = checkInfo(testGetSetBoth_1.getClass(), "IGetSetBoth-1");
+        ok = checkInfo(testGetSetBoth_1.getClass(), "IGetSetBoth-1", true);
         System.out.println("OK = " + ok);
         passed = passed && ok;
         */
@@ -813,7 +850,7 @@ public class AnonymousClassBeanPropertyTest {
             public void addPropertyChangeListener(PropertyChangeListener l)    {}
             public void removePropertyChangeListener(PropertyChangeListener l) {}
         };
-        ok = checkInfo(testGetSetBoth_2.getClass(), "IGetSetBoth-2");
+        ok = checkInfo(testGetSetBoth_2.getClass(), "IGetSetBoth-2", true);
         System.out.println("OK = " + ok);
         passed = passed && ok;
         */
@@ -853,13 +890,134 @@ public class AnonymousClassBeanPropertyTest {
             public void addPropertyChangeListener(PropertyChangeListener l)    {}
             public void removePropertyChangeListener(PropertyChangeListener l) {}
         };
-        ok = checkInfo(testGetSetBoth_3.getClass(), "IGetSetBoth-3");
+        ok = checkInfo(testGetSetBoth_3.getClass(), "IGetSetBoth-3", true);
         System.out.println("OK = " + ok);
         ok2 = checkAlternativeInfo(
             testGetSetBoth_3.getClass(), "IGetSetBoth-3");
         System.out.println("OK = " + ok2);
-        passed = passed && ok && ok2;
+        passed = passed && (ok || ok2);
         */
+
+        //----------------------------------------------------------------------
+
+        IIs testIs_1 = new IIs() {
+
+            @BeanProperty(
+                description  = DESCRIPTION,
+                bound        = BOUND,
+                expert       = EXPERT,
+                hidden       = HIDDEN,
+                preferred    = PREFERRED,
+                required     = REQUIRED,
+                visualUpdate = UPDATE)
+            @Override
+            public boolean isX() { return false; }
+
+            public void addPropertyChangeListener(PropertyChangeListener l)    {}
+            public void removePropertyChangeListener(PropertyChangeListener l) {}
+        };
+        ok = checkInfo(testIs_1.getClass(), "IIs-1", false);
+        System.out.println("OK = " + ok);
+        passed = passed && ok;
+
+
+        IIs testIs_2 = new IIs() {
+
+            private boolean b;
+
+            @Override
+            public boolean isX() { return b; }
+
+            @BeanProperty(
+                description  = DESCRIPTION,
+                bound        = BOUND,
+                expert       = EXPERT,
+                hidden       = HIDDEN,
+                preferred    = PREFERRED,
+                required     = REQUIRED,
+                visualUpdate = UPDATE)
+            public void setX(boolean v) { b = v; }
+
+            public void addPropertyChangeListener(PropertyChangeListener l)    {}
+            public void removePropertyChangeListener(PropertyChangeListener l) {}
+        };
+        ok = checkInfo(testIs_2.getClass(), "IIs-2", false);
+        System.out.println("OK = " + ok);
+        passed = passed && ok;
+
+
+        IIs testIs_3 = new IIs() {
+
+            @BeanProperty(
+                description  = DESCRIPTION,
+                bound        = BOUND,
+                expert       = EXPERT,
+                hidden       = HIDDEN,
+                preferred    = PREFERRED,
+                required     = REQUIRED,
+                visualUpdate = UPDATE)
+            @Override
+            public boolean isX() { return false; }
+
+            @BeanProperty(
+                description  = DESCRIPTION_2,
+                bound        = !BOUND,
+                expert       = !EXPERT,
+                hidden       = !HIDDEN,
+                preferred    = !PREFERRED,
+                required     = !REQUIRED,
+                visualUpdate = !UPDATE)
+            public boolean getX() { return false; }
+
+            public void addPropertyChangeListener(PropertyChangeListener l)    {}
+            public void removePropertyChangeListener(PropertyChangeListener l) {}
+        };
+        ok = checkInfo(testIs_3.getClass(), "IIs-3", false);
+        System.out.println("OK = " + ok);
+        ok2 = checkAlternativeInfo(testIs_3.getClass(), "IIs-3");
+        System.out.println("OK = " + ok2);
+        passed = passed && (ok || ok2);
+
+        // TODO: please uncomment/update after 8132973 fix
+        /*
+        IIs testIs_4 = new IIs() {
+
+            private boolean b;
+
+            @BeanProperty(
+                description  = DESCRIPTION,
+                bound        = BOUND,
+                expert       = EXPERT,
+                hidden       = HIDDEN,
+                preferred    = PREFERRED,
+                required     = REQUIRED,
+                visualUpdate = UPDATE)
+            @Override
+            public boolean isX() { return b; }
+
+            @BeanProperty(
+                description  = DESCRIPTION_2,
+                bound        = !BOUND,
+                expert       = !EXPERT,
+                hidden       = !HIDDEN,
+                preferred    = !PREFERRED,
+                required     = !REQUIRED,
+                visualUpdate = !UPDATE)
+            public void setX(boolean v) { b = v; }
+
+            public void addPropertyChangeListener(PropertyChangeListener l)    {}
+            public void removePropertyChangeListener(PropertyChangeListener l) {}
+        };
+        ok = checkInfo(testIs_4.getClass(), "IIs-4", false);
+        System.out.println("OK = " + ok);
+        ok2 = checkAlternativeInfo(testIs_4.getClass(), "IIs-4");
+        System.out.println("OK = " + ok2);
+        passed = passed && (ok || ok2);
+        */
+
+
+        //----------------------------------------------------------------------
+
 
         if (!passed) { throw new RuntimeException("test failed"); }
         System.out.println("\ntest passed");

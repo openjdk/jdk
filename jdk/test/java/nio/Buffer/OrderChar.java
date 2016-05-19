@@ -52,8 +52,5 @@ public class OrderChar extends Order {
         buf = CharBuffer.allocate(LENGTH);
         ck(buf.order(), nord);
         ckCharBuffer(buf, nord);
-
-        ckCharBuffer(ByteBuffer.allocate(LENGTH).asCharBuffer(), be);
-        ckCharBuffer(ByteBuffer.allocateDirect(LENGTH).asCharBuffer(), be);
     }
 }
