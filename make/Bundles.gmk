@@ -1,0 +1,300 @@
+#
+# Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+
+PRODUCT_TARGETS :=
+TEST_TARGETS :=
+DOCS_TARGETS :=
+
+# On Windows tar frequently complains that "file changed as we read it" for
+# some random source files. This seems to be cause by anti virus scanners and
+# is most likely safe to ignore. When it happens, tar returns '1'.
+ifeq ($(OPENJDK_BUILD_OS), windows)
+  TAR_IGNORE_EXIT_VALUE := || test "$$$$?" = "1"
+endif
+
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, , Bundles-pre.gmk))
+################################################################################
+# BUNDLE : Name of bundle to create
+# FILES : Files in BASE_DIR to add to bundle
+# SPECIAL_INCLUDES : List of directories inside BASE_DIR to look for additional
+#     files in. These files will not get proper dependency handling. Use when
+#     files or directories may contain spaces.
+# BASE_DIR : Base directory for the root dir in the bundle.
+# SUBDIR : Optional name of root dir in bundle.
+SetupBundleFile = $(NamedParamsMacroTemplate)
+define SetupBundleFileBody
+
+  $1_RELATIVE_FILES := $$(patsubst $$($1_BASE_DIR)/%, ./%, $$($1_FILES))
+
+  ifneq ($$(filter %.tar.gz, $$($1_BUNDLE_NAME)), )
+    $1_TYPE := tar.gz
+  else ifneq ($$(filter %.zip, $$($1_BUNDLE_NAME)), )
+    $1_TYPE := zip
+  else
+    $$(error Unknown bundle type $$($1_BUNDLE_NAME))
+  endif
+
+  $$(call SetIfEmpty, $1_UNZIP_DEBUGINFO, false)
+
+  $(BUNDLES_OUTPUTDIR)/$$($1_BUNDLE_NAME): $$($1_FILES)
+	$$(eval $$(call ListPathsSafely, \
+	    $1_RELATIVE_FILES, \
+	    $(SUPPORT_OUTPUTDIR)/bundles/_$1_files))
+	$$(call MakeDir, $$(@D))
+        ifneq ($$($1_SPECIAL_INCLUDES), )
+	  $$(foreach i, $$($1_SPECIAL_INCLUDES), \
+	      ($(CD) $$($1_BASE_DIR) && $(FIND) ./$$i \
+	          >> $(SUPPORT_OUTPUTDIR)/bundles/_$1_files ) ; )
+        endif
+        ifneq ($$($1_SUBDIR), )
+          ifeq ($$($1_TYPE)-$(TAR_SUPPORTS_TRANSFORM)-$$($1_UNZIP_DEBUGINFO), tar.gz-true-false)
+	    $(CD) $$($1_BASE_DIR) \
+	        && ( $(TAR) cf - -$(TAR_INCLUDE_PARAM) $(SUPPORT_OUTPUTDIR)/bundles/_$1_files \
+	            --transform 's|^|$$($1_SUBDIR)/|' $(TAR_IGNORE_EXIT_VALUE) ) \
+	        | $(GZIP) > $$@
+          else
+            # If a subdir has been specified, copy all files into a temporary
+            # location with this subdir before creating the tar file
+	    $(RM) -r $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR)
+	    $(MKDIR) -p $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR)
+	    ( $(CD) $$($1_BASE_DIR) \
+	        && $(TAR) cf - -$(TAR_INCLUDE_PARAM) $(SUPPORT_OUTPUTDIR)/bundles/_$1_files \
+	            $(TAR_IGNORE_EXIT_VALUE) ) \
+	        | ( $(CD) $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR) && $(TAR) xf - )
+            # Unzip any zipped debuginfo files
+            ifeq ($$($1_UNZIP_DEBUGINFO), true)
+	      for f in `$(FIND) $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR) -name "*.diz"`; do \
+	        $(CD) $$$${f%/*} && $(UNZIP) -q $$$${f} && $(RM) $$$${f}; \
+	      done
+            endif
+            ifeq ($$($1_TYPE), tar.gz)
+	      $(CD) $(SUPPORT_OUTPUTDIR)/bundles/$1 && \
+	          ( $(TAR) cf - $$($1_SUBDIR) $(TAR_IGNORE_EXIT_VALUE) ) | $(GZIP) > $$@
+            else ifeq ($$($1_TYPE), zip)
+	      $(CD) $(SUPPORT_OUTPUTDIR)/bundles/$1 && $(ZIP) -qr $$@ .
+            endif
+          endif
+        else
+          ifeq ($$($1_TYPE), tar.gz)
+	    $(CD) $$($1_BASE_DIR) \
+	        && ( $(TAR) cf - -$(TAR_INCLUDE_PARAM) $(SUPPORT_OUTPUTDIR)/bundles/_$1_files \
+	            $(TAR_IGNORE_EXIT_VALUE) ) \
+	        | $(GZIP) > $$@
+          else ifeq ($$($1_TYPE), zip)
+	    $(CD) $$($1_BASE_DIR) \
+	        && $(ZIP) -qr $$@ . -i@$(SUPPORT_OUTPUTDIR)/bundles/_$1_files
+          endif
+        endif
+
+  $1 += $(BUNDLES_OUTPUTDIR)/$$($1_BUNDLE_NAME)
+
+endef
+
+################################################################################
+
+# On Macosx, we bundle up the macosx specific images which already have the
+# correct base directories.
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  JDK_IMAGE_DIR := $(JDK_MACOSX_BUNDLE_DIR)
+  JRE_IMAGE_DIR := $(JRE_MACOSX_BUNDLE_DIR)
+  JDK_IMAGE_HOMEDIR := $(JDK_MACOSX_CONTENTS_DIR)/Home
+  JRE_IMAGE_HOMEDIR := $(JRE_MACOSX_CONTENTS_DIR)/Home
+  JDK_BUNDLE_SUBDIR :=
+  JRE_BUNDLE_SUBDIR :=
+else
+  JDK_IMAGE_HOMEDIR := $(JDK_IMAGE_DIR)
+  JRE_IMAGE_HOMEDIR := $(JRE_IMAGE_DIR)
+  JDK_BUNDLE_SUBDIR := jdk-$(VERSION_NUMBER)
+  JRE_BUNDLE_SUBDIR := jre-$(VERSION_NUMBER)
+  ifneq ($(DEBUG_LEVEL), release)
+    JDK_BUNDLE_SUBDIR := $(JDK_BUNDLE_SUBDIR)/$(DEBUG_LEVEL)
+    JRE_BUNDLE_SUBDIR := $(JRE_BUNDLE_SUBDIR)/$(DEBUG_LEVEL)
+  endif
+endif
+
+################################################################################
+
+ifneq ($(filter product-bundles, $(MAKECMDGOALS)), )
+  $(eval $(call FillCacheFind, $(IMAGES_OUTPUTDIR)))
+
+  SYMBOLS_EXCLUDE_PATTERN := %.debuginfo %.diz %.pdb %.map
+
+  ALL_JDK_FILES := $(call CacheFind, $(JDK_IMAGE_DIR))
+
+  # Create special filter rules when dealing with unzipped .dSYM directories on
+  # macosx
+  ifeq ($(OPENJDK_TARGET_OS), macosx)
+    ifeq ($(ZIP_DEBUGINFO_FILES), false)
+      JDK_SYMBOLS_EXCLUDE_PATTERN := $(addprefix %, \
+          $(call containing, .dSYM/, $(patsubst $(JDK_IMAGE_DIR)/%, %, $(ALL_JDK_FILES))))
+    endif
+  endif
+
+  JDK_BUNDLE_FILES := \
+      $(filter-out \
+          $(JDK_SYMBOLS_EXCLUDE_PATTERN) \
+          $(JDK_EXTRA_EXCLUDES) \
+          $(SYMBOLS_EXCLUDE_PATTERN) \
+          $(JDK_IMAGE_HOMEDIR)/demo/% $(JDK_IMAGE_HOMEDIR)/sample/% \
+          , \
+          $(ALL_JDK_FILES) \
+      )
+  DEMOS_BUNDLE_FILES := \
+      $(filter-out \
+          $(JDK_SYMBOLS_EXCLUDE_PATTERN) \
+          $(SYMBOLS_EXCLUDE_PATTERN) \
+          , \
+          $(filter \
+               $(JDK_IMAGE_HOMEDIR)/demo/% $(JDK_IMAGE_HOMEDIR)/sample/% \
+               $(JDK_IMAGE_HOMEDIR)/release \
+               , \
+               $(ALL_JDK_FILES) \
+          ) \
+      )
+  JDK_SYMBOLS_BUNDLE_FILES := \
+      $(filter \
+          $(JDK_SYMBOLS_EXCLUDE_PATTERN) \
+          $(SYMBOLS_EXCLUDE_PATTERN) \
+          , \
+          $(ALL_JDK_FILES) \
+      ) \
+      $(call CacheFind, $(SYMBOLS_IMAGE_DIR))
+
+  ALL_JRE_FILES := $(call CacheFind, $(JRE_IMAGE_DIR))
+
+  # Create special filter rules when dealing with unzipped .dSYM directories on
+  # macosx
+  ifeq ($(OPENJDK_TARGET_OS), macosx)
+    ifeq ($(ZIP_DEBUGINFO_FILES), false)
+      JRE_SYMBOLS_EXCLUDE_PATTERN := $(addprefix %, \
+          $(call containing, .dSYM/, $(patsubst $(JRE_IMAGE_DIR)/%, %, $(ALL_JRE_FILES))))
+    endif
+  endif
+
+  JRE_BUNDLE_FILES := $(filter-out \
+      $(JRE_SYMBOLS_EXCLUDE_PATTERN) \
+      $(SYMBOLS_EXCLUDE_PATTERN), \
+      $(ALL_JRE_FILES))
+  JRE_SYMBOLS_BUNDLE_FILES := $(filter \
+      $(JRE_SYMBOLS_EXCLUDE_PATTERN) \
+      $(SYMBOLS_EXCLUDE_PATTERN), \
+      $(ALL_JRE_FILES))
+
+  $(eval $(call SetupBundleFile, BUILD_JDK_BUNDLE, \
+      BUNDLE_NAME := $(JDK_BUNDLE_NAME), \
+      FILES := $(JDK_BUNDLE_FILES), \
+      SPECIAL_INCLUDES := $(JDK_SPECIAL_INCLUDES), \
+      BASE_DIR := $(JDK_IMAGE_DIR), \
+      SUBDIR := $(JDK_BUNDLE_SUBDIR), \
+  ))
+
+  PRODUCT_TARGETS += $(BUILD_JDK_BUNDLE)
+
+  $(eval $(call SetupBundleFile, BUILD_JRE_BUNDLE, \
+      BUNDLE_NAME := $(JRE_BUNDLE_NAME), \
+      FILES := $(JRE_BUNDLE_FILES), \
+      BASE_DIR := $(JRE_IMAGE_DIR), \
+      SUBDIR := $(JRE_BUNDLE_SUBDIR), \
+  ))
+
+  PRODUCT_TARGETS += $(BUILD_JRE_BUNDLE)
+
+  $(eval $(call SetupBundleFile, BUILD_JDK_SYMBOLS_BUNDLE, \
+      BUNDLE_NAME := $(JDK_SYMBOLS_BUNDLE_NAME), \
+      FILES := $(JDK_SYMBOLS_BUNDLE_FILES), \
+      BASE_DIR := $(JDK_IMAGE_DIR), \
+      SUBDIR := $(JDK_BUNDLE_SUBDIR), \
+      UNZIP_DEBUGINFO := true, \
+  ))
+
+  PRODUCT_TARGETS += $(BUILD_JDK_SYMBOLS_BUNDLE)
+
+  $(eval $(call SetupBundleFile, BUILD_JRE_SYMBOLS_BUNDLE, \
+      BUNDLE_NAME := $(JRE_SYMBOLS_BUNDLE_NAME), \
+      FILES := $(JRE_SYMBOLS_BUNDLE_FILES), \
+      BASE_DIR := $(JRE_IMAGE_DIR), \
+      SUBDIR := $(JRE_BUNDLE_SUBDIR), \
+      UNZIP_DEBUGINFO := true, \
+  ))
+
+  PRODUCT_TARGETS += $(BUILD_JRE_SYMBOLS_BUNDLE)
+
+  $(eval $(call SetupBundleFile, BUILD_DEMOS_BUNDLE, \
+      BUNDLE_NAME := $(DEMOS_BUNDLE_NAME), \
+      FILES := $(call DoubleDollar, $(DEMOS_BUNDLE_FILES)), \
+      BASE_DIR := $(JDK_IMAGE_DIR), \
+      SUBDIR := $(JDK_BUNDLE_SUBDIR), \
+  ))
+
+  PRODUCT_TARGETS += $(BUILD_DEMOS_BUNDLE)
+endif
+
+################################################################################
+
+ifneq ($(filter test-bundles, $(MAKECMDGOALS)), )
+  TEST_BUNDLE_FILES := $(call CacheFind, $(TEST_IMAGE_DIR))
+
+  $(eval $(call SetupBundleFile, BUILD_TEST_BUNDLE, \
+      BUNDLE_NAME := $(TEST_BUNDLE_NAME), \
+      FILES := $(call DoubleDollar, $(TEST_BUNDLE_FILES)), \
+      BASE_DIR := $(TEST_IMAGE_DIR), \
+  ))
+
+  TEST_TARGETS += $(BUILD_TEST_BUNDLE)
+endif
+
+################################################################################
+
+ifneq ($(filter docs-bundles, $(MAKECMDGOALS)), )
+  DOCS_BUNDLE_FILES := $(call CacheFind, $(DOCS_IMAGE_DIR))
+
+  $(eval $(call SetupBundleFile, BUILD_DOCS_BUNDLE, \
+      BUNDLE_NAME := $(DOCS_BUNDLE_NAME), \
+      FILES := $(DOCS_BUNDLE_FILES), \
+      BASE_DIR := $(DOCS_IMAGE_DIR), \
+      SUBDIR := docs, \
+  ))
+
+  DOCS_TARGETS += $(BUILD_DOCS_BUNDLE)
+endif
+
+################################################################################
+
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, , Bundles.gmk))
+
+################################################################################
+
+product-bundles: $(PRODUCT_TARGETS)
+test-bundles: $(TEST_TARGETS)
+docs-bundles: $(DOCS_TARGETS)
+
+.PHONY: all default product-bundles test-bundles docs-bundles
