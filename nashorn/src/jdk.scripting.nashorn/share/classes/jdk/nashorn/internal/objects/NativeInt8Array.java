@@ -80,7 +80,7 @@ public final class NativeInt8Array extends ArrayBufferView {
         private static final MethodHandle SET_ELEM = specialCall(MethodHandles.lookup(), Int8ArrayData.class, "setElem", void.class, int.class, int.class).methodHandle();
 
         private Int8ArrayData(final ByteBuffer nb, final int start, final int end) {
-            super(((ByteBuffer)nb.position(start).limit(end)).slice(), end - start);
+            super((nb.position(start).limit(end)).slice(), end - start);
         }
 
         @Override
