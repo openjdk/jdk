@@ -546,13 +546,13 @@ class CompileReplay : public StackObj {
       }
     }
     // Make sure the existence of a prior compile doesn't stop this one
-    nmethod* nm = (entry_bci != InvocationEntryBci) ? method->lookup_osr_nmethod_for(entry_bci, comp_level, true) : method->code();
+    CompiledMethod* nm = (entry_bci != InvocationEntryBci) ? method->lookup_osr_nmethod_for(entry_bci, comp_level, true) : method->code();
     if (nm != NULL) {
       nm->make_not_entrant();
     }
     replay_state = this;
     CompileBroker::compile_method(method, entry_bci, comp_level,
-                                  methodHandle(), 0, "replay", THREAD);
+                                  methodHandle(), 0, CompileTask::Reason_Replay, THREAD);
     replay_state = NULL;
     reset();
   }

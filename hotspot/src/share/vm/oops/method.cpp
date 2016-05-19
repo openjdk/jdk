@@ -737,7 +737,7 @@ void Method::set_native_function(address function, bool post_event_flag) {
   // This function can be called more than once. We must make sure that we always
   // use the latest registered method -> check if a stub already has been generated.
   // If so, we have to make it not_entrant.
-  nmethod* nm = code(); // Put it into local variable to guard against concurrent updates
+  CompiledMethod* nm = code(); // Put it into local variable to guard against concurrent updates
   if (nm != NULL) {
     nm->make_not_entrant();
   }
@@ -1037,12 +1037,12 @@ address Method::verified_code_entry() {
 // Not inline to avoid circular ref.
 bool Method::check_code() const {
   // cached in a register or local.  There's a race on the value of the field.
-  nmethod *code = (nmethod *)OrderAccess::load_ptr_acquire(&_code);
+  CompiledMethod *code = (CompiledMethod *)OrderAccess::load_ptr_acquire(&_code);
   return code == NULL || (code->method() == NULL) || (code->method() == (Method*)this && !code->is_osr_method());
 }
 
 // Install compiled code.  Instantly it can execute.
-void Method::set_code(methodHandle mh, nmethod *code) {
+void Method::set_code(methodHandle mh, CompiledMethod *code) {
   assert( code, "use clear_code to remove code" );
   assert( mh->check_code(), "" );
 
@@ -1628,6 +1628,7 @@ bool CompressedLineNumberReadStream::read_pair() {
   return true;
 }
 
+#if INCLUDE_JVMTI
 
 Bytecodes::Code Method::orig_bytecode_at(int bci) const {
   BreakpointInfo* bp = method_holder()->breakpoints();
@@ -1708,6 +1709,7 @@ void Method::clear_all_breakpoints() {
   clear_matches(this, -1);
 }
 
+#endif // INCLUDE_JVMTI
 
 int Method::invocation_count() {
   MethodCounters *mcs = method_counters();
@@ -1773,6 +1775,8 @@ void Method::set_highest_osr_comp_level(int level) {
   }
 }
 
+#if INCLUDE_JVMTI
+
 BreakpointInfo::BreakpointInfo(Method* m, int bci) {
   _bci = bci;
   _name_index = m->name_index();
@@ -1809,6 +1813,8 @@ void BreakpointInfo::clear(Method* method) {
   assert(method->number_of_breakpoints() > 0, "must not go negative");
   method->decr_number_of_breakpoints(Thread::current());
 }
+
+#endif // INCLUDE_JVMTI
 
 // jmethodID handling
 

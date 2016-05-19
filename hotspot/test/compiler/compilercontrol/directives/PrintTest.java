@@ -25,8 +25,8 @@
  * @test
  * @bug 8137167
  * @summary Tests directives to be able to turn on print_assembly
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib /compiler/testlibrary ../share /
- * @ignore 8140354
  * @build compiler.compilercontrol.directives.PrintTest
  *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*

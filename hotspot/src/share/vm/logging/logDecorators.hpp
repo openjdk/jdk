@@ -102,6 +102,10 @@ class LogDecorators VALUE_OBJ_CLASS_SPEC {
     _decorators |= source._decorators;
   }
 
+  bool is_empty() const {
+    return _decorators == 0;
+  }
+
   bool is_decorator(LogDecorators::Decorator decorator) const {
     return (_decorators & mask(decorator)) != 0;
   }

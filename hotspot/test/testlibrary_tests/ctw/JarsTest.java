@@ -26,7 +26,7 @@
  * @bug 8012447
  * @library /testlibrary /test/lib /testlibrary/ctw/src
  * @modules java.base/jdk.internal.misc
- *          java.base/sun.reflect
+ *          java.base/jdk.internal.reflect
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor

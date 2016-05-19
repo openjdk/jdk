@@ -56,4 +56,11 @@ public interface SpeculationLog {
      *         argument to the deoptimization function.
      */
     JavaConstant speculate(SpeculationReason reason);
+
+    /**
+     * Returns if this log has speculations.
+     *
+     * @return true if there are speculations, false otherwise
+     */
+    boolean hasSpeculations();
 }

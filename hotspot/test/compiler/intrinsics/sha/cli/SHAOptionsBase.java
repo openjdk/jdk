@@ -42,6 +42,11 @@ public class SHAOptionsBase extends CommandLineOptionTest {
     protected static final String USE_SHA512_INTRINSICS_OPTION
             = "UseSHA512Intrinsics";
 
+    // Intrinsics flags are of diagnostic type
+    // and must be preceded by UnlockDiagnosticVMOptions.
+    protected static final String UNLOCK_DIAGNOSTIC_VM_OPTIONS
+            = "-XX:+UnlockDiagnosticVMOptions";
+
     // Note that strings below will be passed to
     // CommandLineOptionTest.verifySameJVMStartup and thus are regular
     // expressions, not just a plain strings.

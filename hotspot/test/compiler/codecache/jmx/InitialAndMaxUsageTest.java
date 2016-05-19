@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public class InitialAndMaxUsageTest {
             Asserts.assertEQ(initialUsage, 0L, "Unexpected initial usage");
         }
         ArrayList<Long> blobs = new ArrayList<>();
-        long minAllocationUnit = CodeCacheUtils.MIN_ALLOCATION - headerSize;
+        long minAllocationUnit = Math.max(0, CodeCacheUtils.MIN_ALLOCATION - headerSize);
         /* now filling code cache with large-sized allocation first, since
          lots of small allocations takes too much time, so, just a small
          optimization */

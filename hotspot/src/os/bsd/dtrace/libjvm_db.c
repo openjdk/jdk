@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,10 +124,10 @@ typedef struct Nmethod_t {
   uint64_t pc_desc;
 
   int32_t  orig_pc_offset;      /* _orig_pc_offset */
-  int32_t  instrs_beg;          /* _code_offset */
-  int32_t  instrs_end;
-  int32_t  deopt_beg;           /* _deoptimize_offset */
-  int32_t  scopes_data_beg;     /* _scopes_data_offset */
+  uint64_t  instrs_beg;          /* _code_offset */
+  uint64_t  instrs_end;
+  uint64_t  deopt_beg;           /* _deoptimize_offset */
+  uint64_t  scopes_data_beg;     /* _scopes_data_offset */
   int32_t  scopes_data_end;
   int32_t  metadata_beg;        /* _metadata_offset */
   int32_t  metadata_end;
@@ -617,11 +617,12 @@ static int nmethod_info(Nmethod_t *N)
       fprintf(stderr, "\t nmethod_info: BEGIN \n");
 
   /* Instructions */
-  err = ps_pread(J->P, nm + OFFSET_CodeBlob_code_offset, &N->instrs_beg, SZ32);
+  err = read_pointer(J, base + OFFSET_VMStructEntryaddress, &vmp->address);
+  err = read_pointer(J, nm + OFFSET_CodeBlob_code_begin, &N->instrs_beg);
   CHECK_FAIL(err);
-  err = ps_pread(J->P, nm + OFFSET_CodeBlob_data_offset, &N->instrs_end, SZ32);
+  err = read_pointer(J, nm + OFFSET_CodeBlob_code_end, &N->instrs_end);
   CHECK_FAIL(err);
-  err = ps_pread(J->P, nm + OFFSET_nmethod_deoptimize_offset, &N->deopt_beg, SZ32);
+  err = read_pointer(J, nm + OFFSET_nmethod_deopt_handler_begin, &N->deopt_beg);
   CHECK_FAIL(err);
   err = ps_pread(J->P, nm + OFFSET_nmethod_orig_pc_offset, &N->orig_pc_offset, SZ32);
   CHECK_FAIL(err);
@@ -639,7 +640,7 @@ static int nmethod_info(Nmethod_t *N)
   CHECK_FAIL(err);
 
   /* scopes_data */
-  err = ps_pread(J->P, nm + OFFSET_nmethod_scopes_data_offset, &N->scopes_data_beg, SZ32);
+  err = ps_pread(J->P, nm + OFFSET_nmethod_scopes_data_begin, &N->scopes_data_beg, POINTER_SIZE);
   CHECK_FAIL(err);
 
   if (debug > 2 ) {
@@ -868,7 +869,7 @@ get_real_pc(Nmethod_t *N, uint64_t pc_desc, uint64_t *real_pc)
   err = ps_pread(N->J->P, pc_desc + OFFSET_PcDesc_pc_offset, &pc_offset, SZ32);
   CHECK_FAIL(err);
 
-  *real_pc = N->nm + N->instrs_beg + pc_offset;
+  *real_pc = N->instrs_beg + pc_offset;
   if (debug > 2) {
       fprintf(stderr, "\t\t get_real_pc: pc_offset: %lx, real_pc: %llx\n",
                        pc_offset, *real_pc);
@@ -942,7 +943,7 @@ scope_desc_at(Nmethod_t *N, int32_t decode_offset, Vframe_t *vf)
       fprintf(stderr, "\t\t scope_desc_at: BEGIN \n");
   }
 
-  buffer = N->nm + N->scopes_data_beg + decode_offset;
+  buffer = N->scopes_data_beg + decode_offset;
 
   err = raw_read_int(N->J, &buffer, &vf->sender_decode_offset);
   CHECK_FAIL(err);
@@ -1052,11 +1053,11 @@ name_for_nmethod(jvm_agent_t* J,
   CHECK_FAIL(err);
   if (debug) {
       fprintf(stderr, "name_for_nmethod: pc: %#llx, deopt_pc:  %#llx\n",
-              pc, N->nm + N->deopt_beg);
+              pc, N->deopt_beg);
   }
 
   /* check for a deoptimized frame */
-  if ( pc == N->nm + N->deopt_beg) {
+  if ( pc == N->deopt_beg) {
     uint64_t base;
     if (debug) {
         fprintf(stderr, "name_for_nmethod: found deoptimized frame\n");

@@ -25,6 +25,7 @@
 /*
  * @test MonitorMismatchTest
  * @bug 8150084
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @compile MonitorMismatchHelper.jasm
  * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools jdk.test.lib.Platform

@@ -28,9 +28,8 @@ import java.io.*;
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
-import jdk.internal.vm.agent.spi.ToolProvider;
 
-public class PMap extends Tool implements ToolProvider {
+public class PMap extends Tool {
 
    public PMap() {
        super();
@@ -43,11 +42,6 @@ public class PMap extends Tool implements ToolProvider {
    @Override
    public String getName() {
        return "pmap";
-   }
-
-   @Override
-   public void run(String... arguments) {
-       execute(arguments);
    }
 
    public void run() {

@@ -40,6 +40,7 @@
 # include "memory/resourceArea.hpp"
 # include "utilities/macros.hpp"
 #if INCLUDE_JVMTI
+# include "logging/log.hpp"
 # include "oops/oop.inline.hpp"
 # include "prims/jvmtiEnter.hpp"
 # include "prims/jvmtiRawMonitor.hpp"
@@ -415,7 +416,7 @@ struct jvmtiInterface_1_ jvmti</xsl:text>
     <xsl:value-of select="$space"/>
     <xsl:text>  if (trace_flags) {</xsl:text>
     <xsl:value-of select="$space"/>
-    <xsl:text>    tty->print_cr("JVMTI [non-attached thread] %s %s",  func_name,</xsl:text>
+    <xsl:text>    log_trace(jvmti)("[non-attached thread] %s %s",  func_name,</xsl:text>
     <xsl:value-of select="$space"/>
     <xsl:text>    JvmtiUtil::error_name(JVMTI_ERROR_UNATTACHED_THREAD));</xsl:text>
     <xsl:value-of select="$space"/>
@@ -452,7 +453,7 @@ struct jvmtiInterface_1_ jvmti</xsl:text>
 </xsl:text>
     <xsl:if test="$trace='Trace'">
       <xsl:text>    if (trace_flags) {
-          tty->print_cr("JVMTI [%s] %s %s",  curr_thread_name, func_name, 
+          log_trace(jvmti)("[%s] %s %s",  curr_thread_name, func_name, 
                     JvmtiUtil::error_name(JVMTI_ERROR_MUST_POSSESS_CAPABILITY));
     }
 </xsl:text>
@@ -486,7 +487,7 @@ static jvmtiError JNICALL
 </xsl:text>
     <xsl:if test="$trace='Trace'">
       <xsl:text>    if (trace_flags) {
-          tty->print_cr("JVMTI [-] %s %s",  func_name, 
+          log_trace(jvmti)("[-] %s %s",  func_name, 
                     JvmtiUtil::error_name(JVMTI_ERROR_WRONG_PHASE));
     }
 </xsl:text>
@@ -509,7 +510,7 @@ static jvmtiError JNICALL
 </xsl:text>
     <xsl:if test="$trace='Trace'">
       <xsl:text>    if (trace_flags) {
-          tty->print_cr("JVMTI [-] %s %s",  func_name, 
+          log_trace(jvmti)("[-] %s %s",  func_name, 
                     JvmtiUtil::error_name(JVMTI_ERROR_WRONG_PHASE));
     }
 </xsl:text>
@@ -522,7 +523,7 @@ static jvmtiError JNICALL
 </xsl:text>
     <xsl:if test="$trace='Trace'">
       <xsl:text>    if (trace_flags) {
-          tty->print_cr("JVMTI [-] %s %s",  func_name, 
+          log_trace(jvmti)("[-] %s %s",  func_name, 
                     JvmtiUtil::error_name(JVMTI_ERROR_WRONG_PHASE));
     }
 </xsl:text>
@@ -541,7 +542,7 @@ static jvmtiError JNICALL
 </xsl:text>
     <xsl:if test="$trace='Trace'">
       <xsl:text>    if (trace_flags) {
-          tty->print_cr("JVMTI [%s] %s %s  env=" PTR_FORMAT,  curr_thread_name, func_name, 
+          log_trace(jvmti)("[%s] %s %s  env=" PTR_FORMAT,  curr_thread_name, func_name, 
                     JvmtiUtil::error_name(JVMTI_ERROR_INVALID_ENVIRONMENT), p2i(env));
     }
 </xsl:text>
@@ -667,7 +668,7 @@ static jvmtiError JNICALL
     <xsl:with-param name="endParam" select="."/>
   </xsl:apply-templates>
   <xsl:text>      }
-        tty->print_cr("JVMTI [%s] %s } %s - erroneous arg is </xsl:text>
+        log_error(jvmti)("[%s] %s } %s - erroneous arg is </xsl:text>
     <xsl:value-of select="@id"/>
     <xsl:value-of select="$comment"/>
     <xsl:text>",  curr_thread_name, func_name, 
@@ -692,10 +693,10 @@ static jvmtiError JNICALL
 </xsl:text>
     <xsl:apply-templates select="." mode="traceIn"/>
     <xsl:text>    }
-    tty->print_cr("JVMTI [%s] %s } %s",  curr_thread_name, func_name, 
+    log_error(jvmti)("[%s] %s } %s",  curr_thread_name, func_name, 
                   JvmtiUtil::error_name(err));
   } else if ((trace_flags &amp; JvmtiTrace::SHOW_OUT) != 0) {
-    tty->print_cr("JVMTI [%s] %s }",  curr_thread_name, func_name);
+    log_trace(jvmti)("[%s] %s }",  curr_thread_name, func_name);
   }
 </xsl:text>
   </xsl:if>
@@ -703,7 +704,7 @@ static jvmtiError JNICALL
 
 <xsl:template match="function" mode="traceIn">
   <xsl:param name="endParam"></xsl:param>
-  <xsl:text>          tty->print_cr("JVMTI [%s] %s { </xsl:text>
+  <xsl:text>          log_trace(jvmti)("[%s] %s { </xsl:text>
   <xsl:apply-templates select="parameters" mode="traceInFormat">
     <xsl:with-param name="endParam" select="$endParam"/>    
   </xsl:apply-templates>

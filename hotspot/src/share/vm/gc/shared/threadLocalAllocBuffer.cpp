@@ -36,6 +36,7 @@
 
 // static member initialization
 size_t           ThreadLocalAllocBuffer::_max_size       = 0;
+int              ThreadLocalAllocBuffer::_reserve_for_allocation_prefetch = 0;
 unsigned         ThreadLocalAllocBuffer::_target_refills = 0;
 GlobalTLABStats* ThreadLocalAllocBuffer::_global_stats   = NULL;
 
@@ -214,6 +215,23 @@ void ThreadLocalAllocBuffer::startup_initialization() {
   _target_refills = MAX2(_target_refills, (unsigned)1U);
 
   _global_stats = new GlobalTLABStats();
+
+  // Need extra space at the end of TLAB, otherwise prefetching
+  // instructions will fault (due to accessing memory outside of heap).
+  // The amount of space is the max of the number of lines to
+  // prefetch for array and for instance allocations. (Extra space must be
+  // reserved to accommodate both types of allocations.)
+  //
+  // Only SPARC-specific BIS instructions are known to fault. (Those
+  // instructions are generated if AllocatePrefetchStyle==3 and
+  // AllocatePrefetchInstr==1). To be on the safe side, however,
+  // extra space is reserved for all combinations of
+  // AllocatePrefetchStyle and AllocatePrefetchInstr.
+
+  // +1 for rounding up to next cache line, +1 to be safe
+  int lines =  MAX2(AllocatePrefetchLines, AllocateInstancePrefetchLines) + 2;
+  _reserve_for_allocation_prefetch = (AllocatePrefetchDistance + AllocatePrefetchStepSize * lines) /
+                                     (int)HeapWordSize;
 
   // During jvm startup, the main (primordial) thread is initialized
   // before the heap is initialized.  So reinitialize it now.

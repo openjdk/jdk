@@ -665,7 +665,7 @@ static uint64_t locate_unique_thread_id(mach_port_t mach_thread_port) {
 #endif
 
 // Thread start routine for all newly created threads
-static void *java_start(Thread *thread) {
+static void *thread_native_entry(Thread *thread) {
   // Try to randomize the cache line index of hot stack frames.
   // This helps when threads of the same stack traces evict each other's
   // cache lines. The threads can be either from the same JVM instance, or
@@ -722,6 +722,15 @@ static void *java_start(Thread *thread) {
 
   log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
     os::current_thread_id(), (uintx) pthread_self());
+
+  // If a thread has not deleted itself ("delete this") as part of its
+  // termination sequence, we have to ensure thread-local-storage is
+  // cleared before we actually terminate. No threads should ever be
+  // deleted asynchronously with respect to their termination.
+  if (Thread::current_or_null_safe() != NULL) {
+    assert(Thread::current_or_null_safe() == thread, "current thread is wrong");
+    thread->clear_thread_current();
+  }
 
   return 0;
 }
@@ -781,7 +790,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
 
   {
     pthread_t tid;
-    int ret = pthread_create(&tid, &attr, (void* (*)(void*)) java_start, thread);
+    int ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
 
     char buf[64];
     if (ret == 0) {
@@ -889,11 +898,14 @@ void os::pd_start_thread(Thread* thread) {
 void os::free_thread(OSThread* osthread) {
   assert(osthread != NULL, "osthread not set");
 
-  if (Thread::current()->osthread() == osthread) {
-    // Restore caller's signal mask
-    sigset_t sigmask = osthread->caller_sigmask();
-    pthread_sigmask(SIG_SETMASK, &sigmask, NULL);
-  }
+  // We are told to free resources of the argument thread,
+  // but we can only really operate on the current thread.
+  assert(Thread::current()->osthread() == osthread,
+         "os::free_thread but not current thread");
+
+  // Restore caller's signal mask
+  sigset_t sigmask = osthread->caller_sigmask();
+  pthread_sigmask(SIG_SETMASK, &sigmask, NULL);
 
   delete osthread;
 }

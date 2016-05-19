@@ -31,11 +31,12 @@ import compiler.whitebox.CompilerWhiteBoxTest;
  * @test GetNMethodTest
  * @bug 8038240
  * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build GetNMethodTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCase$Helper::* GetNMethodTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCounterDecay -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::* GetNMethodTest
  * @summary testing of WB::getNMethod()
  * @author igor.ignatyev@oracle.com
  */

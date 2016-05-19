@@ -24,6 +24,7 @@
 /*
  * @test WBApi
  * @summary verify that whitebox functions can be linked and executed
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @build WBApi
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

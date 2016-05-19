@@ -60,7 +60,7 @@ public class JcmdWithNMTDisabled {
     }
 
     // Grab my own PID
-    pid = Integer.toString(ProcessTools.getProcessId());
+    pid = Long.toString(ProcessTools.getProcessId());
 
     jcmdCommand("summary");
     jcmdCommand("detail");

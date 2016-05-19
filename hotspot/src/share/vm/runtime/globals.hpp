@@ -280,6 +280,12 @@ struct Flag {
     VIOLATES_CONSTRAINT,
     // there is no flag with the given name
     INVALID_FLAG,
+    // the flag can only be set only on command line during invocation of the VM
+    COMMAND_LINE_ONLY,
+    // the flag may only be set once
+    SET_ONLY_ONCE,
+    // the flag is not writable in this combination of product/debug build
+    CONSTANT,
     // other, unspecified error related to setting the flag
     ERR_OTHER
   };
@@ -316,44 +322,44 @@ struct Flag {
   static const char* get_size_t_default_range_str();
   static const char* get_double_default_range_str();
 
-  void check_writable();
+  Flag::Error check_writable(bool changed);
 
   bool is_bool() const;
   bool get_bool() const;
-  void set_bool(bool value);
+  Flag::Error set_bool(bool value);
 
   bool is_int() const;
   int get_int() const;
-  void set_int(int value);
+  Flag::Error set_int(int value);
 
   bool is_uint() const;
   uint get_uint() const;
-  void set_uint(uint value);
+  Flag::Error set_uint(uint value);
 
   bool is_intx() const;
   intx get_intx() const;
-  void set_intx(intx value);
+  Flag::Error set_intx(intx value);
 
   bool is_uintx() const;
   uintx get_uintx() const;
-  void set_uintx(uintx value);
+  Flag::Error set_uintx(uintx value);
 
   bool is_uint64_t() const;
   uint64_t get_uint64_t() const;
-  void set_uint64_t(uint64_t value);
+  Flag::Error set_uint64_t(uint64_t value);
 
   bool is_size_t() const;
   size_t get_size_t() const;
-  void set_size_t(size_t value);
+  Flag::Error set_size_t(size_t value);
 
   bool is_double() const;
   double get_double() const;
-  void set_double(double value);
+  Flag::Error set_double(double value);
 
   bool is_ccstr() const;
   bool ccstr_accumulates() const;
   ccstr get_ccstr() const;
-  void set_ccstr(ccstr value);
+  Flag::Error set_ccstr(ccstr value);
 
   Flags get_origin();
   void set_origin(Flags origin);
@@ -621,8 +627,31 @@ public:
 // constraint is a macro that will expand to custom function call
 //    for constraint checking if provided - see commandLineFlagConstraintList.hpp
 //
+// writeable is a macro that controls if and how the value can change during the runtime
+//
+// writeable(Always) is optional and allows the flag to have its value changed
+//    without any limitations at any time
+//
+// writeable(Once) flag value's can be only set once during the lifetime of VM
+//
+// writeable(CommandLineOnly) flag value's can be only set from command line
+//    (multiple times allowed)
+//
 
-#define RUNTIME_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, manageable, product_rw, lp64_product, range, constraint) \
+
+#define RUNTIME_FLAGS(develop, \
+                      develop_pd, \
+                      product, \
+                      product_pd, \
+                      diagnostic, \
+                      experimental, \
+                      notproduct, \
+                      manageable, \
+                      product_rw, \
+                      lp64_product, \
+                      range, \
+                      constraint, \
+                      writeable) \
                                                                             \
   lp64_product(bool, UseCompressedOops, false,                              \
           "Use 32-bit object references in 64-bit VM. "                     \
@@ -732,7 +761,7 @@ public:
           "Control whether SHA instructions can be used "                   \
           "on SPARC, on ARM and on x86")                                    \
                                                                             \
-  product(bool, UseGHASHIntrinsics, false,                                  \
+  diagnostic(bool, UseGHASHIntrinsics, false,                               \
           "Use intrinsics for GHASH versions of crypto")                    \
                                                                             \
   product(size_t, LargePageSizeInBytes, 0,                                  \
@@ -802,27 +831,27 @@ public:
   product(bool, UseInlineCaches, true,                                      \
           "Use Inline Caches for virtual calls ")                           \
                                                                             \
-  develop(bool, InlineArrayCopy, true,                                      \
+  diagnostic(bool, InlineArrayCopy, true,                                   \
           "Inline arraycopy native that is known to be part of "            \
           "base library DLL")                                               \
                                                                             \
-  develop(bool, InlineObjectHash, true,                                     \
+  diagnostic(bool, InlineObjectHash, true,                                  \
           "Inline Object::hashCode() native that is known to be part "      \
           "of base library DLL")                                            \
                                                                             \
-  develop(bool, InlineNatives, true,                                        \
+  diagnostic(bool, InlineNatives, true,                                     \
           "Inline natives that are known to be part of base library DLL")   \
                                                                             \
-  develop(bool, InlineMathNatives, true,                                    \
+  diagnostic(bool, InlineMathNatives, true,                                 \
           "Inline SinD, CosD, etc.")                                        \
                                                                             \
-  develop(bool, InlineClassNatives, true,                                   \
+  diagnostic(bool, InlineClassNatives, true,                                \
           "Inline Class.isInstance, etc")                                   \
                                                                             \
-  develop(bool, InlineThreadNatives, true,                                  \
+  diagnostic(bool, InlineThreadNatives, true,                               \
           "Inline Thread.currentThread, etc")                               \
                                                                             \
-  develop(bool, InlineUnsafeOps, true,                                      \
+  diagnostic(bool, InlineUnsafeOps, true,                                   \
           "Inline memory ops (native methods) from Unsafe")                 \
                                                                             \
   product(bool, CriticalJNINatives, true,                                   \
@@ -831,34 +860,34 @@ public:
   notproduct(bool, StressCriticalJNINatives, false,                         \
           "Exercise register saving code in critical natives")              \
                                                                             \
-  product(bool, UseAESIntrinsics, false,                                    \
+  diagnostic(bool, UseAESIntrinsics, false,                                 \
           "Use intrinsics for AES versions of crypto")                      \
                                                                             \
-  product(bool, UseAESCTRIntrinsics, false,                                 \
+  diagnostic(bool, UseAESCTRIntrinsics, false,                              \
           "Use intrinsics for the paralleled version of AES/CTR crypto")    \
                                                                             \
-  product(bool, UseSHA1Intrinsics, false,                                   \
+  diagnostic(bool, UseSHA1Intrinsics, false,                                \
           "Use intrinsics for SHA-1 crypto hash function. "                 \
           "Requires that UseSHA is enabled.")                               \
                                                                             \
-  product(bool, UseSHA256Intrinsics, false,                                 \
+  diagnostic(bool, UseSHA256Intrinsics, false,                              \
           "Use intrinsics for SHA-224 and SHA-256 crypto hash functions. "  \
           "Requires that UseSHA is enabled.")                               \
                                                                             \
-  product(bool, UseSHA512Intrinsics, false,                                 \
+  diagnostic(bool, UseSHA512Intrinsics, false,                              \
           "Use intrinsics for SHA-384 and SHA-512 crypto hash functions. "  \
           "Requires that UseSHA is enabled.")                               \
                                                                             \
-  product(bool, UseCRC32Intrinsics, false,                                  \
+  diagnostic(bool, UseCRC32Intrinsics, false,                               \
           "use intrinsics for java.util.zip.CRC32")                         \
                                                                             \
-  product(bool, UseCRC32CIntrinsics, false,                                 \
+  diagnostic(bool, UseCRC32CIntrinsics, false,                              \
           "use intrinsics for java.util.zip.CRC32C")                        \
                                                                             \
-  product(bool, UseAdler32Intrinsics, false,                                \
+  diagnostic(bool, UseAdler32Intrinsics, false,                             \
           "use intrinsics for java.util.zip.Adler32")                       \
                                                                             \
-  product(bool, UseVectorizedMismatchIntrinsic, false,                      \
+  diagnostic(bool, UseVectorizedMismatchIntrinsic, false,                   \
           "Enables intrinsification of ArraysSupport.vectorizedMismatch()") \
                                                                             \
   diagnostic(ccstrlist, DisableIntrinsic, "",                               \
@@ -1253,7 +1282,7 @@ public:
   product(intx, MonitorBound, 0, "Bound Monitor population")                \
           range(0, max_jint)                                                \
                                                                             \
-  product(bool, MonitorInUseLists, false, "Track Monitors for Deflation")   \
+  product(bool, MonitorInUseLists, true, "Track Monitors for Deflation")    \
                                                                             \
   experimental(intx, SyncFlags, 0, "(Unsafe, Unstable) "                    \
                "Experimental Sync flags")                                   \
@@ -1417,10 +1446,6 @@ public:
   /* This option should be used with caution.                       */      \
   product(bool, StressLdcRewrite, false,                                    \
           "Force ldc -> ldc_w rewrite during RedefineClasses")              \
-                                                                            \
-  product(uintx, TraceRedefineClasses, 0,                                   \
-          "Trace level for JVMTI RedefineClasses")                          \
-          range(0, 0xFFFFFFFF)                                              \
                                                                             \
   /* change to false by default sometime after Mustang */                   \
   product(bool, VerifyMergedCPBytecodes, true,                              \
@@ -2070,6 +2095,9 @@ public:
   notproduct(bool, VerboseInternalVMTests, false,                           \
           "Turn on logging for internal VM tests.")                         \
                                                                             \
+  product(bool, ExecutingUnitTests, false,                                  \
+          "Whether the JVM is running unit tests or not")                   \
+                                                                            \
   product_pd(bool, UseTLAB, "Use thread-local object allocation")           \
                                                                             \
   product_pd(bool, ResizeTLAB,                                              \
@@ -2221,11 +2249,11 @@ public:
           "Adaptive size policy maximum GC pause time goal in millisecond, "\
           "or (G1 Only) the maximum GC time per MMU time slice")            \
           range(1, max_uintx - 1)                                           \
-          constraint(MaxGCPauseMillisConstraintFunc,AfterMemoryInit)        \
+          constraint(MaxGCPauseMillisConstraintFunc,AfterErgo)              \
                                                                             \
   product(uintx, GCPauseIntervalMillis, 0,                                  \
           "Time slice for MMU specification")                               \
-          constraint(GCPauseIntervalMillisConstraintFunc,AfterMemoryInit)   \
+          constraint(GCPauseIntervalMillisConstraintFunc,AfterErgo)         \
                                                                             \
   product(uintx, MaxGCMinorPauseMillis, max_uintx,                          \
           "Adaptive size policy maximum GC minor pause time goal "          \
@@ -2901,9 +2929,9 @@ public:
                                                                             \
   product(intx,  AllocatePrefetchStyle, 1,                                  \
           "0 = no prefetch, "                                               \
-          "1 = prefetch instructions for each allocation, "                 \
+          "1 = generate prefetch instructions for each allocation, "        \
           "2 = use TLAB watermark to gate allocation prefetch, "            \
-          "3 = use BIS instruction on Sparc for allocation prefetch")       \
+          "3 = generate one prefetch instruction per cache line")           \
           range(0, 3)                                                       \
                                                                             \
   product(intx,  AllocatePrefetchDistance, -1,                              \
@@ -2926,8 +2954,8 @@ public:
           constraint(AllocatePrefetchStepSizeConstraintFunc,AfterMemoryInit)\
                                                                             \
   product(intx,  AllocatePrefetchInstr, 0,                                  \
-          "Prefetch instruction to prefetch ahead of allocation pointer")   \
-          constraint(AllocatePrefetchInstrConstraintFunc, AfterErgo)        \
+          "Select instruction to prefetch ahead of allocation pointer")     \
+          constraint(AllocatePrefetchInstrConstraintFunc, AfterMemoryInit)  \
                                                                             \
   /* deoptimization */                                                      \
   develop(bool, TraceDeoptimization, false,                                 \
@@ -3847,9 +3875,9 @@ public:
                                                                             \
   /* Properties for Java libraries  */                                      \
                                                                             \
-  product(size_t, MaxDirectMemorySize, 0,                                   \
+  product(uint64_t, MaxDirectMemorySize, 0,                                 \
           "Maximum total size of NIO direct-buffer allocations")            \
-          range(0, (size_t)SIZE_MAX)                                        \
+          range(0, max_jlong)                                               \
                                                                             \
   /* Flags used for temporary code during development  */                   \
                                                                             \
@@ -4186,6 +4214,8 @@ public:
 // Only materialize src code for contraint checking when required, ignore otherwise
 #define IGNORE_CONSTRAINT(func,type)
 
+#define IGNORE_WRITEABLE(type)
+
 RUNTIME_FLAGS(DECLARE_DEVELOPER_FLAG, \
               DECLARE_PD_DEVELOPER_FLAG, \
               DECLARE_PRODUCT_FLAG, \
@@ -4197,7 +4227,8 @@ RUNTIME_FLAGS(DECLARE_DEVELOPER_FLAG, \
               DECLARE_PRODUCT_RW_FLAG, \
               DECLARE_LP64_PRODUCT_FLAG, \
               IGNORE_RANGE, \
-              IGNORE_CONSTRAINT)
+              IGNORE_CONSTRAINT, \
+              IGNORE_WRITEABLE)
 
 RUNTIME_OS_FLAGS(DECLARE_DEVELOPER_FLAG, \
                  DECLARE_PD_DEVELOPER_FLAG, \
@@ -4206,7 +4237,8 @@ RUNTIME_OS_FLAGS(DECLARE_DEVELOPER_FLAG, \
                  DECLARE_DIAGNOSTIC_FLAG, \
                  DECLARE_NOTPRODUCT_FLAG, \
                  IGNORE_RANGE, \
-                 IGNORE_CONSTRAINT)
+                 IGNORE_CONSTRAINT, \
+                 IGNORE_WRITEABLE)
 
 ARCH_FLAGS(DECLARE_DEVELOPER_FLAG, \
            DECLARE_PRODUCT_FLAG, \
@@ -4214,7 +4246,8 @@ ARCH_FLAGS(DECLARE_DEVELOPER_FLAG, \
            DECLARE_EXPERIMENTAL_FLAG, \
            DECLARE_NOTPRODUCT_FLAG, \
            IGNORE_RANGE, \
-           IGNORE_CONSTRAINT)
+           IGNORE_CONSTRAINT, \
+           IGNORE_WRITEABLE)
 
 // Extensions
 

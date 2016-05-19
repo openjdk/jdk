@@ -76,6 +76,14 @@
                                                                                                                                      \
   static_field(CompilerToVM::Data,             vm_page_size,                           int)                                          \
                                                                                                                                      \
+  static_field(CompilerToVM::Data,             dsin,                                   address)                                      \
+  static_field(CompilerToVM::Data,             dcos,                                   address)                                      \
+  static_field(CompilerToVM::Data,             dtan,                                   address)                                      \
+  static_field(CompilerToVM::Data,             dexp,                                   address)                                      \
+  static_field(CompilerToVM::Data,             dlog,                                   address)                                      \
+  static_field(CompilerToVM::Data,             dlog10,                                 address)                                      \
+  static_field(CompilerToVM::Data,             dpow,                                   address)                                      \
+                                                                                                                                     \
   static_field(Abstract_VM_Version,            _features,                              uint64_t)                                     \
                                                                                                                                      \
   nonstatic_field(Array<int>,                  _length,                                int)                                          \
@@ -186,7 +194,7 @@
   nonstatic_field(Method,                      _vtable_index,                                 int)                                   \
   nonstatic_field(Method,                      _intrinsic_id,                                 u2)                                    \
   nonstatic_field(Method,                      _flags,                                        u2)                                    \
-  volatile_nonstatic_field(Method,             _code,                                         nmethod*)                              \
+  volatile_nonstatic_field(Method,             _code,                                         CompiledMethod*)                       \
   volatile_nonstatic_field(Method,             _from_compiled_entry,                          address)                               \
                                                                                                                                      \
   nonstatic_field(MethodCounters,              _invocation_counter,                           InvocationCounter)                     \
@@ -309,6 +317,7 @@
   declare_constant(JVM_ACC_MONITOR_MATCH)                                 \
   declare_constant(JVM_ACC_HAS_MONITOR_BYTECODES)                         \
   declare_constant(JVM_ACC_HAS_FINALIZER)                                 \
+  declare_constant(JVM_ACC_IS_CLONEABLE_FAST)                             \
   declare_constant(JVM_ACC_FIELD_INTERNAL)                                \
   declare_constant(JVM_ACC_FIELD_STABLE)                                  \
   declare_constant(JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE)                   \
@@ -523,13 +532,6 @@
   declare_function(SharedRuntime::exception_handler_for_return_address)   \
   declare_function(SharedRuntime::OSR_migration_end)                      \
   declare_function(SharedRuntime::enable_stack_reserved_zone)             \
-  declare_function(SharedRuntime::dsin)                                   \
-  declare_function(SharedRuntime::dcos)                                   \
-  declare_function(SharedRuntime::dtan)                                   \
-  declare_function(SharedRuntime::dexp)                                   \
-  declare_function(SharedRuntime::dlog)                                   \
-  declare_function(SharedRuntime::dlog10)                                 \
-  declare_function(SharedRuntime::dpow)                                   \
                                                                           \
   declare_function(os::dll_load)                                          \
   declare_function(os::dll_lookup)                                        \

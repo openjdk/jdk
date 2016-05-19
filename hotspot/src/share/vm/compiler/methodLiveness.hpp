@@ -30,18 +30,18 @@
 
 class ciMethod;
 
-class MethodLivenessResult : public BitMap {
+class MethodLivenessResult : public ResourceBitMap {
  private:
   bool _is_valid;
 
  public:
-  MethodLivenessResult(BitMap::bm_word_t* map, idx_t size_in_bits)
-    : BitMap(map, size_in_bits)
+  MethodLivenessResult()
+    : ResourceBitMap()
     , _is_valid(false)
   {}
 
   MethodLivenessResult(idx_t size_in_bits)
-    : BitMap(size_in_bits)
+    : ResourceBitMap(size_in_bits)
     , _is_valid(false)
   {}
 
@@ -66,23 +66,23 @@ class MethodLiveness : public ResourceObj {
     int _limit_bci;
 
     // The liveness at the start of the block;
-    BitMap _entry;
+    ArenaBitMap _entry;
 
     // The summarized liveness effects of our direct successors reached
     // by normal control flow
-    BitMap _normal_exit;
+    ArenaBitMap _normal_exit;
 
     // The summarized liveness effects of our direct successors reached
     // by exceptional control flow
-    BitMap _exception_exit;
+    ArenaBitMap _exception_exit;
 
     // These members hold the results of the last call to
     // compute_gen_kill_range().  _gen is the set of locals
     // used before they are defined in the range.  _kill is the
     // set of locals defined before they are used.
-    BitMap _gen;
-    BitMap _kill;
-    int    _last_bci;
+    ArenaBitMap _gen;
+    ArenaBitMap _kill;
+    int         _last_bci;
 
     // A list of all blocks which could come directly before this one
     // in normal (non-exceptional) control flow.  We propagate liveness
@@ -100,11 +100,11 @@ class MethodLiveness : public ResourceObj {
 
     // Our successors call this method to merge liveness information into
     // our _normal_exit member.
-    bool merge_normal(BitMap other);
+    bool merge_normal(const BitMap& other);
 
     // Our successors call this method to merge liveness information into
     // our _exception_exit member.
-    bool merge_exception(BitMap other);
+    bool merge_exception(const BitMap& other);
 
     // This helper routine is used to help compute the gen/kill pair for
     // the block.  It is also used to answer queries.
@@ -181,7 +181,6 @@ class MethodLiveness : public ResourceObj {
 
   // The size of a BitMap.
   int _bit_map_size_bits;
-  int _bit_map_size_words;
 
   // A list of all BasicBlocks.
   BasicBlock **_block_list;
@@ -198,7 +197,7 @@ class MethodLiveness : public ResourceObj {
 
 #ifdef COMPILER1
   // bcis where blocks start are marked
-  BitMap _bci_block_start;
+  ArenaBitMap _bci_block_start;
 #endif // COMPILER1
 
   // -- Graph construction & Analysis
@@ -218,7 +217,6 @@ class MethodLiveness : public ResourceObj {
 
   // And accessors.
   int bit_map_size_bits() const { return _bit_map_size_bits; }
-  int bit_map_size_words() const { return _bit_map_size_words; }
 
   // Work list manipulation routines.  Called internally by BasicBlock.
   BasicBlock *work_list_get();
@@ -270,7 +268,7 @@ class MethodLiveness : public ResourceObj {
   MethodLivenessResult get_liveness_at(int bci);
 
 #ifdef COMPILER1
-  const BitMap get_bci_block_start() const { return _bci_block_start; }
+  const BitMap& get_bci_block_start() const { return _bci_block_start; }
 #endif // COMPILER1
 
   static void print_times() PRODUCT_RETURN;

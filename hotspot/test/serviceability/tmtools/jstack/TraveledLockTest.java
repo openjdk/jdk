@@ -27,6 +27,7 @@
  *          synchronizing on one monitor inside of each method.
  *          After checking that lock info is correct free the lock and
  *          invoke another method. Repeat this action.
+ * @modules java.base/jdk.internal.misc
  * @library /test/lib/share/classes
  * @library ../share
  * @build common.*

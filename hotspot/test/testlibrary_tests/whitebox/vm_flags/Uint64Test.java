@@ -25,6 +25,7 @@
  * @test Uint64Test
  * @bug 8028756
  * @library /testlibrary /test/lib
+ * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
  * @build Uint64Test
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

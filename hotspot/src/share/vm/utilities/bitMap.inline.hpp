@@ -121,17 +121,17 @@ inline void BitMap::set_range_of_words(idx_t beg, idx_t end) {
   for (idx_t i = beg; i < end; ++i) map[i] = ~(bm_word_t)0;
 }
 
-
-inline void BitMap::clear_range_of_words(idx_t beg, idx_t end) {
-  bm_word_t* map = _map;
+inline void BitMap::clear_range_of_words(bm_word_t* map, idx_t beg, idx_t end) {
   for (idx_t i = beg; i < end; ++i) map[i] = 0;
 }
 
+inline void BitMap::clear_range_of_words(idx_t beg, idx_t end) {
+  clear_range_of_words(_map, beg, end);
+}
 
 inline void BitMap::clear() {
   clear_range_of_words(0, size_in_words());
 }
-
 
 inline void BitMap::par_clear_range(idx_t beg, idx_t end, RangeSizeHint hint) {
   if (hint == small_range && end - beg == 1) {
@@ -359,7 +359,12 @@ inline void BitMap2D::at_put(idx_t slot_index, idx_t bit_within_slot_index, bool
 
 inline void BitMap2D::at_put_grow(idx_t slot_index, idx_t bit_within_slot_index, bool value) {
   verify_bit_within_slot_index(bit_within_slot_index);
-  _map.at_put_grow(bit_index(slot_index, bit_within_slot_index), value);
+
+  idx_t bit = bit_index(slot_index, bit_within_slot_index);
+  if (bit >= _map.size()) {
+    _map.resize(2 * MAX2(_map.size(), bit));
+  }
+  _map.at_put(bit, value);
 }
 
 inline void BitMap2D::clear() {

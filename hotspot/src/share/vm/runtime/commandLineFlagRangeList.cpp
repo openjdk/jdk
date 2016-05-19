@@ -305,7 +305,8 @@ void CommandLineFlagRangeList::init(void) {
                                    EMIT_RANGE_PRODUCT_RW_FLAG,
                                    EMIT_RANGE_LP64_PRODUCT_FLAG,
                                    EMIT_RANGE_CHECK,
-                                   IGNORE_CONSTRAINT) );
+                                   IGNORE_CONSTRAINT,
+                                   IGNORE_WRITEABLE));
 
   EMIT_RANGES_FOR_GLOBALS_EXT
 
@@ -315,7 +316,8 @@ void CommandLineFlagRangeList::init(void) {
                                 EMIT_RANGE_EXPERIMENTAL_FLAG,
                                 EMIT_RANGE_NOTPRODUCT_FLAG,
                                 EMIT_RANGE_CHECK,
-                                IGNORE_CONSTRAINT));
+                                IGNORE_CONSTRAINT,
+                                IGNORE_WRITEABLE));
 
 #if INCLUDE_JVMCI
   emit_range_no(NULL JVMCI_FLAGS(EMIT_RANGE_DEVELOPER_FLAG,
@@ -326,7 +328,8 @@ void CommandLineFlagRangeList::init(void) {
                                  EMIT_RANGE_EXPERIMENTAL_FLAG,
                                  EMIT_RANGE_NOTPRODUCT_FLAG,
                                  EMIT_RANGE_CHECK,
-                                 IGNORE_CONSTRAINT));
+                                 IGNORE_CONSTRAINT,
+                                 IGNORE_WRITEABLE));
 #endif // INCLUDE_JVMCI
 
 #ifdef COMPILER1
@@ -337,7 +340,8 @@ void CommandLineFlagRangeList::init(void) {
                               EMIT_RANGE_DIAGNOSTIC_FLAG,
                               EMIT_RANGE_NOTPRODUCT_FLAG,
                               EMIT_RANGE_CHECK,
-                              IGNORE_CONSTRAINT));
+                              IGNORE_CONSTRAINT,
+                              IGNORE_WRITEABLE));
 #endif // COMPILER1
 
 #ifdef COMPILER2
@@ -349,7 +353,8 @@ void CommandLineFlagRangeList::init(void) {
                               EMIT_RANGE_EXPERIMENTAL_FLAG,
                               EMIT_RANGE_NOTPRODUCT_FLAG,
                               EMIT_RANGE_CHECK,
-                              IGNORE_CONSTRAINT));
+                              IGNORE_CONSTRAINT,
+                              IGNORE_WRITEABLE));
 #endif // COMPILER2
 
 #if INCLUDE_ALL_GCS
@@ -363,7 +368,8 @@ void CommandLineFlagRangeList::init(void) {
                               EMIT_RANGE_MANAGEABLE_FLAG,
                               EMIT_RANGE_PRODUCT_RW_FLAG,
                               EMIT_RANGE_CHECK,
-                              IGNORE_CONSTRAINT));
+                              IGNORE_CONSTRAINT,
+                              IGNORE_WRITEABLE));
 #endif // INCLUDE_ALL_GCS
 }
 

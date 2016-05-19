@@ -26,6 +26,7 @@
  * @bug 8076110
  * @summary Redefine running methods that have cached resolution errors
  * @library /testlibrary
+ * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.instrument
  *          jdk.jartool/sun.tools.jar

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,9 @@ public class InputBlock {
     public void addNode(int id) {
         InputNode node = graph.getNode(id);
         assert node != null;
-        assert !nodes.contains(node) : "duplicate : " + node;
+        // nodes.contains(node) is too expensive for large graphs so
+        // just make sure the Graph doesn't know it yet.
+        assert graph.getBlock(id) == null : "duplicate : " + node;
         graph.setBlock(node, this);
         nodes.add(node);
     }
