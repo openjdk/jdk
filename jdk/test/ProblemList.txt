@@ -126,8 +126,6 @@ java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 gen
 
 # jdk_lang
 
-java/lang/ClassLoader/deadlock/GetResource.java                 8029891 generic-all
-
 java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-all
 
 ############################################################################
