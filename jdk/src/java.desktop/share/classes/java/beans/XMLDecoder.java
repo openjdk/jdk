@@ -53,8 +53,8 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  *<p>
  * For more information you might also want to check out
- * <a
- href="http://java.sun.com/products/jfc/tsc/articles/persistence3">Long Term Persistence of JavaBeans Components: XML Schema</a>,
+ * <a href="http://www.oracle.com/technetwork/java/persistence3-139471.html">
+ * Long Term Persistence of JavaBeans Components: XML Schema</a>,
  * an article in <em>The Swing Connection.</em>
  * @see XMLEncoder
  * @see java.io.ObjectInputStream
@@ -284,7 +284,8 @@ public class XMLDecoder implements AutoCloseable {
      * The {@code null} value may cause illegal parsing in such case.
      * The same problem may occur, if the {@code owner} class
      * does not contain expected method to call. See details <a
-     * href="http://java.sun.com/products/jfc/tsc/articles/persistence3/">here</a>.
+     * href="http://www.oracle.com/technetwork/java/persistence3-139471.html">
+     * here</a>.
      *
      * @param owner  the owner of the default handler
      *               that can be used as a value of &lt;java&gt; element

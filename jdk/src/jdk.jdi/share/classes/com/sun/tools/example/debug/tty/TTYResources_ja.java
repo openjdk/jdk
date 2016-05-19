@@ -74,7 +74,6 @@ public class TTYResources_ja extends java.util.ListResourceBundle {
         {"Array element is not a method", "\u914D\u5217\u8981\u7D20\u306F\u30E1\u30BD\u30C3\u30C9\u3067\u306F\u3042\u308A\u307E\u305B\u3093"},
         {"Array index must be a integer type", "\u914D\u5217\u306E\u6DFB\u3048\u5B57\u306F\u6574\u6570\u578B\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059"},
         {"base directory:", "\u30D9\u30FC\u30B9\u30FB\u30C7\u30A3\u30EC\u30AF\u30C8\u30EA: {0}"},
-        {"bootclasspath:", "\u30D6\u30FC\u30C8\u30FB\u30AF\u30E9\u30B9\u30D1\u30B9: {0}"},
         {"Breakpoint hit:", "\u30D2\u30C3\u30C8\u3057\u305F\u30D6\u30EC\u30FC\u30AF\u30DD\u30A4\u30F3\u30C8: "},
         {"breakpoint", "\u30D6\u30EC\u30FC\u30AF\u30DD\u30A4\u30F3\u30C8{0}"},
         {"Breakpoints set:", "\u8A2D\u5B9A\u3055\u308C\u3066\u3044\u308B\u30D6\u30EC\u30FC\u30AF\u30DD\u30A4\u30F3\u30C8:"},

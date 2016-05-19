@@ -26,7 +26,6 @@ package java.net.http;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
@@ -557,25 +556,37 @@ public class AsyncSSLDelegate implements Closeable, AsyncConnection {
     }
 
     static void logParams(SSLParameters p) {
-        if (!Log.ssl())
+        if (!Log.ssl()) {
             return;
+        }
+
         Log.logSSL("SSLParameters:");
         if (p == null) {
             Log.logSSL("Null params");
             return;
         }
-        for (String cipher : p.getCipherSuites()) {
-            Log.logSSL("cipher: {0}\n", cipher);
+
+        if (p.getCipherSuites() != null) {
+            for (String cipher : p.getCipherSuites()) {
+                Log.logSSL("cipher: {0}\n", cipher);
+            }
         }
+
+        // SSLParameters.getApplicationProtocols() can't return null
         for (String approto : p.getApplicationProtocols()) {
             Log.logSSL("application protocol: {0}\n", approto);
         }
-        for (String protocol : p.getProtocols()) {
-            Log.logSSL("protocol: {0}\n", protocol);
+
+        if (p.getProtocols() != null) {
+            for (String protocol : p.getProtocols()) {
+                Log.logSSL("protocol: {0}\n", protocol);
+            }
         }
-        if (p.getServerNames() != null)
+
+        if (p.getServerNames() != null) {
             for (SNIServerName sname : p.getServerNames()) {
                 Log.logSSL("server name: {0}\n", sname.toString());
+            }
         }
     }
 

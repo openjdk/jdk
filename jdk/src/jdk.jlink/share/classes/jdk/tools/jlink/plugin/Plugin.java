@@ -26,7 +26,6 @@ package jdk.tools.jlink.plugin;
 
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import jdk.tools.jlink.internal.plugins.PluginsResourceBundle;
@@ -37,14 +36,6 @@ import jdk.tools.jlink.internal.plugins.PluginsResourceBundle;
 public interface Plugin {
 
     /**
-     * Type of plugin.
-     */
-    public interface PluginType {
-
-        public String getName();
-    }
-
-    /**
      * Order of categories:
      * <ol>
      * <li>FILTER: Filter in/out resources or files.</li>
@@ -53,28 +44,29 @@ public interface Plugin {
      * <li>MODULEINFO_TRANSFORMER: Transform only module-info.class</li>
      * <li>SORTER: Sort resources within the resource container.</li>
      * <li>COMPRESSOR: Compress resource within the resouce containers.</li>
+     * <li>METAINFO_ADDER: Added meta info (like release, copyright etc.)</li>
      * <li>VERIFIER: Does some image verification.</li>
      * <li>PROCESSOR: Does some post processing on image.</li>
      * <li>PACKAGER: Final processing</li>
      * </ol>
      */
-    public enum CATEGORY implements PluginType {
+    public enum Category {
         FILTER("FILTER"),
         TRANSFORMER("TRANSFORMER"),
         MODULEINFO_TRANSFORMER("MODULEINFO_TRANSFORMER"),
         SORTER("SORTER"),
         COMPRESSOR("COMPRESSOR"),
+        METAINFO_ADDER("METAINFO_ADDER"),
         VERIFIER("VERIFIER"),
         PROCESSOR("PROCESSOR"),
         PACKAGER("PACKAGER");
 
         private final String name;
 
-        CATEGORY(String name) {
+        Category(String name) {
             this.name = name;
         }
 
-        @Override
         public String getName() {
             return name;
         }
@@ -91,7 +83,7 @@ public interface Plugin {
      * {@link #getStateDescription() getStateDescription} method</li>
      * </ul>
      */
-    public enum STATE {
+    public enum State {
         DISABLED,
         AUTO_ENABLED,
         FUNCTIONAL
@@ -101,7 +93,7 @@ public interface Plugin {
      * The Plugin set of types.
      * @return The set of types.
      */
-    public default Set<PluginType> getType() {
+    public default Set<Category> getType() {
         return Collections.emptySet();
     }
 
@@ -109,8 +101,8 @@ public interface Plugin {
      * The Plugin set of states.
      * @return The set of states.
      */
-    public default Set<STATE> getState() {
-        return EnumSet.of(STATE.FUNCTIONAL);
+    public default Set<State> getState() {
+        return EnumSet.of(State.FUNCTIONAL);
     }
 
     /**
@@ -191,7 +183,7 @@ public interface Plugin {
      * @return A status description.
      */
     public default String getStateDescription() {
-        return getState().contains(STATE.FUNCTIONAL)
+        return getState().contains(State.FUNCTIONAL)
                 ? PluginsResourceBundle.getMessage("main.status.ok")
                 : PluginsResourceBundle.getMessage("main.status.not.ok");
     }
@@ -205,19 +197,5 @@ public interface Plugin {
      * if an argument has invalid value.
      */
     public default void configure(Map<String, String> config) {
-    }
-
-    /**
-     * Configure the plugin based on the passed configuration.
-     * This method is called prior to invoke the plugin.
-     *
-     * @param config The plugin configuration.
-     * @param ctx The plugin context
-     * @throws IllegalArgumentException if a mandatory argument is missing or
-     * if an argument has invalid value.
-     *
-     */
-    public default void configure(Map<String, String> config, PluginContext ctx) {
-        configure(config);
     }
 }

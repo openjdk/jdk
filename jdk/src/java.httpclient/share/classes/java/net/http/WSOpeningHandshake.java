@@ -24,6 +24,8 @@
  */
 package java.net.http;
 
+import java.io.UncheckedIOException;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -126,6 +128,8 @@ final class WSOpeningHandshake {
                         return CompletableFuture.completedFuture(result);
                     } catch (WebSocketHandshakeException e) {
                         return CompletableFuture.failedFuture(e);
+                    } catch (UncheckedIOException ee) {
+                        return CompletableFuture.failedFuture(ee.getCause());
                     }
                 });
     }
@@ -149,7 +153,12 @@ final class WSOpeningHandshake {
         checkAccept(response, h);
         checkExtensions(response, h);
         String subprotocol = checkAndReturnSubprotocol(response, h);
-        RawChannel channel = ((HttpResponseImpl) response).rawChannel();
+        RawChannel channel = null;
+        try {
+            channel = ((HttpResponseImpl) response).rawChannel();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         return new Result(subprotocol, channel);
     }
 

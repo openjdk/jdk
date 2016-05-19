@@ -29,14 +29,12 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
-import jdk.tools.jlink.plugin.Pool.ModuleDataType;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 
 /**
@@ -61,9 +59,9 @@ public final class StripDebugPlugin implements TransformerPlugin {
     }
 
     @Override
-    public Set<PluginType> getType() {
-        Set<PluginType> set = new HashSet<>();
-        set.add(CATEGORY.TRANSFORMER);
+    public Set<Category> getType() {
+        Set<Category> set = new HashSet<>();
+        set.add(Category.TRANSFORMER);
         return Collections.unmodifiableSet(set);
     }
 
@@ -73,11 +71,11 @@ public final class StripDebugPlugin implements TransformerPlugin {
     }
 
     @Override
-    public void visit(Pool in, Pool out) {
+    public void visit(ModulePool in, ModulePool out) {
         //remove *.diz files as well as debug attributes.
-        in.visit((resource) -> {
-            ModuleData res = resource;
-            if (resource.getType().equals(ModuleDataType.CLASS_OR_RESOURCE)) {
+        in.transformAndCopy((resource) -> {
+            ModuleEntry res = resource;
+            if (resource.getType().equals(ModuleEntry.Type.CLASS_OR_RESOURCE)) {
                 String path = resource.getPath();
                 if (path.endsWith(".class")) {
                     if (path.endsWith("module-info.class")) {
@@ -87,7 +85,7 @@ public final class StripDebugPlugin implements TransformerPlugin {
                         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
                         reader.accept(writer, ClassReader.SKIP_DEBUG);
                         byte[] content = writer.toByteArray();
-                        res = Pool.newResource(path, new ByteArrayInputStream(content), content.length);
+                        res = ModuleEntry.create(path, new ByteArrayInputStream(content), content.length);
                     }
                 }
             } else if (predicate.test(res.getPath())) {

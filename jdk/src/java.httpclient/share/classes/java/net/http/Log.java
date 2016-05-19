@@ -88,7 +88,7 @@ abstract class Log implements System.Logger {
                         logging |= TRACE;
                         break;
                     case "all":
-                        logging |= CONTENT|HEADERS|REQUESTS|FRAMES|ERRORS|TRACE;
+                        logging |= CONTENT|HEADERS|REQUESTS|FRAMES|ERRORS|TRACE|SSL;
                         break;
                 }
                 if (val.startsWith("frames")) {

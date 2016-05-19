@@ -33,7 +33,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.URI;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.FileSystem;
@@ -483,9 +482,15 @@ class Utils {
         }
         return out;
     }
+
+    static List<String> runExec(String... cmds) {
+        return runExec(Arrays.asList(cmds));
+    }
+
     static List<String> runExec(List<String> cmdsList) {
         return runExec(cmdsList, null);
     }
+
     static List<String> runExec(List<String> cmdsList, Map<String, String> penv) {
         ArrayList<String> alist = new ArrayList<String>();
         ProcessBuilder pb =

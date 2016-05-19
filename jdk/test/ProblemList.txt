@@ -116,10 +116,8 @@
 
 # jdk_beans
 
-java/beans/XMLEncoder/Test4903007.java                          8060027 generic-all
-java/beans/XMLEncoder/java_awt_GridBagLayout.java               8060027 generic-all
-java/beans/XMLDecoder/8028054/TestConstructorFinder.java        8060027 generic-all
-java/beans/XMLDecoder/8028054/TestMethodFinder.java             8060027 generic-all
+java/beans/XMLDecoder/8028054/TestConstructorFinder.java        8156579 generic-all
+java/beans/XMLDecoder/8028054/TestMethodFinder.java             8156579 generic-all
 
 java/beans/Introspector/8132566/OverridePropertyInfoTest.java   8132565 generic-all
 java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 generic-all
@@ -142,6 +140,12 @@ java/lang/instrument/RetransformBigClass.sh                     8061177 generic-
 java/lang/instrument/BootClassPath/BootClassPathTest.sh         8072130 macosx-all
 
 java/lang/management/MemoryMXBean/LowMemoryTest.java            8130339 generic-all
+
+############################################################################
+
+# jdk_io
+
+java/io/pathNames/GeneralWin32.java                             8156595 windows-all
 
 ############################################################################
 
@@ -294,7 +298,6 @@ sun/security/x509/URICertStore/ExtensionsWithLDAP.java          8134577 generic-
 
 # jdk_sound
 
-javax/sound/midi/Gervill/SoftProvider/GetDevice.java            8059743 generic-all
 javax/sound/sampled/DirectAudio/bug6400879.java                 8148915 linux-all
 
 ############################################################################
