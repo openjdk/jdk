@@ -298,8 +298,6 @@ sun/security/x509/URICertStore/ExtensionsWithLDAP.java          8134577 generic-
 
 # jdk_sound
 
-javax/sound/sampled/DirectAudio/bug6400879.java                 8148915 linux-all
-
 ############################################################################
 
 # jdk_imageio
