@@ -394,13 +394,6 @@ void ParallelCompact_test() {
   HeapWord* end_heap =
     (HeapWord*) heap->young_gen()->virtual_space()->high_boundary();
 
-  size_t end_index =
-    PSParallelCompact::summary_data().addr_to_region_idx(end_heap);
-  ParallelCompactData::RegionData* c = PSParallelCompact::summary_data().region(end_index);
-
-  // Initialize the end region with a bad destination.
-  c->set_destination(begin_heap - 1);
-
   print_generic_summary_data(PSParallelCompact::summary_data(),
     begin_heap, end_heap);
 }
