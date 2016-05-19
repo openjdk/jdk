@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,9 +104,7 @@ class XHandler: public CompilationResourceObj {
   bool equals(XHandler* other) const;
 };
 
-define_array(_XHandlerArray, XHandler*)
-define_stack(_XHandlerList, _XHandlerArray)
-
+typedef GrowableArray<XHandler*> _XHandlerList;
 
 // XHandlers is the C1 internal list of exception handlers for a method
 class XHandlers: public CompilationResourceObj {
@@ -132,8 +130,7 @@ class XHandlers: public CompilationResourceObj {
 
 
 class IRScope;
-define_array(IRScopeArray, IRScope*)
-define_stack(IRScopeList, IRScopeArray)
+typedef GrowableArray<IRScope*> IRScopeList;
 
 class Compilation;
 class IRScope: public CompilationResourceObj {
@@ -154,7 +151,7 @@ class IRScope: public CompilationResourceObj {
   bool          _wrote_volatile;                 // has written volatile field
   BlockBegin*   _start;                          // the start block, successsors are method entries
 
-  BitMap        _requires_phi_function;          // bit is set if phi functions at loop headers are necessary for a local variable
+  ResourceBitMap _requires_phi_function;         // bit is set if phi functions at loop headers are necessary for a local variable
 
   // helper functions
   BlockBegin* build_graph(Compilation* compilation, int osr_bci);

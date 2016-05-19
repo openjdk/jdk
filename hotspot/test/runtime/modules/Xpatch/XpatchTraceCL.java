@@ -26,6 +26,7 @@
  * @bug 8069469
  * @summary Make sure -Xlog:classload=info works properly with "modules" jimage,
             -Xpatch, and with -Xbootclasspath/a
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @compile XpatchMain.java
  * @run main XpatchTraceCL
@@ -50,15 +51,15 @@ public class XpatchTraceCL {
              "mods/java.naming");
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xpatch:java.naming=mods/java.naming",
-             "-Xlog:classload=info", "XpatchMain", "javax.naming.spi.NamingManager");
+             "-Xlog:class+load=info", "XpatchMain", "javax.naming.spi.NamingManager");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         // "modules" jimage case.
-        output.shouldContain("[classload] java.lang.Thread source: jrt:/java.base");
+        output.shouldContain("[class,load] java.lang.Thread source: jrt:/java.base");
         // -Xpatch case.
-        output.shouldContain("[classload] javax.naming.spi.NamingManager source: mods/java.naming");
+        output.shouldContain("[class,load] javax.naming.spi.NamingManager source: mods/java.naming");
         // -cp case.
-        output.shouldContain("[classload] XpatchMain source: file");
+        output.shouldContain("[class,load] XpatchMain source: file");
 
         // Test -Xlog:classload=info output for -Xbootclasspath/a
         source = "package XpatchTraceCL_pkg; "                 +
@@ -73,10 +74,10 @@ public class XpatchTraceCL {
              "xbcp");
 
         pb = ProcessTools.createJavaProcessBuilder("-Xbootclasspath/a:xbcp",
-             "-Xlog:classload=info", "XpatchMain", "XpatchTraceCL_pkg.ItIsI");
+             "-Xlog:class+load=info", "XpatchMain", "XpatchTraceCL_pkg.ItIsI");
         output = new OutputAnalyzer(pb.start());
         // -Xbootclasspath/a case.
-        output.shouldContain("[classload] XpatchTraceCL_pkg.ItIsI source: xbcp");
+        output.shouldContain("[class,load] XpatchTraceCL_pkg.ItIsI source: xbcp");
         output.shouldHaveExitValue(0);
     }
 }

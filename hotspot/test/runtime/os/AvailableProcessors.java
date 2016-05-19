@@ -30,6 +30,7 @@ import java.util.ArrayList;
  * @bug 6515172 8148766
  * @summary Check that availableProcessors reports the correct value when running in a cpuset on linux
  * @requires os.family == "linux"
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @build jdk.test.lib.*
  * @run driver AvailableProcessors

@@ -25,6 +25,7 @@
  * @test
  * @bug 8062280
  * @summary C2: inlining failure due to access checks being too strict
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @run main/othervm MHInlineTest
  */

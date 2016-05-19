@@ -61,6 +61,8 @@ class aarch64 {
   static address _double_sign_mask;
   static address _double_sign_flip;
 
+  static address _zero_longs;
+
  public:
 
   static address get_previous_fp_entry()
@@ -111,6 +113,11 @@ class aarch64 {
   static address double_sign_flip()
   {
     return _double_sign_flip;
+  }
+
+  static address get_zero_longs()
+  {
+    return _zero_longs;
   }
 
  private:

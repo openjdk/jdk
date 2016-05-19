@@ -36,7 +36,7 @@
 
 import jdk.test.lib.*;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import jdk.test.lib.Utils;
 
 public class ProblematicFrameTest {

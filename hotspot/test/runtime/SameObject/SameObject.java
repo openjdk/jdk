@@ -30,6 +30,7 @@ import jdk.test.lib.Asserts;
  * @summary -Xcheck:jni overly strict in JNI method IsSameObject
  *          Fixed in JDK1.3.1_10
  *          Fixed in JDK1.4.1_07
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @run main/othervm/native -Xcheck:jni SameObject
  */

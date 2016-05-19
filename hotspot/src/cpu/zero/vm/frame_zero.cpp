@@ -360,7 +360,7 @@ void SharkFrame::identify_word(int   frame_index,
   case pc_off:
     strncpy(fieldbuf, "pc", buflen);
     if (method()->is_method()) {
-      nmethod *code = method()->code();
+      CompiledMethod *code = method()->code();
       if (code && code->pc_desc_at(pc())) {
         SimpleScopeDesc ssd(code, pc());
         snprintf(valuebuf, buflen, PTR_FORMAT " (bci %d)",

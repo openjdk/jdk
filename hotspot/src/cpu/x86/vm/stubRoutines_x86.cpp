@@ -46,7 +46,33 @@ address StubRoutines::x86::_ghash_byte_swap_mask_addr = NULL;
 address StubRoutines::x86::_upper_word_mask_addr = NULL;
 address StubRoutines::x86::_shuffle_byte_flip_mask_addr = NULL;
 address StubRoutines::x86::_k256_adr = NULL;
+#ifdef _LP64
+address StubRoutines::x86::_k256_W_adr = NULL;
+#endif
 address StubRoutines::x86::_pshuffle_byte_flip_mask_addr = NULL;
+
+//tables common for sin and cos
+address StubRoutines::x86::_ONEHALF_adr = NULL;
+address StubRoutines::x86::_P_2_adr = NULL;
+address StubRoutines::x86::_SC_4_adr = NULL;
+address StubRoutines::x86::_Ctable_adr = NULL;
+address StubRoutines::x86::_SC_2_adr = NULL;
+address StubRoutines::x86::_SC_3_adr = NULL;
+address StubRoutines::x86::_SC_1_adr = NULL;
+address StubRoutines::x86::_PI_INV_TABLE_adr = NULL;
+address StubRoutines::x86::_PI_4_adr = NULL;
+address StubRoutines::x86::_PI32INV_adr = NULL;
+address StubRoutines::x86::_SIGN_MASK_adr = NULL;
+address StubRoutines::x86::_P_1_adr = NULL;
+address StubRoutines::x86::_P_3_adr = NULL;
+address StubRoutines::x86::_NEG_ZERO_adr = NULL;
+
+//tables common for sincos and tancot
+address StubRoutines::x86::_L_2il0floatpacket_0_adr = NULL;
+address StubRoutines::x86::_Pi4Inv_adr = NULL;
+address StubRoutines::x86::_Pi4x3_adr = NULL;
+address StubRoutines::x86::_Pi4x4_adr = NULL;
+address StubRoutines::x86::_ones_adr = NULL;
 
 uint64_t StubRoutines::x86::_crc_by128_masks[] =
 {
@@ -266,3 +292,9 @@ ALIGNED_(64) juint StubRoutines::x86::_k256[] =
     0x748f82eeUL, 0x78a5636fUL, 0x84c87814UL, 0x8cc70208UL,
     0x90befffaUL, 0xa4506cebUL, 0xbef9a3f7UL, 0xc67178f2UL
 };
+
+#ifdef _LP64
+// used in MacroAssembler::sha256_AVX2
+// dynamically built from _k256
+ALIGNED_(64) juint StubRoutines::x86::_k256_W[2*sizeof(StubRoutines::x86::_k256)];
+#endif

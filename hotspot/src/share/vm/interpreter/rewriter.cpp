@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,11 +65,12 @@ void Rewriter::compute_index_maps() {
   // Record limits of resolved reference map for constant pool cache indices
   record_map_limits();
 
-  guarantee((int)_cp_cache_map.length()-1 <= (int)((u2)-1),
+  guarantee((int) _cp_cache_map.length() - 1 <= (int) ((u2)-1),
             "all cp cache indexes fit in a u2");
 
-  if (saw_mh_symbol)
-    _method_handle_invokers.initialize(length, (int)0);
+  if (saw_mh_symbol) {
+    _method_handle_invokers.at_grow(length, 0);
+  }
 }
 
 // Unrewrite the bytecodes if an error occurs.
@@ -193,7 +194,7 @@ void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_i
       assert(_pool->tag_at(cp_index).is_method(), "wrong index");
       // Determine whether this is a signature-polymorphic method.
       if (cp_index >= _method_handle_invokers.length())  return;
-      int status = _method_handle_invokers[cp_index];
+      int status = _method_handle_invokers.at(cp_index);
       assert(status >= -1 && status <= 1, "oob tri-state");
       if (status == 0) {
         if (_pool->klass_ref_at_noresolve(cp_index) == vmSymbols::java_lang_invoke_MethodHandle() &&
@@ -211,7 +212,7 @@ void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_i
         } else {
           status = -1;
         }
-        _method_handle_invokers[cp_index] = status;
+        _method_handle_invokers.at(cp_index) = status;
       }
       // We use a special internal bytecode for such methods (if non-static).
       // The basic reason for this is that such methods need an extra "appendix" argument
@@ -287,7 +288,7 @@ void Rewriter::patch_invokedynamic_bytecodes() {
       // add delta to each.
       int resolved_index = _patch_invokedynamic_refs->at(i);
       for (int entry = 0; entry < ConstantPoolCacheEntry::_indy_resolved_references_entries; entry++) {
-        assert(_invokedynamic_references_map[resolved_index+entry] == cache_index,
+        assert(_invokedynamic_references_map.at(resolved_index + entry) == cache_index,
              "should be the same index");
         _invokedynamic_references_map.at_put(resolved_index+entry,
                                              cache_index + delta);
@@ -520,7 +521,14 @@ void Rewriter::rewrite(instanceKlassHandle klass, TRAPS) {
 Rewriter::Rewriter(instanceKlassHandle klass, const constantPoolHandle& cpool, Array<Method*>* methods, TRAPS)
   : _klass(klass),
     _pool(cpool),
-    _methods(methods)
+    _methods(methods),
+    _cp_map(cpool->length()),
+    _cp_cache_map(cpool->length() / 2),
+    _reference_map(cpool->length()),
+    _resolved_references_map(cpool->length() / 2),
+    _invokedynamic_references_map(cpool->length() / 2),
+    _method_handle_invokers(cpool->length()),
+    _invokedynamic_cp_cache_map(cpool->length() / 4)
 {
 
   // Rewrite bytecodes - exception here exits.

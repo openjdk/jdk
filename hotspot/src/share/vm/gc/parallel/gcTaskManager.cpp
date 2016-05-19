@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/gcTaskThread.hpp"
-#include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/gcId.hpp"
+#include "gc/shared/workerManager.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
@@ -34,6 +34,7 @@
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.inline.hpp"
+#include "runtime/os.hpp"
 
 //
 // GCTask
@@ -372,8 +373,26 @@ SynchronizedGCTaskQueue::~SynchronizedGCTaskQueue() {
 GCTaskManager::GCTaskManager(uint workers) :
   _workers(workers),
   _active_workers(0),
-  _idle_workers(0) {
+  _idle_workers(0),
+  _created_workers(0) {
   initialize();
+}
+
+GCTaskThread* GCTaskManager::install_worker(uint t) {
+  GCTaskThread* new_worker = GCTaskThread::create(this, t, _processor_assignment[t]);
+  set_thread(t, new_worker);
+  return new_worker;
+}
+
+void GCTaskManager::add_workers(bool initializing) {
+  os::ThreadType worker_type = os::pgc_thread;
+  _created_workers = WorkerManager::add_workers(this,
+                                                _active_workers,
+                                                (uint) _workers,
+                                                _created_workers,
+                                                worker_type,
+                                                initializing);
+  _active_workers = MIN2(_created_workers, _active_workers);
 }
 
 void GCTaskManager::initialize() {
@@ -394,28 +413,30 @@ void GCTaskManager::initialize() {
     // Set up worker threads.
     //     Distribute the workers among the available processors,
     //     unless we were told not to, or if the os doesn't want to.
-    uint* processor_assignment = NEW_C_HEAP_ARRAY(uint, workers(), mtGC);
+    _processor_assignment = NEW_C_HEAP_ARRAY(uint, workers(), mtGC);
     if (!BindGCTaskThreadsToCPUs ||
-        !os::distribute_processes(workers(), processor_assignment)) {
+        !os::distribute_processes(workers(), _processor_assignment)) {
       for (uint a = 0; a < workers(); a += 1) {
-        processor_assignment[a] = sentinel_worker();
+        _processor_assignment[a] = sentinel_worker();
       }
     }
+
     _thread = NEW_C_HEAP_ARRAY(GCTaskThread*, workers(), mtGC);
-    for (uint t = 0; t < workers(); t += 1) {
-      set_thread(t, GCTaskThread::create(this, t, processor_assignment[t]));
+    _active_workers = ParallelGCThreads;
+    if (UseDynamicNumberOfGCThreads && !FLAG_IS_CMDLINE(ParallelGCThreads)) {
+      _active_workers = 1U;
     }
+
     Log(gc, task, thread) log;
     if (log.is_trace()) {
       ResourceMark rm;
       outputStream* out = log.trace_stream();
       out->print("GCTaskManager::initialize: distribution:");
       for (uint t = 0; t < workers(); t += 1) {
-        out->print("  %u", processor_assignment[t]);
+        out->print("  %u", _processor_assignment[t]);
       }
       out->cr();
     }
-    FREE_C_HEAP_ARRAY(uint, processor_assignment);
   }
   reset_busy_workers();
   set_unblocked();
@@ -426,9 +447,8 @@ void GCTaskManager::initialize() {
   reset_completed_tasks();
   reset_barriers();
   reset_emptied_queue();
-  for (uint s = 0; s < workers(); s += 1) {
-    thread(s)->start();
-  }
+
+  add_workers(true);
 }
 
 GCTaskManager::~GCTaskManager() {
@@ -437,12 +457,16 @@ GCTaskManager::~GCTaskManager() {
   NoopGCTask::destroy(_noop_task);
   _noop_task = NULL;
   if (_thread != NULL) {
-    for (uint i = 0; i < workers(); i += 1) {
+    for (uint i = 0; i < created_workers(); i += 1) {
       GCTaskThread::destroy(thread(i));
       set_thread(i, NULL);
     }
     FREE_C_HEAP_ARRAY(GCTaskThread*, _thread);
     _thread = NULL;
+  }
+  if (_processor_assignment != NULL) {
+    FREE_C_HEAP_ARRAY(uint, _processor_assignment);
+    _processor_assignment = NULL;
   }
   if (_resource_flag != NULL) {
     FREE_C_HEAP_ARRAY(bool, _resource_flag);
@@ -470,6 +494,9 @@ void GCTaskManager::set_active_gang() {
          "all_workers_active() is  incorrect: "
          "active %d  ParallelGCThreads %u", active_workers(),
          ParallelGCThreads);
+  _active_workers = MIN2(_active_workers, _workers);
+  // "add_workers" does not guarantee any additional workers
+  add_workers(false);
   log_trace(gc, task)("GCTaskManager::set_active_gang(): "
                       "all_workers_active()  %d  workers %d  "
                       "active  %d  ParallelGCThreads %u",
@@ -499,7 +526,7 @@ void GCTaskManager::task_idle_workers() {
       // is starting).  Try later to release enough idle_workers
       // to allow the desired number of active_workers.
       more_inactive_workers =
-        workers() - active_workers() - idle_workers();
+        created_workers() - active_workers() - idle_workers();
       if (more_inactive_workers < 0) {
         int reduced_active_workers = active_workers() + more_inactive_workers;
         set_active_workers(reduced_active_workers);
@@ -507,7 +534,7 @@ void GCTaskManager::task_idle_workers() {
       }
       log_trace(gc, task)("JT: %d  workers %d  active  %d  idle %d  more %d",
                           Threads::number_of_non_daemon_threads(),
-                          workers(),
+                          created_workers(),
                           active_workers(),
                           idle_workers(),
                           more_inactive_workers);
@@ -517,7 +544,7 @@ void GCTaskManager::task_idle_workers() {
       q->enqueue(IdleGCTask::create_on_c_heap());
       increment_idle_workers();
     }
-    assert(workers() == active_workers() + idle_workers(),
+    assert(created_workers() == active_workers() + idle_workers(),
       "total workers should equal active + inactive");
     add_list(q);
     // GCTaskQueue* q was created in a ResourceArea so a
@@ -539,14 +566,15 @@ void GCTaskManager::print_task_time_stamps() {
   if (!log_is_enabled(Debug, gc, task, time)) {
     return;
   }
-  for(uint i=0; i<ParallelGCThreads; i++) {
+  uint num_thr = created_workers();
+  for(uint i=0; i < num_thr; i++) {
     GCTaskThread* t = thread(i);
     t->print_task_time_stamps();
   }
 }
 
 void GCTaskManager::print_threads_on(outputStream* st) {
-  uint num_thr = workers();
+  uint num_thr = created_workers();
   for (uint i = 0; i < num_thr; i++) {
     thread(i)->print_on(st);
     st->cr();
@@ -555,19 +583,20 @@ void GCTaskManager::print_threads_on(outputStream* st) {
 
 void GCTaskManager::threads_do(ThreadClosure* tc) {
   assert(tc != NULL, "Null ThreadClosure");
-  uint num_thr = workers();
+  uint num_thr = created_workers();
   for (uint i = 0; i < num_thr; i++) {
     tc->do_thread(thread(i));
   }
 }
 
 GCTaskThread* GCTaskManager::thread(uint which) {
-  assert(which < workers(), "index out of bounds");
+  assert(which < created_workers(), "index out of bounds");
   assert(_thread[which] != NULL, "shouldn't have null thread");
   return _thread[which];
 }
 
 void GCTaskManager::set_thread(uint which, GCTaskThread* value) {
+  // "_created_workers" may not have been updated yet so use workers()
   assert(which < workers(), "index out of bounds");
   assert(value != NULL, "shouldn't have null thread");
   _thread[which] = value;
@@ -728,7 +757,7 @@ uint GCTaskManager::decrement_busy_workers() {
 
 void GCTaskManager::release_all_resources() {
   // If you want this to be done atomically, do it in a WaitForBarrierGCTask.
-  for (uint i = 0; i < workers(); i += 1) {
+  for (uint i = 0; i < created_workers(); i += 1) {
     set_resource_flag(i, true);
   }
 }

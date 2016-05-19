@@ -70,7 +70,8 @@
     // outgoing sp before a call to an invoked method
     interpreter_frame_last_sp_offset                 = interpreter_frame_sender_sp_offset - 1,
     interpreter_frame_method_offset                  = interpreter_frame_last_sp_offset - 1,
-    interpreter_frame_mdp_offset                     = interpreter_frame_method_offset - 1,
+    interpreter_frame_mirror_offset                  = interpreter_frame_method_offset - 1,
+    interpreter_frame_mdp_offset                     = interpreter_frame_mirror_offset - 1,
     interpreter_frame_cache_offset                   = interpreter_frame_mdp_offset - 1,
     interpreter_frame_locals_offset                  = interpreter_frame_cache_offset - 1,
     interpreter_frame_bcp_offset                     = interpreter_frame_locals_offset - 1,
@@ -124,7 +125,7 @@
 
 #ifdef ASSERT
   // Used in frame::sender_for_{interpreter,compiled}_frame
-  static void verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp);
+  static void verify_deopt_original_pc(CompiledMethod* nm, intptr_t* unextended_sp);
 #endif
 
  public:

@@ -137,7 +137,7 @@ address NativeCall::get_trampoline() {
     return NULL;
 
   address bl_destination = Assembler::bxx_destination(call_addr);
-  if (code->content_contains(bl_destination) &&
+  if (code->contains(bl_destination) &&
       is_NativeCallTrampolineStub_at(bl_destination))
     return bl_destination;
 

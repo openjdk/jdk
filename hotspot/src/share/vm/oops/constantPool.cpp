@@ -209,11 +209,11 @@ void ConstantPool::trace_class_resolution(const constantPoolHandle& this_cp, Kla
   if (k() != this_cp->pool_holder()) {
     // only print something if the classes are different
     if (source_file != NULL) {
-      log_debug(classresolve)("%s %s %s:%d",
+      log_debug(class, resolve)("%s %s %s:%d",
                  this_cp->pool_holder()->external_name(),
                  k->external_name(), source_file, line_number);
     } else {
-      log_debug(classresolve)("%s %s",
+      log_debug(class, resolve)("%s %s",
                  this_cp->pool_holder()->external_name(),
                  k->external_name());
     }
@@ -282,8 +282,8 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
   ClassLoaderData* this_key = this_cp->pool_holder()->class_loader_data();
   this_key->record_dependency(k(), CHECK_NULL); // Can throw OOM
 
-  // logging for classresolve tag.
-  if (log_is_enabled(Debug, classresolve)){
+  // logging for class+resolve.
+  if (log_is_enabled(Debug, class, resolve)){
     trace_class_resolution(this_cp, k);
   }
   this_cp->klass_at_put(which, k());
@@ -341,7 +341,7 @@ Method* ConstantPool::method_at_if_loaded(const constantPoolHandle& cpool,
   int cache_index = decode_cpcache_index(which, true);
   if (!(cache_index >= 0 && cache_index < cpool->cache()->length())) {
     // FIXME: should be an assert
-    log_debug(classresolve)("bad operand %d in:", which); cpool->print();
+    log_debug(class, resolve)("bad operand %d in:", which); cpool->print();
     return NULL;
   }
   ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
@@ -672,7 +672,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp, in
       Symbol*  name =      this_cp->method_handle_name_ref_at(index);
       Symbol*  signature = this_cp->method_handle_signature_ref_at(index);
       { ResourceMark rm(THREAD);
-        log_debug(classresolve)("resolve JVM_CONSTANT_MethodHandle:%d [%d/%d/%d] %s.%s",
+        log_debug(class, resolve)("resolve JVM_CONSTANT_MethodHandle:%d [%d/%d/%d] %s.%s",
                               ref_kind, index, this_cp->method_handle_index_at(index),
                               callee_index, name->as_C_string(), signature->as_C_string());
       }
@@ -695,7 +695,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp, in
     {
       Symbol*  signature = this_cp->method_type_signature_at(index);
       { ResourceMark rm(THREAD);
-        log_debug(classresolve)("resolve JVM_CONSTANT_MethodType [%d/%d] %s",
+        log_debug(class, resolve)("resolve JVM_CONSTANT_MethodType [%d/%d] %s",
                               index, this_cp->method_type_index_at(index),
                               signature->as_C_string());
       }

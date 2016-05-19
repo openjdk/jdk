@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,8 @@ private:
   bool _optimistic; // Insert predicates and deoptimize when they fail
   IR *_ir;
 
-  define_array(BlockBeginArray, BlockBegin*)
-  define_stack(BlockBeginList, BlockBeginArray)
-  define_stack(IntegerStack, intArray)
-  define_array(IntegerMap, IntegerStack*)
+  typedef GrowableArray<BlockBegin*> BlockBeginList;
+  typedef GrowableArray<int> IntegerStack;
 
   class Verification : public BlockClosure {
   // RangeCheckEliminator::Verification should never get instatiated on the heap.
@@ -180,13 +178,10 @@ public:
   void add_assertions(Bound *bound, Instruction *instruction, Instruction *position);
 #endif
 
-  define_array(BoundArray, Bound *)
-  define_stack(BoundStack, BoundArray)
-  define_array(BoundMap, BoundStack *)
-  define_array(AccessIndexedArray, AccessIndexed *)
-  define_stack(AccessIndexedList, AccessIndexedArray)
-  define_array(InstructionArray, Instruction *)
-  define_stack(InstructionList, InstructionArray)
+  typedef GrowableArray<Bound*> BoundStack;
+  typedef GrowableArray<BoundStack*> BoundMap;
+  typedef GrowableArray<AccessIndexed*> AccessIndexedList;
+  typedef GrowableArray<Instruction*> InstructionList;
 
   class AccessIndexedInfo : public CompilationResourceObj  {
   public:
@@ -195,7 +190,7 @@ public:
     int _max;
   };
 
-  define_array(AccessIndexedInfoArray, AccessIndexedInfo *)
+  typedef GrowableArray<AccessIndexedInfo*> AccessIndexedInfoArray;
   BoundMap _bounds; // Mapping from Instruction's id to current bound
   AccessIndexedInfoArray _access_indexed_info; // Mapping from Instruction's id to AccessIndexedInfo for in block motion
   Visitor _visitor;

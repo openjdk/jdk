@@ -31,7 +31,7 @@
 // BitsInByte is a lookup table which tells the number of bits that
 // are in the looked-up number.  It is very useful in VectorSet_Size.
 
-uint8_t bitsInByte[256] = {
+uint8_t bitsInByte[BITS_IN_BYTE_ARRAY_SIZE] = {
   0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
   1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
   1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,

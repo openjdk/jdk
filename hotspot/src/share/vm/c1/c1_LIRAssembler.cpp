@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ void LIR_Assembler::append_code_stub(CodeStub* stub) {
 
 void LIR_Assembler::emit_stubs(CodeStubList* stub_list) {
   for (int m = 0; m < stub_list->length(); m++) {
-    CodeStub* s = (*stub_list)[m];
+    CodeStub* s = stub_list->at(m);
 
     check_codespace();
     CHECK_BAILOUT();
@@ -676,6 +676,10 @@ void LIR_Assembler::emit_op0(LIR_Op0* op) {
 
     case lir_get_thread:
       get_thread(op->result_opr());
+      break;
+
+    case lir_on_spin_wait:
+      on_spin_wait();
       break;
 
     default:

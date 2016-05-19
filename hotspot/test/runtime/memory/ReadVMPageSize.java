@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Using WhiteBox to get VM page size
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @build ReadVMPageSize
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
