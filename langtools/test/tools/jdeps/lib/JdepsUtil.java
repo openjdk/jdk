@@ -23,6 +23,7 @@
 
 import com.sun.tools.jdeps.Analyzer;
 import com.sun.tools.jdeps.DepsAnalyzer;
+import com.sun.tools.jdeps.InverseDepsAnalyzer;
 import com.sun.tools.jdeps.JdepsConfiguration;
 import com.sun.tools.jdeps.JdepsFilter;
 import com.sun.tools.jdeps.JdepsWriter;
@@ -197,6 +198,11 @@ public final class JdepsUtil {
             addmods(mods);
             builder.allModules();
             return new ModuleAnalyzer(configuration(), pw, mods);
+        }
+
+        public InverseDepsAnalyzer getInverseDepsAnalyzer() throws IOException {
+            return new InverseDepsAnalyzer(configuration(), filter.build(), writer(),
+                                           verbose, false);
         }
 
         public void dumpOutput(PrintStream out) {

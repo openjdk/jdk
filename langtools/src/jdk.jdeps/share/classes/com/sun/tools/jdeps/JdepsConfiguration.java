@@ -65,7 +65,10 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class JdepsConfiguration {
-    private static final String MODULE_INFO = "module-info.class";
+    // the token for "all modules on the module path"
+    public static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
+    public static final String ALL_DEFAULT = "ALL-DEFAULT";
+    public static final String MODULE_INFO = "module-info.class";
 
     private final SystemModuleFinder system;
     private final ModuleFinder finder;
@@ -83,7 +86,8 @@ public class JdepsConfiguration {
                                ModuleFinder finder,
                                Set<String> roots,
                                List<Path> classpaths,
-                               List<Archive> initialArchives)
+                               List<Archive> initialArchives,
+                               boolean allDefaultModules)
         throws IOException
     {
         trace("root: %s%n", roots);
@@ -91,15 +95,13 @@ public class JdepsConfiguration {
         this.system = systemModulePath;
         this.finder = finder;
 
-        // build root set
-        Set<String> mods = new HashSet<>();
+        // build root set for resolution
+        Set<String> mods = new HashSet<>(roots);
 
-        if (initialArchives.isEmpty() && classpaths.isEmpty() && !roots.isEmpty()) {
-            // named module as root. No initial unnamed module
-            mods.addAll(roots);
-        } else {
-            // unnamed module
-            mods.addAll(roots);
+        // add default modules to the root set
+        // unnamed module
+        if (!initialArchives.isEmpty() || !classpaths.isEmpty() ||
+                roots.isEmpty() || allDefaultModules) {
             mods.addAll(systemModulePath.defaultSystemRoots());
         }
 
@@ -188,6 +190,10 @@ public class JdepsConfiguration {
 
     boolean isSystem(Module m) {
         return system.find(m.name()).isPresent();
+    }
+
+    boolean isValidToken(String name) {
+        return ALL_MODULE_PATH.equals(name) || ALL_DEFAULT.equals(name);
     }
 
     /**
@@ -299,6 +305,7 @@ public class JdepsConfiguration {
     }
 
     static class SystemModuleFinder implements ModuleFinder {
+        private static final String JAVA_HOME = System.getProperty("java.home");
         private static final String JAVA_SE = "java.se";
 
         private final FileSystem fileSystem;
@@ -306,41 +313,50 @@ public class JdepsConfiguration {
         private final Map<String, ModuleReference> systemModules;
 
         SystemModuleFinder() {
-            this(System.getProperty("java.home"));
-        }
-        SystemModuleFinder(String javaHome) {
-            final FileSystem fs;
-            final Path root;
-            final Map<String, ModuleReference> systemModules;
-            if (javaHome != null) {
-                if (Files.isRegularFile(Paths.get(javaHome, "lib", "modules"))) {
-                    try {
-                        // jrt file system
-                        fs = FileSystems.getFileSystem(URI.create("jrt:/"));
-                        root = fs.getPath("/modules");
-                        systemModules = Files.walk(root, 1)
-                            .filter(path -> !path.equals(root))
-                            .map(this::toModuleReference)
-                            .collect(toMap(mref -> mref.descriptor().name(),
-                                           Function.identity()));
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                } else {
-                    // exploded image
-                    fs = FileSystems.getDefault();
-                    root = Paths.get(javaHome, "modules");
-                    systemModules = ModuleFinder.ofSystem().findAll().stream()
-                        .collect(toMap(mref -> mref.descriptor().name(), Function.identity()));
-                }
+            if (Files.isRegularFile(Paths.get(JAVA_HOME, "lib", "modules"))) {
+                // jrt file system
+                this.fileSystem = FileSystems.getFileSystem(URI.create("jrt:/"));
+                this.root = fileSystem.getPath("/modules");
+                this.systemModules = walk(root);
             } else {
-                fs = null;
-                root = null;
-                systemModules = Collections.emptyMap();
+                // exploded image
+                this.fileSystem = FileSystems.getDefault();
+                root = Paths.get(JAVA_HOME, "modules");
+                this.systemModules = ModuleFinder.ofSystem().findAll().stream()
+                    .collect(toMap(mref -> mref.descriptor().name(), Function.identity()));
             }
-            this.fileSystem = fs;
-            this.root = root;
-            this.systemModules = systemModules;
+        }
+
+        SystemModuleFinder(String javaHome) throws IOException {
+            if (javaHome == null) {
+                // -system none
+                this.fileSystem = null;
+                this.root = null;
+                this.systemModules = Collections.emptyMap();
+            } else {
+                if (Files.isRegularFile(Paths.get(javaHome, "lib", "modules")))
+                    throw new IllegalArgumentException("Invalid java.home: " + javaHome);
+
+                // alternate java.home
+                Map<String, String> env = new HashMap<>();
+                env.put("java.home", javaHome);
+                // a remote run-time image
+                this.fileSystem = FileSystems.newFileSystem(URI.create("jrt:/"), env);
+                this.root = fileSystem.getPath("/modules");
+                this.systemModules = walk(root);
+            }
+        }
+
+        private Map<String, ModuleReference> walk(Path root) {
+            try {
+                return Files.walk(root, 1)
+                    .filter(path -> !path.equals(root))
+                    .map(this::toModuleReference)
+                    .collect(toMap(mref -> mref.descriptor().name(),
+                                    Function.identity()));
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
 
         private ModuleReference toModuleReference(Path path) {
@@ -437,8 +453,6 @@ public class JdepsConfiguration {
     }
 
     public static class Builder {
-        // the token for "all modules on the module path"
-        private static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
 
         final SystemModuleFinder systemModulePath;
         final Set<String> rootModules = new HashSet<>();
@@ -449,13 +463,16 @@ public class JdepsConfiguration {
         ModuleFinder upgradeModulePath;
         ModuleFinder appModulePath;
         boolean addAllApplicationModules;
+        boolean addAllDefaultModules;
 
         public Builder() {
-            this(System.getProperty("java.home"));
+            this.systemModulePath = new SystemModuleFinder();
         }
 
-        public Builder(String systemModulePath) {
-            this.systemModulePath = new SystemModuleFinder(systemModulePath);;
+        public Builder(String javaHome) throws IOException {
+            this.systemModulePath = SystemModuleFinder.JAVA_HOME.equals(javaHome)
+                ? new SystemModuleFinder()
+                : new SystemModuleFinder(javaHome);
         }
 
         public Builder upgradeModulePath(String upgradeModulePath) {
@@ -473,6 +490,9 @@ public class JdepsConfiguration {
                 switch (mn) {
                     case ALL_MODULE_PATH:
                         this.addAllApplicationModules = true;
+                        break;
+                    case ALL_DEFAULT:
+                        this.addAllDefaultModules = true;
                         break;
                     default:
                         this.rootModules.add(mn);
@@ -531,11 +551,13 @@ public class JdepsConfiguration {
                     .map(mref -> mref.descriptor().name())
                     .forEach(rootModules::add);
             }
+
             return new JdepsConfiguration(systemModulePath,
                                           finder,
                                           rootModules,
                                           classPaths,
-                                          initialArchives);
+                                          initialArchives,
+                                          addAllDefaultModules);
         }
 
         private static ModuleFinder createModulePathFinder(String mpaths) {
