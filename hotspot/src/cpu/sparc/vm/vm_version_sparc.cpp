@@ -49,7 +49,7 @@ void VM_Version::initialize() {
   AllocatePrefetchDistance = allocate_prefetch_distance();
   AllocatePrefetchStyle    = allocate_prefetch_style();
 
-  if (!has_blk_init()) {
+  if (!has_blk_init() || cache_line_size <= 0) {
     if (AllocatePrefetchInstr == 1) {
       warning("BIS instructions required for AllocatePrefetchInstr 1 unavailable");
       FLAG_SET_DEFAULT(AllocatePrefetchInstr, 0);
@@ -87,7 +87,7 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(InteriorEntryAlignment, 4);
     }
     if (is_niagara_plus()) {
-      if (has_blk_init() && UseTLAB &&
+      if (has_blk_init() && (cache_line_size > 0) && UseTLAB &&
           FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {
         // Use BIS instruction for TLAB allocation prefetch.
         FLAG_SET_DEFAULT(AllocatePrefetchInstr, 1);
