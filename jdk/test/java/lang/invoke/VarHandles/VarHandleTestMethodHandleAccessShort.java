@@ -24,7 +24,6 @@
 /*
  * @test
  * @run testng/othervm -Diters=20000 VarHandleTestMethodHandleAccessShort
- * @run testng/othervm -Diters=20000 -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false VarHandleTestMethodHandleAccessShort
  */
 
 import org.testng.annotations.BeforeClass;

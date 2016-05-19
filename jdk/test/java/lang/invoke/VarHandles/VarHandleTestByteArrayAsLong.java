@@ -27,7 +27,6 @@
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 VarHandleTestByteArrayAsLong
  * @run testng/othervm -Diters=20000                         VarHandleTestByteArrayAsLong
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  VarHandleTestByteArrayAsLong
- * @run testng/othervm -Diters=20000 -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false VarHandleTestByteArrayAsLong
  */
 
 import org.testng.annotations.DataProvider;

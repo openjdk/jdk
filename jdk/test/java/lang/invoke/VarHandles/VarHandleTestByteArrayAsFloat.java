@@ -27,7 +27,6 @@
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 VarHandleTestByteArrayAsFloat
  * @run testng/othervm -Diters=20000                         VarHandleTestByteArrayAsFloat
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  VarHandleTestByteArrayAsFloat
- * @run testng/othervm -Diters=20000 -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false VarHandleTestByteArrayAsFloat
  */
 
 import org.testng.annotations.DataProvider;
