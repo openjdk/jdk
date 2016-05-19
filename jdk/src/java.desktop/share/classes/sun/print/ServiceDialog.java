@@ -1632,10 +1632,13 @@ public class ServiceDialog extends JDialog implements ActionListener {
             float hgt = mediaSize.getY(units);
             float pax = lm;
             float pay = tm;
+            float par = rm;
+            float pab = bm;
             float paw = wid - lm - rm;
             float pah = hgt - tm - bm;
 
             if (paw <= 0f || pah <= 0f || pax < 0f || pay < 0f ||
+                par <= 0f || pab <= 0f ||
                 pax < mpaMax.getX(units) || paw > mpaMax.getWidth(units) ||
                 pay < mpaMax.getY(units) || pah > mpaMax.getHeight(units)) {
                 return null;
