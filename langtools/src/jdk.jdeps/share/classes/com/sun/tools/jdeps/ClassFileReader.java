@@ -173,7 +173,7 @@ public class ClassFileReader {
 
     static boolean isClass(Path file) {
         String fn = file.getFileName().toString();
-        return fn.endsWith(".class") && !fn.equals(MODULE_INFO);
+        return fn.endsWith(".class");
     }
 
     class FileIterator implements Iterator<ClassFile> {
@@ -306,7 +306,7 @@ public class ClassFileReader {
         protected Set<String> scan() {
             try (JarFile jf = new JarFile(path.toFile())) {
                 return jf.stream().map(JarEntry::getName)
-                         .filter(n -> n.endsWith(".class") && !n.endsWith(MODULE_INFO))
+                         .filter(n -> n.endsWith(".class"))
                          .collect(Collectors.toSet());
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
@@ -409,7 +409,7 @@ public class ClassFileReader {
             while (entries.hasMoreElements()) {
                 JarEntry e = entries.nextElement();
                 String name = e.getName();
-                if (name.endsWith(".class") && !name.equals(MODULE_INFO)) {
+                if (name.endsWith(".class")) {
                     return e;
                 }
             }

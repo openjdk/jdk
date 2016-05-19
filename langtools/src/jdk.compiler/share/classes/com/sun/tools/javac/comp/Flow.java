@@ -2345,10 +2345,11 @@ public class Flow {
         // assigned before reading their value
         public void visitSelect(JCFieldAccess tree) {
             super.visitSelect(tree);
+            JCTree sel = TreeInfo.skipParens(tree.selected);
             if (enforceThisDotInit &&
-                tree.selected.hasTag(IDENT) &&
-                ((JCIdent)tree.selected).name == names._this &&
-                tree.sym.kind == VAR) {
+                    sel.hasTag(IDENT) &&
+                    ((JCIdent)sel).name == names._this &&
+                    tree.sym.kind == VAR) {
                 checkInit(tree.pos(), (VarSymbol)tree.sym);
             }
         }

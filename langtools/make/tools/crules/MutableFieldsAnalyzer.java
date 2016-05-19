@@ -41,6 +41,7 @@ import static com.sun.tools.javac.code.Flags.STATIC;
 import static com.sun.tools.javac.code.Flags.SYNTHETIC;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 
+/**This analyzer guards against non-final static fields.*/
 public class MutableFieldsAnalyzer extends AbstractCodingRulesAnalyzer {
 
     public MutableFieldsAnalyzer(JavacTask task) {
