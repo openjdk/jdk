@@ -127,7 +127,7 @@ public:
     number_of_flags
   } flags;
 
-  bool _modified[number_of_flags];
+  bool _modified[number_of_flags]; // Records what options where set by a directive
 
 #define flag_store_definition(name, type, dvalue, cc_flag) type name##Option;
   compilerdirectives_common_flags(flag_store_definition)
@@ -135,7 +135,7 @@ public:
   compilerdirectives_c1_flags(flag_store_definition)
 
 // Casting to get the same function signature for all setters. Used from parser.
-#define set_function_definition(name, type, dvalue, cc_flag) void set_##name(void* value) { type val = *(type*)value; name##Option = val; _modified[name##Index] = 1; }
+#define set_function_definition(name, type, dvalue, cc_flag) void set_##name(void* value) { type val = *(type*)value; name##Option = val; _modified[name##Index] = true; }
   compilerdirectives_common_flags(set_function_definition)
   compilerdirectives_c2_flags(set_function_definition)
   compilerdirectives_c1_flags(set_function_definition)
@@ -149,7 +149,7 @@ public:
 void print(outputStream* st) {
     print_inline(st);
     st->print("  ");
-#define print_function_definition(name, type, dvalue, cc_flag) print_##type(st, #name, this->name##Option, true);//(bool)_modified[name##Index]);
+#define print_function_definition(name, type, dvalue, cc_flag) print_##type(st, #name, this->name##Option, true);
     compilerdirectives_common_flags(print_function_definition)
     compilerdirectives_c2_flags(print_function_definition)
     compilerdirectives_c1_flags(print_function_definition)
