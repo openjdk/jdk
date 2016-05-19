@@ -21,16 +21,13 @@
  * questions.
  */
 
-package p4.internal;
+module m6 {
+    requires unsafe;
 
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
+    // no dependency on sun.misc.Unsafe directly or indirectly
+    exports p6.safe;
 
-public class Impl {
-    private final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-
-    public String name() {
-        return Impl.class.getName();
-    }
-
+    // direct dependency on org.unsafe
+    // hence indirect dependency on sun.misc.Unsafe
+    exports p6.indirect;
 }

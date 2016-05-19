@@ -21,16 +21,8 @@
  * questions.
  */
 
-package p4.internal;
+module m8 {
+    requires m5;
 
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
-
-public class Impl {
-    private final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-
-    public String name() {
-        return Impl.class.getName();
-    }
-
+    // use p5.internal
 }

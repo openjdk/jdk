@@ -21,16 +21,12 @@
  * questions.
  */
 
-package p4.internal;
+package p6.safe;
 
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
-
-public class Impl {
-    private final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-
-    public String name() {
-        return Impl.class.getName();
+// no direct or indirect dependency on sun.misc.Unsafe
+public class Lib {
+    public static void doit() {
+        System.out.println(Lib.class.getName());
+        org.safe.Lib.doit();
     }
-
 }

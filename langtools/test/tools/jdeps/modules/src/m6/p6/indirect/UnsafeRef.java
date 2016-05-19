@@ -21,16 +21,11 @@
  * questions.
  */
 
-package p4.internal;
+package p6.indirect;
 
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
-
-public class Impl {
-    private final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-
-    public String name() {
-        return Impl.class.getName();
-    }
-
+// indirectly depend on sun.misc.Unsafe
+public class UnsafeRef {
+     public static org.unsafe.UseUnsafe get() {
+         return new org.unsafe.UseUnsafe();
+     }
 }

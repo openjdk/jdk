@@ -41,22 +41,27 @@ import java.util.stream.Stream;
  * 2. -filter:package to filter out same-package dependencies
  *    This filter is applied when jdeps parses the class files
  *    and filtered dependencies are not stored in the Analyzer.
- * 3. -module specifies to match target dependencies from the given module
+ * 3. -requires specifies to match target dependence from the given module
  *    This gets expanded into package lists to be filtered.
  * 4. -filter:archive to filter out same-archive dependencies
  *    This filter is applied later in the Analyzer as the
  *    containing archive of a target class may not be known until
  *    the entire archive
  */
-class JdepsFilter implements Dependency.Filter, Analyzer.Filter {
+public class JdepsFilter implements Dependency.Filter, Analyzer.Filter {
+
+    public static final JdepsFilter DEFAULT_FILTER =
+        new JdepsFilter.Builder().filter(true, true).build();
+
     private final Dependency.Filter filter;
     private final Pattern filterPattern;
     private final boolean filterSamePackage;
     private final boolean filterSameArchive;
     private final boolean findJDKInternals;
     private final Pattern includePattern;
-    private final Set<String> includePackages;
-    private final Set<String> excludeModules;
+    private final Pattern includeSystemModules;
+
+    private final Set<String> requires;
 
     private JdepsFilter(Dependency.Filter filter,
                         Pattern filterPattern,
@@ -64,16 +69,16 @@ class JdepsFilter implements Dependency.Filter, Analyzer.Filter {
                         boolean filterSameArchive,
                         boolean findJDKInternals,
                         Pattern includePattern,
-                        Set<String> includePackages,
-                        Set<String> excludeModules) {
+                        Pattern includeSystemModules,
+                        Set<String> requires) {
         this.filter = filter;
         this.filterPattern = filterPattern;
         this.filterSamePackage = filterSamePackage;
         this.filterSameArchive = filterSameArchive;
         this.findJDKInternals = findJDKInternals;
         this.includePattern = includePattern;
-        this.includePackages = includePackages;
-        this.excludeModules = excludeModules;
+        this.includeSystemModules = includeSystemModules;
+        this.requires = requires;
     }
 
     /**
@@ -82,12 +87,7 @@ class JdepsFilter implements Dependency.Filter, Analyzer.Filter {
      * @param cn fully-qualified name
      */
     public boolean matches(String cn) {
-        if (includePackages.isEmpty() && includePattern == null)
-            return true;
-
-        int i = cn.lastIndexOf('.');
-        String pn = i > 0 ? cn.substring(0, i) : "";
-        if (includePackages.contains(pn))
+        if (includePattern == null)
             return true;
 
         if (includePattern != null)
@@ -97,29 +97,39 @@ class JdepsFilter implements Dependency.Filter, Analyzer.Filter {
     }
 
     /**
-     * Tests if the given source includes classes specified in includePattern
-     * or includePackages filters.
+     * Tests if the given source includes classes specified in -include option
      *
      * This method can be used to determine if the given source should eagerly
      * be processed.
      */
     public boolean matches(Archive source) {
-        if (!includePackages.isEmpty() && source.getModule().isNamed()) {
-            boolean found = source.getModule().packages()
-                                  .stream()
-                                  .filter(pn -> includePackages.contains(pn))
-                                  .findAny().isPresent();
-            if (found)
-                return true;
+        if (includePattern != null) {
+            return source.reader().entries().stream()
+                    .map(name -> name.replace('/', '.'))
+                    .filter(name -> !name.equals("module-info.class"))
+                    .anyMatch(this::matches);
         }
-        if (!includePackages.isEmpty() || includePattern != null) {
-            return source.reader().entries()
-                         .stream()
-                         .map(name -> name.replace('/', '.'))
-                         .filter(this::matches)
-                         .findAny().isPresent();
-        }
-        return false;
+        return hasTargetFilter();
+    }
+
+    public boolean include(Archive source) {
+        Module module = source.getModule();
+        // skip system module by default; or if includeSystemModules is set
+        // only include the ones matching the pattern
+        return  !module.isSystem() || (includeSystemModules != null &&
+            includeSystemModules.matcher(module.name()).matches());
+    }
+
+    public boolean hasIncludePattern() {
+        return includePattern != null || includeSystemModules != null;
+    }
+
+    public boolean hasTargetFilter() {
+        return filter != null;
+    }
+
+    public Set<String> requiresFilter() {
+        return requires;
     }
 
     // ----- Dependency.Filter -----
@@ -164,42 +174,35 @@ class JdepsFilter implements Dependency.Filter, Analyzer.Filter {
         return true;
     }
 
-    /**
-     * Returns true if dependency should be recorded for the given source.
-     */
-    public boolean accept(Archive source) {
-        return !excludeModules.contains(source.getName());
-    }
-
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("exclude modules: ")
-          .append(excludeModules.stream().sorted().collect(Collectors.joining(",")))
-          .append("\n");
+        sb.append("include pattern: ").append(includePattern).append("\n");
         sb.append("filter same archive: ").append(filterSameArchive).append("\n");
         sb.append("filter same package: ").append(filterSamePackage).append("\n");
+        sb.append("requires: ").append(requires).append("\n");
         return sb.toString();
     }
 
-    static class Builder {
-        Dependency.Filter filter;
+    public static class Builder {
+        static Pattern SYSTEM_MODULE_PATTERN = Pattern.compile("java\\..*|jdk\\..*|javafx\\..*");
         Pattern filterPattern;
+        Pattern regex;
         boolean filterSamePackage;
         boolean filterSameArchive;
         boolean findJDKInterals;
         // source filters
         Pattern includePattern;
-        Set<String> includePackages = new HashSet<>();
-        Set<String> includeModules = new HashSet<>();
-        Set<String> excludeModules = new HashSet<>();
+        Pattern includeSystemModules;
+        Set<String> requires = new HashSet<>();
+        Set<String> targetPackages = new HashSet<>();
 
         public Builder packages(Set<String> packageNames) {
-            this.filter = Dependencies.getPackageFilter(packageNames, false);
+            this.targetPackages.addAll(packageNames);
             return this;
         }
         public Builder regex(Pattern regex) {
-            this.filter = Dependencies.getRegexFilter(regex);
+            this.regex = regex;
             return this;
         }
         public Builder filter(Pattern regex) {
@@ -211,6 +214,13 @@ class JdepsFilter implements Dependency.Filter, Analyzer.Filter {
             this.filterSameArchive = sameArchive;
             return this;
         }
+        public Builder requires(String name, Set<String> packageNames) {
+            this.requires.add(name);
+            this.targetPackages.addAll(packageNames);
+
+            includeIfSystemModule(name);
+            return this;
+        }
         public Builder findJDKInternals(boolean value) {
             this.findJDKInterals = value;
             return this;
@@ -219,30 +229,33 @@ class JdepsFilter implements Dependency.Filter, Analyzer.Filter {
             this.includePattern = regex;
             return this;
         }
-        public Builder includePackage(String pn) {
-            this.includePackages.add(pn);
+        public Builder includeSystemModules(Pattern regex) {
+            this.includeSystemModules = regex;
             return this;
         }
-        public Builder includeModules(Set<String> includes) {
-            this.includeModules.addAll(includes);
-            return this;
-        }
-        public Builder excludeModules(Set<String> excludes) {
-            this.excludeModules.addAll(excludes);
+        public Builder includeIfSystemModule(String name) {
+            if (includeSystemModules == null &&
+                    SYSTEM_MODULE_PATTERN.matcher(name).matches()) {
+                this.includeSystemModules = SYSTEM_MODULE_PATTERN;
+            }
             return this;
         }
 
-        JdepsFilter build() {
+        public JdepsFilter build() {
+            Dependency.Filter filter = null;
+            if (regex != null)
+                filter = Dependencies.getRegexFilter(regex);
+            else if (!targetPackages.isEmpty()) {
+                filter = Dependencies.getPackageFilter(targetPackages, false);
+            }
             return new JdepsFilter(filter,
                                    filterPattern,
                                    filterSamePackage,
                                    filterSameArchive,
                                    findJDKInterals,
                                    includePattern,
-                                   includePackages,
-                                   excludeModules.stream()
-                                        .filter(mn -> !includeModules.contains(mn))
-                                        .collect(Collectors.toSet()));
+                                   includeSystemModules,
+                                   requires);
         }
 
     }

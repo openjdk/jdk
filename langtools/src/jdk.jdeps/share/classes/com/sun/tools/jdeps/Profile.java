@@ -26,9 +26,13 @@
 package com.sun.tools.jdeps;
 
 import java.io.IOException;
+import java.lang.module.ModuleDescriptor;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -44,17 +48,18 @@ enum Profile {
     // need a way to determine JRE modules
     SE_JRE("Java SE JRE", 4, "java.se", "jdk.charsets",
                             "jdk.crypto.ec", "jdk.crypto.pkcs11",
-                            "jdk.crypto.mscapi", "jdk.crypto.ucrypto", "jdk.jvmstat",
+                            "jdk.crypto.mscapi", "jdk.crypto.ucrypto",
                             "jdk.localedata", "jdk.scripting.nashorn", "jdk.zipfs"),
     FULL_JRE("Full JRE", 5, "java.se.ee", "jdk.charsets",
                             "jdk.crypto.ec", "jdk.crypto.pkcs11",
                             "jdk.crypto.mscapi", "jdk.crypto.ucrypto", "jdk.jvmstat",
-                            "jdk.localedata", "jdk.scripting.nashorn", "jdk.zipfs");
+                            "jdk.localedata", "jdk.scripting.nashorn",
+                            "jdk.unsupported", "jdk.zipfs");
 
     final String name;
     final int profile;
     final String[] mnames;
-    final Set<Module> modules = new HashSet<>();
+    final Map<String, Module> modules = new HashMap<>();
 
     Profile(String name, int profile, String... mnames) {
         this.name = name;
@@ -75,12 +80,18 @@ enum Profile {
         return JDK.isEmpty() ? 0 : Profile.values().length;
     }
 
+    Optional<Module> findModule(String name) {
+        return modules.containsKey(name)
+            ? Optional.of(modules.get(name))
+            : Optional.empty();
+    }
+
     /**
      * Returns the Profile for the given package name; null if not found.
      */
     public static Profile getProfile(String pn) {
         for (Profile p : Profile.values()) {
-            for (Module m : p.modules) {
+            for (Module m : p.modules.values()) {
                 if (m.packages().contains(pn)) {
                     return p;
                 }
@@ -94,7 +105,7 @@ enum Profile {
      */
     public static Profile getProfile(Module m) {
         for (Profile p : Profile.values()) {
-            if (p.modules.contains(m)) {
+            if (p.modules.containsValue(m)) {
                 return p;
             }
         }
@@ -102,34 +113,28 @@ enum Profile {
     }
 
     private final static Set<Module> JDK = new HashSet<>();
-    static synchronized void init(Map<String, Module> installed) {
-        for (Profile p : Profile.values()) {
-            for (String mn : p.mnames) {
-                // this includes platform-dependent module that may not exist
-                Module m = installed.get(mn);
-                if (m != null) {
-                    p.addModule(installed, m);
-                }
-            }
-        }
+    static synchronized void init(Map<String, Module> systemModules) {
+        Arrays.stream(Profile.values()).forEach(p ->
+            // this includes platform-dependent module that may not exist
+            Arrays.stream(p.mnames)
+                  .filter(systemModules::containsKey)
+                  .map(systemModules::get)
+                  .forEach(m -> p.addModule(systemModules, m)));
 
         // JDK modules should include full JRE plus other jdk.* modules
         // Just include all installed modules.  Assume jdeps is running
         // in JDK image
-        JDK.addAll(installed.values());
+        JDK.addAll(systemModules.values());
     }
 
-    private void addModule(Map<String, Module> installed, Module m) {
-        modules.add(m);
-        for (String n : m.requires().keySet()) {
-            Module d = installed.get(n);
-            if (d == null) {
-                throw new InternalError("module " + n + " required by " +
-                        m.name() + " doesn't exist");
-            }
-            modules.add(d);
-        }
+    private void addModule(Map<String, Module> systemModules, Module module) {
+        modules.put(module.name(), module);
+        module.descriptor().requires().stream()
+              .map(ModuleDescriptor.Requires::name)
+              .map(systemModules::get)
+              .forEach(m -> modules.put(m.name(), m));
     }
+
     // for debugging
     public static void main(String[] args) throws IOException {
         // find platform modules
@@ -139,14 +144,6 @@ enum Profile {
         for (Profile p : Profile.values()) {
             String profileName = p.name;
             System.out.format("%2d: %-10s  %s%n", p.profile, profileName, p.modules);
-            for (Module m: p.modules) {
-                System.out.format("module %s%n", m.name());
-                System.out.format("   requires %s%n", m.requires());
-                for (Map.Entry<String,Set<String>> e: m.exports().entrySet()) {
-                    System.out.format("   exports %s %s%n", e.getKey(),
-                        e.getValue().isEmpty() ? "" : "to " + e.getValue());
-                }
-            }
         }
         System.out.println("All JDK modules:-");
         JDK.stream().sorted(Comparator.comparing(Module::name))

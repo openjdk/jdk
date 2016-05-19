@@ -21,16 +21,12 @@
  * questions.
  */
 
-package p4.internal;
+package p8;
 
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
+import p5.internal.T;
 
-public class Impl {
-    private final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-
-    public String name() {
-        return Impl.class.getName();
+public class Main {
+    public static void main() {
+        T t = new T();
     }
-
 }
