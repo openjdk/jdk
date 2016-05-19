@@ -650,12 +650,29 @@ public final class ProviderList {
         }
     }
 
+    /* Defined Groups for jdk.security.provider.preferred */
+    private static final String SHA2Group[] = { "SHA-224", "SHA-256",
+            "SHA-384", "SHA-512", "SHA-512/224", "SHA-512/256" };
+    private static final String HmacSHA2Group[] = { "HmacSHA224",
+            "HmacSHA256", "HmacSHA384", "HmacSHA512"};
+    private static final String SHA2RSAGroup[] = { "SHA224withRSA",
+            "SHA256withRSA", "SHA384withRSA", "SHA512withRSA"};
+    private static final String SHA2DSAGroup[] = { "SHA224withDSA",
+            "SHA256withDSA", "SHA384withDSA", "SHA512withDSA"};
+    private static final String SHA2ECDSAGroup[] = { "SHA224withECDSA",
+            "SHA256withECDSA", "SHA384withECDSA", "SHA512withECDSA"};
+    private static final String SHA3Group[] = { "SHA3-224", "SHA3-256",
+            "SHA3-384", "SHA3-512" };
+    private static final String HmacSHA3Group[] = { "HmacSHA3-224",
+            "HmacSHA3-256", "HmacSHA3-384", "HmacSHA3-512"};
+
     // Individual preferred property entry from jdk.security.provider.preferred
-    private class PreferredEntry {
-        String type = null;
-        String algorithm;
-        String provider;
-        String alternateName = null;
+    private static class PreferredEntry {
+        private String type = null;
+        private String algorithm;
+        private String provider;
+        private String alternateNames[] = null;
+        private boolean group = false;
 
         PreferredEntry(String t, String p) {
             int i = t.indexOf('.');
@@ -667,47 +684,83 @@ public final class ProviderList {
             }
 
             provider = p;
-            if (algorithm.compareToIgnoreCase("SHA1") == 0) {
-                alternateName = "SHA-1";
+            // Group definitions
+            if (type != null && type.compareToIgnoreCase("Group") == 0) {
+                // Currently intrinsic algorithm groups
+                if (algorithm.compareToIgnoreCase("SHA2") == 0) {
+                    alternateNames = SHA2Group;
+                } else if (algorithm.compareToIgnoreCase("HmacSHA2") == 0) {
+                    alternateNames = HmacSHA2Group;
+                } else if (algorithm.compareToIgnoreCase("SHA2RSA") == 0) {
+                    alternateNames = SHA2RSAGroup;
+                } else if (algorithm.compareToIgnoreCase("SHA2DSA") == 0) {
+                    alternateNames = SHA2DSAGroup;
+                } else if (algorithm.compareToIgnoreCase("SHA2ECDSA") == 0) {
+                    alternateNames = SHA2ECDSAGroup;
+                } else if (algorithm.compareToIgnoreCase("SHA3") == 0) {
+                    alternateNames = SHA3Group;
+                } else if (algorithm.compareToIgnoreCase("HmacSHA3") == 0) {
+                    alternateNames = HmacSHA3Group;
+                }
+                if (alternateNames != null) {
+                    group = true;
+                }
+
+            // If the algorithm name given is SHA1
+            } else if (algorithm.compareToIgnoreCase("SHA1") == 0) {
+                alternateNames = new String[] { "SHA-1" };
             } else if (algorithm.compareToIgnoreCase("SHA-1") == 0) {
-                alternateName = "SHA1";
+                alternateNames = new String[] { "SHA1" };
             }
         }
 
         boolean match(String t, String a) {
             if (debug != null) {
-                debug.println("Config match:  " + toString() + " == [" + t +
-                        ", " + a + "]");
+                debug.println("Config check:  " + toString() + " == " +
+                        print(t, a, null));
             }
 
             // Compare service type if configured
-            if (type != null && type.compareToIgnoreCase(t) != 0) {
+            if (type != null && !group && type.compareToIgnoreCase(t) != 0) {
                 return false;
             }
 
             // Compare the algorithm string.
-            if (a.compareToIgnoreCase(algorithm) == 0) {
+            if (!group && a.compareToIgnoreCase(algorithm) == 0) {
                 if (debug != null) {
-                    debug.println("Config entry found:  " + toString());
+                    debug.println("Config entry matched:  " + toString());
                 }
                 return true;
             }
 
-            if (alternateName != null &&
-                    a.compareToIgnoreCase(alternateName) == 0) {
-                if (debug != null) {
-                    debug.println("Config entry found (alternateName):  " +
-                            toString());
+            if (alternateNames != null) {
+                for (String alt : alternateNames) {
+                    if (debug != null) {
+                        debug.println("AltName check:  " + print(type, alt,
+                                provider));
+                    }
+                    if (a.compareToIgnoreCase(alt) == 0) {
+                        if (debug != null) {
+                            debug.println("AltName entry matched:  " +
+                                    provider);
+                        }
+                        return true;
+                    }
                 }
-                return true;
             }
 
             // No match
             return false;
         }
 
+        // Print debugging output of PreferredEntry
+        private String print(String t, String a, String p) {
+            return "[" + ((t != null) ? t : "" ) + ", " + a +
+                    ((p != null) ? " : " + p : "" ) + "] ";
+        }
+
         public String toString() {
-            return "[" + type + ", " + algorithm + " : " + provider + "] ";
+            return print(type, algorithm, provider);
         }
     }
 
