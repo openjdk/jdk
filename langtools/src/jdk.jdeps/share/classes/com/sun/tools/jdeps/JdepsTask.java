@@ -28,6 +28,7 @@ package com.sun.tools.jdeps;
 import static com.sun.tools.jdeps.Analyzer.NOT_FOUND;
 import static com.sun.tools.jdeps.Analyzer.Type.*;
 import static com.sun.tools.jdeps.JdepsWriter.*;
+import static com.sun.tools.jdeps.JdepsConfiguration.ALL_MODULE_PATH;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -37,6 +38,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -246,6 +249,25 @@ class JdepsTask {
                 task.options.upgradeModulePath = arg;
             }
         },
+        new Option(true, "-system") {
+            void process(JdepsTask task, String opt, String arg) throws BadArgs {
+                if (arg.equals("none")) {
+                    task.options.systemModulePath = null;
+                } else {
+                    Path path = Paths.get(arg);
+                    if (Files.isRegularFile(path.resolve("lib").resolve("modules")))
+                        task.options.systemModulePath = arg;
+                    else
+                        throw new BadArgs("err.invalid.path", arg);
+                }
+            }
+        },
+        new Option(true, "-addmods") {
+            void process(JdepsTask task, String opt, String arg) throws BadArgs {
+                Set<String> mods = Set.of(arg.split(","));
+                task.options.addmods.addAll(mods);
+            }
+        },
         new Option(true, "-m") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 task.options.rootModule = arg;
@@ -264,7 +286,7 @@ class JdepsTask {
                 task.options.regex = Pattern.compile(arg);
             }
         },
-        new Option(true, "-module") {
+        new Option(true, "-requires") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.requires.add(arg);
             }
@@ -315,6 +337,7 @@ class JdepsTask {
                 task.options.showProfile = true;
             }
         },
+
         new Option(false, "-R", "-recursive") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.depth = 0;
@@ -323,6 +346,17 @@ class JdepsTask {
                 task.options.filterSamePackage = false;
             }
         },
+
+        new Option(false, "-I", "-inverse") {
+            void process(JdepsTask task, String opt, String arg) {
+                task.options.inverse = true;
+                // equivalent to the inverse of compile-time view analysis
+                task.options.compileTimeView = true;
+                task.options.filterSamePackage = true;
+                task.options.filterSameArchive = true;
+            }
+        },
+
         new Option(false, "-ct", "-compile-time") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.compileTimeView = true;
@@ -423,6 +457,16 @@ class JdepsTask {
                 return EXIT_CMDERR;
             }
 
+            if (options.inverse && options.depth != 1) {
+                reportError("err.invalid.inverse.option", "-R");
+                return EXIT_CMDERR;
+            }
+
+            if (options.inverse && options.numFilters() == 0) {
+                reportError("err.invalid.filters");
+                return EXIT_CMDERR;
+            }
+
             if ((options.findJDKInternals) && (options.hasFilter() || options.showSummary)) {
                 showHelp();
                 return EXIT_CMDERR;
@@ -463,8 +507,9 @@ class JdepsTask {
             .forEach(e -> System.out.format("split package: %s %s%n", e.getKey(),
                                             e.getValue().toString()));
 
-        // check if any module specified in -module is missing
+        // check if any module specified in -requires is missing
         Stream.concat(options.addmods.stream(), options.requires.stream())
+              .filter(mn -> !config.isValidToken(mn))
               .forEach(mn -> config.findModule(mn).orElseThrow(() ->
                   new UncheckedBadArgs(new BadArgs("err.module.not.found", mn))));
 
@@ -484,7 +529,11 @@ class JdepsTask {
             return new ModuleAnalyzer(config, log).genDotFiles(options.dotOutputDir);
         }
 
-        return analyzeDeps(config);
+        if (options.inverse) {
+            return analyzeInverseDeps(config);
+        } else {
+            return analyzeDeps(config);
+        }
     }
 
     private JdepsConfiguration buildConfig() throws IOException {
@@ -540,7 +589,7 @@ class JdepsTask {
         boolean ok = analyzer.run(options.compileTimeView, options.depth);
 
         // print skipped entries, if any
-        analyzer.analyzer.archives()
+        analyzer.archives()
             .forEach(archive -> archive.reader()
                 .skippedEntries().stream()
                 .forEach(name -> warning("warn.skipped.entry",
@@ -567,6 +616,40 @@ class JdepsTask {
 
         }
         return ok;
+    }
+
+    private boolean analyzeInverseDeps(JdepsConfiguration config) throws IOException {
+        JdepsWriter writer = new SimpleWriter(log,
+                                              options.verbose,
+                                              options.showProfile,
+                                              options.showModule);
+
+        InverseDepsAnalyzer analyzer = new InverseDepsAnalyzer(config,
+                                                               dependencyFilter(config),
+                                                               writer,
+                                                               options.verbose,
+                                                               options.apiOnly);
+        boolean ok = analyzer.run();
+
+        log.println();
+        if (!options.requires.isEmpty())
+            log.format("Inverse transitive dependences on %s%n", options.requires);
+        else
+            log.format("Inverse transitive dependences matching %s%n",
+                options.regex != null
+                    ? options.regex.toString()
+                    : "packages " + options.packageNames);
+
+        analyzer.inverseDependences().stream()
+                .sorted(Comparator.comparing(this::sortPath))
+                .forEach(path -> log.println(path.stream()
+                                                .map(Archive::getName)
+                                                .collect(Collectors.joining(" <- "))));
+        return ok;
+    }
+
+    private String sortPath(Deque<Archive> path) {
+        return path.peekFirst().getName();
     }
 
     private boolean genModuleInfo(JdepsConfiguration config) throws IOException {
@@ -603,7 +686,7 @@ class JdepsTask {
      * Returns a filter used during dependency analysis
      */
     private JdepsFilter dependencyFilter(JdepsConfiguration config) {
-        // Filter specified by -filter, -package, -regex, and -module options
+        // Filter specified by -filter, -package, -regex, and -requires options
         JdepsFilter.Builder builder = new JdepsFilter.Builder();
 
         // source filters
@@ -613,7 +696,7 @@ class JdepsTask {
         builder.filter(options.filterSamePackage, options.filterSameArchive);
         builder.findJDKInternals(options.findJDKInternals);
 
-        // -module
+        // -requires
         if (!options.requires.isEmpty()) {
             options.requires.stream()
                 .forEach(mn -> {
@@ -753,6 +836,7 @@ class JdepsTask {
         Pattern regex;             // apply to the dependences
         Pattern includePattern;
         Pattern includeSystemModulePattern;
+        boolean inverse = false;
         boolean compileTimeView = false;
         Set<String> checkModuleDeps;
         String systemModulePath = System.getProperty("java.home");
