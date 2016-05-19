@@ -44,11 +44,6 @@ void  AbstractWorkGang::initialize_workers() {
     vm_exit_out_of_memory(0, OOM_MALLOC_ERROR, "Cannot create GangWorker array.");
   }
 
-  _active_workers = ParallelGCThreads;
-  if (UseDynamicNumberOfGCThreads && !FLAG_IS_CMDLINE(ParallelGCThreads)) {
-    _active_workers = 1U;
-  }
-
   add_workers(true);
 }
 
