@@ -21,16 +21,15 @@
  * questions.
  */
 
-package p4.internal;
+module unsafe {
+    requires jdk.unsupported;
 
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
+    // direct dependency on sun.misc.Unsafe
+    exports org.unsafe;
 
-public class Impl {
-    private final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+    // no dependency on sun.misc.Unsafe directly or indirectly
+    exports org.safe;
 
-    public String name() {
-        return Impl.class.getName();
-    }
-
+    // indirect dependency on sun.misc.Unsafe
+    exports org.indirect;
 }

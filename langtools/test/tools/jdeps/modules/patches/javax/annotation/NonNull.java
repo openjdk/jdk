@@ -21,16 +21,17 @@
  * questions.
  */
 
-package p4.internal;
+package javax.annotation;
 
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public class Impl {
-    private final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+import static java.lang.annotation.ElementType.*;
 
-    public String name() {
-        return Impl.class.getName();
-    }
-
+@Documented
+@Target({FIELD, LOCAL_VARIABLE})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface NonNull {
 }

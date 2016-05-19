@@ -24,15 +24,24 @@
  */
 package com.sun.tools.jdeps;
 
-import static com.sun.tools.jdeps.Analyzer.Type.CLASS;
+import static com.sun.tools.jdeps.JdepsTask.*;
 import static com.sun.tools.jdeps.Analyzer.NOT_FOUND;
-import static com.sun.tools.jdeps.Module.trace;
+import static com.sun.tools.jdeps.JdepsFilter.DEFAULT_FILTER;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UncheckedIOException;
+import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleDescriptor.Exports;
+import java.lang.module.ModuleDescriptor.Provides;
+import java.lang.module.ModuleDescriptor.Requires;
+import java.lang.module.ModuleFinder;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -40,168 +49,159 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+
 public class ModuleInfoBuilder {
-    final ModulePaths modulePaths;
+    final JdepsConfiguration configuration;
+    final Path outputdir;
+
     final DependencyFinder dependencyFinder;
-    final JdepsFilter filter;
     final Analyzer analyzer;
-    final Map<Module, Module> strictModules = new HashMap<>();
-    ModuleInfoBuilder(ModulePaths modulePaths, DependencyFinder finder) {
-        this.modulePaths = modulePaths;
-        this.dependencyFinder = finder;
-        this.filter = new JdepsFilter.Builder().filter(true, true).build();
-        this.analyzer = new Analyzer(CLASS, filter);
+    final Map<Module, Module> strictModules;
+    public ModuleInfoBuilder(JdepsConfiguration configuration,
+                             List<String> args,
+                             Path outputdir) {
+        this.configuration = configuration;
+        this.outputdir = outputdir;
+
+        this.dependencyFinder = new DependencyFinder(configuration, DEFAULT_FILTER);
+        this.analyzer = new Analyzer(configuration, Analyzer.Type.CLASS, DEFAULT_FILTER);
+
+        // add targets to modulepath if it has module-info.class
+        List<Path> paths = args.stream()
+            .map(fn -> Paths.get(fn))
+            .collect(Collectors.toList());
+
+        // automatic module to convert to strict module
+        this.strictModules = ModuleFinder.of(paths.toArray(new Path[0]))
+                .findAll().stream()
+                .map(configuration::toModule)
+                .collect(Collectors.toMap(Function.identity(), Function.identity()));
+
+        Optional<Module> om = strictModules.keySet().stream()
+                                    .filter(m -> !m.descriptor().isAutomatic())
+                                    .findAny();
+        if (om.isPresent()) {
+            throw new UncheckedBadArgs(new BadArgs("err.genmoduleinfo.not.jarfile",
+                                                   om.get().getPathName()));
+        }
+        if (strictModules.isEmpty()) {
+            throw new UncheckedBadArgs(new BadArgs("err.invalid.path", args));
+        }
     }
 
-    private Stream<Module> automaticModules() {
-        return modulePaths.getModules().values()
-                .stream()
-                .filter(Module::isAutomatic);
+    public boolean run() throws IOException {
+        try {
+            // pass 1: find API dependencies
+            Map<Archive, Set<Archive>> requiresPublic = computeRequiresPublic();
+
+            // pass 2: analyze all class dependences
+            dependencyFinder.parse(automaticModules().stream());
+
+            analyzer.run(automaticModules(), dependencyFinder.locationToArchive());
+
+            // computes requires and requires public
+            automaticModules().forEach(m -> {
+                Map<String, Boolean> requires;
+                if (requiresPublic.containsKey(m)) {
+                    requires = requiresPublic.get(m).stream()
+                        .map(Archive::getModule)
+                        .collect(Collectors.toMap(Module::name, (v) -> Boolean.TRUE));
+                } else {
+                    requires = new HashMap<>();
+                }
+                analyzer.requires(m)
+                    .map(Archive::getModule)
+                    .forEach(d -> requires.putIfAbsent(d.name(), Boolean.FALSE));
+
+                strictModules.put(m, m.toStrictModule(requires));
+            });
+
+            // generate module-info.java
+            descriptors().forEach(md -> writeModuleInfo(outputdir, md));
+
+            // find any missing dependences
+            return automaticModules().stream()
+                        .flatMap(analyzer::requires)
+                        .allMatch(m -> !m.equals(NOT_FOUND));
+        } finally {
+            dependencyFinder.shutdown();
+        }
+    }
+
+    /**
+     * Returns the stream of resulting modules
+     */
+    Stream<Module> modules() {
+        return strictModules.values().stream();
+    }
+
+    /**
+     * Returns the stream of resulting ModuleDescriptors
+     */
+    public Stream<ModuleDescriptor> descriptors() {
+        return strictModules.values().stream().map(Module::descriptor);
+    }
+
+    void visitMissingDeps(Analyzer.Visitor visitor) {
+        automaticModules().stream()
+            .filter(m -> analyzer.requires(m).anyMatch(d -> d.equals(NOT_FOUND)))
+            .forEach(m -> {
+                analyzer.visitDependences(m, visitor, Analyzer.Type.VERBOSE);
+            });
+    }
+    void writeModuleInfo(Path dir, ModuleDescriptor descriptor) {
+        String mn = descriptor.name();
+        Path srcFile = dir.resolve(mn).resolve("module-info.java");
+        try {
+            Files.createDirectories(srcFile.getParent());
+            System.out.println("writing to " + srcFile);
+            try (PrintWriter pw = new PrintWriter(Files.newOutputStream(srcFile))) {
+                printModuleInfo(pw, descriptor);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private void printModuleInfo(PrintWriter writer, ModuleDescriptor descriptor) {
+        writer.format("module %s {%n", descriptor.name());
+
+        Map<String, Module> modules = configuration.getModules();
+        // first print the JDK modules
+        descriptor.requires().stream()
+                  .filter(req -> !req.name().equals("java.base"))   // implicit requires
+                  .sorted(Comparator.comparing(Requires::name))
+                  .forEach(req -> writer.format("    requires %s;%n", req));
+
+        descriptor.exports().stream()
+                  .peek(exp -> {
+                      if (exp.targets().size() > 0)
+                          throw new InternalError(descriptor.name() + " qualified exports: " + exp);
+                  })
+                  .sorted(Comparator.comparing(Exports::source))
+                  .forEach(exp -> writer.format("    exports %s;%n", exp.source()));
+
+        descriptor.provides().values().stream()
+                    .sorted(Comparator.comparing(Provides::service))
+                    .forEach(p -> p.providers().stream()
+                        .sorted()
+                        .forEach(impl -> writer.format("    provides %s with %s;%n", p.service(), impl)));
+
+        writer.println("}");
+    }
+
+
+    private Set<Module> automaticModules() {
+        return strictModules.keySet();
     }
 
     /**
      * Compute 'requires public' dependences by analyzing API dependencies
      */
-    Map<Module, Set<Module>> computeRequiresPublic() throws IOException {
-        dependencyFinder.findDependencies(filter, true /* api only */, 1);
-        Analyzer pass1 = new Analyzer(Analyzer.Type.CLASS, filter);
+    private Map<Archive, Set<Archive>> computeRequiresPublic() throws IOException {
+        // parse the input modules
+        dependencyFinder.parseExportedAPIs(automaticModules().stream());
 
-        pass1.run(dependencyFinder.archives());
-
-        return automaticModules().collect(Collectors.toMap(Function.identity(),
-                source -> pass1.requires(source)
-                               .map(Archive::getModule)
-                               .collect(Collectors.toSet())));
-    }
-
-    boolean run(Analyzer.Type verbose, boolean quiet) throws IOException {
-        // add all automatic modules to the root set
-        automaticModules().forEach(dependencyFinder::addRoot);
-
-        // pass 1: find API dependencies
-        Map<Module, Set<Module>> requiresPublic = computeRequiresPublic();
-
-        // pass 2: analyze all class dependences
-        dependencyFinder.findDependencies(filter, false /* all classes */, 1);
-        analyzer.run(dependencyFinder.archives());
-
-        // computes requires and requires public
-        automaticModules().forEach(m -> {
-            Map<String, Boolean> requires;
-            if (requiresPublic.containsKey(m)) {
-                requires = requiresPublic.get(m)
-                        .stream()
-                        .collect(Collectors.toMap(Archive::getName, (v) -> Boolean.TRUE));
-            } else {
-                requires = new HashMap<>();
-            }
-            analyzer.requires(m)
-                    .forEach(d -> requires.putIfAbsent(d.getName(), Boolean.FALSE));
-
-            trace("strict module %s requires %s%n", m.name(), requires);
-            strictModules.put(m, m.toStrictModule(requires));
-        });
-
-        // find any missing dependences
-        Optional<Module> missingDeps = automaticModules()
-                .filter(this::missingDep)
-                .findAny();
-        if (missingDeps.isPresent()) {
-            automaticModules()
-                    .filter(this::missingDep)
-                    .forEach(m -> {
-                        System.err.format("Missing dependencies from %s%n", m.name());
-                        analyzer.visitDependences(m,
-                                new Analyzer.Visitor() {
-                                    @Override
-                                    public void visitDependence(String origin, Archive originArchive,
-                                                                String target, Archive targetArchive) {
-                                        if (targetArchive == NOT_FOUND)
-                                            System.err.format("   %-50s -> %-50s %s%n",
-                                                    origin, target, targetArchive.getName());
-                                    }
-                                }, verbose);
-                        System.err.println();
-                    });
-
-            System.err.println("ERROR: missing dependencies (check \"requires NOT_FOUND;\")");
-        }
-        return missingDeps.isPresent() ? false : true;
-    }
-
-    private boolean missingDep(Archive m) {
-        return analyzer.requires(m).filter(a -> a.equals(NOT_FOUND))
-                       .findAny().isPresent();
-    }
-
-    void build(Path dir) throws IOException {
-        ModuleInfoWriter writer = new ModuleInfoWriter(dir);
-        writer.generateOutput(strictModules.values(), analyzer);
-    }
-
-    private class ModuleInfoWriter {
-        private final Path outputDir;
-        ModuleInfoWriter(Path dir) {
-            this.outputDir = dir;
-        }
-
-        void generateOutput(Iterable<Module> modules, Analyzer analyzer) throws IOException {
-            // generate module-info.java file for each archive
-            for (Module m : modules) {
-                if (m.packages().contains("")) {
-                    System.err.format("ERROR: %s contains unnamed package.  " +
-                                      "module-info.java not generated%n", m.getPathName());
-                    continue;
-                }
-
-                String mn = m.getName();
-                Path srcFile = outputDir.resolve(mn).resolve("module-info.java");
-                Files.createDirectories(srcFile.getParent());
-                System.out.println("writing to " + srcFile);
-                try (PrintWriter pw = new PrintWriter(Files.newOutputStream(srcFile))) {
-                    printModuleInfo(pw, m);
-                }
-            }
-        }
-
-        private void printModuleInfo(PrintWriter writer, Module m) {
-            writer.format("module %s {%n", m.name());
-
-            Map<String, Module> modules = modulePaths.getModules();
-            Map<String, Boolean> requires = m.requires();
-            // first print the JDK modules
-            requires.keySet().stream()
-                    .filter(mn -> !mn.equals("java.base"))   // implicit requires
-                    .filter(mn -> modules.containsKey(mn) && modules.get(mn).isJDK())
-                    .sorted()
-                    .forEach(mn -> {
-                        String modifier = requires.get(mn) ? "public " : "";
-                        writer.format("    requires %s%s;%n", modifier, mn);
-                    });
-
-            // print requires non-JDK modules
-            requires.keySet().stream()
-                    .filter(mn -> !modules.containsKey(mn) || !modules.get(mn).isJDK())
-                    .sorted()
-                    .forEach(mn -> {
-                        String modifier = requires.get(mn) ? "public " : "";
-                        writer.format("    requires %s%s;%n", modifier, mn);
-                    });
-
-            m.packages().stream()
-                    .sorted()
-                    .forEach(pn -> writer.format("    exports %s;%n", pn));
-
-            m.provides().entrySet().stream()
-                    .sorted(Map.Entry.comparingByKey())
-                    .forEach(e -> {
-                        String service = e.getKey();
-                        e.getValue().stream()
-                                .sorted()
-                                .forEach(impl -> writer.format("    provides %s with %s;%n", service, impl));
-                    });
-
-            writer.println("}");
-        }
+        return dependencyFinder.dependences();
     }
 }

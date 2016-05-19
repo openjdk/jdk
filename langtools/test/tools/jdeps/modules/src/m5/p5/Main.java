@@ -21,16 +21,24 @@
  * questions.
  */
 
-package p4.internal;
+package p5;
 
+import java.sql.Driver;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 
-public class Impl {
-    private final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+public class Main {
+    public void run(Driver driver) throws Exception {
+        driver.getParentLogger().config("test");
 
-    public String name() {
-        return Impl.class.getName();
+    }
+
+    public p4.Lib getLib() {
+        return new p4.Lib();
+    }
+
+    public JavaCompiler getCompiler() {
+        return ToolProvider.getSystemJavaCompiler();
     }
 
 }

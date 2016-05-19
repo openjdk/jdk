@@ -21,16 +21,19 @@
  * questions.
  */
 
-package p4.internal;
+module m5 {
+    // m4 requires public java.compilerr
+    requires public m4;
+    requires public java.compiler;
 
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
+    // java.sql should be requires public
+    requires java.sql;
 
-public class Impl {
-    private final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+    // java.logging is used for implementation only
+    requires public java.logging;
 
-    public String name() {
-        return Impl.class.getName();
-    }
+    exports p5;
 
+    // m8 is not in the resolved graph but used by m8
+    exports p5.internal to m8;
 }

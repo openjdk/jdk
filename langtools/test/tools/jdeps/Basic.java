@@ -39,6 +39,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.*;
+import java.util.stream.Collectors;
+
 import static java.nio.file.StandardCopyOption.*;
 
 public class Basic {
@@ -157,7 +159,7 @@ public class Basic {
     Map<String,String> jdeps(String... args) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
-        System.err.println("jdeps " + Arrays.toString(args));
+        System.err.println("jdeps " + Arrays.stream(args).collect(Collectors.joining(" ")));
         int rc = com.sun.tools.jdeps.Main.run(args, pw);
         pw.close();
         String out = sw.toString();

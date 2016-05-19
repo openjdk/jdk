@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 /**
  * Represents the source of the class files.
@@ -86,6 +87,10 @@ public class Archive {
         return Module.UNNAMED_MODULE;
     }
 
+    public boolean contains(String entry) {
+        return reader.entries().contains(entry);
+    }
+
     public void addClass(Location origin) {
         deps.computeIfAbsent(origin, _k -> new HashSet<>());
     }
@@ -96,6 +101,15 @@ public class Archive {
 
     public Set<Location> getClasses() {
         return deps.keySet();
+    }
+
+    public Stream<Location> getDependencies() {
+        return deps.values().stream()
+                   .flatMap(Set::stream);
+    }
+
+    public boolean hasDependences() {
+        return getDependencies().count() > 0;
     }
 
     public void visitDependences(Visitor v) {

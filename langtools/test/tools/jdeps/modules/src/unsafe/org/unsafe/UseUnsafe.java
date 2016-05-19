@@ -21,16 +21,10 @@
  * questions.
  */
 
-package p4.internal;
+package org.unsafe;
 
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
+import sun.misc.Unsafe;
 
-public class Impl {
-    private final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-
-    public String name() {
-        return Impl.class.getName();
-    }
-
+public class UseUnsafe {
+    static Unsafe unsafe = Unsafe.getUnsafe();
 }
