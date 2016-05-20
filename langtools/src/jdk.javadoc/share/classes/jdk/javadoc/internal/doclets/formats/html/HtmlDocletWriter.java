@@ -570,6 +570,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             if (configuration.createoverview) {
                 navList.addContent(getNavLinkContents());
             }
+            if (configuration.modules.size() == 1) {
+                navList.addContent(getNavLinkModule(configuration.modules.first()));
+            } else if (!configuration.modules.isEmpty()) {
+                navList.addContent(getNavLinkModule());
+            }
             if (configuration.packages.size() == 1) {
                 navList.addContent(getNavLinkPackage(configuration.packages.first()));
             } else if (!configuration.packages.isEmpty()) {
@@ -675,6 +680,28 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         Content linkContent = getHyperLink(pathToRoot.resolve(DocPaths.OVERVIEW_SUMMARY),
                 overviewLabel, "", "");
         Content li = HtmlTree.LI(linkContent);
+        return li;
+    }
+
+    /**
+     * Get link to the module summary page for the module passed.
+     *
+     * @param mdle Module to which link will be generated
+     * @return a content tree for the link
+     */
+    protected Content getNavLinkModule(ModuleElement mdle) {
+        Content linkContent = getModuleLink(mdle, moduleLabel);
+        Content li = HtmlTree.LI(linkContent);
+        return li;
+    }
+
+    /**
+     * Get the word "Module", to indicate that link is not available here.
+     *
+     * @return a content tree for the link
+     */
+    protected Content getNavLinkModule() {
+        Content li = HtmlTree.LI(moduleLabel);
         return li;
     }
 

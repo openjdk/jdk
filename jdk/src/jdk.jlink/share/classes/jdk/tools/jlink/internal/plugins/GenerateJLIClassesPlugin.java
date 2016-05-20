@@ -33,8 +33,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.Pool;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 
 /**
@@ -60,8 +61,8 @@ public final class GenerateJLIClassesPlugin implements TransformerPlugin {
     }
 
     @Override
-    public Set<PluginType> getType() {
-        return Collections.singleton(CATEGORY.TRANSFORMER);
+    public Set<Category> getType() {
+        return Collections.singleton(Category.TRANSFORMER);
     }
 
     @Override
@@ -75,8 +76,8 @@ public final class GenerateJLIClassesPlugin implements TransformerPlugin {
     }
 
     @Override
-    public Set<STATE> getState() {
-        return EnumSet.of(STATE.AUTO_ENABLED, STATE.FUNCTIONAL);
+    public Set<State> getState() {
+        return EnumSet.of(State.AUTO_ENABLED, State.FUNCTIONAL);
     }
 
     @Override
@@ -151,8 +152,8 @@ public final class GenerateJLIClassesPlugin implements TransformerPlugin {
     }
 
     @Override
-    public void visit(Pool in, Pool out) {
-        for (Pool.ModuleData data : in.getContent()) {
+    public void visit(ModulePool in, ModulePool out) {
+        in.entries().forEach(data -> {
             if (("/java.base/" + BMH + ".class").equals(data.getPath())) {
                 // Add BoundMethodHandle unchanged
                 out.add(data);
@@ -162,11 +163,11 @@ public final class GenerateJLIClassesPlugin implements TransformerPlugin {
                     out.add(data);
                 }
             }
-        }
+        });
     }
 
     @SuppressWarnings("unchecked")
-    private void generateConcreteClass(String types, Pool.ModuleData data, Pool out) {
+    private void generateConcreteClass(String types, ModuleEntry data, ModulePool out) {
         try {
             // Generate class
             Map.Entry<String, byte[]> result = (Map.Entry<String, byte[]>)
@@ -175,9 +176,9 @@ public final class GenerateJLIClassesPlugin implements TransformerPlugin {
             byte[] bytes = result.getValue();
 
             // Add class to pool
-            Pool.ModuleData ndata = new Pool.ModuleData(data.getModule(),
+            ModuleEntry ndata = ModuleEntry.create(data.getModule(),
                     "/java.base/" + className + ".class",
-                    Pool.ModuleDataType.CLASS_OR_RESOURCE,
+                    ModuleEntry.Type.CLASS_OR_RESOURCE,
                     new ByteArrayInputStream(bytes), bytes.length);
             if (!out.contains(ndata)) {
                 out.add(ndata);

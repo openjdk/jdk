@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8132734
+ * @bug 8132734 8144062
  * @summary Test that URL connections to multi-release jars can be runtime versioned
  * @library /lib/testlibrary/java/util/jar
  * @build Compiler JarBuilder CreateMultiReleaseTestJars SimpleHttpServer
@@ -42,8 +42,6 @@ import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.jar.JarFile;
-
-import jdk.Version;
 
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -94,7 +92,7 @@ public class MultiReleaseJarURLConnection {
     public void testRuntimeVersioning(String style, String file) throws Exception {
         String urlFile = "jar:file:" + file + "!/";
         String baseUrlEntry = urlFile + "version/Version.java";
-        String rtreturn = "return " + Version.current().major();
+        String rtreturn = "return " + Runtime.version().major();
 
         Assert.assertTrue(readAndCompare(new URL(baseUrlEntry), "return 8"));
         // #runtime is "magic" for a multi-release jar, but not for unversioned jar
@@ -109,7 +107,7 @@ public class MultiReleaseJarURLConnection {
         if (style.equals("unversioned")) return;
 
         // direct access to versioned entry
-        String versUrlEntry = urlFile + "META-INF/versions/" + Version.current().major()
+        String versUrlEntry = urlFile + "META-INF/versions/" + Runtime.version().major()
                 + "/version/Version.java";
         Assert.assertTrue(readAndCompare(new URL(versUrlEntry), rtreturn));
         // adding any fragment does not change things
@@ -187,7 +185,7 @@ public class MultiReleaseJarURLConnection {
         MethodType mt = MethodType.methodType(int.class);
         MethodHandle mh = MethodHandles.lookup().findVirtual(vcls, "getVersion", mt);
         Assert.assertEquals((int)mh.invoke(vcls.newInstance()),
-                style.equals("unversioned") ? 8 : Version.current().major());
+                style.equals("unversioned") ? 8 : Runtime.version().major());
 
         // now get a resource and verify that we don't have a fragment attached
         URL vclsUrl = vcls.getResource("/version/Version.class");
@@ -206,7 +204,7 @@ public class MultiReleaseJarURLConnection {
         if (style.equals("unversioned")) {
             suffix = ".jar!/version/Version.class";
         } else {
-            suffix = ".jar!/META-INF/versions/" + Version.current().major()
+            suffix = ".jar!/META-INF/versions/" + Runtime.version().major()
                     + "/version/Version.class";
         }
         Assert.assertTrue(rep.endsWith(suffix));

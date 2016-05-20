@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,41 +39,49 @@ public class Order {
 
     static void ck(ByteOrder ord, ByteOrder expected) {
         if (ord != expected)
-            throw new RuntimeException("Got " + ord
-                                       + ", expected " + expected);
+            throw new RuntimeException("Got " + ord + ", expected " + expected);
     }
 
-    static void ckViews(ByteBuffer bb, ByteOrder ord) {
+    private static void ckViews(ByteBuffer bb) {
         ck(bb.asCharBuffer().order(), bb.order());
+        ck(bb.asShortBuffer().order(), bb.order());
         ck(bb.asIntBuffer().order(), bb.order());
         ck(bb.asLongBuffer().order(), bb.order());
         ck(bb.asFloatBuffer().order(), bb.order());
         ck(bb.asDoubleBuffer().order(), bb.order());
     }
 
-    static void ckByteBuffer(ByteBuffer bb) {
-        ckViews(bb, bb.order());
-        bb.order(be);
-        ckViews(bb, be);
-        bb.order(le);
-        ckViews(bb, le);
+    private static void ckCopyViews(ByteBuffer bb) {
+        ck(bb.asReadOnlyBuffer().order(), be);
+        ck(bb.duplicate().order(), be);
+        ck(bb.slice().order(), be);
+    }
 
-        if (bb.hasArray()) {
-            byte[] array = bb.array();
-            ck(ByteBuffer.wrap(array, LENGTH/2, LENGTH/2).order(), be);
-            ck(ByteBuffer.wrap(array).order(), be);
-            ck(bb.asReadOnlyBuffer().order(), be);
-            ck(bb.duplicate().order(), be);
-            ck(bb.slice().order(), be);
-        }
+    private static void ckByteBuffer(ByteBuffer bb) {
+        ckViews(bb);
+        ckCopyViews(bb);
+        bb.order(be);
+        ckViews(bb);
+        ckCopyViews(bb);
+        bb.order(le);
+        ckViews(bb);
+        ckCopyViews(bb);
     }
 
     public static void main(String args[]) throws Exception {
 
+        ck(ByteBuffer.wrap(new byte[LENGTH], LENGTH/2, LENGTH/2).order(), be);
+        ck(ByteBuffer.wrap(new byte[LENGTH]).order(), be);
+        ck(ByteBuffer.wrap(new byte[LENGTH], LENGTH/2, LENGTH/2).order(be).order(), be);
+        ck(ByteBuffer.wrap(new byte[LENGTH]).order(be).order(), be);
+        ck(ByteBuffer.wrap(new byte[LENGTH], LENGTH/2, LENGTH/2).order(le).order(), le);
+        ck(ByteBuffer.wrap(new byte[LENGTH]).order(le).order(), le);
         ck(ByteBuffer.allocate(LENGTH).order(), be);
         ck(ByteBuffer.allocateDirect(LENGTH).order(), be);
         ck(ByteBuffer.allocate(LENGTH).order(be).order(), be);
         ck(ByteBuffer.allocate(LENGTH).order(le).order(), le);
+        ck(ByteBuffer.allocateDirect(LENGTH).order(be).order(), be);
+        ck(ByteBuffer.allocateDirect(LENGTH).order(le).order(), le);
 
         ckByteBuffer(ByteBuffer.allocate(LENGTH));
         ckByteBuffer(ByteBuffer.allocateDirect(LENGTH));
@@ -85,5 +93,4 @@ public class Order {
         OrderFloat.ckFloatBuffer();
         OrderDouble.ckDoubleBuffer();
     }
-
 }

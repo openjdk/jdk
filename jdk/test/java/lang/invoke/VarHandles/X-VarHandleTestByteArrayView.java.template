@@ -311,10 +311,12 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
             checkROBE(() -> {
                 $type$ o = ($type$) vh.getAndSet(array, ci, VALUE_1);
             });
+
+#else[CAS]
             checkUOE(() -> {
                 boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
             });
-#else[CAS]
+
             checkUOE(() -> {
                 $type$ r = ($type$) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
             });

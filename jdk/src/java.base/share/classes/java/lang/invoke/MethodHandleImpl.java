@@ -41,9 +41,15 @@ import sun.invoke.empty.Empty;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
+
+import jdk.internal.org.objectweb.asm.AnnotationVisitor;
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.MethodVisitor;
+
 import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
+import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 /**
  * Trusted implementation code for MethodHandle.
@@ -66,25 +72,28 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
     /// Factory methods to create method handles:
 
-    static MethodHandle makeArrayElementAccessor(Class<?> arrayClass, boolean isSetter) {
-        if (arrayClass == Object[].class)
-            return (isSetter ? ArrayAccessor.OBJECT_ARRAY_SETTER : ArrayAccessor.OBJECT_ARRAY_GETTER);
+    static MethodHandle makeArrayElementAccessor(Class<?> arrayClass, ArrayAccess access) {
+        if (arrayClass == Object[].class) {
+            return ArrayAccess.objectAccessor(access);
+        }
         if (!arrayClass.isArray())
             throw newIllegalArgumentException("not an array: "+arrayClass);
         MethodHandle[] cache = ArrayAccessor.TYPED_ACCESSORS.get(arrayClass);
-        int cacheIndex = (isSetter ? ArrayAccessor.SETTER_INDEX : ArrayAccessor.GETTER_INDEX);
+        int cacheIndex = ArrayAccess.cacheIndex(access);
         MethodHandle mh = cache[cacheIndex];
         if (mh != null)  return mh;
-        mh = ArrayAccessor.getAccessor(arrayClass, isSetter);
-        MethodType correctType = ArrayAccessor.correctType(arrayClass, isSetter);
+        mh = ArrayAccessor.getAccessor(arrayClass, access);
+        MethodType correctType = ArrayAccessor.correctType(arrayClass, access);
         if (mh.type() != correctType) {
             assert(mh.type().parameterType(0) == Object[].class);
-            assert((isSetter ? mh.type().parameterType(2) : mh.type().returnType()) == Object.class);
-            assert(isSetter || correctType.parameterType(0).getComponentType() == correctType.returnType());
+            /* if access == SET */ assert(access != ArrayAccess.SET || mh.type().parameterType(2) == Object.class);
+            /* if access == GET */ assert(access != ArrayAccess.GET ||
+                    (mh.type().returnType() == Object.class &&
+                     correctType.parameterType(0).getComponentType() == correctType.returnType()));
             // safe to view non-strictly, because element type follows from array type
             mh = mh.viewAsType(correctType, false);
         }
-        mh = makeIntrinsic(mh, (isSetter ? Intrinsic.ARRAY_STORE : Intrinsic.ARRAY_LOAD));
+        mh = makeIntrinsic(mh, ArrayAccess.intrinsic(access));
         // Atomically update accessor cache.
         synchronized(cache) {
             if (cache[cacheIndex] == null) {
@@ -97,9 +106,52 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         return mh;
     }
 
+    enum ArrayAccess {
+        GET, SET, LENGTH;
+
+        // As ArrayAccess and ArrayAccessor have a circular dependency, the ArrayAccess properties cannot be stored in
+        // final fields.
+
+        static String opName(ArrayAccess a) {
+            switch (a) {
+                case GET: return "getElement";
+                case SET: return "setElement";
+                case LENGTH: return "length";
+            }
+            throw new AssertionError();
+        }
+
+        static MethodHandle objectAccessor(ArrayAccess a) {
+            switch (a) {
+                case GET: return ArrayAccessor.OBJECT_ARRAY_GETTER;
+                case SET: return ArrayAccessor.OBJECT_ARRAY_SETTER;
+                case LENGTH: return ArrayAccessor.OBJECT_ARRAY_LENGTH;
+            }
+            throw new AssertionError();
+        }
+
+        static int cacheIndex(ArrayAccess a) {
+            switch (a) {
+                case GET: return ArrayAccessor.GETTER_INDEX;
+                case SET: return ArrayAccessor.SETTER_INDEX;
+                case LENGTH: return ArrayAccessor.LENGTH_INDEX;
+            }
+            throw new AssertionError();
+        }
+
+        static Intrinsic intrinsic(ArrayAccess a) {
+            switch (a) {
+                case GET: return Intrinsic.ARRAY_LOAD;
+                case SET: return Intrinsic.ARRAY_STORE;
+                case LENGTH: return Intrinsic.ARRAY_LENGTH;
+            }
+            throw new AssertionError();
+        }
+    }
+
     static final class ArrayAccessor {
-        /// Support for array element access
-        static final int GETTER_INDEX = 0, SETTER_INDEX = 1, INDEX_LIMIT = 2;
+        /// Support for array element and length access
+        static final int GETTER_INDEX = 0, SETTER_INDEX = 1, LENGTH_INDEX = 2, INDEX_LIMIT = 3;
         static final ClassValue<MethodHandle[]> TYPED_ACCESSORS
                 = new ClassValue<MethodHandle[]>() {
                     @Override
@@ -107,14 +159,16 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                         return new MethodHandle[INDEX_LIMIT];
                     }
                 };
-        static final MethodHandle OBJECT_ARRAY_GETTER, OBJECT_ARRAY_SETTER;
+        static final MethodHandle OBJECT_ARRAY_GETTER, OBJECT_ARRAY_SETTER, OBJECT_ARRAY_LENGTH;
         static {
             MethodHandle[] cache = TYPED_ACCESSORS.get(Object[].class);
-            cache[GETTER_INDEX] = OBJECT_ARRAY_GETTER = makeIntrinsic(getAccessor(Object[].class, false), Intrinsic.ARRAY_LOAD);
-            cache[SETTER_INDEX] = OBJECT_ARRAY_SETTER = makeIntrinsic(getAccessor(Object[].class, true),  Intrinsic.ARRAY_STORE);
+            cache[GETTER_INDEX] = OBJECT_ARRAY_GETTER = makeIntrinsic(getAccessor(Object[].class, ArrayAccess.GET),    Intrinsic.ARRAY_LOAD);
+            cache[SETTER_INDEX] = OBJECT_ARRAY_SETTER = makeIntrinsic(getAccessor(Object[].class, ArrayAccess.SET),    Intrinsic.ARRAY_STORE);
+            cache[LENGTH_INDEX] = OBJECT_ARRAY_LENGTH = makeIntrinsic(getAccessor(Object[].class, ArrayAccess.LENGTH), Intrinsic.ARRAY_LENGTH);
 
             assert(InvokerBytecodeGenerator.isStaticallyInvocable(ArrayAccessor.OBJECT_ARRAY_GETTER.internalMemberName()));
             assert(InvokerBytecodeGenerator.isStaticallyInvocable(ArrayAccessor.OBJECT_ARRAY_SETTER.internalMemberName()));
+            assert(InvokerBytecodeGenerator.isStaticallyInvocable(ArrayAccessor.OBJECT_ARRAY_LENGTH.internalMemberName()));
         }
 
         static int     getElementI(int[]     a, int i)            { return              a[i]; }
@@ -137,31 +191,47 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         static void    setElementC(char[]    a, int i, char    x) {              a[i] = x; }
         static void    setElementL(Object[]  a, int i, Object  x) {              a[i] = x; }
 
-        static String name(Class<?> arrayClass, boolean isSetter) {
+        static int     lengthI(int[]     a)                       { return a.length; }
+        static int     lengthJ(long[]    a)                       { return a.length; }
+        static int     lengthF(float[]   a)                       { return a.length; }
+        static int     lengthD(double[]  a)                       { return a.length; }
+        static int     lengthZ(boolean[] a)                       { return a.length; }
+        static int     lengthB(byte[]    a)                       { return a.length; }
+        static int     lengthS(short[]   a)                       { return a.length; }
+        static int     lengthC(char[]    a)                       { return a.length; }
+        static int     lengthL(Object[]  a)                       { return a.length; }
+
+        static String name(Class<?> arrayClass, ArrayAccess access) {
             Class<?> elemClass = arrayClass.getComponentType();
             if (elemClass == null)  throw newIllegalArgumentException("not an array", arrayClass);
-            return (!isSetter ? "getElement" : "setElement") + Wrapper.basicTypeChar(elemClass);
+            return ArrayAccess.opName(access) + Wrapper.basicTypeChar(elemClass);
         }
-        static MethodType type(Class<?> arrayClass, boolean isSetter) {
+        static MethodType type(Class<?> arrayClass, ArrayAccess access) {
             Class<?> elemClass = arrayClass.getComponentType();
             Class<?> arrayArgClass = arrayClass;
             if (!elemClass.isPrimitive()) {
                 arrayArgClass = Object[].class;
                 elemClass = Object.class;
             }
-            return !isSetter ?
-                    MethodType.methodType(elemClass,  arrayArgClass, int.class) :
-                    MethodType.methodType(void.class, arrayArgClass, int.class, elemClass);
+            switch (access) {
+                case GET:    return MethodType.methodType(elemClass,  arrayArgClass, int.class);
+                case SET:    return MethodType.methodType(void.class, arrayArgClass, int.class, elemClass);
+                case LENGTH: return MethodType.methodType(int.class,  arrayArgClass);
+            }
+            throw new IllegalStateException("should not reach here");
         }
-        static MethodType correctType(Class<?> arrayClass, boolean isSetter) {
+        static MethodType correctType(Class<?> arrayClass, ArrayAccess access) {
             Class<?> elemClass = arrayClass.getComponentType();
-            return !isSetter ?
-                    MethodType.methodType(elemClass,  arrayClass, int.class) :
-                    MethodType.methodType(void.class, arrayClass, int.class, elemClass);
+            switch (access) {
+                case GET:    return MethodType.methodType(elemClass,  arrayClass, int.class);
+                case SET:    return MethodType.methodType(void.class, arrayClass, int.class, elemClass);
+                case LENGTH: return MethodType.methodType(int.class,  arrayClass);
+            }
+            throw new IllegalStateException("should not reach here");
         }
-        static MethodHandle getAccessor(Class<?> arrayClass, boolean isSetter) {
-            String     name = name(arrayClass, isSetter);
-            MethodType type = type(arrayClass, isSetter);
+        static MethodHandle getAccessor(Class<?> arrayClass, ArrayAccess access) {
+            String     name = name(arrayClass, access);
+            MethodType type = type(arrayClass, access);
             try {
                 return IMPL_LOOKUP.findStatic(ArrayAccessor.class, name, type);
             } catch (ReflectiveOperationException ex) {
@@ -1091,6 +1161,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     // Put the whole mess into its own nested class.
     // That way we can lazily load the code and set up the constants.
     private static class BindCaller {
+        private static MethodType INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object[].class);
+
         static
         MethodHandle bindCaller(MethodHandle mh, Class<?> hostClass) {
             // Do not use this function to inject calls into system classes.
@@ -1109,38 +1181,15 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         }
 
         private static MethodHandle makeInjectedInvoker(Class<?> hostClass) {
-            Class<?> bcc = UNSAFE.defineAnonymousClass(hostClass, T_BYTES, null);
-            if (hostClass.getClassLoader() != bcc.getClassLoader())
-                throw new InternalError(hostClass.getName()+" (CL)");
             try {
-                if (hostClass.getProtectionDomain() != bcc.getProtectionDomain())
-                    throw new InternalError(hostClass.getName()+" (PD)");
-            } catch (SecurityException ex) {
-                // Self-check was blocked by security manager.  This is OK.
-                // In fact the whole try body could be turned into an assertion.
-            }
-            try {
-                MethodHandle init = IMPL_LOOKUP.findStatic(bcc, "init", MethodType.methodType(void.class));
-                init.invokeExact();  // force initialization of the class
-            } catch (Throwable ex) {
-                throw uncaughtException(ex);
-            }
-            MethodHandle bccInvoker;
-            try {
-                MethodType invokerMT = MethodType.methodType(Object.class, MethodHandle.class, Object[].class);
-                bccInvoker = IMPL_LOOKUP.findStatic(bcc, "invoke_V", invokerMT);
+                Class<?> invokerClass = UNSAFE.defineAnonymousClass(hostClass, INJECTED_INVOKER_TEMPLATE, null);
+                assert checkInjectedInvoker(hostClass, invokerClass);
+                return IMPL_LOOKUP.findStatic(invokerClass, "invoke_V", INVOKER_MT);
             } catch (ReflectiveOperationException ex) {
                 throw uncaughtException(ex);
             }
-            // Test the invoker, to ensure that it really injects into the right place.
-            try {
-                MethodHandle vamh = prepareForInvoker(MH_checkCallerClass);
-                Object ok = bccInvoker.invokeExact(vamh, new Object[]{hostClass, bcc});
-            } catch (Throwable ex) {
-                throw new InternalError(ex);
-            }
-            return bccInvoker;
         }
+
         private static ClassValue<MethodHandle> CV_makeInjectedInvoker = new ClassValue<MethodHandle>() {
             @Override protected MethodHandle computeValue(Class<?> hostClass) {
                 return makeInjectedInvoker(hostClass);
@@ -1171,61 +1220,81 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             return mh;
         }
 
+        private static boolean checkInjectedInvoker(Class<?> hostClass, Class<?> invokerClass) {
+            assert (hostClass.getClassLoader() == invokerClass.getClassLoader()) : hostClass.getName()+" (CL)";
+            try {
+                assert (hostClass.getProtectionDomain() == invokerClass.getProtectionDomain()) : hostClass.getName()+" (PD)";
+            } catch (SecurityException ex) {
+                // Self-check was blocked by security manager. This is OK.
+            }
+            try {
+                // Test the invoker to ensure that it really injects into the right place.
+                MethodHandle invoker = IMPL_LOOKUP.findStatic(invokerClass, "invoke_V", INVOKER_MT);
+                MethodHandle vamh = prepareForInvoker(MH_checkCallerClass);
+                return (boolean)invoker.invoke(vamh, new Object[]{ invokerClass });
+            } catch (Throwable ex) {
+                throw new InternalError(ex);
+            }
+        }
+
         private static final MethodHandle MH_checkCallerClass;
         static {
             final Class<?> THIS_CLASS = BindCaller.class;
-            assert(checkCallerClass(THIS_CLASS, THIS_CLASS));
+            assert(checkCallerClass(THIS_CLASS));
             try {
                 MH_checkCallerClass = IMPL_LOOKUP
                     .findStatic(THIS_CLASS, "checkCallerClass",
-                                MethodType.methodType(boolean.class, Class.class, Class.class));
-                assert((boolean) MH_checkCallerClass.invokeExact(THIS_CLASS, THIS_CLASS));
+                                MethodType.methodType(boolean.class, Class.class));
+                assert((boolean) MH_checkCallerClass.invokeExact(THIS_CLASS));
             } catch (Throwable ex) {
                 throw new InternalError(ex);
             }
         }
 
         @CallerSensitive
-        private static boolean checkCallerClass(Class<?> expected, Class<?> expected2) {
-            // This method is called via MH_checkCallerClass and so it's
-            // correct to ask for the immediate caller here.
+        private static boolean checkCallerClass(Class<?> expected) {
+            // This method is called via MH_checkCallerClass and so it's correct to ask for the immediate caller here.
             Class<?> actual = Reflection.getCallerClass();
-            if (actual != expected && actual != expected2)
-                throw new InternalError("found "+actual.getName()+", expected "+expected.getName()
-                                        +(expected == expected2 ? "" : ", or else "+expected2.getName()));
+            if (actual != expected)
+                throw new InternalError("found " + actual.getName() + ", expected " + expected.getName());
             return true;
         }
 
-        private static final byte[] T_BYTES;
-        static {
-            final Object[] values = {null};
-            AccessController.doPrivileged(new PrivilegedAction<>() {
-                    public Void run() {
-                        try {
-                            Class<T> tClass = T.class;
-                            String tName = tClass.getName();
-                            String tResource = tName.substring(tName.lastIndexOf('.')+1)+".class";
-                            try (java.io.InputStream in = tClass.getResourceAsStream(tResource)) {
-                                values[0] = in.readAllBytes();
-                            }
-                        } catch (java.io.IOException ex) {
-                            throw new InternalError(ex);
-                        }
-                        return null;
-                    }
-                });
-            T_BYTES = (byte[]) values[0];
-        }
+        private static final byte[] INJECTED_INVOKER_TEMPLATE = generateInvokerTemplate();
 
-        // The following class is used as a template for Unsafe.defineAnonymousClass:
-        private static class T {
-            static void init() { }  // side effect: initializes this class
-            static Object invoke_V(MethodHandle vamh, Object[] args) throws Throwable {
-                return vamh.invokeExact(args);
-            }
+        /** Produces byte code for a class that is used as an injected invoker. */
+        private static byte[] generateInvokerTemplate() {
+            ClassWriter cw = new ClassWriter(0);
+
+            // private static class InjectedInvoker {
+            //     @Hidden
+            //     static Object invoke_V(MethodHandle vamh, Object[] args) throws Throwable {
+            //        return vamh.invokeExact(args);
+            //     }
+            // }
+            cw.visit(52, ACC_PRIVATE | ACC_SUPER, "InjectedInvoker", null, "java/lang/Object", null);
+
+            MethodVisitor mv = cw.visitMethod(ACC_STATIC, "invoke_V",
+                          "(Ljava/lang/invoke/MethodHandle;[Ljava/lang/Object;)Ljava/lang/Object;",
+                          null, null);
+
+            // Suppress invoker method in stack traces.
+            AnnotationVisitor av0 = mv.visitAnnotation("Ljava/lang/invoke/LambdaForm$Hidden;", true);
+            av0.visitEnd();
+
+            mv.visitCode();
+            mv.visitVarInsn(ALOAD, 0);
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invokeExact",
+                               "([Ljava/lang/Object;)Ljava/lang/Object;", false);
+            mv.visitInsn(ARETURN);
+            mv.visitMaxs(2, 2);
+            mv.visitEnd();
+
+            cw.visitEnd();
+            return cw.toByteArray();
         }
     }
-
 
     /** This subclass allows a wrapped method handle to be re-associated with an arbitrary member name. */
     private static final class WrappedMember extends DelegatingMethodHandle {
@@ -1282,6 +1351,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         NEW_ARRAY,
         ARRAY_LOAD,
         ARRAY_STORE,
+        ARRAY_LENGTH,
         IDENTITY,
         ZERO,
         NONE // no intrinsic associated

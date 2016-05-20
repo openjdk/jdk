@@ -50,7 +50,7 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
 
     static final float VALUE_2 = 0x11121314;
 
-    static final float VALUE_3 = 0x21222324;
+    static final float VALUE_3 = 0xFFFEFDFC;
 
 
     @Override
@@ -254,9 +254,7 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
             checkROBE(() -> {
                 float o = (float) vh.getAndSet(array, ci, VALUE_1);
             });
-            checkUOE(() -> {
-                boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
-            });
+
 
             checkUOE(() -> {
                 float o = (float) vh.getAndAdd(array, ci, VALUE_1);

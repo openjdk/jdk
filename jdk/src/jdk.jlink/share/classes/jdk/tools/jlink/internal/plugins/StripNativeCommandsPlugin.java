@@ -26,9 +26,9 @@ package jdk.tools.jlink.internal.plugins;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
-import jdk.tools.jlink.plugin.Pool;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 
 /**
@@ -45,16 +45,16 @@ public final class StripNativeCommandsPlugin implements TransformerPlugin {
     }
 
     @Override
-    public Set<PluginType> getType() {
-        Set<PluginType> set = new HashSet<>();
-        set.add(CATEGORY.FILTER);
+    public Set<Category> getType() {
+        Set<Category> set = new HashSet<>();
+        set.add(Category.FILTER);
         return Collections.unmodifiableSet(set);
     }
 
     @Override
-    public void visit(Pool in, Pool out) {
-        in.visit((file) -> {
-            return file.getType() == Pool.ModuleDataType.NATIVE_CMD ? null : file;
+    public void visit(ModulePool in, ModulePool out) {
+        in.transformAndCopy((file) -> {
+            return file.getType() == ModuleEntry.Type.NATIVE_CMD ? null : file;
         }, out);
     }
 

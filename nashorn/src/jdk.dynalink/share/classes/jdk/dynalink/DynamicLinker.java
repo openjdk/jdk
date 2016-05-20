@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,7 @@
 
 package jdk.dynalink;
 
+import java.lang.StackWalker.StackFrame;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -171,6 +172,8 @@ public final class DynamicLinker {
     private static final String INITIAL_LINK_CLASS_NAME = "java.lang.invoke.MethodHandleNatives";
     private static final String INITIAL_LINK_METHOD_NAME = "linkCallSite";
     private static final String INVOKE_PACKAGE_PREFIX = "java.lang.invoke.";
+
+    private static final StackWalker stackWalker = StackWalker.getInstance(StackWalker.Option.SHOW_HIDDEN_FRAMES);
 
     private final LinkerServices linkerServices;
     private final GuardedInvocationTransformer prelinkTransformer;
@@ -300,21 +303,16 @@ public final class DynamicLinker {
      *         site is being linked.
      */
     public static StackTraceElement getLinkedCallSiteLocation() {
-        final StackTraceElement[] trace = new Throwable().getStackTrace();
-        for(int i = 0; i < trace.length - 1; ++i) {
-            final StackTraceElement frame = trace[i];
-            // If we found any of our linking entry points on the stack...
-            if(isRelinkFrame(frame) || isInitialLinkFrame(frame)) {
+        return stackWalker.walk(s -> s
+                // Find one of our linking entry points on the stack...
+                .dropWhile(f -> !(isRelinkFrame(f) || isInitialLinkFrame(f)))
+                .skip(1)
                 // ... then look for the first thing calling it that isn't j.l.invoke
-                for (int j = i + 1; j < trace.length; ++j) {
-                    final StackTraceElement frame2 = trace[j];
-                    if (!frame2.getClassName().startsWith(INVOKE_PACKAGE_PREFIX)) {
-                        return frame2;
-                    }
-                }
-            }
-        }
-        return null;
+                .dropWhile(f -> f.getClassName().startsWith(INVOKE_PACKAGE_PREFIX))
+                .findFirst()
+                .map(StackFrame::toStackTraceElement)
+                .orElse(null)
+        );
     }
 
     /**
@@ -326,7 +324,7 @@ public final class DynamicLinker {
      *
      * @return {@code true} if this frame represents {@code MethodHandleNatives.linkCallSite()}.
      */
-    private static boolean isInitialLinkFrame(final StackTraceElement frame) {
+    private static boolean isInitialLinkFrame(final StackFrame frame) {
         return testFrame(frame, INITIAL_LINK_METHOD_NAME, INITIAL_LINK_CLASS_NAME);
     }
 
@@ -339,11 +337,11 @@ public final class DynamicLinker {
      *
      * @return {@code true} if this frame represents {@code DynamicLinker.relink()}.
      */
-    private static boolean isRelinkFrame(final StackTraceElement frame) {
+    private static boolean isRelinkFrame(final StackFrame frame) {
         return testFrame(frame, RELINK_METHOD_NAME, CLASS_NAME);
     }
 
-    private static boolean testFrame(final StackTraceElement frame, final String methodName, final String className) {
+    private static boolean testFrame(final StackFrame frame, final String methodName, final String className) {
         return methodName.equals(frame.getMethodName()) && className.equals(frame.getClassName());
     }
 }

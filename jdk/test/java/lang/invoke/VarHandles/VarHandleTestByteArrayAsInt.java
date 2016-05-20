@@ -50,7 +50,7 @@ public class VarHandleTestByteArrayAsInt extends VarHandleBaseByteArrayTest {
 
     static final int VALUE_2 = 0x11121314;
 
-    static final int VALUE_3 = 0x21222324;
+    static final int VALUE_3 = 0xFFFEFDFC;
 
 
     @Override
@@ -247,9 +247,7 @@ public class VarHandleTestByteArrayAsInt extends VarHandleBaseByteArrayTest {
             checkROBE(() -> {
                 int o = (int) vh.getAndSet(array, ci, VALUE_1);
             });
-            checkUOE(() -> {
-                boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
-            });
+
 
             checkROBE(() -> {
                 int o = (int) vh.getAndAdd(array, ci, VALUE_1);

@@ -76,6 +76,7 @@ jdk_lang = \
     jdk/lambda \
     jdk/internal/misc \
     jdk/internal/ref \
+    jdk/internal/jimage \
     jdk/modules \
     vm
 
@@ -352,7 +353,7 @@ jdk_desktop = \
 # SwingSet3 tests.
 jdk_client_sanity = \
     sanity/client/SwingSet
-    
+
 ###############################################################################
 #
 # Serviceability sanity groups

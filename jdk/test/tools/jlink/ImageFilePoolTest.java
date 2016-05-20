@@ -31,11 +31,12 @@
  */
 
 import java.io.ByteArrayInputStream;
-import jdk.tools.jlink.internal.PoolImpl;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
-import jdk.tools.jlink.plugin.Pool.ModuleDataType;
-import jdk.tools.jlink.plugin.Pool.Visitor;
+import java.util.Optional;
+import java.util.function.Function;
+import jdk.tools.jlink.internal.ModuleEntryImpl;
+import jdk.tools.jlink.internal.ModulePoolImpl;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 
 public class ImageFilePoolTest {
     public static void main(String[] args) throws Exception {
@@ -50,45 +51,45 @@ public class ImageFilePoolTest {
     private static final String SUFFIX = "END";
 
     private void checkVisitor() throws Exception {
-        Pool input = new PoolImpl();
+        ModulePool input = new ModulePoolImpl();
         for (int i = 0; i < 1000; ++i) {
             String module = "module" + (i / 100);
             input.add(new InMemoryImageFile(module, "/" + module + "/java/class" + i,
-                    ModuleDataType.CONFIG, "class" + i));
+                    ModuleEntry.Type.CONFIG, "class" + i));
         }
-        if (input.getContent().size() != 1000) {
+        if (input.getEntryCount() != 1000) {
             throw new AssertionError();
         }
-        Pool output = new PoolImpl();
+        ModulePool output = new ModulePoolImpl();
         ResourceVisitor visitor = new ResourceVisitor();
-        input.visit(visitor, output);
+        input.transformAndCopy(visitor, output);
         if (visitor.getAmountBefore() == 0) {
             throw new AssertionError("Resources not found");
         }
-        if (visitor.getAmountBefore() != input.getContent().size()) {
+        if (visitor.getAmountBefore() != input.getEntryCount()) {
             throw new AssertionError("Number of visited resources. Expected: " +
-                    visitor.getAmountBefore() + ", got: " + input.getContent().size());
+                    visitor.getAmountBefore() + ", got: " + input.getEntryCount());
         }
-        if (visitor.getAmountAfter() != output.getContent().size()) {
+        if (visitor.getAmountAfter() != output.getEntryCount()) {
             throw new AssertionError("Number of added resources. Expected: " +
-                    visitor.getAmountAfter() + ", got: " + output.getContent().size());
+                    visitor.getAmountAfter() + ", got: " + output.getEntryCount());
         }
-        for (ModuleData outFile : output.getContent()) {
+        output.entries().forEach(outFile -> {
             String path = outFile.getPath().replaceAll(SUFFIX + "$", "");
-            ModuleData inFile = input.get(path);
-            if (inFile == null) {
+            Optional<ModuleEntry> inFile = input.findEntry(path);
+            if (!inFile.isPresent()) {
                 throw new AssertionError("Unknown resource: " + path);
             }
-        }
+        });
     }
 
-    private static class ResourceVisitor implements Visitor {
+    private static class ResourceVisitor implements Function<ModuleEntry, ModuleEntry> {
 
         private int amountBefore;
         private int amountAfter;
 
         @Override
-        public ModuleData visit(ModuleData file) {
+        public ModuleEntry apply(ModuleEntry file) {
             int index = ++amountBefore % 3;
             switch (index) {
                 case 0:
@@ -113,7 +114,7 @@ public class ImageFilePoolTest {
     }
 
     private void checkNegative() throws Exception {
-        PoolImpl input = new PoolImpl();
+        ModulePoolImpl input = new ModulePoolImpl();
         try {
             input.add(null);
             throw new AssertionError("NullPointerException is not thrown");
@@ -126,30 +127,30 @@ public class ImageFilePoolTest {
         } catch (NullPointerException e) {
             // expected
         }
-        if (input.get("unknown") != null) {
-            throw new AssertionError("ImageFilePool does not return null for unknown file");
+        if (input.findEntry("unknown").isPresent()) {
+            throw new AssertionError("ImageFileModulePool does not return null for unknown file");
         }
-        if (input.contains(new InMemoryImageFile("", "unknown", ModuleDataType.CONFIG, "unknown"))) {
+        if (input.contains(new InMemoryImageFile("", "unknown", ModuleEntry.Type.CONFIG, "unknown"))) {
             throw new AssertionError("'contain' returns true for unknown file");
         }
-        input.add(new InMemoryImageFile("", "/aaa/bbb", ModuleDataType.CONFIG, ""));
+        input.add(new InMemoryImageFile("", "/aaa/bbb", ModuleEntry.Type.CONFIG, ""));
         try {
-            input.add(new InMemoryImageFile("", "/aaa/bbb", ModuleDataType.CONFIG, ""));
+            input.add(new InMemoryImageFile("", "/aaa/bbb", ModuleEntry.Type.CONFIG, ""));
             throw new AssertionError("Exception expected");
         } catch (Exception e) {
             // expected
         }
         input.setReadOnly();
         try {
-            input.add(new InMemoryImageFile("", "/aaa/ccc", ModuleDataType.CONFIG, ""));
+            input.add(new InMemoryImageFile("", "/aaa/ccc", ModuleEntry.Type.CONFIG, ""));
             throw new AssertionError("Exception expected");
         } catch (Exception e) {
             // expected
         }
     }
 
-    private static class InMemoryImageFile extends ModuleData {
-        public InMemoryImageFile(String module, String path, ModuleDataType type, String content) {
+    private static class InMemoryImageFile extends ModuleEntryImpl {
+        public InMemoryImageFile(String module, String path, ModuleEntry.Type type, String content) {
             super(module, path, type, new ByteArrayInputStream(content.getBytes()), content.getBytes().length);
         }
     }
