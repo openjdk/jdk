@@ -756,15 +756,9 @@ extern "C" void* thread_native_entry(void* thread_addr) {
     }
   }
 
-  // If the creator called set priority before we started,
-  // we need to call set_native_priority now that we have an lwp.
-  // We used to get the priority from thr_getprio (we called
-  // thr_setprio way back in create_thread) and pass it to
-  // set_native_priority, but Solaris scales the priority
-  // in java_to_os_priority, so when we read it back here,
-  // we pass trash to set_native_priority instead of what's
-  // in java_to_os_priority. So we save the native priority
-  // in the osThread and recall it here.
+  // Our priority was set when we were created, and stored in the
+  // osthread, but couldn't be passed through to our LWP until now.
+  // So read back the priority and set it again.
 
   if (osthr->thread_id() != -1) {
     if (UseThreadPriorities) {
@@ -1043,6 +1037,10 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   // Remember that we created this thread so we can set priority on it
   osthread->set_vm_created();
+
+  // Most thread types will set an explicit priority before starting the thread,
+  // but for those that don't we need a valid value to read back in thread_native_entry.
+  osthread->set_native_priority(NormPriority);
 
   // Initial thread state is INITIALIZED, not SUSPENDED
   osthread->set_state(INITIALIZED);
