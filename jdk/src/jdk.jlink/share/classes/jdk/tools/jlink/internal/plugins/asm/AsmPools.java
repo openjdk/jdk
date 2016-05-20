@@ -41,11 +41,11 @@ import java.util.Objects;
 import java.util.Set;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.tools.jlink.internal.PoolImpl;
+import jdk.tools.jlink.internal.ModulePoolImpl;
 import jdk.tools.jlink.internal.plugins.asm.AsmPool.Sorter;
+import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
+import jdk.tools.jlink.plugin.ModulePool;
 
 /**
  * A container for pools of ClassReader and other resource files. A pool of all
@@ -97,10 +97,10 @@ public final class AsmPools {
             }
 
             @Override
-            public Collection<Pool.ModuleData> getClasses() {
-                List<Pool.ModuleData> all = new ArrayList<>();
+            public Collection<ModuleEntry> getClasses() {
+                List<ModuleEntry> all = new ArrayList<>();
                 visitAllPools((AsmModulePool pool) -> {
-                    for (Pool.ModuleData rf : pool.getTransformedClasses().getClasses()) {
+                    for (ModuleEntry rf : pool.getTransformedClasses().getClasses()) {
                         all.add(rf);
                     }
                 });
@@ -108,7 +108,7 @@ public final class AsmPools {
             }
 
             @Override
-            public ClassReader getClassReader(Pool.ModuleData res) {
+            public ClassReader getClassReader(ModuleEntry res) {
                 return visitPools((AsmModulePool pool) -> {
                     return pool.getTransformedClasses().getClassReader(res);
                 });
@@ -140,10 +140,10 @@ public final class AsmPools {
             }
 
             @Override
-            public Collection<Pool.ModuleData> getResourceFiles() {
-                List<Pool.ModuleData> all = new ArrayList<>();
+            public Collection<ModuleEntry> getResourceFiles() {
+                List<ModuleEntry> all = new ArrayList<>();
                 visitAllPools((AsmModulePool pool) -> {
-                    for (Pool.ModuleData rf : pool.getTransformedResourceFiles().getResourceFiles()) {
+                    for (ModuleEntry rf : pool.getTransformedResourceFiles().getResourceFiles()) {
                         all.add(rf);
                     }
                 });
@@ -151,7 +151,7 @@ public final class AsmPools {
             }
 
             @Override
-            public ResourceFile getResourceFile(Pool.ModuleData res) {
+            public ResourceFile getResourceFile(ModuleEntry res) {
                 return visitPools((AsmModulePool pool) -> {
                     return pool.getTransformedResourceFiles().getResourceFile(res);
                 });
@@ -175,10 +175,10 @@ public final class AsmPools {
         }
 
         @Override
-        public Collection<Pool.ModuleData> getClasses() {
-            List<Pool.ModuleData> all = new ArrayList<>();
+        public Collection<ModuleEntry> getClasses() {
+            List<ModuleEntry> all = new ArrayList<>();
             visitAllPools((AsmModulePool pool) -> {
-                for (Pool.ModuleData rf : pool.getClasses()) {
+                for (ModuleEntry rf : pool.getClasses()) {
                     all.add(rf);
                 }
             });
@@ -186,10 +186,10 @@ public final class AsmPools {
         }
 
         @Override
-        public Collection<Pool.ModuleData> getResourceFiles() {
-            List<Pool.ModuleData> all = new ArrayList<>();
+        public Collection<ModuleEntry> getResourceFiles() {
+            List<ModuleEntry> all = new ArrayList<>();
             visitAllPools((AsmModulePool pool) -> {
-                for (Pool.ModuleData rf : pool.getResourceFiles()) {
+                for (ModuleEntry rf : pool.getResourceFiles()) {
                     all.add(rf);
                 }
             });
@@ -211,14 +211,14 @@ public final class AsmPools {
         }
 
         @Override
-        public ResourceFile getResourceFile(Pool.ModuleData res) {
+        public ResourceFile getResourceFile(ModuleEntry res) {
             return visitPools((AsmModulePool pool) -> {
                 return pool.getResourceFile(res);
             });
         }
 
         @Override
-        public ClassReader getClassReader(Pool.ModuleData res) {
+        public ClassReader getClassReader(ModuleEntry res) {
             return visitPoolsEx((AsmModulePool pool) -> {
                 return pool.getClassReader(res);
             });
@@ -239,7 +239,7 @@ public final class AsmPools {
         }
 
         @Override
-        public void fillOutputResources(Pool outputResources) {
+        public void fillOutputResources(ModulePool outputResources) {
             AsmPools.this.fillOutputResources(outputResources);
         }
 
@@ -324,15 +324,15 @@ public final class AsmPools {
      *
      * @param inputResources The raw resources to build the pool from.
      */
-    public AsmPools(Pool inputResources) {
+    public AsmPools(ModulePool inputResources) {
         Objects.requireNonNull(inputResources);
-        Map<String, Pool> resPools = new LinkedHashMap<>();
+        Map<String, ModulePool> resPools = new LinkedHashMap<>();
         Map<String, ModuleDescriptor> descriptors = new HashMap<>();
-        for (Pool.ModuleData res : inputResources.getContent()) {
-            Pool p = resPools.get(res.getModule());
+        inputResources.entries().forEach(res -> {
+            ModulePool p = resPools.get(res.getModule());
             if (p == null) {
-                p = new PoolImpl(inputResources.getByteOrder(),
-                        ((PoolImpl)inputResources).getStringTable());
+                p = new ModulePoolImpl(inputResources.getByteOrder(),
+                        ((ModulePoolImpl)inputResources).getStringTable());
                 resPools.put(res.getModule(), p);
             }
             if (res.getPath().endsWith("module-info.class")) {
@@ -341,11 +341,11 @@ public final class AsmPools {
                 descriptors.put(res.getModule(), descriptor);
             }
             p.add(res);
-        }
+        });
         poolsArray = new AsmModulePool[resPools.size()];
         int i = 0;
 
-        for (Entry<String, Pool> entry : resPools.entrySet()) {
+        for (Entry<String, ModulePool> entry : resPools.entrySet()) {
             ModuleDescriptor descriptor = descriptors.get(entry.getKey());
             if (descriptor == null) {
                 throw new PluginException("module-info.class not found for " + entry.getKey() + " module");
@@ -405,7 +405,7 @@ public final class AsmPools {
      *
      * @param outputResources The pool used to fill the jimage.
      */
-    public void fillOutputResources(Pool outputResources) {
+    public void fillOutputResources(ModulePool outputResources) {
         // First sort modules
         List<String> modules = new ArrayList<>();
         for (String k : pools.keySet()) {
@@ -414,8 +414,8 @@ public final class AsmPools {
         if (moduleSorter != null) {
             modules = moduleSorter.sort(modules);
         }
-        Pool output = new PoolImpl(outputResources.getByteOrder(),
-                ((PoolImpl)outputResources).getStringTable());
+        ModulePool output = new ModulePoolImpl(outputResources.getByteOrder(),
+                ((ModulePoolImpl)outputResources).getStringTable());
         for (String mn : modules) {
             AsmPool pool = pools.get(mn);
             pool.fillOutputResources(output);
@@ -423,17 +423,17 @@ public final class AsmPools {
         sort(outputResources, output, global.sorter);
     }
 
-    static void sort(Pool outputResources,
-            Pool transientOutput, Sorter sorter) {
+    static void sort(ModulePool outputResources,
+            ModulePool transientOutput, Sorter sorter) {
         if (sorter != null) {
             List<String> order = sorter.sort(transientOutput);
             for (String s : order) {
-                outputResources.add(transientOutput.get(s));
+                outputResources.add(transientOutput.findEntry(s).get());
             }
         } else {
-            for (ModuleData res : transientOutput.getContent()) {
+            transientOutput.entries().forEach(res-> {
                 outputResources.add(res);
-            }
+            });
         }
     }
 

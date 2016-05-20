@@ -162,99 +162,25 @@ mlib_status mlib_ImageAffine_d64_4ch_bc(mlib_affine_param *param);
 
 /***************************************************************/
 void mlib_ImageAffineEdgeZero(mlib_affine_param *param,
-                              mlib_affine_param *param_e,
-                              const void        *colormap);
+                              mlib_affine_param *param_e);
 
 void mlib_ImageAffineEdgeNearest(mlib_affine_param *param,
                                  mlib_affine_param *param_e);
 
 mlib_status mlib_ImageAffineEdgeExtend_BL(mlib_affine_param *param,
-                                          mlib_affine_param *param_e,
-                                          const void        *colormap);
+                                          mlib_affine_param *param_e);
 
 mlib_status mlib_ImageAffineEdgeExtend_BC(mlib_affine_param *param,
-                                          mlib_affine_param *param_e,
-                                          const void        *colormap);
-
-mlib_status mlib_ImageAffineEdgeExtend_BC2(mlib_affine_param *param,
-                                           mlib_affine_param *param_e,
-                                           const void        *colormap);
-
-/***************************************************************/
-typedef mlib_status (*type_affine_i_fun)(mlib_affine_param *param, const void *colormap);
-
-mlib_status mlib_ImageAffine_u8_u8_i_bl(mlib_affine_param *param,
-                                        const void        *colormap);
-mlib_status mlib_ImageAffine_u8_s16_i_bl(mlib_affine_param *param,
-                                         const void        *colormap);
-mlib_status mlib_ImageAffine_s16_u8_i_bl(mlib_affine_param *param,
-                                         const void        *colormap);
-mlib_status mlib_ImageAffine_s16_s16_i_bl(mlib_affine_param *param,
-                                          const void        *colormap);
-
-mlib_status mlib_ImageAffine_u8_u8_i_bc(mlib_affine_param *param,
-                                        const void        *colormap);
-mlib_status mlib_ImageAffine_u8_s16_i_bc(mlib_affine_param *param,
-                                         const void        *colormap);
-mlib_status mlib_ImageAffine_s16_u8_i_bc(mlib_affine_param *param,
-                                         const void        *colormap);
-mlib_status mlib_ImageAffine_s16_s16_i_bc(mlib_affine_param *param,
-                                          const void        *colormap);
-
-void mlib_ImageAffineEdgeZeroIndex(mlib_affine_param *param,
-                                   mlib_affine_param *param_e,
-                                   const void        *colormap);
-
-void mlib_ImageAffineEdgeExtendIndex_BL(mlib_affine_param *param,
-                                        mlib_affine_param *param_e,
-                                        const void        *colormap);
-
-void mlib_ImageAffineEdgeExtendIndex_BC(mlib_affine_param *param,
-                                        mlib_affine_param *param_e,
-                                        const void        *colormap);
-
-void mlib_ImageAffineEdgeExtendIndex_BC2(mlib_affine_param *param,
-                                         mlib_affine_param *param_e,
-                                         const void        *colormap);
-
-/***************************************************************/
-#define PROT_AFFINEINDEX_BC(ITYPE, LTYPE, NCHAN)                                                 \
-  mlib_status mlib_ImageAffineIndex_##ITYPE##_##LTYPE##_##NCHAN##CH_BC(mlib_affine_param *param, \
-                                                                       const void        *colormap)
-
-PROT_AFFINEINDEX_BC(U8, U8, 3);
-PROT_AFFINEINDEX_BC(U8, S16, 3);
-PROT_AFFINEINDEX_BC(U8, U8, 4);
-PROT_AFFINEINDEX_BC(U8, S16, 4);
-PROT_AFFINEINDEX_BC(S16, U8, 3);
-PROT_AFFINEINDEX_BC(S16, S16, 3);
-PROT_AFFINEINDEX_BC(S16, U8, 4);
-PROT_AFFINEINDEX_BC(S16, S16, 4);
-
-/***************************************************************/
-#define PROT_AFFINEINDEX_BL(ITYPE, LTYPE, NCHAN)                                                 \
-  mlib_status mlib_ImageAffineIndex_##ITYPE##_##LTYPE##_##NCHAN##CH_BL(mlib_affine_param *param, \
-                                                                       const void        *colormap)
-
-PROT_AFFINEINDEX_BL(U8, U8, 3);
-PROT_AFFINEINDEX_BL(U8, S16, 3);
-PROT_AFFINEINDEX_BL(U8, U8, 4);
-PROT_AFFINEINDEX_BL(U8, S16, 4);
-PROT_AFFINEINDEX_BL(S16, U8, 3);
-PROT_AFFINEINDEX_BL(S16, S16, 3);
-PROT_AFFINEINDEX_BL(S16, U8, 4);
-PROT_AFFINEINDEX_BL(S16, S16, 4);
+                                          mlib_affine_param *param_e);
 
 /***************************************************************/
 mlib_status mlib_ImageAffine_alltypes(mlib_image       *dst,
                                       const mlib_image *src,
                                       const mlib_d64   *mtx,
                                       mlib_filter      filter,
-                                      mlib_edge        edge,
-                                      const void       *colormap);
+                                      mlib_edge        edge);
 
 /***************************************************************/
-extern const type_affine_i_fun mlib_AffineFunArr_bl_i[];
 extern const type_affine_fun mlib_AffineFunArr_nn[];
 extern const type_affine_fun mlib_AffineFunArr_bl[];
 extern const type_affine_fun mlib_AffineFunArr_bc[];

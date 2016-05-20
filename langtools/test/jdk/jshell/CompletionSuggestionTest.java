@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8141092
+ * @bug 8141092 8153761
  * @summary Test Completion
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -34,14 +34,20 @@
  * @run testng CompletionSuggestionTest
  */
 
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 
 import jdk.jshell.Snippet;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static jdk.jshell.Snippet.Status.VALID;
@@ -295,10 +301,11 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletion("import inner.|");
     }
 
-    public void testDocumentation() {
+    public void testDocumentation() throws Exception {
+        dontReadParameterNamesFromClassFile();
         assertDocumentation("System.getProperty(|",
-                "java.lang.System.getProperty(java.lang.String arg0)",
-                "java.lang.System.getProperty(java.lang.String arg0, java.lang.String arg1)");
+                "java.lang.System.getProperty(java.lang.String key)",
+                "java.lang.System.getProperty(java.lang.String key, java.lang.String def)");
         assertEval("char[] chars = null;");
         assertDocumentation("new String(chars, |",
                 "java.lang.String(char[] arg0, int arg1, int arg2)");
@@ -313,7 +320,8 @@ public class CompletionSuggestionTest extends KullaTesting {
                                                      "java.lang.String.getBytes(java.nio.charset.Charset arg0)");
     }
 
-    public void testMethodsWithNoArguments() {
+    public void testMethodsWithNoArguments() throws Exception {
+        dontReadParameterNamesFromClassFile();
         assertDocumentation("System.out.println(|",
                 "java.io.PrintStream.println()",
                 "java.io.PrintStream.println(boolean arg0)",
@@ -442,29 +450,30 @@ public class CompletionSuggestionTest extends KullaTesting {
     public void testDocumentationOfUserDefinedMethods() {
         assertEval("void f() {}");
         assertDocumentation("f(|", "f()");
-        assertEval("void f(int a) {}");
-        assertDocumentation("f(|", "f()", "f(int arg0)");
-        assertEval("<T> void f(T... a) {}", DiagCheck.DIAG_WARNING, DiagCheck.DIAG_OK);
-        assertDocumentation("f(|", "f()", "f(int arg0)", "f(T... arg0)");
+        assertEval("void f(int i) {}");
+        assertDocumentation("f(|", "f()", "f(int i)");
+        assertEval("<T> void f(T... ts) {}", DiagCheck.DIAG_WARNING, DiagCheck.DIAG_OK);
+        assertDocumentation("f(|", "f()", "f(int i)", "f(T... ts)");
         assertEval("class A {}");
         assertEval("void f(A a) {}");
-        assertDocumentation("f(|", "f()", "f(int arg0)", "f(T... arg0)", "f(A arg0)");
+        assertDocumentation("f(|", "f()", "f(int i)", "f(T... ts)", "f(A a)");
     }
 
     public void testDocumentationOfUserDefinedConstructors() {
         Snippet a = classKey(assertEval("class A {}"));
         assertDocumentation("new A(|", "A()");
-        Snippet a2 = classKey(assertEval("class A { A() {} A(int a) {}}",
+        Snippet a2 = classKey(assertEval("class A { A() {} A(int i) {}}",
                 ste(MAIN_SNIPPET, VALID, VALID, true, null),
                 ste(a, VALID, OVERWRITTEN, false, MAIN_SNIPPET)));
-        assertDocumentation("new A(|", "A()", "A(int arg0)");
-        assertEval("class A<T> { A(T a) {} A(int a) {}}",
+        assertDocumentation("new A(|", "A()", "A(int i)");
+        assertEval("class A<T> { A(T t) {} A(int i) {}}",
                 ste(MAIN_SNIPPET, VALID, VALID, true, null),
                 ste(a2, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
-        assertDocumentation("new A(|", "A(T arg0)", "A(int arg0)");
+        assertDocumentation("new A(|", "A(T t)", "A(int i)");
     }
 
-    public void testDocumentationOfOverriddenMethods() {
+    public void testDocumentationOfOverriddenMethods() throws Exception {
+        dontReadParameterNamesFromClassFile();
         assertDocumentation("\"\".wait(|",
             "java.lang.Object.wait(long arg0)",
             "java.lang.Object.wait(long arg0, int arg1)",
@@ -502,13 +511,13 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertEval("void method(int n, Object o) { }");
         assertEval("void method(Object n, int o) { }");
         assertDocumentation("method(primitive,|",
-                "method(int arg0, java.lang.Object arg1)",
-                "method(java.lang.Object arg0, int arg1)");
+                "method(int n, java.lang.Object o)",
+                "method(java.lang.Object n, int o)");
         assertDocumentation("method(boxed,|",
-                "method(int arg0, java.lang.Object arg1)",
-                "method(java.lang.Object arg0, int arg1)");
+                "method(int n, java.lang.Object o)",
+                "method(java.lang.Object n, int o)");
         assertDocumentation("method(object,|",
-                "method(java.lang.Object arg0, int arg1)");
+                "method(java.lang.Object n, int o)");
     }
 
     public void testVarArgs() {
@@ -545,5 +554,37 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletion("Baz<String> bz = new Baz<>(|", true, "str");
         assertEval("class Foo { static void m(String str) {} static void m(Baz<String> baz) {} }");
         assertCompletion("Foo.m(new Baz<>(|", true, "str");
+    }
+
+    @BeforeMethod
+    public void setUp() {
+        super.setUp();
+
+        Path srcZip = Paths.get("src.zip");
+
+        try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(srcZip))) {
+            out.putNextEntry(new JarEntry("java/lang/System.java"));
+            out.write(("package java.lang;\n" +
+                       "public class System {\n" +
+                       "    public String getProperty(String key) { return null; }\n" +
+                       "    public String getProperty(String key, String def) { return def; }\n" +
+                       "}\n").getBytes());
+        } catch (IOException ex) {
+            throw new IllegalStateException(ex);
+        }
+
+        try {
+            Field availableSources = getAnalysis().getClass().getDeclaredField("availableSources");
+            availableSources.setAccessible(true);
+            availableSources.set(getAnalysis(), Arrays.asList(srcZip));
+        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
+
+    private void dontReadParameterNamesFromClassFile() throws Exception {
+        Field keepParameterNames = getAnalysis().getClass().getDeclaredField("keepParameterNames");
+        keepParameterNames.setAccessible(true);
+        keepParameterNames.set(getAnalysis(), new String[0]);
     }
 }

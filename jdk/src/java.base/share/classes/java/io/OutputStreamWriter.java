@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,7 +202,12 @@ public class OutputStreamWriter extends Writer {
      * @param  off   Offset from which to start writing characters
      * @param  len   Number of characters to write
      *
-     * @exception  IOException  If an I/O error occurs
+     * @throws  IndexOutOfBoundsException
+     *          If {@code off} is negative, or {@code len} is negative,
+     *          or {@code off + len} is negative or greater than the length
+     *          of the given array
+     *
+     * @throws  IOException  If an I/O error occurs
      */
     public void write(char cbuf[], int off, int len) throws IOException {
         se.write(cbuf, off, len);
@@ -215,7 +220,12 @@ public class OutputStreamWriter extends Writer {
      * @param  off  Offset from which to start writing characters
      * @param  len  Number of characters to write
      *
-     * @exception  IOException  If an I/O error occurs
+     * @throws  IndexOutOfBoundsException
+     *          If {@code off} is negative, or {@code len} is negative,
+     *          or {@code off + len} is negative or greater than the length
+     *          of the given string
+     *
+     * @throws  IOException  If an I/O error occurs
      */
     public void write(String str, int off, int len) throws IOException {
         se.write(str, off, len);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,11 @@ class CharArrayWriter extends Writer {
      * @param c the data to be written
      * @param off       the start offset in the data
      * @param len       the number of chars that are written
+     *
+     * @throws  IndexOutOfBoundsException
+     *          If {@code off} is negative, or {@code len} is negative,
+     *          or {@code off + len} is negative or greater than the length
+     *          of the given array
      */
     public void write(char c[], int off, int len) {
         if ((off < 0) || (off > c.length) || (len < 0) ||
@@ -114,6 +119,11 @@ class CharArrayWriter extends Writer {
      * @param  str  String to be written from
      * @param  off  Offset from which to start reading characters
      * @param  len  Number of characters to be written
+     *
+     * @throws  IndexOutOfBoundsException
+     *          If {@code off} is negative, or {@code len} is negative,
+     *          or {@code off + len} is negative or greater than the length
+     *          of the given string
      */
     public void write(String str, int off, int len) {
         synchronized (lock) {

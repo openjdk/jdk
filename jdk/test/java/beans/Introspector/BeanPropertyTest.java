@@ -33,7 +33,7 @@ import java.util.Arrays;
 
 /**
  * @test
- * @bug 8132703 8132163 8132732 8132973 8154756 8132888
+ * @bug 8132703 8132163 8132732 8132973 8154756 8132888 8155103
  * @summary Some check for BeanProperty annotation
  * @author a.stepanov
  * @run main BeanPropertyTest
@@ -853,6 +853,64 @@ public class BeanPropertyTest {
         public void removePropertyChangeListener(PropertyChangeListener l) {}
     }
 
+    // JDK-8155103
+    public static enum E {
+
+        ONE,
+        TWO {
+            @BeanProperty(
+            description  = DESCRIPTION,
+            bound        = BOUND,
+            expert       = EXPERT,
+            hidden       = HIDDEN,
+            preferred    = PREFERRED,
+            required     = REQUIRED,
+            visualUpdate = UPDATE,
+            enumerationValues = {V_NAME})
+            public void setX(int v) {}
+
+            public void addPropertyChangeListener(PropertyChangeListener l)    {}
+            public void removePropertyChangeListener(PropertyChangeListener l) {}
+        };
+
+        @BeanProperty(
+            description  = DESCRIPTION,
+            bound        = BOUND,
+            expert       = EXPERT,
+            hidden       = HIDDEN,
+            preferred    = PREFERRED,
+            required     = REQUIRED,
+            visualUpdate = UPDATE,
+            enumerationValues = {V_NAME})
+        public void setX(int v) {}
+
+        public void addPropertyChangeListener(PropertyChangeListener l)    {}
+        public void removePropertyChangeListener(PropertyChangeListener l) {}
+
+    }
+
+    private static enum EB {
+
+        TRUE(true), FALSE(false);
+
+        private boolean b;
+        private EB(boolean v) { b = v; }
+
+        @BeanProperty(
+            description  = DESCRIPTION,
+            bound        = BOUND,
+            expert       = EXPERT,
+            hidden       = HIDDEN,
+            preferred    = PREFERRED,
+            required     = REQUIRED,
+            visualUpdate = UPDATE)
+        public boolean isTrue() { return true; }
+
+        public void addPropertyChangeListener(PropertyChangeListener l)    {}
+        public void removePropertyChangeListener(PropertyChangeListener l) {}
+
+    }
+
 
     // ---------- checks ----------
 
@@ -953,7 +1011,7 @@ public class BeanPropertyTest {
     }
 
     private static boolean ignoreVals(Class<?> c) {
-        return (c.equals(Self.class) || c.equals(SelfArr.class));
+        return (c.equals(Self.class) || c.equals(SelfArr.class)) || c.equals(EB.class);
     }
 
 
@@ -1002,6 +1060,29 @@ public class BeanPropertyTest {
             System.out.println(ok ? "OK" : "NOK");
             passed = passed && ok;
         }
+
+        // enums
+
+        Class<?> enumCases[] = {
+
+            // TODO: uncomment/update after 8155103 fix
+            //E.class, E.TWO.getClass(), EB.class
+        };
+
+        int ne = 1;
+        for (Class<?> c: enumCases) {
+
+            System.out.println("\nEnum-" + ne + ":");
+            ne++;
+
+            BeanInfo i;
+            try { i = Introspector.getBeanInfo(c, Object.class); }
+            catch (IntrospectionException e) { throw new RuntimeException(e); }
+            boolean ok = checkInfo(i, !ignoreVals(c));
+            System.out.println(ok ? "OK" : "NOK");
+            passed = passed && ok;
+        }
+
 
         if (!passed) { throw new RuntimeException("test failed"); }
         System.out.println("\ntest passed");

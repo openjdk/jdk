@@ -768,7 +768,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
         $2CFLAGS_JDK="${$2CFLAGS_JDK} -fno-strict-aliasing"
         ;;
     esac
-    TOOLCHAIN_CHECK_COMPILER_VERSION(VERSION: 6, IF_AT_LEAST: FLAGS_SETUP_GCC6_COMPILER_FLAGS)
+    TOOLCHAIN_CHECK_COMPILER_VERSION(VERSION: 6, PREFIX: $2, IF_AT_LEAST: FLAGS_SETUP_GCC6_COMPILER_FLAGS)
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     $2JVM_CFLAGS="[$]$2JVM_CFLAGS -D_GNU_SOURCE"
 
@@ -964,7 +964,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
         -Wunused-value -Woverloaded-virtual"
 
     if test "x$TOOLCHAIN_TYPE" = xgcc; then
-      TOOLCHAIN_CHECK_COMPILER_VERSION(VERSION: [4.8],
+      TOOLCHAIN_CHECK_COMPILER_VERSION(VERSION: [4.8], PREFIX: $2,
           IF_AT_LEAST: [
             # These flags either do not work or give spurious warnings prior to gcc 4.8.
             $2JVM_CFLAGS="[$]$2JVM_CFLAGS -Wno-format-zero-length -Wtype-limits -Wuninitialized"
@@ -1411,9 +1411,15 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_MISC],
         DISABLE_WARNING_PREFIX=
       fi
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
-      # Repeate the check for the BUILD_CC
+      # Repeate the check for the BUILD_CC and BUILD_CXX. Need to also reset
+      # CFLAGS since any target specific flags will likely not work with the
+      # build compiler
       CC_OLD="$CC"
+      CXX_OLD="$CXX"
       CC="$BUILD_CC"
+      CXX="$BUILD_CXX"
+      CFLAGS_OLD="$CFLAGS"
+      CFLAGS=""
       FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [-Wno-this-is-a-warning-that-do-not-exist],
           IF_TRUE: [BUILD_CC_CAN_DISABLE_WARNINGS=true],
           IF_FALSE: [BUILD_CC_CAN_DISABLE_WARNINGS=false]
@@ -1424,6 +1430,8 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_MISC],
         BUILD_CC_DISABLE_WARNING_PREFIX=
       fi
       CC="$CC_OLD"
+      CXX="$CXX_OLD"
+      CFLAGS="$CFLAGS_OLD"
       ;;
     clang)
       DISABLE_WARNING_PREFIX="-Wno-"

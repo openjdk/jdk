@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,30 +23,10 @@
  * questions.
  */
 
-/*
-  Java Class Version numbers history
-  1.0 to 1.3.X 45,3
-  1.4 to 1.4.X 46,0
-  1.5 to 1.5.X 49,0
-  1.6 to 1.5.x 50,0 NOTE Assumed for now
-*/
-
 // classfile constants
 #define JAVA_MAGIC 0xCAFEBABE
-#define JAVA_MIN_MAJOR_VERSION 45
-#define JAVA_MIN_MINOR_VERSION 3
 
-#define JAVA5_MAX_MAJOR_VERSION 49
-#define JAVA5_MAX_MINOR_VERSION 0
-
-#define JAVA6_MAX_MAJOR_VERSION 50
-#define JAVA6_MAX_MINOR_VERSION 0
-
-#define JAVA7_MAX_MAJOR_VERSION 51
-#define JAVA7_MAX_MINOR_VERSION 0
-
-#define JAVA8_MAX_MAJOR_VERSION 52
-#define JAVA8_MAX_MINOR_VERSION 0
+// Class version history, refer to Constants.java
 
 // package file constants
 #define JAVA_PACKAGE_MAGIC 0xCAFED00D

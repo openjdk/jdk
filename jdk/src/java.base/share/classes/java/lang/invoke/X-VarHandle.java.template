@@ -165,8 +165,7 @@ final class VarHandle$Type$s {
 
         @ForceInline
         static boolean weakCompareAndSetVolatile(FieldInstanceReadWrite handle, Object holder, $type$ expected, $type$ value) {
-            // TODO defer to strong form until new Unsafe method is added
-            return UNSAFE.compareAndSwap$Type$(Objects.requireNonNull(handle.receiverType.cast(holder)),
+            return UNSAFE.weakCompareAndSwap$Type$Volatile(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                                handle.fieldOffset,
                                                {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?handle.fieldType.cast(value):value});
@@ -347,8 +346,7 @@ final class VarHandle$Type$s {
 
         @ForceInline
         static boolean weakCompareAndSetVolatile(FieldStaticReadWrite handle, $type$ expected, $type$ value) {
-            // TODO defer to strong form until new Unsafe method is added
-            return UNSAFE.compareAndSwap$Type$(handle.base,
+            return UNSAFE.weakCompareAndSwap$Type$Volatile(handle.base,
                                                handle.fieldOffset,
                                                {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?handle.fieldType.cast(value):value});
@@ -583,8 +581,7 @@ final class VarHandle$Type$s {
 #else[Object]
             $type$[] array = ($type$[]) oarray;
 #end[Object]
-            // TODO defer to strong form until new Unsafe method is added
-            return UNSAFE.compareAndSwap$Type$(array,
+            return UNSAFE.weakCompareAndSwap$Type$Volatile(array,
                     (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
                     {#if[Object]?handle.componentType.cast(expected):expected},
                     {#if[Object]?handle.componentType.cast(value):value});

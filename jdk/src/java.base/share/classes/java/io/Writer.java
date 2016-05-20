@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,11 @@ package java.io;
  * Most subclasses, however, will override some of the methods defined here in
  * order to provide higher efficiency, additional functionality, or both.
  *
- * @see Writer
  * @see   BufferedWriter
  * @see   CharArrayWriter
  * @see   FilterWriter
  * @see   OutputStreamWriter
- * @see     FileWriter
+ * @see   FileWriter
  * @see   PipedWriter
  * @see   PrintWriter
  * @see   StringWriter
@@ -139,6 +138,12 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      * @param  len
      *         Number of characters to write
      *
+     * @throws  IndexOutOfBoundsException
+     *          Implementations should throw this exception
+     *          if {@code off} is negative, or {@code len} is negative,
+     *          or {@code off + len} is negative or greater than the length
+     *          of the given array
+     *
      * @throws  IOException
      *          If an I/O error occurs
      */
@@ -160,6 +165,11 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
     /**
      * Writes a portion of a string.
      *
+     * @implSpec
+     * The implementation in this class throws an
+     * {@code IndexOutOfBoundsException} for the indicated conditions;
+     * overriding methods may choose to do otherwise.
+     *
      * @param  str
      *         A String
      *
@@ -170,8 +180,9 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *         Number of characters to write
      *
      * @throws  IndexOutOfBoundsException
-     *          If {@code off} is negative, or {@code len} is negative,
-     *          or {@code off+len} is negative or greater than the length
+     *          Implementations should throw this exception
+     *          if {@code off} is negative, or {@code len} is negative,
+     *          or {@code off + len} is negative or greater than the length
      *          of the given string
      *
      * @throws  IOException

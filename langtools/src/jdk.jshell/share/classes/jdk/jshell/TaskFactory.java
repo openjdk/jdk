@@ -215,17 +215,21 @@ class TaskFactory {
 
         private final Iterable<? extends CompilationUnitTree> cuts;
 
-        AnalyzeTask(final OuterWrap wrap) {
-            this(Collections.singletonList(wrap));
+        AnalyzeTask(final OuterWrap wrap, String... extraArgs) {
+            this(Collections.singletonList(wrap), extraArgs);
         }
 
-        AnalyzeTask(final Collection<OuterWrap> wraps) {
+        AnalyzeTask(final Collection<OuterWrap> wraps, String... extraArgs) {
             this(wraps.stream(),
                     new WrapSourceHandler(),
-                    "-XDshouldStopPolicy=FLOW", "-Xlint:unchecked", "-XaddExports:jdk.jshell/jdk.internal.jshell.remote=ALL-UNNAMED", "-proc:none");
+                    Util.join(new String[] {
+                        "-XDshouldStopPolicy=FLOW", "-Xlint:unchecked",
+                        "-XaddExports:jdk.jshell/jdk.internal.jshell.remote=ALL-UNNAMED",
+                        "-proc:none"
+                    }, extraArgs));
         }
 
-        <T>AnalyzeTask(final Stream<T> stream, SourceHandler<T> sourceHandler,
+        private <T>AnalyzeTask(final Stream<T> stream, SourceHandler<T> sourceHandler,
                 String... extraOptions) {
             super(stream, sourceHandler, extraOptions);
             cuts = analyze();
@@ -264,7 +268,7 @@ class TaskFactory {
 
         CompileTask(final Collection<OuterWrap> wraps) {
             super(wraps.stream(), new WrapSourceHandler(),
-                    "-Xlint:unchecked", "-XaddExports:jdk.jshell/jdk.internal.jshell.remote=ALL-UNNAMED", "-proc:none");
+                    "-Xlint:unchecked", "-XaddExports:jdk.jshell/jdk.internal.jshell.remote=ALL-UNNAMED", "-proc:none", "-parameters");
         }
 
         boolean compile() {

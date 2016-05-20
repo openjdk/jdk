@@ -78,6 +78,12 @@ public enum CompilerConstants {
     /** function prefix for anonymous functions */
     ANON_FUNCTION_PREFIX("L:"),
 
+    /** separator for method names of nested functions */
+    NESTED_FUNCTION_SEPARATOR("#"),
+
+    /** separator for making method names unique by appending numeric ids */
+    ID_FUNCTION_SEPARATOR("-"),
+
     /** method name for Java method that is the program entry point */
     PROGRAM(":program"),
 

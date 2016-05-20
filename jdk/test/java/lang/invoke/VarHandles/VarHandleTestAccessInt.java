@@ -104,6 +104,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
@@ -430,12 +431,22 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             assertEquals(x, 2, "weakCompareAndSetRelease int");
         }
 
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetVolatile(recv, 2, 1);
+            }
+            assertEquals(success, true, "weakCompareAndSetVolatile int");
+            int x = (int) vh.get(recv);
+            assertEquals(x, 1, "weakCompareAndSetVolatile int value");
+        }
+
         // Compare set and get
         {
-            int o = (int) vh.getAndSet(recv, 1);
-            assertEquals(o, 2, "getAndSet int");
+            int o = (int) vh.getAndSet(recv, 2);
+            assertEquals(o, 1, "getAndSet int");
             int x = (int) vh.get(recv);
-            assertEquals(x, 1, "getAndSet int value");
+            assertEquals(x, 2, "getAndSet int value");
         }
 
         vh.set(recv, 1);
@@ -573,12 +584,22 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             assertEquals(x, 2, "weakCompareAndSetRelease int");
         }
 
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetRelease(2, 1);
+            }
+            assertEquals(success, true, "weakCompareAndSetVolatile int");
+            int x = (int) vh.get();
+            assertEquals(x, 1, "weakCompareAndSetVolatile int");
+        }
+
         // Compare set and get
         {
-            int o = (int) vh.getAndSet( 1);
-            assertEquals(o, 2, "getAndSet int");
+            int o = (int) vh.getAndSet(2);
+            assertEquals(o, 1, "getAndSet int");
             int x = (int) vh.get();
-            assertEquals(x, 1, "getAndSet int value");
+            assertEquals(x, 2, "getAndSet int value");
         }
 
         vh.set(1);
@@ -719,12 +740,22 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
                 assertEquals(x, 2, "weakCompareAndSetRelease int");
             }
 
+            {
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = vh.weakCompareAndSetVolatile(array, i, 2, 1);
+                }
+                assertEquals(success, true, "weakCompareAndSetVolatile int");
+                int x = (int) vh.get(array, i);
+                assertEquals(x, 1, "weakCompareAndSetVolatile int");
+            }
+
             // Compare set and get
             {
-                int o = (int) vh.getAndSet(array, i, 1);
-                assertEquals(o, 2, "getAndSet int");
+                int o = (int) vh.getAndSet(array, i, 2);
+                assertEquals(o, 1, "getAndSet int");
                 int x = (int) vh.get(array, i);
-                assertEquals(x, 1, "getAndSet int value");
+                assertEquals(x, 2, "getAndSet int value");
             }
 
             vh.set(array, i, 1);
@@ -802,6 +833,10 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
 
             checkIOOBE(() -> {
                 boolean r = vh.weakCompareAndSet(array, ci, 1, 2);
+            });
+
+            checkIOOBE(() -> {
+                boolean r = vh.weakCompareAndSetVolatile(array, ci, 1, 2);
             });
 
             checkIOOBE(() -> {

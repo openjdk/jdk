@@ -50,7 +50,7 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
 
     static final long VALUE_2 = 0x1112131415161718L;
 
-    static final long VALUE_3 = 0x2122232425262728L;
+    static final long VALUE_3 = 0xFFFEFDFCFBFAF9F8L;
 
 
     @Override
@@ -247,9 +247,7 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
             checkROBE(() -> {
                 long o = (long) vh.getAndSet(array, ci, VALUE_1);
             });
-            checkUOE(() -> {
-                boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
-            });
+
 
             checkROBE(() -> {
                 long o = (long) vh.getAndAdd(array, ci, VALUE_1);

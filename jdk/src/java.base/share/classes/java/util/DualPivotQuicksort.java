@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,12 +146,26 @@ final class DualPivotQuicksort {
             }
         }
 
-        // Check special cases
-        // Implementation note: variable "right" is increased by 1.
-        if (run[count] == right++) { // The last run contains one element
-            run[++count] = right;
-        } else if (count <= 1) { // The array is already sorted
+        // These invariants should hold true:
+        //    run[0] = 0
+        //    run[<last>] = right + 1; (terminator)
+
+        if (count == 0) {
+            // A single equal run
             return;
+        } else if (count == 1 && run[count] > right) {
+            // Either a single ascending or a transformed descending run.
+            // Always check that a final run is a proper terminator, otherwise
+            // we have an unterminated trailing run, to handle downstream.
+            return;
+        }
+        right++;
+        if (run[count] < right) {
+            // Corner case: the final run is not a terminator. This may happen
+            // if a final run is an equals run, or there is a single-element run
+            // at the end. Fix up by adding a proper terminator at the end.
+            // Note that we terminate with (right + 1), incremented earlier.
+            run[++count] = right;
         }
 
         // Determine alternation base for merge
@@ -598,12 +612,26 @@ final class DualPivotQuicksort {
             }
         }
 
-        // Check special cases
-        // Implementation note: variable "right" is increased by 1.
-        if (run[count] == right++) { // The last run contains one element
-            run[++count] = right;
-        } else if (count <= 1) { // The array is already sorted
+        // These invariants should hold true:
+        //    run[0] = 0
+        //    run[<last>] = right + 1; (terminator)
+
+        if (count == 0) {
+            // A single equal run
             return;
+        } else if (count == 1 && run[count] > right) {
+            // Either a single ascending or a transformed descending run.
+            // Always check that a final run is a proper terminator, otherwise
+            // we have an unterminated trailing run, to handle downstream.
+            return;
+        }
+        right++;
+        if (run[count] < right) {
+            // Corner case: the final run is not a terminator. This may happen
+            // if a final run is an equals run, or there is a single-element run
+            // at the end. Fix up by adding a proper terminator at the end.
+            // Note that we terminate with (right + 1), incremented earlier.
+            run[++count] = right;
         }
 
         // Determine alternation base for merge
@@ -1086,12 +1114,26 @@ final class DualPivotQuicksort {
             }
         }
 
-        // Check special cases
-        // Implementation note: variable "right" is increased by 1.
-        if (run[count] == right++) { // The last run contains one element
-            run[++count] = right;
-        } else if (count <= 1) { // The array is already sorted
+        // These invariants should hold true:
+        //    run[0] = 0
+        //    run[<last>] = right + 1; (terminator)
+
+        if (count == 0) {
+            // A single equal run
             return;
+        } else if (count == 1 && run[count] > right) {
+            // Either a single ascending or a transformed descending run.
+            // Always check that a final run is a proper terminator, otherwise
+            // we have an unterminated trailing run, to handle downstream.
+            return;
+        }
+        right++;
+        if (run[count] < right) {
+            // Corner case: the final run is not a terminator. This may happen
+            // if a final run is an equals run, or there is a single-element run
+            // at the end. Fix up by adding a proper terminator at the end.
+            // Note that we terminate with (right + 1), incremented earlier.
+            run[++count] = right;
         }
 
         // Determine alternation base for merge
@@ -1574,12 +1616,26 @@ final class DualPivotQuicksort {
             }
         }
 
-        // Check special cases
-        // Implementation note: variable "right" is increased by 1.
-        if (run[count] == right++) { // The last run contains one element
-            run[++count] = right;
-        } else if (count <= 1) { // The array is already sorted
+        // These invariants should hold true:
+        //    run[0] = 0
+        //    run[<last>] = right + 1; (terminator)
+
+        if (count == 0) {
+            // A single equal run
             return;
+        } else if (count == 1 && run[count] > right) {
+            // Either a single ascending or a transformed descending run.
+            // Always check that a final run is a proper terminator, otherwise
+            // we have an unterminated trailing run, to handle downstream.
+            return;
+        }
+        right++;
+        if (run[count] < right) {
+            // Corner case: the final run is not a terminator. This may happen
+            // if a final run is an equals run, or there is a single-element run
+            // at the end. Fix up by adding a proper terminator at the end.
+            // Note that we terminate with (right + 1), incremented earlier.
+            run[++count] = right;
         }
 
         // Determine alternation base for merge
@@ -2158,12 +2214,26 @@ final class DualPivotQuicksort {
             }
         }
 
-        // Check special cases
-        // Implementation note: variable "right" is increased by 1.
-        if (run[count] == right++) { // The last run contains one element
-            run[++count] = right;
-        } else if (count <= 1) { // The array is already sorted
+        // These invariants should hold true:
+        //    run[0] = 0
+        //    run[<last>] = right + 1; (terminator)
+
+        if (count == 0) {
+            // A single equal run
             return;
+        } else if (count == 1 && run[count] > right) {
+            // Either a single ascending or a transformed descending run.
+            // Always check that a final run is a proper terminator, otherwise
+            // we have an unterminated trailing run, to handle downstream.
+            return;
+        }
+        right++;
+        if (run[count] < right) {
+            // Corner case: the final run is not a terminator. This may happen
+            // if a final run is an equals run, or there is a single-element run
+            // at the end. Fix up by adding a proper terminator at the end.
+            // Note that we terminate with (right + 1), incremented earlier.
+            run[++count] = right;
         }
 
         // Determine alternation base for merge
@@ -2701,12 +2771,26 @@ final class DualPivotQuicksort {
             }
         }
 
-        // Check special cases
-        // Implementation note: variable "right" is increased by 1.
-        if (run[count] == right++) { // The last run contains one element
-            run[++count] = right;
-        } else if (count <= 1) { // The array is already sorted
+        // These invariants should hold true:
+        //    run[0] = 0
+        //    run[<last>] = right + 1; (terminator)
+
+        if (count == 0) {
+            // A single equal run
             return;
+        } else if (count == 1 && run[count] > right) {
+            // Either a single ascending or a transformed descending run.
+            // Always check that a final run is a proper terminator, otherwise
+            // we have an unterminated trailing run, to handle downstream.
+            return;
+        }
+        right++;
+        if (run[count] < right) {
+            // Corner case: the final run is not a terminator. This may happen
+            // if a final run is an equals run, or there is a single-element run
+            // at the end. Fix up by adding a proper terminator at the end.
+            // Note that we terminate with (right + 1), incremented earlier.
+            run[++count] = right;
         }
 
         // Determine alternation base for merge

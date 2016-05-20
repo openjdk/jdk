@@ -56,11 +56,11 @@ import java.util.stream.Collectors;
 import jdk.internal.jimage.decompressor.CompressIndexes;
 import jdk.internal.jimage.decompressor.SignatureParser;
 import jdk.internal.jimage.decompressor.StringSharingDecompressor;
-import jdk.tools.jlink.internal.PoolImpl;
+import jdk.tools.jlink.internal.ModulePoolImpl;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.internal.ResourcePrevisitor;
 import jdk.tools.jlink.internal.StringTable;
 import jdk.tools.jlink.internal.Utils;
@@ -228,7 +228,7 @@ public class StringSharingPlugin implements TransformerPlugin, ResourcePrevisito
             }
         }
 
-        public byte[] transform(ModuleData resource, Pool out,
+        public byte[] transform(ModuleEntry resource, ModulePool out,
                 StringTable strings) throws IOException, Exception {
             byte[] content = resource.getBytes();
             ClassFile cf;
@@ -243,7 +243,7 @@ public class StringSharingPlugin implements TransformerPlugin, ResourcePrevisito
         }
 
         @SuppressWarnings("fallthrough")
-        private byte[] optimize(ModuleData resource, Pool resources,
+        private byte[] optimize(ModuleEntry resource, ModulePool resources,
                 StringTable strings,
                 Set<Integer> descriptorIndexes, byte[] content) throws Exception {
             DataInputStream stream = new DataInputStream(new ByteArrayInputStream(content));
@@ -348,27 +348,27 @@ public class StringSharingPlugin implements TransformerPlugin, ResourcePrevisito
     }
 
     @Override
-    public Set<PluginType> getType() {
-        Set<PluginType> set = new HashSet<>();
-        set.add(CATEGORY.COMPRESSOR);
+    public Set<Category> getType() {
+        Set<Category> set = new HashSet<>();
+        set.add(Category.COMPRESSOR);
         return Collections.unmodifiableSet(set);
     }
 
     @Override
-    public void visit(Pool in, Pool result) {
+    public void visit(ModulePool in, ModulePool result) {
         CompactCPHelper visit = new CompactCPHelper();
-        in.visit((resource) -> {
-            ModuleData res = resource;
+        in.transformAndCopy((resource) -> {
+            ModuleEntry res = resource;
             if (predicate.test(resource.getPath()) && resource.getPath().endsWith(".class")) {
                 byte[] compressed = null;
                 try {
-                    compressed = visit.transform(resource, result, ((PoolImpl) in).getStringTable());
+                    compressed = visit.transform(resource, result, ((ModulePoolImpl) in).getStringTable());
                 } catch (Exception ex) {
                     throw new PluginException(ex);
                 }
-                res = PoolImpl.newCompressedResource(resource,
+                res = ModulePoolImpl.newCompressedResource(resource,
                         ByteBuffer.wrap(compressed), getName(), null,
-                        ((PoolImpl) in).getStringTable(), in.getByteOrder());
+                        ((ModulePoolImpl) in).getStringTable(), in.getByteOrder());
             }
             return res;
         }, result);
@@ -405,10 +405,10 @@ public class StringSharingPlugin implements TransformerPlugin, ResourcePrevisito
     }
 
     @Override
-    public void previsit(Pool resources, StringTable strings) {
+    public void previsit(ModulePool resources, StringTable strings) {
         CompactCPHelper preVisit = new CompactCPHelper();
-        for (ModuleData resource : resources.getContent()) {
-            if (resource.getType().equals(Pool.ModuleDataType.CLASS_OR_RESOURCE)
+        resources.entries().forEach(resource -> {
+            if (resource.getType().equals(ModuleEntry.Type.CLASS_OR_RESOURCE)
                     && resource.getPath().endsWith(".class") && predicate.test(resource.getPath())) {
                 try {
                     preVisit.transform(resource, null, strings);
@@ -416,6 +416,6 @@ public class StringSharingPlugin implements TransformerPlugin, ResourcePrevisito
                     throw new PluginException(ex);
                 }
             }
-        }
+        });
     }
 }

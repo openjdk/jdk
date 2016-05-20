@@ -116,10 +116,8 @@
 
 # jdk_beans
 
-java/beans/XMLEncoder/Test4903007.java                          8060027 generic-all
-java/beans/XMLEncoder/java_awt_GridBagLayout.java               8060027 generic-all
-java/beans/XMLDecoder/8028054/TestConstructorFinder.java        8060027 generic-all
-java/beans/XMLDecoder/8028054/TestMethodFinder.java             8060027 generic-all
+java/beans/XMLDecoder/8028054/TestConstructorFinder.java        8156579 generic-all
+java/beans/XMLDecoder/8028054/TestMethodFinder.java             8156579 generic-all
 
 java/beans/Introspector/8132566/OverridePropertyInfoTest.java   8132565 generic-all
 java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 generic-all
@@ -127,8 +125,6 @@ java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 gen
 ############################################################################
 
 # jdk_lang
-
-java/lang/ClassLoader/deadlock/GetResource.java                 8029891 generic-all
 
 java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-all
 
@@ -142,6 +138,12 @@ java/lang/instrument/RetransformBigClass.sh                     8061177 generic-
 java/lang/instrument/BootClassPath/BootClassPathTest.sh         8072130 macosx-all
 
 java/lang/management/MemoryMXBean/LowMemoryTest.java            8130339 generic-all
+
+############################################################################
+
+# jdk_io
+
+java/io/pathNames/GeneralWin32.java                             8156595 windows-all
 
 ############################################################################
 
@@ -228,6 +230,8 @@ sun/security/pkcs11/Cipher/TestSymmCiphersNoPad.java            8077138,8023434 
 sun/security/pkcs11/KeyAgreement/TestDH.java                    8077138,8023434 windows-all
 sun/security/pkcs11/KeyAgreement/TestInterop.java               8077138,8023434 windows-all
 sun/security/pkcs11/KeyAgreement/TestShort.java                 8077138,8023434 windows-all
+sun/security/pkcs11/KeyAgreement/SupportedDHKeys.java           8154910 windows-all
+sun/security/pkcs11/KeyAgreement/UnsupportedDHKeys.java         8154910 windows-all
 sun/security/pkcs11/KeyGenerator/DESParity.java                 8077138,8023434 windows-all
 sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java          8077138,8023434 windows-all
 sun/security/pkcs11/KeyPairGenerator/TestDH2048.java            8077138,8023434 windows-all
@@ -288,11 +292,12 @@ sun/security/provider/NSASuiteB/TestDSAGenParameterSpec.java    8137255 generic-
 
 sun/security/x509/URICertStore/ExtensionsWithLDAP.java          8134577 generic-all
 
+sun/security/provider/SecureRandom/StrongSecureRandom.java      8157387 linux-all
+
 ############################################################################
 
 # jdk_sound
 
-javax/sound/midi/Gervill/SoftProvider/GetDevice.java            8059743 generic-all
 javax/sound/sampled/DirectAudio/bug6400879.java                 8148915 linux-all
 
 ############################################################################
