@@ -41,7 +41,6 @@ void InternalVMTests::run_test(const char* name, void (*test)()) {
 
 void InternalVMTests::run() {
   tty->print_cr("Running internal VM tests");
-  run_unit_test(TestDependencyContext_test);
   run_unit_test(test_semaphore);
   run_unit_test(TestOS_test);
   run_unit_test(TestReservedSpace_test);
