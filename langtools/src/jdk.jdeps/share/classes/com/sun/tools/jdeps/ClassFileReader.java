@@ -29,6 +29,7 @@ import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.Dependencies.ClassFileError;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -54,7 +55,7 @@ import java.util.stream.Stream;
  * ClassFileReader reads ClassFile(s) of a given path that can be
  * a .class file, a directory, or a JAR file.
  */
-public class ClassFileReader {
+public class ClassFileReader implements Closeable {
     /**
      * Returns a ClassFileReader instance of a given path.
      */
@@ -175,6 +176,10 @@ public class ClassFileReader {
     static boolean isClass(Path file) {
         String fn = file.getFileName().toString();
         return fn.endsWith(".class");
+    }
+
+    @Override
+    public void close() throws IOException {
     }
 
     class FileIterator implements Iterator<ClassFile> {
@@ -304,6 +309,11 @@ public class ClassFileReader {
         JarFileReader(Path path, JarFile jf) throws IOException {
             super(path);
             this.jarfile = jf;
+        }
+
+        @Override
+        public void close() throws IOException {
+            jarfile.close();
         }
 
         protected Set<String> scan() {

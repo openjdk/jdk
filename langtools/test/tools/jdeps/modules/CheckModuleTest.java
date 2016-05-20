@@ -78,19 +78,19 @@ public class CheckModuleTest {
 
     @Test(dataProvider = "javaBase")
     public void testJavaBase(String name, ModuleMetaData data) throws Exception {
-        JdepsUtil.Command jdeps = JdepsUtil.newCommand(
-            String.format("jdeps -check %s -mp %s%n", name, MODS_DIR)
-        );
-        jdeps.appModulePath(MODS_DIR.toString());
+        String cmd = String.format("jdeps -check %s -mp %s%n", name, MODS_DIR);
+        try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd)) {
+            jdeps.appModulePath(MODS_DIR.toString());
 
-        ModuleAnalyzer analyzer = jdeps.getModuleAnalyzer(Set.of(name));
-        assertTrue(analyzer.run());
-        jdeps.dumpOutput(System.err);
+            ModuleAnalyzer analyzer = jdeps.getModuleAnalyzer(Set.of(name));
+            assertTrue(analyzer.run());
+            jdeps.dumpOutput(System.err);
 
-        ModuleDescriptor[] descriptors = analyzer.descriptors(name);
-        for (int i=0; i < 3; i++) {
-            descriptors[i].requires().stream()
-                .forEach(req -> data.checkRequires(req));
+            ModuleDescriptor[] descriptors = analyzer.descriptors(name);
+            for (int i = 0; i < 3; i++) {
+                descriptors[i].requires().stream()
+                    .forEach(req -> data.checkRequires(req));
+            }
         }
     }
 
@@ -137,26 +137,27 @@ public class CheckModuleTest {
 
     @Test(dataProvider = "modules")
     public void modularTest(String name, ModuleMetaData[] data) throws Exception {
-        JdepsUtil.Command jdeps = JdepsUtil.newCommand(
-            String.format("jdeps -check %s -mp %s%n", name, MODS_DIR)
-        );
-        jdeps.appModulePath(MODS_DIR.toString());
+        String cmd = String.format("jdeps -check %s -mp %s%n", name, MODS_DIR);
 
-        ModuleAnalyzer analyzer = jdeps.getModuleAnalyzer(Set.of(name));
-        assertTrue(analyzer.run());
-        jdeps.dumpOutput(System.err);
+        try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd)) {
+            jdeps.appModulePath(MODS_DIR.toString());
 
-        // compare the module descriptors and the suggested versions
-        ModuleDescriptor[] descriptors = analyzer.descriptors(name);
-        for (int i=0; i < 3; i++) {
-            ModuleMetaData metaData = data[i];
-            descriptors[i].requires().stream()
-                .forEach(req -> metaData.checkRequires(req));
+            ModuleAnalyzer analyzer = jdeps.getModuleAnalyzer(Set.of(name));
+            assertTrue(analyzer.run());
+            jdeps.dumpOutput(System.err);
+
+            // compare the module descriptors and the suggested versions
+            ModuleDescriptor[] descriptors = analyzer.descriptors(name);
+            for (int i = 0; i < 3; i++) {
+                ModuleMetaData metaData = data[i];
+                descriptors[i].requires().stream()
+                    .forEach(req -> metaData.checkRequires(req));
+            }
+
+            Map<String, Set<String>> unused = analyzer.unusedQualifiedExports(name);
+            // verify unuused qualified exports
+            assertEquals(unused, data[0].exports);
         }
-
-        Map<String, Set<String>> unused = analyzer.unusedQualifiedExports(name);
-        // verify unuused qualified exports
-        assertEquals(unused, data[0].exports);
     }
 
 }

@@ -107,8 +107,7 @@ public class GenModuleInfo {
                 .map(Path::toString);
 
         JdepsUtil.jdeps(Stream.concat(Stream.of("-genmoduleinfo", DEST_DIR.toString()),
-                            files)
-                    .toArray(String[]::new));
+                                      files).toArray(String[]::new));
 
         // check file exists
         Arrays.stream(modules)
@@ -162,14 +161,13 @@ public class GenModuleInfo {
     }
 
     private Set<String> packages(Path dir) {
-        try {
-            return Files.find(dir, Integer.MAX_VALUE,
+        try (Stream<Path> stream = Files.find(dir, Integer.MAX_VALUE,
                              ((path, attrs) -> attrs.isRegularFile() &&
-                                               path.toString().endsWith(".class")))
-                        .map(path -> toPackageName(dir.relativize(path)))
-                        .filter(pkg -> pkg.length() > 0)   // module-info
-                        .distinct()
-                        .collect(Collectors.toSet());
+                                               path.toString().endsWith(".class")))) {
+            return stream.map(path -> toPackageName(dir.relativize(path)))
+                         .filter(pkg -> pkg.length() > 0)   // module-info
+                         .distinct()
+                         .collect(Collectors.toSet());
         } catch (IOException x) {
             throw new UncheckedIOException(x);
         }

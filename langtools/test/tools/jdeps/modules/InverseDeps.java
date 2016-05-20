@@ -117,26 +117,28 @@ public class InverseDeps {
 
     @Test(dataProvider = "testrequires")
     public void testrequires(String name, String[][] expected) throws Exception {
-        JdepsUtil.Command jdeps = JdepsUtil.newCommand(
-            String.format("jdeps -inverse -modulepath %s -requires %s -addmods %s%n",
-                MODS_DIR, name, modules.stream().collect(Collectors.joining(","))
-        ));
-        jdeps.appModulePath(MODS_DIR.toString())
-             .addmods(modules)
-             .requires(Set.of(name));
+        String cmd1 = String.format("jdeps -inverse -modulepath %s -requires %s -addmods %s%n",
+                MODS_DIR, name, modules.stream().collect(Collectors.joining(",")));
 
-        runJdeps(jdeps, expected);
+        try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd1)) {
+            jdeps.appModulePath(MODS_DIR.toString())
+                .addmods(modules)
+                .requires(Set.of(name));
 
-        // automatic module
-        jdeps = JdepsUtil.newCommand(
-            String.format("jdeps -inverse -modulepath %s -requires %s -addmods ALL-MODULE-PATH%n",
-                          LIBS_DIR, name)
-        );
-        jdeps.appModulePath(MODS_DIR.toString())
-            .addmods(Set.of("ALL-MODULE-PATH"))
-            .requires(Set.of(name));
+            runJdeps(jdeps, expected);
+        }
 
-        runJdeps(jdeps, expected);
+        String cmd2 = String.format("jdeps -inverse -modulepath %s -requires %s" +
+            " -addmods ALL-MODULE-PATH%n", LIBS_DIR, name);
+
+            // automatic module
+        try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd2)) {
+            jdeps.appModulePath(MODS_DIR.toString())
+                .addmods(Set.of("ALL-MODULE-PATH"))
+                .requires(Set.of(name));
+
+            runJdeps(jdeps, expected);
+        }
     }
 
     @DataProvider(name = "testpackage")
@@ -162,15 +164,15 @@ public class InverseDeps {
 
     @Test(dataProvider = "testpackage")
     public void testpackage(String name, String[][] expected) throws Exception {
-        JdepsUtil.Command jdeps = JdepsUtil.newCommand(
-            String.format("jdeps -inverse -modulepath %s -package %s -addmods %s%n",
-                MODS_DIR, name, modules.stream().collect(Collectors.joining(","))
-        ));
-        jdeps.appModulePath(MODS_DIR.toString())
-            .addmods(modules)
-            .matchPackages(Set.of(name));
+        String cmd = String.format("jdeps -inverse -modulepath %s -package %s -addmods %s%n",
+            MODS_DIR, name, modules.stream().collect(Collectors.joining(",")));
+        try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd)) {
+            jdeps.appModulePath(MODS_DIR.toString())
+                .addmods(modules)
+                .matchPackages(Set.of(name));
 
-        runJdeps(jdeps, expected);
+            runJdeps(jdeps, expected);
+        }
     }
 
     @DataProvider(name = "testregex")
@@ -193,16 +195,16 @@ public class InverseDeps {
 
     @Test(dataProvider = "testregex")
     public void testregex(String name, String[][] expected) throws Exception {
-        JdepsUtil.Command jdeps = JdepsUtil.newCommand(
-            String.format("jdeps -inverse -modulepath %s -regex %s -addmods %s%n",
-                MODS_DIR, name, modules.stream().collect(Collectors.joining(",")))
-        );
+        String cmd = String.format("jdeps -inverse -modulepath %s -regex %s -addmods %s%n",
+                MODS_DIR, name, modules.stream().collect(Collectors.joining(",")));
 
-        jdeps.appModulePath(MODS_DIR.toString())
-             .addmods(modules)
-             .regex(name);
+        try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd)) {
+            jdeps.appModulePath(MODS_DIR.toString())
+                .addmods(modules)
+                .regex(name);
 
-        runJdeps(jdeps, expected);
+            runJdeps(jdeps, expected);
+        }
     }
 
     @DataProvider(name = "classpath")
@@ -237,26 +239,26 @@ public class InverseDeps {
             .collect(Collectors.joining(File.pathSeparator));
 
         Path jarfile = LIBS_DIR.resolve("m7.jar");
-        JdepsUtil.Command jdeps = JdepsUtil.newCommand(
-            String.format("jdeps -inverse -classpath %s -regex %s %s%n",
-                cpath, name, jarfile)
-        );
-        jdeps.verbose("-verbose:class")
-             .addClassPath(cpath)
-             .regex(name).addRoot(jarfile);
-        runJdeps(jdeps, expected);
+
+        String cmd1 = String.format("jdeps -inverse -classpath %s -regex %s %s%n",
+            cpath, name, jarfile);
+        try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd1)) {
+            jdeps.verbose("-verbose:class")
+                .addClassPath(cpath)
+                .regex(name).addRoot(jarfile);
+            runJdeps(jdeps, expected);
+        }
 
         // all JAR files on the command-line arguments
         Set<Path> paths = modules.stream()
-            .map(mn -> LIBS_DIR.resolve(mn + ".jar"))
-            .collect(Collectors.toSet());
-        jdeps = JdepsUtil.newCommand(
-            String.format("jdeps -inverse -regex %s %s%n", name, paths)
-        );
-        jdeps.verbose("-verbose:class").regex(name);
-        paths.forEach(jdeps::addRoot);
-        runJdeps(jdeps, expected);
-
+                                 .map(mn -> LIBS_DIR.resolve(mn + ".jar"))
+                                 .collect(Collectors.toSet());
+        String cmd2 = String.format("jdeps -inverse -regex %s %s%n", name, paths);
+        try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd2)) {
+            jdeps.verbose("-verbose:class").regex(name);
+            paths.forEach(jdeps::addRoot);
+            runJdeps(jdeps, expected);
+        }
     }
 
     private void runJdeps(JdepsUtil.Command jdeps, String[][] expected)  throws Exception {
@@ -292,7 +294,6 @@ public class InverseDeps {
 
             assertFalse(noneMatched);
         }
-
     }
 
 }

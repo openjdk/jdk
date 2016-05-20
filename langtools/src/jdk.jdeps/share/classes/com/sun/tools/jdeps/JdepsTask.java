@@ -499,40 +499,41 @@ class JdepsTask {
     }
 
     boolean run() throws IOException {
-        JdepsConfiguration config = buildConfig();
+        try (JdepsConfiguration config = buildConfig()) {
 
-        // detect split packages
-        config.splitPackages().entrySet().stream()
-            .sorted(Map.Entry.comparingByKey())
-            .forEach(e -> System.out.format("split package: %s %s%n", e.getKey(),
-                                            e.getValue().toString()));
+            // detect split packages
+            config.splitPackages().entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(e -> System.out.format("split package: %s %s%n", e.getKey(),
+                    e.getValue().toString()));
 
-        // check if any module specified in -requires is missing
-        Stream.concat(options.addmods.stream(), options.requires.stream())
-              .filter(mn -> !config.isValidToken(mn))
-              .forEach(mn -> config.findModule(mn).orElseThrow(() ->
-                  new UncheckedBadArgs(new BadArgs("err.module.not.found", mn))));
+            // check if any module specified in -requires is missing
+            Stream.concat(options.addmods.stream(), options.requires.stream())
+                .filter(mn -> !config.isValidToken(mn))
+                .forEach(mn -> config.findModule(mn).orElseThrow(() ->
+                    new UncheckedBadArgs(new BadArgs("err.module.not.found", mn))));
 
-        // -genmoduleinfo
-        if (options.genModuleInfo != null) {
-            return genModuleInfo(config);
-        }
+            // -genmoduleinfo
+            if (options.genModuleInfo != null) {
+                return genModuleInfo(config);
+            }
 
-        // -check
-        if (options.checkModuleDeps != null) {
-            return new ModuleAnalyzer(config, log, options.checkModuleDeps).run();
-        }
+            // -check
+            if (options.checkModuleDeps != null) {
+                return new ModuleAnalyzer(config, log, options.checkModuleDeps).run();
+            }
 
-        if (options.dotOutputDir != null &&
+            if (options.dotOutputDir != null &&
                 (options.verbose == SUMMARY || options.verbose == MODULE) &&
                 !options.addmods.isEmpty() && inputArgs.isEmpty()) {
-            return new ModuleAnalyzer(config, log).genDotFiles(options.dotOutputDir);
-        }
+                return new ModuleAnalyzer(config, log).genDotFiles(options.dotOutputDir);
+            }
 
-        if (options.inverse) {
-            return analyzeInverseDeps(config);
-        } else {
-            return analyzeDeps(config);
+            if (options.inverse) {
+                return analyzeInverseDeps(config);
+            } else {
+                return analyzeDeps(config);
+            }
         }
     }
 
