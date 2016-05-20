@@ -369,9 +369,9 @@ public class Analyzer {
         }
     }
 
-    private static final JdkInternals REMOVED_JDK_INTERNALS = new JdkInternals();
+    static final JdkInternals REMOVED_JDK_INTERNALS = new JdkInternals();
 
-    private static class JdkInternals extends Module {
+    static class JdkInternals extends Module {
         private final String BUNDLE = "com.sun.tools.jdeps.resources.jdkinternals";
 
         private final Set<String> jdkinternals;
@@ -403,6 +403,11 @@ public class Analyzer {
         @Override
         public String name() {
             return getName();
+        }
+
+        @Override
+        public boolean isJDK() {
+            return true;
         }
 
         @Override

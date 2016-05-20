@@ -26,6 +26,7 @@
 package com.sun.tools.jdeps;
 
 import static com.sun.tools.jdeps.Analyzer.NOT_FOUND;
+import static com.sun.tools.jdeps.Analyzer.REMOVED_JDK_INTERNALS;
 import static com.sun.tools.jdeps.Analyzer.Type.*;
 import static com.sun.tools.jdeps.JdepsWriter.*;
 import static com.sun.tools.jdeps.JdepsConfiguration.ALL_MODULE_PATH;
@@ -666,19 +667,17 @@ class JdepsTask {
         });
 
         if (!ok && !options.nowarning) {
-            log.println("Missing dependencies");
+            log.println("ERROR: missing dependencies");
             builder.visitMissingDeps(
                 new Analyzer.Visitor() {
                     @Override
                     public void visitDependence(String origin, Archive originArchive,
                                                 String target, Archive targetArchive) {
-                        if (targetArchive == NOT_FOUND)
+                        if (builder.notFound(targetArchive))
                             log.format("   %-50s -> %-50s %s%n",
                                 origin, target, targetArchive.getName());
                     }
                 });
-
-            log.println("ERROR: missing dependencies (check \"requires NOT_FOUND;\")");
         }
         return ok;
     }
