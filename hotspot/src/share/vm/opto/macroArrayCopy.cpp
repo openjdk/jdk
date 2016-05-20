@@ -503,46 +503,50 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
     // further to JVM_ArrayCopy on the first per-oop check that fails.
     // (Actually, we don't move raw bits only; the GC requires card marks.)
 
-    // Get the klass* for both src and dest
-    Node* src_klass  = ac->in(ArrayCopyNode::SrcKlass);
-    Node* dest_klass = ac->in(ArrayCopyNode::DestKlass);
+    // We don't need a subtype check for validated copies and Object[].clone()
+    bool skip_subtype_check = ac->is_arraycopy_validated() || ac->is_copyof_validated() ||
+                              ac->is_copyofrange_validated() || ac->is_cloneoop();
+    if (!skip_subtype_check) {
+      // Get the klass* for both src and dest
+      Node* src_klass  = ac->in(ArrayCopyNode::SrcKlass);
+      Node* dest_klass = ac->in(ArrayCopyNode::DestKlass);
 
-    assert(src_klass != NULL && dest_klass != NULL, "should have klasses");
+      assert(src_klass != NULL && dest_klass != NULL, "should have klasses");
 
-    // Generate the subtype check.
-    // This might fold up statically, or then again it might not.
-    //
-    // Non-static example:  Copying List<String>.elements to a new String[].
-    // The backing store for a List<String> is always an Object[],
-    // but its elements are always type String, if the generic types
-    // are correct at the source level.
-    //
-    // Test S[] against D[], not S against D, because (probably)
-    // the secondary supertype cache is less busy for S[] than S.
-    // This usually only matters when D is an interface.
-    Node* not_subtype_ctrl = (ac->is_arraycopy_validated() || ac->is_copyof_validated() || ac->is_copyofrange_validated()) ? top() :
-      Phase::gen_subtype_check(src_klass, dest_klass, ctrl, mem, &_igvn);
-    // Plug failing path into checked_oop_disjoint_arraycopy
-    if (not_subtype_ctrl != top()) {
-      Node* local_ctrl = not_subtype_ctrl;
-      MergeMemNode* local_mem = MergeMemNode::make(mem);
-      transform_later(local_mem);
+      // Generate the subtype check.
+      // This might fold up statically, or then again it might not.
+      //
+      // Non-static example:  Copying List<String>.elements to a new String[].
+      // The backing store for a List<String> is always an Object[],
+      // but its elements are always type String, if the generic types
+      // are correct at the source level.
+      //
+      // Test S[] against D[], not S against D, because (probably)
+      // the secondary supertype cache is less busy for S[] than S.
+      // This usually only matters when D is an interface.
+      Node* not_subtype_ctrl = Phase::gen_subtype_check(src_klass, dest_klass, ctrl, mem, &_igvn);
+      // Plug failing path into checked_oop_disjoint_arraycopy
+      if (not_subtype_ctrl != top()) {
+        Node* local_ctrl = not_subtype_ctrl;
+        MergeMemNode* local_mem = MergeMemNode::make(mem);
+        transform_later(local_mem);
 
-      // (At this point we can assume disjoint_bases, since types differ.)
-      int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
-      Node* p1 = basic_plus_adr(dest_klass, ek_offset);
-      Node* n1 = LoadKlassNode::make(_igvn, NULL, C->immutable_memory(), p1, TypeRawPtr::BOTTOM);
-      Node* dest_elem_klass = transform_later(n1);
-      Node* cv = generate_checkcast_arraycopy(&local_ctrl, &local_mem,
-                                              adr_type,
-                                              dest_elem_klass,
-                                              src, src_offset, dest, dest_offset,
-                                              ConvI2X(copy_length), dest_uninitialized);
-      if (cv == NULL)  cv = intcon(-1);  // failure (no stub available)
-      checked_control = local_ctrl;
-      checked_i_o     = *io;
-      checked_mem     = local_mem->memory_at(alias_idx);
-      checked_value   = cv;
+        // (At this point we can assume disjoint_bases, since types differ.)
+        int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
+        Node* p1 = basic_plus_adr(dest_klass, ek_offset);
+        Node* n1 = LoadKlassNode::make(_igvn, NULL, C->immutable_memory(), p1, TypeRawPtr::BOTTOM);
+        Node* dest_elem_klass = transform_later(n1);
+        Node* cv = generate_checkcast_arraycopy(&local_ctrl, &local_mem,
+                                                adr_type,
+                                                dest_elem_klass,
+                                                src, src_offset, dest, dest_offset,
+                                                ConvI2X(copy_length), dest_uninitialized);
+        if (cv == NULL)  cv = intcon(-1);  // failure (no stub available)
+        checked_control = local_ctrl;
+        checked_i_o     = *io;
+        checked_mem     = local_mem->memory_at(alias_idx);
+        checked_value   = cv;
+      }
     }
     // At this point we know we do not need type checks on oop stores.
 

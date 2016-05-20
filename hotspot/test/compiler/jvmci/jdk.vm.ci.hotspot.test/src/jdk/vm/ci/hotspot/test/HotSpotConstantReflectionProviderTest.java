@@ -58,7 +58,7 @@ public class HotSpotConstantReflectionProviderTest {
     public void testForObject(Object obj, String expected) {
         JavaConstant jConst = TestHelper.CONSTANT_REFLECTION_PROVIDER.forObject(obj);
         Assert.assertNotNull(jConst,
-                             "An instance of JavaConstant returned by" + " \"forObject\" method should not be null");
+                        "An instance of JavaConstant returned by" + " \"forObject\" method should not be null");
         Assert.assertEquals(jConst.toString(), expected, "Unexpected result:");
     }
 
@@ -66,131 +66,46 @@ public class HotSpotConstantReflectionProviderTest {
     public void testForString(String string, String expected) {
         JavaConstant jConst = CONSTANT_REFLECTION_PROVIDER.forString(string);
         Assert.assertNotNull(jConst,
-                             "An instance of JavaConstant returned by" + " \"forString\" method should not be null");
+                        "An instance of JavaConstant returned by" + " \"forString\" method should not be null");
         Assert.assertEquals(jConst.toString(), expected, "Unexpected result:");
     }
 
     @Test(dataProvider = "constantEqualsDataProvider", dataProviderClass = ConstantEqualsDataProvider.class)
     public void testConstantEquals(Constant const1, Constant const2, Boolean expected) {
         Assert.assertEquals(CONSTANT_REFLECTION_PROVIDER.constantEquals(const1, const2), expected,
-                            "Unexpected result:");
+                        "Unexpected result:");
     }
 
     @Test(dataProvider = "readArrayLengthDataProvider", dataProviderClass = ReadArrayLengthDataProvider.class)
     public void testReadArrayLength(JavaConstant array, Integer expected) {
         Assert.assertEquals(CONSTANT_REFLECTION_PROVIDER.readArrayLength(array), expected,
-                            "Unexpected result:");
+                        "Unexpected result:");
     }
 
     @Test(dataProvider = "readArrayElementDataProvider", dataProviderClass = ReadArrayElementDataProvider.class)
     public void testReadArrayElement(JavaConstant array, int index, Object expected) {
         Assert.assertEquals(CONSTANT_REFLECTION_PROVIDER.readArrayElement(array, index), expected,
-                            "Unexpected result:");
+                        "Unexpected result:");
     }
 
     @Test(dataProvider = "readFieldValueDataProvider", dataProviderClass = ReadFieldValueDataProvider.class)
     public void testReadFieldValue(ResolvedJavaField field, JavaConstant receiver, JavaConstant expected) {
         JavaConstant actual = CONSTANT_REFLECTION_PROVIDER.readFieldValue(field, receiver);
         Assert.assertEquals(actual == null ? "null" : actual.toString(),
-                            expected == null ? "null" : expected.toString(), "Unexpected result:");
+                        expected == null ? "null" : expected.toString(), "Unexpected result:");
     }
 
-    @Test(dataProvider = "readFieldValueNegativeDataProvider",
-            dataProviderClass = ReadFieldValueDataProvider.class,
-            expectedExceptions = {NullPointerException.class})
+    @Test(dataProvider = "readFieldValueNegativeDataProvider", dataProviderClass = ReadFieldValueDataProvider.class, expectedExceptions = {NullPointerException.class})
     public void testNegativeReadFieldValue(ResolvedJavaField field, JavaConstant receiver) {
         CONSTANT_REFLECTION_PROVIDER.readFieldValue(field, receiver);
-    }
-
-    @Test(dataProvider = "readStableFieldValueDataProvider",
-            dataProviderClass = ReadStableFieldValueDataProvider.class)
-    public void testReadStableFieldValue(ResolvedJavaField field, JavaConstant receiver, boolean isDefStab,
-                                         JavaConstant expected) {
-        Assert.assertEquals(
-                CONSTANT_REFLECTION_PROVIDER.readStableFieldValue(field, receiver, isDefStab),
-                expected,
-                "Unexpected result:");
-    }
-
-    @Test(dataProvider = "readStableFieldValueArrayDataProvider",
-            dataProviderClass = ReadStableFieldValueDataProvider.class)
-    public void testReadStableFieldValueForArray(ResolvedJavaField field, JavaConstant receiver, boolean isDefStab,
-                                                 int arrayDim, JavaConstant expected) {
-        JavaConstant result = CONSTANT_REFLECTION_PROVIDER.readStableFieldValue(field, receiver,
-                                                                                isDefStab);
-        boolean resultDefStab = false;
-        int resultStableDim = -1;
-        try {
-            Class<?> hotSpotObjectConstantImplClass = Class.forName(
-                    "jdk.vm.ci.hotspot.HotSpotObjectConstantImpl");
-            Method getStableDimensionMethod = hotSpotObjectConstantImplClass.getDeclaredMethod(
-                    "getStableDimension");
-            Method isDefaultStableMethod = hotSpotObjectConstantImplClass.getDeclaredMethod(
-                    "isDefaultStable");
-            getStableDimensionMethod.setAccessible(true);
-            isDefaultStableMethod.setAccessible(true);
-            resultDefStab = (boolean) isDefaultStableMethod.invoke(result);
-            resultStableDim = (int) getStableDimensionMethod.invoke(result);
-        } catch (ReflectiveOperationException e) {
-            throw new Error("Unexpected error: " + e, e);
-        }
-        Assert.assertEquals(resultDefStab, isDefStab,
-                            "Wrong default stable value for " + result.toString());
-        Assert.assertEquals(resultStableDim, arrayDim,
-                            "Wrong array dimension for " + result.toString());
-        Assert.assertEquals(result.toString(), expected.toString(), "Unexpected result:");
-    }
-
-    @Test(dataProvider = "readStableFieldValueNegativeDataProvider",
-            dataProviderClass = ReadStableFieldValueDataProvider.class,
-            expectedExceptions = {NullPointerException.class})
-    public void testNegativeReadStableFieldValue(ResolvedJavaField field, JavaConstant receiver, boolean isDefStab) {
-        CONSTANT_REFLECTION_PROVIDER.readStableFieldValue(field, receiver, isDefStab);
-    }
-
-    @Test(dataProvider = "readConstantFieldValueDataProvider",
-            dataProviderClass = ReadConstantFieldValueDataProvider.class)
-    public void testReadConstantFieldValue(ResolvedJavaField field, JavaConstant receiver, JavaConstant expected,
-                                           String testInfo) {
-        String msg = String.format("Unexpected result for %s. Field is stable = %s.", testInfo,
-                                   ((HotSpotResolvedJavaField) field).isStable());
-        Assert.assertEquals(CONSTANT_REFLECTION_PROVIDER.readConstantFieldValue(field, receiver),
-                            expected, msg);
-    }
-
-    @Test(dataProvider = "readConstantFieldValueNegativeDataProvider",
-            dataProviderClass = ReadConstantFieldValueDataProvider.class,
-            expectedExceptions = {NullPointerException.class})
-    public void testNegativeReadConstantFieldValue(ResolvedJavaField field, JavaConstant receiver) {
-        CONSTANT_REFLECTION_PROVIDER.readConstantFieldValue(field, receiver);
-    }
-
-    @Test(dataProvider = "readConstantArrayElementDataProvider",
-            dataProviderClass = ReadConstantArrayElementDataProvider.class)
-    public void testReadConstantArrayElement(JavaConstant array, int index, JavaConstant expected, String testInfo) {
-        JavaConstant actual = CONSTANT_REFLECTION_PROVIDER.readConstantArrayElement(array, index);
-        Assert.assertEquals(actual == null ? "null" : actual.toString(),
-                            expected == null ? "null" : expected.toString(),
-                            String.format("Unexpected result while testing %s:", testInfo));
-    }
-
-    @Test(dataProvider = "readConstantArrayElementForOffsetDataProvider",
-            dataProviderClass = ReadConstantArrayElementDataProvider.class)
-    public void testReadConstantArrayElementForOffset(JavaConstant array, long offset, JavaConstant expected,
-                                                      String testInfo) {
-        JavaConstant actual = CONSTANT_REFLECTION_PROVIDER.readConstantArrayElementForOffset(array,
-                                                                                             offset);
-        Assert.assertEquals(actual == null ? "null" : actual.toString(),
-                            expected == null ? "null" : expected.toString(),
-                            String.format("Unexpected result while testing %s:", testInfo));
     }
 
     @Test(dataProvider = "asJavaTypeDataProvider", dataProviderClass = AsJavaTypeDataProvider.class)
     public void testAsJavaType(JavaConstant constant, String expected) {
         ResolvedJavaType actual = CONSTANT_REFLECTION_PROVIDER.asJavaType(constant);
         Assert.assertEquals(actual == null ? "null" : actual.toJavaName(),
-                            expected == null ? "null" : expected,
-                            "Unexpected result, wrong type returned:");
+                        expected == null ? "null" : expected,
+                        "Unexpected result, wrong type returned:");
     }
 
     @Test(dataProvider = "boxPrimitiveDataProvider", dataProviderClass = BoxPrimitiveDataProvider.class)
@@ -221,6 +136,6 @@ public class HotSpotConstantReflectionProviderTest {
     public void testGetMethodHandleAccess() {
         MethodHandleAccessProvider actual = CONSTANT_REFLECTION_PROVIDER.getMethodHandleAccess();
         Assert.assertNotNull(actual,
-                             "Returned MethodHandleAccessProvider instance should not be null");
+                        "Returned MethodHandleAccessProvider instance should not be null");
     }
 }

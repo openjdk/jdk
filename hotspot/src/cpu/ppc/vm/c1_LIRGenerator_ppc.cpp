@@ -1353,7 +1353,11 @@ void LIRGenerator::do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) {
     }
   }
 
-  __ membar();
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    __ membar_acquire();
+  } else {
+    __ membar();
+  }
 }
 
 

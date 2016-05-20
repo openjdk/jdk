@@ -151,8 +151,6 @@ const DirectivesParser::key DirectivesParser::keys[] = {
     { "c2",     type_c2,     0, mask(type_directives), NULL, UnknownFlagType },
     { "match",  type_match,  1, mask(type_directives), NULL, UnknownFlagType },
     { "inline", type_inline, 1, mask(type_directives) | mask(type_c1) | mask(type_c2), NULL, UnknownFlagType },
-    { "enable", type_enable, 1, mask(type_directives) | mask(type_c1) | mask(type_c2), NULL, UnknownFlagType },
-    { "preset", type_preset, 0, mask(type_c1) | mask(type_c2), NULL, UnknownFlagType },
 
     // Global flags
     #define common_flag_key(name, type, dvalue, compiler) \
@@ -353,7 +351,7 @@ bool DirectivesParser::set_option(JSON_TYPE t, JSON_VAL* v) {
       if (!set_option_flag(t, v, option_key, current_directive->_c1_store)) {
         return false;
       }
-      if(!set_option_flag(t, v, option_key, current_directive->_c2_store)) {
+      if (!set_option_flag(t, v, option_key, current_directive->_c2_store)) {
         return false;
       }
     } else {
@@ -432,31 +430,6 @@ bool DirectivesParser::set_option(JSON_TYPE t, JSON_VAL* v) {
     current_directiveset = current_directive->_c2_store;
     if (t != JSON_TRUE && t != JSON_FALSE) {
       error(VALUE_ERROR, "Key of type %s needs a true or false value", option_key->name);
-      return false;
-    }
-    break;
-
-  case type_enable:
-    switch (enclosing_key->type) {
-    case type_c1:
-    case type_c2:
-    {
-      if (t != JSON_TRUE && t != JSON_FALSE) {
-        error(VALUE_ERROR, "Key of type %s enclosed in a %s key needs a true or false value", option_key->name, enclosing_key->name);
-        return false;
-      }
-      int val = (t == JSON_TRUE);
-      current_directiveset->set_Enable(&val);
-      break;
-    }
-
-    case type_directives:
-      error(VALUE_ERROR, "Enable keyword not available for generic directive");
-      return false;
-
-    default:
-      error(INTERNAL_ERROR, "Unexpected enclosing type for key %s: %s", option_key->name, enclosing_key->name);
-      ShouldNotReachHere();
       return false;
     }
     break;
@@ -730,19 +703,6 @@ void DirectivesParser::test() {
     DirectivesParser::test(
       "[{c1:{c1:{c1:{c1:{c1:{c1:{c1:{}}}}}}}}]", false);
 
-  DirectivesParser::test(
-    "[" "\n"
-    "  {" "\n"
-    "    c1: true," "\n"
-    "    c2: true," "\n"
-    "    match: true," "\n"
-    "    inline: true," "\n"
-    "    enable: true," "\n"
-    "    c1: {" "\n"
-    "      preset: true," "\n"
-    "    }" "\n"
-    "  }" "\n"
-    "]" "\n", false);
 }
 
 void DirectivesParser_test() {

@@ -25,10 +25,12 @@ package jdk.test.lib.jittester.functions;
 
 import java.util.ArrayList;
 import jdk.test.lib.jittester.IRNode;
+import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.visitors.Visitor;
 
 public class FunctionRedefinitionBlock extends IRNode {
     public FunctionRedefinitionBlock(ArrayList<IRNode> content, int level) {
+        super(TypeList.VOID);
         this.level = level;
         addChildren(content);
     }
@@ -40,10 +42,6 @@ public class FunctionRedefinitionBlock extends IRNode {
             complexity += child.complexity();
         }
         return complexity;
-    }
-
-    protected int size() {
-        return getChildren() != null ? getChildren().size() : 0;
     }
 
     @Override
