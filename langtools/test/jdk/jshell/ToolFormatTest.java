@@ -220,7 +220,7 @@ public class ToolFormatTest extends ReplToolTesting {
                     (a) -> assertCommandOutputStartsWith(a, "/set feedback te",
                             ""),
                     (a) -> assertCommandOutputStartsWith(a, "/set ",
-                            "ERROR: The '/set' command requires a sub-command and arguments"),
+                            "ERROR: The '/set' command requires a sub-command"),
                     (a) -> assertCommandOutputStartsWith(a, "/set xyz",
                             "ERROR: Invalid '/set' argument: xyz"),
                     (a) -> assertCommandOutputStartsWith(a, "/set f",
