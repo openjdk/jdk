@@ -27,7 +27,7 @@
  * @library /lib/testlibrary
  * @summary Check SecureRandom generate expected seed counts what the caller
  *          asked for.
- * @run main EnoughSeedTest
+ * @run main/othervm EnoughSeedTest
  */
 import java.security.SecureRandom;
 import java.security.Security;
@@ -40,6 +40,7 @@ public class EnoughSeedTest {
             = Security.getProperty(DRBG_CONFIG);
 
     public static void main(String[] args) {
+        System.setProperty("java.security.egd", "file:/dev/urandom");
 
         boolean success = true;
         for (String mech : new String[]{

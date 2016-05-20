@@ -292,6 +292,8 @@ sun/security/provider/NSASuiteB/TestDSAGenParameterSpec.java    8137255 generic-
 
 sun/security/x509/URICertStore/ExtensionsWithLDAP.java          8134577 generic-all
 
+sun/security/provider/SecureRandom/StrongSecureRandom.java      8157387 linux-all
+
 ############################################################################
 
 # jdk_sound
