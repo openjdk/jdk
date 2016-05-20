@@ -5708,8 +5708,10 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
 
 #if INCLUDE_CDS
     if (DumpLoadedClassList != NULL && stream->source() != NULL && classlist_file->is_open()) {
-      // Only dump the classes that can be stored into CDS archive
-      if (SystemDictionaryShared::is_sharing_possible(_loader_data)) {
+      // Only dump the classes that can be stored into CDS archive.
+      // Anonymous classes such as generated LambdaForm classes are also not included.
+      if (SystemDictionaryShared::is_sharing_possible(_loader_data) &&
+          _host_klass == NULL) {
         ResourceMark rm(THREAD);
         classlist_file->print_cr("%s", _class_name->as_C_string());
         classlist_file->flush();
