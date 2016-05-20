@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class DriverResource_zh_CN extends ListResourceBundle {
      * Do not translate command arguments and words with a prefix of '-' or '--'.
      */
     private static final Object[][] resource = {
-        {VERSION, "{0}\u7248\u672C{1}"}, // parameter 0:class name;parameter 1: version value
+        {VERSION, "{0}\u7248\u672C {1}"}, // parameter 0:class name;parameter 1: version value
         {BAD_ARGUMENT, "\u9519\u8BEF\u53C2\u6570: {0}"},
         {BAD_OPTION, "\u9519\u8BEF\u9009\u9879: {0}={1}"}, // parameter 0:option name;parameter 1:option value
         {BAD_REPACK_OUTPUT, "--repack \u8F93\u51FA\u9519\u8BEF: {0}"}, // parameter 0:filename

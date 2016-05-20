@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,8 @@ public class MsgAppletViewer_pt_BR extends ListResourceBundle {
             {"appletviewer.parse.warning.embed.requiresheight", "Advert\u00EAncia: a tag <embed> requer um atributo de altura."},
             {"appletviewer.parse.warning.embed.requireswidth", "Advert\u00EAncia: a tag <embed> requer um atributo de largura."},
             {"appletviewer.parse.warning.appnotLongersupported", "Advert\u00EAncia: a tag <app> n\u00E3o \u00E9 mais suportada; use <applet>:"},
-            {"appletviewer.usage", "Uso: appletviewer <op\u00E7\u00F5es> url(s)\n\nem que as <op\u00E7\u00F5es> incluem:\n  -debug                  Inicia o visualizador do applet no depurador Java\n  -encoding <codifica\u00E7\u00E3o>    Especifica a codifica\u00E7\u00E3o de caractere usada pelos arquivos HTML\n  -J<flag de runtime>        Informa o argumento ao intepretador java\n\nA op\u00E7\u00E3o -J n\u00E3o \u00E9 padr\u00E3o e est\u00E1 sujeita \u00E0 altera\u00E7\u00E3o sem notifica\u00E7\u00E3o."},
+            {"appletviewer.deprecated", "O AppletViewer est\u00E1 obsoleto."},
+            {"appletviewer.usage", "Uso: appletviewer <op\u00E7\u00F5es> url(s)\n\nem que as <op\u00E7\u00F5es> incluem:\n  -encoding <codifica\u00E7\u00E3o>    Especifica a codifica\u00E7\u00E3o de caractere usada pelos arquivos HTML\n  -J<flag de runtime>        Informa o argumento ao intepretador java\n\nA op\u00E7\u00E3o -J n\u00E3o \u00E9 padr\u00E3o e est\u00E1 sujeita \u00E0 altera\u00E7\u00E3o sem notifica\u00E7\u00E3o."},
             {"appletviewer.main.err.unsupportedopt", "Op\u00E7\u00E3o n\u00E3o suportada: {0}"},
             {"appletviewer.main.err.unrecognizedarg", "Argumento n\u00E3o reconhecido: {0}"},
             {"appletviewer.main.err.dupoption", "Uso duplicado da op\u00E7\u00E3o: {0}"},
@@ -93,7 +94,7 @@ public class MsgAppletViewer_pt_BR extends ListResourceBundle {
             {"appletviewer.main.nosecmgr", "Advert\u00EAncia: SecurityManager n\u00E3o instalado!"},
             {"appletviewer.main.warning", "Advert\u00EAncia: Nenhum applet iniciado. Certifique-se de que a entrada contenha uma tag <applet>."},
             {"appletviewer.main.warn.prop.overwrite", "Advert\u00EAncia: Substituindo a propriedade do sistema temporariamente a pedido do usu\u00E1rio: chave: {0} valor antigo: {1} valor novo: {2}"},
-            {"appletviewer.main.warn.cantreadprops", "Advert\u00EAncia: N\u00E3o \u00E9 poss\u00EDvel ler o arquivo de propriedades AppletViewer: {0} Usando defaults."},
+            {"appletviewer.main.warn.cantreadprops", "Advert\u00EAncia: N\u00E3o \u00E9 poss\u00EDvel ler o arquivo de propriedades AppletViewer: {0} Usando padr\u00F5es."},
             {"appletioexception.loadclass.throw.interrupted", "carregamento de classe interrompido: {0}"},
             {"appletioexception.loadclass.throw.notloaded", "classe n\u00E3o carregada: {0}"},
             {"appletclassloader.loadcode.verbose", "Fluxo de abertura para: {0} para obter {1}"},
