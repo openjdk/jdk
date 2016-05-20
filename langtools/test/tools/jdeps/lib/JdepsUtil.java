@@ -29,6 +29,7 @@ import com.sun.tools.jdeps.JdepsFilter;
 import com.sun.tools.jdeps.JdepsWriter;
 import com.sun.tools.jdeps.ModuleAnalyzer;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -73,7 +74,7 @@ public final class JdepsUtil {
         return new Command(cmd);
     }
 
-    public static class Command {
+    public static class Command implements Closeable {
 
         final StringWriter sw = new StringWriter();
         final PrintWriter pw = new PrintWriter(sw);
@@ -81,6 +82,7 @@ public final class JdepsUtil {
         final JdepsConfiguration.Builder builder =  new JdepsConfiguration.Builder();
         final Set<String> requires = new HashSet<>();
 
+        JdepsConfiguration configuration;
         Analyzer.Type verbose = Analyzer.Type.PACKAGE;
         boolean apiOnly = false;
 
@@ -176,12 +178,14 @@ public final class JdepsUtil {
         }
 
         public JdepsConfiguration configuration() throws IOException {
-            JdepsConfiguration config = builder.build();
-            requires.forEach(name -> {
-                ModuleDescriptor md = config.findModuleDescriptor(name).get();
-                filter.requires(name, md.packages());
-            });
-            return config;
+            if (configuration == null) {
+                this.configuration = builder.build();
+                requires.forEach(name -> {
+                    ModuleDescriptor md = configuration.findModuleDescriptor(name).get();
+                    filter.requires(name, md.packages());
+                });
+            }
+            return configuration;
         }
 
         private JdepsWriter writer() {
@@ -207,6 +211,11 @@ public final class JdepsUtil {
 
         public void dumpOutput(PrintStream out) {
             out.println(sw.toString());
+        }
+
+        @Override
+        public void close() throws IOException {
+            configuration.close();
         }
     }
 

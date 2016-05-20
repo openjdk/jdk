@@ -27,6 +27,7 @@ package com.sun.tools.jdeps;
 
 import com.sun.tools.classfile.Dependency.Location;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -43,7 +44,7 @@ import java.util.stream.Stream;
 /**
  * Represents the source of the class files.
  */
-public class Archive {
+public class Archive implements Closeable {
     public static Archive getInstance(Path p) {
         try {
             return new Archive(p, ClassFileReader.newInstance(p));
@@ -178,6 +179,13 @@ public class Archive {
     private boolean isJrt() {
         return location != null && location.getScheme().equals("jrt");
     }
+
+    @Override
+    public void close() throws IOException {
+        if (reader != null)
+            reader.close();
+    }
+
     interface Visitor {
         void visit(Location origin, Location target);
     }

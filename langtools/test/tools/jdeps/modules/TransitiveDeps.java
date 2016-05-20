@@ -122,30 +122,31 @@ public class TransitiveDeps {
     @Test(dataProvider = "modules")
     public void testModulePath(String name, List<ModuleMetaData> data) throws IOException {
         Set<String> roots = Set.of("m6", "unsafe");
-        JdepsUtil.Command jdeps = JdepsUtil.newCommand(
-            String.format("jdeps -modulepath %s -addmods %s -m %s%n", MODS_DIR,
-                          roots.stream().collect(Collectors.joining(",")), name)
-        );
-        jdeps.verbose("-verbose:class")
-             .appModulePath(MODS_DIR.toString())
-             .addmods(roots)
-             .addmods(Set.of(name));
 
-        runJdeps(jdeps, data);
+        String cmd1 = String.format("jdeps -modulepath %s -addmods %s -m %s%n", MODS_DIR,
+            roots.stream().collect(Collectors.joining(",")), name);
+        try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd1)) {
+            jdeps.verbose("-verbose:class")
+                .appModulePath(MODS_DIR.toString())
+                .addmods(roots)
+                .addmods(Set.of(name));
 
+            runJdeps(jdeps, data);
+        }
         // run automatic modules
         roots = Set.of("ALL-MODULE-PATH", "jdk.unsupported");
 
-        jdeps = JdepsUtil.newCommand(
-            String.format("jdeps -modulepath %s -addmods %s -m %s%n", LIBS_DIR,
-                          roots.stream().collect(Collectors.joining(",")), name)
-        );
-        jdeps.verbose("-verbose:class")
-            .appModulePath(LIBS_DIR.toString())
-            .addmods(roots)
-            .addmods(Set.of(name));
+        String cmd2 = String.format("jdeps -modulepath %s -addmods %s -m %s%n", LIBS_DIR,
+            roots.stream().collect(Collectors.joining(",")), name);
 
-        runJdeps(jdeps, data);
+        try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd2)) {
+            jdeps.verbose("-verbose:class")
+                .appModulePath(LIBS_DIR.toString())
+                .addmods(roots)
+                .addmods(Set.of(name));
+
+            runJdeps(jdeps, data);
+        }
     }
 
     @DataProvider(name = "jars")
@@ -170,14 +171,15 @@ public class TransitiveDeps {
             .collect(Collectors.joining(File.pathSeparator));
 
         Path jarfile = LIBS_DIR.resolve(name + ".jar");
-        JdepsUtil.Command jdeps = JdepsUtil.newCommand(
-            String.format("jdeps -classpath %s %s%n", cpath, jarfile)
-        );
-        jdeps.verbose("-verbose:class")
-             .addClassPath(cpath)
-             .addRoot(jarfile);
 
-        runJdeps(jdeps, data);
+        String cmd = String.format("jdeps -classpath %s %s%n", cpath, jarfile);
+        try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd)) {
+            jdeps.verbose("-verbose:class")
+                .addClassPath(cpath)
+                .addRoot(jarfile);
+
+            runJdeps(jdeps, data);
+        }
     }
 
     @DataProvider(name = "compileTimeView")
@@ -225,15 +227,14 @@ public class TransitiveDeps {
 
         Path jarfile = LIBS_DIR.resolve(name + ".jar");
 
-        JdepsUtil.Command jdeps = JdepsUtil.newCommand(
-            String.format("jdeps -ct -classpath %s %s%n", cpath, jarfile)
-        );
+        String cmd = String.format("jdeps -ct -classpath %s %s%n", cpath, jarfile);
+        try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd)) {
+            jdeps.verbose("-verbose:class")
+                .addClassPath(cpath)
+                .addRoot(jarfile);
 
-        jdeps.verbose("-verbose:class")
-             .addClassPath(cpath)
-             .addRoot(jarfile);
-
-        runJdeps(jdeps, data, true, 0 /* -recursive */);
+            runJdeps(jdeps, data, true, 0 /* -recursive */);
+        }
     }
 
     @DataProvider(name = "recursiveDeps")
@@ -276,14 +277,14 @@ public class TransitiveDeps {
 
         Path jarfile = LIBS_DIR.resolve(name + ".jar");
 
-        JdepsUtil.Command jdeps = JdepsUtil.newCommand(
-            String.format("jdeps -R -classpath %s %s%n", cpath, jarfile)
-        );
-        jdeps.verbose("-verbose:class").filter("-filter:archive")
-             .addClassPath(cpath)
-             .addRoot(jarfile);
+        String cmd = String.format("jdeps -R -classpath %s %s%n", cpath, jarfile);
+        try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd)) {
+            jdeps.verbose("-verbose:class").filter("-filter:archive")
+                .addClassPath(cpath)
+                .addRoot(jarfile);
 
-        runJdeps(jdeps, data, true, 0 /* -recursive */);
+            runJdeps(jdeps, data, true, 0 /* -recursive */);
+        }
     }
 
     private void runJdeps(JdepsUtil.Command jdeps, List<ModuleMetaData> data)
@@ -322,6 +323,5 @@ public class TransitiveDeps {
                 ModuleMetaData md = dataMap.get(u.name);
                 md.checkDependences(u.name, g2.adjacentNodes(u));
             });
-
     }
 }

@@ -119,6 +119,11 @@ public class ModuleInfoBuilder {
             // generate module-info.java
             descriptors().forEach(md -> writeModuleInfo(outputdir, md));
 
+            // done parsing
+            for (Module m : automaticModules()) {
+                m.close();
+            }
+
             // find any missing dependences
             return automaticModules().stream()
                         .flatMap(analyzer::requires)

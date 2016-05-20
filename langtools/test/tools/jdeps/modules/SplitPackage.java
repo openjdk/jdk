@@ -70,36 +70,35 @@ public class SplitPackage {
     }
 
     private void runTest(String root, String... splitPackages) throws Exception {
-        JdepsUtil.Command jdeps = JdepsUtil.newCommand(
-            String.format("jdeps -verbose:class -addmods %s %s%n",
-                          root, CLASSES_DIR)
-        );
-        jdeps.verbose("-verbose:class")
-            .addRoot(CLASSES_DIR);
-        if (root != null)
-            jdeps.addmods(Set.of(root));
+        String cmd = String.format("jdeps -verbose:class -addmods %s %s%n",
+            root, CLASSES_DIR);
 
+        try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd)) {
+            jdeps.verbose("-verbose:class")
+                .addRoot(CLASSES_DIR);
+            if (root != null)
+                jdeps.addmods(Set.of(root));
 
-        JdepsConfiguration config = jdeps.configuration();
-        Map<String, Set<String>> pkgs = config.splitPackages();
+            JdepsConfiguration config = jdeps.configuration();
+            Map<String, Set<String>> pkgs = config.splitPackages();
 
-        final Set<String> expected;
-        if (splitPackages != null) {
-            expected = Arrays.stream(splitPackages).collect(Collectors.toSet());
-        } else {
-            expected = Collections.emptySet();
+            final Set<String> expected;
+            if (splitPackages != null) {
+                expected = Arrays.stream(splitPackages).collect(Collectors.toSet());
+            } else {
+                expected = Collections.emptySet();
+            }
+
+            if (!pkgs.keySet().equals(expected)) {
+                throw new RuntimeException(splitPackages.toString());
+            }
+
+            // java.annotations.common is not observable
+            DepsAnalyzer analyzer = jdeps.getDepsAnalyzer();
+
+            assertTrue(analyzer.run());
+
+            jdeps.dumpOutput(System.err);
         }
-
-        if (!pkgs.keySet().equals(expected)) {
-            throw new RuntimeException(splitPackages.toString());
-        }
-
-        // java.annotations.common is not observable
-        DepsAnalyzer analyzer = jdeps.getDepsAnalyzer();
-
-        assertTrue(analyzer.run());
-
-        jdeps.dumpOutput(System.err);
     }
-
 }

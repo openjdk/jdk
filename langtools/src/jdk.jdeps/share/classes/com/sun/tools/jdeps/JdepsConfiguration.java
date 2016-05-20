@@ -64,7 +64,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-public class JdepsConfiguration {
+public class JdepsConfiguration implements AutoCloseable {
     // the token for "all modules on the module path"
     public static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
     public static final String ALL_DEFAULT = "ALL-DEFAULT";
@@ -302,6 +302,19 @@ public class JdepsConfiguration {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    /*
+     * Close all archives e.g. JarFile
+     */
+    @Override
+    public void close() throws IOException {
+        for (Archive archive : initialArchives)
+            archive.close();
+        for (Archive archive : classpathArchives)
+            archive.close();
+        for (Module module : nameToModule.values())
+            module.close();
     }
 
     static class SystemModuleFinder implements ModuleFinder {

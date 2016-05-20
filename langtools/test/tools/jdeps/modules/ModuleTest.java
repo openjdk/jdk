@@ -151,30 +151,30 @@ public class ModuleTest {
         throws IOException
     {
         // jdeps -modulepath <modulepath> -m root paths
+        String cmd = String.format("jdeps -modulepath %s -addmods %s %s%n",
+            MODS_DIR, roots.stream().collect(Collectors.joining(",")), paths);
 
-        JdepsUtil.Command jdeps = JdepsUtil.newCommand(
-            String.format("jdeps -modulepath %s -addmods %s %s%n", MODS_DIR,
-                          roots.stream().collect(Collectors.joining(",")), paths)
-        );
-        jdeps.appModulePath(modulepath)
-             .addmods(roots);
-        Arrays.stream(paths).forEach(jdeps::addRoot);
+        try (JdepsUtil.Command jdeps = JdepsUtil.newCommand(cmd)) {
+            jdeps.appModulePath(modulepath)
+                .addmods(roots);
+            Arrays.stream(paths).forEach(jdeps::addRoot);
 
-        // run the analyzer
-        DepsAnalyzer analyzer = jdeps.getDepsAnalyzer();
-        assertTrue(analyzer.run());
+            // run the analyzer
+            DepsAnalyzer analyzer = jdeps.getDepsAnalyzer();
+            assertTrue(analyzer.run());
 
-        // analyze result
-        Graph<DepsAnalyzer.Node> g1 = analyzer.moduleGraph();
-        g1.nodes().stream()
-            .filter(u -> u.name.equals(data.moduleName))
-            .forEach(u -> data.checkRequires(u.name, g1.adjacentNodes(u)));
+            // analyze result
+            Graph<DepsAnalyzer.Node> g1 = analyzer.moduleGraph();
+            g1.nodes().stream()
+                .filter(u -> u.name.equals(data.moduleName))
+                .forEach(u -> data.checkRequires(u.name, g1.adjacentNodes(u)));
 
-        Graph<DepsAnalyzer.Node> g2 = analyzer.dependenceGraph();
-        g2.nodes().stream()
-            .filter(u -> u.name.equals(data.moduleName))
-            .forEach(u -> data.checkDependences(u.name, g2.adjacentNodes(u)));
+            Graph<DepsAnalyzer.Node> g2 = analyzer.dependenceGraph();
+            g2.nodes().stream()
+                .filter(u -> u.name.equals(data.moduleName))
+                .forEach(u -> data.checkDependences(u.name, g2.adjacentNodes(u)));
 
-        jdeps.dumpOutput(System.err);
+            jdeps.dumpOutput(System.err);
+        }
     }
 }
