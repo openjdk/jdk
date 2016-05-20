@@ -25,7 +25,7 @@
 package com.sun.tools.jdeps;
 
 import static com.sun.tools.jdeps.JdepsTask.*;
-import static com.sun.tools.jdeps.Analyzer.NOT_FOUND;
+import static com.sun.tools.jdeps.Analyzer.*;
 import static com.sun.tools.jdeps.JdepsFilter.DEFAULT_FILTER;
 
 import java.io.IOException;
@@ -39,6 +39,7 @@ import java.lang.module.ModuleFinder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -56,7 +57,10 @@ public class ModuleInfoBuilder {
 
     final DependencyFinder dependencyFinder;
     final Analyzer analyzer;
-    final Map<Module, Module> strictModules;
+
+    // an input JAR file (loaded as an automatic module for analysis)
+    // maps to an explicit module to generate module-info.java
+    final Map<Module, Module> automaticToExplicitModule;
     public ModuleInfoBuilder(JdepsConfiguration configuration,
                              List<String> args,
                              Path outputdir) {
@@ -64,27 +68,27 @@ public class ModuleInfoBuilder {
         this.outputdir = outputdir;
 
         this.dependencyFinder = new DependencyFinder(configuration, DEFAULT_FILTER);
-        this.analyzer = new Analyzer(configuration, Analyzer.Type.CLASS, DEFAULT_FILTER);
+        this.analyzer = new Analyzer(configuration, Type.CLASS, DEFAULT_FILTER);
 
         // add targets to modulepath if it has module-info.class
         List<Path> paths = args.stream()
             .map(fn -> Paths.get(fn))
             .collect(Collectors.toList());
 
-        // automatic module to convert to strict module
-        this.strictModules = ModuleFinder.of(paths.toArray(new Path[0]))
+        // automatic module to convert to explicit module
+        this.automaticToExplicitModule = ModuleFinder.of(paths.toArray(new Path[0]))
                 .findAll().stream()
                 .map(configuration::toModule)
                 .collect(Collectors.toMap(Function.identity(), Function.identity()));
 
-        Optional<Module> om = strictModules.keySet().stream()
+        Optional<Module> om = automaticToExplicitModule.keySet().stream()
                                     .filter(m -> !m.descriptor().isAutomatic())
                                     .findAny();
         if (om.isPresent()) {
             throw new UncheckedBadArgs(new BadArgs("err.genmoduleinfo.not.jarfile",
                                                    om.get().getPathName()));
         }
-        if (strictModules.isEmpty()) {
+        if (automaticToExplicitModule.isEmpty()) {
             throw new UncheckedBadArgs(new BadArgs("err.invalid.path", args));
         }
     }
@@ -99,68 +103,90 @@ public class ModuleInfoBuilder {
 
             analyzer.run(automaticModules(), dependencyFinder.locationToArchive());
 
-            // computes requires and requires public
-            automaticModules().forEach(m -> {
-                Map<String, Boolean> requires;
-                if (requiresPublic.containsKey(m)) {
-                    requires = requiresPublic.get(m).stream()
-                        .map(Archive::getModule)
-                        .collect(Collectors.toMap(Module::name, (v) -> Boolean.TRUE));
-                } else {
-                    requires = new HashMap<>();
-                }
-                analyzer.requires(m)
-                    .map(Archive::getModule)
-                    .forEach(d -> requires.putIfAbsent(d.name(), Boolean.FALSE));
-
-                strictModules.put(m, m.toStrictModule(requires));
-            });
-
-            // generate module-info.java
-            descriptors().forEach(md -> writeModuleInfo(outputdir, md));
-
-            // done parsing
+            boolean missingDeps = false;
             for (Module m : automaticModules()) {
-                m.close();
+                Set<Archive> apiDeps = requiresPublic.containsKey(m)
+                                            ? requiresPublic.get(m)
+                                            : Collections.emptySet();
+
+                Path file = outputdir.resolve(m.name()).resolve("module-info.java");
+
+                // computes requires and requires public
+                Module explicitModule = toExplicitModule(m, apiDeps);
+                if (explicitModule != null) {
+                    automaticToExplicitModule.put(m, explicitModule);
+
+                    // generate module-info.java
+                    System.out.format("writing to %s%n", file);
+                    writeModuleInfo(file,  explicitModule.descriptor());
+                } else {
+                    // find missing dependences
+                    System.out.format("Missing dependence: %s not generated%n", file);
+                    missingDeps = true;
+                }
             }
 
-            // find any missing dependences
-            return automaticModules().stream()
-                        .flatMap(analyzer::requires)
-                        .allMatch(m -> !m.equals(NOT_FOUND));
+            return !missingDeps;
         } finally {
             dependencyFinder.shutdown();
         }
+    }
+
+    boolean notFound(Archive m) {
+        return m == NOT_FOUND || m == REMOVED_JDK_INTERNALS;
+    }
+
+    private Module toExplicitModule(Module module, Set<Archive> requiresPublic)
+        throws IOException
+    {
+        // done analysis
+        module.close();
+
+        if (analyzer.requires(module).anyMatch(this::notFound)) {
+            // missing dependencies
+            return null;
+        }
+
+        Map<String, Boolean> requires = new HashMap<>();
+        requiresPublic.stream()
+            .map(Archive::getModule)
+            .forEach(m -> requires.put(m.name(), Boolean.TRUE));
+
+        analyzer.requires(module)
+            .map(Archive::getModule)
+            .forEach(d -> requires.putIfAbsent(d.name(), Boolean.FALSE));
+
+        return module.toStrictModule(requires);
     }
 
     /**
      * Returns the stream of resulting modules
      */
     Stream<Module> modules() {
-        return strictModules.values().stream();
+        return automaticToExplicitModule.values().stream();
     }
 
     /**
      * Returns the stream of resulting ModuleDescriptors
      */
     public Stream<ModuleDescriptor> descriptors() {
-        return strictModules.values().stream().map(Module::descriptor);
+        return automaticToExplicitModule.entrySet().stream()
+                    .map(Map.Entry::getValue)
+                    .map(Module::descriptor);
     }
 
     void visitMissingDeps(Analyzer.Visitor visitor) {
         automaticModules().stream()
-            .filter(m -> analyzer.requires(m).anyMatch(d -> d.equals(NOT_FOUND)))
+            .filter(m -> analyzer.requires(m).anyMatch(this::notFound))
             .forEach(m -> {
                 analyzer.visitDependences(m, visitor, Analyzer.Type.VERBOSE);
             });
     }
-    void writeModuleInfo(Path dir, ModuleDescriptor descriptor) {
-        String mn = descriptor.name();
-        Path srcFile = dir.resolve(mn).resolve("module-info.java");
+
+    void writeModuleInfo(Path file, ModuleDescriptor descriptor) {
         try {
-            Files.createDirectories(srcFile.getParent());
-            System.out.println("writing to " + srcFile);
-            try (PrintWriter pw = new PrintWriter(Files.newOutputStream(srcFile))) {
+            Files.createDirectories(file.getParent());
+            try (PrintWriter pw = new PrintWriter(Files.newOutputStream(file))) {
                 printModuleInfo(pw, descriptor);
             }
         } catch (IOException e) {
@@ -197,7 +223,7 @@ public class ModuleInfoBuilder {
 
 
     private Set<Module> automaticModules() {
-        return strictModules.keySet();
+        return automaticToExplicitModule.keySet();
     }
 
     /**

@@ -266,7 +266,8 @@ public class DepsAnalyzer {
         MODULE_PRIVATE,
         QUALIFIED_EXPORTED_API,
         INTERNAL_API,
-        JDK_INTERNAL_API
+        JDK_INTERNAL_API,
+        JDK_REMOVED_INTERNAL_API
     }
 
     public static class Node {
@@ -372,8 +373,9 @@ public class DepsAnalyzer {
             info = Info.EXPORTED_API;
         } else {
             Module module = target.getModule();
-
-            if (!source.getModule().isJDK() && module.isJDK())
+            if (module == Analyzer.REMOVED_JDK_INTERNALS) {
+                info = Info.JDK_REMOVED_INTERNAL_API;
+            } else if (!source.getModule().isJDK() && module.isJDK())
                 info = Info.JDK_INTERNAL_API;
                 // qualified exports or inaccessible
             else if (module.isExported(pn, source.getModule().name()))

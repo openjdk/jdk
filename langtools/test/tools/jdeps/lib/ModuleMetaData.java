@@ -43,6 +43,7 @@ public class ModuleMetaData {
     static final String INTERNAL = "(internal)";
     static final String QUALIFIED = "(qualified)";
     static final String JDK_INTERNAL = "JDK internal API";
+    static final String REMOVED_JDK_INTERNAL = "JDK removed internal API";
 
     final String moduleName;
     final boolean isNamed;
@@ -94,6 +95,9 @@ public class ModuleMetaData {
 
     ModuleMetaData jdkInternal(String origin, String target, String module) {
         return dependence(origin, target, module, JDK_INTERNAL);
+    }
+    ModuleMetaData removedJdkInternal(String origin, String target) {
+        return dependence(origin, target, REMOVED_JDK_INTERNAL, REMOVED_JDK_INTERNAL);
     }
 
     ModuleMetaData exports(String pn, Set<String> targets) {
@@ -154,6 +158,8 @@ public class ModuleMetaData {
             access = QUALIFIED;
         else if (info == JDK_INTERNAL_API)
             access = JDK_INTERNAL;
+        else if (info == JDK_REMOVED_INTERNAL_API)
+            access = REMOVED_JDK_INTERNAL;
         else if (info == INTERNAL_API)
             access = INTERNAL;
 
