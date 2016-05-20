@@ -29,7 +29,7 @@
  *          as well from it's serialized instance in the same time then the
  *          generated random numbers should be different when one or both are
  *          reseeded.
- * @run main SerializedSeedTest
+ * @run main/othervm -Djava.security.egd=file:/dev/urandom SerializedSeedTest
  */
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

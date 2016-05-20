@@ -41,7 +41,7 @@ import static java.lang.Math.*;
  * @library /lib/testlibrary
  * @summary Test behavior of a shared SecureRandom object when it is operated
  *          by multiple threads concurrently.
- * @run main MultiThreadTest
+ * @run main/othervm -Djava.security.egd=file:/dev/urandom MultiThreadTest
  */
 public class MultiThreadTest {
 

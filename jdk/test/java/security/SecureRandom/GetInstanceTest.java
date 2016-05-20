@@ -36,12 +36,9 @@ import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.security.SecureRandomParameters;
 import java.security.DrbgParameters;
-
 import static java.security.DrbgParameters.Capability.*;
-
 import java.security.Security;
 import java.util.Arrays;
-
 import jdk.testlibrary.Asserts;
 
 public class GetInstanceTest {
@@ -77,13 +74,16 @@ public class GetInstanceTest {
                     + "strong algorithm through security Property: "
                     + "'securerandom.strongAlgorithms'.");
         }
-        Security.setProperty(STRONG_ALG_SEC_PROP, "DRBG:SUN");
-        sr = matchExc(() -> SecureRandom.getInstanceStrong(),
-                PASS, NoSuchAlgorithmException.class,
-                "PASS - Undefined security Property "
-                + "'securerandom.strongAlgorithms'");
-        checkAttributes(sr, "DRBG");
-        Security.setProperty(STRONG_ALG_SEC_PROP, origDRBGConfig);
+        try {
+            Security.setProperty(STRONG_ALG_SEC_PROP, "DRBG:SUN");
+            sr = matchExc(() -> SecureRandom.getInstanceStrong(),
+                    PASS, NoSuchAlgorithmException.class,
+                    "PASS - Undefined security Property "
+                    + "'securerandom.strongAlgorithms'");
+            checkAttributes(sr, "DRBG");
+        } finally {
+            Security.setProperty(STRONG_ALG_SEC_PROP, origDRBGConfig);
+        }
 
         for (String mech : new String[]{
             "SHA1PRNG", "Hash_DRBG", "HMAC_DRBG", "CTR_DRBG", INVALID_ALGO,}) {
