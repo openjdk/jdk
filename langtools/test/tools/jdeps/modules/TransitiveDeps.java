@@ -39,6 +39,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 import com.sun.tools.jdeps.DepsAnalyzer;
@@ -72,12 +73,13 @@ public class TransitiveDeps {
 
             // create JAR files with no module-info.class
             Path root = MODS_DIR.resolve(mn);
-            JdepsUtil.createJar(LIBS_DIR.resolve(mn + ".jar"), root,
-                Files.walk(root, Integer.MAX_VALUE)
-                    .filter(f -> {
-                        String fn = f.getFileName().toString();
-                        return fn.endsWith(".class") && !fn.equals("module-info.class");
-                    }));
+            try (Stream<Path> stream = Files.walk(root, Integer.MAX_VALUE)) {
+                Stream<Path> entries = stream.filter(f -> {
+                    String fn = f.getFileName().toString();
+                    return fn.endsWith(".class") && !fn.equals("module-info.class");
+                });
+                JdepsUtil.createJar(LIBS_DIR.resolve(mn + ".jar"), root, entries);
+            }
         }
     }
 
