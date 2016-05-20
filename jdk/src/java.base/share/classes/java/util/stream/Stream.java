@@ -93,7 +93,7 @@ import java.util.function.UnaryOperator;
  * example of such an optimization, see the API note documented on the
  * {@link #count} operation.  For more detail, see the
  * <a href="package-summary.html#SideEffects">side-effects</a> section of the
- * strean package documentation.)
+ * stream package documentation.)
  *
  * <p>Collections and streams, while bearing some superficial similarities,
  * have different goals.  Collections are primarily concerned with the efficient
@@ -428,7 +428,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *         .collect(Collectors.toList());
      * }</pre>
      *
-     * <p>In cases where stream implementation is able to optimize away the
+     * <p>In cases where the stream implementation is able to optimize away the
      * production of some or all the elements (such as with short-circuiting
      * operations like {@code findFirst}, or in the example described in
      * {@link #count}), the action will not be invoked for those elements.

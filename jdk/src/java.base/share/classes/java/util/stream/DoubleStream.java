@@ -211,7 +211,7 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
      *         .sum();
      * }</pre>
      *
-     * <p>In cases where stream implementation is able to optimize away the
+     * <p>In cases where the stream implementation is able to optimize away the
      * production of some or all the elements (such as with short-circuiting
      * operations like {@code findFirst}, or in the example described in
      * {@link #count}), the action will not be invoked for those elements.
