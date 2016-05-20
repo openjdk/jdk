@@ -3266,6 +3266,16 @@ assertEquals("yz", (String) d0.invokeExact(123, "x", "y", "z"));
      */
     public static
     MethodHandle dropArguments(MethodHandle target, int pos, List<Class<?>> valueTypes) {
+        return dropArguments0(target, pos, copyTypes(valueTypes));
+    }
+
+    private static List<Class<?>> copyTypes(List<Class<?>> types) {
+        Object[] a = types.toArray();
+        return Arrays.asList(Arrays.copyOf(a, a.length, Class[].class));
+    }
+
+    private static
+    MethodHandle dropArguments0(MethodHandle target, int pos, List<Class<?>> valueTypes) {
         MethodType oldType = target.type();  // get NPE
         int dropped = dropArgumentChecks(oldType, pos, valueTypes);
         MethodType newType = oldType.insertParameterTypes(pos, valueTypes);
@@ -3346,6 +3356,7 @@ assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
     // private version which allows caller some freedom with error handling
     private static MethodHandle dropArgumentsToMatch(MethodHandle target, int skip, List<Class<?>> newTypes, int pos,
                                       boolean nullOnFailure) {
+        newTypes = copyTypes(newTypes);
         List<Class<?>> oldTypes = target.type().parameterList();
         int match = oldTypes.size();
         if (skip != 0) {
@@ -3377,11 +3388,11 @@ assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
         // target: ( S*[skip],        M*[match]  )
         MethodHandle adapter = target;
         if (add > 0) {
-            adapter = dropArguments(adapter, skip+ match, addTypes);
+            adapter = dropArguments0(adapter, skip+ match, addTypes);
         }
         // adapter: (S*[skip],        M*[match], A*[add] )
         if (pos > 0) {
-            adapter = dropArguments(adapter, skip, newTypes.subList(0, pos));
+            adapter = dropArguments0(adapter, skip, newTypes.subList(0, pos));
        }
         // adapter: (S*[skip], P*[pos], M*[match], A*[add] )
         return adapter;
@@ -4288,7 +4299,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
                 step.set(i, dropArgumentsToMatch(identityOrVoid(t), 0, commonParameterSequence, i));
             }
             if (pred.get(i) == null) {
-                pred.set(i, dropArguments(constant(boolean.class, true), 0, commonParameterSequence));
+                pred.set(i, dropArguments0(constant(boolean.class, true), 0, commonParameterSequence));
             }
             if (fini.get(i) == null) {
                 fini.set(i, empty(methodType(t, commonParameterSequence)));
@@ -4313,7 +4324,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         return hs.stream().map(h -> {
             int pc = h.type().parameterCount();
             int tpsize = targetParams.size();
-            return pc < tpsize ? dropArguments(h, pc, targetParams.subList(pc, tpsize)) : h;
+            return pc < tpsize ? dropArguments0(h, pc, targetParams.subList(pc, tpsize)) : h;
         }).collect(Collectors.toList());
     }
 
