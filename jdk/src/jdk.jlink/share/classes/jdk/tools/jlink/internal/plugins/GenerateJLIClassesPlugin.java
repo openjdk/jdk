@@ -101,8 +101,8 @@ public final class GenerateJLIClassesPlugin implements TransformerPlugin {
      */
     public static List<String> defaultSpecies() {
         return List.of("LL", "L3", "L4", "L5", "L6", "L7", "L7I",
-                "L7II", "L7IIL", "L8", "L9", "L10", "L11", "L11I", "L11II",
-                "L12", "L13", "LI", "D", "L3I", "LIL", "LLI", "LLIL",
+                "L7II", "L7IIL", "L8", "L9", "L10", "L10I", "L10II", "L10IIL",
+                "L11", "L12", "L13", "LI", "D", "L3I", "LIL", "LLI", "LLIL",
                 "LILL", "I", "LLILL");
     }
 
