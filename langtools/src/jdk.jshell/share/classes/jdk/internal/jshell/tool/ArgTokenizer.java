@@ -93,6 +93,13 @@ class ArgTokenizer {
         return isQuoted;
     }
 
+    boolean isIdentifier() {
+        if (isQuoted) {
+            return false;
+        }
+        return sval.codePoints().allMatch(cp -> Character.isJavaIdentifierPart(cp));
+    }
+
     String whole() {
         return prefix + str;
     }

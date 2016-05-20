@@ -569,4 +569,17 @@ public class ToolBasicTest extends ReplToolTesting {
             return ex.getMessage();
         }
     }
+
+    public void testHeadlessEditPad() {
+        String prevHeadless = System.getProperty("java.awt.headless");
+        try {
+            System.setProperty("java.awt.headless", "true");
+            test(
+                (a) -> assertCommandOutputStartsWith(a, "/edit printf", "|  Cannot launch editor -- unexpected exception:")
+            );
+        } finally {
+            System.setProperty("java.awt.headless", prevHeadless==null? "false" : prevHeadless);
+        }
+    }
+
 }

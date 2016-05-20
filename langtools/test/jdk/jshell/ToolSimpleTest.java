@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382 8153920
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -449,18 +449,6 @@ public class ToolSimpleTest extends ReplToolTesting {
                       assertStartsWith("|  '/save' requires a filename argument.")));
     }
 
-    public void testHeadlessEditPad() {
-        String prevHeadless = System.getProperty("java.awt.headless");
-        try {
-            System.setProperty("java.awt.headless", "true");
-            test(
-                (a) -> assertCommandOutputStartsWith(a, "/edit printf", "|  Cannot launch editor -- unexpected exception:")
-            );
-        } finally {
-            System.setProperty("java.awt.headless", prevHeadless==null? "false" : prevHeadless);
-        }
-    }
-
     public void testOptionQ() {
         test(new String[]{"-q", "-nostartup"},
                 (a) -> assertCommand(a, "1+1", "$1 ==> 2"),
@@ -493,6 +481,13 @@ public class ToolSimpleTest extends ReplToolTesting {
         test(new String[]{"-R-Dthe.sound=blorp", "-nostartup"},
                 (a) -> assertCommand(a, "System.getProperty(\"the.sound\")",
                         "$1 ==> \"blorp\"")
+        );
+    }
+
+    public void test8156910() {
+        test(
+                (a) -> assertCommandOutputContains(a, "System.out.println(\"%5d\", 10);", "%5d"),
+                (a) -> assertCommandOutputContains(a, "1234", "==> 1234")
         );
     }
 }

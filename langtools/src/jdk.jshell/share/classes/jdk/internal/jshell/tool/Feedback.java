@@ -30,9 +30,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import static java.util.stream.Collectors.joining;
@@ -50,11 +52,17 @@ class Feedback {
     // Internal field name for truncation length
     private static final String TRUNCATION_FIELD = "<truncation>";
 
+    // For encoding to Properties String
+    private static final String RECORD_SEPARATOR = "\u241E";
+
     // Current mode
     private Mode mode = new Mode("", false); // initial value placeholder during start-up
 
-    // Mapping of mode names to mode modes
+    // Mapping of mode name to mode
     private final Map<String, Mode> modeMap = new HashMap<>();
+
+    // Mapping of mode names to encoded retained mode
+    private final Map<String, String> retainedMap = new HashMap<>();
 
     // Mapping selector enum names to enums
     private final Map<String, Selector<?>> selectorMap = new HashMap<>();
@@ -118,6 +126,23 @@ class Feedback {
         return new Setter(messageHandler, at).setPrompt();
     }
 
+    public String retainFeedback(MessageHandler messageHandler, ArgTokenizer at) {
+        return new Setter(messageHandler, at).retainFeedback();
+    }
+
+    public String retainMode(MessageHandler messageHandler, ArgTokenizer at) {
+        return new Setter(messageHandler, at).retainMode();
+    }
+
+    public boolean restoreEncodedModes(MessageHandler messageHandler, String encoded) {
+        return new Setter(messageHandler, new ArgTokenizer("")).restoreEncodedModes(encoded);
+    }
+
+    public void markModesReadOnly() {
+        modeMap.values().stream()
+                .forEach(m -> m.readOnly = true);
+    }
+
     {
         for (FormatCase e : EnumSet.allOf(FormatCase.class))
             selectorMap.put(e.name().toLowerCase(Locale.US), e);
@@ -146,6 +171,8 @@ class Feedback {
 
         // Event cases: class, method, expression, ...
         final Map<String, List<Setting>> cases;
+
+        boolean readOnly = false;
 
         String prompt = "\n-> ";
         String continuationPrompt = ">> ";
@@ -202,6 +229,57 @@ class Feedback {
 
             this.prompt = m.prompt;
             this.continuationPrompt = m.continuationPrompt;
+        }
+
+        /**
+         * Set up a mode reconstituted from a preferences string.
+         *
+         * @param it the encoded Mode broken into String chunks, may contain
+         * subsequent encoded modes
+         */
+        Mode(Iterator<String> it) {
+            this.name = it.next();
+            this.commandFluff = Boolean.parseBoolean(it.next());
+            this.prompt = it.next();
+            this.continuationPrompt = it.next();
+            cases = new HashMap<>();
+            String field;
+            while (!(field = it.next()).equals("***")) {
+                String open = it.next();
+                assert open.equals("(");
+                List<Setting> settings = new ArrayList<>();
+                String bits;
+                while (!(bits = it.next()).equals(")")) {
+                    String format = it.next();
+                    Setting ing = new Setting(Long.parseLong(bits), format);
+                    settings.add(ing);
+                }
+                cases.put(field, settings);
+            }
+        }
+
+        /**
+         * Encodes the mode into a String so it can be saved in Preferences.
+         *
+         * @return the string representation
+         */
+        String encode() {
+            List<String> el = new ArrayList<>();
+            el.add(name);
+            el.add(String.valueOf(commandFluff));
+            el.add(prompt);
+            el.add(continuationPrompt);
+            for (Entry<String, List<Setting>> es : cases.entrySet()) {
+                el.add(es.getKey());
+                el.add("(");
+                for (Setting ing : es.getValue()) {
+                    el.add(String.valueOf(ing.enumBits));
+                    el.add(ing.format);
+                }
+                el.add(")");
+            }
+            el.add("***");
+            return String.join(RECORD_SEPARATOR, el);
         }
 
         private boolean add(String field, Setting ing) {
@@ -590,8 +668,12 @@ class Feedback {
         // For /set prompt <mode> "<prompt>" "<continuation-prompt>"
         boolean setPrompt() {
             Mode m = nextMode();
-            String prompt = nextFormat();
-            String continuationPrompt = nextFormat();
+            if (valid && m.readOnly) {
+                errorat("jshell.err.not.valid.with.predefined.mode", m.name);
+                valid = false;
+            }
+            String prompt = valid ? nextFormat() : null;
+            String continuationPrompt = valid ? nextFormat() : null;
             if (valid) {
                 m.setPrompts(prompt, continuationPrompt);
             } else {
@@ -603,7 +685,7 @@ class Feedback {
         // For /set newmode <new-mode> [-command|-quiet [<old-mode>]]
         boolean setNewMode() {
             String umode = at.next();
-            if (umode == null) {
+            if (umode == null || !at.isIdentifier()) {
                 errorat("jshell.err.feedback.expected.new.feedback.mode");
                 valid = false;
             }
@@ -637,7 +719,7 @@ class Feedback {
         // For /set feedback <mode>
         boolean setFeedback() {
             Mode m = nextMode();
-            if (valid && m != null) {
+            if (valid) {
                 mode = m;
                 fluffmsg("jshell.msg.feedback.mode", mode.name);
             } else {
@@ -650,8 +732,12 @@ class Feedback {
         // For /set format <mode> "<format>" <selector>...
         boolean setFormat() {
             Mode m = nextMode();
+            if (valid && m.readOnly) {
+                errorat("jshell.err.not.valid.with.predefined.mode", m.name);
+                valid = false;
+            }
             String field = at.next();
-            if (field == null || at.isQuoted()) {
+            if (field == null || !at.isIdentifier()) {
                 errorat("jshell.err.feedback.expected.field");
                 valid = false;
             }
@@ -662,6 +748,10 @@ class Feedback {
         // For /set truncation <mode> <length> <selector>...
         boolean setTruncation() {
             Mode m = nextMode();
+            if (valid && m.readOnly) {
+                errorat("jshell.err.not.valid.with.predefined.mode", m.name);
+                valid = false;
+            }
             String length = at.next();
             if (length == null) {
                 errorat("jshell.err.truncation.expected.length");
@@ -677,6 +767,54 @@ class Feedback {
             }
             // install length into an internal format field
             return installFormat(m, TRUNCATION_FIELD, length, "/help /set truncation");
+        }
+
+        String retainFeedback() {
+            String umode = at.next();
+            if (umode != null) {
+                Mode m = toMode(umode);
+                if (valid && !m.readOnly && !retainedMap.containsKey(m.name)) {
+                    errorat("jshell.err.retained.feedback.mode.must.be.retained.or.predefined");
+                    valid = false;
+                }
+                if (valid) {
+                    mode = m;
+                    fluffmsg("jshell.msg.feedback.mode", mode.name);
+                } else {
+                    fluffmsg("jshell.msg.see", "/help /retain feedback");
+                    return null;
+                }
+            }
+            return mode.name;
+        }
+
+        String retainMode() {
+            Mode m = nextMode();
+            if (valid && m.readOnly) {
+                errorat("jshell.err.not.valid.with.predefined.mode", m.name);
+                valid = false;
+            }
+            if (valid) {
+                retainedMap.put(m.name, m.encode());
+                return String.join(RECORD_SEPARATOR, retainedMap.values());
+            } else {
+                fluffmsg("jshell.msg.see", "/help /retain mode");
+                return null;
+            }
+        }
+
+        boolean restoreEncodedModes(String allEncoded) {
+            // Iterate over each record in each encoded mode
+            String[] ms = allEncoded.split(RECORD_SEPARATOR);
+            Iterator<String> itr = Arrays.asList(ms).iterator();
+            while (itr.hasNext()) {
+                // Reconstruct the encoded mode
+                Mode m = new Mode(itr);
+                modeMap.put(m.name, m);
+                // Continue to retain it a new retains occur
+                retainedMap.put(m.name, m.encode());
+            }
+            return true;
         }
 
         // install the format of a field under parsed selectors
@@ -712,7 +850,7 @@ class Feedback {
         }
 
         Mode toMode(String umode) {
-            if (umode == null) {
+            if (umode == null || !at.isIdentifier()) {
                 errorat("jshell.err.feedback.expected.mode");
                 valid = false;
                 return null;
