@@ -28,11 +28,11 @@
  * @summary This test do API coverage for SecureRandom. It covers most of
  *          supported operations along with possible positive and negative
  *          parameters for DRBG mechanism.
- * @run main ApiTest Hash_DRBG
- * @run main ApiTest HMAC_DRBG
- * @run main ApiTest CTR_DRBG
- * @run main ApiTest SHA1PRNG
- * @run main ApiTest NATIVE
+ * @run main/othervm ApiTest Hash_DRBG
+ * @run main/othervm ApiTest HMAC_DRBG
+ * @run main/othervm ApiTest CTR_DRBG
+ * @run main/othervm ApiTest SHA1PRNG
+ * @run main/othervm ApiTest NATIVE
  */
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -53,6 +53,7 @@ public class ApiTest {
             = Security.getProperty(DRBG_CONFIG);
 
     public static void main(String[] args) throws Exception {
+        System.setProperty("java.security.egd", "file:/dev/urandom");
 
         if (args == null || args.length < 1) {
             throw new RuntimeException("No mechanism available to run test.");
