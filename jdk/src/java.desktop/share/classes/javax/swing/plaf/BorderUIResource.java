@@ -160,7 +160,7 @@ public class BorderUIResource implements Border, UIResource, Serializable
     public static class EmptyBorderUIResource extends EmptyBorder implements UIResource {
 
         /**
-         * Constructs a {@code EmptyBorderUIResource}.
+         * Constructs an {@code EmptyBorderUIResource}.
          * @param top the top inset of the border
          * @param left the left inset of the border
          * @param bottom the bottom inset of the border
@@ -170,7 +170,7 @@ public class BorderUIResource implements Border, UIResource, Serializable
             super(top, left, bottom, right);
         }
         /**
-         * Constructs a {@code EmptyBorderUIResource}.
+         * Constructs an {@code EmptyBorderUIResource}.
          * @param insets the insets of the border
          */
         @ConstructorProperties({"borderInsets"})
