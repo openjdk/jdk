@@ -348,12 +348,11 @@ public class JdepsConfiguration {
         }
 
         private Map<String, ModuleReference> walk(Path root) {
-            try {
-                return Files.walk(root, 1)
-                    .filter(path -> !path.equals(root))
-                    .map(this::toModuleReference)
-                    .collect(toMap(mref -> mref.descriptor().name(),
-                                    Function.identity()));
+            try (Stream<Path> stream = Files.walk(root, 1)) {
+                return stream.filter(path -> !path.equals(root))
+                             .map(this::toModuleReference)
+                             .collect(toMap(mref -> mref.descriptor().name(),
+                                            Function.identity()));
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }

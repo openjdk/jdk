@@ -48,6 +48,7 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * ClassFileReader reads ClassFile(s) of a given path that can be
@@ -58,7 +59,7 @@ public class ClassFileReader {
      * Returns a ClassFileReader instance of a given path.
      */
     public static ClassFileReader newInstance(Path path) throws IOException {
-        if (!Files.exists(path)) {
+        if (Files.notExists(path)) {
             throw new FileNotFoundException(path.toString());
         }
 
@@ -218,13 +219,12 @@ public class ClassFileReader {
         }
 
         protected Set<String> scan() {
-            try {
-                return Files.walk(path, Integer.MAX_VALUE)
-                        .filter(ClassFileReader::isClass)
-                        .map(f -> path.relativize(f))
-                        .map(Path::toString)
-                        .map(p -> p.replace(File.separatorChar, '/'))
-                        .collect(Collectors.toSet());
+            try (Stream<Path> stream = Files.walk(path, Integer.MAX_VALUE)) {
+                return stream.filter(ClassFileReader::isClass)
+                             .map(f -> path.relativize(f))
+                             .map(Path::toString)
+                             .map(p -> p.replace(File.separatorChar, '/'))
+                             .collect(Collectors.toSet());
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -235,7 +235,7 @@ public class ClassFileReader {
                 int i = name.lastIndexOf('.');
                 String pathname = name.replace(".", fsSep) + ".class";
                 Path p = path.resolve(pathname);
-                if (!Files.exists(p)) {
+                if (Files.notExists(p)) {
                     p = path.resolve(pathname.substring(0, i) + "$" +
                             pathname.substring(i+1, pathname.length()));
                 }
@@ -261,13 +261,16 @@ public class ClassFileReader {
         }
 
         class DirectoryIterator implements Iterator<ClassFile> {
-            private List<Path> entries;
+            private final List<Path> entries;
             private int index = 0;
             DirectoryIterator() throws IOException {
-                entries = Files.walk(path, Integer.MAX_VALUE)
-                               .filter(ClassFileReader::isClass)
-                               .collect(Collectors.toList());
-                index = 0;
+                List<Path> paths = null;
+                try (Stream<Path> stream = Files.walk(path, Integer.MAX_VALUE)) {
+                    paths = stream.filter(ClassFileReader::isClass)
+                                  .collect(Collectors.toList());
+                }
+                this.entries = paths;
+                this.index = 0;
             }
 
             public boolean hasNext() {

@@ -82,12 +82,13 @@ public class GenModuleInfo {
 
         for (String mn : modules) {
             Path root = MODS_DIR.resolve(mn);
-            JdepsUtil.createJar(LIBS_DIR.resolve(mn + ".jar"), root,
-                      Files.walk(root, Integer.MAX_VALUE)
-                           .filter(f -> {
-                                String fn = f.getFileName().toString();
-                                return fn.endsWith(".class") && !fn.equals("module-info.class");
-                           }));
+            try (Stream<Path> stream = Files.walk(root, Integer.MAX_VALUE)) {
+                Stream<Path> entries = stream.filter(f -> {
+                    String fn = f.getFileName().toString();
+                    return fn.endsWith(".class") && !fn.equals("module-info.class");
+                });
+                JdepsUtil.createJar(LIBS_DIR.resolve(mn + ".jar"), root, entries);
+            }
         }
     }
 
@@ -115,19 +116,20 @@ public class GenModuleInfo {
                 .forEach(f -> assertTrue(Files.exists(f)));
 
         // copy classes except the original module-info.class
-        Files.walk(MODS_DIR, Integer.MAX_VALUE)
-                .filter(path -> !path.getFileName().toString().equals(MODULE_INFO) &&
-                                path.getFileName().toString().endsWith(".class"))
-                .map(path -> MODS_DIR.relativize(path))
-                .forEach(path -> {
-                    try {
-                        Path newFile = NEW_MODS_DIR.resolve(path);
-                        Files.createDirectories(newFile.getParent());
-                        Files.copy(MODS_DIR.resolve(path), newFile);
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                });
+        try (Stream<Path> stream = Files.walk(MODS_DIR, Integer.MAX_VALUE)) {
+            stream.filter(path -> !path.getFileName().toString().equals(MODULE_INFO) &&
+                                    path.getFileName().toString().endsWith(".class"))
+                  .map(path -> MODS_DIR.relativize(path))
+                  .forEach(path -> {
+                      try {
+                          Path newFile = NEW_MODS_DIR.resolve(path);
+                          Files.createDirectories(newFile.getParent());
+                          Files.copy(MODS_DIR.resolve(path), newFile);
+                      } catch (IOException e) {
+                          throw new UncheckedIOException(e);
+                      }
+                  });
+        }
 
         // compile new module-info.java
         assertTrue(CompilerUtils.compileModule(DEST_DIR, NEW_MODS_DIR, UNSUPPORTED,
