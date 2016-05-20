@@ -811,9 +811,12 @@ AWT_ASSERT_APPKIT_THREAD;
             if (p.y >= (frame.origin.y + contentRect.size.height)) {
                 JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
                 jobject platformWindow = [self.javaPlatformWindow jObjectWithEnv:env];
-                // Currently, no need to deliver the whole NSEvent.
-                static JNF_MEMBER_CACHE(jm_deliverNCMouseDown, jc_CPlatformWindow, "deliverNCMouseDown", "()V");
-                JNFCallVoidMethod(env, platformWindow, jm_deliverNCMouseDown);
+                if (platformWindow != NULL) {
+                    // Currently, no need to deliver the whole NSEvent.
+                    static JNF_MEMBER_CACHE(jm_deliverNCMouseDown, jc_CPlatformWindow, "deliverNCMouseDown", "()V");
+                    JNFCallVoidMethod(env, platformWindow, jm_deliverNCMouseDown);
+                    (*env)->DeleteLocalRef(env, platformWindow);
+                }
             }
         }
 }
