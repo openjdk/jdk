@@ -101,8 +101,6 @@ private:
   InlineMatcher* _inlinematchers;
   CompilerDirectives* _directive;
 
-  static ccstrlist canonicalize_disableintrinsic(ccstrlist option_value);
-
 public:
   DirectiveSet(CompilerDirectives* directive);
   ~DirectiveSet();
@@ -117,6 +115,7 @@ public:
   bool matches_inline(methodHandle method, int inline_action);
   static DirectiveSet* clone(DirectiveSet const* src);
   bool is_intrinsic_disabled(methodHandle method);
+  static ccstrlist canonicalize_disableintrinsic(ccstrlist option_value);
   void finalize(outputStream* st);
 
   typedef enum {
