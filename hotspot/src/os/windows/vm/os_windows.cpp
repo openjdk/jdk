@@ -5277,7 +5277,8 @@ bool os::check_heap(bool force) {
         }
       }
       DWORD err = GetLastError();
-      if (err != ERROR_NO_MORE_ITEMS && err != ERROR_CALL_NOT_IMPLEMENTED) {
+      if (err != ERROR_NO_MORE_ITEMS && err != ERROR_CALL_NOT_IMPLEMENTED &&
+         (err == ERROR_INVALID_FUNCTION && phe.lpData != NULL)) {
         HeapUnlock(heap);
         fatal("heap walk aborted with error %d", err);
       }
