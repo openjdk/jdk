@@ -114,12 +114,18 @@ void LogTagSet::vwrite(LogLevelType level, const char* fmt, va_list args) {
   va_copy(saved_args, args);
   size_t prefix_len = _write_prefix(buf, sizeof(buf));
   // Check that string fits in buffer; resize buffer if necessary
-  int ret = os::log_vsnprintf(buf + prefix_len, sizeof(buf) - prefix_len, fmt, args);
+  int ret;
+  if (prefix_len < vwrite_buffer_size) {
+    ret = os::log_vsnprintf(buf + prefix_len, sizeof(buf) - prefix_len, fmt, args);
+  } else {
+    // Buffer too small. Just call printf to find out the length for realloc below.
+    ret = os::log_vsnprintf(buf, sizeof(buf), fmt, args);
+  }
   assert(ret >= 0, "Log message buffer issue");
   if ((size_t)ret >= sizeof(buf)) {
     size_t newbuf_len = prefix_len + ret + 1;
     char* newbuf = NEW_C_HEAP_ARRAY(char, newbuf_len, mtLogging);
-    memcpy(newbuf, buf, prefix_len);
+    prefix_len = _write_prefix(newbuf, newbuf_len);
     ret = os::log_vsnprintf(newbuf + prefix_len, newbuf_len - prefix_len, fmt, saved_args);
     assert(ret >= 0, "Log message buffer issue");
     log(level, newbuf);

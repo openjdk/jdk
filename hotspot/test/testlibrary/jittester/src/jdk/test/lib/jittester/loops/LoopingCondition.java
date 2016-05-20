@@ -30,6 +30,7 @@ public class LoopingCondition extends IRNode {
     private final IRNode condition;
 
     public LoopingCondition(IRNode condition) {
+        super(condition.getResultType());
         this.condition = condition;
         addChild(condition);
     }

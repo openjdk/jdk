@@ -20,10 +20,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.hotspot;
+package jdk.vm.ci.common;
 
 /**
- * Marker interface for classes whose values are proxied during replay compilation capture.
+ * Used to suppress <a href="http://findbugs.sourceforge.net">FindBugs</a> warnings.
  */
-public interface HotSpotProxified {
+@interface SuppressFBWarnings {
+    /**
+     * The set of FindBugs
+     * <a href="http://findbugs.sourceforge.net/bugDescriptions.html">warnings</a> that are to be
+     * suppressed in annotated element. The value can be a bug category, kind or pattern.
+     */
+    String[] value();
+
+    /**
+     * Reason why the warning is suppressed.
+     */
+    String justification();
 }

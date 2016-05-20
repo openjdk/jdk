@@ -24,12 +24,12 @@ package jdk.vm.ci.code.site;
 
 import java.util.Objects;
 
-import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.VMConstant;
 
 /**
  * Represents a code site that references some data. The associated data can be either a
  * {@link DataSectionReference reference} to the data section, or it may be an inlined
- * {@link JavaConstant} that needs to be patched.
+ * {@link VMConstant} that needs to be patched.
  */
 public final class DataPatch extends Site {
 

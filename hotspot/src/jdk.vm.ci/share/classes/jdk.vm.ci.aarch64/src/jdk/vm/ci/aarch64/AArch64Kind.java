@@ -45,12 +45,7 @@ public enum AArch64Kind implements PlatformKind {
     V128_DWORD(16, DWORD),
     V128_QWORD(16, QWORD),
     V128_SINGLE(16, SINGLE),
-    V128_DOUBLE(16, DOUBLE),
-
-    MASK8(1),
-    MASK16(2),
-    MASK32(4),
-    MASK64(8);
+    V128_DOUBLE(16, DOUBLE);
 
     private final int size;
     private final int vectorLength;
@@ -121,18 +116,6 @@ public enum AArch64Kind implements PlatformKind {
         }
     }
 
-    public boolean isMask() {
-        switch (this) {
-            case MASK8:
-            case MASK16:
-            case MASK32:
-            case MASK64:
-                return true;
-            default:
-                return false;
-        }
-    }
-
     public char getTypeChar() {
         switch (this) {
             case BYTE:
@@ -159,11 +142,6 @@ public enum AArch64Kind implements PlatformKind {
             case V128_SINGLE:
             case V128_DOUBLE:
                 return 'v';
-            case MASK8:
-            case MASK16:
-            case MASK32:
-            case MASK64:
-                return 'k';
             default:
                 return '-';
         }

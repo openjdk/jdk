@@ -44,12 +44,11 @@
   do_klass(HotSpotSentinelConstant_klass,                jdk_vm_ci_hotspot_HotSpotSentinelConstant,             Jvmci) \
   do_klass(HotSpotStackFrameReference_klass,             jdk_vm_ci_hotspot_HotSpotStackFrameReference,          Jvmci) \
   do_klass(HotSpotMetaData_klass,                        jdk_vm_ci_hotspot_HotSpotMetaData,                     Jvmci) \
-  do_klass(HotSpotOopMap_klass,                          jdk_vm_ci_hotspot_HotSpotOopMap,                       Jvmci) \
   do_klass(HotSpotConstantPool_klass,                    jdk_vm_ci_hotspot_HotSpotConstantPool,                 Jvmci) \
   do_klass(HotSpotJVMCIMetaAccessContext_klass,          jdk_vm_ci_hotspot_HotSpotJVMCIMetaAccessContext,       Jvmci) \
   do_klass(HotSpotJVMCIRuntime_klass,                    jdk_vm_ci_hotspot_HotSpotJVMCIRuntime,                 Jvmci) \
   do_klass(HotSpotSpeculationLog_klass,                  jdk_vm_ci_hotspot_HotSpotSpeculationLog,               Jvmci) \
-  do_klass(HotSpotSymbol_klass,                          jdk_vm_ci_hotspot_HotSpotSymbol,                       Jvmci) \
+  do_klass(HotSpotCompilationRequestResult_klass,        jdk_vm_ci_hotspot_HotSpotCompilationRequestResult,     Jvmci) \
   do_klass(Assumptions_ConcreteMethod_klass,             jdk_vm_ci_meta_Assumptions_ConcreteMethod,             Jvmci) \
   do_klass(Assumptions_NoFinalizableSubclass_klass,      jdk_vm_ci_meta_Assumptions_NoFinalizableSubclass,      Jvmci) \
   do_klass(Assumptions_ConcreteSubtype_klass,            jdk_vm_ci_meta_Assumptions_ConcreteSubtype,            Jvmci) \
@@ -61,7 +60,6 @@
   do_klass(DebugInfo_klass,                              jdk_vm_ci_code_DebugInfo,                              Jvmci) \
   do_klass(RegisterSaveLayout_klass,                     jdk_vm_ci_code_RegisterSaveLayout,                     Jvmci) \
   do_klass(BytecodeFrame_klass,                          jdk_vm_ci_code_BytecodeFrame,                          Jvmci) \
-  do_klass(CompilationRequestResult_klass,               jdk_vm_ci_code_CompilationRequestResult,               Jvmci) \
   do_klass(InstalledCode_klass,                          jdk_vm_ci_code_InstalledCode,                          Jvmci) \
   do_klass(code_Location_klass,                          jdk_vm_ci_code_Location,                               Jvmci) \
   do_klass(code_Register_klass,                          jdk_vm_ci_code_Register,                               Jvmci) \
@@ -84,7 +82,7 @@
   do_klass(NullConstant_klass,                           jdk_vm_ci_meta_NullConstant,                           Jvmci) \
   do_klass(ExceptionHandler_klass,                       jdk_vm_ci_meta_ExceptionHandler,                       Jvmci) \
   do_klass(JavaKind_klass,                               jdk_vm_ci_meta_JavaKind,                               Jvmci) \
-  do_klass(LIRKind_klass,                                jdk_vm_ci_meta_LIRKind,                                Jvmci) \
+  do_klass(ValueKind_klass,                              jdk_vm_ci_meta_ValueKind,                              Jvmci) \
   do_klass(Value_klass,                                  jdk_vm_ci_meta_Value,                                  Jvmci)
 #endif
 

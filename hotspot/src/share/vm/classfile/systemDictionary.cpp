@@ -1160,10 +1160,10 @@ Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
     while ((index = strchr(name, '/')) != NULL) {
       *index = '.'; // replace '/' with '.' in package name
     }
-    const char* fmt = "Prohibited package name: %s";
-    size_t len = strlen(fmt) + strlen(name);
+    const char* msg_text = "Prohibited package name: ";
+    size_t len = strlen(msg_text) + strlen(name) + 1;
     char* message = NEW_RESOURCE_ARRAY(char, len);
-    jio_snprintf(message, len, fmt, name);
+    jio_snprintf(message, len, "%s%s", msg_text, name);
     Exceptions::_throw_msg(THREAD_AND_LOCATION,
       vmSymbols::java_lang_SecurityException(), message);
   }
