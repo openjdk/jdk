@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -584,7 +584,9 @@ public class CLDRConverter {
                 String[] data = (String[])e[1];
 
                 if (map.get(TIMEZONE_ID_PREFIX + tzid) == null &&
-                    handlerMetaZones.get(tzid) == null) {
+                    handlerMetaZones.get(tzid) == null ||
+                    handlerMetaZones.get(tzid) != null &&
+                    map.get(METAZONE_ID_PREFIX + handlerMetaZones.get(tzid)) == null) {
                     // First, check the CLDR meta key
                     Optional<Map.Entry<String, String>> cldrMeta =
                         handlerMetaZones.getData().entrySet().stream()
