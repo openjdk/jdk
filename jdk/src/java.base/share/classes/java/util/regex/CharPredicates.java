@@ -302,7 +302,8 @@ class CharPredicates {
         defCategory("C", ((1<<Character.CONTROL)     |
                           (1<<Character.FORMAT)      |
                           (1<<Character.PRIVATE_USE) |
-                          (1<<Character.SURROGATE))); // Other
+                          (1<<Character.SURROGATE)   |
+                          (1<<Character.UNASSIGNED))); // Other
         defCategory("P", ((1<<Character.DASH_PUNCTUATION)      |
                           (1<<Character.START_PUNCTUATION)     |
                           (1<<Character.END_PUNCTUATION)       |
