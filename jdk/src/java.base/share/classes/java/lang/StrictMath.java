@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -829,6 +829,33 @@ public final class StrictMath {
      */
     public static int toIntExact(long value) {
         return Math.toIntExact(value);
+    }
+
+    /**
+     * Returns the exact mathematical product of the arguments.
+     *
+     * @param x the first value
+     * @param y the second value
+     * @return the result
+     * @see Math#multiplyFull(long,long)
+     * @since 1.9
+     */
+    public static long multiplyFull(int x, int y) {
+        return Math.multiplyFull(x, y);
+    }
+
+    /**
+     * Returns as a {@code long} the most significant 64 bits of the 128-bit
+     * product of two 64-bit factors.
+     *
+     * @param x the first value
+     * @param y the second value
+     * @return the result
+     * @see Math#multiplyHigh(long,long)
+     * @since 1.9
+     */
+    public static long multiplyHigh(long x, long y) {
+        return Math.multiplyHigh(x, y);
     }
 
     /**
