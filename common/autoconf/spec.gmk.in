@@ -237,7 +237,7 @@ VALID_JVM_FEATURES := @VALID_JVM_FEATURES@
 VALID_JVM_VARIANTS := @VALID_JVM_VARIANTS@
 
 # Control wether Hotspot builds gtest tests
-BUILD_GTEST := true
+BUILD_GTEST := @BUILD_GTEST@
 
 # Control use of precompiled header in hotspot libjvm build
 USE_PRECOMPILED_HEADER := @USE_PRECOMPILED_HEADER@
