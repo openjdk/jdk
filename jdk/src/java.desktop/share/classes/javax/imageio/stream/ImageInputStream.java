@@ -32,7 +32,7 @@ import java.nio.ByteOrder;
 
 /**
  * A seekable input stream interface for use by
- * {@code ImageReader}s.  Various input sources, such as
+ * {@code ImageReader}s. Various input sources, such as
  * {@code InputStream}s and {@code File}s,
  * as well as future fast I/O sources may be "wrapped" by a suitable
  * implementation of this interface for use by the Image I/O API.
@@ -469,7 +469,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      * then a {@code UTFDataFormatException} is thrown.
      *
      * <p> If end of file is encountered at any time during this
-     * entire process, then an {@code java.io.EOFException} is thrown.
+     * entire process, then a {@code java.io.EOFException} is thrown.
      *
      * <p> After every group has been converted to a character by this
      * process, the characters are gathered, in the same order in
@@ -499,7 +499,7 @@ public interface ImageInputStream extends DataInput, Closeable {
     /**
      * Reads {@code len} bytes from the stream, and stores them
      * into {@code b} starting at index {@code off}.
-     * If the end of the stream is reached, an {@code java.io.EOFException}
+     * If the end of the stream is reached, a {@code java.io.EOFException}
      * will be thrown.
      *
      * <p> The bit offset within the stream is reset to zero before
@@ -523,7 +523,7 @@ public interface ImageInputStream extends DataInput, Closeable {
     /**
      * Reads {@code b.length} bytes from the stream, and stores them
      * into {@code b} starting at index {@code 0}.
-     * If the end of the stream is reached, an {@code java.io.EOFException}
+     * If the end of the stream is reached, a {@code java.io.EOFException}
      * will be thrown.
      *
      * <p> The bit offset within the stream is reset to zero before
@@ -543,8 +543,8 @@ public interface ImageInputStream extends DataInput, Closeable {
      * Reads {@code len} shorts (signed 16-bit integers) from the
      * stream according to the current byte order, and
      * stores them into {@code s} starting at index
-     * {@code off}.  If the end of the stream is reached, an
-     * {@code java.io.EOFException} will be thrown.
+     * {@code off}.  If the end of the stream is reached,
+     * a {@code java.io.EOFException} will be thrown.
      *
      * <p> The bit offset within the stream is reset to zero before
      * the read occurs.
@@ -568,8 +568,8 @@ public interface ImageInputStream extends DataInput, Closeable {
      * Reads {@code len} chars (unsigned 16-bit integers) from the
      * stream according to the current byte order, and
      * stores them into {@code c} starting at index
-     * {@code off}.  If the end of the stream is reached, an
-     * {@code java.io.EOFException} will be thrown.
+     * {@code off}.  If the end of the stream is reached,
+     * a {@code java.io.EOFException} will be thrown.
      *
      * <p> The bit offset within the stream is reset to zero before
      * the read occurs.
@@ -593,8 +593,8 @@ public interface ImageInputStream extends DataInput, Closeable {
      * Reads {@code len} ints (signed 32-bit integers) from the
      * stream according to the current byte order, and
      * stores them into {@code i} starting at index
-     * {@code off}.  If the end of the stream is reached, an
-     * {@code java.io.EOFException} will be thrown.
+     * {@code off}.  If the end of the stream is reached,
+     * a {@code java.io.EOFException} will be thrown.
      *
      * <p> The bit offset within the stream is reset to zero before
      * the read occurs.
@@ -618,8 +618,8 @@ public interface ImageInputStream extends DataInput, Closeable {
      * Reads {@code len} longs (signed 64-bit integers) from the
      * stream according to the current byte order, and
      * stores them into {@code l} starting at index
-     * {@code off}.  If the end of the stream is reached, an
-     * {@code java.io.EOFException} will be thrown.
+     * {@code off}.  If the end of the stream is reached,
+     * a {@code java.io.EOFException} will be thrown.
      *
      * <p> The bit offset within the stream is reset to zero before
      * the read occurs.
@@ -644,7 +644,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      * floats) from the stream according to the current byte order,
      * and stores them into {@code f} starting at
      * index {@code off}.  If the end of the stream is reached,
-     * an {@code java.io.EOFException} will be thrown.
+     * a {@code java.io.EOFException} will be thrown.
      *
      * <p> The bit offset within the stream is reset to zero before
      * the read occurs.
@@ -669,7 +669,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      * floats) from the stream according to the current byte order,
      * and stores them into {@code d} starting at
      * index {@code off}.  If the end of the stream is reached,
-     * an {@code java.io.EOFException} will be thrown.
+     * a {@code java.io.EOFException} will be thrown.
      *
      * <p> The bit offset within the stream is reset to zero before
      * the read occurs.
@@ -781,7 +781,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      * byte order is being used (i.e., {@code getByteOrder() == false}).
      *
      * <p> If the end of the stream is encountered before all the bits
-     * have been read, an {@code java.io.EOFException} is thrown.
+     * have been read, a {@code java.io.EOFException} is thrown.
      *
      * @param numBits the number of bits to read, as an {@code int}
      * between 0 and 64, inclusive.
@@ -848,8 +848,8 @@ public interface ImageInputStream extends DataInput, Closeable {
      * {@code pos} is smaller than the flushed position (as
      * returned by {@code getflushedPosition}).
      *
-     * <p> It is legal to seek past the end of the file; an
-     * {@code java.io.EOFException} will be thrown only if a read is
+     * <p> It is legal to seek past the end of the file;
+     * a {@code java.io.EOFException} will be thrown only if a read is
      * performed.
      *
      * @param pos a {@code long} containing the desired file
