@@ -116,9 +116,6 @@
 
 # jdk_beans
 
-java/beans/XMLDecoder/8028054/TestConstructorFinder.java        8156579 generic-all
-java/beans/XMLDecoder/8028054/TestMethodFinder.java             8156579 generic-all
-
 java/beans/Introspector/8132566/OverridePropertyInfoTest.java   8132565 generic-all
 java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 generic-all
 
