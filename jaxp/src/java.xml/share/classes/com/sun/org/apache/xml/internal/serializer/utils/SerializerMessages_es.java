@@ -20,7 +20,7 @@
  * limitations under the License.
  */
 /*
- * $Id: SerializerMessages_es.java /st_wptg_1.8.0.0.0jdk/2 2013/09/16 09:06:34 gmolloy Exp $
+ * $Id: SerializerMessages_es.java /st_wptg_1.9.0.0.0jdk/2 2016/04/14 05:09:25 gmolloy Exp $
  */
 package com.sun.org.apache.xml.internal.serializer.utils;
 
@@ -200,94 +200,98 @@ public class SerializerMessages_es extends ListResourceBundle {
                 "El objeto de propiedades transferido a SerializerFactory no tiene una propiedad ''{0}''." },
 
             {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
-                "Aviso: La codificaci\u00f3n ''{0}'' no est\u00e1 soportada por Java Runtime." },
+                "Advertencia: el tiempo de ejecuci\u00F3n de Java no soporta la codificaci\u00F3n ''{0}''." },
 
              {MsgKey.ER_FEATURE_NOT_FOUND,
-             "El par\u00e1metro ''{0}'' no se reconoce."},
+             "No se reconoce el par\u00E1metro ''{0}''."},
 
              {MsgKey.ER_FEATURE_NOT_SUPPORTED,
-             "Se reconoce el par\u00e1metro ''{0}'' pero no puede establecerse el valor solicitado."},
+             "Se reconoce el par\u00E1metro ''{0}'' pero no se puede definir el valor solicitado."},
 
              {MsgKey.ER_STRING_TOO_LONG,
-             "La serie producida es demasiado larga para ajustarse a DOMString: ''{0}''."},
+             "La cadena resultante es demasiado larga para que quepa en una cadena DOM: ''{0}''."},
 
              {MsgKey.ER_TYPE_MISMATCH_ERR,
-             "El tipo de valor para este nombre de par\u00e1metro es incompatible con el tipo de valor esperado."},
+             "El tipo de valor para este nombre de par\u00E1metro no es compatible con el tipo de valor esperado. "},
 
              {MsgKey.ER_NO_OUTPUT_SPECIFIED,
-             "El destino de salida de escritura de los datos es nulo."},
+             "El destino de salida en el que se deb\u00EDan escribir los datos era nulo."},
 
              {MsgKey.ER_UNSUPPORTED_ENCODING,
-             "Se ha encontrado una codificaci\u00f3n no soportada."},
+             "Se ha encontrado una codificaci\u00F3n no soportada."},
 
              {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
-             "No se ha podido serializar el nodo."},
+             "El nodo no se ha podido serializar."},
 
              {MsgKey.ER_CDATA_SECTIONS_SPLIT,
-             "La secci\u00f3n CDATA contiene uno o m\u00e1s marcadores ']]>' de terminaci\u00f3n."},
+             "La secci\u00F3n CDATA contiene uno o m\u00E1s marcadores de terminaci\u00F3n ']]>'."},
 
              {MsgKey.ER_WARNING_WF_NOT_CHECKED,
-                 "No se ha podido crear una instancia del comprobador de gram\u00e1tica correcta.  El par\u00e1metro well-formed se ha establecido en true pero no se puede realizar la comprobaci\u00f3n de gram\u00e1tica correcta."
+                 "No se ha podido crear una instancia del comprobador de formato correcto. El par\u00E1metro de formato correcto se ha definido en true pero no se puede realizar la comprobaci\u00F3n de formato correcto."
              },
 
              {MsgKey.ER_WF_INVALID_CHARACTER,
-                 "El nodo ''{0}'' contiene caracteres XML no v\u00e1lidos."
+                 "El nodo ''{0}'' contiene caracteres XML no v\u00E1lidos."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
-                 "Se ha encontrado un car\u00e1cter XML no v\u00e1lido (Unicode: 0x{0}) en el comentario."
+                 "Se ha encontrado un car\u00E1cter XML (Unicode: 0x{0}) no v\u00E1lido en el comentario."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
-                 "Se ha encontrado un car\u00e1cter XML no v\u00e1lido (Unicode: 0x{0}) en los datos de la instrucci\u00f3n de proceso."
+                 "Se ha encontrado un car\u00E1cter XML (Unicode: 0x{0}) no v\u00E1lido en los datos de la instrucci\u00F3n de procesamiento."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
-                 "Se ha encontrado un car\u00e1cter XML no v\u00e1lido (Unicode: 0x{0}) en el contenido de CDATASection."
+                 "Se ha encontrado un car\u00E1cter XML (Unicode: 0x{0}) no v\u00E1lido en el contenido de la secci\u00F3n CDATA."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
-                 "Se ha encontrado un car\u00e1cter XML no v\u00e1lido (Unicode: 0x{0}) en el contenido de datos de caracteres del nodo."
+                 "Se ha encontrado un car\u00E1cter XML (Unicode: 0x{0}) no v\u00E1lido en los datos de caracteres del nodo."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
-                 "Se ha encontrado un car\u00e1cter o caracteres XML no v\u00e1lidos en el nodo {0} denominado ''{1}''."
+                 "Se ha encontrado un car\u00E1cter XML no v\u00E1lido en el nodo {0} denominado ''{1}''."
              },
 
              { MsgKey.ER_WF_DASH_IN_COMMENT,
-                 "No se permite la serie \"--\" dentro de los comentarios."
+                 "La cadena \"--\" no est\u00E1 permitida en los comentarios."
              },
 
              {MsgKey.ER_WF_LT_IN_ATTVAL,
-                 "El valor del atributo \"{1}\" asociado a un tipo de elemento \"{0}\" no debe contener el car\u00e1cter ''''<''''."
+                 "El valor del atributo \"{1}\" asociado a un tipo de elemento \"{0}\" no debe contener el car\u00E1cter ''<''."
              },
 
              {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
-                 "No se permite la referencia de entidad no analizada \"&{0};\"."
+                 "La referencia de entidad no analizada \"&{0};\" no est\u00E1 permitida."
              },
 
              {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
-                 "La referencia de entidad externa \"&{0};\" no est\u00e1 permitida en un valor de atributo."
+                 "La referencia de entidad externa \"&{0};\" no est\u00E1 permitida en un valor de atributo."
              },
 
              {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
-                 "No se puede encontrar el prefijo \"{0}\" en el espacio de nombres \"{1}\"."
+                 "El prefijo \"{0}\" no se puede enlazar al espacio de nombres \"{1}\"."
              },
 
              {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
-                 "El nombre local del elemento \"{0}\" es null."
+                 "El nombre local del elemento \"{0}\" es nulo."
              },
 
              {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
-                 "El nombre local del atributo \"{0}\" es null."
+                 "El nombre local del atributo \"{0}\" es nulo."
              },
 
              { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
-                 "El texto de sustituci\u00f3n del nodo de entidad \"{0}\" contiene un nodo de elemento \"{1}\" con un prefijo no enlazado \"{2}\"."
+                 "El texto de sustituci\u00F3n del nodo de entidad \"{0}\" contiene un nodo de elemento \"{1}\"con un prefijo no enlazado \"{2}\"."
              },
 
              { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
-                 "El texto de sustituci\u00f3n del nodo de entidad \"{0}\" contiene un nodo de atributo \"{1}\" con un prefijo no enlazado \"{2}\"."
+                 "El texto de sustituci\u00F3n del nodo de entidad \"{0}\" contiene un nodo de atributo \"{1}\"con un prefijo no enlazado \"{2}\"."
+             },
+
+             { MsgKey.ER_WRITING_INTERNAL_SUBSET,
+                 "Se ha producido un error al escribir el subjuego interno."
              },
 
         };

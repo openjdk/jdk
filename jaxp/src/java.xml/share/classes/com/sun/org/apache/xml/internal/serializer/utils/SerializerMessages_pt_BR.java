@@ -20,7 +20,7 @@
  * limitations under the License.
  */
 /*
- * $Id: SerializerMessages_pt_BR.java /st_wptg_1.8.0.0.0jdk/2 2013/09/11 12:46:54 gmolloy Exp $
+ * $Id: SerializerMessages_pt_BR.java /st_wptg_1.9.0.0.0jdk/2 2016/04/12 18:01:34 gmolloy Exp $
  */
 package com.sun.org.apache.xml.internal.serializer.utils;
 
@@ -129,7 +129,7 @@ public class SerializerMessages_pt_BR extends ListResourceBundle {
                 "Declara\u00E7\u00E3o de namespace ''{0}''=''{1}'' fora do elemento." },
 
             {   MsgKey.ER_COULD_NOT_LOAD_RESOURCE,
-                "N\u00E3o foi poss\u00EDvel carregar ''{0}'' (verificar CLASSPATH); usando agora apenas os defaults" },
+                "N\u00E3o foi poss\u00EDvel carregar ''{0}'' (verificar CLASSPATH); usando agora apenas os padr\u00F5es" },
 
             {   MsgKey.ER_ILLEGAL_CHARACTER,
                 "Tentativa de exibir um caractere de valor integral {0} que n\u00E3o est\u00E1 representado na codifica\u00E7\u00E3o de sa\u00EDda especificada de {1}." },
@@ -203,91 +203,95 @@ public class SerializerMessages_pt_BR extends ListResourceBundle {
                 "Advert\u00EAncia: a codifica\u00E7\u00E3o ''{0}'' n\u00E3o \u00E9 suportada pelo Java runtime." },
 
              {MsgKey.ER_FEATURE_NOT_FOUND,
-             "O par\u00e2metro ''{0}'' n\u00e3o \u00e9 reconhecido."},
+             "O par\u00E2metro ''{0}'' n\u00E3o \u00E9 reconhecido."},
 
              {MsgKey.ER_FEATURE_NOT_SUPPORTED,
-             "O par\u00e2metro ''{0}'' \u00e9 reconhecido, mas o valor pedido n\u00e3o pode ser definido. "},
+             "O par\u00E2metro ''{0}'' \u00E9 reconhecido, mas o valor solicitado n\u00E3o pode ser definido."},
 
              {MsgKey.ER_STRING_TOO_LONG,
-             "A cadeia resultante \u00e9 muito longa para caber em uma DOMString: ''{0}''. "},
+             "A string resultante \u00E9 muito longa para se ajustar a uma DOMString: ''{0}''."},
 
              {MsgKey.ER_TYPE_MISMATCH_ERR,
-             "O tipo de valor para este nome de par\u00e2metro \u00e9 incompat\u00edvel com o tipo de valor esperado. "},
+             "O tipo de valor do nome deste par\u00E2metro \u00E9 incompat\u00EDvel com o tipo de valor esperado."},
 
              {MsgKey.ER_NO_OUTPUT_SPECIFIED,
-             "O destino de sa\u00edda para os dados a serem gravados era nulo. "},
+             "O destino da sa\u00EDda dos dados a serem gravados era nulo."},
 
              {MsgKey.ER_UNSUPPORTED_ENCODING,
-             "Uma codifica\u00e7\u00e3o n\u00e3o suportada foi encontrada. "},
+             "Uma codifica\u00E7\u00E3o n\u00E3o suportada foi encontrada."},
 
              {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
-             "O n\u00f3 n\u00e3o p\u00f4de ser serializado."},
+             "N\u00E3o foi poss\u00EDvel serializar o n\u00F3."},
 
              {MsgKey.ER_CDATA_SECTIONS_SPLIT,
-             "A Se\u00e7\u00e3o CDATA cont\u00e9m um ou mais marcadores de t\u00e9rmino ']]>'."},
+             "A Se\u00E7\u00E3o CDATA cont\u00E9m um ou mais marcadores de t\u00E9rmino ']]>'."},
 
              {MsgKey.ER_WARNING_WF_NOT_CHECKED,
-                 "Uma inst\u00e2ncia do verificador Well-Formedness n\u00e3o p\u00f4de ser criada. O par\u00e2metro well-formed foi definido como true, mas a verifica\u00e7\u00e3o well-formedness n\u00e3o pode ser executada."
+                 "N\u00E3o foi poss\u00EDvel criar uma inst\u00E2ncia do verificador de Formato Correto. O par\u00E2metro formatado corretamente foi definido como verdadeiro, mas a verifica\u00E7\u00E3o de formato correto n\u00E3o pode ser executada."
              },
 
              {MsgKey.ER_WF_INVALID_CHARACTER,
-                 "O n\u00f3 ''{0}'' cont\u00e9m caracteres XML inv\u00e1lidos. "
+                 "O n\u00F3 ''{0}'' cont\u00E9m caracteres XML inv\u00E1lidos."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
-                 "Um caractere XML inv\u00e1lido (Unicode: 0x{0}) foi encontrado no coment\u00e1rio. "
+                 "Um caractere XML inv\u00E1lido (Unicode: 0x{0}) foi encontrado no coment\u00E1rio."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
-                 "Um caractere XML inv\u00e1lido (Unicode: 0x{0}) foi encontrado no processo instructiondata."
+                 "Um caractere XML inv\u00E1lido (Unicode: 0x{0}) foi encontrado nos dados da instru\u00E7\u00E3o de processamento."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
-                 "Um caractere XML inv\u00e1lido (Unicode: 0x{0}) foi encontrado nos conte\u00fados do CDATASection. "
+                 "Um caractere XML inv\u00E1lido (Unicode: 0x {0}) foi encontrado no conte\u00FAdo da Se\u00E7\u00E3o CDATA."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
-                 "Um caractere XML inv\u00e1lido (Unicode: 0x{0}) foi encontrado no conte\u00fado dos dados de caractere dos n\u00f3s. "
+                 "Um caractere XML inv\u00E1lido (Unicode: 0x {0}) foi encontrado no conte\u00FAdo dos dados de caracteres do n\u00F3."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
-                 "Um caractere inv\u00e1lido foi encontrado no {0} do n\u00f3 denominado ''{1}''."
+                 "Um ou mais caracteres XML inv\u00E1lidos foram encontrados no n\u00F3 {0} chamado ''{1}''."
              },
 
              { MsgKey.ER_WF_DASH_IN_COMMENT,
-                 "A cadeia \"--\" n\u00e3o \u00e9 permitida dentro dos coment\u00e1rios. "
+                 "A string \"--\" n\u00E3o \u00E9 permitida nos coment\u00E1rios."
              },
 
              {MsgKey.ER_WF_LT_IN_ATTVAL,
-                 "O valor do atributo \"{1}\" associado a um tipo de elemento \"{0}\" n\u00e3o deve conter o caractere ''<''. "
+                 "O valor do atributo \"{1}\" associado a um tipo de elemento \"{0}\" n\u00E3o deve conter o caractere ''<''."
              },
 
              {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
-                 "A refer\u00eancia de entidade n\u00e3o analisada \"&{0};\" n\u00e3o \u00e9 permitida. "
+                 "A refer\u00EAncia da entidade n\u00E3o submetida a parsing \"&{0};\" n\u00E3o \u00E9 permitida."
              },
 
              {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
-                 "A refer\u00eancia de entidade externa \"&{0};\" n\u00e3o \u00e9 permitida em um valor de atributo. "
+                 "A refer\u00EAncia da entidade externa \"&{0};\" n\u00E3o \u00E9 permitida em um valor do atributo."
              },
 
              {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
-                 "O prefixo \"{0}\" n\u00e3o pode ser vinculado ao espa\u00e7o de nomes \"{1}\"."
+                 "O prefixo \"{0}\" n\u00E3o pode ser vinculado ao namespace \"{1}\"."
              },
 
              {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
-                 "O nome local do elemento \"{0}\" \u00e9 nulo."
+                 "O nome local do elemento \"{0}\" \u00E9 nulo."
              },
 
              {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
-                 "O nome local do atributo \"{0}\" \u00e9 nulo."
+                 "O nome local do atributo \"{0}\" \u00E9 nulo."
              },
 
              { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
-                 "O texto de substitui\u00e7\u00e3o do n\u00f3 de entidade \"{0}\" cont\u00e9m um n\u00f3 de elemento \"{1}\" com um prefixo n\u00e3o vinculado \"{2}\"."
+                 "O texto de substitui\u00E7\u00E3o do n\u00F3 \"{0}\" de entidade cont\u00E9m um n\u00F3 \"{1}\" de elemento com um prefixo desvinculado \"{2}\"."
              },
 
              { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
-                 "O texto de substitui\u00e7\u00e3o do n\u00f3 de entidade \"{0}\" cont\u00e9m um n\u00f3 de atributo \"{1}\" com um prefixo n\u00e3o vinculado \"{2}\"."
+                 "O texto de substitui\u00E7\u00E3o do n\u00F3 \"{0}\" de entidade cont\u00E9m um n\u00F3 \"{1}\" de atributo com um prefixo desvinculado \"{2}\"."
+             },
+
+             { MsgKey.ER_WRITING_INTERNAL_SUBSET,
+                 "Ocorreu um erro ao gravar o subconjunto interno."
              },
 
         };
