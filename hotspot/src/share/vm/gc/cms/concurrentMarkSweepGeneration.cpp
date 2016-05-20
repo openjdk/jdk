@@ -545,6 +545,8 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   }
   assert((_conc_workers != NULL) == (ConcGCThreads > 1),
          "Inconsistency");
+  log_debug(gc)("ConcGCThreads: %u", ConcGCThreads);
+  log_debug(gc)("ParallelGCThreads: %u", ParallelGCThreads);
 
   // Parallel task queues; these are shared for the
   // concurrent and stop-world phases of CMS, but
