@@ -306,3 +306,43 @@ AC_DEFUN_ONCE([HOTSPOT_VALIDATE_JVM_FEATURES],
     fi
   done
 ])
+
+################################################################################
+# Check if gtest should be built
+#
+AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_GTEST],
+[
+  AC_ARG_ENABLE([hotspot-gtest], [AS_HELP_STRING([--disable-hotspot-gtest],
+      [Disables building of the Hotspot unit tests])])
+
+  if test -e "$HOTSPOT_TOPDIR/test/native"; then
+    GTEST_DIR_EXISTS="true"
+  else
+    GTEST_DIR_EXISTS="false"
+  fi
+
+  AC_MSG_CHECKING([if Hotspot gtest unit tests should be built])
+  if test "x$enable_hotspot_gtest" = "xyes"; then
+    if test "x$GTEST_DIR_EXISTS" = "xtrue"; then
+      AC_MSG_RESULT([yes, forced])
+      BUILD_GTEST="true"
+    else
+      AC_MSG_ERROR([Cannot build gtest without the test source])
+    fi
+  elif test "x$enable_hotspot_gtest" = "xno"; then
+    AC_MSG_RESULT([no, forced])
+    BUILD_GTEST="false"
+  elif test "x$enable_hotspot_gtest" = "x"; then
+    if test "x$GTEST_DIR_EXISTS" = "xtrue"; then
+      AC_MSG_RESULT([yes])
+      BUILD_GTEST="true"
+    else
+      AC_MSG_RESULT([no])
+      BUILD_GTEST="false"
+    fi
+  else
+    AC_MSG_ERROR([--enable-gtest must be either yes or no])
+  fi
+
+  AC_SUBST(BUILD_GTEST)
+])

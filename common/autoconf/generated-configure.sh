@@ -688,6 +688,7 @@ LIBCXX
 STATIC_CXX_SETTING
 FIXPATH_DETACH_FLAG
 FIXPATH
+BUILD_GTEST
 VALID_JVM_FEATURES
 JVM_FEATURES_custom
 JVM_FEATURES_zeroshark
@@ -1198,6 +1199,7 @@ enable_native_coverage
 enable_dtrace
 with_jvm_features
 with_jvm_interpreter
+enable_hotspot_gtest
 with_stdc__lib
 with_msvcr_dll
 with_msvcp_dll
@@ -1992,6 +1994,7 @@ Optional Features:
   --enable-dtrace[=yes/no/auto]
                           enable dtrace. Default is auto, where dtrace is
                           enabled if all dependencies are present.
+  --disable-hotspot-gtest Disables building of the Hotspot unit tests
   --disable-freetype-bundling
                           disable bundling of the freetype library with the
                           build result [enabled on Windows or when using
@@ -4298,6 +4301,11 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 #
 
 
+################################################################################
+# Check if gtest should be built
+#
+
+
 #
 # Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -5072,7 +5080,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1463500649
+DATE_WHEN_GENERATED=1463732692
 
 ###############################################################################
 #
@@ -53405,6 +53413,49 @@ if test "${with_jvm_interpreter+set}" = set; then :
   withval=$with_jvm_interpreter; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-jvm-interpreter is deprecated and will be ignored." >&5
 $as_echo "$as_me: WARNING: Option --with-jvm-interpreter is deprecated and will be ignored." >&2;}
 fi
+
+
+
+
+  # Check whether --enable-hotspot-gtest was given.
+if test "${enable_hotspot_gtest+set}" = set; then :
+  enableval=$enable_hotspot_gtest;
+fi
+
+
+  if test -e "$HOTSPOT_TOPDIR/test/native"; then
+    GTEST_DIR_EXISTS="true"
+  else
+    GTEST_DIR_EXISTS="false"
+  fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if Hotspot gtest unit tests should be built" >&5
+$as_echo_n "checking if Hotspot gtest unit tests should be built... " >&6; }
+  if test "x$enable_hotspot_gtest" = "xyes"; then
+    if test "x$GTEST_DIR_EXISTS" = "xtrue"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, forced" >&5
+$as_echo "yes, forced" >&6; }
+      BUILD_GTEST="true"
+    else
+      as_fn_error $? "Cannot build gtest without the test source" "$LINENO" 5
+    fi
+  elif test "x$enable_hotspot_gtest" = "xno"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, forced" >&5
+$as_echo "no, forced" >&6; }
+    BUILD_GTEST="false"
+  elif test "x$enable_hotspot_gtest" = "x"; then
+    if test "x$GTEST_DIR_EXISTS" = "xtrue"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+      BUILD_GTEST="true"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      BUILD_GTEST="false"
+    fi
+  else
+    as_fn_error $? "--enable-gtest must be either yes or no" "$LINENO" 5
+  fi
 
 
 
