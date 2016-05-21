@@ -125,7 +125,7 @@ class Main {
     boolean printModuleDescriptor;
     Version moduleVersion;
     Pattern modulesToHash;
-    ModuleFinder moduleFinder = ModuleFinder.empty();
+    ModuleFinder moduleFinder = ModuleFinder.of();
 
     private static final String MODULE_INFO = "module-info.class";
 
