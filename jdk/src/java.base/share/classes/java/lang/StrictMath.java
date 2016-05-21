@@ -852,7 +852,7 @@ public final class StrictMath {
      * @param x the first value
      * @param y the second value
      * @return the result
-     * @see Math#multiplyFull(long,long)
+     * @see Math#multiplyFull(int,int)
      * @since 1.9
      */
     public static long multiplyFull(int x, int y) {
