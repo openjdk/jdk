@@ -89,7 +89,7 @@ public class Umod_PkgNotExp {
         // Resolves "m1"
         Configuration cf = Layer.boot()
                 .configuration()
-                .resolveRequires(finder, ModuleFinder.empty(), Set.of("m1"));
+                .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
 
         // map each module to the same class loader for this test
         Map<String, ClassLoader> map = new HashMap<>();
