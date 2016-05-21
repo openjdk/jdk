@@ -77,7 +77,7 @@ import sun.security.util.SecurityConstants;
  * #boot() boot} layer, that is created when the Java virtual machine is
  * started. The <em>system modules</em>, including {@code java.base}, are in
  * the boot layer. The modules in the boot layer are mapped to the bootstrap
- * class loader and other class loaders that are built-in into the ava virtual
+ * class loader and other class loaders that are built-in into the Java virtual
  * machine. The boot layer will often be the {@link #parent() parent} when
  * creating additional layers. </p>
  *
@@ -105,7 +105,7 @@ import sun.security.util.SecurityConstants;
  *     Layer parent = Layer.boot();
  *
  *     Configuration cf = parent.configuration()
- *         .resolveRequires(finder, ModuleFinder.empty(), Set.of("myapp"));
+ *         .resolveRequires(finder, ModuleFinder.of(), Set.of("myapp"));
  *
  *     ClassLoader scl = ClassLoader.getSystemClassLoader();
  *
