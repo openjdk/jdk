@@ -93,7 +93,9 @@ ifneq ($(MOD_FILES), )
   # Param 1 - Name of package with dots
   PackageExists = \
       $(strip $(wildcard $(addsuffix $(subst .,/,/$(strip $1)), \
-          $(MODULE_CLASSES_DIRS))))
+          $(MODULE_CLASSES_DIRS) \
+          $(addsuffix /$(MODULE), $(IMPORT_MODULES_CLASSES)) \
+      )))
 
   # Convert the modification lines into arguments for the modification tool.
   # Filter out modifications for non existing to-modules.
