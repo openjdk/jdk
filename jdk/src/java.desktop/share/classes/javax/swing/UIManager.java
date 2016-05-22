@@ -59,6 +59,7 @@ import sun.security.action.GetPropertyAction;
 import sun.swing.SwingUtilities2;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.Objects;
 import sun.awt.AppContext;
 import sun.awt.AWTAccessor;
 
@@ -495,6 +496,48 @@ public class UIManager implements Serializable
         return getLAFState().lookAndFeel;
     }
 
+    /**
+     * Creates a supported built-in Java {@code LookAndFeel} specified
+     * by the given {@code L&F name} name.
+     *
+     * @param name a {@code String} specifying the name of the built-in
+     *             look and feel
+     * @return the built-in {@code LookAndFeel} object
+     * @throws NullPointerException if {@code name} is {@code null}
+     * @throws UnsupportedLookAndFeelException if the built-in Java {@code L&F}
+     *         is not found for the given name or it is not supported by the
+     *         underlying platform
+     *
+     * @see LookAndFeel#getName
+     * @see LookAndFeel#isSupportedLookAndFeel
+     *
+     * @since 9
+     */
+    public static LookAndFeel createLookAndFeel(String name)
+            throws UnsupportedLookAndFeelException {
+        Objects.requireNonNull(name);
+
+        if ("GTK look and feel".equals(name)) {
+            name = "GTK+";
+        }
+
+        try {
+            for (LookAndFeelInfo info : installedLAFs) {
+                if (info.getName().equals(name)) {
+                    Class<?> cls = Class.forName(UIManager.class.getModule(),
+                                                 info.getClassName());
+                    LookAndFeel laf = (LookAndFeel) cls.newInstance();
+                    if (!laf.isSupportedLookAndFeel()) {
+                        break;
+                    }
+                    return laf;
+                }
+            }
+        } catch (InstantiationException | IllegalAccessException ignore) {
+        }
+
+        throw new UnsupportedLookAndFeelException(name);
+    }
 
     /**
      * Sets the current look and feel to {@code newLookAndFeel}.
