@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,21 @@
  * questions.
  */
 
-module jdk.jshell {
-    requires public java.compiler;
-    requires java.desktop;
-    requires java.prefs;
-    requires jdk.compiler;
-    requires jdk.internal.le;
-    requires jdk.jdi;
+package jdk.internal.jshell.jdi;
 
-    exports jdk.jshell;
-    exports jdk.jshell.spi;
+/**
+ * Internal exception when Java Debug Interface VirtualMacine is not connected.
+ * Copy of jdb VMNotConnectedException.
+ */
+class JDINotConnectedException extends RuntimeException {
+
+    private static final long serialVersionUID = -7433430494903950165L;
+
+    public JDINotConnectedException() {
+        super();
+    }
+
+    public JDINotConnectedException(String s) {
+        super(s);
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,35 +22,43 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.jshell.jdi;
 
-package jdk.jshell;
-
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Objects;
 import com.sun.jdi.ReferenceType;
+import java.util.List;
 
 /**
- * Tracks the state of a class through compilation and loading in the remote
- * environment.
- *
- * @author Robert Field
+ * Tracks the state of a class.
  */
 class ClassTracker {
 
-    private final JShell state;
+    private final JDIEnv jdiEnv;
     private final HashMap<String, ClassInfo> map;
 
-    ClassTracker(JShell state) {
-        this.state = state;
+    ClassTracker(JDIEnv jdiEnv) {
+        this.jdiEnv = jdiEnv;
         this.map = new HashMap<>();
     }
 
+    /**
+     * Associates a class name, class bytes, and ReferenceType.
+     */
     class ClassInfo {
 
+        // The name of the class -- always set
         private final String className;
+
+        // The corresponding compiled class bytes when a load or redefine
+        // is started.  May not be the loaded bytes.  May be null.
         private byte[] bytes;
+
+        // The class bytes successfully loaded/redefined into the remote VM.
         private byte[] loadedBytes;
+
+        // The corresponding JDI ReferenceType.  Used by redefineClasses and
+        // acts as indicator of successful load (null if not loaded).
         private ReferenceType rt;
 
         private ClassInfo(String className) {
@@ -61,33 +69,44 @@ class ClassTracker {
             return className;
         }
 
+        byte[] getLoadedBytes() {
+            return loadedBytes;
+        }
+
         byte[] getBytes() {
             return bytes;
         }
 
-        void setBytes(byte[] bytes) {
-            this.bytes = bytes;
+        private void setBytes(byte[] potentialBytes) {
+            this.bytes = potentialBytes;
         }
 
-        void setLoaded() {
+        // The class has been successful loaded redefined.  The class bytes
+        // sent are now actually loaded.
+        void markLoaded() {
             loadedBytes = bytes;
         }
 
-        boolean isLoaded() {
-            return Arrays.equals(loadedBytes, bytes);
-        }
-
+        // Ask JDI for the ReferenceType, null if not loaded.
         ReferenceType getReferenceTypeOrNull() {
             if (rt == null) {
-                rt = state.executionControl().nameToRef(className);
+                rt = nameToRef(className);
             }
             return rt;
         }
 
+        private ReferenceType nameToRef(String name) {
+            List<ReferenceType> rtl = jdiEnv.vm().classesByName(name);
+            if (rtl.size() != 1) {
+                return null;
+            }
+            return rtl.get(0);
+        }
+
         @Override
         public boolean equals(Object o) {
-            return o instanceof ClassInfo &&
-                    ((ClassInfo) o).className.equals(className);
+            return o instanceof ClassInfo
+                    && ((ClassInfo) o).className.equals(className);
         }
 
         @Override
@@ -96,13 +115,15 @@ class ClassTracker {
         }
     }
 
+    // Map a class name to the current compiled class bytes.
     ClassInfo classInfo(String className, byte[] bytes) {
-        ClassInfo ci = map.computeIfAbsent(className, k -> new ClassInfo(k));
+        ClassInfo ci = get(className);
         ci.setBytes(bytes);
         return ci;
     }
 
+    // Lookup the ClassInfo by class name, create if it does not exist.
     ClassInfo get(String className) {
-        return map.get(className);
+        return map.computeIfAbsent(className, k -> new ClassInfo(k));
     }
 }

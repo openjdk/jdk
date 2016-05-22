@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.jshell;
+package jdk.internal.jshell.jdi;
 
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

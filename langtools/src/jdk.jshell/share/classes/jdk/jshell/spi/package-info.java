@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,17 @@
  * questions.
  */
 
-package jdk.jshell;
-
 /**
- * Internal exception when Java Debug Interface VirtualMacine is not connected.
- * Copy of jdb VMNotConnectedException.
+ * Provides support for alternate implementations of the JShell execution
+ * engine.  The JShell core tracks and compiles Snippets then sends them
+ * (represented in a wrapper class) to the execution engine for loading,
+ * and in the case of executable Snippets, execution.  The JShell
+ * implementation includes a default execution engine (currently a remote
+ * process which is JDI controlled).  By implementing the
+ * {@link ExecutionControl} interface and installing it with
+ * {@link jdk.jshell.JShell.Builder#executionEngine(jdk.jshell.spi.ExecutionControl) }
+ * other execution engines can be used.
+ * <p>
+ * This is not a part of the JShell API.
  */
-class JDINotConnectedException extends RuntimeException {
-
-    private static final long serialVersionUID = -7433430494903950165L;
-
-    public JDINotConnectedException() {
-        super();
-    }
-
-    public JDINotConnectedException(String s) {
-        super(s);
-    }
-}
+package jdk.jshell.spi;
