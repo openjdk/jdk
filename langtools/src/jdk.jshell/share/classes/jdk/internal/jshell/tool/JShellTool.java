@@ -101,8 +101,13 @@ import jdk.internal.jshell.tool.Feedback.FormatResolve;
 import jdk.internal.jshell.tool.Feedback.FormatUnresolved;
 import jdk.internal.jshell.tool.Feedback.FormatWhen;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
 import static jdk.jshell.Snippet.SubKind.VAR_VALUE_SUBKIND;
+import static java.util.stream.Collectors.toMap;
+import static jdk.internal.jshell.debug.InternalDebugControl.DBG_COMPA;
+import static jdk.internal.jshell.debug.InternalDebugControl.DBG_DEP;
+import static jdk.internal.jshell.debug.InternalDebugControl.DBG_EVNT;
+import static jdk.internal.jshell.debug.InternalDebugControl.DBG_FMGR;
+import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
 
 /**
  * Command line REPL tool for Java using the JShell API.
@@ -1344,7 +1349,7 @@ public class JShellTool implements MessageHandler {
     boolean cmdDebug(String arg) {
         if (arg.isEmpty()) {
             debug = !debug;
-            InternalDebugControl.setDebugFlags(state, debug ? InternalDebugControl.DBG_GEN : 0);
+            InternalDebugControl.setDebugFlags(state, debug ? DBG_GEN : 0);
             fluff("Debugging %s", debug ? "on" : "off");
         } else {
             int flags = 0;
@@ -1360,23 +1365,23 @@ public class JShellTool implements MessageHandler {
                         fluff("REPL tool debugging on");
                         break;
                     case 'g':
-                        flags |= InternalDebugControl.DBG_GEN;
+                        flags |= DBG_GEN;
                         fluff("General debugging on");
                         break;
                     case 'f':
-                        flags |= InternalDebugControl.DBG_FMGR;
+                        flags |= DBG_FMGR;
                         fluff("File manager debugging on");
                         break;
                     case 'c':
-                        flags |= InternalDebugControl.DBG_COMPA;
+                        flags |= DBG_COMPA;
                         fluff("Completion analysis debugging on");
                         break;
                     case 'd':
-                        flags |= InternalDebugControl.DBG_DEP;
+                        flags |= DBG_DEP;
                         fluff("Dependency debugging on");
                         break;
                     case 'e':
-                        flags |= InternalDebugControl.DBG_EVNT;
+                        flags |= DBG_EVNT;
                         fluff("Event debugging on");
                         break;
                     default:

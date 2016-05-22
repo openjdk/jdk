@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.jshell;
+package jdk.internal.jshell.jdi;
 
 import java.util.Map;
 
@@ -37,14 +37,14 @@ import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
 class JDIEnv {
 
     private JDIConnection connection;
-    private final JShell state;
+    private final JDIExecutionControl ec;
 
-    JDIEnv(JShell state) {
-        this.state = state;
+    JDIEnv(JDIExecutionControl ec) {
+        this.ec = ec;
     }
 
     void init(String connectorName, Map<String, String> argumentName2Value, boolean openNow, int flags) {
-        connection = new JDIConnection(this, connectorName, argumentName2Value, flags, state);
+        connection = new JDIConnection(ec, connectorName, argumentName2Value, flags);
         if (!connection.isLaunch() || openNow) {
             connection.open();
         }
@@ -66,14 +66,14 @@ class JDIEnv {
                 // Shutting down after the VM has gone away. This is
                 // not an error, and we just ignore it.
             } catch (Throwable e) {
-                state.debug(DBG_GEN, null, "disposeVM threw: " + e);
+                ec.debug(DBG_GEN, null, "disposeVM threw: " + e);
             }
         }
-        if (state != null) { // If state has been set-up
+        if (ec.execEnv.state() != null) { // If state has been set-up
             try {
-                state.closeDown();
+                ec.execEnv.closeDown();
             } catch (Throwable e) {
-                state.debug(DBG_GEN, null, "state().closeDown() threw: " + e);
+                ec.debug(DBG_GEN, null, "state().closeDown() threw: " + e);
             }
         }
     }

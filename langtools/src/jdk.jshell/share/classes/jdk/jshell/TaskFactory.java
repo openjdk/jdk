@@ -60,7 +60,6 @@ import java.util.stream.Stream;
 import javax.lang.model.util.Elements;
 import javax.tools.FileObject;
 import jdk.jshell.MemoryFileManager.SourceMemoryJavaFileObject;
-import jdk.jshell.ClassTracker.ClassInfo;
 import java.lang.Runtime.Version;
 
 /**
@@ -278,13 +277,19 @@ class TaskFactory {
             return result;
         }
 
-
-        List<ClassInfo> classInfoList(OuterWrap w) {
+        // Returns the list of classes generated during this compile.
+        // Stores the mapping between class name and current compiled bytes.
+        List<String> classList(OuterWrap w) {
             List<OutputMemoryJavaFileObject> l = classObjs.get(w);
-            if (l == null) return Collections.emptyList();
-            return l.stream()
-                    .map(fo -> state.classTracker.classInfo(fo.getName(), fo.getBytes()))
-                    .collect(Collectors.toList());
+            if (l == null) {
+                return Collections.emptyList();
+            }
+            List<String> list = new ArrayList<>();
+            for (OutputMemoryJavaFileObject fo : l) {
+                state.setClassnameToBytes(fo.getName(), fo.getBytes());
+                list.add(fo.getName());
+            }
+            return list;
         }
 
         private void listenForNewClassFile(OutputMemoryJavaFileObject jfo, JavaFileManager.Location location,

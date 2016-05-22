@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  */
 
 
-package jdk.jshell;
+package jdk.internal.jshell.jdi;
 
 import com.sun.jdi.*;
 import com.sun.jdi.connect.*;
@@ -40,7 +40,6 @@ import com.sun.jdi.connect.*;
 import java.util.*;
 import java.util.Map.Entry;
 import java.io.*;
-
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
 
 /**
@@ -54,8 +53,7 @@ class JDIConnection {
     private Process process = null;
     private int outputCompleteCount = 0;
 
-    private final JShell proc;
-    private final JDIEnv env;
+    private final JDIExecutionControl ec;
     private final Connector connector;
     private final Map<String, com.sun.jdi.connect.Connector.Argument> connectorArgs;
     private final int traceFlags;
@@ -103,9 +101,9 @@ class JDIConnection {
         return arguments;
     }
 
-    JDIConnection(JDIEnv env, String connectorName, Map<String, String> argumentName2Value, int traceFlags, JShell proc) {
-        this.env = env;
-        this.proc = proc;
+
+    JDIConnection(JDIExecutionControl ec, String connectorName, Map<String, String> argumentName2Value, int traceFlags) {
+        this.ec = ec;
         this.connector = findConnector(connectorName);
 
         if (connector == null) {
@@ -260,8 +258,8 @@ class JDIConnection {
                 try {
                     dumpStream(inStream, pStream);
                 } catch (IOException ex) {
-                    proc.debug(ex, "Failed reading output");
-                    env.shutdown();
+                    ec.debug(ex, "Failed reading output");
+                    ec.jdiEnv.shutdown();
                 } finally {
                     notifyOutputComplete();
                 }
@@ -287,8 +285,8 @@ class JDIConnection {
                         outStream.flush();
                     }
                 } catch (IOException ex) {
-                    proc.debug(ex, "Failed reading output");
-                    env.shutdown();
+                    ec.debug(ex, "Failed reading output");
+                    ec.jdiEnv.shutdown();
                 }
             }
         };
@@ -302,9 +300,9 @@ class JDIConnection {
         try {
             VirtualMachine new_vm = launcher.launch(connectorArgs);
             process = new_vm.process();
-            displayRemoteOutput(process.getErrorStream(), proc.err);
-            displayRemoteOutput(process.getInputStream(), proc.out);
-            readRemoteInput(process.getOutputStream(), proc.in);
+            displayRemoteOutput(process.getErrorStream(), ec.execEnv.userErr());
+            displayRemoteOutput(process.getInputStream(), ec.execEnv.userOut());
+            readRemoteInput(process.getOutputStream(), ec.execEnv.userIn());
             return new_vm;
         } catch (Exception ex) {
             reportLaunchFail(ex, "launch");
@@ -330,7 +328,7 @@ class JDIConnection {
         ListeningConnector listener = (ListeningConnector)connector;
         try {
             String retAddress = listener.startListening(connectorArgs);
-            proc.debug(DBG_GEN, "Listening at address: " + retAddress);
+            ec.debug(DBG_GEN, "Listening at address: " + retAddress);
             vm = listener.accept(connectorArgs);
             listener.stopListening(connectorArgs);
             return vm;
