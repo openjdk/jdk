@@ -171,7 +171,8 @@ class LocalExecutionControl implements ExecutionControl {
                 Thread[] threadList = new Thread[execThreadGroup.activeCount()];
                 execThreadGroup.enumerate(threadList);
                 for (Thread thread : threadList) {
-                    thread.join();
+                    if (thread != null)
+                        thread.join();
                 }
 
                 if (stopped.get()) {
