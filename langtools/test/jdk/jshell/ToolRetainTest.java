@@ -37,7 +37,7 @@ public class ToolRetainTest extends ReplToolTesting {
 
     public void testRetainMode() {
         test(
-                (a) -> assertCommand(a, "/set newmode trm -quiet", "|  Created new feedback mode: trm"),
+                (a) -> assertCommand(a, "/set mode trm -quiet", "|  Created new feedback mode: trm"),
                 (a) -> assertCommand(a, "/set feedback trm", ""),
                 (a) -> assertCommand(a, "/set format trm display '{name}:{value}'", ""),
                 (a) -> assertCommand(a, "int x = 45", "x:45"),
@@ -52,7 +52,7 @@ public class ToolRetainTest extends ReplToolTesting {
 
     public void testRetain2Mode() {
         test(
-                (a) -> assertCommand(a, "/set newmode trm1 -quiet", "|  Created new feedback mode: trm1"),
+                (a) -> assertCommand(a, "/set mode trm1 -quiet", "|  Created new feedback mode: trm1"),
                 (a) -> assertCommand(a, "/retain mode trm1", ""),
                 (a) -> assertCommand(a, "/retain feedback trm1", ""),
                 (a) -> assertCommand(a, "/set format trm1 display '{name}:{value}'", ""),
@@ -61,7 +61,7 @@ public class ToolRetainTest extends ReplToolTesting {
                 (a) -> assertCommand(a, "/exit", "")
         );
         test(
-                (a) -> assertCommand(a, "/set newmode trm2 -quiet", ""),
+                (a) -> assertCommand(a, "/set mode trm2 -quiet", ""),
                 (a) -> assertCommand(a, "/set format trm2 display '{name}={value}'", ""),
                 (a) -> assertCommand(a, "int x = 45", "x:45"),
                 (a) -> assertCommand(a, "/retain mode trm2", ""),
@@ -121,9 +121,9 @@ public class ToolRetainTest extends ReplToolTesting {
     public void testRetainModeNeg() {
         test(
                 (a) -> assertCommandOutputStartsWith(a, "/retain mode verbose",
-                        "|  Not valid with predefined mode"),
+                        "|  Not valid with a predefined mode"),
                 (a) -> assertCommandOutputStartsWith(a, "/retain mode ????",
-                        "|  Expected a feedback mode")
+                        "|  Expected a feedback mode name: ????")
         );
     }
 
@@ -131,18 +131,18 @@ public class ToolRetainTest extends ReplToolTesting {
         test(
                 (a) -> assertCommandOutputStartsWith(a, "/retain feedback babble1",
                         "|  Does not match any current feedback mode"),
-                (a) -> assertCommand(a, "/set newmode trfn",
+                (a) -> assertCommand(a, "/set mode trfn",
                         "|  Created new feedback mode: trfn"),
                 (a) -> assertCommandOutputContains(a, "/retain feedback trfn",
                         "is predefined or has been retained"),
                 (a) -> assertCommandOutputStartsWith(a, "/retain feedback !!!!",
-                        "|  Expected a feedback mode")
+                        "|  Expected a feedback mode name: !!!!")
         );
     }
 
     public void testNoRetainMode() {
         test(
-                (a) -> assertCommand(a, "/set newmode trm -quiet", "|  Created new feedback mode: trm"),
+                (a) -> assertCommand(a, "/set mode trm -quiet", "|  Created new feedback mode: trm"),
                 (a) -> assertCommand(a, "/set feedback trm", ""),
                 (a) -> assertCommand(a, "/set format trm display '{name}:{value}'", ""),
                 (a) -> assertCommand(a, "int x = 45", "x:45"),
