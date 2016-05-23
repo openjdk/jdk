@@ -38,6 +38,7 @@ import java.lang.module.ModuleReference;
 import java.lang.module.ResolutionException;
 import java.lang.module.ResolvedModule;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -62,6 +63,7 @@ import jdk.internal.util.jar.JarIndex;
 import static jdk.internal.util.jar.JarIndex.INDEX_NAME;
 import static java.util.jar.JarFile.MANIFEST_NAME;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toSet;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
@@ -129,10 +131,8 @@ class Main {
 
     private static final String MODULE_INFO = "module-info.class";
 
-    Path moduleInfo;
-    private boolean isModularJar() { return moduleInfo != null; }
-
     static final String MANIFEST_DIR = "META-INF/";
+    static final String VERSIONS_DIR = MANIFEST_DIR + "versions/";
     static final String VERSION = "1.0";
 
     private static ResourceBundle rsrc;
@@ -242,12 +242,27 @@ class Main {
                         addMainClass(manifest, ename);
                     }
                 }
-                expand(null, files, false);
+                Map<String,Path> moduleInfoPaths = new HashMap<>();
+                expand(null, files, false, moduleInfoPaths);
 
-                byte[] moduleInfoBytes = null;
-                if (isModularJar()) {
-                    moduleInfoBytes = addExtendedModuleAttributes(
-                            readModuleInfo(moduleInfo));
+                Map<String,byte[]> moduleInfos = new LinkedHashMap<>();
+                if (!moduleInfoPaths.isEmpty()) {
+                    if (!checkModuleInfos(moduleInfoPaths))
+                        return false;
+
+                    // root module-info first
+                    byte[] b = readModuleInfo(moduleInfoPaths.get(MODULE_INFO));
+                    moduleInfos.put(MODULE_INFO, b);
+                    for (Map.Entry<String,Path> e : moduleInfoPaths.entrySet())
+                        moduleInfos.putIfAbsent(e.getKey(), readModuleInfo(e.getValue()));
+
+                    if (!addExtendedModuleAttributes(moduleInfos))
+                        return false;
+
+                    // Basic consistency checks for modular jars.
+                    if (!checkServices(moduleInfos.get(MODULE_INFO)))
+                        return false;
+
                 } else if (moduleVersion != null || modulesToHash != null) {
                     error(getMsg("error.module.options.without.info"));
                     return false;
@@ -274,13 +289,7 @@ class Main {
                     tmpfile = createTemporaryFile(tmpbase, ".jar");
                     out = new FileOutputStream(tmpfile);
                 }
-                create(new BufferedOutputStream(out, 4096), manifest, moduleInfoBytes);
-
-                // Consistency checks for modular jars.
-                if (isModularJar()) {
-                    if (!checkServices(moduleInfoBytes))
-                        return false;
-                }
+                create(new BufferedOutputStream(out, 4096), manifest, moduleInfos);
 
                 if (in != null) {
                     in.close();
@@ -337,19 +346,20 @@ class Main {
                 }
                 InputStream manifest = (!Mflag && (mname != null)) ?
                     (new FileInputStream(mname)) : null;
-                expand(null, files, true);
 
-                byte[] moduleInfoBytes = null;
-                if (isModularJar()) {
-                    moduleInfoBytes = readModuleInfo(moduleInfo);
-                }
+                Map<String,Path> moduleInfoPaths = new HashMap<>();
+                expand(null, files, true, moduleInfoPaths);
+
+                Map<String,byte[]> moduleInfos = new HashMap<>();
+                for (Map.Entry<String,Path> e : moduleInfoPaths.entrySet())
+                    moduleInfos.put(e.getKey(), readModuleInfo(e.getValue()));
 
                 boolean updateOk = update(in, new BufferedOutputStream(out),
-                                          manifest, moduleInfoBytes, null);
+                                          manifest, moduleInfos, null);
 
                 // Consistency checks for modular jars.
-                if (isModularJar()) {
-                    if(!checkServices(moduleInfoBytes))
+                if (!moduleInfos.isEmpty()) {
+                    if(!checkServices(moduleInfos.get(MODULE_INFO)))
                         return false;
                 }
 
@@ -638,7 +648,12 @@ class Main {
      * Expands list of files to process into full list of all files that
      * can be found by recursively descending directories.
      */
-    void expand(File dir, String[] files, boolean isUpdate) throws IOException {
+    void expand(File dir,
+                String[] files,
+                boolean isUpdate,
+                Map<String,Path> moduleInfoPaths)
+        throws IOException
+    {
         if (files == null)
             return;
 
@@ -651,18 +666,17 @@ class Main {
 
             if (f.isFile()) {
                 String path = f.getPath();
-                if (entryName(path).equals(MODULE_INFO)) {
-                    if (moduleInfo != null && vflag)
-                        output(formatMsg("error.unexpected.module-info", path));
-                    moduleInfo = f.toPath();
+                String entryName = entryName(path);
+                if (entryName.endsWith(MODULE_INFO)) {
+                    moduleInfoPaths.put(entryName, f.toPath());
                     if (isUpdate)
-                        entryMap.put(entryName(path), f);
+                        entryMap.put(entryName, f);
                 } else if (entries.add(f)) {
-                    jarEntries.add(entryName(path));
-                    if (path.endsWith(".class"))
-                        packages.add(toPackageName(entryName(path)));
+                    jarEntries.add(entryName);
+                    if (path.endsWith(".class") && !entryName.startsWith(VERSIONS_DIR))
+                        packages.add(toPackageName(entryName));
                     if (isUpdate)
-                        entryMap.put(entryName(f.getPath()), f);
+                        entryMap.put(entryName, f);
                 }
             } else if (f.isDirectory()) {
                 if (entries.add(f)) {
@@ -672,7 +686,7 @@ class Main {
                             (dirPath + File.separator);
                         entryMap.put(entryName(dirPath), f);
                     }
-                    expand(f, f.list(), isUpdate);
+                    expand(f, f.list(), isUpdate, moduleInfoPaths);
                 }
             } else {
                 error(formatMsg("error.nosuch.fileordir", String.valueOf(f)));
@@ -684,7 +698,7 @@ class Main {
     /**
      * Creates a new JAR file.
      */
-    void create(OutputStream out, Manifest manifest, byte[] moduleInfoBytes)
+    void create(OutputStream out, Manifest manifest, Map<String,byte[]> moduleInfos)
         throws IOException
     {
         ZipOutputStream zos = new JarOutputStream(out);
@@ -710,17 +724,19 @@ class Main {
             manifest.write(zos);
             zos.closeEntry();
         }
-        if (moduleInfoBytes != null) {
+        for (Map.Entry<String,byte[]> mi : moduleInfos.entrySet()) {
+            String entryName = mi.getKey();
+            byte[] miBytes = mi.getValue();
             if (vflag) {
-                output(getMsg("out.added.module-info"));
+                output(formatMsg("out.added.module-info", entryName));
             }
-            ZipEntry e = new ZipEntry(MODULE_INFO);
+            ZipEntry e = new ZipEntry(mi.getKey());
             e.setTime(System.currentTimeMillis());
             if (flag0) {
-                crc32ModuleInfo(e, moduleInfoBytes);
+                crc32ModuleInfo(e, miBytes);
             }
             zos.putNextEntry(e);
-            ByteArrayInputStream in = new ByteArrayInputStream(moduleInfoBytes);
+            ByteArrayInputStream in = new ByteArrayInputStream(miBytes);
             in.transferTo(zos);
             zos.closeEntry();
         }
@@ -755,18 +771,41 @@ class Main {
     }
 
     /**
+     * Returns true of the given module-info's are located in acceptable
+     * locations.  Otherwise, outputs an appropriate message and returns false.
+     */
+    private boolean checkModuleInfos(Map<String,?> moduleInfos) {
+        // there must always be, at least, a root module-info
+        if (!moduleInfos.containsKey(MODULE_INFO)) {
+            error(getMsg("error.versioned.info.without.root"));
+            return false;
+        }
+
+        // module-info can only appear in the root, or a versioned section
+        Optional<String> other = moduleInfos.keySet().stream()
+                .filter(x -> !x.equals(MODULE_INFO))
+                .filter(x -> !x.startsWith(VERSIONS_DIR))
+                .findFirst();
+
+        if (other.isPresent()) {
+            error(formatMsg("error.unexpected.module-info", other.get()));
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Updates an existing jar file.
      */
     boolean update(InputStream in, OutputStream out,
                    InputStream newManifest,
-                   byte[] newModuleInfoBytes,
+                   Map<String,byte[]> moduleInfos,
                    JarIndex jarIndex) throws IOException
     {
         ZipInputStream zis = new ZipInputStream(in);
         ZipOutputStream zos = new JarOutputStream(out);
         ZipEntry e = null;
         boolean foundManifest = false;
-        boolean foundModuleInfo = false;
         boolean updateOk = true;
 
         if (jarIndex != null) {
@@ -778,7 +817,7 @@ class Main {
             String name = e.getName();
 
             boolean isManifestEntry = equalsIgnoreCase(name, MANIFEST_NAME);
-            boolean isModuleInfoEntry = name.equals(MODULE_INFO);
+            boolean isModuleInfoEntry = name.endsWith(MODULE_INFO);
 
             if ((jarIndex != null && equalsIgnoreCase(name, INDEX_NAME))
                 || (Mflag && isManifestEntry)) {
@@ -806,13 +845,8 @@ class Main {
                 if (!updateManifest(old, zos)) {
                     return false;
                 }
-            } else if (isModuleInfoEntry
-                       && ((newModuleInfoBytes != null) || (ename != null)
-                           || moduleVersion != null || modulesToHash != null)) {
-                if (newModuleInfoBytes == null) {
-                    // Update existing module-info.class
-                    newModuleInfoBytes = readModuleInfo(zis);
-                }
+            } else if (moduleInfos != null && isModuleInfoEntry) {
+                moduleInfos.putIfAbsent(name, readModuleInfo(zis));
             } else {
                 if (!entryMap.containsKey(name)) { // copy the old stuff
                     // do our own compression
@@ -860,13 +894,22 @@ class Main {
             }
         }
 
-        // write the module-info.class
-        if (newModuleInfoBytes != null) {
-            newModuleInfoBytes = addExtendedModuleAttributes(newModuleInfoBytes);
+        if (moduleInfos != null && !moduleInfos.isEmpty()) {
+            if (!checkModuleInfos(moduleInfos))
+                updateOk = false;
+
+            if (updateOk) {
+                if (!addExtendedModuleAttributes(moduleInfos))
+                    updateOk = false;
+            }
 
             // TODO: check manifest main classes, etc
-            if (!updateModuleInfo(newModuleInfoBytes, zos)) {
-                updateOk = false;
+
+            if (updateOk) {
+                for (Map.Entry<String,byte[]> mi : moduleInfos.entrySet()) {
+                    if (!updateModuleInfo(mi.getValue(), zos, mi.getKey()))
+                        updateOk = false;
+                }
             }
         } else if (moduleVersion != null || modulesToHash != null) {
             error(getMsg("error.module.options.without.info"));
@@ -894,10 +937,10 @@ class Main {
         zos.closeEntry();
     }
 
-    private boolean updateModuleInfo(byte[] moduleInfoBytes, ZipOutputStream zos)
+    private boolean updateModuleInfo(byte[] moduleInfoBytes, ZipOutputStream zos, String entryName)
         throws IOException
     {
-        ZipEntry e = new ZipEntry(MODULE_INFO);
+        ZipEntry e = new ZipEntry(entryName);
         e.setTime(System.currentTimeMillis());
         if (flag0) {
             crc32ModuleInfo(e, moduleInfoBytes);
@@ -905,7 +948,7 @@ class Main {
         zos.putNextEntry(e);
         zos.write(moduleInfoBytes);
         if (vflag) {
-            output(getMsg("out.update.module-info"));
+            output(formatMsg("out.update.module-info", entryName));
         }
         return true;
     }
@@ -1710,13 +1753,11 @@ class Main {
         return (classname.replace('.', '/')) + ".class";
     }
 
+    /* A module must have the implementation class of the services it 'provides'. */
     private boolean checkServices(byte[] moduleInfoBytes)
         throws IOException
     {
-        ModuleDescriptor md;
-        try (InputStream in = new ByteArrayInputStream(moduleInfoBytes)) {
-            md = ModuleDescriptor.read(in);
-        }
+        ModuleDescriptor md = ModuleDescriptor.read(ByteBuffer.wrap(moduleInfoBytes));
         Set<String> missing = md.provides()
                                 .values()
                                 .stream()
@@ -1732,63 +1773,140 @@ class Main {
     }
 
     /**
-     * Returns a byte array containing the module-info.class.
+     * Adds extended modules attributes to the given module-info's.  The given
+     * Map values are updated in-place. Returns false if an error occurs.
+     */
+    private boolean addExtendedModuleAttributes(Map<String,byte[]> moduleInfos)
+        throws IOException
+    {
+        assert !moduleInfos.isEmpty() && moduleInfos.get(MODULE_INFO) != null;
+
+        ByteBuffer bb = ByteBuffer.wrap(moduleInfos.get(MODULE_INFO));
+        ModuleDescriptor rd = ModuleDescriptor.read(bb);
+
+        Set<String> exports = rd.exports()
+                                .stream()
+                                .map(Exports::source)
+                                .collect(toSet());
+
+        Set<String> conceals = packages.stream()
+                                       .filter(p -> !exports.contains(p))
+                                       .collect(toSet());
+
+        for (Map.Entry<String,byte[]> e: moduleInfos.entrySet()) {
+            ModuleDescriptor vd = ModuleDescriptor.read(ByteBuffer.wrap(e.getValue()));
+            if (!(isValidVersionedDescriptor(vd, rd)))
+                return false;
+            e.setValue(extendedInfoBytes(rd, vd, e.getValue(), conceals));
+        }
+        return true;
+    }
+
+    private static boolean isPlatformModule(String name) {
+        return name.startsWith("java.") || name.startsWith("jdk.");
+    }
+
+    /**
+     * Tells whether or not the given versioned module descriptor's attributes
+     * are valid when compared against the given root module descriptor.
+     *
+     * A versioned module descriptor must be identical to the root module
+     * descriptor, with two exceptions:
+     *  - A versioned descriptor can have different non-public `requires`
+     *    clauses of platform ( `java.*` and `jdk.*` ) modules, and
+     *  - A versioned descriptor can have different `uses` clauses, even of
+     *    service types defined outside of the platform modules.
+     */
+    private boolean isValidVersionedDescriptor(ModuleDescriptor vd,
+                                               ModuleDescriptor rd)
+        throws IOException
+    {
+        if (!rd.name().equals(vd.name())) {
+            fatalError(getMsg("error.versioned.info.name.notequal"));
+            return false;
+        }
+        if (!rd.requires().equals(vd.requires())) {
+            Set<Requires> rootRequires = rd.requires();
+            for (Requires r : vd.requires()) {
+                if (rootRequires.contains(r)) {
+                    continue;
+                } else if (r.modifiers().contains(Requires.Modifier.PUBLIC)) {
+                    fatalError(getMsg("error.versioned.info.requires.public"));
+                    return false;
+                } else if (!isPlatformModule(r.name())) {
+                    fatalError(getMsg("error.versioned.info.requires.added"));
+                    return false;
+                }
+            }
+            for (Requires r : rootRequires) {
+                Set<Requires> mdRequires = vd.requires();
+                if (mdRequires.contains(r)) {
+                    continue;
+                } else if (!isPlatformModule(r.name())) {
+                    fatalError(getMsg("error.versioned.info.requires.dropped"));
+                    return false;
+                }
+            }
+        }
+        if (!rd.exports().equals(vd.exports())) {
+            fatalError(getMsg("error.versioned.info.exports.notequal"));
+            return false;
+        }
+        if (!rd.provides().equals(vd.provides())) {
+            fatalError(getMsg("error.versioned.info.provides.notequal"));
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Returns a byte array containing the given module-info.class plus any
+     * extended attributes.
      *
      * If --module-version, --main-class, or other options were provided
      * then the corresponding class file attributes are added to the
      * module-info here.
      */
-    private byte[] addExtendedModuleAttributes(byte[] moduleInfoBytes)
+    private byte[] extendedInfoBytes(ModuleDescriptor rootDescriptor,
+                                     ModuleDescriptor md,
+                                     byte[] miBytes,
+                                     Set<String> conceals)
         throws IOException
     {
-        assert isModularJar();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        InputStream is = new ByteArrayInputStream(miBytes);
+        ModuleInfoExtender extender = ModuleInfoExtender.newExtender(is);
 
-        ModuleDescriptor md;
-        try (InputStream in = new ByteArrayInputStream(moduleInfoBytes)) {
-            md = ModuleDescriptor.read(in);
-        }
-        String name = md.name();
-        Set<String> exported = md.exports()
-                                 .stream()
-                                 .map(ModuleDescriptor.Exports::source)
-                                 .collect(Collectors.toSet());
+        // Add (or replace) the ConcealedPackages attribute
+        extender.conceals(conceals);
 
-        // copy the module-info.class into the jmod with the additional
-        // attributes for the version, main class and other meta data
-        try (InputStream in = new ByteArrayInputStream(moduleInfoBytes);
-             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            ModuleInfoExtender extender = ModuleInfoExtender.newExtender(in);
+        // --main-class
+        if (ename != null)
+            extender.mainClass(ename);
+        else if (rootDescriptor.mainClass().isPresent())
+            extender.mainClass(rootDescriptor.mainClass().get());
 
-            // Add (or replace) the ConcealedPackages attribute
-            Set<String> conceals = packages.stream()
-                                            .filter(p -> !exported.contains(p))
-                                            .collect(Collectors.toSet());
+        // --module-version
+        if (moduleVersion != null)
+            extender.version(moduleVersion);
+        else if (rootDescriptor.version().isPresent())
+            extender.version(rootDescriptor.version().get());
 
-            extender.conceals(conceals);
-
-            // --main-class
-            if (ename != null)
-                extender.mainClass(ename);
-
-            // --module-version
-            if (moduleVersion != null)
-                extender.version(moduleVersion);
-
-            // --hash-modules
-            if (modulesToHash != null) {
-                Hasher hasher = new Hasher(md, fname);
-                ModuleHashes moduleHashes = hasher.computeHashes(name);
-                if (moduleHashes != null) {
-                    extender.hashes(moduleHashes);
-                } else {
-                    // should it issue warning or silent?
-                    System.out.println("warning: no module is recorded in hash in " + name);
-                }
+        // --hash-modules
+        if (modulesToHash != null) {
+            String mn = md.name();
+            Hasher hasher = new Hasher(md, fname);
+            ModuleHashes moduleHashes = hasher.computeHashes(mn);
+            if (moduleHashes != null) {
+                extender.hashes(moduleHashes);
+            } else {
+                // should it issue warning or silent?
+                System.out.println("warning: no module is recorded in hash in " + mn);
             }
-
-            extender.write(baos);
-            return baos.toByteArray();
         }
+
+        extender.write(baos);
+        return baos.toByteArray();
     }
 
     /**
@@ -1865,8 +1983,8 @@ class Main {
             deque.add(name);
             Set<String> mods = visitNodes(graph, deque);
 
-            // filter modules matching the pattern specified --hash-modules
-            // as well as itself as the jmod file is being generated
+            // filter modules matching the pattern specified in --hash-modules,
+            // as well as the modular jar file that is being created / updated
             Map<String, Path> modulesForHash = mods.stream()
                 .filter(mn -> !mn.equals(name) && modules.contains(mn))
                 .collect(Collectors.toMap(Function.identity(), moduleNameToPath::get));
