@@ -194,7 +194,7 @@ public class Infer {
                 //inject return constraints earlier
                 doIncorporation(inferenceContext, warn); //propagation
 
-                boolean shouldPropagate = resultInfo.checkContext.inferenceContext().free(resultInfo.pt);
+                boolean shouldPropagate = shouldPropagate(mt.getReturnType(), resultInfo, inferenceContext);
 
                 InferenceContext minContext = shouldPropagate ?
                         inferenceContext.min(roots(mt, deferredAttrContext), true, warn) :
@@ -255,6 +255,13 @@ public class Infer {
         }
     }
     //where
+        private boolean shouldPropagate(Type restype, Attr.ResultInfo target, InferenceContext inferenceContext) {
+            return target.checkContext.inferenceContext() != emptyContext && //enclosing context is a generic method
+                        inferenceContext.free(restype) && //return type contains inference vars
+                        (!inferenceContext.inferencevars.contains(restype) || //no eager instantiation is required (as per 18.5.2)
+                                !needsEagerInstantiation((UndetVar)inferenceContext.asUndetVar(restype), target.pt, inferenceContext));
+        }
+
         private List<Type> roots(MethodType mt, DeferredAttrContext deferredAttrContext) {
             ListBuffer<Type> roots = new ListBuffer<>();
             roots.add(mt.getReturnType());
@@ -309,7 +316,7 @@ public class Infer {
                  */
                 saved_undet = inferenceContext.save();
                 if (allowGraphInference && !warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {
-                    boolean shouldPropagate = resultInfo.checkContext.inferenceContext().free(resultInfo.pt);
+                    boolean shouldPropagate = shouldPropagate(getReturnType(), resultInfo, inferenceContext);
 
                     InferenceContext minContext = shouldPropagate ?
                             inferenceContext.min(roots(asMethodType(), null), false, warn) :
@@ -394,8 +401,9 @@ public class Infer {
             to = from.isPrimitive() ? from : syms.objectType;
         } else if (qtype.hasTag(UNDETVAR)) {
             if (resultInfo.pt.isReference()) {
-                to = generateReturnConstraintsUndetVarToReference(
-                        tree, (UndetVar)qtype, to, resultInfo, inferenceContext);
+                if (needsEagerInstantiation((UndetVar)qtype, to, inferenceContext)) {
+                    to = generateReferenceToTargetConstraint(tree, (UndetVar)qtype, to, resultInfo, inferenceContext);
+                }
             } else {
                 if (to.isPrimitive()) {
                     to = generateReturnConstraintsPrimitive(tree, (UndetVar)qtype, to,
@@ -439,9 +447,7 @@ public class Infer {
         return types.boxedClass(to).type;
     }
 
-    private Type generateReturnConstraintsUndetVarToReference(JCTree tree,
-            UndetVar from, Type to, Attr.ResultInfo resultInfo,
-            InferenceContext inferenceContext) {
+    private boolean needsEagerInstantiation(UndetVar from, Type to, InferenceContext inferenceContext) {
         Type captureOfTo = types.capture(to);
         /* T is a reference type, but is not a wildcard-parameterized type, and either
          */
@@ -452,8 +458,7 @@ public class Infer {
             for (Type t : from.getBounds(InferenceBound.EQ, InferenceBound.LOWER)) {
                 Type captureOfBound = types.capture(t);
                 if (captureOfBound != t) {
-                    return generateReferenceToTargetConstraint(tree, from, to,
-                            resultInfo, inferenceContext);
+                    return true;
                 }
             }
 
@@ -467,8 +472,7 @@ public class Infer {
                             !inferenceContext.free(aLowerBound) &&
                             !inferenceContext.free(anotherLowerBound) &&
                             commonSuperWithDiffParameterization(aLowerBound, anotherLowerBound)) {
-                        return generateReferenceToTargetConstraint(tree, from, to,
-                            resultInfo, inferenceContext);
+                        return true;
                     }
                 }
             }
@@ -483,12 +487,11 @@ public class Infer {
             for (Type t : from.getBounds(InferenceBound.EQ, InferenceBound.LOWER)) {
                 Type sup = types.asSuper(t, to.tsym);
                 if (sup != null && sup.isRaw()) {
-                    return generateReferenceToTargetConstraint(tree, from, to,
-                            resultInfo, inferenceContext);
+                    return true;
                 }
             }
         }
-        return to;
+        return false;
     }
 
     private boolean commonSuperWithDiffParameterization(Type t, Type s) {
@@ -1475,21 +1478,16 @@ public class Infer {
                     //not a throws undet var
                     return false;
                 }
-                if (t.getBounds(InferenceBound.EQ, InferenceBound.LOWER, InferenceBound.UPPER)
-                            .diff(t.getDeclaredBounds()).nonEmpty()) {
-                    //not an unbounded undet var
-                    return false;
-                }
                 Infer infer = inferenceContext.infer;
-                for (Type db : t.getDeclaredBounds()) {
+                for (Type db : t.getBounds(InferenceBound.UPPER)) {
                     if (t.isInterface()) continue;
-                    if (infer.types.asSuper(infer.syms.runtimeExceptionType, db.tsym) != null) {
-                        //declared bound is a supertype of RuntimeException
-                        return true;
+                    if (infer.types.asSuper(infer.syms.runtimeExceptionType, db.tsym) == null) {
+                        //upper bound is not a supertype of RuntimeException - give up
+                        return false;
                     }
                 }
-                //declared bound is more specific then RuntimeException - give up
-                return false;
+
+                return true;
             }
 
             @Override
