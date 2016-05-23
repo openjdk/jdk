@@ -75,6 +75,7 @@ public class MaterializeVirtualObjectTest {
     private static final Method METHOD;
     private static final ResolvedJavaMethod RESOLVED_METHOD;
     private static final boolean INVALIDATE;
+    private static final int COMPILE_THRESHOLD;
 
     static {
         WB = WhiteBox.getWhiteBox();
@@ -86,7 +87,10 @@ public class MaterializeVirtualObjectTest {
         }
         RESOLVED_METHOD = CTVMUtilities.getResolvedMethod(METHOD);
         INVALIDATE = Boolean.getBoolean(
-            "compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate");
+                "compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate");
+        COMPILE_THRESHOLD = WB.getBooleanVMFlag("TieredCompilation")
+                ? CompilerWhiteBoxTest.THRESHOLD
+                : CompilerWhiteBoxTest.THRESHOLD * 2;
     }
 
     public static void main(String[] args) {
@@ -110,15 +114,12 @@ public class MaterializeVirtualObjectTest {
                 + " : method unexpectedly compiled");
         /* need to trigger compilation by multiple method invocations
            in order to have method profile data to be gathered */
-        boolean isTiered = WB.getBooleanVMFlag("TieredCompilation");
-        int COMPILE_THRESHOLD = isTiered ? CompilerWhiteBoxTest.THRESHOLD
-                : CompilerWhiteBoxTest.THRESHOLD * 2;
         for (int i = 0; i < COMPILE_THRESHOLD; i++) {
             testFrame("someString", i);
         }
         Asserts.assertTrue(WB.isMethodCompiled(METHOD), getName()
                 + "Method unexpectedly not compiled");
-        testFrame("someString", CompilerWhiteBoxTest.THRESHOLD);
+        testFrame("someString", COMPILE_THRESHOLD);
     }
 
     private void testFrame(String str, int iteration) {
@@ -130,7 +131,7 @@ public class MaterializeVirtualObjectTest {
 
     private void check(int iteration) {
         // Materialize virtual objects on last invocation
-        if (iteration == CompilerWhiteBoxTest.THRESHOLD) {
+        if (iteration == COMPILE_THRESHOLD) {
             HotSpotStackFrameReference hsFrame = CompilerToVMHelper
                     .getNextStackFrame(/* topmost frame */ null,
                             new ResolvedJavaMethod[]{
