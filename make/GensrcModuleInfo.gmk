@@ -102,13 +102,23 @@ ifneq ($(MOD_FILES), )
   $(foreach line, $(MODIFICATIONS), \
     $(eval split_line := $(subst /,$(SPACE),$(line))) \
     $(eval command := $(word 1, $(split_line))) \
-    $(eval package := $(patsubst %;,%,$(word 2, $(split_line)))) \
-    $(if $(call PackageExists, $(package)), \
-      $(eval to_module := $(patsubst %;,%,$(word 4, $(split_line)))) \
-      $(if $(to_module), \
-        $(eval ARGS += -$(command) $(package)/$(to_module)) \
+    $(if $(filter $(command), exports), \
+      $(eval package := $(patsubst %;,%,$(word 2, $(split_line)))) \
+      $(if $(call PackageExists, $(package)), \
+        $(eval to_module := $(patsubst %;,%,$(word 4, $(split_line)))) \
+        $(if $(to_module), \
+          $(eval ARGS += -$(command) $(package)/$(to_module)) \
+        , \
+          $(eval ARGS += -$(command) $(package)) \
+        ) \
+      ) \
+    , \
+      $(if $(filter $(command), provides), \
+        $(eval provider := $(patsubst %;,%,$(word 2, $(split_line)))) \
+        $(eval class := $(patsubst %;,%,$(word 4, $(split_line)))) \
+        $(eval ARGS += -$(command) $(provider)/$(class)) \
       , \
-        $(eval ARGS += -$(command) $(package)) \
+        $(error A module-info.extra in $(MODULE) contains invalid command $(command)) \
       ) \
     ) \
   )
