@@ -117,8 +117,6 @@ public class JShellTool implements MessageHandler {
 
     private static final String LINE_SEP = System.getProperty("line.separator");
     private static final Pattern LINEBREAK = Pattern.compile("\\R");
-    private static final Pattern HISTORY_ALL_START_FILENAME = Pattern.compile(
-            "((?<cmd>(-all|-history|-start))(\\z|\\p{javaWhitespace}+))?(?<filename>.*)");
     private static final String RECORD_SEPARATOR = "\u241E";
     private static final String RB_NAME_PREFIX  = "jdk.internal.jshell.tool.resources";
     private static final String VERSION_RB_NAME = RB_NAME_PREFIX + ".version";
@@ -462,9 +460,19 @@ public class JShellTool implements MessageHandler {
     }
 
     private void start(IOContext in, List<String> loadList) {
+        // If startup hasn't been set by command line, set from retained/default
+        if (startup == null) {
+            startup = prefs.get(STARTUP_KEY, null);
+            if (startup == null) {
+                startup = DEFAULT_STARTUP;
+            }
+        }
+
         // Read retained editor setting (if any)
-        String editorString = prefs.get(EDITOR_KEY, null);
-        if (editorString != null) {
+        String editorString = prefs.get(EDITOR_KEY, "");
+        if (editorString == null || editorString.isEmpty()) {
+            editor = null;
+        } else {
             editor = editorString.split(RECORD_SEPARATOR);
         }
 
@@ -648,18 +656,10 @@ public class JShellTool implements MessageHandler {
             state.addToClasspath(cmdlineClasspath);
         }
 
-        String start;
-        if (startup == null) {
-            start = startup = prefs.get(STARTUP_KEY, null);
-            if (start == null) {
-                start = DEFAULT_STARTUP;
-            }
-        } else {
-            start = startup;
-        }
-        startUpRun(start);
+        startUpRun(startup);
         currentNameSpace = mainNamespace;
     }
+
     //where -- one-time per run initialization of feedback modes
     private void initFeedback() {
         // No fluff, no prefix, for init failures
@@ -670,12 +670,15 @@ public class JShellTool implements MessageHandler {
         feedback.markModesReadOnly();
         // Restore user defined modes retained on previous run with /retain mode
         String encoded = prefs.get(MODE_KEY, null);
-        if (encoded != null) {
-            feedback.restoreEncodedModes(initmh, encoded);
+        if (encoded != null && !encoded.isEmpty()) {
+            if (!feedback.restoreEncodedModes(initmh, encoded)) {
+                // Catastrophic corruption -- remove the retained modes
+                prefs.remove(MODE_KEY);
+            }
         }
         if (commandLineFeedbackMode != null) {
             // The feedback mode to use was specified on the command line, use it
-            if (!feedback.setFeedback(initmh, new ArgTokenizer("-feedback ", commandLineFeedbackMode))) {
+            if (!feedback.setFeedback(initmh, new ArgTokenizer("-feedback", commandLineFeedbackMode))) {
                 regenerateOnDeath = false;
             }
             commandLineFeedbackMode = null;
@@ -684,7 +687,7 @@ public class JShellTool implements MessageHandler {
             if (fb != null) {
                 // Restore the feedback mode to use that was retained
                 // on a previous run with /retain feedback
-                feedback.setFeedback(initmh, new ArgTokenizer("/retain feedback ", fb));
+                feedback.retainFeedback(initmh, new ArgTokenizer("/retain feedback", fb));
             }
         }
     }
@@ -695,6 +698,7 @@ public class JShellTool implements MessageHandler {
             run(suin);
         } catch (Exception ex) {
             hardmsg("jshell.err.startup.unexpected.exception", ex);
+            ex.printStackTrace(cmdout);
         }
     }
 
@@ -1012,9 +1016,10 @@ public class JShellTool implements MessageHandler {
         return state.snippets();
     }
 
-    List<Snippet> dropableSnippets() {
+    List<PersistentSnippet> dropableSnippets() {
         return state.snippets().stream()
-                .filter(sn -> state.status(sn).isActive)
+                .filter(sn -> state.status(sn).isActive && sn instanceof PersistentSnippet)
+                .map(sn -> (PersistentSnippet) sn)
                 .collect(toList());
     }
 
@@ -1173,14 +1178,14 @@ public class JShellTool implements MessageHandler {
     // --- Command implementations ---
 
     private static final String[] SET_SUBCOMMANDS = new String[]{
-        "format", "truncation", "feedback", "newmode", "prompt", "editor", "start"};
+        "format", "truncation", "feedback", "mode", "prompt", "editor", "start"};
 
     private static final String[] RETAIN_SUBCOMMANDS = new String[]{
         "feedback", "mode", "editor", "start"};
 
     final boolean cmdSet(String arg) {
         String cmd = "/set";
-        ArgTokenizer at = new ArgTokenizer(cmd +" ", arg.trim());
+        ArgTokenizer at = new ArgTokenizer(cmd, arg.trim());
         String which = subCommand(cmd, at, SET_SUBCOMMANDS);
         if (which == null) {
             return false;
@@ -1192,22 +1197,14 @@ public class JShellTool implements MessageHandler {
                 return feedback.setTruncation(this, at);
             case "feedback":
                 return feedback.setFeedback(this, at);
-            case "newmode":
-                return feedback.setNewMode(this, at);
+            case "mode":
+                return feedback.setMode(this, at);
             case "prompt":
                 return feedback.setPrompt(this, at);
-            case "editor": {
-                String prog = at.next();
-                if (prog == null) {
-                    errormsg("jshell.err.set.editor.arg");
-                    return false;
-                } else {
-                    return setEditor(cmd, prog, at);
-                }
-            }
-            case "start": {
-                return setStart(cmd, at.next());
-            }
+            case "editor":
+                return setEditor(at, true);
+            case "start":
+                return setStart(cmd, at, true);
             default:
                 errormsg("jshell.err.arg", cmd, at.val());
                 return false;
@@ -1216,7 +1213,7 @@ public class JShellTool implements MessageHandler {
 
     final boolean cmdRetain(String arg) {
         String cmd = "/retain";
-        ArgTokenizer at = new ArgTokenizer(cmd +" ", arg.trim());
+        ArgTokenizer at = new ArgTokenizer(cmd, arg.trim());
         String which = subCommand(cmd, at, RETAIN_SUBCOMMANDS);
         if (which == null) {
             return false;
@@ -1239,33 +1236,22 @@ public class JShellTool implements MessageHandler {
                     return true;
                 }
                 return false;
-            case "editor": {
-                String prog = at.next();
-                if (prog != null) {
-                    // If the editor is specified, first run /set editor ...
-                    if(!setEditor(cmd, prog, at)) {
-                        return false;
-                    }
+            case "editor":
+                if (!setEditor(at, false)) {
+                    return false;
                 }
-                if (editor != null) {
-                    // If an editor has been set now, or in the past, retain it
-                    prefs.put(EDITOR_KEY, String.join(RECORD_SEPARATOR, editor));
-                    return true;
-                }
-                return false;
-            }
+                // retain editor setting
+                prefs.put(EDITOR_KEY, (editor == null)
+                        ? ""
+                        : String.join(RECORD_SEPARATOR, editor));
+                return true;
             case "start": {
-                String fn = at.next();
-                if (fn != null) {
-                    if (!setStart(cmd, fn)) {
-                        return false;
-                    }
+                if (!setStart(cmd, at, false)) {
+                    return false;
                 }
-                if (startup != null) {
-                    prefs.put(STARTUP_KEY, startup);
-                    return true;
-                }
-                return false;
+                // retain startup setting
+                prefs.put(STARTUP_KEY, startup);
+                return true;
             }
             default:
                 errormsg("jshell.err.arg", cmd, at.val());
@@ -1311,28 +1297,60 @@ public class JShellTool implements MessageHandler {
     }
 
     // The sub-command:  /set editor <editor-command-line>>
-    boolean setEditor(String cmd, String prog, ArgTokenizer at) {
+    boolean setEditor(ArgTokenizer at, boolean argsRequired) {
+        at.allowedOptions("-default");
+        String prog = at.next();
         List<String> ed = new ArrayList<>();
-        ed.add(prog);
-        String n;
-        while ((n = at.next()) != null) {
-            ed.add(n);
+        while (at.val() != null) {
+            ed.add(at.val());
+            at.nextToken();
         }
-        editor = ed.toArray(new String[ed.size()]);
-        fluffmsg("jshell.msg.set.editor.set", prog);
+        if (!checkOptionsAndRemainingInput(at)) {
+            return false;
+        }
+        boolean defaultOption = at.hasOption("-default");
+        if (prog != null) {
+            if (defaultOption) {
+                errormsg("jshell.err.default.option.or.program", at.whole());
+                return false;
+            }
+            editor = ed.toArray(new String[ed.size()]);
+            fluffmsg("jshell.msg.set.editor.set", prog);
+        } else if (defaultOption) {
+            editor = null;
+        } else if (argsRequired) {
+            errormsg("jshell.err.set.editor.arg");
+            return false;
+        }
         return true;
     }
 
     // The sub-command:  /set start <start-file>
-    boolean setStart(String cmd, String fn) {
-        String init = readFile(fn, cmd + " start");
-        if (init == null) {
+    boolean setStart(String cmd, ArgTokenizer at, boolean argsRequired) {
+        at.allowedOptions("-default", "-none");
+        String fn = at.next();
+        if (!checkOptionsAndRemainingInput(at)) {
             return false;
-        } else {
-            startup = init;
-            //prefs.put(STARTUP_KEY, init);
-            return true;
         }
+        int argCount = at.optionCount() + ((fn != null) ? 1 : 0);
+        if (argCount > 1 || argsRequired && argCount == 0) {
+            errormsg("jshell.err.option.or.filename", at.whole());
+            return false;
+        }
+        if (fn != null) {
+            String init = readFile(fn, cmd + " start");
+            if (init == null) {
+                return false;
+            } else {
+                startup = init;
+                return true;
+            }
+        } else if (at.hasOption("-default")) {
+            startup = DEFAULT_STARTUP;
+        } else if (at.hasOption("-none")) {
+            startup = "";
+        }
+        return true;
     }
 
     boolean cmdClasspath(String arg) {
@@ -1419,7 +1437,7 @@ public class JShellTool implements MessageHandler {
     }
 
     boolean cmdHelp(String arg) {
-        ArgTokenizer at = new ArgTokenizer(arg);
+        ArgTokenizer at = new ArgTokenizer("/help", arg);
         String subject = at.next();
         if (subject != null) {
             Command[] matches = commands.values().stream()
@@ -1517,116 +1535,137 @@ public class JShellTool implements MessageHandler {
     }
 
     /**
-     * Convert a user argument to a Stream of snippets referenced by that argument
-     * (or lack of argument).
-     *
-     * @param snippets the base list of possible snippets
-     * @param arg the user's argument to the command, maybe be the empty string
-     * @param allowAll if true, allow the use of '-all' and '-start'
-     * @return a Stream of referenced snippets or null if no matches to specific arg
-     */
-    private <T extends Snippet> Stream<T> argToSnippets(List<T> snippets, String arg, boolean allowAll) {
-        return argToSnippets(snippets, this::mainActive, arg, allowAll);
-    }
-
-    /**
-     * Convert a user argument to a Stream of snippets referenced by that argument
-     * (or lack of argument).
+     * Convert user arguments to a Stream of snippets referenced by those
+     * arguments (or lack of arguments).
      *
      * @param snippets the base list of possible snippets
      * @param defFilter the filter to apply to the arguments if no argument
-     * @param arg the user's argument to the command, maybe be the empty string
-     * @param allowAll if true, allow the use of '-all' and '-start'
-     * @return a Stream of referenced snippets or null if no matches to specific arg
+     * @param rawargs the user's argument to the command, maybe be the empty
+     * string
+     * @return a Stream of referenced snippets or null if no matches are found
      */
-    private <T extends Snippet> Stream<T> argToSnippets(List<T> snippets,
-            Predicate<Snippet> defFilter, String arg, boolean allowAll) {
-        if (allowAll && arg.equals("-all")) {
+    private <T extends Snippet> Stream<T> argsOptionsToSnippets(List<T> snippets,
+            Predicate<Snippet> defFilter, String rawargs, String cmd) {
+        ArgTokenizer at = new ArgTokenizer(cmd, rawargs.trim());
+        at.allowedOptions("-all", "-start");
+        List<String> args = new ArrayList<>();
+        String s;
+        while ((s = at.next()) != null) {
+            args.add(s);
+        }
+        if (!checkOptionsAndRemainingInput(at)) {
+            return null;
+        }
+        if (at.optionCount() > 0 && args.size() > 0) {
+            errormsg("jshell.err.may.not.specify.options.and.snippets", at.whole());
+            return null;
+        }
+        if (at.optionCount() > 1) {
+            errormsg("jshell.err.conflicting.options", at.whole());
+            return null;
+        }
+        if (at.hasOption("-all")) {
             // all snippets including start-up, failed, and overwritten
             return snippets.stream();
-        } else if (allowAll && arg.equals("-start")) {
+        }
+        if (at.hasOption("-start")) {
             // start-up snippets
             return snippets.stream()
                     .filter(this::inStartUp);
-        } else if (arg.isEmpty()) {
+        }
+        if (args.isEmpty()) {
             // Default is all active user snippets
             return snippets.stream()
                     .filter(defFilter);
-        } else {
-            Stream<T> result =
-                    nonEmptyStream(
-                            () -> snippets.stream(),
-                            // look for active user declarations matching the name
-                            sn -> isActive(sn) && matchingDeclaration(sn, arg),
-                            // else, look for any declarations matching the name
-                            sn -> matchingDeclaration(sn, arg),
-                            // else, look for an id of this name
-                            sn -> sn.id().equals(arg)
-                    );
-            return result;
         }
+        return argsToSnippets(snippets, args);
     }
 
     /**
-     * Convert a user argument to a Stream of snippets referenced by that
-     * argument, printing an informative message if no matches. Allow '-all' and
-     * '-start'.
+     * Convert user arguments to a Stream of snippets referenced by those
+     * arguments.
      *
      * @param snippets the base list of possible snippets
-     * @param defFilter the filter to apply to the arguments if no argument
-     * @param arg the user's argument to the command, maybe be the empty string
-     * @param cmd the name of the command (for use in a help message
+     * @param args the user's argument to the command, maybe be the empty list
      * @return a Stream of referenced snippets or null if no matches to specific
      * arg
      */
-    private <T extends Snippet> Stream<T> argToSnippetsWithMessage(List<T> snippets,
-            Predicate<Snippet> defFilter, String arg, String cmd) {
-        Stream<T> stream = argToSnippets(snippets, defFilter, arg, true);
-        if (stream == null) {
-            errormsg("jshell.err.def.or.id.not.found", arg);
-            // Check if there are any definitions at all
-            if (argToSnippets(snippets, "", false).iterator().hasNext()) {
-                fluffmsg("jshell.msg.try.command.without.args", cmd);
+    private <T extends Snippet> Stream<T> argsToSnippets(List<T> snippets,
+            List<String> args) {
+        Stream<T> result = null;
+        for (String arg : args) {
+            // Find the best match
+            Stream<T> st = layeredSnippetSearch(snippets, arg);
+            if (st == null) {
+                Stream<Snippet> est = layeredSnippetSearch(state.snippets(), arg);
+                if (est == null) {
+                    errormsg("jshell.err.no.such.snippets", arg);
+                } else {
+                    errormsg("jshell.err.the.snippet.cannot.be.used.with.this.command",
+                            arg, est.findFirst().get().source());
+                }
+                return null;
+            }
+            if (result == null) {
+                result = st;
             } else {
-                hardmsg("jshell.msg.no.active");
+                result = Stream.concat(result, st);
             }
         }
-        return stream;
+        return result;
     }
 
-    private boolean cmdDrop(String arg) {
-        if (arg.isEmpty()) {
+    private <T extends Snippet> Stream<T> layeredSnippetSearch(List<T> snippets, String arg) {
+        return nonEmptyStream(
+                // the stream supplier
+                () -> snippets.stream(),
+                // look for active user declarations matching the name
+                sn -> isActive(sn) && matchingDeclaration(sn, arg),
+                // else, look for any declarations matching the name
+                sn -> matchingDeclaration(sn, arg),
+                // else, look for an id of this name
+                sn -> sn.id().equals(arg)
+        );
+    }
+
+    private boolean cmdDrop(String rawargs) {
+        ArgTokenizer at = new ArgTokenizer("/drop", rawargs.trim());
+        at.allowedOptions();
+        List<String> args = new ArrayList<>();
+        String s;
+        while ((s = at.next()) != null) {
+            args.add(s);
+        }
+        if (!checkOptionsAndRemainingInput(at)) {
+            return false;
+        }
+        if (args.isEmpty()) {
             errormsg("jshell.err.drop.arg");
             return false;
         }
-        Stream<Snippet> stream = argToSnippets(dropableSnippets(), arg, false);
+        Stream<PersistentSnippet> stream = argsToSnippets(dropableSnippets(), args);
         if (stream == null) {
-            errormsg("jshell.err.def.or.id.not.found", arg);
+            // Snippet not found. Error already printed
             fluffmsg("jshell.msg.see.classes.etc");
             return false;
         }
-        List<Snippet> snippets = stream
-                .filter(sn -> state.status(sn).isActive && sn instanceof PersistentSnippet)
-                .collect(toList());
-        if (snippets.isEmpty()) {
-            errormsg("jshell.err.drop.not.active");
-            return false;
-        }
-        if (snippets.size() > 1) {
+        List<PersistentSnippet> snippets = stream.collect(toList());
+        if (snippets.size() > args.size()) {
+            // One of the args references more thean one snippet
             errormsg("jshell.err.drop.ambiguous");
             fluffmsg("jshell.msg.use.one.of", snippets.stream()
-                    .map(sn -> String.format("\n%4s : %s", sn.id(), sn.source().replace("\n", "\n       ")))
+                    .map(sn -> String.format("\n/drop %-5s :   %s", sn.id(), sn.source().replace("\n", "\n       ")))
                     .collect(Collectors.joining(", "))
             );
             return false;
         }
-        PersistentSnippet psn = (PersistentSnippet) snippets.get(0);
-        state.drop(psn).forEach(this::handleEvent);
+        snippets.stream()
+                .forEach(sn -> state.drop(sn).forEach(this::handleEvent));
         return true;
     }
 
     private boolean cmdEdit(String arg) {
-        Stream<Snippet> stream = argToSnippetsWithMessage(state.snippets(),
+        Stream<Snippet> stream = argsOptionsToSnippets(state.snippets(),
                 this::mainActive, arg, "/edit");
         if (stream == null) {
             return false;
@@ -1728,10 +1767,10 @@ public class JShellTool implements MessageHandler {
     }
 
     private boolean cmdList(String arg) {
-        if (arg.equals("-history")) {
+        if (arg.length() >= 2 && "-history".startsWith(arg)) {
             return cmdHistory();
         }
-        Stream<Snippet> stream = argToSnippetsWithMessage(state.snippets(),
+        Stream<Snippet> stream = argsOptionsToSnippets(state.snippets(),
                 this::mainActive, arg, "/list");
         if (stream == null) {
             return false;
@@ -1801,75 +1840,63 @@ public class JShellTool implements MessageHandler {
         return true;
     }
 
-    private boolean cmdReload(String arg) {
-        Iterable<String> history = replayableHistory;
-        boolean echo = true;
-        if (arg.length() > 0) {
-            if ("-restore".startsWith(arg)) {
-                if (replayableHistoryPrevious == null) {
-                    errormsg("jshell.err.reload.no.previous");
-                    return false;
-                }
-                history = replayableHistoryPrevious;
-            } else if ("-quiet".startsWith(arg)) {
-                echo = false;
-            } else {
-                errormsg("jshell.err.arg", "/reload", arg);
+    private boolean cmdReload(String rawargs) {
+        ArgTokenizer at = new ArgTokenizer("/reload", rawargs.trim());
+        at.allowedOptions("-restore", "-quiet");
+        if (!checkOptionsAndRemainingInput(at)) {
+            return false;
+        }
+        Iterable<String> history;
+        if (at.hasOption("-restore")) {
+            if (replayableHistoryPrevious == null) {
+                errormsg("jshell.err.reload.no.previous");
                 return false;
             }
+            history = replayableHistoryPrevious;
+            fluffmsg("jshell.err.reload.restarting.previous.state");
+        } else {
+            history = replayableHistory;
+            fluffmsg("jshell.err.reload.restarting.state");
         }
-        fluffmsg(history == replayableHistoryPrevious
-                        ? "jshell.err.reload.restarting.previous.state"
-                        : "jshell.err.reload.restarting.state");
+        boolean echo = !at.hasOption("-quiet");
         resetState();
         run(new ReloadIOContext(history,
-                echo? cmdout : null));
+                echo ? cmdout : null));
         return true;
     }
 
-    private boolean cmdSave(String arg_filename) {
-        Matcher mat = HISTORY_ALL_START_FILENAME.matcher(arg_filename);
-        if (!mat.find()) {
-            errormsg("jshell.err.arg", arg_filename);
+    private boolean cmdSave(String rawargs) {
+        ArgTokenizer at = new ArgTokenizer("/save", rawargs.trim());
+        at.allowedOptions("-all", "-start", "-history");
+        String filename = at.next();
+        if (filename == null) {
+            errormsg("jshell.err.file.filename", "/save");
             return false;
         }
-        boolean useHistory = false;
-        String saveAll = "";
-        boolean saveStart = false;
-        String cmd = mat.group("cmd");
-        if (cmd != null) switch (cmd) {
-            case "-all":
-                saveAll = "-all";
-                break;
-            case "-history":
-                useHistory = true;
-                break;
-            case "-start":
-                saveStart = true;
-                break;
+        if (!checkOptionsAndRemainingInput(at)) {
+            return false;
         }
-        String filename = mat.group("filename");
-        if (filename == null ||filename.isEmpty()) {
-            errormsg("jshell.err.file.filename", "/save");
+        if (at.optionCount() > 1) {
+            errormsg("jshell.err.conflicting.options", at.whole());
             return false;
         }
         try (BufferedWriter writer = Files.newBufferedWriter(toPathResolvingUserHome(filename),
                 Charset.defaultCharset(),
                 CREATE, TRUNCATE_EXISTING, WRITE)) {
-            if (useHistory) {
+            if (at.hasOption("-history")) {
                 for (String s : input.currentSessionHistory()) {
                     writer.write(s);
                     writer.write("\n");
                 }
-            } else if (saveStart) {
-                writer.append(DEFAULT_STARTUP);
+            } else if (at.hasOption("-start")) {
+                writer.append(startup);
             } else {
-                Stream<Snippet> stream = argToSnippets(state.snippets(), saveAll, true);
-                if (stream != null) {
-                    for (Snippet sn : stream.collect(toList())) {
-                        writer.write(sn.source());
-                        writer.write("\n");
-                    }
+                List<Snippet> sns = at.hasOption("-all")
+                        ? state.snippets()
+                        : state.snippets().stream().filter(this::mainActive).collect(toList());
+                for (Snippet sn : sns) {
+                    writer.write(sn.source());
+                    writer.write("\n");
                 }
             }
         } catch (FileNotFoundException e) {
@@ -1883,7 +1910,7 @@ public class JShellTool implements MessageHandler {
     }
 
     private boolean cmdVars(String arg) {
-        Stream<VarSnippet> stream = argToSnippetsWithMessage(allVarSnippets(),
+        Stream<VarSnippet> stream = argsOptionsToSnippets(allVarSnippets(),
                 this::isActive, arg, "/vars");
         if (stream == null) {
             return false;
@@ -1899,7 +1926,7 @@ public class JShellTool implements MessageHandler {
     }
 
     private boolean cmdMethods(String arg) {
-        Stream<MethodSnippet> stream = argToSnippetsWithMessage(allMethodSnippets(),
+        Stream<MethodSnippet> stream = argsOptionsToSnippets(allMethodSnippets(),
                 this::isActive, arg, "/methods");
         if (stream == null) {
             return false;
@@ -1911,7 +1938,7 @@ public class JShellTool implements MessageHandler {
     }
 
     private boolean cmdTypes(String arg) {
-        Stream<TypeDeclSnippet> stream = argToSnippetsWithMessage(allTypeSnippets(),
+        Stream<TypeDeclSnippet> stream = argsOptionsToSnippets(allTypeSnippets(),
                 this::isActive, arg, "/types");
         if (stream == null) {
             return false;
@@ -1960,6 +1987,21 @@ public class JShellTool implements MessageHandler {
         } else {
             errormsg("jshell.err.out.of.range");
             return false;
+        }
+        return true;
+    }
+
+    boolean checkOptionsAndRemainingInput(ArgTokenizer at) {
+        String junk = at.remainder();
+        if (!junk.isEmpty()) {
+            errormsg("jshell.err.unexpected.at.end", junk, at.whole());
+            return false;
+        } else {
+            String bad = at.badOptions();
+            if (!bad.isEmpty()) {
+                errormsg("jshell.err.unknown.option", bad, at.whole());
+                return false;
+            }
         }
         return true;
     }
