@@ -54,6 +54,8 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.misc.JavaUtilZipFileAccess;
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaIORandomAccessFileAccess;
+import jdk.internal.misc.VM;
 import jdk.internal.perf.PerfCounter;
 
 import static java.util.zip.ZipConstants.*;
@@ -805,19 +807,6 @@ class ZipFile implements ZipConstants, Closeable {
         }
     }
 
-    static {
-        SharedSecrets.setJavaUtilZipFileAccess(
-            new JavaUtilZipFileAccess() {
-                public boolean startsWithLocHeader(ZipFile zip) {
-                    return zip.zsrc.startsWithLoc;
-                }
-                public String[] getMetaInfEntryNames(ZipFile zip) {
-                    return zip.getMetaInfEntryNames();
-                }
-             }
-        );
-    }
-
     /**
      * Returns an array of strings representing the names of all entries
      * that begin with "META-INF/" (case ignored). This method is used
@@ -840,6 +829,21 @@ class ZipFile implements ZipConstants, Closeable {
             }
             return names;
         }
+    }
+
+    private static boolean isWindows;
+    static {
+        SharedSecrets.setJavaUtilZipFileAccess(
+            new JavaUtilZipFileAccess() {
+                public boolean startsWithLocHeader(ZipFile zip) {
+                    return zip.zsrc.startsWithLoc;
+                }
+                public String[] getMetaInfEntryNames(ZipFile zip) {
+                    return zip.getMetaInfEntryNames();
+                }
+             }
+        );
+        isWindows = VM.getSavedProperty("os.name").contains("Windows");
     }
 
     private static class Source {
@@ -956,9 +960,16 @@ class ZipFile implements ZipConstants, Closeable {
 
         private Source(Key key, boolean toDelete) throws IOException {
             this.key = key;
-            this.zfile = new RandomAccessFile(key.file, "r");
             if (toDelete) {
-                key.file.delete();
+                if (isWindows) {
+                    this.zfile = SharedSecrets.getJavaIORandomAccessFileAccess()
+                                              .openAndDelete(key.file, "r");
+                } else {
+                    this.zfile = new RandomAccessFile(key.file, "r");
+                    key.file.delete();
+                }
+            } else {
+                this.zfile = new RandomAccessFile(key.file, "r");
             }
             try {
                 initCEN(-1);
