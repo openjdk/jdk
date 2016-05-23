@@ -808,11 +808,10 @@ class ZipFile implements ZipConstants, Closeable {
     }
 
     /**
-     * Returns an array of strings representing the names of all entries
-     * that begin with "META-INF/" (case ignored). This method is used
-     * in JarFile, via SharedSecrets, as an optimization when looking up
-     * manifest and signature file entries. Returns null if no entries
-     * were found.
+     * Returns the names of all non-directory entries that begin with
+     * "META-INF/" (case ignored). This method is used in JarFile, via
+     * SharedSecrets, as an optimization when looking up manifest and
+     * signature file entries. Returns null if no entries were found.
      */
     private String[] getMetaInfEntryNames() {
         synchronized (this) {
@@ -1304,18 +1303,19 @@ class ZipFile implements ZipConstants, Closeable {
                 && (name[off]         ) == '/';
         }
 
-        /*
-         * Counts the number of CEN headers in a central directory extending
-         * from BEG to END.  Might return a bogus answer if the zip file is
-         * corrupt, but will not crash.
+        /**
+         * Returns the number of CEN headers in a central directory.
+         * Will not throw, even if the zip file is corrupt.
+         *
+         * @param cen copy of the bytes in a zip file's central directory
+         * @param size number of bytes in central directory
          */
-        static int countCENHeaders(byte[] cen, int end) {
+        private static int countCENHeaders(byte[] cen, int size) {
             int count = 0;
-            int pos = 0;
-            while (pos + CENHDR <= end) {
+            for (int p = 0;
+                 p + CENHDR <= size;
+                 p += CENHDR + CENNAM(cen, p) + CENEXT(cen, p) + CENCOM(cen, p))
                 count++;
-                pos += (CENHDR + CENNAM(cen, pos) + CENEXT(cen, pos) + CENCOM(cen, pos));
-            }
             return count;
         }
     }
