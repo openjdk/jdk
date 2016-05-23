@@ -190,10 +190,11 @@ class ResponseHeaders implements HttpHeaders {
     List<String> populateMapEntry(String name) {
         List<String> l = getOrCreate(name);
         int[] search = findHeaderValue(name);
-        if (search[0] != -1) {
+        while (search[0] != -1) {
             addEntry(l, name, search[0]);
             // clear the offset
             headerOffsets[search[1]] = -1;
+            search = findHeaderValue(name);
         }
         return l;
     }
