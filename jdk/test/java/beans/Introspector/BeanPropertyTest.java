@@ -38,8 +38,6 @@ import java.util.Arrays;
  * @author a.stepanov
  * @run main BeanPropertyTest
  */
-
-
 public class BeanPropertyTest {
 
     private final static String  DESCRIPTION = "TEST";
@@ -853,8 +851,7 @@ public class BeanPropertyTest {
         public void removePropertyChangeListener(PropertyChangeListener l) {}
     }
 
-    // JDK-8155103
-    public static enum E {
+    public enum E {
 
         ONE,
         TWO {
@@ -889,7 +886,7 @@ public class BeanPropertyTest {
 
     }
 
-    private static enum EB {
+    private enum EB {
 
         TRUE(true), FALSE(false);
 
@@ -1064,9 +1061,7 @@ public class BeanPropertyTest {
         // enums
 
         Class<?> enumCases[] = {
-
-            // TODO: uncomment/update after 8155103 fix
-            //E.class, E.TWO.getClass(), EB.class
+            E.class, E.TWO.getClass(), EB.class
         };
 
         int ne = 1;
@@ -1076,7 +1071,7 @@ public class BeanPropertyTest {
             ne++;
 
             BeanInfo i;
-            try { i = Introspector.getBeanInfo(c, Object.class); }
+            try { i = Introspector.getBeanInfo(c, Enum.class); }
             catch (IntrospectionException e) { throw new RuntimeException(e); }
             boolean ok = checkInfo(i, !ignoreVals(c));
             System.out.println(ok ? "OK" : "NOK");
