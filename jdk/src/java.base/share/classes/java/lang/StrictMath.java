@@ -811,7 +811,7 @@ public final class StrictMath {
      * @return the result
      * @throws ArithmeticException if the result overflows a long
      * @see Math#multiplyExact(long,int)
-     * @since 1.9
+     * @since 9
      */
     public static long multiplyExact(long x, int y) {
         return Math.multiplyExact(x, y);
@@ -853,7 +853,7 @@ public final class StrictMath {
      * @param y the second value
      * @return the result
      * @see Math#multiplyFull(int,int)
-     * @since 1.9
+     * @since 9
      */
     public static long multiplyFull(int x, int y) {
         return Math.multiplyFull(x, y);
@@ -867,7 +867,7 @@ public final class StrictMath {
      * @param y the second value
      * @return the result
      * @see Math#multiplyHigh(long,long)
-     * @since 1.9
+     * @since 9
      */
     public static long multiplyHigh(long x, long y) {
         return Math.multiplyHigh(x, y);
@@ -915,7 +915,7 @@ public final class StrictMath {
      * @throws ArithmeticException if the divisor {@code y} is zero
      * @see Math#floorDiv(long, int)
      * @see Math#floor(double)
-     * @since 1.9
+     * @since 9
      */
     public static long floorDiv(long x, int y) {
         return Math.floorDiv(x, y);
@@ -994,7 +994,7 @@ public final class StrictMath {
      * @throws ArithmeticException if the divisor {@code y} is zero
      * @see Math#floorMod(long, int)
      * @see StrictMath#floorDiv(long, int)
-     * @since 1.9
+     * @since 9
      */
     public static int floorMod(long x, int y) {
         return Math.floorMod(x , y);
