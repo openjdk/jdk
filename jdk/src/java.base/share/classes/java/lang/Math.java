@@ -916,7 +916,7 @@ public final class Math {
      * @param y the second value
      * @return the result
      * @throws ArithmeticException if the result overflows a long
-     * @since 1.9
+     * @since 9
      */
     public static long multiplyExact(long x, int y) {
         return multiplyExact(x, (long)y);
@@ -1186,7 +1186,7 @@ public final class Math {
      * @throws ArithmeticException if the divisor {@code y} is zero
      * @see #floorMod(long, int)
      * @see #floor(double)
-     * @since 1.9
+     * @since 9
      */
     public static long floorDiv(long x, int y) {
         return floorDiv(x, (long)y);
@@ -1294,7 +1294,7 @@ public final class Math {
      * @return the floor modulus {@code x - (floorDiv(x, y) * y)}
      * @throws ArithmeticException if the divisor {@code y} is zero
      * @see #floorDiv(long, int)
-     * @since 1.9
+     * @since 9
      */
     public static int floorMod(long x, int y) {
         // Result cannot overflow the range of int.
