@@ -578,11 +578,6 @@ void Test_logconfiguration_subscribe() {
 
   LogConfiguration::disable_logging();
   assert(Test_logconfiguration_subscribe_triggered == 3, "subscription not triggered (3)");
-
-  // We need to renable stderr error logging since "disable_logging" disable it all.
-  // TestLogSavedConfig log_cfg will only renable stdout for us.
-  LogConfiguration::parse_log_arguments("stderr", "all=warning", NULL, NULL, log.error_stream());
-  assert(Test_logconfiguration_subscribe_triggered == 4, "subscription not triggered (3)");
 }
 
 #define LOG_PREFIX_STR "THE_PREFIX "
