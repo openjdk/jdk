@@ -56,13 +56,11 @@ package java.util.concurrent;
  * void solve(Executor e,
  *            Collection<Callable<Result>> solvers)
  *     throws InterruptedException, ExecutionException {
- *   CompletionService<Result> ecs
- *       = new ExecutorCompletionService<Result>(e);
- *   for (Callable<Result> s : solvers)
- *     ecs.submit(s);
- *   int n = solvers.size();
- *   for (int i = 0; i < n; ++i) {
- *     Result r = ecs.take().get();
+ *   CompletionService<Result> cs
+ *       = new ExecutorCompletionService<>(e);
+ *   solvers.forEach(cs::submit);
+ *   for (int i = solvers.size(); i > 0; i--) {
+ *     Result r = cs.take().get();
  *     if (r != null)
  *       use(r);
  *   }
@@ -76,27 +74,24 @@ package java.util.concurrent;
  * void solve(Executor e,
  *            Collection<Callable<Result>> solvers)
  *     throws InterruptedException {
- *   CompletionService<Result> ecs
- *       = new ExecutorCompletionService<Result>(e);
+ *   CompletionService<Result> cs
+ *       = new ExecutorCompletionService<>(e);
  *   int n = solvers.size();
  *   List<Future<Result>> futures = new ArrayList<>(n);
  *   Result result = null;
  *   try {
- *     for (Callable<Result> s : solvers)
- *       futures.add(ecs.submit(s));
- *     for (int i = 0; i < n; ++i) {
+ *     solvers.forEach((solver) -> futures.add(cs.submit(solver)));
+ *     for (int i = n; i > 0; i--) {
  *       try {
- *         Result r = ecs.take().get();
+ *         Result r = cs.take().get();
  *         if (r != null) {
  *           result = r;
  *           break;
  *         }
  *       } catch (ExecutionException ignore) {}
  *     }
- *   }
- *   finally {
- *     for (Future<Result> f : futures)
- *       f.cancel(true);
+ *   } finally {
+ *     futures.forEach((future) -> future.cancel(true));
  *   }
  *
  *   if (result != null)
