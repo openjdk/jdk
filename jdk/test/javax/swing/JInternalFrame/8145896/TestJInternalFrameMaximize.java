@@ -65,6 +65,7 @@ public class TestJInternalFrameMaximize {
                 createUI();
                 robot.waitForIdle();
                 executeTest();
+                robot.delay(1000);
             }
         }
         if (!"".equals(errorMessage)) {
