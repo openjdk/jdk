@@ -1198,7 +1198,8 @@ public:
 
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
-                      Register tmp1);
+                      Register tmp1,
+                      FloatRegister vtmp, FloatRegister vtmpZ, int ae);
 
   void arrays_equals(Register a1, Register a2,
                      Register result, Register cnt1,
