@@ -97,6 +97,7 @@ class ConsoleIOContext extends IOContext {
             }
         });
         in.setBellEnabled(true);
+        in.setCopyPasteDetection(true);
         in.addCompleter(new Completer() {
             private String lastTest;
             private int lastCursor;
