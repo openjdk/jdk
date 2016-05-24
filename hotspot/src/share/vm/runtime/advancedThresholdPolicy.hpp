@@ -174,10 +174,10 @@ class AdvancedThresholdPolicy : public SimpleThresholdPolicy {
   // Transition functions.
   // call_event determines if a method should be compiled at a different
   // level with a regular invocation entry.
-  CompLevel call_event(Method* method, CompLevel cur_level);
+  CompLevel call_event(Method* method, CompLevel cur_level, JavaThread * thread);
   // loop_event checks if a method should be OSR compiled at a different
   // level.
-  CompLevel loop_event(Method* method, CompLevel cur_level);
+  CompLevel loop_event(Method* method, CompLevel cur_level, JavaThread * thread);
   // Has a method been long around?
   // We don't remove old methods from the compile queue even if they have
   // very low activity (see select_task()).

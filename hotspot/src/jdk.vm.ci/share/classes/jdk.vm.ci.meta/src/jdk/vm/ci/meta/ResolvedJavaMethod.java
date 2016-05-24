@@ -24,6 +24,7 @@ package jdk.vm.ci.meta;
 
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -33,7 +34,7 @@ import java.lang.reflect.Type;
  * Represents a resolved Java method. Methods, like fields and types, are resolved through
  * {@link ConstantPool constant pools}.
  */
-public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersProvider {
+public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersProvider, AnnotatedElement {
 
     /**
      * Returns the bytecode of this method, if the method has code. The returned byte array does not
@@ -93,8 +94,8 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
     }
 
     /**
-     * Checks that the method is a <a
-     * href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6">varargs</a>
+     * Checks that the method is a
+     * <a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6">varargs</a>
      * method.
      *
      * @return whether the method is a varargs method
@@ -104,8 +105,8 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
     }
 
     /**
-     * Checks that the method is a <a
-     * href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6">bridge</a>
+     * Checks that the method is a
+     * <a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6">bridge</a>
      * method.
      *
      * @return whether the method is a bridge method
@@ -187,22 +188,6 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      * Returns the constant pool of this method.
      */
     ConstantPool getConstantPool();
-
-    /**
-     * Returns all annotations of this method. If no annotations are present, an array of length 0
-     * is returned.
-     */
-    Annotation[] getAnnotations();
-
-    /**
-     * Returns the annotation for the specified type of this method, if such an annotation is
-     * present.
-     *
-     * @param annotationClass the Class object corresponding to the annotation type
-     * @return this element's annotation for the specified annotation type if present on this
-     *         method, else {@code null}
-     */
-    <T extends Annotation> T getAnnotation(Class<T> annotationClass);
 
     /**
      * Returns an array of arrays that represent the annotations on the formal parameters, in
@@ -347,8 +332,8 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
     SpeculationLog getSpeculationLog();
 
     /**
-     * Determines if the method identified by its holder and name is a <a
-     * href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-2.html#jvms-2.9">signature
+     * Determines if the method identified by its holder and name is a
+     * <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-2.html#jvms-2.9">signature
      * polymorphic</a> method.
      */
     static boolean isSignaturePolymorphic(JavaType holder, String name, MetaAccessProvider metaAccess) {

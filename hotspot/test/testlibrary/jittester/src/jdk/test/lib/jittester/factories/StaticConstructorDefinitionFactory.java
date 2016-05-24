@@ -26,13 +26,13 @@ package jdk.test.lib.jittester.factories;
 import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.SymbolTable;
+import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.VariableInfo;
 import jdk.test.lib.jittester.functions.StaticConstructorDefinition;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeVoid;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class StaticConstructorDefinitionFactory extends Factory {
+class StaticConstructorDefinitionFactory extends Factory<StaticConstructorDefinition> {
     private final long complexityLimit;
     private final int statementLimit;
     private final int operatorLimit;
@@ -49,7 +49,7 @@ class StaticConstructorDefinitionFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public StaticConstructorDefinition produce() throws ProductionFailedException {
         SymbolTable.push();
         IRNode body;
         try {
@@ -57,7 +57,7 @@ class StaticConstructorDefinitionFactory extends Factory {
             long complLimit = (long) (PseudoRandom.random() * complexityLimit);
             body = new IRNodeBuilder()
                     .setOwnerKlass(ownerClass)
-                    .setResultType(new TypeVoid())
+                    .setResultType(TypeList.VOID)
                     .setComplexityLimit(complLimit)
                     .setStatementLimit(statementLimit)
                     .setOperatorLimit(operatorLimit)

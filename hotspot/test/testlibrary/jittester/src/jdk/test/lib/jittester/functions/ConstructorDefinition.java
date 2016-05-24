@@ -32,7 +32,9 @@ public class ConstructorDefinition extends IRNode {
 
     public ConstructorDefinition(FunctionInfo functionInfo,
             ArrayList<ArgumentDeclaration> argumentsDeclaration, IRNode body) {
+        super(functionInfo.type);
         this.functionInfo = functionInfo;
+        this.owner = functionInfo.owner;
         addChild(body);
         addChildren(argumentsDeclaration);
     }

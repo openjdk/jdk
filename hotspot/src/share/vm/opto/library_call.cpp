@@ -2697,6 +2697,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
       assert(sig->type_at(0)->basic_type() == T_OBJECT, "get and set base is object");
       assert(sig->type_at(1)->basic_type() == T_LONG, "get and set offset is long");
       assert(sig->type_at(2)->basic_type() == type, "get and set must take expected type as new value/delta");
+      assert(access_kind == Volatile, "mo is not passed to intrinsic nodes in current implementation");
 #endif // ASSERT
         break;
       }
@@ -2822,8 +2823,14 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
     case Acquire:
       break;
     case Release:
-    case Volatile:
       insert_mem_bar(Op_MemBarRelease);
+      break;
+    case Volatile:
+      if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+        insert_mem_bar(Op_MemBarVolatile);
+      } else {
+        insert_mem_bar(Op_MemBarRelease);
+      }
       break;
     default:
       ShouldNotReachHere();
@@ -3035,6 +3042,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
     case Acquire:
     case Volatile:
       insert_mem_bar(Op_MemBarAcquire);
+      // !support_IRIW_for_not_multiple_copy_atomic_cpu handled in platform code
       break;
     default:
       ShouldNotReachHere();

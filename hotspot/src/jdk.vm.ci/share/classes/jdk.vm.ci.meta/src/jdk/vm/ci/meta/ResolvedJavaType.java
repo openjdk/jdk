@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 package jdk.vm.ci.meta;
 
-import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 
@@ -31,7 +31,7 @@ import jdk.vm.ci.meta.Assumptions.AssumptionResult;
  * thereof. Types, like fields and methods, are resolved through {@link ConstantPool constant pools}
  * .
  */
-public interface ResolvedJavaType extends JavaType, ModifiersProvider {
+public interface ResolvedJavaType extends JavaType, ModifiersProvider, AnnotatedElement {
     /**
      * Checks whether this type has a finalizer method.
      *
@@ -60,13 +60,6 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider {
      * @return {@code true} if this type is an instance class
      */
     boolean isInstanceClass();
-
-    /**
-     * Checks whether this type is an array class.
-     *
-     * @return {@code true} if this type is an array class
-     */
-    boolean isArray();
 
     /**
      * Checks whether this type is primitive.
@@ -135,14 +128,6 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider {
      * @return {@code true} if the object is an instance of this type
      */
     boolean isInstance(JavaConstant obj);
-
-    /**
-     * Returns this type if it is an exact type otherwise returns null. This type is exact if it is
-     * void, primitive, final, or an array of a final or primitive type.
-     *
-     * @return this type if it is exact; {@code null} otherwise
-     */
-    ResolvedJavaType asExactType();
 
     /**
      * Gets the super class of this type. If this type represents either the {@code Object} class,
@@ -276,28 +261,12 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider {
     ResolvedJavaField[] getInstanceFields(boolean includeSuperclasses);
 
     /**
-     * Returns the static fields of this class, including
-     * {@linkplain ResolvedJavaField#isInternal() internal} fields. A zero-length array is returned
-     * for array and primitive types. The order of fields returned by this method is stable. That
-     * is, for a single JVM execution the same order is returned each time this method is called.
+     * Returns the static fields of this class, including {@linkplain ResolvedJavaField#isInternal()
+     * internal} fields. A zero-length array is returned for array and primitive types. The order of
+     * fields returned by this method is stable. That is, for a single JVM execution the same order
+     * is returned each time this method is called.
      */
     ResolvedJavaField[] getStaticFields();
-
-    /**
-     * Returns all annotations of this class. If no annotations are present, an array of length 0 is
-     * returned.
-     */
-    Annotation[] getAnnotations();
-
-    /**
-     * Returns the annotation for the specified type of this class, if such an annotation is
-     * present.
-     *
-     * @param annotationClass the Class object corresponding to the annotation type
-     * @return this element's annotation for the specified annotation type if present on this class,
-     *         else {@code null}
-     */
-    <T extends Annotation> T getAnnotation(Class<T> annotationClass);
 
     /**
      * Returns the instance field of this class (or one of its super classes) at the given offset,
@@ -344,12 +313,6 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider {
      * Returns the {@code <clinit>} method for this class if there is one.
      */
     ResolvedJavaMethod getClassInitializer();
-
-    /**
-     * Returns true if this type represents an interface and it should be trusted even in places
-     * where the JVM verifier would not give any guarantees other than {@link Object}.
-     */
-    boolean isTrustedInterfaceType();
 
     default ResolvedJavaMethod findMethod(String name, Signature signature) {
         for (ResolvedJavaMethod method : getDeclaredMethods()) {
