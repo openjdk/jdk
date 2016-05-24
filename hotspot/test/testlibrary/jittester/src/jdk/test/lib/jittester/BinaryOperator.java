@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,8 @@ package jdk.test.lib.jittester;
 import jdk.test.lib.jittester.visitors.Visitor;
 
 public class BinaryOperator extends Operator {
-    protected String operationCode;
-    protected Type resultType;
-
-    public BinaryOperator(OperatorKind opKind, IRNode leftOperand, IRNode rightOperand) {
-        super(opKind.priority);
-        operationCode = opKind.text;
+    public BinaryOperator(OperatorKind opKind, Type resultType, IRNode leftOperand, IRNode rightOperand) {
+        super(opKind, resultType);
         addChild(leftOperand);
         addChild(rightOperand);
     }
@@ -45,10 +41,6 @@ public class BinaryOperator extends Operator {
         } else {
             return 0;
         }
-    }
-
-    public String getOperationCode() {
-        return operationCode;
     }
 
     @Override

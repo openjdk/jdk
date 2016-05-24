@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.Literal;
-import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.VariableDeclaration;
 import jdk.test.lib.jittester.types.TypeArray;
 import jdk.test.lib.jittester.visitors.Visitor;
@@ -39,6 +38,7 @@ public class ArrayCreation extends IRNode {
     private final List<Byte> dims;
 
     public ArrayCreation(VariableDeclaration var, TypeArray array, ArrayList<IRNode> dimensionSizeExpressions) {
+        super(array);
         this.variable = var;
         this.array = array;
         addChildren(dimensionSizeExpressions);
@@ -55,8 +55,8 @@ public class ArrayCreation extends IRNode {
         type.setDimentions(dims);
     }
 
-    public Type getArrayType() {
-        return array.type;
+    public TypeArray getArrayType() {
+        return array;
     }
 
     @Override

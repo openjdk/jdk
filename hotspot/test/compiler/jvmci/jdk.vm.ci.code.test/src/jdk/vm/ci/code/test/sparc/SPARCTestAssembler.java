@@ -37,7 +37,6 @@ import jdk.vm.ci.hotspot.HotSpotForeignCallTarget;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.LIRKind;
 import jdk.vm.ci.meta.VMConstant;
 import jdk.vm.ci.sparc.SPARC;
 import jdk.vm.ci.sparc.SPARCKind;
@@ -70,7 +69,7 @@ public class SPARCTestAssembler extends TestAssembler {
     public void emitPrologue() {
         // SAVE sp, -128, sp
         emitOp3(0b10, SPARC.sp, 0b111100, SPARC.sp, -SPARC.REGISTER_SAFE_AREA_SIZE);
-        setDeoptRescueSlot(newStackSlot(LIRKind.value(SPARCKind.XWORD)));
+        setDeoptRescueSlot(newStackSlot(SPARCKind.XWORD));
     }
 
     @Override
@@ -194,7 +193,7 @@ public class SPARCTestAssembler extends TestAssembler {
 
     @Override
     public StackSlot emitIntToStack(Register a) {
-        StackSlot ret = newStackSlot(LIRKind.value(SPARCKind.WORD));
+        StackSlot ret = newStackSlot(SPARCKind.WORD);
         // STW a, [fp+offset]
         emitOp3(0b11, a, 0b000100, SPARC.fp, ret.getRawOffset() + SPARC.STACK_BIAS);
         return ret;
@@ -202,7 +201,7 @@ public class SPARCTestAssembler extends TestAssembler {
 
     @Override
     public StackSlot emitLongToStack(Register a) {
-        StackSlot ret = newStackSlot(LIRKind.value(SPARCKind.XWORD));
+        StackSlot ret = newStackSlot(SPARCKind.XWORD);
         // STX a, [fp+offset]
         emitOp3(0b11, a, 0b001110, SPARC.fp, ret.getRawOffset() + SPARC.STACK_BIAS);
         return ret;
@@ -210,7 +209,7 @@ public class SPARCTestAssembler extends TestAssembler {
 
     @Override
     public StackSlot emitFloatToStack(Register a) {
-        StackSlot ret = newStackSlot(LIRKind.value(SPARCKind.SINGLE));
+        StackSlot ret = newStackSlot(SPARCKind.SINGLE);
         // STF a, [fp+offset]
         emitOp3(0b11, a, 0b100100, SPARC.fp, ret.getRawOffset() + SPARC.STACK_BIAS);
         return ret;
@@ -218,7 +217,7 @@ public class SPARCTestAssembler extends TestAssembler {
 
     @Override
     public StackSlot emitPointerToStack(Register a) {
-        StackSlot ret = newStackSlot(LIRKind.reference(SPARCKind.XWORD));
+        StackSlot ret = newStackSlot(SPARCKind.XWORD);
         // STX a, [fp+offset]
         emitOp3(0b11, a, 0b001110, SPARC.fp, ret.getRawOffset() + SPARC.STACK_BIAS);
         return ret;
@@ -226,7 +225,7 @@ public class SPARCTestAssembler extends TestAssembler {
 
     @Override
     public StackSlot emitNarrowPointerToStack(Register a) {
-        StackSlot ret = newStackSlot(LIRKind.reference(SPARCKind.WORD));
+        StackSlot ret = newStackSlot(SPARCKind.WORD);
         // STW a, [fp+offset]
         emitOp3(0b11, a, 0b000100, SPARC.fp, ret.getRawOffset() + SPARC.STACK_BIAS);
         return ret;

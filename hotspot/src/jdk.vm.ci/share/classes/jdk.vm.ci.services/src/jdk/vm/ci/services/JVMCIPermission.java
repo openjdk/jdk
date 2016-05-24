@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,21 +20,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.inittimer;
+package jdk.vm.ci.services;
+
+import java.security.BasicPermission;
 
 /**
- * Used to suppress <a href="http://findbugs.sourceforge.net">FindBugs</a> warnings.
+ * This class represents the permission to access JVMCI services.
  */
-public @interface SuppressFBWarnings {
-    /**
-     * The set of FindBugs <a
-     * href="http://findbugs.sourceforge.net/bugDescriptions.html">warnings</a> that are to be
-     * suppressed in annotated element. The value can be a bug category, kind or pattern.
-     */
-    String[] value();
+public class JVMCIPermission extends BasicPermission {
 
-    /**
-     * Reason why the warning is suppressed.
-     */
-    String justification();
+    private static final long serialVersionUID = 6346818963934448226L;
+
+    public JVMCIPermission() {
+        super("jvmci");
+    }
 }

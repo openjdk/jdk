@@ -22,11 +22,42 @@
  */
 package jdk.vm.ci.meta;
 
-public interface LocalVariableTable {
+import java.util.ArrayList;
+import java.util.List;
 
-    Local[] getLocals();
+public class LocalVariableTable {
 
-    Local[] getLocalsAt(int bci);
+    private final Local[] locals;
 
-    Local getLocal(int slot, int bci);
+    public LocalVariableTable(Local[] locals) {
+        this.locals = locals;
+    }
+
+    public Local getLocal(int slot, int bci) {
+        Local result = null;
+        for (Local local : locals) {
+            if (local.getSlot() == slot && local.getStartBCI() <= bci && local.getEndBCI() >= bci) {
+                if (result == null) {
+                    result = local;
+                } else {
+                    throw new IllegalStateException("Locals overlap!");
+                }
+            }
+        }
+        return result;
+    }
+
+    public Local[] getLocals() {
+        return locals;
+    }
+
+    public Local[] getLocalsAt(int bci) {
+        List<Local> result = new ArrayList<>();
+        for (Local l : locals) {
+            if (l.getStartBCI() <= bci && bci <= l.getEndBCI()) {
+                result.add(l);
+            }
+        }
+        return result.toArray(new Local[result.size()]);
+    }
 }
