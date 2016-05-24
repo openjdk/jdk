@@ -3740,7 +3740,7 @@ Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region,
   }
   // Now test the correct condition.
   jint  nval = (obj_array
-                ? ((jint)Klass::_lh_array_tag_type_value
+                ? (jint)(Klass::_lh_array_tag_type_value
                    <<    Klass::_lh_array_tag_shift)
                 : Klass::_lh_neutral_value);
   Node* cmp = _gvn.transform(new CmpINode(layout_val, intcon(nval)));
