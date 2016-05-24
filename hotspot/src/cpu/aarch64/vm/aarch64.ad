@@ -15502,6 +15502,24 @@ instruct string_indexof_conLU(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
   ins_pipe(pipe_class_memory);
 %}
 
+instruct string_indexofU_char(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
+                              iRegI_R0 result, iRegI tmp1, iRegI tmp2,
+                              iRegI tmp3, rFlagsReg cr)
+%{
+  match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
+  effect(USE_KILL str1, USE_KILL cnt1, USE_KILL ch,
+         TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
+
+  format %{ "String IndexOf char[] $str1,$cnt1,$ch -> $result" %}
+
+  ins_encode %{
+    __ string_indexof_char($str1$$Register, $cnt1$$Register, $ch$$Register,
+                           $result$$Register, $tmp1$$Register, $tmp2$$Register,
+                           $tmp3$$Register);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
 instruct string_equalsL(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
                         iRegI_R0 result, rFlagsReg cr)
 %{
