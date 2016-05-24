@@ -177,12 +177,17 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
 
         updateInsets(insets_);
 
-        Font f = ((Window)target).getFont();
-        if (f == null) {
-            f = defaultFont;
-            ((Window)target).setFont(f);
-            setFont(f);
+        if (!((Window) target).isFontSet()) {
+            ((Window) target).setFont(defaultFont);
+            setFont(defaultFont);
         }
+        if (!((Window) target).isForegroundSet()) {
+            ((Window) target).setForeground(SystemColor.windowText);
+        }
+        if (!((Window) target).isBackgroundSet()) {
+            ((Window) target).setBackground(SystemColor.window);
+        }
+
         // Express our interest in display changes
         GraphicsConfiguration gc = getGraphicsConfiguration();
         ((Win32GraphicsDevice)gc.getDevice()).addDisplayChangedListener(this);
