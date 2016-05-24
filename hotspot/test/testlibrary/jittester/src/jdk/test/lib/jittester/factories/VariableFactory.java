@@ -23,15 +23,15 @@
 
 package jdk.test.lib.jittester.factories;
 
-import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Rule;
 import jdk.test.lib.jittester.Type;
+import jdk.test.lib.jittester.VariableBase;
 import jdk.test.lib.jittester.VariableInfo;
 import jdk.test.lib.jittester.types.TypeKlass;
 
-class VariableFactory extends Factory {
-    private final Rule rule;
+class VariableFactory extends Factory<VariableBase> {
+    private final Rule<VariableBase> rule;
 
     VariableFactory(long complexityLimit, int operatorLimit, TypeKlass ownerClass, Type resultType,
             boolean constant, boolean initialized, boolean exceptionSafe, boolean noconsts) {
@@ -42,7 +42,7 @@ class VariableFactory extends Factory {
         if (initialized) {
             flags |= VariableInfo.INITIALIZED;
         }
-        rule = new Rule("variable");
+        rule = new Rule<>("variable");
         IRNodeBuilder b = new IRNodeBuilder().setResultType(resultType)
                 .setFlags(flags)
                 .setComplexityLimit(complexityLimit)
@@ -55,7 +55,7 @@ class VariableFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public VariableBase produce() throws ProductionFailedException {
         return rule.produce();
     }
 }

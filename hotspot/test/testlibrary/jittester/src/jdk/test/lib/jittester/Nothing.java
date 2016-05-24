@@ -27,6 +27,10 @@ import jdk.test.lib.jittester.visitors.Visitor;
 
 public class Nothing extends IRNode {
 
+    public Nothing() {
+        super(TypeList.VOID);
+    }
+
     @Override
     public long complexity() {
         return 0;

@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.inittimer;
+package jdk.vm.ci.common;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

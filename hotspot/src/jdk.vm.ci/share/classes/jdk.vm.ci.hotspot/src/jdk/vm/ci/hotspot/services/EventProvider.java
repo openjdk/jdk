@@ -20,17 +20,65 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.hotspot.events;
+package jdk.vm.ci.hotspot.services;
+
+import jdk.vm.ci.hotspot.services.EmptyEventProvider.EmptyCompilationEvent;
+import jdk.vm.ci.hotspot.services.EmptyEventProvider.EmptyCompilerFailureEvent;
+import jdk.vm.ci.services.JVMCIPermission;
 
 /**
- * A provider that provides a specific implementation for events that can be logged in the compiler.
+ * Service-provider class for logging compiler related events.
  */
-public interface EventProvider {
+public abstract class EventProvider {
+
+    private static Void checkPermission() {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new JVMCIPermission());
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unused")
+    EventProvider(Void ignore) {
+    }
+
+    /**
+     * Initializes a new instance of this class.
+     *
+     * @throws SecurityException if a security manager has been installed and it denies
+     *             {@link JVMCIPermission}
+     */
+    protected EventProvider() {
+        this(checkPermission());
+    }
+
+    /**
+     * Creates and returns an empty implementation for {@link EventProvider}. This implementation
+     * can be used when no logging is requested.
+     */
+    public static EventProvider createEmptyEventProvider() {
+        return new EmptyEventProvider();
+    }
+
+    /**
+     * Creates and returns an empty implementation for {@link CompilationEvent}.
+     */
+    public static CompilationEvent createEmptyCompilationEvent() {
+        return new EmptyCompilationEvent();
+    }
+
+    /**
+     * Creates and returns an empty implementation for {@link CompilationEvent}.
+     */
+    public static CompilerFailureEvent createEmptyCompilerFailureEvent() {
+        return new EmptyCompilerFailureEvent();
+    }
 
     /**
      * An instant event is an event that is not considered to have taken any time.
      */
-    interface InstantEvent {
+    public interface InstantEvent {
         /**
          * Commits the event.
          */
@@ -49,7 +97,7 @@ public interface EventProvider {
     /**
      * Timed events describe an operation that somehow consumes time.
      */
-    interface TimedEvent extends InstantEvent {
+    public interface TimedEvent extends InstantEvent {
         /**
          * Starts the timing for this event.
          */
@@ -66,12 +114,12 @@ public interface EventProvider {
      *
      * @return a compilation event
      */
-    CompilationEvent newCompilationEvent();
+    public abstract CompilationEvent newCompilationEvent();
 
     /**
      * A compilation event.
      */
-    interface CompilationEvent extends TimedEvent {
+    public interface CompilationEvent extends TimedEvent {
         void setMethod(String method);
 
         void setCompileId(int compileId);
@@ -92,12 +140,12 @@ public interface EventProvider {
      *
      * @return a compiler failure event
      */
-    CompilerFailureEvent newCompilerFailureEvent();
+    public abstract CompilerFailureEvent newCompilerFailureEvent();
 
     /**
      * A compiler failure event.
      */
-    interface CompilerFailureEvent extends InstantEvent {
+    public interface CompilerFailureEvent extends InstantEvent {
         void setCompileId(int compileId);
 
         void setMessage(String message);

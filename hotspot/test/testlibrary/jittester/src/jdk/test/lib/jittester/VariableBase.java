@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,14 @@
 
 package jdk.test.lib.jittester;
 
-public interface VariableBase {
+public abstract class VariableBase extends IRNode {
+    private final VariableInfo variableInfo;
+    protected VariableBase(VariableInfo variableInfo) {
+        super(variableInfo.type);
+        this.variableInfo = variableInfo;
+    }
 
-    VariableInfo get();
+    public VariableInfo getVariableInfo() {
+        return variableInfo;
+    }
 }
