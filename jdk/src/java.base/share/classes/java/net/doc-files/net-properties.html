@@ -1,5 +1,5 @@
 <!--
- Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ alter the mechanisms and behavior of the various classes of the
 java.net package. Some are checked only once at startup of the VM,
 and therefore are best set using the -D option of the java command,
 while others have a more dynamic nature and can also be changed using
-the <a href="../../lang/System.html#setProperty(java.lang.String,%20java.lang.String)">System.setProperty()</a> API. 
+the <a href="../../lang/System.html#setProperty(java.lang.String,%20java.lang.String)">System.setProperty()</a> API.
 The purpose of this document is to list
 and detail all of these properties.</P>
 <P>If there is no special note, a property value is checked every time it is used.</P>
@@ -58,7 +58,8 @@ and detail all of these properties.</P>
 	applications that depend on the representation of an IPv4 address
 	(e.g. 192.168.1.1). This property can be set to <B>true</B> to
 	change that preference and use IPv6 addresses over IPv4 ones where
-	possible.</P>
+	possible, or <B>system</B> to preserve the order of the addresses as
+    returned by the operating system.</P>
 </UL>
 <P>Both of these properties are checked only once, at startup.</P>
 <a name="Proxies"></a>
@@ -73,7 +74,7 @@ of proxies.</P>
 	<P>The following proxy settings are used by the HTTP protocol handler.</P>
 	<UL>
 		<LI><P><B>http.proxyHost</B> (default: &lt;none&gt;)<BR>
-	        The hostname, or address, of the proxy server 
+	        The hostname, or address, of the proxy server
 		</P>
 		<LI><P><B>http.proxyPort</B> (default: 80)<BR>
 	        The port number of the proxy server.</P>
@@ -94,7 +95,7 @@ of proxies.</P>
 	<P>The following proxy settings are used by the HTTPS protocol handler.</P>
 	<UL>
 		<LI><P><B>https.proxyHost</B>(default: &lt;none&gt;)<BR>
-	        The hostname, or address, of the proxy server 
+	        The hostname, or address, of the proxy server
 		</P>
 		<LI><P><B>https.proxyPort</B> (default: 443)<BR>
 	        The port number of the proxy server.</P>
@@ -105,7 +106,7 @@ of proxies.</P>
 	<P>The following proxy settings are used by the FTP protocol handler.</P>
 	<UL>
 		<LI><P><B>ftp.proxyHost</B>(default: &lt;none&gt;)<BR>
-	        The hostname, or address, of the proxy server 
+	        The hostname, or address, of the proxy server
 		</P>
 		<LI><P><B>ftp.proxyPort</B> (default: 80)<BR>
 	        The port number of the proxy server.</P>
@@ -160,7 +161,7 @@ of proxies.</P>
 	<LI><P><B>http.agent</B> (default: &ldquo;Java/&lt;version&gt;&rdquo;)<BR>
 	Defines the string sent in the User-Agent request header in http
 	requests. Note that the string &ldquo;Java/&lt;version&gt;&rdquo; will
-	be appended to the one provided in the property (e.g. if 
+	be appended to the one provided in the property (e.g. if
 	-Dhttp.agent=&rdquo;foobar&rdquo; is used, the User-Agent header will
 	contain &ldquo;foobar Java/1.5.0&rdquo; if the version of the VM is
 	1.5.0). This property is checked only once at startup.</P>
