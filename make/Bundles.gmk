@@ -122,7 +122,7 @@ endef
 
 # On Macosx, we bundle up the macosx specific images which already have the
 # correct base directories.
-ifeq ($(OPENJDK_TARGET_OS), macosx)
+ifeq ($(OPENJDK_TARGET_OS)-$(DEBUG_LEVEL), macosx-release)
   JDK_IMAGE_DIR := $(JDK_MACOSX_BUNDLE_DIR)
   JRE_IMAGE_DIR := $(JRE_MACOSX_BUNDLE_DIR)
   JDK_IMAGE_HOMEDIR := $(JDK_MACOSX_CONTENTS_DIR)/Home
