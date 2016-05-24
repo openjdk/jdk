@@ -66,6 +66,7 @@
                  product, \
                  product_pd, \
                  diagnostic, \
+                 diagnostic_pd, \
                  experimental, \
                  notproduct, \
                  range, \
@@ -203,7 +204,7 @@
            "Map number of unrolls for main loop via "                       \
            "Superword Level Parallelism analysis")                          \
                                                                             \
-  product_pd(bool, PostLoopMultiversioning,                                 \
+  diagnostic_pd(bool, PostLoopMultiversioning,                              \
            "Multi versioned post loops to eliminate range checks")          \
                                                                             \
   notproduct(bool, TraceSuperWordLoopUnrollAnalysis, false,                 \
@@ -764,6 +765,7 @@ C2_FLAGS(DECLARE_DEVELOPER_FLAG, \
          DECLARE_PRODUCT_FLAG, \
          DECLARE_PD_PRODUCT_FLAG, \
          DECLARE_DIAGNOSTIC_FLAG, \
+         DECLARE_PD_DIAGNOSTIC_FLAG, \
          DECLARE_EXPERIMENTAL_FLAG, \
          DECLARE_NOTPRODUCT_FLAG, \
          IGNORE_RANGE, \

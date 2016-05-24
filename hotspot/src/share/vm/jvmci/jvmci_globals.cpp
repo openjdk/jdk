@@ -32,6 +32,7 @@ JVMCI_FLAGS(MATERIALIZE_DEVELOPER_FLAG, \
             MATERIALIZE_PRODUCT_FLAG, \
             MATERIALIZE_PD_PRODUCT_FLAG, \
             MATERIALIZE_DIAGNOSTIC_FLAG, \
+            MATERIALIZE_PD_DIAGNOSTIC_FLAG, \
             MATERIALIZE_EXPERIMENTAL_FLAG, \
             MATERIALIZE_NOTPRODUCT_FLAG,
             IGNORE_RANGE, \
@@ -89,6 +90,7 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
                 JVMCI_IGNORE_FLAG_FOUR_PARAM, \
                 JVMCI_IGNORE_FLAG_THREE_PARAM, \
                 JVMCI_DIAGNOSTIC_FLAG_VALUE_CHANGED_CHECK_CODE, \
+                JVMCI_IGNORE_FLAG_THREE_PARAM, \
                 JVMCI_IGNORE_FLAG_FOUR_PARAM, \
                 JVMCI_IGNORE_FLAG_FOUR_PARAM, \
                 IGNORE_RANGE, \
@@ -104,6 +106,7 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
                 JVMCI_IGNORE_FLAG_FOUR_PARAM, \
                 JVMCI_IGNORE_FLAG_THREE_PARAM, \
                 JVMCI_IGNORE_FLAG_FOUR_PARAM, \
+                JVMCI_IGNORE_FLAG_THREE_PARAM, \
                 JVMCI_EXPERIMENTAL_FLAG_VALUE_CHANGED_CHECK_CODE, \
                 JVMCI_IGNORE_FLAG_FOUR_PARAM, \
                 IGNORE_RANGE, \
@@ -129,6 +132,7 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
               JVMCI_PRODUCT_FLAG_VALUE_CHANGED_CHECK_CODE, \
               JVMCI_PD_PRODUCT_FLAG_VALUE_CHANGED_CHECK_CODE, \
               JVMCI_IGNORE_FLAG_FOUR_PARAM, \
+              JVMCI_IGNORE_FLAG_THREE_PARAM, \
               JVMCI_IGNORE_FLAG_FOUR_PARAM, \
               JVMCI_NOTPRODUCT_FLAG_VALUE_CHANGED_CHECK_CODE, \
               IGNORE_RANGE, \
@@ -168,6 +172,7 @@ void JVMCIGlobals::print_jvmci_args_inconsistency_error_message() {
                 JVMCI_IGNORE_FLAG_FOUR_PARAM, \
                 JVMCI_IGNORE_FLAG_THREE_PARAM, \
                 JVMCI_DIAGNOSTIC_FLAG_CHECK_PRINT_ERR_MSG_CODE, \
+                JVMCI_IGNORE_FLAG_THREE_PARAM, \
                 JVMCI_IGNORE_FLAG_FOUR_PARAM, \
                 JVMCI_IGNORE_FLAG_FOUR_PARAM, \
                 IGNORE_RANGE, \
@@ -181,6 +186,7 @@ void JVMCIGlobals::print_jvmci_args_inconsistency_error_message() {
                 JVMCI_IGNORE_FLAG_FOUR_PARAM, \
                 JVMCI_IGNORE_FLAG_THREE_PARAM, \
                 JVMCI_IGNORE_FLAG_FOUR_PARAM, \
+                JVMCI_IGNORE_FLAG_THREE_PARAM, \
                 JVMCI_EXPERIMENTAL_FLAG_CHECK_PRINT_ERR_MSG_CODE, \
                 JVMCI_IGNORE_FLAG_FOUR_PARAM, \
                 IGNORE_RANGE, \
@@ -206,6 +212,7 @@ void JVMCIGlobals::print_jvmci_args_inconsistency_error_message() {
               JVMCI_PRODUCT_FLAG_CHECK_PRINT_ERR_MSG_CODE, \
               JVMCI_PD_PRODUCT_FLAG_CHECK_PRINT_ERR_MSG_CODE, \
               JVMCI_IGNORE_FLAG_FOUR_PARAM, \
+              JVMCI_IGNORE_FLAG_THREE_PARAM, \
               JVMCI_IGNORE_FLAG_FOUR_PARAM, \
               JVMCI_NOTPRODUCT_FLAG_CHECK_PRINT_ERR_MSG_CODE, \
               IGNORE_RANGE, \

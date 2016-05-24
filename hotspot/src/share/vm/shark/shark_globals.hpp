@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,7 +31,7 @@
 # include "shark_globals_zero.hpp"
 #endif
 
-#define SHARK_FLAGS(develop, develop_pd, product, product_pd, diagnostic, notproduct) \
+#define SHARK_FLAGS(develop, develop_pd, product, product_pd, diagnostic, diagnostic_pd, notproduct) \
                                                                               \
   product(intx, MaxNodeLimit, 65000,                                          \
           "Maximum number of nodes")                                          \
@@ -69,6 +69,7 @@
           "Runs LLVM verify over LLVM IR")                                    \
 
 
-SHARK_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_NOTPRODUCT_FLAG)
+SHARK_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_PD_DIAGNOSTIC_FLAG,
+           DECLARE_NOTPRODUCT_FLAG)
 
 #endif // SHARE_VM_SHARK_SHARK_GLOBALS_HPP

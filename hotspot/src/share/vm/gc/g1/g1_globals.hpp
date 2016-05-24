@@ -36,6 +36,7 @@
                  product, \
                  product_pd, \
                  diagnostic, \
+                 diagnostic_pd, \
                  experimental, \
                  notproduct, \
                  manageable, \
@@ -323,6 +324,7 @@ G1_FLAGS(DECLARE_DEVELOPER_FLAG, \
          DECLARE_PRODUCT_FLAG, \
          DECLARE_PD_PRODUCT_FLAG, \
          DECLARE_DIAGNOSTIC_FLAG, \
+         DECLARE_PD_DIAGNOSTIC_FLAG, \
          DECLARE_EXPERIMENTAL_FLAG, \
          DECLARE_NOTPRODUCT_FLAG, \
          DECLARE_MANAGEABLE_FLAG, \
