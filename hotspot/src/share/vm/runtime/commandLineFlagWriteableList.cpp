@@ -108,6 +108,7 @@ void emit_writeable_double(const char* name, CommandLineFlagWriteable::Writeable
 #define EMIT_WRITEABLE_PD_PRODUCT_FLAG(type, name, doc)          ); emit_writeable_##type(#name
 #define EMIT_WRITEABLE_DEVELOPER_FLAG(type, name, value, doc)    ); emit_writeable_##type(#name
 #define EMIT_WRITEABLE_PD_DEVELOPER_FLAG(type, name, doc)        ); emit_writeable_##type(#name
+#define EMIT_WRITEABLE_PD_DIAGNOSTIC_FLAG(type, name, doc)       ); emit_writeable_##type(#name
 #define EMIT_WRITEABLE_NOTPRODUCT_FLAG(type, name, value, doc)   ); emit_writeable_##type(#name
 #define EMIT_WRITEABLE_LP64_PRODUCT_FLAG(type, name, value, doc) ); emit_writeable_##type(#name
 
@@ -126,6 +127,7 @@ void CommandLineFlagWriteableList::init(void) {
                                    EMIT_WRITEABLE_PRODUCT_FLAG,
                                    EMIT_WRITEABLE_PD_PRODUCT_FLAG,
                                    EMIT_WRITEABLE_DIAGNOSTIC_FLAG,
+                                   EMIT_WRITEABLE_PD_DIAGNOSTIC_FLAG,
                                    EMIT_WRITEABLE_EXPERIMENTAL_FLAG,
                                    EMIT_WRITEABLE_NOTPRODUCT_FLAG,
                                    EMIT_WRITEABLE_MANAGEABLE_FLAG,
@@ -152,6 +154,7 @@ void CommandLineFlagWriteableList::init(void) {
                                  EMIT_WRITEABLE_PRODUCT_FLAG,
                                  EMIT_WRITEABLE_PD_PRODUCT_FLAG,
                                  EMIT_WRITEABLE_DIAGNOSTIC_FLAG,
+                                 EMIT_WRITEABLE_PD_DIAGNOSTIC_FLAG,
                                  EMIT_WRITEABLE_EXPERIMENTAL_FLAG,
                                  EMIT_WRITEABLE_NOTPRODUCT_FLAG,
                                  IGNORE_RANGE,
@@ -165,6 +168,7 @@ void CommandLineFlagWriteableList::init(void) {
                               EMIT_WRITEABLE_PRODUCT_FLAG,
                               EMIT_WRITEABLE_PD_PRODUCT_FLAG,
                               EMIT_WRITEABLE_DIAGNOSTIC_FLAG,
+                              EMIT_WRITEABLE_PD_DIAGNOSTIC_FLAG,
                               EMIT_WRITEABLE_NOTPRODUCT_FLAG,
                               IGNORE_RANGE,
                               IGNORE_CONSTRAINT,
@@ -177,6 +181,7 @@ void CommandLineFlagWriteableList::init(void) {
                               EMIT_WRITEABLE_PRODUCT_FLAG,
                               EMIT_WRITEABLE_PD_PRODUCT_FLAG,
                               EMIT_WRITEABLE_DIAGNOSTIC_FLAG,
+                              EMIT_WRITEABLE_PD_DIAGNOSTIC_FLAG,
                               EMIT_WRITEABLE_EXPERIMENTAL_FLAG,
                               EMIT_WRITEABLE_NOTPRODUCT_FLAG,
                               IGNORE_RANGE,
@@ -190,6 +195,7 @@ void CommandLineFlagWriteableList::init(void) {
                               EMIT_WRITEABLE_PRODUCT_FLAG,
                               EMIT_WRITEABLE_PD_PRODUCT_FLAG,
                               EMIT_WRITEABLE_DIAGNOSTIC_FLAG,
+                              EMIT_WRITEABLE_PD_DIAGNOSTIC_FLAG,
                               EMIT_WRITEABLE_EXPERIMENTAL_FLAG,
                               EMIT_WRITEABLE_NOTPRODUCT_FLAG,
                               EMIT_WRITEABLE_MANAGEABLE_FLAG,

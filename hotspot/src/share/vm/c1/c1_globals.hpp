@@ -65,6 +65,7 @@
                  product, \
                  product_pd, \
                  diagnostic, \
+                 diagnostic_pd, \
                  notproduct, \
                  range, \
                  constraint, \
@@ -356,6 +357,7 @@ C1_FLAGS(DECLARE_DEVELOPER_FLAG, \
          DECLARE_PRODUCT_FLAG, \
          DECLARE_PD_PRODUCT_FLAG, \
          DECLARE_DIAGNOSTIC_FLAG, \
+         DECLARE_PD_DIAGNOSTIC_FLAG, \
          DECLARE_NOTPRODUCT_FLAG, \
          IGNORE_RANGE, \
          IGNORE_CONSTRAINT, \
