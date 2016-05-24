@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,24 +20,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.hotspot;
 
-import jdk.vm.ci.inittimer.SuppressFBWarnings;
+/*
+ * @test
+ * @bug 8155241
+ * @summary Test arraycopy elimination with ReduceBulkZeroing disabled.
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:-ReduceBulkZeroing TestReduceBulkZeroingDisabled
+ */
+public class TestReduceBulkZeroingDisabled {
 
-public class HotSpotOopMap {
-    @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD", justification = "field is set by the native part") private int offset;
-    @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD", justification = "field is set by the native part") private int count;
-    @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD", justification = "field is set by the native part") private byte[] data;
-
-    public byte[] data() {
-        return data;
-    }
-
-    public int count() {
-        return count;
-    }
-
-    public int offset() {
-        return offset;
+    static public void main(String[] args) {
+        System.out.println("Passed");
     }
 }
+

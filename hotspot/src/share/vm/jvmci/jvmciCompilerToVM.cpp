@@ -781,13 +781,11 @@ C2V_VMENTRY(jint, getMetadata, (JNIEnv *jniEnv, jobject, jobject target, jobject
   Handle compiled_code_handle = JNIHandles::resolve(compiled_code);
   Handle metadata_handle = JNIHandles::resolve(metadata);
 
-  HotSpotOopMap::klass()->initialize(thread);
-
   CodeMetadata code_metadata;
   CodeBlob *cb = NULL;
   CodeInstaller installer;
 
-  JVMCIEnv::CodeInstallResult result = installer.gather_metadata(target_handle, compiled_code_handle, code_metadata, CHECK_0); //cb, pc_descs, nr_pc_descs, scopes_descs, scopes_size, reloc_buffer);
+  JVMCIEnv::CodeInstallResult result = installer.gather_metadata(target_handle, compiled_code_handle, code_metadata, CHECK_0);
   if (result != JVMCIEnv::ok) {
     return result;
   }
@@ -1008,11 +1006,6 @@ C2V_VMENTRY(void, invalidateInstalledCode, (JNIEnv*, jobject, jobject installed_
   nmethod::invalidate_installed_code(installed_code_handle, CHECK);
 C2V_END
 
-C2V_VMENTRY(jobject, readUncompressedOop, (JNIEnv*, jobject, jlong addr))
-  oop ret = oopDesc::load_decode_heap_oop((oop*)(address)addr);
-  return JNIHandles::make_local(THREAD, ret);
-C2V_END
-
 C2V_VMENTRY(jlongArray, collectCounters, (JNIEnv*, jobject))
   typeArrayOop arrayOop = oopFactory::new_longArray(JVMCICounterSize, CHECK_NULL);
   JavaThread::collect_counters(arrayOop);
@@ -1046,11 +1039,6 @@ C2V_END
 C2V_VMENTRY(jobject, getSymbol, (JNIEnv*, jobject, jlong symbol))
   Handle sym = java_lang_String::create_from_symbol((Symbol*)(address)symbol, CHECK_NULL);
   return JNIHandles::make_local(THREAD, sym());
-C2V_END
-
-C2V_VMENTRY(jlong, lookupSymbol, (JNIEnv*, jobject, jobject string))
-  Symbol* symbol = java_lang_String::as_symbol_or_null(JNIHandles::resolve(string));
-  return (jlong) symbol;
 C2V_END
 
 bool matches(jobjectArray methods, Method* method) {
@@ -1474,13 +1462,11 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getLocalVariableTableLength",                  CC "(" HS_RESOLVED_METHOD ")I",                                                       FN_PTR(getLocalVariableTableLength)},
   {CC "reprofile",                                    CC "(" HS_RESOLVED_METHOD ")V",                                                       FN_PTR(reprofile)},
   {CC "invalidateInstalledCode",                      CC "(" INSTALLED_CODE ")V",                                                           FN_PTR(invalidateInstalledCode)},
-  {CC "readUncompressedOop",                          CC "(J)" OBJECT,                                                                      FN_PTR(readUncompressedOop)},
   {CC "collectCounters",                              CC "()[J",                                                                            FN_PTR(collectCounters)},
   {CC "allocateCompileId",                            CC "(" HS_RESOLVED_METHOD "I)I",                                                      FN_PTR(allocateCompileId)},
   {CC "isMature",                                     CC "(" METASPACE_METHOD_DATA ")Z",                                                    FN_PTR(isMature)},
   {CC "hasCompiledCodeForOSR",                        CC "(" HS_RESOLVED_METHOD "II)Z",                                                     FN_PTR(hasCompiledCodeForOSR)},
   {CC "getSymbol",                                    CC "(J)" STRING,                                                                      FN_PTR(getSymbol)},
-  {CC "lookupSymbol",                                 CC "(" STRING ")J",                                                                   FN_PTR(lookupSymbol)},
   {CC "getNextStackFrame",                            CC "(" HS_STACK_FRAME_REF "[" RESOLVED_METHOD "I)" HS_STACK_FRAME_REF,                FN_PTR(getNextStackFrame)},
   {CC "materializeVirtualObjects",                    CC "(" HS_STACK_FRAME_REF "Z)V",                                                      FN_PTR(materializeVirtualObjects)},
   {CC "shouldDebugNonSafepoints",                     CC "()Z",                                                                             FN_PTR(shouldDebugNonSafepoints)},

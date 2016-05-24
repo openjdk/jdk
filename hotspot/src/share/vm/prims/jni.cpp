@@ -3988,7 +3988,11 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
         if (BootstrapJVMCI) {
           JavaThread* THREAD = thread;
           JVMCICompiler* compiler = JVMCICompiler::instance(CATCH);
-          compiler->bootstrap();
+          compiler->bootstrap(THREAD);
+          if (HAS_PENDING_EXCEPTION) {
+            HandleMark hm;
+            vm_exit_during_initialization(Handle(THREAD, PENDING_EXCEPTION));
+          }
         }
       }
     }

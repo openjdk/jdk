@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ public abstract class Value {
 
     private static final class IllegalValue extends AllocatableValue {
         private IllegalValue() {
-            super(LIRKind.Illegal);
+            super(ValueKind.Illegal);
         }
 
         @Override
@@ -49,15 +49,15 @@ public abstract class Value {
         }
     }
 
-    private final LIRKind lirKind;
+    private final ValueKind<?> valueKind;
 
     /**
      * Initializes a new value of the specified kind.
      *
-     * @param lirKind the kind
+     * @param valueKind the kind
      */
-    protected Value(LIRKind lirKind) {
-        this.lirKind = lirKind;
+    protected Value(ValueKind<?> valueKind) {
+        this.valueKind = valueKind;
     }
 
     /**
@@ -68,27 +68,31 @@ public abstract class Value {
         return "|" + getPlatformKind().getTypeChar();
     }
 
-    public final LIRKind getLIRKind() {
-        return lirKind;
+    public final ValueKind<?> getValueKind() {
+        return valueKind;
+    }
+
+    public final <K extends ValueKind<K>> K getValueKind(Class<K> cls) {
+        return cls.cast(valueKind);
     }
 
     /**
      * Returns the platform specific kind used to store this value.
      */
     public final PlatformKind getPlatformKind() {
-        return lirKind.getPlatformKind();
+        return valueKind.getPlatformKind();
     }
 
     @Override
     public int hashCode() {
-        return 41 + lirKind.hashCode();
+        return 41 + valueKind.hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof Value) {
             Value that = (Value) obj;
-            return lirKind.equals(that.lirKind);
+            return valueKind.equals(that.valueKind);
         }
         return false;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.util.UnknownFormatConversionException;
  * Represents a reference to a Java method, either resolved or unresolved. Methods, like fields and
  * types, are resolved through {@link ConstantPool constant pools}.
  */
-public interface JavaMethod extends TrustedInterface {
+public interface JavaMethod {
 
     /**
      * Returns the name of this method.
