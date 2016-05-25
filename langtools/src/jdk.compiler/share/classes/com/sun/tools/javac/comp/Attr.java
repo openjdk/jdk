@@ -2666,7 +2666,7 @@ public class Attr extends JCTree.Visitor {
             @Override
             public boolean compatible(Type found, Type req, Warner warn) {
                 //return type must be compatible in both current context and assignment context
-                return chk.basicHandler.compatible(found, inferenceContext().asUndetVar(req), warn);
+                return chk.basicHandler.compatible(inferenceContext().asUndetVar(found), inferenceContext().asUndetVar(req), warn);
             }
 
             @Override
@@ -2678,6 +2678,7 @@ public class Attr extends JCTree.Visitor {
         class ExpressionLambdaReturnContext extends FunctionalReturnContext {
 
             JCExpression expr;
+            boolean expStmtExpected;
 
             ExpressionLambdaReturnContext(JCExpression expr, CheckContext enclosingContext) {
                 super(enclosingContext);
@@ -2685,10 +2686,23 @@ public class Attr extends JCTree.Visitor {
             }
 
             @Override
+            public void report(DiagnosticPosition pos, JCDiagnostic details) {
+                if (expStmtExpected) {
+                    enclosingContext.report(pos, diags.fragment(Fragments.StatExprExpected));
+                } else {
+                    super.report(pos, details);
+                }
+            }
+
+            @Override
             public boolean compatible(Type found, Type req, Warner warn) {
                 //a void return is compatible with an expression statement lambda
-                return TreeInfo.isExpressionStatement(expr) && req.hasTag(VOID) ||
-                        super.compatible(found, req, warn);
+                if (req.hasTag(VOID)) {
+                    expStmtExpected = true;
+                    return TreeInfo.isExpressionStatement(expr);
+                } else {
+                    return super.compatible(found, req, warn);
+                }
             }
         }
 

@@ -35,6 +35,7 @@ import jdk.test.lib.InfiniteLoop;
  * @test AllocationCodeBlobTest
  * @bug 8059624 8064669
  * @library /testlibrary /test/lib
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build AllocationCodeBlobTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

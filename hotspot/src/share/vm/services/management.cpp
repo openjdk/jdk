@@ -1609,8 +1609,8 @@ JVM_ENTRY(void, jmm_SetVMGlobal(JNIEnv *env, jstring flag_name, jvalue new_value
   }
   char* name = java_lang_String::as_utf8_string(fn);
 
-  FormatBuffer<80> err_msg("%s", "");
-  int succeed = WriteableFlags::set_flag(name, new_value, Flag::MANAGEMENT, err_msg);
+  FormatBuffer<80> error_msg("%s", "");
+  int succeed = WriteableFlags::set_flag(name, new_value, Flag::MANAGEMENT, error_msg);
 
   if (succeed != Flag::SUCCESS) {
     if (succeed == Flag::MISSING_VALUE) {
@@ -1619,7 +1619,7 @@ JVM_ENTRY(void, jmm_SetVMGlobal(JNIEnv *env, jstring flag_name, jvalue new_value
     } else {
       // all the other errors are reported as IAE with the appropriate error message
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-                err_msg.buffer());
+                error_msg.buffer());
     }
   }
   assert(succeed == Flag::SUCCESS, "Setting flag should succeed");

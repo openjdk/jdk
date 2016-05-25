@@ -30,9 +30,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import static java.util.stream.Collectors.joining;
@@ -47,11 +49,23 @@ class Feedback {
     // Patern for substituted fields within a customized format string
     private static final Pattern FIELD_PATTERN = Pattern.compile("\\{(.*?)\\}");
 
-    // Current mode
-    private Mode mode = new Mode("", false); // initial value placeholder during start-up
+    // Internal field name for truncation length
+    private static final String TRUNCATION_FIELD = "<truncation>";
 
-    // Mapping of mode names to mode modes
+    // For encoding to Properties String
+    private static final String RECORD_SEPARATOR = "\u241E";
+
+    // Current mode -- initial value is placeholder during start-up
+    private Mode mode = new Mode("");
+
+    // Retained current mode -- for checks
+    private Mode retainedCurrentMode = null;
+
+    // Mapping of mode name to mode
     private final Map<String, Mode> modeMap = new HashMap<>();
+
+    // Mapping of mode names to encoded retained mode
+    private final Map<String, String> retainedMap = new HashMap<>();
 
     // Mapping selector enum names to enums
     private final Map<String, Selector<?>> selectorMap = new HashMap<>();
@@ -103,12 +117,33 @@ class Feedback {
         return new Setter(messageHandler, at).setFormat();
     }
 
-    public boolean setNewMode(MessageHandler messageHandler, ArgTokenizer at) {
-        return new Setter(messageHandler, at).setNewMode();
+    public boolean setTruncation(MessageHandler messageHandler, ArgTokenizer at) {
+        return new Setter(messageHandler, at).setTruncation();
+    }
+
+    public boolean setMode(MessageHandler messageHandler, ArgTokenizer at) {
+        return new Setter(messageHandler, at).setMode();
     }
 
     public boolean setPrompt(MessageHandler messageHandler, ArgTokenizer at) {
         return new Setter(messageHandler, at).setPrompt();
+    }
+
+    public String retainFeedback(MessageHandler messageHandler, ArgTokenizer at) {
+        return new Setter(messageHandler, at).retainFeedback();
+    }
+
+    public String retainMode(MessageHandler messageHandler, ArgTokenizer at) {
+        return new Setter(messageHandler, at).retainMode();
+    }
+
+    public boolean restoreEncodedModes(MessageHandler messageHandler, String encoded) {
+        return new Setter(messageHandler, new ArgTokenizer("<init>", "")).restoreEncodedModes(encoded);
+    }
+
+    public void markModesReadOnly() {
+        modeMap.values().stream()
+                .forEach(m -> m.readOnly = true);
     }
 
     {
@@ -135,10 +170,12 @@ class Feedback {
         final String name;
 
         // Display command verification/information
-        final boolean commandFluff;
+        boolean commandFluff;
 
         // Event cases: class, method, expression, ...
         final Map<String, List<Setting>> cases;
+
+        boolean readOnly = false;
 
         String prompt = "\n-> ";
         String continuationPrompt = ">> ";
@@ -158,10 +195,9 @@ class Feedback {
          * @param name
          * @param commandFluff True if should display command fluff messages
          */
-        Mode(String name, boolean commandFluff) {
+        Mode(String name) {
             this.name = name;
-            this.commandFluff = commandFluff;
-            cases = new HashMap<>();
+            this.cases = new HashMap<>();
             add("name",       new Setting(ALWAYS, "%1$s"));
             add("type",       new Setting(ALWAYS, "%2$s"));
             add("value",      new Setting(ALWAYS, "%3$s"));
@@ -181,20 +217,79 @@ class Feedback {
          * Set up a copied mode.
          *
          * @param name
-         * @param commandFluff True if should display command fluff messages
          * @param m Mode to copy, or null for no fresh
          */
-        Mode(String name, boolean commandFluff, Mode m) {
+        Mode(String name, Mode m) {
             this.name = name;
-            this.commandFluff = commandFluff;
-            cases = new HashMap<>();
-
+            this.commandFluff = m.commandFluff;
+            this.prompt = m.prompt;
+            this.continuationPrompt = m.continuationPrompt;
+            this.cases = new HashMap<>();
             m.cases.entrySet().stream()
                     .forEach(fes -> fes.getValue()
                     .forEach(ing -> add(fes.getKey(), ing)));
 
-            this.prompt = m.prompt;
-            this.continuationPrompt = m.continuationPrompt;
+        }
+
+        /**
+         * Set up a mode reconstituted from a preferences string.
+         *
+         * @param it the encoded Mode broken into String chunks, may contain
+         * subsequent encoded modes
+         */
+        Mode(Iterator<String> it) {
+            this.name = it.next();
+            this.commandFluff = Boolean.parseBoolean(it.next());
+            this.prompt = it.next();
+            this.continuationPrompt = it.next();
+            cases = new HashMap<>();
+            String field;
+            while (!(field = it.next()).equals("***")) {
+                String open = it.next();
+                assert open.equals("(");
+                List<Setting> settings = new ArrayList<>();
+                String bits;
+                while (!(bits = it.next()).equals(")")) {
+                    String format = it.next();
+                    Setting ing = new Setting(Long.parseLong(bits), format);
+                    settings.add(ing);
+                }
+                cases.put(field, settings);
+            }
+        }
+
+        /**
+         * Set if this mode displays informative/confirmational messages on
+         * commands.
+         *
+         * @param fluff the value to set
+         */
+        void setCommandFluff(boolean fluff) {
+            commandFluff = fluff;
+        }
+
+        /**
+         * Encodes the mode into a String so it can be saved in Preferences.
+         *
+         * @return the string representation
+         */
+        String encode() {
+            List<String> el = new ArrayList<>();
+            el.add(name);
+            el.add(String.valueOf(commandFluff));
+            el.add(prompt);
+            el.add(continuationPrompt);
+            for (Entry<String, List<Setting>> es : cases.entrySet()) {
+                el.add(es.getKey());
+                el.add("(");
+                for (Setting ing : es.getValue()) {
+                    el.add(String.valueOf(ing.enumBits));
+                    el.add(ing.format);
+                }
+                el.add(")");
+            }
+            el.add("***");
+            return String.join(RECORD_SEPARATOR, el);
         }
 
         private boolean add(String field, Setting ing) {
@@ -251,13 +346,42 @@ class Feedback {
             return sb.toString();
         }
 
+        // Compute the display output given full context and values
         String format(FormatCase fc, FormatAction fa, FormatWhen fw,
                     FormatResolve fr, FormatUnresolved fu, FormatErrors fe,
                     String name, String type, String value, String unresolved, List<String> errorLines) {
+            // Convert the context into a bit representation used as selectors for store field formats
             long bits = bits(fc, fa, fw, fr, fu, fe);
             String fname = name==null? "" : name;
             String ftype = type==null? "" : type;
-            String fvalue = value==null? "" : value;
+            // Compute the representation of value
+            String fvalue;
+            if (value==null) {
+                fvalue = "";
+            } else {
+                // Retrieve the truncation length
+                String truncField = format(TRUNCATION_FIELD, bits);
+                if (truncField.isEmpty()) {
+                    // No truncation set, use whole value
+                    fvalue = value;
+                } else {
+                    // Convert truncation length to int
+                    // this is safe since it has been tested before it is set
+                    int trunc = Integer.parseUnsignedInt(truncField);
+                    if (value.length() > trunc) {
+                        if (trunc <= 5) {
+                            // Very short truncations have no room for "..."
+                            fvalue = value.substring(0, trunc);
+                        } else {
+                            // Normal truncation, make total length equal truncation length
+                            fvalue = value.substring(0, trunc - 4) + " ...";
+                        }
+                    } else {
+                        // Within truncation length, use whole value
+                        fvalue = value;
+                    }
+                }
+            }
             String funresolved = unresolved==null? "" : unresolved;
             String errors = errorLines.stream()
                     .map(el -> String.format(
@@ -554,8 +678,12 @@ class Feedback {
         // For /set prompt <mode> "<prompt>" "<continuation-prompt>"
         boolean setPrompt() {
             Mode m = nextMode();
-            String prompt = nextFormat();
-            String continuationPrompt = nextFormat();
+            if (valid && m.readOnly) {
+                errorat("jshell.err.not.valid.with.predefined.mode", m.name);
+                valid = false;
+            }
+            String prompt = valid ? nextFormat() : null;
+            String continuationPrompt = valid ? nextFormat() : null;
             if (valid) {
                 m.setPrompts(prompt, continuationPrompt);
             } else {
@@ -564,36 +692,71 @@ class Feedback {
             return valid;
         }
 
-        // For /set newmode <new-mode> [command|quiet [<old-mode>]]
-        boolean setNewMode() {
-            String umode = at.next();
-            if (umode == null) {
-                errorat("jshell.err.feedback.expected.new.feedback.mode");
-                valid = false;
-            }
-            if (modeMap.containsKey(umode)) {
-                errorat("jshell.err.feedback.expected.mode.name", umode);
-                valid = false;
-            }
-            String[] fluffOpt = at.next("command", "quiet");
-            boolean fluff = fluffOpt == null || fluffOpt.length != 1 || "command".equals(fluffOpt[0]);
-            if (fluffOpt != null && fluffOpt.length != 1) {
-                errorat("jshell.err.feedback.command.quiet");
-                valid = false;
-            }
+        /**
+         * Set mode. Create, changed, or delete a feedback mode. For @{code /set
+         * mode <mode> [<old-mode>] [-command|-quiet|-delete]}.
+         *
+         * @return true if successful
+         */
+        boolean setMode() {
+            at.allowedOptions("-command", "-quiet", "-delete");
+            String umode = nextModeIdentifier();
             Mode om = null;
             String omode = at.next();
-            if (omode != null) {
+            if (valid && omode != null) {
                 om = toMode(omode);
             }
+            checkOptionsAndRemainingInput();
+            boolean commandOption = at.hasOption("-command");
+            boolean quietOption = at.hasOption("-quiet");
+            boolean deleteOption = at.hasOption("-delete");
+            // Only one (or zero) of the options can be used
+            if (valid && at.optionCount() > 1) {
+                errorat("jshell.err.conflicting.options");
+                valid = false;
+            }
             if (valid) {
-                Mode nm = (om != null)
-                        ? new Mode(umode, fluff, om)
-                        : new Mode(umode, fluff);
-                modeMap.put(umode, nm);
-                fluffmsg("jshell.msg.feedback.new.mode", nm.name);
-            } else {
-                fluffmsg("jshell.msg.see", "/help /set newmode");
+                Mode m = modeMap.get(umode);
+                if (m != null && m.readOnly) {
+                    // Cannot make changes to a the built-in modes
+                    errorat("jshell.err.not.valid.with.predefined.mode", m.name);
+                    valid = false;
+                } else if (deleteOption) {
+                    if (m == null) {
+                        // Cannot delete a mode that does not exist
+                        errorat("jshell.err.mode.unknown", umode);
+                        valid = false;
+                    } else if (mode.name.equals(m.name)) {
+                        // Cannot delete the current mode out from under us
+                        errorat("jshell.err.cannot.delete.current.mode", umode);
+                        valid = false;
+                    } else {
+                        // Remove the mode
+                        modeMap.remove(umode);
+                    }
+                } else {
+                    if (om != null || m == null) {
+                        // We are copying and existing mode and/or creating a
+                        // brand-new mode -- in either case create from scratch
+                        m = (om != null)
+                                ? new Mode(umode, om)
+                                : new Mode(umode);
+                        modeMap.put(umode, m);
+                        fluffmsg("jshell.msg.feedback.new.mode", m.name);
+                        // Set the current mode by name, in case we just smashed
+                        // the current mode
+                        if (umode.equals(mode.name)) {
+                            mode = modeMap.get(mode.name);
+                        }
+                    }
+                    if (commandOption || quietOption || om == null) {
+                        // set command fluff, if explicit, or wholly new
+                        m.setCommandFluff(!quietOption);
+                    }
+                }
+            }
+            if (!valid) {
+                fluffmsg("jshell.msg.see", "/help /set mode");
             }
             return valid;
         }
@@ -601,7 +764,7 @@ class Feedback {
         // For /set feedback <mode>
         boolean setFeedback() {
             Mode m = nextMode();
-            if (valid && m != null) {
+            if (valid) {
                 mode = m;
                 fluffmsg("jshell.msg.feedback.mode", mode.name);
             } else {
@@ -614,12 +777,149 @@ class Feedback {
         // For /set format <mode> "<format>" <selector>...
         boolean setFormat() {
             Mode m = nextMode();
-            String field = at.next();
-            if (field == null || at.isQuoted()) {
-                errorat("jshell.err.feedback.expected.field");
+            if (valid && m.readOnly) {
+                errorat("jshell.err.not.valid.with.predefined.mode", m.name);
                 valid = false;
             }
-            String format = valid? nextFormat() : null;
+            String field = valid
+                    ? toIdentifier(at.next(), "jshell.err.missing.field", "jshell.err.field.name")
+                    : null;
+            String format = valid ? nextFormat() : null;
+            return installFormat(m, field, format, "/help /set format");
+        }
+
+        // For /set truncation <mode> <length> <selector>...
+        boolean setTruncation() {
+            Mode m = nextMode();
+            if (valid && m.readOnly) {
+                errorat("jshell.err.not.valid.with.predefined.mode", m.name);
+                valid = false;
+            }
+            String length = at.next();
+            if (length == null) {
+                errorat("jshell.err.truncation.expected.length");
+                valid = false;
+            } else {
+                try {
+                    // Assure that integer format is correct
+                    Integer.parseUnsignedInt(length);
+                } catch (NumberFormatException ex) {
+                    errorat("jshell.err.truncation.length.not.integer", length);
+                    valid = false;
+                }
+            }
+            // install length into an internal format field
+            return installFormat(m, TRUNCATION_FIELD, length, "/help /set truncation");
+        }
+
+        String retainFeedback() {
+            String umode = at.next();
+            if (umode != null) {
+                toModeIdentifier(umode);
+                Mode m = valid ? toMode(umode) : null;
+                if (valid && !m.readOnly && !retainedMap.containsKey(m.name)) {
+                    errorat("jshell.err.retained.feedback.mode.must.be.retained.or.predefined");
+                    valid = false;
+                }
+                if (valid) {
+                    mode = m;
+                    retainedCurrentMode = m;
+                    fluffmsg("jshell.msg.feedback.mode", mode.name);
+                } else {
+                    fluffmsg("jshell.msg.see", "/help /retain feedback");
+                    return null;
+                }
+            }
+            return mode.name;
+        }
+
+        /**
+         * Retain (or delete from retention) a previously set mode.
+         *
+         * @return all retained modes encoded into a String
+         */
+        String retainMode() {
+            at.allowedOptions("-delete");
+            String umode = nextModeIdentifier();
+            // -delete is the only valid option, fail for anything else
+            checkOptionsAndRemainingInput();
+            boolean deleteOption = at.hasOption("-delete");
+            // Lookup the mode
+            Mode m;
+            if (!valid) {
+                m = null;
+                // Skip this stuff, we have failed already
+            } else if (deleteOption) {
+                // If delete, allow for deleting, from retention, a mode that
+                // has been locally deleted but is retained.
+                // Also require the full name.
+                m = modeMap.get(umode);
+                if (m == null && !retainedMap.containsKey(umode)) {
+                    errorat("jshell.err.mode.unknown", umode);
+                    valid = false;
+                }
+            } else {
+                // For retain do normal lookup and checking
+                m = toMode(umode);
+            }
+
+            // Built-in modes cannot be retained or deleted
+            if (valid && m != null && m.readOnly) {
+                errorat("jshell.err.not.valid.with.predefined.mode", umode);
+                valid = false;
+            }
+            if (valid) {
+                if (deleteOption) {
+                    if (mode.name.equals(umode)) {
+                        // Cannot delete the current mode out from under us
+                        errorat("jshell.err.cannot.delete.current.mode", umode);
+                        valid = false;
+                    } else if (retainedCurrentMode != null && retainedCurrentMode.name.equals(umode)) {
+                        // Cannot delete the retained mode or re-start has error
+                        errorat("jshell.err.cannot.delete.retained.mode", umode);
+                        valid = false;
+                    } else {
+                        // Delete the mode
+                        modeMap.remove(umode);
+                        retainedMap.remove(umode);
+                    }
+                } else {
+                    // Retain the current encoding
+                    retainedMap.put(m.name, m.encode());
+                }
+            }
+            if (valid) {
+                // Join all the retained encodings
+                return String.join(RECORD_SEPARATOR, retainedMap.values());
+            } else {
+                fluffmsg("jshell.msg.see", "/help /retain mode");
+                return null;
+            }
+        }
+
+        boolean restoreEncodedModes(String allEncoded) {
+            try {
+                // Iterate over each record in each encoded mode
+                String[] ms = allEncoded.split(RECORD_SEPARATOR);
+                Iterator<String> itr = Arrays.asList(ms).iterator();
+                while (itr.hasNext()) {
+                    // Reconstruct the encoded mode
+                    Mode m = new Mode(itr);
+                    modeMap.put(m.name, m);
+                    // Continue to retain it a new retains occur
+                    retainedMap.put(m.name, m.encode());
+                }
+                return true;
+            } catch (Throwable exc) {
+                // Catastrophic corruption -- clear map
+                errorat("jshell.err.retained.mode.failure", exc);
+                retainedMap.clear();
+                return false;
+            }
+        }
+
+        // install the format of a field under parsed selectors
+        boolean installFormat(Mode m, String field, String format, String help) {
             String slRaw;
             List<SelectorList> slList = new ArrayList<>();
             while (valid && (slRaw = at.next()) != null) {
@@ -629,8 +929,10 @@ class Feedback {
             }
             if (valid) {
                 if (slList.isEmpty()) {
+                    // No selectors specified, then always the format
                     m.set(field, ALWAYS, format);
                 } else {
+                    // Set the format of the field for specified selector
                     slList.stream()
                             .forEach(sl -> m.set(field,
                                 sl.cases.getSet(), sl.actions.getSet(), sl.whens.getSet(),
@@ -638,19 +940,73 @@ class Feedback {
                                 format));
                 }
             } else {
-                fluffmsg("jshell.msg.see", "/help /set format");
+                fluffmsg("jshell.msg.see", help);
             }
             return valid;
         }
 
+        void checkOptionsAndRemainingInput() {
+            if (!valid) {
+                return;
+            }
+            String junk = at.remainder();
+            if (!junk.isEmpty()) {
+                errorat("jshell.err.unexpected.at.end", junk);
+                valid = false;
+            } else {
+                String bad = at.badOptions();
+                if (!bad.isEmpty()) {
+                    errorat("jshell.err.unknown.option", bad);
+                    valid = false;
+                }
+            }
+        }
+
+        /**
+         * Check that the specified string is an identifier (Java identifier).
+         * If null display the missing error. If it is not an identifier,
+         * display the error.
+         *
+         * @param id the string to check, MUST be the most recently retrieved
+         * token from 'at'.
+         * @param missing the resource error to display if null
+         * @param err the resource error to display if not an identifier
+         * @return the identifier string, or null if null or not an identifier
+         */
+        String toIdentifier(String id, String missing, String err) {
+            if (id == null) {
+                errorat(missing);
+                valid = false;
+                return null;
+            }
+            if (at.isQuoted() ||
+                    !id.codePoints().allMatch(cp -> Character.isJavaIdentifierPart(cp))) {
+                errorat(err, id);
+                valid = false;
+                return null;
+            }
+            return id;
+        }
+
+        String toModeIdentifier(String id) {
+            return toIdentifier(id, "jshell.err.missing.mode", "jshell.err.mode.name");
+        }
+
+        String nextModeIdentifier() {
+            return toModeIdentifier(at.next());
+        }
+
         Mode nextMode() {
-            String umode = at.next();
+            String umode = nextModeIdentifier();
             return toMode(umode);
         }
 
         Mode toMode(String umode) {
+            if (!valid) {
+                return null;
+            }
             if (umode == null) {
-                errorat("jshell.err.feedback.expected.mode");
+                errorat("jshell.err.missing.mode");
                 valid = false;
                 return null;
             }

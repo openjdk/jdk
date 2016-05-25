@@ -364,8 +364,7 @@ class Http2Connection implements BufferHandler {
     }
 
     void shutdown(Throwable t) {
-        System.err.println("Shutdown: " + t);
-        t.printStackTrace();
+        Log.logError(t);
         closed = true;
         client2.deleteConnection(this);
         Collection<Stream> c = streams.values();

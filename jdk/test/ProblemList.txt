@@ -123,8 +123,6 @@ java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 gen
 
 # jdk_lang
 
-java/lang/ClassLoader/deadlock/GetResource.java                 8029891 generic-all
-
 java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-all
 
 ############################################################################
@@ -193,8 +191,6 @@ java/rmi/server/Unreferenced/finiteGCLatency/FiniteGCLatency.java 7140992 generi
 java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java 7146541 linux-all
 
 java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java       7191877 generic-all
-
-sun/rmi/transport/proxy/EagerHttpFallback.java                  7195095 generic-all
 
 java/rmi/activation/Activatable/extLoadedImpl/ext.sh            8062724 generic-all
 
@@ -287,9 +283,9 @@ sun/security/krb5/auto/HttpNegotiateServer.java                 8038079 generic-
 
 sun/security/tools/keytool/autotest.sh                          8130302 generic-all
 
-sun/security/provider/NSASuiteB/TestDSAGenParameterSpec.java    8137255 generic-all
-
 sun/security/x509/URICertStore/ExtensionsWithLDAP.java          8134577 generic-all
+
+sun/security/provider/SecureRandom/StrongSecureRandom.java      8157387 linux-all
 
 ############################################################################
 
@@ -326,8 +322,6 @@ tools/pack200/Pack200Test.java                                  8059906,8151901 
 tools/launcher/FXLauncherTest.java                              8068049 linux-all,macosx-all
 
 tools/pack200/Pack200Props.java                                 8155857 generic-all
-
-tools/pack200/TestNormal.java                                   8156807 windows-all
 
 ############################################################################
 

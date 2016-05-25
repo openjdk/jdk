@@ -45,6 +45,7 @@ import jdk.internal.jimage.ImageLocation;
 import jdk.internal.jimage.ImageReader;
 import jdk.internal.jimage.ImageReaderFactory;
 import jdk.internal.module.ModuleHashes;
+import jdk.internal.module.ModuleHashes.HashSupplier;
 import jdk.internal.module.SystemModules;
 import jdk.internal.module.ModulePatcher;
 import jdk.internal.perf.PerfCounter;
@@ -84,57 +85,23 @@ class SystemModuleFinder implements ModuleFinder {
         long t0 = System.nanoTime();
         imageReader = ImageReaderFactory.getImageReader();
 
-        String[] moduleNames = SystemModules.MODULE_NAMES;
-        ModuleDescriptor[] descriptors = null;
+        String[] names = moduleNames();
+        ModuleDescriptor[] descriptors = descriptors(names);
 
-        boolean fastLoad = System.getProperty("jdk.installed.modules.disable") == null;
-        if (fastLoad) {
-            // fast loading of ModuleDescriptor of installed modules
-            descriptors = SystemModules.modules();
-        }
-
-        int n = moduleNames.length;
+        int n = names.length;
         moduleCount.add(n);
 
         Set<ModuleReference> mods = new HashSet<>(n);
         Map<String, ModuleReference> map = new HashMap<>(n);
 
         for (int i = 0; i < n; i++) {
-            String mn = moduleNames[i];
-            ModuleDescriptor md;
-            String hash;
-            if (fastLoad) {
-                md = descriptors[i];
-                hash = SystemModules.MODULES_TO_HASH[i];
-            } else {
-                // fallback to read module-info.class
-                // if fast loading of ModuleDescriptors is disabled
-                ImageLocation location = imageReader.findLocation(mn, "module-info.class");
-                md = ModuleDescriptor.read(imageReader.getResourceBuffer(location));
-                hash = null;
-            }
-            if (!md.name().equals(mn))
-                throw new InternalError();
+            ModuleDescriptor md = descriptors[i];
 
             // create the ModuleReference
-
-            URI uri = URI.create("jrt:/" + mn);
-
-            Supplier<ModuleReader> readerSupplier = new Supplier<>() {
-                @Override
-                public ModuleReader get() {
-                    return new ImageModuleReader(mn, uri);
-                }
-            };
-
-            ModuleReference mref =
-                new ModuleReference(md, uri, readerSupplier, hashSupplier(hash));
-
-            // may need a reference to a patched module if -Xpatch specified
-            mref = ModulePatcher.interposeIfNeeded(mref);
+            ModuleReference mref = toModuleReference(md, hashSupplier(i, names[i]));
 
             mods.add(mref);
-            map.put(mn, mref);
+            map.put(names[i], mref);
 
             // counters
             packageCount.add(md.packages().size());
@@ -147,16 +114,114 @@ class SystemModuleFinder implements ModuleFinder {
         initTime.addElapsedTimeFrom(t0);
     }
 
-    private static ModuleHashes.HashSupplier hashSupplier(String hash) {
-        if (hash == null)
-            return null;
+    /*
+     * Returns an array of ModuleDescriptor of the given module names.
+     *
+     * This obtains ModuleDescriptors from SystemModules class that is generated
+     * from the jlink system-modules plugin.  ModuleDescriptors have already
+     * been validated at link time.
+     *
+     * If java.base is patched, or fastpath is disabled for troubleshooting
+     * purpose, it will fall back to find system modules via jrt file system.
+     */
+    private static ModuleDescriptor[] descriptors(String[] names) {
+        // fastpath is enabled by default.
+        // It can be disabled for troubleshooting purpose.
+        boolean disabled =
+            System.getProperty("jdk.system.module.finder.disabledFastPath") != null;
 
-        return new ModuleHashes.HashSupplier() {
+        // fast loading of ModuleDescriptor of system modules
+        if (isFastPathSupported() && !disabled)
+            return SystemModules.modules();
+
+        // if fast loading of ModuleDescriptors is disabled
+        // fallback to read module-info.class
+        ModuleDescriptor[] descriptors = new ModuleDescriptor[names.length];
+        for (int i = 0; i < names.length; i++) {
+            String mn = names[i];
+            ImageLocation loc = imageReader.findLocation(mn, "module-info.class");
+            descriptors[i] = ModuleDescriptor.read(imageReader.getResourceBuffer(loc));
+
+            // add the recorded hashes of tied modules
+            Hashes.add(descriptors[i]);
+        }
+        return descriptors;
+    }
+
+    private static boolean isFastPathSupported() {
+       return SystemModules.MODULE_NAMES.length > 0;
+    }
+
+    private static String[] moduleNames() {
+        if (isFastPathSupported())
+            // module names recorded at link time
+            return SystemModules.MODULE_NAMES;
+
+        // this happens when java.base is patched with java.base
+        // from an exploded image
+        return imageReader.getModuleNames();
+    }
+
+    private static ModuleReference toModuleReference(ModuleDescriptor md,
+                                                     HashSupplier hash)
+    {
+        String mn = md.name();
+        URI uri = URI.create("jrt:/" + mn);
+
+        Supplier<ModuleReader> readerSupplier = new Supplier<>() {
             @Override
-            public String generate(String algorithm) {
-                return hash;
+            public ModuleReader get() {
+                return new ImageModuleReader(mn, uri);
             }
         };
+
+        ModuleReference mref =
+            new ModuleReference(md, uri, readerSupplier, hash);
+
+        // may need a reference to a patched module if -Xpatch specified
+        mref = ModulePatcher.interposeIfNeeded(mref);
+
+        return mref;
+    }
+
+    private static HashSupplier hashSupplier(int index, String name) {
+        if (isFastPathSupported()) {
+            return new HashSupplier() {
+                @Override
+                public String generate(String algorithm) {
+                    return SystemModules.MODULES_TO_HASH[index];
+                }
+            };
+        } else {
+            return Hashes.hashFor(name);
+        }
+    }
+
+    /*
+     * This helper class is only used when SystemModules is patched.
+     * It will get the recorded hashes from module-info.class.
+     */
+    private static class Hashes {
+        static Map<String, String> hashes = new HashMap<>();
+
+        static void add(ModuleDescriptor descriptor) {
+            Optional<ModuleHashes> ohashes = descriptor.hashes();
+            if (ohashes.isPresent()) {
+                hashes.putAll(ohashes.get().hashes());
+            }
+        }
+
+        static HashSupplier hashFor(String name) {
+            if (!hashes.containsKey(name))
+                return null;
+
+            return new HashSupplier() {
+                @Override
+                public String generate(String algorithm) {
+                    return hashes.get(name);
+                }
+            };
+        }
     }
 
     SystemModuleFinder() { }
@@ -207,9 +272,9 @@ class SystemModuleFinder implements ModuleFinder {
          * if not found.
          */
         private ImageLocation findImageLocation(String name) throws IOException {
+            Objects.requireNonNull(name);
             if (closed)
                 throw new IOException("ModuleReader is closed");
-
             if (imageReader != null) {
                 return imageReader.findLocation(module, name);
             } else {
@@ -257,6 +322,7 @@ class SystemModuleFinder implements ModuleFinder {
 
         @Override
         public void release(ByteBuffer bb) {
+            Objects.requireNonNull(bb);
             ImageReader.releaseByteBuffer(bb);
         }
 

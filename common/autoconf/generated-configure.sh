@@ -652,21 +652,7 @@ MEMORY_SIZE
 NUM_CORES
 BUILD_FAILURE_HANDLER
 ENABLE_INTREE_EC
-JVM_VARIANT_CORE
-JVM_VARIANT_ZEROSHARK
-JVM_VARIANT_ZERO
-JVM_VARIANT_HOTSPOT
-JVM_VARIANT_MINIMAL1
-JVM_VARIANT_CLIENT
-JVM_VARIANT_SERVER
-JVM_VARIANTS_COMMA
-TEST_IN_BUILD
-HOTSPOT_MAKE_ARGS
-MACOSX_UNIVERSAL
-DEBUG_CLASSFILES
-FASTDEBUG
-VARIANT
-USE_NEW_HOTSPOT_BUILD
+STLPORT_LIB
 LIBZIP_CAN_USE_MMAP
 LIBDL
 LIBM
@@ -702,6 +688,7 @@ LIBCXX
 STATIC_CXX_SETTING
 FIXPATH_DETACH_FLAG
 FIXPATH
+BUILD_GTEST
 VALID_JVM_FEATURES
 JVM_FEATURES_custom
 JVM_FEATURES_zeroshark
@@ -963,6 +950,8 @@ OTOOL
 LDD
 ZIP
 UNZIP
+TAR_SUPPORTS_TRANSFORM
+TAR_INCLUDE_PARAM
 FIND_DELETE
 OUTPUT_SYNC
 OUTPUT_SYNC_SUPPORTED
@@ -995,6 +984,9 @@ HOTSPOT_BUILD_CPU_ARCH
 HOTSPOT_BUILD_CPU
 HOTSPOT_BUILD_OS_TYPE
 HOTSPOT_BUILD_OS
+OPENJDK_BUILD_BUNDLE_PLATFORM
+OPENJDK_BUILD_CPU_BUNDLE
+OPENJDK_BUILD_OS_BUNDLE
 OPENJDK_BUILD_OS_EXPORT_DIR
 OPENJDK_BUILD_CPU_JLI_CFLAGS
 OPENJDK_BUILD_CPU_OSARCH
@@ -1009,6 +1001,9 @@ HOTSPOT_TARGET_OS_TYPE
 HOTSPOT_TARGET_OS
 DEFINE_CROSS_COMPILE_ARCH
 LP64
+OPENJDK_TARGET_BUNDLE_PLATFORM
+OPENJDK_TARGET_CPU_BUNDLE
+OPENJDK_TARGET_OS_BUNDLE
 OPENJDK_TARGET_OS_EXPORT_DIR
 OPENJDK_TARGET_CPU_JLI_CFLAGS
 OPENJDK_TARGET_CPU_OSARCH
@@ -1078,6 +1073,8 @@ MKTEMP
 MKDIR
 LS
 LN
+GZIP
+GUNZIP
 HEAD
 FIND
 FILE
@@ -1202,6 +1199,7 @@ enable_native_coverage
 enable_dtrace
 with_jvm_features
 with_jvm_interpreter
+enable_hotspot_gtest
 with_stdc__lib
 with_msvcr_dll
 with_msvcp_dll
@@ -1227,8 +1225,6 @@ with_lcms
 with_dxsdk
 with_dxsdk_lib
 with_dxsdk_include
-enable_new_hotspot_build
-enable_hotspot_test_in_build
 enable_jtreg_failure_handler
 with_num_cores
 with_memory_size
@@ -1262,6 +1258,8 @@ EXPR
 FILE
 FIND
 HEAD
+GUNZIP
+GZIP
 LN
 LS
 MKDIR
@@ -1996,15 +1994,11 @@ Optional Features:
   --enable-dtrace[=yes/no/auto]
                           enable dtrace. Default is auto, where dtrace is
                           enabled if all dependencies are present.
+  --disable-hotspot-gtest Disables building of the Hotspot unit tests
   --disable-freetype-bundling
                           disable bundling of the freetype library with the
                           build result [enabled on Windows or when using
                           --with-freetype, disabled otherwise]
-  --disable-new-hotspot-build
-                          disable the new hotspot build system (use the old)
-                          [enabled]
-  --enable-hotspot-test-in-build
-                          run the Queens test after Hotspot build [disabled]
   --enable-jtreg-failure-handler
                           forces build of the jtreg failure handler to be
                           enabled, missing dependencies become fatal errors.
@@ -2205,6 +2199,8 @@ Some influential environment variables:
   FILE        Override default value for FILE
   FIND        Override default value for FIND
   HEAD        Override default value for HEAD
+  GUNZIP      Override default value for GUNZIP
+  GZIP        Override default value for GZIP
   LN          Override default value for LN
   LS          Override default value for LS
   MKDIR       Override default value for MKDIR
@@ -3707,6 +3703,8 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
+
+
 # Check if build directory is on local disk. If not possible to determine,
 # we prefer to claim it's local.
 # Argument 1: directory to test
@@ -4303,9 +4301,8 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 #
 
 
-###############################################################################
-# Support for old hotspot build. Remove once new hotspot build has proven
-# to work satisfactory.
+################################################################################
+# Check if gtest should be built
 #
 
 
@@ -4732,6 +4729,13 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 ################################################################################
 
 
+################################################################################
+# libstlport.so.1 is needed for running gtest on Solaris. Find it to
+# redistribute it in the test image.
+################################################################################
+
+
+
 #
 # Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -5076,7 +5080,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1462970869
+DATE_WHEN_GENERATED=1463732692
 
 ###############################################################################
 #
@@ -8404,6 +8408,414 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
+  if [ -z "${GUNZIP+x}" ]; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in gunzip
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_GUNZIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $GUNZIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_GUNZIP="$GUNZIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_GUNZIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+GUNZIP=$ac_cv_path_GUNZIP
+if test -n "$GUNZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GUNZIP" >&5
+$as_echo "$GUNZIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$GUNZIP" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !GUNZIP! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!GUNZIP!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xGUNZIP" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of GUNZIP from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of GUNZIP from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in gunzip
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_GUNZIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $GUNZIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_GUNZIP="$GUNZIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_GUNZIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+GUNZIP=$ac_cv_path_GUNZIP
+if test -n "$GUNZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GUNZIP" >&5
+$as_echo "$GUNZIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$GUNZIP" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if we try to supply an empty value
+      if test "x$GUNZIP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool GUNZIP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool GUNZIP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GUNZIP" >&5
+$as_echo_n "checking for GUNZIP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$GUNZIP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool GUNZIP=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool GUNZIP=$tool_basename" >&6;}
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_GUNZIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $GUNZIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_GUNZIP="$GUNZIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_GUNZIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+GUNZIP=$ac_cv_path_GUNZIP
+if test -n "$GUNZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GUNZIP" >&5
+$as_echo "$GUNZIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+          if test "x$GUNZIP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool GUNZIP=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool GUNZIP=$tool_specified" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GUNZIP" >&5
+$as_echo_n "checking for GUNZIP... " >&6; }
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+            as_fn_error $? "User supplied tool GUNZIP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+        fi
+      fi
+    fi
+
+  fi
+
+
+
+  if test "x$GUNZIP" = x; then
+    as_fn_error $? "Could not find required tool for GUNZIP" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if [ -z "${GZIP+x}" ]; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in pigz gzip
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_GZIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $GZIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_GZIP="$GZIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_GZIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+GZIP=$ac_cv_path_GZIP
+if test -n "$GZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GZIP" >&5
+$as_echo "$GZIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$GZIP" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !GZIP! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!GZIP!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xGZIP" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of GZIP from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of GZIP from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in pigz gzip
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_GZIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $GZIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_GZIP="$GZIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_GZIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+GZIP=$ac_cv_path_GZIP
+if test -n "$GZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GZIP" >&5
+$as_echo "$GZIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$GZIP" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if we try to supply an empty value
+      if test "x$GZIP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool GZIP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool GZIP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GZIP" >&5
+$as_echo_n "checking for GZIP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$GZIP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool GZIP=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool GZIP=$tool_basename" >&6;}
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_GZIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $GZIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_GZIP="$GZIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_GZIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+GZIP=$ac_cv_path_GZIP
+if test -n "$GZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GZIP" >&5
+$as_echo "$GZIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+          if test "x$GZIP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool GZIP=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool GZIP=$tool_specified" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GZIP" >&5
+$as_echo_n "checking for GZIP... " >&6; }
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+            as_fn_error $? "User supplied tool GZIP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+        fi
+      fi
+    fi
+
+  fi
+
+
+
+  if test "x$GZIP" = x; then
+    as_fn_error $? "Could not find required tool for GZIP" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
   if [ -z "${LN+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in ln
@@ -10854,7 +11266,7 @@ $as_echo "$tool_specified" >&6; }
 
   if [ -z "${TAR+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
-    for ac_prog in tar
+    for ac_prog in gtar tar
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -10912,7 +11324,7 @@ done
 $as_echo "$as_me: WARNING: Ignoring value of TAR from the environment. Use command line variables instead." >&2;}
       fi
       # Try to locate tool using the code snippet
-      for ac_prog in tar
+      for ac_prog in gtar tar
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -15428,6 +15840,23 @@ $as_echo "$COMPILE_TYPE" >&6; }
   fi
 
 
+  # The new version string in JDK 9 also defined new naming of OS and ARCH for bundles
+  # Macosx is osx and x86_64 is x64
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    OPENJDK_TARGET_OS_BUNDLE="osx"
+  else
+    OPENJDK_TARGET_OS_BUNDLE="$OPENJDK_TARGET_OS"
+  fi
+  if test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+    OPENJDK_TARGET_CPU_BUNDLE="x64"
+  else
+    OPENJDK_TARGET_CPU_BUNDLE="$OPENJDK_TARGET_CPU"
+  fi
+  OPENJDK_TARGET_BUNDLE_PLATFORM="${OPENJDK_TARGET_OS_BUNDLE}-${OPENJDK_TARGET_CPU_BUNDLE}"
+
+
+
+
   if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
     A_LP64="LP64:="
     # -D_LP64=1 is only set on linux and mac. Setting on windows causes diff in
@@ -15582,6 +16011,23 @@ $as_echo "$COMPILE_TYPE" >&6; }
   else
       OPENJDK_BUILD_OS_EXPORT_DIR=${OPENJDK_BUILD_OS_TYPE}
   fi
+
+
+  # The new version string in JDK 9 also defined new naming of OS and ARCH for bundles
+  # Macosx is osx and x86_64 is x64
+  if test "x$OPENJDK_BUILD_OS" = xmacosx; then
+    OPENJDK_BUILD_OS_BUNDLE="osx"
+  else
+    OPENJDK_BUILD_OS_BUNDLE="$OPENJDK_TARGET_OS"
+  fi
+  if test "x$OPENJDK_BUILD_CPU" = xx86_64; then
+    OPENJDK_BUILD_CPU_BUNDLE="x64"
+  else
+    OPENJDK_BUILD_CPU_BUNDLE="$OPENJDK_BUILD_CPU"
+  fi
+  OPENJDK_BUILD_BUNDLE_PLATFORM="${OPENJDK_BUILD_OS_BUNDLE}-${OPENJDK_BUILD_CPU_BUNDLE}"
+
+
 
 
   if test "x$OPENJDK_BUILD_CPU_BITS" = x64; then
@@ -16297,7 +16743,10 @@ $as_echo "$JVM_VARIANTS" >&6; }
   # Check that the selected variants are valid
 
   # grep filter function inspired by a comment to http://stackoverflow.com/a/1617326
-  INVALID_VARIANTS=`$GREP -Fvx "${VALID_JVM_VARIANTS// /$'\n'}" <<< "${JVM_VARIANTS// /$'\n'}"`
+  # Notice that the original variant failes on SLES 10 and 11
+  NEEDLE=${VALID_JVM_VARIANTS// /$'\n'}
+  STACK=${JVM_VARIANTS// /$'\n'}
+  INVALID_VARIANTS=`$GREP -Fvx "${NEEDLE}" <<< "${STACK}"`
   if test "x$INVALID_VARIANTS" != x; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: Unknown variant(s) specified: $INVALID_VARIANTS" >&5
 $as_echo "$as_me: Unknown variant(s) specified: $INVALID_VARIANTS" >&6;}
@@ -16306,7 +16755,9 @@ $as_echo "$as_me: Unknown variant(s) specified: $INVALID_VARIANTS" >&6;}
 
   # All "special" variants share the same output directory ("server")
   VALID_MULTIPLE_JVM_VARIANTS="server client minimal"
-  INVALID_MULTIPLE_VARIANTS=`$GREP -Fvx "${VALID_MULTIPLE_JVM_VARIANTS// /$'\n'}" <<< "${JVM_VARIANTS// /$'\n'}"`
+  NEEDLE=${VALID_MULTIPLE_JVM_VARIANTS// /$'\n'}
+  STACK=${JVM_VARIANTS// /$'\n'}
+  INVALID_MULTIPLE_VARIANTS=`$GREP -Fvx "${NEEDLE}" <<< "${STACK}"`
   if  test "x$INVALID_MULTIPLE_VARIANTS" != x && test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = xtrue; then
     as_fn_error $? "You cannot build multiple variants with anything else than $VALID_MULTIPLE_JVM_VARIANTS." "$LINENO" 5
   fi
@@ -17015,9 +17466,6 @@ $as_echo "$as_me: The path of OUTPUT_ROOT, which resolves as \"$path\", is inval
 
   # The spec.gmk file contains all variables for the make system.
   ac_config_files="$ac_config_files $OUTPUT_ROOT/spec.gmk:$AUTOCONF_DIR/spec.gmk.in"
-
-  # The hotspot-spec.gmk file contains legacy variables for the hotspot make system.
-  ac_config_files="$ac_config_files $OUTPUT_ROOT/hotspot-spec.gmk:$AUTOCONF_DIR/hotspot-spec.gmk.in"
 
   # The bootcycle-spec.gmk file contains support for boot cycle builds.
   ac_config_files="$ac_config_files $OUTPUT_ROOT/bootcycle-spec.gmk:$AUTOCONF_DIR/bootcycle-spec.gmk.in"
@@ -20699,6 +21147,30 @@ $as_echo "yes" >&6; }
 
 
 
+  # Test which kind of tar was found
+  if test "x$($TAR --version | $GREP "GNU tar")" != "x"; then
+    TAR_TYPE="gnu"
+  elif test "x$($TAR -v | $GREP "bsdtar")" != "x"; then
+    TAR_TYPE="bsd"
+  elif test "x$OPENJDK_BUILD_OS" = "xsolaris"; then
+    TAR_TYPE="solaris"
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking what type of tar was found" >&5
+$as_echo_n "checking what type of tar was found... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TAR_TYPE" >&5
+$as_echo "$TAR_TYPE" >&6; }
+
+  if test "x$TAR_TYPE" = "xgnu"; then
+    TAR_INCLUDE_PARAM="T"
+    TAR_SUPPORTS_TRANSFORM="true"
+  else
+    TAR_INCLUDE_PARAM="I"
+    TAR_SUPPORTS_TRANSFORM="false"
+  fi
+
+
+
+
   # These tools might not be installed by default,
   # need hint on how to install them.
 
@@ -23788,9 +24260,6 @@ fi
     INCLUDE_SA=false
   fi
   if test "x$OPENJDK_TARGET_OS" = xaix ; then
-    INCLUDE_SA=false
-  fi
-  if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
     INCLUDE_SA=false
   fi
 
@@ -52948,6 +53417,49 @@ fi
 
 
 
+  # Check whether --enable-hotspot-gtest was given.
+if test "${enable_hotspot_gtest+set}" = set; then :
+  enableval=$enable_hotspot_gtest;
+fi
+
+
+  if test -e "$HOTSPOT_TOPDIR/test/native"; then
+    GTEST_DIR_EXISTS="true"
+  else
+    GTEST_DIR_EXISTS="false"
+  fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if Hotspot gtest unit tests should be built" >&5
+$as_echo_n "checking if Hotspot gtest unit tests should be built... " >&6; }
+  if test "x$enable_hotspot_gtest" = "xyes"; then
+    if test "x$GTEST_DIR_EXISTS" = "xtrue"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, forced" >&5
+$as_echo "yes, forced" >&6; }
+      BUILD_GTEST="true"
+    else
+      as_fn_error $? "Cannot build gtest without the test source" "$LINENO" 5
+    fi
+  elif test "x$enable_hotspot_gtest" = "xno"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, forced" >&5
+$as_echo "no, forced" >&6; }
+    BUILD_GTEST="false"
+  elif test "x$enable_hotspot_gtest" = "x"; then
+    if test "x$GTEST_DIR_EXISTS" = "xtrue"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+      BUILD_GTEST="true"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      BUILD_GTEST="false"
+    fi
+  else
+    as_fn_error $? "--enable-gtest must be either yes or no" "$LINENO" 5
+  fi
+
+
+
+
 ###############################################################################
 #
 # Check dependencies for external and internal libraries.
@@ -64076,6 +64588,157 @@ fi
 
 
 
+  if test "$OPENJDK_TARGET_OS" = "solaris"; then
+    # Find the root of the Solaris Studio installation from the compiler path
+    SOLARIS_STUDIO_DIR="$(dirname $CC)/.."
+    STLPORT_LIB="$SOLARIS_STUDIO_DIR/lib/stlport4$OPENJDK_TARGET_CPU_ISADIR/libstlport.so.1"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libstlport.so.1" >&5
+$as_echo_n "checking for libstlport.so.1... " >&6; }
+    if test -f "$STLPORT_LIB"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, $STLPORT_LIB" >&5
+$as_echo "yes, $STLPORT_LIB" >&6; }
+
+  # Only process if variable expands to non-empty
+
+  if test "x$STLPORT_LIB" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$STLPORT_LIB"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of STLPORT_LIB, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of STLPORT_LIB, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of STLPORT_LIB" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    STLPORT_LIB="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting STLPORT_LIB to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting STLPORT_LIB to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$STLPORT_LIB"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    STLPORT_LIB="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting STLPORT_LIB to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting STLPORT_LIB to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$STLPORT_LIB"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of STLPORT_LIB, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of STLPORT_LIB, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of STLPORT_LIB, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      if test -d "$path"; then
+        STLPORT_LIB="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        STLPORT_LIB="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
+    fi
+  fi
+
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, not found at $STLPORT_LIB" >&5
+$as_echo "no, not found at $STLPORT_LIB" >&6; }
+      as_fn_error $? "Failed to find libstlport.so.1, cannot build Hotspot gtests" "$LINENO" 5
+    fi
+
+  fi
+
+
+
 
 
 
@@ -64092,144 +64755,6 @@ fi
 # We need to do some final tweaking, when everything else is done.
 #
 ###############################################################################
-
-
-  # Check whether --enable-new-hotspot-build was given.
-if test "${enable_new_hotspot_build+set}" = set; then :
-  enableval=$enable_new_hotspot_build;
-fi
-
-
-   if test "x$enable_new_hotspot_build" = "x" || test "x$enable_new_hotspot_build" = "xyes"; then
-     USE_NEW_HOTSPOT_BUILD=true
-   else
-     USE_NEW_HOTSPOT_BUILD=false
-   fi
-
-
-  case $HOTSPOT_DEBUG_LEVEL in
-    product )
-      VARIANT="OPT"
-      FASTDEBUG="false"
-      DEBUG_CLASSFILES="false"
-      ;;
-    fastdebug )
-      VARIANT="DBG"
-      FASTDEBUG="true"
-      DEBUG_CLASSFILES="true"
-      ;;
-    debug )
-      VARIANT="DBG"
-      FASTDEBUG="false"
-      DEBUG_CLASSFILES="true"
-      ;;
-    optimized )
-      VARIANT="OPT"
-      FASTDEBUG="false"
-      DEBUG_CLASSFILES="false"
-      ;;
-  esac
-
-
-
-
-  if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
-    MACOSX_UNIVERSAL="true"
-  fi
-
-
-
-  # Make sure JVM_VARIANTS_COMMA use minimal1 for backwards compatibility
-  JVM_VARIANTS_COMMA=`$ECHO ,$JVM_VARIANTS_OPT, | $SED -e 's/,minimal,/,minimal1,/'`
-
-  JVM_VARIANT_SERVER=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,server,/!s/.*/false/g' -e '/,server,/s/.*/true/g'`
-  JVM_VARIANT_CLIENT=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,client,/!s/.*/false/g' -e '/,client,/s/.*/true/g'`
-  JVM_VARIANT_MINIMAL1=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,minimal1\?,/!s/.*/false/g' -e '/,minimal1\?,/s/.*/true/g'`
-  JVM_VARIANT_CORE=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,core,/!s/.*/false/g' -e '/,core,/s/.*/true/g'`
-  JVM_VARIANT_ZERO=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,zero,/!s/.*/false/g' -e '/,zero,/s/.*/true/g'`
-  JVM_VARIANT_ZEROSHARK=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,zeroshark,/!s/.*/false/g' -e '/,zeroshark,/s/.*/true/g'`
-  JVM_VARIANT_CUSTOM=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,custom,/!s/.*/false/g' -e '/,custom,/s/.*/true/g'`
-
-  #####
-  # Generate the legacy makefile targets for hotspot.
-  HOTSPOT_TARGET=""
-
-  if test "x$JVM_VARIANT_SERVER" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL} "
-  fi
-
-  if test "x$JVM_VARIANT_CLIENT" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}1 "
-  fi
-
-  if test "x$JVM_VARIANT_MINIMAL1" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}minimal1 "
-  fi
-
-  if test "x$JVM_VARIANT_ZERO" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}zero "
-  fi
-
-  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}shark "
-  fi
-
-  if test "x$JVM_VARIANT_CORE" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}core "
-  fi
-
-  HOTSPOT_TARGET="$HOTSPOT_TARGET docs export_$HOTSPOT_DEBUG_LEVEL"
-
-  # On Macosx universal binaries are produced, but they only contain
-  # 64 bit intel. This invalidates control of which jvms are built
-  # from configure, but only server is valid anyway. Fix this
-  # when hotspot makefiles are rewritten.
-  if test "x$MACOSX_UNIVERSAL" = xtrue; then
-    HOTSPOT_TARGET=universal_${HOTSPOT_DEBUG_LEVEL}
-  fi
-
-  HOTSPOT_MAKE_ARGS="$HOTSPOT_TARGET"
-
-
-  # Control wether Hotspot runs Queens test after build.
-  # Check whether --enable-hotspot-test-in-build was given.
-if test "${enable_hotspot_test_in_build+set}" = set; then :
-  enableval=$enable_hotspot_test_in_build;
-else
-  enable_hotspot_test_in_build=no
-fi
-
-  if test "x$enable_hotspot_test_in_build" = "xyes"; then
-    TEST_IN_BUILD=true
-  else
-    TEST_IN_BUILD=false
-  fi
-
-
-  if test "x$USE_NEW_HOTSPOT_BUILD" = xfalse; then
-    if test "x$JVM_VARIANT_CLIENT" = xtrue; then
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        as_fn_error $? "You cannot build a client JVM for a 64-bit machine." "$LINENO" 5
-      fi
-    fi
-    if test "x$JVM_VARIANT_MINIMAL1" = xtrue; then
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        as_fn_error $? "You cannot build a minimal JVM for a 64-bit machine." "$LINENO" 5
-      fi
-    fi
-    if test "x$JVM_VARIANT_CUSTOM" = xtrue; then
-        as_fn_error $? "You cannot build a custom JVM using the old hotspot build system." "$LINENO" 5
-    fi
-  fi
-
-
-
-
-
-
-
-
-
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if elliptic curve crypto implementation is present" >&5
@@ -65977,7 +66502,9 @@ $as_echo_n "checking JVM features for JVM variant '$variant'... " >&6; }
     JVM_FEATURES_TO_TEST=${!features_var_name}
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JVM_FEATURES_TO_TEST" >&5
 $as_echo "$JVM_FEATURES_TO_TEST" >&6; }
-    INVALID_FEATURES=`$GREP -Fvx "${VALID_JVM_FEATURES// /$'\n'}" <<< "${JVM_FEATURES_TO_TEST// /$'\n'}"`
+    NEEDLE=${VALID_JVM_FEATURES// /$'\n'}
+    STACK=${JVM_FEATURES_TO_TEST// /$'\n'}
+    INVALID_FEATURES=`$GREP -Fvx "${NEEDLE}" <<< "${STACK}"`
     if test "x$INVALID_FEATURES" != x; then
       as_fn_error $? "Invalid JVM feature(s): $INVALID_FEATURES" "$LINENO" 5
     fi
@@ -66697,7 +67224,6 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "$OUTPUT_ROOT/spec.gmk") CONFIG_FILES="$CONFIG_FILES $OUTPUT_ROOT/spec.gmk:$AUTOCONF_DIR/spec.gmk.in" ;;
-    "$OUTPUT_ROOT/hotspot-spec.gmk") CONFIG_FILES="$CONFIG_FILES $OUTPUT_ROOT/hotspot-spec.gmk:$AUTOCONF_DIR/hotspot-spec.gmk.in" ;;
     "$OUTPUT_ROOT/bootcycle-spec.gmk") CONFIG_FILES="$CONFIG_FILES $OUTPUT_ROOT/bootcycle-spec.gmk:$AUTOCONF_DIR/bootcycle-spec.gmk.in" ;;
     "$OUTPUT_ROOT/buildjdk-spec.gmk") CONFIG_FILES="$CONFIG_FILES $OUTPUT_ROOT/buildjdk-spec.gmk:$AUTOCONF_DIR/buildjdk-spec.gmk.in" ;;
     "$OUTPUT_ROOT/compare.sh") CONFIG_FILES="$CONFIG_FILES $OUTPUT_ROOT/compare.sh:$AUTOCONF_DIR/compare.sh.in" ;;

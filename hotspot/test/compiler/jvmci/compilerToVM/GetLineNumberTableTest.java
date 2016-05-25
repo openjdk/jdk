@@ -29,6 +29,7 @@
  * @library /testlibrary /test/lib /
  * @library ../common/patches
  * @library ../common/patches
+ * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.org.objectweb.asm.tree
  *          jdk.vm.ci/jdk.vm.ci.hotspot

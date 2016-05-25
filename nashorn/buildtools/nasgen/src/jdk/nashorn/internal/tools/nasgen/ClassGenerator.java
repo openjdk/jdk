@@ -280,6 +280,7 @@ public class ClassGenerator {
         addField(cv, name, OBJECT_DESC);
     }
 
+    @SuppressWarnings("deprecation")
     static void newFunction(final MethodGenerator mi, final String objName, final String className, final MemberInfo memInfo, final List<MemberInfo> specs) {
         final boolean arityFound = (memInfo.getArity() != MemberInfo.DEFAULT_ARITY);
 
@@ -305,6 +306,7 @@ public class ClassGenerator {
         mi.invokeVirtual(SCRIPTFUNCTION_TYPE, SCRIPTFUNCTION_SETDOCUMENTATIONKEY, SCRIPTFUNCTION_SETDOCUMENTATIONKEY_DESC);
     }
 
+    @SuppressWarnings("deprecation")
     static void linkerAddGetterSetter(final MethodGenerator mi, final String className, final MemberInfo memInfo) {
         final String propertyName = memInfo.getName();
         // stack: Collection
@@ -334,6 +336,7 @@ public class ClassGenerator {
         // stack: Collection
     }
 
+    @SuppressWarnings("deprecation")
     static void linkerAddGetterSetter(final MethodGenerator mi, final String className, final MemberInfo getter, final MemberInfo setter) {
         final String propertyName = getter.getName();
         // stack: Collection

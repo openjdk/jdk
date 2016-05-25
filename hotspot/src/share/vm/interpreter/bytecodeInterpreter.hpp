@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,7 @@ private:
     intptr_t*             _locals;        // local variable pointer
     ConstantPoolCache*    _constants;     // constant pool cache
     Method*               _method;        // method being executed
+    oop                   _mirror;        // mirror to klass containing method
     DataLayout*           _mdx;           // compiler profiling data for current bytecode
     intptr_t*             _stack;         // expression stack
     messages              _msg;           // frame manager <-> interpreter message

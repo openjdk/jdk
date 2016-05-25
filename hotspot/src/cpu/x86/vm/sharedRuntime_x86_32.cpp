@@ -29,9 +29,9 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compiledICHolder.hpp"
-#include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframeArray.hpp"
 #include "vmreg_x86.inline.hpp"
@@ -1953,7 +1953,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   }
 
   // RedefineClasses() tracing support for obsolete method entry
-  if (RC_TRACE_IN_RANGE(0x00001000, 0x00002000)) {
+  if (log_is_enabled(Trace, redefine, class, obsolete)) {
     __ mov_metadata(rax, method());
     __ call_VM_leaf(
          CAST_FROM_FN_PTR(address, SharedRuntime::rc_trace_method_entry),

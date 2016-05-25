@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @requires vm.gc == "G1" | vm.gc == "null"
  * @summary Test handling of marked but unscanned reclaimed humongous objects.
  * @key gc
+ * @modules jdk.management
  * @run main/othervm -XX:+UseG1GC -Xss32m -Xmx128m -XX:G1HeapRegionSize=1m
  *      -XX:+UnlockExperimentalVMOptions
  *          -XX:+G1EagerReclaimHumongousObjects

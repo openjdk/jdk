@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,19 @@
  * @test
  * @bug 8047771
  * @summary check permissions and principals from various modules
+ * @modules java.desktop
+ *          java.logging
+ *          java.management
+ *          java.security.jgss
+ *          java.smartcardio
+ *          java.sql
+ *          java.xml
+ *          java.xml.bind
+ *          jdk.attach
+ *          jdk.jdi
+ *          jdk.net
+ *          jdk.security.auth
+ *          jdk.security.jgss
  * @compile -addmods java.xml.ws,java.smartcardio Modules.java
  * @run main/othervm/java.security.policy==modules.policy
  *     -addmods java.xml.ws,java.smartcardio Modules

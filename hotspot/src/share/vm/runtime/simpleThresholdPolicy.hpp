@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,16 +81,16 @@ protected:
 
   // Get a compilation level for a given method.
   static CompLevel comp_level(Method* method) {
-    nmethod *nm = method->code();
+    CompiledMethod *nm = method->code();
     if (nm != NULL && nm->is_in_use()) {
       return (CompLevel)nm->comp_level();
     }
     return CompLevel_none;
   }
   virtual void method_invocation_event(const methodHandle& method, const methodHandle& inlinee,
-                                       CompLevel level, nmethod* nm, JavaThread* thread);
+                                       CompLevel level, CompiledMethod* nm, JavaThread* thread);
   virtual void method_back_branch_event(const methodHandle& method, const methodHandle& inlinee,
-                                        int bci, CompLevel level, nmethod* nm, JavaThread* thread);
+                                        int bci, CompLevel level, CompiledMethod* nm, JavaThread* thread);
 public:
   SimpleThresholdPolicy() : _c1_count(0), _c2_count(0) { }
   virtual int compiler_count(CompLevel comp_level) {
@@ -104,7 +104,7 @@ public:
   virtual void disable_compilation(Method* method) { }
   virtual void reprofile(ScopeDesc* trap_scope, bool is_osr);
   virtual nmethod* event(const methodHandle& method, const methodHandle& inlinee,
-                         int branch_bci, int bci, CompLevel comp_level, nmethod* nm, JavaThread* thread);
+                         int branch_bci, int bci, CompLevel comp_level, CompiledMethod* nm, JavaThread* thread);
   // Select task is called by CompileBroker. We should return a task or NULL.
   virtual CompileTask* select_task(CompileQueue* compile_queue);
   // Tell the runtime if we think a given method is adequately profiled.

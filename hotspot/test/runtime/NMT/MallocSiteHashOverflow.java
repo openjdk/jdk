@@ -26,6 +26,7 @@
  * @summary Test corner case that overflows malloc site hashtable bucket
  * @requires sun.arch.data.model == "32"
  * @key nmt jcmd stress
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @build MallocSiteHashOverflow
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
@@ -48,7 +49,7 @@ public class MallocSiteHashOverflow {
         int MAX_HASH_SIZE = wb.NMTGetHashSize();
 
         // Grab my own PID
-        String pid = Integer.toString(ProcessTools.getProcessId());
+        String pid = Long.toString(ProcessTools.getProcessId());
         ProcessBuilder pb = new ProcessBuilder();
 
         // Verify that current tracking level is "detail"

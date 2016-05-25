@@ -243,6 +243,7 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0
     if (name_utf == NULL) {
        if (!(*env)->ExceptionCheck(env))
            JNU_ThrowOutOfMemoryError(env, NULL);
+       freeif(ifs);
        return NULL;
     }
 
@@ -519,7 +520,7 @@ JNIEXPORT jbyteArray JNICALL Java_java_net_NetworkInterface_getMacAddr0
     }
     if ((sock = openSocketWithFallback(env, name_utf)) < 0) {
        (*env)->ReleaseStringUTFChars(env, name, name_utf);
-       return JNI_FALSE;
+       return NULL;
     }
 
     if (!IS_NULL(addrArray)) {
@@ -664,7 +665,7 @@ jobject createNetworkInterface(JNIEnv *env, netif *ifs) {
     }
 
     // Create the array of InetAddresses
-    addrArr = (*env)->NewObjectArray(env, addr_count,  ia_class, NULL);
+    addrArr = (*env)->NewObjectArray(env, addr_count, ia_class, NULL);
     if (addrArr == NULL) {
         return NULL;
     }
@@ -1829,7 +1830,7 @@ static int getFlags(int sock, const char *ifname, int *flags) {
     strncpy(if2.lifr_name, ifname, sizeof(if2.lifr_name) - 1);
 
     if (ioctl(sock, SIOCGLIFFLAGS, (char *)&if2) < 0) {
-         return -1;
+        return -1;
     }
 
     *flags = if2.lifr_flags;
@@ -1859,8 +1860,7 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname) {
                                               "IPV6 Socket creation failed");
                  return -1;
               }
-         }
-         else{ // errno is not NOSUPPORT
+         } else { // errno is not NOSUPPORT
              NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
                                           "IPV4 Socket creation failed");
              return -1;

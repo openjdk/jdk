@@ -28,10 +28,12 @@ import utils.*;
  *          Test scenario:
  *          tests forces debuggee application eat ~70% of heap and runs jstat.
  *          jstat should show that ~70% of heap is utilized (OC/OU ~= 70%).
+ * @modules java.base/jdk.internal.misc
  * @library /test/lib/share/classes
  * @library ../share
  * @build common.*
  * @build utils.*
+ * @ignore 8155570
  * @run main/othervm -XX:+UsePerfData -Xmx128M -XX:MaxMetaspaceSize=128M GcTest02
  */
 

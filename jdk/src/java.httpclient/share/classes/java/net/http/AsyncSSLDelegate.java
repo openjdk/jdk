@@ -217,8 +217,8 @@ public class AsyncSSLDelegate implements Closeable, AsyncConnection {
             }
             returnBuffers(buffers);
         } catch (Throwable t) {
-            t.printStackTrace();
             close();
+            errorHandler.accept(t);
         }
     }
 
@@ -230,8 +230,8 @@ public class AsyncSSLDelegate implements Closeable, AsyncConnection {
                 doHandshakeImpl(r);
                 channelInputQ.registerPutCallback(this::upperRead);
             } catch (Throwable t) {
-                t.printStackTrace();
                 close();
+                errorHandler.accept(t);
             }
         });
     }
@@ -510,7 +510,7 @@ public class AsyncSSLDelegate implements Closeable, AsyncConnection {
                     }
                 }
             } catch (Throwable t) {
-                Utils.close(lowerOutput);
+                close();
                 errorHandler.accept(t);
             }
         }

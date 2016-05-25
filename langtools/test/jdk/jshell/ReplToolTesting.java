@@ -70,6 +70,9 @@ public class ReplToolTesting {
                     new MethodInfo("void printf(String format, Object... args) { System.out.printf(format, args); }",
                             "(String,Object...)void", "printf"))
                     .collect(toList());
+    final static List<String> START_UP_CMD_METHOD = Stream.of(
+                    "|    printf (String,Object...)void")
+                    .collect(toList());
     final static List<String> START_UP = Collections.unmodifiableList(
             Stream.concat(START_UP_IMPORTS.stream(), START_UP_METHODS.stream())
             .map(s -> s.getSource())

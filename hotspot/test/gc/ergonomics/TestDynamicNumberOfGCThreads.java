@@ -27,6 +27,7 @@
  * @summary Ensure that UseDynamicNumberOfGCThreads runs
  * @requires vm.gc=="null"
  * @key gc
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  */
 

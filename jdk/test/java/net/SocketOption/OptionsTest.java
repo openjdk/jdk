@@ -26,7 +26,7 @@
  * @bug 8036979 8072384 8044773
  * @run main/othervm -Xcheck:jni OptionsTest
  * @run main/othervm -Xcheck:jni -Djava.net.preferIPv4Stack=true OptionsTest
- * @run main/othervm -Djdk.launcher.limitmods=java.base OptionsTest
+ * @run main/othervm -limitmods java.base OptionsTest
  */
 
 import java.lang.reflect.Method;

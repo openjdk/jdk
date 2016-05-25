@@ -569,7 +569,8 @@ public abstract class Provider extends Properties {
      * @since 1.8
      */
     @Override
-    public synchronized void replaceAll(BiFunction<? super Object, ? super Object, ? extends Object> function) {
+    public synchronized void replaceAll(BiFunction<? super Object,
+            ? super Object, ? extends Object> function) {
         check("putProviderProperty." + name);
 
         if (debug != null) {
@@ -597,8 +598,8 @@ public abstract class Provider extends Properties {
      * @since 1.8
      */
     @Override
-    public synchronized Object compute(Object key,
-        BiFunction<? super Object, ? super Object, ? extends Object> remappingFunction) {
+    public synchronized Object compute(Object key, BiFunction<? super Object,
+            ? super Object, ? extends Object> remappingFunction) {
         check("putProviderProperty." + name);
         check("removeProviderProperty" + name);
 
@@ -628,7 +629,8 @@ public abstract class Provider extends Properties {
      * @since 1.8
      */
     @Override
-    public synchronized Object computeIfAbsent(Object key, Function<? super Object, ? extends Object> mappingFunction) {
+    public synchronized Object computeIfAbsent(Object key, Function<? super Object,
+            ? extends Object> mappingFunction) {
         check("putProviderProperty." + name);
         check("removeProviderProperty" + name);
 
@@ -657,7 +659,8 @@ public abstract class Provider extends Properties {
      * @since 1.8
      */
     @Override
-    public synchronized Object computeIfPresent(Object key, BiFunction<? super Object, ? super Object, ? extends Object> remappingFunction) {
+    public synchronized Object computeIfPresent(Object key, BiFunction<? super Object,
+            ? super Object, ? extends Object> remappingFunction) {
         check("putProviderProperty." + name);
         check("removeProviderProperty" + name);
 
@@ -689,7 +692,8 @@ public abstract class Provider extends Properties {
      * @since 1.8
      */
     @Override
-    public synchronized Object merge(Object key, Object value,  BiFunction<? super Object, ? super Object, ? extends Object>  remappingFunction) {
+    public synchronized Object merge(Object key, Object value,  BiFunction<? super Object,
+            ? super Object, ? extends Object>  remappingFunction) {
         check("putProviderProperty." + name);
         check("removeProviderProperty" + name);
 
@@ -868,18 +872,21 @@ public abstract class Provider extends Properties {
     }
 
     @SuppressWarnings("unchecked") // Function must actually operate over strings
-    private void implReplaceAll(BiFunction<? super Object, ? super Object, ? extends Object> function) {
+    private void implReplaceAll(BiFunction<? super Object, ? super Object,
+            ? extends Object> function) {
         legacyChanged = true;
         if (legacyStrings == null) {
             legacyStrings = new LinkedHashMap<>();
         } else {
-            legacyStrings.replaceAll((BiFunction<? super String, ? super String, ? extends String>) function);
+            legacyStrings.replaceAll((BiFunction<? super String, ? super String,
+                    ? extends String>) function);
         }
         super.replaceAll(function);
     }
 
     @SuppressWarnings("unchecked") // Function must actually operate over strings
-    private Object implMerge(Object key, Object value, BiFunction<? super Object, ? super Object, ? extends Object> remappingFunction) {
+    private Object implMerge(Object key, Object value, BiFunction<? super Object,
+            ? super Object, ? extends Object> remappingFunction) {
         if ((key instanceof String) && (value instanceof String)) {
             if (!checkLegacy(key)) {
                 return null;
@@ -891,7 +898,8 @@ public abstract class Provider extends Properties {
     }
 
     @SuppressWarnings("unchecked") // Function must actually operate over strings
-    private Object implCompute(Object key, BiFunction<? super Object, ? super Object, ? extends Object> remappingFunction) {
+    private Object implCompute(Object key, BiFunction<? super Object,
+            ? super Object, ? extends Object> remappingFunction) {
         if (key instanceof String) {
             if (!checkLegacy(key)) {
                 return null;
@@ -903,7 +911,8 @@ public abstract class Provider extends Properties {
     }
 
     @SuppressWarnings("unchecked") // Function must actually operate over strings
-    private Object implComputeIfAbsent(Object key, Function<? super Object, ? extends Object> mappingFunction) {
+    private Object implComputeIfAbsent(Object key, Function<? super Object,
+            ? extends Object> mappingFunction) {
         if (key instanceof String) {
             if (!checkLegacy(key)) {
                 return null;
@@ -915,7 +924,8 @@ public abstract class Provider extends Properties {
     }
 
     @SuppressWarnings("unchecked") // Function must actually operate over strings
-    private Object implComputeIfPresent(Object key, BiFunction<? super Object, ? super Object, ? extends Object> remappingFunction) {
+    private Object implComputeIfPresent(Object key, BiFunction<? super Object,
+            ? super Object, ? extends Object> remappingFunction) {
         if (key instanceof String) {
             if (!checkLegacy(key)) {
                 return null;
