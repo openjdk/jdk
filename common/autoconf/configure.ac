@@ -229,6 +229,7 @@ LIB_SETUP_LIBRARIES
 
 JDKOPT_DETECT_INTREE_EC
 JDKOPT_ENABLE_DISABLE_FAILURE_HANDLER
+JDKOPT_ENABLE_DISABLE_GENERATE_CLASSLIST
 
 ###############################################################################
 #
