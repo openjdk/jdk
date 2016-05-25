@@ -442,26 +442,42 @@ public class TCKIsoFields {
     }
 
     //-----------------------------------------------------------------------
-    // range refinedby
+    // rangeRefinedBy
     //-----------------------------------------------------------------------
     @DataProvider(name="isofields")
     Object[][] data_isofields() {
         return new Object[][] {
-               {IsoFields.DAY_OF_QUARTER},
-               {IsoFields.QUARTER_OF_YEAR},
-               {IsoFields.WEEK_OF_WEEK_BASED_YEAR},
-               {IsoFields.WEEK_BASED_YEAR},
+               {IsoFields.DAY_OF_QUARTER, 49, ValueRange.of(1, 91)},
+               {IsoFields.QUARTER_OF_YEAR, 2, ValueRange.of(1, 4)},
+               {IsoFields.WEEK_OF_WEEK_BASED_YEAR, 20, ValueRange.of(1, 52)},
+               {IsoFields.WEEK_BASED_YEAR, 2016, ValueRange.of(LocalDate.MIN.getYear(),
+                                                               LocalDate.MAX.getYear())},
         };
     }
 
     @Test(dataProvider = "isofields")
-    public void test_isofields_rangerefinedby(TemporalField field) {
-        field.rangeRefinedBy(LocalDate.now());
+    public void test_isofields_rangerefinedby(TemporalField field, int value, ValueRange valueRange) {
+        LocalDate date = LocalDate.of(2016, 5, 19);
+        assertEquals(field.rangeRefinedBy(date), valueRange);
     }
 
     @Test(dataProvider = "isofields", expectedExceptions = UnsupportedTemporalTypeException.class)
-    public void test_nonisofields_rangerefinedby(TemporalField field) {
+    public void test_nonisofields_rangerefinedby(TemporalField field, int value, ValueRange valueRange) {
         field.rangeRefinedBy(ThaiBuddhistDate.now());
+    }
+
+    //-----------------------------------------------------------------------
+    // getFrom
+    //-----------------------------------------------------------------------
+    @Test(dataProvider = "isofields")
+    public void test_isofields_getFrom(TemporalField field, int value, ValueRange valueRange) {
+        LocalDate date = LocalDate.of(2016, 5, 19);
+        assertEquals(field.getFrom(date), value);
+    }
+
+    @Test(dataProvider = "isofields", expectedExceptions = UnsupportedTemporalTypeException.class)
+    public void test_nonisofields_getFrom(TemporalField field, int value, ValueRange valueRange) {
+        field.getFrom(ThaiBuddhistDate.now());
     }
 
     //-----------------------------------------------------------------------
