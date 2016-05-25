@@ -158,7 +158,10 @@ lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6)
     }
 
     name = (*env)->NewStringUTF(env, hostname);
-    CHECK_NULL_RETURN(name, NULL);
+    if (name == NULL) {
+        freeifaddrs(ifa);
+        return NULL;
+    }
 
     /* Iterate over the interfaces, and total up the number of IPv4 and IPv6
      * addresses we have. Also keep a count of loopback addresses. We need to
