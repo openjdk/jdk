@@ -37,7 +37,6 @@ import jdk.test.lib.jittester.Nothing;
 import jdk.test.lib.jittester.Operator;
 import jdk.test.lib.jittester.OperatorKind;
 import jdk.test.lib.jittester.PrintVariables;
-import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Statement;
 import jdk.test.lib.jittester.StaticMemberVariable;
 import jdk.test.lib.jittester.Symbol;
@@ -171,22 +170,22 @@ public class FixedTrees {
         TryCatchBlock tryCatch1 = new TryCatchBlock(tryNode, nothing, catchBlocks1, 3);
         TypeKlass printStreamKlass = new TypeKlass("java.io.PrintStream");
         TypeKlass systemKlass = new TypeKlass("java.lang.System");
-        FunctionInfo systemOutPrintlnInfo = new FunctionInfo("println", printStreamKlass,
+        FunctionInfo systemOutPrintInfo = new FunctionInfo("print", printStreamKlass,
                 TypeList.VOID, 0, FunctionInfo.PUBLIC,
                 new VariableInfo("this", owner, printStreamKlass, VariableInfo.LOCAL | VariableInfo.INITIALIZED),
                 new VariableInfo("t", owner, TypeList.OBJECT,
                         VariableInfo.LOCAL  | VariableInfo.INITIALIZED));
-        List<IRNode> printlnArgs = new ArrayList<>();
+        List<IRNode> printArgs = new ArrayList<>();
         VariableInfo systemOutInfo = new VariableInfo("out", systemKlass, printStreamKlass,
                 VariableInfo.STATIC | VariableInfo.PUBLIC);
         StaticMemberVariable systemOutVar = new StaticMemberVariable(owner, systemOutInfo);
-        printlnArgs.add(systemOutVar);
-        printlnArgs.add(tVar);
-        Function println = new Function(printStreamKlass, systemOutPrintlnInfo, printlnArgs);
-        ArrayList<IRNode> printlnBlockContent = new ArrayList<>();
-        printlnBlockContent.add(new Statement(println, true));
-        Block printlnBlock = new Block(owner, TypeList.VOID, printlnBlockContent, 3);
-        TryCatchBlock tryCatch2 = new TryCatchBlock(printlnBlock, nothing, catchBlocks2, 3);
+        printArgs.add(systemOutVar);
+        printArgs.add(tVar);
+        Function print = new Function(printStreamKlass, systemOutPrintInfo, printArgs);
+        ArrayList<IRNode> printBlockContent = new ArrayList<>();
+        printBlockContent.add(new Statement(print, true));
+        Block printBlock = new Block(owner, TypeList.VOID, printBlockContent, 3);
+        TryCatchBlock tryCatch2 = new TryCatchBlock(printBlock, nothing, catchBlocks2, 3);
 
         List<IRNode> mainTryCatchBlockContent = new ArrayList<>();
         mainTryCatchBlockContent.add(new Statement(testInit, true));
