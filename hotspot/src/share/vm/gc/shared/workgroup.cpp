@@ -60,6 +60,10 @@ AbstractGangWorker* AbstractWorkGang::install_worker(uint worker_id) {
 }
 
 void AbstractWorkGang::add_workers(bool initializing) {
+  add_workers(_active_workers, initializing);
+}
+
+void AbstractWorkGang::add_workers(uint active_workers, bool initializing) {
 
   os::ThreadType worker_type;
   if (are_ConcurrentGC_threads()) {
@@ -69,7 +73,7 @@ void AbstractWorkGang::add_workers(bool initializing) {
   }
 
   _created_workers = WorkerManager::add_workers(this,
-                                                _active_workers,
+                                                active_workers,
                                                 _total_workers,
                                                 _created_workers,
                                                 worker_type,
@@ -268,10 +272,11 @@ void WorkGang::run_task(AbstractGangTask* task) {
 }
 
 void WorkGang::run_task(AbstractGangTask* task, uint num_workers) {
-  guarantee(num_workers <= active_workers(),
-            "Trying to execute task %s with %u workers which is more than the amount of active workers %u.",
-            task->name(), num_workers, active_workers());
+  guarantee(num_workers <= total_workers(),
+            "Trying to execute task %s with %u workers which is more than the amount of total workers %u.",
+            task->name(), num_workers, total_workers());
   guarantee(num_workers > 0, "Trying to execute task %s with zero workers", task->name());
+  add_workers(num_workers, false);
   _dispatcher->coordinator_execute_on_workers(task, num_workers);
 }
 
