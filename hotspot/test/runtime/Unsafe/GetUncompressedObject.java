@@ -32,7 +32,7 @@
 import static jdk.test.lib.Asserts.*;
 
 import jdk.test.lib.*;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 public class GetUncompressedObject {
 

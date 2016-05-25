@@ -60,6 +60,7 @@
 #include "runtime/atomic.inline.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/commandLineFlagConstraintList.hpp"
+#include "runtime/commandLineFlagWriteableList.hpp"
 #include "runtime/commandLineFlagRangeList.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fprofiler.hpp"
@@ -785,7 +786,7 @@ bool Thread::claim_oops_do_par_case(int strong_roots_parity) {
   return false;
 }
 
-void Thread::oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
+void Thread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   active_handles()->oops_do(f);
   // Do oop for ThreadShadow
   f->do_oop((oop*)&_pending_exception);
@@ -1432,7 +1433,7 @@ void JavaThread::initialize() {
   set_vframe_array_last(NULL);
   set_deferred_locals(NULL);
   set_deopt_mark(NULL);
-  set_deopt_nmethod(NULL);
+  set_deopt_compiled_method(NULL);
   clear_must_deopt_id();
   set_monitor_chunks(NULL);
   set_next(NULL);
@@ -2758,7 +2759,7 @@ class RememberProcessedThread: public StackObj {
   }
 };
 
-void JavaThread::oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
+void JavaThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   // Verify that the deferred card marks have been flushed.
   assert(deferred_card_mark().is_empty(), "Should be empty during GC");
 
@@ -2766,7 +2767,7 @@ void JavaThread::oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) 
   // since there may be more than one thread using each ThreadProfiler.
 
   // Traverse the GCHandles
-  Thread::oops_do(f, cld_f, cf);
+  Thread::oops_do(f, cf);
 
   JVMCI_ONLY(f->do_oop((oop*)&_pending_failed_speculation);)
 
@@ -2796,7 +2797,7 @@ void JavaThread::oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) 
 
     // Traverse the execution stack
     for (StackFrameStream fst(this); !fst.is_done(); fst.next()) {
-      fst.current()->oops_do(f, cld_f, cf, fst.register_map());
+      fst.current()->oops_do(f, cf, fst.register_map());
     }
   }
 
@@ -2946,7 +2947,7 @@ static void frame_verify(frame* f, const RegisterMap *map) { f->verify(map); }
 
 void JavaThread::verify() {
   // Verify oops in the thread.
-  oops_do(&VerifyOopClosure::verify_oop, NULL, NULL);
+  oops_do(&VerifyOopClosure::verify_oop, NULL);
 
   // Verify the stack frames.
   frames_do(frame_verify);
@@ -3186,7 +3187,7 @@ class PrintAndVerifyOopClosure: public OopClosure {
 static void oops_print(frame* f, const RegisterMap *map) {
   PrintAndVerifyOopClosure print;
   f->print_value();
-  f->oops_do(&print, NULL, NULL, (RegisterMap*)map);
+  f->oops_do(&print, NULL, (RegisterMap*)map);
 }
 
 // Print our all the locations that contain oops and whether they are
@@ -3300,26 +3301,26 @@ bool CompilerThread::can_call_java() const {
 // Create sweeper thread
 CodeCacheSweeperThread::CodeCacheSweeperThread()
 : JavaThread(&sweeper_thread_entry) {
-  _scanned_nmethod = NULL;
+  _scanned_compiled_method = NULL;
 }
 
-void CodeCacheSweeperThread::oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
-  JavaThread::oops_do(f, cld_f, cf);
-  if (_scanned_nmethod != NULL && cf != NULL) {
+void CodeCacheSweeperThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
+  JavaThread::oops_do(f, cf);
+  if (_scanned_compiled_method != NULL && cf != NULL) {
     // Safepoints can occur when the sweeper is scanning an nmethod so
     // process it here to make sure it isn't unloaded in the middle of
     // a scan.
-    cf->do_code_blob(_scanned_nmethod);
+    cf->do_code_blob(_scanned_compiled_method);
   }
 }
 
 void CodeCacheSweeperThread::nmethods_do(CodeBlobClosure* cf) {
   JavaThread::nmethods_do(cf);
-  if (_scanned_nmethod != NULL && cf != NULL) {
+  if (_scanned_compiled_method != NULL && cf != NULL) {
     // Safepoints can occur when the sweeper is scanning an nmethod so
     // process it here to make sure it isn't unloaded in the middle of
     // a scan.
-    cf->do_code_blob(_scanned_nmethod);
+    cf->do_code_blob(_scanned_compiled_method);
   }
 }
 
@@ -3543,6 +3544,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (!constraint_result) {
     return JNI_EINVAL;
   }
+
+  CommandLineFlagWriteableList::mark_startup();
 
   if (PauseAtStartup) {
     os::pause();
@@ -4291,11 +4294,11 @@ bool Threads::includes(JavaThread* p) {
 // uses the Threads_lock to guarantee this property. It also makes sure that
 // all threads gets blocked when exiting or starting).
 
-void Threads::oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
+void Threads::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   ALL_JAVA_THREADS(p) {
-    p->oops_do(f, cld_f, cf);
+    p->oops_do(f, cf);
   }
-  VMThread::vm_thread()->oops_do(f, cld_f, cf);
+  VMThread::vm_thread()->oops_do(f, cf);
 }
 
 void Threads::change_thread_claim_parity() {
@@ -4318,16 +4321,16 @@ void Threads::assert_all_threads_claimed() {
 }
 #endif // ASSERT
 
-void Threads::possibly_parallel_oops_do(bool is_par, OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
+void Threads::possibly_parallel_oops_do(bool is_par, OopClosure* f, CodeBlobClosure* cf) {
   int cp = Threads::thread_claim_parity();
   ALL_JAVA_THREADS(p) {
     if (p->claim_oops_do(is_par, cp)) {
-      p->oops_do(f, cld_f, cf);
+      p->oops_do(f, cf);
     }
   }
   VMThread* vmt = VMThread::vm_thread();
   if (vmt->claim_oops_do(is_par, cp)) {
-    vmt->oops_do(f, cld_f, cf);
+    vmt->oops_do(f, cf);
   }
 }
 
@@ -4353,7 +4356,7 @@ void Threads::nmethods_do(CodeBlobClosure* cf) {
   ALL_JAVA_THREADS(p) {
     // This is used by the code cache sweeper to mark nmethods that are active
     // on the stack of a Java thread. Ignore the sweeper thread itself to avoid
-    // marking CodeCacheSweeperThread::_scanned_nmethod as active.
+    // marking CodeCacheSweeperThread::_scanned_compiled_method as active.
     if(!p->is_Code_cache_sweeper_thread()) {
       p->nmethods_do(cf);
     }

@@ -90,11 +90,12 @@ public class TestOptionsWithRanges {
         excludeTestMaxRange("CICompilerCount");
 
         /*
-         * JDK-8153340
-         * Temporary exclude AllocatePrefetchDistance option from testing
+         * JDK-8156679
+         * Temporarily exclude from range testing as the range is not
+         * valid for all platforms
          */
-        excludeTestRange("AllocatePrefetchDistance");
-
+        excludeTestRange("AllocatePrefetchLines");
+        excludeTestRange("AllocateInstancePrefetchLines");
 
         /*
          * JDK-8136766

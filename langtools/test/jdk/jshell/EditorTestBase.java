@@ -142,7 +142,7 @@ public abstract class EditorTestBase extends ReplToolTesting {
                     exit();
                     loadClass(true, "enum A {}", "enum", "A");
                 }),
-                a -> assertCommandCheckOutput(a, "/classes", assertClasses())
+                a -> assertCommandCheckOutput(a, "/types", assertClasses())
         );
     }
 
@@ -161,7 +161,7 @@ public abstract class EditorTestBase extends ReplToolTesting {
                     exit();
                     loadClass(true, "enum A {}", "enum", "A");
                 }),
-                a -> assertCommandCheckOutput(a, "/classes", assertClasses())
+                a -> assertCommandCheckOutput(a, "/types", assertClasses())
         );
     }
 

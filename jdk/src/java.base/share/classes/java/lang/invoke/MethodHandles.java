@@ -2252,6 +2252,7 @@ return mh1;
      * @return a method handle which can retrieve the length of an array of the given array type
      * @throws NullPointerException if the argument is {@code null}
      * @throws IllegalArgumentException if arrayClass is not an array type
+     * @since 9
      */
     public static
     MethodHandle arrayLength(Class<?> arrayClass) throws IllegalArgumentException {

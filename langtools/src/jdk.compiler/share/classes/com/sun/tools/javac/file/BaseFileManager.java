@@ -380,13 +380,17 @@ public abstract class BaseFileManager implements JavaFileManager {
                 dest = CharBuffer.allocate(newCapacity).put(dest);
             } else if (result.isMalformed() || result.isUnmappable()) {
                 // bad character in input
+                StringBuilder unmappable = new StringBuilder();
+                int len = result.length();
 
-                log.error(new SimpleDiagnosticPosition(dest.limit()),
-                          "illegal.char.for.encoding",
-                          charset == null ? encodingName : charset.name());
+                for (int i = 0; i < len; i++) {
+                    unmappable.append(String.format("%02X", inbuf.get()));
+                }
 
-                // skip past the coding error
-                inbuf.position(inbuf.position() + result.length());
+                String charsetName = charset == null ? encodingName : charset.name();
+
+                log.error(dest.limit(),
+                          Errors.IllegalCharForEncoding(unmappable.toString(), charsetName));
 
                 // undo the flip() to prepare the output buffer
                 // for more translation

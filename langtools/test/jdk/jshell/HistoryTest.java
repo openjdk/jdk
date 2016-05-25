@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,152 +24,64 @@
 /*
  * @test
  * @summary Test Completion
- * @modules jdk.jshell/jdk.internal.jshell.tool
- *          jdk.internal.le/jdk.internal.jline.console.history
+ * @modules jdk.internal.le/jdk.internal.jline.extra
+ *          jdk.jshell/jdk.internal.jshell.tool
  * @build HistoryTest
  * @run testng HistoryTest
  */
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.prefs.AbstractPreferences;
-import java.util.prefs.BackingStoreException;
-import jdk.internal.jline.console.history.MemoryHistory;
-
-import jdk.jshell.JShell;
-import jdk.jshell.SourceCodeAnalysis;
-import jdk.jshell.SourceCodeAnalysis.CompletionInfo;
+import java.lang.reflect.Field;
+import jdk.internal.jline.extra.EditingHistory;
 import org.testng.annotations.Test;
-import jdk.internal.jshell.tool.EditingHistory;
-
 import static org.testng.Assert.*;
 
 @Test
-public class HistoryTest {
+public class HistoryTest extends ReplToolTesting {
 
     public void testHistory() {
-        JShell eval = JShell.builder()
-                .in(new ByteArrayInputStream(new byte[0]))
-                .out(new PrintStream(new ByteArrayOutputStream()))
-                .err(new PrintStream(new ByteArrayOutputStream()))
-                .build();
-        SourceCodeAnalysis analysis = eval.sourceCodeAnalysis();
-        MemoryPreferences prefs = new MemoryPreferences(null, "");
-        EditingHistory history = new EditingHistory(prefs) {
-            @Override protected CompletionInfo analyzeCompletion(String input) {
-                return analysis.analyzeCompletion(input);
-            }
-        };
-        history.add("void test() {");
-        history.add("    System.err.println(1);");
-        history.add("}");
-        history.add("/exit");
-
-        previousAndAssert(history, "/exit");
-
-        history.previous(); history.previous(); history.previous();
-
-        history.add("void test() { /*changed*/");
-
-        previousAndAssert(history, "}");
-        previousAndAssert(history, "    System.err.println(1);");
-        previousAndAssert(history, "void test() {");
-
-        assertFalse(history.previous());
-
-        nextAndAssert(history, "    System.err.println(1);");
-        nextAndAssert(history, "}");
-        nextAndAssert(history, "");
-
-        history.add("    System.err.println(2);");
-        history.add("} /*changed*/");
-
-        assertEquals(history.size(), 7);
-
-        history.save();
-
-        history = new EditingHistory(prefs) {
-            @Override protected CompletionInfo analyzeCompletion(String input) {
-                return analysis.analyzeCompletion(input);
-            }
-        };
-
-        previousSnippetAndAssert(history, "void test() { /*changed*/");
-        previousSnippetAndAssert(history, "/exit");
-        previousSnippetAndAssert(history, "void test() {");
-
-        assertFalse(history.previousSnippet());
-
-        nextSnippetAndAssert(history, "/exit");
-        nextSnippetAndAssert(history, "void test() { /*changed*/");
-        nextSnippetAndAssert(history, "");
-
-        assertFalse(history.nextSnippet());
-
-        history.add("{");
-        history.add("}");
-
-        history.save();
-
-        history = new EditingHistory(prefs) {
-            @Override protected CompletionInfo analyzeCompletion(String input) {
-                return analysis.analyzeCompletion(input);
-            }
-        };
-
-        previousSnippetAndAssert(history, "{");
-        previousSnippetAndAssert(history, "void test() { /*changed*/");
-        previousSnippetAndAssert(history, "/exit");
-        previousSnippetAndAssert(history, "void test() {");
-
-        while (history.next());
-
-        history.add("/*current1*/");
-        history.add("/*current2*/");
-        history.add("/*current3*/");
-
-        assertEquals(history.currentSessionEntries(), Arrays.asList("/*current1*/", "/*current2*/", "/*current3*/"));
-
-        history.remove(0);
-
-        assertEquals(history.currentSessionEntries(), Arrays.asList("/*current1*/", "/*current2*/", "/*current3*/"));
-
-        while (history.size() > 2)
-            history.remove(0);
-
-        assertEquals(history.currentSessionEntries(), Arrays.asList("/*current2*/", "/*current3*/"));
-
-        for (int i = 0; i < MemoryHistory.DEFAULT_MAX_SIZE * 2; i++) {
-            history.add("/exit");
-        }
-
-        history.add("void test() { /*after full*/");
-        history.add("    System.err.println(1);");
-        history.add("}");
-
-        previousSnippetAndAssert(history, "void test() { /*after full*/");
+        test(
+             a -> {if (!a) setCommandInput("void test() {\n");},
+             a -> {if (!a) setCommandInput("    System.err.println(1);\n");},
+             a -> {if (!a) setCommandInput("    System.err.println(1);\n");},
+             a -> {assertCommand(a, "} //test", "|  created method test()");},
+             a -> {
+                 if (!a) {
+                     try {
+                         previousAndAssert(getHistory(), "} //test");
+                         previousSnippetAndAssert(getHistory(), "void test() {");
+                     } catch (Exception ex) {
+                         throw new IllegalStateException(ex);
+                     }
+                 }
+                 assertCommand(a, "int dummy;", "dummy ==> 0");
+             });
+        test(
+             a -> {if (!a) setCommandInput("void test2() {\n");},
+             a -> {assertCommand(a, "} //test2", "|  created method test2()");},
+             a -> {
+                 if (!a) {
+                     try {
+                         previousAndAssert(getHistory(), "} //test2");
+                         previousSnippetAndAssert(getHistory(), "void test2() {");
+                         previousSnippetAndAssert(getHistory(), "/debug 0"); //added by test framework
+                         previousSnippetAndAssert(getHistory(), "/exit");
+                         previousSnippetAndAssert(getHistory(), "int dummy;");
+                         previousSnippetAndAssert(getHistory(), "void test() {");
+                     } catch (Exception ex) {
+                         throw new IllegalStateException(ex);
+                     }
+                 }
+                 assertCommand(a, "int dummy;", "dummy ==> 0");
+             });
     }
 
-    public void testSaveOneHistory() {
-        JShell eval = JShell.builder()
-                .in(new ByteArrayInputStream(new byte[0]))
-                .out(new PrintStream(new ByteArrayOutputStream()))
-                .err(new PrintStream(new ByteArrayOutputStream()))
-                .build();
-        SourceCodeAnalysis analysis = eval.sourceCodeAnalysis();
-        MemoryPreferences prefs = new MemoryPreferences(null, "");
-        EditingHistory history = new EditingHistory(prefs) {
-            @Override protected CompletionInfo analyzeCompletion(String input) {
-                return analysis.analyzeCompletion(input);
-            }
-        };
-
-        history.add("first");
-        history.save();
+    private EditingHistory getHistory() throws Exception {
+        Field input = repl.getClass().getDeclaredField("input");
+        input.setAccessible(true);
+        Object console = input.get(repl);
+        Field history = console.getClass().getDeclaredField("history");
+        history.setAccessible(true);
+        return (EditingHistory) history.get(console);
     }
 
     private void previousAndAssert(EditingHistory history, String expected) {
@@ -177,71 +89,9 @@ public class HistoryTest {
         assertEquals(history.current().toString(), expected);
     }
 
-    private void nextAndAssert(EditingHistory history, String expected) {
-        assertTrue(history.next());
-        assertEquals(history.current().toString(), expected);
-    }
-
     private void previousSnippetAndAssert(EditingHistory history, String expected) {
         assertTrue(history.previousSnippet());
         assertEquals(history.current().toString(), expected);
-    }
-
-    private void nextSnippetAndAssert(EditingHistory history, String expected) {
-        assertTrue(history.nextSnippet());
-        assertEquals(history.current().toString(), expected);
-    }
-
-    private static final class MemoryPreferences extends AbstractPreferences {
-
-        private final Map<String, String> key2Value = new HashMap<>();
-        private final Map<String, MemoryPreferences> key2SubNode = new HashMap<>();
-
-        public MemoryPreferences(AbstractPreferences parent, String name) {
-            super(parent, name);
-        }
-
-        @Override
-        protected void putSpi(String key, String value) {
-            key2Value.put(key, value);
-        }
-
-        @Override
-        protected String getSpi(String key) {
-            return key2Value.get(key);
-        }
-
-        @Override
-        protected void removeSpi(String key) {
-            key2Value.remove(key);
-        }
-
-        @Override
-        protected void removeNodeSpi() throws BackingStoreException {
-            ((MemoryPreferences) parent()).key2SubNode.remove(name());
-        }
-
-        @Override
-        protected String[] keysSpi() throws BackingStoreException {
-            return key2Value.keySet().toArray(new String[key2Value.size()]);
-        }
-
-        @Override
-        protected String[] childrenNamesSpi() throws BackingStoreException {
-            return key2SubNode.keySet().toArray(new String[key2SubNode.size()]);
-        }
-
-        @Override
-        protected AbstractPreferences childSpi(String name) {
-            return key2SubNode.computeIfAbsent(name, n -> new MemoryPreferences(this, n));
-        }
-
-        @Override
-        protected void syncSpi() throws BackingStoreException {}
-
-        @Override
-        protected void flushSpi() throws BackingStoreException {}
-
     }
 
 }

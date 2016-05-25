@@ -27,6 +27,7 @@
  *          Test scenario:
  *          test forces debuggee application call System.gc(), runs jstat and checks that
  *          cause of last garbage collection displayed by jstat (LGCC) is 'System.gc()'.
+ * @modules java.base/jdk.internal.misc
  * @library /test/lib/share/classes
  * @library ../share
  * @build common.*

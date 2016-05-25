@@ -60,7 +60,7 @@ import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * Test for {@code jdk.vm.ci.hotspot.CompilerToVM.resolveFieldInPool} method

@@ -81,7 +81,7 @@ public final class NativeFloat32Array extends ArrayBufferView {
         private static final MethodHandle SET_ELEM = specialCall(MethodHandles.lookup(), Float32ArrayData.class, "setElem", void.class, int.class, double.class).methodHandle();
 
         private Float32ArrayData(final FloatBuffer nb, final int start, final int end) {
-            super(((FloatBuffer)nb.position(start).limit(end)).slice(), end - start);
+            super((nb.position(start).limit(end)).slice(), end - start);
         }
 
         @Override

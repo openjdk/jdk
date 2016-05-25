@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,6 +228,14 @@ public class Hashtable<K,V>
         this(Math.max(2*t.size(), 11), 0.75f);
         putAll(t);
     }
+
+    /**
+     * A constructor chained from {@link Properties} keeps Hashtable fields
+     * uninitialized since they are not used.
+     *
+     * @param dummy a dummy parameter
+     */
+    Hashtable(Void dummy) {}
 
     /**
      * Returns the number of keys in this hashtable.
@@ -549,18 +557,23 @@ public class Hashtable<K,V>
      * @return  a clone of the hashtable
      */
     public synchronized Object clone() {
+        Hashtable<?,?> t = cloneHashtable();
+        t.table = new Entry<?,?>[table.length];
+        for (int i = table.length ; i-- > 0 ; ) {
+            t.table[i] = (table[i] != null)
+                ? (Entry<?,?>) table[i].clone() : null;
+        }
+        t.keySet = null;
+        t.entrySet = null;
+        t.values = null;
+        t.modCount = 0;
+        return t;
+    }
+
+    /** Calls super.clone() */
+    final Hashtable<?,?> cloneHashtable() {
         try {
-            Hashtable<?,?> t = (Hashtable<?,?>)super.clone();
-            t.table = new Entry<?,?>[table.length];
-            for (int i = table.length ; i-- > 0 ; ) {
-                t.table[i] = (table[i] != null)
-                    ? (Entry<?,?>) table[i].clone() : null;
-            }
-            t.keySet = null;
-            t.entrySet = null;
-            t.values = null;
-            t.modCount = 0;
-            return t;
+            return (Hashtable<?,?>)super.clone();
         } catch (CloneNotSupportedException e) {
             // this shouldn't happen, since we are Cloneable
             throw new InternalError(e);
@@ -1189,6 +1202,15 @@ public class Hashtable<K,V>
      */
     private void writeObject(java.io.ObjectOutputStream s)
             throws IOException {
+        writeHashtable(s);
+    }
+
+    /**
+     * Perform serialization of the Hashtable to an ObjectOutputStream.
+     * The Properties class overrides this method.
+     */
+    void writeHashtable(java.io.ObjectOutputStream s)
+            throws IOException {
         Entry<Object, Object> entryStack = null;
 
         synchronized (this) {
@@ -1219,11 +1241,29 @@ public class Hashtable<K,V>
     }
 
     /**
+     * Called by Properties to write out a simulated threshold and loadfactor.
+     */
+    final void defaultWriteHashtable(java.io.ObjectOutputStream s, int length,
+            float loadFactor) throws IOException {
+        this.threshold = (int)Math.min(length * loadFactor, MAX_ARRAY_SIZE + 1);
+        this.loadFactor = loadFactor;
+        s.defaultWriteObject();
+    }
+
+    /**
      * Reconstitute the Hashtable from a stream (i.e., deserialize it).
      */
     private void readObject(java.io.ObjectInputStream s)
-         throws IOException, ClassNotFoundException
-    {
+            throws IOException, ClassNotFoundException {
+        readHashtable(s);
+    }
+
+    /**
+     * Perform deserialization of the Hashtable from an ObjectInputStream.
+     * The Properties class overrides this method.
+     */
+    void readHashtable(java.io.ObjectInputStream s)
+            throws IOException, ClassNotFoundException {
         // Read in the threshold and loadFactor
         s.defaultReadObject();
 

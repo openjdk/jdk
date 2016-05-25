@@ -49,11 +49,12 @@ public class AARCH64Frame extends Frame {
   private static final int SENDER_SP_OFFSET           =  2;
 
   // Interpreter frames
-  private static final int INTERPRETER_FRAME_MIRROR_OFFSET    =  2; // for native calls only
   private static final int INTERPRETER_FRAME_SENDER_SP_OFFSET = -1;
   private static final int INTERPRETER_FRAME_LAST_SP_OFFSET   = INTERPRETER_FRAME_SENDER_SP_OFFSET - 1;
   private static final int INTERPRETER_FRAME_METHOD_OFFSET    = INTERPRETER_FRAME_LAST_SP_OFFSET - 1;
   private static       int INTERPRETER_FRAME_MDX_OFFSET;         // Non-core builds only
+  private static       int INTERPRETER_FRAME_PADDING_OFFSET;
+  private static       int INTERPRETER_FRAME_MIRROR_OFFSET;
   private static       int INTERPRETER_FRAME_CACHE_OFFSET;
   private static       int INTERPRETER_FRAME_LOCALS_OFFSET;
   private static       int INTERPRETER_FRAME_BCX_OFFSET;
@@ -79,7 +80,9 @@ public class AARCH64Frame extends Frame {
 
   private static synchronized void initialize(TypeDataBase db) {
     INTERPRETER_FRAME_MDX_OFFSET                  = INTERPRETER_FRAME_METHOD_OFFSET - 1;
-    INTERPRETER_FRAME_CACHE_OFFSET                = INTERPRETER_FRAME_MDX_OFFSET - 1;
+    INTERPRETER_FRAME_PADDING_OFFSET              = INTERPRETER_FRAME_MDX_OFFSET - 1;
+    INTERPRETER_FRAME_MIRROR_OFFSET               = INTERPRETER_FRAME_PADDING_OFFSET - 1;
+    INTERPRETER_FRAME_CACHE_OFFSET                = INTERPRETER_FRAME_MIRROR_OFFSET - 1;
     INTERPRETER_FRAME_LOCALS_OFFSET               = INTERPRETER_FRAME_CACHE_OFFSET - 1;
     INTERPRETER_FRAME_BCX_OFFSET                  = INTERPRETER_FRAME_LOCALS_OFFSET - 1;
     INTERPRETER_FRAME_INITIAL_SP_OFFSET           = INTERPRETER_FRAME_BCX_OFFSET - 1;

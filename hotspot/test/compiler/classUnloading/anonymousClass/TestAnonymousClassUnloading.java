@@ -22,7 +22,7 @@
  */
 
 import sun.hotspot.WhiteBox;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import java.io.IOException;
 import java.lang.reflect.Method;

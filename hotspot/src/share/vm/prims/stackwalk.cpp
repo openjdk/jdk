@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,44 +37,44 @@
 #include "utilities/globalDefinitions.hpp"
 
 // setup and cleanup actions
-void StackWalkAnchor::setup_magic_on_entry(objArrayHandle frames_array) {
+void JavaFrameStream::setup_magic_on_entry(objArrayHandle frames_array) {
   frames_array->obj_at_put(magic_pos, _thread->threadObj());
   _anchor = address_value();
   assert(check_magic(frames_array), "invalid magic");
 }
 
-bool StackWalkAnchor::check_magic(objArrayHandle frames_array) {
+bool JavaFrameStream::check_magic(objArrayHandle frames_array) {
   oop   m1 = frames_array->obj_at(magic_pos);
   jlong m2 = _anchor;
   if (m1 == _thread->threadObj() && m2 == address_value())  return true;
   return false;
 }
 
-bool StackWalkAnchor::cleanup_magic_on_exit(objArrayHandle frames_array) {
+bool JavaFrameStream::cleanup_magic_on_exit(objArrayHandle frames_array) {
   bool ok = check_magic(frames_array);
   frames_array->obj_at_put(magic_pos, NULL);
   _anchor = 0L;
   return ok;
 }
 
-// Returns StackWalkAnchor for the current stack being traversed.
+// Returns JavaFrameStream for the current stack being traversed.
 //
 // Parameters:
 //  thread         Current Java thread.
 //  magic          Magic value used for each stack walking
 //  frames_array   User-supplied buffers.  The 0th element is reserved
-//                 to this StackWalkAnchor to use
+//                 to this JavaFrameStream to use
 //
-StackWalkAnchor* StackWalkAnchor::from_current(JavaThread* thread, jlong magic,
+JavaFrameStream* JavaFrameStream::from_current(JavaThread* thread, jlong magic,
                                                objArrayHandle frames_array)
 {
   assert(thread != NULL && thread->is_Java_thread(), "");
   oop m1 = frames_array->obj_at(magic_pos);
   if (m1 != thread->threadObj())      return NULL;
   if (magic == 0L)                    return NULL;
-  StackWalkAnchor* anchor = (StackWalkAnchor*) (intptr_t) magic;
-  if (!anchor->is_valid_in(thread, frames_array))   return NULL;
-  return anchor;
+  JavaFrameStream* stream = (JavaFrameStream*) (intptr_t) magic;
+  if (!stream->is_valid_in(thread, frames_array))   return NULL;
+  return stream;
 }
 
 // Unpacks one or more frames into user-supplied buffers.
@@ -84,19 +84,19 @@ StackWalkAnchor* StackWalkAnchor::from_current(JavaThread* thread, jlong magic,
 // In other words, do not leave any stale data in the vfst.
 //
 // Parameters:
-//   mode           Restrict which frames to be decoded.
-//   vfst           vFrameStream.
-//   max_nframes    Maximum number of frames to be filled.
-//   start_index    Start index to the user-supplied buffers.
-//   frames_array   Buffer to store Class or StackFrame in, starting at start_index.
-//                  frames array is a Class<?>[] array when only getting caller
-//                  reference, and a StackFrameInfo[] array (or derivative)
-//                  otherwise. It should never be null.
-//   end_index      End index to the user-supplied buffers with unpacked frames.
+//   mode             Restrict which frames to be decoded.
+//   JavaFrameStream  stream of javaVFrames
+//   max_nframes      Maximum number of frames to be filled.
+//   start_index      Start index to the user-supplied buffers.
+//   frames_array     Buffer to store Class or StackFrame in, starting at start_index.
+//                    frames array is a Class<?>[] array when only getting caller
+//                    reference, and a StackFrameInfo[] array (or derivative)
+//                    otherwise. It should never be null.
+//   end_index        End index to the user-supplied buffers with unpacked frames.
 //
 // Returns the number of frames whose information was transferred into the buffers.
 //
-int StackWalk::fill_in_frames(jlong mode, vframeStream& vfst,
+int StackWalk::fill_in_frames(jlong mode, JavaFrameStream& stream,
                               int max_nframes, int start_index,
                               objArrayHandle  frames_array,
                               int& end_index, TRAPS) {
@@ -108,9 +108,9 @@ int StackWalk::fill_in_frames(jlong mode, vframeStream& vfst,
   assert(start_index + max_nframes <= frames_array->length(), "oob");
 
   int frames_decoded = 0;
-  for (; !vfst.at_end(); vfst.next()) {
-    Method* method = vfst.method();
-    int bci = vfst.bci();
+  for (; !stream.at_end(); stream.next()) {
+    Method* method = stream.method();
+    int bci = stream.bci();
 
     if (method == NULL) continue;
     if (!ShowHiddenFrames && StackWalk::skip_hidden_frames(mode)) {
@@ -133,7 +133,7 @@ int StackWalk::fill_in_frames(jlong mode, vframeStream& vfst,
     if (live_frame_info(mode)) {
       assert (use_frames_array(mode), "Bad mode for get live frame");
       Handle stackFrame(frames_array->obj_at(index));
-      fill_live_stackframe(stackFrame, method, bci, vfst.java_frame(), CHECK_0);
+      fill_live_stackframe(stackFrame, method, bci, stream.java_frame(), CHECK_0);
     } else if (need_method_info(mode)) {
       assert (use_frames_array(mode), "Bad mode for get stack frame");
       Handle stackFrame(frames_array->obj_at(index));
@@ -294,6 +294,7 @@ oop StackWalk::walk(Handle stackStream, jlong mode,
                     int skip_frames, int frame_count, int start_index,
                     objArrayHandle frames_array,
                     TRAPS) {
+  ResourceMark rm(THREAD);
   JavaThread* jt = (JavaThread*)THREAD;
   if (TraceStackWalk) {
     tty->print_cr("Start walking: mode " JLONG_FORMAT " skip %d frames batch size %d",
@@ -309,41 +310,39 @@ oop StackWalk::walk(Handle stackStream, jlong mode,
 
   methodHandle m_doStackWalk(THREAD, Universe::do_stack_walk_method());
 
-  // Open up a traversable stream onto my stack.
-  // This stream will be made available by *reference* to the inner Java call.
-  StackWalkAnchor anchor(jt);
-  vframeStream& vfst = anchor.vframe_stream();
-
+  // Setup traversal onto my stack.
+  RegisterMap regMap(jt, true);
+  JavaFrameStream stream(jt, &regMap);
   {
-    while (!vfst.at_end()) {
-      InstanceKlass* ik = vfst.method()->method_holder();
+    while (!stream.at_end()) {
+      InstanceKlass* ik = stream.method()->method_holder();
       if (ik != stackWalker_klass &&
             ik != abstractStackWalker_klass && ik->super() != abstractStackWalker_klass)  {
         break;
       }
 
       if (TraceStackWalk) {
-        tty->print("  skip "); vfst.method()->print_short_name(); tty->print("\n");
+        tty->print("  skip "); stream.method()->print_short_name(); tty->print("\n");
       }
-      vfst.next();
+      stream.next();
     }
 
     // stack frame has been traversed individually and resume stack walk
     // from the stack frame at depth == skip_frames.
-    for (int n=0; n < skip_frames && !vfst.at_end(); vfst.next(), n++) {
+    for (int n=0; n < skip_frames && !stream.at_end(); stream.next(), n++) {
       if (TraceStackWalk) {
-        tty->print("  skip "); vfst.method()->print_short_name();
+        tty->print("  skip "); stream.method()->print_short_name();
         tty->print_cr(" frame id: " PTR_FORMAT " pc: " PTR_FORMAT,
-                      p2i(vfst.frame_id()), p2i(vfst.frame_pc()));
+                      p2i(stream.java_frame()->fr().id()),
+                      p2i(stream.java_frame()->fr().pc()));
       }
     }
   }
 
-  // The Method* pointer in the vfst has a very short shelf life.  Grab it now.
   int end_index = start_index;
   int numFrames = 0;
-  if (!vfst.at_end()) {
-    numFrames = fill_in_frames(mode, vfst, frame_count, start_index,
+  if (!stream.at_end()) {
+    numFrames = fill_in_frames(mode, stream, frame_count, start_index,
                                frames_array, end_index, CHECK_NULL);
     if (numFrames < 1) {
       THROW_MSG_(vmSymbols::java_lang_InternalError(), "stack walk: decode failed", NULL);
@@ -356,19 +355,19 @@ oop StackWalk::walk(Handle stackStream, jlong mode,
   // When JVM_CallStackWalk returns, it invalidates the stack stream.
   JavaValue result(T_OBJECT);
   JavaCallArguments args(stackStream);
-  args.push_long(anchor.address_value());
+  args.push_long(stream.address_value());
   args.push_int(skip_frames);
   args.push_int(frame_count);
   args.push_int(start_index);
   args.push_int(end_index);
 
   // Link the thread and vframe stream into the callee-visible object
-  anchor.setup_magic_on_entry(frames_array);
+  stream.setup_magic_on_entry(frames_array);
 
   JavaCalls::call(&result, m_doStackWalk, &args, THREAD);
 
   // Do this before anything else happens, to disable any lingering stream objects
-  bool ok = anchor.cleanup_magic_on_exit(frames_array);
+  bool ok = stream.cleanup_magic_on_exit(frames_array);
 
   // Throw pending exception if we must
   (void) (CHECK_NULL);
@@ -379,7 +378,6 @@ oop StackWalk::walk(Handle stackStream, jlong mode,
 
   // Return normally
   return (oop)result.get_jobject();
-
 }
 
 // Walk the next batch of stack frames
@@ -400,8 +398,8 @@ jint StackWalk::moreFrames(Handle stackStream, jlong mode, jlong magic,
                            TRAPS)
 {
   JavaThread* jt = (JavaThread*)THREAD;
-  StackWalkAnchor* existing_anchor = StackWalkAnchor::from_current(jt, magic, frames_array);
-  if (existing_anchor == NULL) {
+  JavaFrameStream* existing_stream = JavaFrameStream::from_current(jt, magic, frames_array);
+  if (existing_stream == NULL) {
     THROW_MSG_(vmSymbols::java_lang_InternalError(), "doStackWalk: corrupted buffers", 0L);
   }
 
@@ -410,8 +408,8 @@ jint StackWalk::moreFrames(Handle stackStream, jlong mode, jlong magic,
   }
 
   if (TraceStackWalk) {
-    tty->print_cr("StackWalk::moreFrames frame_count %d existing_anchor " PTR_FORMAT " start %d frames %d",
-                  frame_count, p2i(existing_anchor), start_index, frames_array->length());
+    tty->print_cr("StackWalk::moreFrames frame_count %d existing_stream " PTR_FORMAT " start %d frames %d",
+                  frame_count, p2i(existing_stream), start_index, frames_array->length());
   }
   int end_index = start_index;
   if (frame_count <= 0) {
@@ -421,12 +419,11 @@ jint StackWalk::moreFrames(Handle stackStream, jlong mode, jlong magic,
   int count = frame_count + start_index;
   assert (frames_array->length() >= count, "not enough space in buffers");
 
-  StackWalkAnchor& anchor = (*existing_anchor);
-  vframeStream& vfst = anchor.vframe_stream();
-  if (!vfst.at_end()) {
-    vfst.next();  // this was the last frame decoded in the previous batch
-    if (!vfst.at_end()) {
-      int n = fill_in_frames(mode, vfst, frame_count, start_index,
+  JavaFrameStream& stream = (*existing_stream);
+  if (!stream.at_end()) {
+    stream.next(); // advance past the last frame decoded in previous batch
+    if (!stream.at_end()) {
+      int n = fill_in_frames(mode, stream, frame_count, start_index,
                              frames_array, end_index, CHECK_0);
       if (n < 1) {
         THROW_MSG_(vmSymbols::java_lang_InternalError(), "doStackWalk: later decode failed", 0L);

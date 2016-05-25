@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,20 +29,40 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.lang.model.element.Name;
-import static jdk.internal.jshell.remote.RemoteCodes.DOIT_METHOD_NAME;
-import static jdk.internal.jshell.remote.RemoteCodes.PREFIX_PATTERN;
-import static jdk.internal.jshell.remote.RemoteCodes.REPL_CLASS_PREFIX;
 
 /**
- * Assorted shared utilities.
- * @author Robert Field
+ * Assorted shared utilities and constants.
  */
 class Util {
 
-    static final String REPL_DOESNOTMATTER_CLASS_NAME = REPL_CLASS_PREFIX+"DOESNOTMATTER";
+    /**
+     * The package name of all wrapper classes.
+     */
+    static final String REPL_PACKAGE = "REPL";
+
+    /**
+     * The prefix for all wrapper class names.
+     */
+    static final String REPL_CLASS_PREFIX = "$JShell$";
+
+    /**
+     * The name of the invoke method.
+     */
+    static final String DOIT_METHOD_NAME = "do_it$";
+
+    /**
+     * A pattern matching the full or simple class name of a wrapper class.
+     */
+    static final Pattern PREFIX_PATTERN = Pattern.compile(
+            "(" + REPL_PACKAGE + "\\.)?"
+            + "(?<class>" + Pattern.quote(REPL_CLASS_PREFIX)
+            + "\\w+" + ")" + "[\\$\\.]?");
+
+    static final String REPL_DOESNOTMATTER_CLASS_NAME = REPL_CLASS_PREFIX + "DOESNOTMATTER";
 
     static final Locale PARSED_LOCALE = Locale.ROOT;
 

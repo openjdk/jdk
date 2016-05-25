@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,16 @@
 // Defines all globals flags used by the server compiler.
 //
 
-#define C2_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, range, constraint) \
+#define C2_FLAGS(develop, \
+                 develop_pd, \
+                 product, \
+                 product_pd, \
+                 diagnostic, \
+                 experimental, \
+                 notproduct, \
+                 range, \
+                 constraint, \
+                 writeable) \
                                                                             \
   develop(bool, StressLCM, false,                                           \
           "Randomize instruction scheduling in LCM")                        \
@@ -587,28 +596,28 @@
           range(0, 100)                                                     \
                                                                             \
   product(bool, BlockLayoutRotateLoops, true,                               \
-          "Allow back branches to be fall throughs in the block layour")    \
+          "Allow back branches to be fall throughs in the block layout")    \
                                                                             \
-  develop(bool, InlineReflectionGetCallerClass, true,                       \
+  diagnostic(bool, InlineReflectionGetCallerClass, true,                    \
           "inline sun.reflect.Reflection.getCallerClass(), known to be "    \
           "part of base library DLL")                                       \
                                                                             \
-  develop(bool, InlineObjectCopy, true,                                     \
+  diagnostic(bool, InlineObjectCopy, true,                                  \
           "inline Object.clone and Arrays.copyOf[Range] intrinsics")        \
                                                                             \
-  develop(bool, SpecialStringCompareTo, true,                               \
+  diagnostic(bool, SpecialStringCompareTo, true,                            \
           "special version of string compareTo")                            \
                                                                             \
-  develop(bool, SpecialStringIndexOf, true,                                 \
+  diagnostic(bool, SpecialStringIndexOf, true,                              \
           "special version of string indexOf")                              \
                                                                             \
-  develop(bool, SpecialStringEquals, true,                                  \
+  diagnostic(bool, SpecialStringEquals, true,                               \
           "special version of string equals")                               \
                                                                             \
-  develop(bool, SpecialArraysEquals, true,                                  \
+  diagnostic(bool, SpecialArraysEquals, true,                               \
           "special version of Arrays.equals(char[],char[])")                \
                                                                             \
-  product(bool, SpecialEncodeISOArray, true,                                \
+  diagnostic(bool, SpecialEncodeISOArray, true,                             \
           "special version of ISO_8859_1$Encoder.encodeISOArray")           \
                                                                             \
   develop(bool, BailoutToInterpreterForThrows, false,                       \
@@ -710,22 +719,22 @@
   diagnostic(bool, OptimizeExpensiveOps, true,                              \
           "Find best control for expensive operations")                     \
                                                                             \
-  product(bool, UseMathExactIntrinsics, true,                               \
+  diagnostic(bool, UseMathExactIntrinsics, true,                            \
           "Enables intrinsification of various java.lang.Math functions")   \
                                                                             \
-  product(bool, UseMultiplyToLenIntrinsic, false,                           \
+  diagnostic(bool, UseMultiplyToLenIntrinsic, false,                        \
           "Enables intrinsification of BigInteger.multiplyToLen()")         \
                                                                             \
-  product(bool, UseSquareToLenIntrinsic, false,                             \
+  diagnostic(bool, UseSquareToLenIntrinsic, false,                          \
           "Enables intrinsification of BigInteger.squareToLen()")           \
                                                                             \
-  product(bool, UseMulAddIntrinsic, false,                                  \
+  diagnostic(bool, UseMulAddIntrinsic, false,                               \
           "Enables intrinsification of BigInteger.mulAdd()")                \
                                                                             \
-  product(bool, UseMontgomeryMultiplyIntrinsic, false,                      \
+  diagnostic(bool, UseMontgomeryMultiplyIntrinsic, false,                   \
           "Enables intrinsification of BigInteger.montgomeryMultiply()")    \
                                                                             \
-  product(bool, UseMontgomerySquareIntrinsic, false,                        \
+  diagnostic(bool, UseMontgomerySquareIntrinsic, false,                     \
           "Enables intrinsification of BigInteger.montgomerySquare()")      \
                                                                             \
   product(bool, UseTypeSpeculation, true,                                   \
@@ -758,6 +767,7 @@ C2_FLAGS(DECLARE_DEVELOPER_FLAG, \
          DECLARE_EXPERIMENTAL_FLAG, \
          DECLARE_NOTPRODUCT_FLAG, \
          IGNORE_RANGE, \
-         IGNORE_CONSTRAINT)
+         IGNORE_CONSTRAINT, \
+         IGNORE_WRITEABLE)
 
 #endif // SHARE_VM_OPTO_C2_GLOBALS_HPP

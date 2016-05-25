@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public enum SourceVersion {
      * 1.6: no changes
      * 1.7: diamond syntax, try-with-resources, etc.
      * 1.8: lambda expressions and default methods
-     * 9: To be determined
+     *   9: modules, small cleanups to 1.7 and 1.8 changes
      */
 
     /**
@@ -145,6 +145,9 @@ public enum SourceVersion {
      * The version recognized by the Java Platform, Standard Edition
      * 9.
      *
+     * Additions in this release include modules and removal of a
+     * single underscore from the set of legal identifier names.
+     *
      * @since 9
      */
      RELEASE_9;
@@ -233,10 +236,10 @@ public enum SourceVersion {
     }
 
     /**
-     *  Returns whether or not {@code name} is a syntactically valid
-     *  qualified name in the latest source version.  Unlike {@link
-     *  #isIdentifier isIdentifier}, this method returns {@code false}
-     *  for keywords and literals.
+     * Returns whether or not {@code name} is a syntactically valid
+     * qualified name in the latest source version.  Unlike {@link
+     * #isIdentifier isIdentifier}, this method returns {@code false}
+     * for keywords, boolean literals, and the null literal.
      *
      * @param name the string to check
      * @return {@code true} if this string is a
@@ -244,45 +247,115 @@ public enum SourceVersion {
      * @jls 6.2 Names and Identifiers
      */
     public static boolean isName(CharSequence name) {
+        return isName(name, latest());
+    }
+
+    /**
+     * Returns whether or not {@code name} is a syntactically valid
+     * qualified name in the given source version.  Unlike {@link
+     * #isIdentifier isIdentifier}, this method returns {@code false}
+     * for keywords, boolean literals, and the null literal.
+     *
+     * @param name the string to check
+     * @param version the version to use
+     * @return {@code true} if this string is a
+     * syntactically valid name, {@code false} otherwise.
+     * @jls 6.2 Names and Identifiers
+     * @since 9
+     */
+    public static boolean isName(CharSequence name, SourceVersion version) {
         String id = name.toString();
 
         for(String s : id.split("\\.", -1)) {
-            if (!isIdentifier(s) || isKeyword(s))
+            if (!isIdentifier(s) || isKeyword(s, version))
                 return false;
         }
         return true;
     }
 
-    private final static Set<String> keywords;
-    static {
-        Set<String> s = new HashSet<>();
-        String [] kws = {
-            "abstract", "continue",     "for",          "new",          "switch",
-            "assert",   "default",      "if",           "package",      "synchronized",
-            "boolean",  "do",           "goto",         "private",      "this",
-            "break",    "double",       "implements",   "protected",    "throw",
-            "byte",     "else",         "import",       "public",       "throws",
-            "case",     "enum",         "instanceof",   "return",       "transient",
-            "catch",    "extends",      "int",          "short",        "try",
-            "char",     "final",        "interface",    "static",       "void",
-            "class",    "finally",      "long",         "strictfp",     "volatile",
-            "const",    "float",        "native",       "super",        "while",
-            // literals
-            "null",     "true",         "false"
-        };
-        for(String kw : kws)
-            s.add(kw);
-        keywords = Collections.unmodifiableSet(s);
+    /**
+     * Returns whether or not {@code s} is a keyword, boolean literal,
+     * or null literal in the latest source version.
+     *
+     * @param s the string to check
+     * @return {@code true} if {@code s} is a keyword, or boolean
+     * literal, or null literal, {@code false} otherwise.
+     * @jls 3.9 Keywords
+     * @jls 3.10.3 Boolean Literals
+     * @jls 3.10.7 The Null Literal
+     */
+    public static boolean isKeyword(CharSequence s) {
+        return isKeyword(s, latest());
     }
 
     /**
-     *  Returns whether or not {@code s} is a keyword or literal in the
-     *  latest source version.
+     * Returns whether or not {@code s} is a keyword, boolean literal,
+     * or null literal in the given source version.
      *
      * @param s the string to check
-     * @return {@code true} if {@code s} is a keyword or literal, {@code false} otherwise.
+     * @param version the version to use
+     * @return {@code true} if {@code s} is a keyword, or boolean
+     * literal, or null literal, {@code false} otherwise.
+     * @jls 3.9 Keywords
+     * @jls 3.10.3 Boolean Literals
+     * @jls 3.10.7 The Null Literal
+     * @since 9
      */
-    public static boolean isKeyword(CharSequence s) {
-        return keywords.contains(s.toString());
+    public static boolean isKeyword(CharSequence s, SourceVersion version) {
+        String id = s.toString();
+        switch(id) {
+            // A trip through history
+        case "strictfp":
+            return version.compareTo(RELEASE_2) >= 0;
+
+        case "assert":
+            return version.compareTo(RELEASE_4) >= 0;
+
+        case "enum":
+            return version.compareTo(RELEASE_5) >= 0;
+
+        case "_":
+            return version.compareTo(RELEASE_9) >= 0;
+
+            // Keywords common across versions
+
+            // Modifiers
+        case "public":    case "protected": case "private":
+        case "abstract":  case "static":    case "final":
+        case "transient": case "volatile":  case "synchronized":
+        case "native":
+
+            // Declarations
+        case "class":     case "interface": case "extends":
+        case "package":   case "throws":    case "implements":
+
+            // Primitive types and void
+        case "boolean":   case "byte":      case "char":
+        case "short":     case "int":       case "long":
+        case "float":     case "double":
+        case "void":
+
+            // Control flow
+        case "if":      case "else":
+        case "try":     case "catch":    case "finally":
+        case "do":      case "while":
+        case "for":     case "continue":
+        case "switch":  case "case":     case "default":
+        case "break":   case "throw":    case "return":
+
+            // Other keywords
+        case  "this":   case "new":      case "super":
+        case "import":  case "instanceof":
+
+            // Forbidden!
+        case "goto":        case "const":
+
+            // literals
+        case "null":         case "true":       case "false":
+            return true;
+
+        default:
+            return false;
+        }
     }
 }

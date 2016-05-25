@@ -32,7 +32,7 @@
  * @run main/othervm/timeout=300 -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -XX:+OptimizeFill TestIntUnsafeVolatile
  */
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import java.lang.reflect.*;
 
 public class TestIntUnsafeVolatile {
@@ -47,7 +47,7 @@ public class TestIntUnsafeVolatile {
   private static final int BASE;
   static {
     try {
-      Class c = TestIntUnsafeVolatile.class.getClassLoader().loadClass("sun.misc.Unsafe");
+      Class c = TestIntUnsafeVolatile.class.getClassLoader().loadClass("jdk.internal.misc.Unsafe");
       Field f = c.getDeclaredField("theUnsafe");
       f.setAccessible(true);
       unsafe = (Unsafe)f.get(c);

@@ -33,9 +33,8 @@ import sun.jvm.hotspot.debugger.JVMDebugger;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
-import jdk.internal.vm.agent.spi.ToolProvider;
 
-public class HeapSummary extends Tool implements ToolProvider {
+public class HeapSummary extends Tool {
 
    public HeapSummary() {
       super();
@@ -53,11 +52,6 @@ public class HeapSummary extends Tool implements ToolProvider {
    @Override
    public String getName() {
       return "heapSummary";
-   }
-
-   @Override
-   public void run(String... arguments) {
-      execute(arguments);
    }
 
    public void run() {

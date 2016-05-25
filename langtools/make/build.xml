@@ -239,11 +239,12 @@
         </condition>
         <replace file=".idea/ant.xml" token="@IDEA_JTREG_HOME@" value="${idea.jtreg.home}"/>
         <replace file=".idea/ant.xml" token="@IDEA_TARGET_JDK@" value="${idea.target.jdk}"/>
-        <replace file=".idea/workspace.xml" token="@IDEA_TARGET_JDK@" value="${idea.target.jdk}"/>
-        <replace file=".idea/workspace.xml" token="@XPATCH@" value="${xpatch.cmd}"/>
-        <replace file=".idea/workspace.xml" token="@PATH_SEP@" value="${path.separator}"/>
+        <replace dir=".idea/runConfigurations" token="@IDEA_TARGET_JDK@" value="${idea.target.jdk}"/>
+        <replace dir=".idea/runConfigurations" token="@XPATCH@" value="${xpatch.cmd}"/>
         <mkdir dir=".idea/classes"/>
-        <javac srcdir="make/intellij/src"
+        <javac source="${javac.build.source}"
+               target="${javac.build.target}"
+               srcdir="make/intellij/src"
                destdir=".idea/classes"/>
     </target>
 
@@ -255,10 +256,8 @@
         <copy todir="${build.tools}/propertiesparser" >
             <fileset dir="${make.tools.dir}/propertiesparser" includes="**/resources/**"/>
         </copy>
-        <javac fork="true"
-               source="${javac.source}"
-               target="${javac.target}"
-               executable="${langtools.jdk.home}/bin/javac"
+        <javac source="${javac.build.source}"
+               target="${javac.build.target}"
                srcdir="${make.tools.dir}"
                includes="propertiesparser/* anttasks/PropertiesParser* anttasks/PathFileSet*"
                destdir="${build.tools}"
@@ -273,10 +272,9 @@
     </target>
 
      <target name="-def-pcompile">
-        <javac fork="true"
-               source="${javac.source}"
-               target="${javac.target}"
-               executable="${langtools.jdk.home}/bin/javac"
+        <javac
+               source="${javac.build.source}"
+               target="${javac.build.target}"
                srcdir="${make.tools.dir}"
                includes="compileproperties/* anttasks/CompileProperties* anttasks/PathFileSet*"
                destdir="${build.dir}/toolclasses/"

@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/concurrentG1Refine.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
+#include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/workerDataArray.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -60,7 +60,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   _gc_par_phases[SATBFiltering] = new WorkerDataArray<double>(max_gc_threads, "SATB Filtering (ms):");
 
   _gc_par_phases[UpdateRS] = new WorkerDataArray<double>(max_gc_threads, "Update RS (ms):");
-  if (ConcurrentG1Refine::hot_card_cache_enabled()) {
+  if (G1HotCardCache::default_use_cache()) {
     _gc_par_phases[ScanHCC] = new WorkerDataArray<double>(max_gc_threads, "Scan HCC (ms):");
   } else {
     _gc_par_phases[ScanHCC] = NULL;
@@ -255,7 +255,7 @@ void G1GCPhaseTimes::print() {
     trace_phase(_gc_par_phases[i]);
   }
   debug_phase(_gc_par_phases[UpdateRS]);
-  if (ConcurrentG1Refine::hot_card_cache_enabled()) {
+  if (G1HotCardCache::default_use_cache()) {
     trace_phase(_gc_par_phases[ScanHCC]);
   }
   debug_phase(_gc_par_phases[ScanRS]);

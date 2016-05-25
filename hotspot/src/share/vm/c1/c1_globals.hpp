@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,15 @@
 //
 // Defines all global flags used by the client compiler.
 //
-#define C1_FLAGS(develop, develop_pd, product, product_pd, diagnostic, notproduct, range, constraint) \
+#define C1_FLAGS(develop, \
+                 develop_pd, \
+                 product, \
+                 product_pd, \
+                 diagnostic, \
+                 notproduct, \
+                 range, \
+                 constraint, \
+                 writeable) \
                                                                             \
   /* Printing */                                                            \
   notproduct(bool, PrintC1Statistics, false,                                \
@@ -176,7 +184,7 @@
   product(bool, InlineSynchronizedMethods, true,                            \
           "Inline synchronized methods")                                    \
                                                                             \
-  develop(bool, InlineNIOCheckIndex, true,                                  \
+  diagnostic(bool, InlineNIOCheckIndex, true,                               \
           "Intrinsify java.nio.Buffer.checkIndex")                          \
                                                                             \
   develop(bool, CanonicalizeNodes, true,                                    \
@@ -350,6 +358,7 @@ C1_FLAGS(DECLARE_DEVELOPER_FLAG, \
          DECLARE_DIAGNOSTIC_FLAG, \
          DECLARE_NOTPRODUCT_FLAG, \
          IGNORE_RANGE, \
-         IGNORE_CONSTRAINT)
+         IGNORE_CONSTRAINT, \
+         IGNORE_WRITEABLE)
 
 #endif // SHARE_VM_C1_C1_GLOBALS_HPP
