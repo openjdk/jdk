@@ -545,6 +545,15 @@ public:
     mrs(0b011, 0b0000, 0b0000, 0b111, reg);
   }
 
+  // CTR_EL0:   op1 == 011
+  //            CRn == 0000
+  //            CRm == 0000
+  //            op2 == 001
+  inline void get_ctr_el0(Register reg)
+  {
+    mrs(0b011, 0b0000, 0b0000, 0b001, reg);
+  }
+
   // idiv variant which deals with MINLONG as dividend and -1 as divisor
   int corrected_idivl(Register result, Register ra, Register rb,
                       bool want_remainder, Register tmp = rscratch1);
