@@ -1033,7 +1033,7 @@ public class BeanPropertyTest {
             G13.class, // S13.class, // TODO: please update after 8154756 fix
             // G14.class, S14.class, // TODO: please update after 8132888 fix or
                                      // remove these cases if it is not an issue
-            // GS.class, // TODO: please update after 8132973 fix
+            GS.class,
             getX.class, setX.class,
             Self.class, SelfArr.class
         };
