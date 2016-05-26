@@ -38,8 +38,7 @@ import java.util.Arrays;
  * @author a.stepanov
  * @run main AnonymousClassBeanPropertyTest
  */
-
-
+//TODO in final revision each test should have only one checkInfo/checkAlternate
 public class AnonymousClassBeanPropertyTest {
 
     private final static String  DESCRIPTION = "TEST";
@@ -655,8 +654,6 @@ public class AnonymousClassBeanPropertyTest {
         System.out.println("OK = " + ok);
         passed = passed && ok;
 
-        // TODO: please uncomment/update after 8132973 fix
-        /*
         IGetSet testGetSet_3 = new IGetSet() {
 
             private double x;
@@ -688,10 +685,7 @@ public class AnonymousClassBeanPropertyTest {
         };
         ok = checkInfo(testGetSet_3.getClass(), "IGetSet-3", true);
         System.out.println("OK = " + ok);
-        ok2 = checkAlternativeInfo(testGetSet_3.getClass(), "IGetSet-3");
-        System.out.println("OK = " + ok2);
-        passed = passed && (ok || ok2);
-        */
+        passed = passed && ok;
 
         //----------------------------------------------------------------------
 
@@ -746,8 +740,6 @@ public class AnonymousClassBeanPropertyTest {
         System.out.println("OK = " + ok);
         passed = passed && ok;
 
-        // TODO: please uncomment/update after 8132973 fix
-        /*
         IGetSetByIndex testGetSetByIndex_3 = new IGetSetByIndex() {
 
             private double x[] = {X, X};
@@ -783,11 +775,7 @@ public class AnonymousClassBeanPropertyTest {
         };
         ok = checkInfo(testGetSetByIndex_3.getClass(), "IGetSetByIndex-3", true);
         System.out.println("OK = " + ok);
-        ok2 = checkAlternativeInfo(
-            testGetSetByIndex_3.getClass(), "IGetSetByIndex-3");
-        System.out.println("OK = " + ok2);
-        passed = passed && (ok || ok2);
-        */
+        passed = passed && ok;
 
         //----------------------------------------------------------------------
 
@@ -855,7 +843,7 @@ public class AnonymousClassBeanPropertyTest {
         passed = passed && ok;
         */
 
-        // TODO: please uncomment/update after 8132973 fix
+        // TODO: please uncomment/update after 8155013 fix
         /*
         IGetSetBoth testGetSetBoth_3 = new IGetSetBoth() {
 
@@ -978,8 +966,6 @@ public class AnonymousClassBeanPropertyTest {
         System.out.println("OK = " + ok2);
         passed = passed && (ok || ok2);
 
-        // TODO: please uncomment/update after 8132973 fix
-        /*
         IIs testIs_4 = new IIs() {
 
             private boolean b;
@@ -1010,11 +996,7 @@ public class AnonymousClassBeanPropertyTest {
         };
         ok = checkInfo(testIs_4.getClass(), "IIs-4", false);
         System.out.println("OK = " + ok);
-        ok2 = checkAlternativeInfo(testIs_4.getClass(), "IIs-4");
-        System.out.println("OK = " + ok2);
-        passed = passed && (ok || ok2);
-        */
-
+        passed = passed && ok;
 
         //----------------------------------------------------------------------
 
