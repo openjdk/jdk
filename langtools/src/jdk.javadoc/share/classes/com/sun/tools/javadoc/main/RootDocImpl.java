@@ -54,6 +54,7 @@ import com.sun.tools.javac.util.Position;
  * @author Atul M Dambalkar
  * @author Neal Gafter (rewrite)
  */
+@Deprecated
 public class RootDocImpl extends DocImpl implements RootDoc {
 
     /**

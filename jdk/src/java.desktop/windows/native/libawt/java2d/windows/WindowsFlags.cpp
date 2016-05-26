@@ -27,13 +27,10 @@
 #include "Trace.h"
 #include "WindowsFlags.h"
 
-BOOL      accelReset;         // reset registry 2d acceleration settings
 BOOL      useD3D = TRUE;      // d3d enabled flag
                               // initially is TRUE to allow D3D preloading
 BOOL      forceD3DUsage;      // force d3d on or off
 jboolean  g_offscreenSharing; // JAWT accelerated surface sharing
-BOOL      checkRegistry;      // Diagnostic tool: outputs 2d registry settings
-BOOL      disableRegistry;    // Diagnostic tool: disables registry interaction
 BOOL      setHighDPIAware;    // Whether to set the high-DPI awareness flag
 
 extern WCHAR *j2dAccelKey;       // Name of java2d root key
@@ -95,12 +92,6 @@ void GetFlagValues(JNIEnv *env, jclass wFlagsClass)
     g_offscreenSharing = GetStaticBoolean(env, wFlagsClass,
                                           "offscreenSharingEnabled");
     JNU_CHECK_EXCEPTION(env);
-    accelReset = GetStaticBoolean(env, wFlagsClass, "accelReset");
-    JNU_CHECK_EXCEPTION(env);
-    checkRegistry = GetStaticBoolean(env, wFlagsClass, "checkRegistry");
-    JNU_CHECK_EXCEPTION(env);
-    disableRegistry = GetStaticBoolean(env, wFlagsClass, "disableRegistry");
-    JNU_CHECK_EXCEPTION(env);
 
     setHighDPIAware =
         (IS_WINVISTA && GetStaticBoolean(env, wFlagsClass, "setHighDPIAware"));
@@ -113,12 +104,6 @@ void GetFlagValues(JNIEnv *env, jclass wFlagsClass)
                 (forceD3DUsage ? "true" : "false"));
     J2dTraceLn1(J2D_TRACE_INFO, "  offscreenSharing = %s",
                 (g_offscreenSharing ? "true" : "false"));
-    J2dTraceLn1(J2D_TRACE_INFO, "  accelReset = %s",
-                (accelReset ? "true" : "false"));
-    J2dTraceLn1(J2D_TRACE_INFO, "  checkRegistry = %s",
-                (checkRegistry ? "true" : "false"));
-    J2dTraceLn1(J2D_TRACE_INFO, "  disableRegistry = %s",
-                (disableRegistry ? "true" : "false"));
     J2dTraceLn1(J2D_TRACE_INFO, "  setHighDPIAware = %s",
                 (setHighDPIAware ? "true" : "false"));
 }

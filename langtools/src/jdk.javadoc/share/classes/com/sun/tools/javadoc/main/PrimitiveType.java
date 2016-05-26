@@ -33,6 +33,7 @@ import com.sun.javadoc.*;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
+@Deprecated
 class PrimitiveType implements com.sun.javadoc.Type {
 
     private final String name;

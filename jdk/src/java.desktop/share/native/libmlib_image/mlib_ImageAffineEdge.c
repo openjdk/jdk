@@ -73,7 +73,6 @@
  */
 
 #include "mlib_image.h"
-#include "mlib_ImageColormap.h"
 #include "mlib_ImageAffine.h"
 
 /***************************************************************/
@@ -218,97 +217,6 @@
   }
 
 /***************************************************************/
-#define LUT(k, ind) plut[channels*sp[ind] + k]
-
-/***************************************************************/
-#define MLIB_EDGE_INDEX(ITYPE, DTYPE, size)                             \
-  for (j = 0; j < size; j++) {                                          \
-    ySrc = ((Y - 32768) >> MLIB_SHIFT);                                 \
-    xSrc = ((X - 32768) >> MLIB_SHIFT);                                 \
-                                                                        \
-    t = ((X - 32768) & MLIB_MASK) * scale;                              \
-    u = ((Y - 32768) & MLIB_MASK) * scale;                              \
-                                                                        \
-    xDelta = (((xSrc + 1 - srcWidth )) >> MLIB_SIGN_SHIFT) & 1;         \
-    yDelta = (((ySrc + 1 - srcHeight)) >> MLIB_SIGN_SHIFT) & srcStride; \
-                                                                        \
-    xFlag = (xSrc >> (MLIB_SIGN_SHIFT - MLIB_SHIFT));                   \
-    xSrc = xSrc + (1 & xFlag);                                          \
-    xDelta = xDelta &~ xFlag;                                           \
-                                                                        \
-    yFlag = (ySrc >> (MLIB_SIGN_SHIFT - MLIB_SHIFT));                   \
-    ySrc = ySrc + (1 & yFlag);                                          \
-    yDelta = yDelta &~ yFlag;                                           \
-                                                                        \
-    sp = (ITYPE*)lineAddr[ySrc] + xSrc;                                 \
-                                                                        \
-    for (k = 0; k < channels; k++) {                                    \
-      a00  = LUT(k, 0);                                                 \
-      a01  = LUT(k, xDelta);                                            \
-      a10  = LUT(k, yDelta);                                            \
-      a11  = LUT(k, yDelta + xDelta);                                   \
-      pix0 = (a00 * (1 - t) + a01 * t) * (1 - u) +                      \
-             (a10 * (1 - t) + a11 * t) * u;                             \
-                                                                        \
-      pbuff[k] = (mlib_s32)pix0;                                        \
-    }                                                                   \
-    pbuff += channels;                                                  \
-                                                                        \
-    X += dX;                                                            \
-    Y += dY;                                                            \
-  }
-
-/***************************************************************/
-#define MLIB_EDGE_INDEX_u8i(ITYPE, Left, Right) {                              \
-  mlib_u8  *pbuff = buff;                                                      \
-                                                                               \
-  size = Right - Left;                                                         \
-                                                                               \
-  MLIB_EDGE_INDEX(ITYPE, mlib_u8, size);                                       \
-                                                                               \
-  dp = (ITYPE*)data + Left;                                                    \
-                                                                               \
-  if (channels == 3) {                                                         \
-    if (sizeof(ITYPE) == 1) {                                                  \
-      mlib_ImageColorTrue2IndexLine_U8_U8_3 (buff, (void*)dp, size, colormap); \
-    } else {                                                                   \
-      mlib_ImageColorTrue2IndexLine_U8_S16_3(buff, (void*)dp, size, colormap); \
-    }                                                                          \
-  } else {                                                                     \
-    if (sizeof(ITYPE) == 1) {                                                  \
-      mlib_ImageColorTrue2IndexLine_U8_U8_4 (buff, (void*)dp, size, colormap); \
-    } else {                                                                   \
-      mlib_ImageColorTrue2IndexLine_U8_S16_4(buff, (void*)dp, size, colormap); \
-    }                                                                          \
-  }                                                                            \
-}
-
-/***************************************************************/
-#define MLIB_EDGE_INDEX_s16i(ITYPE, Left, Right) {                              \
-  mlib_s16 *pbuff = buff;                                                       \
-                                                                                \
-  size = Right - Left;                                                          \
-                                                                                \
-  MLIB_EDGE_INDEX(ITYPE, mlib_s16, size);                                       \
-                                                                                \
-  dp = (ITYPE*)data + Left;                                                     \
-                                                                                \
-  if (channels == 3) {                                                          \
-    if (sizeof(ITYPE) == 1) {                                                   \
-      mlib_ImageColorTrue2IndexLine_S16_U8_3 (buff, (void*)dp, size, colormap); \
-    } else {                                                                    \
-      mlib_ImageColorTrue2IndexLine_S16_S16_3(buff, (void*)dp, size, colormap); \
-    }                                                                           \
-  } else {                                                                      \
-    if (sizeof(ITYPE) == 1) {                                                   \
-      mlib_ImageColorTrue2IndexLine_S16_U8_4 (buff, (void*)dp, size, colormap); \
-    } else {                                                                    \
-      mlib_ImageColorTrue2IndexLine_S16_S16_4(buff, (void*)dp, size, colormap); \
-    }                                                                           \
-  }                                                                             \
-}
-
-/***************************************************************/
 #define GET_FLT_TBL(X, xf0, xf1, xf2, xf3)                      \
   filterpos = ((X - 32768) >> flt_shift) & flt_mask;            \
   fptr = (mlib_f32 *) ((mlib_u8 *)flt_tbl + filterpos);         \
@@ -422,47 +330,6 @@
 /***************************************************************/
 #define MLIB_EDGE_BC2(TYPE, Left, Right)                        \
   MLIB_EDGE_BC_LINE(TYPE, Left, Right, GET_FLT_BC2)
-
-/***************************************************************/
-#define MLIB_EDGE_INDEX_BC(ITYPE, DTYPE, size)                  \
-  for (j = 0; j < size; j++) {                                  \
-    GET_FLT_TBL(X, xf0, xf1, xf2, xf3);                         \
-    GET_FLT_TBL(Y, yf0, yf1, yf2, yf3);                         \
-                                                                \
-    CALC_SRC_POS(X, Y, 1, srcStride);                           \
-                                                                \
-    sp = (ITYPE*)lineAddr[ySrc] + xSrc;                         \
-                                                                \
-    for (k = 0; k < channels; k++) {                            \
-      c0 = LUT(k, yDelta0 + xDelta0) * xf0 +                    \
-           LUT(k, yDelta0          ) * xf1 +                    \
-           LUT(k, yDelta0 + xDelta1) * xf2 +                    \
-           LUT(k, yDelta0 + xDelta2) * xf3;                     \
-                                                                \
-      c1 = LUT(k, xDelta0) * xf0 +                              \
-           LUT(k, 0      ) * xf1 +                              \
-           LUT(k, xDelta1) * xf2 +                              \
-           LUT(k, xDelta2) * xf3;                               \
-                                                                \
-      c2 = LUT(k, yDelta1 + xDelta0) * xf0 +                    \
-           LUT(k, yDelta1          ) * xf1 +                    \
-           LUT(k, yDelta1 + xDelta1) * xf2 +                    \
-           LUT(k, yDelta1 + xDelta2) * xf3;                     \
-                                                                \
-      c3 = LUT(k, yDelta2 + xDelta0) * xf0 +                    \
-           LUT(k, yDelta2          ) * xf1 +                    \
-           LUT(k, yDelta2 + xDelta1) * xf2 +                    \
-           LUT(k, yDelta2 + xDelta2) * xf3;                     \
-                                                                \
-      val0 = c0*yf0 + c1*yf1 + c2*yf2 + c3*yf3;                 \
-                                                                \
-      SAT##DTYPE(pbuff[k], val0);                               \
-    }                                                           \
-    pbuff += channels;                                          \
-                                                                \
-    X += dX;                                                    \
-    Y += dY;                                                    \
-  }
 
 /***************************************************************/
 #define MLIB_PROCESS_EDGES_ZERO(TYPE) {                         \
@@ -586,15 +453,10 @@
 
 /***************************************************************/
 void mlib_ImageAffineEdgeZero(mlib_affine_param *param,
-                              mlib_affine_param *param_e,
-                              const void        *colormap)
+                              mlib_affine_param *param_e)
 {
   GET_EDGE_PARAMS_ZERO();
   mlib_s32 zero = 0;
-
-  if (colormap != NULL) {
-    zero = mlib_ImageGetLutOffset(colormap);
-  }
 
   switch (type) {
     case MLIB_BYTE:
@@ -654,87 +516,13 @@ void mlib_ImageAffineEdgeNearest(mlib_affine_param *param,
 
 /***************************************************************/
 mlib_status mlib_ImageAffineEdgeExtend_BL(mlib_affine_param *param,
-                                          mlib_affine_param *param_e,
-                                          const void        *colormap)
+                                          mlib_affine_param *param_e)
 {
   GET_EDGE_PARAMS();
   mlib_d64 scale = 1.0 / (mlib_d64) MLIB_PREC;
   mlib_s32 xDelta, yDelta, xFlag, yFlag;
   mlib_d64 t, u, pix0;
   mlib_d64 a00, a01, a10, a11;
-
-  if (colormap != NULL) {
-    mlib_s32 max_xsize = param_e->max_xsize;
-    mlib_type ltype = mlib_ImageGetLutType(colormap);
-    mlib_d64 *plut = (mlib_d64 *) mlib_ImageGetLutDoubleData(colormap);
-    void *buff;
-
-    channels = mlib_ImageGetLutChannels(colormap);
-    plut -= channels * mlib_ImageGetLutOffset(colormap);
-
-    if (max_xsize == 0) {
-      return MLIB_SUCCESS;
-    }
-
-    if (ltype == MLIB_BYTE) {
-      buff = mlib_malloc(channels * max_xsize);
-    }
-    else if (ltype == MLIB_SHORT) {
-      buff = mlib_malloc(channels * max_xsize * sizeof(mlib_s16));
-    } else {
-      /* Unsupported type of lookup table. Report a failure */
-      return MLIB_FAILURE;
-    }
-
-    if (buff == NULL)
-      return MLIB_FAILURE;
-
-    switch (ltype) {
-      case MLIB_BYTE:
-        switch (type) {
-          case MLIB_BYTE:
-            MLIB_PROCESS_EDGES(MLIB_EDGE_INDEX_u8i, mlib_u8);
-            break;
-
-          case MLIB_SHORT:
-            srcStride >>= 1;
-            MLIB_PROCESS_EDGES(MLIB_EDGE_INDEX_u8i, mlib_s16);
-            break;
-        default:
-          /* Incompatible image type. Ignore it for now. */
-          break;
-        }
-
-        break;
-
-      case MLIB_SHORT:
-        switch (type) {
-          case MLIB_BYTE:
-            MLIB_PROCESS_EDGES(MLIB_EDGE_INDEX_s16i, mlib_u8);
-            break;
-
-          case MLIB_SHORT:
-            srcStride >>= 1;
-            MLIB_PROCESS_EDGES(MLIB_EDGE_INDEX_s16i, mlib_s16);
-            break;
-        default:
-          /* Incompatible image type. Ignore it for now. */
-          break;
-        }
-
-        break;
-    default:
-      /* Unsupported type of lookup table.
-       * Can not be here due to check on line 685,
-       * so just ignore it.
-       */
-      break;
-    }
-
-    mlib_free(buff);
-
-    return MLIB_SUCCESS;
-  }
 
   switch (type) {
     case MLIB_BYTE:
@@ -775,12 +563,8 @@ mlib_status mlib_ImageAffineEdgeExtend_BL(mlib_affine_param *param,
 }
 
 /***************************************************************/
-#undef  MLIB_EDGE_INDEX
-#define MLIB_EDGE_INDEX MLIB_EDGE_INDEX_BC
-
 mlib_status mlib_ImageAffineEdgeExtend_BC(mlib_affine_param *param,
-                                          mlib_affine_param *param_e,
-                                          const void        *colormap)
+                                          mlib_affine_param *param_e)
 {
   GET_EDGE_PARAMS();
   mlib_d64 scale = 1.0 / (mlib_d64) MLIB_PREC;
@@ -789,7 +573,6 @@ mlib_status mlib_ImageAffineEdgeExtend_BC(mlib_affine_param *param,
   mlib_d64 xf0, xf1, xf2, xf3;
   mlib_d64 yf0, yf1, yf2, yf3;
   mlib_d64 c0, c1, c2, c3, val0;
-  mlib_type ltype;
   mlib_filter filter = param->filter;
   mlib_f32 *fptr;
   mlib_f32 const *flt_tbl;
@@ -798,9 +581,7 @@ mlib_status mlib_ImageAffineEdgeExtend_BC(mlib_affine_param *param,
   mlib_s32 yDelta0, yDelta1, yDelta2;
   mlib_d64 sat;
 
-  ltype = (colormap != NULL) ? mlib_ImageGetLutType(colormap) : type;
-
-  if (ltype == MLIB_BYTE) {
+  if (type == MLIB_BYTE) {
     flt_shift = FLT_SHIFT_U8;
     flt_mask = FLT_MASK_U8;
     flt_tbl = (filter == MLIB_BICUBIC) ? mlib_filters_u8f_bc : mlib_filters_u8f_bc2;
@@ -813,78 +594,6 @@ mlib_status mlib_ImageAffineEdgeExtend_BC(mlib_affine_param *param,
     sat = (mlib_d64) 0x7FFF8000;                           /* saturation for U16 */
   }
 
-  if (colormap != NULL) {
-    mlib_s32 max_xsize = param_e->max_xsize;
-    mlib_d64 *plut = (mlib_d64 *) mlib_ImageGetLutDoubleData(colormap);
-    void *buff;
-
-    channels = mlib_ImageGetLutChannels(colormap);
-    plut -= channels * mlib_ImageGetLutOffset(colormap);
-
-    if (max_xsize == 0) {
-      return MLIB_SUCCESS;
-    }
-
-    if (ltype == MLIB_BYTE) {
-      buff = mlib_malloc(channels * max_xsize);
-    }
-    else if (ltype == MLIB_SHORT) {
-      buff = mlib_malloc(channels * max_xsize * sizeof(mlib_s16));
-    } else {
-      /* Unsupported type of lookup table. */
-      return MLIB_FAILURE;
-    }
-
-    if (buff == NULL)
-      return MLIB_FAILURE;
-
-    switch (ltype) {
-      case MLIB_BYTE:
-        switch (type) {
-          case MLIB_BYTE:
-            MLIB_PROCESS_EDGES(MLIB_EDGE_INDEX_u8i, mlib_u8);
-            break;
-
-          case MLIB_SHORT:
-            srcStride >>= 1;
-            MLIB_PROCESS_EDGES(MLIB_EDGE_INDEX_u8i, mlib_s16);
-            break;
-        default:
-          /* Ignore incomatible image type. */
-          break;
-        }
-
-        break;
-
-      case MLIB_SHORT:
-        switch (type) {
-          case MLIB_BYTE:
-            MLIB_PROCESS_EDGES(MLIB_EDGE_INDEX_s16i, mlib_u8);
-            break;
-
-          case MLIB_SHORT:
-            srcStride >>= 1;
-            MLIB_PROCESS_EDGES(MLIB_EDGE_INDEX_s16i, mlib_s16);
-            break;
-        default:
-          /* Ignore incomatible image type. */
-          break;
-        }
-
-        break;
-
-    default:
-      /* Unsupported type of lookup table.
-       * Can not be here due to check on line 836,
-       * so just ignore it.
-       */
-      break;
-    }
-
-    mlib_free(buff);
-
-    return MLIB_SUCCESS;
-  }
 
   switch (type) {
     case MLIB_BYTE:

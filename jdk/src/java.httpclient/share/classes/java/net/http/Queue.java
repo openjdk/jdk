@@ -105,6 +105,8 @@ class Queue<T> implements Closeable {
             while (q.size() == 0) {
                 waiters++;
                 wait();
+                if (closed)
+                    throw new IOException("Queue closed");
                 waiters--;
             }
             return q.removeFirst();

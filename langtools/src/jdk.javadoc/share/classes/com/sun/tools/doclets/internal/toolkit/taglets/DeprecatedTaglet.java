@@ -40,6 +40,7 @@ import com.sun.tools.doclets.internal.toolkit.Content;
  * @since 1.5
  */
 
+@Deprecated
 public class DeprecatedTaglet extends BaseTaglet{
 
     public DeprecatedTaglet() {

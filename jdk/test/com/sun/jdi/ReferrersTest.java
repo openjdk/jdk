@@ -446,7 +446,7 @@ public class ReferrersTest extends TestScaffold {
         if (rt instanceof ClassType) {
             ClassType ct = (ClassType)rt;
             String name = ct.name();
-            if (name.equals("sun.misc.SoftCache$ValueCell")) {
+            if (name.equals("sun.awt.SoftCache$ValueCell")) {
                 return;
             }
             if (name.equals("java.lang.ref.Finalizer")) {

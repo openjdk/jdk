@@ -228,12 +228,18 @@ public class FieldSetAccessibleTest {
     }
 
     static boolean test(String s, boolean addExports) {
+        String clsName = s.replace('/', '.').substring(0, s.length() - 6);
         try {
+            System.out.println("Loading " + clsName);
             final Class<?> c = Class.forName(
-                    s.replace('/', '.').substring(0, s.length() - 6),
+                    clsName,
                     false,
                     systemClassLoader);
             return test(c, addExports);
+        } catch (VerifyError ve) {
+            System.err.println("VerifyError for " + clsName);
+            ve.printStackTrace(System.err);
+            failed.add(s);
         } catch (Exception t) {
             t.printStackTrace(System.err);
             failed.add(s);

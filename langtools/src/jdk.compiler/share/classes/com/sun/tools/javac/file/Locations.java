@@ -1062,7 +1062,7 @@ public class Locations {
                     return null;
                 }
 
-                if (p.getFileName().toString().endsWith(".jar")) {
+                if (p.getFileName().toString().endsWith(".jar") && fsInfo.exists(p)) {
                     try (FileSystem fs = FileSystems.newFileSystem(p, null)) {
                         Path moduleInfoClass = fs.getPath("module-info.class");
                         if (Files.exists(moduleInfoClass)) {
@@ -1138,7 +1138,7 @@ public class Locations {
                     }
                 }
 
-                if (warn && false) {  // temp disable
+                if (warn && false) {  // temp disable, when enabled, massage examples.not-yet.txt suitably.
                     log.warning(Warnings.LocnUnknownFileOnModulePath(p));
                 }
                 return null;

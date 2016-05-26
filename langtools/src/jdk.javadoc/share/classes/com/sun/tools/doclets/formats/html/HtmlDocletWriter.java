@@ -53,6 +53,7 @@ import com.sun.tools.javac.util.StringUtils;
  * @author Robert Field
  * @author Bhavesh Patel (Modified)
  */
+@Deprecated
 public class HtmlDocletWriter extends HtmlDocWriter {
 
     /**

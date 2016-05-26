@@ -775,20 +775,16 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
   <!-- octane benchmark -->
   <target name="get-octane" depends="init" unless="${test-sys-prop.external.octane}">
     <!-- checkout octane benchmarks -->
-    <exec executable="${svn.executable}">
-       <arg value="--non-interactive"/>
-       <arg value="--trust-server-cert"/>
-       <arg value="checkout"/>
-       <arg value="http://octane-benchmark.googlecode.com/svn/trunk/"/>
+    <exec executable="${git.executable}">
+       <arg value="clone"/>
+       <arg value="https://github.com/chromium/octane"/>
        <arg value="${test.external.dir}/octane"/>
     </exec>
   </target>
   <target name="update-octane" depends="init" if="${test-sys-prop.external.octane}">
     <!-- update octane benchmarks -->
-    <exec executable="${svn.executable}" dir="${test.external.dir}/octane">
-       <arg value="--non-interactive"/>
-       <arg value="--trust-server-cert"/>
-       <arg value="update"/>
+    <exec executable="${git.executable}" dir="${test.external.dir}/octane">
+       <arg value="pull"/>
     </exec>
   </target>
 

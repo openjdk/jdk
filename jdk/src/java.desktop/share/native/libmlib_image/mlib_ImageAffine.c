@@ -73,7 +73,6 @@
  */
 
 #include "mlib_ImageCheck.h"
-#include "mlib_ImageColormap.h"
 #include "mlib_ImageAffine.h"
 
 
@@ -125,18 +124,6 @@ const type_affine_fun mlib_AffineFunArr_bc[] = {
 };
 
 /***************************************************************/
-const type_affine_i_fun mlib_AffineFunArr_bc_i[] = {
-  mlib_ImageAffineIndex_U8_U8_3CH_BC,
-  mlib_ImageAffineIndex_U8_U8_4CH_BC,
-  mlib_ImageAffineIndex_S16_U8_3CH_BC,
-  mlib_ImageAffineIndex_S16_U8_4CH_BC,
-  mlib_ImageAffineIndex_U8_S16_3CH_BC,
-  mlib_ImageAffineIndex_U8_S16_4CH_BC,
-  mlib_ImageAffineIndex_S16_S16_3CH_BC,
-  mlib_ImageAffineIndex_S16_S16_4CH_BC
-};
-
-/***************************************************************/
 #ifdef i386 /* do not perform the coping by mlib_d64 data type for x86 */
 #define MAX_T_IND  2
 #else
@@ -148,8 +135,7 @@ mlib_status mlib_ImageAffine_alltypes(mlib_image       *dst,
                                       const mlib_image *src,
                                       const mlib_d64   *mtx,
                                       mlib_filter      filter,
-                                      mlib_edge        edge,
-                                      const void       *colormap)
+                                      mlib_edge        edge)
 {
   mlib_affine_param param[1];
   mlib_status res;
@@ -213,18 +199,6 @@ mlib_status mlib_ImageAffine_alltypes(mlib_image       *dst,
   else
     return MLIB_FAILURE; /* unknown image type */
 
-  if (colormap != NULL && filter != MLIB_NEAREST) {
-    if (t_ind != 0 && t_ind != 1)
-      return MLIB_FAILURE;
-
-    if (mlib_ImageGetLutType(colormap) == MLIB_SHORT)
-      t_ind += 2;
-    t_ind = 2 * t_ind;
-
-    if (mlib_ImageGetLutChannels(colormap) == 4)
-      t_ind++;
-  }
-
   if (type == MLIB_BIT) {
     mlib_s32 s_bitoff = mlib_ImageGetBitOffset(src);
     mlib_s32 d_bitoff = mlib_ImageGetBitOffset(dst);
@@ -253,25 +227,13 @@ mlib_status mlib_ImageAffine_alltypes(mlib_image       *dst,
 
       case MLIB_BILINEAR:
 
-        if (colormap != NULL) {
-          res = mlib_AffineFunArr_bl_i[t_ind] (param, colormap);
-        }
-        else {
-          res = mlib_AffineFunArr_bl[4 * t_ind + (nchan - 1)] (param);
-        }
-
+        res = mlib_AffineFunArr_bl[4 * t_ind + (nchan - 1)] (param);
         break;
 
       case MLIB_BICUBIC:
       case MLIB_BICUBIC2:
 
-        if (colormap != NULL) {
-          res = mlib_AffineFunArr_bc_i[t_ind] (param, colormap);
-        }
-        else {
-          res = mlib_AffineFunArr_bc[4 * t_ind + (nchan - 1)] (param);
-        }
-
+        res = mlib_AffineFunArr_bc[4 * t_ind + (nchan - 1)] (param);
         break;
     }
 
@@ -303,7 +265,7 @@ mlib_status mlib_ImageAffine_alltypes(mlib_image       *dst,
 
     switch (edge) {
       case MLIB_EDGE_DST_FILL_ZERO:
-        mlib_ImageAffineEdgeZero(param, param_e, colormap);
+        mlib_ImageAffineEdgeZero(param, param_e);
         break;
 
       case MLIB_EDGE_OP_NEAREST:
@@ -313,10 +275,10 @@ mlib_status mlib_ImageAffine_alltypes(mlib_image       *dst,
       case MLIB_EDGE_SRC_EXTEND:
 
         if (filter == MLIB_BILINEAR) {
-          res = mlib_ImageAffineEdgeExtend_BL(param, param_e, colormap);
+          res = mlib_ImageAffineEdgeExtend_BL(param, param_e);
         }
         else {
-          res = mlib_ImageAffineEdgeExtend_BC(param, param_e, colormap);
+          res = mlib_ImageAffineEdgeExtend_BC(param, param_e);
         }
 
         break;
@@ -355,7 +317,7 @@ mlib_status mlib_ImageAffine(mlib_image       *dst,
     return MLIB_FAILURE;
   }
 
-  return mlib_ImageAffine_alltypes(dst, src, mtx, filter, edge, NULL);
+  return mlib_ImageAffine_alltypes(dst, src, mtx, filter, edge);
 }
 
 /***************************************************************/

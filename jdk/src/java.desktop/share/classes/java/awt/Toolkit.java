@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ import javax.accessibility.AccessibilityProvider;
  * <br>For more information, see
  * <a href="http://docs.oracle.com/javase/tutorial/uiswing/misc/focus.html#transferTiming">Timing
  * Focus Transfers</a>, a section in
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/">The Swing
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/">The Swing
  * Tutorial</a>.
  *
  * <li>Making a top-level container visible.
@@ -207,30 +207,34 @@ public abstract class Toolkit {
     }
 
     /**
-     * Returns whether dynamic layout of Containers on resize is
-     * currently active (both set in program
-     *( {@code isDynamicLayoutSet()} )
-     *, and supported
-     * by the underlying operating system and/or window manager).
-     * If dynamic layout is currently inactive then Containers
-     * re-layout their components when resizing is completed. As a result
-     * the {@code Component.validate()} method will be invoked only
-     * once per resize.
-     * If dynamic layout is currently active then Containers
-     * re-layout their components on every native resize event and
-     * the {@code validate()} method will be invoked each time.
-     * The OS/WM support can be queried using
-     * the getDesktopProperty("awt.dynamicLayoutSupported") method.
+     * Returns whether dynamic layout of Containers on resize is currently
+     * enabled on the underlying operating system and/or window manager). If the
+     * platform supports it, {@code setDynamicLayout(boolean)} may be used to
+     * programmatically enable or disable platform dynamic layout. Regardless of
+     * whether that toggling is supported, or whether {@code true} or {@code
+     * false} is specified as an argument, or has never been called at all, this
+     * method will return the active current platform behavior and which will be
+     * followed by the JDK in determining layout policy during resizing.
+     * <p>
+     * If dynamic layout is currently inactive then Containers re-layout their
+     * components when resizing is completed. As a result the
+     * {@code Component.validate()} method will be invoked only once per resize.
+     * If dynamic layout is currently active then Containers re-layout their
+     * components on every native resize event and the {@code validate()} method
+     * will be invoked each time. The OS/WM support can be queried using the
+     * getDesktopProperty("awt.dynamicLayoutSupported") method. This property
+     * will reflect the platform capability but is not sufficient to tell if it
+     * is presently enabled.
      *
-     * @return    true if dynamic layout of Containers on resize is
-     *            currently active, false otherwise.
-     * @exception HeadlessException if the GraphicsEnvironment.isHeadless()
-     *            method returns true
-     * @see       #setDynamicLayout(boolean dynamic)
-     * @see       #isDynamicLayoutSet()
-     * @see       #getDesktopProperty(String propertyName)
-     * @see       java.awt.GraphicsEnvironment#isHeadless
-     * @since     1.4
+     * @return true if dynamic layout of Containers on resize is currently
+     *         active, false otherwise.
+     * @throws HeadlessException if the GraphicsEnvironment.isHeadless() method
+     *         returns true
+     * @see #setDynamicLayout(boolean dynamic)
+     * @see #isDynamicLayoutSet()
+     * @see #getDesktopProperty(String propertyName)
+     * @see java.awt.GraphicsEnvironment#isHeadless
+     * @since 1.4
      */
     public boolean isDynamicLayoutActive()
         throws HeadlessException {

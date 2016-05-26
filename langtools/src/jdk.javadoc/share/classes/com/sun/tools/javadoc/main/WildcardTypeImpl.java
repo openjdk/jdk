@@ -44,6 +44,7 @@ import com.sun.tools.javac.util.List;
  * @author Scott Seligman
  * @since 1.5
  */
+@Deprecated
 public class WildcardTypeImpl extends AbstractTypeImpl implements WildcardType {
 
     WildcardTypeImpl(DocEnv env, Type.WildcardType type) {

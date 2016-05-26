@@ -76,7 +76,7 @@ public class ToolLocaleMessageTest extends ReplToolTesting {
     public void testSample() {
         try {
             testLocale(
-                    (a) -> assertCommandOK(a, "/set newmode test command normal", "test"),
+                    (a) -> assertCommandOK(a, "/set mode test -command normal", "test"),
                     (a) -> assertCommandOK(a, "/set format test errorpre 'ERROR: '"),
                     (a) -> assertCommandOK(a, "/set feedback test", "test"),
 
@@ -101,7 +101,7 @@ public class ToolLocaleMessageTest extends ReplToolTesting {
     public void testCommand() {
         try {
             testLocale(
-                    (a) -> assertCommandOK(a, "/set newmode test command normal", "test"),
+                    (a) -> assertCommandOK(a, "/set mode test -command normal", "test"),
                     (a) -> assertCommandOK(a, "/set format test errorpre 'ERROR: '"),
                     (a) -> assertCommandOK(a, "/set feedback test", "test"),
 
@@ -118,10 +118,10 @@ public class ToolLocaleMessageTest extends ReplToolTesting {
                     (a) -> assertCommandOK(a, "int dup"),
                     (a) -> assertCommandFail(a, "/drop dup"),
                     (a) -> assertCommandFail(a, "/edit zebra", "zebra"),
-                    (a) -> assertCommandFail(a, "/list zebra", "zebra", "/list"),
+                    (a) -> assertCommandFail(a, "/list zebra", "zebra", "No such snippet: zebra"),
                     (a) -> assertCommandFail(a, "/open", "/open"),
                     (a) -> assertCommandFail(a, "/open zebra", "zebra", "/open"),
-                    (a) -> assertCommandFail(a, "/reload zebra", "zebra", "/reload"),
+                    (a) -> assertCommandFail(a, "/reload zebra", "zebra", "Unexpected arguments at end of command"),
                     (a) -> assertCommandFail(a, "/save", "/save"),
                     (a) -> assertCommandFail(a, "/-99"),
 
@@ -134,20 +134,20 @@ public class ToolLocaleMessageTest extends ReplToolTesting {
 
     public void testHelp() {
         testLocale(
-                (a) -> assertCommandOK(a, "/help", "/list", "/save", "/set", "[restore]"),
-                (a) -> assertCommandOK(a, "/help /list", "start", "all"),
+                (a) -> assertCommandOK(a, "/help", "/list", "/save", "/set", "[-restore]"),
+                (a) -> assertCommandOK(a, "/help /list", "-start", "-all"),
                 (a) -> assertCommandOK(a, "/help /edit", "/set editor"),
                 (a) -> assertCommandOK(a, "/help /drop", "/drop"),
-                (a) -> assertCommandOK(a, "/help /save", "all", "start"),
+                (a) -> assertCommandOK(a, "/help /save", "-all", "-start"),
                 (a) -> assertCommandOK(a, "/help /open", "/open"),
-                (a) -> assertCommandOK(a, "/help /reload", "restore"),
+                (a) -> assertCommandOK(a, "/help /reload", "-restore"),
                 (a) -> assertCommandOK(a, "/help /help", "intro"),
-                (a) -> assertCommandOK(a, "/help /set", "newmode"),
+                (a) -> assertCommandOK(a, "/help /set", "mode"),
                 (a) -> assertCommandOK(a, "/help /?", "intro"),
                 (a) -> assertCommandOK(a, "/help intro", "/help"),
                 (a) -> assertCommandOK(a, "/help /set format", "import", "case", "{value}", "added"),
-                (a) -> assertCommandOK(a, "/help /set feedback", "newmode"),
-                (a) -> assertCommandOK(a, "/help /set newmode", "feedback"),
+                (a) -> assertCommandOK(a, "/help /set feedback", "mode"),
+                (a) -> assertCommandOK(a, "/help /set mode", "feedback"),
                 (a) -> assertCommandOK(a, "/help /set prompt", "/set prompt"),
                 (a) -> assertCommandOK(a, "/help /set editor", "/edit")
         );
@@ -156,11 +156,11 @@ public class ToolLocaleMessageTest extends ReplToolTesting {
     public void testFeedbackError() {
         try {
             testLocale(
-                    (a) -> assertCommandOK(a, "/set newmode tee command foo", "foo"),
-                    (a) -> assertCommandOK(a, "/set newmode tee flurb", "command", "quiet"),
-                    (a) -> assertCommandOK(a, "/set newmode te2", "te2"),
-                    (a) -> assertCommandOK(a, "/set newmode te2 command", "te2"),
-                    (a) -> assertCommandOK(a, "/set newmode te command normal", "te"),
+                    (a) -> assertCommandOK(a, "/set mode te2", "te2"),
+                    (a) -> assertCommandOK(a, "/set mode te3 -command", "te3"),
+                    (a) -> assertCommandOK(a, "/set mode te2 -command"),
+                    (a) -> assertCommandOK(a, "/set mode te -command normal", "te"),
+                    (a) -> assertCommandOK(a, "/set mode te"),
                     (a) -> assertCommandOK(a, "/set format te errorpre 'ERROR: '"),
                     (a) -> assertCommandOK(a, "/set feedback te"),
 
@@ -179,16 +179,14 @@ public class ToolLocaleMessageTest extends ReplToolTesting {
                     (a) -> assertCommandFail(a, "/set format te fld 'aaa' import-frog"),
                     (a) -> assertCommandFail(a, "/set format te fld 'aaa' import-import"),
                     (a) -> assertCommandFail(a, "/set format te fld 'aaa' import,added"),
-                    (a) -> assertCommandFail(a, "/set newmode"),
-                    (a) -> assertCommandFail(a, "/set newmode te"),
-                    (a) -> assertCommandFail(a, "/set newmode x xyz"),
-                    (a) -> assertCommandFail(a, "/set newmode x quiet y"),
+                    (a) -> assertCommandFail(a, "/set mode"),
+                    (a) -> assertCommandFail(a, "/set mode x xyz"),
+                    (a) -> assertCommandFail(a, "/set mode x -quiet y"),
+                    (a) -> assertCommandFail(a, "/set mode tee -command foo", "foo"),
                     (a) -> assertCommandFail(a, "/set prompt"),
                     (a) -> assertCommandFail(a, "/set prompt te"),
                     (a) -> assertCommandFail(a, "/set prompt te aaa xyz", "aaa"),
                     (a) -> assertCommandFail(a, "/set prompt te 'aaa' xyz", "xyz"),
-                    (a) -> assertCommandFail(a, "/set prompt"),
-                    (a) -> assertCommandFail(a, "/set prompt te"),
                     (a) -> assertCommandFail(a, "/set prompt te aaa"),
                     (a) -> assertCommandFail(a, "/set prompt te 'aaa'"),
 

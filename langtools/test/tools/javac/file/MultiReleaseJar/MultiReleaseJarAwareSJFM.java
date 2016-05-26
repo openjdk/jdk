@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8149757
+ * @bug 8149757 8144062
  * @summary Test that StandardJavaFileManager uses the correct version of a
  * class from a multi-release jar on classpath
  * @library /tools/lib
@@ -164,7 +164,7 @@ public class MultiReleaseJarAwareSJFM {
                 {"", 8},
                 {"8", 8},
                 {"9", 9},
-                {"runtime", jdk.Version.current().major()}
+                {"runtime", Runtime.version().major()}
         };
     }
 
