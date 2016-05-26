@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -101,22 +101,22 @@ public class ToolSimpleTest extends ReplToolTesting {
         );
     }
 
-    public void defineClasses() {
+    public void defineTypes() {
         test(
                 (a) -> assertCommandCheckOutput(a, "/list", assertList()),
-                (a) -> assertCommandCheckOutput(a, "/classes", assertClasses()),
+                (a) -> assertCommandCheckOutput(a, "/types", assertClasses()),
                 (a) -> assertClass(a, "class A { }", "class", "A"),
                 (a) -> assertCommandCheckOutput(a, "/list", assertList()),
-                (a) -> assertCommandCheckOutput(a, "/classes", assertClasses()),
+                (a) -> assertCommandCheckOutput(a, "/types", assertClasses()),
                 (a) -> assertClass(a, "interface A { }", "interface", "A"),
                 (a) -> assertCommandCheckOutput(a, "/list", assertList()),
-                (a) -> assertCommandCheckOutput(a, "/classes", assertClasses()),
+                (a) -> assertCommandCheckOutput(a, "/types", assertClasses()),
                 (a) -> assertClass(a, "enum A { }", "enum", "A"),
                 (a) -> assertCommandCheckOutput(a, "/list", assertList()),
-                (a) -> assertCommandCheckOutput(a, "/classes", assertClasses()),
+                (a) -> assertCommandCheckOutput(a, "/types", assertClasses()),
                 (a) -> assertClass(a, "@interface A { }", "@interface", "A"),
                 (a) -> assertCommandCheckOutput(a, "/list", assertList()),
-                (a) -> assertCommandCheckOutput(a, "/classes", assertClasses())
+                (a) -> assertCommandCheckOutput(a, "/types", assertClasses())
         );
     }
 
@@ -179,15 +179,14 @@ public class ToolSimpleTest extends ReplToolTesting {
     }
 
     public void testNoArgument() {
-        String[] commands = {"/save", "/open", "/set start"};
-        test(Stream.of(commands)
-                .map(cmd -> {
-                    String c = cmd;
-                    final String finalC = c;
-                    return (ReplTest) after -> assertCommand(after, cmd,
-                            "|  '" + finalC + "' requires a filename argument.");
-                })
-                .toArray(ReplTest[]::new));
+        test(
+                (a) -> assertCommand(a, "/save",
+                        "|  '/save' requires a filename argument."),
+                (a) -> assertCommand(a, "/open",
+                        "|  '/open' requires a filename argument."),
+                (a) -> assertCommand(a, "/set start",
+                        "|  Specify either one option or a startup file name -- /set start")
+        );
     }
 
     public void testDebug() {
@@ -211,7 +210,7 @@ public class ToolSimpleTest extends ReplToolTesting {
                 a -> dropImport(a, "/drop 4", "import java.util.stream.*", ""),
                 a -> assertCommandCheckOutput(a, "/vars", assertVariables()),
                 a -> assertCommandCheckOutput(a, "/methods", assertMethods()),
-                a -> assertCommandCheckOutput(a, "/classes", assertClasses()),
+                a -> assertCommandCheckOutput(a, "/types", assertClasses()),
                 a -> assertCommandCheckOutput(a, "/imports", assertImports())
         );
         test(false, new String[]{"-nostartup"},
@@ -223,20 +222,22 @@ public class ToolSimpleTest extends ReplToolTesting {
                 a -> dropClass(a, "/drop A", "class A", "|  dropped class A"),
                 a -> assertCommandCheckOutput(a, "/vars", assertVariables()),
                 a -> assertCommandCheckOutput(a, "/methods", assertMethods()),
-                a -> assertCommandCheckOutput(a, "/classes", assertClasses()),
+                a -> assertCommandCheckOutput(a, "/types", assertClasses()),
                 a -> assertCommandCheckOutput(a, "/imports", assertImports())
         );
     }
 
     public void testDropNegative() {
         test(false, new String[]{"-nostartup"},
-                a -> assertCommandOutputStartsWith(a, "/drop 0", "|  No definition or id found named: 0"),
-                a -> assertCommandOutputStartsWith(a, "/drop a", "|  No definition or id found named: a"),
+                a -> assertCommandOutputStartsWith(a, "/drop 0", "|  No such snippet: 0"),
+                a -> assertCommandOutputStartsWith(a, "/drop a", "|  No such snippet: a"),
                 a -> assertCommandCheckOutput(a, "/drop",
                         assertStartsWith("|  In the /drop argument, please specify an import, variable, method, or class to drop.")),
                 a -> assertVariable(a, "int", "a"),
                 a -> assertCommand(a, "a", "a ==> 0"),
-                a -> assertCommand(a, "/drop 2", "|  The argument did not specify an active import, variable, method, or class to drop.")
+                a -> assertCommand(a, "/drop 2",
+                        "|  This command does not accept the snippet '2' : a\n" +
+                        "|  See /types, /methods, /vars, or /list")
         );
     }
 
@@ -253,7 +254,7 @@ public class ToolSimpleTest extends ReplToolTesting {
                 a -> assertCommandCheckOutput(a, "/drop a", check),
                 a -> assertCommandCheckOutput(a, "/vars", assertVariables()),
                 a -> assertCommandCheckOutput(a, "/methods", assertMethods()),
-                a -> assertCommandCheckOutput(a, "/classes", assertClasses()),
+                a -> assertCommandCheckOutput(a, "/types", assertClasses()),
                 a -> assertCommandCheckOutput(a, "/imports", assertImports())
         );
         test(
@@ -284,7 +285,7 @@ public class ToolSimpleTest extends ReplToolTesting {
                 (a) -> assertHelp(a, "/?", "/list", "/help", "/exit", "intro"),
                 (a) -> assertHelp(a, "/help", "/list", "/help", "/exit", "intro"),
                 (a) -> assertHelp(a, "/help short", "shortcuts", "<tab>"),
-                (a) -> assertHelp(a, "/? /li", "/list all", "snippets"),
+                (a) -> assertHelp(a, "/? /li", "/list -all", "snippets"),
                 (a) -> assertHelp(a, "/help /help", "/help <command>")
         );
     }
@@ -299,7 +300,10 @@ public class ToolSimpleTest extends ReplToolTesting {
 
     // Check that each line of output contains the corresponding string from the list
     private void checkLineToList(String in, List<String> match) {
-        String[] res = in.trim().split("\n");
+        String trimmed = in.trim();
+        String[] res = trimmed.isEmpty()
+                ? new String[0]
+                : trimmed.split("\n");
         assertEquals(res.length, match.size(), "Got: " + Arrays.asList(res));
         for (int i = 0; i < match.size(); ++i) {
             assertTrue(res[i].contains(match.get(i)));
@@ -311,23 +315,132 @@ public class ToolSimpleTest extends ReplToolTesting {
         List<String> startVarList = new ArrayList<>(START_UP);
         startVarList.add("int aardvark");
         test(
-                a -> assertCommandCheckOutput(a, "/list all",
+                a -> assertCommandCheckOutput(a, "/list -all",
                         s -> checkLineToList(s, START_UP)),
                 a -> assertCommandOutputStartsWith(a, "/list " + arg,
-                        "|  No definition or id found named: " + arg),
+                        "|  No such snippet: " + arg),
                 a -> assertVariable(a, "int", "aardvark"),
                 a -> assertCommandOutputContains(a, "/list aardvark", "aardvark"),
-                a -> assertCommandCheckOutput(a, "/list start",
+                a -> assertCommandCheckOutput(a, "/list -start",
                         s -> checkLineToList(s, START_UP)),
-                a -> assertCommandCheckOutput(a, "/list all",
+                a -> assertCommandCheckOutput(a, "/list -all",
                         s -> checkLineToList(s, startVarList)),
                 a -> assertCommandCheckOutput(a, "/list printf",
                         s -> assertTrue(s.contains("void printf"))),
                 a -> assertCommandOutputStartsWith(a, "/list " + arg,
-                        "|  No definition or id found named: " + arg)
+                        "|  No such snippet: " + arg)
         );
     }
 
+    public void testVarsArgs() {
+        String arg = "qqqq";
+        List<String> startVarList = new ArrayList<>();
+        test(
+                a -> assertCommandCheckOutput(a, "/vars -all",
+                        s -> checkLineToList(s, startVarList)),
+                a -> assertCommand(a, "/vars " + arg,
+                        "|  No such snippet: " + arg),
+                a -> assertVariable(a, "int", "aardvark"),
+                a -> assertMethod(a, "int f() { return 0; }", "()int", "f"),
+                a -> assertVariable(a, "int", "a"),
+                a -> assertVariable(a, "double", "a", "1", "1.0"),
+                a -> assertCommandOutputStartsWith(a, "/vars aardvark",
+                        "|    int aardvark = 0"),
+                a -> assertCommandCheckOutput(a, "/vars -start",
+                        s -> checkLineToList(s, startVarList)),
+                a -> assertCommandOutputStartsWith(a, "/vars -all",
+                        "|    int aardvark = 0\n|    int a = "),
+                a -> assertCommandOutputStartsWith(a, "/vars printf",
+                        "|  This command does not accept the snippet 'printf'"),
+                a -> assertCommand(a, "/var " + arg,
+                        "|  No such snippet: " + arg)
+        );
+    }
+
+    public void testMethodsArgs() {
+        String arg = "qqqq";
+        List<String> startMethodList = new ArrayList<>(START_UP_CMD_METHOD);
+        test(
+                a -> assertCommandCheckOutput(a, "/methods -all",
+                        s -> checkLineToList(s, startMethodList)),
+                a -> assertCommandCheckOutput(a, "/methods -start",
+                        s -> checkLineToList(s, startMethodList)),
+                a -> assertCommandCheckOutput(a, "/methods printf",
+                        s -> checkLineToList(s, startMethodList)),
+                a -> assertCommandCheckOutput(a, "/methods",
+                        s -> checkLineToList(s, startMethodList)),
+                a -> assertCommandOutputStartsWith(a, "/methods " + arg,
+                        "|  No such snippet: " + arg),
+                a -> assertMethod(a, "int f() { return 0; }", "()int", "f"),
+                a -> assertVariable(a, "int", "aardvark"),
+                a -> assertMethod(a, "void f(int a) { g(); }", "(int)void", "f"),
+                a -> assertMethod(a, "void g() {}", "()void", "g"),
+                a -> assertCommandOutputStartsWith(a, "/methods " + arg,
+                        "|  No such snippet: " + arg),
+                a -> assertCommandOutputStartsWith(a, "/methods aardvark",
+                        "|  This command does not accept the snippet 'aardvark' : int aardvark"),
+                a -> assertCommandCheckOutput(a, "/methods -start",
+                        s -> checkLineToList(s, startMethodList)),
+                a -> assertCommandCheckOutput(a, "/methods printf",
+                        s -> checkLineToList(s, startMethodList)),
+                a -> assertCommandOutputStartsWith(a, "/methods g",
+                        "|    g ()void"),
+                a -> assertCommandOutputStartsWith(a, "/methods f",
+                        "|    f ()int\n" +
+                        "|    f (int)void")
+        );
+    }
+
+    public void testTypesArgs() {
+        String arg = "qqqq";
+        List<String> startTypeList = new ArrayList<>();
+        test(
+                a -> assertCommandCheckOutput(a, "/types -all",
+                        s -> checkLineToList(s, startTypeList)),
+                a -> assertCommandCheckOutput(a, "/types -start",
+                        s -> checkLineToList(s, startTypeList)),
+                a -> assertCommandOutputStartsWith(a, "/types " + arg,
+                        "|  No such snippet: " + arg),
+                a -> assertVariable(a, "int", "aardvark"),
+                (a) -> assertClass(a, "class A { }", "class", "A"),
+                (a) -> assertClass(a, "interface A { }", "interface", "A"),
+                a -> assertCommandOutputStartsWith(a, "/types -all",
+                        "|    class A\n" +
+                        "|    interface A"),
+                (a) -> assertClass(a, "enum E { }", "enum", "E"),
+                (a) -> assertClass(a, "@interface B { }", "@interface", "B"),
+                a -> assertCommand(a, "/types aardvark",
+                        "|  This command does not accept the snippet 'aardvark' : int aardvark;"),
+                a -> assertCommandOutputStartsWith(a, "/types A",
+                        "|    interface A"),
+                a -> assertCommandOutputStartsWith(a, "/types E",
+                        "|    enum E"),
+                a -> assertCommandOutputStartsWith(a, "/types B",
+                        "|    @interface B"),
+                a -> assertCommandOutputStartsWith(a, "/types " + arg,
+                        "|  No such snippet: " + arg),
+                a -> assertCommandCheckOutput(a, "/types -start",
+                        s -> checkLineToList(s, startTypeList))
+        );
+    }
+    public void defineClasses() {
+        test(
+                (a) -> assertCommandCheckOutput(a, "/list", assertList()),
+                (a) -> assertCommandCheckOutput(a, "/types", assertClasses()),
+                (a) -> assertClass(a, "class A { }", "class", "A"),
+                (a) -> assertCommandCheckOutput(a, "/list", assertList()),
+                (a) -> assertCommandCheckOutput(a, "/types", assertClasses()),
+                (a) -> assertClass(a, "interface A { }", "interface", "A"),
+                (a) -> assertCommandCheckOutput(a, "/list", assertList()),
+                (a) -> assertCommandCheckOutput(a, "/types", assertClasses()),
+                (a) -> assertClass(a, "enum A { }", "enum", "A"),
+                (a) -> assertCommandCheckOutput(a, "/list", assertList()),
+                (a) -> assertCommandCheckOutput(a, "/types", assertClasses()),
+                (a) -> assertClass(a, "@interface A { }", "@interface", "A"),
+                (a) -> assertCommandCheckOutput(a, "/list", assertList()),
+                (a) -> assertCommandCheckOutput(a, "/types", assertClasses())
+        );
+    }
     public void testCommandPrefix() {
         test(a -> assertCommandCheckOutput(a, "/s",
                       assertStartsWith("|  Command: '/s' is ambiguous: /save, /set")),
@@ -336,18 +449,6 @@ public class ToolSimpleTest extends ReplToolTesting {
                       assertStartsWith("|    int var = 0")),
              a -> assertCommandCheckOutput(a, "/save",
                       assertStartsWith("|  '/save' requires a filename argument.")));
-    }
-
-    public void testHeadlessEditPad() {
-        String prevHeadless = System.getProperty("java.awt.headless");
-        try {
-            System.setProperty("java.awt.headless", "true");
-            test(
-                (a) -> assertCommandOutputStartsWith(a, "/edit printf", "|  Cannot launch editor -- unexpected exception:")
-            );
-        } finally {
-            System.setProperty("java.awt.headless", prevHeadless==null? "false" : prevHeadless);
-        }
     }
 
     public void testOptionQ() {
@@ -382,6 +483,13 @@ public class ToolSimpleTest extends ReplToolTesting {
         test(new String[]{"-R-Dthe.sound=blorp", "-nostartup"},
                 (a) -> assertCommand(a, "System.getProperty(\"the.sound\")",
                         "$1 ==> \"blorp\"")
+        );
+    }
+
+    public void test8156910() {
+        test(
+                (a) -> assertCommandOutputContains(a, "System.out.println(\"%5d\", 10);", "%5d"),
+                (a) -> assertCommandOutputContains(a, "1234", "==> 1234")
         );
     }
 }

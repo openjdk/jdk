@@ -118,7 +118,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                 case SET: return "setElement";
                 case LENGTH: return "length";
             }
-            throw new AssertionError();
+            throw unmatchedArrayAccess(a);
         }
 
         static MethodHandle objectAccessor(ArrayAccess a) {
@@ -127,7 +127,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                 case SET: return ArrayAccessor.OBJECT_ARRAY_SETTER;
                 case LENGTH: return ArrayAccessor.OBJECT_ARRAY_LENGTH;
             }
-            throw new AssertionError();
+            throw unmatchedArrayAccess(a);
         }
 
         static int cacheIndex(ArrayAccess a) {
@@ -136,7 +136,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                 case SET: return ArrayAccessor.SETTER_INDEX;
                 case LENGTH: return ArrayAccessor.LENGTH_INDEX;
             }
-            throw new AssertionError();
+            throw unmatchedArrayAccess(a);
         }
 
         static Intrinsic intrinsic(ArrayAccess a) {
@@ -145,8 +145,12 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                 case SET: return Intrinsic.ARRAY_STORE;
                 case LENGTH: return Intrinsic.ARRAY_LENGTH;
             }
-            throw new AssertionError();
+            throw unmatchedArrayAccess(a);
         }
+    }
+
+    static InternalError unmatchedArrayAccess(ArrayAccess a) {
+        return newInternalError("should not reach here (unmatched ArrayAccess: " + a + ")");
     }
 
     static final class ArrayAccessor {
@@ -218,7 +222,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                 case SET:    return MethodType.methodType(void.class, arrayArgClass, int.class, elemClass);
                 case LENGTH: return MethodType.methodType(int.class,  arrayArgClass);
             }
-            throw new IllegalStateException("should not reach here");
+            throw unmatchedArrayAccess(access);
         }
         static MethodType correctType(Class<?> arrayClass, ArrayAccess access) {
             Class<?> elemClass = arrayClass.getComponentType();
@@ -227,7 +231,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                 case SET:    return MethodType.methodType(void.class, arrayClass, int.class, elemClass);
                 case LENGTH: return MethodType.methodType(int.class,  arrayClass);
             }
-            throw new IllegalStateException("should not reach here");
+            throw unmatchedArrayAccess(access);
         }
         static MethodHandle getAccessor(Class<?> arrayClass, ArrayAccess access) {
             String     name = name(arrayClass, access);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,7 +264,7 @@ public:
   ciMethodType* get_method_type();
   ciKlass*      get_declared_method_holder();
   int           get_method_holder_index();
-  int           get_method_signature_index();
+  int           get_method_signature_index(const constantPoolHandle& cpool);
 
   // Get the resolved references arrays from the constant pool
   ciObjArray* get_resolved_references();

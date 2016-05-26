@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ int InterpretedRFrame::cost() const {
 }
 
 int CompiledRFrame::cost() const {
-  nmethod* nm = top_method()->code();
+  CompiledMethod* nm = top_method()->code();
   if (nm != NULL) {
     return nm->insts_size();
   } else {
@@ -139,7 +139,7 @@ void CompiledRFrame::init() {
   RegisterMap map(thread(), false);
   vframe* vf = vframe::new_vframe(&_fr, &map, thread());
   assert(vf->is_compiled_frame(), "must be compiled");
-  _nm = compiledVFrame::cast(vf)->code();
+  _nm = compiledVFrame::cast(vf)->code()->as_nmethod();
   vf = vf->top();
   _vf = javaVFrame::cast(vf);
   _method = CodeCache::find_nmethod(_fr.pc())->method();

@@ -175,8 +175,11 @@ class ClassLoaderData : public CHeapObj<mtClass> {
                            // classes in the class loader are allocated.
   Mutex* _metaspace_lock;  // Locks the metaspace for allocations and setup.
   bool _unloading;         // true if this class loader goes away
-  bool _keep_alive;        // if this CLD is kept alive without a keep_alive_object().
   bool _is_anonymous;      // if this CLD is for an anonymous class
+  int _keep_alive;         // if this CLD is kept alive without a keep_alive_object().
+                           // Currently used solely for anonymous classes.
+                           // _keep_alive does not need to be volatile or
+                           // atomic since there is one unique CLD per anonymous class.
   volatile int _claimed;   // true if claimed, for example during GC traces.
                            // To avoid applying oop closure more than once.
                            // Has to be an int because we cas it.
@@ -224,7 +227,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   bool claim();
 
   void unload();
-  bool keep_alive() const       { return _keep_alive; }
+  bool keep_alive() const       { return _keep_alive > 0; }
   void classes_do(void f(Klass*));
   void loaded_classes_do(KlassClosure* klass_closure);
   void classes_do(void f(InstanceKlass*));
@@ -286,8 +289,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
     return _unloading;
   }
 
-  // Used to make sure that this CLD is not unloaded.
-  void set_keep_alive(bool value) { _keep_alive = value; }
+  void inc_keep_alive();
+  void dec_keep_alive();
 
   inline unsigned int identity_hash() const;
 

@@ -32,7 +32,7 @@
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;

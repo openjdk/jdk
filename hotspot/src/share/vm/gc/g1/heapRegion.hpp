@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ class G1ContiguousSpace: public CompactibleSpace {
  protected:
   G1BlockOffsetTablePart _bot_part;
   Mutex _par_alloc_lock;
-  volatile unsigned _gc_time_stamp;
+  volatile uint _gc_time_stamp;
   // When we need to retire an allocation region, while other threads
   // are also concurrently trying to allocate into it, we typically
   // allocate a dummy object at the end of the region to ensure that
@@ -174,7 +174,7 @@ class G1ContiguousSpace: public CompactibleSpace {
   HeapWord* scan_top() const;
   void record_timestamp();
   void reset_gc_time_stamp() { _gc_time_stamp = 0; }
-  unsigned get_gc_time_stamp() { return _gc_time_stamp; }
+  uint get_gc_time_stamp() { return _gc_time_stamp; }
   void record_retained_region();
 
   // See the comment above in the declaration of _pre_dummy_top for an
@@ -266,12 +266,6 @@ class HeapRegion: public G1ContiguousSpace {
   // is only one set:
   //   The collection set.
   HeapRegion* _next_in_special_set;
-
-  // next region in the young "generation" region set
-  HeapRegion* _next_young_region;
-
-  // Next region whose cards need cleaning
-  HeapRegion* _next_dirty_cards_region;
 
   // Fields used by the HeapRegionSetBase class and subclasses.
   HeapRegion* _next;
@@ -526,15 +520,6 @@ class HeapRegion: public G1ContiguousSpace {
   // to provide a dummy version of it.
 #endif // ASSERT
 
-  HeapRegion* get_next_young_region() { return _next_young_region; }
-  void set_next_young_region(HeapRegion* hr) {
-    _next_young_region = hr;
-  }
-
-  HeapRegion* get_next_dirty_cards_region() const { return _next_dirty_cards_region; }
-  HeapRegion** next_dirty_cards_region_addr() { return &_next_dirty_cards_region; }
-  void set_next_dirty_cards_region(HeapRegion* hr) { _next_dirty_cards_region = hr; }
-  bool is_on_dirty_cards_region_list() const { return get_next_dirty_cards_region() != NULL; }
 
   // Reset HR stuff to default values.
   void hr_clear(bool par, bool clear_space, bool locked = false);

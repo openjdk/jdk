@@ -16,6 +16,10 @@
         <os family="windows"/>
     </condition>
 
+    <target name="-check-jtreg.home" depends="-def-check">
+        <check name="jtreg" property="jtreg.home" marker="lib/jtreg.jar"/>
+    </target>
+
     <property name="test.dir" value="${basedir}/jdk/test"/>
 
     <macrodef name="call-make">
@@ -29,26 +33,6 @@
             </sequential>
         </macrodef>
 
-    <macrodef name="exec-target">
-        <attribute name="antfile" default="${ant.file}" />
-        <attribute name="target" />
-        <sequential>
-            <java classname="org.apache.tools.ant.Main" fork="true" spawn="true">
-                <arg value="-f"/>
-                <arg value="@{antfile}"/>  
-                <arg value="-Dboot.java.home=${boot.java.home}"/>
-                <arg value="-Dbuild.target.dir=${build.target.dir}"/>
-                <arg value="-Djtreg.home=${jtreg.home}"/>
-                <arg value="-Djtreg.tests=${jtreg.tests}"/>
-                <arg value="-Djtreg.jpda.jvmargs=${jtreg.jpda.jvmargs}"/>
-                <arg value="@{target}"/>
-                <classpath>           
-                    <pathelement path="${java.class.path}"/>
-                </classpath>
-            </java>
-        </sequential>
-    </macrodef>
-
     <target name="post-make" depends="build-module"/>
 
     <!--
@@ -59,7 +43,7 @@
         <echo message="base = ${basedir}"/>
         <call-make dir = "${build.target.dir}" args = "clean"/>
     </target>
-    
+
     <target name="-do-configure">
         <echo message="base = ${basedir}"/>
         <fail message="Not part of a full JDK forest">
@@ -122,5 +106,68 @@
             </sequential>
         </macrodef>
     </target>
-</project>
 
+    <macrodef name="exec-target">
+        <attribute name="antfile" default="${ant.file}" />
+        <attribute name="target" />
+        <sequential>
+            <java classname="org.apache.tools.ant.Main" fork="true" spawn="true">
+                <arg value="-f"/>
+                <arg value="@{antfile}"/>
+                <arg value="-Dbuild.target.dir=${build.target.dir}"/>
+                <arg value="-Djtreg.home=${jtreg.home}"/>
+                <arg value="-Djtreg.tests=${jtreg.tests}"/>
+                <arg value="-Djtreg.jpda.jvmargs=${jtreg.jpda.jvmargs}"/>
+                <arg value="@{target}"/>
+                <classpath>
+                    <pathelement path="${java.class.path}"/>
+                </classpath>
+            </java>
+        </sequential>
+    </macrodef>
+
+    <target name="jtreg" depends="images,-def-jtreg">
+        <jtreg-tool name="all" tests="${jtreg.tests}"/>
+    </target>
+
+    <target name="-def-jtreg" unless="jtreg.defined" depends="-check-jtreg.home">
+        <taskdef name="jtreg" classname="com.sun.javatest.regtest.Main$$Ant">
+            <classpath>
+                <pathelement location="${jtreg.home}/lib/jtreg.jar"/>
+                <pathelement location="${jtreg.home}/lib/javatest.jar"/>
+            </classpath>
+        </taskdef>
+        <macrodef name="jtreg-tool">
+            <attribute name="name"/>
+            <attribute name="tests"/>
+            <attribute name="jdk" default="${build.target.dir}/images/jdk"/>
+            <attribute name="agentvm" default="true"/>
+            <attribute name="verbose" default="${default.jtreg.verbose}"/>
+            <attribute name="options" default="${other.jtreg.options}"/>
+            <attribute name="keywords" default="-keywords:!ignore"/>
+            <attribute name="jpda.jvmargs" default=""/>
+            <attribute name="extra.jvmargs" default=""/>
+            <attribute name="build.modules" default="${build.modules}"/>
+            <sequential>
+                <property name="coverage.options" value=""/>              <!-- default -->
+                <property name="coverage.classpath" value=""/>            <!-- default -->
+                <property name="default.jtreg.verbose" value="summary"/>  <!-- default -->
+                <property name="other.jtreg.options" value=""/>           <!-- default -->
+                <property name="jtreg.classfiles.to.modules" value="@{agentvm}"/>
+                <jtreg
+                    dir="${test.dir}"
+                    workDir="${build.target.dir}/idea/@{name}/work"
+                    reportDir="${build.target.dir}/idea/@{name}/report"
+                    jdk="@{jdk}"
+                    agentvm="@{agentvm}" verbose="@{verbose}"
+                    failonerror="false" resultproperty="jtreg.@{name}.result">
+                    <arg value="-debug:@{jpda.jvmargs}"/>
+                    <arg line="@{keywords}"/>
+                    <arg line="@{options}"/>
+                    <arg line="@{tests}"/>
+                </jtreg>
+            </sequential>
+        </macrodef>
+        <property name="jtreg.defined" value="true"/>
+    </target>
+</project>

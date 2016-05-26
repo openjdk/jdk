@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 4767128 5048557 5048773
+ * @bug 4767128 5048557 5048773 8078559
  * @summary diagnose encoding errors in Java source files
  * @author gafter
  *

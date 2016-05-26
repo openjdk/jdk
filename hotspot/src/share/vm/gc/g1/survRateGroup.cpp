@@ -30,31 +30,12 @@
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 
-SurvRateGroup::SurvRateGroup(G1Predictions* predictor,
-                             const char* name,
-                             size_t summary_surv_rates_len) :
-    _predictor(predictor), _name(name),
-    _summary_surv_rates_len(summary_surv_rates_len),
-    _summary_surv_rates_max_len(0),
-    _summary_surv_rates(NULL),
-    _surv_rate(NULL),
+SurvRateGroup::SurvRateGroup() :
     _accum_surv_rate_pred(NULL),
     _surv_rate_pred(NULL),
     _stats_arrays_length(0) {
   reset();
-  if (summary_surv_rates_len > 0) {
-    size_t length = summary_surv_rates_len;
-      _summary_surv_rates = NEW_C_HEAP_ARRAY(NumberSeq*, length, mtGC);
-    for (size_t i = 0; i < length; ++i) {
-      _summary_surv_rates[i] = new NumberSeq();
-    }
-  }
-
   start_adding_regions();
-}
-
-double SurvRateGroup::get_new_prediction(TruncatedSeq const* seq) const {
-  return _predictor->get_new_prediction(seq);
 }
 
 void SurvRateGroup::reset() {
@@ -73,10 +54,14 @@ void SurvRateGroup::reset() {
   _stats_arrays_length = 0;
 
   stop_adding_regions();
+
+  // Seed initial _surv_rate_pred and _accum_surv_rate_pred values
   guarantee( _stats_arrays_length == 1, "invariant" );
   guarantee( _surv_rate_pred[0] != NULL, "invariant" );
-  _surv_rate_pred[0]->add(0.4);
-  all_surviving_words_recorded(false);
+  const double initial_surv_rate = 0.4;
+  _surv_rate_pred[0]->add(initial_surv_rate);
+  _last_pred = _accum_surv_rate_pred[0] = initial_surv_rate;
+
   _region_num = 0;
 }
 
@@ -87,131 +72,49 @@ void SurvRateGroup::start_adding_regions() {
 
 void SurvRateGroup::stop_adding_regions() {
   if (_region_num > _stats_arrays_length) {
-    double* old_surv_rate = _surv_rate;
-    double* old_accum_surv_rate_pred = _accum_surv_rate_pred;
-    TruncatedSeq** old_surv_rate_pred = _surv_rate_pred;
+    _accum_surv_rate_pred = REALLOC_C_HEAP_ARRAY(double, _accum_surv_rate_pred, _region_num, mtGC);
+    _surv_rate_pred = REALLOC_C_HEAP_ARRAY(TruncatedSeq*, _surv_rate_pred, _region_num, mtGC);
 
-    _surv_rate = NEW_C_HEAP_ARRAY(double, _region_num, mtGC);
-    _accum_surv_rate_pred = NEW_C_HEAP_ARRAY(double, _region_num, mtGC);
-    _surv_rate_pred = NEW_C_HEAP_ARRAY(TruncatedSeq*, _region_num, mtGC);
-
-    for (size_t i = 0; i < _stats_arrays_length; ++i) {
-      _surv_rate_pred[i] = old_surv_rate_pred[i];
-    }
     for (size_t i = _stats_arrays_length; i < _region_num; ++i) {
       _surv_rate_pred[i] = new TruncatedSeq(10);
     }
 
     _stats_arrays_length = _region_num;
-
-    if (old_surv_rate != NULL) {
-      FREE_C_HEAP_ARRAY(double, old_surv_rate);
-    }
-    if (old_accum_surv_rate_pred != NULL) {
-      FREE_C_HEAP_ARRAY(double, old_accum_surv_rate_pred);
-    }
-    if (old_surv_rate_pred != NULL) {
-      FREE_C_HEAP_ARRAY(TruncatedSeq*, old_surv_rate_pred);
-    }
   }
-
-  for (size_t i = 0; i < _stats_arrays_length; ++i) {
-    _surv_rate[i] = 0.0;
-  }
-}
-
-int SurvRateGroup::next_age_index() {
-  ++_region_num;
-  return (int) ++_all_regions_allocated;
 }
 
 void SurvRateGroup::record_surviving_words(int age_in_group, size_t surv_words) {
   guarantee( 0 <= age_in_group && (size_t) age_in_group < _region_num,
              "pre-condition" );
-  guarantee( _surv_rate[age_in_group] <= 0.00001,
-             "should only update each slot once" );
 
   double surv_rate = (double) surv_words / (double) HeapRegion::GrainWords;
-  _surv_rate[age_in_group] = surv_rate;
   _surv_rate_pred[age_in_group]->add(surv_rate);
-  if ((size_t)age_in_group < _summary_surv_rates_len) {
-    _summary_surv_rates[age_in_group]->add(surv_rate);
-    if ((size_t)(age_in_group+1) > _summary_surv_rates_max_len)
-      _summary_surv_rates_max_len = age_in_group+1;
-  }
 }
 
-void SurvRateGroup::all_surviving_words_recorded(bool update_predictors) {
-  if (update_predictors && _region_num > 0) { // conservative
+void SurvRateGroup::all_surviving_words_recorded(const G1Predictions& predictor, bool update_predictors) {
+  if (update_predictors) {
+    fill_in_last_surv_rates();
+  }
+  finalize_predictions(predictor);
+}
+
+void SurvRateGroup::fill_in_last_surv_rates() {
+  if (_region_num > 0) { // conservative
     double surv_rate = _surv_rate_pred[_region_num-1]->last();
     for (size_t i = _region_num; i < _stats_arrays_length; ++i) {
-      guarantee( _surv_rate[i] <= 0.00001,
-                 "the slot should not have been updated" );
       _surv_rate_pred[i]->add(surv_rate);
     }
   }
+}
 
+void SurvRateGroup::finalize_predictions(const G1Predictions& predictor) {
   double accum = 0.0;
   double pred = 0.0;
   for (size_t i = 0; i < _stats_arrays_length; ++i) {
-    pred = get_new_prediction(_surv_rate_pred[i]);
+    pred = predictor.get_new_prediction(_surv_rate_pred[i]);
     if (pred > 1.0) pred = 1.0;
     accum += pred;
     _accum_surv_rate_pred[i] = accum;
   }
   _last_pred = pred;
 }
-
-#ifndef PRODUCT
-void SurvRateGroup::print() {
-  log_develop_trace(gc, survivor)("Surv Rate Group: %s (" SIZE_FORMAT " entries)", _name, _region_num);
-  for (size_t i = 0; i < _region_num; ++i) {
-    log_develop_trace(gc, survivor)("    age " SIZE_FORMAT_W(4) "   surv rate %6.2lf %%   pred %6.2lf %%",
-                                    i, _surv_rate[i] * 100.0,
-                                    _predictor->get_new_prediction(_surv_rate_pred[i]) * 100.0);
-  }
-}
-
-void
-SurvRateGroup::print_surv_rate_summary() {
-  size_t length = _summary_surv_rates_max_len;
-  if (length == 0)
-    return;
-
-  log_trace(gc, survivor)("%s Rate Summary (for up to age " SIZE_FORMAT ")", _name, length-1);
-  log_trace(gc, survivor)("      age range     survival rate (avg)      samples (avg)");
-  log_trace(gc, survivor)("  ---------------------------------------------------------");
-
-  size_t index = 0;
-  size_t limit = MIN2((int) length, 10);
-  while (index < limit) {
-    log_trace(gc, survivor)("           " SIZE_FORMAT_W(4) "                 %6.2lf%%             %6.2lf",
-                            index, _summary_surv_rates[index]->avg() * 100.0,
-                            (double) _summary_surv_rates[index]->num());
-    ++index;
-  }
-
-  log_trace(gc, survivor)("  ---------------------------------------------------------");
-
-  int num = 0;
-  double sum = 0.0;
-  int samples = 0;
-  while (index < length) {
-    ++num;
-    sum += _summary_surv_rates[index]->avg() * 100.0;
-    samples += _summary_surv_rates[index]->num();
-    ++index;
-
-    if (index == length || num % 10 == 0) {
-      log_trace(gc, survivor)("   " SIZE_FORMAT_W(4) " .. " SIZE_FORMAT_W(4) "                 %6.2lf%%             %6.2lf",
-                              (index-1) / 10 * 10, index-1, sum / (double) num,
-                              (double) samples / (double) num);
-      sum = 0.0;
-      num = 0;
-      samples = 0;
-    }
-  }
-
-  log_trace(gc, survivor)("  ---------------------------------------------------------");
-}
-#endif // PRODUCT

@@ -24,6 +24,7 @@
  */
 
 package jdk.internal.jshell.remote;
+import jdk.jshell.spi.SPIResolutionException;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -111,10 +112,11 @@ class RemoteAgent {
                         out.flush();
                         break;
                     }
+                    String methodName = in.readUTF();
                     Method doitMethod;
                     try {
-                        this.getClass().getModule().addExports(RemoteResolutionException.class.getPackage().getName(), klass.getModule());
-                        doitMethod = klass.getDeclaredMethod(DOIT_METHOD_NAME, new Class<?>[0]);
+                        this.getClass().getModule().addExports(SPIResolutionException.class.getPackage().getName(), klass.getModule());
+                        doitMethod = klass.getDeclaredMethod(methodName, new Class<?>[0]);
                         doitMethod.setAccessible(true);
                         Object res;
                         try {
@@ -138,9 +140,9 @@ class RemoteAgent {
                     } catch (InvocationTargetException ex) {
                         Throwable cause = ex.getCause();
                         StackTraceElement[] elems = cause.getStackTrace();
-                        if (cause instanceof RemoteResolutionException) {
+                        if (cause instanceof SPIResolutionException) {
                             out.writeInt(RESULT_CORRALLED);
-                            out.writeInt(((RemoteResolutionException) cause).id);
+                            out.writeInt(((SPIResolutionException) cause).id());
                         } else {
                             out.writeInt(RESULT_EXCEPTION);
                             out.writeUTF(cause.getClass().getName());
@@ -254,25 +256,12 @@ class RemoteAgent {
         if (value == null) {
             return "null";
         } else if (value instanceof String) {
-            return "\"" + expunge((String)value) + "\"";
+            return "\"" + (String)value + "\"";
         } else if (value instanceof Character) {
             return "'" + value + "'";
         } else {
-            return expunge(value.toString());
+            return value.toString();
         }
-    }
-
-    /**
-     * Expunge internal info from string
-     * @param s string to process
-     * @return string the display, JShell package and wrapper class names removed
-     */
-    static String expunge(String s) {
-        StringBuilder sb = new StringBuilder();
-        for (String comp : PREFIX_PATTERN.split(s)) {
-            sb.append(comp);
-        }
-        return sb.toString();
     }
 
     private static final class MultiplexingOutputStream extends OutputStream {

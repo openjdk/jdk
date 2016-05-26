@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary VM exit initialization results if java.base is specificed more than once to Xpatch.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  */
 

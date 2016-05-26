@@ -25,67 +25,56 @@
 
 package com.sun.tools.jdeps;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UncheckedIOException;
 import java.lang.module.ModuleDescriptor;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.stream.Collectors;
 
 /**
- * JDeps internal representation of module for dependency analysis.
+ * Jdeps internal representation of module for dependency analysis.
  */
 class Module extends Archive {
-    static final boolean traceOn = Boolean.getBoolean("jdeps.debug");
+    static final Module UNNAMED_MODULE = new UnnamedModule();
+    static final String JDK_UNSUPPORTED = "jdk.unsupported";
+
+    static final boolean DEBUG = Boolean.getBoolean("jdeps.debug");
     static void trace(String fmt, Object... args) {
+        trace(DEBUG, fmt, args);
+    }
+
+    static void trace(boolean traceOn, String fmt, Object... args) {
         if (traceOn) {
             System.err.format(fmt, args);
         }
     }
 
-    /*
-     * Returns true if the given package name is JDK critical internal API
-     * in jdk.unsupported module
-     */
-    static boolean isJDKUnsupported(Module m, String pn) {
-        return JDK_UNSUPPORTED.equals(m.name()) || unsupported.contains(pn);
-    };
+    private final ModuleDescriptor descriptor;
+    private final Map<String, Set<String>> exports;
+    private final boolean isSystem;
+    private final URI location;
 
-    protected final ModuleDescriptor descriptor;
-    protected final Map<String, Boolean> requires;
-    protected final Map<String, Set<String>> exports;
-    protected final Set<String> packages;
-    protected final boolean isJDK;
-    protected final URI location;
+    protected Module(String name) {
+        super(name);
+        this.descriptor = null;
+        this.location = null;
+        this.exports = Collections.emptyMap();
+        this.isSystem = true;
+    }
 
     private Module(String name,
                    URI location,
                    ModuleDescriptor descriptor,
-                   Map<String, Boolean> requires,
                    Map<String, Set<String>> exports,
-                   Set<String> packages,
-                   boolean isJDK,
+                   boolean isSystem,
                    ClassFileReader reader) {
         super(name, location, reader);
         this.descriptor = descriptor;
         this.location = location;
-        this.requires = Collections.unmodifiableMap(requires);
         this.exports = Collections.unmodifiableMap(exports);
-        this.packages = Collections.unmodifiableSet(packages);
-        this.isJDK = isJDK;
+        this.isSystem = isSystem;
     }
 
     /**
@@ -111,31 +100,35 @@ class Module extends Archive {
         return descriptor;
     }
 
-    public boolean isJDK() {
-        return isJDK;
+    public URI location() {
+        return location;
     }
 
-    public Map<String, Boolean> requires() {
-        return requires;
+    public boolean isJDK() {
+        String mn = name();
+        return isSystem &&
+            (mn.startsWith("java.") || mn.startsWith("jdk.") || mn.startsWith("javafx."));
+    }
+
+    public boolean isSystem() {
+        return isSystem;
     }
 
     public Map<String, Set<String>> exports() {
         return exports;
     }
 
-    public Map<String, Set<String>> provides() {
-        return descriptor.provides().entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().providers()));
-    }
-
     public Set<String> packages() {
-        return packages;
+        return descriptor.packages();
     }
 
     /**
      * Tests if the package of the given name is exported.
      */
     public boolean isExported(String pn) {
+        if (JDK_UNSUPPORTED.equals(this.name())) {
+            return false;
+        }
         return exports.containsKey(pn) ? exports.get(pn).isEmpty() : false;
     }
 
@@ -159,11 +152,6 @@ class Module extends Archive {
         return isExported(pn) || exports.containsKey(pn) && exports.get(pn).contains(target);
     }
 
-    private final static String JDK_UNSUPPORTED = "jdk.unsupported";
-
-    // temporary until jdk.unsupported module
-    private final static List<String> unsupported = Arrays.asList("sun.misc", "sun.reflect");
-
     @Override
     public String toString() {
         return name();
@@ -171,21 +159,19 @@ class Module extends Archive {
 
     public final static class Builder {
         final String name;
-        final Map<String, Boolean> requires = new HashMap<>();
-        final Map<String, Set<String>> exports = new HashMap<>();
-        final Set<String> packages = new HashSet<>();
-        final boolean isJDK;
+        final ModuleDescriptor descriptor;
+        final boolean isSystem;
         ClassFileReader reader;
-        ModuleDescriptor descriptor;
         URI location;
 
-        public Builder(String name) {
-            this(name, false);
+        public Builder(ModuleDescriptor md) {
+            this(md, false);
         }
 
-        public Builder(String name, boolean isJDK) {
-            this.name = name;
-            this.isJDK = isJDK;
+        public Builder(ModuleDescriptor md, boolean isSystem) {
+            this.name = md.name();
+            this.descriptor = md;
+            this.isSystem = isSystem;
         }
 
         public Builder location(URI location) {
@@ -193,48 +179,30 @@ class Module extends Archive {
             return this;
         }
 
-        public Builder descriptor(ModuleDescriptor md) {
-            this.descriptor = md;
-            return this;
-        }
-
-        public Builder require(String d, boolean reexport) {
-            requires.put(d, reexport);
-            return this;
-        }
-
-        public Builder packages(Set<String> pkgs) {
-            packages.addAll(pkgs);
-            return this;
-        }
-
-        public Builder export(String p, Set<String> ms) {
-            Objects.requireNonNull(p);
-            Objects.requireNonNull(ms);
-            exports.put(p, new HashSet<>(ms));
-            return this;
-        }
         public Builder classes(ClassFileReader reader) {
             this.reader = reader;
             return this;
         }
 
         public Module build() {
-            if (descriptor.isAutomatic() && isJDK) {
+            if (descriptor.isAutomatic() && isSystem) {
                 throw new InternalError("JDK module: " + name + " can't be automatic module");
             }
 
-            return new Module(name, location, descriptor, requires, exports, packages, isJDK, reader);
+            Map<String, Set<String>> exports = new HashMap<>();
+
+            descriptor.exports().stream()
+                .forEach(exp -> exports.computeIfAbsent(exp.source(), _k -> new HashSet<>())
+                                    .addAll(exp.targets()));
+
+            return new Module(name, location, descriptor, exports, isSystem, reader);
         }
     }
 
-    final static Module UNNAMED_MODULE = new UnnamedModule();
     private static class UnnamedModule extends Module {
         private UnnamedModule() {
             super("unnamed", null, null,
                   Collections.emptyMap(),
-                  Collections.emptyMap(),
-                  Collections.emptySet(),
                   false, null);
         }
 
@@ -260,10 +228,7 @@ class Module extends Archive {
     }
 
     private static class StrictModule extends Module {
-        private static final String SERVICES_PREFIX = "META-INF/services/";
-        private final Map<String, Set<String>> provides;
-        private final Module module;
-        private final JarFile jarfile;
+        private final ModuleDescriptor md;
 
         /**
          * Converts the given automatic module to a strict module.
@@ -272,114 +237,26 @@ class Module extends Archive {
          * declare service providers, if specified in META-INF/services configuration file
          */
         private StrictModule(Module m, Map<String, Boolean> requires) {
-            super(m.name(), m.location, m.descriptor, requires, m.exports, m.packages, m.isJDK, m.reader());
-            this.module = m;
-            try {
-                this.jarfile = new JarFile(m.path().toFile(), false);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-            this.provides = providers(jarfile);
+            super(m.name(), m.location, m.descriptor, m.exports, m.isSystem, m.reader());
+
+            ModuleDescriptor.Builder builder = new ModuleDescriptor.Builder(m.name());
+            requires.keySet().forEach(mn -> {
+                if (requires.get(mn).equals(Boolean.TRUE)) {
+                    builder.requires(ModuleDescriptor.Requires.Modifier.PUBLIC, mn);
+                } else {
+                    builder.requires(mn);
+                }
+            });
+            m.descriptor.exports().forEach(e -> builder.exports(e));
+            m.descriptor.uses().forEach(s -> builder.uses(s));
+            m.descriptor.provides().values().forEach(p -> builder.provides(p));
+            builder.conceals(m.descriptor.conceals());
+            this.md = builder.build();
         }
 
         @Override
-        public Map<String, Set<String>> provides() {
-            return provides;
-        }
-
-        private Map<String, Set<String>> providers(JarFile jf) {
-            Map<String, Set<String>> provides = new HashMap<>();
-            // map names of service configuration files to service names
-            Set<String> serviceNames =  jf.stream()
-                    .map(e -> e.getName())
-                    .filter(e -> e.startsWith(SERVICES_PREFIX))
-                    .distinct()
-                    .map(this::toServiceName)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .collect(Collectors.toSet());
-
-            // parse each service configuration file
-            for (String sn : serviceNames) {
-                JarEntry entry = jf.getJarEntry(SERVICES_PREFIX + sn);
-                Set<String> providerClasses = new HashSet<>();
-                try (InputStream in = jf.getInputStream(entry)) {
-                    BufferedReader reader
-                            = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-                    String cn;
-                    while ((cn = nextLine(reader)) != null) {
-                        if (isJavaIdentifier(cn)) {
-                            providerClasses.add(cn);
-                        }
-                    }
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-                if (!providerClasses.isEmpty())
-                    provides.put(sn, providerClasses);
-            }
-
-            return provides;
-        }
-
-        /**
-         * Returns a container with the service type corresponding to the name of
-         * a services configuration file.
-         *
-         * For example, if called with "META-INF/services/p.S" then this method
-         * returns a container with the value "p.S".
-         */
-        private Optional<String> toServiceName(String cf) {
-            assert cf.startsWith(SERVICES_PREFIX);
-            int index = cf.lastIndexOf("/") + 1;
-            if (index < cf.length()) {
-                String prefix = cf.substring(0, index);
-                if (prefix.equals(SERVICES_PREFIX)) {
-                    String sn = cf.substring(index);
-                    if (isJavaIdentifier(sn))
-                        return Optional.of(sn);
-                }
-            }
-            return Optional.empty();
-        }
-
-        /**
-         * Reads the next line from the given reader and trims it of comments and
-         * leading/trailing white space.
-         *
-         * Returns null if the reader is at EOF.
-         */
-        private String nextLine(BufferedReader reader) throws IOException {
-            String ln = reader.readLine();
-            if (ln != null) {
-                int ci = ln.indexOf('#');
-                if (ci >= 0)
-                    ln = ln.substring(0, ci);
-                ln = ln.trim();
-            }
-            return ln;
-        }
-
-        /**
-         * Returns {@code true} if the given identifier is a legal Java identifier.
-         */
-        private static boolean isJavaIdentifier(String id) {
-            int n = id.length();
-            if (n == 0)
-                return false;
-            if (!Character.isJavaIdentifierStart(id.codePointAt(0)))
-                return false;
-            int cp = id.codePointAt(0);
-            int i = Character.charCount(cp);
-            for (; i < n; i += Character.charCount(cp)) {
-                cp = id.codePointAt(i);
-                if (!Character.isJavaIdentifierPart(cp) && id.charAt(i) != '.')
-                    return false;
-            }
-            if (cp == '.')
-                return false;
-
-            return true;
+        public ModuleDescriptor descriptor() {
+            return md;
         }
     }
 }

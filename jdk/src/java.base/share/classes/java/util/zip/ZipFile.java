@@ -54,6 +54,8 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.misc.JavaUtilZipFileAccess;
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaIORandomAccessFileAccess;
+import jdk.internal.misc.VM;
 import jdk.internal.perf.PerfCounter;
 
 import static java.util.zip.ZipConstants.*;
@@ -805,25 +807,11 @@ class ZipFile implements ZipConstants, Closeable {
         }
     }
 
-    static {
-        SharedSecrets.setJavaUtilZipFileAccess(
-            new JavaUtilZipFileAccess() {
-                public boolean startsWithLocHeader(ZipFile zip) {
-                    return zip.zsrc.startsWithLoc;
-                }
-                public String[] getMetaInfEntryNames(ZipFile zip) {
-                    return zip.getMetaInfEntryNames();
-                }
-             }
-        );
-    }
-
     /**
-     * Returns an array of strings representing the names of all entries
-     * that begin with "META-INF/" (case ignored). This method is used
-     * in JarFile, via SharedSecrets, as an optimization when looking up
-     * manifest and signature file entries. Returns null if no entries
-     * were found.
+     * Returns the names of all non-directory entries that begin with
+     * "META-INF/" (case ignored). This method is used in JarFile, via
+     * SharedSecrets, as an optimization when looking up manifest and
+     * signature file entries. Returns null if no entries were found.
      */
     private String[] getMetaInfEntryNames() {
         synchronized (this) {
@@ -840,6 +828,21 @@ class ZipFile implements ZipConstants, Closeable {
             }
             return names;
         }
+    }
+
+    private static boolean isWindows;
+    static {
+        SharedSecrets.setJavaUtilZipFileAccess(
+            new JavaUtilZipFileAccess() {
+                public boolean startsWithLocHeader(ZipFile zip) {
+                    return zip.zsrc.startsWithLoc;
+                }
+                public String[] getMetaInfEntryNames(ZipFile zip) {
+                    return zip.getMetaInfEntryNames();
+                }
+             }
+        );
+        isWindows = VM.getSavedProperty("os.name").contains("Windows");
     }
 
     private static class Source {
@@ -956,9 +959,16 @@ class ZipFile implements ZipConstants, Closeable {
 
         private Source(Key key, boolean toDelete) throws IOException {
             this.key = key;
-            this.zfile = new RandomAccessFile(key.file, "r");
             if (toDelete) {
-                key.file.delete();
+                if (isWindows) {
+                    this.zfile = SharedSecrets.getJavaIORandomAccessFileAccess()
+                                              .openAndDelete(key.file, "r");
+                } else {
+                    this.zfile = new RandomAccessFile(key.file, "r");
+                    key.file.delete();
+                }
+            } else {
+                this.zfile = new RandomAccessFile(key.file, "r");
             }
             try {
                 initCEN(-1);
@@ -1293,18 +1303,19 @@ class ZipFile implements ZipConstants, Closeable {
                 && (name[off]         ) == '/';
         }
 
-        /*
-         * Counts the number of CEN headers in a central directory extending
-         * from BEG to END.  Might return a bogus answer if the zip file is
-         * corrupt, but will not crash.
+        /**
+         * Returns the number of CEN headers in a central directory.
+         * Will not throw, even if the zip file is corrupt.
+         *
+         * @param cen copy of the bytes in a zip file's central directory
+         * @param size number of bytes in central directory
          */
-        static int countCENHeaders(byte[] cen, int end) {
+        private static int countCENHeaders(byte[] cen, int size) {
             int count = 0;
-            int pos = 0;
-            while (pos + CENHDR <= end) {
+            for (int p = 0;
+                 p + CENHDR <= size;
+                 p += CENHDR + CENNAM(cen, p) + CENEXT(cen, p) + CENCOM(cen, p))
                 count++;
-                pos += (CENHDR + CENNAM(cen, pos) + CENEXT(cen, pos) + CENCOM(cen, pos));
-            }
             return count;
         }
     }

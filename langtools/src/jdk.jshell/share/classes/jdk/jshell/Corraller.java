@@ -49,6 +49,8 @@ import static com.sun.tools.javac.code.Flags.STATIC;
 import static com.sun.tools.javac.code.Flags.INTERFACE;
 import static com.sun.tools.javac.code.Flags.ENUM;
 import static com.sun.tools.javac.code.Flags.PUBLIC;
+import com.sun.tools.javac.util.Name;
+import jdk.jshell.spi.SPIResolutionException;
 
 /**
  * Produce a corralled version of the Wrap for a snippet.
@@ -129,16 +131,22 @@ class Corraller extends Pretty {
         super.visitClassDef(tree);
     }
 
+    // Build a compiler tree for an exception throwing block, e.g.:
+    // {
+    //     throw new jdk.jshell.spi.SPIResolutionException(9);
+    // }
     private JCBlock resolutionExceptionBlock() {
         if (resolutionExceptionBlock == null) {
-            JCExpression expClass
-                    = make.Select(make.Select(make.Select(make.Select(
-                            make.Ident(names.fromString("jdk")),
-                            names.fromString("internal")),
-                            names.fromString("jshell")),
-                            names.fromString("remote")),
-                            names.fromString("RemoteResolutionException")
-                    );
+            JCExpression expClass = null;
+            // Split the exception class name at dots
+            for (String id : SPIResolutionException.class.getName().split("\\.")) {
+                Name nm = names.fromString(id);
+                if (expClass == null) {
+                    expClass = make.Ident(nm);
+                } else {
+                    expClass = make.Select(expClass, nm);
+                }
+            }
             JCNewClass exp = make.NewClass(null,
                     null, expClass, List.of(make.Literal(keyIndex)), null);
             resolutionExceptionBlock = make.Block(0L, List.<JCStatement>of(

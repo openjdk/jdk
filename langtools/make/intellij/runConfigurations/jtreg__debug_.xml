@@ -1,0 +1,18 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="jtreg (debug)" type="Remote" factoryName="Remote" singleton="true">
+    <option name="USE_SOCKET_TRANSPORT" value="true" />
+    <option name="SERVER_MODE" value="true" />
+    <option name="SHMEM_ADDRESS" />
+    <option name="HOST" value="localhost" />
+    <option name="PORT" value="5900" />
+    <RunnerSettings RunnerId="Debug">
+      <option name="DEBUG_PORT" value="5900" />
+      <option name="TRANSPORT" value="0" />
+      <option name="LOCAL" value="false" />
+    </RunnerSettings>
+    <ConfigurationWrapper RunnerId="Debug" />
+    <method>
+      <option name="AntTarget" enabled="true" antfile="file://$PROJECT_DIR$/.idea/build.xml" target="jtreg-debug" />
+    </method>
+  </configuration>
+</component>

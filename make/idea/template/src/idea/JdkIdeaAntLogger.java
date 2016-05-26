@@ -99,7 +99,9 @@ public final class JdkIdeaAntLogger extends DefaultLogger {
         /** jtreg test failure */
         JTREG_TEST_FAILED(StringBinaryPredicate.STARTS_WITH, MSG_ERR, "FAILED: "),
         /** jtreg test error */
-        JTREG_TEST_ERROR(StringBinaryPredicate.STARTS_WITH, MSG_ERR, "Error: ");
+        JTREG_TEST_ERROR(StringBinaryPredicate.STARTS_WITH, MSG_ERR, "Error: "),
+        /** jtreg report */
+        JTREG_TEST_REPORT(StringBinaryPredicate.STARTS_WITH, MSG_INFO, "Report written");
 
         StringBinaryPredicate sbp;
         int priority;
@@ -132,7 +134,7 @@ public final class JdkIdeaAntLogger extends DefaultLogger {
         MAKE("exec", MessageKind.MAKE_ERROR, MessageKind.MAKE_WARNING, MessageKind.MAKE_NOTE,
                        MessageKind.MAKE_OTHER, MessageKind.JAVAC_CRASH),
         /** jtreg task - invoked during test execution */
-        JTREG("jtreg", MessageKind.JTREG_TEST_PASSED, MessageKind.JTREG_TEST_FAILED, MessageKind.JTREG_TEST_ERROR),
+        JTREG("jtreg", MessageKind.JTREG_TEST_PASSED, MessageKind.JTREG_TEST_FAILED, MessageKind.JTREG_TEST_ERROR, MessageKind.JTREG_TEST_REPORT),
         /** initial synthetic task when the logger is created */
         ROOT("") {
             @Override

@@ -28,9 +28,11 @@ package jdk.jshell;
 import java.util.Locale;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
-import jdk.internal.jshell.remote.RemoteCodes;
-import static jdk.jshell.Util.*;
-import static jdk.internal.jshell.remote.RemoteCodes.REPL_PACKAGE;
+import static jdk.jshell.Util.PARSED_LOCALE;
+import static jdk.jshell.Util.REPL_CLASS_PREFIX;
+import static jdk.jshell.Util.REPL_DOESNOTMATTER_CLASS_NAME;
+import static jdk.jshell.Util.REPL_PACKAGE;
+import static jdk.jshell.Util.expunge;
 
 /**
  *
@@ -163,7 +165,7 @@ class OuterWrap implements GeneralWrap {
             }
             for (String line : diag.getMessage(PARSED_LOCALE).split("\\r?\\n")) {
                 if (line.trim().startsWith("location:")) {
-                    if (!line.contains(RemoteCodes.REPL_CLASS_PREFIX)) {
+                    if (!line.contains(REPL_CLASS_PREFIX)) {
                         // Resolution error must occur within a REPL class or it is not resolvable
                         return false;
                     }

@@ -28,6 +28,7 @@
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @library /testlibrary /test/lib /
  * @library ../common/patches
+ * @modules java.base/jdk.internal.misc
  * @modules jdk.vm.ci/jdk.vm.ci.hotspot
  *          jdk.vm.ci/jdk.vm.ci.meta
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
@@ -51,7 +52,7 @@ import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.hotspot.PublicMetaspaceWrapperObject;
 import jdk.test.lib.Utils;
 import sun.hotspot.WhiteBox;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * Tests for jdk.vm.ci.hotspot.CompilerToVM::getConstantPool method
