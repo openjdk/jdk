@@ -41,6 +41,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.*;
+import java.util.stream.Collectors;
 
 public class DotFileTest {
     public static void main(String... args) throws Exception {
@@ -182,7 +183,7 @@ public class DotFileTest {
         // invoke jdeps
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
-        System.err.println("jdeps " + args);
+        System.err.println("jdeps " + args.stream().collect(Collectors.joining(" ")));
         int rc = com.sun.tools.jdeps.Main.run(args.toArray(new String[0]), pw);
         pw.close();
         String out = sw.toString();

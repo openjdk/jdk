@@ -27,6 +27,7 @@
  * @test
  * @summary class c5 in an unnamed module can read module m2, but package p6 in module m2 is not exported.
  *          Access denied since even though unnamed module can read all modules, p6 in module m2 is not exported at all.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @compile myloaders/MyDiffClassLoader.java
  * @compile p6/c6.java
@@ -90,7 +91,7 @@ public class UmodUpkgDiffCL_NotExp {
         // Resolves "m1"
         Configuration cf = Layer.boot()
                 .configuration()
-                .resolveRequires(finder, ModuleFinder.empty(), Set.of("m1"));
+                .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
 
         // map each module to differing class loaders for this test
         Map<String, ClassLoader> map = new HashMap<>();

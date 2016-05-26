@@ -25,6 +25,7 @@
  * @test
  * @bug 5057225
  * @summary Remove useless I2L conversions
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @run main/othervm -Xcomp -XX:CompileOnly=Test5057225.doload Test5057225
  */

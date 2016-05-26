@@ -25,6 +25,7 @@
  * @test
  * @bug 6823354
  * @summary These methods can be instrinsified by using bit scan, bit test, and population count instructions.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @run main/othervm -Xcomp -XX:CompileOnly=Test6823354.lzcomp,Test6823354.tzcomp,.dolzcomp,.dotzcomp Test6823354
  */

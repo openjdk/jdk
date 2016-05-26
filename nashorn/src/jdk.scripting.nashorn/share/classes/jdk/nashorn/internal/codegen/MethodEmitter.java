@@ -170,9 +170,11 @@ public class MethodEmitter {
     }
 
     /** Bootstrap for normal indy:s */
+    @SuppressWarnings("deprecation")
     private static final Handle LINKERBOOTSTRAP  = new Handle(H_INVOKESTATIC, Bootstrap.BOOTSTRAP.className(), Bootstrap.BOOTSTRAP.name(), Bootstrap.BOOTSTRAP.descriptor());
 
     /** Bootstrap for array populators */
+    @SuppressWarnings("deprecation")
     private static final Handle POPULATE_ARRAY_BOOTSTRAP = new Handle(H_INVOKESTATIC, RewriteException.BOOTSTRAP.className(), RewriteException.BOOTSTRAP.name(), RewriteException.BOOTSTRAP.descriptor());
 
     /**
@@ -1005,6 +1007,7 @@ public class MethodEmitter {
      *
      * @return the method emitter
      */
+    @SuppressWarnings("deprecation")
     MethodEmitter loadHandle(final String className, final String methodName, final String descName, final EnumSet<Flag> flags) {
         debug("load handle ");
         pushType(Type.OBJECT.ldc(method, new Handle(Flag.getValue(flags), className, methodName, descName)));

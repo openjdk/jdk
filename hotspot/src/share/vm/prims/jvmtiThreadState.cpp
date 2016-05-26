@@ -224,18 +224,11 @@ int JvmtiThreadState::count_frames() {
   RegisterMap reg_map(get_thread());
   javaVFrame *jvf = get_thread()->last_java_vframe(&reg_map);
   int n = 0;
-  // tty->print_cr("CSD: counting frames on %s ...",
-  //               JvmtiTrace::safe_get_thread_name(get_thread()));
   while (jvf != NULL) {
     Method* method = jvf->method();
-    // tty->print_cr("CSD: frame - method %s.%s - loc %d",
-    //               method->klass_name()->as_C_string(),
-    //               method->name()->as_C_string(),
-    //               jvf->bci() );
     jvf = jvf->java_sender();
     n++;
   }
-  // tty->print_cr("CSD: frame count: %d", n);
   return n;
 }
 

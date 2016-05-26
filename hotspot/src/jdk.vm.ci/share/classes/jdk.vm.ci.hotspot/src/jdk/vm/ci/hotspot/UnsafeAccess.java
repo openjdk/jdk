@@ -24,7 +24,7 @@ package jdk.vm.ci.hotspot;
 
 import java.lang.reflect.Field;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * Package private access to the {@link Unsafe} capability.

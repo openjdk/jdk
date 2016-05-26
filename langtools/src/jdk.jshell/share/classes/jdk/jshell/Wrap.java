@@ -27,7 +27,7 @@ package jdk.jshell;
 
 import java.util.Arrays;
 import static java.util.stream.Collectors.joining;
-import static jdk.internal.jshell.remote.RemoteCodes.DOIT_METHOD_NAME;
+import static jdk.jshell.Util.DOIT_METHOD_NAME;
 
 /**
  * Wrapping of source into Java methods, fields, etc.  All but outer layer

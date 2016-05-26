@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef SHARE_VM_GC_G1_G1YOUNGGENSIZER_HPP
+#define SHARE_VM_GC_G1_G1YOUNGGENSIZER_HPP
+
 #include "memory/allocation.hpp"
 
 // There are three command line options related to the young gen size:
@@ -60,7 +63,7 @@
 //
 // NewSize and MaxNewSize override NewRatio. So, NewRatio is ignored if it is
 // combined with either NewSize or MaxNewSize. (A warning message is printed.)
-class G1YoungGenSizer : public CHeapObj<mtGC> {
+class G1YoungGenSizer VALUE_OBJ_CLASS_SPEC {
 private:
   enum SizerKind {
     SizerDefaults,
@@ -84,13 +87,13 @@ public:
   G1YoungGenSizer();
   // Calculate the maximum length of the young gen given the number of regions
   // depending on the sizing algorithm.
-  uint max_young_length(uint number_of_heap_regions);
+  void adjust_max_new_size(uint number_of_heap_regions);
 
   void heap_size_changed(uint new_number_of_heap_regions);
-  uint min_desired_young_length() {
+  uint min_desired_young_length() const {
     return _min_desired_young_length;
   }
-  uint max_desired_young_length() {
+  uint max_desired_young_length() const {
     return _max_desired_young_length;
   }
 
@@ -99,3 +102,4 @@ public:
   }
 };
 
+#endif // SHARE_VM_GC_G1_G1YOUNGGENSIZER_HPP

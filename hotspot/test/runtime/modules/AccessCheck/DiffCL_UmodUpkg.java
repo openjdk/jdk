@@ -27,6 +27,7 @@
  * @test
  * @summary class p3.c3 defined in module m1 tries to access c4 defined in an unnamed package
  *          and an unnamed module.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @compile myloaders/MyDiffClassLoader.java
  * @compile c4.java
@@ -86,7 +87,7 @@ public class DiffCL_UmodUpkg {
      // Resolves "m1"
      Configuration cf = Layer.boot()
              .configuration()
-             .resolveRequires(finder, ModuleFinder.empty(), Set.of("m1"));
+             .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
 
      MyDiffClassLoader.loader1 = new MyDiffClassLoader();
      MyDiffClassLoader.loader2 = new MyDiffClassLoader();
@@ -135,7 +136,7 @@ public class DiffCL_UmodUpkg {
      // Resolves "m1"
      Configuration cf = Layer.boot()
              .configuration()
-             .resolveRequires(finder, ModuleFinder.empty(), Set.of("m1"));
+             .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
 
      MyDiffClassLoader.loader1 = new MyDiffClassLoader();
      MyDiffClassLoader.loader2 = new MyDiffClassLoader();

@@ -44,6 +44,7 @@
 #include "trace/tracing.hpp"
 #include "utilities/ticks.hpp"
 
+class AddPNode;
 class Block;
 class Bundle;
 class C2Compiler;
@@ -212,6 +213,8 @@ class Compile : public Phase {
       assert(_element == NULL, "");
       _element = e;
     }
+
+    BasicType basic_type() const;
 
     void print_on(outputStream* st) PRODUCT_RETURN;
   };
@@ -576,6 +579,8 @@ class Compile : public Phase {
   relocInfo*            _scratch_locs_memory;   // For temporary code buffers.
   int                   _scratch_const_size;    // For temporary code buffers.
   bool                  _in_scratch_emit_size;  // true when in scratch_emit_size.
+
+  void reshape_address(AddPNode* n);
 
  public:
   // Accessors
@@ -1099,7 +1104,7 @@ class Compile : public Phase {
   int               code_size()                 { return _method_size; }
   CodeBuffer*       code_buffer()               { return &_code_buffer; }
   int               first_block_size()          { return _first_block_size; }
-  void              set_frame_complete(int off) { _code_offsets.set_value(CodeOffsets::Frame_Complete, off); }
+  void              set_frame_complete(int off) { if (!in_scratch_emit_size()) { _code_offsets.set_value(CodeOffsets::Frame_Complete, off); } }
   ExceptionHandlerTable*  handler_table()       { return &_handler_table; }
   ImplicitExceptionTable* inc_table()           { return &_inc_table; }
   OopMapSet*        oop_map_set()               { return _oop_map_set; }

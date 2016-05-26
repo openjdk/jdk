@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Module system initialization exception results if a module is specificed twice to Xpatch.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  */
 

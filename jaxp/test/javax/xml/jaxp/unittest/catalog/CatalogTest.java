@@ -34,6 +34,7 @@ import javax.xml.catalog.CatalogUriResolver;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.Source;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
@@ -65,6 +66,24 @@ public class CatalogTest {
         } else {
             filepath = file1.substring(0, file1.lastIndexOf("/") + 1);
         }
+    }
+
+    /*
+     * @bug 8156845
+     * Verifies that an URI reference with a urn:publicid is correctly resolved
+     * with an uri entry with a publicId.
+     *
+     * @param expectedFile is not used in this test, it's kept since we're
+     * copying the JCK test and its dataProvider. This test may be reused for
+     * other cases in that test.
+     */
+    @Test(dataProvider = "resolveUri")
+    public void testMatch1(String cFile, String href, String expectedFile, String expectedUri, String msg) {
+        String catalogFile = getClass().getResource(cFile).getFile();
+        CatalogUriResolver cur = CatalogManager.catalogUriResolver(CatalogFeatures.defaults(), catalogFile);
+        Source source = cur.resolve(href, null);
+        Assert.assertNotNull(source, "Source returned is null");
+        Assert.assertEquals(expectedUri, source.getSystemId(), msg);
     }
 
     /*
@@ -327,6 +346,21 @@ public class CatalogTest {
         } catch (Exception e) {
             Assert.fail(e.getMessage());
         }
+    }
+
+
+    /*
+        DataProvider: used to verify CatalogUriResolver's resolve function.
+        Data columns:
+        catalog, uri or publicId, expectedFile, expectedUri, msg
+
+        This DataProvider is copied from JCK ResolveTests' dataMatch1
+     */
+    @DataProvider(name = "resolveUri")
+    Object[][] getDataForUriResolver() {
+        return new Object[][]{
+            {"uri.xml", "urn:publicid:-:Acme,+Inc.:DTD+Book+Version+1.0", null, "http://local/base/dtd/book.dtd", "Uri in publicId namespace is incorrectly unwrapped"},
+        };
     }
 
     /*

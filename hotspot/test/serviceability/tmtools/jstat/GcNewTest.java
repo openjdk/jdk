@@ -29,6 +29,7 @@ import utils.*;
  *          test several times provokes garbage collection in the debuggee application and after each garbage
  *          collection runs jstat. jstat should show that after garbage collection number of GC events and garbage
  *          collection time increase.
+ * @modules java.base/jdk.internal.misc
  * @library /test/lib/share/classes
  * @library ../share
  * @build common.*

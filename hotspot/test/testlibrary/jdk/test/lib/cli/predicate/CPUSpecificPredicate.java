@@ -44,7 +44,7 @@ public class CPUSpecificPredicate implements BooleanSupplier {
     @Override
     public boolean getAsBoolean() {
         if (!Platform.getOsArch().matches(cpuArchPattern)) {
-            System.out.println("CPU arch does not match " + cpuArchPattern);
+            System.out.println("CPU arch " + Platform.getOsArch() + " does not match " + cpuArchPattern);
             return false;
         }
 

@@ -43,8 +43,6 @@
 PSOldGen*            ParCompactionManager::_old_gen = NULL;
 ParCompactionManager**  ParCompactionManager::_manager_array = NULL;
 
-RegionTaskQueue**              ParCompactionManager::_region_list = NULL;
-
 OopTaskQueueSet*     ParCompactionManager::_stack_array = NULL;
 ParCompactionManager::ObjArrayTaskQueueSet*
   ParCompactionManager::_objarray_queues = NULL;
@@ -52,14 +50,8 @@ ObjectStartArray*    ParCompactionManager::_start_array = NULL;
 ParMarkBitMap*       ParCompactionManager::_mark_bitmap = NULL;
 RegionTaskQueueSet*  ParCompactionManager::_region_array = NULL;
 
-uint*                 ParCompactionManager::_recycled_stack_index = NULL;
-int                   ParCompactionManager::_recycled_top = -1;
-int                   ParCompactionManager::_recycled_bottom = -1;
-
 ParCompactionManager::ParCompactionManager() :
-    _action(CopyAndUpdate),
-    _region_stack(NULL),
-    _region_stack_index((uint)max_uintx) {
+    _action(CopyAndUpdate) {
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
@@ -68,12 +60,9 @@ ParCompactionManager::ParCompactionManager() :
 
   marking_stack()->initialize();
   _objarray_stack.initialize();
+  _region_stack.initialize();
 
   reset_bitmap_query_cache();
-}
-
-ParCompactionManager::~ParCompactionManager() {
-  delete _recycled_stack_index;
 }
 
 void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
@@ -88,19 +77,6 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
   _manager_array = NEW_C_HEAP_ARRAY(ParCompactionManager*, parallel_gc_threads+1, mtGC);
   guarantee(_manager_array != NULL, "Could not allocate manager_array");
 
-  _region_list = NEW_C_HEAP_ARRAY(RegionTaskQueue*,
-                         parallel_gc_threads+1, mtGC);
-  guarantee(_region_list != NULL, "Could not initialize promotion manager");
-
-  _recycled_stack_index = NEW_C_HEAP_ARRAY(uint, parallel_gc_threads, mtGC);
-
-  // parallel_gc-threads + 1 to be consistent with the number of
-  // compaction managers.
-  for(uint i=0; i<parallel_gc_threads + 1; i++) {
-    _region_list[i] = new RegionTaskQueue();
-    region_list(i)->initialize();
-  }
-
   _stack_array = new OopTaskQueueSet(parallel_gc_threads);
   guarantee(_stack_array != NULL, "Could not allocate stack_array");
   _objarray_queues = new ObjArrayTaskQueueSet(parallel_gc_threads);
@@ -114,7 +90,7 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
     guarantee(_manager_array[i] != NULL, "Could not create ParCompactionManager");
     stack_array()->register_queue(i, _manager_array[i]->marking_stack());
     _objarray_queues->register_queue(i, &_manager_array[i]->_objarray_stack);
-    region_array()->register_queue(i, region_list(i));
+    region_array()->register_queue(i, _manager_array[i]->region_stack());
   }
 
   // The VMThread gets its own ParCompactionManager, which is not available
@@ -133,29 +109,6 @@ void ParCompactionManager::reset_all_bitmap_query_caches() {
   }
 }
 
-int ParCompactionManager::pop_recycled_stack_index() {
-  assert(_recycled_bottom <= _recycled_top, "list is empty");
-  // Get the next available index
-  if (_recycled_bottom < _recycled_top) {
-    uint cur, next, last;
-    do {
-      cur = _recycled_bottom;
-      next = cur + 1;
-      last = Atomic::cmpxchg(next, &_recycled_bottom, cur);
-    } while (cur != last);
-    return _recycled_stack_index[next];
-  } else {
-    return -1;
-  }
-}
-
-void ParCompactionManager::push_recycled_stack_index(uint v) {
-  // Get the next available index
-  int cur = Atomic::add(1, &_recycled_top);
-  _recycled_stack_index[cur] = v;
-  assert(_recycled_bottom <= _recycled_top, "list top and bottom are wrong");
-}
-
 bool ParCompactionManager::should_update() {
   assert(action() != NotValid, "Action is not set");
   return (action() == ParCompactionManager::Update) ||
@@ -168,15 +121,6 @@ bool ParCompactionManager::should_copy() {
   return (action() == ParCompactionManager::Copy) ||
          (action() == ParCompactionManager::CopyAndUpdate) ||
          (action() == ParCompactionManager::UpdateAndCopy);
-}
-
-void ParCompactionManager::region_list_push(uint list_index,
-                                            size_t region_index) {
-  region_list(list_index)->push(region_index);
-}
-
-void ParCompactionManager::verify_region_list_empty(uint list_index) {
-  assert(region_list(list_index)->is_empty(), "Not empty");
 }
 
 ParCompactionManager*

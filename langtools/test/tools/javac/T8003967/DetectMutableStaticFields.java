@@ -108,14 +108,14 @@ public class DetectMutableStaticFields {
         // when running javac on JDK 8.
         ignore("com/sun/tools/javac/util/ModuleHelper",
                 "addExportsMethod", "getModuleMethod", "getUnnamedModuleMethod");
-        ignore("com/sun/tools/javac/util/ModuleWrappers$ConfigurationHelper",
+        ignore("com/sun/tools/javac/util/JDK9Wrappers$Configuration",
                 "resolveRequiresAndUsesMethod", "configurationClass");
-        ignore("com/sun/tools/javac/util/ModuleWrappers$LayerHelper",
+        ignore("com/sun/tools/javac/util/JDK9Wrappers$Layer",
                 "bootMethod", "defineModulesWithOneLoaderMethod", "configurationMethod", "layerClass");
-        ignore("com/sun/tools/javac/util/ModuleWrappers$ModuleFinderHelper",
-                "emptyMethod", "moduleFinderInterface", "ofMethod");
-
-
+        ignore("com/sun/tools/javac/util/JDK9Wrappers$ModuleFinder",
+                "moduleFinderClass", "ofMethod");
+        ignore("com/sun/tools/javac/util/JDK9Wrappers$ServiceLoaderHelper",
+                "loadMethod");
     }
 
     private final List<String> errors = new ArrayList<>();

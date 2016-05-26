@@ -33,7 +33,7 @@
                                                                                                                                      \
   nonstatic_field(CMSBitMap,                   _bmWordSize,                                   size_t)                                \
   nonstatic_field(CMSBitMap,                   _shifter,                                      const int)                             \
-  nonstatic_field(CMSBitMap,                      _bm,                                           BitMap)                             \
+  nonstatic_field(CMSBitMap,                   _bm,                                           BitMapView)                            \
   nonstatic_field(CMSBitMap,                   _virtual_space,                                VirtualSpace)                          \
   nonstatic_field(CMSCollector,                _markBitMap,                                   CMSBitMap)                             \
   nonstatic_field(ConcurrentMarkSweepGeneration, _cmsSpace,                                   CompactibleFreeListSpace*)             \

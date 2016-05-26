@@ -30,12 +30,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.io.Writer;
+import java.nio.file.Files;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import jdk.internal.jline.NoInterruptUnixTerminal;
 import jdk.internal.jline.Terminal;
 import jdk.internal.jline.TerminalFactory;
@@ -43,23 +41,29 @@ import jdk.internal.jline.TerminalFactory.Flavor;
 import jdk.internal.jline.WindowsTerminal;
 import jdk.internal.jline.console.ConsoleReader;
 import jdk.internal.jline.console.KeyMap;
-import jdk.internal.jline.console.completer.Completer;
-import jdk.internal.jline.console.history.FileHistory;
+import jdk.internal.jline.extra.EditingHistory;
 
 class Console implements AutoCloseable {
     private static final String DOCUMENTATION_SHORTCUT = "\033\133\132"; //Shift-TAB
     private final ConsoleReader in;
-    private final FileHistory history;
+    private final File historyFile;
 
     Console(final InputStream cmdin, final PrintStream cmdout, final File historyFile,
-            final Completer completer, final Function<String, String> docHelper) throws IOException {
+            final NashornCompleter completer, final Function<String, String> docHelper) throws IOException {
+        this.historyFile = historyFile;
+
         TerminalFactory.registerFlavor(Flavor.WINDOWS, isCygwin()? JJSUnixTerminal::new : JJSWindowsTerminal::new);
         TerminalFactory.registerFlavor(Flavor.UNIX, JJSUnixTerminal::new);
         in = new ConsoleReader(cmdin, cmdout);
         in.setExpandEvents(false);
         in.setHandleUserInterrupt(true);
         in.setBellEnabled(true);
-        in.setHistory(history = new FileHistory(historyFile));
+        in.setCopyPasteDetection(true);
+        in.setHistory(new EditingHistory(in, Files.readAllLines(historyFile.toPath())) {
+            @Override protected boolean isComplete(CharSequence input) {
+                return completer.isComplete(input.toString());
+            }
+        });
         in.addCompleter(completer);
         Runtime.getRuntime().addShutdownHook(new Thread((Runnable)this::saveHistory));
         bind(DOCUMENTATION_SHORTCUT, (ActionListener)evt -> showDocumentation(docHelper));
@@ -75,13 +79,17 @@ class Console implements AutoCloseable {
     }
 
     private void saveHistory() {
-        try {
-            getHistory().flush();
+        try (Writer out = Files.newBufferedWriter(historyFile.toPath())) {
+            String lineSeparator = System.getProperty("line.separator");
+
+            out.write(getHistory().save()
+                                  .stream()
+                                  .collect(Collectors.joining(lineSeparator)));
         } catch (final IOException exp) {}
     }
 
-    FileHistory getHistory() {
-        return (FileHistory) in.getHistory();
+    EditingHistory getHistory() {
+        return (EditingHistory) in.getHistory();
     }
 
     boolean terminalEditorRunning() {

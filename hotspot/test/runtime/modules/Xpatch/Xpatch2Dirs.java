@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Make sure -Xpatch works with multiple directories.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @compile Xpatch2DirsMain.java
  * @run main Xpatch2Dirs

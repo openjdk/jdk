@@ -27,31 +27,32 @@
  * @test TestStableShort
  * @summary tests on stable fields and arrays
  * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.vm.annotation
  * @build sun.hotspot.WhiteBox
  * @build compiler.stable.TestStableShort
  *
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                         -XX:-TieredCompilation
- *                         -XX:+FoldStableValues
- *                         compiler.stable.TestStableShort
+ *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:-TieredCompilation
+ *                                 -XX:+FoldStableValues
+ *                                 compiler.stable.TestStableShort
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                         -XX:-TieredCompilation
- *                         -XX:+FoldStableValues
- *                         compiler.stable.TestStableShort
+ *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:-TieredCompilation
+ *                                 -XX:+FoldStableValues
+ *                                 compiler.stable.TestStableShort
  *
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                         -XX:-TieredCompilation
- *                         -XX:+FoldStableValues
- *                         compiler.stable.TestStableShort
+ *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:-TieredCompilation
+ *                                 -XX:+FoldStableValues
+ *                                 compiler.stable.TestStableShort
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                         -XX:-TieredCompilation
- *                         -XX:+FoldStableValues
- *                         compiler.stable.TestStableShort
+ *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:-TieredCompilation
+ *                                 -XX:+FoldStableValues
+ *                                 compiler.stable.TestStableShort
  */
 
 package compiler.stable;

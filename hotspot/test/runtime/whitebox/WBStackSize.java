@@ -24,6 +24,7 @@
 /*
  * @test WBStackSize
  * @summary verify that whitebox functions getThreadFullStackSize() and getThreadRemainingStackSize are working
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @build WBStackSize
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

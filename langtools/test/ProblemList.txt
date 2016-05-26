@@ -66,7 +66,6 @@ jdk/jshell/ToolBasicTest.java                                                   
 # javac
 
 tools/javac/Paths/AbsolutePathTest.java                                         8055768    generic-all    ToolBox does not close opened files
-tools/javac/Paths/MineField.sh                                                  8149599	   generic-all    needs rewrite
 tools/javac/annotations/typeAnnotations/failures/CantAnnotatePackages.java      8057679    generic-all    clarify error messages trying to annotate scoping
 tools/javac/annotations/typeAnnotations/failures/CantAnnotateScoping.java       8057679    generic-all    clarify error messages trying to annotate scoping
 tools/javac/annotations/typeAnnotations/failures/CantAnnotateStaticClass2.java  8057679    generic-all    clarify error messages trying to annotate scoping
@@ -94,7 +93,4 @@ tools/sjavac/IncCompileWithChanges.java                                         
 ###########################################################################
 #
 # jdeps 
-
-tools/jdeps/modules/GenModuleInfo.java                                          8152502,8153481    generic-all    fails to clean up files, java.util.HashMap$Node cannot be cast to java.util.HashMap$TreeNode
-tools/jdeps/modules/ModuleTest.java                                             8153481    generic-all    java.util.HashMap$Node cannot be cast to java.util.HashMap$TreeNode
 

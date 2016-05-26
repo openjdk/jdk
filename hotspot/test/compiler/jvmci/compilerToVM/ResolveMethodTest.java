@@ -27,6 +27,7 @@
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @library / /testlibrary /test/lib
  * @library ../common/patches
+ * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.org.objectweb.asm.tree
  *          jdk.vm.ci/jdk.vm.ci.hotspot
@@ -56,7 +57,7 @@ import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 public class ResolveMethodTest {
     private static final Unsafe UNSAFE = Utils.getUnsafe();
@@ -137,8 +138,14 @@ public class ResolveMethodTest {
         HotSpotResolvedObjectType callerMetaspace = CompilerToVMHelper
                 .lookupType(Utils.toJVMTypeSignature(tcase.caller),
                         getClass(), /* resolve = */ true);
+        HotSpotResolvedObjectType receiverMetaspace = CompilerToVMHelper
+                .lookupType(Utils.toJVMTypeSignature(tcase.receiver),
+                        getClass(), /* resolve = */ true);
+
+        // Can only resolve methods on a linked class so force initialization
+        receiverMetaspace.initialize();
         HotSpotResolvedJavaMethod resolvedMetaspaceMethod
-                = CompilerToVMHelper.resolveMethod(holderMetaspace,
+                = CompilerToVMHelper.resolveMethod(receiverMetaspace,
                         metaspaceMethod, callerMetaspace);
         if (tcase.isPositive) {
             Asserts.assertNotNull(resolvedMetaspaceMethod,

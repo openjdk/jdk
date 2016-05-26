@@ -65,6 +65,14 @@ class CompilerToVM {
 
     static int vm_page_size;
 
+    static address dsin;
+    static address dcos;
+    static address dtan;
+    static address dexp;
+    static address dlog;
+    static address dlog10;
+    static address dpow;
+
    public:
     static void initialize();
   };

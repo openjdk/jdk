@@ -35,16 +35,10 @@
  * @test
  * @bug 8074773
  * @summary Stress test looks for lost unparks
- * @library /lib/testlibrary/
- * @modules java.management
- * @run main/timeout=1200 ParkLoops
  */
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadInfo;
 import java.util.SplittableRandom;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -52,11 +46,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.locks.LockSupport;
-import jdk.testlibrary.Utils;
 
 public final class ParkLoops {
-    static final long TEST_TIMEOUT_SECONDS = Utils.adjustTimeout(1000);
-    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
     static final int THREADS = 4;
     static final int ITERS = 30_000;
 
@@ -126,28 +117,13 @@ public final class ParkLoops {
         final AtomicReferenceArray<Thread> threads
             = new AtomicReferenceArray<>(THREADS);
         final CountDownLatch done = new CountDownLatch(THREADS);
-        final Runnable parker = new Parker(threads, done, rnd.split());
-        final Runnable unparker = new Unparker(threads, done, rnd.split());
         for (int i = 0; i < THREADS; i++) {
-            pool.submit(parker);
-            pool.submit(unparker);
+            pool.submit(new Parker(threads, done, rnd.split()));
+            pool.submit(new Unparker(threads, done, rnd.split()));
         }
-        try {
-          if (!done.await(TEST_TIMEOUT_SECONDS, SECONDS)) {
-            dumpAllStacks();
-            throw new AssertionError("lost unpark");
-          }
-        } finally {
-          pool.shutdown();
-          pool.awaitTermination(LONG_DELAY_MS, MILLISECONDS);
-        }
-    }
-
-    static void dumpAllStacks() {
-        ThreadInfo[] threadInfos =
-            ManagementFactory.getThreadMXBean().dumpAllThreads(true, true);
-        for (ThreadInfo threadInfo : threadInfos) {
-            System.err.print(threadInfo);
-        }
+        // Let test harness handle timeout
+        done.await();
+        pool.shutdown();
+        pool.awaitTermination(Long.MAX_VALUE, SECONDS);
     }
 }

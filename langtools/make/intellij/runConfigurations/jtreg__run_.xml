@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="jtreg (run)" type="AntRunConfiguration" factoryName="Ant Target">
+    <antsettings antfile="file://$PROJECT_DIR$/.idea/build.xml" target="jtreg" />
+    <method>
+      <option name="Make" enabled="false" />
+    </method>
+  </configuration>
+</component>

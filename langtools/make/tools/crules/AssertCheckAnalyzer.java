@@ -37,6 +37,9 @@ import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Assert;
 
+/**This analyzer guards against complex messages (i.e. those that use string concatenation) passed
+ * to various Assert.check methods.
+ */
 public class AssertCheckAnalyzer extends AbstractCodingRulesAnalyzer {
 
     enum AssertOverloadKind {

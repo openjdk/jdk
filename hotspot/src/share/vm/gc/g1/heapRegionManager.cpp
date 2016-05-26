@@ -51,8 +51,7 @@ void HeapRegionManager::initialize(G1RegionToSpaceMapper* heap_storage,
   MemRegion reserved = heap_storage->reserved();
   _regions.initialize(reserved.start(), reserved.end(), HeapRegion::GrainBytes);
 
-  _available_map.resize(_regions.length(), false);
-  _available_map.clear();
+  _available_map.initialize(_regions.length());
 }
 
 bool HeapRegionManager::is_available(uint region) const {

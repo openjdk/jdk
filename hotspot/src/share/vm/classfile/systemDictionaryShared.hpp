@@ -29,6 +29,7 @@
 #include "classfile/dictionary.hpp"
 
 class ClassFileStream;
+class SerializeClosure;
 
 class SystemDictionaryShared: public SystemDictionary {
 public:
@@ -77,6 +78,7 @@ public:
                                            TRAPS) {
     return NULL;
   }
+  static void serialize(SerializeClosure* soc) {}
 };
 
 #endif // SHARE_VM_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
