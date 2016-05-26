@@ -34,7 +34,6 @@
  */
 
 import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -48,85 +47,76 @@ import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
 
 @Test
 public class StartOptionTest {
 
-    private ByteArrayOutputStream out;
-    private ByteArrayOutputStream err;
+    private ByteArrayOutputStream cmdout;
+    private ByteArrayOutputStream cmderr;
+    private ByteArrayOutputStream console;
+    private ByteArrayOutputStream userout;
+    private ByteArrayOutputStream usererr;
 
     private JShellTool getShellTool() {
-        class NoOutputAllowedStream extends OutputStream {
-            private final String label;
-            NoOutputAllowedStream(String label) {
-               this.label = label;
-            }
-            @Override
-            public void write(int b) { fail("Unexpected output to: " + label); }
-        }
         return new JShellTool(
                 new TestingInputStream(),
-                new PrintStream(out),
-                new PrintStream(err),
-                new PrintStream(new NoOutputAllowedStream("console")),
+                new PrintStream(cmdout),
+                new PrintStream(cmderr),
+                new PrintStream(console),
                 new TestingInputStream(),
-                new PrintStream(new NoOutputAllowedStream("userout")),
-                new PrintStream(new NoOutputAllowedStream("usererr")),
+                new PrintStream(userout),
+                new PrintStream(usererr),
                 new ReplToolTesting.MemoryPreferences(),
                 Locale.ROOT);
     }
 
-    private String getOutput() {
-        byte[] bytes = out.toByteArray();
-        out.reset();
-        return new String(bytes, StandardCharsets.UTF_8);
-    }
-
-    private String getError() {
-        byte[] bytes = err.toByteArray();
-        err.reset();
-        return new String(bytes, StandardCharsets.UTF_8);
+    private void check(ByteArrayOutputStream str, Consumer<String> checkOut, String label) {
+        byte[] bytes = str.toByteArray();
+        str.reset();
+        String out =  new String(bytes, StandardCharsets.UTF_8);
+        if (checkOut != null) {
+            checkOut.accept(out);
+        } else {
+            assertEquals("", out, label + ": Expected empty -- ");
+        }
     }
 
     private void start(Consumer<String> checkOutput, Consumer<String> checkError, String... args) throws Exception {
         JShellTool tool = getShellTool();
         tool.start(args);
-        if (checkOutput != null) {
-            checkOutput.accept(getOutput());
-        } else {
-            assertEquals("", getOutput(), "Output: ");
-        }
-        if (checkError != null) {
-            checkError.accept(getError());
-        } else {
-            assertEquals("", getError(), "Error: ");
-        }
+        check(cmdout, checkOutput, "cmdout");
+        check(cmderr, checkError, "cmderr");
+        check(console, null, "console");
+        check(userout, null, "userout");
+        check(usererr, null, "usererr");
     }
 
     private void start(String expectedOutput, String expectedError, String... args) throws Exception {
-        start(s -> assertEquals(s.trim(), expectedOutput, "Output: "), s -> assertEquals(s.trim(), expectedError, "Error: "), args);
+        start(s -> assertEquals(s.trim(), expectedOutput, "cmdout: "), s -> assertEquals(s.trim(), expectedError, "cmderr: "), args);
     }
 
     @BeforeMethod
     public void setUp() {
-        out = new ByteArrayOutputStream();
-        err = new ByteArrayOutputStream();
+        cmdout  = new ByteArrayOutputStream();
+        cmderr  = new ByteArrayOutputStream();
+        console = new ByteArrayOutputStream();
+        userout = new ByteArrayOutputStream();
+        usererr = new ByteArrayOutputStream();
     }
 
     @Test
     public void testUsage() throws Exception {
         start(s -> {
-            assertTrue(s.split("\n").length >= 7, s);
-            assertTrue(s.startsWith("Usage:   jshell <options>"), s);
+            assertTrue(s.split("\n").length >= 7, "Not enough usage lines: " + s);
+            assertTrue(s.startsWith("Usage:   jshell <options>"), "Unexpect usage start: " + s);
         },  null, "-help");
     }
 
     @Test
     public void testUnknown() throws Exception {
         start(s -> {
-            assertTrue(s.split("\n").length >= 7, s);
-            assertTrue(s.startsWith("Usage:   jshell <options>"), s);
+            assertTrue(s.split("\n").length >= 7, "Not enough usage lines (unknown): " + s);
+            assertTrue(s.startsWith("Usage:   jshell <options>"), "Unexpect usage start (unknown): " + s);
         }, s -> assertEquals(s.trim(), "Unknown option: -unknown"), "-unknown");
     }
 
@@ -157,12 +147,15 @@ public class StartOptionTest {
 
     @Test
     public void testVersion() throws Exception {
-        start(s -> assertTrue(s.startsWith("jshell")), null, "-version");
+        start(s -> assertTrue(s.startsWith("jshell"), "unexpected version: " + s), null, "-version");
     }
 
     @AfterMethod
     public void tearDown() {
-        out = null;
-        err = null;
+        cmdout  = null;
+        cmderr  = null;
+        console = null;
+        userout = null;
+        usererr = null;
     }
 }
