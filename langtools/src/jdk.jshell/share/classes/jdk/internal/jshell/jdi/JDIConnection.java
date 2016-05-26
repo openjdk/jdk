@@ -50,6 +50,7 @@ import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
 class JDIConnection {
 
     private VirtualMachine vm;
+    private boolean active = true;
     private Process process = null;
     private int outputCompleteCount = 0;
 
@@ -175,6 +176,11 @@ class JDIConnection {
         return process != null && process.isAlive();
     }
 
+    // Beginning shutdown, ignore any random dying squeals
+    void beginShutdown() {
+        active = false;
+    }
+
     public synchronized void disposeVM() {
         try {
             if (vm != null) {
@@ -233,14 +239,19 @@ class JDIConnection {
         int i;
         try {
             while ((i = in.read()) != -1) {
-                pStream.print((char) i);
+                // directly copy input to output, but skip if asked to close
+                if (active) {
+                    pStream.print((char) i);
+                }
             }
         } catch (IOException ex) {
             String s = ex.getMessage();
-            if (!s.startsWith("Bad file number")) {
+            if (active && !s.startsWith("Bad file number")) {
                 throw ex;
             }
-            // else we got a Bad file number IOException which just means
+            // else we are being shutdown (and don't want any spurious death
+            // throws to ripple) or
+            // we got a Bad file number IOException which just means
             // that the debuggee has gone away.  We'll just treat it the
             // same as if we got an EOF.
         }

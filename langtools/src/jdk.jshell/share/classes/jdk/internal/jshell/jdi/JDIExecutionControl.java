@@ -109,11 +109,14 @@ public class JDIExecutionControl implements ExecutionControl {
     @Override
     public void close() {
         try {
+            JDIConnection c = jdiEnv.connection();
+            if (c != null) {
+                c.beginShutdown();
+            }
             if (remoteOut != null) {
                 remoteOut.writeInt(CMD_EXIT);
                 remoteOut.flush();
             }
-            JDIConnection c = jdiEnv.connection();
             if (c != null) {
                 c.disposeVM();
             }
