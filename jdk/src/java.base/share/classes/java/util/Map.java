@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,6 +133,9 @@ import java.io.Serializable;
  * Factories are free to create new instances or reuse existing ones. Therefore,
  * identity-sensitive operations on these instances (reference equality ({@code ==}),
  * identity hash code, and synchronization) are unreliable and should be avoided.
+ * <li>They are serialized as specified on the
+ * <a href="{@docRoot}/serialized-form.html#java.util.CollSer">Serialized Form</a>
+ * page.
  * </ul>
  *
  * <p>This interface is a member of the
