@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ extern "C" {
 #endif
 
 /* Classfile version number for this information */
-#define JVM_CLASSFILE_MAJOR_VERSION 52
+#define JVM_CLASSFILE_MAJOR_VERSION 53
 #define JVM_CLASSFILE_MINOR_VERSION 0
 
 /* Flags */
