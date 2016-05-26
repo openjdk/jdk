@@ -39,6 +39,7 @@ import com.sun.tools.doclets.internal.toolkit.Content;
  * @author Jamie Ho
  * @since 1.5
  */
+@Deprecated
 public abstract class LinkFactory {
 
     /**

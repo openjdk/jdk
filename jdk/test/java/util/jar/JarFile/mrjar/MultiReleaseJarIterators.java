@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8132734
+ * @bug 8132734 8144062
  * @summary Test the extended API and the aliasing additions in JarFile that
  *          support multi-release jar files
  * @library /lib/testlibrary/java/util/jar
@@ -42,7 +42,6 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
-import jdk.Version;
 
 import static java.util.jar.JarFile.Release;
 
@@ -54,7 +53,7 @@ import org.testng.annotations.Test;
 
 public class MultiReleaseJarIterators {
 
-    static final int MAJOR_VERSION = Version.current().major();
+    static final int MAJOR_VERSION = Runtime.version().major();
 
     String userdir = System.getProperty("user.dir", ".");
     File unversioned = new File(userdir, "unversioned.jar");

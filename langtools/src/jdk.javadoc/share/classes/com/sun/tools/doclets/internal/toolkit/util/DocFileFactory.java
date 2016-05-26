@@ -45,6 +45,7 @@ import com.sun.tools.doclets.internal.toolkit.Configuration;
  *
  * @since 1.8
  */
+@Deprecated
 abstract class DocFileFactory {
     private static final Map<Configuration, DocFileFactory> factories = new WeakHashMap<>();
 

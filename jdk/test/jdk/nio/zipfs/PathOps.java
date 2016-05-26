@@ -31,11 +31,12 @@ import java.nio.file.Path;
 /**
  *
  * @test
- * @bug 8038500 8040059
+ * @bug 8038500 8040059 8139956 8146754
  * @summary Tests path operations for zip provider.
  *
  * @run main PathOps
  * @run main/othervm/java.security.policy=test.policy PathOps
+ * @modules jdk.zipfs
  */
 
 public class PathOps {
@@ -424,6 +425,11 @@ public class PathOps {
         test("/")
             .relativize("/a", "a")
             .relativize("/a/c", "a/c");
+        // 8146754
+        test("/tmp/path")
+            .relativize("/tmp/path/a.txt", "a.txt");
+        test("/tmp/path/")
+            .relativize("/tmp/path/a.txt", "a.txt");
 
         // normalize
         test("/")
@@ -486,7 +492,16 @@ public class PathOps {
         // isSameFile
         test("/fileDoesNotExist")
             .isSameFile("/fileDoesNotExist");
-    }
+
+        // 8139956
+        out.println("check getNameCount");
+        int nc = fs.getPath("/").relativize(fs.getPath("/")).getNameCount();
+        if (nc != 1) {
+            out.format("\tExpected: 1\n");
+            out.format("\tActual: %d\n",  nc);
+            throw new RuntimeException("getNameCount of empty path failed");
+        }
+     }
 
     static void npes() {
         header("NullPointerException");

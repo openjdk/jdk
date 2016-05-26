@@ -35,7 +35,6 @@
 #include <mlib_sys.h>
 #include <mlib_image_types.h>
 #include <mlib_image_proto.h>
-#include <mlib_image_blend_proto.h>
 #include <mlib_image_get.h>
 
 #endif  /* MLIB_IMAGE_H */

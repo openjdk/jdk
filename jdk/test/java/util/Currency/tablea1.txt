@@ -5,7 +5,7 @@
 #
 
 # Version
-FILEVERSION=2
+FILEVERSION=3
 DATAVERSION=160
 
 # ISO 4217 currency data

@@ -42,6 +42,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @author Bhavesh Patel
  * @since 1.8
  */
+@Deprecated
 public class AnnotationTypeFieldBuilder extends AbstractMemberBuilder {
 
     /**

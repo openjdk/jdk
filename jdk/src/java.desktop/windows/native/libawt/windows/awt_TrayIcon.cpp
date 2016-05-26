@@ -93,6 +93,12 @@ AwtTrayIcon::~AwtTrayIcon() {
 
 void AwtTrayIcon::Dispose() {
     SendTrayMessage(NIM_DELETE);
+
+    // Destroy the icon to avoid leak of GDI objects
+    if (m_nid.hIcon != NULL) {
+        ::DestroyIcon(m_nid.hIcon);
+    }
+
     UnlinkObjects();
 
     if (--sm_instCount == 0) {

@@ -894,43 +894,43 @@ public abstract class Configuration {
     }
 
     public String getText(String key) {
-        try {
-            //Check the doclet specific properties file.
-            return getDocletSpecificMsg().getText(key);
-        } catch (Exception e) {
-            //Check the shared properties file.
-            return message.getText(key);
+        // Check the doclet specific properties file.
+        MessageRetriever docletMessage = getDocletSpecificMsg();
+        if (docletMessage.containsKey(key)) {
+            return docletMessage.getText(key);
         }
+        // Check the shared properties file.
+        return message.getText(key);
     }
 
     public String getText(String key, String a1) {
-        try {
-            //Check the doclet specific properties file.
-            return getDocletSpecificMsg().getText(key, a1);
-        } catch (MissingResourceException e) {
-            //Check the shared properties file.
-            return message.getText(key, a1);
+        // Check the doclet specific properties file.
+        MessageRetriever docletMessage = getDocletSpecificMsg();
+        if (docletMessage.containsKey(key)) {
+            return docletMessage.getText(key, a1);
         }
+        // Check the shared properties file.
+        return message.getText(key, a1);
     }
 
     public String getText(String key, String a1, String a2) {
-        try {
-            //Check the doclet specific properties file.
-            return getDocletSpecificMsg().getText(key, a1, a2);
-        } catch (MissingResourceException e) {
-            //Check the shared properties file.
-            return message.getText(key, a1, a2);
+        // Check the doclet specific properties file.
+        MessageRetriever docletMessage = getDocletSpecificMsg();
+        if (docletMessage.containsKey(key)) {
+            return docletMessage.getText(key, a1, a2);
         }
+        // Check the shared properties file.
+        return message.getText(key, a1, a2);
     }
 
     public String getText(String key, String a1, String a2, String a3) {
-        try {
-            //Check the doclet specific properties file.
-            return getDocletSpecificMsg().getText(key, a1, a2, a3);
-        } catch (MissingResourceException e) {
-            //Check the shared properties file.
-            return message.getText(key, a1, a2, a3);
+        // Check the doclet specific properties file.
+        MessageRetriever docletMessage = getDocletSpecificMsg();
+        if (docletMessage.containsKey(key)) {
+            return docletMessage.getText(key, a1, a2, a3);
         }
+        // Check the shared properties file.
+        return message.getText(key, a1, a2, a3);
     }
 
     public abstract Content newContent();

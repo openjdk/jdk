@@ -2720,6 +2720,7 @@ KeyMapEntry keyMapTable[] = {
     {java_awt_event_KeyEvent_VK_SHIFT,            VK_SHIFT},
     {java_awt_event_KeyEvent_VK_CONTROL,          VK_CONTROL},
     {java_awt_event_KeyEvent_VK_ALT,              VK_MENU},
+    {java_awt_event_KeyEvent_VK_ALT_GRAPH,        VK_RMENU},
     {java_awt_event_KeyEvent_VK_NUM_LOCK,         VK_NUMLOCK},
 
     // Miscellaneous Windows keys

@@ -101,6 +101,6 @@ public class ImportSnippet extends PersistentSnippet {
 
     @Override
     String importLine(JShell state) {
-        return source();
+        return guts().wrapped();
     }
 }

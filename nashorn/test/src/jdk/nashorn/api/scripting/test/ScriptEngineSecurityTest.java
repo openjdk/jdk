@@ -172,7 +172,7 @@ public class ScriptEngineSecurityTest {
     }
 
     // @bug 8032948: Nashorn linkages awry
-    @SuppressWarnings("serial")
+    @SuppressWarnings({ "serial", "deprecation" })
     public static class FakeProxy extends Proxy {
         public FakeProxy(final InvocationHandler ih) {
             super(ih);

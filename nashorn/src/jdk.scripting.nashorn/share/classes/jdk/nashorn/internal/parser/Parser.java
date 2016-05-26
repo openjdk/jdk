@@ -2070,6 +2070,7 @@ public class Parser extends AbstractParser implements Loggable {
         }
     }
 
+    @SuppressWarnings("fallthrough")
     private boolean lookaheadIsLetDeclaration(final boolean ofContextualKeyword) {
         assert type == LET;
         for (int i = 1;; i++) {
@@ -2323,6 +2324,7 @@ public class Parser extends AbstractParser implements Loggable {
      *   yield [no LineTerminator here] AssignmentExpression[?In, Yield]
      *   yield [no LineTerminator here] * AssignmentExpression[?In, Yield]
      */
+    @SuppressWarnings("fallthrough")
     private Expression yieldExpression(final boolean noIn) {
         assert inGeneratorFunction();
         // Capture YIELD token.
@@ -2838,6 +2840,7 @@ public class Parser extends AbstractParser implements Loggable {
      * Parse array literal.
      * @return Expression node.
      */
+    @SuppressWarnings("fallthrough")
     private LiteralNode<Expression[]> arrayLiteral() {
         // Capture LBRACKET token.
         final long arrayToken = token;
