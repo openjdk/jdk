@@ -70,7 +70,7 @@ public class LayerAndLoadersTest {
 
 
     /**
-     * Basic test of Layer.defineModulesWithOneLoader
+     * Basic test of Layer defineModulesWithOneLoader
      *
      * Test scenario:
      *   m1 requires m2 and m3
@@ -99,7 +99,7 @@ public class LayerAndLoadersTest {
 
 
     /**
-     * Basic test of Layer.defineModulesWithManyLoaders
+     * Basic test of Layer defineModulesWithManyLoaders
      *
      * Test scenario:
      *   m1 requires m2 and m3
@@ -131,7 +131,7 @@ public class LayerAndLoadersTest {
 
 
     /**
-     * Basic test of Layer.defineModulesWithOneLoader where one of the modules
+     * Basic test of Layer defineModulesWithOneLoader where one of the modules
      * is a service provider module.
      *
      * Test scenario:
@@ -172,8 +172,8 @@ public class LayerAndLoadersTest {
 
 
     /**
-     * Basic test of Layer.defineModulesWithManyLoaders where one of the modules
-     * is a service provider module.
+     * Basic test of Layer defineModulesWithManyLoaders where one of the
+     * modules is a service provider module.
      *
      * Test scenario:
      *    m1 requires m2 and m3
@@ -224,7 +224,7 @@ public class LayerAndLoadersTest {
 
 
     /**
-     * Tests that the class loaders created by Layer.createWithXXX delegate
+     * Tests that the class loaders created by defineModulesWithXXX delegate
      * to the given parent class loader.
      */
     public void testDelegationToParent() throws Exception {
@@ -254,7 +254,7 @@ public class LayerAndLoadersTest {
 
 
     /**
-     * Test Layer.createWithXXX when modules that have overlapping packages.
+     * Test defineModulesWithXXX when modules that have overlapping packages.
      *
      * Test scenario:
      *   m1 exports p
@@ -288,7 +288,7 @@ public class LayerAndLoadersTest {
 
 
     /**
-     * Test Layer.createWithXXX with split delegation.
+     * Test Layer defineModulesWithXXX with split delegation.
      *
      * Test scenario:
      *   layer1: m1 exports p, m2 exports p
@@ -319,7 +319,8 @@ public class LayerAndLoadersTest {
 
         ModuleFinder finder2 = ModuleUtils.finderOf(descriptor3, descriptor4);
 
-        Configuration cf2 = cf1.resolveRequires(finder2, ModuleFinder.of(), Set.of("m3", "m4"));
+        Configuration cf2 = cf1.resolveRequires(finder2, ModuleFinder.of(),
+                                                Set.of("m3", "m4"));
 
         // package p cannot be supplied by two class loaders
         try {
@@ -335,8 +336,8 @@ public class LayerAndLoadersTest {
 
 
     /**
-     * Test Layer.createWithXXX when the modules that override same named
-     * modules in the parent layer.
+     * Test Layer defineModulesWithXXX when the modules that override same
+     * named modules in the parent layer.
      *
      * Test scenario:
      *   layer1: m1, m2, m3 => same loader
@@ -350,7 +351,8 @@ public class LayerAndLoadersTest {
         checkLayer(layer1, "m1", "m2", "m3");
 
         ModuleFinder finder = ModuleFinder.of(MODS_DIR);
-        Configuration cf2 = cf1.resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
+        Configuration cf2 = cf1.resolveRequires(finder, ModuleFinder.of(),
+                                                Set.of("m1"));
 
         Layer layer2 = layer1.defineModulesWithOneLoader(cf2, null);
         checkLayer(layer2, "m1", "m2", "m3");
@@ -383,8 +385,8 @@ public class LayerAndLoadersTest {
 
 
     /**
-     * Test Layer.createWithXXX when the modules that override same named
-     * modules in the parent layer.
+     * Test Layer defineModulesWithXXX when the modules that override same
+     * named modules in the parent layer.
      *
      * Test scenario:
      *   layer1: m1, m2, m3 => loader pool
@@ -398,7 +400,8 @@ public class LayerAndLoadersTest {
         checkLayer(layer1, "m1", "m2", "m3");
 
         ModuleFinder finder = ModuleFinder.of(MODS_DIR);
-        Configuration cf2 = cf1.resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
+        Configuration cf2 = cf1.resolveRequires(finder, ModuleFinder.of(),
+                                                Set.of("m1"));
 
         Layer layer2 = layer1.defineModulesWithManyLoaders(cf2, null);
         checkLayer(layer2, "m1", "m2", "m3");
@@ -477,8 +480,8 @@ public class LayerAndLoadersTest {
 
 
     /**
-     * Test Layer.createWithXXX when the modules that override same named
-     * modules in the parent layer.
+     * Test Layer defineModulesWithXXX when the modules that override same
+     * named modules in the parent layer.
      *
      * layer1: m1, m2, m3 => same loader
      * layer2: m1, m3 => same loader
@@ -492,7 +495,8 @@ public class LayerAndLoadersTest {
 
         ModuleFinder finder = finderFor("m1", "m3");
 
-        Configuration cf2 = cf1.resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
+        Configuration cf2 = cf1.resolveRequires(finder, ModuleFinder.of(),
+                                                Set.of("m1"));
 
         Layer layer2 = layer1.defineModulesWithOneLoader(cf2, null);
         checkLayer(layer2, "m1", "m3");
@@ -513,8 +517,8 @@ public class LayerAndLoadersTest {
 
 
     /**
-     * Test Layer.createWithXXX when the modules that override same named
-     * modules in the parent layer.
+     * Test Layer defineModulesWithXXX when the modules that override same
+     * named modules in the parent layer.
      *
      * layer1: m1, m2, m3 => loader pool
      * layer2: m1, m3 => loader pool
@@ -528,7 +532,8 @@ public class LayerAndLoadersTest {
 
         ModuleFinder finder = finderFor("m1", "m3");
 
-        Configuration cf2 = cf1.resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
+        Configuration cf2 = cf1.resolveRequires(finder, ModuleFinder.of(),
+                                                Set.of("m1"));
 
         Layer layer2 = layer1.defineModulesWithManyLoaders(cf2, null);
         checkLayer(layer2, "m1", "m3");

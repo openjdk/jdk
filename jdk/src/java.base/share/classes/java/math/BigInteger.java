@@ -116,6 +116,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * +2<sup>{@code Integer.MAX_VALUE}</sup> (exclusive).
  *
  * @see     BigDecimal
+ * @jls     4.2.2 Integer Operations
  * @author  Josh Bloch
  * @author  Michael McCloskey
  * @author  Alan Eliasen
@@ -126,7 +127,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
 public class BigInteger extends Number implements Comparable<BigInteger> {
     /**
      * The signum of this BigInteger: -1 for negative, 0 for zero, or
-     * 1 for positive.  Note that the BigInteger zero <i>must</i> have
+     * 1 for positive.  Note that the BigInteger zero <em>must</em> have
      * a signum of 0.  This is necessary to ensures that there is exactly one
      * representation for each BigInteger value.
      */
@@ -710,7 +711,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Constructs a randomly generated positive BigInteger that is probably
      * prime, with the specified bitLength.
      *
-     * <p>It is recommended that the {@link #probablePrime probablePrime}
+     * @apiNote It is recommended that the {@link #probablePrime probablePrime}
      * method be used in preference to this constructor unless there
      * is a compelling need to specify a certainty.
      *
@@ -1157,9 +1158,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
     /**
      * Returns a BigInteger whose value is equal to that of the
-     * specified {@code long}.  This "static factory method" is
-     * provided in preference to a ({@code long}) constructor
-     * because it allows for reuse of frequently used BigIntegers.
+     * specified {@code long}.
+     *
+     * @apiNote This static factory method is provided in preference
+     * to a ({@code long}) constructor because it allows for reuse of
+     * frequently used BigIntegers.
      *
      * @param  val value of the BigInteger to return.
      * @return a BigInteger with the specified value.
@@ -3551,13 +3554,13 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
     /**
      * Returns the number of bits in the minimal two's-complement
-     * representation of this BigInteger, <i>excluding</i> a sign bit.
+     * representation of this BigInteger, <em>excluding</em> a sign bit.
      * For positive BigIntegers, this is equivalent to the number of bits in
      * the ordinary binary representation.  (Computes
      * {@code (ceil(log2(this < 0 ? -this : this+1)))}.)
      *
      * @return number of bits in the minimal two's-complement
-     *         representation of this BigInteger, <i>excluding</i> a sign bit.
+     *         representation of this BigInteger, <em>excluding</em> a sign bit.
      */
     public int bitLength() {
         int n = bitLengthPlusOne - 1;
@@ -4034,7 +4037,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Converts this BigInteger to an {@code int}.  This
      * conversion is analogous to a
      * <i>narrowing primitive conversion</i> from {@code long} to
-     * {@code int} as defined in section 5.1.3 of
+     * {@code int} as defined in
      * <cite>The Java&trade; Language Specification</cite>:
      * if this BigInteger is too big to fit in an
      * {@code int}, only the low-order 32 bits are returned.
@@ -4044,6 +4047,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @return this BigInteger converted to an {@code int}.
      * @see #intValueExact()
+     * @jls 5.1.3 Narrowing Primitive Conversion
      */
     public int intValue() {
         int result = 0;
@@ -4055,7 +4059,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Converts this BigInteger to a {@code long}.  This
      * conversion is analogous to a
      * <i>narrowing primitive conversion</i> from {@code long} to
-     * {@code int} as defined in section 5.1.3 of
+     * {@code int} as defined in
      * <cite>The Java&trade; Language Specification</cite>:
      * if this BigInteger is too big to fit in a
      * {@code long}, only the low-order 64 bits are returned.
@@ -4065,6 +4069,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @return this BigInteger converted to a {@code long}.
      * @see #longValueExact()
+     * @jls 5.1.3 Narrowing Primitive Conversion
      */
     public long longValue() {
         long result = 0;
@@ -4078,7 +4083,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Converts this BigInteger to a {@code float}.  This
      * conversion is similar to the
      * <i>narrowing primitive conversion</i> from {@code double} to
-     * {@code float} as defined in section 5.1.3 of
+     * {@code float} as defined in
      * <cite>The Java&trade; Language Specification</cite>:
      * if this BigInteger has too great a magnitude
      * to represent as a {@code float}, it will be converted to
@@ -4088,6 +4093,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * information about the precision of the BigInteger value.
      *
      * @return this BigInteger converted to a {@code float}.
+     * @jls 5.1.3 Narrowing Primitive Conversion
      */
     public float floatValue() {
         if (signum == 0) {
@@ -4162,7 +4168,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Converts this BigInteger to a {@code double}.  This
      * conversion is similar to the
      * <i>narrowing primitive conversion</i> from {@code double} to
-     * {@code float} as defined in section 5.1.3 of
+     * {@code float} as defined in
      * <cite>The Java&trade; Language Specification</cite>:
      * if this BigInteger has too great a magnitude
      * to represent as a {@code double}, it will be converted to
@@ -4172,6 +4178,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * information about the precision of the BigInteger value.
      *
      * @return this BigInteger converted to a {@code double}.
+     * @jls 5.1.3 Narrowing Primitive Conversion
      */
     public double doubleValue() {
         if (signum == 0) {

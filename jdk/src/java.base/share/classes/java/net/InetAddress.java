@@ -26,8 +26,6 @@
 package java.net;
 
 import java.util.NavigableSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Scanner;
@@ -41,6 +39,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectInputStream.GetField;
 import java.io.ObjectOutputStream;
 import java.io.ObjectOutputStream.PutField;
+import java.lang.annotation.Native;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -193,6 +192,11 @@ import sun.net.util.IPAddressUtil;
  */
 public
 class InetAddress implements java.io.Serializable {
+
+    @Native static final int PREFER_IPV4_VALUE = 0;
+    @Native static final int PREFER_IPV6_VALUE = 1;
+    @Native static final int PREFER_SYSTEM_VALUE = 2;
+
     /**
      * Specify the address family: Internet Protocol, Version 4
      * @since 1.4
@@ -206,8 +210,7 @@ class InetAddress implements java.io.Serializable {
     static final int IPv6 = 2;
 
     /* Specify address family preference */
-    static transient boolean preferIPv6Address = false;
-
+    static transient final int preferIPv6Address;
 
     static class InetAddressHolder {
         /**
@@ -293,8 +296,19 @@ class InetAddress implements java.io.Serializable {
      * Load net library into runtime, and perform initializations.
      */
     static {
-        preferIPv6Address = java.security.AccessController.doPrivileged(
-            new GetBooleanAction("java.net.preferIPv6Addresses")).booleanValue();
+        String str = java.security.AccessController.doPrivileged(
+                new GetPropertyAction("java.net.preferIPv6Addresses"));
+        if (str == null) {
+            preferIPv6Address = PREFER_IPV4_VALUE;
+        } else if (str.equalsIgnoreCase("true")) {
+            preferIPv6Address = PREFER_IPV6_VALUE;
+        } else if (str.equalsIgnoreCase("false")) {
+            preferIPv6Address = PREFER_IPV4_VALUE;
+        } else if (str.equalsIgnoreCase("system")) {
+            preferIPv6Address = PREFER_SYSTEM_VALUE;
+        } else {
+            preferIPv6Address = PREFER_IPV4_VALUE;
+        }
         AccessController.doPrivileged(
             new java.security.PrivilegedAction<>() {
                 public Void run() {
