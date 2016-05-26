@@ -89,11 +89,17 @@
     </pathconvert>
 
     <pathconvert property="xpatch.rest" pathsep=" -Xpatch:">
+        <regexpmapper from="${file.separator}([^${file.separator}]+)$" to='\1="${build.modules}${file.separator}\1"' />
+        <dirset dir="${src.dir}" includes="*.*"/>
+    </pathconvert>
+
+    <pathconvert property="xpatch.noquotes.rest" pathsep=" -Xpatch:">
         <regexpmapper from="${file.separator}([^${file.separator}]+)$" to="\1=${build.modules}${file.separator}\1" />
         <dirset dir="${src.dir}" includes="*.*"/>
     </pathconvert>
 
     <property name="xpatch.cmd" value="-Xpatch:${xpatch.rest}"/>
+    <property name="xpatch.noquotes.cmd" value="-Xpatch:${xpatch.noquotes.rest}"/>
 
     <!-- java.marker is set to a marker file to check for within a Java install dir.
          The best file to check for across Solaris/Linux/Windows/MacOS is one of the
@@ -341,7 +347,7 @@
                     jdk="@{jdk}"
                     agentvm="@{agentvm}" verbose="@{verbose}"
                     failonerror="false" resultproperty="jtreg.@{name}.result"
-                    vmoptions="${coverage.options} @{extra.jvmargs} ${xpatch.cmd}">
+                    vmoptions="${coverage.options} @{extra.jvmargs} ${xpatch.noquotes.cmd}">
                     <arg value="-debug:@{jpda.jvmargs}"/>
                     <arg line="@{keywords}"/>
                     <arg line="@{options}"/>
