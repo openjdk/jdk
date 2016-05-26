@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,35 +22,22 @@
  */
 
 /*
- * @test Test2GbHeap
- * @bug 8031686
- * @summary Regression test to ensure we can start G1 with 2gb heap.
- * Skip test on 32 bit system: it typically does not support the many and large virtual memory reservations needed.
- * @requires (vm.gc == "G1" | vm.gc == "null")
- * @requires vm.bits != "32"
- * @key gc
- * @key regression
- * @library /testlibrary
+ * @test TestDefaultLogOutput
+ * @summary Ensure logging is default on stdout.
  * @modules java.base/jdk.internal.misc
- *          java.management
+ * @library /testlibrary
  */
 
-import java.util.ArrayList;
-
-import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.ProcessTools;
+import jdk.test.lib.OutputAnalyzer;
 
-public class Test2GbHeap {
-  public static void main(String[] args) throws Exception {
-    ArrayList<String> testArguments = new ArrayList<String>();
+public class TestDefaultLogOutput {
 
-    testArguments.add("-XX:+UseG1GC");
-    testArguments.add("-Xmx2g");
-    testArguments.add("-version");
-
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(testArguments.toArray(new String[0]));
-
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldHaveExitValue(0);
-  }
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:badTag");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.stdoutShouldMatch("\\[error *\\]\\[logging *\\]");
+        output.shouldHaveExitValue(1);
+    }
 }
+
