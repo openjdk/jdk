@@ -175,12 +175,43 @@ public class PopupFactory {
      * @return Popup containing Contents
      */
     public Popup getPopup(Component owner, Component contents,
-                          int x, int y) throws IllegalArgumentException {
+            int x, int y) throws IllegalArgumentException {
+        return getPopup(owner, contents, x, y, false);
+    }
+
+    /**
+     * Creates a {@code Popup} for the Component {@code owner}
+     * containing the Component {@code contents}.
+     * The window containing the component {@code owner}
+     * will be used as the parent window. A null {@code owner} implies there
+     * is no valid parent. {@code x} and {@code y} specify the preferred
+     * initial location to place the {@code Popup} at. Based on screen size,
+     * or other parameters, the {@code Popup} may not display at {@code x} and
+     * {@code y}. {@code isHeavyWeightPopup} specifies if the {@code Popup}
+     * will be heavyweight. Passing {@code true} will force the {@code Popup}
+     * type to be heavyweight, otherwise {@code Popup} type will be selected by
+     * {@code Popup} factory. Lightweight {@code Popup} windows are more
+     * efficient than heavyweight (native peer) windows, but lightweight
+     * and heavyweight components do not mix well in a GUI.
+     * This method is intended to be used only by PopupFactory sub-classes.
+     * @param owner Component mouse coordinates are relative to, may be null
+     * @param contents Contents of the Popup
+     * @param x Initial x screen coordinate
+     * @param y Initial y screen coordinate
+     * @param isHeavyWeightPopup true if Popup should be heavy weight,
+     * otherwise popup type will be selected by popup factory.
+     * @throws IllegalArgumentException if contents is null
+     * @return Popup containing Contents
+     */
+    protected Popup getPopup(Component owner, Component contents, int x, int y,
+            boolean isHeavyWeightPopup) throws IllegalArgumentException {
         if (contents == null) {
             throw new IllegalArgumentException(
-                          "Popup.getPopup must be passed non-null contents");
+                    "Popup.getPopup must be passed non-null contents");
         }
-
+        if (isHeavyWeightPopup) {
+            return getPopup(owner, contents, x, y, HEAVY_WEIGHT_POPUP);
+        }
         int popupType = getPopupType(owner, contents, x, y);
         Popup popup = getPopup(owner, contents, x, y, popupType);
 
@@ -987,3 +1018,4 @@ public class PopupFactory {
         }
     }
 }
+
