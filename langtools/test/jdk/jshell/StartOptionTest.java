@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 8151754
+ * @test 8151754 8080883
  * @summary Testing start-up options.
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -120,15 +120,20 @@ public class StartOptionTest {
         }, s -> assertEquals(s.trim(), "Unknown option: -unknown"), "-unknown");
     }
 
-    @Test(enabled = false) // TODO 8080883
     public void testStartup() throws Exception {
         Compiler compiler = new Compiler();
         Path p = compiler.getPath("file.txt");
         compiler.writeToFile(p);
         start("", "'-startup' requires a filename argument.", "-startup");
-        start("", "Conflicting -startup or -nostartup option.", "-startup", p.toString(), "-startup", p.toString());
-        start("", "Conflicting -startup or -nostartup option.", "-nostartup", "-startup", p.toString());
-        start("", "Conflicting -startup or -nostartup option.", "-startup", p.toString(), "-nostartup");
+        start("", "Only one -startup or -nostartup option may be used.", "-startup", p.toString(), "-startup", p.toString());
+        start("", "Only one -startup or -nostartup option may be used.", "-nostartup", "-startup", p.toString());
+        start("", "Only one -startup or -nostartup option may be used.", "-startup", p.toString(), "-nostartup");
+        start("", "Only one -startup or -nostartup option may be used.", "-nostartup", "-nostartup");
+        start("", "Only one -startup or -nostartup option may be used.", "-nostartup", "-startup");
+    }
+
+    public void testStartupUnknown() throws Exception {
+        start("", "File 'UNKNOWN' for '-startup' is not found.", "-startup", "UNKNOWN");
     }
 
     @Test
