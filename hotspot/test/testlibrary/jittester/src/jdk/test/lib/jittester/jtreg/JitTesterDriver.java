@@ -56,24 +56,19 @@ public class JitTesterDriver {
         Pattern splitOut = Pattern.compile("\\n"); // tests use \n only in stdout
         Pattern splitErr = Pattern.compile("\\r?\\n"); // can handle both \r\n and \n
         Path testDir = Paths.get(Utils.TEST_SRC);
-        String goldOut = formatOutput(streamGoldFile(testDir, args[0], "out"), s -> true);
-        String anlzOut = formatOutput(Arrays.stream(splitOut.split(oa.getStdout())), s -> true);
+        String goldOut = formatOutput(streamGoldFile(testDir, args[0], "out"));
+        String anlzOut = formatOutput(Arrays.stream(splitOut.split(oa.getStdout())));
         Asserts.assertEQ(anlzOut, goldOut, "Actual stdout isn't equal to golden one");
-        // TODO: add a comment why we skip such lines
-        Predicate<String> notStartWhitespaces = s -> !(s.startsWith("\t") || s.startsWith(" "));
-        String goldErr = formatOutput(streamGoldFile(testDir, args[0], "err"), notStartWhitespaces);
-        String anlzErr = formatOutput(Arrays.stream(splitErr.split(oa.getStderr())),
-                                      notStartWhitespaces);
+        String goldErr = formatOutput(streamGoldFile(testDir, args[0], "err"));
+        String anlzErr = formatOutput(Arrays.stream(splitErr.split(oa.getStderr())));
         Asserts.assertEQ(anlzErr, goldErr, "Actual stderr isn't equal to golden one");
 
         int exitValue = Integer.parseInt(streamGoldFile(testDir, args[0], "exit").findFirst().get());
         oa.shouldHaveExitValue(exitValue);
     }
 
-    private static String formatOutput(Stream<String> stream, Predicate<String> predicate) {
-        String result = stream
-                .filter(predicate)
-                .collect(Collectors.joining(Utils.NEW_LINE));
+    private static String formatOutput(Stream<String> stream) {
+        String result = stream.collect(Collectors.joining(Utils.NEW_LINE));
         if (result.length() > 0) {
             result += Utils.NEW_LINE;
         }
