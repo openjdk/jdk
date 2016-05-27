@@ -57,14 +57,14 @@ public class ImageStringsReader implements ImageStrings {
     private static int hashCode(byte[] bytes, int offset, int count, int seed) {
         Objects.requireNonNull(bytes);
 
-        if (offset < 0 || offset >= bytes.length) {
-            throw new IndexOutOfBoundsException("offset");
+        if (offset < 0 || count < 0 || offset > bytes.length - count) {
+            throw new IndexOutOfBoundsException("offset=" + offset + ", count=" + count);
         }
 
         int limit = offset + count;
 
         if (limit < 0 || limit > bytes.length) {
-            throw new IndexOutOfBoundsException("limit");
+            throw new IndexOutOfBoundsException("limit=" + limit);
         }
 
         for (int i = offset; i < limit; i++) {
