@@ -51,6 +51,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @author Robert Field
  * @author Bhavesh Patel (Modified)
  */
+@Deprecated
 public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         implements AnnotationTypeWriter {
 

@@ -37,6 +37,7 @@ import com.sun.tools.doclets.internal.toolkit.util.links.*;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
+@Deprecated
 public class LinkInfoImpl extends LinkInfo {
 
     public enum Kind {

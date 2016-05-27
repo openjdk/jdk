@@ -29,6 +29,7 @@ import java.security.AlgorithmConstraints;
 import java.security.CryptoPrimitive;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Set;
 import java.util.EnumSet;
 import java.math.BigInteger;
@@ -59,7 +60,7 @@ import sun.security.x509.X509CRLImpl;
 import sun.security.x509.AlgorithmId;
 
 /**
- * A <code>PKIXCertPathChecker</code> implementation to check whether a
+ * A {@code PKIXCertPathChecker} implementation to check whether a
  * specified certificate contains the required algorithm constraints.
  * <p>
  * Certificate fields such as the subject public key, the signature
@@ -74,6 +75,7 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
 
     private final AlgorithmConstraints constraints;
     private final PublicKey trustedPubKey;
+    private final Date pkixdate;
     private PublicKey prevPubKey;
 
     private static final Set<CryptoPrimitive> SIGNATURE_PRIMITIVE_SET =
@@ -99,7 +101,7 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
     private boolean trustedMatch = false;
 
     /**
-     * Create a new <code>AlgorithmChecker</code> with the algorithm
+     * Create a new {@code AlgorithmChecker} with the algorithm
      * constraints specified in security property
      * "jdk.certpath.disabledAlgorithms".
      *
@@ -107,11 +109,26 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
      *     certificate
      */
     public AlgorithmChecker(TrustAnchor anchor) {
-        this(anchor, certPathDefaultConstraints);
+        this(anchor, certPathDefaultConstraints, null);
     }
 
     /**
-     * Create a new <code>AlgorithmChecker</code> with the
+     * Create a new {@code AlgorithmChecker} with the
+     * given {@code TrustAnchor} and {@code AlgorithmConstraints}.
+     *
+     * @param anchor the trust anchor selected to validate the target
+     *     certificate
+     * @param constraints the algorithm constraints (or null)
+     *
+     * @throws IllegalArgumentException if the {@code anchor} is null
+     */
+    public AlgorithmChecker(TrustAnchor anchor,
+            AlgorithmConstraints constraints) {
+        this(anchor, constraints, null);
+    }
+
+    /**
+     * Create a new {@code AlgorithmChecker} with the
      * given {@code AlgorithmConstraints}.
      * <p>
      * Note that this constructor will be used to check a certification
@@ -124,20 +141,24 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
         this.prevPubKey = null;
         this.trustedPubKey = null;
         this.constraints = constraints;
+        this.pkixdate = null;
     }
 
     /**
-     * Create a new <code>AlgorithmChecker</code> with the
-     * given <code>TrustAnchor</code> and <code>AlgorithmConstraints</code>.
+     * Create a new {@code AlgorithmChecker} with the
+     * given {@code TrustAnchor} and {@code AlgorithmConstraints}.
      *
      * @param anchor the trust anchor selected to validate the target
      *     certificate
      * @param constraints the algorithm constraints (or null)
+     * @param pkixdate Date the constraints are checked against. The value is
+     *             either the PKIXParameter date or null for the current date.
      *
-     * @throws IllegalArgumentException if the <code>anchor</code> is null
+     * @throws IllegalArgumentException if the {@code anchor} is null
      */
     public AlgorithmChecker(TrustAnchor anchor,
-            AlgorithmConstraints constraints) {
+            AlgorithmConstraints constraints,
+            Date pkixdate) {
 
         if (anchor == null) {
             throw new IllegalArgumentException(
@@ -157,6 +178,22 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
 
         this.prevPubKey = trustedPubKey;
         this.constraints = constraints;
+        this.pkixdate = pkixdate;
+    }
+
+    /**
+     * Create a new {@code AlgorithmChecker} with the
+     * given {@code TrustAnchor} and {@code PKIXParameter} date.
+     *
+     * @param anchor the trust anchor selected to validate the target
+     *     certificate
+     * @param pkixdate Date the constraints are checked against. The value is
+     *             either the PKIXParameter date or null for the current date.
+     *
+     * @throws IllegalArgumentException if the {@code anchor} is null
+     */
+    public AlgorithmChecker(TrustAnchor anchor, Date pkixdate) {
+        this(anchor, certPathDefaultConstraints, pkixdate);
     }
 
     // Check this 'cert' for restrictions in the AnchorCertificates
@@ -259,7 +296,7 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
         // permits() will throw exception on failure.
         certPathDefaultConstraints.permits(primitives,
                 new CertConstraintParameters((X509Certificate)cert,
-                        trustedMatch));
+                        trustedMatch, pkixdate));
                 // new CertConstraintParameters(x509Cert, trustedMatch));
         // If there is no previous key, set one and exit
         if (prevPubKey == null) {

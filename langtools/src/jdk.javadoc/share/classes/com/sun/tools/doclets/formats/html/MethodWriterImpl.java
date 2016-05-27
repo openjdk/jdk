@@ -46,6 +46,7 @@ import com.sun.tools.javac.util.StringUtils;
  * @author Jamie Ho (rewrite)
  * @author Bhavesh Patel (Modified)
  */
+@Deprecated
 public class MethodWriterImpl extends AbstractExecutableMemberWriter
         implements MethodWriter, MemberSummaryWriter {
 

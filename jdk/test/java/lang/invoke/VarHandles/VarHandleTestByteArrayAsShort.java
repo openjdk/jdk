@@ -50,7 +50,7 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
 
     static final short VALUE_2 = (short)0x1112;
 
-    static final short VALUE_3 = (short)0x2122;
+    static final short VALUE_3 = (short)0xFFFE;
 
 
     @Override
@@ -253,6 +253,10 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
             checkROBE(() -> {
                 vh.setOpaque(array, ci, VALUE_1);
             });
+            checkUOE(() -> {
+                boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
+            });
+
             checkUOE(() -> {
                 short r = (short) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
             });

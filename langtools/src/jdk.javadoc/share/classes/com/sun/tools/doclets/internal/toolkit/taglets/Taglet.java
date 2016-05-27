@@ -60,6 +60,7 @@ import com.sun.tools.doclets.internal.toolkit.Content;
  * @author Jamie Ho
  */
 
+@Deprecated
 public interface Taglet {
 
     /**

@@ -48,6 +48,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  *
  * @author Atul M Dambalkar
  */
+@Deprecated
 public class FrameOutputWriter extends HtmlDocletWriter {
 
     /**

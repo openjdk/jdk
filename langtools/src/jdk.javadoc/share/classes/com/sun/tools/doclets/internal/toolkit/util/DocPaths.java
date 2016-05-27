@@ -35,6 +35,7 @@ package com.sun.tools.doclets.internal.toolkit.util;
  *
  * @since 8
  */
+@Deprecated
 public class DocPaths {
 
     /** The name of the file for all classes, using frames. */

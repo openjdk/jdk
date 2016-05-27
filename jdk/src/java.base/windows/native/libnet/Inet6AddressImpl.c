@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
 
     /* get the address preference */
     preferIPv6Address
-        = (*env)->GetStaticBooleanField(env, ia_class, ia_preferIPv6AddressID);
+        = (*env)->GetStaticIntField(env, ia_class, ia_preferIPv6AddressID);
 
     /* Try once, with our static buffer. */
     memset(&hints, 0, sizeof(hints));
@@ -122,7 +122,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
         }
     } else {
         int i = 0;
-        int inetCount = 0, inet6Count = 0, inetIndex, inet6Index;
+        int inetCount = 0, inet6Count = 0, inetIndex = 0, inet6Index = 0, originalIndex = 0;
         struct addrinfo *itr, *last, *iterator = res;
         while (iterator != NULL) {
             int skip = 0;
@@ -203,12 +203,14 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
             goto cleanupAndReturn;
         }
 
-        if (preferIPv6Address) {
+        if (preferIPv6Address == java_net_InetAddress_PREFER_IPV6_VALUE) {
             inetIndex = inet6Count;
             inet6Index = 0;
-        } else {
+        } else if (preferIPv6Address == java_net_InetAddress_PREFER_IPV4_VALUE) {
             inetIndex = 0;
             inet6Index = inetCount;
+        } else if (preferIPv6Address == java_net_InetAddress_PREFER_SYSTEM_VALUE) {
+            inetIndex = inet6Index = originalIndex = 0;
         }
 
         while (iterator != NULL) {
@@ -220,7 +222,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
               }
               setInetAddress_addr(env, iaObj, ntohl(((struct sockaddr_in*)iterator->ai_addr)->sin_addr.s_addr));
               setInetAddress_hostName(env, iaObj, host);
-              (*env)->SetObjectArrayElement(env, ret, inetIndex, iaObj);
+              (*env)->SetObjectArrayElement(env, ret, (inetIndex | originalIndex), iaObj);
                 inetIndex ++;
             } else if (iterator->ai_family == AF_INET6) {
               jint scope = 0;
@@ -240,8 +242,12 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                 setInet6Address_scopeid(env, iaObj, scope);
               }
               setInetAddress_hostName(env, iaObj, host);
-              (*env)->SetObjectArrayElement(env, ret, inet6Index, iaObj);
+              (*env)->SetObjectArrayElement(env, ret, (inet6Index | originalIndex), iaObj);
               inet6Index ++;
+            }
+            if (preferIPv6Address == java_net_InetAddress_PREFER_SYSTEM_VALUE) {
+                originalIndex++;
+                inetIndex = inet6Index = 0;
             }
             iterator = iterator->ai_next;
         }

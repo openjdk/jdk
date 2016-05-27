@@ -721,7 +721,7 @@ public class ConfigurationTest {
         // finder2 is the after ModuleFinder and so p@2.0 should not be located
         // as module p is in parent configuration.
 
-        cf2 = resolveRequiresAndUses(cf1, ModuleFinder.empty(), finder2, "m1");
+        cf2 = resolveRequiresAndUses(cf1, ModuleFinder.of(), finder2, "m1");
 
         assertTrue(cf2.parent().get() == cf1);
         assertTrue(cf2.modules().size() == 1);
@@ -865,7 +865,7 @@ public class ConfigurationTest {
 
         ModuleFinder finder2 = ModuleUtils.finderOf(descriptor2);
 
-        Configuration cf2 = resolveRequires(cf1, ModuleFinder.empty(), finder2, "m2");
+        Configuration cf2 = resolveRequires(cf1, ModuleFinder.of(), finder2, "m2");
 
         assertTrue(cf2.modules().size() == 1);
         assertTrue(cf2.findModule("m2").isPresent());
@@ -967,7 +967,7 @@ public class ConfigurationTest {
      */
     @Test(expectedExceptions = { ResolutionException.class })
     public void testRootNotFound() {
-        resolveRequires(ModuleFinder.empty(), "m1");
+        resolveRequires(ModuleFinder.of(), "m1");
     }
 
 
@@ -1440,22 +1440,22 @@ public class ConfigurationTest {
 
     @Test(expectedExceptions = { NullPointerException.class })
     public void testResolveRequiresWithNull1() {
-        resolveRequires((ModuleFinder)null, ModuleFinder.empty());
+        resolveRequires((ModuleFinder)null, ModuleFinder.of());
     }
 
     @Test(expectedExceptions = { NullPointerException.class })
     public void testResolveRequiresWithNull2() {
-        resolveRequires(ModuleFinder.empty(), (ModuleFinder)null);
+        resolveRequires(ModuleFinder.of(), (ModuleFinder)null);
     }
 
     @Test(expectedExceptions = { NullPointerException.class })
     public void testResolveRequiresAndUsesWithNull1() {
-        resolveRequiresAndUses((ModuleFinder) null, ModuleFinder.empty());
+        resolveRequiresAndUses((ModuleFinder) null, ModuleFinder.of());
     }
 
     @Test(expectedExceptions = { NullPointerException.class })
     public void testResolveRequiresAndUsesWithNull2() {
-        resolveRequiresAndUses(ModuleFinder.empty(), (ModuleFinder) null);
+        resolveRequiresAndUses(ModuleFinder.of(), (ModuleFinder) null);
     }
 
     @Test(expectedExceptions = { NullPointerException.class })
@@ -1493,7 +1493,7 @@ public class ConfigurationTest {
     private Configuration resolveRequires(Configuration parent,
                                           ModuleFinder before,
                                           String... roots) {
-        return resolveRequires(parent, before, ModuleFinder.empty(), roots);
+        return resolveRequires(parent, before, ModuleFinder.of(), roots);
     }
 
     private Configuration resolveRequires(ModuleFinder before,
@@ -1521,7 +1521,7 @@ public class ConfigurationTest {
     private Configuration resolveRequiresAndUses(Configuration parent,
                                                  ModuleFinder before,
                                                  String... roots) {
-        return resolveRequiresAndUses(parent, before, ModuleFinder.empty(), roots);
+        return resolveRequiresAndUses(parent, before, ModuleFinder.of(), roots);
     }
 
     private Configuration resolveRequiresAndUses(ModuleFinder before,

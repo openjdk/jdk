@@ -34,9 +34,6 @@
  */
 
 import java.io.*;
-import java.nio.*;
-import java.nio.channels.*;
-import java.util.*;
 import java.net.*;
 import javax.net.ssl.*;
 
@@ -197,6 +194,7 @@ public class BestEffortOnLazyConnected {
                 hostname);
         // Ignore the test if the hostname does not sound like a domain name.
         if ((hostname == null) || hostname.isEmpty() ||
+                !hostname.contains(".") || hostname.endsWith(".") ||
                 hostname.startsWith("localhost") ||
                 Character.isDigit(hostname.charAt(hostname.length() - 1))) {
 

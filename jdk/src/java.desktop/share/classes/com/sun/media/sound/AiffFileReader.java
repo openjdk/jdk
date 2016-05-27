@@ -45,7 +45,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 public final class AiffFileReader extends SunFileReader {
 
     @Override
-    AudioFileFormat getAudioFileFormatImpl(final InputStream stream)
+    StandardFileFormat getAudioFileFormatImpl(final InputStream stream)
             throws UnsupportedAudioFileException, IOException {
         DataInputStream dis = new DataInputStream(stream);
 
@@ -60,11 +60,11 @@ public final class AiffFileReader extends SunFileReader {
             throw new UnsupportedAudioFileException("not an AIFF file");
         }
 
-        int frameLength = 0;
+        long /* unsigned 32bit */ frameLength = 0;
         int length = dis.readInt();
         int iffType = dis.readInt();
 
-        int totallength;
+        final long totallength;
         if(length <= 0 ) {
             length = AudioSystem.NOT_SPECIFIED;
             totallength = AudioSystem.NOT_SPECIFIED;
@@ -106,12 +106,7 @@ public final class AiffFileReader extends SunFileReader {
                 if (channels <= 0) {
                     throw new UnsupportedAudioFileException("Invalid number of channels");
                 }
-                frameLength = dis.readInt(); // numSampleFrames
-                if (frameLength < 0) {
-                    // AiffFileFormat uses int, unlike AIS which uses long
-                    //TODO this (negative) value should be passed as long to AIS
-                    frameLength = AudioSystem.NOT_SPECIFIED;
-                }
+                frameLength = dis.readInt() & 0xffffffffL; // numSampleFrames
 
                 int sampleSizeInBits = dis.readUnsignedShort();
                 if (sampleSizeInBits < 1 || sampleSizeInBits > 32) {

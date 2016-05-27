@@ -31,6 +31,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Iterator;
 import jdk.xml.internal.SecuritySupport;
 
 /**
@@ -38,6 +39,61 @@ import jdk.xml.internal.SecuritySupport;
  * @since 9
  */
 class Util {
+    final static String URN = "urn:publicid:";
+    final static String PUBLICID_PREFIX = "-//";
+    final static String PUBLICID_PREFIX_ALT = "+//";
+
+    /**
+     * Finds an entry in the catalog that matches with the publicId or systemId.
+     *
+     * The resolution follows the following rules determined by the prefer setting:
+     *
+     * prefer "system": attempts to resolve with a system entry;
+     *                  attempts to resolve with a public entry when only
+     *                  publicId is specified.
+     *
+     * prefer "public": attempts to resolve with a system entry;
+     *                  attempts to resolve with a public entry if no matching
+     *                  system entry is found.
+     * @param catalog the catalog
+     * @param publicId the publicId
+     * @param systemId the systemId
+     * @return the resolved systemId if a match is found, null otherwise
+     */
+    static String resolve(CatalogImpl catalog, String publicId, String systemId) {
+        String resolvedSystemId = null;
+
+        //search the current catalog
+        catalog.reset();
+        if (systemId != null) {
+            /*
+               If a system identifier is specified, it is used no matter how
+            prefer is set.
+            */
+            resolvedSystemId = catalog.matchSystem(systemId);
+        }
+
+        if (resolvedSystemId == null && publicId != null) {
+            resolvedSystemId = catalog.matchPublic(publicId);
+        }
+
+        //mark the catalog as having been searched before trying alternatives
+        catalog.markAsSearched();
+
+        //search alternative catalogs
+        if (resolvedSystemId == null) {
+            Iterator<Catalog> iter = catalog.catalogs().iterator();
+            while (iter.hasNext()) {
+                resolvedSystemId = resolve((CatalogImpl)iter.next(), publicId, systemId);
+                if (resolvedSystemId != null) {
+                    break;
+                }
+
+            }
+        }
+
+        return resolvedSystemId;
+    }
 
     /**
      * Resolves the specified file path to an absolute systemId. If it is

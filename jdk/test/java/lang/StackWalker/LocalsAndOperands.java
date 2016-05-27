@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,20 @@
 
 /*
  * @test
- * @bug 8020968
- * @summary Sanity test for locals and operands
- * @run main LocalsAndOperands
+ * @bug 8020968 8147039
+ * @summary Tests for locals and operands
+ * @run testng LocalsAndOperands
  */
 
+import org.testng.annotations.*;
 import java.lang.StackWalker.StackFrame;
 import java.lang.reflect.*;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.stream.*;
 
 public class LocalsAndOperands {
+    static final boolean debug = true;
+
     static Class<?> liveStackFrameClass;
     static Class<?> primitiveValueClass;
     static StackWalker extendedWalker;
@@ -41,92 +44,319 @@ public class LocalsAndOperands {
     static Method getOperands;
     static Method getMonitors;
     static Method primitiveType;
-    public static void main(String... args) throws Exception {
-        liveStackFrameClass = Class.forName("java.lang.LiveStackFrame");
-        primitiveValueClass = Class.forName("java.lang.LiveStackFrame$PrimitiveValue");
 
-        getLocals = liveStackFrameClass.getDeclaredMethod("getLocals");
-        getLocals.setAccessible(true);
+    static {
+        try {
+            liveStackFrameClass = Class.forName("java.lang.LiveStackFrame");
+            primitiveValueClass = Class.forName("java.lang.LiveStackFrame$PrimitiveValue");
 
-        getOperands = liveStackFrameClass.getDeclaredMethod("getStack");
-        getOperands.setAccessible(true);
+            getLocals = liveStackFrameClass.getDeclaredMethod("getLocals");
+            getLocals.setAccessible(true);
 
-        getMonitors = liveStackFrameClass.getDeclaredMethod("getMonitors");
-        getMonitors.setAccessible(true);
+            getOperands = liveStackFrameClass.getDeclaredMethod("getStack");
+            getOperands.setAccessible(true);
 
-        primitiveType = primitiveValueClass.getDeclaredMethod("type");
-        primitiveType.setAccessible(true);
+            getMonitors = liveStackFrameClass.getDeclaredMethod("getMonitors");
+            getMonitors.setAccessible(true);
 
-        Method method = liveStackFrameClass.getMethod("getStackWalker");
-        method.setAccessible(true);
-        extendedWalker = (StackWalker) method.invoke(null);
-        new LocalsAndOperands(extendedWalker, true).test();
+            primitiveType = primitiveValueClass.getDeclaredMethod("type");
+            primitiveType.setAccessible(true);
 
-        // no access to local and operands.
-        new LocalsAndOperands(StackWalker.getInstance(), false).test();
+            Method method = liveStackFrameClass.getMethod("getStackWalker");
+            method.setAccessible(true);
+            extendedWalker = (StackWalker) method.invoke(null);
+        } catch (Throwable t) { throw new RuntimeException(t); }
     }
 
-    private final StackWalker walker;
-    private final boolean extended;
-    LocalsAndOperands(StackWalker walker, boolean extended) {
-        this.walker = walker;
-        this.extended = extended;
+    /** Helper method to return a StackFrame's locals */
+    static Object[] invokeGetLocals(StackFrame arg) {
+        try {
+            return (Object[]) getLocals.invoke(arg);
+        } catch (Exception e) { throw new RuntimeException(e); }
     }
 
-    synchronized void test() throws Exception {
-        int x = 10;
-        char c = 'z';
-        String hi = "himom";
-        long l = 1000000L;
-        double d =  3.1415926;
+    /*****************
+     * DataProviders *
+     *****************/
 
-        List<StackWalker.StackFrame> frames = walker.walk(s -> s.collect(Collectors.toList()));
-        if (extended) {
-            for (StackWalker.StackFrame f : frames) {
-                System.out.println("frame: " + f);
-                Object[] locals = (Object[]) getLocals.invoke(f);
+    /** Calls testLocals() and provides LiveStackFrames for testLocals* methods */
+    @DataProvider
+    public static StackFrame[][] provider() {
+        return new StackFrame[][] {
+            new Tester().testLocals()
+        };
+    }
+
+    /**
+     * Calls testLocalsKeepAlive() and provides LiveStackFrames for testLocals* methods.
+     * Local variables in testLocalsKeepAlive() are ensured to not become dead.
+     */
+    @DataProvider
+    public static StackFrame[][] keepAliveProvider() {
+        return new StackFrame[][] {
+            new Tester().testLocalsKeepAlive()
+        };
+    }
+
+    /**
+     * Provides StackFrames from a StackWalker without the LOCALS_AND_OPERANDS
+     * option.
+     */
+    @DataProvider
+    public static StackFrame[][] noLocalsProvider() {
+        // Use default StackWalker
+        return new StackFrame[][] {
+            new Tester(StackWalker.getInstance(), true).testLocals()
+        };
+    }
+
+    /**
+     * Calls testLocals() and provides LiveStackFrames for *all* called methods,
+     * including test infrastructure (jtreg, testng, etc)
+     *
+     */
+    @DataProvider
+    public static StackFrame[][] unfilteredProvider() {
+        return new StackFrame[][] {
+            new Tester(extendedWalker, false).testLocals()
+        };
+    }
+
+    /****************
+     * Test methods *
+     ****************/
+
+    /**
+     * Check for expected local values and types in the LiveStackFrame
+     */
+    @Test(dataProvider = "keepAliveProvider")
+    public static void checkLocalValues(StackFrame... frames) {
+        if (debug) {
+            System.out.println("Running checkLocalValues");
+            dumpStackWithLocals(frames);
+        }
+        Arrays.stream(frames).filter(f -> f.getMethodName()
+                                           .equals("testLocalsKeepAlive"))
+                                           .forEach(
+            f -> {
+                Object[] locals = invokeGetLocals(f);
                 for (int i = 0; i < locals.length; i++) {
-                    System.out.format("  local %d: %s type %s\n", i, locals[i], type(locals[i]));
+                    // Value
+                    String expected = Tester.LOCAL_VALUES[i];
+                    Object observed = locals[i];
+                    if (expected != null /* skip nulls in golden values */ &&
+                            !expected.equals(observed.toString())) {
+                        System.err.println("Local value mismatch:");
+                        if (!debug) { dumpStackWithLocals(frames); }
+                        throw new RuntimeException("local " + i + " value is " +
+                                observed + ", expected " + expected);
+                    }
 
-                    // check for non-null locals in LocalsAndOperands.test()
-                    if (f.getClassName().equals("LocalsAndOperands") &&
-                            f.getMethodName().equals("test")) {
-                        if (locals[i] == null) {
-                            throw new RuntimeException("kept-alive locals should not be null");
-                        }
+                    // Type
+                    expected = Tester.LOCAL_TYPES[i];
+                    observed = type(locals[i]);
+                    if (expected != null /* skip nulls in golden values */ &&
+                            !expected.equals(observed)) {
+                        System.err.println("Local type mismatch:");
+                        if (!debug) { dumpStackWithLocals(frames); }
+                        throw new RuntimeException("local " + i + " type is " +
+                                observed + ", expected " + expected);
                     }
                 }
-
-                Object[] operands = (Object[]) getOperands.invoke(f);
-                for (int i = 0; i < operands.length; i++) {
-                    System.out.format("  operand %d: %s type %s%n", i, operands[i],
-                                      type(operands[i]));
-                }
-
-                Object[] monitors = (Object[]) getMonitors.invoke(f);
-                for (int i = 0; i < monitors.length; i++) {
-                    System.out.format("  monitor %d: %s%n", i, monitors[i]);
-                }
             }
-        } else {
-            for (StackFrame f : frames) {
-                if (liveStackFrameClass.isInstance(f)) {
-                    throw new RuntimeException("should not be LiveStackFrame");
-                }
-            }
-        }
-        // Use local variables so they stay alive
-        System.out.println("Stayin' alive: "+x+" "+c+" "+hi+" "+l+" "+d);
+        );
     }
 
-    String type(Object o) throws Exception {
-        if (o == null) {
-            return "null";
-        } else if (primitiveValueClass.isInstance(o)) {
-            char c = (char)primitiveType.invoke(o);
-            return String.valueOf(c);
-        } else {
-            return o.getClass().getName();
+    /**
+     * Basic sanity check for locals and operands
+     */
+    @Test(dataProvider = "provider")
+    public static void sanityCheck(StackFrame... frames) {
+        if (debug) {
+            System.out.println("Running sanityCheck");
         }
+        try {
+            Stream<StackFrame> stream = Arrays.stream(frames);
+            if (debug) {
+                stream.forEach(LocalsAndOperands::printLocals);
+            } else {
+                System.out.println(stream.count() + " frames");
+            }
+        } catch (Throwable t) {
+            dumpStackWithLocals(frames);
+            throw t;
+        }
+    }
+
+    /**
+     * Sanity check for locals and operands, including testng/jtreg frames
+     */
+    @Test(dataProvider = "unfilteredProvider")
+    public static void unfilteredSanityCheck(StackFrame... frames) {
+        if (debug) {
+            System.out.println("Running unfilteredSanityCheck");
+        }
+        try {
+            Stream<StackFrame> stream = Arrays.stream(frames);
+            if (debug) {
+                stream.forEach(f -> { System.out.println(f + ": " +
+                        invokeGetLocals(f).length + " locals"); } );
+            } else {
+                System.out.println(stream.count() + " frames");
+            }
+        } catch (Throwable t) {
+            dumpStackWithLocals(frames);
+            throw t;
+        }
+    }
+
+    /**
+     * Test that LiveStackFrames are not provided with the default StackWalker
+     * options.
+     */
+    @Test(dataProvider = "noLocalsProvider")
+    public static void withoutLocalsAndOperands(StackFrame... frames) {
+        for (StackFrame frame : frames) {
+            if (liveStackFrameClass.isInstance(frame)) {
+                throw new RuntimeException("should not be LiveStackFrame");
+            }
+        }
+    }
+
+    static class Tester {
+        private StackWalker walker;
+        private boolean filter = true; // Filter out testng/jtreg/etc frames?
+
+        Tester() {
+            this.walker = extendedWalker;
+        }
+
+        Tester(StackWalker walker, boolean filter) {
+            this.walker = walker;
+            this.filter = filter;
+        }
+
+        /**
+         * Perform stackwalk without keeping local variables alive and return an
+         * array of the collected StackFrames
+         */
+        private synchronized StackFrame[] testLocals() {
+            // Unused local variables will become dead
+            int x = 10;
+            char c = 'z';
+            String hi = "himom";
+            long l = 1000000L;
+            double d =  3.1415926;
+
+            if (filter) {
+                return walker.walk(s -> s.filter(f -> TEST_METHODS.contains(f
+                        .getMethodName())).collect(Collectors.toList()))
+                        .toArray(new StackFrame[0]);
+            } else {
+                return walker.walk(s -> s.collect(Collectors.toList()))
+                        .toArray(new StackFrame[0]);
+            }
+        }
+
+        /**
+         * Perform stackwalk, keeping local variables alive, and return a list of
+         * the collected StackFrames
+         */
+        private synchronized StackFrame[] testLocalsKeepAlive() {
+            int x = 10;
+            char c = 'z';
+            String hi = "himom";
+            long l = 1000000L;
+            double d =  3.1415926;
+
+            List<StackWalker.StackFrame> frames;
+            if (filter) {
+                frames = walker.walk(s -> s.filter(f -> TEST_METHODS.contains(f
+                        .getMethodName())).collect(Collectors.toList()));
+            } else {
+                frames = walker.walk(s -> s.collect(Collectors.toList()));
+            }
+
+            // Use local variables so they stay alive
+            System.out.println("Stayin' alive: "+x+" "+c+" "+hi+" "+l+" "+d);
+            return frames.toArray(new StackFrame[0]); // FIXME: convert to Array here
+        }
+
+        // Expected values for locals in testLocals() & testLocalsKeepAlive()
+        // TODO: use real values instead of Strings, rebuild doubles & floats, etc
+        private final static String[] LOCAL_VALUES = new String[] {
+            null, // skip, LocalsAndOperands$Tester@XXX identity is different each run
+            "10",
+            "122",
+            "himom",
+            "0",
+            null, // skip, fix in 8156073
+            null, // skip, fix in 8156073
+            null, // skip, fix in 8156073
+            "0"
+        };
+
+        // Expected types for locals in testLocals() & testLocalsKeepAlive()
+        // TODO: use real types
+        private final static String[] LOCAL_TYPES = new String[] {
+            null, // skip
+            "I",
+            "I",
+            "java.lang.String",
+            "I",
+            "I",
+            "I",
+            "I",
+            "I"
+        };
+
+        final static Map NUM_LOCALS = Map.of("testLocals", 8,
+                                             "testLocalsKeepAlive",
+                                             LOCAL_VALUES.length);
+        private final static Collection<String> TEST_METHODS = NUM_LOCALS.keySet();
+    }
+
+    /**
+     * Print stack trace with locals
+     */
+    public static void dumpStackWithLocals(StackFrame...frames) {
+        Arrays.stream(frames).forEach(LocalsAndOperands::printLocals);
+    }
+
+    /**
+     * Print the StackFrame and an indexed list of its locals
+     */
+    public static void printLocals(StackWalker.StackFrame frame) {
+        try {
+            System.out.println(frame);
+            Object[] locals = (Object[]) getLocals.invoke(frame);
+            for (int i = 0; i < locals.length; i++) {
+                System.out.format("  local %d: %s type %s\n", i, locals[i], type(locals[i]));
+            }
+
+            Object[] operands = (Object[]) getOperands.invoke(frame);
+            for (int i = 0; i < operands.length; i++) {
+                System.out.format("  operand %d: %s type %s%n", i, operands[i],
+                                  type(operands[i]));
+            }
+
+            Object[] monitors = (Object[]) getMonitors.invoke(frame);
+            for (int i = 0; i < monitors.length; i++) {
+                System.out.format("  monitor %d: %s%n", i, monitors[i]);
+            }
+        } catch (Exception e) { throw new RuntimeException(e); }
+    }
+
+    private static String type(Object o) {
+        try {
+            if (o == null) {
+                return "null";
+            } else if (primitiveValueClass.isInstance(o)) {
+                char c = (char)primitiveType.invoke(o);
+                return String.valueOf(c);
+            } else {
+                return o.getClass().getName();
+            }
+        } catch(Exception e) { throw new RuntimeException(e); }
     }
 }

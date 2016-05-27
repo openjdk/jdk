@@ -48,6 +48,7 @@ import static com.sun.tools.javac.code.Kinds.Kind.*;
  * @since 1.5
  */
 
+@Deprecated
 public class AnnotationTypeDocImpl
         extends ClassDocImpl implements AnnotationTypeDoc {
 

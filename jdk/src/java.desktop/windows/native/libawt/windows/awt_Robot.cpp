@@ -335,6 +335,9 @@ void AwtRobot::DoKeyEvent( jint jkey, DWORD dwFlags )
     } else {
         // get the scancode from the virtual key
         scancode = ::MapVirtualKey(vkey, 0);
+        if (vkey == VK_RMENU) {
+            dwFlags |= KEYEVENTF_EXTENDEDKEY;
+        }
         keybd_event(vkey, scancode, dwFlags, 0);
     }
 }

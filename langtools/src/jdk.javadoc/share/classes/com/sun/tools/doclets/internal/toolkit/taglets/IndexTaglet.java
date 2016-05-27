@@ -37,6 +37,7 @@ import com.sun.tools.doclets.internal.toolkit.Content;
  * @author Bhavesh Patel
  */
 
+@Deprecated
 public class IndexTaglet extends BaseInlineTaglet {
 
     private static final String NAME = "index";

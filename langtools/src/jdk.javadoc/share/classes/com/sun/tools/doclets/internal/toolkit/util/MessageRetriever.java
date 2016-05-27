@@ -44,6 +44,7 @@ import com.sun.tools.doclets.internal.toolkit.Configuration;
  * @author Atul M Dambalkar
  * @author Robert Field
  */
+@Deprecated
 public class MessageRetriever {
     /**
      * The global configuration information for this run.
@@ -83,6 +84,34 @@ public class MessageRetriever {
         this.resourcelocation = resourcelocation;
     }
 
+    private ResourceBundle initRB() {
+        ResourceBundle bundle = messageRB;
+        if (bundle == null) {
+            try {
+                messageRB = bundle =
+                        ResourceBundle.getBundle(resourcelocation, configuration.getLocale());
+            } catch (MissingResourceException e) {
+                throw new Error("Fatal: Resource (" + resourcelocation
+                        + ") for javadoc doclets is missing.");
+            }
+        }
+        return bundle;
+    }
+
+    /**
+     * Determines whether the given <code>key</code> can be retrieved
+     * from this <code>MessageRetriever</code>
+     *
+     * @param key
+     *        the resource <code>key</code>
+     * @return <code>true</code> if the given <code>key</code> is
+     *        contained in the underlying <code>ResourceBundle</code>.
+     */
+    public boolean containsKey(String key) {
+        ResourceBundle bundle = initRB();
+        return bundle.containsKey(key);
+    }
+
     /**
      * Get and format message string from resource
      *
@@ -92,15 +121,8 @@ public class MessageRetriever {
      * exist in the properties file.
      */
     public String getText(String key, Object... args) throws MissingResourceException {
-        if (messageRB == null) {
-            try {
-                messageRB = ResourceBundle.getBundle(resourcelocation);
-            } catch (MissingResourceException e) {
-                throw new Error("Fatal: Resource (" + resourcelocation +
-                                    ") for javadoc doclets is missing.");
-            }
-        }
-        String message = messageRB.getString(key);
+        ResourceBundle bundle = initRB();
+        String message = bundle.getString(key);
         return MessageFormat.format(message, args);
     }
 
