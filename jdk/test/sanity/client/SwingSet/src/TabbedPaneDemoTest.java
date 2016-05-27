@@ -43,6 +43,8 @@ import org.testng.annotations.Listeners;
  * @library /sanity/client/lib/jemmy/src
  * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
+ * @modules java.desktop
+ *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.tabbedpane.TabbedPaneDemo
  * @run testng TabbedPaneDemoTest
@@ -69,9 +71,8 @@ public class TabbedPaneDemoTest {
         for (int i = 0; i < tabTitles.length; i++) {
             String pageTitle = tabTitles[i];
             JTabbedPaneOperator tabOperator = new JTabbedPaneOperator(mainFrame);
+            tabOperator.setVerification(true);
             tabOperator.selectPage(pageTitle);
-
-            assertEquals("Selected tab is selected", i, tabOperator.getSelectedIndex());
         }
     }
 
