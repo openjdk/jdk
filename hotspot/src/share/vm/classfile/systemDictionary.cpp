@@ -1336,9 +1336,12 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
       return nh;
     }
 
-    // Found the class, now load the superclass and interfaces.  If they
-    // are shared, add them to the main system dictionary and reset
-    // their hierarchy references (supers, subs, and interfaces).
+    // Resolve the superclass and interfaces. They must be the same
+    // as in dump time, because the layout of <ik> depends on
+    // the specific layout of ik->super() and ik->local_interfaces().
+    //
+    // If unexpected superclass or interfaces are found, we cannot
+    // load <ik> from the shared archive.
 
     if (ik->super() != NULL) {
       Symbol*  cn = ik->super()->name();
@@ -1348,6 +1351,8 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
         // The dynamically resolved super class is not the same as the one we used during dump time,
         // so we cannot use ik.
         return nh;
+      } else {
+        assert(s->is_shared(), "must be");
       }
     }
 
@@ -1366,6 +1371,8 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
         // The dynamically resolved interface class is not the same as the one we used during dump time,
         // so we cannot use ik.
         return nh;
+      } else {
+        assert(i->is_shared(), "must be");
       }
     }
 
