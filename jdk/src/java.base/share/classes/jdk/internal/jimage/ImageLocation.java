@@ -26,6 +26,7 @@
 package jdk.internal.jimage;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 /**
  * @implNote This class needs to maintain JDK 8 source compatibility.
@@ -50,8 +51,8 @@ public class ImageLocation {
     protected final ImageStrings strings;
 
     public ImageLocation(long[] attributes, ImageStrings strings) {
-        this.attributes = attributes;
-        this.strings = strings;
+        this.attributes = Objects.requireNonNull(attributes);
+        this.strings = Objects.requireNonNull(strings);
     }
 
     ImageStrings getStrings() {
@@ -67,6 +68,7 @@ public class ImageLocation {
     }
 
     static long[] decompress(ByteBuffer bytes) {
+        Objects.requireNonNull(bytes);
         long[] attributes = new long[ATTRIBUTE_COUNT];
 
         if (bytes != null) {
@@ -103,6 +105,7 @@ public class ImageLocation {
     }
 
     public static byte[] compress(long[] attributes) {
+        Objects.requireNonNull(attributes);
         ImageStream stream = new ImageStream(16);
 
         for (int kind = ATTRIBUTE_END + 1; kind < ATTRIBUTE_COUNT; kind++) {
@@ -124,6 +127,8 @@ public class ImageLocation {
      }
 
     public boolean verify(String name) {
+        Objects.requireNonNull(name);
+
         return name.equals(getFullName());
     }
 
@@ -250,6 +255,7 @@ public class ImageLocation {
     }
 
     static ImageLocation readFrom(BasicImageReader reader, int offset) {
+        Objects.requireNonNull(reader);
         long[] attributes = reader.getAttributes(offset);
         ImageStringsReader strings = reader.getStrings();
 

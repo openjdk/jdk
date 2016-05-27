@@ -67,9 +67,9 @@ public class BasicImageReader implements AutoCloseable {
     static private final boolean MAP_ALL =
             isSystemProperty("jdk.image.map.all", "true", IS_64_BIT ? "true" : "false");
 
-    private final String name;
-    private final ByteOrder byteOrder;
     private final Path imagePath;
+    private final ByteOrder byteOrder;
+    private final String name;
     private final ByteBuffer memoryMap;
     private final FileChannel channel;
     private final ImageHeader header;
@@ -83,11 +83,9 @@ public class BasicImageReader implements AutoCloseable {
 
     protected BasicImageReader(Path path, ByteOrder byteOrder)
             throws IOException {
-        Objects.requireNonNull(path);
-        Objects.requireNonNull(byteOrder);
-        this.name = path.toString();
-        this.byteOrder = byteOrder;
-        imagePath = path;
+        this.imagePath = Objects.requireNonNull(path);
+        this.byteOrder = Objects.requireNonNull(byteOrder);
+        this.name = this.imagePath.toString();
 
         ByteBuffer map;
 
@@ -211,6 +209,8 @@ public class BasicImageReader implements AutoCloseable {
     }
 
     public static void releaseByteBuffer(ByteBuffer buffer) {
+        Objects.requireNonNull(buffer);
+
         if (!MAP_ALL) {
             ImageBufferCache.releaseBuffer(buffer);
         }
@@ -240,10 +240,14 @@ public class BasicImageReader implements AutoCloseable {
     }
 
     public ImageLocation findLocation(String mn, String rn) {
+        Objects.requireNonNull(mn);
+        Objects.requireNonNull(rn);
+
         return findLocation("/" + mn + "/" + rn);
     }
 
     public synchronized ImageLocation findLocation(String name) {
+        Objects.requireNonNull(name);
         // Details of the algorithm used here can be found in
         // jdk.tools.jlink.internal.PerfectHashBuilder.
         byte[] bytes = ImageStringsReader.mutf8FromString(name);
@@ -287,16 +291,25 @@ public class BasicImageReader implements AutoCloseable {
     }
 
     public long[] getAttributes(int offset) {
+        if (offset < 0 || offset >= locations.limit()) {
+            throw new IndexOutOfBoundsException("offset");
+        }
+
         ByteBuffer buffer = slice(locations, offset, locations.limit() - offset);
         return ImageLocation.decompress(buffer);
     }
 
     public String getString(int offset) {
+        if (offset < 0 || offset >= strings.limit()) {
+            throw new IndexOutOfBoundsException("offset");
+        }
+
         ByteBuffer buffer = slice(strings, offset, strings.limit() - offset);
         return ImageStringsReader.stringFromByteBuffer(buffer);
     }
 
     private byte[] getBufferBytes(ByteBuffer buffer) {
+        Objects.requireNonNull(buffer);
         byte[] bytes = new byte[buffer.limit()];
         buffer.get(bytes);
 
@@ -343,6 +356,7 @@ public class BasicImageReader implements AutoCloseable {
     }
 
     public byte[] getResource(String name) {
+        Objects.requireNonNull(name);
         ImageLocation location = findLocation(name);
 
         return location != null ? getResource(location) : null;
@@ -362,6 +376,7 @@ public class BasicImageReader implements AutoCloseable {
     }
 
     public ByteBuffer getResourceBuffer(ImageLocation loc) {
+        Objects.requireNonNull(loc);
         long offset = loc.getContentOffset() + indexSize;
         long compressedSize = loc.getCompressedSize();
         long uncompressedSize = loc.getUncompressedSize();
@@ -399,6 +414,7 @@ public class BasicImageReader implements AutoCloseable {
     }
 
     public InputStream getResourceStream(ImageLocation loc) {
+        Objects.requireNonNull(loc);
         byte[] bytes = getResource(loc);
 
         return new ByteArrayInputStream(bytes);
