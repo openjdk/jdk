@@ -231,6 +231,7 @@ LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, TRAPS) {
   // Get name, signature, and static klass
   _name          = pool->name_ref_at(index);
   _signature     = pool->signature_ref_at(index);
+  _tag           = pool->tag_ref_at(index);
   _current_klass = KlassHandle(THREAD, pool->pool_holder());
 
   // Coming from the constant pool always checks access
@@ -573,7 +574,7 @@ methodHandle LinkResolver::resolve_method_statically(Bytecodes::Code code,
     Symbol* method_signature = pool->signature_ref_at(index);
     KlassHandle  current_klass(THREAD, pool->pool_holder());
     LinkInfo link_info(resolved_klass, method_name, method_signature, current_klass);
-    return resolve_method(link_info, /*require_methodref*/false, THREAD);
+    return resolve_method(link_info, code, THREAD);
   }
 
   LinkInfo link_info(pool, index, CHECK_NULL);
@@ -591,9 +592,9 @@ methodHandle LinkResolver::resolve_method_statically(Bytecodes::Code code,
   if (code == Bytecodes::_invokeinterface) {
     return resolve_interface_method(link_info, code, THREAD);
   } else if (code == Bytecodes::_invokevirtual) {
-    return resolve_method(link_info, /*require_methodref*/true, THREAD);
+    return resolve_method(link_info, code, THREAD);
   } else if (!resolved_klass->is_interface()) {
-    return resolve_method(link_info, /*require_methodref*/false, THREAD);
+    return resolve_method(link_info, code, THREAD);
   } else {
     return resolve_interface_method(link_info, code, THREAD);
   }
@@ -663,13 +664,13 @@ void LinkResolver::check_field_loader_constraints(Symbol* field, Symbol* sig,
 }
 
 methodHandle LinkResolver::resolve_method(const LinkInfo& link_info,
-                                          bool require_methodref, TRAPS) {
+                                          Bytecodes::Code code, TRAPS) {
 
   Handle nested_exception;
   KlassHandle resolved_klass = link_info.resolved_klass();
 
-  // 1. check if methodref required, that resolved_klass is not interfacemethodref
-  if (require_methodref && resolved_klass->is_interface()) {
+  // 1. For invokevirtual, cannot call an interface method
+  if (code == Bytecodes::_invokevirtual && resolved_klass->is_interface()) {
     ResourceMark rm(THREAD);
     char buf[200];
     jio_snprintf(buf, sizeof(buf), "Found interface %s, but class was expected",
@@ -677,11 +678,20 @@ methodHandle LinkResolver::resolve_method(const LinkInfo& link_info,
     THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
-  // 2. lookup method in resolved klass and its super klasses
+  // 2. check constant pool tag for called method - must be JVM_CONSTANT_Methodref
+  if (!link_info.tag().is_invalid() && !link_info.tag().is_method()) {
+    ResourceMark rm(THREAD);
+    char buf[200];
+    jio_snprintf(buf, sizeof(buf), "Method %s must be Methodref constant", link_info.method_string());
+    THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
+  }
+
+
+  // 3. lookup method in resolved klass and its super klasses
   methodHandle resolved_method = lookup_method_in_klasses(link_info, true, false, CHECK_NULL);
 
+  // 4. lookup method in all the interfaces implemented by the resolved klass
   if (resolved_method.is_null() && !resolved_klass->is_array_klass()) { // not found in the class hierarchy
-    // 3. lookup method in all the interfaces implemented by the resolved klass
     resolved_method = lookup_method_in_interfaces(link_info, CHECK_NULL);
 
     if (resolved_method.is_null()) {
@@ -694,8 +704,8 @@ methodHandle LinkResolver::resolve_method(const LinkInfo& link_info,
     }
   }
 
+  // 5. method lookup failed
   if (resolved_method.is_null()) {
-    // 4. method lookup failed
     ResourceMark rm(THREAD);
     THROW_MSG_CAUSE_(vmSymbols::java_lang_NoSuchMethodError(),
                     Method::name_and_sig_as_C_string(resolved_klass(),
@@ -704,7 +714,7 @@ methodHandle LinkResolver::resolve_method(const LinkInfo& link_info,
                     nested_exception, NULL);
   }
 
-  // 5. access checks, access checking may be turned off when calling from within the VM.
+  // 6. access checks, access checking may be turned off when calling from within the VM.
   KlassHandle current_klass = link_info.current_klass();
   if (link_info.check_access()) {
     assert(current_klass.not_null() , "current_klass should not be null");
@@ -763,6 +773,14 @@ methodHandle LinkResolver::resolve_interface_method(const LinkInfo& link_info, B
     ResourceMark rm(THREAD);
     char buf[200];
     jio_snprintf(buf, sizeof(buf), "Found class %s, but interface was expected", resolved_klass()->external_name());
+    THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
+  }
+
+  // check constant pool tag for called method - must be JVM_CONSTANT_InterfaceMethodref
+  if (!link_info.tag().is_invalid() && !link_info.tag().is_interface_method()) {
+    ResourceMark rm(THREAD);
+    char buf[200];
+    jio_snprintf(buf, sizeof(buf), "Method %s must be InterfaceMethodref constant", link_info.method_string());
     THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
@@ -956,7 +974,8 @@ void LinkResolver::resolve_static_call(CallInfo& result,
     resolved_klass->initialize(CHECK);
     // Use updated LinkInfo (to reresolve with resolved_klass as method_holder?)
     LinkInfo new_info(resolved_klass, link_info.name(), link_info.signature(),
-                      link_info.current_klass(), link_info.check_access());
+                      link_info.current_klass(),
+                      link_info.check_access() ? LinkInfo::needs_access_check : LinkInfo::skip_access_check);
     resolved_method = linktime_resolve_static_method(new_info, CHECK);
   }
 
@@ -971,7 +990,7 @@ methodHandle LinkResolver::linktime_resolve_static_method(const LinkInfo& link_i
   KlassHandle resolved_klass = link_info.resolved_klass();
   methodHandle resolved_method;
   if (!resolved_klass->is_interface()) {
-    resolved_method = resolve_method(link_info, /*require_methodref*/false, CHECK_NULL);
+    resolved_method = resolve_method(link_info, Bytecodes::_invokestatic, CHECK_NULL);
   } else {
     resolved_method = resolve_interface_method(link_info, Bytecodes::_invokestatic, CHECK_NULL);
   }
@@ -1014,7 +1033,7 @@ methodHandle LinkResolver::linktime_resolve_special_method(const LinkInfo& link_
   methodHandle resolved_method;
 
   if (!resolved_klass->is_interface()) {
-    resolved_method = resolve_method(link_info, /*require_methodref*/false, CHECK_NULL);
+    resolved_method = resolve_method(link_info, Bytecodes::_invokespecial, CHECK_NULL);
   } else {
     resolved_method = resolve_interface_method(link_info, Bytecodes::_invokespecial, CHECK_NULL);
   }
@@ -1164,7 +1183,7 @@ void LinkResolver::resolve_virtual_call(CallInfo& result, Handle recv, KlassHand
 methodHandle LinkResolver::linktime_resolve_virtual_method(const LinkInfo& link_info,
                                                            TRAPS) {
   // normal method resolution
-  methodHandle resolved_method = resolve_method(link_info, /*require_methodref*/true, CHECK_NULL);
+  methodHandle resolved_method = resolve_method(link_info, Bytecodes::_invokevirtual, CHECK_NULL);
 
   assert(resolved_method->name() != vmSymbols::object_initializer_name(), "should have been checked in verifier");
   assert(resolved_method->name() != vmSymbols::class_initializer_name (), "should have been checked in verifier");
@@ -1173,6 +1192,7 @@ methodHandle LinkResolver::linktime_resolve_virtual_method(const LinkInfo& link_
   KlassHandle resolved_klass = link_info.resolved_klass();
   KlassHandle current_klass = link_info.current_klass();
 
+  // This is impossible, if resolve_klass is an interface, we've thrown icce in resolve_method
   if (resolved_klass->is_interface() && resolved_method->is_private()) {
     ResourceMark rm(THREAD);
     char buf[200];
@@ -1482,7 +1502,7 @@ void LinkResolver::resolve_invoke(CallInfo& result, Handle& recv,
   KlassHandle defc = attached_method->method_holder();
   Symbol* name = attached_method->name();
   Symbol* type = attached_method->signature();
-  LinkInfo link_info(defc, name, type, KlassHandle(), /*check_access=*/false);
+  LinkInfo link_info(defc, name, type);
   switch(byte) {
     case Bytecodes::_invokevirtual:
       resolve_virtual_call(result, recv, recv->klass(), link_info,
