@@ -42,6 +42,7 @@ import com.sun.tools.javac.code.Symbol.*;
  * @since 1.5
  */
 
+@Deprecated
 public class AnnotationTypeElementDocImpl
         extends MethodDocImpl implements AnnotationTypeElementDoc {
 

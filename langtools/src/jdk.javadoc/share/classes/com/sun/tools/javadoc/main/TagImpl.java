@@ -48,6 +48,7 @@ import com.sun.javadoc.*;
  * @see Doc#tags()
  *
  */
+@Deprecated
 class TagImpl implements Tag {
 
     protected final String text;

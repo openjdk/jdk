@@ -41,6 +41,7 @@ import com.sun.javadoc.*;
  * @since 1.7
  */
 
+@Deprecated
 public interface PropertyWriter {
 
     /**

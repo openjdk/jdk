@@ -37,6 +37,7 @@ import com.sun.javadoc.PackageDoc;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
+@Deprecated
 public class DocPath {
     private final String path;
 

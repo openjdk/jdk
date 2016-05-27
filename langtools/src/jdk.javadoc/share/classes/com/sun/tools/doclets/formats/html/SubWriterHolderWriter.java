@@ -53,6 +53,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @author Atul M Dambalkar
  * @author Bhavesh Patel (Modified)
  */
+@Deprecated
 public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
 
     /**

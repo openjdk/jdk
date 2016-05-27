@@ -45,6 +45,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  *
  * @author Atul M Dambalkar
  */
+@Deprecated
 public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
 
     /**

@@ -43,6 +43,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @author Jamie Ho
  * @author Bhavesh Patel (Modified)
  */
+@Deprecated
 public class EnumConstantWriterImpl extends AbstractMemberWriter
     implements EnumConstantWriter, MemberSummaryWriter {
 

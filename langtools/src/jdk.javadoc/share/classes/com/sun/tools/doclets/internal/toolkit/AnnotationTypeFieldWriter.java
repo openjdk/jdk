@@ -41,6 +41,7 @@ import com.sun.javadoc.*;
  * @since 1.8
  */
 
+@Deprecated
 public interface AnnotationTypeFieldWriter {
 
     /**
