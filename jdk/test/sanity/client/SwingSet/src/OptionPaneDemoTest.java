@@ -21,20 +21,25 @@
  * questions.
  */
 
-import org.jtregext.GuiTestListener;
 import com.sun.swingset3.demos.optionpane.OptionPaneDemo;
 import static com.sun.swingset3.demos.optionpane.OptionPaneDemo.*;
+
 import javax.swing.UIManager;
-import static org.testng.AssertJUnit.*;
-import org.testng.annotations.Test;
+
+import org.jtregext.GuiTestListener;
+
 import org.netbeans.jemmy.ClassReference;
+import org.netbeans.jemmy.operators.Operator.DefaultStringComparator;
 import org.netbeans.jemmy.operators.JButtonOperator;
 import org.netbeans.jemmy.operators.JComboBoxOperator;
 import org.netbeans.jemmy.operators.JDialogOperator;
 import org.netbeans.jemmy.operators.JFrameOperator;
 import org.netbeans.jemmy.operators.JLabelOperator;
 import org.netbeans.jemmy.operators.JTextFieldOperator;
+
 import org.testng.annotations.Listeners;
+import org.testng.annotations.Test;
+import static org.testng.AssertJUnit.*;
 
 
 /*
@@ -46,6 +51,8 @@ import org.testng.annotations.Listeners;
  * @library /sanity/client/lib/jemmy/src
  * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
+ * @modules java.desktop
+ *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.optionpane.OptionPaneDemo
  * @run testng OptionPaneDemoTest
@@ -77,70 +84,44 @@ public class OptionPaneDemoTest {
         showConfirmationDialog(frame);
     }
 
+    private void checkMessage(String message) {
+        JDialogOperator jdo = new JDialogOperator(MESSAGE);
+        new JLabelOperator(jdo, message);
+        new JButtonOperator(jdo, OK).push();
+        jdo.waitClosed();
+    }
+
+    private void useInputDialog(JFrameOperator jfo, String textToType, String buttonToPush) {
+        new JButtonOperator(jfo, INPUT_BUTTON).pushNoBlock();
+        JDialogOperator jdo = new JDialogOperator(INPUT);
+        if(textToType != null) {
+            JTextFieldOperator jto = new JTextFieldOperator(jdo);
+            jto.typeText(textToType);
+            jto.waitText(textToType);
+        }
+        new JButtonOperator(jdo, buttonToPush).push();
+        jdo.waitClosed();
+    }
+
     public void showInputDialog(JFrameOperator jfo) throws Exception {
         // Cancel with text case
-        {
-            new JButtonOperator(jfo, INPUT_BUTTON).pushNoBlock();
-
-            JDialogOperator jdo = new JDialogOperator(INPUT);
-            JTextFieldOperator jto = new JTextFieldOperator(jdo);
-            jto.setText(SOME_TEXT_TO_TYPE);
-
-            assertTrue("Show Input Dialog cancel w/ Text", jdo.isShowing());
-
-            new JButtonOperator(jdo, CANCEL).push();
-
-            assertFalse("Show Input Dialog cancel w/ Text", jdo.isShowing());
-        }
+        useInputDialog(jfo, SOME_TEXT_TO_TYPE, CANCEL);
+        //TODO: wait for no dialog displayed
 
         // Cancel with *NO* text case
-        {
-            new JButtonOperator(jfo, INPUT_BUTTON).pushNoBlock();
-
-            JDialogOperator jdo = new JDialogOperator(INPUT);
-
-            assertTrue("Show Input Dialog cancel w/o Text", jdo.isShowing());
-
-            new JButtonOperator(jdo, CANCEL).push();
-
-            assertFalse("Show Input Dialog cancel w/o Text", jdo.isShowing());
-        }
+        useInputDialog(jfo, null, CANCEL);
+        //TODO: wait for no dialog displayed
 
         // Text field has *NO* input
-        {
-            new JButtonOperator(jfo, INPUT_BUTTON).pushNoBlock();
-
-            JDialogOperator jdo = new JDialogOperator(INPUT);
-
-            assertTrue("Show Input Dialog w/o Input", jdo.isShowing());
-
-            new JButtonOperator(jdo, OK).push();
-
-            assertFalse("Show Input Dialog w/o Input", jdo.isShowing());
-        }
+        useInputDialog(jfo, null, OK);
+        //TODO: wait for no dialog displayed
 
         // Text field has input
         {
             final String enteredText = "Rambo";
 
-            new JButtonOperator(jfo, INPUT_BUTTON).pushNoBlock();
-
-            JDialogOperator jdo = new JDialogOperator(INPUT);
-            JTextFieldOperator jto = new JTextFieldOperator(jdo);
-            jto.setText(enteredText);
-            new JButtonOperator(jdo, OK).pushNoBlock();
-
-            JDialogOperator jdo1 = new JDialogOperator(MESSAGE);
-
-            assertTrue("Show Input Dialog w/ Input", jdo1.isShowing());
-
-            final String labelText = enteredText + INPUT_RESPONSE;
-            JLabelOperator jLabelOperator = new JLabelOperator(jdo1, labelText);
-            assertEquals("Text from the field made it into the dialog", labelText, jLabelOperator.getText());
-
-            new JButtonOperator(jdo1, OK).push();
-
-            assertFalse("Show Input Dialog w/ Input", jdo1.isShowing());
+            useInputDialog(jfo, enteredText, OK);
+            checkMessage(enteredText + INPUT_RESPONSE);
         }
     }
 
@@ -149,11 +130,9 @@ public class OptionPaneDemoTest {
 
         JDialogOperator jdo = new JDialogOperator(WARNING_TITLE);
 
-        assertTrue("Show Warning Dialog", jdo.isShowing());
-
         new JButtonOperator(jdo, OK).push();
 
-        assertFalse("Show Warning Dialog", jdo.isShowing());
+        jdo.waitClosed();
     }
 
     public void showMessageDialog(JFrameOperator jfo) throws Exception {
@@ -161,105 +140,46 @@ public class OptionPaneDemoTest {
 
         JDialogOperator jdo = new JDialogOperator(MESSAGE);
 
-        assertTrue("Show Message Dialog", jdo.isShowing());
-
         new JButtonOperator(jdo, OK).push();
 
-        assertFalse("Show Message Dialog", jdo.isShowing());
+        jdo.waitClosed();
+    }
+
+    private void callADialogAndClose(JFrameOperator jfo, String buttonToOpenDialog,
+                                     String dialogTitle, String buttonToPush) {
+        new JButtonOperator(jfo, buttonToOpenDialog).pushNoBlock();
+        JDialogOperator jdo = new JDialogOperator(dialogTitle);
+        new JButtonOperator(jdo, buttonToPush).push();
+        jdo.waitClosed();
     }
 
     public void showComponentDialog(JFrameOperator jfo) throws Exception {
         // Case: Cancel
-        {
-            new JButtonOperator(jfo, COMPONENT_BUTTON).pushNoBlock();
-
-            JDialogOperator jdo = new JDialogOperator(COMPONENT_TITLE);
-
-            assertTrue("Show Component Dialog Cancel Option", jdo.isShowing());
-
-            new JButtonOperator(jdo, COMPONENT_OP5).push();
-
-            assertFalse("Show Component Dialog Cancel Option", jdo.isShowing());
-        }
+        callADialogAndClose(jfo, COMPONENT_BUTTON, COMPONENT_TITLE, COMPONENT_OP5);
+        //TODO: wait for no dialog displayed
 
         // Case: Yes option selected
         {
-            new JButtonOperator(jfo, COMPONENT_BUTTON).pushNoBlock();
-
-            JDialogOperator jdo = new JDialogOperator(COMPONENT_TITLE);
-            new JButtonOperator(jdo, COMPONENT_OP1).pushNoBlock();
-
-            JDialogOperator jdo1 = new JDialogOperator(MESSAGE);
-
-            assertTrue("Component Dialog Example Yes Option", jdo1.isShowing());
-
-            final String labelText = COMPONENT_R1;
-            JLabelOperator jLabelOperator = new JLabelOperator(jdo1, labelText);
-            assertEquals("Dialog contains appropriate text", labelText, jLabelOperator.getText());
-
-            new JButtonOperator(jdo1, OK).push();
-
-            assertFalse("Component Dialog Example Yes Option", jdo1.isShowing());
+            callADialogAndClose(jfo, COMPONENT_BUTTON, COMPONENT_TITLE, COMPONENT_OP1);
+            checkMessage(COMPONENT_R1);
         }
 
         // Case: No option selected
         {
-            new JButtonOperator(jfo, COMPONENT_BUTTON).pushNoBlock();
-
-            JDialogOperator jdo = new JDialogOperator(COMPONENT_TITLE);
-            new JButtonOperator(jdo, COMPONENT_OP2).pushNoBlock();
-
-            JDialogOperator jdo1 = new JDialogOperator(MESSAGE);
-
-            assertTrue("Component Dialog Example No Option", jdo1.isShowing());
-
-            final String labelText = COMPONENT_R2;
-            JLabelOperator jLabelOperator = new JLabelOperator(jdo1, labelText);
-            assertEquals("Dialog contains appropriate text", labelText, jLabelOperator.getText());
-
-            new JButtonOperator(jdo1, OK).push();
-
-            assertFalse("Component Dialog Example No Option", jdo1.isShowing());
+            callADialogAndClose(jfo, COMPONENT_BUTTON, COMPONENT_TITLE, COMPONENT_OP2);
+            checkMessage(COMPONENT_R2);
         }
 
         // Case: Maybe option selected
         {
-            new JButtonOperator(jfo, COMPONENT_BUTTON).pushNoBlock();
-
-            JDialogOperator jdo = new JDialogOperator(COMPONENT_TITLE);
-            new JButtonOperator(jdo, COMPONENT_OP3).pushNoBlock();
-
-            JDialogOperator jdo1 = new JDialogOperator(MESSAGE);
-
-            assertTrue("Component Dialog Maybe Yes Option", jdo1.isShowing());
-
-            final String labelText = COMPONENT_R3;
-            JLabelOperator jLabelOperator = new JLabelOperator(jdo1, labelText);
-            assertEquals("Dialog contains appropriate text", labelText, jLabelOperator.getText());
-
-            new JButtonOperator(jdo1, OK).push();
-
-            assertFalse("Component Dialog Maybe Yes Option", jdo1.isShowing());
+            callADialogAndClose(jfo, COMPONENT_BUTTON, COMPONENT_TITLE, COMPONENT_OP3);
+            checkMessage(COMPONENT_R3);
         }
 
         // Case: Probably option selected
         {
-            new JButtonOperator(jfo, COMPONENT_BUTTON).pushNoBlock();
-
-            JDialogOperator jdo = new JDialogOperator(COMPONENT_TITLE);
-            new JButtonOperator(jdo, COMPONENT_OP4).pushNoBlock();
-
-            JDialogOperator jdo1 = new JDialogOperator(MESSAGE);
-
-            assertTrue("Component Dialog Example Probably Option", jdo1.isShowing());
-
-            final String labelText = COMPONENT_R4;
-            JLabelOperator jLabelOperator = new JLabelOperator(jdo1, labelText);
-            assertEquals("Dialog contains appropriate text", labelText, jLabelOperator.getText());
-
-            new JButtonOperator(jdo1, OK).push();
-
-            assertFalse("Component Dialog Example Probably Option", jdo1.isShowing());
+            callADialogAndClose(jfo, COMPONENT_BUTTON, COMPONENT_TITLE, COMPONENT_OP4);
+            checkMessage(COMPONENT_R4);
         }
 
         // Case TextField and ComboBox functional
@@ -271,69 +191,35 @@ public class OptionPaneDemoTest {
             JTextFieldOperator jto = new JTextFieldOperator(jdo);
             jto.clearText();
             jto.typeText(TEXT_TO_TYPE);
+            jto.waitText(TEXT_TO_TYPE);
 
             JComboBoxOperator jcbo = new JComboBoxOperator(jdo);
             jcbo.selectItem(2);
+            jcbo.waitItemSelected(2);
 
-            assertEquals("Show Component Dialog TextField", TEXT_TO_TYPE, jto.getText());
-            assertEquals("Show Component Dialog ComboBox", 2, jcbo.getSelectedIndex());
-
-            new JButtonOperator(jdo, "cancel").push();
+            new JButtonOperator(jdo, COMPONENT_OP5).push();
+            jdo.waitClosed();
+            //TODO: wait for no dialog displayed
         }
     }
 
     public void showConfirmationDialog(JFrameOperator jfo) throws Exception {
         // Case: Yes option selected
         {
-            new JButtonOperator(jfo, CONFIRM_BUTTON).pushNoBlock();
-
-            JDialogOperator jdo = new JDialogOperator(SELECT_AN_OPTION);
-            new JButtonOperator(jdo, YES).pushNoBlock();
-
-            JDialogOperator jdo1 = new JDialogOperator(MESSAGE);
-
-            assertTrue("Show Confirmation Dialog Yes Option", jdo1.isShowing());
-
-            final String labelText = CONFIRM_YES;
-            JLabelOperator jLabelOperator = new JLabelOperator(jdo1, labelText);
-            assertEquals("Dialog contains appropriate text", labelText, jLabelOperator.getText());
-
-            new JButtonOperator(jdo1, OK).push();
-
-            assertFalse("Show Confirmation Dialog Yes Option", jdo1.isShowing());
+            callADialogAndClose(jfo, CONFIRM_BUTTON, SELECT_AN_OPTION, YES);
+            checkMessage(CONFIRM_YES);
         }
 
         // Case: No option selected
         {
-            new JButtonOperator(jfo, CONFIRM_BUTTON).pushNoBlock();
-
-            JDialogOperator jdo = new JDialogOperator(SELECT_AN_OPTION);
-            new JButtonOperator(jdo, NO).pushNoBlock();
-
-            JDialogOperator jdo1 = new JDialogOperator(MESSAGE);
-
-            assertTrue("Show Confirmation Dialog No Option", jdo1.isShowing());
-
-            final String labelText = CONFIRM_NO;
-            JLabelOperator jLabelOperator = new JLabelOperator(jdo1, labelText);
-            assertEquals("Dialog contains appropriate text", labelText, jLabelOperator.getText());
-
-            new JButtonOperator(jdo1, OK).push();
-
-            assertFalse("Show Confirmation Dialog No Option", jdo1.isShowing());
+            callADialogAndClose(jfo, CONFIRM_BUTTON, SELECT_AN_OPTION, NO);
+            checkMessage(CONFIRM_NO);
         }
 
         // Case: Cancel option selected
         {
-            new JButtonOperator(jfo, CONFIRM_BUTTON).pushNoBlock();
-
-            JDialogOperator jdo = new JDialogOperator(SELECT_AN_OPTION);
-
-            assertTrue("Show Confirmation Dialog Cancel Option", jdo.isShowing());
-
-            new JButtonOperator(jdo, CANCEL).push();
-
-            assertFalse("Show Confirmation Dialog Cancel Option", jdo.isShowing());
+            callADialogAndClose(jfo, CONFIRM_BUTTON, SELECT_AN_OPTION, CANCEL);
+            //TODO: wait for no dialog displayed
         }
     }
 

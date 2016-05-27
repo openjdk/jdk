@@ -302,6 +302,8 @@ javax/imageio/plugins/tiff/WriteToSequenceAfterAbort.java       8148454 generic-
 
 # jdk_swing
 
+sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java        8157338 generic-all
+
 ############################################################################
 
 # jdk_text
