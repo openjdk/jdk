@@ -59,14 +59,12 @@ class Method {
     private final String ownerClassName;
     private final ClassVisitor cv;
     private final MethodVisitor mv;
-    private final boolean isInterface;
     private final ClassBuilder.ExecutionMode execMode;
 
     public Method(ClassConstruct ownerClass, ClassVisitor cv, String name, String descriptor, int access,
                   ClassBuilder.ExecutionMode execMode) {
         this.ownerClassName = ownerClass.getName();
         this.ownerClass = ownerClass;
-        this.isInterface = ownerClass.isInterface();
         this.execMode = execMode;
         this.cv = cv;
         mv = cv.visitMethod(access, name, descriptor, null, null);
@@ -91,12 +89,12 @@ class Method {
 
     public void makeSuperCallMethod(int invokeInstruction, String className) {
         mv.visitVarInsn(ALOAD, 0);
-        makeCall(invokeInstruction, className);
+        makeCall(invokeInstruction, className, false);
         mv.visitInsn(POP);
         done();
     }
 
-    public void defaultInvoke(int instr, String className, String objectRef) {
+    public void defaultInvoke(int instr, String className, String objectRef, boolean isInterface) {
         switch (instr) {
             case INVOKEVIRTUAL:
                 defaultInvokeVirtual(className, objectRef);
@@ -105,10 +103,10 @@ class Method {
                 defaultInvokeInterface(className, objectRef);
                 break;
             case INVOKESTATIC:
-                defaultInvokeStatic(className);
+                defaultInvokeStatic(className, isInterface);
                 break;
             case INVOKESPECIAL:
-                defaultInvokeSpecial(className, objectRef);
+                defaultInvokeSpecial(className, objectRef, isInterface);
                 break;
             default:
                 break;
@@ -118,30 +116,26 @@ class Method {
         mv.visitEnd();
     }
 
-    public void defaultInvokeVirtual(String className, String objectRef) {
+    private void defaultInvokeVirtual(String className, String objectRef) {
         String objectRefPackageName = objectRef.substring(0, objectRef.lastIndexOf("/"));
         makeNewObject(objectRef, objectRefPackageName);
         makeCall(INVOKEVIRTUAL, className, false);
     }
 
-    public void defaultInvokeInterface(String className, String objectRef) {
+    private void defaultInvokeInterface(String className, String objectRef) {
         String objectRefPackageName = objectRef.substring(0, objectRef.lastIndexOf("/"));
         makeNewObject(objectRef, objectRefPackageName);
         makeCall(INVOKEINTERFACE, className, true);
     }
 
-    public void defaultInvokeSpecial(String className, String objectRef) {
+    private void defaultInvokeSpecial(String className, String objectRef, boolean isInterface) {
         String objectRefPackageName = objectRef.substring(0, objectRef.lastIndexOf("/"));
         makeNewObject(objectRef, objectRefPackageName);
-        makeCall(INVOKESPECIAL, className, false);
+        makeCall(INVOKESPECIAL, className, isInterface);
     }
 
-    public void defaultInvokeStatic(String className) {
-        makeCall(INVOKESTATIC, className);
-    }
-
-    private Method makeCall(int invokeInstruction, String className) {
-        return makeCall(invokeInstruction, className, isInterface);
+    private void defaultInvokeStatic(String className, boolean isInterface) {
+        makeCall(INVOKESTATIC, className, isInterface);
     }
 
     private Method makeCall(int invokeInstruction, String className, boolean isInterface) {
@@ -219,7 +213,7 @@ class Method {
         String className = objectRef.substring(objectRef.lastIndexOf("/") + 1);
         makeStaticCall( objectRefPackageName + "/Helper",
                         "get" + className,
-                        "()L" + objectRef + ";");
+                        "()L" + objectRef + ";", false);
         mv.visitVarInsn(ASTORE, 1);
         mv.visitVarInsn(ALOAD, 1);
     }
@@ -236,12 +230,12 @@ class Method {
         mv.visitEnd();
     }
 
-    public Method makeStaticCall(String classname, String method, String descriptor) {
+    public Method makeStaticCall(String classname, String method, String descriptor, boolean isInterface) {
         mv.visitMethodInsn(INVOKESTATIC, classname, method, descriptor, isInterface);
         return this;
     }
 
-    public void makeConstructor(String extending) {
+    public void makeConstructor(String extending, boolean isInterface) {
         mv.visitVarInsn(ALOAD, 0);
         mv.visitMethodInsn(INVOKESPECIAL, extending == null ? "java/lang/Object" : extending, "<init>", "()V", isInterface);
         mv.visitInsn(RETURN);
