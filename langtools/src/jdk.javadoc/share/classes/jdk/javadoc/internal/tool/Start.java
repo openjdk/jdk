@@ -81,6 +81,7 @@ import static com.sun.tools.javac.main.Option.*;
  */
 public class Start extends ToolOption.Helper {
 
+    @SuppressWarnings("deprecation")
     private static final Class<?> OldStdDoclet =
             com.sun.tools.doclets.standard.Standard.class;
 
@@ -564,6 +565,7 @@ public class Start extends ToolOption.Helper {
      * all other conditions including errors it returns false, allowing
      * nature to take its own course.
      */
+    @SuppressWarnings("deprecation")
     private boolean hasOldTaglet(List<String> tagletNames, List<File> tagletPaths) {
         if (!fileManager.hasLocation(TAGLET_PATH)) {
             try {

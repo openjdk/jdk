@@ -42,6 +42,7 @@ import com.sun.tools.doclets.internal.toolkit.*;
  * @see com.sun.javadoc.PackageDoc
  * @author Atul M Dambalkar
  */
+@Deprecated
 public class PackageListWriter extends PrintWriter {
 
     private final Configuration configuration;

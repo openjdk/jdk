@@ -43,6 +43,7 @@ import com.sun.javadoc.*;
  * @see ExecutableMemberDocImpl#throwsTags()
  *
  */
+@Deprecated
 class ThrowsTagImpl extends TagImpl implements ThrowsTag {
 
     private final String exceptionName;

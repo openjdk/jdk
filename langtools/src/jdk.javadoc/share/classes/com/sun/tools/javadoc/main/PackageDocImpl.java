@@ -62,6 +62,7 @@ import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
  * @author Scott Seligman (package-info.java)
  */
 
+@Deprecated
 public class PackageDocImpl extends DocImpl implements PackageDoc {
 
     public final PackageSymbol sym;

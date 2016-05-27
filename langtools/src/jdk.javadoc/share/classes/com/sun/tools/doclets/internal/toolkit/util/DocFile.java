@@ -52,6 +52,7 @@ import com.sun.tools.doclets.internal.toolkit.Configuration;
  *
  * @since 8
  */
+@Deprecated
 public abstract class DocFile {
 
     /** Create a DocFile for a directory. */

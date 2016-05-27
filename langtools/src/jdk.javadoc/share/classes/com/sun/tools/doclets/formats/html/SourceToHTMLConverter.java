@@ -47,6 +47,7 @@ import com.sun.tools.javadoc.main.SourcePositionImpl;
  * @author Bhavesh Patel (Modified)
  * @since 1.4
  */
+@Deprecated
 public class SourceToHTMLConverter {
 
     /**

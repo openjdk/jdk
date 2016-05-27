@@ -67,6 +67,7 @@ import com.sun.tools.javac.util.ListBuffer;
  *
  *  @author Neal Gafter
  */
+@Deprecated
 public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
     DocEnv docenv;
 

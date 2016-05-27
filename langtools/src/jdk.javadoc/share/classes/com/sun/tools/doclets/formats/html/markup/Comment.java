@@ -41,6 +41,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  *
  * @author Bhavesh Patel
  */
+@Deprecated
 public class Comment extends Content {
 
     private String commentText;

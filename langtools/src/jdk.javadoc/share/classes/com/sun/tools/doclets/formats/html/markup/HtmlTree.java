@@ -44,6 +44,7 @@ import com.sun.tools.doclets.formats.html.markup.HtmlAttr.Role;
  *
  * @author Bhavesh Patel
  */
+@Deprecated
 public class HtmlTree extends Content {
 
     private HtmlTag htmlTag;

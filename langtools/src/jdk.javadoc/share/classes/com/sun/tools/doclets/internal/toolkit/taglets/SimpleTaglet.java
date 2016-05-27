@@ -41,6 +41,7 @@ import com.sun.tools.javac.util.StringUtils;
  * @author Jamie Ho
  */
 
+@Deprecated
 public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
 
     /**
