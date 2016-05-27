@@ -661,8 +661,7 @@ C2V_VMENTRY(jobject, resolveMethod, (JNIEnv *, jobject, jobject receiver_jvmci_t
   Symbol* h_name      = method->name();
   Symbol* h_signature = method->signature();
 
-  bool check_access = true;
-  LinkInfo link_info(h_resolved, h_name, h_signature, caller_klass, check_access);
+  LinkInfo link_info(h_resolved, h_name, h_signature, caller_klass);
   methodHandle m;
   // Only do exact lookup if receiver klass has been linked.  Otherwise,
   // the vtable has not been setup, and the LinkResolver will fail.
