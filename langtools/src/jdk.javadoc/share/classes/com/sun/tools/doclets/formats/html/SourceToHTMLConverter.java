@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.javadoc.main.SourcePositionImpl;
 
 /**
  * Converts Java Source Code to HTML.
@@ -149,8 +150,8 @@ public class SourceToHTMLConverter {
                 return;
             Reader r;
             // temp hack until we can update SourcePosition API.
-            if (sp instanceof com.sun.tools.javadoc.main.SourcePositionImpl) {
-                FileObject fo = ((com.sun.tools.javadoc.main.SourcePositionImpl) sp).fileObject();
+            if (sp instanceof SourcePositionImpl) {
+                FileObject fo = ((SourcePositionImpl) sp).fileObject();
                 if (fo == null)
                     return;
                 r = fo.openReader(true);

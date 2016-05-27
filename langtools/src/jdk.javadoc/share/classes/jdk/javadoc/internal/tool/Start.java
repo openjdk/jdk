@@ -221,6 +221,7 @@ public class Start extends ToolOption.Helper {
      * this is to minimize argument processing and most importantly the impact
      * of class loader creation, needed to detect the doclet/taglet class variants.
      */
+    @SuppressWarnings("deprecation")
     int begin(String... argv) {
         // Preprocess @file arguments
         try {
@@ -254,6 +255,7 @@ public class Start extends ToolOption.Helper {
         return begin(opts, fileObjects);
     }
 
+    @SuppressWarnings("deprecation")
     private boolean begin(List<String> options, Iterable<? extends JavaFileObject> fileObjects) {
         fileManager = context.get(JavaFileManager.class);
         if (fileManager == null) {
@@ -270,7 +272,6 @@ public class Start extends ToolOption.Helper {
             initMessager();
             messager.setLocale(locale);
             try {
-                @SuppressWarnings("deprecation")
                 Object o = docletClass.newInstance();
                 doclet = (Doclet) o;
             } catch (InstantiationException | IllegalAccessException exc) {
