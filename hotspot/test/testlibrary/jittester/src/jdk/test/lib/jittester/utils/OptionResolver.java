@@ -230,7 +230,7 @@ public class OptionResolver {
 
         @Override
         public Long parseFromString(String arg) {
-            return new Long(arg);
+            return Long.valueOf(arg);
         }
     }
 
@@ -242,7 +242,7 @@ public class OptionResolver {
 
         @Override
         public Integer parseFromString(String arg) {
-            return new Integer(arg);
+            return Integer.valueOf(arg);
         }
     }
 
