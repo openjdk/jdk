@@ -188,8 +188,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             syms.unnamedModule.complete(); // TEMP to force reading all named modules
 
             // Build up the complete list of any packages to be documented
-            Location location =
-                    modules.multiModuleMode && !modules.noModules ? StandardLocation.MODULE_SOURCE_PATH
+            Location location = modules.multiModuleMode ? StandardLocation.MODULE_SOURCE_PATH
                     : docenv.fileManager.hasLocation(StandardLocation.SOURCE_PATH) ? StandardLocation.SOURCE_PATH
                     : StandardLocation.CLASS_PATH;
 
