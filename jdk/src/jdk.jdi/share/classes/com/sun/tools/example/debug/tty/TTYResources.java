@@ -74,7 +74,6 @@ public class TTYResources extends java.util.ListResourceBundle {
         {"Array element is not a method", "Array element is not a method"},
         {"Array index must be a integer type", "Array index must be a integer type"},
         {"base directory:", "base directory: {0}"},
-        {"bootclasspath:", "bootclasspath: {0}"},
         {"Breakpoint hit:", "Breakpoint hit: "},
         {"breakpoint", "breakpoint {0}"},
         {"Breakpoints set:", "Breakpoints set:"},

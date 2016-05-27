@@ -29,6 +29,7 @@
  * jfx app class, a main-class for the manifest, a bogus one and none.
  * All should execute except the incorrect fx app class entries.
  * @run main/othervm FXLauncherTest
+ * @key intermittent
  */
 import java.io.File;
 import java.io.IOException;

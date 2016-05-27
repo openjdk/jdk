@@ -64,8 +64,11 @@ import com.sun.javadoc.*;
  *
  * @since 1.4
  * @author Jamie Ho
+ *
+ * @deprecated
+ *   This interface has been superseded by one in the new package {@code jdk.javadoc.doclet.taglet}.
  */
-
+@Deprecated
 public interface Taglet {
 
     /**

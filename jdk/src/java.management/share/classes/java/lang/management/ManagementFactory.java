@@ -598,9 +598,8 @@ public class ManagementFactory {
 
         try {
             final ObjectName objName = new ObjectName(mxbeanName);
-            // skip the isInstanceOf check for LoggingMXBean
             String intfName = mxbeanInterface.getName();
-            if (!connection.isInstanceOf(objName, intfName)) {
+            if (!isInstanceOf(connection, objName, intfName)) {
                 throw new IllegalArgumentException(mxbeanName +
                     " is not an instance of " + mxbeanInterface);
             }
@@ -614,6 +613,33 @@ public class ManagementFactory {
         } catch (InstanceNotFoundException|MalformedObjectNameException e) {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    // This makes it possible to obtain an instance of LoggingMXBean
+    // using newPlatformMXBeanProxy(mbs, on, LoggingMXBean.class)
+    // even though the underlying MXBean no longer implements
+    // java.util.logging.LoggingMXBean.
+    // Altough java.util.logging.LoggingMXBean is deprecated, an application
+    // that uses newPlatformMXBeanProxy(mbs, on, LoggingMXBean.class) will
+    // continue to work.
+    //
+    private static boolean isInstanceOf(MBeanServerConnection connection,
+            ObjectName objName, String intfName)
+            throws InstanceNotFoundException, IOException
+    {
+        // special case for java.util.logging.LoggingMXBean.
+        // java.util.logging.LoggingMXBean is deprecated and
+        // replaced with java.lang.management.PlatformLoggingMXBean,
+        // so we will consider that any MBean implementing
+        // java.lang.management.PlatformLoggingMXBean also implements
+        // java.util.logging.LoggingMXBean.
+        if ("java.util.logging.LoggingMXBean".equals(intfName)) {
+            if (connection.isInstanceOf(objName,
+                    PlatformLoggingMXBean.class.getName())) {
+                return true;
+            }
+        }
+        return connection.isInstanceOf(objName, intfName);
     }
 
     /**

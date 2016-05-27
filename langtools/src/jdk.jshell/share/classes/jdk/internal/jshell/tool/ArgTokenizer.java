@@ -25,8 +25,13 @@
 
 package jdk.internal.jshell.tool;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Parse command arguments, derived from StreamTokenizer by
@@ -49,13 +54,12 @@ class ArgTokenizer {
     private String sval;
     private boolean isQuoted = false;
 
-    ArgTokenizer(String arg) {
-        this("", arg);
-    }
+    private final Map<String, Boolean> options = new HashMap<>();
+    private final List<String> badOptions = new ArrayList<>();
 
     ArgTokenizer(String prefix, String arg) {
         this.str = arg;
-        this.prefix = prefix;
+        this.prefix = prefix + " ";
         this.length = arg.length();
         quoteChar('"');
         quoteChar('\'');
@@ -65,9 +69,39 @@ class ArgTokenizer {
         whitespaceChars(0xA0, 0xA0);
     }
 
+    /**
+     * Return the next non-option argument. Encountered options are stored.
+     *
+     * @return the token string, or null if there are no more tokens
+     */
     String next() {
-        nextToken();
+        while (true) {
+            nextToken();
+            if (sval != null && !isQuoted() && sval.startsWith("-")) {
+                foundOption(sval);
+            } else {
+                break;
+            }
+        }
         return sval;
+    }
+
+    private void foundOption(String opt) {
+        if (options.containsKey(opt)) {
+            options.put(opt, true);
+            return;
+        }
+
+        List<Map.Entry<String,Boolean>> matches =
+                options.entrySet()
+                       .stream()
+                       .filter(e -> e.getKey().startsWith(opt))
+                       .collect(toList());
+        if (matches.size() == 1) {
+            matches.get(0).setValue(true);
+        } else {
+            badOptions.add(opt);
+        }
     }
 
     String[] next(String... strings) {
@@ -75,7 +109,7 @@ class ArgTokenizer {
     }
 
     String[] next(Stream<String> stream) {
-        nextToken();
+        next();
         if (sval == null) {
             return null;
         }
@@ -83,6 +117,68 @@ class ArgTokenizer {
                 .filter(s -> s.startsWith(sval))
                 .toArray(size -> new String[size]);
         return matches;
+    }
+
+    /**
+     * Set the allowed options. Must be called before any options would be read
+     * and before calling any of the option functionality below.
+     */
+    void allowedOptions(String... opts) {
+        for (String opt : opts) {
+            options.put(opt, false);
+        }
+    }
+
+    /**
+     * Has the specified option been encountered.
+     *
+     * @param opt the option to check
+     * @return true if the option has been encountered
+     */
+    boolean hasOption(String opt) {
+        Boolean has = options.get(opt);
+        if (has == null) {
+            throw new InternalError("hasOption called before allowedOptions or on bad option");
+        }
+        return has;
+    }
+
+    /**
+     * Return the number of encountered options
+     *
+     * @return the option count
+     */
+    int optionCount() {
+        return (int) options.entrySet().stream()
+                .filter(e -> e.getValue())
+                .count();
+    }
+
+    /**
+     * Return the bad options encountered. Bad options are those that were not
+     * listed in the call to allowedOptions().
+     *
+     * @return as space-separated list the bad options encountered, or the empty
+     * string if none.
+     */
+    String badOptions() {
+        return String.join(" ", badOptions);
+    }
+
+    /**
+     * Consume the remainder of the input. This is useful to sure all options
+     * have been encountered and to check to unexpected additional non-option
+     * input.
+     *
+     * @return the string-separated concatenation of all remaining non-option
+     * arguments.
+     */
+    String remainder() {
+        List<String> rem = new ArrayList<>();
+        while (next() != null) {
+            rem.add(sval);
+        }
+        return String.join(" ", rem);
     }
 
     String val() {

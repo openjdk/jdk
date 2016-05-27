@@ -87,7 +87,7 @@ public class DiffCL_UmodUpkg {
      // Resolves "m1"
      Configuration cf = Layer.boot()
              .configuration()
-             .resolveRequires(finder, ModuleFinder.empty(), Set.of("m1"));
+             .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
 
      MyDiffClassLoader.loader1 = new MyDiffClassLoader();
      MyDiffClassLoader.loader2 = new MyDiffClassLoader();
@@ -136,7 +136,7 @@ public class DiffCL_UmodUpkg {
      // Resolves "m1"
      Configuration cf = Layer.boot()
              .configuration()
-             .resolveRequires(finder, ModuleFinder.empty(), Set.of("m1"));
+             .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
 
      MyDiffClassLoader.loader1 = new MyDiffClassLoader();
      MyDiffClassLoader.loader2 = new MyDiffClassLoader();

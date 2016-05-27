@@ -49,7 +49,6 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import jdk.jshell.ClassTracker.ClassInfo;
 import jdk.jshell.Key.ErroneousKey;
 import jdk.jshell.Key.MethodKey;
 import jdk.jshell.Key.TypeDeclKey;
@@ -64,9 +63,9 @@ import jdk.jshell.Snippet.Status;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
-import static jdk.jshell.Util.*;
-import static jdk.internal.jshell.remote.RemoteCodes.DOIT_METHOD_NAME;
-import static jdk.internal.jshell.remote.RemoteCodes.PREFIX_PATTERN;
+import static jdk.jshell.Util.DOIT_METHOD_NAME;
+import static jdk.jshell.Util.PREFIX_PATTERN;
+import static jdk.jshell.Util.expunge;
 import static jdk.jshell.Snippet.SubKind.SINGLE_TYPE_IMPORT_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.SINGLE_STATIC_IMPORT_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.TYPE_IMPORT_ON_DEMAND_SUBKIND;
@@ -456,7 +455,7 @@ class Eval {
         if (si.status().isDefined) {
             if (si.isExecutable()) {
                 try {
-                value = state.executionControl().commandInvoke(si.classFullName());
+                value = state.executionControl().invoke(si.classFullName(), DOIT_METHOD_NAME);
                     value = si.subKind().hasValue()
                             ? expunge(value)
                             : "";
@@ -578,7 +577,7 @@ class Eval {
 
                     // load all new classes
                     load(legit.stream()
-                            .flatMap(u -> u.classesToLoad(ct.classInfoList(u.snippet().outerWrap())))
+                            .flatMap(u -> u.classesToLoad(ct.classList(u.snippet().outerWrap())))
                             .collect(toSet()));
                     // attempt to redefine the remaining classes
                     List<Unit> toReplace = legit.stream()
@@ -613,9 +612,13 @@ class Eval {
         }
     }
 
-    private void load(Set<ClassInfo> cil) {
-        if (!cil.isEmpty()) {
-            state.executionControl().commandLoad(cil);
+    /**
+     * If there are classes to load, loads by calling the execution engine.
+     * @param classnames names of the classes to load.
+     */
+    private void load(Collection<String> classnames) {
+        if (!classnames.isEmpty()) {
+            state.executionControl().load(classnames);
         }
     }
 

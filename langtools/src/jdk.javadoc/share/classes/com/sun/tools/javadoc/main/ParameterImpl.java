@@ -43,6 +43,7 @@ import com.sun.tools.javac.code.Symbol.VarSymbol;
  * @author Robert Field (rewrite)
  * @author Scott Seligman (generics, annotations)
  */
+@Deprecated
 class ParameterImpl implements Parameter {
 
     private final DocEnv env;

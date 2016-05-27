@@ -44,10 +44,6 @@ package java.lang.management;
  *      {@link java.util.logging.LogManager#LOGGING_MXBEAN_NAME java.util.logging:type=Logging}
  * </pre>
  *
- * <p>The instance registered in the platform {@code MBeanServer} with
- * this {@code ObjectName} implements all attributes defined by
- * {@link java.util.logging.LoggingMXBean}.
- *
  * @since   1.7
  */
 public interface PlatformLoggingMXBean extends PlatformManagedObject {

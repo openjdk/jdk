@@ -163,8 +163,6 @@ extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
 #define FP_SELECT(TypeName, intcode, fpcode) \
   FP_SELECT_##TypeName(intcode, fpcode)
 
-#define COMMA ,
-
 // Choose DT_RETURN_MARK macros  based on the type: float/double -> void
 // (dtrace doesn't do FP yet)
 #define DT_RETURN_MARK_DECL_FOR(TypeName, name, type, probe)    \

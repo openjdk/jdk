@@ -23,21 +23,18 @@
 
 /*
  * @test
- * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955
+ * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953
  * @summary Tests for Basic tests for REPL tool
- * @requires os.family != "solaris"
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
  *          jdk.jshell/jdk.internal.jshell.tool
  * @library /tools/lib
- * @ignore 8139873
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build KullaTesting TestingInputStream Compiler
  * @run testng/timeout=600 ToolBasicTest
  */
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -68,7 +65,7 @@ public class ToolBasicTest extends ReplToolTesting {
 
     public void elideStartUpFromList() {
         test(
-                (a) -> assertCommandOutputContains(a, "123", "type int"),
+                (a) -> assertCommandOutputContains(a, "123", "==> 123"),
                 (a) -> assertCommandCheckOutput(a, "/list", (s) -> {
                     int cnt;
                     try (Scanner scanner = new Scanner(s)) {
@@ -89,7 +86,7 @@ public class ToolBasicTest extends ReplToolTesting {
         Compiler compiler = new Compiler();
         Path path = compiler.getPath("myfile");
         test(
-                (a) -> assertCommandOutputContains(a, "123", "type int"),
+                (a) -> assertCommandOutputContains(a, "123", "==> 123"),
                 (a) -> assertCommand(a, "/save " + path.toString(), "")
         );
         try (Stream<String> lines = Files.lines(path)) {
@@ -118,9 +115,9 @@ public class ToolBasicTest extends ReplToolTesting {
                     (a) -> assertCommand(a, "class A {" + s, ""),
                     interrupt,
                     (a) -> assertCommand(a, "class A {}\u0003", ""),
-                    (a) -> assertCommandCheckOutput(a, "/classes", assertClasses()),
+                    (a) -> assertCommandCheckOutput(a, "/types", assertClasses()),
                     (a) -> assertClass(a, "interface A {}", "interface", "A"),
-                    (a) -> assertCommandCheckOutput(a, "/classes", assertClasses()),
+                    (a) -> assertCommandCheckOutput(a, "/types", assertClasses()),
                     (a) -> assertCommand(a, "import java.util.stream." + s, ""),
                     interrupt,
                     (a) -> assertCommand(a, "import java.util.stream.\u0003", ""),
@@ -187,12 +184,11 @@ public class ToolBasicTest extends ReplToolTesting {
 
     public void testStop() {
         test(
-                (a) -> assertStop(a, "while (true) {}", "Killed."),
-                (a) -> assertStop(a, "while (true) { try { Thread.sleep(100); } catch (InterruptedException ex) { } }", "Killed.")
+                (a) -> assertStop(a, "while (true) {}", ""),
+                (a) -> assertStop(a, "while (true) { try { Thread.sleep(100); } catch (InterruptedException ex) { } }", "")
         );
     }
 
-    @Test(enabled = false) // TODO 8130450
     public void testRerun() {
         test(false, new String[] {"-nostartup"},
                 (a) -> assertCommand(a, "/0", "|  No such command or snippet id: /0\n|  Type /help for help."),
@@ -209,6 +205,7 @@ public class ToolBasicTest extends ReplToolTesting {
         for (String s : codes) {
             tests.add((a) -> assertCommand(a, s, null));
         }
+        // Test /1 through /5 -- assure references are correct
         for (int i = 0; i < codes.length; ++i) {
             final int finalI = i;
             Consumer<String> check = (s) -> {
@@ -218,6 +215,7 @@ public class ToolBasicTest extends ReplToolTesting {
             };
             tests.add((a) -> assertCommandCheckOutput(a, "/" + (finalI + 1), check));
         }
+        // Test /-1 ... note that the snippets added by history must be stepped over
         for (int i = 0; i < codes.length; ++i) {
             final int finalI = i;
             Consumer<String> check = (s) -> {
@@ -225,9 +223,9 @@ public class ToolBasicTest extends ReplToolTesting {
                 assertEquals(ss[0], codes[codes.length - finalI - 1]);
                 assertTrue(ss.length > 1, s);
             };
-            tests.add((a) -> assertCommandCheckOutput(a, "/-" + (finalI + 1), check));
+            tests.add((a) -> assertCommandCheckOutput(a, "/-" + (2 * finalI + 1), check));
         }
-        tests.add((a) -> assertCommandCheckOutput(a, "/!", assertStartsWith("void g() { h(); }")));
+        tests.add((a) -> assertCommandCheckOutput(a, "/!", assertStartsWith("int a = 0;")));
         test(false, new String[]{"-nostartup"},
                 tests.toArray(new ReplTest[tests.size()]));
     }
@@ -308,8 +306,9 @@ public class ToolBasicTest extends ReplToolTesting {
             test(new String[]{"-nostartup"},
                     (a) -> assertCommandCheckOutput(a, "printf(\"\")", assertStartsWith("|  Error:\n|  cannot find symbol"))
             );
-            test((a) -> assertCommand(a, "printf(\"A\")", "", "", null, "A", ""));
-            test(Locale.ROOT, false, new String[]{"-startup", "UNKNOWN"}, "|  File 'UNKNOWN' for start-up is not found.");
+            test(
+                    (a) -> assertCommand(a, "printf(\"A\")", "", "", null, "A", "")
+            );
         } finally {
             removeStartup();
         }
@@ -325,8 +324,8 @@ public class ToolBasicTest extends ReplToolTesting {
         );
         Path unknown = compiler.getPath("UNKNOWN.jar");
         test(Locale.ROOT, true, new String[]{unknown.toString()},
-                "|  File " + unknown
-                + " is not found: " + unresolvableMessage(unknown));
+                "|  File '" + unknown
+                + "' for 'jshell' is not found.");
     }
 
     public void testReset() {
@@ -338,13 +337,13 @@ public class ToolBasicTest extends ReplToolTesting {
                 (a) -> assertMethod(a, "void f() { }", "()void", "f"),
                 (a) -> assertCommandCheckOutput(a, "/methods", assertMethods()),
                 (a) -> assertClass(a, "class A { }", "class", "A"),
-                (a) -> assertCommandCheckOutput(a, "/classes", assertClasses()),
+                (a) -> assertCommandCheckOutput(a, "/types", assertClasses()),
                 (a) -> assertImport(a, "import java.util.stream.*;", "", "java.util.stream.*"),
                 (a) -> assertCommandCheckOutput(a, "/imports", assertImports()),
                 (a) -> assertReset(a, "/reset"),
                 (a) -> assertCommandCheckOutput(a, "/vars", assertVariables()),
                 (a) -> assertCommandCheckOutput(a, "/methods", assertMethods()),
-                (a) -> assertCommandCheckOutput(a, "/classes", assertClasses()),
+                (a) -> assertCommandCheckOutput(a, "/types", assertClasses()),
                 (a) -> assertCommandCheckOutput(a, "/imports", assertImports())
         );
     }
@@ -369,7 +368,7 @@ public class ToolBasicTest extends ReplToolTesting {
                         loadClass(a, "class A { public String toString() { return \"A\"; } }",
                                 "class", "A");
                         loadImport(a, "import java.util.stream.*;", "", "java.util.stream.*");
-                        assertCommandCheckOutput(a, "/classes", assertClasses());
+                        assertCommandCheckOutput(a, "/types", assertClasses());
                     },
                     (a) -> assertCommandCheckOutput(a, "/methods", assertMethods()),
                     (a) -> assertCommandCheckOutput(a, "/vars", assertVariables()),
@@ -403,13 +402,13 @@ public class ToolBasicTest extends ReplToolTesting {
                     (a) -> assertCommand(a, "int a;", null),
                     (a) -> assertCommand(a, "()", null, null, null, "", ""),
                     (a) -> assertClass(a, "class A { public String toString() { return \"A\"; } }", "class", "A"),
-                    (a) -> assertCommandCheckOutput(a, "/list all", (out) ->
+                    (a) -> assertCommandCheckOutput(a, "/list -all", (out) ->
                             output.addAll(Stream.of(out.split("\n"))
                                     .filter(str -> !str.isEmpty())
                                     .map(str -> str.substring(str.indexOf(':') + 2))
                                     .filter(str -> !str.startsWith("/"))
                                     .collect(Collectors.toList()))),
-                    (a) -> assertCommand(a, "/save all " + path.toString(), "")
+                    (a) -> assertCommand(a, "/save -all " + path.toString(), "")
             );
             assertEquals(Files.readAllLines(path), output);
         }
@@ -422,13 +421,13 @@ public class ToolBasicTest extends ReplToolTesting {
                         output.addAll(Stream.of(out.split("\n"))
                                 .filter(str -> !str.isEmpty())
                                 .collect(Collectors.toList()))),
-                (a) -> assertCommand(a, "/save history " + path.toString(), "")
+                (a) -> assertCommand(a, "/save -history " + path.toString(), "")
         );
-        output.add("/save history " + path.toString());
+        output.add("/save -history " + path.toString());
         assertEquals(Files.readAllLines(path), output);
     }
 
-    public void testStartSet() throws BackingStoreException {
+    public void testStartRetain() throws BackingStoreException {
         try {
             Compiler compiler = new Compiler();
             Path startUpFile = compiler.getPath("startUp.txt");
@@ -438,12 +437,12 @@ public class ToolBasicTest extends ReplToolTesting {
                     (a) -> assertMethod(a, "void f() {}", "()V", "f"),
                     (a) -> assertImport(a, "import java.util.stream.*;", "", "java.util.stream.*"),
                     (a) -> assertCommand(a, "/save " + startUpFile.toString(), null),
-                    (a) -> assertCommand(a, "/set start " + startUpFile.toString(), null)
+                    (a) -> assertCommand(a, "/retain start " + startUpFile.toString(), null)
             );
             Path unknown = compiler.getPath("UNKNOWN");
             test(
-                    (a) -> assertCommandOutputStartsWith(a, "/set start " + unknown.toString(),
-                            "|  File '" + unknown + "' for '/set start' is not found.")
+                    (a) -> assertCommandOutputStartsWith(a, "/retain start " + unknown.toString(),
+                            "|  File '" + unknown + "' for '/retain start' is not found.")
             );
             test(false, new String[0],
                     (a) -> {
@@ -451,7 +450,7 @@ public class ToolBasicTest extends ReplToolTesting {
                         loadVariable(a, "double", "b", "10.0", "10.0");
                         loadMethod(a, "void f() {}", "()void", "f");
                         loadImport(a, "import java.util.stream.*;", "", "java.util.stream.*");
-                        assertCommandCheckOutput(a, "/classes", assertClasses());
+                        assertCommandCheckOutput(a, "/types", assertClasses());
                     },
                     (a) -> assertCommandCheckOutput(a, "/vars", assertVariables()),
                     (a) -> assertCommandCheckOutput(a, "/methods", assertMethods()),
@@ -472,7 +471,7 @@ public class ToolBasicTest extends ReplToolTesting {
     public void testStartSave() throws IOException {
         Compiler compiler = new Compiler();
         Path startSave = compiler.getPath("startSave.txt");
-        test(a -> assertCommand(a, "/save start " + startSave.toString(), null));
+        test(a -> assertCommand(a, "/save -start " + startSave.toString(), null));
         List<String> lines = Files.lines(startSave)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
@@ -561,12 +560,16 @@ public class ToolBasicTest extends ReplToolTesting {
         );
     }
 
-    private String unresolvableMessage(Path p) {
+    public void testHeadlessEditPad() {
+        String prevHeadless = System.getProperty("java.awt.headless");
         try {
-            new FileInputStream(p.toFile());
-            throw new AssertionError("Expected exception did not occur.");
-        } catch (IOException ex) {
-            return ex.getMessage();
+            System.setProperty("java.awt.headless", "true");
+            test(
+                (a) -> assertCommandOutputStartsWith(a, "/edit printf", "|  Cannot launch editor -- unexpected exception:")
+            );
+        } finally {
+            System.setProperty("java.awt.headless", prevHeadless==null? "false" : prevHeadless);
         }
     }
+
 }

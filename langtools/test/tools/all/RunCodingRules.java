@@ -50,6 +50,17 @@ import javax.tools.ToolProvider;
 
 import com.sun.tools.javac.util.Assert;
 
+/**
+ * This is a test to verify specific coding standards for source code in the langtools repository.
+ *
+ * As such, it is not a standard unit, regression or functional test, and will
+ * automatically skip if the langtools source code is not available.
+ *
+ * If the source code is available, it will find and compile the coding
+ * style analyzers found in langtools/make/tools/crules/*.java, and run the resulting
+ * code on all source files under langtools/src/share/classes. Any coding style
+ * violations will cause the test to fail.
+ */
 public class RunCodingRules {
     public static void main(String... args) throws Exception {
         new RunCodingRules().run();

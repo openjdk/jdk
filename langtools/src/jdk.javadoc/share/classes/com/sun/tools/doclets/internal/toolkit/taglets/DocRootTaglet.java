@@ -43,6 +43,7 @@ import com.sun.tools.doclets.internal.toolkit.Content;
  * @since 1.4
  */
 
+@Deprecated
 public class DocRootTaglet extends BaseInlineTaglet {
 
 

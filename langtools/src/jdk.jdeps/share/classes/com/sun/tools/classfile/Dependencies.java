@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 import com.sun.tools.classfile.Dependency.Filter;
@@ -561,13 +562,10 @@ public class Dependencies {
     }
 
     static abstract class BasicDependencyFinder implements Finder {
-        private Map<String,Location> locations = new HashMap<>();
+        private Map<String,Location> locations = new ConcurrentHashMap<>();
 
         Location getLocation(String className) {
-            Location l = locations.get(className);
-            if (l == null)
-                locations.put(className, l = new SimpleLocation(className));
-            return l;
+            return locations.computeIfAbsent(className, cn -> new SimpleLocation(cn));
         }
 
         class Visitor implements ConstantPool.Visitor<Void,Void>, Type.Visitor<Void, Void> {

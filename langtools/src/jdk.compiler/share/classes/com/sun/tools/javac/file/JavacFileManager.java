@@ -74,10 +74,10 @@ import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-import com.sun.tools.javac.util.ModuleWrappers.Configuration;
-import com.sun.tools.javac.util.ModuleWrappers.Layer;
-import com.sun.tools.javac.util.ModuleWrappers.ModuleFinder;
-import com.sun.tools.javac.util.ModuleWrappers.ServiceLoaderHelper;
+import com.sun.tools.javac.util.JDK9Wrappers.Configuration;
+import com.sun.tools.javac.util.JDK9Wrappers.Layer;
+import com.sun.tools.javac.util.JDK9Wrappers.ModuleFinder;
+import com.sun.tools.javac.util.JDK9Wrappers.ServiceLoaderHelper;
 
 import static java.nio.file.FileVisitOption.FOLLOW_LINKS;
 
@@ -972,7 +972,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             Collection<Path> paths = locations.getLocation(location);
             ModuleFinder finder = ModuleFinder.of(paths.toArray(new Path[paths.size()]));
             Layer bootLayer = Layer.boot();
-            Configuration cf = bootLayer.configuration().resolveRequiresAndUses(ModuleFinder.empty(), finder, Collections.emptySet());
+            Configuration cf = bootLayer.configuration().resolveRequiresAndUses(ModuleFinder.of(), finder, Collections.emptySet());
             Layer layer = bootLayer.defineModulesWithOneLoader(cf, ClassLoader.getSystemClassLoader());
             return ServiceLoaderHelper.load(layer, service);
         } else {

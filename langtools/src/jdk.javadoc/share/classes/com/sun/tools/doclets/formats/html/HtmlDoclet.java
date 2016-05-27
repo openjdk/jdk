@@ -46,6 +46,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @author Jamie Ho
  *
  */
+@Deprecated
 public class HtmlDoclet extends AbstractDoclet {
     // An instance will be created by validOptions, and used by start.
     private static HtmlDoclet docletToStart = null;

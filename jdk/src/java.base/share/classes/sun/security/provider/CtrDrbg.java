@@ -471,7 +471,7 @@ public class CtrDrbg extends AbstractDrbg {
 
     @Override
     public String toString() {
-        return super.toString() + "/"
+        return super.toString() + ","
                 + (usedf ? "use_df" : "no_df");
     }
 }

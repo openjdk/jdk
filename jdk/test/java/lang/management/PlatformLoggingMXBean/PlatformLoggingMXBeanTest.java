@@ -270,8 +270,7 @@ public class PlatformLoggingMXBeanTest
         // Calling getMBeanInfo will throw exception if not found.
         platformMBS.getMBeanInfo(objName);
 
-        if (!platformMBS.isInstanceOf(objName, "java.lang.management.PlatformLoggingMXBean") ||
-            !platformMBS.isInstanceOf(objName, "java.util.logging.LoggingMXBean")) {
+        if (!platformMBS.isInstanceOf(objName, "java.lang.management.PlatformLoggingMXBean")) {
             throw new RuntimeException(objName + " is of unexpected type");
         }
 

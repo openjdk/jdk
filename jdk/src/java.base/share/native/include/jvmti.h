@@ -704,7 +704,8 @@ typedef struct {
     unsigned int can_generate_resource_exhaustion_heap_events : 1;
     unsigned int can_generate_resource_exhaustion_threads_events : 1;
     unsigned int can_generate_early_vmstart : 1;
-    unsigned int : 6;
+    unsigned int can_generate_early_class_hook_events : 1;
+    unsigned int : 5;
     unsigned int : 16;
     unsigned int : 16;
     unsigned int : 16;

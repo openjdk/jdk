@@ -25,22 +25,23 @@
 
 package com.sun.tools.jdeps;
 
-import java.io.PrintStream;
-import java.util.ArrayList;
+import static com.sun.tools.jdeps.JdepsConfiguration.*;
+
+import com.sun.tools.classfile.Dependency.Location;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
+import java.util.MissingResourceException;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.sun.tools.classfile.Dependency.Location;
 
 /**
  * Dependency Analyzer.
@@ -52,6 +53,7 @@ public class Analyzer {
      */
     public enum Type {
         SUMMARY,
+        MODULE,  // equivalent to summary in addition, print module descriptor
         PACKAGE,
         CLASS,
         VERBOSE
@@ -62,9 +64,11 @@ public class Analyzer {
      * Only the accepted dependencies are recorded.
      */
     interface Filter {
-        boolean accepts(Location origin, Archive originArchive, Location target, Archive targetArchive);
+        boolean accepts(Location origin, Archive originArchive,
+                        Location target, Archive targetArchive);
     }
 
+    protected final JdepsConfiguration configuration;
     protected final Type type;
     protected final Filter filter;
     protected final Map<Archive, Dependences> results = new HashMap<>();
@@ -78,7 +82,8 @@ public class Analyzer {
      * @param type Type of the dependency analysis
      * @param filter
      */
-    public Analyzer(Type type, Filter filter) {
+    Analyzer(JdepsConfiguration config, Type type, Filter filter) {
+        this.configuration = config;
         this.type = type;
         this.filter = filter;
     }
@@ -86,16 +91,10 @@ public class Analyzer {
     /**
      * Performs the dependency analysis on the given archives.
      */
-    public boolean run(Stream<? extends Archive> archives) {
-        return run(archives.collect(Collectors.toList()));
-    }
-
-    /**
-     * Performs the dependency analysis on the given archives.
-     */
-    public boolean run(Iterable<? extends Archive> archives) {
-        // build a map from Location to Archive
-        buildLocationArchiveMap(archives);
+    boolean run(Iterable<? extends Archive> archives,
+                Map<Location, Archive> locationMap)
+    {
+        this.locationToArchive.putAll(locationMap);
 
         // traverse and analyze all dependencies
         for (Archive archive : archives) {
@@ -106,40 +105,50 @@ public class Analyzer {
         return true;
     }
 
-    protected void buildLocationArchiveMap(Iterable<? extends Archive> archives) {
-        // build a map from Location to Archive
-        for (Archive archive: archives) {
-            archive.getClasses()
-                   .forEach(l -> locationToArchive.putIfAbsent(l, archive));
-        }
+    /**
+     * Returns the analyzed archives
+     */
+    Set<Archive> archives() {
+        return results.keySet();
     }
 
-    public boolean hasDependences(Archive archive) {
+    /**
+     * Returns true if the given archive has dependences.
+     */
+    boolean hasDependences(Archive archive) {
         if (results.containsKey(archive)) {
             return results.get(archive).dependencies().size() > 0;
         }
         return false;
     }
 
-    public Set<String> dependences(Archive source) {
+    /**
+     * Returns the dependences, either class name or package name
+     * as specified in the given verbose level, from the given source.
+     */
+    Set<String> dependences(Archive source) {
         if (!results.containsKey(source)) {
             return Collections.emptySet();
         }
-        Dependences result = results.get(source);
-        return result.dependencies().stream()
-                     .map(Dep::target)
-                     .collect(Collectors.toSet());
+
+        return results.get(source).dependencies()
+                      .stream()
+                      .map(Dep::target)
+                      .collect(Collectors.toSet());
     }
 
-    public Stream<Archive> requires(Archive source) {
+    /**
+     * Returns the direct dependences of the given source
+     */
+    Stream<Archive> requires(Archive source) {
         if (!results.containsKey(source)) {
             return Stream.empty();
         }
-        Dependences result = results.get(source);
-        return result.requires().stream().filter(a -> !a.isEmpty());
+        return results.get(source).requires()
+                      .stream();
     }
 
-    public interface Visitor {
+    interface Visitor {
         /**
          * Visits a recorded dependency from origin to target which can be
          * a fully-qualified classname, a package name, a module or
@@ -153,7 +162,7 @@ public class Analyzer {
      * Visit the dependencies of the given source.
      * If the requested level is SUMMARY, it will visit the required archives list.
      */
-    public void visitDependences(Archive source, Visitor v, Type level) {
+    void visitDependences(Archive source, Visitor v, Type level) {
         if (level == Type.SUMMARY) {
             final Dependences result = results.get(source);
             final Set<Archive> reqs = result.requires();
@@ -187,7 +196,7 @@ public class Analyzer {
         }
     }
 
-    public void visitDependences(Archive source, Visitor v) {
+    void visitDependences(Archive source, Visitor v) {
         visitDependences(source, v, type);
     }
 
@@ -224,14 +233,28 @@ public class Analyzer {
             }
         }
 
+        /*
+         * Returns the archive that contains the given location.
+         */
         Archive findArchive(Location t) {
+            // local in this archive
             if (archive.getClasses().contains(t))
                 return archive;
 
-            return locationToArchive.computeIfAbsent(t, _k -> NOT_FOUND);
+            Archive target;
+            if (locationToArchive.containsKey(t)) {
+                target = locationToArchive.get(t);
+            } else {
+                // special case JDK removed API
+                target = configuration.findClass(t)
+                    .orElseGet(() -> REMOVED_JDK_INTERNALS.contains(t)
+                                        ? REMOVED_JDK_INTERNALS
+                                        : NOT_FOUND);
+            }
+            return locationToArchive.computeIfAbsent(t, _k -> target);
         }
 
-        // return classname or package name depedning on the level
+        // return classname or package name depending on the level
         private String getLocationName(Location o) {
             if (level == Type.CLASS || level == Type.VERBOSE) {
                 return o.getClassName();
@@ -343,6 +366,73 @@ public class Analyzer {
             return String.format("%s (%s) -> %s (%s)%n",
                     origin, originArchive.getName(),
                     target, targetArchive.getName());
+        }
+    }
+
+    static final JdkInternals REMOVED_JDK_INTERNALS = new JdkInternals();
+
+    static class JdkInternals extends Module {
+        private final String BUNDLE = "com.sun.tools.jdeps.resources.jdkinternals";
+
+        private final Set<String> jdkinternals;
+        private final Set<String> jdkUnsupportedClasses;
+        private JdkInternals() {
+            super("JDK removed internal API");
+
+            try {
+                ResourceBundle rb = ResourceBundle.getBundle(BUNDLE);
+                this.jdkinternals = rb.keySet();
+            } catch (MissingResourceException e) {
+                throw new InternalError("Cannot find jdkinternals resource bundle");
+            }
+
+            this.jdkUnsupportedClasses = getUnsupportedClasses();
+        }
+
+        public boolean contains(Location location) {
+            if (jdkUnsupportedClasses.contains(location.getName() + ".class")) {
+                return false;
+            }
+
+            String cn = location.getClassName();
+            int i = cn.lastIndexOf('.');
+            String pn = i > 0 ? cn.substring(0, i) : "";
+            return jdkinternals.contains(cn) || jdkinternals.contains(pn);
+        }
+
+        @Override
+        public String name() {
+            return getName();
+        }
+
+        @Override
+        public boolean isJDK() {
+            return true;
+        }
+
+        @Override
+        public boolean isExported(String pn) {
+            return false;
+        }
+
+        private Set<String> getUnsupportedClasses() {
+            // jdk.unsupported may not be observable
+            Optional<Module> om = Profile.FULL_JRE.findModule(JDK_UNSUPPORTED);
+            if (om.isPresent()) {
+                return om.get().reader().entries();
+            }
+
+            // find from local run-time image
+            SystemModuleFinder system = new SystemModuleFinder();
+            if (system.find(JDK_UNSUPPORTED).isPresent()) {
+                try {
+                    return system.getClassReader(JDK_UNSUPPORTED).entries();
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }
+
+            return Collections.emptySet();
         }
     }
 }

@@ -154,7 +154,7 @@ final class ModuleInfo {
         int minor_version = in.readUnsignedShort();
         int major_version = in.readUnsignedShort();
         if (major_version < 53) {
-            // throw invalidModuleDescriptor"Must be >= 53.0");
+            throw invalidModuleDescriptor("Must be >= 53.0");
         }
 
         ConstantPool cpool = new ConstantPool(in);

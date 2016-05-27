@@ -43,6 +43,7 @@ import com.sun.javadoc.*;
  * @author Bhavesh Patel (Modified)
  * @since 1.7
  */
+@Deprecated
 public class PropertyBuilder extends AbstractMemberBuilder {
 
     /**
