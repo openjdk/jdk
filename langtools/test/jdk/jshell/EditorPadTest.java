@@ -23,9 +23,10 @@
 
 /*
  * @test
+ * @bug 8139872
  * @summary Testing built-in editor.
- * @ignore 8139872
- * @modules jdk.jshell/jdk.internal.jshell.tool
+ * @modules java.desktop/java.awt
+ *          jdk.jshell/jdk.internal.jshell.tool
  * @build ReplToolTesting EditorTestBase
  * @run testng EditorPadTest
  */
@@ -35,6 +36,7 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Frame;
+import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
@@ -67,14 +69,24 @@ public class EditorPadTest extends EditorTestBase {
     private static JButton accept = null;
     private static JButton exit = null;
 
+    // Do not actually run if we are headless
+    @Override
+    public void testEditor(boolean defaultStartup, String[] args, ReplTest... tests) {
+        if (!GraphicsEnvironment.isHeadless()) {
+            test(defaultStartup, args, tests);
+        }
+    }
+
     @BeforeClass
     public static void setUpEditorPadTest() {
-        try {
-            robot = new Robot();
-            robot.setAutoWaitForIdle(true);
-            robot.setAutoDelay(DELAY);
-        } catch (AWTException e) {
-            throw new ExceptionInInitializerError(e);
+        if (!GraphicsEnvironment.isHeadless()) {
+            try {
+                robot = new Robot();
+                robot.setAutoWaitForIdle(true);
+                robot.setAutoDelay(DELAY);
+            } catch (AWTException e) {
+                throw new ExceptionInInitializerError(e);
+            }
         }
     }
 
@@ -123,7 +135,7 @@ public class EditorPadTest extends EditorTestBase {
     @Test
     public void testShuttingDown() {
         testEditor(
-                (a) -> assertEditOutput(a, "/e", "", this::shutdownEditor)
+                (a) -> assertEditOutput(a, "/ed", "", this::shutdownEditor)
         );
     }
 
