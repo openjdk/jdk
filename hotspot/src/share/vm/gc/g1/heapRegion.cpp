@@ -290,8 +290,7 @@ HeapRegion::HeapRegion(uint hrm_index,
     _containing_set(NULL),
 #endif // ASSERT
      _young_index_in_cset(-1), _surv_rate_group(NULL), _age_index(-1),
-    _rem_set(NULL), _recorded_rs_length(0), _predicted_elapsed_time_ms(0),
-    _predicted_bytes_to_copy(0)
+    _rem_set(NULL), _recorded_rs_length(0), _predicted_elapsed_time_ms(0)
 {
   _rem_set = new HeapRegionRemSet(bot, this);
 
@@ -343,9 +342,7 @@ void HeapRegion::note_self_forwarding_removal_start(bool during_initial_mark,
   }
 }
 
-void HeapRegion::note_self_forwarding_removal_end(bool during_initial_mark,
-                                                  bool during_conc_mark,
-                                                  size_t marked_bytes) {
+void HeapRegion::note_self_forwarding_removal_end(size_t marked_bytes) {
   assert(marked_bytes <= used(),
          "marked: " SIZE_FORMAT " used: " SIZE_FORMAT, marked_bytes, used());
   _prev_top_at_mark_start = top();
@@ -483,7 +480,6 @@ void HeapRegion::strong_code_roots_do(CodeBlobClosure* blk) const {
 
 class VerifyStrongCodeRootOopClosure: public OopClosure {
   const HeapRegion* _hr;
-  nmethod* _nm;
   bool _failures;
   bool _has_oops_in_region;
 
@@ -510,7 +506,7 @@ class VerifyStrongCodeRootOopClosure: public OopClosure {
   }
 
 public:
-  VerifyStrongCodeRootOopClosure(const HeapRegion* hr, nmethod* nm):
+  VerifyStrongCodeRootOopClosure(const HeapRegion* hr):
     _hr(hr), _failures(false), _has_oops_in_region(false) {}
 
   void do_oop(narrowOop* p) { do_oop_work(p); }
@@ -536,7 +532,7 @@ public:
                               p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
         _failures = true;
       } else {
-        VerifyStrongCodeRootOopClosure oop_cl(_hr, nm);
+        VerifyStrongCodeRootOopClosure oop_cl(_hr);
         nm->oops_do(&oop_cl);
         if (!oop_cl.has_oops_in_region()) {
           log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has nmethod " PTR_FORMAT " in its strong code roots with no pointers into region",
@@ -728,7 +724,6 @@ public:
     Log(gc, verify) log;
     if (!oopDesc::is_null(heap_oop)) {
       oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-      bool failed = false;
       HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
       HeapRegion* to = _g1h->heap_region_containing(obj);
       if (from != NULL && to != NULL &&
@@ -763,7 +758,7 @@ public:
           log.error("Obj head CTE = %d, field CTE = %d.", cv_obj, cv_field);
           log.error("----------");
           _failures = true;
-          if (!failed) _n_failures++;
+          _n_failures++;
         }
       }
     }

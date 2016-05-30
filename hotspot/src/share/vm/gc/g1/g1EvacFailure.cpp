@@ -216,14 +216,14 @@ public:
   }
 
   bool doHeapRegion(HeapRegion *hr) {
-    bool during_initial_mark = _g1h->collector_state()->during_initial_mark_pause();
-    bool during_conc_mark = _g1h->collector_state()->mark_in_progress();
-
     assert(!hr->is_pinned(), "Unexpected pinned region at index %u", hr->hrm_index());
     assert(hr->in_collection_set(), "bad CS");
 
     if (_hrclaimer->claim_region(hr->hrm_index())) {
       if (hr->evacuation_failed()) {
+        bool during_initial_mark = _g1h->collector_state()->during_initial_mark_pause();
+        bool during_conc_mark = _g1h->collector_state()->mark_in_progress();
+
         hr->note_self_forwarding_removal_start(during_initial_mark,
                                                during_conc_mark);
         _g1h->verifier()->check_bitmaps("Self-Forwarding Ptr Removal", hr);
@@ -234,9 +234,7 @@ public:
 
         hr->rem_set()->clean_strong_code_roots(hr);
 
-        hr->note_self_forwarding_removal_end(during_initial_mark,
-                                             during_conc_mark,
-                                             live_bytes);
+        hr->note_self_forwarding_removal_end(live_bytes);
       }
     }
     return false;
