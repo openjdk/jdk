@@ -216,6 +216,8 @@ module java.base {
     exports sun.nio.cs to
         java.desktop,
         jdk.charsets;
+    exports sun.nio.fs to
+        jdk.unsupported;
     exports sun.reflect.annotation to
         jdk.compiler;
     exports sun.reflect.generics.reflectiveObjects to

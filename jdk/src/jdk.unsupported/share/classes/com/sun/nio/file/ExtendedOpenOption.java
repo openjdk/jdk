@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,31 @@
 
 package com.sun.nio.file;
 
-import java.nio.file.CopyOption;
+import java.nio.file.OpenOption;
+import sun.nio.fs.ExtendedOptions;
 
 /**
- * Defines <em>extended</em> copy options supported on some platforms
+ * Defines <em>extended</em> open options supported on some platforms
  * by Sun's provider implementation.
  *
  * @since 1.7
  */
 
-public enum ExtendedCopyOption implements CopyOption {
+public enum ExtendedOpenOption implements OpenOption {
     /**
-     * The copy may be interrupted by the {@link Thread#interrupt interrupt}
-     * method.
+     * Prevent operations on the file that request read access.
      */
-    INTERRUPTIBLE,
+    NOSHARE_READ(ExtendedOptions.NOSHARE_READ),
+    /**
+     * Prevent operations on the file that request write access.
+     */
+    NOSHARE_WRITE(ExtendedOptions.NOSHARE_WRITE),
+    /**
+     * Prevent operations on the file that request delete access.
+     */
+    NOSHARE_DELETE(ExtendedOptions.NOSHARE_DELETE);
+
+    ExtendedOpenOption(ExtendedOptions.InternalOption<Void> option) {
+        option.register(this);
+    }
 }

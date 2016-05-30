@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,40 @@
 package com.sun.nio.file;
 
 import java.nio.file.WatchEvent.Modifier;
+import sun.nio.fs.ExtendedOptions;
 
 /**
- * Defines <em>extended</em> watch event modifiers supported on some platforms
- * by Sun's provider implementation.
+ * Defines the <em>sensitivity levels</em> when registering objects with a
+ * watch service implementation that polls the file system.
  *
  * @since 1.7
  */
 
-public enum ExtendedWatchEventModifier implements Modifier {
+public enum SensitivityWatchEventModifier implements Modifier {
+    /**
+     * High sensitivity.
+     */
+    HIGH(ExtendedOptions.SENSITIVITY_HIGH, 2),
+    /**
+     * Medium sensitivity.
+     */
+    MEDIUM(ExtendedOptions.SENSITIVITY_MEDIUM, 10),
+    /**
+     * Low sensitivity.
+     */
+    LOW(ExtendedOptions.SENSITIVITY_LOW, 30);
 
     /**
-     * Register a file tree instead of a single directory.
+     * Returns the sensitivity in seconds.
      */
-    FILE_TREE,
+    public int sensitivityValueInSeconds() {
+        return sensitivity;
+    }
+
+    private final int sensitivity;
+    private SensitivityWatchEventModifier(ExtendedOptions.InternalOption<Integer> option,
+                                          int sensitivity) {
+        this.sensitivity = sensitivity;
+        option.register(this, sensitivity);
+    }
 }
