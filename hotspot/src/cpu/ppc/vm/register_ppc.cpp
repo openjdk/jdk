@@ -75,3 +75,14 @@ const char* VectorRegisterImpl::name() const {
   };
   return is_valid() ? names[encoding()] : "vnoreg";
 }
+
+const char* VectorSRegisterImpl::name() const {
+  const char* names[number_of_registers] = {
+    "VSR0",  "VSR1",  "VSR2",  "VSR3",  "VSR4",  "VSR5",  "VSR6",  "VSR7",
+    "VSR8",  "VSR9",  "VSR10", "VSR11", "VSR12", "VSR13", "VSR14", "VSR15",
+    "VSR16", "VSR17", "VSR18", "VSR19", "VSR20", "VSR21", "VSR22", "VSR23",
+    "VSR24", "VSR25", "VSR26", "VSR27", "VSR28", "VSR29", "VSR30", "VSR31"
+  };
+  return is_valid() ? names[encoding()] : "vsnoreg";
+}
+
