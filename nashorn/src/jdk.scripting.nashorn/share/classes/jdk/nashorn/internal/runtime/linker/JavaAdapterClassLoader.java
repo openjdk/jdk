@@ -25,6 +25,9 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
+import java.lang.module.ModuleDescriptor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Module;
 import java.security.AccessControlContext;
 import java.security.AccessController;
@@ -42,7 +45,6 @@ import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
-import jdk.internal.module.Modules;
 
 /**
  * This class encapsulates the bytecode of the adapter class and can be used to load it into the JVM as an actual Class.
@@ -52,14 +54,12 @@ import jdk.internal.module.Modules;
  * class are normally created by {@code JavaAdapterBytecodeGenerator}.
  */
 final class JavaAdapterClassLoader {
-    private static final Module nashornModule = JavaAdapterClassLoader.class.getModule();
-    private static final Set<String> adapterPkgs = new HashSet<>();
-    static {
-        adapterPkgs.add(JavaAdapterBytecodeGenerator.ADAPTER_PACKAGE);
-    }
+    private static final Module NASHORN_MODULE = Context.class.getModule();
 
     private static final AccessControlContext CREATE_LOADER_ACC_CTXT = ClassAndLoader.createPermAccCtxt("createClassLoader");
     private static final AccessControlContext GET_CONTEXT_ACC_CTXT = ClassAndLoader.createPermAccCtxt(Context.NASHORN_GET_CONTEXT);
+    private static final AccessControlContext CREATE_MODULE_ACC_CTXT = ClassAndLoader.createPermAccCtxt(Context.NASHORN_CREATE_MODULE);
+
     private static final Collection<String> VISIBLE_INTERNAL_CLASS_NAMES = Collections.unmodifiableCollection(new HashSet<>(
             Arrays.asList(JavaAdapterServices.class.getName(), ScriptObject.class.getName(), ScriptFunction.class.getName(), JSType.class.getName())));
 
@@ -93,12 +93,19 @@ final class JavaAdapterClassLoader {
         }, CREATE_LOADER_ACC_CTXT);
     }
 
-    private static void addExports(final Module from, final String pkg, final Module to) {
-        if (to == null) {
-            Modules.addExportsToAll(from, pkg);
-        } else {
-            Modules.addExports(from, pkg, to);
-        }
+    private static Module createAdapterModule(final ClassLoader loader) {
+        final ModuleDescriptor descriptor =
+            new ModuleDescriptor.Builder("jdk.scripting.nashorn.javaadapters")
+                .requires(NASHORN_MODULE.getName())
+                .exports(JavaAdapterBytecodeGenerator.ADAPTER_PACKAGE)
+                .build();
+
+        return AccessController.doPrivileged(new PrivilegedAction<Module>() {
+            @Override
+            public Module run() {
+                return Context.createModule(descriptor, loader);
+            }
+        }, CREATE_MODULE_ACC_CTXT);
     }
 
     // Note that the adapter class is created in the protection domain of the class/interface being
@@ -113,23 +120,44 @@ final class JavaAdapterClassLoader {
             private final ClassLoader myLoader = getClass().getClassLoader();
 
             // new adapter module
-            private final Module adapterModule = Modules.defineModule(this, "jdk.scripting.nashorn.javaadapters", adapterPkgs);
+            private final Module adapterModule = createAdapterModule(this);
 
             {
-                // new adapter module exports and read-edges
-                addExports(adapterModule, JavaAdapterBytecodeGenerator.ADAPTER_PACKAGE, null);
-                Modules.addReads(adapterModule, nashornModule);
-                Modules.addReads(adapterModule, Object.class.getModule());
-                for (Module mod : accessedModules) {
-                    Modules.addReads(adapterModule, mod);
+                // new adapter module read-edges
+                if (!accessedModules.isEmpty()) {
+
+                    // There are modules accessed from this adapter. We need to add module-read
+                    // edges to those from the adapter module. We do this by generating a
+                    // package-private class, loading it with this adapter class loader and
+                    // then calling a private static method on it.
+                    final byte[] buf = JavaAdapterBytecodeGenerator.getModulesAddReadsBytes();
+                    final Class<?> addReader = defineClass(
+                        JavaAdapterBytecodeGenerator.MODULES_READ_ADDER, buf, 0, buf.length);
+                    final PrivilegedAction<Method> pa = () -> {
+                        try {
+                            final Method m = addReader.getDeclaredMethod(
+                                JavaAdapterBytecodeGenerator.MODULES_ADD_READS, Module[].class);
+                            m.setAccessible(true);
+                            return m;
+                        } catch (final NoSuchMethodException | SecurityException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                    };
+                    final Method addReads = AccessController.doPrivileged(pa);
+                    try {
+                        addReads.invoke(null, (Object)accessedModules.toArray(new Module[0]));
+                    } catch (final IllegalAccessException | IllegalArgumentException |
+                            InvocationTargetException ex) {
+                        throw new RuntimeException(ex);
+                    }
                 }
 
                 // specific exports from nashorn to the new adapter module
-                nashornModule.addExports("jdk.nashorn.internal.runtime", adapterModule);
-                nashornModule.addExports("jdk.nashorn.internal.runtime.linker", adapterModule);
+                NASHORN_MODULE.addExports("jdk.nashorn.internal.runtime", adapterModule);
+                NASHORN_MODULE.addExports("jdk.nashorn.internal.runtime.linker", adapterModule);
 
                 // nashorn should be be able to read methods of classes loaded in adapter module
-                nashornModule.addReads(adapterModule);
+                NASHORN_MODULE.addReads(adapterModule);
             }
 
             @Override
