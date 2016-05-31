@@ -119,7 +119,7 @@ public class UserModuleTest {
 
         Path java = IMAGE.resolve("bin").resolve("java");
         assertTrue(executeProcess(java.toString(),
-                                  "-Djdk.installed.modules.disable",
+                                  "-Djdk.system.module.finder.disabledFastPath",
                                   "-m", "m1/p1.Main")
                         .outputTo(System.out)
                         .errorTo(System.out)
