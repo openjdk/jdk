@@ -31,7 +31,6 @@
  * @build jdk.vm.ci.runtime.test.ConstantTest
  * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI jdk.vm.ci.runtime.test.ConstantTest
  */
-// * @compile ConstantTest.java FieldUniverse.java TypeUniverse.java TestMetaAccessProvider.java
 package jdk.vm.ci.runtime.test;
 
 import org.junit.Assert;
