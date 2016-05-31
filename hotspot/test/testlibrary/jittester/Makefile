@@ -44,6 +44,10 @@ ifneq "x$(SEED)" "x"
 	APPLICATION_ARGS += --seed $(SEED)
 endif
 
+ifneq "x$(EXTRA_SRC_DIR)" "x"
+        EXTRA_SRC_FILES := $(shell find $(EXTRA_SRC_DIR) -name '*.java')
+endif
+
 JAVA = $(JDK_HOME)/bin/java
 JAVAC = $(JDK_HOME)/bin/javac
 JAR = $(JDK_HOME)/bin/jar
@@ -99,6 +103,7 @@ COMPILE: INIT filelist compile_testlib
 filelist: $(SRC_FILES)
 		@rm -f $@
 		@echo $(SRC_FILES) > $@
+		@echo $(EXTRA_SRC_FILES) >> $@
 
 INIT: $(DIST_DIR)
 	$(shell if [ ! -d $(CLASSES_DIR) ]; then mkdir -p $(CLASSES_DIR); fi)
