@@ -49,6 +49,7 @@ import com.sun.tools.javac.util.StringUtils;
  * @since 1.4
  */
 
+@Deprecated
 public class TagletManager {
 
     /**

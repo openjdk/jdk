@@ -37,8 +37,8 @@ public class VersionTest {
         try {
             Locale.setDefault(Locale.ENGLISH);
             System.err.println(Locale.getDefault());
-            test("-version", "\\S+ version \"\\S+\"");
-            test("-fullversion", "\\S+ full version \"\\S+\"");
+            test("-version -XDsuppress-tool-removal-message", "\\S+ version \"\\S+\"");
+            test("-fullversion -XDsuppress-tool-removal-message", "\\S+ full version \"\\S+\"");
         } finally {
             Locale.setDefault(prev);
         }
@@ -47,7 +47,7 @@ public class VersionTest {
     static void test(String option, String regex) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
-        String[] args = { option };
+        String[] args = option.split(" ");
         int rc = com.sun.tools.javah.Main.run(args, pw);
         pw.close();
         if (rc != 0)

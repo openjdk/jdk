@@ -50,6 +50,7 @@ import static com.sun.tools.javac.code.Kinds.Kind.*;
  * @author Atul M Dambalkar
  *
  */
+@Deprecated
 class SeeTagImpl extends TagImpl implements SeeTag, LayoutCharacters {
 
     //### TODO: Searching for classes, fields, and methods

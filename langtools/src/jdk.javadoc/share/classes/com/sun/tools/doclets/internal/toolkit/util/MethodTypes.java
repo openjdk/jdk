@@ -30,6 +30,7 @@ package com.sun.tools.doclets.internal.toolkit.util;
  *
  * @author Bhavesh Patel
  */
+@Deprecated
 public enum MethodTypes {
     ALL(0xffff, "doclet.All_Methods", "t0", true),
     STATIC(0x1, "doclet.Static_Methods", "t1", false),

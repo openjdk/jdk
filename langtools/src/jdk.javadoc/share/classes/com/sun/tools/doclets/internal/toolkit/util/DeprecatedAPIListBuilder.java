@@ -40,6 +40,7 @@ import com.sun.tools.doclets.internal.toolkit.Configuration;
  *
  * @author Atul M Dambalkar
  */
+@Deprecated
 public class DeprecatedAPIListBuilder {
 
     public static final int NUM_TYPES = 12;

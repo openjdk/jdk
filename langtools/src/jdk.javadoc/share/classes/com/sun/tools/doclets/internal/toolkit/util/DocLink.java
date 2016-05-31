@@ -38,6 +38,7 @@ package com.sun.tools.doclets.internal.toolkit.util;
  *  deletion without notice.</b>
  *
  */
+@Deprecated
 public class DocLink {
     final String path;
     final String query;

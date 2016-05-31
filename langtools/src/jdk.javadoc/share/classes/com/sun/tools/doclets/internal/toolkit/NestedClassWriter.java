@@ -40,6 +40,7 @@ import java.io.*;
  * @since 1.5
  */
 
+@Deprecated
 public interface NestedClassWriter {
 
     /**
