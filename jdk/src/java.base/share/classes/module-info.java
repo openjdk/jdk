@@ -152,8 +152,7 @@ module java.base {
         java.xml,
         jdk.dynalink,
         jdk.jartool,
-        jdk.jlink,
-        jdk.scripting.nashorn;
+        jdk.jlink;
     exports jdk.internal.misc to
         java.corba,
         java.desktop,
