@@ -25,8 +25,7 @@
  * @test
  * @bug 6894807
  * @summary No ClassCastException for HashAttributeSet constructors if run with -Xcomp
- * @compile IsInstanceTest.java
- * @run shell Test6894807.sh
+ * @run main IsInstanceTest
 */
 
 public class IsInstanceTest {
@@ -35,13 +34,7 @@ public class IsInstanceTest {
         BaseInterface baseInterfaceImpl = new BaseInterfaceImpl();
         for (int i = 0; i < 100000; i++) {
             if (isInstanceOf(baseInterfaceImpl, ExtendedInterface.class)) {
-                System.out.println("Failed at index:" + i);
-                System.out.println("Arch: "+System.getProperty("os.arch", "")+
-                                   " OS: "+System.getProperty("os.name", "")+
-                                   " OSV: "+System.getProperty("os.version", "")+
-                                   " Cores: "+Runtime.getRuntime().availableProcessors()+
-                                   " JVM: "+System.getProperty("java.version", "")+" "+System.getProperty("sun.arch.data.model", ""));
-                break;
+                throw new AssertionError("Failed at index:" + i);
             }
         }
         System.out.println("Done!");
