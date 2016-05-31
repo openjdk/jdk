@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -102,27 +102,27 @@ public class JavaTimeSupplementary_mk extends OpenListResourceBundle {
             { "calendarname.japanese",
                 "\u0408\u0430\u043f\u043e\u043d\u0441\u043a\u0438 \u043a\u0430\u043b\u0435\u043d\u0434\u0430\u0440" },
             { "calendarname.roc",
-                "\u041a\u0430\u043b\u0435\u043d\u0434\u0430\u0440 \u043d\u0430 \u0420\u0435\u043f\u0443\u0431\u043b\u0438\u043a\u0430 \u041a\u0438\u043d\u0430" },
+                "\u041c\u0438\u043d\u0433\u0443\u043e-\u043a\u0430\u043b\u0435\u043d\u0434\u0430\u0440" },
             { "field.dayperiod",
                 "\u043f\u0440\u0435\u0442\u043f\u043b\u0430\u0434\u043d\u0435/\u043f\u043e\u043f\u043b\u0430\u0434\u043d\u0435" },
             { "field.era",
-                "\u0415\u0440\u0430" },
+                "\u0435\u0440\u0430" },
             { "field.hour",
-                "\u0427\u0430\u0441" },
+                "\u0447\u0430\u0441" },
             { "field.minute",
-                "\u041c\u0438\u043d\u0443\u0442\u0430" },
+                "\u043c\u0438\u043d\u0443\u0442\u0430" },
             { "field.month",
-                "\u041c\u0435\u0441\u0435\u0446" },
+                "\u043c\u0435\u0441\u0435\u0446" },
             { "field.second",
-                "\u0421\u0435\u043a\u0443\u043d\u0434\u0430" },
+                "\u0441\u0435\u043a\u0443\u043d\u0434\u0430" },
             { "field.week",
-                "\u041d\u0435\u0434\u0435\u043b\u0430" },
+                "\u043d\u0435\u0434\u0435\u043b\u0430" },
             { "field.weekday",
-                "\u0414\u0435\u043d \u0432\u043e \u043d\u0435\u0434\u0435\u043b\u0430\u0442\u0430" },
+                "\u0434\u0435\u043d \u0432\u043e \u043d\u0435\u0434\u0435\u043b\u0430\u0442\u0430" },
             { "field.year",
                 "\u0433\u043e\u0434\u0438\u043d\u0430" },
             { "field.zone",
-                "\u0437\u043e\u043d\u0430" },
+                "\u0432\u0440\u0435\u043c\u0435\u043d\u0441\u043a\u0430 \u0437\u043e\u043d\u0430" },
             { "islamic.AmPmMarkers",
                 new String[] {
                     "\u043f\u0440\u0435\u0442\u043f\u043b\u0430\u0434\u043d\u0435",
@@ -200,6 +200,12 @@ public class JavaTimeSupplementary_mk extends OpenListResourceBundle {
                     "HH:mm:ss z",
                     "HH:mm:ss",
                     "HH:mm",
+                }
+            },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "\u043f\u0440\u0435\u0442\u043f\u043b\u0430\u0434\u043d\u0435",
+                    "\u043f\u043e\u043f\u043b\u0430\u0434\u043d\u0435",
                 }
             },
             { "islamic.narrow.AmPmMarkers",
@@ -372,6 +378,12 @@ public class JavaTimeSupplementary_mk extends OpenListResourceBundle {
                     "HH:mm:ss z",
                     "HH:mm:ss",
                     "HH:mm",
+                }
+            },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "\u043f\u0440\u0435\u0442\u043f\u043b\u0430\u0434\u043d\u0435",
+                    "\u043f\u043e\u043f\u043b\u0430\u0434\u043d\u0435",
                 }
             },
             { "roc.narrow.AmPmMarkers",

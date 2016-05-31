@@ -186,7 +186,7 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_001.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_IN.class",
                 "/jdk.localedata/sun/util/resources/cldr/ext/CalendarData_kok_IN.class",
-                "/jdk.localedata/sun/util/resources/cldr/ext/CalendarData_ks_Arab_IN.class"),
+                "/jdk.localedata/sun/util/resources/cldr/ext/CalendarData_pa_Guru_IN.class"),
             List.of(
                 "/jdk.localedata/sun/text/resources/LineBreakIteratorData_th",
                 "/jdk.localedata/sun/text/resources/thai_dict",

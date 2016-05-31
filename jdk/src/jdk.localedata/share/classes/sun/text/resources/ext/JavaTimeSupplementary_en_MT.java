@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -81,6 +81,14 @@ public class JavaTimeSupplementary_en_MT extends OpenListResourceBundle {
                     "G y-MM-dd",
                 }
             },
+            { "islamic.TimePatterns",
+                new String[] {
+                    "HH:mm:ss zzzz",
+                    "HH:mm:ss z",
+                    "HH:mm:ss",
+                    "HH:mm",
+                }
+            },
             { "java.time.buddhist.DatePatterns",
                 new String[] {
                     "G y MMMM d, EEEE",
@@ -119,6 +127,14 @@ public class JavaTimeSupplementary_en_MT extends OpenListResourceBundle {
                     "dd MMMM y GGGG",
                     "dd MMM y GGGG",
                     "G y-MM-dd",
+                }
+            },
+            { "roc.TimePatterns",
+                new String[] {
+                    "HH:mm:ss zzzz",
+                    "HH:mm:ss z",
+                    "HH:mm:ss",
+                    "HH:mm",
                 }
             },
         };
