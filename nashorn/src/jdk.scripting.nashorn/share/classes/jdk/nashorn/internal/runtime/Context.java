@@ -39,14 +39,21 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UncheckedIOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
+import java.lang.module.Configuration;
+import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReference;
 import java.lang.reflect.Field;
+import java.lang.reflect.Layer;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Module;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.AccessControlContext;
@@ -60,9 +67,12 @@ import java.security.PrivilegedExceptionAction;
 import java.security.ProtectionDomain;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -127,6 +137,11 @@ public final class Context {
      * Permission to use Java reflection/jsr292 from script code.
      */
     public static final String NASHORN_JAVA_REFLECTION = "nashorn.JavaReflection";
+
+    /**
+     * Permission to create a new Module
+     */
+    public static final String NASHORN_CREATE_MODULE = "nashorn.createModule";
 
     /**
      * Permission to enable nashorn debug mode.
@@ -337,7 +352,7 @@ public final class Context {
             return new NamedContextCodeInstaller(context, codeSource, context.createNewLoader());
         }
 
-        private static final byte[] getAnonymousHostClassBytes() {
+        private static byte[] getAnonymousHostClassBytes() {
             final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
             cw.visit(V1_7, Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, ANONYMOUS_HOST_CLASS_NAME.replace('.', '/'), null, "java/lang/Object", null);
             cw.visitEnd();
@@ -486,7 +501,6 @@ public final class Context {
     /** Optional class filter to use for Java classes. Can be null. */
     private final ClassFilter classFilter;
 
-    private static final ClassLoader myLoader = Context.class.getClassLoader();
     private static final StructureLoader sharedLoader;
     private static final ConcurrentMap<String, Class<?>> structureClasses = new ConcurrentHashMap<>();
 
@@ -508,8 +522,10 @@ public final class Context {
     private static final AccessControlContext NO_PERMISSIONS_ACC_CTXT = createNoPermAccCtxt();
     private static final AccessControlContext CREATE_LOADER_ACC_CTXT  = createPermAccCtxt("createClassLoader");
     private static final AccessControlContext CREATE_GLOBAL_ACC_CTXT  = createPermAccCtxt(NASHORN_CREATE_GLOBAL);
+    private static final AccessControlContext GET_LOADER_ACC_CTXT     = createPermAccCtxt("getClassLoader");
 
     static {
+        final ClassLoader myLoader = Context.class.getClassLoader();
         sharedLoader = AccessController.doPrivileged(new PrivilegedAction<StructureLoader>() {
             @Override
             public StructureLoader run() {
@@ -791,7 +807,7 @@ public final class Context {
         // Nashorn extension: any 'eval' is unconditionally strict when -strict is specified.
         boolean strictFlag = strict || this._strict;
 
-        Class<?> clazz = null;
+        Class<?> clazz;
         try {
             clazz = compile(source, new ThrowErrorManager(), strictFlag, true);
         } catch (final ParserException e) {
@@ -1279,6 +1295,78 @@ public final class Context {
      */
     public static DynamicLinker getDynamicLinker() {
         return getContextTrusted().dynamicLinker;
+    }
+
+    /**
+     * Creates a module layer with one module that is defined to the given class
+     * loader.
+     *
+     * @param descriptor the module descriptor for the newly created module
+     * @param loader the class loader of the module
+     * @return the new Module
+     */
+    public static Module createModule(final ModuleDescriptor descriptor, final ClassLoader loader) {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new RuntimePermission(NASHORN_CREATE_MODULE));
+        }
+        return createModuleTrusted(descriptor, loader);
+    }
+
+    /**
+     * Creates a module layer with one module that is defined to the given class
+     * loader.
+     *
+     * @param descriptor the module descriptor for the newly created module
+     * @param loader the class loader of the module
+     * @return the new Module
+     */
+    static Module createModuleTrusted(final ModuleDescriptor descriptor, final ClassLoader loader) {
+        return createModuleTrusted(Layer.boot(), descriptor, loader);
+    }
+
+    /**
+     * Creates a module layer with one module that is defined to the given class
+     * loader.
+     *
+     * @param parent the parent layer of the new module
+     * @param descriptor the module descriptor for the newly created module
+     * @param loader the class loader of the module
+     * @return the new Module
+     */
+    static Module createModuleTrusted(final Layer parent, final ModuleDescriptor descriptor, final ClassLoader loader) {
+        final String mn = descriptor.name();
+
+        final ModuleReference mref = new ModuleReference(descriptor, null, () -> {
+            IOException ioe = new IOException("<dynamic module>");
+            throw new UncheckedIOException(ioe);
+        });
+
+        final ModuleFinder finder = new ModuleFinder() {
+            @Override
+            public Optional<ModuleReference> find(String name) {
+                if (name.equals(mn)) {
+                    return Optional.of(mref);
+                } else {
+                    return Optional.empty();
+                }
+            }
+            @Override
+            public Set<ModuleReference> findAll() {
+                return Set.of(mref);
+            }
+        };
+
+        final Configuration cf = parent.configuration()
+                .resolveRequires(finder, ModuleFinder.of(), Set.of(mn));
+
+        final PrivilegedAction<Layer> pa = () -> parent.defineModules(cf, name -> loader);
+        final Layer layer = AccessController.doPrivileged(pa, GET_LOADER_ACC_CTXT);
+
+        final Module m = layer.findModule(mn).get();
+        assert m.getLayer() == layer;
+
+        return m;
     }
 
     static Context getContextTrustedOrNull() {

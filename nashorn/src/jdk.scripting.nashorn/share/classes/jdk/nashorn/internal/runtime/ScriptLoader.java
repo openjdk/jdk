@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.runtime;
 
+import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.Module;
 import java.security.CodeSource;
 import java.util.Objects;
@@ -52,21 +53,33 @@ final class ScriptLoader extends NashornLoader {
         this.context = context;
 
         // new scripts module, it's specific exports and read-edges
-        scriptModule = defineModule("jdk.scripting.nashorn.scripts", this);
-        addModuleExports(scriptModule, SCRIPTS_PKG, nashornModule);
-        addReadsModule(scriptModule, nashornModule);
-        addReadsModule(scriptModule, Object.class.getModule());
+        scriptModule = createModule("jdk.scripting.nashorn.scripts");
 
         // specific exports from nashorn to new scripts module
-        nashornModule.addExports(OBJECTS_PKG, scriptModule);
-        nashornModule.addExports(RUNTIME_PKG, scriptModule);
-        nashornModule.addExports(RUNTIME_ARRAYS_PKG, scriptModule);
-        nashornModule.addExports(RUNTIME_LINKER_PKG, scriptModule);
-        nashornModule.addExports(SCRIPTS_PKG, scriptModule);
+        NASHORN_MODULE.addExports(OBJECTS_PKG, scriptModule);
+        NASHORN_MODULE.addExports(RUNTIME_PKG, scriptModule);
+        NASHORN_MODULE.addExports(RUNTIME_ARRAYS_PKG, scriptModule);
+        NASHORN_MODULE.addExports(RUNTIME_LINKER_PKG, scriptModule);
+        NASHORN_MODULE.addExports(SCRIPTS_PKG, scriptModule);
 
         // nashorn needs to read scripts module methods,fields
-        nashornModule.addReads(scriptModule);
+        NASHORN_MODULE.addReads(scriptModule);
     }
+
+    private Module createModule(final String moduleName) {
+        final Module structMod = context.getSharedLoader().getModule();
+        final ModuleDescriptor descriptor
+                = new ModuleDescriptor.Builder(moduleName)
+                    .requires(NASHORN_MODULE.getName())
+                    .requires(structMod.getName())
+                    .conceals(SCRIPTS_PKG)
+                    .build();
+
+        final Module mod = Context.createModuleTrusted(structMod.getLayer(), descriptor, this);
+        loadModuleManipulator();
+        return mod;
+    }
+
 
     @Override
     protected Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
@@ -74,13 +87,9 @@ final class ScriptLoader extends NashornLoader {
         if (name.startsWith(NASHORN_PKG_PREFIX)) {
             final StructureLoader sharedCl = context.getSharedLoader();
             final Class<?> cl = sharedCl.loadClass(name);
-            if (! structureAccessAdded) {
-                if (cl.getClassLoader() == sharedCl) {
-                    structureAccessAdded = true;
-                    final Module structModule = sharedCl.getModule();
-                    addModuleExports(structModule, SCRIPTS_PKG, scriptModule);
-                    addReadsModule(scriptModule, structModule);
-                }
+            if (!structureAccessAdded && cl.getClassLoader() == sharedCl) {
+                structureAccessAdded = true;
+                sharedCl.addModuleExport(scriptModule);
             }
             return cl;
         }
