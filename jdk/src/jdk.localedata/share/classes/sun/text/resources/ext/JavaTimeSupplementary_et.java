@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -123,6 +123,12 @@ public class JavaTimeSupplementary_et extends OpenListResourceBundle {
                 "aasta" },
             { "field.zone",
                 "ajav\u00f6\u00f6nd" },
+            { "islamic.AmPmMarkers",
+                new String[] {
+                    "AM",
+                    "PM",
+                }
+            },
             { "islamic.DatePatterns",
                 new String[] {
                     "EEEE, d. MMMM y GGGG",
@@ -196,6 +202,12 @@ public class JavaTimeSupplementary_et extends OpenListResourceBundle {
                     "H:mm",
                 }
             },
+            { "islamic.narrow.AmPmMarkers",
+                new String[] {
+                    "a",
+                    "p",
+                }
+            },
             { "java.time.buddhist.DatePatterns",
                 new String[] {
                     "EEEE, d. MMMM y G",
@@ -222,8 +234,8 @@ public class JavaTimeSupplementary_et extends OpenListResourceBundle {
             },
             { "java.time.long.Eras",
                 new String[] {
-                    "enne meie aega",
-                    "meie aja j\u00e4rgi",
+                    "enne Kristust",
+                    "p\u00e4rast Kristust",
                 }
             },
             { "java.time.roc.DatePatterns",
@@ -238,6 +250,12 @@ public class JavaTimeSupplementary_et extends OpenListResourceBundle {
                 new String[] {
                     "e.m.a.",
                     "m.a.j.",
+                }
+            },
+            { "roc.AmPmMarkers",
+                new String[] {
+                    "AM",
+                    "PM",
                 }
             },
             { "roc.DatePatterns",
@@ -354,6 +372,12 @@ public class JavaTimeSupplementary_et extends OpenListResourceBundle {
                     "H:mm.ss z",
                     "H:mm.ss",
                     "H:mm",
+                }
+            },
+            { "roc.narrow.AmPmMarkers",
+                new String[] {
+                    "a",
+                    "p",
                 }
             },
         };

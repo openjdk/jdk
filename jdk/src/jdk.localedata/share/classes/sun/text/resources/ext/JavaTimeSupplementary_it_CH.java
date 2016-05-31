@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -77,7 +77,7 @@ public class JavaTimeSupplementary_it_CH extends OpenListResourceBundle {
                 new String[] {
                     "EEEE, d MMMM y GGGG",
                     "d MMMM y GGGG",
-                    "d-MMM-y GGGG",
+                    "d MMM y GGGG",
                     "dd.MM.yy G",
                 }
             },
@@ -85,7 +85,7 @@ public class JavaTimeSupplementary_it_CH extends OpenListResourceBundle {
                 new String[] {
                     "EEEE, d MMMM y G",
                     "d MMMM y G",
-                    "d-MMM-y G",
+                    "d MMM y G",
                     "dd.MM.yy GGGGG",
                 }
             },
@@ -93,7 +93,7 @@ public class JavaTimeSupplementary_it_CH extends OpenListResourceBundle {
                 new String[] {
                     "EEEE, d MMMM y G",
                     "d MMMM y G",
-                    "d-MMM-y G",
+                    "d MMM y G",
                     "dd.MM.yy GGGGG",
                 }
             },
@@ -101,7 +101,7 @@ public class JavaTimeSupplementary_it_CH extends OpenListResourceBundle {
                 new String[] {
                     "EEEE, d MMMM y G",
                     "d MMMM y G",
-                    "d-MMM-y G",
+                    "d MMM y G",
                     "dd.MM.yy GGGGG",
                 }
             },
@@ -109,7 +109,7 @@ public class JavaTimeSupplementary_it_CH extends OpenListResourceBundle {
                 new String[] {
                     "EEEE, d MMMM y G",
                     "d MMMM y G",
-                    "d-MMM-y G",
+                    "d MMM y G",
                     "dd.MM.yy GGGGG",
                 }
             },
@@ -117,7 +117,7 @@ public class JavaTimeSupplementary_it_CH extends OpenListResourceBundle {
                 new String[] {
                     "EEEE, d MMMM y GGGG",
                     "d MMMM y GGGG",
-                    "d-MMM-y GGGG",
+                    "d MMM y GGGG",
                     "dd.MM.yy G",
                 }
             },
