@@ -40,30 +40,31 @@ import java.util.stream.Stream;
 public class JitTesterDriver {
 
     public static void main(String[] args) {
-        if (args.length != 1) {
+        if (args.length < 1) {
             throw new IllegalArgumentException(
                     "[TESTBUG]: wrong number of argument : " + args.length
-                    + ". Expected 1 argument -- jit-tester test name.");
+                    + ". Expected at least 1 argument -- jit-tester test name.");
         }
         OutputAnalyzer oa;
         try {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, args[0]);
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, args);
             oa = new OutputAnalyzer(pb.start());
         } catch (Exception e) {
             throw new Error("Unexpected exception on test jvm start :" + e, e);
         }
 
+        String name = args[args.length - 1];
         Pattern splitOut = Pattern.compile("\\n"); // tests use \n only in stdout
         Pattern splitErr = Pattern.compile("\\r?\\n"); // can handle both \r\n and \n
         Path testDir = Paths.get(Utils.TEST_SRC);
-        String goldOut = formatOutput(streamGoldFile(testDir, args[0], "out"));
+        String goldOut = formatOutput(streamGoldFile(testDir, name, "out"));
         String anlzOut = formatOutput(Arrays.stream(splitOut.split(oa.getStdout())));
         Asserts.assertEQ(anlzOut, goldOut, "Actual stdout isn't equal to golden one");
-        String goldErr = formatOutput(streamGoldFile(testDir, args[0], "err"));
+        String goldErr = formatOutput(streamGoldFile(testDir, name, "err"));
         String anlzErr = formatOutput(Arrays.stream(splitErr.split(oa.getStderr())));
         Asserts.assertEQ(anlzErr, goldErr, "Actual stderr isn't equal to golden one");
 
-        int exitValue = Integer.parseInt(streamGoldFile(testDir, args[0], "exit").findFirst().get());
+        int exitValue = Integer.parseInt(streamGoldFile(testDir, name, "exit").findFirst().get());
         oa.shouldHaveExitValue(exitValue);
     }
 
