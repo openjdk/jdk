@@ -46,6 +46,7 @@ import com.sun.tools.doclets.internal.toolkit.util.DocPath;
  * @author Atul M Dambalkar
  * @author Bhavesh Patel (Modified)
  */
+@Deprecated
 public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
 
     /**

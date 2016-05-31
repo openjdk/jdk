@@ -44,6 +44,7 @@ import com.sun.tools.doclets.internal.toolkit.util.DocletAbortException;
  *
  * @author Atul M Dambalkar
  */
+@Deprecated
 public class SerializedFormWriterImpl extends SubWriterHolderWriter
     implements SerializedFormWriter {
 

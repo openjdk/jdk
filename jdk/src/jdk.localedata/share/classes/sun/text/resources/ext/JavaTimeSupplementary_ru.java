@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -108,23 +108,29 @@ public class JavaTimeSupplementary_ru extends OpenListResourceBundle {
             { "field.dayperiod",
                 "\u0414\u041f/\u041f\u041f" },
             { "field.era",
-                "\u042d\u0440\u0430" },
+                "\u044d\u0440\u0430" },
             { "field.hour",
-                "\u0427\u0430\u0441" },
+                "\u0447\u0430\u0441" },
             { "field.minute",
-                "\u041c\u0438\u043d\u0443\u0442\u0430" },
+                "\u043c\u0438\u043d\u0443\u0442\u0430" },
             { "field.month",
-                "\u041c\u0435\u0441\u044f\u0446" },
+                "\u043c\u0435\u0441\u044f\u0446" },
             { "field.second",
-                "\u0421\u0435\u043a\u0443\u043d\u0434\u0430" },
+                "\u0441\u0435\u043a\u0443\u043d\u0434\u0430" },
             { "field.week",
-                "\u041d\u0435\u0434\u0435\u043b\u044f" },
+                "\u043d\u0435\u0434\u0435\u043b\u044f" },
             { "field.weekday",
-                "\u0414\u0435\u043d\u044c \u043d\u0435\u0434\u0435\u043b\u0438" },
+                "\u0434\u0435\u043d\u044c \u043d\u0435\u0434\u0435\u043b\u0438" },
             { "field.year",
-                "\u0413\u043e\u0434" },
+                "\u0433\u043e\u0434" },
             { "field.zone",
-                "\u0427\u0430\u0441\u043e\u0432\u043e\u0439 \u043f\u043e\u044f\u0441" },
+                "\u0447\u0430\u0441\u043e\u0432\u043e\u0439 \u043f\u043e\u044f\u0441" },
+            { "islamic.AmPmMarkers",
+                new String[] {
+                    "\u0414\u041f",
+                    "\u041f\u041f",
+                }
+            },
             { "islamic.DatePatterns",
                 new String[] {
                     "EEEE, d MMMM y '\u0433'. GGGG",
@@ -232,10 +238,16 @@ public class JavaTimeSupplementary_ru extends OpenListResourceBundle {
                     "H:mm",
                 }
             },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "\u0414\u041f",
+                    "\u041f\u041f",
+                }
+            },
             { "islamic.narrow.AmPmMarkers",
                 new String[] {
-                    "AM",
-                    "PM",
+                    "\u0414\u041f",
+                    "\u041f\u041f",
                 }
             },
             { "java.time.buddhist.DatePatterns",
@@ -276,7 +288,7 @@ public class JavaTimeSupplementary_ru extends OpenListResourceBundle {
             },
             { "java.time.japanese.long.Eras",
                 new String[] {
-                    "\u043d. \u044d.",
+                    "\u043e\u0442 \u0420\u043e\u0436\u0434\u0435\u0441\u0442\u0432\u0430 \u0425\u0440\u0438\u0441\u0442\u043e\u0432\u0430",
                     "\u042d\u043f\u043e\u0445\u0430 \u041c\u044d\u0439\u0434\u0437\u0438",
                     "\u042d\u043f\u043e\u0445\u0430 \u0422\u0430\u0439\u0441\u044c\u043e",
                     "\u0421\u044c\u043e\u0432\u0430",
@@ -294,8 +306,8 @@ public class JavaTimeSupplementary_ru extends OpenListResourceBundle {
             },
             { "java.time.long.Eras",
                 new String[] {
-                    "\u0434\u043e \u043d. \u044d.",
-                    "\u043d. \u044d.",
+                    "\u0434\u043e \u0420\u043e\u0436\u0434\u0435\u0441\u0442\u0432\u0430 \u0425\u0440\u0438\u0441\u0442\u043e\u0432\u0430",
+                    "\u043e\u0442 \u0420\u043e\u0436\u0434\u0435\u0441\u0442\u0432\u0430 \u0425\u0440\u0438\u0441\u0442\u043e\u0432\u0430",
                 }
             },
             { "java.time.roc.DatePatterns",
@@ -310,6 +322,12 @@ public class JavaTimeSupplementary_ru extends OpenListResourceBundle {
                 new String[] {
                     "\u0434\u043e \u043d.\u044d.",
                     "\u043d.\u044d.",
+                }
+            },
+            { "roc.AmPmMarkers",
+                new String[] {
+                    "\u0414\u041f",
+                    "\u041f\u041f",
                 }
             },
             { "roc.DatePatterns",
@@ -363,11 +381,11 @@ public class JavaTimeSupplementary_ru extends OpenListResourceBundle {
                 new String[] {
                     "\u044f\u043d\u0432.",
                     "\u0444\u0435\u0432\u0440.",
-                    "\u043c\u0430\u0440\u0442\u0430",
+                    "\u043c\u0430\u0440.",
                     "\u0430\u043f\u0440.",
                     "\u043c\u0430\u044f",
-                    "\u0438\u044e\u043d\u044f",
-                    "\u0438\u044e\u043b\u044f",
+                    "\u0438\u044e\u043d.",
+                    "\u0438\u044e\u043b.",
                     "\u0430\u0432\u0433.",
                     "\u0441\u0435\u043d\u0442.",
                     "\u043e\u043a\u0442.",
@@ -434,6 +452,12 @@ public class JavaTimeSupplementary_ru extends OpenListResourceBundle {
                     "H:mm",
                 }
             },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "\u0414\u041f",
+                    "\u041f\u041f",
+                }
+            },
             { "roc.long.Eras",
                 new String[] {
                     "Before R.O.C.",
@@ -442,8 +466,8 @@ public class JavaTimeSupplementary_ru extends OpenListResourceBundle {
             },
             { "roc.narrow.AmPmMarkers",
                 new String[] {
-                    "AM",
-                    "PM",
+                    "\u0414\u041f",
+                    "\u041f\u041f",
                 }
             },
             { "roc.narrow.Eras",

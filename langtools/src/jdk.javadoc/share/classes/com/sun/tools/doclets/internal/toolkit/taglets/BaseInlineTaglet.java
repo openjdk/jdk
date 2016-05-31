@@ -37,6 +37,7 @@ package com.sun.tools.doclets.internal.toolkit.taglets;
  * @since 1.4
  */
 
+@Deprecated
 public abstract class BaseInlineTaglet extends BaseTaglet {
 
     /**

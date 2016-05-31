@@ -59,6 +59,7 @@ public class CLDRConverter {
     private static String SPPL_SOURCE_FILE;
     private static String NUMBERING_SOURCE_FILE;
     private static String METAZONES_SOURCE_FILE;
+    private static String LIKELYSUBTAGS_SOURCE_FILE;
     static String DESTINATION_DIR = "build/gensrc";
 
     static final String LOCALE_NAME_PREFIX = "locale.displayname.";
@@ -71,6 +72,7 @@ public class CLDRConverter {
     static final String PARENT_LOCALE_PREFIX = "parentLocale.";
 
     private static SupplementDataParseHandler handlerSuppl;
+    private static LikelySubtagsParseHandler handlerLikelySubtags;
     static NumberingSystemsParseHandler handlerNumbering;
     static MetaZonesParseHandler handlerMetaZones;
     private static BundleGenerator bundleGenerator;
@@ -196,12 +198,13 @@ public class CLDRConverter {
         }
 
         // Set up path names
-        LOCAL_LDML_DTD = CLDR_BASE + "common/dtd/ldml.dtd";
-        LOCAL_SPPL_LDML_DTD = CLDR_BASE + "common/dtd/ldmlSupplemental.dtd";
-        SOURCE_FILE_DIR = CLDR_BASE + "common/main";
-        SPPL_SOURCE_FILE = CLDR_BASE + "common/supplemental/supplementalData.xml";
-        NUMBERING_SOURCE_FILE = CLDR_BASE + "common/supplemental/numberingSystems.xml";
-        METAZONES_SOURCE_FILE = CLDR_BASE + "common/supplemental/metaZones.xml";
+        LOCAL_LDML_DTD = CLDR_BASE + "/dtd/ldml.dtd";
+        LOCAL_SPPL_LDML_DTD = CLDR_BASE + "/dtd/ldmlSupplemental.dtd";
+        SOURCE_FILE_DIR = CLDR_BASE + "/main";
+        SPPL_SOURCE_FILE = CLDR_BASE + "/supplemental/supplementalData.xml";
+        LIKELYSUBTAGS_SOURCE_FILE = CLDR_BASE + "/supplemental/likelySubtags.xml";
+        NUMBERING_SOURCE_FILE = CLDR_BASE + "/supplemental/numberingSystems.xml";
+        METAZONES_SOURCE_FILE = CLDR_BASE + "/supplemental/metaZones.xml";
 
         if (BASE_LOCALES.isEmpty()) {
             setupBaseLocales("en-US");
@@ -220,8 +223,8 @@ public class CLDRConverter {
         errout("Usage: java CLDRConverter [options]%n"
                 + "\t-help          output this usage message and exit%n"
                 + "\t-verbose       output information%n"
-                + "\t-draft [approved | provisional | unconfirmed]%n"
-                + "\t\t       draft level for using data (default: approved)%n"
+                + "\t-draft [contributed | approved | provisional | unconfirmed]%n"
+                + "\t\t       draft level for using data (default: contributed)%n"
                 + "\t-base dir      base directory for CLDR input files%n"
                 + "\t-basemodule    generates bundles that go into java.base module%n"
                 + "\t-baselocales loc(,loc)*      locales that go into the base module%n"
@@ -379,7 +382,6 @@ public class CLDRConverter {
             });
 
         // Parse numberingSystems to get digit zero character information.
-        info("..... Parsing numberingSystem.xml .....");
         SAXParserFactory numberingParser = SAXParserFactory.newInstance();
         numberingParser.setValidating(true);
         SAXParser parserNumbering = numberingParser.newSAXParser();
@@ -396,7 +398,17 @@ public class CLDRConverter {
         enableFileAccess(parserMetaZones);
         handlerMetaZones = new MetaZonesParseHandler();
         File fileMetaZones = new File(METAZONES_SOURCE_FILE);
-        parserNumbering.parse(fileMetaZones, handlerMetaZones);
+        parserMetaZones.parse(fileMetaZones, handlerMetaZones);
+
+        // Parse likelySubtags
+        info("..... Parsing likelySubtags.xml .....");
+        SAXParserFactory likelySubtagsParser = SAXParserFactory.newInstance();
+        likelySubtagsParser.setValidating(true);
+        SAXParser parserLikelySubtags = likelySubtagsParser.newSAXParser();
+        enableFileAccess(parserLikelySubtags);
+        handlerLikelySubtags = new LikelySubtagsParseHandler();
+        File fileLikelySubtags = new File(LIKELYSUBTAGS_SOURCE_FILE);
+        parserLikelySubtags.parse(fileLikelySubtags, handlerLikelySubtags);
     }
 
     private static void convertBundles(List<Bundle> bundles) throws Exception {
@@ -434,6 +446,7 @@ public class CLDRConverter {
                 Map<String, Object> localeNamesMap = extractLocaleNames(targetMap, bundle.getID());
                 if (!localeNamesMap.isEmpty() || bundle.isRoot()) {
                     metaInfo.get("LocaleNames").add(toLanguageTag(bundle.getID()));
+                    addLikelySubtags(metaInfo, "LocaleNames", bundle.getID());
                     bundleGenerator.generateBundle("util", "LocaleNames", bundle.getJavaID(), true, localeNamesMap, BundleType.OPEN);
                 }
             }
@@ -441,6 +454,7 @@ public class CLDRConverter {
                 Map<String, Object> currencyNamesMap = extractCurrencyNames(targetMap, bundle.getID(), bundle.getCurrencies());
                 if (!currencyNamesMap.isEmpty() || bundle.isRoot()) {
                     metaInfo.get("CurrencyNames").add(toLanguageTag(bundle.getID()));
+                    addLikelySubtags(metaInfo, "CurrencyNames", bundle.getID());
                     bundleGenerator.generateBundle("util", "CurrencyNames", bundle.getJavaID(), true, currencyNamesMap, BundleType.OPEN);
                 }
             }
@@ -448,6 +462,7 @@ public class CLDRConverter {
                 Map<String, Object> zoneNamesMap = extractZoneNames(targetMap, bundle.getID());
                 if (!zoneNamesMap.isEmpty() || bundle.isRoot()) {
                     metaInfo.get("TimeZoneNames").add(toLanguageTag(bundle.getID()));
+                    addLikelySubtags(metaInfo, "TimeZoneNames", bundle.getID());
                     bundleGenerator.generateBundle("util", "TimeZoneNames", bundle.getJavaID(), true, zoneNamesMap, BundleType.TIMEZONE);
                 }
             }
@@ -455,6 +470,7 @@ public class CLDRConverter {
                 Map<String, Object> calendarDataMap = extractCalendarData(targetMap, bundle.getID());
                 if (!calendarDataMap.isEmpty() || bundle.isRoot()) {
                     metaInfo.get("CalendarData").add(toLanguageTag(bundle.getID()));
+                    addLikelySubtags(metaInfo, "CalendarData", bundle.getID());
                     bundleGenerator.generateBundle("util", "CalendarData", bundle.getJavaID(), true, calendarDataMap, BundleType.PLAIN);
                 }
             }
@@ -462,12 +478,14 @@ public class CLDRConverter {
                 Map<String, Object> formatDataMap = extractFormatData(targetMap, bundle.getID());
                 if (!formatDataMap.isEmpty() || bundle.isRoot()) {
                     metaInfo.get("FormatData").add(toLanguageTag(bundle.getID()));
+                    addLikelySubtags(metaInfo, "FormatData", bundle.getID());
                     bundleGenerator.generateBundle("text", "FormatData", bundle.getJavaID(), true, formatDataMap, BundleType.PLAIN);
                 }
             }
 
             // For AvailableLocales
             metaInfo.get("AvailableLocales").add(toLanguageTag(bundle.getID()));
+            addLikelySubtags(metaInfo, "AvailableLocales", bundle.getID());
         }
 
         bundleGenerator.generateMetaInfo(metaInfo);
@@ -664,6 +682,7 @@ public class CLDRConverter {
         "standalone.QuarterNarrows",
         "AmPmMarkers",
         "narrow.AmPmMarkers",
+        "abbreviated.AmPmMarkers",
         "long.Eras",
         "Eras",
         "narrow.Eras",
@@ -817,6 +836,14 @@ public class CLDRConverter {
         return loc.toLanguageTag();
     }
 
+    private static void addLikelySubtags(Map<String, SortedSet<String>> metaInfo, String category, String id) {
+        String likelySubtag = handlerLikelySubtags.get(id);
+        if (likelySubtag != null) {
+            // Remove Script for now
+            metaInfo.get(category).add(toLanguageTag(likelySubtag).replaceFirst("-[A-Z][a-z]{3}", ""));
+        }
+    }
+
     private static String toLocaleName(String tag) {
         if (tag.indexOf('-') == -1) {
             return tag;
@@ -830,7 +857,7 @@ public class CLDRConverter {
             .map(l -> Control.getControl(Control.FORMAT_DEFAULT)
                              .getCandidateLocales("", l))
             .forEach(BASE_LOCALES::addAll);
-}
+    }
 
     // applying parent locale rules to the passed candidates list
     // This has to match with the one in sun.util.cldr.CLDRLocaleProviderAdapter

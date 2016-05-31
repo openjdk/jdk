@@ -27,6 +27,7 @@ package jdk.internal.jimage;
 
 import java.io.UTFDataFormatException;
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 /**
  * @implNote This class needs to maintain JDK 8 source compatibility.
@@ -40,7 +41,7 @@ public class ImageStringsReader implements ImageStrings {
     private final BasicImageReader reader;
 
     ImageStringsReader(BasicImageReader reader) {
-        this.reader = reader;
+        this.reader = Objects.requireNonNull(reader);
     }
 
     @Override
@@ -54,7 +55,19 @@ public class ImageStringsReader implements ImageStrings {
     }
 
     private static int hashCode(byte[] bytes, int offset, int count, int seed) {
-        for (int i = offset, limit = offset + count; i < limit; i++) {
+        Objects.requireNonNull(bytes);
+
+        if (offset < 0 || count < 0 || offset > bytes.length - count) {
+            throw new IndexOutOfBoundsException("offset=" + offset + ", count=" + count);
+        }
+
+        int limit = offset + count;
+
+        if (limit < 0 || limit > bytes.length) {
+            throw new IndexOutOfBoundsException("limit=" + limit);
+        }
+
+        for (int i = offset; i < limit; i++) {
             seed = (seed * HASH_MULTIPLIER) ^ (bytes[i] & 0xFF);
         }
 

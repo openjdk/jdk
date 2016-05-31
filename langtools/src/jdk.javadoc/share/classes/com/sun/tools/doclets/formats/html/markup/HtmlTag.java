@@ -37,6 +37,7 @@ import com.sun.tools.javac.util.StringUtils;
  *
  * @author Bhavesh Patel
  */
+@Deprecated
 public enum HtmlTag {
     A(BlockType.INLINE, EndTag.END),
     BLOCKQUOTE,

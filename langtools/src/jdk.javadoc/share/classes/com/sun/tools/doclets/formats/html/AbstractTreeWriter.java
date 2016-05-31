@@ -46,6 +46,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  *
  * @author Atul M Dambalkar
  */
+@Deprecated
 public abstract class AbstractTreeWriter extends HtmlDocletWriter {
 
     /**

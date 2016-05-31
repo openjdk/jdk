@@ -51,6 +51,7 @@ import com.sun.javadoc.*;
  *
  * @see java.io.ObjectStreamField
  */
+@Deprecated
 class SerialFieldTagImpl
     extends TagImpl
     implements SerialFieldTag, Comparable<Object>

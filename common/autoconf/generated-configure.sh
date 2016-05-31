@@ -650,6 +650,7 @@ TEST_JOBS
 JOBS
 MEMORY_SIZE
 NUM_CORES
+ENABLE_GENERATE_CLASSLIST
 BUILD_FAILURE_HANDLER
 ENABLE_INTREE_EC
 STLPORT_LIB
@@ -1226,6 +1227,7 @@ with_dxsdk
 with_dxsdk_lib
 with_dxsdk_include
 enable_jtreg_failure_handler
+enable_generate_classlist
 with_num_cores
 with_memory_size
 with_jobs
@@ -2005,6 +2007,10 @@ Optional Features:
                           Default is auto, where the failure handler is built
                           if all dependencies are present and otherwise just
                           disabled.
+  --disable-generate-classlist
+                          forces enabling or disabling of the generation of a
+                          CDS classlist at build time. Default is to generate
+                          it when either the server or client JVMs are built.
   --enable-sjavac         use sjavac to do fast incremental compiles
                           [disabled]
   --disable-javac-server  disable javac server [enabled]
@@ -4391,6 +4397,12 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 #
 
 
+################################################################################
+#
+# Enable or disable generation of the classlist at build time
+#
+
+
 #
 # Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -5080,7 +5092,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1463732692
+DATE_WHEN_GENERATED=1464173584
 
 ###############################################################################
 #
@@ -64807,6 +64819,51 @@ $as_echo "yes, jtreg present" >&6; }
     fi
   else
     as_fn_error $? "Invalid value for --enable-jtreg-failure-handler: $enable_jtreg_failure_handler" "$LINENO" 5
+  fi
+
+
+
+
+  # Check whether --enable-generate-classlist was given.
+if test "${enable_generate_classlist+set}" = set; then :
+  enableval=$enable_generate_classlist;
+fi
+
+
+  # Check if it's likely that it's possible to generate the classlist. Depending
+  # on exact jvm configuration it could be possible anyway.
+  if   [[ " $JVM_VARIANTS " =~ " server " ]]   ||   [[ " $JVM_VARIANTS " =~ " client " ]]  ; then
+    ENABLE_GENERATE_CLASSLIST_POSSIBLE="true"
+  else
+    ENABLE_GENERATE_CLASSLIST_POSSIBLE="false"
+  fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the CDS classlist generation should be enabled" >&5
+$as_echo_n "checking if the CDS classlist generation should be enabled... " >&6; }
+  if test "x$enable_generate_classlist" = "xyes"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, forced" >&5
+$as_echo "yes, forced" >&6; }
+    ENABLE_GENERATE_CLASSLIST="true"
+    if test "x$ENABLE_GENERATE_CLASSLIST_POSSIBLE" = "xfalse"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Generation of classlist might not be possible with JVM Variants $JVM_VARIANTS" >&5
+$as_echo "$as_me: WARNING: Generation of classlist might not be possible with JVM Variants $JVM_VARIANTS" >&2;}
+    fi
+  elif test "x$enable_generate_classlist" = "xno"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, forced" >&5
+$as_echo "no, forced" >&6; }
+    ENABLE_GENERATE_CLASSLIST="false"
+  elif test "x$enable_generate_classlist" = "x"; then
+    if test "x$ENABLE_GENERATE_CLASSLIST_POSSIBLE" = "xtrue"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+      ENABLE_GENERATE_CLASSLIST="true"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      ENABLE_GENERATE_CLASSLIST="false"
+    fi
+  else
+    as_fn_error $? "Invalid value for --enable-generate-classlist: $enable_generate_classlist" "$LINENO" 5
   fi
 
 

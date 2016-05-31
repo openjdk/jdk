@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -108,19 +108,23 @@ public class JavaTimeSupplementary_nl extends OpenListResourceBundle {
             { "field.dayperiod",
                 "a.m./p.m." },
             { "field.era",
-                "Tijdperk" },
+                "tijdperk" },
             { "field.hour",
                 "Uur" },
             { "field.minute",
-                "Minuut" },
+                "minuut" },
             { "field.month",
-                "Maand" },
+                "maand" },
             { "field.second",
-                "Seconde" },
+                "seconde" },
+            { "field.week",
+                "week" },
             { "field.weekday",
-                "Dag van de week" },
+                "dag van de week" },
             { "field.year",
-                "Jaar" },
+                "jaar" },
+            { "field.zone",
+                "tijdzone" },
             { "islamic.AmPmMarkers",
                 new String[] {
                     "a.m.",
@@ -240,6 +244,12 @@ public class JavaTimeSupplementary_nl extends OpenListResourceBundle {
                     "HH:mm",
                 }
             },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "a.m.",
+                    "p.m.",
+                }
+            },
             { "islamic.long.Eras",
                 new String[] {
                     "",
@@ -298,6 +308,24 @@ public class JavaTimeSupplementary_nl extends OpenListResourceBundle {
                     "d MMMM y G",
                     "d MMM y G",
                     "dd-MM-yy GGGGG",
+                }
+            },
+            { "java.time.japanese.long.Eras",
+                new String[] {
+                    "na Christus",
+                    "Meiji",
+                    "Taish\u014d",
+                    "Sh\u014dwa",
+                    "Heisei",
+                }
+            },
+            { "java.time.japanese.short.Eras",
+                new String[] {
+                    "n.Chr.",
+                    "Meiji",
+                    "Taish\u014d",
+                    "Sh\u014dwa",
+                    "Heisei",
                 }
             },
             { "java.time.long.Eras",
@@ -369,7 +397,7 @@ public class JavaTimeSupplementary_nl extends OpenListResourceBundle {
             },
             { "roc.Eras",
                 new String[] {
-                    "Before R.O.C.",
+                    "voor R.O.C.",
                     "Minguo",
                 }
             },
@@ -448,9 +476,15 @@ public class JavaTimeSupplementary_nl extends OpenListResourceBundle {
                     "HH:mm",
                 }
             },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "a.m.",
+                    "p.m.",
+                }
+            },
             { "roc.long.Eras",
                 new String[] {
-                    "Before R.O.C.",
+                    "voor R.O.C.",
                     "Minguo",
                 }
             },
@@ -462,13 +496,13 @@ public class JavaTimeSupplementary_nl extends OpenListResourceBundle {
             },
             { "roc.narrow.Eras",
                 new String[] {
-                    "Before R.O.C.",
+                    "voor R.O.C.",
                     "Minguo",
                 }
             },
             { "roc.short.Eras",
                 new String[] {
-                    "Before R.O.C.",
+                    "voor R.O.C.",
                     "Minguo",
                 }
             },
