@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8148316 8148317 8151755 8152246 8153551 8154812
+ * @bug 8148316 8148317 8151755 8152246 8153551 8154812 8157261
  * @summary Tests for output customization
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -36,6 +36,7 @@
 import java.util.ArrayList;
 import java.util.List;
 import org.testng.annotations.Test;
+import static org.testng.Assert.assertTrue;
 
 @Test
 public class ToolFormatTest extends ReplToolTesting {
@@ -176,6 +177,28 @@ public class ToolFormatTest extends ReplToolTesting {
             assertCommandCheckOutput(false, "/set feedback normal", s -> {
             });
         }
+    }
+
+    public void testDefaultTruncation() {
+        test(
+                    (a) -> assertCommand(a, "char[] cs = new char[2000];", null),
+                    (a) -> assertCommand(a, "Arrays.fill(cs, 'A');", ""),
+                    (a) -> assertCommandCheckOutput(a, "String s = new String(cs)",
+                            (s) -> {
+                                assertTrue(s.length() < 120, "Result too long (" + s.length() + ") -- " + s);
+                                assertTrue(s.contains("AAAAAAAAAAAAAAAAAA"), "Bad value: " + s);
+                            }),
+                    (a) -> assertCommandCheckOutput(a, "s",
+                            (s) -> {
+                                assertTrue(s.length() > 300, "Result too short (" + s.length() + ") -- " + s);
+                                assertTrue(s.contains("AAAAAAAAAAAAAAAAAA"), "Bad value: " + s);
+                            }),
+                    (a) -> assertCommandCheckOutput(a, "\"X\" + s",
+                            (s) -> {
+                                assertTrue(s.length() > 300, "Result too short (" + s.length() + ") -- " + s);
+                                assertTrue(s.contains("XAAAAAAAAAAAAAAAAAA"), "Bad value: " + s);
+                            })
+        );
     }
 
     public void testShowFeedbackModes() {

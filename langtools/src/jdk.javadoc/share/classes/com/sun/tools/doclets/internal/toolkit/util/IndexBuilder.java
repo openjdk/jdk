@@ -45,6 +45,7 @@ import com.sun.tools.doclets.internal.toolkit.*;
  * @see java.lang.Character
  * @author Atul M Dambalkar
  */
+@Deprecated
 public class IndexBuilder {
 
     /**

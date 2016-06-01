@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.tools.javac.api;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -130,9 +131,13 @@ public class BasicJavacTask extends JavacTask {
     public TypeMirror getTypeMirror(Iterable<? extends Tree> path) {
         // TODO: Should complete attribution if necessary
         Tree last = null;
-        for (Tree node : path)
-            last = node;
-        return ((JCTree)last).type;
+        for (Tree node : path) {
+            last = Objects.requireNonNull(node);
+        }
+        if (last == null) {
+            throw new IllegalArgumentException("empty path");
+        }
+        return ((JCTree) last).type;
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)

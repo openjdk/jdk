@@ -174,6 +174,17 @@ public class Main {
             return Result.CMDERR;
         }
 
+        // prefix argv with contents of _JAVAC_OPTIONS if set
+        String envOpt = System.getenv("_JAVAC_OPTIONS");
+        if (envOpt != null && !envOpt.trim().isEmpty()) {
+            String[] envv = envOpt.split("\\s+");
+            String[] result = new String[envv.length + argv.length];
+            System.arraycopy(envv, 0, result, 0, envv.length);
+            System.arraycopy(argv, 0, result, envv.length, argv.length);
+            argv = result;
+        }
+
+        // expand @-files
         try {
             argv = CommandLine.parse(argv);
         } catch (FileNotFoundException | NoSuchFileException e) {

@@ -45,6 +45,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @author Bhavesh Patel (Modified)
  * @since 1.4
  */
+@Deprecated
 public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
         implements ConstantsSummaryWriter {
 

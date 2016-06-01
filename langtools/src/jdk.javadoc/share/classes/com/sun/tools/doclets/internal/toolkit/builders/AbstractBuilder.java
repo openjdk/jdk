@@ -52,6 +52,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @since 1.5
  */
 
+@Deprecated
 public abstract class AbstractBuilder {
     public static class Context {
         /**

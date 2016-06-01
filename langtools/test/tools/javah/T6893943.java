@@ -32,8 +32,8 @@ import java.io.*;
 import java.util.*;
 
 public class T6893943 {
-    static final String[] NO_ARGS = { };
-    static final String[] HELP = { "-help" };
+    static final String[] NO_ARGS = { "-XDsuppress-tool-removal-message" };
+    static final String[] SUPPRESS_WARNING_PLUS_HELP = { "-XDsuppress-tool-removal-message", "-help" };
     static final String NEWLINE = System.getProperty("line.separator");
 
     public static void main(String... args) throws Exception {
@@ -42,9 +42,9 @@ public class T6893943 {
 
     void run() throws Exception {
         testSimpleAPI(NO_ARGS, 1);
-        testSimpleAPI(HELP, 0);
+        testSimpleAPI(SUPPRESS_WARNING_PLUS_HELP, 0);
         testCommand(NO_ARGS, 1);
-        testCommand(HELP, 0);
+        testCommand(SUPPRESS_WARNING_PLUS_HELP, 0);
     }
 
     void testSimpleAPI(String[] args, int expect_rc) throws Exception {
@@ -80,11 +80,6 @@ public class T6893943 {
     void expect(String name, String out, int actual_rc, int expect_rc) throws Exception {
         if (out.isEmpty())
             throw new Exception("No output from javah");
-
-        if (!out.startsWith("Usage:")) {
-            System.err.println(out);
-            throw new Exception("Unexpected output from javah");
-        }
 
         if (actual_rc != expect_rc)
             throw new Exception(name + ": unexpected exit: " + actual_rc + ", expected: " + expect_rc);

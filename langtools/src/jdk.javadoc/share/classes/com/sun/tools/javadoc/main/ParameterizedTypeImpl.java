@@ -46,6 +46,7 @@ import static com.sun.tools.javac.code.TypeTag.CLASS;
  * @author Scott Seligman
  * @since 1.5
  */
+@Deprecated
 public class ParameterizedTypeImpl
         extends AbstractTypeImpl implements ParameterizedType {
 
