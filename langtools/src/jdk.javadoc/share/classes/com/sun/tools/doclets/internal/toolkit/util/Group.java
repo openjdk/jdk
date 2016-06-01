@@ -56,6 +56,7 @@ import com.sun.tools.doclets.internal.toolkit.*;
  *
  * @author Atul M Dambalkar
  */
+@Deprecated
 public class Group {
 
     /**

@@ -39,6 +39,7 @@ import com.sun.tools.javac.util.*;
  *
  *  @author Neal Gafter
  */
+@Deprecated
 public class JavadocTodo extends Todo {
     public static void preRegister(Context context) {
         context.put(todoKey, new Context.Factory<Todo>() {

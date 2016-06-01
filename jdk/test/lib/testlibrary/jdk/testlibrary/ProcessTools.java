@@ -423,7 +423,7 @@ public final class ProcessTools {
      * @param cmds The command line to execute.
      * @return The output from the process.
      */
-    public static OutputAnalyzer executeProcess(String... cmds) throws Throwable {
+    public static OutputAnalyzer executeProcess(String... cmds) throws Exception {
         return executeProcess(new ProcessBuilder(cmds));
     }
 

@@ -41,6 +41,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  *
  * @author Bhavesh Patel
  */
+@Deprecated
 public class StringContent extends Content {
 
     private StringBuilder stringContent;

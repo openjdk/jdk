@@ -46,6 +46,7 @@ import com.sun.tools.doclets.internal.toolkit.*;
  * @author Atul M Dambalkar
  * @author Jamie Ho (rewrite)
  */
+@Deprecated
 public class VisibleMemberMap {
 
     private boolean noVisibleMembers = true;

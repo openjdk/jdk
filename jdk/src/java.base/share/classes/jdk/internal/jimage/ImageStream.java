@@ -28,6 +28,7 @@ package jdk.internal.jimage;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * @implNote This class needs to maintain JDK 8 source compatibility.
@@ -57,16 +58,16 @@ public class ImageStream {
 
     public ImageStream(int size, ByteOrder byteOrder) {
         buffer = ByteBuffer.allocate(size);
-        buffer.order(byteOrder);
+        buffer.order(Objects.requireNonNull(byteOrder));
     }
 
     public ImageStream(byte[] bytes, ByteOrder byteOrder) {
-        buffer = ByteBuffer.wrap(bytes);
-        buffer.order(byteOrder);
+        buffer = ByteBuffer.wrap(Objects.requireNonNull(bytes));
+        buffer.order(Objects.requireNonNull(byteOrder));
     }
 
     public ImageStream(ByteBuffer buffer) {
-        this.buffer = buffer;
+        this.buffer = Objects.requireNonNull(buffer);
     }
 
     public ImageStream align(int alignment) {
