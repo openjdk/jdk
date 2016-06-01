@@ -38,8 +38,8 @@ final class ScriptLoader extends NashornLoader {
     private static final String NASHORN_PKG_PREFIX = "jdk.nashorn.internal.";
 
     private volatile boolean structureAccessAdded;
-    private final Module scriptModule;
     private final Context context;
+    private final Module scriptModule;
 
     /*package-private*/ Context getContext() {
         return context;
@@ -48,8 +48,8 @@ final class ScriptLoader extends NashornLoader {
     /**
      * Constructor.
      */
-    ScriptLoader(final ClassLoader parent, final Context context) {
-        super(parent);
+    ScriptLoader(final Context context) {
+        super(context.getStructLoader());
         this.context = context;
 
         // new scripts module, it's specific exports and read-edges
@@ -67,7 +67,7 @@ final class ScriptLoader extends NashornLoader {
     }
 
     private Module createModule(final String moduleName) {
-        final Module structMod = context.getSharedLoader().getModule();
+        final Module structMod = context.getStructLoader().getModule();
         final ModuleDescriptor descriptor
                 = new ModuleDescriptor.Builder(moduleName)
                     .requires(NASHORN_MODULE.getName())
@@ -80,20 +80,45 @@ final class ScriptLoader extends NashornLoader {
         return mod;
     }
 
-
     @Override
     protected Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
         checkPackageAccess(name);
-        if (name.startsWith(NASHORN_PKG_PREFIX)) {
-            final StructureLoader sharedCl = context.getSharedLoader();
-            final Class<?> cl = sharedCl.loadClass(name);
-            if (!structureAccessAdded && cl.getClassLoader() == sharedCl) {
+        final Class<?> cl = super.loadClass(name, resolve);
+        if (!structureAccessAdded) {
+            final StructureLoader structLoader = context.getStructLoader();
+            if (cl.getClassLoader() == structLoader) {
                 structureAccessAdded = true;
-                sharedCl.addModuleExport(scriptModule);
+                structLoader.addModuleExport(scriptModule);
             }
-            return cl;
         }
-        return super.loadClass(name, resolve);
+        return cl;
+    }
+
+    @Override
+    protected Class<?> findClass(String name) throws ClassNotFoundException {
+        final ClassLoader appLoader = context.getAppLoader();
+
+        /*
+         * If the appLoader is null, don't bother side-delegating to it!
+         * Bootloader has been already attempted via parent loader
+         * delegation from the "loadClass" method.
+         *
+         * Also, make sure that we don't delegate to the app loader
+         * for nashorn's own classes or nashorn generated classes!
+         */
+        if (appLoader == null || name.startsWith(NASHORN_PKG_PREFIX)) {
+            throw new ClassNotFoundException(name);
+        }
+
+        /*
+         * This split-delegation is used so that caller loader
+         * based resolutions of classes would work. For example,
+         * java.sql.DriverManager uses caller's class loader to
+         * get Driver instances. Without this split-delegation
+         * a script class evaluating DriverManager.getDrivers()
+         * will not get back any JDBC driver!
+         */
+        return appLoader.loadClass(name);
     }
 
     // package-private and private stuff below this point

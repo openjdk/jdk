@@ -486,6 +486,11 @@ public final class Context {
     /** class loader to resolve classes from script. */
     private final ClassLoader appLoader;
 
+    /*package-private*/
+    ClassLoader getAppLoader() {
+        return appLoader;
+    }
+
     /** Class loader to load classes compiled from scripts. */
     private final ScriptLoader scriptLoader;
 
@@ -501,12 +506,13 @@ public final class Context {
     /** Optional class filter to use for Java classes. Can be null. */
     private final ClassFilter classFilter;
 
-    private static final StructureLoader sharedLoader;
+    /** Process-wide singleton structure loader */
+    private static final StructureLoader theStructLoader;
     private static final ConcurrentMap<String, Class<?>> structureClasses = new ConcurrentHashMap<>();
 
     /*package-private*/ @SuppressWarnings("static-method")
-    StructureLoader getSharedLoader() {
-        return sharedLoader;
+    StructureLoader getStructLoader() {
+        return theStructLoader;
     }
 
     private static AccessControlContext createNoPermAccCtxt() {
@@ -526,7 +532,7 @@ public final class Context {
 
     static {
         final ClassLoader myLoader = Context.class.getClassLoader();
-        sharedLoader = AccessController.doPrivileged(new PrivilegedAction<StructureLoader>() {
+        theStructLoader = AccessController.doPrivileged(new PrivilegedAction<StructureLoader>() {
             @Override
             public StructureLoader run() {
                 return new StructureLoader(myLoader);
@@ -1038,7 +1044,7 @@ public final class Context {
         }
         return (Class<? extends ScriptObject>)structureClasses.computeIfAbsent(fullName, (name) -> {
             try {
-                return Class.forName(name, true, sharedLoader);
+                return Class.forName(name, true, theStructLoader);
             } catch (final ClassNotFoundException e) {
                 throw new AssertionError(e);
             }
@@ -1191,7 +1197,7 @@ public final class Context {
             // No verification when security manager is around as verifier
             // may load further classes - which should be avoided.
             if (System.getSecurityManager() == null) {
-                CheckClassAdapter.verify(new ClassReader(bytecode), sharedLoader, false, new PrintWriter(System.err, true));
+                CheckClassAdapter.verify(new ClassReader(bytecode), theStructLoader, false, new PrintWriter(System.err, true));
             }
         }
     }
@@ -1551,7 +1557,7 @@ public final class Context {
              new PrivilegedAction<ScriptLoader>() {
                 @Override
                 public ScriptLoader run() {
-                    return new ScriptLoader(appLoader, Context.this);
+                    return new ScriptLoader(Context.this);
                 }
              }, CREATE_LOADER_ACC_CTXT);
     }
