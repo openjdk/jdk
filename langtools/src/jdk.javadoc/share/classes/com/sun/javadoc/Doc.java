@@ -37,7 +37,13 @@ import java.util.Locale;
  * @since 1.2
  * @author Robert Field
  * @author Scott Seligman (generics, enums, annotations)
+ *
+ * @deprecated
+ *   The declarations in this package have been superseded by those
+ *   in the package {@code jdk.javadoc.doclet}.
+ *   For more information, see the <i>Migration Guide</i> in the documentation for that package.
  */
+@Deprecated
 public interface Doc extends Comparable<Object> {
 
     /**

@@ -48,6 +48,7 @@ import com.sun.tools.javac.util.Pair;
  * @since 1.5
  */
 
+@Deprecated
 public class AnnotationDescImpl implements AnnotationDesc {
 
     private final DocEnv env;

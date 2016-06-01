@@ -65,6 +65,7 @@ import com.sun.tools.javadoc.main.RootDocImpl;
  * @author Jamie Ho
  * @author Bhavesh Patel (Modified)
  */
+@Deprecated
 public class ConfigurationImpl extends Configuration {
 
     /**

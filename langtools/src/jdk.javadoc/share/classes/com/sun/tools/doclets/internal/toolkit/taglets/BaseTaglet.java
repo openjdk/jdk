@@ -39,6 +39,7 @@ import com.sun.tools.doclets.internal.toolkit.Content;
  * @author Jamie Ho
  * @since 1.4
  */
+@Deprecated
 public abstract class BaseTaglet implements Taglet {
 
     protected String name = "Default";

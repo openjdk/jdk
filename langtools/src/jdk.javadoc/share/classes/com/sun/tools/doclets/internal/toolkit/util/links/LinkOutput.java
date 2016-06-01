@@ -36,6 +36,7 @@ package com.sun.tools.doclets.internal.toolkit.util.links;
  * @author Jamie Ho
  * @since 1.5
  */
+@Deprecated
 public interface LinkOutput {
 
     /**

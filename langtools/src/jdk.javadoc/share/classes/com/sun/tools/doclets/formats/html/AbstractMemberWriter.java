@@ -47,6 +47,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @author Jamie Ho (Re-write)
  * @author Bhavesh Patel (Modified)
  */
+@Deprecated
 public abstract class AbstractMemberWriter {
 
     protected final ConfigurationImpl configuration;

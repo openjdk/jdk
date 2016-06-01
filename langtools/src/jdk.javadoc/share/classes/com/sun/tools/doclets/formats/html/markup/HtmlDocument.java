@@ -42,6 +42,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  *
  * @author Bhavesh Patel
  */
+@Deprecated
 public class HtmlDocument extends Content {
 
     private List<Content> docContent = Collections.<Content>emptyList();
