@@ -148,9 +148,10 @@ public class TypeAnnotationPosition {
 
     // For exception parameters, index into exception table.  In
     // com.sun.tools.javac.jvm.Gen.genCatch, we first use this to hold
-    // the catch type index.  Then in
+    // the catch type's constant pool entry index.  Then in
     // com.sun.tools.javac.jvm.Code.fillExceptionParameterPositions we
     // use that value to determine the exception table index.
+    // When read from class file, this holds
     private int exception_index = Integer.MIN_VALUE;
 
     // If this type annotation is within a lambda expression,
@@ -303,13 +304,13 @@ public class TypeAnnotationPosition {
     }
 
     public int getExceptionIndex() {
-        Assert.check(exception_index >= 0, "exception_index does not contain a bytecode offset");
+        Assert.check(exception_index >= 0, "exception_index is not set");
         return exception_index;
     }
 
     public void setExceptionIndex(final int exception_index) {
-        Assert.check(hasCatchType(), "exception_index already contains a bytecode offset");
-        Assert.check(exception_index >= 0, "Expected a valid bytecode offset");
+        Assert.check(!hasExceptionIndex(), "exception_index already set");
+        Assert.check(exception_index >= 0, "Expected a valid index into exception table");
         this.exception_index = exception_index;
     }
 
@@ -330,8 +331,8 @@ public class TypeAnnotationPosition {
     }
 
     public void setCatchInfo(final int catchType, final int startPos) {
-        Assert.check(this.exception_index < 0,
-                     "exception_index already contains a bytecode index");
+        Assert.check(!hasExceptionIndex(),
+                     "exception_index is already set");
         Assert.check(catchType >= 0, "Expected a valid catch type");
         this.exception_index = -((catchType | startPos << 8) + 1);
     }

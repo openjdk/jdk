@@ -43,6 +43,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @author Bhavesh Patel (Modified)
  * @since 1.5
  */
+@Deprecated
 public class ConstructorBuilder extends AbstractMemberBuilder {
 
     /**

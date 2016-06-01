@@ -52,6 +52,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @author Robert G. Field
  * @author Bhavesh Patel (Modified)
  */
+@Deprecated
 public class ClassUseWriter extends SubWriterHolderWriter {
 
     final ClassDoc classdoc;

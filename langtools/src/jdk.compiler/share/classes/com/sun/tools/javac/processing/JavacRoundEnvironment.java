@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ public class JavacRoundEnvironment implements RoundEnvironment {
     private final boolean processingOver;
     private final boolean errorRaised;
     private final ProcessingEnvironment processingEnv;
+    private final Elements eltUtils;
 
     // Caller must pass in an immutable set
     private final Set<? extends Element> rootElements;
@@ -63,6 +64,7 @@ public class JavacRoundEnvironment implements RoundEnvironment {
         this.errorRaised = errorRaised;
         this.rootElements = rootElements;
         this.processingEnv = processingEnv;
+        this.eltUtils = processingEnv.getElementUtils();
     }
 
     public String toString() {
@@ -100,9 +102,6 @@ public class JavacRoundEnvironment implements RoundEnvironment {
         return rootElements;
     }
 
-    private static final String NOT_AN_ANNOTATION_TYPE =
-        "The argument does not represent an annotation type: ";
-
     /**
      * Returns the elements annotated with the given annotation type.
      * Only type elements <i>included</i> in this round of annotation
@@ -117,10 +116,9 @@ public class JavacRoundEnvironment implements RoundEnvironment {
      */
     @DefinedBy(Api.ANNOTATION_PROCESSING)
     public Set<? extends Element> getElementsAnnotatedWith(TypeElement a) {
-        Set<Element> result = Collections.emptySet();
-        if (a.getKind() != ElementKind.ANNOTATION_TYPE)
-            throw new IllegalArgumentException(NOT_AN_ANNOTATION_TYPE + a);
+        throwIfNotAnnotation(a);
 
+        Set<Element> result = Collections.emptySet();
         ElementScanner9<Set<Element>, TypeElement> scanner =
             new AnnotationSetScanner(result);
 
@@ -130,40 +128,92 @@ public class JavacRoundEnvironment implements RoundEnvironment {
         return result;
     }
 
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
+    public Set<? extends Element> getElementsAnnotatedWithAny(TypeElement... annotations) {
+        // Don't bother to special-case annotations.length == 1 as
+        // return getElementsAnnotatedWith(annotations[0]);
+
+        Set<TypeElement> annotationSet = new LinkedHashSet<>(annotations.length);
+        for (TypeElement annotation : annotations) {
+            throwIfNotAnnotation(annotation);
+            annotationSet.add(annotation);
+        }
+
+        Set<Element> result = Collections.emptySet();
+        ElementScanner9<Set<Element>, Set<TypeElement>> scanner =
+            new AnnotationSetMultiScanner(result);
+
+        for (Element element : rootElements)
+            result = scanner.scan(element, annotationSet);
+
+        return result;
+    }
+
     // Could be written as a local class inside getElementsAnnotatedWith
     private class AnnotationSetScanner extends
-        ElementScanner9<Set<Element>, TypeElement> {
+        ElementScanningIncludingTypeParameters<Set<Element>, TypeElement> {
         // Insertion-order preserving set
-        Set<Element> annotatedElements = new LinkedHashSet<>();
+        private Set<Element> annotatedElements = new LinkedHashSet<>();
 
         AnnotationSetScanner(Set<Element> defaultSet) {
             super(defaultSet);
         }
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
-        public Set<Element> visitType(TypeElement e, TypeElement p) {
+        public Set<Element> scan(Element e, TypeElement annotation) {
+            for (AnnotationMirror annotMirror :  eltUtils.getAllAnnotationMirrors(e)) {
+                if (annotation.equals(mirrorAsElement(annotMirror))) {
+                    annotatedElements.add(e);
+                    break;
+                }
+            }
+            e.accept(this, annotation);
+            return annotatedElements;
+        }
+    }
+
+    // Could be written as a local class inside getElementsAnnotatedWithAny
+    private class AnnotationSetMultiScanner extends
+        ElementScanningIncludingTypeParameters<Set<Element>, Set<TypeElement>> {
+        // Insertion-order preserving set
+        private Set<Element> annotatedElements = new LinkedHashSet<>();
+
+        AnnotationSetMultiScanner(Set<Element> defaultSet) {
+            super(defaultSet);
+        }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public Set<Element> scan(Element e, Set<TypeElement> annotations) {
+            for (AnnotationMirror annotMirror : eltUtils.getAllAnnotationMirrors(e)) {
+                if (annotations.contains(mirrorAsElement(annotMirror))) {
+                    annotatedElements.add(e);
+                    break;
+                }
+            }
+            e.accept(this, annotations);
+            return annotatedElements;
+        }
+    }
+
+    private static abstract class ElementScanningIncludingTypeParameters<R, P>
+        extends ElementScanner9<R, P> {
+
+        protected ElementScanningIncludingTypeParameters(R defaultValue) {
+            super(defaultValue);
+        }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public R visitType(TypeElement e, P p) {
             // Type parameters are not considered to be enclosed by a type
             scan(e.getTypeParameters(), p);
             return super.visitType(e, p);
         }
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
-        public Set<Element> visitExecutable(ExecutableElement e, TypeElement p) {
+        public R visitExecutable(ExecutableElement e, P p) {
             // Type parameters are not considered to be enclosed by an executable
             scan(e.getTypeParameters(), p);
             return super.visitExecutable(e, p);
-        }
-
-        @Override @DefinedBy(Api.LANGUAGE_MODEL)
-        public Set<Element> scan(Element e, TypeElement p) {
-            java.util.List<? extends AnnotationMirror> annotationMirrors =
-                processingEnv.getElementUtils().getAllAnnotationMirrors(e);
-            for (AnnotationMirror annotationMirror : annotationMirrors) {
-                if (p.equals(annotationMirror.getAnnotationType().asElement()))
-                    annotatedElements.add(e);
-            }
-            e.accept(this, p);
-            return annotatedElements;
         }
     }
 
@@ -172,17 +222,48 @@ public class JavacRoundEnvironment implements RoundEnvironment {
      */
     @DefinedBy(Api.ANNOTATION_PROCESSING)
     public Set<? extends Element> getElementsAnnotatedWith(Class<? extends Annotation> a) {
-        if (!a.isAnnotation())
-            throw new IllegalArgumentException(NOT_AN_ANNOTATION_TYPE + a);
+        throwIfNotAnnotation(a);
         String name = a.getCanonicalName();
         if (name == null)
             return Collections.emptySet();
         else {
-            TypeElement annotationType = processingEnv.getElementUtils().getTypeElement(name);
+            TypeElement annotationType = eltUtils.getTypeElement(name);
             if (annotationType == null)
                 return Collections.emptySet();
             else
                 return getElementsAnnotatedWith(annotationType);
         }
+    }
+
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
+    public Set<? extends Element> getElementsAnnotatedWithAny(Set<Class<? extends Annotation>> annotations) {
+        List<TypeElement> annotationsAsElements = new ArrayList<>(annotations.size());
+
+        for (Class<? extends Annotation> annotation : annotations) {
+            throwIfNotAnnotation(annotation);
+            String name = annotation.getCanonicalName();
+            if (name == null)
+                continue;
+            annotationsAsElements.add(eltUtils.getTypeElement(name));
+        }
+
+        return getElementsAnnotatedWithAny(annotationsAsElements.toArray(new TypeElement[0]));
+    }
+
+    private Element mirrorAsElement(AnnotationMirror annotationMirror) {
+        return annotationMirror.getAnnotationType().asElement();
+    }
+
+    private static final String NOT_AN_ANNOTATION_TYPE =
+        "The argument does not represent an annotation type: ";
+
+    private void throwIfNotAnnotation(Class<? extends Annotation> a) {
+        if (!a.isAnnotation())
+            throw new IllegalArgumentException(NOT_AN_ANNOTATION_TYPE + a);
+    }
+
+    private void throwIfNotAnnotation(TypeElement a) {
+        if (a.getKind() != ElementKind.ANNOTATION_TYPE)
+            throw new IllegalArgumentException(NOT_AN_ANNOTATION_TYPE + a);
     }
 }

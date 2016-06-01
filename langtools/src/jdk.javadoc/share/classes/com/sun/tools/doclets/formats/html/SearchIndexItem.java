@@ -33,6 +33,7 @@ package com.sun.tools.doclets.formats.html;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
+@Deprecated
 public class SearchIndexItem {
 
     private String label = "";
