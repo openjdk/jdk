@@ -145,7 +145,7 @@ static void add_to_exploded_build_list(char *module_name, TRAPS) {
 
   const char* home = Arguments::get_java_home();
   size_t len = strlen(home) + module_len + 32;
-  char* path = NEW_C_HEAP_ARRAY(char, len, mtInternal);
+  char* path = NEW_C_HEAP_ARRAY(char, len, mtModule);
   jio_snprintf(path, len, "%s%cmodules%c%s", home, file_sep, file_sep, module_name);
   struct stat st;
   // See if exploded module path exists

@@ -49,7 +49,7 @@ class ModuleClosure;
 //
 // The Mutex Module_lock is shared between ModuleEntry and PackageEntry, to lock either
 // data structure.
-class ModuleEntry : public HashtableEntry<Symbol*, mtClass> {
+class ModuleEntry : public HashtableEntry<Symbol*, mtModule> {
 private:
   jobject _module;                     // java.lang.reflect.Module
   jobject _pd;                         // java.security.ProtectionDomain, cached
@@ -127,10 +127,10 @@ public:
   }
 
   ModuleEntry* next() const {
-    return (ModuleEntry*)HashtableEntry<Symbol*, mtClass>::next();
+    return (ModuleEntry*)HashtableEntry<Symbol*, mtModule>::next();
   }
   ModuleEntry** next_addr() {
-    return (ModuleEntry**)HashtableEntry<Symbol*, mtClass>::next_addr();
+    return (ModuleEntry**)HashtableEntry<Symbol*, mtModule>::next_addr();
   }
 
   // iteration support for readability
@@ -166,7 +166,7 @@ class ModuleClosure: public StackObj {
 //
 // The ModuleEntryTable's lookup is lock free.
 //
-class ModuleEntryTable : public Hashtable<Symbol*, mtClass> {
+class ModuleEntryTable : public Hashtable<Symbol*, mtModule> {
   friend class VMStructs;
 public:
   enum Constants {
@@ -181,10 +181,10 @@ private:
                          Symbol* location, ClassLoaderData* class_loader);
   void add_entry(int index, ModuleEntry* new_entry);
 
-  int entry_size() const { return BasicHashtable<mtClass>::entry_size(); }
+  int entry_size() const { return BasicHashtable<mtModule>::entry_size(); }
 
   ModuleEntry** bucket_addr(int i) {
-    return (ModuleEntry**)Hashtable<Symbol*, mtClass>::bucket_addr(i);
+    return (ModuleEntry**)Hashtable<Symbol*, mtModule>::bucket_addr(i);
   }
 
   static unsigned int compute_hash(Symbol* name) { return ((name == NULL) ? 0 : (unsigned int)(name->identity_hash())); }
@@ -195,7 +195,7 @@ public:
   ~ModuleEntryTable();
 
   ModuleEntry* bucket(int i) {
-    return (ModuleEntry*)Hashtable<Symbol*, mtClass>::bucket(i);
+    return (ModuleEntry*)Hashtable<Symbol*, mtModule>::bucket(i);
   }
 
   // Create module in loader's module entry table, if already exists then
