@@ -49,6 +49,7 @@ import com.sun.tools.doclets.internal.toolkit.Content;
  * @since 1.5
  */
 
+@Deprecated
 public class LiteralTaglet extends BaseInlineTaglet {
 
     private static final String NAME = "literal";

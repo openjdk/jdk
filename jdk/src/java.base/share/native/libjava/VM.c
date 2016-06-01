@@ -55,3 +55,8 @@ Java_jdk_internal_misc_VM_initialize(JNIEnv *env, jclass cls) {
     (*env)->RegisterNatives(env, cls,
                             methods, sizeof(methods)/sizeof(methods[0]));
 }
+
+JNIEXPORT jobjectArray JNICALL
+Java_jdk_internal_misc_VM_getRuntimeArguments(JNIEnv *env, jclass cls) {
+    return JVM_GetVmArguments(env);
+}

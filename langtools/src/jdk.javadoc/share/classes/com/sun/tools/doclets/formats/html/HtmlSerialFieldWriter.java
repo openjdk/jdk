@@ -45,6 +45,7 @@ import com.sun.tools.doclets.internal.toolkit.taglets.*;
  * @author Joe Fialli
  * @author Bhavesh Patel (Modified)
  */
+@Deprecated
 public class HtmlSerialFieldWriter extends FieldWriterImpl
         implements SerializedFormWriter.SerialFieldWriter {
     ProgramElementDoc[] members = null;

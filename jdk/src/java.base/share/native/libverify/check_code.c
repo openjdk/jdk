@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1744,9 +1744,14 @@ static int instruction_length(unsigned char *iptr, unsigned char *end)
             }
 
         default: {
+            if (instruction < 0 || instruction > JVM_OPC_MAX)
+                return -1;
+
             /* A length of 0 indicates an error. */
-            int length = opcode_length[instruction];
-            return (length <= 0) ? -1 : length;
+            if (opcode_length[instruction] <= 0)
+                return -1;
+
+            return opcode_length[instruction];
         }
     }
 }

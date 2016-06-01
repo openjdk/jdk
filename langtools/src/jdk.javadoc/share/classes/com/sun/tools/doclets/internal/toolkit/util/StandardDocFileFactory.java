@@ -64,6 +64,7 @@ import com.sun.tools.javac.util.Assert;
  *
  * @since 1.8
  */
+@Deprecated
 class StandardDocFileFactory extends DocFileFactory {
     private final StandardJavaFileManager fileManager;
     private Path destDir;

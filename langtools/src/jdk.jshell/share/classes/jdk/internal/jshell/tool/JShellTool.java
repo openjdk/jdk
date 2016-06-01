@@ -373,7 +373,11 @@ public class JShellTool implements MessageHandler {
      */
     @Override
     public void errormsg(String key, Object... args) {
-        cmdout.println(prefix(messageFormat(key, args), feedback.getErrorPre()));
+        if (isRunningInteractive()) {
+            cmdout.println(prefix(messageFormat(key, args), feedback.getErrorPre()));
+        } else {
+            startmsg(key, args);
+        }
     }
 
     /**
@@ -558,17 +562,17 @@ public class JShellTool implements MessageHandler {
                         break;
                     case "-startup":
                         if (startup != null) {
-                            startmsg("jshell.err.opt.startup.conflict");
+                            startmsg("jshell.err.opt.startup.one");
                             return null;
                         }
-                        startup = readFile(ai.hasNext()? ai.next() : null, "'-startup'");
+                        startup = readFile(ai.hasNext()? ai.next() : null, "-startup");
                         if (startup == null) {
                             return null;
                         }
                         break;
                     case "-nostartup":
-                        if (startup != null && !startup.isEmpty()) {
-                            startmsg("jshell.err.opt.startup.conflict");
+                        if (startup != null) {
+                            startmsg("jshell.err.opt.startup.one");
                             return null;
                         }
                         startup = "";
@@ -660,6 +664,10 @@ public class JShellTool implements MessageHandler {
         currentNameSpace = mainNamespace;
     }
 
+    private boolean isRunningInteractive() {
+        return currentNameSpace != null && currentNameSpace == mainNamespace;
+    }
+
     //where -- one-time per run initialization of feedback modes
     private void initFeedback() {
         // No fluff, no prefix, for init failures
@@ -722,7 +730,7 @@ public class JShellTool implements MessageHandler {
             String incomplete = "";
             while (live) {
                 String prompt;
-                if (currentNameSpace == mainNamespace) {
+                if (isRunningInteractive()) {
                     prompt = testPrompt
                                     ? incomplete.isEmpty()
                                             ? "\u0005" //ENQ
@@ -770,7 +778,7 @@ public class JShellTool implements MessageHandler {
     }
 
     private void addToReplayHistory(String s) {
-        if (currentNameSpace == mainNamespace) {
+        if (isRunningInteractive()) {
             replayableHistory.add(s);
         }
     }

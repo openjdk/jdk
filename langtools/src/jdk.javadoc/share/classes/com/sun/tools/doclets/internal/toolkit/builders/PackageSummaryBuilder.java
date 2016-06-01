@@ -42,6 +42,7 @@ import com.sun.tools.doclets.internal.toolkit.*;
  * @author Bhavesh Patel (Modified)
  * @since 1.5
  */
+@Deprecated
 public class PackageSummaryBuilder extends AbstractBuilder {
     /**
      * The root element of the package summary XML is {@value}.

@@ -42,6 +42,7 @@ import com.sun.tools.doclets.internal.toolkit.taglets.*;
  * @author Jamie Ho
  * @since 1.5
  */
+@Deprecated
 public class DocFinder {
 
     /**

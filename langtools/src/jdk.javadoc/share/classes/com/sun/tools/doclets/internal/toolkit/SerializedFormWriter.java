@@ -41,6 +41,7 @@ import com.sun.javadoc.*;
  * @since 1.5
  */
 
+@Deprecated
 public interface SerializedFormWriter {
 
     /**

@@ -811,6 +811,7 @@ public class Attr extends JCTree.Visitor {
         DiagnosticPosition prevLintPos
                 = deferredLintHandler.setPos(variable.pos());
 
+        final JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
         try {
             Type itype = attribExpr(variable.init, env, type);
             if (itype.constValue() != null) {
@@ -819,6 +820,7 @@ public class Attr extends JCTree.Visitor {
                 return null;
             }
         } finally {
+            log.useSource(prevSource);
             deferredLintHandler.setPos(prevLintPos);
         }
     }
@@ -3467,7 +3469,6 @@ public class Attr extends JCTree.Visitor {
             } else {
                 // Check if type-qualified fields or methods are static (JLS)
                 if ((sym.flags() & STATIC) == 0 &&
-                    !env.next.tree.hasTag(REFERENCE) &&
                     sym.name != names._super &&
                     (sym.kind == VAR || sym.kind == MTH)) {
                     rs.accessBase(rs.new StaticError(sym),

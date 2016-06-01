@@ -52,6 +52,7 @@ import com.sun.tools.javac.util.Names;
  * @author Scott Seligman
  * @since 1.5
  */
+@Deprecated
 public class TypeVariableImpl extends AbstractTypeImpl implements TypeVariable {
 
     TypeVariableImpl(DocEnv env, TypeVar type) {

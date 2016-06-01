@@ -28,7 +28,7 @@ package com.sun.tools.doclets.standard;
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.*;
 
-
+@Deprecated
 public class Standard {
 
     public static int optionLength(String option) {

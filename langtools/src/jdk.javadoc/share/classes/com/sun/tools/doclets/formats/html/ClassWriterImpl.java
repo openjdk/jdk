@@ -55,6 +55,7 @@ import java.io.IOException;
  * @author Robert Field
  * @author Bhavesh Patel (Modified)
  */
+@Deprecated
 public class ClassWriterImpl extends SubWriterHolderWriter
         implements ClassWriter {
 
