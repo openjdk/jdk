@@ -152,8 +152,7 @@ module java.base {
         java.xml,
         jdk.dynalink,
         jdk.jartool,
-        jdk.jlink,
-        jdk.scripting.nashorn;
+        jdk.jlink;
     exports jdk.internal.misc to
         java.corba,
         java.desktop,
@@ -165,6 +164,7 @@ module java.base {
         java.sql,
         java.xml,
         jdk.charsets,
+        jdk.compiler,
         jdk.jartool,
         jdk.jlink,
         jdk.net,
@@ -215,6 +215,8 @@ module java.base {
     exports sun.nio.cs to
         java.desktop,
         jdk.charsets;
+    exports sun.nio.fs to
+        jdk.unsupported;
     exports sun.reflect.annotation to
         jdk.compiler;
     exports sun.reflect.generics.reflectiveObjects to

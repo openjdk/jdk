@@ -373,8 +373,10 @@ ALL_TARGETS += create-buildjdk-copy create-buildjdk-interim-image
 interim-image:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f InterimImage.gmk)
 
-generate-classlist:
+ifeq ($(ENABLE_GENERATE_CLASSLIST), true)
+  generate-classlist:
 	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f GenerateClasslist.gmk)
+endif
 
 ALL_TARGETS += interim-image generate-classlist
 
@@ -640,18 +642,22 @@ else
 
   jrtfs-jar: interim-langtools
 
-  ifeq ($(CREATE_BUILDJDK), true)
-    # If creating a buildjdk, the interim image needs to be based on that.
-    generate-classlist: create-buildjdk
-  else ifeq ($(EXTERNAL_BUILDJDK), false)
-    # If an external buildjdk has been provided, we skip generating an
-    # interim-image and just use the external buildjdk for generating
-    # classlist.
-    generate-classlist: interim-image
-  endif
-  generate-classlist: buildtools-jdk
+  ifeq ($(ENABLE_GENERATE_CLASSLIST), true)
+    ifeq ($(CREATE_BUILDJDK), true)
+      # If creating a buildjdk, the interim image needs to be based on that.
+      generate-classlist: create-buildjdk
+    else ifeq ($(EXTERNAL_BUILDJDK), false)
+      # If an external buildjdk has been provided, we skip generating an
+      # interim-image and just use the external buildjdk for generating
+      # classlist.
+      generate-classlist: interim-image
+    endif
+    generate-classlist: buildtools-jdk
 
-  jimages: jmods zip-source source-tips demos samples jrtfs-jar generate-classlist
+    jimages: generate-classlist
+  endif
+
+  jimages: jmods zip-source source-tips demos samples jrtfs-jar
 
   profiles: jmods zip-source source-tips jrtfs-jar
 

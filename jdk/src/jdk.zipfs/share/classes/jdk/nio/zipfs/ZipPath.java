@@ -52,13 +52,28 @@ final class ZipPath implements Path {
         this(zfs, path, false);
     }
 
-    ZipPath(ZipFileSystem zfs, byte[] path, boolean normalized)
-    {
+    ZipPath(ZipFileSystem zfs, byte[] path, boolean normalized) {
         this.zfs = zfs;
-        if (normalized)
+        if (normalized) {
             this.path = path;
-        else
+        } else {
+            if (zfs.zc.isUTF8()) {
+                this.path = normalize(path);
+            } else {
+                // see normalize(String);
+                this.path = normalize(zfs.getString(path));
+            }
+        }
+    }
+
+    ZipPath(ZipFileSystem zfs, String path) {
+        this.zfs = zfs;
+        if (zfs.zc.isUTF8()) {
+            this.path = normalize(zfs.getBytes(path));
+        } else {
+            // see normalize(String);
             this.path = normalize(path);
+        }
     }
 
     @Override
@@ -376,12 +391,17 @@ final class ZipPath implements Path {
             // count names
             count = 0;
             index = 0;
-            while (index < path.length) {
-                byte c = path[index++];
-                if (c != '/') {
-                    count++;
-                    while (index < path.length && path[index] != '/')
-                        index++;
+            if (path.length == 0) {
+                // empty path has one name
+                count = 1;
+            } else {
+                while (index < path.length) {
+                    byte c = path[index++];
+                    if (c != '/') {
+                        count++;
+                        while (index < path.length && path[index] != '/')
+                             index++;
+                    }
                 }
             }
             // populate offsets
@@ -423,10 +443,11 @@ final class ZipPath implements Path {
     // removes redundant slashs, replace "\" to zip separator "/"
     // and check for invalid characters
     private byte[] normalize(byte[] path) {
-        if (path.length == 0)
+        int len = path.length;
+        if (len == 0)
             return path;
         byte prevC = 0;
-        for (int i = 0; i < path.length; i++) {
+        for (int i = 0; i < len; i++) {
             byte c = path[i];
             if (c == '\\' || c == '\u0000')
                 return normalize(path, i);
@@ -434,6 +455,8 @@ final class ZipPath implements Path {
                 return normalize(path, i - 1);
             prevC = c;
         }
+        if (len > 1 && prevC == '/')
+            return Arrays.copyOf(path, len - 1);
         return path;
     }
 
@@ -461,6 +484,50 @@ final class ZipPath implements Path {
         if (m > 1 && to[m - 1] == '/')
             m--;
         return (m == to.length)? to : Arrays.copyOf(to, m);
+    }
+
+    // if zfs is NOT in utf8, normalize the path as "String"
+    // to avoid incorrectly normalizing byte '0x5c' (as '\')
+    // to '/'.
+    private byte[] normalize(String path) {
+        int len = path.length();
+        if (len == 0)
+            return new byte[0];
+        char prevC = 0;
+        for (int i = 0; i < len; i++) {
+            char c = path.charAt(i);
+            if (c == '\\' || c == '\u0000')
+                return normalize(path, i, len);
+            if (c == '/' && prevC == '/')
+                return normalize(path, i - 1, len);
+            prevC = c;
+        }
+        if (len > 1 && prevC == '/')
+            path = path.substring(0, len - 1);
+        return zfs.getBytes(path);
+    }
+
+    private byte[] normalize(String path, int off, int len) {
+        StringBuilder to = new StringBuilder(len);
+        to.append(path, 0, off);
+        int m = off;
+        char prevC = 0;
+        while (off < len) {
+            char c = path.charAt(off++);
+            if (c == '\\')
+                c = '/';
+            if (c == '/' && prevC == '/')
+                continue;
+            if (c == '\u0000')
+                throw new InvalidPathException(path,
+                                               "Path: nul character not allowed");
+            to.append(c);
+            prevC = c;
+        }
+        len = to.length();
+        if (len > 1 && prevC == '/')
+            to.delete(len -1, len);
+        return zfs.getBytes(to.toString());
     }
 
     // Remove DotSlash(./) and resolve DotDot (..) components
@@ -567,7 +634,8 @@ final class ZipPath implements Path {
         if (watcher == null || events == null || modifiers == null) {
             throw new NullPointerException();
         }
-        throw new UnsupportedOperationException();
+        // watcher must be associated with a different provider
+        throw new ProviderMismatchException();
     }
 
     @Override

@@ -54,6 +54,7 @@ import com.sun.tools.javac.util.StringUtils;
  * @author Atul Dambalkar.
  * @author Jamie Ho
  */
+@Deprecated
 public abstract class Configuration {
 
     /**

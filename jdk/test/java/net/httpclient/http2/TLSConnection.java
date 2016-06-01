@@ -39,6 +39,7 @@ import javax.net.ssl.SSLSession;
 /*
  * @test
  * @bug 8150769 8157107
+ * @key intermittent
  * @summary Checks that SSL parameters can be set for HTTP/2 connection
  * @modules java.httpclient
  * @compile/module=java.httpclient java/net/http/Http2Handler.java

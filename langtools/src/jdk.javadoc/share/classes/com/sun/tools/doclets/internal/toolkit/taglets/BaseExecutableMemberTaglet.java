@@ -37,6 +37,7 @@ package com.sun.tools.doclets.internal.toolkit.taglets;
  * @author Jamie Ho
  * @since 1.4
  */
+@Deprecated
 public abstract class BaseExecutableMemberTaglet extends BaseTaglet {
 
     /**

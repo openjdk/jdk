@@ -41,6 +41,7 @@ import com.sun.tools.doclets.internal.toolkit.Configuration;
  *
  * @author Atul M Dambalkar
  */
+@Deprecated
 public class ImplementedMethods {
 
     private final Map<MethodDoc,Type> interfaces = new HashMap<>();

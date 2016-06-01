@@ -43,6 +43,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @author Jamie Ho
  * @since 1.5
  */
+@Deprecated
 public abstract class AbstractMemberBuilder extends AbstractBuilder {
 
     /**

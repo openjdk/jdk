@@ -28,6 +28,9 @@
  * @library /lib/testlibrary/java/util/jar
  * @build Compiler JarBuilder CreateMultiReleaseTestJars
  * @run testng MultiReleaseJarTest
+ * @modules java.compiler
+ *          jdk.jartool
+ *          jdk.zipfs
  */
 
 import java.io.IOException;

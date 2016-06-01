@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,6 @@
  */
 
 package jdk.testlibrary;
-
-import com.sun.net.httpserver.*;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -54,7 +52,7 @@ public class SimpleSSLContext {
      * loads default keystore from SimpleSSLContext
      * source directory
      */
-    public SimpleSSLContext () throws IOException {
+    public SimpleSSLContext() throws IOException {
         String paths = System.getProperty("test.src.path");
         StringTokenizer st = new StringTokenizer(paths, File.pathSeparator);
         boolean securityExceptions = false;
@@ -63,8 +61,10 @@ public class SimpleSSLContext {
             try {
                 File f = new File(path, "jdk/testlibrary/testkeys");
                 if (f.exists()) {
-                    init (new FileInputStream(f));
-                    return;
+                    try (FileInputStream fis = new FileInputStream(f)) {
+                        init(fis);
+                        return;
+                    }
                 }
             } catch (SecurityException e) {
                 // catch and ignore because permission only required
@@ -80,13 +80,14 @@ public class SimpleSSLContext {
     /**
      * loads default keystore from given directory
      */
-    public SimpleSSLContext (String dir) throws IOException {
+    public SimpleSSLContext(String dir) throws IOException {
         String file = dir+"/testkeys";
-        FileInputStream fis = new FileInputStream(file);
-        init(fis);
+        try (FileInputStream fis = new FileInputStream(file)) {
+            init(fis);
+        }
     }
 
-    private void init (InputStream i) throws IOException {
+    private void init(InputStream i) throws IOException {
         try {
             char[] passphrase = "passphrase".toCharArray();
             KeyStore ks = KeyStore.getInstance("JKS");
@@ -98,22 +99,22 @@ public class SimpleSSLContext {
             TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
             tmf.init(ks);
 
-            ssl = SSLContext.getInstance ("TLS");
+            ssl = SSLContext.getInstance("TLS");
             ssl.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
         } catch (KeyManagementException e) {
-            throw new RuntimeException (e.getMessage());
+            throw new RuntimeException(e.getMessage());
         } catch (KeyStoreException e) {
-            throw new RuntimeException (e.getMessage());
+            throw new RuntimeException(e.getMessage());
         } catch (UnrecoverableKeyException e) {
-            throw new RuntimeException (e.getMessage());
+            throw new RuntimeException(e.getMessage());
         } catch (CertificateException e) {
-            throw new RuntimeException (e.getMessage());
+            throw new RuntimeException(e.getMessage());
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException (e.getMessage());
+            throw new RuntimeException(e.getMessage());
         }
     }
 
-    public SSLContext get () {
+    public SSLContext get() {
         return ssl;
     }
 }

@@ -42,6 +42,7 @@ import static com.sun.tools.javac.code.TypeTag.ARRAY;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
+@Deprecated
 public class TypeMaker {
 
     public static com.sun.javadoc.Type getType(DocEnv env, Type t) {

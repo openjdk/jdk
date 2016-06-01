@@ -35,6 +35,7 @@ package com.sun.tools.doclets.formats.html.markup;
  *
  * @author Bhavesh Patel
  */
+@Deprecated
 public enum HtmlStyle {
     aboutLanguage,
     activeTableTab,

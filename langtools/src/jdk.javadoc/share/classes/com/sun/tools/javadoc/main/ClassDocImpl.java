@@ -86,6 +86,7 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  * @author Scott Seligman (generics, enums, annotations)
  */
 
+@Deprecated
 public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
 
     public final ClassType type;        // protected->public for debugging

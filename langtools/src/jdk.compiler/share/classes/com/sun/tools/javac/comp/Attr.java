@@ -811,6 +811,7 @@ public class Attr extends JCTree.Visitor {
         DiagnosticPosition prevLintPos
                 = deferredLintHandler.setPos(variable.pos());
 
+        final JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
         try {
             Type itype = attribExpr(variable.init, env, type);
             if (itype.constValue() != null) {
@@ -819,6 +820,7 @@ public class Attr extends JCTree.Visitor {
                 return null;
             }
         } finally {
+            log.useSource(prevSource);
             deferredLintHandler.setPos(prevLintPos);
         }
     }

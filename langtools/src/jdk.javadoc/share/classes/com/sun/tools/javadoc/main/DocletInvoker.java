@@ -45,9 +45,6 @@ import com.sun.javadoc.*;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.List;
 
-import static com.sun.javadoc.LanguageVersion.*;
-
-
 /**
  * Class creates, controls and invokes doclets.
  *
@@ -58,6 +55,7 @@ import static com.sun.javadoc.LanguageVersion.*;
  *
  * @author Neal Gafter (rewrite)
  */
+@Deprecated
 public class DocletInvoker {
 
     private final Class<?> docletClass;
@@ -283,16 +281,16 @@ public class DocletInvoker {
             Class<?>[] paramTypes = new Class<?>[0];
             Object[] params = new Object[0];
             try {
-                retVal = invoke(methodName, JAVA_1_1, paramTypes, params);
+                retVal = invoke(methodName, LanguageVersion.JAVA_1_1, paramTypes, params);
             } catch (DocletInvokeException exc) {
-                return JAVA_1_1;
+                return LanguageVersion.JAVA_1_1;
             }
             if (retVal instanceof LanguageVersion) {
                 return (LanguageVersion)retVal;
             } else {
                 messager.error(Messager.NOPOS, "main.must_return_languageversion",
                                docletClassName, methodName);
-                return JAVA_1_1;
+                return LanguageVersion.JAVA_1_1;
             }
         } catch (NoClassDefFoundError ex) { // for boostrapping, no Enum class.
             return null;

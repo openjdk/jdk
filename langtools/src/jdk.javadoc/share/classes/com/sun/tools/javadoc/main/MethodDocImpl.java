@@ -47,6 +47,7 @@ import static com.sun.tools.javac.code.TypeTag.CLASS;
  * @author Neal Gafter (rewrite)
  */
 
+@Deprecated
 public class MethodDocImpl
         extends ExecutableMemberDocImpl implements MethodDoc {
 
