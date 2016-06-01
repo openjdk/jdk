@@ -166,14 +166,11 @@ class Parse : public GraphKit {
     int                _all_successors; // Include exception paths also.
     Block**            _successors;
 
-    // Use init_node/init_graph to initialize Blocks.
-    // Block() : _live_locals((uintptr_t*)NULL,0) { ShouldNotReachHere(); }
-    Block() : _live_locals() { ShouldNotReachHere(); }
-
    public:
 
     // Set up the block data structure itself.
-    void init_node(Parse* outer, int po);
+    Block(Parse* outer, int rpo);
+
     // Set up the block's relations to other blocks.
     void init_graph(Parse* outer);
 
