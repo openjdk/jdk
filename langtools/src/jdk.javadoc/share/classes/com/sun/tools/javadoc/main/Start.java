@@ -69,6 +69,7 @@ import static com.sun.tools.javac.code.Flags.*;
  * @author Robert Field
  * @author Neal Gafter (rewrite)
  */
+@Deprecated
 public class Start extends ToolOption.Helper {
     /** Context for this invocation. */
     private final Context context;

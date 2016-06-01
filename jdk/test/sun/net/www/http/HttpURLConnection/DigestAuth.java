@@ -41,6 +41,7 @@ import java.util.List;
  * @summary Tests for HTTP Digest auth
  *          The impl maintains a cache for auth info,
  *          the testcases run in a separate JVM to avoid cache hits
+ * @modules jdk.httpserver
  * @run main/othervm DigestAuth good
  * @run main/othervm DigestAuth only_nonce
  * @run main/othervm DigestAuth sha1

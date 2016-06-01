@@ -2,7 +2,7 @@
   <configuration default="false" name="javac" type="Application" factoryName="Application">
     <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
     <option name="MAIN_CLASS_NAME" value="com.sun.tools.javac.Main" />
-    <option name="VM_PARAMETERS" value="@XPATCH@" />
+    <option name="VM_PARAMETERS" value='@XPATCH@' />
     <option name="PROGRAM_PARAMETERS" value="" />
     <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />

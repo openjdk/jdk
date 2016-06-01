@@ -45,6 +45,7 @@ import com.sun.tools.javac.util.StringUtils;
  * @author Bhavesh Patel (Modified)
  * @since 1.5
  */
+@Deprecated
 public class SerializedFormBuilder extends AbstractBuilder {
 
     /**
