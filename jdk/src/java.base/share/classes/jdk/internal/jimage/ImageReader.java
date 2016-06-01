@@ -59,6 +59,9 @@ public final class ImageReader implements AutoCloseable {
     }
 
     public static ImageReader open(Path imagePath, ByteOrder byteOrder) throws IOException {
+        Objects.requireNonNull(imagePath);
+        Objects.requireNonNull(byteOrder);
+
         return SharedImageReader.open(imagePath, byteOrder);
     }
 
@@ -218,6 +221,9 @@ public final class ImageReader implements AutoCloseable {
         }
 
         public static ImageReader open(Path imagePath, ByteOrder byteOrder) throws IOException {
+            Objects.requireNonNull(imagePath);
+            Objects.requireNonNull(byteOrder);
+
             synchronized (OPEN_FILES) {
                 SharedImageReader reader = OPEN_FILES.get(imagePath);
 
@@ -237,6 +243,8 @@ public final class ImageReader implements AutoCloseable {
         }
 
         public void close(ImageReader image) throws IOException {
+            Objects.requireNonNull(image);
+
             synchronized (OPEN_FILES) {
                 if (!openers.remove(image)) {
                     throw new IOException("image file already closed");

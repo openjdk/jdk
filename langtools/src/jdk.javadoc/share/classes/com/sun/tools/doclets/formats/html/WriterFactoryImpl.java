@@ -42,6 +42,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @author Jamie Ho
  * @since 1.5
  */
+@Deprecated
 public class WriterFactoryImpl implements WriterFactory {
 
     private final ConfigurationImpl configuration;

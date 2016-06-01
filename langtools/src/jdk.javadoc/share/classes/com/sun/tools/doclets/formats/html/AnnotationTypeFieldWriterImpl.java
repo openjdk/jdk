@@ -41,6 +41,7 @@ import com.sun.tools.doclets.internal.toolkit.*;
  *
  * @author Bhavesh Patel
  */
+@Deprecated
 public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
     implements AnnotationTypeFieldWriter, MemberSummaryWriter {
 

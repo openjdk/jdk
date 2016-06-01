@@ -44,6 +44,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @since 1.4
  */
 
+@Deprecated
 public class InheritDocTaglet extends BaseInlineTaglet {
 
     /**

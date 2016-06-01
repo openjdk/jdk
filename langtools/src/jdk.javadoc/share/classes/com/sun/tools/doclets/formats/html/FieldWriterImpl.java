@@ -45,6 +45,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @author Jamie Ho (rewrite)
  * @author Bhavesh Patel (Modified)
  */
+@Deprecated
 public class FieldWriterImpl extends AbstractMemberWriter
     implements FieldWriter, MemberSummaryWriter {
 

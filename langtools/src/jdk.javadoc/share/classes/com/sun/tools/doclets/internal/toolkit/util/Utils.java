@@ -33,10 +33,8 @@ import java.text.Collator;
 import java.util.*;
 
 import javax.tools.JavaFileManager.Location;
-import javax.tools.StandardLocation;
 
 import com.sun.javadoc.*;
-import com.sun.javadoc.AnnotationDesc.ElementValuePair;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.javac.util.StringUtils;
 
@@ -51,6 +49,7 @@ import com.sun.tools.javac.util.StringUtils;
  * @author Atul M Dambalkar
  * @author Jamie Ho
  */
+@Deprecated
 public class Utils {
     /**
      * Return array of class members whose documentation is to be generated.
@@ -445,7 +444,7 @@ public class Utils {
 
     private boolean isDeclarationTarget(AnnotationDesc targetAnno) {
         // The error recovery steps here are analogous to TypeAnnotations
-        ElementValuePair[] elems = targetAnno.elementValues();
+        AnnotationDesc.ElementValuePair[] elems = targetAnno.elementValues();
         if (elems == null
             || elems.length != 1
             || !"value".equals(elems[0].element().name())

@@ -348,10 +348,6 @@ public class Phaser {
     private final AtomicReference<QNode> evenQ;
     private final AtomicReference<QNode> oddQ;
 
-    private AtomicReference<QNode> queueFor(int phase) {
-        return ((phase & 1) == 0) ? evenQ : oddQ;
-    }
-
     /**
      * Returns message string for bounds exceptions on arrival.
      */

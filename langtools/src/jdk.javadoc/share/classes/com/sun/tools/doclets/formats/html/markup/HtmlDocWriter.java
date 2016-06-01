@@ -53,6 +53,7 @@ import com.sun.tools.doclets.internal.toolkit.util.DocPaths;
  * @author Atul M Dambalkar
  * @author Robert Field
  */
+@Deprecated
 public abstract class HtmlDocWriter extends HtmlWriter {
 
     public static final String CONTENT_TYPE = "text/html";

@@ -44,6 +44,7 @@ import com.sun.tools.doclets.internal.toolkit.Configuration;
  * @author Atul M Dambalkar
  * @author Robert Field
  */
+@Deprecated
 public class MessageRetriever {
     /**
      * The global configuration information for this run.

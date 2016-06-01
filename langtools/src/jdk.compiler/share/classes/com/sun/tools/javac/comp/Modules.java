@@ -68,6 +68,7 @@ import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.jvm.ClassWriter;
 import com.sun.tools.javac.jvm.JNIWriter;
 import com.sun.tools.javac.main.Option;
@@ -123,12 +124,12 @@ public class Modules extends JCTree.Visitor {
     private final Symtab syms;
     private final Attr attr;
     private final TypeEnvs typeEnvs;
+    private final Types types;
     private final JavaFileManager fileManager;
     private final ModuleFinder moduleFinder;
     private final boolean allowModules;
 
     public final boolean multiModuleMode;
-    public final boolean noModules;
 
     private final String moduleOverride;
 
@@ -161,15 +162,12 @@ public class Modules extends JCTree.Visitor {
         attr = Attr.instance(context);
         typeEnvs = TypeEnvs.instance(context);
         moduleFinder = ModuleFinder.instance(context);
+        types = Types.instance(context);
         fileManager = context.get(JavaFileManager.class);
         allowModules = Source.instance(context).allowModules();
         Options options = Options.instance(context);
 
         moduleOverride = options.get(Option.XMODULE);
-
-        // The following is required, for now, to support building
-        // Swing beaninfo via javadoc.
-        noModules = options.isSet("noModules");
 
         multiModuleMode = fileManager.hasLocation(StandardLocation.MODULE_SOURCE_PATH);
         ClassWriter classWriter = ClassWriter.instance(context);
@@ -194,7 +192,7 @@ public class Modules extends JCTree.Visitor {
     }
 
     public boolean enter(List<JCCompilationUnit> trees, ClassSymbol c) {
-        if (!allowModules || noModules) {
+        if (!allowModules) {
             for (JCCompilationUnit tree: trees) {
                 tree.modle = syms.noModule;
             }
@@ -718,9 +716,12 @@ public class Modules extends JCTree.Visitor {
         @Override
         public void visitProvides(JCProvides tree) {
             Type st = attr.attribType(tree.serviceName, env, syms.objectType);
-            Type it = attr.attribType(tree.implName, env, st);
+            Type it = attr.attribType(tree.implName, env, syms.objectType);
             ClassSymbol service = (ClassSymbol) st.tsym;
             ClassSymbol impl = (ClassSymbol) it.tsym;
+            if (!types.isSubtype(it, st)) {
+                log.error(tree.implName.pos(), Errors.ServiceImplementationMustBeSubtypeOfServiceInterface);
+            }
             if ((impl.flags() & ABSTRACT) != 0) {
                 log.error(tree.implName.pos(), Errors.ServiceImplementationIsAbstract(impl));
             } else if (impl.isInner()) {
