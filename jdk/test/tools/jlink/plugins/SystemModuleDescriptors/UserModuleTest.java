@@ -110,11 +110,11 @@ public class UserModuleTest {
     }
 
     /*
-     * Disable the fast loading of installed modules.
+     * Disable the fast loading of system modules.
      * Parsing module-info.class
      */
     @Test
-    public void disableInstalledModules() throws Throwable {
+    public void disableSystemModules() throws Throwable {
         if (!hasJmods()) return;
 
         Path java = IMAGE.resolve("bin").resolve("java");

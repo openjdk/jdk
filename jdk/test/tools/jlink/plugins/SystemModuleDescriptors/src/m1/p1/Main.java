@@ -37,7 +37,7 @@ public class Main {
         // load another package
         p2.T.test();
 
-        // check the module descriptor of an installed module
+        // check the module descriptor of a system module
         validate(Main.class.getModule().getDescriptor());
 
         // read m1/module-info.class
