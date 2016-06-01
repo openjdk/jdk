@@ -38,12 +38,12 @@ import static org.testng.Assert.*;
 /**
  * @test
  * @modules java.base/jdk.internal.misc
- * @run testng InstalledModulesTest
+ * @run testng SystemModulesTest
  * @summary Verify the properties of ModuleDescriptor created
- *          by InstalledModules
+ *          by SystemModules
  */
 
-public class InstalledModulesTest {
+public class SystemModulesTest {
     private static final JavaLangModuleAccess jlma = SharedSecrets.getJavaLangModuleAccess();
 
     /**
