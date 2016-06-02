@@ -492,6 +492,10 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     permission java.io.FilePermission "${basedir}/test/script/external/showdown/-", "read";
 };
 
+grant codeBase "file:/${basedir}/test/script/basic/JDK-8158467.js" {
+    permission java.lang.RuntimePermission "nashorn.setConfig";
+};
+
     </echo>
 
     <replace file="${build.dir}/nashorn.policy"><replacetoken>\</replacetoken><replacevalue>/</replacevalue></replace>    <!--hack for Windows - to make URLs with normal path separators -->
