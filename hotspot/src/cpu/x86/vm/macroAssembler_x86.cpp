@@ -10151,7 +10151,13 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
   movdqa(xmm1, Address(buf, 0));
   movdl(rax, xmm1);
   xorl(crc, rax);
-  pinsrd(xmm1, crc, 0);
+  if (VM_Version::supports_sse4_1()) {
+    pinsrd(xmm1, crc, 0);
+  } else {
+    pinsrw(xmm1, crc, 0);
+    shrl(crc, 16);
+    pinsrw(xmm1, crc, 1);
+  }
   addptr(buf, 16);
   subl(len, 4); // len > 0
   jcc(Assembler::less, L_fold_tail);
