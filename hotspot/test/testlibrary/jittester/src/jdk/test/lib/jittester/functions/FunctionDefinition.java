@@ -23,9 +23,10 @@
 
 package jdk.test.lib.jittester.functions;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
+
 import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.Symbol;
 import jdk.test.lib.jittester.SymbolTable;
@@ -36,8 +37,10 @@ public class FunctionDefinition extends IRNode {
     private final FunctionInfo functionInfo;
 
     public FunctionDefinition(FunctionInfo functionInfo,
-            ArrayList<ArgumentDeclaration> argumentsDeclaration, IRNode body, IRNode ret) {
+                              List<? extends ArgumentDeclaration> argumentsDeclaration, IRNode body, Return ret) {
+        super(functionInfo.type);
         this.functionInfo = functionInfo;
+        this.owner = functionInfo.owner;
         addChild(body);
         addChild(ret);
         addChildren(argumentsDeclaration);

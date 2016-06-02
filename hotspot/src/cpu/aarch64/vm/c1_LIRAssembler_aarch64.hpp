@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_X86_VM_C1_LIRASSEMBLER_X86_HPP
-#define CPU_X86_VM_C1_LIRASSEMBLER_X86_HPP
+#ifndef CPU_AARCH64_VM_C1_LIRASSEMBLER_AARCH64_HPP
+#define CPU_AARCH64_VM_C1_LIRASSEMBLER_AARCH64_HPP
 
 // ArrayCopyStub needs access to bailout
 friend class ArrayCopyStub;
@@ -78,4 +78,4 @@ enum { call_stub_size = 12 * NativeInstruction::instruction_size,
        exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(175),
        deopt_handler_size = 7 * NativeInstruction::instruction_size };
 
-#endif // CPU_X86_VM_C1_LIRASSEMBLER_X86_HPP
+#endif // CPU_AARCH64_VM_C1_LIRASSEMBLER_AARCH64_HPP

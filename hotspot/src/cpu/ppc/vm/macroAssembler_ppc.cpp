@@ -1404,7 +1404,7 @@ address MacroAssembler::get_stack_bang_address(int instruction, void *ucontext) 
 void MacroAssembler::cmpxchgw(ConditionRegister flag, Register dest_current_value,
                               Register compare_value, Register exchange_value,
                               Register addr_base, int semantics, bool cmpxchgx_hint,
-                              Register int_flag_success, bool contention_hint) {
+                              Register int_flag_success, bool contention_hint, bool weak) {
   Label retry;
   Label failed;
   Label done;
@@ -1414,6 +1414,7 @@ void MacroAssembler::cmpxchgw(ConditionRegister flag, Register dest_current_valu
   bool use_result_reg    = (int_flag_success != noreg);
   bool preset_result_reg = (int_flag_success != dest_current_value && int_flag_success != compare_value &&
                             int_flag_success != exchange_value && int_flag_success != addr_base);
+  assert(!weak || flag == CCR0, "weak only supported with CCR0");
 
   if (use_result_reg && preset_result_reg) {
     li(int_flag_success, 0); // preset (assume cas failed)
@@ -1445,10 +1446,12 @@ void MacroAssembler::cmpxchgw(ConditionRegister flag, Register dest_current_valu
   // fall through    => (flag == eq), (dest_current_value == compare_value)
 
   stwcx_(exchange_value, addr_base);
-  if (UseStaticBranchPredictionInCompareAndSwapPPC64) {
-    bne_predict_not_taken(CCR0, retry); // StXcx_ sets CCR0.
-  } else {
-    bne(                  CCR0, retry); // StXcx_ sets CCR0.
+  if (!weak || use_result_reg) {
+    if (UseStaticBranchPredictionInCompareAndSwapPPC64) {
+      bne_predict_not_taken(CCR0, weak ? failed : retry); // StXcx_ sets CCR0.
+    } else {
+      bne(                  CCR0, weak ? failed : retry); // StXcx_ sets CCR0.
+    }
   }
   // fall through    => (flag == eq), (dest_current_value == compare_value), (swapped)
 
@@ -1498,7 +1501,7 @@ void MacroAssembler::cmpxchgw(ConditionRegister flag, Register dest_current_valu
 void MacroAssembler::cmpxchgd(ConditionRegister flag,
                               Register dest_current_value, RegisterOrConstant compare_value, Register exchange_value,
                               Register addr_base, int semantics, bool cmpxchgx_hint,
-                              Register int_flag_success, Label* failed_ext, bool contention_hint) {
+                              Register int_flag_success, Label* failed_ext, bool contention_hint, bool weak) {
   Label retry;
   Label failed_int;
   Label& failed = (failed_ext != NULL) ? *failed_ext : failed_int;
@@ -1508,6 +1511,7 @@ void MacroAssembler::cmpxchgd(ConditionRegister flag,
   bool use_result_reg    = (int_flag_success!=noreg);
   bool preset_result_reg = (int_flag_success!=dest_current_value && int_flag_success!=compare_value.register_or_noreg() &&
                             int_flag_success!=exchange_value && int_flag_success!=addr_base);
+  assert(!weak || flag == CCR0, "weak only supported with CCR0");
   assert(int_flag_success == noreg || failed_ext == NULL, "cannot have both");
 
   if (use_result_reg && preset_result_reg) {
@@ -1538,10 +1542,12 @@ void MacroAssembler::cmpxchgd(ConditionRegister flag,
   }
 
   stdcx_(exchange_value, addr_base);
-  if (UseStaticBranchPredictionInCompareAndSwapPPC64) {
-    bne_predict_not_taken(CCR0, retry); // stXcx_ sets CCR0
-  } else {
-    bne(                  CCR0, retry); // stXcx_ sets CCR0
+  if (!weak || use_result_reg || failed_ext) {
+    if (UseStaticBranchPredictionInCompareAndSwapPPC64) {
+      bne_predict_not_taken(CCR0, weak ? failed : retry); // stXcx_ sets CCR0
+    } else {
+      bne(                  CCR0, weak ? failed : retry); // stXcx_ sets CCR0
+    }
   }
 
   // result in register (must do this at the end because int_flag_success can be the same register as one above)

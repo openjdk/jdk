@@ -42,7 +42,7 @@ public class DoWhile extends IRNode {
         HEADER,
         BODY1,
         BODY2,
-    };
+    }
     private final Loop loop;
     // header;                  [subblock]
     // do {
@@ -52,8 +52,9 @@ public class DoWhile extends IRNode {
     // } while(condition);
     private long thisLoopIterLimit = 0;
 
-    public DoWhile(int level, Loop loop, long thisLoopIterLimit, IRNode header,
-            IRNode body1, IRNode body2) {
+    public DoWhile(int level, Loop loop, long thisLoopIterLimit, Block header,
+                   Block body1, Block body2) {
+        super(body1.getResultType());
         this.level = level;
         this.loop = loop;
         this.thisLoopIterLimit = thisLoopIterLimit;
@@ -85,13 +86,12 @@ public class DoWhile extends IRNode {
         IRNode header = getChildren().get(DoWhilePart.HEADER.ordinal());
         List<IRNode> siblings = getParent().getChildren();
         int index = siblings.indexOf(this);
+        siblings.set(index++, loop.initialization);
         if (header instanceof Block) {
-            siblings.remove(this);
             siblings.addAll(index, header.getChildren());
         } else {
-            siblings.set(index, header);
+            siblings.add(index, header);
         }
-        siblings.add(index + header.getChildren().size(), loop.initialization);
         return true;
     }
 }

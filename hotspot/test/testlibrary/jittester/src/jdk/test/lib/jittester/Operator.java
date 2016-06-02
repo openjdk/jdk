@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,28 @@
 package jdk.test.lib.jittester;
 
 public abstract class Operator extends IRNode {
-    protected int operatorPriority;
+    protected final OperatorKind opKind;
+    private final int priority;
 
     public int getPriority() {
-        return operatorPriority;
+        return priority;
+    }
+
+    public OperatorKind getOperationKind() {
+        return opKind;
     }
 
     public enum Order {
         LEFT, RIGHT
-    };
+    }
 
-    // This constructor is called to construct an IR-tree node.
-    protected Operator(int operatorPriority) {
-        this.operatorPriority = operatorPriority;
+    protected Operator(OperatorKind opKind, Type resultType) {
+        this(opKind, opKind.priority, resultType);
+    }
+
+    protected Operator(OperatorKind opKind, int operatorPriority, Type resultType) {
+        super(resultType);
+        this.opKind = opKind;
+        this.priority = operatorPriority;
     }
 }

@@ -6096,19 +6096,23 @@ size_t ScanMarkedObjectsAgainCarefullyClosure::do_object_careful_m(
           size = CompactibleFreeListSpace::adjustObjectSize(
                    p->oop_iterate_size(_scanningClosure));
         }
-        #ifdef ASSERT
-          size_t direct_size =
-            CompactibleFreeListSpace::adjustObjectSize(p->size());
-          assert(size == direct_size, "Inconsistency in size");
-          assert(size >= 3, "Necessary for Printezis marks to work");
-          if (!_bitMap->isMarked(addr+1)) {
-            _bitMap->verifyNoOneBitsInRange(addr+2, addr+size);
-          } else {
-            _bitMap->verifyNoOneBitsInRange(addr+2, addr+size-1);
-            assert(_bitMap->isMarked(addr+size-1),
-                   "inconsistent Printezis mark");
-          }
-        #endif // ASSERT
+      #ifdef ASSERT
+        size_t direct_size =
+          CompactibleFreeListSpace::adjustObjectSize(p->size());
+        assert(size == direct_size, "Inconsistency in size");
+        assert(size >= 3, "Necessary for Printezis marks to work");
+        HeapWord* start_pbit = addr + 1;
+        HeapWord* end_pbit = addr + size - 1;
+        assert(_bitMap->isMarked(start_pbit) == _bitMap->isMarked(end_pbit),
+               "inconsistent Printezis mark");
+        // Verify inner mark bits (between Printezis bits) are clear,
+        // but don't repeat if there are multiple dirty regions for
+        // the same object, to avoid potential O(N^2) performance.
+        if (addr != _last_scanned_object) {
+          _bitMap->verifyNoOneBitsInRange(start_pbit + 1, end_pbit);
+          _last_scanned_object = addr;
+        }
+      #endif // ASSERT
     } else {
       // An uninitialized object.
       assert(_bitMap->isMarked(addr+1), "missing Printezis mark?");
