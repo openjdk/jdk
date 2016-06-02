@@ -93,10 +93,8 @@ void InterpreterMacroAssembler::check_and_handle_popframe(Register java_thread) 
     // This method is only called just after the call into the vm in
     // call_VM_base, so the arg registers are available.
     ldrw(rscratch1, Address(rthread, JavaThread::popframe_condition_offset()));
-    tstw(rscratch1, JavaThread::popframe_pending_bit);
-    br(Assembler::EQ, L);
-    tstw(rscratch1, JavaThread::popframe_processing_bit);
-    br(Assembler::NE, L);
+    tbz(rscratch1, exact_log2(JavaThread::popframe_pending_bit), L);
+    tbnz(rscratch1, exact_log2(JavaThread::popframe_processing_bit), L);
     // Call Interpreter::remove_activation_preserving_args_entry() to get the
     // address of the same-named entrypoint in the generated interpreter code.
     call_VM_leaf(CAST_FROM_FN_PTR(address, Interpreter::remove_activation_preserving_args_entry));
@@ -505,8 +503,7 @@ void InterpreterMacroAssembler::remove_activation(
  // get method access flags
   ldr(r1, Address(rfp, frame::interpreter_frame_method_offset * wordSize));
   ldr(r2, Address(r1, Method::access_flags_offset()));
-  tst(r2, JVM_ACC_SYNCHRONIZED);
-  br(Assembler::EQ, unlocked);
+  tbz(r2, exact_log2(JVM_ACC_SYNCHRONIZED), unlocked);
 
   // Don't unlock anything if the _do_not_unlock_if_synchronized flag
   // is set.
@@ -1582,8 +1579,8 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
                            // do. The unknown bit may have been
                            // set already but no need to check.
 
-  tst(obj, TypeEntries::type_unknown);
-  br(Assembler::NE, next); // already unknown. Nothing to do anymore.
+  tbnz(obj, exact_log2(TypeEntries::type_unknown), next);
+  // already unknown. Nothing to do anymore.
 
   ldr(rscratch1, mdo_addr);
   cbz(rscratch1, none);
