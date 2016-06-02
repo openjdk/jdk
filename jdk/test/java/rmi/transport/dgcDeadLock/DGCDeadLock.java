@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 4118056
+ * @key intermittent
  *
  * @summary synopsis: Distributed Garbage Collection Deadlock
  * @author Laird Dornin

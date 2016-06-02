@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -81,6 +81,12 @@ public class JavaTimeSupplementary_fr_CA extends OpenListResourceBundle {
                     "y-MM-dd G",
                 }
             },
+            { "islamic.narrow.AmPmMarkers",
+                new String[] {
+                    "a",
+                    "p",
+                }
+            },
             { "java.time.buddhist.DatePatterns",
                 new String[] {
                     "EEEE d MMMM y G",
@@ -119,6 +125,12 @@ public class JavaTimeSupplementary_fr_CA extends OpenListResourceBundle {
                     "GGGG y MMMM d",
                     "GGGG y MMM d",
                     "yy-MM-dd G",
+                }
+            },
+            { "roc.narrow.AmPmMarkers",
+                new String[] {
+                    "a",
+                    "p",
                 }
             },
         };
