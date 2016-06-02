@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -106,23 +106,25 @@ public class JavaTimeSupplementary_lt extends OpenListResourceBundle {
             { "calendarname.roc",
                 "Kinijos Respublikos kalendorius" },
             { "field.dayperiod",
-                "Iki piet\u0173 / po piet\u0173" },
+                "iki piet\u0173 / po piet\u0173" },
+            { "field.era",
+                "era" },
             { "field.hour",
-                "Valanda" },
+                "valanda" },
             { "field.minute",
-                "Minut\u0117" },
+                "minut\u0117" },
             { "field.month",
-                "M\u0117nuo" },
+                "m\u0117nuo" },
             { "field.second",
-                "Sekund\u0117" },
+                "sekund\u0117" },
             { "field.week",
-                "Savait\u0117" },
+                "savait\u0117" },
             { "field.weekday",
-                "Savait\u0117s diena" },
+                "savait\u0117s diena" },
             { "field.year",
-                "Metai" },
+                "metai" },
             { "field.zone",
-                "Laiko juosta" },
+                "laiko juosta" },
             { "islamic.AmPmMarkers",
                 new String[] {
                     "prie\u0161piet",
@@ -208,6 +210,12 @@ public class JavaTimeSupplementary_lt extends OpenListResourceBundle {
                     "HH:mm",
                 }
             },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "prie\u0161piet",
+                    "popiet",
+                }
+            },
             { "islamic.long.Eras",
                 new String[] {
                     "",
@@ -216,7 +224,7 @@ public class JavaTimeSupplementary_lt extends OpenListResourceBundle {
             },
             { "islamic.narrow.AmPmMarkers",
                 new String[] {
-                    "pr.p.",
+                    "pr. p.",
                     "pop.",
                 }
             },
@@ -434,6 +442,12 @@ public class JavaTimeSupplementary_lt extends OpenListResourceBundle {
                     "HH:mm",
                 }
             },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "prie\u0161piet",
+                    "popiet",
+                }
+            },
             { "roc.long.Eras",
                 new String[] {
                     "Prie\u0161 R.O.C.",
@@ -442,7 +456,7 @@ public class JavaTimeSupplementary_lt extends OpenListResourceBundle {
             },
             { "roc.narrow.AmPmMarkers",
                 new String[] {
-                    "pr.p.",
+                    "pr. p.",
                     "pop.",
                 }
             },

@@ -3016,6 +3016,7 @@ assert((int)twice.invokeExact(21) == 42);
      * @throws NullPointerException if the argument is null
      * @see MethodHandles#constant
      * @see MethodHandles#empty
+     * @see MethodHandles#explicitCastArguments
      * @since 9
      */
     public static  MethodHandle zero(Class<?> type) {

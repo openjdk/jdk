@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -105,22 +105,24 @@ public class JavaTimeSupplementary_es extends OpenListResourceBundle {
                 "calendario de la Rep\u00fablica de China" },
             { "field.dayperiod",
                 "a. m./p. m." },
+            { "field.era",
+                "era" },
             { "field.hour",
-                "Hora" },
+                "hora" },
             { "field.minute",
-                "Minuto" },
+                "minuto" },
             { "field.month",
-                "Mes" },
+                "mes" },
             { "field.second",
-                "Segundo" },
+                "segundo" },
             { "field.week",
-                "Semana" },
+                "semana" },
             { "field.weekday",
-                "D\u00eda de la semana" },
+                "d\u00eda de la semana" },
             { "field.year",
-                "A\u00f1o" },
+                "a\u00f1o" },
             { "field.zone",
-                "Zona horaria" },
+                "zona horaria" },
             { "islamic.AmPmMarkers",
                 new String[] {
                     "a. m.",
@@ -131,8 +133,8 @@ public class JavaTimeSupplementary_es extends OpenListResourceBundle {
                 new String[] {
                     "EEEE, d 'de' MMMM 'de' y GGGG",
                     "d 'de' MMMM 'de' y GGGG",
-                    "dd/MM/y GGGG",
-                    "dd/MM/yy G",
+                    "d/M/y GGGG",
+                    "d/M/yy GGGG",
                 }
             },
             { "islamic.DayAbbreviations",
@@ -190,12 +192,26 @@ public class JavaTimeSupplementary_es extends OpenListResourceBundle {
                     "4.\u00ba trimestre",
                 }
             },
+            { "islamic.QuarterNarrows",
+                new String[] {
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                }
+            },
             { "islamic.TimePatterns",
                 new String[] {
                     "H:mm:ss (zzzz)",
                     "H:mm:ss z",
                     "H:mm:ss",
                     "H:mm",
+                }
+            },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "a. m.",
+                    "p. m.",
                 }
             },
             { "islamic.long.Eras",
@@ -206,8 +222,8 @@ public class JavaTimeSupplementary_es extends OpenListResourceBundle {
             },
             { "islamic.narrow.AmPmMarkers",
                 new String[] {
-                    "a.m.",
-                    "p.m.",
+                    "a. m.",
+                    "p. m.",
                 }
             },
             { "islamic.narrow.Eras",
@@ -226,8 +242,8 @@ public class JavaTimeSupplementary_es extends OpenListResourceBundle {
                 new String[] {
                     "EEEE, d 'de' MMMM 'de' y G",
                     "d 'de' MMMM 'de' y G",
-                    "dd/MM/y G",
-                    "dd/MM/yy GGGGG",
+                    "d/M/y G",
+                    "d/M/yy G",
                 }
             },
             { "java.time.buddhist.long.Eras",
@@ -246,8 +262,8 @@ public class JavaTimeSupplementary_es extends OpenListResourceBundle {
                 new String[] {
                     "EEEE, d 'de' MMMM 'de' y G",
                     "d 'de' MMMM 'de' y G",
-                    "dd/MM/y G",
-                    "dd/MM/yy GGGGG",
+                    "d/M/y G",
+                    "d/M/yy G",
                 }
             },
             { "java.time.japanese.DatePatterns",
@@ -268,8 +284,8 @@ public class JavaTimeSupplementary_es extends OpenListResourceBundle {
                 new String[] {
                     "EEEE, d 'de' MMMM 'de' y G",
                     "d 'de' MMMM 'de' y G",
-                    "dd/MM/y G",
-                    "dd/MM/yy GGGGG",
+                    "d/M/y G",
+                    "d/M/yy G",
                 }
             },
             { "java.time.short.Eras",
@@ -288,8 +304,8 @@ public class JavaTimeSupplementary_es extends OpenListResourceBundle {
                 new String[] {
                     "EEEE, d 'de' MMMM 'de' y GGGG",
                     "d 'de' MMMM 'de' y GGGG",
-                    "dd/MM/y GGGG",
-                    "dd/MM/yy G",
+                    "d/M/y GGGG",
+                    "d/M/yy GGGG",
                 }
             },
             { "roc.DayAbbreviations",
@@ -406,6 +422,12 @@ public class JavaTimeSupplementary_es extends OpenListResourceBundle {
                     "H:mm",
                 }
             },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "a. m.",
+                    "p. m.",
+                }
+            },
             { "roc.long.Eras",
                 new String[] {
                     "antes de R.O.C.",
@@ -414,8 +436,8 @@ public class JavaTimeSupplementary_es extends OpenListResourceBundle {
             },
             { "roc.narrow.AmPmMarkers",
                 new String[] {
-                    "a.m.",
-                    "p.m.",
+                    "a. m.",
+                    "p. m.",
                 }
             },
             { "roc.narrow.Eras",
