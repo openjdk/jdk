@@ -1242,8 +1242,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label L;
     __ ldrw(t, Address(rmethod, Method::access_flags_offset()));
-    __ tst(t, JVM_ACC_STATIC);
-    __ br(Assembler::EQ, L);
+    __ tbz(t, exact_log2(JVM_ACC_STATIC), L);
     // get mirror
     __ load_mirror(t, rmethod);
     // copy mirror into activation frame
@@ -1435,8 +1434,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label L;
     __ ldrw(t, Address(rmethod, Method::access_flags_offset()));
-    __ tst(t, JVM_ACC_SYNCHRONIZED);
-    __ br(Assembler::EQ, L);
+    __ tbz(t, exact_log2(JVM_ACC_SYNCHRONIZED), L);
     // the code below should be shared with interpreter macro
     // assembler implementation
     {
