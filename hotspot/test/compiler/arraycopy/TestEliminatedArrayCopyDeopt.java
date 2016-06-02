@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 8130847
+ * @bug 8130847 8156760
  * @summary Eliminated instance/array written to by an array copy variant must be correctly initialized when reallocated at a deopt
  * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestEliminatedArrayCopyDeopt
- *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:+IgnoreUnrecognizedVMOptions -XX:-ReduceInitialCardMarks TestEliminatedArrayCopyDeopt
  */
 
 // Test that if an ArrayCopy node is eliminated because it doesn't
