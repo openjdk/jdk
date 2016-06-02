@@ -31,12 +31,24 @@ import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_STATIC;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_SUPER;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_VARARGS;
+import static jdk.internal.org.objectweb.asm.Opcodes.AALOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.ALOAD;
+import static jdk.internal.org.objectweb.asm.Opcodes.ARRAYLENGTH;
 import static jdk.internal.org.objectweb.asm.Opcodes.ASTORE;
 import static jdk.internal.org.objectweb.asm.Opcodes.D2F;
+import static jdk.internal.org.objectweb.asm.Opcodes.GETSTATIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.GOTO;
 import static jdk.internal.org.objectweb.asm.Opcodes.H_INVOKESTATIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_0;
+import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPGE;
+import static jdk.internal.org.objectweb.asm.Opcodes.ILOAD;
+import static jdk.internal.org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static jdk.internal.org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+import static jdk.internal.org.objectweb.asm.Opcodes.ISTORE;
 import static jdk.internal.org.objectweb.asm.Opcodes.I2B;
 import static jdk.internal.org.objectweb.asm.Opcodes.I2S;
+import static jdk.internal.org.objectweb.asm.Opcodes.POP;
+import static jdk.internal.org.objectweb.asm.Opcodes.PUTSTATIC;
 import static jdk.internal.org.objectweb.asm.Opcodes.RETURN;
 import static jdk.nashorn.internal.codegen.CompilerConstants.interfaceCallNoLookup;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
@@ -62,6 +74,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.FieldVisitor;
+import jdk.internal.org.objectweb.asm.Handle;
+import jdk.internal.org.objectweb.asm.Label;
+import jdk.internal.org.objectweb.asm.MethodVisitor;
+import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.Opcodes;
@@ -69,6 +87,7 @@ import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.commons.InstructionAdapter;
 import jdk.nashorn.api.scripting.ScriptUtils;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.linker.AdaptationResult.Outcome;
@@ -136,6 +155,9 @@ import jdk.internal.reflect.CallerSensitive;
  * implemented securely.
  */
 final class JavaAdapterBytecodeGenerator {
+    private static final Module NASHORN_MODULE = Context.class.getModule();
+    private static final Module JAVA_BASE_MODULE = Object.class.getModule();
+
     // Field names in adapters
     private static final String GLOBAL_FIELD_NAME = "global";
     private static final String DELEGATE_FIELD_NAME = "delegate";
@@ -210,6 +232,17 @@ final class JavaAdapterBytecodeGenerator {
     // Method name and type for the no-privilege finalizer delegate
     private static final String FINALIZER_DELEGATE_NAME = "$$nashornFinalizerDelegate";
     private static final String FINALIZER_DELEGATE_METHOD_DESCRIPTOR = Type.getMethodDescriptor(Type.VOID_TYPE, OBJECT_TYPE);
+
+    // adapter class may need module read-edges from other modules.
+    // We generate a class to add those required module read-edges.
+    // This is the name of the module read edge adder class.
+    static final String MODULES_READ_ADDER_INTERNAL = ADAPTER_PACKAGE_INTERNAL + "$ModulesReadAdder";
+    static final String MODULES_READ_ADDER = MODULES_READ_ADDER_INTERNAL.replace('/', '.');
+    // module add read method
+    static final String MODULES_ADD_READS = "addReads";
+
+    // .class bytes of module add reader class. Lazily generated and cached.
+    private static byte[] MODULES_READ_ADDER_BYRES;
 
     /**
      * Collection of methods we never override: Object.clone(), Object.finalize().
@@ -305,6 +338,21 @@ final class JavaAdapterBytecodeGenerator {
 
     boolean isAutoConvertibleFromFunction() {
         return autoConvertibleFromFunction;
+    }
+
+    static synchronized byte[] getModulesAddReadsBytes() {
+        if (MODULES_READ_ADDER_BYRES == null) {
+            // lazily generate module read edge adder class
+            MODULES_READ_ADDER_BYRES = generateModulesReadAdderClass();
+        }
+
+        return MODULES_READ_ADDER_BYRES;
+    }
+
+    private void addAccessedModule(Module m) {
+        if (m != null && m != JAVA_BASE_MODULE && m != NASHORN_MODULE) {
+            accessedModules.add(m);
+        }
     }
 
     private static String getGeneratedClassName(final Class<?> superType, final List<Class<?>> interfaces) {
@@ -1086,10 +1134,7 @@ final class JavaAdapterBytecodeGenerator {
      */
     private void gatherMethods(final Class<?> type) throws AdaptationException {
         if (Modifier.isPublic(type.getModifiers())) {
-            final Module module = type.getModule();
-            if (module != null) {
-                accessedModules.add(module);
-            }
+            addAccessedModule(type.getModule());
 
             final Method[] typeMethods = type.isInterface() ? type.getMethods() : type.getDeclaredMethods();
 
@@ -1117,16 +1162,12 @@ final class JavaAdapterBytecodeGenerator {
 
                     for (final Class<?> pt : typeMethod.getParameterTypes()) {
                         if (pt.isPrimitive()) continue;
-                        final Module ptMod = pt.getModule();
-                        if (ptMod != null) {
-                            accessedModules.add(ptMod);
-                        }
+                        addAccessedModule(pt.getModule());
                     }
 
                     final Class<?> rt = typeMethod.getReturnType();
                     if (!rt.isPrimitive()) {
-                        final Module rtMod = rt.getModule();
-                        if (rtMod != null) accessedModules.add(rtMod);
+                        addAccessedModule(rt.getModule());
                     }
 
                     final MethodInfo mi = new MethodInfo(typeMethod);
@@ -1211,7 +1252,95 @@ final class JavaAdapterBytecodeGenerator {
         return e.isAnnotationPresent(CallerSensitive.class);
     }
 
-    private static final Call lookupServiceMethod(final String name, final Class<?> rtype, final Class<?>... ptypes) {
+    private static Call lookupServiceMethod(final String name, final Class<?> rtype, final Class<?>... ptypes) {
         return staticCallNoLookup(JavaAdapterServices.class, name, rtype, ptypes);
+    }
+
+    /*
+     * Generate a class that adds module read edges from adapter module to the
+     * modules of the reference types used by the generated adapter class.
+     */
+    private static byte[] generateModulesReadAdderClass() {
+        final ClassWriter cw = new ClassWriter(0);
+        MethodVisitor mv;
+
+        // make the class package private
+        cw.visit(Opcodes.V1_7, ACC_SUPER | ACC_FINAL, MODULES_READ_ADDER_INTERNAL,
+            null, "java/lang/Object", null);
+
+        // private static final Module MY_MODULE;
+        {
+            FieldVisitor fv = cw.visitField(ACC_PRIVATE | ACC_FINAL | ACC_STATIC,
+                "MY_MODULE", "Ljava/lang/reflect/Module;", null, null);
+            fv.visitEnd();
+        }
+
+        /*
+         * private static void addReads(Module[] modules) {
+         *     for (Module m : mods) {
+         *         MY_MODULE.addRead(m);
+         *     }
+         * }
+         */
+        {
+            mv = cw.visitMethod(ACC_PRIVATE | ACC_STATIC,
+                MODULES_ADD_READS,
+                "([Ljava/lang/reflect/Module;)V", null, null);
+            mv.visitCode();
+            mv.visitVarInsn(ALOAD, 0);
+            mv.visitVarInsn(ASTORE, 1);
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitInsn(ARRAYLENGTH);
+            mv.visitVarInsn(ISTORE, 2);
+            mv.visitInsn(ICONST_0);
+            mv.visitVarInsn(ISTORE, 3);
+            Label l0 = new Label();
+            mv.visitLabel(l0);
+            mv.visitFrame(Opcodes.F_APPEND, 3,
+                new Object[]{"[Ljava/lang/reflect/Module;",
+                Opcodes.INTEGER, Opcodes.INTEGER}, 0, null);
+            mv.visitVarInsn(ILOAD, 3);
+            mv.visitVarInsn(ILOAD, 2);
+            Label l1 = new Label();
+            mv.visitJumpInsn(IF_ICMPGE, l1);
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitVarInsn(ILOAD, 3);
+            mv.visitInsn(AALOAD);
+            mv.visitVarInsn(ASTORE, 4);
+            mv.visitFieldInsn(GETSTATIC, MODULES_READ_ADDER_INTERNAL,
+                "MY_MODULE", "Ljava/lang/reflect/Module;");
+            mv.visitVarInsn(ALOAD, 4);
+            mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/reflect/Module",
+                "addReads", "(Ljava/lang/reflect/Module;)Ljava/lang/reflect/Module;", false);
+            mv.visitInsn(POP);
+            mv.visitIincInsn(3, 1);
+            mv.visitJumpInsn(GOTO, l0);
+            mv.visitLabel(l1);
+            mv.visitFrame(Opcodes.F_CHOP, 3, null, 0, null);
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(2, 5);
+            mv.visitEnd();
+        }
+
+        /*
+         * static {
+         *      MY_MODULE = ThisClass.class.getModule();
+         * }
+         */
+        {
+            mv = cw.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
+            mv.visitCode();
+            mv.visitLdcInsn(Type.getType("L" + MODULES_READ_ADDER_INTERNAL + ";"));
+            mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Class",
+                "getModule", "()Ljava/lang/reflect/Module;", false);
+            mv.visitFieldInsn(PUTSTATIC, MODULES_READ_ADDER_INTERNAL,
+                "MY_MODULE", "Ljava/lang/reflect/Module;");
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(1, 0);
+            mv.visitEnd();
+        }
+        cw.visitEnd();
+
+        return cw.toByteArray();
     }
 }
