@@ -232,12 +232,6 @@ public class Annotation {
                 values[i] = element_value.read(cr);
         }
 
-        public Array_element_value(element_value[] values, int tag) {
-            super(tag);
-            this.num_values = values.length;
-            this.values = values;
-        }
-
         @Override
         public int length() {
             int n = 2;
