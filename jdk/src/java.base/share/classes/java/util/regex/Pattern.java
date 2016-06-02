@@ -3194,6 +3194,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 break;
             case 'U':
                 flags &= ~(UNICODE_CHARACTER_CLASS | UNICODE_CASE);
+                break;
             default:
                 return;
             }
