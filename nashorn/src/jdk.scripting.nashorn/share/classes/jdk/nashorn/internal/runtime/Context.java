@@ -1166,7 +1166,17 @@ public final class Context {
         }
 
         // Try finding using the "app" loader.
-        return Class.forName(fullName, true, appLoader);
+        if (appLoader != null) {
+            return Class.forName(fullName, true, appLoader);
+        } else {
+            final Class<?> cl = Class.forName(fullName);
+            // return the Class only if it was loaded by boot loader
+            if (cl.getClassLoader() == null) {
+                return cl;
+            } else {
+                throw new ClassNotFoundException(fullName);
+            }
+        }
     }
 
     /**
