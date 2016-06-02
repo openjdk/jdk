@@ -21,40 +21,14 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8156101
- * @summary Tests for ExecutionControl SPI
- * @build KullaTesting LocalExecutionControl
- * @run testng ExecutionControlTest
- */
-
-
 import javax.tools.Diagnostic;
 
 import jdk.jshell.VarSnippet;
-import org.testng.annotations.Test;
 
 import static jdk.jshell.Snippet.Status.VALID;
 import static jdk.jshell.Snippet.SubKind.*;
-import static org.testng.Assert.assertEquals;
-import org.testng.annotations.BeforeMethod;
 
-@Test
-public class ExecutionControlTest extends KullaTesting {
-
-    @BeforeMethod
-    @Override
-    public void setUp() {
-        setUp(new LocalExecutionControl());
-    }
-
-    public void verifyLocal() throws ClassNotFoundException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-        System.setProperty("LOCAL_CHECK", "TBD");
-        assertEquals(System.getProperty("LOCAL_CHECK"), "TBD");
-        assertEval("System.setProperty(\"LOCAL_CHECK\", \"local\")");
-        assertEquals(System.getProperty("LOCAL_CHECK"), "local");
-    }
+public class ExecutionControlTestBase extends KullaTesting {
 
     public void classesDeclaration() {
         assertEval("interface A { }");
@@ -71,7 +45,6 @@ public class ExecutionControlTest extends KullaTesting {
         assertActiveKeys();
     }
 
-    @Test
     public void interfaceTest() {
         String interfaceSource
                 = "interface A {\n"

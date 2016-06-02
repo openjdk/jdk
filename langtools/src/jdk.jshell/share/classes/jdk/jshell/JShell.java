@@ -44,6 +44,7 @@ import java.util.function.Consumer;
 
 import java.util.function.Supplier;
 import jdk.internal.jshell.debug.InternalDebugControl;
+import jdk.internal.jshell.jdi.FailOverExecutionControl;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
 import static jdk.jshell.Util.expunge;
@@ -112,7 +113,9 @@ public class JShell implements AutoCloseable {
         this.idGenerator = b.idGenerator;
         this.extraRemoteVMOptions = b.extraRemoteVMOptions;
         this.executionControl = b.executionControl==null
-                ? new JDIExecutionControl()
+                ? new FailOverExecutionControl(
+                        new JDIExecutionControl(),
+                        new JDIExecutionControl(false))
                 : b.executionControl;
 
         this.maps = new SnippetMaps(this);
@@ -759,7 +762,11 @@ public class JShell implements AutoCloseable {
         if (!closed) {
             // Send only once
             closed = true;
-            notifyShutdownEvent(this);
+            try {
+                notifyShutdownEvent(this);
+            } catch (Throwable thr) {
+                // Don't care about dying exceptions
+            }
         }
     }
 
