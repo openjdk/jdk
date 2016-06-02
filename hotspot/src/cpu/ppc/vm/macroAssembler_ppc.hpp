@@ -430,11 +430,11 @@ class MacroAssembler: public Assembler {
   void cmpxchgw(ConditionRegister flag,
                 Register dest_current_value, Register compare_value, Register exchange_value, Register addr_base,
                 int semantics, bool cmpxchgx_hint = false,
-                Register int_flag_success = noreg, bool contention_hint = false);
+                Register int_flag_success = noreg, bool contention_hint = false, bool weak = false);
   void cmpxchgd(ConditionRegister flag,
                 Register dest_current_value, RegisterOrConstant compare_value, Register exchange_value,
                 Register addr_base, int semantics, bool cmpxchgx_hint = false,
-                Register int_flag_success = noreg, Label* failed = NULL, bool contention_hint = false);
+                Register int_flag_success = noreg, Label* failed = NULL, bool contention_hint = false, bool weak = false);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,

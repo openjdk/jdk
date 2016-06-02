@@ -204,7 +204,7 @@ DirectiveSet::DirectiveSet(CompilerDirectives* d) :_inlinematchers(NULL), _direc
   compilerdirectives_common_flags(init_defaults_definition)
   compilerdirectives_c2_flags(init_defaults_definition)
   compilerdirectives_c1_flags(init_defaults_definition)
-  memset(_modified, 0, sizeof _modified);
+  memset(_modified, 0, sizeof(_modified));
 
   // Canonicalize DisableIntrinsic to contain only ',' as a separator.
   this->DisableIntrinsicOption = canonicalize_disableintrinsic(DisableIntrinsic);

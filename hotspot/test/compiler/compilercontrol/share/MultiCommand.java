@@ -73,6 +73,7 @@ public class MultiCommand extends AbstractTestBase {
     public void test() {
         Scenario.Builder builder = Scenario.getBuilder();
         builder.addFlag("-Xmixed");
+        builder.addFlag("-XX:CompilerDirectivesLimit=101");
         for (CompileCommand cc : testCases) {
             cc.print();
             builder.add(cc);

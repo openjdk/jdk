@@ -25,15 +25,16 @@ package jdk.test.lib.jittester;
 
 import java.util.ArrayList;
 import java.util.List;
+import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.visitors.Visitor;
 
 public class PrintVariables extends IRNode {
-    private final String printerName;
     private final ArrayList<Symbol> vars;
 
-    public PrintVariables(String printerName, ArrayList<Symbol> vars, int level) {
-        this.printerName = printerName;
-        this.vars = vars;
+    public PrintVariables(TypeKlass owner, int level) {
+        super(TypeList.VOID);
+        this.owner = owner;
+        this.vars = SymbolTable.getAllCombined(owner, VariableInfo.class);
         this.level = level;
     }
 
@@ -44,9 +45,5 @@ public class PrintVariables extends IRNode {
 
     public List<Symbol> getVars() {
         return vars;
-    }
-
-    public String getPrinterName() {
-        return printerName;
     }
 }
