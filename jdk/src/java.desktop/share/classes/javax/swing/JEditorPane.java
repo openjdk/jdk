@@ -559,10 +559,9 @@ public class JEditorPane extends JTextComponent {
             in = new BufferedInputStream(in, READ_LIMIT);
             in.mark(READ_LIMIT);
         }
-        try {
-            String charset = (String) getClientProperty("charset");
-            Reader r = (charset != null) ? new InputStreamReader(in, charset) :
-                new InputStreamReader(in);
+        String charset = (String) getClientProperty("charset");
+        try(Reader r = (charset != null) ? new InputStreamReader(in, charset) :
+                new InputStreamReader(in)) {
             kit.read(r, doc, 0);
         } catch (BadLocationException e) {
             throw new IOException(e.getMessage());
