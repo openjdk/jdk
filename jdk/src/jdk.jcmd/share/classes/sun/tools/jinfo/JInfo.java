@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.util.Collection;
 
 import com.sun.tools.attach.VirtualMachine;
+import com.sun.tools.attach.VirtualMachineDescriptor;
 
 import sun.tools.attach.HotSpotVirtualMachine;
 import sun.tools.common.ProcessArgumentMatcher;
@@ -50,6 +51,7 @@ final public class JInfo {
         boolean doFlag = false;
         boolean doFlags = false;
         boolean doSysprops = false;
+        int flag = -1;
 
         // Parse the options (arguments starting with "-" )
         int optionCount = 0;
@@ -67,65 +69,64 @@ final public class JInfo {
 
             if (arg.equals("-flag")) {
                 doFlag = true;
-                continue;
+                // Consume the flag
+                if (optionCount < args.length) {
+                    flag = optionCount++;
+                    break;
+                }
+                usage(1);
             }
 
             if (arg.equals("-flags")) {
                 doFlags = true;
-                continue;
+                break;
             }
 
             if (arg.equals("-sysprops")) {
                 doSysprops = true;
-                continue;
+                break;
             }
         }
 
-        // Next we check the parameter count. -flag allows extra parameters
         int paramCount = args.length - optionCount;
-        if ((doFlag && paramCount != 2) || ((!doFlag && paramCount != 1))) {
+        if (paramCount != 1) {
             usage(1);
         }
 
-        if (!doFlag && !doFlags && !doSysprops) {
-            // Print flags and sysporps if no options given
-            ProcessArgumentMatcher ap = new ProcessArgumentMatcher(args[optionCount], JInfo.class);
-            Collection<String> pids = ap.getPids();
-            for (String pid : pids) {
-                if (pids.size() > 1) {
-                    System.out.println("Pid:" + pid);
-                }
-                sysprops(pid);
-                System.out.println();
-                flags(pid);
-                System.out.println();
-                commandLine(pid);
-            }
+        String parg = args[optionCount];
+
+        ProcessArgumentMatcher ap = new ProcessArgumentMatcher(parg);
+        Collection<VirtualMachineDescriptor> vids = ap.getVirtualMachineDescriptors(JInfo.class);
+
+        if (vids.isEmpty()) {
+            System.err.println("Could not find any processes matching : '" + parg + "'");
+            System.exit(1);
         }
 
-        if (doFlag) {
-            ProcessArgumentMatcher ap = new ProcessArgumentMatcher(args[optionCount+1], JInfo.class);
-            Collection<String> pids = ap.getPids();
-            for (String pid : pids) {
-                if (pids.size() > 1) {
-                    System.out.println("Pid:" + pid);
-                }
-                flag(pid, args[optionCount]);
+        for (VirtualMachineDescriptor vid : vids) {
+            if (vids.size() > 1) {
+                System.out.println("Pid:" + vid.id());
             }
-        }
-        else if (doFlags || doSysprops) {
-            ProcessArgumentMatcher ap = new ProcessArgumentMatcher(args[optionCount], JInfo.class);
-            Collection<String> pids = ap.getPids();
-            for (String pid : pids) {
-                if (pids.size() > 1) {
-                    System.out.println("Pid:" + pid);
+            if (!doFlag && !doFlags && !doSysprops) {
+                // Print flags and sysporps if no options given
+                sysprops(vid.id());
+                System.out.println();
+                flags(vid.id());
+                System.out.println();
+                commandLine(vid.id());
+            }
+            if (doFlag) {
+                if (flag < 0) {
+                    System.err.println("Missing flag");
+                    usage(1);
                 }
-                if (doFlags) {
-                    flags(pid);
-                }
-                else if (doSysprops) {
-                    sysprops(pid);
-                }
+                flag(vid.id(), args[flag]);
+            }
+            if (doFlags) {
+                flags(vid.id());
+            }
+            if (doSysprops) {
+                sysprops(vid.id());
             }
         }
     }
