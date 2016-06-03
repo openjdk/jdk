@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 8147521
+ * @bug 8147521 8158358
  * @summary [macosx] Internal API Usage: setPopupType used to force creation of
- *  heavyweight popup
+ * heavyweight popup
  * @run main PopupMenuTest
  */
 import java.awt.Component;
@@ -91,6 +91,10 @@ public class PopupMenuTest {
 
     private void dispose() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
+            Popup popup = PopMenuUIExt.getPopup();
+            if (popup != null) {
+                popup.hide();
+            }
             frame.dispose();
         });
     }
@@ -150,7 +154,7 @@ public class PopupMenuTest {
 
 class PopMenuUIExt extends BasicPopupMenuUI {
 
-    private Popup popup;
+    private static Popup popUp;
 
     @Override
     public Popup getPopup(JPopupMenu popup, int x, int y) {
@@ -159,17 +163,16 @@ class PopMenuUIExt extends BasicPopupMenuUI {
             @Override
             public Popup getPopup(Component owner, Component contents,
                     int x, int y) {
-                return super.getPopup(popup, popup x, y, true);
+                return super.getPopup(owner, contents, x, y, true);
             }
         });
         PopupFactory factory = PopupFactory.getSharedInstance();
-        popup = factory.getPopup(popup, popup, x, y);
-        return popup;
+        popUp = factory.getPopup(popup.getInvoker(), popup, x, y);
+        return popUp;
     }
 
-
-    public Popup getPopup() {
-        return popup;
+    public static Popup getPopup() {
+        return popUp;
     }
 }
 
