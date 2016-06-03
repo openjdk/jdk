@@ -21,7 +21,7 @@
  or visit www.oracle.com if you need additional information or have any
  questions.
 -->
-<dataset package="sampleapi.tiny">
+<package name="sampleapi.tiny" module="sat.sampleapi">
 
     <class basename="TinyClass">
         <modifier>public</modifier>
@@ -68,4 +68,4 @@
         </member>
     </annotation>
         
-</dataset>
+</package>
