@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1530,6 +1530,10 @@ class Assembler : public AbstractAssembler {
   inline void ld(   Register d, int si16,    Register s1);
   inline void ldu(  Register d, int si16,    Register s1);
 
+  // For convenience. Load pointer into d from b+s1.
+  inline void ld_ptr(Register d, int b, Register s1);
+  DEBUG_ONLY(inline void ld_ptr(Register d, ByteSize b, Register s1);)
+
   //  PPC 1, section 3.3.3 Fixed-Point Store Instructions
   inline void stwx( Register d, Register s1, Register s2);
   inline void stw(  Register d, int si16,    Register s1);
@@ -2194,7 +2198,8 @@ class Assembler : public AbstractAssembler {
   void add( Register d, RegisterOrConstant roc, Register s1);
   void subf(Register d, RegisterOrConstant roc, Register s1);
   void cmpd(ConditionRegister d, RegisterOrConstant roc, Register s1);
-
+  // Load pointer d from s1+roc.
+  void ld_ptr(Register d, RegisterOrConstant roc, Register s1 = noreg) { ld(d, roc, s1); }
 
   // Emit several instructions to load a 64 bit constant. This issues a fixed
   // instruction pattern so that the constant can be patched later on.
