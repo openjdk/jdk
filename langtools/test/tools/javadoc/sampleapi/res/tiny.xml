@@ -21,25 +21,51 @@
  or visit www.oracle.com if you need additional information or have any
  questions.
 -->
-<dataset package="sampleapi.fx" style="fx">
+<package name="sampleapi.tiny">
 
-    <class basename="FXClass">
+    <class basename="TinyClass">
         <modifier>public</modifier>
+        <modifier>none|abstract</modifier>
         <member>
             <field basename="id">
                 <modifier>public</modifier>
-                <type>int|boolean</type>
+                <type>int</type>
             </field>
-            <method basename="setProp">
-                <modifier>public|protected|private</modifier>
-                <param>int|String</param>
-                <type>void</type>
-            </method>
-            <method basename="getProp">
-                <modifier>public|protected|private</modifier>
-                <type>int|int|String</type>
+            <method basename="get">
+                <modifier>public</modifier>
+                <type>int</type>
             </method>
         </member>
     </class>
 
-</dataset>
+    <interface basename="TinyInterface">
+        <modifier>public</modifier>
+        <member>
+            <method basename="put">
+                <modifier>public</modifier>
+                <type>void</type>
+                <param>int</param>
+            </method>
+        </member>
+    </interface>
+
+    <enum basename="TinyEnum">
+        <modifier>public</modifier>
+        <member>
+            <constant basename="YES" count="1"/>
+            <constant basename="NO" count="1"/>
+            <constant basename="MAYBE" count="1"/>
+        </member>
+    </enum>
+
+    <annotation basename="TinyAnno">
+        <modifier>public</modifier>
+        <member>
+            <method basename="value">
+                <modifier>public</modifier>
+                <type>boolean</type>
+            </method>
+        </member>
+    </annotation>
+        
+</package>

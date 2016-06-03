@@ -21,7 +21,7 @@
  or visit www.oracle.com if you need additional information or have any
  questions.
 -->
-<dataset package="sampleapi.simple">
+<package name="sampleapi.simple">
 
     <class basename="SampleClass" id="baseclass">
         <modifier>public</modifier>
@@ -526,4 +526,4 @@
             </method>
         </member>
     </class>
-</dataset>
+</package>
