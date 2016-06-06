@@ -372,7 +372,7 @@ static const char *flagnames[] = {
 
 void ciBlock::dump() {
   tty->print(" [%d .. %d), {", _start_bci, _limit_bci);
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < 7; i++) {
     if ((_flags & (1 << i)) != 0) {
       tty->print(" %s", flagnames[i]);
     }

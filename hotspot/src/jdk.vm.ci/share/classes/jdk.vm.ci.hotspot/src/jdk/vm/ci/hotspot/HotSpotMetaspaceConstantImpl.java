@@ -27,7 +27,7 @@ import java.util.Objects;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.VMConstant;
 
-final class HotSpotMetaspaceConstantImpl implements HotSpotMetaspaceConstant, VMConstant, HotSpotProxified {
+final class HotSpotMetaspaceConstantImpl implements HotSpotMetaspaceConstant, VMConstant {
 
     static HotSpotMetaspaceConstantImpl forMetaspaceObject(MetaspaceWrapperObject metaspaceObject, boolean compressed) {
         return new HotSpotMetaspaceConstantImpl(metaspaceObject, compressed);
@@ -105,13 +105,6 @@ final class HotSpotMetaspaceConstantImpl implements HotSpotMetaspaceConstant, VM
     public HotSpotResolvedJavaMethod asResolvedJavaMethod() {
         if (metaspaceObject instanceof HotSpotResolvedJavaMethod) {
             return (HotSpotResolvedJavaMethod) metaspaceObject;
-        }
-        return null;
-    }
-
-    public HotSpotSymbol asSymbol() {
-        if (metaspaceObject instanceof HotSpotSymbol) {
-            return (HotSpotSymbol) metaspaceObject;
         }
         return null;
     }

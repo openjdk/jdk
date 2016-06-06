@@ -23,8 +23,6 @@
 
 package jdk.test.lib.jittester.visitors;
 
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -41,10 +39,10 @@ import jdk.test.lib.jittester.If;
 import jdk.test.lib.jittester.Initialization;
 import jdk.test.lib.jittester.Literal;
 import jdk.test.lib.jittester.LocalVariable;
-import jdk.test.lib.jittester.LogicOperator;
 import jdk.test.lib.jittester.NonStaticMemberVariable;
 import jdk.test.lib.jittester.Nothing;
 import jdk.test.lib.jittester.Operator;
+import jdk.test.lib.jittester.OperatorKind;
 import jdk.test.lib.jittester.PrintVariables;
 import jdk.test.lib.jittester.ProductionParams;
 import jdk.test.lib.jittester.Statement;
@@ -89,13 +87,8 @@ import jdk.test.lib.jittester.loops.Loop;
 import jdk.test.lib.jittester.loops.LoopingCondition;
 import jdk.test.lib.jittester.loops.While;
 import jdk.test.lib.jittester.types.TypeArray;
-import jdk.test.lib.jittester.types.TypeByte;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeChar;
-import jdk.test.lib.jittester.types.TypeDouble;
-import jdk.test.lib.jittester.types.TypeFloat;
-import jdk.test.lib.jittester.types.TypeLong;
-import jdk.test.lib.jittester.types.TypeShort;
+import jdk.test.lib.jittester.utils.FixedTrees;
 import jdk.test.lib.jittester.utils.PrintingUtils;
 
 public class JavaCodeVisitor implements Visitor<String> {
@@ -128,7 +121,91 @@ public class JavaCodeVisitor implements Visitor<String> {
         return attrs;
     }
 
-    public String expressionToJavaCode(Operator t, IRNode p, Operator.Order o) {
+    private String operatorToJaveCode(OperatorKind operationKind) {
+       switch (operationKind) {
+           case COMPOUND_ADD:
+               return  "+=";
+           case COMPOUND_SUB:
+               return "-=";
+           case COMPOUND_MUL:
+               return "*=";
+           case COMPOUND_DIV:
+               return "/=";
+           case COMPOUND_MOD:
+               return "%=";
+           case COMPOUND_AND:
+               return "&=";
+           case COMPOUND_OR:
+               return "|=";
+           case COMPOUND_XOR:
+               return "^=";
+           case COMPOUND_SHR:
+               return ">>=";
+           case COMPOUND_SHL:
+               return "<<=";
+           case COMPOUND_SAR:
+               return ">>>=";
+           case ASSIGN:
+               return "=";
+           case OR:
+               return "||";
+           case BIT_OR:
+               return "|";
+           case BIT_XOR:
+               return "^";
+           case AND:
+               return "&&";
+           case BIT_AND:
+               return "&";
+           case EQ:
+               return "==";
+           case NE:
+               return "!=";
+           case GT:
+               return ">";
+           case LT:
+               return "<";
+           case GE:
+               return ">=";
+           case LE:
+               return "<=";
+           case SHR:
+               return ">>";
+           case SHL:
+               return "<<";
+           case SAR:
+               return ">>>";
+           case ADD:
+           case STRADD:
+               return "+";
+           case SUB:
+               return "-";
+           case MUL:
+               return "*";
+           case DIV:
+               return "/";
+           case MOD:
+               return "%";
+           case NOT:
+               return "!";
+           case BIT_NOT:
+               return "~";
+           case UNARY_PLUS:
+               return "+";
+           case UNARY_MINUS:
+               return "-";
+           case PRE_DEC:
+           case POST_DEC:
+               return "--";
+           case PRE_INC:
+           case POST_INC:
+               return "++";
+           default:
+               throw new IllegalArgumentException("Unkown operator kind " + operationKind);
+       }
+    }
+
+    private String expressionToJavaCode(Operator t, IRNode p, Operator.Order o) {
         String result;
         try {
             if ((o == Operator.Order.LEFT && ((Operator) p).getPriority() < t.getPriority())
@@ -151,8 +228,8 @@ public class JavaCodeVisitor implements Visitor<String> {
 
     @Override
     public String visit(ArrayCreation node) {
-        Type arrayType = node.getArrayType();
-        String type = arrayType.accept(this);
+        Type arrayElemType = node.getArrayType().type;
+        String type = arrayElemType.accept(this);
         String name = node.getVariable().getName();
         StringBuilder code = new StringBuilder()
                 .append(node.getVariable().accept(this))
@@ -165,7 +242,7 @@ public class JavaCodeVisitor implements Visitor<String> {
                 .map(p -> p.accept(this))
                 .collect(Collectors.joining("][", "[", "]")));
         code.append(";\n");
-        if (!TypeList.isBuiltIn(arrayType)) {
+        if (!TypeList.isBuiltIn(arrayElemType)) {
             code.append(PrintingUtils.align(node.getParent().getLevel()))
                 .append("java.util.Arrays.fill(")
                 .append(name)
@@ -220,7 +297,7 @@ public class JavaCodeVisitor implements Visitor<String> {
             return "null";
         }
         return expressionToJavaCode(node, left, Operator.Order.LEFT)
-               + " " + node.getOperationCode() + " "
+               + " " + operatorToJaveCode(node.getOperationKind()) + " "
                + expressionToJavaCode(node, right, Operator.Order.RIGHT);
     }
 
@@ -320,7 +397,7 @@ public class JavaCodeVisitor implements Visitor<String> {
 
     @Override
     public String visit(CounterInitializer node) {
-        VariableInfo vi = node.get();
+        VariableInfo vi = node.getVariableInfo();
         return vi.type.accept(this) + " " + vi.name + " = " + node.getChild(0).accept(this)+ ";";
     }
 
@@ -407,8 +484,8 @@ public class JavaCodeVisitor implements Visitor<String> {
                 + ")";
         String prefix = "";
         if (value.isStatic()) {
-            if(!node.getKlass().equals(value.klass)) {
-                prefix = value.klass.getName() + ".";
+            if(!node.getOwner().equals(value.owner)) {
+                prefix = value.owner.getName() + ".";
             }
         } else if (value.isConstructor()) {
             prefix = "new ";
@@ -434,7 +511,7 @@ public class JavaCodeVisitor implements Visitor<String> {
                 .collect(Collectors.joining(", "));
 
         FunctionInfo functionInfo = node.getFunctionInfo();
-        return (functionInfo.klass.isInterface() ? "" : "abstract ")
+        return (functionInfo.owner.isInterface() ? "" : "abstract ")
                 + funcAttributes(functionInfo) + functionInfo.type.accept(this)+ " "
                 + functionInfo.name + "(" + args + ");";
     }
@@ -464,7 +541,7 @@ public class JavaCodeVisitor implements Visitor<String> {
                 + PrintingUtils.align(node.getLevel() + 1) + "{\n"
                 + body.accept(this)
                 + (ret != null ? PrintingUtils.align(node.getLevel() + 2) + ret.accept(this) + "\n" : "")
-                + PrintingUtils.align(node.getLevel() + 1) + "}";
+                + PrintingUtils.align(node.getLevel() + 1) + "}\n";
     }
 
     @Override
@@ -483,6 +560,7 @@ public class JavaCodeVisitor implements Visitor<String> {
     @Override
     public String visit(FunctionRedefinition node) {
         String args = node.getChildren().stream()
+                .skip(2)
                 .map(c -> c.accept(this))
                 .collect(Collectors.joining(", "));
 
@@ -490,10 +568,10 @@ public class JavaCodeVisitor implements Visitor<String> {
         IRNode ret = node.getChild(1);
         int level = node.getLevel();
         FunctionInfo functionInfo = node.getFunctionInfo();
-        return funcAttributes(functionInfo) + functionInfo.type + " " + functionInfo.name + "(" + args + ")" + "\n"
+        return funcAttributes(functionInfo) + functionInfo.type.accept(this) + " " + functionInfo.name + "(" + args + ")" + "\n"
                 + PrintingUtils.align(level + 1) + "{\n"
-                + body
-                + (ret != null ? PrintingUtils.align(level + 2) + ret + "\n" : "")
+                + body.accept(this)
+                + (ret != null ? PrintingUtils.align(level + 2) + ret.accept(this) + "\n" : "")
                 + PrintingUtils.align(level + 1) + "}";
     }
 
@@ -551,10 +629,11 @@ public class JavaCodeVisitor implements Visitor<String> {
                 + (thisKlass.isFinal() ? "final " : "")
                 + (thisKlass.isAbstract() ? "abstract " : "")
                 + "class " + node.getName()
-                + (node.getParentKlass()!= null ? " extends " + node.getParentKlass().getName() : "");
+                + (node.getParentKlass() != null && !node.getParentKlass().equals(TypeList.OBJECT)
+                ? " extends " + node.getParentKlass().getName() : "");
         List<TypeKlass> interfaces = node.getInterfaces();
         r += interfaces.stream()
-                .map(c -> c.getName())
+                .map(Type::getName)
                 .collect(Collectors.joining(", ", (interfaces.isEmpty() ? "" : " implements "), ""));
         IRNode dataMembers = node.getChild(Klass.KlassPart.DATA_MEMBERS.ordinal());
         IRNode constructors = node.getChild(Klass.KlassPart.CONSTRUCTORS.ordinal());
@@ -570,10 +649,7 @@ public class JavaCodeVisitor implements Visitor<String> {
              + (overridenFunctions != null ? (overridenFunctions.accept(this)+ "\n") : "")
              + (memberFunctionDecls != null ? (memberFunctionDecls.accept(this)+ "\n") : "")
              + (memberFunctions != null ? (memberFunctions.accept(this)+ "\n") : "")
-             + "    public String toString()\n"
-             + "    {\n"
              + printVariables.accept(this)
-             + "    }\n"
              + "}\n";
         return r;
     }
@@ -582,43 +658,42 @@ public class JavaCodeVisitor implements Visitor<String> {
     public String visit(Literal node) {
         Type resultType = node.getResultType();
         Object value = node.getValue();
-        if (resultType.equals(new TypeLong())) {
+        if (resultType.equals(TypeList.LONG)) {
             return value.toString() + "L";
         }
-        if (resultType.equals(new TypeFloat())) {
+        if (resultType.equals(TypeList.FLOAT)) {
             return String.format((Locale) null,
-                "%." + ProductionParams.floatingPointPrecision.value() + "EF",
+                "%EF",
                 Double.parseDouble(value.toString()));
         }
-        if (resultType.equals(new TypeDouble())) {
+        if (resultType.equals(TypeList.DOUBLE)) {
             return String.format((Locale) null,
-                "%." + 2 * ProductionParams.floatingPointPrecision.value() + "E",
+                "%E",
                 Double.parseDouble(value.toString()));
         }
-        if (resultType.equals(new TypeChar())) {
-            if (((Character) value).charValue() == '\\') {
+        if (resultType.equals(TypeList.CHAR)) {
+            if ((Character) value == '\\') {
                 return "\'" + "\\\\" + "\'";
             } else {
                 return "\'" + value.toString() + "\'";
             }
         }
-        if (resultType.equals(new TypeShort())) {
+        if (resultType.equals(TypeList.SHORT)) {
             return "(short) " + value.toString();
         }
-        if (resultType.equals(new TypeByte())) {
+        if (resultType.equals(TypeList.BYTE)) {
             return "(byte) " + value.toString();
+        }
+        if (resultType.equals(TypeList.STRING)) {
+            // TOOD handle other non-printable
+            return "\"" + value.toString().replace("\n", "\\n") + "\"";
         }
         return value.toString();
     }
 
     @Override
     public String visit(LocalVariable node) {
-        return node.get().name;
-    }
-
-    @Override
-    public String visit(LogicOperator node) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return node.getVariableInfo().name;
     }
 
     @Override
@@ -633,182 +708,16 @@ public class JavaCodeVisitor implements Visitor<String> {
         IRNode memberFunctions = node.getChild(MainKlass.MainKlassPart.MEMBER_FUNCTIONS.ordinal());
         IRNode testFunction = node.getChild(MainKlass.MainKlassPart.TEST_FUNCTION.ordinal());
         IRNode printVariables = node.getChild(MainKlass.MainKlassPart.PRINT_VARIABLES.ordinal());
-        String executeFunction = "    public static String execute()\n"
-                + "    {\n"
-                + "        try {\n"
-                + "            " + name + " t = new " + name + "();\n"
-                + "            try { t.test(); }\n"
-                + "            catch(Throwable e) { }\n"
-                + "            try { return t.toString(); }\n"
-                + "            catch (Throwable e) { return \"Error during result conversion to String\"; }\n"
-                + "        } catch (Throwable e) { return \"Error during test execution\"; }\n"
-                + "    }\n";
-        String mainFunction = "    public static void main(String[] args)\n"
-                + "    {\n"
-                + "        try {\n"
-                + "            " + name + " t = new " + name + "();\n"
-                + "            try {\n"
-                + "                for (int i = 0; i < 150000; ++i) {\n"
-                + "                    t.test();\n"
-                + "                }\n"
-                + "            }\n"
-                + "            catch(Throwable e) { e.printStackTrace(); }\n"
-                + "            try { System.out.println(t); }\n"
-                + "            catch(Throwable e) { e.printStackTrace();}\n"
-                + "        } catch (Throwable e) { e.printStackTrace(); }\n"
-                + "    }\n";
-        String printerClass = "    static class Printer\n"
-                + "    {\n"
-                + "        public static String print(boolean arg) { return String.valueOf(arg); }\n"
-                + "        public static String print(byte arg)    { return String.valueOf(arg); }\n"
-                + "        public static String print(short arg)   { return String.valueOf(arg); }\n"
-                + "        public static String print(char arg)    { return String.valueOf((int)arg); }\n"
-                + "        public static String print(int arg)     { return String.valueOf(arg); }\n"
-                + "        public static String print(long arg)    { return String.valueOf(arg); }\n"
-                + "        public static String print(float arg)   { return String.valueOf(arg); }\n"
-                + "        public static String print(double arg)  { return String.valueOf(arg); }\n"
-                + "\n"
-                + "\n"
-                + "        public static String print(Object arg)\n"
-                + "        {\n"
-                + "            return print_r(new java.util.Stack(), arg);\n"
-                + "        }\n"
-                + "\n"
-                + "        private static String print_r(java.util.Stack visitedObjects, Object arg)\n"
-                + "        {\n"
-                + "            String result = \"\";\n"
-                + "            if (arg == null)\n"
-                + "                result += \"null\";\n"
-                + "            else\n"
-                + "            if (arg.getClass().isArray())\n"
-                + "            {\n"
-                + "                for (int i = 0; i < visitedObjects.size(); i++)\n"
-                + "                    if (visitedObjects.elementAt(i) == arg) return \"<recursive>\";\n"
-                + "\n"
-                + "                visitedObjects.push(arg);\n"
-                + "\n"
-                + "                final String delimiter = \", \";\n"
-                + "                result += \"[\";\n"
-                + "\n"
-                + "                if (arg instanceof Object[])\n"
-                + "                {\n"
-                + "                    Object[] array = (Object[]) arg;\n"
-                + "                    for (int i = 0; i < array.length; i++)\n"
-                + "                    {\n"
-                + "                        result += print_r(visitedObjects, array[i]);\n"
-                + "                        if (i < array.length - 1) result += delimiter;\n"
-                + "                    }\n"
-                + "                }\n"
-                + "                else\n"
-                + "                if (arg instanceof boolean[])\n"
-                + "                {\n"
-                + "                    boolean[] array = (boolean[]) arg;\n"
-                + "                    for (int i = 0; i < array.length; i++)\n"
-                + "                    {\n"
-                + "                        result += print(array[i]);\n"
-                + "                        if (i < array.length - 1) result += delimiter;\n"
-                + "                    }\n"
-                + "                }\n"
-                + "                else\n"
-                + "                if (arg instanceof byte[])\n"
-                + "                {\n"
-                + "                    byte[] array = (byte[]) arg;\n"
-                + "                    for (int i = 0; i < array.length; i++)\n"
-                + "                    {\n"
-                + "                        result += print(array[i]);\n"
-                + "                        if (i < array.length - 1) result += delimiter;\n"
-                + "                    }\n"
-                + "                }\n"
-                + "                else\n"
-                + "                if (arg instanceof short[])\n"
-                + "                {\n"
-                + "                    short[] array = (short[]) arg;\n"
-                + "                    for (int i = 0; i < array.length; i++)\n"
-                + "                    {\n"
-                + "                        result += print(array[i]);\n"
-                + "                        if (i < array.length - 1) result += delimiter;\n"
-                + "                    }\n"
-                + "                }\n"
-                + "                else\n"
-                + "                if (arg instanceof char[])\n"
-                + "                {\n"
-                + "                    char[] array = (char[]) arg;\n"
-                + "                    for (int i = 0; i < array.length; i++)\n"
-                + "                    {\n"
-                + "                        result += print(array[i]);\n"
-                + "                        if (i < array.length - 1) result += delimiter;\n"
-                + "                    }\n"
-                + "                }\n"
-                + "                else\n"
-                + "                if (arg instanceof int[])\n"
-                + "                {\n"
-                + "                     int[] array = (int[]) arg;\n"
-                + "                     for (int i = 0; i < array.length; i++)\n"
-                + "                     {\n"
-                + "                        result += print(array[i]);\n"
-                + "                        if (i < array.length - 1) result += delimiter;\n"
-                + "                     }\n"
-                + "                }\n"
-                + "                else\n"
-                + "                if (arg instanceof long[])\n"
-                + "                {\n"
-                + "                    long[] array = (long[]) arg;\n"
-                + "                    for (int i = 0; i < array.length; i++)\n"
-                + "                    {\n"
-                + "                        result += print(array[i]);\n"
-                + "                        if (i < array.length - 1) result += delimiter;\n"
-                + "                    }\n"
-                + "                }\n"
-                + "                else\n"
-                + "                if (arg instanceof float[])\n"
-                + "                {\n"
-                + "                    float[] array = (float[]) arg;\n"
-                + "                    for (int i = 0; i < array.length; i++)\n"
-                + "                    {\n"
-                + "                        result += print(array[i]);\n"
-                + "                        if (i < array.length - 1) result += delimiter;\n"
-                + "                    }\n"
-                + "                }\n"
-                + "                else\n"
-                + "                if (arg instanceof double[])\n"
-                + "                {\n"
-                + "                    double[] array = (double[]) arg;\n"
-                + "                    for (int i = 0; i < array.length; i++)\n"
-                + "                    {\n"
-                + "                        result += print(array[i]);\n"
-                + "                        if (i < array.length - 1) result += delimiter;\n"
-                + "                    }\n"
-                + "                }\n"
-                + "\n"
-                + "                result += \"]\";\n"
-                + "                visitedObjects.pop();\n"
-                + "\n"
-                + "            } else\n"
-                + "            {\n"
-                + "                result += arg.toString();\n"
-                + "            }\n"
-                + "\n"
-                + "            return result;\n"
-                + "        }\n"
-                + "    }\n";
 
         return (ProductionParams.enableStrictFP.value() ? "strictfp " : "")
                 + "public class " + name + " {\n"
                 + dataMembers.accept(this)+ "\n"
                 + (memberFunctions != null ? memberFunctions.accept(this): "") + "\n"
-                + executeFunction
-                + "\n"
-                + mainFunction
-                + "\n"
                 + "    private void test()\n"
                 + "    {\n"
                 + testFunction.accept(this)
                 + "    }" + addComplexityInfo(testFunction) + "\n"
-                + "    public String toString()\n"
-                + "    {\n"
                 + printVariables.accept(this)
-                + "    }\n"
-                + printerClass
                 + "}\n\n";
     }
 
@@ -816,7 +725,7 @@ public class JavaCodeVisitor implements Visitor<String> {
     public String visit(NonStaticMemberVariable node) {
         IRNode object = node.getChild(0);
         String objectString = object.accept(this);
-        VariableInfo value = node.getValue();
+        VariableInfo value = node.getVariableInfo();
         if (objectString.equals("this")) {
             return value.name;
         } else {
@@ -835,38 +744,7 @@ public class JavaCodeVisitor implements Visitor<String> {
 
     @Override
     public String visit(PrintVariables node) {
-        int level = node.getLevel();
-        List<Symbol> vars = node.getVars();
-        StringBuilder result = new StringBuilder()
-                .append(PrintingUtils.align(level))
-                .append("String result =  \"[\\n\";\n");
-        if (!vars.isEmpty()) {
-            for (int i = 0; i < vars.size(); i++) {
-                Symbol v = vars.get(i);
-                result.append(PrintingUtils.align(level))
-                        .append("result += \"").append(v.klass.getName())
-                        .append(".")
-                        .append(v.name)
-                        .append(" = \"; ")
-                        .append("result += ")
-                        .append(node.getPrinterName())
-                        .append(".print(")
-                        .append(v.name)
-                        .append(");\n")
-                        .append(PrintingUtils.align(level));
-                if (i < vars.size() - 1) {
-                    result.append("result += \"\\n\";");
-                } else {
-                    result.append("result += \"\";");
-                }
-                result.append("\n");
-            }
-        }
-        result.append(PrintingUtils.align(level))
-                .append("result += \"\\n]\";\n")
-                .append(PrintingUtils.align(level))
-                .append("return result;\n");
-        return result.toString();
+        return FixedTrees.printVariablesAsFunction(node).accept(this);
     }
 
     @Override
@@ -894,12 +772,12 @@ public class JavaCodeVisitor implements Visitor<String> {
 
     @Override
     public String visit(StaticMemberVariable node) {
-        IRNode klass = node.getKlass();
-        VariableInfo value = node.get();
-        if (klass.equals(value.klass)) {
-            return value.name;
+        IRNode owner = node.getOwner();
+        VariableInfo info = node.getVariableInfo();
+        if (owner.equals(info.owner)) {
+            return info.name;
         } else {
-            return value.klass.getName() + "." + value.name;
+            return info.owner.getName() + "." + info.name;
         }
     }
 
@@ -910,10 +788,10 @@ public class JavaCodeVisitor implements Visitor<String> {
         String cases = "";
         for (int i = 0; i < caseBlockIdx - 1; ++i) {
             cases += PrintingUtils.align(level + 1);
-            if (node.getChild(i + 1) != null) {
-                cases += "case " + node.getChild(i + 1).accept(this)+ ":\n";
-            } else {
+            if (node.getChild(i + 1) instanceof Nothing) {
                 cases += "default:\n";
+            } else {
+                cases += "case " + node.getChild(i + 1).accept(this)+ ":\n";
             }
 
             cases += node.getChild(i + caseBlockIdx).accept(this)+ "\n";
@@ -955,11 +833,13 @@ public class JavaCodeVisitor implements Visitor<String> {
     public String visit(UnaryOperator node) {
         IRNode exp = node.getChild(0);
         if (node.isPrefix()) {
-            return node.getOperatorText() + (exp instanceof Operator ? " " : "")
+            return operatorToJaveCode(node.getOperationKind())
+                    + (exp instanceof Operator ? " " : "")
                     + expressionToJavaCode(node, exp, Operator.Order.LEFT);
         } else {
             return expressionToJavaCode(node, exp, Operator.Order.RIGHT)
-                    + (exp instanceof Operator ? " " : "") + node.getOperatorText();
+                    + (exp instanceof Operator ? " " : "")
+                    + operatorToJaveCode(node.getOperationKind());
         }
     }
 
@@ -1024,14 +904,18 @@ public class JavaCodeVisitor implements Visitor<String> {
         int level = node.getLevel();
         result.append("try {\n")
                 .append(body.accept(this)).append("\n")
-                .append(PrintingUtils.align(level)).append("}\n");
+                .append(PrintingUtils.align(level))
+                .append("}\n");
         for (int i = 2; i < childs.size(); i++) {
             result.append(childs.get(i).accept(this));
         }
         if (finallyBody != null) {
-            result.append(PrintingUtils.align(level)).append("finally {\n")
-                    .append(finallyBody.accept(this)).append("\n")
-                    .append(PrintingUtils.align(level)).append("}\n");
+            String finallyContent = finallyBody.accept(this);
+            if (!finallyContent.isEmpty()) {
+                result.append(PrintingUtils.align(level)).append("finally {\n")
+                        .append(finallyContent).append("\n")
+                        .append(PrintingUtils.align(level)).append("}\n");
+            }
         }
         return result.toString();
     }

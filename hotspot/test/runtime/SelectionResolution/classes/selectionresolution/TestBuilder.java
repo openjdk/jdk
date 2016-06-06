@@ -53,9 +53,10 @@ class TestBuilder extends Builder {
         Method m = clazz.addMethod("test", "()Ljava/lang/Integer;", ACC_PUBLIC + ACC_STATIC, execMode);
         m.defaultInvoke(getInvokeInstruction(testcase.invoke),
                     getName(testcase.methodref),
-                    getName(testcase.objectref));
+                    getName(testcase.objectref),
+                    testcase.hier.isInterface(testcase.methodref));
 
-        mainMethod.makeStaticCall(clazz.getName(), "test", "()Ljava/lang/Integer;").done();
+        mainMethod.makeStaticCall(clazz.getName(), "test", "()Ljava/lang/Integer;", false).done();
     }
 
     private static int getInvokeInstruction(SelectionResolutionTestCase.InvokeInstruction instr) {

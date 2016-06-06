@@ -38,7 +38,7 @@ public class While extends IRNode {
         BODY1,
         BODY2,
         BODY3,
-    };
+    }
 
     private final Loop loop;
     // int counter = x;
@@ -51,8 +51,9 @@ public class While extends IRNode {
     // }
     private final long thisLoopIterLimit;
 
-    public While(int level, Loop loop, long thisLoopIterLimit, IRNode header,
-            IRNode body1, IRNode body2, IRNode body3) {
+    public While(int level, Loop loop, long thisLoopIterLimit, Block header,
+                 Block body1, Block body2, Block body3) {
+        super(body1.getResultType());
         this.loop = loop;
         this.level = level;
         this.thisLoopIterLimit = thisLoopIterLimit;
@@ -88,13 +89,12 @@ public class While extends IRNode {
         IRNode header = getChildren().get(WhilePart.HEADER.ordinal());
         List<IRNode> siblings = getParent().getChildren();
         int index = siblings.indexOf(this);
+        siblings.set(index++, loop.initialization);
         if (header instanceof Block) {
-            siblings.remove(this);
             siblings.addAll(index, header.getChildren());
         } else {
-            siblings.set(index, header);
+            siblings.add(index, header);
         }
-        siblings.add(index + header.getChildren().size(), loop.initialization);
         return true;
     }
 

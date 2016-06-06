@@ -33,7 +33,13 @@ public abstract class Type extends IRNode implements Comparable<Type> {
     private final String typeName;
 
     protected Type(String typeName) {
+        super(null);
         this.typeName = typeName;
+    }
+
+    @Override
+    public Type getResultType() {
+        return this;
     }
 
     @Override

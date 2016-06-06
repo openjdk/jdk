@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,19 @@ import sampleapi.SampleApi.Fault;
 
 public class SampleApiDefaultRunner {
 
+    public static final String MSG_NO_OUTDIR =
+        "SampleApi: no outdir set";
+    public static final String MSG_NO_RESDIR =
+        "SampleApi: no resourcedir set";
     public static final String MSG_DUP_OUTDIR =
         "SampleApi: duplicated outdir detected: ";
+    public static final String MSG_DUP_RESDIR =
+        "SampleApi: duplicated resourcedir detected: ";
     public static final String MSG_USE_FIRST =
         "           will use first occurance: ";
     public static final String MSG_INVAL_OUTDIR =
+        "SampleApi: outdir is not valid: ";
+    public static final String MSG_INVAL_RESDIR =
         "SampleApi: outdir is not valid: ";
     public static final String MSG_CANNOT_GEN =
         "SampleApi: cannot generate output: ";
@@ -41,16 +49,28 @@ public class SampleApiDefaultRunner {
         "SampleApi: incorrect option: ";
     public static final String MSG_USE_HELP =
         "           use -? for help";
+    public static final String[] MSG_HELP = {
+        "SampleApi options:",
+        "    -?|-h|--help                                 - print help",
+        "    -r=<dir>|--resdir=<dir>|--resourcedir=<dir>  - set <dir> to find xml resources",
+        "    -o=<dir>|--outdir=<dir>                      - set <dir> to generate output"
+    };
 
     public static void main(String... args) throws Exception {
+        System.exit(execute(args));
+    }
+
+    public static int execute(String... args) throws Exception {
         if (args.length == 0) {
             printHelp();
-            System.exit(1);
+            return 1;
         }
 
         String outDirName = "";
+        String resDirName = "";
 
         boolean isOutDirSet = false;
+        boolean isResDirSet = false;
         boolean isHelpPrinted = false;
         for (String arg : args) {
             Option option = new Option(arg);
@@ -73,6 +93,17 @@ public class SampleApiDefaultRunner {
                         System.err.println(MSG_USE_FIRST + outDirName);
                     }
                     break;
+                case "-r":
+                case "--resdir":
+                case "--resourcedir":
+                    if (!isResDirSet) {
+                        resDirName = option.getOptionValue();
+                        isResDirSet = true;
+                    } else {
+                        System.err.println(MSG_DUP_RESDIR + option.getOptionValue());
+                        System.err.println(MSG_USE_FIRST + resDirName);
+                    }
+                    break;
                 default:
                     System.err.println(MSG_WRONG_OPTION + arg);
                     System.err.println(MSG_USE_HELP);
@@ -82,40 +113,47 @@ public class SampleApiDefaultRunner {
         }
 
         if (!isOutDirSet) {
-            System.exit(1);
+            System.err.println(MSG_NO_OUTDIR);
+            return 1;
         }
 
         if (outDirName.length() == 0) {
             System.err.println(MSG_INVAL_OUTDIR + outDirName);
-            System.exit(1);
+            return 1;
         }
 
+        if (!isResDirSet) {
+            System.err.println(MSG_NO_RESDIR);
+            return 1;
+        }
+
+        if (resDirName.length() == 0) {
+            System.err.println(MSG_INVAL_RESDIR + resDirName);
+            return 1;
+        }
+
+        File resDir = new File(resDirName);
         File outDir = new File(outDirName);
         outDir.mkdirs();
         SampleApi apiGen = new SampleApi();
 
-        try {
-            apiGen.generate(outDir);
-        } catch (Fault e) {
-            System.err.println(MSG_CANNOT_GEN + e.getMessage());
-            e.printStackTrace();
-        }
+        apiGen.generate(resDir, outDir);
+
+        return 0;
     }
 
     private static void printHelp() {
-        System.out.println("SampleApi:");
-        System.out.println("    options: [-?|-h|--help] [-o:<dir>|--outdir:<dir>]");
-        System.out.println("    -?|-h|--help             - print help");
-        System.out.println("    -o:<dir>|--outdir:<dir>  - set <dir> to generate output");
+        for (String line : MSG_HELP)
+            System.out.println(line);
     }
 
     private static class Option {
 
-        private String optionName;
-        private String optionValue;
+        private final String optionName;
+        private final String optionValue;
 
         public Option(String arg) {
-            int delimPos = arg.indexOf(':');
+            int delimPos = arg.indexOf('=');
 
             if (delimPos == -1) {
                 optionName = arg;

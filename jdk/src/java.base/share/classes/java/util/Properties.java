@@ -1037,18 +1037,18 @@ class Properties extends Hashtable<Object,Object> {
     }
 
     /**
-     * Returns a set of keys in this property list where
-     * the key and its corresponding value are strings,
+     * Returns an unmodifiable set of keys from this property list
+     * where the key and its corresponding value are strings,
      * including distinct keys in the default property list if a key
      * of the same name has not already been found from the main
      * properties list.  Properties whose key or value is not
      * of type {@code String} are omitted.
      * <p>
-     * The returned set is not backed by the {@code Properties} object.
-     * Changes to this {@code Properties} are not reflected in the set,
-     * or vice versa.
+     * The returned set is not backed by this {@code Properties} object.
+     * Changes to this {@code Properties} object are not reflected in the
+     * returned set.
      *
-     * @return  a set of keys in this property list where
+     * @return  an unmodifiable set of keys in this property list where
      *          the key and its corresponding value are strings,
      *          including the keys in the default property list.
      * @see     java.util.Properties#defaults
@@ -1057,7 +1057,7 @@ class Properties extends Hashtable<Object,Object> {
     public Set<String> stringPropertyNames() {
         Map<String, String> h = new HashMap<>();
         enumerateStringProperties(h);
-        return h.keySet();
+        return Collections.unmodifiableSet(h.keySet());
     }
 
     /**
