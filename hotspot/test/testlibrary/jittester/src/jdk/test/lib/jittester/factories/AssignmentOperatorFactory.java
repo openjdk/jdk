@@ -24,7 +24,8 @@
 package jdk.test.lib.jittester.factories;
 
 import java.util.ArrayList;
-import jdk.test.lib.jittester.IRNode;
+
+import jdk.test.lib.jittester.Operator;
 import jdk.test.lib.jittester.OperatorKind;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Rule;
@@ -34,7 +35,7 @@ import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class AssignmentOperatorFactory extends Factory {
+class AssignmentOperatorFactory extends Factory<Operator> {
     private final int operatorLimit;
     private final long complexityLimit;
     private final Type resultType;
@@ -42,8 +43,8 @@ class AssignmentOperatorFactory extends Factory {
     private final boolean noconsts;
     private final TypeKlass ownerClass;
 
-    private Rule fillRule(Type resultType) throws ProductionFailedException {
-        Rule rule = new Rule("assignment");
+    private Rule<Operator> fillRule(Type resultType) throws ProductionFailedException {
+        Rule<Operator> rule = new Rule<>("assignment");
         IRNodeBuilder builder = new IRNodeBuilder()
                 .setComplexityLimit(complexityLimit)
                 .setOperatorLimit(operatorLimit)
@@ -84,14 +85,14 @@ class AssignmentOperatorFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public Operator produce() throws ProductionFailedException {
         if (resultType == null) { // if no result type is given - choose any.
             ArrayList<Type> allTypes = new ArrayList<>(TypeList.getAll());
             PseudoRandom.shuffle(allTypes);
             for (Type type : allTypes) {
                 SymbolTable.push();
                 try {
-                    IRNode result =  fillRule(type).produce();
+                    Operator result =  fillRule(type).produce();
                     SymbolTable.merge();
                     return result;
                 } catch (ProductionFailedException e) {

@@ -377,6 +377,12 @@ public class WhiteBox {
   public native long incMetaspaceCapacityUntilGC(long increment);
   public native long metaspaceCapacityUntilGC();
 
+  // Don't use these methods directly
+  // Use sun.hotspot.gc.GC class instead.
+  public native int currentGC();
+  public native int allSupportedGC();
+  public native boolean gcSelectedByErgo();
+
   // Force Young GC
   public native void youngGC();
 

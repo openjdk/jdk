@@ -70,19 +70,21 @@ public class Klass extends IRNode {
             IRNode functionDefinitions, IRNode abstractFunctionRedefinitions,
             IRNode overridenFunctionRedefitions, IRNode functionDeclarations,
             IRNode printVariablesBlock) {
+        super(thisKlass);
         this.thisKlass = thisKlass;
-        klass = thisKlass;
+        owner = thisKlass;
         this.parentKlass = parent;
         this.interfaces = interfaces;
         this.name = name;
         this.level = level;
-        addChild(variableDeclarations);
-        addChild(constructorDefinitions);
-        addChild(abstractFunctionRedefinitions);
-        addChild(overridenFunctionRedefitions);
-        addChild(functionDefinitions);
-        addChild(functionDeclarations);
-        addChild(printVariablesBlock);
+        resizeUpChildren(KlassPart.values().length);
+        setChild(KlassPart.DATA_MEMBERS.ordinal(), variableDeclarations);
+        setChild(KlassPart.CONSTRUCTORS.ordinal(), constructorDefinitions);
+        setChild(KlassPart.REDEFINED_FUNCTIONS.ordinal(), abstractFunctionRedefinitions);
+        setChild(KlassPart.OVERRIDEN_FUNCTIONS.ordinal(), overridenFunctionRedefitions);
+        setChild(KlassPart.MEMBER_FUNCTIONS.ordinal(), functionDefinitions);
+        setChild(KlassPart.MEMBER_FUNCTIONS_DECLARATIONS.ordinal(), functionDeclarations);
+        setChild(KlassPart.PRINT_VARIABLES.ordinal(), printVariablesBlock);
     }
 
     @Override

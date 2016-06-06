@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -211,7 +211,7 @@ public class JavaTimeSupplementary_zh extends OpenListResourceBundle {
             { "islamic.Eras",
                 new String[] {
                     "",
-                    "\u56de\u5386",
+                    "\u4f0a\u65af\u5170\u5386",
                 }
             },
             { "islamic.MonthAbbreviations",
@@ -250,10 +250,16 @@ public class JavaTimeSupplementary_zh extends OpenListResourceBundle {
                     "ah:mm",
                 }
             },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "\u4e0a\u5348",
+                    "\u4e0b\u5348",
+                }
+            },
             { "islamic.long.Eras",
                 new String[] {
                     "",
-                    "\u56de\u5386",
+                    "\u4f0a\u65af\u5170\u5386",
                 }
             },
             { "islamic.narrow.AmPmMarkers",
@@ -265,13 +271,13 @@ public class JavaTimeSupplementary_zh extends OpenListResourceBundle {
             { "islamic.narrow.Eras",
                 new String[] {
                     "",
-                    "\u56de\u5386",
+                    "\u4f0a\u65af\u5170\u5386",
                 }
             },
             { "islamic.short.Eras",
                 new String[] {
                     "",
-                    "\u56de\u5386",
+                    "\u4f0a\u65af\u5170\u5386",
                 }
             },
             { "java.time.buddhist.DatePatterns",
@@ -428,6 +434,12 @@ public class JavaTimeSupplementary_zh extends OpenListResourceBundle {
                     "z ah:mm:ss",
                     "ah:mm:ss",
                     "ah:mm",
+                }
+            },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "\u4e0a\u5348",
+                    "\u4e0b\u5348",
                 }
             },
             { "roc.long.Eras",

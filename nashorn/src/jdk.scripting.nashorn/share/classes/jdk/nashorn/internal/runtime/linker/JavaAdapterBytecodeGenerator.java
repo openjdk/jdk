@@ -31,12 +31,24 @@ import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_STATIC;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_SUPER;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_VARARGS;
+import static jdk.internal.org.objectweb.asm.Opcodes.AALOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.ALOAD;
+import static jdk.internal.org.objectweb.asm.Opcodes.ARRAYLENGTH;
 import static jdk.internal.org.objectweb.asm.Opcodes.ASTORE;
 import static jdk.internal.org.objectweb.asm.Opcodes.D2F;
+import static jdk.internal.org.objectweb.asm.Opcodes.GETSTATIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.GOTO;
 import static jdk.internal.org.objectweb.asm.Opcodes.H_INVOKESTATIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_0;
+import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPGE;
+import static jdk.internal.org.objectweb.asm.Opcodes.ILOAD;
+import static jdk.internal.org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static jdk.internal.org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+import static jdk.internal.org.objectweb.asm.Opcodes.ISTORE;
 import static jdk.internal.org.objectweb.asm.Opcodes.I2B;
 import static jdk.internal.org.objectweb.asm.Opcodes.I2S;
+import static jdk.internal.org.objectweb.asm.Opcodes.POP;
+import static jdk.internal.org.objectweb.asm.Opcodes.PUTSTATIC;
 import static jdk.internal.org.objectweb.asm.Opcodes.RETURN;
 import static jdk.nashorn.internal.codegen.CompilerConstants.interfaceCallNoLookup;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
@@ -51,7 +63,6 @@ import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Module;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -62,6 +73,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.FieldVisitor;
+import jdk.internal.org.objectweb.asm.Handle;
+import jdk.internal.org.objectweb.asm.Label;
+import jdk.internal.org.objectweb.asm.MethodVisitor;
+import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.Opcodes;
@@ -69,6 +86,7 @@ import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.commons.InstructionAdapter;
 import jdk.nashorn.api.scripting.ScriptUtils;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.linker.AdaptationResult.Outcome;
@@ -236,7 +254,6 @@ final class JavaAdapterBytecodeGenerator {
     private final Set<MethodInfo> methodInfos = new HashSet<>();
     private final boolean autoConvertibleFromFunction;
     private boolean hasExplicitFinalizer = false;
-    private final Set<Module> accessedModules = new HashSet<>();
 
     private final ClassWriter cw;
 
@@ -300,7 +317,7 @@ final class JavaAdapterBytecodeGenerator {
     }
 
     JavaAdapterClassLoader createAdapterClassLoader() {
-        return new JavaAdapterClassLoader(generatedClassName, cw.toByteArray(), accessedModules);
+        return new JavaAdapterClassLoader(generatedClassName, cw.toByteArray());
     }
 
     boolean isAutoConvertibleFromFunction() {
@@ -399,14 +416,6 @@ final class JavaAdapterBytecodeGenerator {
     }
 
     private boolean generateConstructors(final Constructor<?> ctor) {
-        for (final Class<?> pt : ctor.getParameterTypes()) {
-            if (pt.isPrimitive()) continue;
-            final Module ptMod = pt.getModule();
-            if (ptMod != null) {
-                accessedModules.add(ptMod);
-            }
-        }
-
         if(classOverride) {
             // Generate a constructor that just delegates to ctor. This is used with class-level overrides, when we want
             // to create instances without further per-instance overrides.
@@ -1086,11 +1095,6 @@ final class JavaAdapterBytecodeGenerator {
      */
     private void gatherMethods(final Class<?> type) throws AdaptationException {
         if (Modifier.isPublic(type.getModifiers())) {
-            final Module module = type.getModule();
-            if (module != null) {
-                accessedModules.add(module);
-            }
-
             final Method[] typeMethods = type.isInterface() ? type.getMethods() : type.getDeclaredMethods();
 
             for (final Method typeMethod: typeMethods) {
@@ -1113,20 +1117,6 @@ final class JavaAdapterBytecodeGenerator {
                             }
                         }
                         continue;
-                    }
-
-                    for (final Class<?> pt : typeMethod.getParameterTypes()) {
-                        if (pt.isPrimitive()) continue;
-                        final Module ptMod = pt.getModule();
-                        if (ptMod != null) {
-                            accessedModules.add(ptMod);
-                        }
-                    }
-
-                    final Class<?> rt = typeMethod.getReturnType();
-                    if (!rt.isPrimitive()) {
-                        final Module rtMod = rt.getModule();
-                        if (rtMod != null) accessedModules.add(rtMod);
                     }
 
                     final MethodInfo mi = new MethodInfo(typeMethod);
@@ -1211,7 +1201,7 @@ final class JavaAdapterBytecodeGenerator {
         return e.isAnnotationPresent(CallerSensitive.class);
     }
 
-    private static final Call lookupServiceMethod(final String name, final Class<?> rtype, final Class<?>... ptypes) {
+    private static Call lookupServiceMethod(final String name, final Class<?> rtype, final Class<?>... ptypes) {
         return staticCallNoLookup(JavaAdapterServices.class, name, rtype, ptypes);
     }
 }

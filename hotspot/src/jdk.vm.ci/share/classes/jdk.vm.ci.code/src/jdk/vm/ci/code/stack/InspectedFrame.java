@@ -24,16 +24,19 @@ package jdk.vm.ci.code.stack;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
+/**
+ * Access to the object variables in a stack frame.
+ */
 public interface InspectedFrame {
 
     /**
-     * Returns the value of the local at the given index. Currently only works for object values.
-     * This value is a copy iff {@link #isVirtual(int)} is true.
+     * Returns the value of the object local at {@code index}. This value is a copy iff
+     * {@link #isVirtual(int)} is true.
      */
     Object getLocal(int index);
 
     /**
-     * Returns whether the local at the given index is a virtual object, and therefore the object
+     * Returns whether the local at {@code index} is a virtual object, and therefore the object
      * returned by {@link #getLocal(int)} is a copy.
      */
     boolean isVirtual(int index);

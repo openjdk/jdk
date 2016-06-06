@@ -380,7 +380,6 @@ public final class JavaAdapterFactory {
     private static ProtectionDomain createMinimalPermissionDomain() {
         // Generated classes need to have at least the permission to access Nashorn runtime and runtime.linker packages.
         final Permissions permissions = new Permissions();
-        permissions.add(new RuntimePermission("accessClassInPackage.jdk.nashorn.internal.objects"));
         permissions.add(new RuntimePermission("accessClassInPackage.jdk.nashorn.internal.runtime"));
         permissions.add(new RuntimePermission("accessClassInPackage.jdk.nashorn.internal.runtime.linker"));
         return new ProtectionDomain(new CodeSource(null, (CodeSigner[])null), permissions);

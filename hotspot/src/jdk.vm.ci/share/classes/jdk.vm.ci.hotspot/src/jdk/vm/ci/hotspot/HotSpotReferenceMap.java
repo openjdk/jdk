@@ -53,7 +53,7 @@ public final class HotSpotReferenceMap extends ReferenceMap {
         }
         if (obj instanceof HotSpotReferenceMap) {
             HotSpotReferenceMap that = (HotSpotReferenceMap) obj;
-            if (Arrays.equals(objects, that.objects)) {
+            if (sizeInBytes == that.sizeInBytes && maxRegisterSize == that.maxRegisterSize && Arrays.equals(objects, that.objects) && Arrays.equals(derivedBase, that.derivedBase)) {
                 return true;
             }
         }

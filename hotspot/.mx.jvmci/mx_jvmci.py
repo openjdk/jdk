@@ -144,42 +144,6 @@ def isJVMCIEnabled(vm):
     assert vm in _jdkJvmVariants
     return True
 
-class JvmciJDKDeployedDist(object):
-    def __init__(self, name, compilers=False):
-        self._name = name
-        self._compilers = compilers
-
-    def dist(self):
-        return mx.distribution(self._name)
-
-    def deploy(self, jdkDir):
-        mx.nyi('deploy', self)
-
-    def post_parse_cmd_line(self):
-        self.set_archiveparticipant()
-
-    def set_archiveparticipant(self):
-        dist = self.dist()
-        dist.set_archiveparticipant(JVMCIArchiveParticipant(dist))
-
-class ExtJDKDeployedDist(JvmciJDKDeployedDist):
-    def __init__(self, name):
-        JvmciJDKDeployedDist.__init__(self, name)
-
-"""
-The monolithic JVMCI distribution is deployed through use of -Xbootclasspath/p
-so that it's not necessary to run JDK make after editing JVMCI sources.
-The latter causes all JDK Java sources to be rebuilt since JVMCI is
-(currently) in java.base.
-"""
-_monolithicJvmci = JvmciJDKDeployedDist('JVMCI')
-
-"""
-List of distributions that are deployed on the boot class path.
-Note: In jvmci-8, they were deployed directly into the JDK directory.
-"""
-jdkDeployedDists = [_monolithicJvmci]
-
 def _makehelp():
     return subprocess.check_output([mx.gmake_cmd(), 'help'], cwd=_jdkSourceRoot)
 
@@ -194,7 +158,7 @@ To build hotspot and import it into the JDK: "mx make hotspot import-hotspot"
         # JDK9 must be bootstrapped with a JDK8
         compliance = mx.JavaCompliance('8')
         jdk8 = mx.get_jdk(compliance.exactMatch, versionDescription=compliance.value)
-        cmd = ['sh', 'configure', '--with-debug-level=' + _vm.debugLevel, '--with-native-debug-symbols=none', '--disable-precompiled-headers',
+        cmd = ['sh', 'configure', '--with-debug-level=' + _vm.debugLevel, '--with-native-debug-symbols=external', '--disable-precompiled-headers',
                '--with-jvm-variants=' + _vm.jvmVariant, '--disable-warnings-as-errors', '--with-boot-jdk=' + jdk8.home]
         mx.run(cmd, cwd=_jdkSourceRoot)
     cmd = [mx.gmake_cmd(), 'CONF=' + _vm.debugLevel]
@@ -217,7 +181,10 @@ To build hotspot and import it into the JDK: "mx make hotspot import-hotspot"
 
         # The OpenJDK build creates an empty cacerts file so copy one from
         # the default JDK (which is assumed to be an OracleJDK)
-        srcCerts = join(mx.get_jdk(tag='default').home, 'jre', 'lib', 'security', 'cacerts')
+        srcCerts = join(mx.get_jdk(tag='default').home, 'lib', 'security', 'cacerts')
+        if not exists(srcCerts):
+            # Might be building with JDK8 which has cacerts under jre/
+            srcCerts = join(mx.get_jdk(tag='default').home, 'jre', 'lib', 'security', 'cacerts')
         dstCerts = join(jdkImageDir, 'lib', 'security', 'cacerts')
         shutil.copyfile(srcCerts, dstCerts)
 
@@ -673,24 +640,6 @@ def jol(args):
 
     run_vm(['-javaagent:' + joljar, '-cp', os.pathsep.join([mx.classpath(), joljar]), "org.openjdk.jol.MainObjectInternals"] + candidates)
 
-class JVMCIArchiveParticipant:
-    def __init__(self, dist):
-        self.dist = dist
-
-    def __opened__(self, arc, srcArc, services):
-        self.services = services
-        self.jvmciServices = services
-        self.arc = arc
-
-    def __add__(self, arcname, contents):
-        return False
-
-    def __addsrc__(self, arcname, contents):
-        return False
-
-    def __closing__(self):
-        pass
-
 def _get_openjdk_os():
     # See: common/autoconf/platform.m4
     os = mx.get_os()
@@ -744,10 +693,6 @@ def _get_hotspot_build_dir(jvmVariant=None, debugLevel=None):
     name = '{}_{}_{}'.format(os, arch, buildname)
     return join(_get_jdk_build_dir(debugLevel=debugLevel), 'hotspot', name)
 
-def add_bootclasspath_prepend(dep):
-    assert isinstance(dep, mx.ClasspathDependency)
-    _jvmci_bootclasspath_prepends.append(dep)
-
 class JVMCI9JDKConfig(mx.JDKConfig):
     def __init__(self, debugLevel):
         self.debugLevel = debugLevel
@@ -770,20 +715,6 @@ class JVMCI9JDKConfig(mx.JDKConfig):
             excluded = frozenset([dist.path for dist in _suite.dists])
             cp = os.pathsep.join([e for e in cp.split(os.pathsep) if e not in excluded])
             args[cpIndex] = cp
-
-        jvmciModeArgs = _jvmciModes[_vm.jvmciMode]
-        if jvmciModeArgs:
-            bcpDeps = [jdkDist.dist() for jdkDist in jdkDeployedDists]
-            if bcpDeps:
-                args = ['-Xbootclasspath/p:' + os.pathsep.join([d.classpath_repr() for d in bcpDeps])] + args
-
-        # Set the default JVMCI compiler
-        for jdkDist in reversed(jdkDeployedDists):
-            assert isinstance(jdkDist, JvmciJDKDeployedDist), jdkDist
-            if jdkDist._compilers:
-                jvmciCompiler = jdkDist._compilers[-1]
-                args = ['-Djvmci.compiler=' + jvmciCompiler] + args
-                break
 
         if '-version' in args:
             ignoredArgs = args[args.index('-version') + 1:]
@@ -877,41 +808,3 @@ def mx_post_parse_cmd_line(opts):
             mx.warn('Ignoring "--jvmci-mode" option as "--jdk" tag is not "' + _JVMCI_JDK_TAG + '"')
 
     _vm.update(jvmVariant, debugLevel, jvmciMode)
-
-    for jdkDist in jdkDeployedDists:
-        jdkDist.post_parse_cmd_line()
-
-def _update_JDK9_STUBS_library():
-    """
-    Sets the "path" and "sha1" attributes of the "JDK9_STUBS" library.
-    """
-    jdk9InternalLib = _suite.suiteDict['libraries']['JDK9_STUBS']
-    jarInputDir = join(_suite.get_output_root(), 'jdk9-stubs')
-    jarPath = join(_suite.get_output_root(), 'jdk9-stubs.jar')
-
-    stubs = [
-        ('jdk.internal.misc', 'VM', """package jdk.internal.misc;
-public class VM {
-    public static String getSavedProperty(String key) {
-        throw new InternalError("should not reach here");
-    }
-}
-""")
-    ]
-
-    if not exists(jarPath):
-        sourceFiles = []
-        for (package, className, source) in stubs:
-            sourceFile = join(jarInputDir, package.replace('.', os.sep), className + '.java')
-            mx.ensure_dir_exists(os.path.dirname(sourceFile))
-            with open(sourceFile, 'w') as fp:
-                fp.write(source)
-            sourceFiles.append(sourceFile)
-        jdk = mx.get_jdk(tag='default')
-        mx.run([jdk.javac, '-d', jarInputDir] + sourceFiles)
-        mx.run([jdk.jar, 'cf', jarPath, '.'], cwd=jarInputDir)
-
-    jdk9InternalLib['path'] = jarPath
-    jdk9InternalLib['sha1'] = mx.sha1OfFile(jarPath)
-
-_update_JDK9_STUBS_library()

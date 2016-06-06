@@ -28,6 +28,8 @@ import jdk.test.lib.jittester.visitors.Visitor;
 
 public class StaticConstructorDefinition extends IRNode {
     public StaticConstructorDefinition(IRNode body) {
+        super(body.getResultType());
+        this.owner = body.getOwner();
         addChild(body);
     }
 

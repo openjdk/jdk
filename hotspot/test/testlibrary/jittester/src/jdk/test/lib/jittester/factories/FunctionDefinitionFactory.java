@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.List;
 
 import jdk.test.lib.jittester.IRNode;
+import jdk.test.lib.jittester.Nothing;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Symbol;
 import jdk.test.lib.jittester.SymbolTable;
@@ -37,11 +38,11 @@ import jdk.test.lib.jittester.VariableInfo;
 import jdk.test.lib.jittester.functions.ArgumentDeclaration;
 import jdk.test.lib.jittester.functions.FunctionDefinition;
 import jdk.test.lib.jittester.functions.FunctionInfo;
+import jdk.test.lib.jittester.functions.Return;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeVoid;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class FunctionDefinitionFactory extends Factory {
+class FunctionDefinitionFactory extends Factory<FunctionDefinition> {
     private final Type resultType;
     private final String name;
     private final long complexityLimit;
@@ -67,11 +68,11 @@ class FunctionDefinitionFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public FunctionDefinition produce() throws ProductionFailedException {
         Type resType = resultType;
         if (resType == null) {
             List<Type> types = new ArrayList<>(TypeList.getAll());
-            types.add(new TypeVoid());
+            types.add(TypeList.VOID);
             resType = PseudoRandom.randomElement(types);
         }
         int argNumber = (int) (PseudoRandom.random() * memberFunctionsArgLimit);
@@ -86,7 +87,7 @@ class FunctionDefinitionFactory extends Factory {
         ArrayList<ArgumentDeclaration> argumentsDeclaration = new ArrayList<>(argNumber);
         SymbolTable.push();
         IRNode body;
-        IRNode returnNode;
+        Return returnNode;
         FunctionInfo functionInfo;
         try {
             IRNodeBuilder builder = new IRNodeBuilder().setArgumentType(ownerClass);
@@ -127,13 +128,13 @@ class FunctionDefinitionFactory extends Factory {
                     .setCanHaveReturn(true)
                     .getBlockFactory()
                     .produce();
-            if (!resType.equals(new TypeVoid())) {
+            if (!resType.equals(TypeList.VOID)) {
                 returnNode = builder.setComplexityLimit(complexityLimit - blockComplLimit)
                         .setExceptionSafe(false)
                         .getReturnFactory()
                         .produce();
             } else {
-                returnNode = null;
+                returnNode = new Return(new Nothing());
             }
         } finally {
             SymbolTable.pop();

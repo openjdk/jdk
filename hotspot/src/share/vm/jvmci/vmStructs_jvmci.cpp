@@ -308,6 +308,10 @@
   declare_preprocessor_constant("FIELDINFO_TAG_SIZE", FIELDINFO_TAG_SIZE) \
   declare_preprocessor_constant("STACK_BIAS", STACK_BIAS)                 \
                                                                           \
+  declare_constant(CompLevel_none)                                        \
+  declare_constant(CompLevel_simple)                                      \
+  declare_constant(CompLevel_limited_profile)                             \
+  declare_constant(CompLevel_full_profile)                                \
   declare_constant(CompLevel_full_optimization)                           \
   declare_constant(HeapWordSize)                                          \
   declare_constant(InvocationEntryBci)                                    \
@@ -464,6 +468,9 @@
   declare_constant(JVMCIEnv::dependencies_invalid)                        \
   declare_constant(JVMCIEnv::cache_full)                                  \
   declare_constant(JVMCIEnv::code_too_large)                              \
+  declare_constant(JVMCIRuntime::none)                                    \
+  declare_constant(JVMCIRuntime::by_holder)                               \
+  declare_constant(JVMCIRuntime::by_full_signature)                       \
                                                                           \
   declare_constant(Klass::_lh_neutral_value)                              \
   declare_constant(Klass::_lh_instance_slow_path_bit)                     \
