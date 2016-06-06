@@ -29,10 +29,7 @@ import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.utils.TypeUtil;
-import jdk.test.lib.jittester.types.TypeBoolean;
-import jdk.test.lib.jittester.types.TypeInt;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeLong;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
 import java.util.Collection;
@@ -45,15 +42,15 @@ class BinaryBitwiseOperatorFactory extends BinaryOperatorFactory {
 
     @Override
     protected boolean isApplicable(Type resultType) {
-        return resultType.equals(new TypeInt()) || resultType.equals(new TypeLong()) || resultType.equals(new TypeBoolean());
+        return resultType.equals(TypeList.INT) || resultType.equals(TypeList.LONG) || resultType.equals(TypeList.BOOLEAN);
     }
 
     @Override
-    protected Pair<Type, Type> generateTypes() throws ProductionFailedException {
+    protected Pair<Type, Type> generateTypes() {
         Collection<Type> castableFromResult = TypeUtil.getImplicitlyCastable(TypeList.getBuiltIn(), resultType);
         // built-in types less capacious than int are automatically casted to int in arithmetic.
         final Type leftType = PseudoRandom.randomElement(castableFromResult);
-        final Type rightType = resultType.equals(new TypeInt()) ? PseudoRandom.randomElement(castableFromResult) : resultType;
+        final Type rightType = resultType.equals(TypeList.INT) ? PseudoRandom.randomElement(castableFromResult) : resultType;
         //TODO: is there sense to swap them randomly as it was done in original code?
         return PseudoRandom.randomBoolean() ? new Pair<>(leftType, rightType) : new Pair<>(rightType, leftType);
     }

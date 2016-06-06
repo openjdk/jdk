@@ -102,7 +102,7 @@ public class TestStressRSetCoarsening {
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
-    public final Object[][] storage;
+    public final ObjStorage storage;
 
     /**
      * Number of objects per region. This is a test parameter.
@@ -161,6 +161,8 @@ public class TestStressRSetCoarsening {
         long totalFree = rt.maxMemory() - used;
         regionCount = (int) ((totalFree / regionSize) * heapFractionToAllocate);
         long toAllocate = regionCount * regionSize;
+        long freeMemoryLimit = totalFree - toAllocate;
+
         System.out.println("%% Test parameters");
         System.out.println("%%   Objects per region              : " + K);
         System.out.println("%%   Heap fraction to allocate       : " + (int) (heapFractionToAllocate * 100) + "%");
@@ -212,9 +214,15 @@ public class TestStressRSetCoarsening {
                 "  (sizeOf(new Object[" + N + "])");
         System.out.println("%%   Reference size        : " + refSize);
 
-        storage = new Object[regionCount * K][];
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = new Object[N];
+        // Maximum number of objects to allocate is regionCount * K.
+        storage = new ObjStorage(regionCount * K);
+
+        // Add objects as long as there is space in the storage
+        // and we haven't used more memory than planned.
+        while (!storage.isFull() && (rt.maxMemory() - used) > freeMemoryLimit) {
+            storage.addArray(new Object[N]);
+            // Update used memory
+            used = rt.totalMemory() - rt.freeMemory();
         }
     }
 
@@ -255,7 +263,7 @@ public class TestStressRSetCoarsening {
                     // The celebrity will be referred from all other regions.
                     // If the number of references after should be less than they
                     // were before, select NULL.
-                    Object celebrity = cur > pre ? storage[to * K] : null;
+                    Object celebrity = cur > pre ? storage.getArrayAt(to * K) : null;
                     for (int from = 0; from < regionCount; from++) {
                         if (to == from) {
                             continue; // no need to refer to itself
@@ -263,7 +271,8 @@ public class TestStressRSetCoarsening {
 
                         int step = cur > pre ? +1 : -1;
                         for (int rn = pre; rn != cur; rn += step) {
-                            storage[getY(to, from, rn)][getX(to, from, rn)] = celebrity;
+                            Object[] rnArray = storage.getArrayAt(getY(to, from, rn));
+                            rnArray[getX(to, from, rn)] = celebrity;
                             if (System.currentTimeMillis() > finishAt) {
                                 throw new TimeoutException();
                             }
@@ -290,14 +299,15 @@ public class TestStressRSetCoarsening {
                             continue; // no need to refer to itself
                         }
                         for (int rn = 0; rn <= cur; rn++) {
-                            storage[getY(to, from, rn)][getX(to, from, rn)] = null;
+                            Object[] rnArray = storage.getArrayAt(getY(to, from, rn));
+                            rnArray[getX(to, from, rn)] = null;
                         }
                     }
                     // 'Refresh' storage elements for the region 'to'
                     // After that loop all 'old' objects in the region 'to'
                     // should become unreachable.
                     for (int k = 0; k < K; k++) {
-                        storage[(to * K + k) % storage.length] = new Object[N];
+                        storage.setArrayAt(to * K + k, new Object[N]);
                     }
                 }
             }
@@ -340,3 +350,36 @@ public class TestStressRSetCoarsening {
     }
 }
 
+//Helper class to encapsulate the object array storage.
+class ObjStorage {
+    public final Object[][] storage;
+    public int usedCount;
+
+    ObjStorage(int size) {
+        storage  = new Object[size][];
+        usedCount = 0;
+    }
+
+    public boolean isFull() {
+        return usedCount >= storage.length;
+    }
+
+    public void addArray(Object[] objects) {
+        if (isFull()) {
+            throw new IllegalStateException("Storage full maximum number of allowed elements: " + usedCount);
+        }
+        storage[usedCount++] = objects;
+    }
+
+    // Limit by usedCount since memory limits can cause the storage
+    // to have unused slots in the end.
+    public void setArrayAt(int i, Object[] objects) {
+        storage[i % usedCount] = objects;
+    }
+
+    // Limit by usedCount since memory limits can cause the storage
+    // to have unused slots in the end.
+    public Object[] getArrayAt(int i) {
+        return storage[i % usedCount];
+    }
+}

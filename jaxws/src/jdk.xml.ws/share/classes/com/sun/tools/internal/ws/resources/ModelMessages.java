@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,23 @@ import com.sun.istack.internal.localization.Localizable;
 import com.sun.istack.internal.localization.LocalizableMessageFactory;
 import com.sun.istack.internal.localization.Localizer;
 
+import java.util.Locale;
+import java.util.ResourceBundle;
+
 
 /**
  * Defines string formatting method for each constant in the resource file
  *
  */
 public final class ModelMessages {
-
-    private final static LocalizableMessageFactory messageFactory = new LocalizableMessageFactory("com.sun.tools.internal.ws.resources.model");
+    private final static String BUNDLE_NAME = "com.sun.tools.internal.ws.resources.model";
+    private final static LocalizableMessageFactory messageFactory =
+        new LocalizableMessageFactory(BUNDLE_NAME, ModelMessages::getResourceBundle);
     private final static Localizer localizer = new Localizer();
+
+    private static ResourceBundle getResourceBundle(Locale locale) {
+        return ResourceBundle.getBundle(BUNDLE_NAME, locale);
+    }
 
     public static Localizable localizableMODEL_NESTED_MODEL_ERROR(Object arg0) {
         return messageFactory.getMessage("model.nestedModelError", arg0);

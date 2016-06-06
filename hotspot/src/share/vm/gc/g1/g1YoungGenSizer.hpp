@@ -75,7 +75,11 @@ private:
   SizerKind _sizer_kind;
   uint _min_desired_young_length;
   uint _max_desired_young_length;
+
+  // False when using a fixed young generation size due to command-line options,
+  // true otherwise.
   bool _adaptive_size;
+
   uint calculate_default_min_length(uint new_number_of_heap_regions);
   uint calculate_default_max_length(uint new_number_of_heap_regions);
 

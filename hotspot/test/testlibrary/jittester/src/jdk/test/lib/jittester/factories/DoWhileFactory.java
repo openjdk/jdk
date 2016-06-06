@@ -23,21 +23,21 @@
 
 package jdk.test.lib.jittester.factories;
 
-import jdk.test.lib.jittester.IRNode;
-import jdk.test.lib.jittester.Initialization;
+import jdk.test.lib.jittester.Block;
 import jdk.test.lib.jittester.Literal;
 import jdk.test.lib.jittester.LocalVariable;
-import jdk.test.lib.jittester.Nothing;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.SymbolTable;
 import jdk.test.lib.jittester.Type;
+import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.loops.DoWhile;
 import jdk.test.lib.jittester.loops.Loop;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeInt;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class DoWhileFactory extends SafeFactory {
+import java.util.LinkedList;
+
+class DoWhileFactory extends SafeFactory<DoWhile> {
     private final Loop loop;
     private final long complexityLimit;
     private final int statementLimit;
@@ -62,7 +62,8 @@ class DoWhileFactory extends SafeFactory {
     }
 
     @Override
-    protected IRNode sproduce() throws ProductionFailedException {
+    protected DoWhile sproduce() throws ProductionFailedException {
+        Block emptyBlock = new Block(ownerClass, returnType, new LinkedList<>(), level - 1);
         if (statementLimit > 0 && complexityLimit > 0) {
             long complexity = complexityLimit;
             // Loop header parameters
@@ -89,7 +90,7 @@ class DoWhileFactory extends SafeFactory {
                     .setResultType(returnType)
                     .setOperatorLimit(operatorLimit);
             loop.initialization = builder.getCounterInitializerFactory(0).produce();
-            IRNode header;
+            Block header;
             try {
                 header = builder.setComplexityLimit(headerComplLimit)
                         .setStatementLimit(headerStatementLimit)
@@ -101,17 +102,17 @@ class DoWhileFactory extends SafeFactory {
                         .getBlockFactory()
                         .produce();
             } catch (ProductionFailedException e) {
-                header = new Nothing();
+                header = emptyBlock;
             }
             // getChildren().set(DoWhile.DoWhilePart.HEADER.ordinal(), header);
-            LocalVariable counter = new LocalVariable(((Initialization) loop.initialization).get());
-            Literal limiter = new Literal(Integer.valueOf((int) thisLoopIterLimit), new TypeInt());
+            LocalVariable counter = new LocalVariable(loop.initialization.getVariableInfo());
+            Literal limiter = new Literal((int) thisLoopIterLimit, TypeList.INT);
             loop.condition = builder.setComplexityLimit(condComplLimit)
                     .setLocalVariable(counter)
                     .getLoopingConditionFactory(limiter)
                     .produce();
             SymbolTable.push();
-            IRNode body1;
+            Block body1;
             try {
                 body1 = builder.setComplexityLimit(body1ComplLimit)
                         .setStatementLimit(body1StatementLimit)
@@ -123,11 +124,11 @@ class DoWhileFactory extends SafeFactory {
                         .getBlockFactory()
                         .produce();
             } catch (ProductionFailedException e) {
-                body1 = new Nothing();
+                body1 = emptyBlock;
             }
             // getChildren().set(DoWhile.DoWhilePart.BODY1.ordinal(), body1);
             loop.manipulator = builder.setLocalVariable(counter).getCounterManipulatorFactory().produce();
-            IRNode body2;
+            Block body2;
             try {
                 body2 = builder.setComplexityLimit(body2ComplLimit)
                         .setStatementLimit(body2StatementLimit)
@@ -139,7 +140,7 @@ class DoWhileFactory extends SafeFactory {
                         .getBlockFactory()
                         .produce();
             } catch (ProductionFailedException e) {
-                body2 = new Nothing();
+                body2 = emptyBlock;
             }
             // getChildren().set(DoWhile.DoWhilePart.BODY2.ordinal(), body2);
             SymbolTable.pop();

@@ -25,6 +25,7 @@ package jdk.test.lib.jittester.functions;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+
 import jdk.test.lib.jittester.Symbol;
 import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.VariableInfo;
@@ -89,7 +90,7 @@ public class FunctionInfo extends Symbol {
 
         try {
             FunctionInfo f = (FunctionInfo) o;
-            return klass.equals(f.klass) && hasEqualSignature(o);
+            return owner.equals(f.owner) && hasEqualSignature(o);
         } catch (Exception e) {
         }
         return false;
@@ -117,7 +118,7 @@ public class FunctionInfo extends Symbol {
     }
 
     public boolean isConstructor() {
-        return name.equals(klass.getName());
+        return name.equals(owner.getName());
     }
 
     @Override

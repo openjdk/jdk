@@ -29,14 +29,14 @@ import java.io.InputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 import org.xml.sax.SAXException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Text;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -54,7 +54,6 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.TypeTag;
-import com.sun.tools.javac.code.TypeMetadata;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symtab;
 
@@ -67,16 +66,16 @@ public class PackageGenerator {
     String packageDirName;
 
     ArrayList<JCCompilationUnit> topLevels;
-    Hashtable<String, Integer> nameIndex;
-    Hashtable<String, JCClassDecl> idBases;
-    Hashtable<String, JCAnnotation> idAnnos;
+    Map<String, Integer> nameIndex;
+    Map<String, JCClassDecl> idBases;
+    Map<String, JCAnnotation> idAnnos;
 
     TreeMaker make;
     Names names;
     Symtab syms;
     DocumentBuilderFactory factory;
     Documentifier documentifier;
-    boolean fx = false;
+    boolean fx;
 
     public PackageGenerator() {
         JavacTool jt = JavacTool.create();
@@ -91,27 +90,27 @@ public class PackageGenerator {
         documentifier = Documentifier.instance(ctx);
     }
 
-    String dataSetName;
+    boolean isDataSetProcessed = false;
 
-    public void processDataSet(String dsName) throws Fault {
-        dataSetName = dsName;
+    public void processDataSet(File dsFile) throws Fault {
+        isDataSetProcessed = true;
         topLevels = new ArrayList<>();
-        nameIndex = new Hashtable<>();
-        idBases =  new Hashtable<>();
-        idAnnos =  new Hashtable<>();
-
-        String dsPath = "res/xml/" + dsName + ".xml";
+        nameIndex = new HashMap<>();
+        idBases =  new HashMap<>();
+        idAnnos =  new HashMap<>();
+        fx = false;
 
         try {
-            InputStream is = getClass().getResourceAsStream("/" + dsPath);
-            if (is == null)
-                is = new FileInputStream(dsPath);
+            InputStream is = new FileInputStream(dsFile);
 
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document document = builder.parse(is);
 
             Element rootElement = document.getDocumentElement();
-            packageName = rootElement.getAttribute("package");
+            if (!rootElement.getTagName().equals("package"))
+                throw new IllegalStateException("Unexpected tag name: "
+                        + rootElement.getTagName());
+            packageName = rootElement.getAttribute("name");
             fx = "fx".equals(rootElement.getAttribute("style"));
             packageDirName = packageName.replace('.', '/');
 
@@ -122,17 +121,15 @@ public class PackageGenerator {
 
                 if (!(node instanceof Element))
                     continue;
-                processTopLevel((Element)node);
+                processTopLevel((Element) node);
             }
         } catch (ParserConfigurationException | SAXException | IOException e) {
-            throw new Fault("Error parsing dataset " + dsName, e);
+            throw new Fault("Error parsing dataset " + dsFile, e);
         }
-
-        fx = false;
     }
 
     public void generate(File outDir) throws Fault {
-        if (dataSetName == null)
+        if (!isDataSetProcessed)
             throw new Fault("No Data Set processed");
 
         try {
@@ -140,9 +137,9 @@ public class PackageGenerator {
             pkgDir.mkdirs();
 
             for (JCCompilationUnit decl : topLevels) {
-                JCClassDecl classDecl = (JCClassDecl)decl.getTypeDecls().get(0);
-                File outFile = new File(pkgDir,
-                                        classDecl.getSimpleName().toString() + ".java");
+                JCClassDecl classDecl = (JCClassDecl) decl.getTypeDecls().get(0);
+                File outFile
+                        = new File(pkgDir, classDecl.getSimpleName().toString() + ".java");
                 FileWriter writer = new FileWriter(outFile);
                 writer.write(decl.toString());
                 writer.flush();
@@ -155,7 +152,19 @@ public class PackageGenerator {
             writer.write("/**\n");
             writer.write(documentifier.getDocGenerator().getPackageComment());
             writer.write("*/\n");
-            writer.write("package " + packageName + ";");
+            writer.write("package " + packageName + ";\n");
+            writer.flush();
+            writer.close();
+
+            // overview
+            outFile = new File(pkgDir, "overview.html");
+            writer = new FileWriter(outFile);
+            writer.write("<html>\n");
+            writer.write("<head>\n<title>" + packageName + "</title>\n</head>\n");
+            writer.write("<body>\n");
+            writer.write("<p>Package " + packageName + " overview.\n");
+            writer.write("</body>\n");
+            writer.write("</html>\n");
             writer.flush();
             writer.close();
         } catch (IOException e) {
@@ -197,7 +206,7 @@ public class PackageGenerator {
         }
     }
 
-    ListBuffer<JCTree>[] processBases(Element baseTag, Hashtable<String, Integer> scope) {
+    ListBuffer<JCTree>[] processBases(Element baseTag, HashMap<String, Integer> scope) {
         String kind = baseTag.getTagName();
         String baseName = baseTag.getAttribute("basename");
         String typeParam = baseTag.getAttribute("tparam");
@@ -232,21 +241,21 @@ public class PackageGenerator {
 
             if (!(node instanceof Element))
                 continue;
-
-            switch (((Element)node).getTagName()) {
+            Element element = (Element)node;
+            switch (element.getTagName()) {
                 case "modifier":
-                    multiply.addAxis(((Element)node).getTextContent());
+                    multiply.addAxis(element.getTextContent());
                     break;
                 case "anno":
-                    multiply.addAxis(((Element)node).getTextContent());
+                    multiply.addAxis(element.getTextContent());
                     break;
                 case "member":
                     // process members here
-                    members.appendList(processMembers((Element)node, baseName, kind));
+                    members.appendList(processMembers(element, baseName, kind));
                     break;
                 case "extend":
-                    String classId = ((Element)node).getAttribute("id");   // this pkg
-                    String classRef = ((Element)node).getAttribute("ref"); // external
+                    String classId = element.getAttribute("id");   // this pkg
+                    String classRef = element.getAttribute("ref"); // external
                     if (classId.length() !=0 &&
                         idBases.containsKey(classId)) {
                         // if have base, take methods from base members
@@ -260,8 +269,8 @@ public class PackageGenerator {
                     }
                     break;
                 case "implement":
-                    String interfaceId = ((Element)node).getAttribute("id");
-                    String interfaceRef = ((Element)node).getAttribute("ref");
+                    String interfaceId = element.getAttribute("id");
+                    String interfaceRef = element.getAttribute("ref");
                     if (interfaceId.length() != 0 &&
                         idBases.containsKey(interfaceId)) {
                         JCClassDecl baseDecl = idBases.get(interfaceId);
@@ -277,7 +286,7 @@ public class PackageGenerator {
                 case "import":
                     imports.append(
                         make.Import(
-                            make.Ident(names.fromString(((Element)node).getTextContent())),
+                            make.Ident(names.fromString(element.getTextContent())),
                             false));
             }
         }
@@ -342,7 +351,7 @@ public class PackageGenerator {
     ListBuffer<JCTree> processMembers(Element memberTag, String name, String kind) {
         ListBuffer<JCTree> members = new ListBuffer<>();
         NodeList nodes = memberTag.getChildNodes();
-        Hashtable<String, Integer> scope = new Hashtable<>();
+        HashMap<String, Integer> scope = new HashMap<>();
         for (int i = 0; i < nodes.getLength(); i++) {
             Node node = nodes.item(i);
 
@@ -378,7 +387,7 @@ public class PackageGenerator {
         return members;
     }
 
-    ListBuffer<JCTree> processFields(Element fieldsNode, Hashtable<String, Integer> scope) {
+    ListBuffer<JCTree> processFields(Element fieldsNode, HashMap<String, Integer> scope) {
         String kind = fieldsNode.getTagName();
         String baseName = fieldsNode.getAttribute("basename");
 
@@ -431,7 +440,7 @@ public class PackageGenerator {
                                              TypeTag.BOT,
                                              "String".equals(type)
                                                  ? new String("blah-blah-blah")
-                                                 : new Integer(0));
+                                                 : Integer.valueOf(0));
 
                 JCVariableDecl fieldDecl = make.VarDef(
                                                make.Modifiers(declFlags, annos.toList()),
@@ -451,7 +460,7 @@ public class PackageGenerator {
         String[] fieldTypes = sfNode.getTextContent().split(",");
 
         ListBuffer<JCExpression> serialFields = new ListBuffer<>();
-        Hashtable<String, Integer> scope = new Hashtable<>();
+        HashMap<String, Integer> scope = new HashMap<>();
 
         for (String fType : fieldTypes) {
             String fieldName = baseName + getUniqIndex(scope, baseName);
@@ -482,7 +491,7 @@ public class PackageGenerator {
         return sfDecl;
     }
 
-    ListBuffer<JCTree> processConstants(Element constNode, Hashtable<String, Integer> scope) {
+    ListBuffer<JCTree> processConstants(Element constNode, HashMap<String, Integer> scope) {
         String baseName = constNode.getAttribute("basename");
         int count = 1;
         try {
@@ -507,7 +516,7 @@ public class PackageGenerator {
         return fields;
     }
 
-    ListBuffer<JCTree> processMethods(Element methodsNode, Hashtable<String, Integer> scope, boolean needBody, boolean isConstructor) {
+    ListBuffer<JCTree> processMethods(Element methodsNode, HashMap<String, Integer> scope, boolean needBody, boolean isConstructor) {
         String kind = methodsNode.getTagName();
         String baseName = methodsNode.getAttribute("basename");
         String name = methodsNode.getAttribute("name");
@@ -590,7 +599,7 @@ public class PackageGenerator {
                                                      retType.isPrimitive() ?
                                                          retType.getTag() :
                                                          TypeTag.BOT,
-                                                     new Integer(0))));
+                                                     Integer.valueOf(0))));
                     }
                     body = make.Block(0, bodyStatements);
                 }
@@ -681,7 +690,7 @@ public class PackageGenerator {
                                                      retType.isPrimitive() ?
                                                          retType.getTag() :
                                                          TypeTag.BOT,
-                                                     new Integer(0))));
+                                                     Integer.valueOf(0))));
 
                     JCBlock body = make.Block(0, bodyStatements);
 
@@ -763,16 +772,16 @@ public class PackageGenerator {
 
     String getUniqName(String name) {
         if (!nameIndex.containsKey(name))
-            nameIndex.put(name, new Integer(0));
+            nameIndex.put(name, 0);
         Integer index = nameIndex.get(name);
         String uniqName = name + index;
         nameIndex.put(name, index + 1);
         return uniqName;
     }
 
-    int getUniqIndex(Hashtable<String, Integer> scope, String name) {
+    int getUniqIndex(HashMap<String, Integer> scope, String name) {
         if (!scope.containsKey(name))
-            scope.put(name, new Integer(0));
+            scope.put(name, 0);
         Integer index = scope.get(name);
         scope.put(name, index + 1);
         return index;

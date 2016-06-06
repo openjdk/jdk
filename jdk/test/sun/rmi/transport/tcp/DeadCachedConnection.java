@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4094891
+ * @bug 4094891 8157777
  * @summary unable to retry call if cached connection to server is used
  * @library ../../../../java/rmi/testlibrary
  * @modules java.rmi/sun.rmi.registry
@@ -123,10 +123,9 @@ public class DeadCachedConnection {
     }
     private static JavaVM subreg = null;
 
-    public static void killRegistry() {
+    public static void killRegistry() throws InterruptedException {
         if (DeadCachedConnection.subreg != null) {
-            DeadCachedConnection.subreg.destroy();
-            try { Thread.sleep(2000); } catch (InterruptedException ie) {}
+            DeadCachedConnection.subreg.terminate();
         }
         DeadCachedConnection.subreg = null;
     }
