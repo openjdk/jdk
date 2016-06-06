@@ -274,7 +274,7 @@ void mutex_init() {
   def(JfrMsg_lock                  , Monitor, leaf,        true,  Monitor::_safepoint_check_always);
   def(JfrBuffer_lock               , Mutex,   leaf,        true,  Monitor::_safepoint_check_never);
   def(JfrThreadGroups_lock         , Mutex,   leaf,        true,  Monitor::_safepoint_check_always);
-  def(JfrStream_lock               , Mutex,   nonleaf,     true,  Monitor::_safepoint_check_never);
+  def(JfrStream_lock               , Mutex,   leaf+1,      true,  Monitor::_safepoint_check_never);      // ensure to rank lower than 'safepoint'
   def(JfrStacktrace_lock           , Mutex,   special,     true,  Monitor::_safepoint_check_sometimes);
 #endif
 
