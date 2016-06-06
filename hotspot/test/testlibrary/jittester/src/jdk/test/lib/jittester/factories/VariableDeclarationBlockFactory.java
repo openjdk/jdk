@@ -24,14 +24,15 @@
 package jdk.test.lib.jittester.factories;
 
 import java.util.ArrayList;
-import jdk.test.lib.jittester.IRNode;
+
+import jdk.test.lib.jittester.Declaration;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.ProductionParams;
 import jdk.test.lib.jittester.VariableDeclarationBlock;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class VariableDeclarationBlockFactory extends Factory {
+class VariableDeclarationBlockFactory extends Factory<VariableDeclarationBlock> {
     private final long complexityLimit;
     private final int operatorLimit;
     private final boolean exceptionSafe;
@@ -48,10 +49,10 @@ class VariableDeclarationBlockFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
-        ArrayList<IRNode> content = new ArrayList<>();
+    public VariableDeclarationBlock produce() throws ProductionFailedException {
+        ArrayList<Declaration> content = new ArrayList<>();
         int limit = (int) Math.ceil(PseudoRandom.random() * ProductionParams.dataMemberLimit.value());
-        DeclarationFactory declFactory = new IRNodeBuilder()
+        Factory<Declaration> declFactory = new IRNodeBuilder()
                 .setOwnerKlass(ownerClass)
                 .setComplexityLimit(complexityLimit)
                 .setOperatorLimit(operatorLimit)

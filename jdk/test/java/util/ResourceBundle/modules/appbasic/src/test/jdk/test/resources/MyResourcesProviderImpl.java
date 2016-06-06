@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,20 @@
 
 package jdk.test.resources;
 
-import java.io.IOException;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.spi.AbstractResourceBundleProvider;
 
-public class MyResourcesProviderImpl extends MyControl implements MyResourcesProvider {
+public class MyResourcesProviderImpl extends AbstractResourceBundleProvider
+    implements MyResourcesProvider
+{
+    public MyResourcesProviderImpl() {
+        super("java.class");
+    }
     @Override
     public ResourceBundle getBundle(String baseName, Locale locale) {
         if (locale.equals(Locale.ENGLISH) || locale.equals(Locale.ROOT)) {
-            try {
-                ClassLoader loader = MyResourcesProviderImpl.class.getClassLoader();
-                return newBundle(baseName, locale, "java.class", loader, false);
-            } catch (IllegalAccessException | InstantiationException | IOException e) {
-            }
+            return super.getBundle(baseName, locale);
         }
         return null;
     }

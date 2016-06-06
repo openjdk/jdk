@@ -33,7 +33,7 @@ class JVMCIJavaClasses : AllStatic {
   static void compute_offsets(TRAPS);
 };
 
-/* This macro defines the structure of the CompilationResult - classes.
+/* This macro defines the structure of the JVMCI classes accessed from VM code.
  * It will generate classes with accessors similar to javaClasses.hpp, but with specializations for oops, Handles and jni handles.
  *
  * The public interface of these classes will look like this:
@@ -63,9 +63,6 @@ class JVMCIJavaClasses : AllStatic {
   end_class                                                                                                                                                    \
   start_class(HotSpotResolvedJavaMethodImpl)                                                                                                                   \
     long_field(HotSpotResolvedJavaMethodImpl, metaspaceMethod)                                                                                                 \
-  end_class                                                                                                                                                    \
-  start_class(HotSpotSymbol)                                                                                                                                   \
-    long_field(HotSpotSymbol, pointer)                                                                                                                         \
   end_class                                                                                                                                                    \
   start_class(InstalledCode)                                                                                                                                   \
     long_field(InstalledCode, address)                                                                                                                         \
@@ -165,10 +162,10 @@ class JVMCIJavaClasses : AllStatic {
   start_class(site_Mark)                                                                                                                                       \
     oop_field(site_Mark, id, "Ljava/lang/Object;")                                                                                                             \
   end_class                                                                                                                                                    \
-  start_class(CompilationRequestResult)                                                                                                                        \
-    oop_field(CompilationRequestResult, failureMessage, "Ljava/lang/String;")                                                                                  \
-    boolean_field(CompilationRequestResult, retry)                                                                                                             \
-    int_field(CompilationRequestResult, inlinedBytecodes)                                                                                                      \
+  start_class(HotSpotCompilationRequestResult)                                                                                                                 \
+    oop_field(HotSpotCompilationRequestResult, failureMessage, "Ljava/lang/String;")                                                                           \
+    boolean_field(HotSpotCompilationRequestResult, retry)                                                                                                      \
+    int_field(HotSpotCompilationRequestResult, inlinedBytecodes)                                                                                               \
   end_class                                                                                                                                                    \
   start_class(DebugInfo)                                                                                                                                       \
     oop_field(DebugInfo, bytecodePosition, "Ljdk/vm/ci/code/BytecodePosition;")                                                                                \
@@ -219,7 +216,7 @@ class JVMCIJavaClasses : AllStatic {
     boolean_field(HotSpotObjectConstantImpl, compressed)                                                                                                       \
   end_class                                                                                                                                                    \
   start_class(HotSpotMetaspaceConstantImpl)                                                                                                                    \
-    oop_field(HotSpotMetaspaceConstantImpl, metaspaceObject, "Ljdk/vm/ci/hotspot/MetaspaceWrapperObject;")                                            \
+    oop_field(HotSpotMetaspaceConstantImpl, metaspaceObject, "Ljdk/vm/ci/hotspot/MetaspaceWrapperObject;")                                                     \
     boolean_field(HotSpotMetaspaceConstantImpl, compressed)                                                                                                    \
   end_class                                                                                                                                                    \
   start_class(HotSpotSentinelConstant)                                                                                                                         \
@@ -233,12 +230,11 @@ class JVMCIJavaClasses : AllStatic {
     static_oop_field(JavaKind, Int, "Ljdk/vm/ci/meta/JavaKind;");                                                                                              \
     static_oop_field(JavaKind, Long, "Ljdk/vm/ci/meta/JavaKind;");                                                                                             \
   end_class                                                                                                                                                    \
-  start_class(LIRKind)                                                                                                                                         \
-    oop_field(LIRKind, platformKind, "Ljdk/vm/ci/meta/PlatformKind;")                                                                                          \
-    int_field(LIRKind, referenceMask)                                                                                                                          \
+  start_class(ValueKind)                                                                                                                                       \
+    oop_field(ValueKind, platformKind, "Ljdk/vm/ci/meta/PlatformKind;")                                                                                        \
   end_class                                                                                                                                                    \
   start_class(Value)                                                                                                                                           \
-    oop_field(Value, lirKind, "Ljdk/vm/ci/meta/LIRKind;")                                                                                                      \
+    oop_field(Value, valueKind, "Ljdk/vm/ci/meta/ValueKind;")                                                                                                  \
     static_oop_field(Value, ILLEGAL, "Ljdk/vm/ci/meta/AllocatableValue;");                                                                                     \
   end_class                                                                                                                                                    \
   start_class(RegisterValue)                                                                                                                                   \
@@ -279,24 +275,20 @@ class JVMCIJavaClasses : AllStatic {
     objArrayOop_field(HotSpotStackFrameReference, locals, "[Ljava/lang/Object;")                                                                               \
     typeArrayOop_field(HotSpotStackFrameReference, localIsVirtual, "[Z")                                                                                       \
   end_class                                                                                                                                                    \
-  start_class(HotSpotMetaData) \
-    typeArrayOop_field(HotSpotMetaData, pcDescBytes, "[B") \
-    typeArrayOop_field(HotSpotMetaData, scopesDescBytes, "[B") \
-    typeArrayOop_field(HotSpotMetaData, relocBytes, "[B") \
-    typeArrayOop_field(HotSpotMetaData, exceptionBytes, "[B") \
-    typeArrayOop_field(HotSpotMetaData, oopMaps, "[B") \
-    objArrayOop_field(HotSpotMetaData, metadata, "[Ljava/lang/String;") \
-  end_class \
-  start_class(HotSpotOopMap) \
-    int_field(HotSpotOopMap, offset) \
-    int_field(HotSpotOopMap, count) \
-    typeArrayOop_field(HotSpotOopMap, data, "[B") \
+  start_class(HotSpotMetaData)                                                                                                                                 \
+    typeArrayOop_field(HotSpotMetaData, pcDescBytes, "[B")                                                                                                     \
+    typeArrayOop_field(HotSpotMetaData, scopesDescBytes, "[B")                                                                                                 \
+    typeArrayOop_field(HotSpotMetaData, relocBytes, "[B")                                                                                                      \
+    typeArrayOop_field(HotSpotMetaData, exceptionBytes, "[B")                                                                                                  \
+    typeArrayOop_field(HotSpotMetaData, oopMaps, "[B")                                                                                                         \
+    objArrayOop_field(HotSpotMetaData, metadata, "[Ljava/lang/String;")                                                                                        \
   end_class                                                                                                                                                    \
   start_class(HotSpotConstantPool)                                                                                                                             \
     long_field(HotSpotConstantPool, metaspaceConstantPool)                                                                                                     \
   end_class                                                                                                                                                    \
   start_class(HotSpotJVMCIRuntime)                                                                                                                             \
     objArrayOop_field(HotSpotJVMCIRuntime, trivialPrefixes, "[Ljava/lang/String;")                                                                             \
+    int_field(HotSpotJVMCIRuntime, compilationLevelAdjustment)                                                                                                 \
   end_class                                                                                                                                                    \
   /* end*/
 
@@ -309,7 +301,7 @@ class name : AllStatic {                                                        
         assert(obj->is_a(SystemDictionary::name##_klass()), "wrong class, " #name " expected, found %s", obj->klass()->external_name());                       \
         assert(offset != 0, "must be valid offset");                                                                                                           \
     }                                                                                                                                                          \
-    static void compute_offsets(TRAPS);                                                                                                                             \
+    static void compute_offsets(TRAPS);                                                                                                                        \
   public:                                                                                                                                                      \
     static InstanceKlass* klass() { return SystemDictionary::name##_klass(); }
 

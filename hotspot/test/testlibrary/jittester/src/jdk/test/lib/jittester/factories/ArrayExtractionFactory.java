@@ -29,14 +29,14 @@ import jdk.test.lib.jittester.Literal;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.ProductionParams;
 import jdk.test.lib.jittester.Type;
+import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.arrays.ArrayCreation;
 import jdk.test.lib.jittester.arrays.ArrayExtraction;
 import jdk.test.lib.jittester.types.TypeArray;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeByte;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class ArrayExtractionFactory extends SafeFactory {
+class ArrayExtractionFactory extends SafeFactory<ArrayExtraction> {
     private final long complexityLimit;
     private final int operatorLimit;
     private final Type resultType;
@@ -55,7 +55,7 @@ class ArrayExtractionFactory extends SafeFactory {
     }
 
     @Override
-    public IRNode sproduce() throws ProductionFailedException {
+    public ArrayExtraction sproduce() throws ProductionFailedException {
         if (resultType instanceof TypeArray) {
             TypeArray arrayType = (TypeArray) resultType;
             int delta = PseudoRandom.randomNotZero(ProductionParams.dimensionsLimit.value()
@@ -79,7 +79,7 @@ class ArrayExtractionFactory extends SafeFactory {
                 double chanceExpression = ProductionParams.chanceExpressionIndex.value() / 100.;
                 for (int i = 0; i < delta; i++) {
                     if (PseudoRandom.randomBoolean(chanceExpression)) {
-                        perDimensionExpression.add(builder.setResultType(new TypeByte())
+                        perDimensionExpression.add(builder.setResultType(TypeList.BYTE)
                                 .setComplexityLimit(dimComplLimit)
                                 .setOperatorLimit(dimOpLimit)
                                 .getExpressionFactory()
@@ -94,7 +94,7 @@ class ArrayExtractionFactory extends SafeFactory {
                             if (i < arrayExtraction.getDimsNumber())
                                 dimLimit = arrayExtraction.getDim(i);
                         }
-                        perDimensionExpression.add(new Literal(PseudoRandom.randomNotNegative(dimLimit), new TypeByte()));
+                        perDimensionExpression.add(new Literal((byte)PseudoRandom.randomNotNegative(dimLimit), TypeList.BYTE));
                     }
                 }
                 return new ArrayExtraction(arrayReturningExpression, perDimensionExpression);

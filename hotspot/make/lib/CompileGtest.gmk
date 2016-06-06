@@ -36,9 +36,6 @@ endif
 
 ################################################################################
 
-GTEST_TEST_SRC_FILES := $(shell $(FIND) $(HOTSPOT_TOPDIR)/test/native -name \
-    "test*.cpp" -type f)
-
 ifeq ($(OPENJDK_TARGET_OS), windows)
   GTEST_JVM_MAPFILE := $(JVM_MAPFILE)
 else
@@ -58,10 +55,12 @@ $(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBJVM, \
     TOOLCHAIN := $(JVM_TOOLCHAIN), \
     LIBRARY := jvm, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR)/gtest, \
-    EXTRA_FILES := $(GTEST_TEST_SRC_FILES) \
-        $(GTEST_FRAMEWORK_SRC)/src/gtest-all.cc \
-        $(GTEST_TEST_SRC)/gtestMain.cpp, \
     OBJECT_DIR := $(JVM_OUTPUTDIR)/gtest/objs, \
+    SRC := $(GTEST_TEST_SRC), \
+    EXCLUDES := $(JVM_EXCLUDES), \
+    EXCLUDE_FILES := gtestLauncher.cpp, \
+    EXCLUDE_PATTERNS := $(JVM_EXCLUDE_PATTERNS), \
+    EXTRA_FILES := $(GTEST_FRAMEWORK_SRC)/src/gtest-all.cc, \
     EXTRA_OBJECT_FILES := $(filter-out %/operator_new$(OBJ_SUFFIX), \
         $(BUILD_LIBJVM_ALL_OBJS)), \
     CFLAGS := $(JVM_CFLAGS) -I$(GTEST_FRAMEWORK_SRC) \

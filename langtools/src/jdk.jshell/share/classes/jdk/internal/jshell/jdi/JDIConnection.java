@@ -49,6 +49,8 @@ import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
  */
 class JDIConnection {
 
+    private static final String REMOTE_AGENT = "jdk.internal.jshell.remote.RemoteAgent";
+
     private VirtualMachine vm;
     private boolean active = true;
     private Process process = null;
@@ -59,12 +61,12 @@ class JDIConnection {
     private final Map<String, com.sun.jdi.connect.Connector.Argument> connectorArgs;
     private final int traceFlags;
 
-    synchronized void notifyOutputComplete() {
+    private synchronized void notifyOutputComplete() {
         outputCompleteCount++;
         notifyAll();
     }
 
-    synchronized void waitOutputComplete() {
+    private synchronized void waitOutputComplete() {
         // Wait for stderr and stdout
         if (process != null) {
             while (outputCompleteCount < 2) {
@@ -102,61 +104,72 @@ class JDIConnection {
         return arguments;
     }
 
+    /**
+     * The JShell specific Connector args for the LaunchingConnector.
+     *
+     * @param portthe socket port for (non-JDI) commands
+     * @param remoteVMOptions any user requested VM options
+     * @return the argument map
+     */
+    private static Map<String, String> launchArgs(int port, String remoteVMOptions) {
+        Map<String, String> argumentName2Value = new HashMap<>();
+        argumentName2Value.put("main", REMOTE_AGENT + " " + port);
+        argumentName2Value.put("options", remoteVMOptions);
+        return argumentName2Value;
+    }
 
+    /**
+     * Start the remote agent and establish a JDI connection to it.
+     *
+     * @param ec the execution control instance
+     * @param port the socket port for (non-JDI) commands
+     * @param remoteVMOptions any user requested VM options
+     * @param isLaunch does JDI do the launch? That is, LaunchingConnector,
+     * otherwise we start explicitly and use ListeningConnector
+     */
+    JDIConnection(JDIExecutionControl ec, int port, List<String> remoteVMOptions, boolean isLaunch) {
+        this(ec,
+                isLaunch
+                        ? "com.sun.jdi.CommandLineLaunch"
+                        : "com.sun.jdi.SocketListen",
+                isLaunch
+                        ? launchArgs(port, String.join(" ", remoteVMOptions))
+                        : new HashMap<>(),
+                0);
+        if (isLaunch) {
+            vm = launchTarget();
+        } else {
+            vm = listenTarget(port, remoteVMOptions);
+        }
+
+        if (isOpen() && vm().canBeModified()) {
+            /*
+             * Connection opened on startup.
+             */
+            new JDIEventHandler(vm(), (b) -> ec.handleVMExit())
+                    .start();
+        }
+    }
+
+    /**
+     * Base constructor -- set-up a JDI connection.
+     *
+     * @param ec the execution control instance
+     * @param connectorName the standardized name of the connector
+     * @param argumentName2Value the argument map
+     * @param traceFlags should we trace JDI behavior
+     */
     JDIConnection(JDIExecutionControl ec, String connectorName, Map<String, String> argumentName2Value, int traceFlags) {
         this.ec = ec;
         this.connector = findConnector(connectorName);
-
         if (connector == null) {
             throw new IllegalArgumentException("No connector named: " + connectorName);
         }
-
         connectorArgs = mergeConnectorArgs(connector, argumentName2Value);
         this.traceFlags = traceFlags;
     }
 
-    synchronized VirtualMachine open() {
-        if (connector instanceof LaunchingConnector) {
-            vm = launchTarget();
-        } else if (connector instanceof AttachingConnector) {
-            vm = attachTarget();
-        } else if (connector instanceof ListeningConnector) {
-            vm = listenTarget();
-        } else {
-            throw new InternalError("Invalid connect type");
-        }
-        vm.setDebugTraceMode(traceFlags);
-        // Uncomment here and below to enable event requests
-        // installEventRequests(vm);
-
-        return vm;
-    }
-
-    synchronized boolean setConnectorArg(String name, String value) {
-        /*
-         * Too late if the connection already made
-         */
-        if (vm != null) {
-            return false;
-        }
-
-        Connector.Argument argument = connectorArgs.get(name);
-        if (argument == null) {
-            return false;
-        }
-        argument.setValue(value);
-        return true;
-    }
-
-    String connectorArg(String name) {
-        Connector.Argument argument = connectorArgs.get(name);
-        if (argument == null) {
-            return "";
-        }
-        return argument.value();
-    }
-
-    public synchronized VirtualMachine vm() {
+    final synchronized VirtualMachine vm() {
         if (vm == null) {
             throw new JDINotConnectedException();
         } else {
@@ -164,12 +177,8 @@ class JDIConnection {
         }
     }
 
-    synchronized boolean isOpen() {
+    private synchronized boolean isOpen() {
         return (vm != null);
-    }
-
-    boolean isLaunch() {
-        return (connector instanceof LaunchingConnector);
     }
 
     synchronized boolean isRunning() {
@@ -181,7 +190,7 @@ class JDIConnection {
         active = false;
     }
 
-    public synchronized void disposeVM() {
+    synchronized void disposeVM() {
         try {
             if (vm != null) {
                 vm.dispose(); // This could NPE, so it is caught below
@@ -189,6 +198,8 @@ class JDIConnection {
             }
         } catch (VMDisconnectedException ex) {
             // Ignore if already closed
+        } catch (Throwable e) {
+            ec.debug(DBG_GEN, null, "disposeVM threw: " + e);
         } finally {
             if (process != null) {
                 process.destroy();
@@ -197,41 +208,6 @@ class JDIConnection {
             waitOutputComplete();
         }
     }
-
-/*** Preserved for possible future support of event requests
-
-    private void installEventRequests(VirtualMachine vm) {
-        if (vm.canBeModified()){
-            setEventRequests(vm);
-            resolveEventRequests();
-        }
-    }
-
-    private void setEventRequests(VirtualMachine vm) {
-        EventRequestManager erm = vm.eventRequestManager();
-
-        // Normally, we want all uncaught exceptions.  We request them
-        // via the same mechanism as Commands.commandCatchException()
-        // so the user can ignore them later if they are not
-        // interested.
-        // FIXME: this works but generates spurious messages on stdout
-        //        during startup:
-        //          Set uncaught java.lang.Throwable
-        //          Set deferred uncaught java.lang.Throwable
-        Commands evaluator = new Commands();
-        evaluator.commandCatchException
-            (new StringTokenizer("uncaught java.lang.Throwable"));
-
-        ThreadStartRequest tsr = erm.createThreadStartRequest();
-        tsr.enable();
-        ThreadDeathRequest tdr = erm.createThreadDeathRequest();
-        tdr.enable();
-    }
-
-    private void resolveEventRequests() {
-        Env.specList.resolveAll();
-    }
-***/
 
     private void dumpStream(InputStream inStream, final PrintStream pStream) throws IOException {
         BufferedReader in =
@@ -270,7 +246,7 @@ class JDIConnection {
                     dumpStream(inStream, pStream);
                 } catch (IOException ex) {
                     ec.debug(ex, "Failed reading output");
-                    ec.jdiEnv.shutdown();
+                    ec.handleVMExit();
                 } finally {
                     notifyOutputComplete();
                 }
@@ -297,12 +273,18 @@ class JDIConnection {
                     }
                 } catch (IOException ex) {
                     ec.debug(ex, "Failed reading output");
-                    ec.jdiEnv.shutdown();
+                    ec.handleVMExit();
                 }
             }
         };
         thr.setPriority(Thread.MAX_PRIORITY-1);
         thr.start();
+    }
+
+    private void forwardIO() {
+        displayRemoteOutput(process.getErrorStream(), ec.execEnv.userErr());
+        displayRemoteOutput(process.getInputStream(), ec.execEnv.userOut());
+        readRemoteInput(process.getOutputStream(), ec.execEnv.userIn());
     }
 
     /* launch child target vm */
@@ -311,9 +293,7 @@ class JDIConnection {
         try {
             VirtualMachine new_vm = launcher.launch(connectorArgs);
             process = new_vm.process();
-            displayRemoteOutput(process.getErrorStream(), ec.execEnv.userErr());
-            displayRemoteOutput(process.getInputStream(), ec.execEnv.userOut());
-            readRemoteInput(process.getOutputStream(), ec.execEnv.userIn());
+            forwardIO();
             return new_vm;
         } catch (Exception ex) {
             reportLaunchFail(ex, "launch");
@@ -321,25 +301,35 @@ class JDIConnection {
         return null;
     }
 
-    /* JShell currently uses only launch, preserved for futures: */
-    /* attach to running target vm */
-    private VirtualMachine attachTarget() {
-        AttachingConnector attacher = (AttachingConnector)connector;
+    /**
+     * Directly launch the remote agent and connect JDI to it with a
+     * ListeningConnector.
+     */
+    private VirtualMachine listenTarget(int port, List<String> remoteVMOptions) {
+        ListeningConnector listener = (ListeningConnector) connector;
         try {
-            return attacher.attach(connectorArgs);
-        } catch (Exception ex) {
-            reportLaunchFail(ex, "attach");
-        }
-        return null;
-    }
+            // Start listening, get the JDI connection address
+            String addr = listener.startListening(connectorArgs);
+            ec.debug(DBG_GEN, "Listening at address: " + addr);
 
-    /* JShell currently uses only launch, preserved for futures: */
-    /* listen for connection from target vm */
-    private VirtualMachine listenTarget() {
-        ListeningConnector listener = (ListeningConnector)connector;
-        try {
-            String retAddress = listener.startListening(connectorArgs);
-            ec.debug(DBG_GEN, "Listening at address: " + retAddress);
+            // Launch the RemoteAgent requesting a connection on that address
+            String javaHome = System.getProperty("java.home");
+            List<String> args = new ArrayList<>();
+            args.add(javaHome == null
+                    ? "java"
+                    : javaHome + File.separator + "bin" + File.separator + "java");
+            args.add("-agentlib:jdwp=transport=" + connector.transport().name() +
+                    ",address=" + addr);
+            args.addAll(remoteVMOptions);
+            args.add(REMOTE_AGENT);
+            args.add("" + port);
+            ProcessBuilder pb = new ProcessBuilder(args);
+            process = pb.start();
+
+            // Forward out, err, and in
+            forwardIO();
+
+            // Accept the connection from the remote agent
             vm = listener.accept(connectorArgs);
             listener.stopListening(connectorArgs);
             return vm;
