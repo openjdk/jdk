@@ -177,7 +177,7 @@ public class PatchTest {
     /**
      * Run test with -Xpatch and patches in JAR files
      */
-    public void testWitJarPatches() throws Exception {
+    public void testWithJarPatches() throws Exception {
 
         // patches/java.base-1.jar:patches/java-base-2.jar
         String basePatches = PATCHES_DIR.resolve("java.base-1.jar")
@@ -193,4 +193,24 @@ public class PatchTest {
 
     }
 
+
+    /**
+     * Run test with -Xpatch and patches in JAR files and exploded patches
+     */
+    public void testWithJarAndExplodedPatches() throws Exception {
+
+        // patches/java.base-1.jar:patches2/java.base
+        String basePatches = PATCHES_DIR.resolve("java.base-1.jar")
+                + File.pathSeparator + PATCHES2_DIR.resolve("java.base");
+
+        // patches1/jdk.naming.dns:patches/jdk.naming.dns-2.jar
+        String dnsPatches = PATCHES1_DIR.resolve("jdk.naming.dns")
+                +  File.pathSeparator + PATCHES_DIR.resolve("jdk.naming.dns-2.jar");
+
+        String compilerPatches = PATCHES1_DIR.resolve("jdk.compiler")
+                +  File.pathSeparator + PATCHES_DIR.resolve("jdk.compiler-2.jar");
+
+        runTest(basePatches, dnsPatches, compilerPatches);
+
+    }
 }

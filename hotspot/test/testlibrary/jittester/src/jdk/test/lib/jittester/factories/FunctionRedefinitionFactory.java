@@ -25,17 +25,19 @@ package jdk.test.lib.jittester.factories;
 
 import java.util.ArrayList;
 import jdk.test.lib.jittester.IRNode;
+import jdk.test.lib.jittester.Nothing;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.SymbolTable;
+import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.VariableInfo;
 import jdk.test.lib.jittester.functions.ArgumentDeclaration;
-import jdk.test.lib.jittester.functions.FunctionDefinition;
 import jdk.test.lib.jittester.functions.FunctionInfo;
+import jdk.test.lib.jittester.functions.FunctionRedefinition;
+import jdk.test.lib.jittester.functions.Return;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeVoid;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class FunctionRedefinitionFactory extends Factory {
+class FunctionRedefinitionFactory extends Factory<FunctionRedefinition> {
     private final long complexityLimit;
     private final int statementLimit;
     private final int operatorLimit;
@@ -47,14 +49,14 @@ class FunctionRedefinitionFactory extends Factory {
             long complexityLimit, int statementLimit, int operatorLimit, int level, int flags) {
         this.ownerClass = ownerClass;
         this.functionInfo = new FunctionInfo(functionInfo); // do deep coping
-        functionInfo.klass = ownerClass; // important! fix klass!
+        functionInfo.owner = ownerClass; // important! fix klass!
         if ((functionInfo.flags & FunctionInfo.STATIC) == 0) {
             functionInfo.argTypes.get(0).type = ownerClass; // redefine type of this
         }
         functionInfo.flags = flags; // apply new flags.
         // fix the type of class where the args would be declared
         for (VariableInfo varInfo : functionInfo.argTypes) {
-            varInfo.klass = ownerClass;
+            varInfo.owner = ownerClass;
         }
         this.complexityLimit = complexityLimit;
         this.statementLimit = statementLimit;
@@ -63,14 +65,14 @@ class FunctionRedefinitionFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public FunctionRedefinition produce() throws ProductionFailedException {
         ArrayList<VariableInfo> argumentsInfo = functionInfo.argTypes;
         SymbolTable.push();
         IRNode body;
-        IRNode returnNode;
+        Return returnNode;
         ArrayList<ArgumentDeclaration> argumentsDeclaration;
         try {
-            if ((functionInfo.flags & FunctionInfo.STATIC) > 0) {
+            if (functionInfo.isStatic()) {
                 argumentsDeclaration = new ArrayList<>(argumentsInfo.size());
                 for (VariableInfo varInfo : argumentsInfo) {
                     argumentsDeclaration.add(new ArgumentDeclaration(varInfo));
@@ -98,13 +100,13 @@ class FunctionRedefinitionFactory extends Factory {
                     .setCanHaveReturn(true)
                     .getBlockFactory()
                     .produce();
-            if (!functionInfo.type.equals(new TypeVoid())) {
+            if (!functionInfo.type.equals(TypeList.VOID)) {
                 returnNode = builder.setComplexityLimit(complexityLimit - blockComplLimit)
                         .setExceptionSafe(false)
                         .getReturnFactory()
                         .produce();
             } else {
-                returnNode = null;
+                returnNode = new Return(new Nothing());
             }
         } catch (ProductionFailedException e) {
             SymbolTable.pop();
@@ -112,12 +114,12 @@ class FunctionRedefinitionFactory extends Factory {
             throw e;
         }
         SymbolTable.pop();
-        if ((functionInfo.flags & FunctionInfo.STATIC) == 0) {
+        if (!functionInfo.isStatic()) {
             functionInfo.flags &= ~FunctionInfo.ABSTRACT;
         }
         // If it's all ok, add the function to the symbol table.
         SymbolTable.add(functionInfo);
-        return new FunctionDefinition(functionInfo, argumentsDeclaration, body, returnNode);
+        return new FunctionRedefinition(functionInfo, argumentsDeclaration, body, returnNode);
     }
 
 }

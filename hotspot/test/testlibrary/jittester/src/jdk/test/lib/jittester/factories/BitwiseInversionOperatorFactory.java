@@ -23,7 +23,6 @@
 
 package jdk.test.lib.jittester.factories;
 
-import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.OperatorKind;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Type;
@@ -31,8 +30,6 @@ import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.utils.TypeUtil;
 import jdk.test.lib.jittester.UnaryOperator;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeInt;
-import jdk.test.lib.jittester.types.TypeLong;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
 class BitwiseInversionOperatorFactory extends UnaryOperatorFactory {
@@ -43,12 +40,12 @@ class BitwiseInversionOperatorFactory extends UnaryOperatorFactory {
 
     @Override
     protected boolean isApplicable(Type resultType) {
-        return resultType.equals(new TypeInt()) || resultType.equals(new TypeLong());
+        return resultType.equals(TypeList.INT) || resultType.equals(TypeList.LONG);
     }
 
     @Override
-    protected Type generateType() throws ProductionFailedException {
-        if (resultType.equals(new TypeInt())) {
+    protected Type generateType() {
+        if (resultType.equals(TypeList.INT)) {
             return PseudoRandom.randomElement(TypeUtil.getImplicitlyCastable(TypeList.getBuiltIn(), resultType));
         } else {
             return resultType;
@@ -56,7 +53,7 @@ class BitwiseInversionOperatorFactory extends UnaryOperatorFactory {
     }
 
     @Override
-    protected IRNode generateProduction(Type resultType) throws ProductionFailedException {
+    protected UnaryOperator generateProduction(Type resultType) throws ProductionFailedException {
         return new UnaryOperator(opKind, new IRNodeBuilder().setComplexityLimit(complexityLimit - 1)
                 .setOperatorLimit(operatorLimit - 1)
                 .setOwnerKlass((TypeKlass) ownerClass)

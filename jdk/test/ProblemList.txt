@@ -346,6 +346,13 @@ com/sun/jdi/GetLocalVariables4Test.sh                           8067354 windows-
 
 ############################################################################
 
+# jdk_time
+
+java/time/test/java/time/TestClock_System.java                  8158128 solaris-all
+
+
+############################################################################
+
 # jdk_util
 
 java/util/spi/ResourceBundleControlProvider/UserDefaultControlTest.java 8062512 generic-all
@@ -390,5 +397,6 @@ com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8141370 linux-i5
 
 # core_tools
 
-############################################################################
+tools/jlink/plugins/IncludeLocalesPluginTest.java               8158272 generic-all
 
+############################################################################

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -206,10 +206,22 @@ public class JavaTimeSupplementary_ms extends OpenListResourceBundle {
                     "h:mm a",
                 }
             },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "PG",
+                    "PTG",
+                }
+            },
             { "islamic.long.Eras",
                 new String[] {
                     "",
                     "AH",
+                }
+            },
+            { "islamic.narrow.AmPmMarkers",
+                new String[] {
+                    "a",
+                    "p",
                 }
             },
             { "islamic.narrow.Eras",
@@ -400,6 +412,18 @@ public class JavaTimeSupplementary_ms extends OpenListResourceBundle {
                     "h:mm:ss a z",
                     "h:mm:ss a",
                     "h:mm a",
+                }
+            },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "PG",
+                    "PTG",
+                }
+            },
+            { "roc.narrow.AmPmMarkers",
+                new String[] {
+                    "a",
+                    "p",
                 }
             },
         };

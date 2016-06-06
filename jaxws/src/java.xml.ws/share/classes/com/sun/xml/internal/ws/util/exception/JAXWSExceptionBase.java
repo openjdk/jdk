@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import javax.xml.ws.WebServiceException;
 
 /**
@@ -125,7 +127,8 @@ public abstract class JAXWSExceptionBase
                 args[i] = in.readObject();
             }
         }
-        msg = new LocalizableMessageFactory(resourceBundleName).getMessage(key,args);
+        msg = new LocalizableMessageFactory(resourceBundleName, this::getResourceBundle)
+                        .getMessage(key,args);
     }
 
     private static Throwable findNestedException(Object[] args) {
@@ -148,6 +151,16 @@ public abstract class JAXWSExceptionBase
      * Used for {@link #JAXWSExceptionBase(String, Object[])}.
      */
     protected abstract String getDefaultResourceBundleName();
+
+    /*
+     * Returns the ResourceBundle in this module.
+     *
+     * Subclasses in a different module has to override this method.
+     */
+    @Override
+    public ResourceBundle getResourceBundle(Locale locale) {
+        return ResourceBundle.getBundle(getDefaultResourceBundleName(), locale);
+    }
 
 //
 // Localizable delegation

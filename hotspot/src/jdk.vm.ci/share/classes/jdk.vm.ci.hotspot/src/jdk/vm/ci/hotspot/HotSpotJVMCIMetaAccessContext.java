@@ -30,7 +30,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import jdk.vm.ci.meta.JVMCIMetaAccessContext;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
@@ -47,7 +46,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * longer used.
  *
  */
-public class HotSpotJVMCIMetaAccessContext implements JVMCIMetaAccessContext {
+public class HotSpotJVMCIMetaAccessContext {
 
     /**
      * The set of currently live contexts used for tracking of live metadata. Examined from the VM
@@ -149,7 +148,11 @@ public class HotSpotJVMCIMetaAccessContext implements JVMCIMetaAccessContext {
 
     private final Map<Class<?>, WeakReference<ResolvedJavaType>> typeMap = new WeakHashMap<>();
 
-    @Override
+    /**
+     * Gets the JVMCI mirror for a {@link Class} object.
+     *
+     * @return the {@link ResolvedJavaType} corresponding to {@code javaClass}
+     */
     public synchronized ResolvedJavaType fromClass(Class<?> javaClass) {
         WeakReference<ResolvedJavaType> typeRef = typeMap.get(javaClass);
         ResolvedJavaType type = typeRef != null ? typeRef.get() : null;

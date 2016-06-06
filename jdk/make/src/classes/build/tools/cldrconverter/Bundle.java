@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,6 +284,7 @@ class Bundle {
             handleMultipleInheritance(myMap, parentsMap, calendarPrefix + "DayNarrows");
             handleMultipleInheritance(myMap, parentsMap, calendarPrefix + "AmPmMarkers");
             handleMultipleInheritance(myMap, parentsMap, calendarPrefix + "narrow.AmPmMarkers");
+            handleMultipleInheritance(myMap, parentsMap, calendarPrefix + "abbreviated.AmPmMarkers");
             handleMultipleInheritance(myMap, parentsMap, calendarPrefix + "QuarterNames");
             handleMultipleInheritance(myMap, parentsMap, calendarPrefix + "QuarterAbbreviations");
             handleMultipleInheritance(myMap, parentsMap, calendarPrefix + "QuarterNarrows");
