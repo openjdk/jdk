@@ -138,17 +138,6 @@ public class GetConstantPoolTest {
                 return CompilerToVMHelper.getConstantPool(cpInst, ptr);
             }
         },
-        OBJECT_TYPE_BASE {
-            @Override
-            ConstantPool getConstantPool() {
-                HotSpotResolvedObjectType type
-                        = HotSpotResolvedObjectType.fromObjectClass(
-                                OBJECT_TYPE_BASE.getClass());
-                long ptrToClass = UNSAFE.getKlassPointer(OBJECT_TYPE_BASE);
-                return CompilerToVMHelper.getConstantPool(type,
-                        getPtrToCpAddress() - ptrToClass);
-            }
-        },
         ;
         abstract ConstantPool getConstantPool();
     }
