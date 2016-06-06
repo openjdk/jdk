@@ -3360,9 +3360,9 @@ assertEquals("xy", h3.invoke("x", "y", 1, "a", "b", "c"));
      * @param pos place in {@code newTypes} where the non-skipped target parameters must occur
      * @return a possibly adapted method handle
      * @throws NullPointerException if either argument is null
-     * @throws IllegalArgumentException
-     *         if either index is out of range in its corresponding list, or
-     *         if the non-skipped target parameter types match the new types at {@code pos}
+     * @throws IllegalArgumentException if any element of {@code newTypes} is {@code void.class},
+     *         or if either index is out of range in its corresponding list,
+     *         or if the non-skipped target parameter types match the new types at {@code pos}
      * @since 9
      */
     public static
