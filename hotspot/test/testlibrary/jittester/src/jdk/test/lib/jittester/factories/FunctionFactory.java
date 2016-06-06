@@ -37,7 +37,7 @@ import jdk.test.lib.jittester.functions.FunctionInfo;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class FunctionFactory extends SafeFactory {
+class FunctionFactory extends SafeFactory<Function> {
     private final FunctionInfo functionInfo;
     private final int operatorLimit;
     private final long complexityLimit;
@@ -55,7 +55,7 @@ class FunctionFactory extends SafeFactory {
     }
 
     @Override
-    protected IRNode sproduce() throws ProductionFailedException {
+    protected Function sproduce() throws ProductionFailedException {
         // Currently no function is exception-safe
         if (exceptionSafe) {
             throw new ProductionFailedException();
@@ -72,7 +72,7 @@ class FunctionFactory extends SafeFactory {
             for (Symbol function : allFunctions) {
                 FunctionInfo functionInfo = (FunctionInfo) function;
                 // Don't try to construct abstract classes.
-                if (functionInfo.isConstructor() && functionInfo.klass.isAbstract()) {
+                if (functionInfo.isConstructor() && functionInfo.owner.isAbstract()) {
                     continue;
                 }
                 // We don't call methods from the same class which are not final, because if we
@@ -94,7 +94,7 @@ class FunctionFactory extends SafeFactory {
 
                 // If it's a local call.. or it's a call using some variable to some object of some type in our hierarchy
                 boolean inHierarchy = false;
-                if (ownerClass.equals(functionInfo.klass) || (inHierarchy = klassHierarchy.contains(functionInfo.klass))) {
+                if (ownerClass.equals(functionInfo.owner) || (inHierarchy = klassHierarchy.contains(functionInfo.owner))) {
                     if ((functionInfo.flags & FunctionInfo.FINAL) == 0 && (functionInfo.flags & FunctionInfo.STATIC) == 0
                             && (functionInfo.flags & FunctionInfo.NONRECURSIVE) == 0) {
                         continue;
@@ -121,7 +121,7 @@ class FunctionFactory extends SafeFactory {
                             // If there are function with a same name and same number of args,
                             // then disable usage of foldable expressions in the args.
                             boolean noconsts = false;
-                            Collection<Symbol> allFuncsInKlass = SymbolTable.getAllCombined(functionInfo.klass,
+                            Collection<Symbol> allFuncsInKlass = SymbolTable.getAllCombined(functionInfo.owner,
                                     FunctionInfo.class);
                             for (Symbol s2 : allFuncsInKlass) {
                                 FunctionInfo i2 = (FunctionInfo) function;

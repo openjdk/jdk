@@ -1712,7 +1712,8 @@ public class CommandProcessor {
     // called after debuggee attach
     private void postAttach() {
         // create JavaScript engine and start it
-        jsengine = new JSJavaScriptEngine() {
+        try {
+            jsengine = new JSJavaScriptEngine() {
                         private ObjectReader reader = new ObjectReader();
                         private JSJavaFactory factory = new JSJavaFactoryImpl();
                         public ObjectReader getObjectReader() {
@@ -1735,17 +1736,24 @@ public class CommandProcessor {
                             return err;
                         }
                    };
-        try {
-            jsengine.defineFunction(this,
+            try {
+                jsengine.defineFunction(this,
                      this.getClass().getMethod("registerCommand",
                                 new Class[] {
                                      String.class, String.class, String.class
                                 }));
-        } catch (NoSuchMethodException exp) {
-            // should not happen, see below...!!
-            exp.printStackTrace();
+            } catch (NoSuchMethodException exp) {
+                  // should not happen, see below...!!
+                  exp.printStackTrace();
+            }
+            jsengine.start();
         }
-        jsengine.start();
+        catch (Exception ex) {
+            System.out.println("Warning! JS Engine can't start, some commands will not be available.");
+            if (verboseExceptions) {
+                ex.printStackTrace(out);
+            }
+        }
     }
 
     public void registerCommand(String cmd, String usage, final String func) {

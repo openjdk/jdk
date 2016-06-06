@@ -199,11 +199,11 @@ class DocCommentGenerator {
     public String getPackageComment() {
         return InlineTag.INDEX.value("PackageCommentLabel") + " "
                + Text.LOREMIPSUM
-               + "\n <p>" + Text.LIEUROPANLINGUES
+               + "\n<p>" + Text.LIEUROPANLINGUES
                + "\n" + Text.CODE
                + "\n" + LinkTag.nextLink()
                + "\n" + LinkTag.nextSee()
-               + "\n" + Tag.SINCE;
+               + "\n" + Tag.SINCE + "\n";
     }
 
     String[] serialVals = new String[] { "include", "exclude" };

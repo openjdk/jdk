@@ -3858,21 +3858,46 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C(supports_clmul);
     }
     if (VM_Version::supports_sse2() && UseLibmIntrinsic) {
-      StubRoutines::x86::_L_2il0floatpacket_0_adr = (address)StubRoutines::x86::_L_2il0floatpacket_0;
-      StubRoutines::x86::_Pi4Inv_adr = (address)StubRoutines::x86::_Pi4Inv;
-      StubRoutines::x86::_Pi4x3_adr = (address)StubRoutines::x86::_Pi4x3;
-      StubRoutines::x86::_Pi4x4_adr = (address)StubRoutines::x86::_Pi4x4;
-      StubRoutines::x86::_ones_adr = (address)StubRoutines::x86::_ones;
-      StubRoutines::_dexp = generate_libmExp();
-      StubRoutines::_dlog = generate_libmLog();
-      StubRoutines::_dlog10 = generate_libmLog10();
-      StubRoutines::_dpow = generate_libmPow();
-      StubRoutines::_dlibm_reduce_pi04l = generate_libm_reduce_pi04l();
-      StubRoutines::_dlibm_sin_cos_huge = generate_libm_sin_cos_huge();
-      StubRoutines::_dsin = generate_libmSin();
-      StubRoutines::_dcos = generate_libmCos();
-      StubRoutines::_dlibm_tan_cot_huge = generate_libm_tan_cot_huge();
-      StubRoutines::_dtan = generate_libmTan();
+      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dsin) ||
+          vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcos) ||
+          vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtan)) {
+        StubRoutines::x86::_L_2il0floatpacket_0_adr = (address)StubRoutines::x86::_L_2il0floatpacket_0;
+        StubRoutines::x86::_Pi4Inv_adr = (address)StubRoutines::x86::_Pi4Inv;
+        StubRoutines::x86::_Pi4x3_adr = (address)StubRoutines::x86::_Pi4x3;
+        StubRoutines::x86::_Pi4x4_adr = (address)StubRoutines::x86::_Pi4x4;
+        StubRoutines::x86::_ones_adr = (address)StubRoutines::x86::_ones;
+      }
+      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dexp)) {
+        StubRoutines::_dexp = generate_libmExp();
+      }
+      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog)) {
+        StubRoutines::_dlog = generate_libmLog();
+      }
+      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog10)) {
+        StubRoutines::_dlog10 = generate_libmLog10();
+      }
+      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dpow)) {
+        StubRoutines::_dpow = generate_libmPow();
+      }
+      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dsin) ||
+        vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcos) ||
+        vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtan)) {
+        StubRoutines::_dlibm_reduce_pi04l = generate_libm_reduce_pi04l();
+      }
+      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dsin) ||
+        vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcos)) {
+        StubRoutines::_dlibm_sin_cos_huge = generate_libm_sin_cos_huge();
+      }
+      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dsin)) {
+        StubRoutines::_dsin = generate_libmSin();
+      }
+      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcos)) {
+        StubRoutines::_dcos = generate_libmCos();
+      }
+      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtan)) {
+        StubRoutines::_dlibm_tan_cot_huge = generate_libm_tan_cot_huge();
+        StubRoutines::_dtan = generate_libmTan();
+      }
     }
   }
 

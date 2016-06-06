@@ -46,7 +46,7 @@ class CompoundBitwiseAssignmentOperatorFactory extends BinaryOperatorFactory {
     }
 
     @Override
-    protected Pair<Type, Type> generateTypes() throws ProductionFailedException {
+    protected Pair<Type, Type> generateTypes() {
         return new Pair<>(resultType, PseudoRandom.randomElement(TypeUtil.getExplicitlyCastable(TypeList.getBuiltInInt(), resultType)));
     }
 
@@ -71,6 +71,6 @@ class CompoundBitwiseAssignmentOperatorFactory extends BinaryOperatorFactory {
                 .setResultType(rightType)
                 .getExpressionFactory()
                 .produce();
-        return new BinaryOperator(opKind, leftExpr, rightExpr);
+        return new BinaryOperator(opKind, resultType, leftExpr, rightExpr);
     }
 }

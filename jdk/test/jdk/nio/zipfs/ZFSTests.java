@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 7156873 8040059 8028480 8034773 8153248
+ * @bug 7156873 8040059 8028480 8034773 8153248 8061777
  * @summary ZipFileSystem regression tests
  *
  * @run main ZFSTests
@@ -43,6 +43,7 @@ public class ZFSTests {
 
     public static void main(String[] args) throws Throwable {
         test7156873();
+        test8061777();
         tests();
     }
 
@@ -59,6 +60,34 @@ public class ZFSTests {
         } finally {
             Files.deleteIfExists(path);
             Files.deleteIfExists(dir);
+        }
+    }
+
+    static void test8061777() throws Throwable {
+        Path path = Paths.get("file.zip");
+        try {
+            URI uri = URI.create("jar:" + path.toUri());
+            Map<String, Object> env = new HashMap<String, Object>();
+            env.put("create", "true");
+            env.put("encoding", "Shift_JIS");
+            try (FileSystem fs = FileSystems.newFileSystem(uri, env)) {
+                FileSystemProvider fsp = fs.provider();
+                Path p = fs.getPath("/\u8868\u7533.txt");  // 0x95 0x5c 0x90 0x5c
+                try (OutputStream os = fsp.newOutputStream(p)) {
+                    os.write("Hello!".getBytes("ASCII"));
+                }
+                Path dir = fs.getPath("/");
+                Files.list(dir)
+                     .forEach( child -> {
+                             System.out.println("child:" + child);
+                             if (!child.toString().equals(p.toString()))
+                                 throw new RuntimeException("wrong path name created");
+                          });
+                if (!"Hello!".equals(new String(Files.readAllBytes(p), "ASCII")))
+                    throw new RuntimeException("wrong content in newly created file");
+            }
+        } finally {
+            Files.deleteIfExists(path);
         }
     }
 

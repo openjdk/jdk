@@ -38,10 +38,9 @@ import jdk.test.lib.jittester.VariableInfo;
 import jdk.test.lib.jittester.classes.MainKlass;
 import jdk.test.lib.jittester.functions.FunctionInfo;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeVoid;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class MainKlassFactory extends Factory {
+class MainKlassFactory extends Factory<MainKlass> {
     private final String name;
     private final long complexityLimit;
     private final int statementsInTestFunctionLimit;
@@ -64,8 +63,8 @@ class MainKlassFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
-        TypeKlass parent = (TypeKlass) TypeList.find("java.lang.Object");
+    public MainKlass produce() throws ProductionFailedException {
+        TypeKlass parent = TypeList.OBJECT;
         thisKlass = new TypeKlass(name);
         thisKlass.addParent(parent.getName());
         thisKlass.setParent(parent);
@@ -80,8 +79,7 @@ class MainKlassFactory extends Factory {
                 .setMemberFunctionsArgLimit(memberFunctionsArgLimit)
                 .setStatementLimit(statementsInFunctionLimit)
                 .setLevel(1)
-                .setExceptionSafe(true)
-                .setPrinterName("Printer");
+                .setExceptionSafe(true);
         IRNode variableDeclarations = builder
                 .setComplexityLimit((long) (complexityLimit * 0.05))
                 .getVariableDeclarationBlockFactory().produce();
@@ -93,7 +91,7 @@ class MainKlassFactory extends Factory {
                     .getFunctionDefinitionBlockFactory()
                     .produce();
         }
-        IRNode testFunction = builder.setResultType(new TypeVoid())
+        IRNode testFunction = builder.setResultType(TypeList.VOID)
                 .setComplexityLimit(complexityLimit)
                 .setStatementLimit(statementsInTestFunctionLimit)
                 .getBlockFactory()
@@ -109,6 +107,7 @@ class MainKlassFactory extends Factory {
         childs.add(printVariables);
         ensureMinDepth(childs, builder);
         ensureMaxDepth(childs);
+        TypeList.add(thisKlass);
         return new MainKlass(name, thisKlass, variableDeclarations,
                 functionDefinitions, testFunction, printVariables);
     }
@@ -119,7 +118,7 @@ class MainKlassFactory extends Factory {
             .filter(c -> c.isCFDeviation() && c.countDepth() > maxDepth)
             .collect(Collectors.toList());
         for (IRNode child : filtered) {
-            List<IRNode> leaves = null;
+            List<IRNode> leaves;
             do {
                 long depth = Math.max(child.countDepth(), maxDepth + 1);
                 leaves = child.getDeviantBlocks(depth);
@@ -138,16 +137,14 @@ class MainKlassFactory extends Factory {
     private void addMoreChildren(List<IRNode> childs, int minDepth, IRNodeBuilder builder)
             throws ProductionFailedException {
         while (!childs.isEmpty() && IRNode.countDepth(childs) < minDepth) {
-            PseudoRandom.shuffle(childs);
-            IRNode randomChild = childs.get(0);
+            IRNode randomChild = childs.get(PseudoRandom.randomNotNegative(childs.size()));
             List<IRNode> leaves = randomChild.getStackableLeaves();
             if (!leaves.isEmpty()) {
-                PseudoRandom.shuffle(leaves);
-                Block randomLeaf = (Block) leaves.get(0);
-                TypeKlass klass = (TypeKlass) randomChild.getKlass();
+                Block randomLeaf = (Block) leaves.get(PseudoRandom.randomNotNegative(leaves.size()));
+                TypeKlass owner = randomChild.getOwner();
                 int newLevel = randomLeaf.getLevel() + 1;
-                Type retType = randomLeaf.getReturnType();
-                IRNode newBlock = builder.setOwnerKlass(klass)
+                Type retType = randomLeaf.getResultType();
+                IRNode newBlock = builder.setOwnerKlass(owner)
                         .setResultType(retType)
                         .setComplexityLimit(complexityLimit)
                         .setStatementLimit(statementsInFunctionLimit)

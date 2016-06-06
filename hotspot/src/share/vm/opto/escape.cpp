@@ -721,7 +721,8 @@ void ConnectionGraph::add_final_edges(Node *n) {
         break;
       }
 #endif
-      if (opcode == Op_GetAndSetP || opcode == Op_GetAndSetN) {
+      if (opcode == Op_GetAndSetP || opcode == Op_GetAndSetN ||
+          opcode == Op_CompareAndExchangeN || opcode == Op_CompareAndExchangeP) {
         add_local_var_and_edge(n, PointsToNode::NoEscape, adr, NULL);
       }
       if (adr_type->isa_oopptr() ||
