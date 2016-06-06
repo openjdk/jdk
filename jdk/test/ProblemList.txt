@@ -394,5 +394,6 @@ com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8141370 linux-i5
 
 # core_tools
 
-############################################################################
+tools/jlink/plugins/IncludeLocalesPluginTest.java               8158272 generic-all
 
+############################################################################

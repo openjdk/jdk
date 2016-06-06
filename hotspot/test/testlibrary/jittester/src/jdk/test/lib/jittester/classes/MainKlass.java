@@ -40,6 +40,7 @@ public class MainKlass extends IRNode {
 
     public MainKlass(String name, TypeKlass thisKlass, IRNode variableDeclarations,
             IRNode functionDefinitions, IRNode testFunction, IRNode printVariables) {
+        super(thisKlass);
         addChild(variableDeclarations);
         addChild(functionDefinitions);
         addChild(testFunction);
@@ -63,5 +64,9 @@ public class MainKlass extends IRNode {
     @Override
     public String getName() {
         return name;
+    }
+
+    public TypeKlass getThisKlass() {
+        return thisKlass;
     }
 }

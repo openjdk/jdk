@@ -37,10 +37,13 @@ package jdk.vm.ci.runtime.test;
 import static jdk.vm.ci.meta.MetaUtil.toInternalName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import jdk.vm.ci.meta.DeoptimizationAction;
+import jdk.vm.ci.meta.DeoptimizationReason;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
@@ -48,6 +51,7 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.Signature;
 
 import org.junit.Test;
 
@@ -55,6 +59,16 @@ import org.junit.Test;
  * Tests for {@link MetaAccessProvider}.
  */
 public class TestMetaAccessProvider extends TypeUniverse {
+    private static final DeoptimizationAction DEOPT_ACTION = DeoptimizationAction.InvalidateRecompile;
+    private static final DeoptimizationReason DEOPT_REASON = DeoptimizationReason.Aliasing;
+    private static final int INT_23BITS_SET = 0x7FFFFF;
+    private static final int[] DEBUG_IDS = new int[]{0, 1, 42, INT_23BITS_SET};
+    private static final int[] VALID_ENCODED_VALUES = new int[]{
+                    metaAccess.encodeDeoptActionAndReason(DEOPT_ACTION, DEOPT_REASON, DEBUG_IDS[0]).asInt(),
+                    metaAccess.encodeDeoptActionAndReason(DEOPT_ACTION, DEOPT_REASON, DEBUG_IDS[1]).asInt(),
+                    metaAccess.encodeDeoptActionAndReason(DEOPT_ACTION, DEOPT_REASON, DEBUG_IDS[2]).asInt(),
+                    metaAccess.encodeDeoptActionAndReason(DEOPT_ACTION, DEOPT_REASON, DEBUG_IDS[3]).asInt()
+    };
 
     @Test
     public void lookupJavaTypeTest() {
@@ -70,6 +84,37 @@ public class TestMetaAccessProvider extends TypeUniverse {
         }
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void lookupJavaTypeNegativeTest() {
+        metaAccess.lookupJavaType((Class<?>) null);
+    }
+
+    @Test
+    public void lookupJavaTypesTest() {
+        ResolvedJavaType[] result = metaAccess.lookupJavaTypes(classes.toArray(new Class<?>[classes.size()]));
+        int counter = 0;
+        for (Class<?> aClass : classes) {
+            assertEquals("Unexpected javaType: " + result[counter] + " while expecting of class: " + aClass, result[counter].toClassName(), aClass.getName());
+            counter++;
+        }
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void lookupJavaTypesNegative1Test() {
+        assertNull("Expected null", metaAccess.lookupJavaTypes(null));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void lookupJavaTypesNegative2Test() {
+        ResolvedJavaType[] result = metaAccess.lookupJavaTypes(new Class<?>[]{null, null, null});
+        for (ResolvedJavaType aType : result) {
+            assertNull("Expected null javaType", aType);
+        }
+        result = metaAccess.lookupJavaTypes(new Class<?>[]{String.class, String.class});
+        assertEquals("Results not equals", result[0].getClass(), result[1].getClass());
+        assertEquals("Result is not String.class", result[0].getClass(), String.class);
+    }
+
     @Test
     public void lookupJavaMethodTest() {
         for (Class<?> c : classes) {
@@ -79,6 +124,11 @@ public class TestMetaAccessProvider extends TypeUniverse {
                 assertTrue(method.getDeclaringClass().equals(metaAccess.lookupJavaType(reflect.getDeclaringClass())));
             }
         }
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void lookupJavaMethodNegativeTest() {
+        metaAccess.lookupJavaMethod(null);
     }
 
     @Test
@@ -104,6 +154,109 @@ public class TestMetaAccessProvider extends TypeUniverse {
             } else {
                 assertEquals(metaAccess.lookupJavaType(c), null);
             }
+        }
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void lookupJavaTypeConstantNegativeTest() {
+        metaAccess.lookupJavaType((JavaConstant) null);
+    }
+
+    @Test
+    public void getMemorySizeTest() {
+        for (ConstantValue cv : constants()) {
+            JavaConstant c = cv.value;
+            long memSize = metaAccess.getMemorySize(c);
+            if (c.isNull()) {
+                assertEquals("Expected size = 0 for null", memSize, 0L);
+            } else {
+                assertTrue("Expected size != 0 for " + cv, memSize != 0L);
+            }
+        }
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void getMemorySizeNegativeTest() {
+        metaAccess.getMemorySize(null);
+    }
+
+    @Test
+    public void parseMethodDescriptorTest() {
+        for (String retType : new String[]{"V", "Z", "Ljava/lang/String;"}) {
+            for (String paramTypes : new String[]{"", "B",
+                            "Ljava/lang/String;", "JLjava/lang/String;",
+                            "Ljava/lang/String;F",
+                            "[Ljava/lang/String;ZBCDFIJLS[ILjava/lang/Object;"}) {
+                String signature = "(" + paramTypes + ")" + retType;
+                Signature result = metaAccess.parseMethodDescriptor(signature);
+                assertEquals("Expected signatures to be equal", result.toMethodDescriptor(), signature);
+            }
+        }
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void parseMethodDescriptorNegativeNullTest() {
+        metaAccess.parseMethodDescriptor(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void encodeDeoptActionAndReasonNegative1Test() {
+        metaAccess.encodeDeoptActionAndReason(null, DeoptimizationReason.Aliasing, 0);
+
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void encodeDeoptActionAndReasonNegative2Test() {
+        metaAccess.encodeDeoptActionAndReason(DeoptimizationAction.InvalidateRecompile, null, 0);
+    }
+
+    @Test
+    public void decodeDeoptReasonTest() {
+        for (int encoded : VALID_ENCODED_VALUES) {
+            JavaConstant value = JavaConstant.forInt(encoded);
+            DeoptimizationReason reason = metaAccess.decodeDeoptReason(value);
+            assertEquals("Expected equal reasons", reason, DEOPT_REASON);
+        }
+    }
+
+    @Test
+    public void decodeDeoptReasonNegative1Test() {
+        int encoded = 42;
+        JavaConstant value = JavaConstant.forInt(encoded);
+        metaAccess.decodeDeoptReason(value);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void decodeDeoptReasonNegative2Test() {
+        metaAccess.decodeDeoptReason(null);
+    }
+
+    @Test
+    public void decodeDeoptActionTest() {
+        for (int encoded : VALID_ENCODED_VALUES) {
+            JavaConstant value = JavaConstant.forInt(encoded);
+            DeoptimizationAction action = metaAccess.decodeDeoptAction(value);
+            assertEquals("Expected equal actions", action, DEOPT_ACTION);
+        }
+    }
+
+    @Test
+    public void decodeDeoptActionNegative1Test() {
+        int encoded = 123456789;
+        JavaConstant value = JavaConstant.forInt(encoded);
+        metaAccess.decodeDeoptAction(value);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void decodeDeoptActionNegative2Test() {
+        metaAccess.decodeDeoptAction(null);
+    }
+
+    @Test
+    public void decodeDebugIdTest() {
+        for (int i = 0; i < VALID_ENCODED_VALUES.length; i++) {
+            JavaConstant value = JavaConstant.forInt(VALID_ENCODED_VALUES[i]);
+            assertEquals("Unexpected debugId", metaAccess.decodeDebugId(value), DEBUG_IDS[i]);
         }
     }
 }

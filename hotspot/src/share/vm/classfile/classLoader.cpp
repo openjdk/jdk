@@ -657,7 +657,7 @@ void ClassLoader::setup_xpatch_entries() {
   int num_of_entries = xpatch_args->length();
 
   // Set up the boot loader's xpatch_entries list
-  _xpatch_entries = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<ModuleClassPathList*>(num_of_entries, true);
+  _xpatch_entries = new (ResourceObj::C_HEAP, mtModule) GrowableArray<ModuleClassPathList*>(num_of_entries, true);
 
   for (int i = 0; i < num_of_entries; i++) {
     const char* module_name = (xpatch_args->at(i))->module_name();
@@ -1069,9 +1069,9 @@ void ClassLoader::initialize_module_loader_map(JImageFile* jimage) {
   char* begin_ptr = char_buf;
   char* end_ptr = strchr(begin_ptr, '\n');
   bool process_boot_modules = false;
-  _boot_modules_array = new (ResourceObj::C_HEAP, mtInternal)
+  _boot_modules_array = new (ResourceObj::C_HEAP, mtModule)
     GrowableArray<char*>(INITIAL_BOOT_MODULES_ARRAY_SIZE, true);
-  _platform_modules_array = new (ResourceObj::C_HEAP, mtInternal)
+  _platform_modules_array = new (ResourceObj::C_HEAP, mtModule)
     GrowableArray<char*>(INITIAL_PLATFORM_MODULES_ARRAY_SIZE, true);
   while (end_ptr != NULL && (end_ptr - char_buf) < buflen) {
     // Allocate a buffer from the C heap to be appended to the _boot_modules_array

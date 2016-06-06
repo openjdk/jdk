@@ -37,7 +37,7 @@ import jdk.test.lib.jittester.functions.FunctionInfo;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class InterfaceFactory extends Factory {
+class InterfaceFactory extends Factory<Interface> {
     private final String name;
     private final int memberFunctionsLimit;
     private final int memberFunctionsArgLimit;
@@ -52,7 +52,7 @@ class InterfaceFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public Interface produce() throws ProductionFailedException {
         TypeKlass thisKlass;
         // Do we want to inherit something?
         if (!ProductionParams.disableInheritance.value()) {
@@ -76,7 +76,7 @@ class InterfaceFactory extends Factory {
             parent.addChild(name);
             for (Symbol symbol : SymbolTable.getAllCombined(parent, FunctionInfo.class)) {
                 FunctionInfo functionInfo = (FunctionInfo) symbol.deepCopy();
-                functionInfo.klass = thisKlass;
+                functionInfo.owner = thisKlass;
                 functionInfo.argTypes.get(0).type = thisKlass;
                 SymbolTable.add(functionInfo);
             }

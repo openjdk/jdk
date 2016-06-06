@@ -122,10 +122,7 @@ public class TestPLABPromotion {
             List<String> options = PLABUtils.prepareOptions(testCase.toOptions());
             options.add(AppPLABPromotion.class.getName());
             OutputAnalyzer out = ProcessTools.executeTestJvm(options.toArray(new String[options.size()]));
-            if (out.getExitValue() != 0) {
-                System.out.println(out.getOutput());
-                throw new RuntimeException("Expect exit code 0.");
-            }
+            PLABUtils.commonCheck(out);
             output = out.getOutput();
             checkResults(testCase);
         }

@@ -612,8 +612,8 @@ bool Relocator::relocate_code(int bci, int ilen, int delta) {
   // In case we have shrunken a tableswitch/lookupswitch statement, we store the last
   // bytes that get overwritten. We have to copy the bytes after the change_jumps method
   // has been called, since it is likely to update last offset in a tableswitch/lookupswitch
-  if (delta < 0) {
-    assert(delta>=-3, "we cannot overwrite more than 3 bytes");
+  assert(delta >= -3, "We cannot overwrite more than 3 bytes.");
+  if (delta < 0 && delta >= -3) {
     memcpy(_overwrite, addr_at(bci + ilen + delta), -delta);
   }
 

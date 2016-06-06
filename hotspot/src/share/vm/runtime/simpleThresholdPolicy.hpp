@@ -51,10 +51,10 @@ class SimpleThresholdPolicy : public CompilationPolicy {
   // Transition functions.
   // call_event determines if a method should be compiled at a different
   // level with a regular invocation entry.
-  CompLevel call_event(Method* method, CompLevel cur_level);
+  CompLevel call_event(Method* method, CompLevel cur_level, JavaThread* thread);
   // loop_event checks if a method should be OSR compiled at a different
   // level.
-  CompLevel loop_event(Method* method, CompLevel cur_level);
+  CompLevel loop_event(Method* method, CompLevel cur_level, JavaThread* thread);
   void print_counters(const char* prefix, methodHandle mh);
 protected:
   int c1_count() const     { return _c1_count; }

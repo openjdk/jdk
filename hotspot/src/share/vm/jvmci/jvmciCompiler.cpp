@@ -39,6 +39,7 @@ elapsedTimer JVMCICompiler::_codeInstallTimer;
 
 JVMCICompiler::JVMCICompiler() : AbstractCompiler(jvmci) {
   _bootstrapping = false;
+  _bootstrap_compilation_request_handled = false;
   _methods_compiled = 0;
   assert(_instance == NULL, "only one instance allowed");
   _instance = this;
@@ -57,7 +58,7 @@ void JVMCICompiler::initialize() {
   CompilationPolicy::completed_vm_startup();
 }
 
-void JVMCICompiler::bootstrap() {
+void JVMCICompiler::bootstrap(TRAPS) {
   if (Arguments::mode() == Arguments::_int) {
     // Nothing to do in -Xint mode
     return;
@@ -68,7 +69,6 @@ void JVMCICompiler::bootstrap() {
   FlagSetting ctwOff(CompileTheWorld, false);
 #endif
 
-  JavaThread* THREAD = JavaThread::current();
   _bootstrapping = true;
   ResourceMark rm;
   HandleMark hm;
@@ -97,7 +97,7 @@ void JVMCICompiler::bootstrap() {
     do {
       os::sleep(THREAD, 100, true);
       qsize = CompileBroker::queue_size(CompLevel_full_optimization);
-    } while (first_round && qsize == 0);
+    } while (!_bootstrap_compilation_request_handled && first_round && qsize == 0);
     first_round = false;
     if (PrintBootstrap) {
       while (z < (_methods_compiled / 100)) {
@@ -111,6 +111,7 @@ void JVMCICompiler::bootstrap() {
     tty->print_cr(" in " JLONG_FORMAT " ms (compiled %d methods)", os::javaTimeMillis() - start, _methods_compiled);
   }
   _bootstrapping = false;
+  JVMCIRuntime::bootstrap_finished(CHECK);
 }
 
 #define CHECK_ABORT THREAD); \
@@ -171,15 +172,15 @@ void JVMCICompiler::compile_method(const methodHandle& method, int entry_bci, JV
   } else {
     oop result_object = (oop) result.get_jobject();
     if (result_object != NULL) {
-      oop failure_message = CompilationRequestResult::failureMessage(result_object);
+      oop failure_message = HotSpotCompilationRequestResult::failureMessage(result_object);
       if (failure_message != NULL) {
         const char* failure_reason = java_lang_String::as_utf8_string(failure_message);
-        env->set_failure(failure_reason, CompilationRequestResult::retry(result_object) != 0);
+        env->set_failure(failure_reason, HotSpotCompilationRequestResult::retry(result_object) != 0);
       } else {
         if (env->task()->code() == NULL) {
           env->set_failure("no nmethod produced", true);
         } else {
-          env->task()->set_num_inlined_bytecodes(CompilationRequestResult::inlinedBytecodes(result_object));
+          env->task()->set_num_inlined_bytecodes(HotSpotCompilationRequestResult::inlinedBytecodes(result_object));
           Atomic::inc(&_methods_compiled);
         }
       }
@@ -187,6 +188,18 @@ void JVMCICompiler::compile_method(const methodHandle& method, int entry_bci, JV
       assert(false, "JVMCICompiler.compileMethod should always return non-null");
     }
   }
+  if (_bootstrapping) {
+    _bootstrap_compilation_request_handled = true;
+  }
+}
+
+CompLevel JVMCIRuntime::adjust_comp_level(methodHandle method, bool is_osr, CompLevel level, JavaThread* thread) {
+  if (!thread->adjusting_comp_level()) {
+    thread->set_adjusting_comp_level(true);
+    level = adjust_comp_level_inner(method, is_osr, level, thread);
+    thread->set_adjusting_comp_level(false);
+  }
+  return level;
 }
 
 /**

@@ -25,9 +25,9 @@
  * @test Test2GbHeap
  * @bug 8031686
  * @summary Regression test to ensure we can start G1 with 2gb heap.
- * Skip test on 32 bit Windows: it typically does not support the many and large virtual memory reservations needed.
+ * Skip test on 32 bit system: it typically does not support the many and large virtual memory reservations needed.
  * @requires (vm.gc == "G1" | vm.gc == "null")
- * @requires !((sun.arch.data.model == "32") & (os.family == "windows"))
+ * @requires vm.bits != "32"
  * @key gc
  * @key regression
  * @library /testlibrary
