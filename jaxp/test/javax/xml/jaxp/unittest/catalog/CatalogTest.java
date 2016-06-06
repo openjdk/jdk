@@ -69,6 +69,20 @@ public class CatalogTest {
     }
 
     /*
+     * @bug 8150187
+     * NPE is expected if the systemId is null. The specification for systemId
+     * is as follows:
+     * A system identifier is required on all external entities. XML
+     * requires a system identifier on all external entities, so this value is
+     * always specified.
+     */
+    @Test(expectedExceptions = NullPointerException.class)
+    public void sysIdCantBeNull() {
+        CatalogResolver catalogResolver = CatalogManager.catalogResolver(CatalogFeatures.defaults());
+        InputSource is = catalogResolver.resolveEntity("-//FOO//DTD XML Dummy V0.0//EN", null);
+    }
+
+    /*
      * @bug 8156845
      * Verifies that an URI reference with a urn:publicid is correctly resolved
      * with an uri entry with a publicId.

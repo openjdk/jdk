@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -73,12 +73,28 @@ public class JavaTimeSupplementary_es_CL extends OpenListResourceBundle {
     @Override
     protected final Object[][] getContents() {
         return new Object[][] {
+            { "QuarterNames",
+                new String[] {
+                    "1.\u00b0 trimestre",
+                    "2.\u00b0 trimestre",
+                    "3.\u00b0 trimestre",
+                    "4.\u00ba trimestre",
+                }
+            },
             { "islamic.DatePatterns",
                 new String[] {
                     "GGGG y MMMM d, EEEE",
                     "GGGG y MMMM d",
                     "dd-MM-y GGGG",
                     "dd-MM-y G",
+                }
+            },
+            { "islamic.QuarterNames",
+                new String[] {
+                    "1.\u00b0 trimestre",
+                    "2.\u00b0 trimestre",
+                    "3.\u00b0 trimestre",
+                    "4.\u00ba trimestre",
                 }
             },
             { "java.time.buddhist.DatePatterns",
@@ -119,6 +135,14 @@ public class JavaTimeSupplementary_es_CL extends OpenListResourceBundle {
                     "GGGG y MMMM d",
                     "dd-MM-y GGGG",
                     "dd-MM-y G",
+                }
+            },
+            { "roc.QuarterNames",
+                new String[] {
+                    "1.\u00b0 trimestre",
+                    "2.\u00b0 trimestre",
+                    "3.\u00b0 trimestre",
+                    "4.\u00ba trimestre",
                 }
             },
         };

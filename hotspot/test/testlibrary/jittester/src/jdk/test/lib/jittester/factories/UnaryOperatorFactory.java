@@ -23,13 +23,13 @@
 
 package jdk.test.lib.jittester.factories;
 
-import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.OperatorKind;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.SymbolTable;
 import jdk.test.lib.jittester.Type;
+import jdk.test.lib.jittester.UnaryOperator;
 
-public abstract class UnaryOperatorFactory extends OperatorFactory {
+public abstract class UnaryOperatorFactory extends OperatorFactory<UnaryOperator> {
     protected final OperatorKind opKind;
     protected final Type resultType;
     protected final Type ownerClass;
@@ -42,16 +42,16 @@ public abstract class UnaryOperatorFactory extends OperatorFactory {
         this.ownerClass = ownerClass;
     }
 
-    protected Type generateType() throws ProductionFailedException {
+    protected Type generateType() {
         return resultType;
     }
 
-    protected abstract IRNode generateProduction(Type type) throws ProductionFailedException;
+    protected abstract UnaryOperator generateProduction(Type type) throws ProductionFailedException;
 
     protected abstract boolean isApplicable(Type resultType);
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public UnaryOperator produce() throws ProductionFailedException {
         if (!isApplicable(resultType)) {
             //avoid implicit use of resultType.toString()
             throw new ProductionFailedException("Type " + resultType.getName()
@@ -65,7 +65,7 @@ public abstract class UnaryOperatorFactory extends OperatorFactory {
         }
         try {
             SymbolTable.push();
-            IRNode result = generateProduction(type);
+            UnaryOperator result = generateProduction(type);
             SymbolTable.merge();
             return result;
         } catch (ProductionFailedException e) {

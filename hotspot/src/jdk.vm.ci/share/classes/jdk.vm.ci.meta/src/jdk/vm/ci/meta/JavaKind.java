@@ -33,34 +33,34 @@ import java.lang.reflect.Array;
  */
 public enum JavaKind {
     /** The primitive boolean kind, represented as an int on the stack. */
-    Boolean('z', "boolean", 1, true, java.lang.Boolean.TYPE, java.lang.Boolean.class),
+    Boolean('Z', "boolean", 1, true, java.lang.Boolean.TYPE, java.lang.Boolean.class),
 
     /** The primitive byte kind, represented as an int on the stack. */
-    Byte('b', "byte", 1, true, java.lang.Byte.TYPE, java.lang.Byte.class),
+    Byte('B', "byte", 1, true, java.lang.Byte.TYPE, java.lang.Byte.class),
 
     /** The primitive short kind, represented as an int on the stack. */
-    Short('s', "short", 1, true, java.lang.Short.TYPE, java.lang.Short.class),
+    Short('S', "short", 1, true, java.lang.Short.TYPE, java.lang.Short.class),
 
     /** The primitive char kind, represented as an int on the stack. */
-    Char('c', "char", 1, true, java.lang.Character.TYPE, java.lang.Character.class),
+    Char('C', "char", 1, true, java.lang.Character.TYPE, java.lang.Character.class),
 
     /** The primitive int kind, represented as an int on the stack. */
-    Int('i', "int", 1, true, java.lang.Integer.TYPE, java.lang.Integer.class),
+    Int('I', "int", 1, true, java.lang.Integer.TYPE, java.lang.Integer.class),
 
     /** The primitive float kind. */
-    Float('f', "float", 1, false, java.lang.Float.TYPE, java.lang.Float.class),
+    Float('F', "float", 1, false, java.lang.Float.TYPE, java.lang.Float.class),
 
     /** The primitive long kind. */
-    Long('j', "long", 2, false, java.lang.Long.TYPE, java.lang.Long.class),
+    Long('J', "long", 2, false, java.lang.Long.TYPE, java.lang.Long.class),
 
     /** The primitive double kind. */
-    Double('d', "double", 2, false, java.lang.Double.TYPE, java.lang.Double.class),
+    Double('D', "double", 2, false, java.lang.Double.TYPE, java.lang.Double.class),
 
     /** The Object kind, also used for arrays. */
-    Object('a', "Object", 1, false, null, null),
+    Object('A', "Object", 1, false, null, null),
 
-    /** The void float kind. */
-    Void('v', "void", 0, false, java.lang.Void.TYPE, java.lang.Void.class),
+    /** The void kind. */
+    Void('V', "void", 0, false, java.lang.Void.TYPE, java.lang.Void.class),
 
     /** The non-type. */
     Illegal('-', "illegal", 0, false, null, null);
@@ -98,7 +98,11 @@ public enum JavaKind {
     }
 
     /**
-     * Returns the name of the kind as a single character.
+     * Returns the name of the kind as a single upper case character. For the void and primitive
+     * kinds, this is the <i>FieldType</i> term in
+     * <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.3.2-200">
+     * table 4.3-A</a> of the JVM Specification. For {@link #Object}, the character {@code 'A'} is
+     * returned and for {@link #Illegal}, {@code '-'} is returned.
      */
     public char getTypeChar() {
         return typeChar;
@@ -204,7 +208,7 @@ public enum JavaKind {
     /**
      * Returns the kind from the character describing a primitive or void.
      *
-     * @param ch the character
+     * @param ch the character for a void or primitive kind as returned by {@link #getTypeChar()}
      * @return the kind
      */
     public static JavaKind fromPrimitiveOrVoidTypeChar(char ch) {
@@ -369,9 +373,9 @@ public enum JavaKind {
     }
 
     /**
-     * The minimum value that can be represented as a value of this kind.
+     * Gets the minimum value that can be represented as a value of this kind.
      *
-     * @return the minimum value
+     * @return the minimum value represented as a {@code long}
      */
     public long getMinValue() {
         switch (this) {
@@ -387,15 +391,19 @@ public enum JavaKind {
                 return java.lang.Integer.MIN_VALUE;
             case Long:
                 return java.lang.Long.MIN_VALUE;
+            case Float:
+                return java.lang.Float.floatToRawIntBits(java.lang.Float.MIN_VALUE);
+            case Double:
+                return java.lang.Double.doubleToRawLongBits(java.lang.Double.MIN_VALUE);
             default:
                 throw new IllegalArgumentException("illegal call to minValue on " + this);
         }
     }
 
     /**
-     * The maximum value that can be represented as a value of this kind.
+     * Gets the maximum value that can be represented as a value of this kind.
      *
-     * @return the maximum value
+     * @return the maximum value represented as a {@code long}
      */
     public long getMaxValue() {
         switch (this) {
@@ -411,6 +419,10 @@ public enum JavaKind {
                 return java.lang.Integer.MAX_VALUE;
             case Long:
                 return java.lang.Long.MAX_VALUE;
+            case Float:
+                return java.lang.Float.floatToRawIntBits(java.lang.Float.MAX_VALUE);
+            case Double:
+                return java.lang.Double.doubleToRawLongBits(java.lang.Double.MAX_VALUE);
             default:
                 throw new IllegalArgumentException("illegal call to maxValue on " + this);
         }

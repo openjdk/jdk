@@ -24,7 +24,7 @@
 package jdk.test.lib.jittester.factories;
 
 import java.util.LinkedList;
-import jdk.test.lib.jittester.IRNode;
+
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.SymbolTable;
 import jdk.test.lib.jittester.Type;
@@ -34,10 +34,10 @@ import jdk.test.lib.jittester.VariableInfo;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class VariableDeclarationFactory extends Factory {
-    protected final boolean isStatic;
-    protected final boolean isLocal;
-    protected final TypeKlass ownerClass;
+class VariableDeclarationFactory extends Factory<VariableDeclaration> {
+    private final boolean isStatic;
+    private final boolean isLocal;
+    private final TypeKlass ownerClass;
     private Type resultType;
 
     VariableDeclarationFactory(TypeKlass ownerClass, boolean isStatic, boolean isLocal, Type resultType) {
@@ -48,8 +48,8 @@ class VariableDeclarationFactory extends Factory {
     }
 
     @Override
-    public  IRNode produce() throws ProductionFailedException {
-        if (resultType == TypeList.getVoid()) {
+    public VariableDeclaration produce() throws ProductionFailedException {
+        if (resultType.equals(TypeList.VOID)) {
             LinkedList<Type> types = new LinkedList<>(TypeList.getAll());
             PseudoRandom.shuffle(types);
             if (types.isEmpty()) {

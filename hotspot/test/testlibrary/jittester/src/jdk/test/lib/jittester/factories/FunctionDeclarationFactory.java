@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Symbol;
 import jdk.test.lib.jittester.SymbolTable;
@@ -39,10 +38,9 @@ import jdk.test.lib.jittester.functions.FunctionDeclaration;
 import jdk.test.lib.jittester.functions.FunctionDefinition;
 import jdk.test.lib.jittester.functions.FunctionInfo;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeVoid;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class FunctionDeclarationFactory extends Factory {
+class FunctionDeclarationFactory extends Factory<FunctionDeclaration> {
     private final Type resultType;
     private final TypeKlass ownerClass;
     private final String name;
@@ -59,11 +57,11 @@ class FunctionDeclarationFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public FunctionDeclaration produce() throws ProductionFailedException {
         Type resType = resultType;
         if (resType == null) {
             List<Type> types = new ArrayList<>(TypeList.getAll());
-            types.add(new TypeVoid());
+            types.add(TypeList.VOID);
             resType = PseudoRandom.randomElement(types);
         }
         int argNumber = (int) (PseudoRandom.random() * memberFunctionsArgLimit);

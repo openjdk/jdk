@@ -1678,8 +1678,14 @@ void GenerateOopMap::ppdupswap(int poplen, const char *out) {
   CellTypeState actual[5];
   assert(poplen < 5, "this must be less than length of actual vector");
 
-  // pop all arguments
-  for(int i = 0; i < poplen; i++) actual[i] = pop();
+  // Pop all arguments.
+  for (int i = 0; i < poplen; i++) {
+    actual[i] = pop();
+  }
+  // Field _state is uninitialized when calling push.
+  for (int i = poplen; i < 5; i++) {
+    actual[i] = CellTypeState::uninit;
+  }
 
   // put them back
   char push_ch = *out++;

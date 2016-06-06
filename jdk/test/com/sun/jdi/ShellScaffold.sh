@@ -131,11 +131,13 @@ killcmd=kill
 
 # This can be increased if timing seems to be an issue.
 sleep_seconds=1
-if [ -n "$TIMEOUT_FACTOR" ] ; then
-  sleep_seconds=$(echo $TIMEOUT_FACTOR $sleep_seconds | awk '{printf "%d\n", int($1 * $2)}')
+timeout_factor=1
+if [ -n "$TESTTIMEOUTFACTOR" ] ; then
+  # convert float value to int
+  timeout_factor=$(echo $TESTTIMEOUTFACTOR | awk '{printf "%d\n", int($1)}')
 fi
 
-echo "ShellScaffold.sh: Version" >& 2
+echo "ShellScaffold.sh: Running with timeout_factor = $timeout_factor" >& 2
 topPid=$$
 
 # Be careful to echo to >& in these general functions.
@@ -664,6 +666,7 @@ cmd()
     count=0
     desiredFileSize=`expr $fileSize + 4`
     msg1=`echo At start: cmd/size/waiting : $command / $fileSize / \`date\``
+    timeLimit=`expr 60 * $timeout_factor`
     while [ 1 = 1 ] ; do
         newFileSize=`wc -c $jdbOutFile | awk '{ print $1 } '`
         #echo jj: desired = $desiredFileSize, new = $newFileSize >& 2
@@ -673,20 +676,17 @@ cmd()
             break
         fi
         sleep ${sleep_seconds}
-        count=`expr $count + 1`
-        if [ $count = 30 -o $count = 60 ] ; then
+        count=`expr $count + ${sleep_seconds}`        
+        if [ $count -gt $timeLimit ] ; then
             # record some debug info.
-            echo "--DEBUG: jdb $$ didn't responded to command in $count secs: $command" >& 2
+            echo "--DEBUG: jdb $$ didn't respond to command in $count secs: $command" >& 2
             echo "--DEBUG:" $msg1 >& 2
             echo "--DEBUG: "done size/waiting : / $newFileSize  / `date` >& 2
             echo "-- $jdbOutFile follows-------------------------------" >& 2
             cat $jdbOutFile >& 2
             echo "------------------------------------------" >& 2
             dojstack
-            #$psCmd | sed -e '/com.sun.javatest/d' -e '/nsk/d' >& 2
-            if [ $count = 60 ] ; then
-                dofail "jdb never responded to command: $command"
-            fi
+            dofail "jdb never responded to command: $command"
         fi
     done
     # Note that this assumes just these chars in thread names.
@@ -734,7 +734,8 @@ waitForJdbMsg()
     nlines=$2
     allowExit="$3"
     myCount=0
-    timeLimit=40  # wait a max of this many secs for a response from a jdb command
+    timeLimit=`expr 40 * $timeout_factor`  # wait a max of this many secs for a response from a jdb command
+
     while [ 1 = 1 ] ; do 
         if [  -r $jdbOutFile ] ; then
             # Something here causes jdb to complain about Unrecognized cmd on x86.
@@ -772,7 +773,7 @@ waitForJdbMsg()
 
         myCount=`expr $myCount + ${sleep_seconds}`
         if [ $myCount -gt $timeLimit ] ; then
-            echo "--Fail: waitForJdbMsg timed out after $timeLimit seconds, looking for /$1/, in $nlines lines; exitting" >> $failFile
+            echo "--Fail: waitForJdbMsg timed out after $timeLimit seconds, looking for /$1/, in $nlines lines; exiting" >> $failFile
             echo "vv jdbOutFile  vvvvvvvvvvvvvvvvvvvvvvvvvvvv" >& 2
             cat $jdbOutFile >& 2
             echo "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" >& 2

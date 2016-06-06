@@ -560,6 +560,7 @@ public class ToolBasicTest extends ReplToolTesting {
         );
     }
 
+    @Test(enabled = false) // TODO 8158197
     public void testHeadlessEditPad() {
         String prevHeadless = System.getProperty("java.awt.headless");
         try {

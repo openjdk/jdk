@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -83,10 +83,10 @@ public class JavaTimeSupplementary_sr extends OpenListResourceBundle {
             },
             { "QuarterNames",
                 new String[] {
-                    "\u041f\u0440\u0432\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
-                    "\u0414\u0440\u0443\u0433\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
-                    "\u0422\u0440\u0435\u045b\u0435 \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
-                    "\u0427\u0435\u0442\u0432\u0440\u0442\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
+                    "\u043f\u0440\u0432\u0438 \u043a\u0432\u0430\u0440\u0442\u0430\u043b",
+                    "\u0434\u0440\u0443\u0433\u0438 \u043a\u0432\u0430\u0440\u0442\u0430\u043b",
+                    "\u0442\u0440\u0435\u045b\u0438 \u043a\u0432\u0430\u0440\u0442\u0430\u043b",
+                    "\u0447\u0435\u0442\u0432\u0440\u0442\u0438 \u043a\u0432\u0430\u0440\u0442\u0430\u043b",
                 }
             },
             { "QuarterNarrows",
@@ -211,10 +211,10 @@ public class JavaTimeSupplementary_sr extends OpenListResourceBundle {
             },
             { "islamic.QuarterNames",
                 new String[] {
-                    "\u041f\u0440\u0432\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
-                    "\u0414\u0440\u0443\u0433\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
-                    "\u0422\u0440\u0435\u045b\u0435 \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
-                    "\u0427\u0435\u0442\u0432\u0440\u0442\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
+                    "\u043f\u0440\u0432\u0438 \u043a\u0432\u0430\u0440\u0442\u0430\u043b",
+                    "\u0434\u0440\u0443\u0433\u0438 \u043a\u0432\u0430\u0440\u0442\u0430\u043b",
+                    "\u0442\u0440\u0435\u045b\u0438 \u043a\u0432\u0430\u0440\u0442\u0430\u043b",
+                    "\u0447\u0435\u0442\u0432\u0440\u0442\u0438 \u043a\u0432\u0430\u0440\u0442\u0430\u043b",
                 }
             },
             { "islamic.QuarterNarrows",
@@ -233,10 +233,22 @@ public class JavaTimeSupplementary_sr extends OpenListResourceBundle {
                     "HH.mm",
                 }
             },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "\u043f\u0440\u0435 \u043f\u043e\u0434\u043d\u0435",
+                    "\u043f\u043e \u043f\u043e\u0434\u043d\u0435",
+                }
+            },
             { "islamic.long.Eras",
                 new String[] {
                     "",
                     "\u0410\u0425",
+                }
+            },
+            { "islamic.narrow.AmPmMarkers",
+                new String[] {
+                    "a",
+                    "p",
                 }
             },
             { "islamic.narrow.Eras",
@@ -289,7 +301,7 @@ public class JavaTimeSupplementary_sr extends OpenListResourceBundle {
             },
             { "java.time.japanese.long.Eras",
                 new String[] {
-                    "\u041d\u043e\u0432\u0435 \u0435\u0440\u0435",
+                    "\u043d\u043e\u0432\u0435 \u0435\u0440\u0435",
                     "\u041c\u0435\u0438\u0452\u0438",
                     "\u0422\u0430\u0438\u0448\u043e",
                     "\u0428\u043e\u0432\u0430",
@@ -307,8 +319,8 @@ public class JavaTimeSupplementary_sr extends OpenListResourceBundle {
             },
             { "java.time.long.Eras",
                 new String[] {
-                    "\u041f\u0440\u0435 \u043d\u043e\u0432\u0435 \u0435\u0440\u0435",
-                    "\u041d\u043e\u0432\u0435 \u0435\u0440\u0435",
+                    "\u043f\u0440\u0435 \u043d\u043e\u0432\u0435 \u0435\u0440\u0435",
+                    "\u043d\u043e\u0432\u0435 \u0435\u0440\u0435",
                 }
             },
             { "java.time.roc.DatePatterns",
@@ -439,10 +451,10 @@ public class JavaTimeSupplementary_sr extends OpenListResourceBundle {
             },
             { "roc.QuarterNames",
                 new String[] {
-                    "\u041f\u0440\u0432\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
-                    "\u0414\u0440\u0443\u0433\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
-                    "\u0422\u0440\u0435\u045b\u0435 \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
-                    "\u0427\u0435\u0442\u0432\u0440\u0442\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
+                    "\u043f\u0440\u0432\u0438 \u043a\u0432\u0430\u0440\u0442\u0430\u043b",
+                    "\u0434\u0440\u0443\u0433\u0438 \u043a\u0432\u0430\u0440\u0442\u0430\u043b",
+                    "\u0442\u0440\u0435\u045b\u0438 \u043a\u0432\u0430\u0440\u0442\u0430\u043b",
+                    "\u0447\u0435\u0442\u0432\u0440\u0442\u0438 \u043a\u0432\u0430\u0440\u0442\u0430\u043b",
                 }
             },
             { "roc.QuarterNarrows",
@@ -461,10 +473,22 @@ public class JavaTimeSupplementary_sr extends OpenListResourceBundle {
                     "HH.mm",
                 }
             },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "\u043f\u0440\u0435 \u043f\u043e\u0434\u043d\u0435",
+                    "\u043f\u043e \u043f\u043e\u0434\u043d\u0435",
+                }
+            },
             { "roc.long.Eras",
                 new String[] {
                     "\u041f\u0440\u0435 \u0420\u041a",
                     "\u0420\u041a",
+                }
+            },
+            { "roc.narrow.AmPmMarkers",
+                new String[] {
+                    "a",
+                    "p",
                 }
             },
             { "roc.narrow.Eras",

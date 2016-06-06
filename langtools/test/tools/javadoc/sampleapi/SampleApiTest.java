@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,24 +24,31 @@
 /*
  * @test
  * @bug 8130880
- * @library lib
+ * @library /jdk/javadoc/tool/sampleapi/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.parser
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
- * @run main sampleapi.SampleApiDefaultRunner -o:out/src
  * @run main SampleApiTest
  */
 
 import com.sun.tools.javadoc.*;
+import sampleapi.*;
 
 public class SampleApiTest {
 
-    public static void main(String... args) {
+    public static void main(String... args) throws Exception {
+
+        // generate
+        SampleApiDefaultRunner.execute(
+            new String[] {
+                "-o=out/src",
+                "-r=" + System.getProperty("test.src") + "/res"
+            });
 
         // html4
-        Main.execute(
+        int res1 = Main.execute(
             new String[] {
                 "-d", "out/doc.html4",
                 "-verbose",
@@ -54,12 +61,13 @@ public class SampleApiTest {
                 "-windowtitle", "SampleAPI",
                 "-sourcepath", "out/src",
                 "sampleapi.simple",
+                "sampleapi.simple.sub",
                 "sampleapi.tiny",
                 "sampleapi.fx"
             });
 
         // html5
-        Main.execute(
+        int res2 = Main.execute(
             new String[] {
                 "-d", "out/doc.html5",
                 "-verbose",
@@ -72,8 +80,13 @@ public class SampleApiTest {
                 "-windowtitle", "SampleAPI",
                 "-sourcepath", "out/src",
                 "sampleapi.simple",
+                "sampleapi.simple.sub",
                 "sampleapi.tiny",
                 "sampleapi.fx"
             });
+
+        if (res1 + res2 > 0)
+            throw new Exception("One of exit statuses of test execution is non-zero: "
+                + res1 + " for HTML4, " + res2 + " for HTML5.");
     }
 }
