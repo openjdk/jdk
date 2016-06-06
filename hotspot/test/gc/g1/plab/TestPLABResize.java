@@ -94,10 +94,7 @@ public class TestPLABResize {
             List<String> options = PLABUtils.prepareOptions(testCase.toOptions());
             options.add(AppPLABResize.class.getName());
             OutputAnalyzer out = ProcessTools.executeTestJvm(options.toArray(new String[options.size()]));
-            if (out.getExitValue() != 0) {
-                System.out.println(out.getOutput());
-                throw new RuntimeException("Exit code is not 0");
-            }
+            PLABUtils.commonCheck(out);
             checkResults(out.getOutput(), testCase);
         }
     }
@@ -124,6 +121,11 @@ public class TestPLABResize {
         // The test case does 3 rounds of allocations.  The second round of N allocations and GC's
         // has a decreasing size of allocations so that iterations N to 2*N -1 will be of decreasing size.
         // The third round with iterations 2*N to 3*N -1 has increasing sizes of allocation.
+        if ( plabSizes.size() != testCase.iterations * 3 ) {
+            System.out.println(output);
+            throw new RuntimeException ("Expects for " + testCase.iterations * 3 + " PLAB entries in log, found " + plabSizes.size());
+        }
+
         long startDesiredPLABSize = plabSizes.get(testCase.getIterations());
         long endDesiredPLABSize = plabSizes.get(testCase.getIterations() * 2 - 1);
 

@@ -25,6 +25,7 @@
 
 package jdk.internal.jshell.jdi;
 
+import java.util.function.Consumer;
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
 
@@ -34,16 +35,20 @@ import com.sun.jdi.event.*;
  */
 class JDIEventHandler implements Runnable {
 
-    Thread thread;
-    volatile boolean connected = true;
-    boolean completed = false;
-    String shutdownMessageKey;
-    final JDIEnv env;
+    private final Thread thread;
+    private volatile boolean connected = true;
+    private boolean completed = false;
+    private final VirtualMachine vm;
+    private final Consumer<Boolean> reportVMExit;
 
-    JDIEventHandler(JDIEnv env) {
-        this.env = env;
+    JDIEventHandler(VirtualMachine vm, Consumer<Boolean> reportVMExit) {
+        this.vm = vm;
+        this.reportVMExit = reportVMExit;
         this.thread = new Thread(this, "event-handler");
-        this.thread.start();
+    }
+
+    void start() {
+        thread.start();
     }
 
     synchronized void shutdown() {
@@ -56,7 +61,7 @@ class JDIEventHandler implements Runnable {
 
     @Override
     public void run() {
-        EventQueue queue = env.vm().eventQueue();
+        EventQueue queue = vm.eventQueue();
         while (connected) {
             try {
                 EventSet eventSet = queue.remove();
@@ -111,27 +116,23 @@ class JDIEventHandler implements Runnable {
     private void handleExitEvent(Event event) {
         if (event instanceof VMDeathEvent) {
             vmDied = true;
-            shutdownMessageKey = "The application exited";
         } else if (event instanceof VMDisconnectEvent) {
             connected = false;
-            if (!vmDied) {
-                shutdownMessageKey = "The application has been disconnected";
-            }
         } else {
             throw new InternalError("Unexpected event type: " +
                     event.getClass());
         }
-        env.shutdown();
+        reportVMExit.accept(vmDied);
     }
 
-    synchronized void handleDisconnectedException() {
+    private synchronized void handleDisconnectedException() {
         /*
          * A VMDisconnectedException has happened while dealing with
          * another event. We need to flush the event queue, dealing only
          * with exit events (VMDeath, VMDisconnect) so that we terminate
          * correctly.
          */
-        EventQueue queue = env.vm().eventQueue();
+        EventQueue queue = vm.eventQueue();
         while (connected) {
             try {
                 EventSet eventSet = queue.remove();

@@ -26,7 +26,7 @@ package jdk.test.lib.jittester.factories;
 import jdk.test.lib.jittester.Nothing;
 import jdk.test.lib.jittester.ProductionFailedException;
 
-public class NothingFactory extends Factory {
+public class NothingFactory extends Factory<Nothing> {
     @Override
     public Nothing produce() throws ProductionFailedException {
         return new Nothing();

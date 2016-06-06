@@ -22,15 +22,58 @@
  */
 package jdk.vm.ci.meta;
 
-public interface Local {
+public class Local {
 
-    int getStartBCI();
+    private final String name;
+    private final int startBci;
+    private final int endBci;
+    private final int slot;
+    private final JavaType type;
 
-    int getEndBCI();
+    public Local(String name, JavaType type, int startBci, int endBci, int slot) {
+        this.name = name;
+        this.startBci = startBci;
+        this.endBci = endBci;
+        this.slot = slot;
+        this.type = type;
+    }
 
-    int getSlot();
+    public int getStartBCI() {
+        return startBci;
+    }
 
-    String getName();
+    public int getEndBCI() {
+        return endBci;
+    }
 
-    JavaType getType();
+    public String getName() {
+        return name;
+    }
+
+    public JavaType getType() {
+        return type;
+    }
+
+    public int getSlot() {
+        return slot;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Local)) {
+            return false;
+        }
+        Local that = (Local) obj;
+        return this.name.equals(that.name) && this.startBci == that.startBci && this.endBci == that.endBci && this.slot == that.slot && this.type.equals(that.type);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "LocalImpl<name=" + name + ", type=" + type + ", startBci=" + startBci + ", endBci=" + endBci + ", slot=" + slot + ">";
+    }
 }

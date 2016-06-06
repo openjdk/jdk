@@ -29,8 +29,48 @@ package java.lang;
  * A helper class to get access to package-private members
  */
 public class Helper {
-  @jdk.internal.vm.annotation.ForceInline
-  public static boolean StringCodingHasNegatives(byte[] ba, int off, int len) {
-    return StringCoding.hasNegatives(ba, off, len);
-  }
+    @jdk.internal.vm.annotation.ForceInline
+    public static boolean StringCodingHasNegatives(byte[] ba, int off, int len) {
+        return StringCoding.hasNegatives(ba, off, len);
+    }
+
+    @jdk.internal.vm.annotation.ForceInline
+    public static byte[] compressByte(byte[] src, int srcOff, int dstSize, int dstOff, int len) {
+        byte[] dst = new byte[dstSize];
+        StringUTF16.compress(src, srcOff, dst, dstOff, len);
+        return dst;
+    }
+
+    @jdk.internal.vm.annotation.ForceInline
+    public static byte[] compressChar(char[] src, int srcOff, int dstSize, int dstOff, int len) {
+        byte[] dst = new byte[dstSize];
+        StringUTF16.compress(src, srcOff, dst, dstOff, len);
+        return dst;
+    }
+
+    @jdk.internal.vm.annotation.ForceInline
+    public static byte[] inflateByte(byte[] src, int srcOff, int dstSize, int dstOff, int len) {
+        byte[] dst = new byte[dstSize];
+        StringLatin1.inflate(src, srcOff, dst, dstOff, len);
+        return dst;
+    }
+
+    @jdk.internal.vm.annotation.ForceInline
+    public static char[] inflateChar(byte[] src, int srcOff, int dstSize, int dstOff, int len) {
+        char[] dst = new char[dstSize];
+        StringLatin1.inflate(src, srcOff, dst, dstOff, len);
+        return dst;
+    }
+
+    @jdk.internal.vm.annotation.ForceInline
+    public static byte[] toBytes(char[] value, int off, int len) {
+        return StringUTF16.toBytes(value, off, len);
+    }
+
+    @jdk.internal.vm.annotation.ForceInline
+    public static char[] getChars(byte[] value, int srcBegin, int srcEnd, int dstSize, int dstBegin) {
+        char[] dst = new char[dstSize];
+        StringUTF16.getChars(value, srcBegin, srcEnd, dst, dstBegin);
+        return dst;
+    }
 }

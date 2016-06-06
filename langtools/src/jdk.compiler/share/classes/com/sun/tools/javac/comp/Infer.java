@@ -1724,7 +1724,7 @@ public class Infer {
 
                 @Override
                 public GraphUtils.DependencyKind[] getSupportedDependencyKinds() {
-                    return DependencyKind.values();
+                    return new GraphUtils.DependencyKind[] { DependencyKind.BOUND };
                 }
 
                 public Iterable<? extends Node> getAllDependencies() {

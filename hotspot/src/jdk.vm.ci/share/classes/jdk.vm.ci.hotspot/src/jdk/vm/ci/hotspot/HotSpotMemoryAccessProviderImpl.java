@@ -33,7 +33,7 @@ import jdk.vm.ci.meta.PrimitiveConstant;
 /**
  * HotSpot implementation of {@link MemoryAccessProvider}.
  */
-class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider, HotSpotProxified {
+class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
 
     protected final HotSpotJVMCIRuntimeProvider runtime;
 
@@ -135,7 +135,7 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider, Ho
         if (base == null) {
             assert !compressed;
             displacement += asRawPointer(baseConstant);
-            ret = runtime.getCompilerToVM().readUncompressedOop(displacement);
+            ret = UNSAFE.getUncompressedObject(displacement);
         } else {
             assert runtime.getConfig().useCompressedOops == compressed;
             ret = UNSAFE.getObject(base, displacement);
@@ -231,17 +231,5 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider, Ho
         Object baseObject = ((HotSpotObjectConstantImpl) base).object();
         HotSpotResolvedJavaMethodImpl method = runtime.getCompilerToVM().getResolvedJavaMethod(baseObject, displacement);
         return HotSpotMetaspaceConstantImpl.forMetaspaceObject(method, false);
-    }
-
-    @Override
-    public Constant readSymbolConstant(Constant base, long displacement) {
-        int bits = runtime.getConfig().symbolPointerSize * Byte.SIZE;
-        long pointer = readRawValue(base, displacement, bits);
-        if (pointer == 0) {
-            return JavaConstant.NULL_POINTER;
-        } else {
-            String symbol = runtime.getCompilerToVM().getSymbol(pointer);
-            return new HotSpotSymbol(symbol, pointer).asConstant();
-        }
     }
 }

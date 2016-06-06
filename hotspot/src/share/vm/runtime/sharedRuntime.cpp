@@ -3084,49 +3084,25 @@ JRT_END
 
 frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* thread, frame fr) {
   frame activation;
-  int decode_offset = 0;
-  nmethod* nm = NULL;
-  frame prv_fr = fr;
+  CompiledMethod* nm = NULL;
   int count = 1;
 
   assert(fr.is_java_frame(), "Must start on Java frame");
 
-  while (!fr.is_first_frame()) {
+  while (true) {
     Method* method = NULL;
-    // Compiled java method case.
-    if (decode_offset != 0) {
-      DebugInfoReadStream stream(nm, decode_offset);
-      decode_offset = stream.read_int();
-      method = (Method*)nm->metadata_at(stream.read_int());
+    if (fr.is_interpreted_frame()) {
+      method = fr.interpreter_frame_method();
     } else {
-      if (fr.is_first_java_frame()) break;
-      address pc = fr.pc();
-      prv_fr = fr;
-      if (fr.is_interpreted_frame()) {
-        method = fr.interpreter_frame_method();
-        fr = fr.java_sender();
-      } else {
-        CodeBlob* cb = fr.cb();
-        fr = fr.java_sender();
-        if (cb == NULL || !cb->is_nmethod()) {
-          continue;
-        }
-        nm = (nmethod*)cb;
-        if (nm->method()->is_native()) {
-          method = nm->method();
-        } else {
-          PcDesc* pd = nm->pc_desc_at(pc);
-          assert(pd != NULL, "PcDesc must not be NULL");
-          decode_offset = pd->scope_decode_offset();
-          // if decode_offset is not equal to 0, it will execute the
-          // "compiled java method case" at the beginning of the loop.
-          continue;
-        }
+      CodeBlob* cb = fr.cb();
+      if (cb != NULL && cb->is_compiled()) {
+        nm = cb->as_compiled_method();
+        method = nm->method();
       }
     }
-    if (method->has_reserved_stack_access()) {
+    if ((method != NULL) && method->has_reserved_stack_access()) {
       ResourceMark rm(thread);
-      activation = prv_fr;
+      activation = fr;
       warning("Potentially dangerous stack overflow in "
               "ReservedStackAccess annotated method %s [%d]",
               method->name_and_sig_as_C_string(), count++);
@@ -3135,6 +3111,11 @@ frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* thread
         event.set_method(method);
         event.commit();
       }
+    }
+    if (fr.is_first_java_frame()) {
+      break;
+    } else {
+      fr = fr.java_sender();
     }
   }
   return activation;

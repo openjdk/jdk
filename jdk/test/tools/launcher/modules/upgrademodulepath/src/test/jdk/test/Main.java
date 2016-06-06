@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,12 @@
 
 package jdk.test;
 
-import javax.transaction.Transaction;
+import java.lang.module.ModuleReference;
+import java.lang.reflect.Layer;
+import java.net.URI;
+
 import javax.enterprise.context.Scope;
+import javax.transaction.Transaction;
 
 /**
  * Uses an upgraded version of module java.transaction.
@@ -34,6 +38,7 @@ public class Main {
 
     public static void main(String[] args) {
 
+        String TRANSACTION_MODULE = "java.transaction";
         ClassLoader scl = ClassLoader.getSystemClassLoader();
         ClassLoader pcl = ClassLoader.getPlatformClassLoader();
         assertTrue(pcl.getParent() == null);
@@ -43,8 +48,16 @@ public class Main {
 
         // javax.transaction.Transaction should be in module java.transaction
         // and defined by the platform class loader
-        assertTrue(Transaction.class.getModule().getName().equals("java.transaction"));
+        assertTrue(Transaction.class.getModule().getName().equals(TRANSACTION_MODULE));
         assertTrue(Transaction.class.getClassLoader() == pcl);
+
+        // javax.transaction should be found in boot layer.
+        ModuleReference ref =
+                Layer.boot().configuration().findModule(TRANSACTION_MODULE).get().reference();
+        // check uri of java.transaction found on the upgrade module path.
+        URI uri = ref.location().get();
+        System.out.println("uri: " + uri);
+        assertTrue(uri.getScheme().equalsIgnoreCase("file"));
 
         // javax.enterprise.context.Scope should be in module java.enterprise
         // and defined by the application class loader
