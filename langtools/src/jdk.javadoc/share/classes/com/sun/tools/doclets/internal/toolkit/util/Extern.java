@@ -50,6 +50,7 @@ import com.sun.tools.doclets.internal.toolkit.*;
  * @author Atul M Dambalkar
  * @author Robert Field
  */
+@Deprecated
 public class Extern {
 
     /**

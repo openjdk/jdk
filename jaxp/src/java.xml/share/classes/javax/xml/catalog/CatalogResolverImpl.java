@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ final class CatalogResolverImpl implements CatalogResolver {
         publicId = Normalizer.normalizePublicId(Normalizer.decodeURN(Util.getNotNullOrEmpty(publicId)));
 
         //check whether systemId is an urn
-        if (systemId != null && systemId.startsWith("urn:publicid:")) {
+        if (systemId != null && systemId.startsWith(Util.URN)) {
             systemId = Normalizer.decodeURN(systemId);
             if (publicId != null && !publicId.equals(systemId)) {
                 systemId = null;
@@ -67,7 +67,7 @@ final class CatalogResolverImpl implements CatalogResolver {
         }
 
         CatalogImpl c = (CatalogImpl)catalog;
-        String resolvedSystemId = resolve(c, publicId, systemId);
+        String resolvedSystemId = Util.resolve(c, publicId, systemId);
 
         if (resolvedSystemId != null) {
             return new InputSource(resolvedSystemId);
@@ -86,55 +86,4 @@ final class CatalogResolverImpl implements CatalogResolver {
         return null;
     }
 
-    /**
-     * Resolves the publicId or systemId using public or system entries in the catalog.
-     *
-     * The resolution follows the following rules determined by the prefer setting:
-     *
-     * prefer "system": attempts to resolve with a system entry;
-     *                  attempts to resolve with a public entry when only
-     *                  publicId is specified.
-     *
-     * prefer "public": attempts to resolve with a system entry;
-     *                  attempts to resolve with a public entry if no matching
-     *                  system entry is found.
-     * @param catalog the catalog
-     * @param publicId the publicId
-     * @param systemId the systemId
-     * @return the resolved systemId if a match is found, null otherwise
-     */
-    String resolve(CatalogImpl catalog, String publicId, String systemId) {
-        String resolvedSystemId = null;
-
-        //search the current catalog
-        catalog.reset();
-        if (systemId != null) {
-            /*
-               If a system identifier is specified, it is used no matter how
-            prefer is set.
-            */
-            resolvedSystemId = catalog.matchSystem(systemId);
-        }
-
-        if (resolvedSystemId == null && publicId != null) {
-            resolvedSystemId = catalog.matchPublic(publicId);
-        }
-
-        //mark the catalog as having been searched before trying alternatives
-        catalog.markAsSearched();
-
-        //search alternative catalogs
-        if (resolvedSystemId == null) {
-            Iterator<Catalog> iter = catalog.catalogs().iterator();
-            while (iter.hasNext()) {
-                resolvedSystemId = resolve((CatalogImpl)iter.next(), publicId, systemId);
-                if (resolvedSystemId != null) {
-                    break;
-                }
-
-            }
-        }
-
-        return resolvedSystemId;
-    }
 }

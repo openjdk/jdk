@@ -28,6 +28,9 @@ package jdk.testlibrary;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.InputStreamReader;
 
 import static jdk.testlibrary.OSInfo.OSType.*;
 
@@ -145,6 +148,28 @@ public class OSInfo {
 
             return result;
         }
+    }
+
+    public static double getSolarisVersion() {
+        try {
+            OutputAnalyzer output = ProcessTools.executeProcess("uname", "-v");
+            System.out.println("'uname -v' finished with code "
+                    + output.getExitValue());
+            return Double.parseDouble(output.getOutput());
+        } catch (Exception e) {
+            System.out.println("First attempt failed with: " + e.getMessage());
+        }
+
+        //Try to get Solaris version from /etc/release
+        try (BufferedReader in =
+                     new BufferedReader(new FileReader("/etc/release"))) {
+            String line = in.readLine().trim().split(" ")[2];
+            return Double.parseDouble(line);
+        } catch (Exception e) {
+            System.out.println("Second attempt failed with: " + e.getMessage());
+        }
+
+        throw new RuntimeException("Unable to get Solaris version");
     }
 
     public static class WindowsVersion implements Comparable<WindowsVersion> {

@@ -47,7 +47,8 @@ import org.w3c.dom.DOMImplementation;
  *  The <code>HTMLDOMImplementation</code> interface extends the
  * <code>DOMImplementation</code> interface with a method for creating an
  * HTML document instance.
- * @since DOM Level 2
+ *
+ * @since 1.4, DOM Level 2
  */
 public interface HTMLDOMImplementation extends DOMImplementation {
     /**

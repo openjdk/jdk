@@ -31,7 +31,13 @@ package com.sun.javadoc;
  *
  * @author Scott Seligman
  * @since 1.5
+ *
+ * @deprecated
+ *   The declarations in this package have been superseded by those
+ *   in the package {@code jdk.javadoc.doclet}.
+ *   For more information, see the <i>Migration Guide</i> in the documentation for that package.
  */
+@Deprecated
 public interface AnnotationValue {
 
     /**

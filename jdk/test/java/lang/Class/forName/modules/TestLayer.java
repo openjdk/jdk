@@ -46,7 +46,7 @@ public class TestLayer {
         ModuleFinder finder = ModuleFinder.of(MODS_DIR);
 
         Configuration parent = Layer.boot().configuration();
-        Configuration cf = parent.resolveRequiresAndUses(ModuleFinder.empty(),
+        Configuration cf = parent.resolveRequiresAndUses(ModuleFinder.of(),
                                                          finder,
                                                          modules);
 

@@ -30,4 +30,3 @@ public class Foo extends Bar implements c.I {
       setF(new f.F());
    }
 }
-

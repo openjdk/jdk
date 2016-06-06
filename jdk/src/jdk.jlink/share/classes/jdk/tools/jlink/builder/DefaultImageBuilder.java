@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,8 +25,6 @@
  */
 package jdk.tools.jlink.builder;
 
-import jdk.tools.jlink.plugin.ExecutableImage;
-import jdk.tools.jlink.plugin.PluginException;
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -47,8 +46,10 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
@@ -56,23 +57,40 @@ import java.util.Set;
 import jdk.tools.jlink.internal.BasicImageWriter;
 import jdk.tools.jlink.internal.plugins.FileCopierPlugin;
 import jdk.tools.jlink.internal.plugins.FileCopierPlugin.SymImageFile;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.Module;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
+import jdk.tools.jlink.plugin.ExecutableImage;
+import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.PluginException;
 
 /**
  *
  * Default Image Builder. This builder creates the default runtime image layout.
  */
-public class DefaultImageBuilder implements ImageBuilder {
+public final class DefaultImageBuilder implements ImageBuilder {
 
     /**
      * The default java executable Image.
      */
-    static class DefaultExecutableImage extends ExecutableImage {
+    static final class DefaultExecutableImage implements ExecutableImage {
+
+        private final Path home;
+        private final List<String> args;
+        private final Set<String> modules;
 
         public DefaultExecutableImage(Path home, Set<String> modules) {
-            super(home, modules, createArgs(home));
+            this(home, modules, createArgs(home));
+        }
+
+        private DefaultExecutableImage(Path home, Set<String> modules,
+                List<String> args) {
+            Objects.requireNonNull(home);
+            Objects.requireNonNull(args);
+            if (!Files.exists(home)) {
+                throw new IllegalArgumentException("Invalid image home");
+            }
+            this.home = home;
+            this.modules = Collections.unmodifiableSet(modules);
+            this.args = Collections.unmodifiableList(args);
         }
 
         private static List<String> createArgs(Path home) {
@@ -81,6 +99,21 @@ public class DefaultImageBuilder implements ImageBuilder {
             javaArgs.add(home.resolve("bin").
                     resolve(getJavaProcessName()).toString());
             return javaArgs;
+        }
+
+        @Override
+        public Path getHome() {
+            return home;
+        }
+
+        @Override
+        public Set<String> getModules() {
+            return modules;
+        }
+
+        @Override
+        public List<String> getExecutionArgs() {
+            return args;
         }
 
         @Override
@@ -111,17 +144,19 @@ public class DefaultImageBuilder implements ImageBuilder {
         Files.createDirectories(mdir);
     }
 
-    private void storeFiles(Set<String> modules, Properties release) throws IOException {
+    private void storeFiles(Set<String> modules, Map<String, String> release) throws IOException {
         if (release != null) {
-            addModules(release, modules);
+            Properties props = new Properties();
+            props.putAll(release);
+            addModules(props, modules);
             File r = new File(root.toFile(), "release");
             try (FileOutputStream fo = new FileOutputStream(r)) {
-                release.store(fo, null);
+                props.store(fo, null);
             }
         }
     }
 
-    private void addModules(Properties release, Set<String> modules) throws IOException {
+    private void addModules(Properties props, Set<String> modules) throws IOException {
         StringBuilder builder = new StringBuilder();
         int i = 0;
         for (String m : modules) {
@@ -131,28 +166,32 @@ public class DefaultImageBuilder implements ImageBuilder {
             }
             i++;
         }
-        release.setProperty("MODULES", builder.toString());
+        props.setProperty("MODULES", builder.toString());
     }
 
     @Override
-    public void storeFiles(Pool files, Properties release) {
+    public void storeFiles(ModulePool files) {
         try {
-            for (ModuleData f : files.getContent()) {
-               if (!f.getType().equals(Pool.ModuleDataType.CLASS_OR_RESOURCE)) {
-                    accept(f);
+            files.entries().forEach(f -> {
+                if (!f.getType().equals(ModuleEntry.Type.CLASS_OR_RESOURCE)) {
+                    try {
+                        accept(f);
+                    } catch (IOException ioExp) {
+                        throw new UncheckedIOException(ioExp);
+                    }
                 }
-            }
-            for (Module m : files.getModules()) {
+            });
+            files.modules().forEach(m -> {
                 // Only add modules that contain packages
                 if (!m.getAllPackages().isEmpty()) {
                     // Skip the fake module used by FileCopierPlugin when copying files.
                     if (m.getName().equals(FileCopierPlugin.FAKE_MODULE)) {
-                       continue;
+                        return;
                     }
                     modules.add(m.getName());
                 }
-            }
-            storeFiles(modules, release);
+            });
+            storeFiles(modules, files.getReleaseProperties());
 
             if (Files.getFileStore(root).supportsFileAttributeView(PosixFileAttributeView.class)) {
                 // launchers in the bin directory need execute permission
@@ -168,8 +207,8 @@ public class DefaultImageBuilder implements ImageBuilder {
                 Path lib = root.resolve("lib");
                 if (Files.isDirectory(lib)) {
                     Files.find(lib, 2, (path, attrs) -> {
-                        return path.getFileName().toString().equals("jspawnhelper") ||
-                               path.getFileName().toString().equals("jexec");
+                        return path.getFileName().toString().equals("jspawnhelper")
+                                || path.getFileName().toString().equals("jexec");
                     }).forEach(this::setExecutable);
                 }
             }
@@ -180,27 +219,23 @@ public class DefaultImageBuilder implements ImageBuilder {
         }
     }
 
-    @Override
-    public void storeFiles(Pool files) {
-        storeFiles(files, new Properties());
-    }
-
     /**
      * Generates launcher scripts.
+     *
      * @param imageContent The image content.
      * @param modules The set of modules that the runtime image contains.
      * @throws IOException
      */
-    protected void prepareApplicationFiles(Pool imageContent, Set<String> modules) throws IOException {
+    protected void prepareApplicationFiles(ModulePool imageContent, Set<String> modules) throws IOException {
         // generate launch scripts for the modules with a main class
         for (String module : modules) {
             String path = "/" + module + "/module-info.class";
-            ModuleData res = imageContent.get(path);
-            if (res == null) {
+            Optional<ModuleEntry> res = imageContent.findEntry(path);
+            if (!res.isPresent()) {
                 throw new IOException("module-info.class not found for " + module + " module");
             }
             Optional<String> mainClass;
-            ByteArrayInputStream stream = new ByteArrayInputStream(res.getBytes());
+            ByteArrayInputStream stream = new ByteArrayInputStream(res.get().getBytes());
             mainClass = ModuleDescriptor.read(stream).mainClass();
             if (mainClass.isPresent()) {
                 Path cmd = root.resolve("bin").resolve(module);
@@ -263,9 +298,9 @@ public class DefaultImageBuilder implements ImageBuilder {
         }
     }
 
-    private void accept(ModuleData file) throws IOException {
+    private void accept(ModuleEntry file) throws IOException {
         String fullPath = file.getPath();
-        String module = "/" + file.getModule()+ "/";
+        String module = "/" + file.getModule() + "/";
         String filename = fullPath.substring(module.length());
         // Remove radical native|config|...
         filename = filename.substring(filename.indexOf('/') + 1);
@@ -404,8 +439,7 @@ public class DefaultImageBuilder implements ImageBuilder {
 
     public static ExecutableImage getExecutableImage(Path root) {
         if (Files.exists(root.resolve("bin").resolve(getJavaProcessName()))) {
-            return new DefaultImageBuilder.DefaultExecutableImage(root,
-                    retrieveModules(root));
+            return new DefaultExecutableImage(root, retrieveModules(root));
         }
         return null;
     }

@@ -35,7 +35,10 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
+import jdk.nashorn.api.scripting.JSObject;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
@@ -44,7 +47,6 @@ import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.JSONFunctions;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyMap;
-import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
@@ -68,6 +70,17 @@ public final class NativeJSON extends ScriptObject {
                 });
     }
 
+    private static final Object JSOBJECT_INVOKER = new Object();
+
+    private static MethodHandle getJSOBJECT_INVOKER() {
+        return Global.instance().getDynamicInvoker(JSOBJECT_INVOKER,
+                new Callable<MethodHandle>() {
+                    @Override
+                    public MethodHandle call() {
+                        return Bootstrap.createDynamicCallInvoker(Object.class, Object.class, Object.class);
+                    }
+                });
+    }
 
     private static final Object REPLACER_INVOKER = new Object();
 
@@ -77,7 +90,7 @@ public final class NativeJSON extends ScriptObject {
                     @Override
                     public MethodHandle call() {
                         return Bootstrap.createDynamicCallInvoker(Object.class,
-                            ScriptFunction.class, ScriptObject.class, Object.class, Object.class);
+                            Object.class, Object.class, Object.class, Object.class);
                     }
                 });
     }
@@ -127,9 +140,10 @@ public final class NativeJSON extends ScriptObject {
         final StringifyState state = new StringifyState();
 
         // If there is a replacer, it must be a function or an array.
-        if (replacer instanceof ScriptFunction) {
-            state.replacerFunction = (ScriptFunction) replacer;
+        if (Bootstrap.isCallable(replacer)) {
+            state.replacerFunction = replacer;
         } else if (isArray(replacer) ||
+                isJSObjectArray(replacer) ||
                 replacer instanceof Iterable ||
                 (replacer != null && replacer.getClass().isArray())) {
 
@@ -201,18 +215,19 @@ public final class NativeJSON extends ScriptObject {
     // stringify helpers.
 
     private static class StringifyState {
-        final Map<ScriptObject, ScriptObject> stack = new IdentityHashMap<>();
+        final Map<Object, Object> stack = new IdentityHashMap<>();
 
         StringBuilder  indent = new StringBuilder();
         String         gap = "";
         List<String>   propertyList = null;
-        ScriptFunction replacerFunction = null;
+        Object         replacerFunction = null;
     }
 
     // Spec: The abstract operation Str(key, holder).
-    private static Object str(final Object key, final ScriptObject holder, final StringifyState state) {
-        Object value = holder.get(key);
+    private static Object str(final Object key, final Object holder, final StringifyState state) {
+        assert holder instanceof ScriptObject || holder instanceof JSObject;
 
+        Object value = getProperty(holder, key);
         try {
             if (value instanceof ScriptObject) {
                 final InvokeByName toJSONInvoker = getTO_JSON();
@@ -220,6 +235,12 @@ public final class NativeJSON extends ScriptObject {
                 final Object toJSON = toJSONInvoker.getGetter().invokeExact(svalue);
                 if (Bootstrap.isCallable(toJSON)) {
                     value = toJSONInvoker.getInvoker().invokeExact(toJSON, svalue, key);
+                }
+            } else if (value instanceof JSObject) {
+                final JSObject jsObj = (JSObject)value;
+                final Object toJSON = jsObj.getMember("toJSON");
+                if (Bootstrap.isCallable(toJSON)) {
+                    value = getJSOBJECT_INVOKER().invokeExact(toJSON, value);
                 }
             }
 
@@ -262,10 +283,10 @@ public final class NativeJSON extends ScriptObject {
 
         final JSType type = JSType.of(value);
         if (type == JSType.OBJECT) {
-            if (isArray(value)) {
-                return JA((ScriptObject)value, state);
-            } else if (value instanceof ScriptObject) {
-                return JO((ScriptObject)value, state);
+            if (isArray(value) || isJSObjectArray(value)) {
+                return JA(value, state);
+            } else if (value instanceof ScriptObject || value instanceof JSObject) {
+                return JO(value, state);
             }
         }
 
@@ -273,7 +294,9 @@ public final class NativeJSON extends ScriptObject {
     }
 
     // Spec: The abstract operation JO(value) serializes an object.
-    private static String JO(final ScriptObject value, final StringifyState state) {
+    private static String JO(final Object value, final StringifyState state) {
+        assert value instanceof ScriptObject || value instanceof JSObject;
+
         if (state.stack.containsKey(value)) {
             throw typeError("JSON.stringify.cyclic");
         }
@@ -284,7 +307,8 @@ public final class NativeJSON extends ScriptObject {
 
         final StringBuilder finalStr = new StringBuilder();
         final List<Object>  partial  = new ArrayList<>();
-        final List<String>  k        = state.propertyList == null ? Arrays.asList(value.getOwnKeys(false)) : state.propertyList;
+        final List<String>  k        = state.propertyList == null ?
+                Arrays.asList(getOwnKeys(value)) : state.propertyList;
 
         for (final Object p : k) {
             final Object strP = str(p, value, state);
@@ -349,7 +373,9 @@ public final class NativeJSON extends ScriptObject {
     }
 
     // Spec: The abstract operation JA(value) serializes an array.
-    private static Object JA(final ScriptObject value, final StringifyState state) {
+    private static Object JA(final Object value, final StringifyState state) {
+        assert value instanceof ScriptObject || value instanceof JSObject;
+
         if (state.stack.containsKey(value)) {
             throw typeError("JSON.stringify.cyclic");
         }
@@ -359,7 +385,7 @@ public final class NativeJSON extends ScriptObject {
         state.indent.append(state.gap);
         final List<Object> partial = new ArrayList<>();
 
-        final int length = JSType.toInteger(value.getLength());
+        final int length = JSType.toInteger(getLength(value));
         int index = 0;
 
         while (index < length) {
@@ -412,5 +438,49 @@ public final class NativeJSON extends ScriptObject {
         state.indent = stepback;
 
         return finalStr.toString();
+    }
+
+    private static String[] getOwnKeys(final Object obj) {
+        if (obj instanceof ScriptObject) {
+            return ((ScriptObject)obj).getOwnKeys(false);
+        } else if (obj instanceof ScriptObjectMirror) {
+            return ((ScriptObjectMirror)obj).getOwnKeys(false);
+        } else if (obj instanceof JSObject) {
+            // No notion of "own keys" or "proto" for general JSObject! We just
+            // return all keys of the object. This will be useful for POJOs
+            // implementing JSObject interface.
+            return ((JSObject)obj).keySet().toArray(new String[0]);
+        } else {
+            throw new AssertionError("should not reach here");
+        }
+    }
+
+    private static Object getLength(final Object obj) {
+        if (obj instanceof ScriptObject) {
+            return ((ScriptObject)obj).getLength();
+        } else if (obj instanceof JSObject) {
+            return ((JSObject)obj).getMember("length");
+        } else {
+            throw new AssertionError("should not reach here");
+        }
+    }
+
+    private static boolean isJSObjectArray(final Object obj) {
+        return (obj instanceof JSObject) && ((JSObject)obj).isArray();
+    }
+
+    private static Object getProperty(final Object holder, final Object key) {
+        if (holder instanceof ScriptObject) {
+            return ((ScriptObject)holder).get(key);
+        } else if (holder instanceof JSObject) {
+            JSObject jsObj = (JSObject)holder;
+            if (key instanceof Integer) {
+                return jsObj.getSlot((Integer)key);
+            } else {
+                return jsObj.getMember(Objects.toString(key));
+            }
+        } else {
+            return new AssertionError("should not reach here");
+        }
     }
 }

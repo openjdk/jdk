@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,15 @@
 
 /**
  * @test TestSmallHeap
- * @bug 8067438
+ * @bug 8067438 8152239
  * @requires vm.gc=="null"
- * @requires (vm.opt.AggressiveOpts=="null") | (vm.opt.AggressiveOpts=="false")
- * @requires vm.compMode != "Xcomp"
- * @requires vm.opt.UseCompressedOops != false
  * @summary Verify that starting the VM with a small heap works
- * @library /testlibrary /test/lib
+ * @library /testlibrary /test/lib /test/lib/share/classes
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
- * @ignore 8076621
  * @build TestSmallHeap
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx2m -XX:+UseParallelGC TestSmallHeap
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx2m -XX:+UseSerialGC TestSmallHeap
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx2m -XX:+UseG1GC TestSmallHeap
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx2m -XX:+UseConcMarkSweepGC TestSmallHeap
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestSmallHeap
  */
 
 /* Note: It would be nice to verify the minimal supported heap size (2m) here,
@@ -60,23 +53,55 @@
  * So, the expected heap size is page_size * 512.
  */
 
-import jdk.test.lib.*;
-import com.sun.management.HotSpotDiagnosticMXBean;
-import java.lang.management.ManagementFactory;
-import static jdk.test.lib.Asserts.*;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+
+import java.util.LinkedList;
 
 import sun.hotspot.WhiteBox;
 
 public class TestSmallHeap {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        // Do all work in the VM driving the test, the VM
+        // with the small heap size should do as little as
+        // possible to avoid hitting an OOME.
         WhiteBox wb = WhiteBox.getWhiteBox();
         int pageSize = wb.getVMPageSize();
         int heapBytesPerCard = 512;
         long expectedMaxHeap = pageSize * heapBytesPerCard;
-        String maxHeap
-            = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
-                .getVMOption("MaxHeapSize").getValue();
-        assertEQ(Long.parseLong(maxHeap), expectedMaxHeap);
+
+        verifySmallHeapSize("-XX:+UseParallelGC", expectedMaxHeap);
+        verifySmallHeapSize("-XX:+UseSerialGC", expectedMaxHeap);
+        verifySmallHeapSize("-XX:+UseG1GC", expectedMaxHeap);
+        verifySmallHeapSize("-XX:+UseConcMarkSweepGC", expectedMaxHeap);
+    }
+
+    private static void verifySmallHeapSize(String gc, long expectedMaxHeap) throws Exception {
+        LinkedList<String> vmOptions = new LinkedList<>();
+        vmOptions.add(gc);
+        vmOptions.add("-Xmx2m");
+        vmOptions.add("-XX:+PrintFlagsFinal");
+        vmOptions.add(VerifyHeapSize.class.getName());
+
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(vmOptions.toArray(new String[0]));
+        OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
+        analyzer.shouldHaveExitValue(0);
+
+        long maxHeapSize = Long.parseLong(analyzer.firstMatch("MaxHeapSize.+=\\s+(\\d+)",1));
+        long actualHeapSize = Long.parseLong(analyzer.firstMatch(VerifyHeapSize.actualMsg + "(\\d+)",1));
+        Asserts.assertEQ(maxHeapSize, expectedMaxHeap);
+        Asserts.assertLessThanOrEqual(actualHeapSize, maxHeapSize);
+    }
+}
+
+class VerifyHeapSize {
+    public static final String actualMsg = "Actual heap size: ";
+
+    public static void main(String args[]) {
+        // Avoid string concatenation
+        System.out.print(actualMsg);
+        System.out.println(Runtime.getRuntime().maxMemory());
     }
 }

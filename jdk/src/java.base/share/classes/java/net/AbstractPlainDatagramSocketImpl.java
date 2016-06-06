@@ -87,27 +87,22 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
         return isReusePortAvailable;
     }
 
-    private static volatile Set<SocketOption<?>> socketOptions;
-
     /**
-     * Returns a set of SocketOptions supported by this impl
-     * and by this impl's socket (Socket or ServerSocket)
+     * Returns a set of SocketOptions supported by this impl and by this impl's
+     * socket (Socket or ServerSocket)
      *
      * @return a Set of SocketOptions
      */
     @Override
     protected Set<SocketOption<?>> supportedOptions() {
-        Set<SocketOption<?>> options = socketOptions;
-        if (options == null) {
-            if (isReusePortAvailable()) {
-                options = new HashSet<>();
-                options.addAll(super.supportedOptions());
-                options.add(StandardSocketOptions.SO_REUSEPORT);
-                options = Collections.unmodifiableSet(options);
-            } else {
-                options = super.supportedOptions();
-            }
-            socketOptions = options;
+        Set<SocketOption<?>> options;
+        if (isReusePortAvailable()) {
+            options = new HashSet<>();
+            options.addAll(super.supportedOptions());
+            options.add(StandardSocketOptions.SO_REUSEPORT);
+            options = Collections.unmodifiableSet(options);
+        } else {
+            options = super.supportedOptions();
         }
         return options;
     }

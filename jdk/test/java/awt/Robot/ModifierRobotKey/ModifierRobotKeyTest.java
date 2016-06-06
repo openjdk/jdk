@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,23 @@
  * questions.
  */
 
-
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.Canvas;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 
 import static jdk.testlibrary.Asserts.assertTrue;
 
 /*
- * @test
+ * @test 8155742
  * @summary Make sure that modifier key mask is set when robot press
- * some key with one or more modifiers.
- *
+ *          some key with one or more modifiers.
  * @library ../../../../lib/testlibrary/
  * @build ExtendedRobot
  * @run main ModifierRobotKeyTest
@@ -60,15 +66,17 @@ public class ModifierRobotKeyTest extends KeyAdapter {
     }
 
     public ModifierRobotKeyTest() throws Exception {
-        modifierKeys =  new int[3];
+        modifierKeys =  new int[4];
         modifierKeys[0] = KeyEvent.VK_SHIFT;
         modifierKeys[1] = KeyEvent.VK_CONTROL;
         modifierKeys[2] = KeyEvent.VK_ALT;
+        modifierKeys[3] = KeyEvent.VK_ALT_GRAPH;
 
-        inputMasks = new int[3];
+        inputMasks = new int[4];
         inputMasks[0] =  InputEvent.SHIFT_MASK;
         inputMasks[1] =  InputEvent.CTRL_MASK;
         inputMasks[2] =  InputEvent.ALT_MASK;
+        inputMasks[3] =  InputEvent.ALT_GRAPH_MASK;
 
         modifierStatus = new boolean[modifierKeys.length];
 

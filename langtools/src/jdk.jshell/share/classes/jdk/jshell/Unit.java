@@ -30,18 +30,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
-import com.sun.jdi.ReferenceType;
 import jdk.jshell.Snippet.Kind;
 import jdk.jshell.Snippet.Status;
 import jdk.jshell.Snippet.SubKind;
 import jdk.jshell.TaskFactory.AnalyzeTask;
-import jdk.jshell.ClassTracker.ClassInfo;
 import jdk.jshell.TaskFactory.CompileTask;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_EVNT;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
@@ -79,7 +75,7 @@ final class Unit {
     private SnippetEvent replaceOldEvent;
     private List<SnippetEvent> secondaryEvents;
     private boolean isAttemptingCorral;
-    private List<ClassInfo> toRedefine;
+    private List<String> toRedefine;
     private boolean dependenciesNeeded;
 
     Unit(JShell state, Snippet si, Snippet causalSnippet,
@@ -260,10 +256,6 @@ final class Unit {
                 si, status);
     }
 
-    /**
-     * Must be called for each unit
-     * @return
-     */
     boolean isDefined() {
         return status.isDefined;
     }
@@ -273,21 +265,28 @@ final class Unit {
      * Requires loading of returned list.
      * @return the list of classes to load
      */
-    Stream<ClassInfo> classesToLoad(List<ClassInfo> cil) {
+    Stream<String> classesToLoad(List<String> classnames) {
         toRedefine = new ArrayList<>();
-        List<ClassInfo> toLoad = new ArrayList<>();
+        List<String> toLoad = new ArrayList<>();
         if (status.isDefined && !isImport()) {
-            cil.stream().forEach(ci -> {
-                if (!ci.isLoaded()) {
-                    if (ci.getReferenceTypeOrNull() == null) {
-                        toLoad.add(ci);
-                        ci.setLoaded();
+            // Classes should only be loaded/redefined if the compile left them
+            // in a defined state.  Imports do not have code and are not loaded.
+            for (String cn : classnames) {
+                switch (state.executionControl().getClassStatus(cn)) {
+                    case UNKNOWN:
+                        // If not loaded, add to the list of classes to load.
+                        toLoad.add(cn);
                         dependenciesNeeded = true;
-                    } else {
-                        toRedefine.add(ci);
-                    }
+                        break;
+                    case NOT_CURRENT:
+                        // If loaded but out of date, add to the list of classes to attempt redefine.
+                        toRedefine.add(cn);
+                        break;
+                    case CURRENT:
+                        // Loaded and current, so nothing to do
+                        break;
                 }
-            });
+            }
         }
         return toLoad.stream();
     }
@@ -298,19 +297,9 @@ final class Unit {
      * @return true if all redefines succeeded (can be vacuously true)
      */
     boolean doRedefines() {
-         if (toRedefine.isEmpty()) {
-            return true;
-        }
-        Map<ReferenceType, byte[]> mp = toRedefine.stream()
-                .collect(toMap(ci -> ci.getReferenceTypeOrNull(), ci -> ci.getBytes()));
-        if (state.executionControl().commandRedefine(mp)) {
-            // success, mark as loaded
-            toRedefine.stream().forEach(ci -> ci.setLoaded());
-            return true;
-        } else {
-            // failed to redefine
-            return false;
-        }
+        return toRedefine.isEmpty()
+                ? true
+                : state.executionControl().redefine(toRedefine);
     }
 
     void markForReplacement() {

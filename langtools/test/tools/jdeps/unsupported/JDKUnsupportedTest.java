@@ -62,7 +62,7 @@ public class JDKUnsupportedTest {
     public void test(String filename, String[][] expected) {
         Path path = Paths.get(TEST_CLASSES, filename);
 
-        Map<String, String> result = jdeps("-M", path.toString());
+        Map<String, String> result = jdeps(path.toString());
         for (String[] e : expected) {
             String pn = e[0];
             String module = e[1];

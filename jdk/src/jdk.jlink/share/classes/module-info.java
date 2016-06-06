@@ -24,9 +24,7 @@
  */
 
 module jdk.jlink {
-    exports jdk.tools.jlink;
     exports jdk.tools.jlink.plugin;
-    exports jdk.tools.jlink.builder;
 
     requires jdk.internal.opt;
     requires jdk.jdeps;
@@ -46,5 +44,5 @@ module jdk.jlink {
     provides jdk.tools.jlink.plugin.TransformerPlugin with jdk.tools.jlink.internal.plugins.ExcludeVMPlugin;
     provides jdk.tools.jlink.plugin.TransformerPlugin with jdk.tools.jlink.internal.plugins.IncludeLocalesPlugin;
     provides jdk.tools.jlink.plugin.TransformerPlugin with jdk.tools.jlink.internal.plugins.GenerateJLIClassesPlugin;
-    provides jdk.tools.jlink.plugin.PostProcessorPlugin with jdk.tools.jlink.internal.plugins.ReleaseInfoPlugin;
+    provides jdk.tools.jlink.plugin.TransformerPlugin with jdk.tools.jlink.internal.plugins.ReleaseInfoPlugin;
 }

@@ -35,8 +35,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import jdk.jshell.Wrap.CompoundWrap;
-import static jdk.internal.jshell.remote.RemoteCodes.PREFIX_PATTERN;
-import static jdk.internal.jshell.remote.RemoteCodes.REPL_CLASS_PREFIX;
+import static jdk.jshell.Util.PREFIX_PATTERN;
+import static jdk.jshell.Util.REPL_CLASS_PREFIX;
 import static jdk.jshell.Util.REPL_DOESNOTMATTER_CLASS_NAME;
 import static jdk.jshell.Util.asLetters;
 

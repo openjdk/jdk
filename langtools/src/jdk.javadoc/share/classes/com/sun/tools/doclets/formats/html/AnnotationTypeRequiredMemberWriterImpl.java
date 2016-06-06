@@ -42,6 +42,7 @@ import com.sun.tools.doclets.internal.toolkit.*;
  * @author Jamie Ho
  * @author Bhavesh Patel (Modified)
  */
+@Deprecated
 public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     implements AnnotationTypeRequiredMemberWriter, MemberSummaryWriter {
 

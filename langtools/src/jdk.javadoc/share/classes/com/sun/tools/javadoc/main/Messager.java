@@ -52,6 +52,7 @@ import com.sun.tools.javac.util.Log;
  * @see java.text.MessageFormat
  * @author Neal Gafter (rewrite)
  */
+@Deprecated
 public class Messager extends Log implements DocErrorReporter {
     public static final SourcePosition NOPOS = null;
 

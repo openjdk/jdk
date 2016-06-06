@@ -67,7 +67,9 @@ public final class CertAndKeyGen {
      *
      * @param keyType type of key, e.g. "RSA", "DSA"
      * @param sigAlg name of the signature algorithm, e.g. "MD5WithRSA",
-     *          "MD2WithRSA", "SHAwithDSA".
+     *          "MD2WithRSA", "SHAwithDSA". If set to null, a default
+     *          algorithm matching the private key will be chosen after
+     *          the first keypair is generated.
      * @exception NoSuchAlgorithmException on unrecognized algorithms.
      */
     public CertAndKeyGen (String keyType, String sigAlg)
@@ -83,7 +85,9 @@ public final class CertAndKeyGen {
      *
      * @param keyType type of key, e.g. "RSA", "DSA"
      * @param sigAlg name of the signature algorithm, e.g. "MD5WithRSA",
-     *          "MD2WithRSA", "SHAwithDSA".
+     *          "MD2WithRSA", "SHAwithDSA". If set to null, a default
+     *          algorithm matching the private key will be chosen after
+     *          the first keypair is generated.
      * @param providerName name of the provider
      * @exception NoSuchAlgorithmException on unrecognized algorithms.
      * @exception NoSuchProviderException on unrecognized providers.
@@ -161,8 +165,16 @@ public final class CertAndKeyGen {
             throw new IllegalArgumentException("Public key format is "
                 + publicKey.getFormat() + ", must be X.509");
         }
-    }
 
+        if (sigAlg == null) {
+            sigAlg = AlgorithmId.getDefaultSigAlgForKey(privateKey);
+            if (sigAlg == null) {
+                throw new IllegalArgumentException(
+                        "Cannot derive signature algorithm from "
+                                + privateKey.getAlgorithm());
+            }
+        }
+    }
 
     /**
      * Returns the public key of the generated key pair if it is of type

@@ -52,8 +52,5 @@ public class OrderShort extends Order {
         buf = ShortBuffer.allocate(LENGTH);
         ck(buf.order(), nord);
         ckShortBuffer(buf, nord);
-
-        ckShortBuffer(ByteBuffer.allocate(LENGTH).asShortBuffer(), be);
-        ckShortBuffer(ByteBuffer.allocateDirect(LENGTH).asShortBuffer(), be);
     }
 }

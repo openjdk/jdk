@@ -49,6 +49,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @author Bhavesh Patel (Modified)
  */
 
+@Deprecated
 public class TagletWriterImpl extends TagletWriter {
 
     private final HtmlDocletWriter htmlWriter;

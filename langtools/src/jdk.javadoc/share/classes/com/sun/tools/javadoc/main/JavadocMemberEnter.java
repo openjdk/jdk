@@ -47,6 +47,7 @@ import static com.sun.tools.javac.code.Kinds.Kind.*;
  *
  *  @author Neal Gafter
  */
+@Deprecated
 public class JavadocMemberEnter extends MemberEnter {
     public static JavadocMemberEnter instance0(Context context) {
         MemberEnter instance = context.get(memberEnterKey);
