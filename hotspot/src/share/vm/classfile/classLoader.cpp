@@ -228,8 +228,9 @@ ClassPathDirEntry::ClassPathDirEntry(const char* dir) : ClassPathEntry() {
 
 ClassFileStream* ClassPathDirEntry::open_stream(const char* name, TRAPS) {
   // construct full path name
-  char path[JVM_MAXPATHLEN];
-  if (jio_snprintf(path, sizeof(path), "%s%s%s", _dir, os::file_separator(), name) == -1) {
+  char* path = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, JVM_MAXPATHLEN);
+  if (jio_snprintf(path, JVM_MAXPATHLEN, "%s%s%s", _dir, os::file_separator(), name) == -1) {
+    FREE_RESOURCE_ARRAY(char, path, JVM_MAXPATHLEN);
     return NULL;
   }
   // check if file exists
@@ -256,6 +257,7 @@ ClassFileStream* ClassPathDirEntry::open_stream(const char* name, TRAPS) {
         if (UsePerfData) {
           ClassLoader::perf_sys_classfile_bytes_read()->inc(num_read);
         }
+        FREE_RESOURCE_ARRAY(char, path, JVM_MAXPATHLEN);
         // Resource allocated
         return new ClassFileStream(buffer,
                                    st.st_size,
@@ -264,6 +266,7 @@ ClassFileStream* ClassPathDirEntry::open_stream(const char* name, TRAPS) {
       }
     }
   }
+  FREE_RESOURCE_ARRAY(char, path, JVM_MAXPATHLEN);
   return NULL;
 }
 
@@ -344,9 +347,10 @@ u1* ClassPathZipEntry::open_versioned_entry(const char* name, jint* filesize, TR
 
     if (is_multi_ver) {
       int n;
-      char entry_name[JVM_MAXPATHLEN];
+      ResourceMark rm(THREAD);
+      char* entry_name = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, JVM_MAXPATHLEN);
       if (version > 0) {
-        n = jio_snprintf(entry_name, sizeof(entry_name), "META-INF/versions/%d/%s", version, name);
+        n = jio_snprintf(entry_name, JVM_MAXPATHLEN, "META-INF/versions/%d/%s", version, name);
         entry_name[n] = '\0';
         buffer = open_entry((const char*)entry_name, filesize, false, CHECK_NULL);
         if (buffer == NULL) {
@@ -355,7 +359,7 @@ u1* ClassPathZipEntry::open_versioned_entry(const char* name, jint* filesize, TR
       }
       if (buffer == NULL) {
         for (int i = cur_ver; i >= base_version; i--) {
-          n = jio_snprintf(entry_name, sizeof(entry_name), "META-INF/versions/%d/%s", i, name);
+          n = jio_snprintf(entry_name, JVM_MAXPATHLEN, "META-INF/versions/%d/%s", i, name);
           entry_name[n] = '\0';
           buffer = open_entry((const char*)entry_name, filesize, false, CHECK_NULL);
           if (buffer != NULL) {
@@ -508,7 +512,8 @@ bool ctw_visitor(JImageFile* jimage,
         const char* name, const char* extension, void* arg) {
   if (strcmp(extension, "class") == 0) {
     Thread* THREAD = Thread::current();
-    char path[JIMAGE_MAX_PATH];
+    ResourceMark rm(THREAD);
+    char* path = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, JIMAGE_MAX_PATH);
     jio_snprintf(path, JIMAGE_MAX_PATH - 1, "%s/%s.class", package, name);
     ClassLoader::compile_the_world_in(path, *(Handle*)arg, THREAD);
     return !HAS_PENDING_EXCEPTION;
@@ -750,9 +755,10 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
   JavaThread* thread = JavaThread::current();
   ClassPathEntry* new_entry = NULL;
   if ((st->st_mode & S_IFREG) == S_IFREG) {
+    ResourceMark rm(thread);
     // Regular file, should be a zip or jimage file
     // Canonicalized filename
-    char canonical_path[JVM_MAXPATHLEN];
+    char* canonical_path = NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, JVM_MAXPATHLEN);
     if (!get_canonical_path(path, canonical_path, JVM_MAXPATHLEN)) {
       // This matches the classic VM
       if (throw_exception) {
@@ -777,14 +783,13 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
       if (zip != NULL && error_msg == NULL) {
         new_entry = new ClassPathZipEntry(zip, path, is_boot_append);
       } else {
-        ResourceMark rm(thread);
         char *msg;
         if (error_msg == NULL) {
-          msg = NEW_RESOURCE_ARRAY(char, strlen(path) + 128); ;
+          msg = NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, strlen(path) + 128); ;
           jio_snprintf(msg, strlen(path) + 127, "error in opening JAR file %s", path);
         } else {
           int len = (int)(strlen(path) + strlen(error_msg) + 128);
-          msg = NEW_RESOURCE_ARRAY(char, len); ;
+          msg = NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, len); ;
           jio_snprintf(msg, len - 1, "error in opening JAR file <%s> %s", error_msg, path);
         }
         // Don't complain about bad jar files added via -Xbootclasspath/a:.
