@@ -139,11 +139,6 @@ public final class Context {
     public static final String NASHORN_JAVA_REFLECTION = "nashorn.JavaReflection";
 
     /**
-     * Permission to create a new Module
-     */
-    public static final String NASHORN_CREATE_MODULE = "nashorn.createModule";
-
-    /**
      * Permission to enable nashorn debug mode.
      */
     public static final String NASHORN_DEBUG_MODE = "nashorn.debugMode";
@@ -1311,22 +1306,6 @@ public final class Context {
      */
     public static DynamicLinker getDynamicLinker() {
         return getContextTrusted().dynamicLinker;
-    }
-
-    /**
-     * Creates a module layer with one module that is defined to the given class
-     * loader.
-     *
-     * @param descriptor the module descriptor for the newly created module
-     * @param loader the class loader of the module
-     * @return the new Module
-     */
-    public static Module createModule(final ModuleDescriptor descriptor, final ClassLoader loader) {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission(NASHORN_CREATE_MODULE));
-        }
-        return createModuleTrusted(descriptor, loader);
     }
 
     /**

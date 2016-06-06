@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
-import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Module;
@@ -58,19 +57,16 @@ final class JavaAdapterClassLoader {
 
     private static final AccessControlContext CREATE_LOADER_ACC_CTXT = ClassAndLoader.createPermAccCtxt("createClassLoader");
     private static final AccessControlContext GET_CONTEXT_ACC_CTXT = ClassAndLoader.createPermAccCtxt(Context.NASHORN_GET_CONTEXT);
-    private static final AccessControlContext CREATE_MODULE_ACC_CTXT = ClassAndLoader.createPermAccCtxt(Context.NASHORN_CREATE_MODULE);
 
     private static final Collection<String> VISIBLE_INTERNAL_CLASS_NAMES = Collections.unmodifiableCollection(new HashSet<>(
             Arrays.asList(JavaAdapterServices.class.getName(), ScriptObject.class.getName(), ScriptFunction.class.getName(), JSType.class.getName())));
 
     private final String className;
     private final byte[] classBytes;
-    private final Set<Module> accessedModules;
 
-    JavaAdapterClassLoader(final String className, final byte[] classBytes, final Set<Module> accessedModules) {
+    JavaAdapterClassLoader(final String className, final byte[] classBytes) {
         this.className = className.replace('/', '.');
         this.classBytes = classBytes;
-        this.accessedModules = accessedModules;
     }
 
     /**
@@ -93,21 +89,6 @@ final class JavaAdapterClassLoader {
         }, CREATE_LOADER_ACC_CTXT);
     }
 
-    private static Module createAdapterModule(final ClassLoader loader) {
-        final ModuleDescriptor descriptor =
-            new ModuleDescriptor.Builder("jdk.scripting.nashorn.javaadapters")
-                .requires(NASHORN_MODULE.getName())
-                .exports(JavaAdapterBytecodeGenerator.ADAPTER_PACKAGE)
-                .build();
-
-        return AccessController.doPrivileged(new PrivilegedAction<Module>() {
-            @Override
-            public Module run() {
-                return Context.createModule(descriptor, loader);
-            }
-        }, CREATE_MODULE_ACC_CTXT);
-    }
-
     // Note that the adapter class is created in the protection domain of the class/interface being
     // extended/implemented, and only the privileged global setter action class is generated in the protection domain
     // of Nashorn itself. Also note that the creation and loading of the global setter is deferred until it is
@@ -119,39 +100,10 @@ final class JavaAdapterClassLoader {
         return new SecureClassLoader(parentLoader) {
             private final ClassLoader myLoader = getClass().getClassLoader();
 
-            // new adapter module
-            private final Module adapterModule = createAdapterModule(this);
+            // the unnamed module into which adapter is loaded!
+            private final Module adapterModule = getUnnamedModule();
 
             {
-                // new adapter module read-edges
-                if (!accessedModules.isEmpty()) {
-
-                    // There are modules accessed from this adapter. We need to add module-read
-                    // edges to those from the adapter module. We do this by generating a
-                    // package-private class, loading it with this adapter class loader and
-                    // then calling a private static method on it.
-                    final byte[] buf = JavaAdapterBytecodeGenerator.getModulesAddReadsBytes();
-                    final Class<?> addReader = defineClass(
-                        JavaAdapterBytecodeGenerator.MODULES_READ_ADDER, buf, 0, buf.length);
-                    final PrivilegedAction<Method> pa = () -> {
-                        try {
-                            final Method m = addReader.getDeclaredMethod(
-                                JavaAdapterBytecodeGenerator.MODULES_ADD_READS, Module[].class);
-                            m.setAccessible(true);
-                            return m;
-                        } catch (final NoSuchMethodException | SecurityException ex) {
-                            throw new RuntimeException(ex);
-                        }
-                    };
-                    final Method addReads = AccessController.doPrivileged(pa);
-                    try {
-                        addReads.invoke(null, (Object)accessedModules.toArray(new Module[0]));
-                    } catch (final IllegalAccessException | IllegalArgumentException |
-                            InvocationTargetException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                }
-
                 // specific exports from nashorn to the new adapter module
                 NASHORN_MODULE.addExports("jdk.nashorn.internal.runtime", adapterModule);
                 NASHORN_MODULE.addExports("jdk.nashorn.internal.runtime.linker", adapterModule);
