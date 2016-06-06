@@ -22,10 +22,12 @@
  */
 
 import java.awt.Font;
+import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
@@ -99,6 +101,11 @@ public final class ClassCastExceptionForInvalidSurface {
                 vi.createGraphics().drawString("123", 1, 1);
                 vi.createGraphics().draw(new Rectangle(0, 0, 10, 10));
                 vi.createGraphics().fillOval(0, 0, 10, 10);
+                final Graphics2D graphics = vi.createGraphics();
+                graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                                          RenderingHints.VALUE_ANTIALIAS_ON);
+                graphics.fillPolygon(new int[] {0, 10, 10, 0},
+                                     new int [] {0, 0, 10, 10}, 4);
             }
         });
         t1.start();
