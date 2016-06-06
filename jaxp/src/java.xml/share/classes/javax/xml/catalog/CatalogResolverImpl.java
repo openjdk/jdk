@@ -51,6 +51,7 @@ final class CatalogResolverImpl implements CatalogResolver {
 
     @Override
     public InputSource resolveEntity(String publicId, String systemId) {
+        CatalogMessages.reportNPEOnNull("systemId", systemId);
         //Normalize publicId and systemId
         systemId = Normalizer.normalizeURI(Util.getNotNullOrEmpty(systemId));
         publicId = Normalizer.normalizePublicId(Normalizer.decodeURN(Util.getNotNullOrEmpty(publicId)));

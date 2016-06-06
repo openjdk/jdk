@@ -31,7 +31,7 @@ import jdk.test.lib.jittester.functions.FunctionInfo;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class FunctionDeclarationBlockFactory extends Factory {
+class FunctionDeclarationBlockFactory extends Factory<FunctionDeclarationBlock> {
     private final int memberFunctionsLimit;
     private final int memberFunctionsArgLimit;
     private final int level;
@@ -46,7 +46,7 @@ class FunctionDeclarationBlockFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public FunctionDeclarationBlock produce() throws ProductionFailedException {
         ArrayList<IRNode> content = new ArrayList<>();
         int memFunLimit = (int) (PseudoRandom.random() * memberFunctionsLimit);
         if (memFunLimit > 0) {

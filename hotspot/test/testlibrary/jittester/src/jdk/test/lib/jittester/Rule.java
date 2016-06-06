@@ -32,27 +32,26 @@ import jdk.test.lib.jittester.utils.PseudoRandom;
 /**
  * The Rule. A helper to perform production.
  */
-public class Rule extends Factory implements Comparable<Rule> {
-    private String name;
+public class Rule<T extends IRNode> extends Factory<T> implements Comparable<Rule<T>> {
+    private final String name;
+    private final TreeSet<RuleEntry> variants;
     private Integer limit = -1;
 
     @Override
-    public int compareTo(Rule rule) {
+    public int compareTo(Rule<T> rule) {
         return name.compareTo(rule.name);
     }
-
-    private TreeSet<RuleEntry> variants;
 
     public Rule(String name) {
         this.name = name;
         variants = new TreeSet<>();
     }
 
-    public void add(String ruleName, Factory factory) {
+    public void add(String ruleName, Factory<? extends T> factory) {
         add(ruleName, factory, 1.0);
     }
 
-    public void add(String ruleName, Factory factory, double weight) {
+    public void add(String ruleName, Factory<? extends T> factory, double weight) {
         variants.add(new RuleEntry(ruleName, factory, weight));
     }
 
@@ -61,7 +60,7 @@ public class Rule extends Factory implements Comparable<Rule> {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public T produce() throws ProductionFailedException {
         if (!variants.isEmpty()) {
             // Begin production.
             LinkedList<RuleEntry> rulesList = new LinkedList<>(variants);
@@ -98,19 +97,19 @@ public class Rule extends Factory implements Comparable<Rule> {
         throw new ProductionFailedException();
     }
 
-    private class RuleEntry extends Factory implements Comparable<RuleEntry> {
+    private class RuleEntry extends Factory<T> implements Comparable<RuleEntry> {
         private final double weight;
-        private final Factory factory;
+        private final Factory<? extends T> factory;
         private final String name;
 
-        private RuleEntry(String name, Factory factory, double weight) {
+        private RuleEntry(String name, Factory<? extends T> factory, double weight) {
             this.name = name;
             this.weight = weight;
             this.factory = factory;
         }
 
         @Override
-        public IRNode produce() throws ProductionFailedException {
+        public T produce() throws ProductionFailedException {
             return factory.produce();
         }
 

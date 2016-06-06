@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,8 +144,9 @@ enum MemoryType {
   mtTracing           = 0x0E,  // memory used for Tracing
   mtLogging           = 0x0F,  // memory for logging
   mtArguments         = 0x10,  // memory for argument processing
-  mtNone              = 0x11,  // undefined
-  mt_number_of_types  = 0x12   // number of memory types (mtDontTrack
+  mtModule            = 0x11,  // memory for module processing
+  mtNone              = 0x12,  // undefined
+  mt_number_of_types  = 0x13   // number of memory types (mtDontTrack
                                  // is not included as validate type)
 };
 

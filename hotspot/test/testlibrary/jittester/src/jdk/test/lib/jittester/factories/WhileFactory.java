@@ -23,21 +23,21 @@
 
 package jdk.test.lib.jittester.factories;
 
-import jdk.test.lib.jittester.IRNode;
-import jdk.test.lib.jittester.Initialization;
+import jdk.test.lib.jittester.Block;
 import jdk.test.lib.jittester.Literal;
 import jdk.test.lib.jittester.LocalVariable;
-import jdk.test.lib.jittester.Nothing;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.SymbolTable;
 import jdk.test.lib.jittester.Type;
+import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.loops.Loop;
 import jdk.test.lib.jittester.loops.While;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeInt;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class WhileFactory extends SafeFactory {
+import java.util.LinkedList;
+
+class WhileFactory extends SafeFactory<While> {
     private final Loop loop;
     private final long complexityLimit;
     private final int statementLimit;
@@ -61,7 +61,8 @@ class WhileFactory extends SafeFactory {
     }
 
     @Override
-    protected IRNode sproduce() throws ProductionFailedException {
+    protected While sproduce() throws ProductionFailedException {
+        Block emptyBlock = new Block(ownerClass, returnType, new LinkedList<>(), level - 1);
         if (statementLimit <= 0 || complexityLimit <= 0) {
             throw new ProductionFailedException();
         }
@@ -91,7 +92,7 @@ class WhileFactory extends SafeFactory {
                 .setResultType(returnType)
                 .setOperatorLimit(operatorLimit);
         loop.initialization = builder.getCounterInitializerFactory(0).produce();
-        IRNode header;
+        Block header;
         try {
             header = builder.setComplexityLimit(headerComplLimit)
                     .setStatementLimit(headerStatementLimit)
@@ -103,15 +104,15 @@ class WhileFactory extends SafeFactory {
                     .getBlockFactory()
                     .produce();
         } catch (ProductionFailedException e) {
-            header = new Nothing();
+            header = emptyBlock;
         }
-        LocalVariable counter = new LocalVariable(((Initialization) loop.initialization).get());
-        Literal limiter = new Literal(Integer.valueOf((int) thisLoopIterLimit), new TypeInt());
+        LocalVariable counter = new LocalVariable(loop.initialization.getVariableInfo());
+        Literal limiter = new Literal((int) thisLoopIterLimit, TypeList.INT);
         loop.condition = builder.setComplexityLimit(condComplLimit)
                 .setLocalVariable(counter)
                 .getLoopingConditionFactory(limiter)
                 .produce();
-        IRNode body1;
+        Block body1;
         SymbolTable.push();
         try {
             body1 = builder.setComplexityLimit(body1ComplLimit)
@@ -124,10 +125,10 @@ class WhileFactory extends SafeFactory {
                     .getBlockFactory()
                     .produce();
         } catch (ProductionFailedException e) {
-            body1 = new Nothing();
+            body1 = emptyBlock;
         }
         loop.manipulator = builder.setLocalVariable(counter).getCounterManipulatorFactory().produce();
-        IRNode body2;
+        Block body2;
         try {
             body2 = builder.setComplexityLimit(body2ComplLimit)
                     .setStatementLimit(body2StatementLimit)
@@ -139,9 +140,9 @@ class WhileFactory extends SafeFactory {
                     .getBlockFactory()
                     .produce();
         } catch (ProductionFailedException e) {
-            body2 = new Nothing();
+            body2 = emptyBlock;
         }
-        IRNode body3;
+        Block body3;
         try {
             body3 = builder.setComplexityLimit(body3ComplLimit)
                     .setStatementLimit(body3StatementLimit)
@@ -153,7 +154,7 @@ class WhileFactory extends SafeFactory {
                     .getBlockFactory()
                     .produce();
         } catch (ProductionFailedException e) {
-            body3 = new Nothing();
+            body3 = emptyBlock;
         }
         SymbolTable.pop();
         return new While(level, loop, thisLoopIterLimit, header, body1, body2, body3);

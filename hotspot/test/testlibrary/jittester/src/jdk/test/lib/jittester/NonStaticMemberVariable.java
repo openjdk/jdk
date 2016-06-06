@@ -25,17 +25,11 @@ package jdk.test.lib.jittester;
 
 import jdk.test.lib.jittester.visitors.Visitor;
 
-public class NonStaticMemberVariable extends IRNode implements VariableBase {
-    private final VariableInfo value;
+public class NonStaticMemberVariable extends VariableBase {
 
     public NonStaticMemberVariable(IRNode object, VariableInfo value) {
-        this.value = value;
+        super(value);
         addChild(object);
-    }
-
-    @Override
-    public VariableInfo get() {
-        return value;
     }
 
     @Override
@@ -46,9 +40,5 @@ public class NonStaticMemberVariable extends IRNode implements VariableBase {
     @Override
     public<T> T accept(Visitor<T> v) {
         return v.visit(this);
-    }
-
-    public VariableInfo getValue() {
-        return value;
     }
 }

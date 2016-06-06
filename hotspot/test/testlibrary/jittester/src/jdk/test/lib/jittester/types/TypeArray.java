@@ -26,6 +26,9 @@ package jdk.test.lib.jittester.types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import jdk.test.lib.jittester.ProductionParams;
 import jdk.test.lib.jittester.SymbolTable;
 import jdk.test.lib.jittester.Type;
@@ -47,26 +50,29 @@ public class TypeArray extends TypeKlass {
     public final int dimensions;
     private List<Byte> dims = new ArrayList<>();
 
-    public TypeArray() {
-        this(new TypeVoid(), 0);
-    }
-
     public TypeArray(Type type, int dimensions) {
         super("Array", TypeKlass.FINAL);
-        addParent("java.lang.Object");
-        setParent((TypeKlass) TypeList.find("java.lang.Object"));
+        addParent(TypeList.OBJECT.getName());
+        setParent(TypeList.OBJECT);
         this.type = type;
         this.dimensions = dimensions;
     }
 
+    public String getName() {
+        String dimString = Stream.generate(() -> "[]")
+                .limit(dimensions)
+                .collect(Collectors.joining());
+        return type.getName() + dimString;
+    }
+
     @Override
     protected void exportSymbols() {
-        SymbolTable.add(new VariableInfo("length", this, new TypeInt(), VariableInfo.PUBLIC | VariableInfo.FINAL));
+        SymbolTable.add(new VariableInfo("length", this, TypeList.INT, VariableInfo.PUBLIC | VariableInfo.FINAL));
     }
 
     @Override
     public boolean equals(Object t) {
-                if (this == t) {
+        if (this == t) {
             return true;
         }
         if (t == null || !(t instanceof TypeArray)) {
@@ -95,8 +101,7 @@ public class TypeArray extends TypeKlass {
 
     @Override
     public int compareTo(Type t) {
-        int r = 0;
-        r = super.compareTo(t);
+        int r = super.compareTo(t);
         if (r == 0) {
             try {
                 TypeArray a = (TypeArray) t;
