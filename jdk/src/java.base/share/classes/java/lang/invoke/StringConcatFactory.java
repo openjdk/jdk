@@ -128,7 +128,7 @@ public final class StringConcatFactory {
     /**
      * Default strategy to use for concatenation.
      */
-    private static final Strategy DEFAULT_STRATEGY = Strategy.BC_SB;
+    private static final Strategy DEFAULT_STRATEGY = Strategy.MH_INLINE_SIZED_EXACT;
 
     private enum Strategy {
         /**

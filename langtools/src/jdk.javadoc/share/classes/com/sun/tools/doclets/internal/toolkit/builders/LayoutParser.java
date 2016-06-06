@@ -49,6 +49,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @since 1.5
  * @see SAXParser
  */
+@Deprecated
 public class LayoutParser extends DefaultHandler {
 
     /**

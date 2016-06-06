@@ -72,6 +72,7 @@ import jdk.jshell.Diag;
 import static jdk.jshell.Snippet.Status.*;
 import static org.testng.Assert.*;
 import static jdk.jshell.Snippet.SubKind.METHOD_SUBKIND;
+import jdk.jshell.spi.ExecutionControl;
 
 public class KullaTesting {
 
@@ -157,6 +158,21 @@ public class KullaTesting {
         outStream = new ByteArrayOutputStream();
         errStream = new ByteArrayOutputStream();
         state = JShell.builder()
+                .in(inStream)
+                .out(new PrintStream(outStream))
+                .err(new PrintStream(errStream))
+                .build();
+        allSnippets = new LinkedHashSet<>();
+        idToSnippet = new LinkedHashMap<>();
+        classpath = new ArrayList<>();
+    }
+
+    public void setUp(ExecutionControl ec) {
+        inStream = new TestingInputStream();
+        outStream = new ByteArrayOutputStream();
+        errStream = new ByteArrayOutputStream();
+        state = JShell.builder()
+                .executionEngine(ec)
                 .in(inStream)
                 .out(new PrintStream(outStream))
                 .err(new PrintStream(errStream))

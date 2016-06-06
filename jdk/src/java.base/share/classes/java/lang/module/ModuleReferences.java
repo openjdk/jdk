@@ -220,10 +220,10 @@ class ModuleReferences {
         Optional<URI> implFind(String name) throws IOException {
             JarEntry je = getEntry(name);
             if (je != null) {
+                if (jf.isMultiRelease())
+                    name = SharedSecrets.javaUtilJarAccess().getRealName(jf, je);
                 String encodedPath = ParseUtil.encodePath(name, false);
                 String uris = "jar:" + uri + "!/" + encodedPath;
-                if (jf.isMultiRelease())
-                    uris += "#runtime";
                 return Optional.of(URI.create(uris));
             } else {
                 return Optional.empty();

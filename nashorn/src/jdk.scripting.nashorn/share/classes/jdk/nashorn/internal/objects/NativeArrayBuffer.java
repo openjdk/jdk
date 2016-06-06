@@ -232,10 +232,10 @@ public final class NativeArrayBuffer extends ScriptObject {
     }
 
     ByteBuffer getBuffer(final int offset) {
-        return (ByteBuffer)nb.duplicate().position(offset);
+        return nb.duplicate().position(offset);
     }
 
     ByteBuffer getBuffer(final int offset, final int length) {
-        return (ByteBuffer)getBuffer(offset).limit(length);
+        return getBuffer(offset).limit(length);
     }
 }

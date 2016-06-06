@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ public class ExactArithTests {
     public static void main(String[] args) {
         testIntegerExact();
         testLongExact();
+        testLongIntExact();
 
         if (errors > 0) {
             throw new RuntimeException(errors + " errors found in ExactArithTests.");
@@ -132,6 +133,7 @@ public class ExactArithTests {
                 fail("FAIL: int Math.multiplyExact(" + x + " * " + y + ")" + "; Unexpected exception: " + ex);
             }
         }
+
         try {
             // Test incrementExact
             int inc = Math.incrementExact(x);
@@ -344,5 +346,61 @@ public class ExactArithTests {
      */
     static boolean inLongRange(BigInteger value) {
         return value.bitLength() <= 63;
+    }
+
+    /**
+     * Test Math.multiplyExact method with {@code long} and {@code int}
+     * arguments.
+     */
+    static void testLongIntExact() {
+        testLongIntExact(0, 0);
+        testLongIntExact(1, 1);
+        testLongIntExact(1, -1);
+        testLongIntExact(1000, 2000);
+
+        testLongIntExact(Long.MIN_VALUE, Integer.MIN_VALUE);
+        testLongIntExact(Long.MAX_VALUE, Integer.MAX_VALUE);
+        testLongIntExact(Long.MIN_VALUE, 1);
+        testLongIntExact(Long.MAX_VALUE, 1);
+        testLongIntExact(Long.MIN_VALUE, 2);
+        testLongIntExact(Long.MAX_VALUE, 2);
+        testLongIntExact(Long.MIN_VALUE, -1);
+        testLongIntExact(Long.MAX_VALUE, -1);
+        testLongIntExact(Long.MIN_VALUE, -2);
+        testLongIntExact(Long.MAX_VALUE, -2);
+        testLongIntExact(Long.MIN_VALUE/2, 2);
+        testLongIntExact(Long.MAX_VALUE, 2);
+        testLongIntExact(Integer.MAX_VALUE, Integer.MAX_VALUE);
+        testLongIntExact(Integer.MAX_VALUE, -Integer.MAX_VALUE);
+        testLongIntExact((long)Integer.MAX_VALUE+1L, Integer.MAX_VALUE);
+        testLongIntExact((long)Integer.MAX_VALUE+1L, -Integer.MAX_VALUE+1);
+        testLongIntExact((long)Integer.MIN_VALUE-1L, Integer.MIN_VALUE);
+        testLongIntExact((long)Integer.MIN_VALUE-1, Integer.MAX_VALUE);
+        testLongIntExact(Integer.MIN_VALUE/2, 2);
+    }
+
+    /**
+     * Test long-int exact arithmetic by comparing with the same operations using BigInteger
+     * and checking that the result is the same as the long truncation.
+     * Errors are reported with {@link fail}.
+     *
+     * @param x first parameter
+     * @param y second parameter
+     */
+    static void testLongIntExact(long x, int y) {
+        BigInteger resultBig = null;
+        final BigInteger xBig = BigInteger.valueOf(x);
+        final BigInteger yBig = BigInteger.valueOf(y);
+
+        try {
+            // Test multiplyExact
+            resultBig = xBig.multiply(yBig);
+            long product = Math.multiplyExact(x, y);
+            checkResult("long Math.multiplyExact", x, y, product, resultBig);
+        } catch (ArithmeticException ex) {
+            if (inLongRange(resultBig)) {
+                fail("FAIL: long Math.multiplyExact(" + x + " * " + y + ")" + "; Unexpected exception: " + ex);
+            }
+        }
     }
 }

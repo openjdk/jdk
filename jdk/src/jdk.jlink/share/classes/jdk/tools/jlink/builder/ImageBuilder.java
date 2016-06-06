@@ -29,7 +29,7 @@ import java.util.Properties;
 
 import jdk.tools.jlink.plugin.ExecutableImage;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.Pool;
+import jdk.tools.jlink.plugin.ModulePool;
 
 /**
  * Implement this interface to develop your own image layout. First the jimage
@@ -45,7 +45,7 @@ public interface ImageBuilder {
      * @param release the release properties
      * @throws PluginException
      */
-    public default void storeFiles(Pool content, Properties release) {
+    public default void storeFiles(ModulePool content, Properties release) {
         storeFiles(content);
     }
 
@@ -55,7 +55,7 @@ public interface ImageBuilder {
      * @param content Pool of module content.
      * @throws PluginException
      */
-    public default void storeFiles(Pool content) {
+    public default void storeFiles(ModulePool content) {
         throw new UnsupportedOperationException("storeFiles");
     }
 

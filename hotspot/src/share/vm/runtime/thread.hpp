@@ -1371,10 +1371,10 @@ class JavaThread: public Thread {
   //  |  reserved pages                      |
   //  |                                      |
   //  --  <-- stack_reserved_zone_base()    ---      ---
-  //                                                 /|\  shadow
+  //                                                 /|\  shadow     <--  stack_overflow_limit() (somewhere in here)
   //                                                  |   zone
   //                                                 \|/  size
-  //  some untouched memory                          ---         <--  stack_overflow_limit()
+  //  some untouched memory                          ---
   //
   //
   //  --
@@ -1522,9 +1522,8 @@ class JavaThread: public Thread {
 
   address stack_overflow_limit() { return _stack_overflow_limit; }
   void set_stack_overflow_limit() {
-    _stack_overflow_limit = stack_end() +
-                            (JavaThread::stack_guard_zone_size() +
-                             JavaThread::stack_shadow_zone_size());
+    _stack_overflow_limit =
+      stack_end() + MAX2(JavaThread::stack_guard_zone_size(), JavaThread::stack_shadow_zone_size());
   }
 
   // Misc. accessors/mutators

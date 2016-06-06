@@ -82,12 +82,6 @@ extern "C" {
     return MLIB_FAILURE;                                        \
   }
 
-#define MLIB_IMAGE_AND_COLORMAP_ARE_COMPAT(image,colormap)                 \
-  if ((mlib_ImageGetChannels(image) != mlib_ImageGetLutChannels(colormap)) \
-    || (mlib_ImageGetLutType(colormap) != mlib_ImageGetType(image))) {     \
-    return MLIB_FAILURE;                                                   \
-  }
-
 #define MLIB_IMAGE_GET_ALL_PARAMS(image, type, nchan, width, height, stride, pdata) \
   type   = mlib_ImageGetType(image);                                                \
   nchan  = mlib_ImageGetChannels(image);                                            \

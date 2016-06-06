@@ -22,8 +22,14 @@
  */
 
 module m4 {
+    // not used in signature
     requires public java.compiler;
+
+    // unused dependence
     requires java.logging;
+
     exports p4;
-    exports p4.internal to m1,m2,m3;
+
+    // unuused qualified exports
+    exports p4.internal to m6,m7;
 }

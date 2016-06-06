@@ -36,7 +36,13 @@ package com.sun.javadoc;
  * affecting doclets is 1.5.
  *
  * @since 1.5
+ *
+ * @deprecated
+ *   The declarations in this package have been superseded by those
+ *   in the package {@code jdk.javadoc.doclet}.
+ *   For more information, see the <i>Migration Guide</i> in the documentation for that package.
  */
+@Deprecated
 public enum LanguageVersion {
 
     /** 1.1 added nested classes and interfaces. */

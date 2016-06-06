@@ -33,7 +33,13 @@ import java.io.File;
  *
  * @since 1.4
  * @author Neal M Gafter
+ *
+ * @deprecated
+ *   The declarations in this package have been superseded by those
+ *   in the package {@code jdk.javadoc.doclet}.
+ *   For more information, see the <i>Migration Guide</i> in the documentation for that package.
  */
+@Deprecated
 public interface SourcePosition {
     /** The source file. Returns null if no file information is
      *  available.

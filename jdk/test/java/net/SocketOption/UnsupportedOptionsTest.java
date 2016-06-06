@@ -33,7 +33,7 @@ import java.util.List;
  * @summary Test checks that UnsupportedOperationException for unsupported
  * SOCKET_OPTIONS is thrown by both getOption() and setOption() methods.
  * @run main UnsupportedOptionsTest
- * @run main/othervm -Djdk.launcher.limitmods=java.base UnsupportedOptionsTest
+ * @run main/othervm -limitmods java.base UnsupportedOptionsTest
  */
 
 public class UnsupportedOptionsTest {

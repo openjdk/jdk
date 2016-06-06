@@ -41,6 +41,7 @@ import com.sun.tools.javac.util.Context;
  *
  *  @author Neal Gafter
  */
+@Deprecated
 public class JavadocClassFinder extends ClassFinder {
 
     public static JavadocClassFinder instance(Context context) {

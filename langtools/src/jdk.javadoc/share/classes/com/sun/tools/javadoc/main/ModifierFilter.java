@@ -42,6 +42,7 @@ import static com.sun.tools.javac.code.Flags.*;
  *   @author Robert Field
  */
 
+@Deprecated
 public class ModifierFilter {
 
     /**

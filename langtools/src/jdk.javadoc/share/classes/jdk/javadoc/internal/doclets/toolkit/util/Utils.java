@@ -1596,7 +1596,7 @@ public class Utils {
                 first = false;
             }
         } catch (SecurityException | IOException exc) {
-            throw new com.sun.tools.doclets.internal.toolkit.util.DocletAbortException(exc);
+            throw new DocletAbortException(exc);
         }
     }
 

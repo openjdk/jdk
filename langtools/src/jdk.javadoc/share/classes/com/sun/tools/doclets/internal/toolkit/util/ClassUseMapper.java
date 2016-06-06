@@ -41,6 +41,7 @@ import com.sun.tools.doclets.formats.html.ConfigurationImpl;
  * @since 1.2
  * @author Robert G. Field
  */
+@Deprecated
 public class ClassUseMapper {
 
     private final ClassTree classtree;

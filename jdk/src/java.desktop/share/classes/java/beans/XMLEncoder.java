@@ -193,8 +193,8 @@ import java.nio.charset.UnsupportedCharsetException;
  *
  *<p>
  * For more information you might also want to check out
- * <a
- href="http://java.sun.com/products/jfc/tsc/articles/persistence4">Using XMLEncoder</a>,
+ * <a href="http://www.oracle.com/technetwork/java/persistence4-140124.html">
+ * Using XMLEncoder</a>,
  * an article in <em>The Swing Connection.</em>
  * @see XMLDecoder
  * @see java.io.ObjectOutputStream
@@ -438,7 +438,8 @@ public class XMLEncoder extends Encoder implements AutoCloseable {
      * <P>
      * For more information about using resource bundles with the
      * XMLEncoder, see
-     * http://java.sun.com/products/jfc/tsc/articles/persistence4/#i18n
+     * <a href="http://www.oracle.com/technetwork/java/persistence4-140124.html#i18n">
+     * Creating Internationalized Applications</a>,
      *
      * @param oldExp The expression that will be written
      *               to the stream.

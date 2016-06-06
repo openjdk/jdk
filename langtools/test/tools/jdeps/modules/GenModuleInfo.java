@@ -24,8 +24,8 @@
 /*
  * @test
  * @summary Tests jdeps -genmoduleinfo option
- * @library ..
- * @build CompilerUtils
+ * @library ../lib
+ * @build CompilerUtils JdepsUtil
  * @modules jdk.jdeps/com.sun.tools.jdeps
  * @run testng GenModuleInfo
  */
@@ -39,15 +39,11 @@ import java.nio.file.Paths;
 
 import java.util.Arrays;
 import java.util.Set;
-import java.util.jar.JarEntry;
-import java.util.jar.JarOutputStream;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
-
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -86,12 +82,13 @@ public class GenModuleInfo {
 
         for (String mn : modules) {
             Path root = MODS_DIR.resolve(mn);
-            createJar(LIBS_DIR.resolve(mn + ".jar"), root,
-                      Files.walk(root, Integer.MAX_VALUE)
-                           .filter(f -> {
-                                String fn = f.getFileName().toString();
-                                return fn.endsWith(".class") && !fn.equals("module-info.class");
-                           }));
+            try (Stream<Path> stream = Files.walk(root, Integer.MAX_VALUE)) {
+                Stream<Path> entries = stream.filter(f -> {
+                    String fn = f.getFileName().toString();
+                    return fn.endsWith(".class") && !fn.equals("module-info.class");
+                });
+                JdepsUtil.createJar(LIBS_DIR.resolve(mn + ".jar"), root, entries);
+            }
         }
     }
 
@@ -100,7 +97,7 @@ public class GenModuleInfo {
         Stream<String> files = Arrays.stream(modules)
                 .map(mn -> LIBS_DIR.resolve(mn + ".jar"))
                 .map(Path::toString);
-        jdeps(Stream.concat(Stream.of("-cp"), files).toArray(String[]::new));
+        JdepsUtil.jdeps(Stream.concat(Stream.of("-cp"), files).toArray(String[]::new));
     }
 
     @Test
@@ -109,9 +106,8 @@ public class GenModuleInfo {
                 .map(mn -> LIBS_DIR.resolve(mn + ".jar"))
                 .map(Path::toString);
 
-        jdeps(Stream.concat(Stream.of("-genmoduleinfo", DEST_DIR.toString()),
-                            files)
-                    .toArray(String[]::new));
+        JdepsUtil.jdeps(Stream.concat(Stream.of("-genmoduleinfo", DEST_DIR.toString()),
+                                      files).toArray(String[]::new));
 
         // check file exists
         Arrays.stream(modules)
@@ -119,19 +115,20 @@ public class GenModuleInfo {
                 .forEach(f -> assertTrue(Files.exists(f)));
 
         // copy classes except the original module-info.class
-        Files.walk(MODS_DIR, Integer.MAX_VALUE)
-                .filter(path -> !path.getFileName().toString().equals(MODULE_INFO) &&
-                                path.getFileName().toString().endsWith(".class"))
-                .map(path -> MODS_DIR.relativize(path))
-                .forEach(path -> {
-                    try {
-                        Path newFile = NEW_MODS_DIR.resolve(path);
-                        Files.createDirectories(newFile.getParent());
-                        Files.copy(MODS_DIR.resolve(path), newFile);
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                });
+        try (Stream<Path> stream = Files.walk(MODS_DIR, Integer.MAX_VALUE)) {
+            stream.filter(path -> !path.getFileName().toString().equals(MODULE_INFO) &&
+                                    path.getFileName().toString().endsWith(".class"))
+                  .map(path -> MODS_DIR.relativize(path))
+                  .forEach(path -> {
+                      try {
+                          Path newFile = NEW_MODS_DIR.resolve(path);
+                          Files.createDirectories(newFile.getParent());
+                          Files.copy(MODS_DIR.resolve(path), newFile);
+                      } catch (IOException e) {
+                          throw new UncheckedIOException(e);
+                      }
+                  });
+        }
 
         // compile new module-info.java
         assertTrue(CompilerUtils.compileModule(DEST_DIR, NEW_MODS_DIR, UNSUPPORTED,
@@ -148,7 +145,7 @@ public class GenModuleInfo {
             try (InputStream in1 = Files.newInputStream(p1);
                  InputStream in2 = Files.newInputStream(p2)) {
                 verify(ModuleDescriptor.read(in1),
-                        ModuleDescriptor.read(in2, () -> packages(MODS_DIR.resolve(mn))));
+                       ModuleDescriptor.read(in2, () -> packages(MODS_DIR.resolve(mn))));
             }
         }
     }
@@ -164,14 +161,13 @@ public class GenModuleInfo {
     }
 
     private Set<String> packages(Path dir) {
-        try {
-            return Files.find(dir, Integer.MAX_VALUE,
+        try (Stream<Path> stream = Files.find(dir, Integer.MAX_VALUE,
                              ((path, attrs) -> attrs.isRegularFile() &&
-                                               path.toString().endsWith(".class")))
-                        .map(path -> toPackageName(dir.relativize(path)))
-                        .filter(pkg -> pkg.length() > 0)   // module-info
-                        .distinct()
-                        .collect(Collectors.toSet());
+                                               path.toString().endsWith(".class")))) {
+            return stream.map(path -> toPackageName(dir.relativize(path)))
+                         .filter(pkg -> pkg.length() > 0)   // module-info
+                         .distinct()
+                         .collect(Collectors.toSet());
         } catch (IOException x) {
             throw new UncheckedIOException(x);
         }
@@ -185,48 +181,6 @@ public class GenModuleInfo {
             return name.substring(0, index).replace(File.separatorChar, '.');
         } else {
             return "";
-        }
-    }
-
-    /*
-     * Runs jdeps with the given arguments
-     */
-    public static String[] jdeps(String... args) {
-        String lineSep =     System.getProperty("line.separator");
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        System.err.println("jdeps " + Arrays.toString(args));
-        int rc = com.sun.tools.jdeps.Main.run(args, pw);
-        pw.close();
-        String out = sw.toString();
-        if (!out.isEmpty())
-            System.err.println(out);
-        if (rc != 0)
-            throw new Error("jdeps failed: rc=" + rc);
-        return out.split(lineSep);
-    }
-
-    /**
-     * Create a jar file using the list of files provided.
-     */
-    public static void createJar(Path jarfile, Path root, Stream<Path> files)
-            throws IOException {
-        try (JarOutputStream target = new JarOutputStream(
-                Files.newOutputStream(jarfile))) {
-           files.forEach(file -> add(root.relativize(file), file, target));
-        }
-    }
-
-    private static void add(Path path, Path source, JarOutputStream target) {
-        try {
-            String name = path.toString().replace(File.separatorChar, '/');
-            JarEntry entry = new JarEntry(name);
-            entry.setTime(source.toFile().lastModified());
-            target.putNextEntry(entry);
-            Files.copy(source, target);
-            target.closeEntry();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
     }
 

@@ -104,7 +104,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -130,6 +129,7 @@ import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
 import static jdk.jshell.Util.REPL_DOESNOTMATTER_CLASS_NAME;
+import static java.util.stream.Collectors.joining;
 
 /**
  * The concrete implementation of SourceCodeAnalysis.

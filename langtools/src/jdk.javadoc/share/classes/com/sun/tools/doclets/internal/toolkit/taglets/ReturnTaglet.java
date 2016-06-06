@@ -40,6 +40,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @author Jamie Ho
  * @since 1.4
  */
+@Deprecated
 public class ReturnTaglet extends BaseExecutableMemberTaglet
         implements InheritableTaglet {
 

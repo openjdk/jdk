@@ -35,6 +35,7 @@ package com.sun.tools.doclets.formats.html;
  *
  * @author Bhavesh Patel
  */
+@Deprecated
 public enum SectionName {
 
     ANNOTATION_TYPE_ELEMENT_DETAIL("annotation.type.element.detail"),
