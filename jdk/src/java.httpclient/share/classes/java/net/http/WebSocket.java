@@ -264,7 +264,7 @@ public interface WebSocket {
      * <ul>
      * <li> {@link #onOpen onOpen} <br>
      * This method is always the first to be invoked.
-     * <li> {@link #onText(WebSocket, WebSocket.Text, WebSocket.MessagePart)
+     * <li> {@link #onText(WebSocket, CharSequence, WebSocket.MessagePart)
      * onText}, {@link #onBinary(WebSocket, ByteBuffer, WebSocket.MessagePart)
      * onBinary}, {@link #onPing(WebSocket, ByteBuffer) onPing} and {@link
      * #onPong(WebSocket, ByteBuffer) onPong} <br>
@@ -375,6 +375,9 @@ public interface WebSocket {
          * @implSpec The default implementation {@linkplain WebSocket#request(long)
          * requests one more message}.
          *
+         * @implNote This implementation passes only complete UTF-16 sequences
+         * to the {@code onText} method.
+         *
          * @param webSocket
          *         the WebSocket
          * @param message
@@ -386,7 +389,7 @@ public interface WebSocket {
          * is done; or {@code null} if already done
          */
         default CompletionStage<?> onText(WebSocket webSocket,
-                                          Text message,
+                                          CharSequence message,
                                           MessagePart part) {
             webSocket.request(1);
             return null;
@@ -596,59 +599,11 @@ public interface WebSocket {
     }
 
     /**
-     * Sends a Text message with bytes from the given {@code ByteBuffer}.
+     * Sends a Text message with characters from the given {@code CharSequence}.
      *
      * <p> Returns immediately with a {@code CompletableFuture<Void>} which
      * completes normally when the message has been sent, or completes
      * exceptionally if an error occurs.
-     *
-     * <p> This message may be a partial UTF-8 sequence. However, the
-     * concatenation of all messages through the last must be a whole UTF-8
-     * sequence.
-     *
-     * <p> The {@code ByteBuffer} should not be modified until the returned
-     * {@code CompletableFuture} completes (either normally or exceptionally).
-     *
-     * <p> The returned {@code CompletableFuture} can complete exceptionally
-     * with:
-     * <ul>
-     * <li> {@link IOException}
-     *          if an I/O error occurs during this operation; or the
-     *          {@code WebSocket} closes while this operation is in progress;
-     *          or the {@code message} is a malformed UTF-8 sequence
-     * </ul>
-     *
-     * @param message
-     *         the message
-     * @param isLast
-     *         {@code true} if this is the final part of the message,
-     *         {@code false} otherwise
-     *
-     * @return a CompletableFuture of Void
-     *
-     * @throws IllegalStateException
-     *         if the WebSocket is closed
-     * @throws IllegalStateException
-     *         if a Close message has been sent already
-     * @throws IllegalStateException
-     *         if there is an outstanding send operation
-     * @throws IllegalStateException
-     *         if a previous Binary message
-     *         was not sent with {@code isLast == true}
-     */
-    CompletableFuture<Void> sendText(ByteBuffer message, boolean isLast);
-
-    /**
-     * Sends a Text message with characters from the given {@code
-     * CharSequence}.
-     *
-     * <p> Returns immediately with a {@code CompletableFuture<Void>} which
-     * completes normally when the message has been sent, or completes
-     * exceptionally if an error occurs.
-     *
-     * <p> This message may be a partial UTF-16 sequence. However, the
-     * concatenation of all messages through the last must be a whole UTF-16
-     * sequence.
      *
      * <p> The {@code CharSequence} should not be modified until the returned
      * {@code CompletableFuture} completes (either normally or exceptionally).
@@ -661,6 +616,10 @@ public interface WebSocket {
      *          {@code WebSocket} closes while this operation is in progress;
      *          or the {@code message} is a malformed UTF-16 sequence
      * </ul>
+     *
+     * @implNote This implementation does not accept partial UTF-16
+     * sequences. In case such a sequence is passed, a returned {@code
+     * CompletableFuture} completes exceptionally.
      *
      * @param message
      *         the message
@@ -700,9 +659,9 @@ public interface WebSocket {
      * with:
      * <ul>
      * <li> {@link IOException}
-     *          if an I/O error occurs during this operation; or the
-     *          {@code WebSocket} closes while this operation is in progress;
-     *          or the message is a malformed UTF-16 sequence
+     *          if an I/O error occurs during this operation;
+     *          or the {@code WebSocket} closes while this operation is in progress;
+     *          or the message is a malformed (or an incomplete) UTF-16 sequence
      * </ul>
      *
      * @param message
@@ -743,9 +702,9 @@ public interface WebSocket {
      * with:
      * <ul>
      * <li> {@link IOException}
-     *          if an I/O error occurs during this operation; or the
-     *          {@code WebSocket} closes while this operation is in progress;
-     *          or the message is a malformed UTF-16 sequence
+     *          if an I/O error occurs during this operation;
+     *          or the {@code WebSocket} closes while this operation is in progress;
+     *          or the message is a malformed (or an incomplete) UTF-16 sequence
      * </ul>
      *
      * @param message
@@ -1001,6 +960,7 @@ public interface WebSocket {
      * @implNote This implementation does not distinguish between partial and
      * whole messages, because it's not known beforehand how a message will be
      * received.
+     *
      * <p> If a server sends more messages than requested, the implementation
      * queues up these messages on the TCP connection and may eventually force
      * the sender to stop sending through TCP flow control.
@@ -1241,48 +1201,5 @@ public interface WebSocket {
         private static Map.Entry<Integer, CloseCode> entry(CloseCode cc) {
             return Map.entry(cc.getCode(), cc);
         }
-    }
-
-    /**
-     * A character sequence that provides access to the characters UTF-8 decoded
-     * from a message in a {@code ByteBuffer}.
-     *
-     * @since 9
-     */
-    interface Text extends CharSequence {
-
-        // Methods from the CharSequence below are mentioned explicitly for the
-        // purpose of documentation, so when looking at javadoc it immediately
-        // obvious what methods Text has
-
-        @Override
-        int length();
-
-        @Override
-        char charAt(int index);
-
-        @Override
-        CharSequence subSequence(int start, int end);
-
-        /**
-         * Returns a string containing the characters in this sequence in the
-         * same order as this sequence. The length of the string will be the
-         * length of this sequence.
-         *
-         * @return a string consisting of exactly this sequence of characters
-         */
-        @Override
-        // TODO: remove the explicit javadoc above when:
-        // (JDK-8144034 has been resolved) AND (the comment is still identical
-        // to CharSequence#toString)
-        String toString();
-
-        /**
-         * Returns a read-only {@code ByteBuffer} containing the message encoded
-         * in UTF-8.
-         *
-         * @return a read-only ByteBuffer
-         */
-        ByteBuffer asByteBuffer();
     }
 }

@@ -95,11 +95,6 @@ final class WS implements WebSocket {
     }
 
     @Override
-    public CompletableFuture<Void> sendText(ByteBuffer message, boolean isLast) {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
-    @Override
     public CompletableFuture<Void> sendText(CharSequence message, boolean isLast) {
         requireNonNull(message, "message");
         synchronized (stateLock) {
@@ -239,7 +234,7 @@ final class WS implements WebSocket {
             }
 
             @Override
-            public CompletionStage<?> onText(WebSocket webSocket, Text message,
+            public CompletionStage<?> onText(WebSocket webSocket, CharSequence message,
                                              MessagePart part) {
                 synchronized (visibilityLock) {
                     return listener.onText(webSocket, message, part);
