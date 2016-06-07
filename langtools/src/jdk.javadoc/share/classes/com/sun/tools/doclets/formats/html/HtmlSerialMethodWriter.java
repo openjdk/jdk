@@ -42,6 +42,7 @@ import com.sun.tools.doclets.internal.toolkit.taglets.*;
  * @author Joe Fialli
  * @author Bhavesh Patel (Modified)
  */
+@Deprecated
 public class HtmlSerialMethodWriter extends MethodWriterImpl implements
         SerializedFormWriter.SerialMethodWriter{
 

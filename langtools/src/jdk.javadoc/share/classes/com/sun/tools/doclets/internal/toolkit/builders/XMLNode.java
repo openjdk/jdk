@@ -38,6 +38,7 @@ import java.util.Map;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
+@Deprecated
 public class XMLNode {
     XMLNode(XMLNode parent, String qname) {
         this.parent = parent;

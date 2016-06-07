@@ -429,6 +429,10 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
 
     public boolean run() throws Util.Exit {
 
+        if (!javac_extras.contains("-XDsuppress-tool-removal-message")) {
+            log.println(getMessage("javah.misc.Deprecation"));
+        }
+
         Util util = new Util(log, diagnosticListener);
 
         if (noArgs || help) {

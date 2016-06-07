@@ -356,19 +356,6 @@ UNSAFE_ENTRY(jobject, Unsafe_GetUncompressedObject(JNIEnv *env, jobject unsafe, 
   return JNIHandles::make_local(env, v);
 } UNSAFE_END
 
-UNSAFE_ENTRY(jclass, Unsafe_GetJavaMirror(JNIEnv *env, jobject unsafe, jlong metaspace_klass)) {
-  Klass* klass = (Klass*) (address) metaspace_klass;
-
-  return (jclass) JNIHandles::make_local(klass->java_mirror());
-} UNSAFE_END
-
-UNSAFE_ENTRY(jlong, Unsafe_GetKlassPointer(JNIEnv *env, jobject unsafe, jobject obj)) {
-  oop o = JNIHandles::resolve(obj);
-  jlong klass = (jlong) (address) o->klass();
-
-  return klass;
-} UNSAFE_END
-
 #ifndef SUPPORTS_NATIVE_CX8
 
 // VM_Version::supports_cx8() is a surrogate for 'supports atomic long memory ops'.
@@ -1152,8 +1139,6 @@ static JNINativeMethod jdk_internal_misc_Unsafe_methods[] = {
     {CC "putObjectVolatile",CC "(" OBJ "J" OBJ ")V",  FN_PTR(Unsafe_PutObjectVolatile)},
 
     {CC "getUncompressedObject", CC "(" ADR ")" OBJ,  FN_PTR(Unsafe_GetUncompressedObject)},
-    {CC "getJavaMirror",         CC "(" ADR ")" CLS,  FN_PTR(Unsafe_GetJavaMirror)},
-    {CC "getKlassPointer",       CC "(" OBJ ")" ADR,  FN_PTR(Unsafe_GetKlassPointer)},
 
     DECLARE_GETPUTOOP(Boolean, Z),
     DECLARE_GETPUTOOP(Byte, B),

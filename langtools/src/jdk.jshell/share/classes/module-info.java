@@ -32,4 +32,5 @@ module jdk.jshell {
     requires jdk.jdi;
 
     exports jdk.jshell;
+    exports jdk.jshell.spi;
 }

@@ -105,15 +105,30 @@ security.provider.tbd=SunPKCS11
 # The provider is the name of the provider. Any provider that does not
 # also appear in the registered list will be ignored.
 #
+# There is a special serviceType for this property only to group a set of
+# algorithms together. The type is "Group" and is followed by an algorithm
+# keyword. Groups are to simplify and lessen the entries on the property
+# line. Current groups are:
+#   Group.SHA2 = SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224, SHA-512/256
+#   Group.HmacSHA2 = HmacSHA224, HmacSHA256, HmacSHA384, HmacSHA512
+#   Group.SHA2RSA = SHA224withRSA, SHA256withRSA, SHA384withRSA, SHA512withRSA
+#   Group.SHA2DSA = SHA224withDSA, SHA256withDSA, SHA384withDSA, SHA512withDSA
+#   Group.SHA2ECDSA = SHA224withECDSA, SHA256withECDSA, SHA384withECDSA, \
+#                     SHA512withECDSA
+#   Group.SHA3 = SHA3-224, SHA3-256, SHA3-384, SHA3-512
+#   Group.HmacSHA3 = HmacSHA3-224, HmacSHA3-256, HmacSHA3-384, HmacSHA3-512
+#
 # Example:
 #   jdk.security.provider.preferred=AES/GCM/NoPadding:SunJCE, \
-#         MessageDigest.SHA-256:SUN
+#         MessageDigest.SHA-256:SUN, Group.HmacSHA2:SunJCE
 #ifdef solaris-sparc
-jdk.security.provider.preferred=AES:SunJCE, SHA1:SUN, SHA-224:SUN, \
-      SHA-256:SUN, SHA-384:SUN, SHA-512:SUN
+jdk.security.provider.preferred=AES:SunJCE, SHA1:SUN, Group.SHA2:SUN, \
+      HmacSHA1:SunJCE, Group.HmacSHA2:SunJCE
 #endif
 #ifdef solaris-x86
-jdk.security.provider.preferred=AES:SunJCE, RSA:SunRsaSign
+jdk.security.provider.preferred=AES:SunJCE, SHA1:SUN, Group.SHA2:SUN, \
+      HmacSHA1:SunJCE, Group.HmacSHA2:SunJCE, RSA:SunRsaSign, \
+      SHA1withRSA:SunRsaSign, Group.SHA2RSA:SunRsaSign
 #endif
 
 
@@ -555,9 +570,7 @@ krb5.kdc.bad.policy = tryLast
 # describes the mechanism for disabling algorithms based on algorithm name
 # and/or key length.  This includes algorithms used in certificates, as well
 # as revocation information such as CRLs and signed OCSP Responses.
-#
-# The syntax of the disabled algorithm string is described as this Java
-# BNF-style:
+# The syntax of the disabled algorithm string is described as follows:
 #   DisabledAlgorithms:
 #       " DisabledAlgorithm { , DisabledAlgorithm } "
 #
@@ -568,25 +581,22 @@ krb5.kdc.bad.policy = tryLast
 #       (see below)
 #
 #   Constraint:
-#       KeySizeConstraint, CertConstraint
+#       KeySizeConstraint | CAConstraint | DenyAfterConstraint
 #
 #   KeySizeConstraint:
-#       keySize Operator DecimalInteger
+#       keySize Operator KeyLength
 #
 #   Operator:
 #       <= | < | == | != | >= | >
 #
-#   DecimalInteger:
-#       DecimalDigits
+#   KeyLength:
+#       Integer value of the algorithm's key length in bits
 #
-#   DecimalDigits:
-#       DecimalDigit {DecimalDigit}
-#
-#   DecimalDigit: one of
-#       1 2 3 4 5 6 7 8 9 0
-#
-#   CertConstraint
+#   CAConstraint:
 #       jdkCA
+#
+#   DenyAfterConstraint:
+#       denyAfter YYYY-MM-DD
 #
 # The "AlgorithmName" is the standard algorithm name of the disabled
 # algorithm. See "Java Cryptography Architecture Standard Algorithm Name
@@ -600,27 +610,42 @@ krb5.kdc.bad.policy = tryLast
 # that rely on DSA, such as NONEwithDSA, SHA1withDSA.  However, the assertion
 # will not disable algorithms related to "ECDSA".
 #
-# A "Constraint" provides further guidance for the algorithm being specified.
-# The "KeySizeConstraint" requires a key of a valid size range if the
-# "AlgorithmName" is of a key algorithm.  The "DecimalInteger" indicates the
-# key size specified in number of bits.  For example, "RSA keySize <= 1024"
-# indicates that any RSA key with key size less than or equal to 1024 bits
-# should be disabled, and "RSA keySize < 1024, RSA keySize > 2048" indicates
-# that any RSA key with key size less than 1024 or greater than 2048 should
-# be disabled. Note that the "KeySizeConstraint" only makes sense to key
-# algorithms.
+# A "Constraint" defines restrictions on the keys and/or certificates for
+# a specified AlgorithmName:
 #
-# "CertConstraint" specifies additional constraints for
-# certificates that contain algorithms that are restricted:
+#   KeySizeConstraint:
+#     keySize Operator KeyLength
+#       The constraint requires a key of a valid size range if the
+#       "AlgorithmName" is of a key algorithm.  The "KeyLength" indicates
+#       the key size specified in number of bits.  For example,
+#       "RSA keySize <= 1024" indicates that any RSA key with key size less
+#       than or equal to 1024 bits should be disabled, and
+#       "RSA keySize < 1024, RSA keySize > 2048" indicates that any RSA key
+#       with key size less than 1024 or greater than 2048 should be disabled.
+#       This constraint is only used on algorithms that have a key size.
 #
-#   "jdkCA" prohibits the specified algorithm only if the algorithm is used
-#     in a certificate chain that terminates at a marked trust anchor in the
-#     lib/security/cacerts keystore.  All other chains are not affected.
-#     If the jdkCA constraint is not set, then all chains using the
-#     specified algorithm are restricted.  jdkCA may only be used once in
-#     a DisabledAlgorithm expression.
-#     Example:  To apply this constraint to SHA-1 certificates, include
-#     the following:  "SHA1 jdkCA"
+#   CAConstraint:
+#     jdkCA
+#       This constraint prohibits the specified algorithm only if the
+#       algorithm is used in a certificate chain that terminates at a marked
+#       trust anchor in the lib/security/cacerts keystore.  If the jdkCA
+#       constraint is not set, then all chains using the specified algorithm
+#       are restricted.  jdkCA may only be used once in a DisabledAlgorithm
+#       expression.
+#       Example:  To apply this constraint to SHA-1 certificates, include
+#       the following:  "SHA1 jdkCA"
+#
+#   DenyAfterConstraint:
+#     denyAfter YYYY-MM-DD
+#       This constraint prohibits a certificate with the specified algorithm
+#       from being used after the date regardless of the certificate's
+#       validity.  JAR files that are signed and timestamped before the
+#       constraint date with certificates containing the disabled algorithm
+#       will not be restricted.  The date is processed in the UTC timezone.
+#       This constraint can only be used once in a DisabledAlgorithm
+#       expression.
+#       Example:  To deny usage of RSA 2048 bit certificates after Feb 3 2020,
+#       use the following:  "RSA keySize == 2048 & denyAfter 2020-02-03"
 #
 # When an algorithm must satisfy more than one constraint, it must be
 # delimited by an ampersand '&'.  For example, to restrict certificates in a
@@ -712,6 +737,12 @@ jdk.tls.disabledAlgorithms=SSLv3, RC4, MD5withRSA, DH keySize < 1024
 #
 # See SSL/TLS specifications and "Java Cryptography Architecture Standard
 # Algorithm Name Documentation" for information about the algorithm names.
+#
+# Note: If a legacy algorithm is also restricted through the
+# jdk.tls.disabledAlgorithms property or the
+# java.security.AlgorithmConstraints API (See
+# javax.net.ssl.SSLParameters.setAlgorithmConstraints()),
+# then the algorithm is completely disabled and will not be negotiated.
 #
 # Note: This property is currently used by Oracle's JSSE implementation.
 # It is not guaranteed to be examined and used by other implementations.

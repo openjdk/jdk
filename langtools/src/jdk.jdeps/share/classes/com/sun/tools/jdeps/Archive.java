@@ -27,6 +27,7 @@ package com.sun.tools.jdeps;
 
 import com.sun.tools.classfile.Dependency.Location;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -38,11 +39,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 /**
  * Represents the source of the class files.
  */
-public class Archive {
+public class Archive implements Closeable {
     public static Archive getInstance(Path p) {
         try {
             return new Archive(p, ClassFileReader.newInstance(p));
@@ -86,6 +88,10 @@ public class Archive {
         return Module.UNNAMED_MODULE;
     }
 
+    public boolean contains(String entry) {
+        return reader.entries().contains(entry);
+    }
+
     public void addClass(Location origin) {
         deps.computeIfAbsent(origin, _k -> new HashSet<>());
     }
@@ -96,6 +102,15 @@ public class Archive {
 
     public Set<Location> getClasses() {
         return deps.keySet();
+    }
+
+    public Stream<Location> getDependencies() {
+        return deps.values().stream()
+                   .flatMap(Set::stream);
+    }
+
+    public boolean hasDependences() {
+        return getDependencies().count() > 0;
     }
 
     public void visitDependences(Visitor v) {
@@ -164,6 +179,13 @@ public class Archive {
     private boolean isJrt() {
         return location != null && location.getScheme().equals("jrt");
     }
+
+    @Override
+    public void close() throws IOException {
+        if (reader != null)
+            reader.close();
+    }
+
     interface Visitor {
         void visit(Location origin, Location target);
     }

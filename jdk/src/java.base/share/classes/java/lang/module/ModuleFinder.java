@@ -33,12 +33,15 @@ import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -60,15 +63,15 @@ import sun.security.action.GetPropertyAction;
  *     ModuleFinder finder = ModuleFinder.of(dir1, dir2, dir3);
  *
  *     Optional<ModuleReference> omref = finder.find("jdk.foo");
- *     if (omref.isPresent()) { ... }
+ *     omref.ifPresent(mref -> ... );
  *
  * }</pre>
  *
  * <p> The {@link #find(String) find} and {@link #findAll() findAll} methods
- * defined here can fail for several reasons. These include include I/O errors,
- * errors detected parsing a module descriptor ({@code module-info.class}), or
- * in the case of {@code ModuleFinder} returned by {@link #of ModuleFinder.of},
- * that two or more modules with the same name are found in a directory.
+ * defined here can fail for several reasons. These include I/O errors, errors
+ * detected parsing a module descriptor ({@code module-info.class}), or in the
+ * case of {@code ModuleFinder} returned by {@link #of ModuleFinder.of}, that
+ * two or more modules with the same name are found in a directory.
  * When an error is detected then these methods throw {@link FindException
  * FindException} with an appropriate {@link Throwable#getCause cause}.
  * The behavior of a {@code ModuleFinder} after a {@code FindException} is
@@ -205,11 +208,13 @@ public interface ModuleFinder {
      *
      * <p> The module finder returned by this method supports modules that are
      * packaged as JAR files. A JAR file with a {@code module-info.class} in
-     * the top-level directory of the JAR file is a modular JAR and is an
-     * <em>explicit module</em>. A JAR file that does not have a {@code
-     * module-info.class} in the top-level directory is an {@link
-     * ModuleDescriptor#isAutomatic automatic} module. The {@link
-     * ModuleDescriptor} for an automatic module is created as follows:
+     * the top-level directory of the JAR file (or overridden by a versioned
+     * entry in a {@link java.util.jar.JarFile#isMultiRelease() multi-release}
+     * JAR file) is a modular JAR and is an <em>explicit module</em>.
+     * A JAR file that does not have a {@code module-info.class} in the
+     * top-level directory is an {@link ModuleDescriptor#isAutomatic automatic}
+     * module. The {@link ModuleDescriptor} for an automatic module is created as
+     * follows:
      *
      * <ul>
      *
@@ -263,18 +268,22 @@ public interface ModuleFinder {
      * </ul>
      *
      * <p> In addition to JAR files, an implementation may also support modules
-     * that are packaged in other implementation specific module formats. As
-     * with automatic modules, the contents of a packaged or exploded module
-     * may need to be <em>scanned</em> in order to determine the packages in
-     * the module. If a {@code .class} file that corresponds to a class in an
+     * that are packaged in other implementation specific module formats. When
+     * a file is encountered that is not recognized as a packaged module then
+     * {@code FindException} is thrown. An implementation may choose to ignore
+     * some files, {@link java.nio.file.Files#isHidden hidden} files for
+     * example. Paths to files that do not exist are always ignored. </p>
+     *
+     * <p> As with automatic modules, the contents of a packaged or exploded
+     * module may need to be <em>scanned</em> in order to determine the packages
+     * in the module. If a {@code .class} file that corresponds to a class in an
      * unnamed package is encountered then {@code FindException} is thrown. </p>
      *
      * <p> Finders created by this method are lazy and do not eagerly check
      * that the given file paths are directories or packaged modules.
      * Consequently, the {@code find} or {@code findAll} methods will only
      * fail if invoking these methods results in searching a directory or
-     * packaged module and an error is encountered. Paths to files that do not
-     * exist are ignored. </p>
+     * packaged module and an error is encountered. </p>
      *
      * @param entries
      *        A possibly-empty array of paths to directories of modules
@@ -283,79 +292,85 @@ public interface ModuleFinder {
      * @return A {@code ModuleFinder} that locates modules on the file system
      */
     static ModuleFinder of(Path... entries) {
+        // special case zero entries
+        if (entries.length == 0) {
+            return new ModuleFinder() {
+                @Override
+                public Optional<ModuleReference> find(String name) {
+                    Objects.requireNonNull(name);
+                    return Optional.empty();
+                }
+
+                @Override
+                public Set<ModuleReference> findAll() {
+                    return Collections.emptySet();
+                }
+            };
+        }
+
         return new ModulePath(entries);
     }
 
     /**
-     * Returns a module finder that is the equivalent to composing two
-     * module finders. The resulting finder will locate modules references
-     * using {@code first}; if not found then it will attempt to locate module
-     * references using {@code second}.
+     * Returns a module finder that is composed from a sequence of zero or more
+     * module finders. The {@link #find(String) find} method of the resulting
+     * module finder will locate a module by invoking the {@code find} method
+     * of each module finder, in array index order, until either the module is
+     * found or all module finders have been searched. The {@link #findAll()
+     * findAll} method of the resulting module finder will return a set of
+     * modules that includes all modules located by the first module finder.
+     * The set of modules will include all modules located by the second or
+     * subsequent module finder that are not located by previous module finders
+     * in the sequence.
      *
-     * <p> The {@link #findAll() findAll} method of the resulting module finder
-     * will locate all modules located by the first module finder. It will
-     * also locate all modules located by the second module finder that are not
-     * located by the first module finder. </p>
+     * <p> When locating modules then any exceptions or errors thrown by the
+     * {@code find} or {@code findAll} methods of the underlying module finders
+     * will be propogated to the caller of the resulting module finder's
+     * {@code find} or {@code findAll} methods. </p>
      *
-     * @apiNote This method will eventually be changed to take a sequence of
-     *          module finders.
+     * @param finders
+     *        The array of module finders
      *
-     * @param first
-     *        The first module finder
-     * @param second
-     *        The second module finder
-     *
-     * @return A {@code ModuleFinder} that composes two module finders
+     * @return A {@code ModuleFinder} that composes a sequence of module finders
      */
-    static ModuleFinder compose(ModuleFinder first, ModuleFinder second) {
-        Objects.requireNonNull(first);
-        Objects.requireNonNull(second);
+    static ModuleFinder compose(ModuleFinder... finders) {
+        final List<ModuleFinder> finderList = Arrays.asList(finders);
+        finderList.forEach(Objects::requireNonNull);
 
         return new ModuleFinder() {
-            Set<ModuleReference> allModules;
+            private final Map<String, ModuleReference> nameToModule = new HashMap<>();
+            private Set<ModuleReference> allModules;
 
             @Override
             public Optional<ModuleReference> find(String name) {
-                Optional<ModuleReference> om = first.find(name);
-                if (!om.isPresent())
-                    om = second.find(name);
-                return om;
+                // cached?
+                ModuleReference mref = nameToModule.get(name);
+                if (mref != null)
+                    return Optional.of(mref);
+                Optional<ModuleReference> omref = finderList.stream()
+                        .map(f -> f.find(name))
+                        .flatMap(Optional::stream)
+                        .findFirst();
+                omref.ifPresent(m -> nameToModule.put(name, m));
+                return omref;
             }
+
             @Override
             public Set<ModuleReference> findAll() {
-                if (allModules == null) {
-                    allModules = Stream.concat(first.findAll().stream(),
-                                               second.findAll().stream())
-                                       .map(a -> a.descriptor().name())
-                                       .distinct()
-                                       .map(this::find)
-                                       .map(Optional::get)
-                                       .collect(Collectors.toSet());
-                }
+                if (allModules != null)
+                    return allModules;
+                // seed with modules already found
+                Set<ModuleReference> result = new HashSet<>(nameToModule.values());
+                finderList.stream()
+                          .flatMap(f -> f.findAll().stream())
+                          .forEach(mref -> {
+                              String name = mref.descriptor().name();
+                              if (nameToModule.putIfAbsent(name, mref) == null) {
+                                  result.add(mref);
+                              }
+                          });
+                allModules = Collections.unmodifiableSet(result);
                 return allModules;
-            }
-        };
-    }
-
-    /**
-     * Returns an empty module finder.  The empty finder does not find any
-     * modules.
-     *
-     * @apiNote This is useful when using methods such as {@link
-     * Configuration#resolveRequires resolveRequires} where two finders are
-     * specified. An alternative is {@code ModuleFinder.of()}.
-     *
-     * @return A {@code ModuleFinder} that does not find any modules
-     */
-    static ModuleFinder empty() {
-        // an alternative implementation of ModuleFinder.of()
-        return new ModuleFinder() {
-            @Override public Optional<ModuleReference> find(String name) {
-                Objects.requireNonNull(name);
-                return Optional.empty();
-            }
-            @Override public Set<ModuleReference> findAll() {
-                return Collections.emptySet();
             }
         };
     }

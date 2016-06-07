@@ -47,6 +47,7 @@ import com.sun.tools.doclets.internal.toolkit.Content;
  * @author Jamie Ho
  */
 
+@Deprecated
 public class LegacyTaglet implements Taglet {
 
     private com.sun.tools.doclets.Taglet legacyTaglet;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4361783
+ * @key intermittent
  * @summary  Test to see if ICMP Port Unreachable on non-connected
  *           DatagramSocket causes a SocketException "socket closed"
  *           exception on Windows 2000.

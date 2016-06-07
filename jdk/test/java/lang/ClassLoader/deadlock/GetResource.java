@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.net.URL;
 
 /* @test
- * @bug 6977738
+ * @bug 6977738 8029891
  * @summary Test ClassLoader.getResource() that should not deadlock
  #          if another thread is holding the system properties object
  *
@@ -70,10 +70,6 @@ public class GetResource {
                     go.await();  // wait until t1 holds the lock of the system properties
 
                     URL u1 = Thread.currentThread().getContextClassLoader().getResource("unknownresource");
-                    URL u2 = Thread.currentThread().getContextClassLoader().getResource("sun/util/resources/CalendarData.class");
-                    if (u2 == null) {
-                        throw new RuntimeException("Test failed: resource not found");
-                    }
                     done.await();
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);

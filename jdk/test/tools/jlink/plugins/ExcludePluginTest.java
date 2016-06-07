@@ -34,11 +34,11 @@ import java.io.File;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
-import jdk.tools.jlink.internal.PoolImpl;
+import jdk.tools.jlink.internal.ModulePoolImpl;
 
 import jdk.tools.jlink.internal.plugins.ExcludePlugin;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 
 public class ExcludePluginTest {
 
@@ -75,17 +75,17 @@ public class ExcludePluginTest {
         prop.put(ExcludePlugin.NAME, s);
         ExcludePlugin excludePlugin = new ExcludePlugin();
         excludePlugin.configure(prop);
-        Pool resources = new PoolImpl();
-        ModuleData resource = Pool.newResource(sample, new byte[0]);
+        ModulePool resources = new ModulePoolImpl();
+        ModuleEntry resource = ModuleEntry.create(sample, new byte[0]);
         resources.add(resource);
-        Pool result = new PoolImpl();
+        ModulePool result = new ModulePoolImpl();
         excludePlugin.visit(resources, result);
         if (exclude) {
-            if (result.getContent().contains(resource)) {
+            if (result.contains(resource)) {
                 throw new AssertionError(sample + " should be excluded by " + s);
             }
         } else {
-            if (!result.getContent().contains(resource)) {
+            if (!result.contains(resource)) {
                 throw new AssertionError(sample + " shouldn't be excluded by " + s);
             }
         }

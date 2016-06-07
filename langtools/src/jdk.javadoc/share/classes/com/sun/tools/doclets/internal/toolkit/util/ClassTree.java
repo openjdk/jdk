@@ -45,6 +45,7 @@ import com.sun.tools.doclets.internal.toolkit.*;
  * @see com.sun.javadoc.ClassDoc
  * @author Atul M Dambalkar
  */
+@Deprecated
 public class ClassTree {
 
     /**

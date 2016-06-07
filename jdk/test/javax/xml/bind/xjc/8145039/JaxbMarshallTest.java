@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 8145039
+ * @bug 8145039 8157096
  * @summary Check that marshalling of xjc generated class doesn't throw
  *          ClassCast exception.
- * @modules javax.xml.bind
+ * @modules java.xml.bind
  * @library /lib/testlibrary
  * @run testng/othervm JaxbMarshallTest
  */
@@ -127,6 +127,8 @@ public class JaxbMarshallTest {
     // Compile java classes with javac tool
     void compileXjcGeneratedClasses() throws Exception {
         JDKToolLauncher javacLauncher = JDKToolLauncher.createUsingTestJDK("javac");
+        javacLauncher.addToolArg("-addmods");
+        javacLauncher.addToolArg("java.xml.bind");
         javacLauncher.addToolArg(xjcResultDir.resolve("ObjectFactory.java").toString());
         javacLauncher.addToolArg(xjcResultDir.resolve("TypesLongList.java").toString());
         javacLauncher.addToolArg(xjcResultDir.resolve("package-info.java").toString());

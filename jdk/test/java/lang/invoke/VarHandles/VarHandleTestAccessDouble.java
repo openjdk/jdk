@@ -293,6 +293,10 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
+            double r = (double) vh.getAndSet(recv, 1.0d);
+        });
+
+        checkUOE(() -> {
             double o = (double) vh.getAndAdd(recv, 1.0d);
         });
 
@@ -379,6 +383,10 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
+            double r = (double) vh.getAndSet(1.0d);
+        });
+
+        checkUOE(() -> {
             double o = (double) vh.getAndAdd(1.0d);
         });
 
@@ -455,6 +463,10 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
+            double r = (double) vh.getAndSet(recv, 1.0d);
+        });
+
+        checkUOE(() -> {
             double o = (double) vh.getAndAdd(recv, 1.0d);
         });
 
@@ -528,6 +540,10 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
 
         checkUOE(() -> {
             boolean r = vh.weakCompareAndSetRelease(1.0d, 2.0d);
+        });
+
+        checkUOE(() -> {
+            double r = (double) vh.getAndSet(1.0d);
         });
 
         checkUOE(() -> {
@@ -611,6 +627,10 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
 
         checkUOE(() -> {
             boolean r = vh.weakCompareAndSetRelease(array, i, 1.0d, 2.0d);
+        });
+
+        checkUOE(() -> {
+            double r = (double) vh.getAndSet(array, i, 1.0d);
         });
 
         checkUOE(() -> {

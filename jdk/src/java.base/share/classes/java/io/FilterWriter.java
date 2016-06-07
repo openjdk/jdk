@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,12 @@ public abstract class FilterWriter extends Writer {
      * @param  off   Offset from which to start reading characters
      * @param  len   Number of characters to be written
      *
-     * @exception  IOException  If an I/O error occurs
+     * @throws  IndexOutOfBoundsException
+     *          If the values of the {@code off} and {@code len} parameters
+     *          cause the corresponding method of the underlying {@code Writer}
+     *          to throw an {@code IndexOutOfBoundsException}
+     *
+     * @throws  IOException  If an I/O error occurs
      */
     public void write(char cbuf[], int off, int len) throws IOException {
         out.write(cbuf, off, len);
@@ -85,7 +90,12 @@ public abstract class FilterWriter extends Writer {
      * @param  off  Offset from which to start reading characters
      * @param  len  Number of characters to be written
      *
-     * @exception  IOException  If an I/O error occurs
+     * @throws  IndexOutOfBoundsException
+     *          If the values of the {@code off} and {@code len} parameters
+     *          cause the corresponding method of the underlying {@code Writer}
+     *          to throw an {@code IndexOutOfBoundsException}
+     *
+     * @throws  IOException  If an I/O error occurs
      */
     public void write(String str, int off, int len) throws IOException {
         out.write(str, off, len);

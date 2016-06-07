@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,6 +327,9 @@ inline void Assembler::lbzu( Register d, int si16,    Register s1) { assert(d !=
 inline void Assembler::ld(   Register d, int si16,    Register s1) { emit_int32(LD_OPCODE  | rt(d) | ds(si16)   | ra0mem(s1));}
 inline void Assembler::ldx(  Register d, Register s1, Register s2) { emit_int32(LDX_OPCODE | rt(d) | ra0mem(s1) | rb(s2));}
 inline void Assembler::ldu(  Register d, int si16,    Register s1) { assert(d != s1, "according to ibm manual"); emit_int32(LDU_OPCODE | rt(d) | ds(si16) | rta0mem(s1));}
+
+inline void Assembler::ld_ptr(Register d, int b, Register s1) { ld(d, b, s1); }
+DEBUG_ONLY(inline void Assembler::ld_ptr(Register d, ByteSize b, Register s1) { ld(d, in_bytes(b), s1); })
 
 //  PPC 1, section 3.3.3 Fixed-Point Store Instructions
 inline void Assembler::stwx( Register d, Register s1, Register s2) { emit_int32(STWX_OPCODE | rs(d) | ra0mem(s1) | rb(s2));}

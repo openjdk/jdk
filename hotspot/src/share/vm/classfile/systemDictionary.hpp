@@ -420,9 +420,9 @@ public:
   // Initialization
   static void initialize(TRAPS);
 
-  // Fast access to commonly used classes (preloaded)
+  // Checked fast access to commonly used classes - mostly preloaded
   static InstanceKlass* check_klass(InstanceKlass* k) {
-    assert(k != NULL, "preloaded klass not initialized");
+    assert(k != NULL, "klass not loaded");
     return k;
   }
 

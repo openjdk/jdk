@@ -54,7 +54,6 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.lang.reflect.Constructor;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URL;
@@ -1238,7 +1237,7 @@ public final class Main {
         PrivateKey privateKey =
                 (PrivateKey)recoverKey(alias, storePass, keyPass).fst;
         if (sigAlgName == null) {
-            sigAlgName = getCompatibleSigAlgName(privateKey.getAlgorithm());
+            sigAlgName = getCompatibleSigAlgName(privateKey);
         }
         Signature signature = Signature.getInstance(sigAlgName);
         signature.initSign(privateKey);
@@ -1328,7 +1327,7 @@ public final class Main {
         PrivateKey privateKey =
                 (PrivateKey)recoverKey(alias, storePass, keyPass).fst;
         if (sigAlgName == null) {
-            sigAlgName = getCompatibleSigAlgName(privateKey.getAlgorithm());
+            sigAlgName = getCompatibleSigAlgName(privateKey);
         }
 
         X509CRLEntry[] badCerts = new X509CRLEntry[ids.size()];
@@ -1387,7 +1386,7 @@ public final class Main {
 
         // Construct a Signature object, so that we can sign the request
         if (sigAlgName == null) {
-            sigAlgName = getCompatibleSigAlgName(privKey.getAlgorithm());
+            sigAlgName = getCompatibleSigAlgName(privKey);
         }
 
         Signature signature = Signature.getInstance(sigAlgName);
@@ -1619,19 +1618,17 @@ public final class Main {
      * If no signature algorithm was specified at the command line,
      * we choose one that is compatible with the selected private key
      */
-    private static String getCompatibleSigAlgName(String keyAlgName)
+    private static String getCompatibleSigAlgName(PrivateKey key)
             throws Exception {
-        if ("DSA".equalsIgnoreCase(keyAlgName)) {
-            return "SHA256WithDSA";
-        } else if ("RSA".equalsIgnoreCase(keyAlgName)) {
-            return "SHA256WithRSA";
-        } else if ("EC".equalsIgnoreCase(keyAlgName)) {
-            return "SHA256withECDSA";
+        String result = AlgorithmId.getDefaultSigAlgForKey(key);
+        if (result != null) {
+            return result;
         } else {
             throw new Exception(rb.getString
                     ("Cannot.derive.signature.algorithm"));
         }
     }
+
     /**
      * Creates a new key pair and self-signed certificate.
      */
@@ -1658,9 +1655,6 @@ public final class Main {
             throw new Exception(form.format(source));
         }
 
-        if (sigAlgName == null) {
-            sigAlgName = getCompatibleSigAlgName(keyAlgName);
-        }
         CertAndKeyGen keypair =
                 new CertAndKeyGen(keyAlgName, sigAlgName, providerName);
 
@@ -2526,7 +2520,7 @@ public final class Main {
 
         // Determine the signature algorithm
         if (sigAlgName == null) {
-            sigAlgName = getCompatibleSigAlgName(privKey.getAlgorithm());
+            sigAlgName = getCompatibleSigAlgName(privKey);
         }
 
         // Get the old certificate

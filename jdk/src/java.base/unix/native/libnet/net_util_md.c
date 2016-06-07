@@ -95,8 +95,8 @@ void setDefaultScopeID(JNIEnv *env, struct sockaddr *him)
         CHECK_NULL(c);
         c = (*env)->NewGlobalRef(env, c);
         CHECK_NULL(c);
-        ni_defaultIndexID = (*env)->GetStaticFieldID(
-            env, c, "defaultIndex", "I");
+        ni_defaultIndexID = (*env)->GetStaticFieldID(env, c, "defaultIndex", "I");
+        CHECK_NULL(ni_defaultIndexID);
         ni_class = c;
     }
     int defaultIndex;
@@ -118,8 +118,8 @@ int getDefaultScopeID(JNIEnv *env) {
         CHECK_NULL_RETURN(c, 0);
         c = (*env)->NewGlobalRef(env, c);
         CHECK_NULL_RETURN(c, 0);
-        ni_defaultIndexID = (*env)->GetStaticFieldID(env, c,
-                                                     "defaultIndex", "I");
+        ni_defaultIndexID = (*env)->GetStaticFieldID(env, c, "defaultIndex", "I");
+        CHECK_NULL_RETURN(ni_defaultIndexID, 0);
         ni_class = c;
     }
     defaultIndex = (*env)->GetStaticIntField(env, ni_class,
@@ -353,6 +353,7 @@ jint  IPv6_supported()
     if (getsockname(0, (struct sockaddr *)&sa, &sa_len) == 0) {
         struct sockaddr *saP = (struct sockaddr *)&sa;
         if (saP->sa_family != AF_INET6) {
+            close(fd);
             return JNI_FALSE;
         }
     }

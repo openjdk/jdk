@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -410,6 +410,11 @@ public class PrintWriter extends Writer {
      * @param buf Array of characters
      * @param off Offset from which to start writing characters
      * @param len Number of characters to write
+     *
+     * @throws  IndexOutOfBoundsException
+     *          If the values of the {@code off} and {@code len} parameters
+     *          cause the corresponding method of the underlying {@code Writer}
+     *          to throw an {@code IndexOutOfBoundsException}
      */
     public void write(char buf[], int off, int len) {
         try {
@@ -440,6 +445,11 @@ public class PrintWriter extends Writer {
      * @param s A String
      * @param off Offset from which to start writing characters
      * @param len Number of characters to write
+     *
+     * @throws  IndexOutOfBoundsException
+     *          If the values of the {@code off} and {@code len} parameters
+     *          cause the corresponding method of the underlying {@code Writer}
+     *          to throw an {@code IndexOutOfBoundsException}
      */
     public void write(String s, int off, int len) {
         try {

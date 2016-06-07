@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -26,6 +24,8 @@
 package jdk.test.foo;
 
 import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleDescriptor.Exports;
+import java.lang.module.ModuleDescriptor.Requires;
 import java.util.StringJoiner;
 
 import jdk.test.foo.internal.Message;
@@ -36,10 +36,30 @@ public class Foo {
 
         ModuleDescriptor md = Foo.class.getModule().getDescriptor();
         System.out.println("nameAndVersion:" + md.toNameAndVersion());
-        System.out.println("mainClass:" + md.mainClass().get());
+        md.mainClass().ifPresent(mc -> System.out.println("mainClass:" + mc));
 
         StringJoiner sj = new StringJoiner(",");
+        md.requires().stream().map(Requires::name).sorted().forEach(sj::add);
+        System.out.println("requires:" + sj.toString());
+
+        sj = new StringJoiner(",");
+        md.exports().stream().map(Exports::source).sorted().forEach(sj::add);
+        if (!sj.toString().equals(""))
+            System.out.println("exports:" + sj.toString());
+
+        sj = new StringJoiner(",");
+        md.uses().stream().sorted().forEach(sj::add);
+        if (!sj.toString().equals(""))
+            System.out.println("uses:" + sj.toString());
+
+        sj = new StringJoiner(",");
+        md.provides().keySet().stream().sorted().forEach(sj::add);
+        if (!sj.toString().equals(""))
+            System.out.println("provides:" + sj.toString());
+
+        sj = new StringJoiner(",");
         md.conceals().forEach(sj::add);
-        System.out.println("conceals:" + sj.toString());
+        if (!sj.toString().equals(""))
+            System.out.println("conceals:" + sj.toString());
     }
 }

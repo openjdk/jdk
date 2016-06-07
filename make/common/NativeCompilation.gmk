@@ -372,6 +372,9 @@ endef
 #       toolchain when compiling C++ code
 #   STRIP_SYMBOLS Set to true to strip the final binary if the toolchain allows for it
 #   DEBUG_SYMBOLS Set to false to disable generation of debug symbols
+#   COPY_DEBUG_SYMBOLS Set to false to override global setting of debug symbol copying
+#   ZIP_EXTERNAL_DEBUG_SYMBOLS Set to false to override global setting of debug symbol
+#       zipping
 #   CFLAGS_DEBUG_SYMBOLS Overrides the default cflags for enabling debug symbols
 #   CXXFLAGS_DEBUG_SYMBOLS Overrides the default cxxflags for enabling debug symbols
 #   STRIPFLAGS Optionally change the flags given to the strip command
@@ -814,7 +817,15 @@ define SetupNativeCompilationBody
   # Need to make sure TARGET is first on list
   $1 := $$($1_TARGET)
 
-  ifeq ($(COPY_DEBUG_SYMBOLS), true)
+  ifneq ($$($1_COPY_DEBUG_SYMBOLS), false)
+    $1_COPY_DEBUG_SYMBOLS := $(COPY_DEBUG_SYMBOLS)
+  endif
+
+  ifneq ($$($1_ZIP_EXTERNAL_DEBUG_SYMBOLS), false)
+    $1_ZIP_EXTERNAL_DEBUG_SYMBOLS := $(ZIP_EXTERNAL_DEBUG_SYMBOLS)
+  endif
+
+  ifeq ($$($1_COPY_DEBUG_SYMBOLS), true)
     ifneq ($$($1_DEBUG_SYMBOLS), false)
       # Only copy debug symbols for dynamic libraries and programs.
       ifeq ($$($1_STATIC_LIBRARY), )
@@ -861,7 +872,7 @@ define SetupNativeCompilationBody
         $$($1_TARGET): $$($1_DEBUGINFO_FILES)
         $$($1_DEBUGINFO_FILES): $$($1_ALL_OBJS)
 
-        ifeq ($(ZIP_EXTERNAL_DEBUG_SYMBOLS), true)
+        ifeq ($$($1_ZIP_EXTERNAL_DEBUG_SYMBOLS), true)
           $1_DEBUGINFO_ZIP := $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).diz
           $1 += $$(subst $$($1_OBJECT_DIR),$$($1_OUTPUT_DIR),$$($1_DEBUGINFO_ZIP))
 

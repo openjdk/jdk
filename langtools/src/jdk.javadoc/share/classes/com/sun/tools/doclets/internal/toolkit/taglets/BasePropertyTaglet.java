@@ -38,6 +38,7 @@ import com.sun.tools.doclets.internal.toolkit.Content;
  *  deletion without notice.</b>
  *
  */
+@Deprecated
 public abstract class BasePropertyTaglet extends BaseTaglet {
 
     public BasePropertyTaglet() {
