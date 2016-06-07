@@ -171,6 +171,8 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
                                          int exec_mode) {
   JavaThread* thread = (JavaThread*) Thread::current();
 
+  bool realloc_failure_exception = thread->frames_to_pop_failed_realloc() > 0;
+
   // Look at bci and decide on bcp and continuation pc
   address bcp;
   // C++ interpreter doesn't need a pc since it will figure out what to do when it
@@ -204,10 +206,12 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
   //
   // For Compiler1, deoptimization can occur while throwing a NullPointerException at monitorenter,
   // in which case bcp should point to the monitorenter since it is within the exception's range.
+  //
+  // For realloc failure exception we just pop frames, skip the guarantee.
 
   assert(*bcp != Bytecodes::_monitorenter || is_top_frame, "a _monitorenter must be a top frame");
   assert(thread->deopt_compiled_method() != NULL, "compiled method should be known");
-  guarantee(!(thread->deopt_compiled_method()->is_compiled_by_c2() &&
+  guarantee(realloc_failure_exception || !(thread->deopt_compiled_method()->is_compiled_by_c2() &&
               *bcp == Bytecodes::_monitorenter             &&
               exec_mode == Deoptimization::Unpack_exception),
             "shouldn't get exception during monitorenter");
@@ -237,12 +241,17 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
         // Deoptimization::fetch_unroll_info_helper
         popframe_preserved_args_size_in_words = in_words(thread->popframe_preserved_args_size_in_words());
       }
-    } else if (JvmtiExport::can_force_early_return() && state != NULL && state->is_earlyret_pending()) {
+    } else if (!realloc_failure_exception && JvmtiExport::can_force_early_return() && state != NULL && state->is_earlyret_pending()) {
       // Force early return from top frame after deoptimization
 #ifndef CC_INTERP
       pc = Interpreter::remove_activation_early_entry(state->earlyret_tos());
 #endif
     } else {
+      if (realloc_failure_exception && JvmtiExport::can_force_early_return() && state != NULL && state->is_earlyret_pending()) {
+        state->clr_earlyret_pending();
+        state->set_earlyret_oop(NULL);
+        state->clr_earlyret_value();
+      }
       // Possibly override the previous pc computation of the top (youngest) frame
       switch (exec_mode) {
       case Deoptimization::Unpack_deopt:
