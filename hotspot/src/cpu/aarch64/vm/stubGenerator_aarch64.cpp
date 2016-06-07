@@ -710,7 +710,7 @@ class StubGenerator: public StubCodeGenerator {
           __ BIND(L_loop);
           __ strb(zr, Address(start, count));
           __ subs(count, count, 1);
-          __ br(Assembler::HS, L_loop);
+          __ br(Assembler::GE, L_loop);
         }
         break;
       default:
