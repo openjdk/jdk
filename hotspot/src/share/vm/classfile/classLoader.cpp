@@ -181,26 +181,59 @@ bool ClassLoader::string_ends_with(const char* str, const char* str_to_find) {
 }
 
 // Used to obtain the package name from a fully qualified class name.
-// It is the responsibility of the caller to establish ResourceMark.
-const char* ClassLoader::package_from_name(const char* class_name) {
-  const char* last_slash = strrchr(class_name, '/');
+// It is the responsibility of the caller to establish a ResourceMark.
+const char* ClassLoader::package_from_name(const char* const class_name, bool* bad_class_name) {
+  if (class_name == NULL) {
+    if (bad_class_name != NULL) {
+      *bad_class_name = true;
+    }
+    return NULL;
+  }
+
+  if (bad_class_name != NULL) {
+    *bad_class_name = false;
+  }
+
+  const char* const last_slash = strrchr(class_name, '/');
   if (last_slash == NULL) {
     // No package name
     return NULL;
   }
-  int length = last_slash - class_name;
 
-  // A class name could have just the slash character in the name,
-  // resulting in a negative length.
+  char* class_name_ptr = (char*) class_name;
+  // Skip over '['s
+  if (*class_name_ptr == '[') {
+    do {
+      class_name_ptr++;
+    } while (*class_name_ptr == '[');
+
+    // Fully qualified class names should not contain a 'L'.
+    // Set bad_class_name to true to indicate that the package name
+    // could not be obtained due to an error condition.
+    // In this situation, is_same_class_package returns false.
+    if (*class_name_ptr == 'L') {
+      if (bad_class_name != NULL) {
+        *bad_class_name = true;
+      }
+      return NULL;
+    }
+  }
+
+  int length = last_slash - class_name_ptr;
+
+  // A class name could have just the slash character in the name.
   if (length <= 0) {
     // No package name
+    if (bad_class_name != NULL) {
+      *bad_class_name = true;
+    }
     return NULL;
   }
 
   // drop name after last slash (including slash)
   // Ex., "java/lang/String.class" => "java/lang"
   char* pkg_name = NEW_RESOURCE_ARRAY(char, length + 1);
-  strncpy(pkg_name, class_name, length);
+  strncpy(pkg_name, class_name_ptr, length);
   *(pkg_name+length) = '\0';
 
   return (const char *)pkg_name;
@@ -1117,13 +1150,11 @@ bool ClassLoader::add_package(const char *fullq_class_name, s2 classpath_index, 
   assert(fullq_class_name != NULL, "just checking");
 
   // Get package name from fully qualified class name.
-  const char *cp = strrchr(fullq_class_name, '/');
+  ResourceMark rm;
+  const char *cp = package_from_name(fullq_class_name);
   if (cp != NULL) {
-    int len = cp - fullq_class_name;
-    PackageEntryTable* pkg_entry_tbl =
-      ClassLoaderData::the_null_class_loader_data()->packages();
-    TempNewSymbol pkg_symbol =
-      SymbolTable::new_symbol(fullq_class_name, len, CHECK_false);
+    PackageEntryTable* pkg_entry_tbl = ClassLoaderData::the_null_class_loader_data()->packages();
+    TempNewSymbol pkg_symbol = SymbolTable::new_symbol(cp, CHECK_false);
     PackageEntry* pkg_entry = pkg_entry_tbl->lookup_only(pkg_symbol);
     if (pkg_entry != NULL) {
       assert(classpath_index != -1, "Unexpected classpath_index");
@@ -1231,11 +1262,9 @@ s2 ClassLoader::classloader_type(Symbol* class_name, ClassPathEntry* e, int clas
   // jimage, it is determined by the class path entry.
   jshort loader_type = ClassLoader::APP_LOADER;
   if (e->is_jrt()) {
-    int length = 0;
-    const jbyte* pkg_string = InstanceKlass::package_from_name(class_name, length);
-    if (pkg_string != NULL) {
-      ResourceMark rm;
-      TempNewSymbol pkg_name = SymbolTable::new_symbol((const char*)pkg_string, length, THREAD);
+    ResourceMark rm;
+    TempNewSymbol pkg_name = InstanceKlass::package_from_name(class_name, CHECK_0);
+    if (pkg_name != NULL) {
       const char* pkg_name_C_string = (const char*)(pkg_name->as_C_string());
       ClassPathImageEntry* cpie = (ClassPathImageEntry*)e;
       JImageFile* jimage = cpie->jimage();
