@@ -22,20 +22,25 @@
  */
 
 /* @test
- * @bug 8051408
+ * @bug 8051408 8157308
  * @modules java.base/sun.security.provider
+ * @build java.base/sun.security.provider.S
+ * @run main SpecTest
  * @summary check the AbstractDrbg API etc
  */
 
 import java.security.*;
-import sun.security.provider.AbstractDrbg;
+import sun.security.provider.S;
 import static java.security.DrbgParameters.Capability.*;
 
 /**
  * This test makes sure the AbstractDrbg API works as specified. It also
  * checks the SecureRandom API.
+ *
+ * The implementations must be patched into java.base/sun.security.provider
+ * because AbstractDrbg is not a public interface.
  */
-public class AbstractDrbgSpec {
+public class SpecTest {
 
     public static void main(String args[]) throws Exception {
 
@@ -170,9 +175,9 @@ public class AbstractDrbgSpec {
     public static class All extends Provider {
         protected All(String name, double version, String info) {
             super(name, version, info);
-            put("SecureRandom.S1", S1.class.getName());
-            put("SecureRandom.S2", S2.class.getName());
-            put("SecureRandom.S3", S3.class.getName());
+            put("SecureRandom.S1", S.S1.class.getName());
+            put("SecureRandom.S2", S.S2.class.getName());
+            put("SecureRandom.S3", S.S3.class.getName());
         }
     }
 
@@ -180,92 +185,21 @@ public class AbstractDrbgSpec {
     public static class Legacy extends Provider {
         protected Legacy(String name, double version, String info) {
             super(name, version, info);
-            put("SecureRandom.S", S1.class.getName());
+            put("SecureRandom.S", S.S1.class.getName());
         }
     }
 
     public static class Weak extends Provider {
         protected Weak(String name, double version, String info) {
             super(name, version, info);
-            put("SecureRandom.S", S2.class.getName());
+            put("SecureRandom.S", S.S2.class.getName());
         }
     }
 
     public static class Strong extends Provider {
         protected Strong(String name, double version, String info) {
             super(name, version, info);
-            put("SecureRandom.S", S3.class.getName());
-        }
-    }
-
-    // This is not a DRBG.
-    public static class S1 extends SecureRandomSpi {
-        @Override
-        protected void engineSetSeed(byte[] seed) {
-        }
-
-        @Override
-        protected void engineNextBytes(byte[] bytes) {
-        }
-
-        @Override
-        protected byte[] engineGenerateSeed(int numBytes) {
-            return new byte[numBytes];
-        }
-    }
-
-    // This is a strong DRBG.
-    public static class S3 extends AbstractDrbg {
-
-        public S3(SecureRandomParameters params) {
-            supportPredictionResistance = true;
-            supportReseeding = true;
-            highestSupportedSecurityStrength = 192;
-            mechName = "S3";
-            algorithm = "SQUEEZE";
-            configure(params);
-        }
-        protected void chooseAlgorithmAndStrength() {
-            if (requestedInstantiationSecurityStrength < 0) {
-                securityStrength = DEFAULT_STRENGTH;
-            } else {
-                securityStrength = requestedInstantiationSecurityStrength;
-            }
-            minLength = securityStrength / 8;
-            maxAdditionalInputLength = maxPersonalizationStringLength = 100;
-        }
-
-        @Override
-        protected void initEngine() {
-
-        }
-
-        @Override
-        protected void instantiateAlgorithm(byte[] ei) {
-
-        }
-
-        @Override
-        protected void generateAlgorithm(byte[] result, byte[] additionalInput) {
-
-        }
-
-        @Override
-        protected void reseedAlgorithm(byte[] ei, byte[] additionalInput) {
-
-        }
-    }
-
-    // This is a weak DRBG. maximum strength is 128 and does
-    // not support prediction resistance or reseed.
-    public static class S2 extends S3 {
-        public S2(SecureRandomParameters params) {
-            super(null);
-            mechName = "S2";
-            highestSupportedSecurityStrength = 128;
-            supportPredictionResistance = false;
-            supportReseeding = false;
-            configure(params);
+            put("SecureRandom.S", S.S3.class.getName());
         }
     }
 
