@@ -51,25 +51,31 @@ public class Order {
         ck(bb.asDoubleBuffer().order(), bb.order());
     }
 
+    private static void ckCopyViews(ByteBuffer bb) {
+        ck(bb.asReadOnlyBuffer().order(), be);
+        ck(bb.duplicate().order(), be);
+        ck(bb.slice().order(), be);
+    }
+
     private static void ckByteBuffer(ByteBuffer bb) {
         ckViews(bb);
+        ckCopyViews(bb);
         bb.order(be);
         ckViews(bb);
+        ckCopyViews(bb);
         bb.order(le);
         ckViews(bb);
-
-        if (bb.hasArray()) {
-            byte[] array = bb.array();
-            ck(ByteBuffer.wrap(array, LENGTH/2, LENGTH/2).order(), be);
-            ck(ByteBuffer.wrap(array).order(), be);
-            ck(bb.asReadOnlyBuffer().order(), be);
-            ck(bb.duplicate().order(), be);
-            ck(bb.slice().order(), be);
-        }
+        ckCopyViews(bb);
     }
 
     public static void main(String args[]) throws Exception {
 
+        ck(ByteBuffer.wrap(new byte[LENGTH], LENGTH/2, LENGTH/2).order(), be);
+        ck(ByteBuffer.wrap(new byte[LENGTH]).order(), be);
+        ck(ByteBuffer.wrap(new byte[LENGTH], LENGTH/2, LENGTH/2).order(be).order(), be);
+        ck(ByteBuffer.wrap(new byte[LENGTH]).order(be).order(), be);
+        ck(ByteBuffer.wrap(new byte[LENGTH], LENGTH/2, LENGTH/2).order(le).order(), le);
+        ck(ByteBuffer.wrap(new byte[LENGTH]).order(le).order(), le);
         ck(ByteBuffer.allocate(LENGTH).order(), be);
         ck(ByteBuffer.allocateDirect(LENGTH).order(), be);
         ck(ByteBuffer.allocate(LENGTH).order(be).order(), be);

@@ -38,9 +38,9 @@ import java.util.regex.Matcher;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static jdk.internal.jshell.remote.RemoteCodes.PREFIX_PATTERN;
+import static jdk.jshell.Util.PREFIX_PATTERN;
+import static jdk.jshell.Util.REPL_PACKAGE;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_DEP;
-import static jdk.internal.jshell.remote.RemoteCodes.REPL_PACKAGE;
 
 /**
  * Maintain relationships between the significant entities: Snippets,

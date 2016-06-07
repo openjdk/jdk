@@ -317,7 +317,6 @@ final class Utils {
 
     static void close(Closeable... chans) {
         for (Closeable chan : chans) {
-            System.err.println("Closing " + chan);
             try {
                 chan.close();
             } catch (IOException e) {

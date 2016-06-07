@@ -50,6 +50,7 @@ import com.sun.tools.doclets.internal.toolkit.Content;
  * @since 1.5
  */
 
+@Deprecated
 public class CodeTaglet extends BaseInlineTaglet {
 
     private static final String NAME = "code";

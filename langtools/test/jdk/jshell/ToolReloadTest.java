@@ -107,7 +107,7 @@ public class ToolReloadTest extends ReplToolTesting {
                         "-: /drop A\n"),
                 a -> assertCommandCheckOutput(a, "/vars", assertVariables()),
                 a -> assertCommandCheckOutput(a, "/methods", assertMethods()),
-                a -> assertCommandCheckOutput(a, "/classes", assertClasses()),
+                a -> assertCommandCheckOutput(a, "/types", assertClasses()),
                 a -> assertCommandCheckOutput(a, "/imports", assertImports())
         );
     }
@@ -120,11 +120,11 @@ public class ToolReloadTest extends ReplToolTesting {
                 a -> dropMethod(a, "/drop b", "b ()I", "|  dropped method b()"),
                 a -> assertClass(a, "class A {}", "class", "A"),
                 a -> dropClass(a, "/dr A", "class A", "|  dropped class A"),
-                a -> assertCommand(a, "/reload quiet",
+                a -> assertCommand(a, "/reload -quiet",
                         "|  Restarting and restoring state."),
                 a -> assertCommandCheckOutput(a, "/vars", assertVariables()),
                 a -> assertCommandCheckOutput(a, "/methods", assertMethods()),
-                a -> assertCommandCheckOutput(a, "/classes", assertClasses()),
+                a -> assertCommandCheckOutput(a, "/types", assertClasses()),
                 a -> assertCommandCheckOutput(a, "/imports", assertImports())
         );
     }
@@ -169,7 +169,7 @@ public class ToolReloadTest extends ReplToolTesting {
                         "(int)int", "m"),
                 (a) -> evaluateExpression(a, "int", "m(x)", "25"),
                 (a) -> assertCommand(a, "/reset", "|  Resetting state."),
-                (a) -> assertCommand(a, "/reload restore",
+                (a) -> assertCommand(a, "/reload -restore",
                         "|  Restarting and restoring from previous state.\n" +
                         "-: int x = 5;\n" +
                         "-: int m(int z) { return z * z; }\n" +
@@ -188,8 +188,8 @@ public class ToolReloadTest extends ReplToolTesting {
                 (a) -> evaluateExpression(a, "int", "m(x)", "25"),
                 (a) -> assertCommand(a, "System.exit(1);",
                         "|  State engine terminated.\n" +
-                        "|  Restore definitions with: /reload restore"),
-                (a) -> assertCommand(a, "/reload restore",
+                        "|  Restore definitions with: /reload -restore"),
+                (a) -> assertCommand(a, "/reload -restore",
                         "|  Restarting and restoring from previous state.\n" +
                         "-: int x = 5;\n" +
                         "-: int m(int z) { return z * z; }\n" +
@@ -208,7 +208,7 @@ public class ToolReloadTest extends ReplToolTesting {
                 (a) -> evaluateExpression(a, "int", "m(x)", "25")
         );
         test(false, new String[]{"-nostartup"},
-                (a) -> assertCommand(a, "/reload restore",
+                (a) -> assertCommand(a, "/reload -restore",
                         "|  Restarting and restoring from previous state.\n" +
                         "-: int x = 5;\n" +
                         "-: int m(int z) { return z * z; }\n" +

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -497,7 +497,7 @@ public final class HijrahDate
      * @return the day-of-week; computed from the epochday
      */
     private int getDayOfWeek() {
-        int dow0 = (int)Math.floorMod(toEpochDay() + 3, 7);
+        int dow0 = Math.floorMod(toEpochDay() + 3, 7);
         return dow0 + 1;
     }
 

@@ -26,7 +26,9 @@
 package java.net;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Set;
 
 /**
  * The multicast datagram socket class is useful for sending
@@ -716,4 +718,24 @@ class MulticastSocket extends DatagramSocket {
                 } // synch p
             }  //synch ttl
     } //method
+
+    private static Set<SocketOption<?>> options;
+    private static boolean optionsSet = false;
+
+    @Override
+    public Set<SocketOption<?>> supportedOptions() {
+        synchronized (MulticastSocket.class) {
+            if (optionsSet) {
+                return options;
+            }
+            try {
+                DatagramSocketImpl impl = getImpl();
+                options = Collections.unmodifiableSet(impl.supportedOptions());
+            } catch (SocketException ex) {
+                options = Collections.emptySet();
+            }
+            optionsSet = true;
+            return options;
+        }
+    }
 }

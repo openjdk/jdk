@@ -306,8 +306,9 @@ public final class StackWalker {
             return DEFAULT_WALKER;
         }
 
-        checkPermission(options);
-        return new StackWalker(toEnumSet(options));
+        EnumSet<Option> optionSet = toEnumSet(options);
+        checkPermission(optionSet);
+        return new StackWalker(optionSet);
     }
 
     /**
@@ -341,8 +342,9 @@ public final class StackWalker {
         if (estimateDepth <= 0) {
             throw new IllegalArgumentException("estimateDepth must be > 0");
         }
-        checkPermission(options);
-        return new StackWalker(toEnumSet(options), estimateDepth);
+        EnumSet<Option> optionSet = toEnumSet(options);
+        checkPermission(optionSet);
+        return new StackWalker(optionSet, estimateDepth);
     }
 
     // ----- private constructors ------
@@ -540,13 +542,11 @@ public final class StackWalker {
     }
 
     // ---- package access ----
-    static StackWalker newInstanceNoCheck(EnumSet<Option> options) {
-        return new StackWalker(options, 0, null);
-    }
 
     static StackWalker newInstance(Set<Option> options, ExtendedOption extendedOption) {
-        checkPermission(options);
-        return new StackWalker(toEnumSet(options), 0, extendedOption);
+        EnumSet<Option> optionSet = toEnumSet(options);
+        checkPermission(optionSet);
+        return new StackWalker(optionSet, 0, extendedOption);
     }
 
     int estimateDepth() {

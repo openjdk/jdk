@@ -42,6 +42,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  *
  * @author Atul M Dambalkar
  */
+@Deprecated
 public class HelpWriter extends HtmlDocletWriter {
 
     HtmlTree mainTree = HtmlTree.MAIN();

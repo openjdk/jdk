@@ -48,4 +48,4 @@ done
 unset DUALCASE
 
 IFS=$nl
-"#TARGET_JAVA#" "#XPATCH#" ${ea} ${javaOpts} #PROGRAM# ${toolOpts}
+"#TARGET_JAVA#" #XPATCH# ${ea} ${javaOpts} #PROGRAM# ${toolOpts}

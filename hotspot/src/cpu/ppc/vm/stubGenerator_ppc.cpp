@@ -3123,6 +3123,9 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_throw_StackOverflowError_entry   =
       generate_throw_exception("StackOverflowError throw_exception",
                                CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError), false);
+    StubRoutines::_throw_delayed_StackOverflowError_entry =
+      generate_throw_exception("delayed StackOverflowError throw_exception",
+                               CAST_FROM_FN_PTR(address, SharedRuntime::throw_delayed_StackOverflowError), false);
 
     // CRC32 Intrinsics.
     if (UseCRC32Intrinsics) {

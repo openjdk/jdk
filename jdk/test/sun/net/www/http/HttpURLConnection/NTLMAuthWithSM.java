@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import sun.net.www.protocol.http.ntlm.NTLMAuthenticationCallback;
  * @test
  * @bug 8137174
  * @modules java.base/sun.net.www.protocol.http.ntlm
+ *          jdk.httpserver
  * @summary Checks if NTLM auth works fine if security manager set
  * @run main/othervm/java.security.policy=NTLMAuthWithSM.policy NTLMAuthWithSM
  */

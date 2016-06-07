@@ -306,7 +306,10 @@ ifdef TESTDIRS
 endif
 
 ifdef CONCURRENCY
-  EXTRA_JTREG_OPTIONS += -concurrency:$(CONCURRENCY)
+  JTREG_BASIC_OPTIONS += -concurrency:$(CONCURRENCY)
+endif
+ifdef EXTRA_JTREG_OPTIONS
+  JTREG_BASIC_OPTIONS += $(EXTRA_JTREG_OPTIONS)
 endif
 
 # Default JTREG to run
@@ -326,8 +329,6 @@ JTREG_BASIC_OPTIONS += $(JTREG_IGNORE_OPTION)
 # Multiply by 4 the timeout factor
 JTREG_TIMEOUT_OPTION =  -timeoutFactor:4
 JTREG_BASIC_OPTIONS += $(JTREG_TIMEOUT_OPTION)
-# Add any extra options
-JTREG_BASIC_OPTIONS += $(EXTRA_JTREG_OPTIONS)
 # Set other vm and test options
 JTREG_TEST_OPTIONS = $(JAVA_ARGS:%=-javaoptions:%) $(JAVA_OPTIONS:%=-vmoption:%) $(JAVA_VM_ARGS:%=-vmoption:%)
 

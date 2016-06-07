@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Receiver;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.Track;
-import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFileFormat.Type;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -56,10 +55,10 @@ public final class SoftMidiAudioFileReader extends SunFileReader {
     private static final AudioFormat format = new AudioFormat(44100, 16, 2,
                                                               true, false);
 
-    private static AudioFileFormat getAudioFileFormat(final Sequence seq) {
+    private static StandardFileFormat getAudioFileFormat(final Sequence seq) {
         long totallen = seq.getMicrosecondLength() / 1000000;
         long len = (long) (format.getFrameRate() * (totallen + 4));
-        return new AudioFileFormat(MIDI, format, (int) len);
+        return new StandardFileFormat(MIDI, format, len);
     }
 
     private AudioInputStream getAudioInputStream(final Sequence seq)
@@ -140,7 +139,7 @@ public final class SoftMidiAudioFileReader extends SunFileReader {
     }
 
     @Override
-    AudioFileFormat getAudioFileFormatImpl(final InputStream stream)
+    StandardFileFormat getAudioFileFormatImpl(final InputStream stream)
             throws UnsupportedAudioFileException, IOException {
         try {
             return getAudioFileFormat(MidiSystem.getSequence(stream));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,13 @@ import javax.accessibility.AccessibleContext;
  *
  * @author Arnaud Weber
  * @since 1.2
+ *
+ * @deprecated  The Applet API is deprecated. See the
+ * <a href="../../java/applet/package-summary.html"> java.applet package documentation</a>
+ * for further information.
  */
+
+@Deprecated(since = "9")
 @JavaBean(defaultProperty = "JMenuBar", description = "Swing's Applet subclass.")
 @SwingContainer(delegate = "getContentPane")
 @SuppressWarnings("serial") // Same-version serialization only

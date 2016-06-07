@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8141415
  * @summary Test imports
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -161,5 +162,10 @@ public class ImportTest extends KullaTesting {
         assertImportKeyMatch("import static util.A.field;", "field", SINGLE_STATIC_IMPORT_SUBKIND, added(VALID));
         assertEval("field;", "\"A\"");
         assertEval("method();", "\"A\"");
+    }
+
+    public void testImportWithComment() {
+        assertImportKeyMatch("import java.util.List;//comment", "List", SINGLE_TYPE_IMPORT_SUBKIND, added(VALID));
+        assertEval("List l = null;");
     }
 }

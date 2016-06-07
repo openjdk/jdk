@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1242,7 +1242,7 @@ void LIR_Assembler::reg2mem(LIR_Opr from_reg, LIR_Opr dest, BasicType type,
 
 
 void LIR_Assembler::return_op(LIR_Opr result) {
-  const Register return_pc        = R11;
+  const Register return_pc        = R31;  // Must survive C-call to enable_stack_reserved_zone().
   const Register polling_page     = R12;
 
   // Pop the stack before the safepoint code.
@@ -1264,6 +1264,10 @@ void LIR_Assembler::return_op(LIR_Opr result) {
   __ ld(return_pc, _abi(lr), R1_SP);
   // Move return pc to LR.
   __ mtlr(return_pc);
+
+  if (StackReservedPages > 0 && compilation()->has_reserved_stack_access()) {
+    __ reserved_stack_check(return_pc);
+  }
 
   // We need to mark the code position where the load from the safepoint
   // polling page was emitted as relocInfo::poll_return_type here.

@@ -469,15 +469,11 @@ class InferenceContext {
         }
     }
 
-    private void solve(GraphStrategy ss, Warner warn) {
-        solve(ss, new HashMap<Type, Set<Type>>(), warn);
-    }
-
     /**
      * Solve with given graph strategy.
      */
-    private void solve(GraphStrategy ss, Map<Type, Set<Type>> stuckDeps, Warner warn) {
-        GraphSolver s = infer.new GraphSolver(this, stuckDeps, warn);
+    private void solve(GraphStrategy ss, Warner warn) {
+        GraphSolver s = infer.new GraphSolver(this, warn);
         s.solve(ss);
     }
 
@@ -506,12 +502,12 @@ class InferenceContext {
     /**
      * Solve at least one variable in given list.
      */
-    public void solveAny(List<Type> varsToSolve, Map<Type, Set<Type>> optDeps, Warner warn) {
+    public void solveAny(List<Type> varsToSolve, Warner warn) {
         solve(infer.new BestLeafSolver(varsToSolve.intersect(restvars())) {
             public boolean done() {
                 return instvars().intersect(varsToSolve).nonEmpty();
             }
-        }, optDeps, warn);
+        }, warn);
     }
 
     /**

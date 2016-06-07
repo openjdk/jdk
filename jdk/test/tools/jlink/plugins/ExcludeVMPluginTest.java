@@ -32,13 +32,12 @@
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
-import jdk.tools.jlink.internal.PoolImpl;
+import jdk.tools.jlink.internal.ModulePoolImpl;
 
 import jdk.tools.jlink.internal.plugins.ExcludeVMPlugin;
 import jdk.tools.jlink.plugin.Plugin;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
-import jdk.tools.jlink.plugin.Pool.ModuleDataType;
+import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 
 public class ExcludeVMPluginTest {
@@ -165,14 +164,14 @@ public class ExcludeVMPluginTest {
     private void doCheckVM(String vm, String[] input, String jvmcfg, String[] expectedOutput, String expectdJvmCfg) throws Exception {
         // Create a pool with jvm.cfg and the input paths.
         byte[] jvmcfgContent = jvmcfg.getBytes();
-        Pool pool = new PoolImpl();
-        pool.add(Pool.newImageFile("java.base", "/java.base/native/jvm.cfg",
-                ModuleDataType.NATIVE_LIB, new ByteArrayInputStream(jvmcfgContent), jvmcfgContent.length));
+        ModulePool pool = new ModulePoolImpl();
+        pool.add(ModuleEntry.create("java.base", "/java.base/native/jvm.cfg",
+                ModuleEntry.Type.NATIVE_LIB, new ByteArrayInputStream(jvmcfgContent), jvmcfgContent.length));
         for (String in : input) {
-            pool.add(Pool.newImageFile("java.base", in,
-                    ModuleDataType.NATIVE_LIB, new ByteArrayInputStream(new byte[0]), 0));
+            pool.add(ModuleEntry.create("java.base", in,
+                    ModuleEntry.Type.NATIVE_LIB, new ByteArrayInputStream(new byte[0]), 0));
         }
-        Pool out = new PoolImpl();
+        ModulePool out = new ModulePoolImpl();
 
         TransformerPlugin p = new ExcludeVMPlugin();
         Map<String, String> config = new HashMap<>();
@@ -182,22 +181,22 @@ public class ExcludeVMPluginTest {
         p.configure(config);
         p.visit(pool, out);
 
-        String newContent = new String(out.get("/java.base/native/jvm.cfg").stream().readAllBytes());
+        String newContent = new String(out.findEntry("/java.base/native/jvm.cfg").get().stream().readAllBytes());
 
         if (!expectdJvmCfg.equals(newContent)) {
             throw new Exception("Got content " + newContent + " expected " + expectdJvmCfg);
         }
 
-        if (out.getContent().size() != (expectedOutput.length + 1)) {
-            for (ModuleData m : out.getContent()) {
+        if (out.getEntryCount() != (expectedOutput.length + 1)) {
+            out.entries().forEach(m -> {
                 System.err.println(m.getPath());
-            }
-            throw new Exception("Invalid output size " + out.getContent().size() + " expected " + (expectedOutput.length + 1));
+            });
+            throw new Exception("Invalid output size " + out.getEntryCount() + " expected " + (expectedOutput.length + 1));
         }
 
-        for (ModuleData md : out.getContent()) {
+        out.entries().forEach(md -> {
             if (md.getPath().equals("/java.base/native/jvm.cfg")) {
-                continue;
+                return;
             }
             boolean contained = false;
             for (String o : expectedOutput) {
@@ -207,9 +206,9 @@ public class ExcludeVMPluginTest {
                 }
             }
             if (!contained) {
-                throw new Exception(md.getPath() + " not expected");
+                throw new RuntimeException(md.getPath() + " not expected");
             }
-        }
+        });
 
     }
 

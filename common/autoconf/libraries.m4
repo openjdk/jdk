@@ -95,6 +95,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   LIB_SETUP_LLVM
   LIB_SETUP_BUNDLED_LIBS
   LIB_SETUP_MISC_LIBS
+  LIB_SETUP_SOLARIS_STLPORT
 ])
 
 ################################################################################
@@ -189,3 +190,26 @@ AC_DEFUN_ONCE([LIB_SETUP_MISC_LIBS],
   LIBZIP_CAN_USE_MMAP=true
   AC_SUBST(LIBZIP_CAN_USE_MMAP)
 ])
+
+################################################################################
+# libstlport.so.1 is needed for running gtest on Solaris. Find it to
+# redistribute it in the test image.
+################################################################################
+AC_DEFUN_ONCE([LIB_SETUP_SOLARIS_STLPORT],
+[
+  if test "$OPENJDK_TARGET_OS" = "solaris"; then
+    # Find the root of the Solaris Studio installation from the compiler path
+    SOLARIS_STUDIO_DIR="$(dirname $CC)/.."
+    STLPORT_LIB="$SOLARIS_STUDIO_DIR/lib/stlport4$OPENJDK_TARGET_CPU_ISADIR/libstlport.so.1"
+    AC_MSG_CHECKING([for libstlport.so.1])
+    if test -f "$STLPORT_LIB"; then
+      AC_MSG_RESULT([yes, $STLPORT_LIB])
+      BASIC_FIXUP_PATH([STLPORT_LIB])
+    else
+      AC_MSG_RESULT([no, not found at $STLPORT_LIB])
+      AC_MSG_ERROR([Failed to find libstlport.so.1, cannot build Hotspot gtests])
+    fi
+    AC_SUBST(STLPORT_LIB)
+  fi
+])
+

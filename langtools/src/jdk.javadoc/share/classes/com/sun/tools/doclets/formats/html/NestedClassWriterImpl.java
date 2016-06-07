@@ -45,6 +45,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @author Jamie Ho (rewrite)
  * @author Bhavesh Patel (Modified)
  */
+@Deprecated
 public class NestedClassWriterImpl extends AbstractMemberWriter
     implements MemberSummaryWriter {
 

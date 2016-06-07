@@ -51,7 +51,7 @@ import org.w3c.dom.Node;
  * an inline  STYLE element. In XML, this interface represents an external
  * style sheet, included via a style sheet processing instruction.
  * <p>See also the <a href='http://www.w3.org/TR/2000/REC-DOM-Level-2-Style-20001113'>Document Object Model (DOM) Level 2 Style Specification</a>.
- * @since DOM Level 2
+ * @since 1.4, DOM Level 2
  */
 public interface StyleSheet {
     /**
