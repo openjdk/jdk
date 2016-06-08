@@ -457,11 +457,12 @@ protected:
   uint workers() const {
     return _workers;
   }
-  void set_active_workers(uint v) {
+  uint update_active_workers(uint v) {
     assert(v <= _workers, "Trying to set more workers active than there are");
     _active_workers = MIN2(v, _workers);
     assert(v != 0, "Trying to set active workers to 0");
     _active_workers = MAX2(1U, _active_workers);
+    return _active_workers;
   }
   // Sets the number of threads that will be used in a collection
   void set_active_gang();

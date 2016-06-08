@@ -274,8 +274,10 @@ void WorkGang::run_task(AbstractGangTask* task, uint num_workers) {
             "Trying to execute task %s with %u workers which is more than the amount of total workers %u.",
             task->name(), num_workers, total_workers());
   guarantee(num_workers > 0, "Trying to execute task %s with zero workers", task->name());
-  add_workers(num_workers, false);
+  uint old_num_workers = _active_workers;
+  update_active_workers(num_workers);
   _dispatcher->coordinator_execute_on_workers(task, num_workers);
+  update_active_workers(old_num_workers);
 }
 
 AbstractGangWorker::AbstractGangWorker(AbstractWorkGang* gang, uint id) {

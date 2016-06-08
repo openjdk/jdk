@@ -898,7 +898,7 @@ void ParNewGeneration::collect(bool   full,
        AdaptiveSizePolicy::calc_active_workers(workers->total_workers(),
                                                workers->active_workers(),
                                                Threads::number_of_non_daemon_threads());
-  workers->set_active_workers(active_workers);
+  active_workers = workers->update_active_workers(active_workers);
   _old_gen = gch->old_gen();
 
   // If the next generation is too full to accommodate worst-case promotion
@@ -952,7 +952,9 @@ void ParNewGeneration::collect(bool   full,
     // separate thread causes wide variance in run times.  We can't help this
     // in the multi-threaded case, but we special-case n=1 here to get
     // repeatable measurements of the 1-thread overhead of the parallel code.
-    if (active_workers > 1) {
+    // Might multiple workers ever be used?  If yes, initialization
+    // has been done such that the single threaded path should not be used.
+    if (workers->total_workers() > 1) {
       workers->run_task(&tsk);
     } else {
       tsk.work(0);
