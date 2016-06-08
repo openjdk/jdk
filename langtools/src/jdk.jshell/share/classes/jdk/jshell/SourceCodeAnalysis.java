@@ -51,7 +51,7 @@ public abstract class SourceCodeAnalysis {
 
     /**
      * Compute possible follow-ups for the given input.
-     * Uses information from the current <code>JShell</code> state, including
+     * Uses information from the current {@code JShell} state, including
      * type information, to filter the suggestions.
      * @param input the user input, so far
      * @param cursor the current position of the cursors in the given {@code input} text
@@ -97,10 +97,15 @@ public abstract class SourceCodeAnalysis {
     SourceCodeAnalysis() {}
 
     /**
-     * The result of <code>analyzeCompletion(String input)</code>.
+     * The result of {@code analyzeCompletion(String input)}.
      * Describes the completeness and position of the first snippet in the given input.
      */
     public static class CompletionInfo {
+
+        private final Completeness completeness;
+        private final int unitEndPos;
+        private final String source;
+        private final String remaining;
 
         CompletionInfo(Completeness completeness, int unitEndPos, String source, String remaining) {
             this.completeness = completeness;
@@ -111,25 +116,42 @@ public abstract class SourceCodeAnalysis {
 
         /**
          * The analyzed completeness of the input.
+         *
+         * @return an enum describing the completeness of the input string.
          */
-        public final Completeness completeness;
+        public Completeness completeness() {
+            return completeness;
+        }
 
         /**
-         * The end of the first unit of source.
+         * Input remaining after the complete part of the source.
+         *
+         * @return the portion of the input string that remains after the
+         * complete Snippet
          */
-        public final int unitEndPos;
+        public String remaining() {
+            return remaining;
+        }
 
         /**
-         * Source code for the first unit of code input.  For example, first
-         * statement, or first method declaration.  Trailing semicolons will
-         * be added, as needed
+         * Source code for the first Snippet of code input. For example, first
+         * statement, or first method declaration. Trailing semicolons will be
+         * added, as needed.
+         *
+         * @return the source of the first encountered Snippet
          */
-        public final String source;
+        public String source() {
+            return source;
+        }
 
         /**
-         * Input remaining after the source
+         * The end of the first Snippet of source.
+         *
+         * @return the position of the end of the first Snippet in the input.
          */
-        public final String remaining;
+        public int unitEndPos() {
+            return unitEndPos;
+        }
     }
 
     /**
@@ -181,15 +203,23 @@ public abstract class SourceCodeAnalysis {
          */
         UNKNOWN(true);
 
-        /**
-         * Is the first snippet of source complete. For example, "x=" is not
-         * complete, but "x=2" is complete, even though a subsequent line could
-         * make it "x=2+2". Already erroneous code is marked complete.
-         */
-        public final boolean isComplete;
+        private final boolean isComplete;
 
         Completeness(boolean isComplete) {
             this.isComplete = isComplete;
+        }
+
+        /**
+         * Indicates whether the first snippet of source is complete.
+         * For example, "{@code x=}" is not
+         * complete, but "{@code x=2}" is complete, even though a subsequent line could
+         * make it "{@code x=2+2}". Already erroneous code is marked complete.
+         *
+         * @return {@code true} if the input is or begins a complete Snippet;
+         * otherwise {@code false}
+         */
+        public boolean isComplete() {
+            return isComplete;
         }
     }
 
@@ -198,27 +228,40 @@ public abstract class SourceCodeAnalysis {
      */
     public static class Suggestion {
 
+        private final String continuation;
+        private final boolean matchesType;
+
         /**
          * Create a {@code Suggestion} instance.
+         *
          * @param continuation a candidate continuation of the user's input
-         * @param isSmart is the candidate "smart"
+         * @param matchesType does the candidate match the target type
          */
-        public Suggestion(String continuation, boolean isSmart) {
+        public Suggestion(String continuation, boolean matchesType) {
             this.continuation = continuation;
-            this.isSmart = isSmart;
+            this.matchesType = matchesType;
         }
 
         /**
          * The candidate continuation of the given user's input.
+         *
+         * @return the continuation string
          */
-        public final String continuation;
+        public String continuation() {
+            return continuation;
+        }
 
         /**
-         * Is it an input continuation that matches the target type and is thus more
-         * likely to be the desired continuation. A smart continuation
-         * is preferred.
+         * Indicates whether input continuation matches the target type and is thus
+         * more likely to be the desired continuation. A matching continuation is
+         * preferred.
+         *
+         * @return {@code true} if this suggested continuation matches the
+         * target type; otherwise {@code false}
          */
-        public final boolean isSmart;
+        public boolean matchesType() {
+            return matchesType;
+        }
     }
 
     /**
@@ -259,22 +302,25 @@ public abstract class SourceCodeAnalysis {
         }
 
         /**
-         * Whether the result is based on up to date data. The
+         * Indicates whether the result is based on up to date data. The
          * {@link SourceCodeAnalysis#listQualifiedNames(java.lang.String, int) listQualifiedNames}
          * method may return before the classpath is fully inspected, in which case this method will
          * return {@code false}. If the result is based on a fully inspected classpath, this method
          * will return {@code true}.
          *
-         * @return true iff the results is based on up-to-date data
+         * @return {@code true} if the result is based on up-to-date data;
+         * otherwise {@code false}
          */
         public boolean isUpToDate() {
             return upToDate;
         }
 
         /**
-         * Whether the given simple name in the original code refers to a resolvable element.
+         * Indicates whether the given simple name in the original code refers
+         * to a resolvable element.
          *
-         * @return true iff the given simple name in the original code refers to a resolvable element
+         * @return {@code true} if the given simple name in the original code
+         * refers to a resolvable element; otherwise {@code false}
          */
         public boolean isResolvable() {
             return resolvable;
