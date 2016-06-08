@@ -5092,7 +5092,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1465316678
+DATE_WHEN_GENERATED=1465351120
 
 ###############################################################################
 #
@@ -64600,12 +64600,16 @@ fi
 
 
 
-  if test "$OPENJDK_TARGET_OS" = "solaris"; then
+  if test "$OPENJDK_TARGET_OS" = "solaris" && test "x$BUILD_GTEST" = "xtrue"; then
     # Find the root of the Solaris Studio installation from the compiler path
     SOLARIS_STUDIO_DIR="$(dirname $CC)/.."
     STLPORT_LIB="$SOLARIS_STUDIO_DIR/lib/stlport4$OPENJDK_TARGET_CPU_ISADIR/libstlport.so.1"
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libstlport.so.1" >&5
 $as_echo_n "checking for libstlport.so.1... " >&6; }
+    if ! test -f "$STLPORT_LIB" && test "x$OPENJDK_TARGET_CPU_ISADIR" = "x/sparcv9"; then
+      # SS12u3 has libstlport under 'stlport4/v9' instead of 'stlport4/sparcv9'
+      STLPORT_LIB="$SOLARIS_STUDIO_DIR/lib/stlport4/v9/libstlport.so.1"
+    fi
     if test -f "$STLPORT_LIB"; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, $STLPORT_LIB" >&5
 $as_echo "yes, $STLPORT_LIB" >&6; }
