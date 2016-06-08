@@ -380,7 +380,6 @@ u1* ClassPathZipEntry::open_versioned_entry(const char* name, jint* filesize, TR
 
     if (is_multi_ver) {
       int n;
-      ResourceMark rm(THREAD);
       char* entry_name = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, JVM_MAXPATHLEN);
       if (version > 0) {
         n = jio_snprintf(entry_name, JVM_MAXPATHLEN, "META-INF/versions/%d/%s", version, name);
@@ -400,6 +399,7 @@ u1* ClassPathZipEntry::open_versioned_entry(const char* name, jint* filesize, TR
           }
         }
       }
+      FREE_RESOURCE_ARRAY(char, entry_name, JVM_MAXPATHLEN);
     }
   }
   return buffer;
