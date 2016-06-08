@@ -167,6 +167,8 @@ java/net/MulticastSocket/Test.java                              7145658 macosx-a
 
 java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
 
+sun/net/www/http/ChunkedOutputStream/checkError.java            8041924 linux-all
+
 ############################################################################
 
 # jdk_nio
