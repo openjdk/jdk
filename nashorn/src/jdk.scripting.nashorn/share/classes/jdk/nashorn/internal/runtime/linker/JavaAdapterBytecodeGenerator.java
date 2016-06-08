@@ -286,7 +286,7 @@ final class JavaAdapterBytecodeGenerator {
         superClassName = Type.getInternalName(superClass);
         generatedClassName = getGeneratedClassName(superClass, interfaces);
 
-        cw.visit(Opcodes.V1_7, ACC_PUBLIC | ACC_SUPER, generatedClassName, null, superClassName, getInternalTypeNames(interfaces));
+        cw.visit(Opcodes.V1_8, ACC_PUBLIC | ACC_SUPER, generatedClassName, null, superClassName, getInternalTypeNames(interfaces));
         generateField(GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR);
         generateField(DELEGATE_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR);
 
@@ -1031,7 +1031,9 @@ final class JavaAdapterBytecodeGenerator {
         if (!constructor && Modifier.isInterface(owner.getModifiers())) {
             // we should call default method on the immediate "super" type - not on (possibly)
             // the indirectly inherited interface class!
-            mv.invokespecial(Type.getInternalName(findInvokespecialOwnerFor(owner)), name, methodDesc, false);
+            final Class<?> superType = findInvokespecialOwnerFor(owner);
+            mv.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(superType), name, methodDesc,
+                Modifier.isInterface(superType.getModifiers()));
         } else {
             mv.invokespecial(superClassName, name, methodDesc, false);
         }
