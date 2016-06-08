@@ -197,11 +197,15 @@ AC_DEFUN_ONCE([LIB_SETUP_MISC_LIBS],
 ################################################################################
 AC_DEFUN_ONCE([LIB_SETUP_SOLARIS_STLPORT],
 [
-  if test "$OPENJDK_TARGET_OS" = "solaris"; then
+  if test "$OPENJDK_TARGET_OS" = "solaris" && test "x$BUILD_GTEST" = "xtrue"; then
     # Find the root of the Solaris Studio installation from the compiler path
     SOLARIS_STUDIO_DIR="$(dirname $CC)/.."
     STLPORT_LIB="$SOLARIS_STUDIO_DIR/lib/stlport4$OPENJDK_TARGET_CPU_ISADIR/libstlport.so.1"
     AC_MSG_CHECKING([for libstlport.so.1])
+    if ! test -f "$STLPORT_LIB" && test "x$OPENJDK_TARGET_CPU_ISADIR" = "x/sparcv9"; then
+      # SS12u3 has libstlport under 'stlport4/v9' instead of 'stlport4/sparcv9'
+      STLPORT_LIB="$SOLARIS_STUDIO_DIR/lib/stlport4/v9/libstlport.so.1"
+    fi
     if test -f "$STLPORT_LIB"; then
       AC_MSG_RESULT([yes, $STLPORT_LIB])
       BASIC_FIXUP_PATH([STLPORT_LIB])
