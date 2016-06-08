@@ -1108,7 +1108,7 @@ public:
 
   // Naming
   const char* signature_name() const;
-  static const jbyte* package_from_name(const Symbol* name, int& length);
+  static Symbol* package_from_name(const Symbol* name, TRAPS);
 
   // GC specific object visitors
   //
