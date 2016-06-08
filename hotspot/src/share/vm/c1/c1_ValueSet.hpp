@@ -53,7 +53,6 @@ class ValueSet: public CompilationResourceObj {
 };
 
 inline ValueSet::ValueSet() : _map(Instruction::number_of_instructions()) {
-  _map.clear();
 }
 
 
