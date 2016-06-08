@@ -71,9 +71,12 @@ inline jlong Thread::cooked_allocated_bytes() {
   jlong allocated_bytes = OrderAccess::load_acquire(&_allocated_bytes);
   if (UseTLAB) {
     size_t used_bytes = tlab().used_bytes();
-    if ((ssize_t)used_bytes > 0) {
-      // More-or-less valid tlab. The load_acquire above should ensure
-      // that the result of the add is <= the instantaneous value.
+    if (used_bytes <= ThreadLocalAllocBuffer::max_size_in_bytes()) {
+      // Comparing used_bytes with the maximum allowed size will ensure
+      // that we don't add the used bytes from a semi-initialized TLAB
+      // ending up with incorrect values. There is still a race between
+      // incrementing _allocated_bytes and clearing the TLAB, that might
+      // cause double counting in rare cases.
       return allocated_bytes + used_bytes;
     }
   }
