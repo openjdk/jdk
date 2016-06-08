@@ -562,14 +562,13 @@ void LinearScan::compute_local_live_sets() {
   LIR_OpVisitState visitor;
 
   BitMap2D local_interval_in_loop = BitMap2D(_num_virtual_regs, num_loops());
-  local_interval_in_loop.clear();
 
   // iterate all blocks
   for (int i = 0; i < num_blocks; i++) {
     BlockBegin* block = block_at(i);
 
-    ResourceBitMap live_gen(live_size);  live_gen.clear();
-    ResourceBitMap live_kill(live_size); live_kill.clear();
+    ResourceBitMap live_gen(live_size);
+    ResourceBitMap live_kill(live_size);
 
     if (block->is_set(BlockBegin::exception_entry_flag)) {
       // Phi functions at the begin of an exception handler are
@@ -715,8 +714,8 @@ void LinearScan::compute_local_live_sets() {
 
     block->set_live_gen (live_gen);
     block->set_live_kill(live_kill);
-    block->set_live_in  (ResourceBitMap(live_size)); block->live_in().clear();
-    block->set_live_out (ResourceBitMap(live_size)); block->live_out().clear();
+    block->set_live_in  (ResourceBitMap(live_size));
+    block->set_live_out (ResourceBitMap(live_size));
 
     TRACE_LINEAR_SCAN(4, tty->print("live_gen  B%d ", block->block_id()); print_bitmap(block->live_gen()));
     TRACE_LINEAR_SCAN(4, tty->print("live_kill B%d ", block->block_id()); print_bitmap(block->live_kill()));
@@ -741,7 +740,7 @@ void LinearScan::compute_global_live_sets() {
   bool change_occurred;
   bool change_occurred_in_block;
   int  iteration_count = 0;
-  ResourceBitMap live_out(live_set_size()); live_out.clear(); // scratch set for calculations
+  ResourceBitMap live_out(live_set_size()); // scratch set for calculations
 
   // Perform a backward dataflow analysis to compute live_out and live_in for each block.
   // The loop is executed until a fixpoint is reached (no changes in an iteration)
@@ -827,7 +826,6 @@ void LinearScan::compute_global_live_sets() {
 
   // check that the live_in set of the first block is empty
   ResourceBitMap live_in_args(ir()->start()->live_in().size());
-  live_in_args.clear();
   if (!ir()->start()->live_in().is_same(live_in_args)) {
 #ifdef ASSERT
     tty->print_cr("Error: live_in set of first block must be empty (when this fails, virtual registers are used before they are defined)");
@@ -1774,8 +1772,8 @@ void LinearScan::resolve_data_flow() {
 
   int num_blocks = block_count();
   MoveResolver move_resolver(this);
-  ResourceBitMap block_completed(num_blocks);  block_completed.clear();
-  ResourceBitMap already_resolved(num_blocks); already_resolved.clear();
+  ResourceBitMap block_completed(num_blocks);
+  ResourceBitMap already_resolved(num_blocks);
 
   int i;
   for (i = 0; i < num_blocks; i++) {
@@ -3750,7 +3748,6 @@ void MoveResolver::verify_before_resolve() {
 
 
   ResourceBitMap used_regs(LinearScan::nof_regs + allocator()->frame_map()->argcount() + allocator()->max_spills());
-  used_regs.clear();
   if (!_multiple_reads_allowed) {
     for (i = 0; i < _mapping_from.length(); i++) {
       Interval* it = _mapping_from.at(i);
@@ -6319,7 +6316,6 @@ void ControlFlowOptimizer::delete_unnecessary_jumps(BlockList* code) {
 void ControlFlowOptimizer::delete_jumps_to_return(BlockList* code) {
 #ifdef ASSERT
   ResourceBitMap return_converted(BlockBegin::number_of_blocks());
-  return_converted.clear();
 #endif
 
   for (int i = code->length() - 1; i >= 0; i--) {
