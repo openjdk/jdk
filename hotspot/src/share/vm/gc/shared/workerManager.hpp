@@ -55,17 +55,28 @@ class WorkerManager : public AllStatic {
     uint start = created_workers;
     uint end = MIN2(active_workers, total_workers);
     for (uint worker_id = start; worker_id < end; worker_id += 1) {
-      WorkerThread* new_worker = holder->install_worker(worker_id);
-      assert(new_worker != NULL, "Failed to allocate GangWorker");
+      WorkerThread* new_worker = NULL;
+      if (initializing || !InjectGCWorkerCreationFailure) {
+        new_worker = holder->install_worker(worker_id);
+      }
       if (new_worker == NULL || !os::create_thread(new_worker, worker_type)) {
-        if (initializing) {
-          vm_exit_out_of_memory(0, OOM_MALLOC_ERROR,
-                  "Cannot create worker GC thread. Out of system resources.");
+        log_trace(gc, task)("WorkerManager::add_workers() : "
+                            "creation failed due to failed allocation of native %s",
+                            new_worker == NULL ?  "memory" : "thread");
+        if (new_worker != NULL) {
+           delete new_worker;
         }
+        if (initializing) {
+          vm_exit_out_of_memory(0, OOM_MALLOC_ERROR, "Cannot create worker GC thread. Out of system resources.");
+        }
+        break;
       }
       created_workers++;
       os::start_thread(new_worker);
     }
+
+    log_trace(gc, task)("WorkerManager::add_workers() : "
+                        "created_workers: %u", created_workers);
 
     return created_workers;
   }
