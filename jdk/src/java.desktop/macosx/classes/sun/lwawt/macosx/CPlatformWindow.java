@@ -51,6 +51,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativeSetNSWindowMenuBar(long nsWindowPtr, long menuBarPtr);
     private static native Insets nativeGetNSWindowInsets(long nsWindowPtr);
     private static native void nativeSetNSWindowBounds(long nsWindowPtr, double x, double y, double w, double h);
+    private static native void nativeSetNSWindowLocationByPlatform(long nsWindowPtr);
     private static native void nativeSetNSWindowStandardFrame(long nsWindowPtr,
             double x, double y, double w, double h);
     private static native void nativeSetNSWindowMinMax(long nsWindowPtr, double minW, double minH, double maxW, double maxH);
@@ -529,6 +530,10 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         updateFocusabilityForAutoRequestFocus(false);
 
         boolean wasMaximized = isMaximized();
+
+        if (visible && target.isLocationByPlatform()) {
+            nativeSetNSWindowLocationByPlatform(getNSWindowPtr());
+        }
 
         // Actually show or hide the window
         LWWindowPeer blocker = (peer == null)? null : peer.getBlocker();
