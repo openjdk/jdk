@@ -2204,15 +2204,7 @@ return mh1;
             }
         }
 
-        private static final Class<?> PUBLIC_LOOKUP_CLASS;
-        static {
-            PrivilegedAction<Class<?>> pa = new PrivilegedAction<Class<?>>() {
-                public Class<?> run() {
-                    return createClass();
-                }
-            };
-            PUBLIC_LOOKUP_CLASS = AccessController.doPrivileged(pa);
-        }
+        private static final Class<?> PUBLIC_LOOKUP_CLASS = createClass();
 
         /**
          * Lookup that is trusted minimally. It can only be used to create
