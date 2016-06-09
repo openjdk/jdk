@@ -115,16 +115,16 @@ JMODS := $(wildcard $(IMAGES_OUTPUTDIR)/jmods/*.jmod)
 # Use this file inside the image as target for make rule
 JIMAGE_TARGET_FILE := bin/java$(EXE_SUFFIX)
 
-JLINK_ORDER_RESOURCES := *module-info.class*
+JLINK_ORDER_RESOURCES := **module-info.class
 ifeq ($(ENABLE_GENERATE_CLASSLIST), true)
   JLINK_ORDER_RESOURCES += @$(SUPPORT_OUTPUTDIR)/classlist/classlist
 endif
 JLINK_ORDER_RESOURCES += \
-    /java.base/java/* \
-    /java.base/jdk/* \
-    /java.base/sun/* \
-    /java.base/com/* \
-    /jdk.localedata/* \
+    /java.base/java/** \
+    /java.base/jdk/** \
+    /java.base/sun/** \
+    /java.base/com/** \
+    /jdk.localedata/** \
     #
 
 JLINK_TOOL := $(JLINK) --modulepath $(IMAGES_OUTPUTDIR)/jmods \
