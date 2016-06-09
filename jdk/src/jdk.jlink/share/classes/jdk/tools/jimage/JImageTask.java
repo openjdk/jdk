@@ -29,9 +29,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.MissingResourceException;
+import java.util.function.Predicate;
 import jdk.internal.jimage.BasicImageReader;
 import jdk.internal.jimage.ImageHeader;
 import jdk.internal.jimage.ImageLocation;
@@ -43,20 +45,27 @@ import jdk.tools.jlink.internal.TaskHelper.Option;
 import jdk.tools.jlink.internal.TaskHelper.OptionsHelper;
 
 class JImageTask {
-
     static final Option<?>[] recognizedOptions = {
         new Option<JImageTask>(true, (task, option, arg) -> {
             task.options.directory = arg;
         }, "--dir"),
+
+        new Option<JImageTask>(true, (task, option, arg) -> {
+            task.options.filters = arg;
+        }, "--filter"),
+
         new Option<JImageTask>(false, (task, option, arg) -> {
             task.options.fullVersion = true;
         }, true, "--fullversion"),
+
         new Option<JImageTask>(false, (task, option, arg) -> {
             task.options.help = true;
         }, "--help"),
+
         new Option<JImageTask>(false, (task, option, arg) -> {
             task.options.verbose = true;
         }, "--verbose"),
+
         new Option<JImageTask>(false, (task, option, arg) -> {
             task.options.version = true;
         }, "--version")
@@ -65,19 +74,33 @@ class JImageTask {
             = new TaskHelper(JIMAGE_BUNDLE);
     private static final OptionsHelper<JImageTask> optionsHelper
             = taskHelper.newOptionsHelper(JImageTask.class, recognizedOptions);
+    private static final String PROGNAME = "jimage";
+
+    private final OptionsValues options;
+    private final List<Predicate<String>> filterPredicates;
+    private PrintWriter log = null;
+
+    JImageTask() {
+        this.options = new OptionsValues();
+        this.filterPredicates = new ArrayList<>();
+        log = null;
+    }
+
+    void setLog(PrintWriter out) {
+        log = out;
+        taskHelper.setLog(log);
+    }
 
     static class OptionsValues {
         Task task = Task.LIST;
         String directory = ".";
+        String filters = "";
         boolean fullVersion;
         boolean help;
         boolean verbose;
         boolean version;
         List<File> jimages = new LinkedList<>();
     }
-
-    private static final String PROGNAME = "jimage";
-    private final OptionsValues options = new OptionsValues();
 
     enum Task {
         EXTRACT,
@@ -135,45 +158,55 @@ class JImageTask {
         if (log == null) {
             setLog(new PrintWriter(System.out, true));
         }
+
         if (args.length == 0) {
             log.println(taskHelper.getMessage("main.usage.summary", PROGNAME));
             return EXIT_ABNORMAL;
         }
+
         try {
             List<String> unhandled = optionsHelper.handleOptions(this, args);
+
             if(!unhandled.isEmpty()) {
                 try {
                     options.task = Enum.valueOf(Task.class, unhandled.get(0).toUpperCase());
                 } catch (IllegalArgumentException ex) {
                     throw taskHelper.newBadArgs("err.not.a.task", unhandled.get(0));
                 }
+
                 for(int i = 1; i < unhandled.size(); i++) {
                     options.jimages.add(new File(unhandled.get(i)));
                 }
             } else if (!options.help && !options.version && !options.fullVersion) {
                 throw taskHelper.newBadArgs("err.invalid.task", "<unspecified>");
             }
+
             if (options.help) {
                 if (unhandled.isEmpty()) {
                     log.println(taskHelper.getMessage("main.usage", PROGNAME));
+
                     for (Option<?> o : recognizedOptions) {
                         String name = o.aliases()[0];
+
                         if (name.startsWith("--")) {
                             name = name.substring(2);
                         } else if (name.startsWith("-")) {
                             name = name.substring(1);
                         }
+
                         log.println(taskHelper.getMessage("main.opt." + name));
                     }
                 } else {
                     try {
-                        log.println(taskHelper.getMessage("main.usage." + options.task.toString().toLowerCase()));
+                        log.println(taskHelper.getMessage("main.usage." +
+                                options.task.toString().toLowerCase()));
                     } catch (MissingResourceException ex) {
                         throw taskHelper.newBadArgs("err.not.a.task", unhandled.get(0));
                     }
                 }
                 return EXIT_OK;
             }
+
             if (options.version || options.fullVersion) {
                 taskHelper.showVersion(options.fullVersion);
 
@@ -181,18 +214,52 @@ class JImageTask {
                     return EXIT_OK;
                 }
             }
+
+            processFilter(options.filters);
+
             return run() ? EXIT_OK : EXIT_ERROR;
         } catch (BadArgs e) {
             taskHelper.reportError(e.key, e.args);
+
             if (e.showUsage) {
                 log.println(taskHelper.getMessage("main.usage.summary", PROGNAME));
             }
+
             return EXIT_CMDERR;
         } catch (Exception x) {
             x.printStackTrace();
+
             return EXIT_ABNORMAL;
         } finally {
             log.flush();
+        }
+    }
+
+    private void processFilter(String filters) {
+        if (filters.isEmpty()) {
+            return;
+        }
+
+        for (String filter : filters.split(",")) {
+            boolean endsWith = filter.startsWith("*");
+            boolean startsWith = filter.endsWith("*");
+            Predicate<String> function;
+
+            if (startsWith && endsWith) {
+                final String string = filter.substring(1, filter.length() - 1);
+                function = (path) -> path.contains(string);
+            } else if (startsWith) {
+                final String string = filter.substring(0, filter.length() - 1);
+                function = (path) -> path.startsWith(string);
+            } else if (endsWith) {
+                final String string = filter.substring(1);
+                function = (path) -> path.endsWith(string);
+            } else {
+                final String string = filter;
+                function = (path) -> path.equals(string);
+            }
+
+            filterPredicates.add(function);
         }
     }
 
@@ -223,10 +290,12 @@ class JImageTask {
 
         if (parent.exists()) {
             if (!parent.isDirectory()) {
-                throw taskHelper.newBadArgs("err.cannot.create.dir", parent.getAbsolutePath());
+                throw taskHelper.newBadArgs("err.cannot.create.dir",
+                                            parent.getAbsolutePath());
             }
         } else if (!parent.mkdirs()) {
-            throw taskHelper.newBadArgs("err.cannot.create.dir", parent.getAbsolutePath());
+            throw taskHelper.newBadArgs("err.cannot.create.dir",
+                                        parent.getAbsolutePath());
         }
 
         if (!ImageResourcesTree.isTreeInfoResource(name)) {
@@ -331,6 +400,19 @@ class JImageTask {
                     String oldModule = "";
 
                     for (String name : entryNames) {
+                        boolean match = filterPredicates.isEmpty();
+
+                        for (Predicate<String> predicate : filterPredicates) {
+                            if (predicate.test(name)) {
+                                match = true;
+                                break;
+                            }
+                        }
+
+                        if (!match) {
+                            continue;
+                        }
+
                         if (!ImageResourcesTree.isTreeInfoResource(name)) {
                             if (moduleAction != null) {
                                 int offset = name.indexOf('/', 1);
@@ -369,15 +451,9 @@ class JImageTask {
                 iterate(this::listTitle, null, this::verify);
                 break;
             default:
-                throw taskHelper.newBadArgs("err.invalid.task", options.task.name()).showUsage(true);
+                throw taskHelper.newBadArgs("err.invalid.task",
+                        options.task.name()).showUsage(true);
         }
         return true;
-    }
-
-    private PrintWriter log = null;
-
-    void setLog(PrintWriter out) {
-        log = out;
-        taskHelper.setLog(log);
     }
 }
