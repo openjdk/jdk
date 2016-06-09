@@ -28,7 +28,9 @@ package jdk.tools.jimage;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
+import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -43,9 +45,10 @@ import jdk.tools.jlink.internal.TaskHelper.BadArgs;
 import static jdk.tools.jlink.internal.TaskHelper.JIMAGE_BUNDLE;
 import jdk.tools.jlink.internal.TaskHelper.Option;
 import jdk.tools.jlink.internal.TaskHelper.OptionsHelper;
+import jdk.tools.jlink.internal.Utils;
 
 class JImageTask {
-    static final Option<?>[] recognizedOptions = {
+    private static final Option<?>[] RECOGNIZED_OPTIONS = {
         new Option<JImageTask>(true, (task, option, arg) -> {
             task.options.directory = arg;
         }, "--dir"),
@@ -70,15 +73,16 @@ class JImageTask {
             task.options.version = true;
         }, "--version")
     };
-    private static final TaskHelper taskHelper
+    private static final TaskHelper TASK_HELPER
             = new TaskHelper(JIMAGE_BUNDLE);
-    private static final OptionsHelper<JImageTask> optionsHelper
-            = taskHelper.newOptionsHelper(JImageTask.class, recognizedOptions);
+    private static final OptionsHelper<JImageTask> OPTION_HELPER
+            = TASK_HELPER.newOptionsHelper(JImageTask.class, RECOGNIZED_OPTIONS);
     private static final String PROGNAME = "jimage";
+    private static final FileSystem JRT_FILE_SYSTEM = Utils.jrtFileSystem();
 
     private final OptionsValues options;
     private final List<Predicate<String>> filterPredicates;
-    private PrintWriter log = null;
+    private PrintWriter log;
 
     JImageTask() {
         this.options = new OptionsValues();
@@ -88,7 +92,7 @@ class JImageTask {
 
     void setLog(PrintWriter out) {
         log = out;
-        taskHelper.setLog(log);
+        TASK_HELPER.setLog(log);
     }
 
     static class OptionsValues {
@@ -160,32 +164,32 @@ class JImageTask {
         }
 
         if (args.length == 0) {
-            log.println(taskHelper.getMessage("main.usage.summary", PROGNAME));
+            log.println(TASK_HELPER.getMessage("main.usage.summary", PROGNAME));
             return EXIT_ABNORMAL;
         }
 
         try {
-            List<String> unhandled = optionsHelper.handleOptions(this, args);
+            List<String> unhandled = OPTION_HELPER.handleOptions(this, args);
 
             if(!unhandled.isEmpty()) {
                 try {
                     options.task = Enum.valueOf(Task.class, unhandled.get(0).toUpperCase());
                 } catch (IllegalArgumentException ex) {
-                    throw taskHelper.newBadArgs("err.not.a.task", unhandled.get(0));
+                    throw TASK_HELPER.newBadArgs("err.not.a.task", unhandled.get(0));
                 }
 
                 for(int i = 1; i < unhandled.size(); i++) {
                     options.jimages.add(new File(unhandled.get(i)));
                 }
             } else if (!options.help && !options.version && !options.fullVersion) {
-                throw taskHelper.newBadArgs("err.invalid.task", "<unspecified>");
+                throw TASK_HELPER.newBadArgs("err.invalid.task", "<unspecified>");
             }
 
             if (options.help) {
                 if (unhandled.isEmpty()) {
-                    log.println(taskHelper.getMessage("main.usage", PROGNAME));
+                    log.println(TASK_HELPER.getMessage("main.usage", PROGNAME));
 
-                    for (Option<?> o : recognizedOptions) {
+                    for (Option<?> o : RECOGNIZED_OPTIONS) {
                         String name = o.aliases()[0];
 
                         if (name.startsWith("--")) {
@@ -194,21 +198,21 @@ class JImageTask {
                             name = name.substring(1);
                         }
 
-                        log.println(taskHelper.getMessage("main.opt." + name));
+                        log.println(TASK_HELPER.getMessage("main.opt." + name));
                     }
                 } else {
                     try {
-                        log.println(taskHelper.getMessage("main.usage." +
+                        log.println(TASK_HELPER.getMessage("main.usage." +
                                 options.task.toString().toLowerCase()));
                     } catch (MissingResourceException ex) {
-                        throw taskHelper.newBadArgs("err.not.a.task", unhandled.get(0));
+                        throw TASK_HELPER.newBadArgs("err.not.a.task", unhandled.get(0));
                     }
                 }
                 return EXIT_OK;
             }
 
             if (options.version || options.fullVersion) {
-                taskHelper.showVersion(options.fullVersion);
+                TASK_HELPER.showVersion(options.fullVersion);
 
                 if (unhandled.isEmpty()) {
                     return EXIT_OK;
@@ -219,10 +223,10 @@ class JImageTask {
 
             return run() ? EXIT_OK : EXIT_ERROR;
         } catch (BadArgs e) {
-            taskHelper.reportError(e.key, e.args);
+            TASK_HELPER.reportError(e.key, e.args);
 
             if (e.showUsage) {
-                log.println(taskHelper.getMessage("main.usage.summary", PROGNAME));
+                log.println(TASK_HELPER.getMessage("main.usage.summary", PROGNAME));
             }
 
             return EXIT_CMDERR;
@@ -241,25 +245,9 @@ class JImageTask {
         }
 
         for (String filter : filters.split(",")) {
-            boolean endsWith = filter.startsWith("*");
-            boolean startsWith = filter.endsWith("*");
-            Predicate<String> function;
-
-            if (startsWith && endsWith) {
-                final String string = filter.substring(1, filter.length() - 1);
-                function = (path) -> path.contains(string);
-            } else if (startsWith) {
-                final String string = filter.substring(0, filter.length() - 1);
-                function = (path) -> path.startsWith(string);
-            } else if (endsWith) {
-                final String string = filter.substring(1);
-                function = (path) -> path.endsWith(string);
-            } else {
-                final String string = filter;
-                function = (path) -> path.equals(string);
-            }
-
-            filterPredicates.add(function);
+            final PathMatcher matcher = Utils.getPathMatcher(JRT_FILE_SYSTEM, filter);
+            Predicate<String> predicate = (path) -> matcher.matches(JRT_FILE_SYSTEM.getPath(path));
+            filterPredicates.add(predicate);
         }
     }
 
@@ -290,11 +278,11 @@ class JImageTask {
 
         if (parent.exists()) {
             if (!parent.isDirectory()) {
-                throw taskHelper.newBadArgs("err.cannot.create.dir",
+                throw TASK_HELPER.newBadArgs("err.cannot.create.dir",
                                             parent.getAbsolutePath());
             }
         } else if (!parent.mkdirs()) {
-            throw taskHelper.newBadArgs("err.cannot.create.dir",
+            throw TASK_HELPER.newBadArgs("err.cannot.create.dir",
                                         parent.getAbsolutePath());
         }
 
@@ -382,12 +370,12 @@ class JImageTask {
             ModuleAction moduleAction,
             ResourceAction resourceAction) throws IOException, BadArgs {
         if (options.jimages.isEmpty()) {
-            throw taskHelper.newBadArgs("err.no.jimage");
+            throw TASK_HELPER.newBadArgs("err.no.jimage");
         }
 
         for (File file : options.jimages) {
             if (!file.exists() || !file.isFile()) {
-                throw taskHelper.newBadArgs("err.not.a.jimage", file.getName());
+                throw TASK_HELPER.newBadArgs("err.not.a.jimage", file.getName());
             }
 
             try (BasicImageReader reader = BasicImageReader.open(file.toPath())) {
@@ -451,7 +439,7 @@ class JImageTask {
                 iterate(this::listTitle, null, this::verify);
                 break;
             default:
-                throw taskHelper.newBadArgs("err.invalid.task",
+                throw TASK_HELPER.newBadArgs("err.invalid.task",
                         options.task.name()).showUsage(true);
         }
         return true;
