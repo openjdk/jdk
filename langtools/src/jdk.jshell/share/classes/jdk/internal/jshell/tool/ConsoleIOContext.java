@@ -215,6 +215,7 @@ class ConsoleIOContext extends IOContext {
         } catch (Exception ex) {
             throw new IOException(ex);
         }
+        input.shutdown();
     }
 
     private void bind(String shortcut, Object action) {
