@@ -28,19 +28,12 @@ package jdk.tools.jimage;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
 import java.nio.file.Files;
-import static java.nio.file.StandardOpenOption.READ;
-import static java.nio.file.StandardOpenOption.WRITE;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.MissingResourceException;
 import jdk.internal.jimage.BasicImageReader;
 import jdk.internal.jimage.ImageHeader;
-import static jdk.internal.jimage.ImageHeader.MAGIC;
-import static jdk.internal.jimage.ImageHeader.MAJOR_VERSION;
-import static jdk.internal.jimage.ImageHeader.MINOR_VERSION;
 import jdk.internal.jimage.ImageLocation;
 import jdk.tools.jlink.internal.ImageResourcesTree;
 import jdk.tools.jlink.internal.TaskHelper;
@@ -52,22 +45,19 @@ import jdk.tools.jlink.internal.TaskHelper.OptionsHelper;
 class JImageTask {
 
     static final Option<?>[] recognizedOptions = {
-        new Option<JImageTask>(true, (task, opt, arg) -> {
+        new Option<JImageTask>(true, (task, option, arg) -> {
             task.options.directory = arg;
         }, "--dir"),
-        new Option<JImageTask>(false, (task, opt, arg) -> {
+        new Option<JImageTask>(false, (task, option, arg) -> {
             task.options.fullVersion = true;
         }, true, "--fullversion"),
-        new Option<JImageTask>(false, (task, opt, arg) -> {
+        new Option<JImageTask>(false, (task, option, arg) -> {
             task.options.help = true;
         }, "--help"),
-        new Option<JImageTask>(true, (task, opt, arg) -> {
-            task.options.flags = arg;
-        }, "--flags"),
-        new Option<JImageTask>(false, (task, opt, arg) -> {
+        new Option<JImageTask>(false, (task, option, arg) -> {
             task.options.verbose = true;
         }, "--verbose"),
-        new Option<JImageTask>(false, (task, opt, arg) -> {
+        new Option<JImageTask>(false, (task, option, arg) -> {
             task.options.version = true;
         }, "--version")
     };
@@ -81,7 +71,6 @@ class JImageTask {
         String directory = ".";
         boolean fullVersion;
         boolean help;
-        String flags;
         boolean verbose;
         boolean version;
         List<File> jimages = new LinkedList<>();
@@ -94,7 +83,6 @@ class JImageTask {
         EXTRACT,
         INFO,
         LIST,
-        SET,
         VERIFY
     };
 
@@ -145,14 +133,12 @@ class JImageTask {
 
     int run(String[] args) {
         if (log == null) {
-            setLog(new PrintWriter(System.out));
+            setLog(new PrintWriter(System.out, true));
         }
-
         if (args.length == 0) {
             log.println(taskHelper.getMessage("main.usage.summary", PROGNAME));
             return EXIT_ABNORMAL;
         }
-
         try {
             List<String> unhandled = optionsHelper.handleOptions(this, args);
             if(!unhandled.isEmpty()) {
@@ -164,17 +150,38 @@ class JImageTask {
                 for(int i = 1; i < unhandled.size(); i++) {
                     options.jimages.add(new File(unhandled.get(i)));
                 }
-            } else {
-                throw taskHelper.newBadArgs("err.not.a.task", "<unspecified>");
+            } else if (!options.help && !options.version && !options.fullVersion) {
+                throw taskHelper.newBadArgs("err.invalid.task", "<unspecified>");
             }
             if (options.help) {
-                optionsHelper.showHelp(PROGNAME);
+                if (unhandled.isEmpty()) {
+                    log.println(taskHelper.getMessage("main.usage", PROGNAME));
+                    for (Option<?> o : recognizedOptions) {
+                        String name = o.aliases()[0];
+                        if (name.startsWith("--")) {
+                            name = name.substring(2);
+                        } else if (name.startsWith("-")) {
+                            name = name.substring(1);
+                        }
+                        log.println(taskHelper.getMessage("main.opt." + name));
+                    }
+                } else {
+                    try {
+                        log.println(taskHelper.getMessage("main.usage." + options.task.toString().toLowerCase()));
+                    } catch (MissingResourceException ex) {
+                        throw taskHelper.newBadArgs("err.not.a.task", unhandled.get(0));
+                    }
+                }
+                return EXIT_OK;
             }
             if (options.version || options.fullVersion) {
                 taskHelper.showVersion(options.fullVersion);
+
+                if (unhandled.isEmpty()) {
+                    return EXIT_OK;
+                }
             }
-            boolean ok = run();
-            return ok ? EXIT_OK : EXIT_ERROR;
+            return run() ? EXIT_OK : EXIT_ERROR;
         } catch (BadArgs e) {
             taskHelper.reportError(e.key, e.args);
             if (e.showUsage) {
@@ -261,7 +268,7 @@ class JImageTask {
 
         log.println(" Major Version:  " + header.getMajorVersion());
         log.println(" Minor Version:  " + header.getMinorVersion());
-        log.println(" Flags:          " + Integer.toHexString(header.getMinorVersion()));
+        log.println(" Flags:          " + Integer.toHexString(header.getFlags()));
         log.println(" Resource Count: " + header.getResourceCount());
         log.println(" Table Length:   " + header.getTableLength());
         log.println(" Offsets Size:   " + header.getOffsetsSize());
@@ -287,36 +294,7 @@ class JImageTask {
         print(reader, name);
     }
 
-    void set(File file, BasicImageReader reader) throws BadArgs {
-        try {
-            ImageHeader oldHeader = reader.getHeader();
-
-            int value = 0;
-            try {
-                value = Integer.valueOf(options.flags);
-            } catch (NumberFormatException ex) {
-                throw taskHelper.newBadArgs("err.flags.not.int", options.flags);
-            }
-
-            ImageHeader newHeader = new ImageHeader(MAGIC, MAJOR_VERSION, MINOR_VERSION,
-                    value,
-                    oldHeader.getResourceCount(), oldHeader.getTableLength(),
-                    oldHeader.getLocationsSize(), oldHeader.getStringsSize());
-
-            ByteBuffer buffer = ByteBuffer.allocate(ImageHeader.getHeaderSize());
-            buffer.order(ByteOrder.nativeOrder());
-            newHeader.writeTo(buffer);
-            buffer.rewind();
-
-            try (FileChannel channel = FileChannel.open(file.toPath(), READ, WRITE)) {
-                channel.write(buffer, 0);
-            }
-        } catch (IOException ex) {
-            throw taskHelper.newBadArgs("err.cannot.update.file", file.getName());
-        }
-    }
-
-     void verify(BasicImageReader reader, String name, ImageLocation location) {
+      void verify(BasicImageReader reader, String name, ImageLocation location) {
         if (name.endsWith(".class")) {
             byte[] bytes = reader.getResource(location);
 
@@ -387,9 +365,6 @@ class JImageTask {
             case LIST:
                 iterate(this::listTitle, this::listModule, this::list);
                 break;
-            case SET:
-                iterate(this::set, null, null);
-                break;
             case VERIFY:
                 iterate(this::listTitle, null, this::verify);
                 break;
@@ -399,7 +374,8 @@ class JImageTask {
         return true;
     }
 
-    private PrintWriter log;
+    private PrintWriter log = null;
+
     void setLog(PrintWriter out) {
         log = out;
         taskHelper.setLog(log);
