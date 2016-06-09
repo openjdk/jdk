@@ -1733,41 +1733,32 @@ public final class StringConcatFactory {
             // no instantiation
         }
 
-        // This one is deliberately non-lambdified to optimize startup time:
-        private static final Function<Class<?>, MethodHandle> MOST = new Function<Class<?>, MethodHandle>() {
+        private static class StringifierMost extends ClassValue<MethodHandle> {
             @Override
-            public MethodHandle apply(Class<?> cl) {
-                MethodHandle mhObject = lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, Object.class);
-
-                // We need the additional conversion here, because String.valueOf(Object) may return null.
-                // String conversion rules in Java state we need to produce "null" String in this case.
-                // It can be easily done with applying valueOf the second time.
-                MethodHandle mhObjectNoNulls = MethodHandles.filterReturnValue(mhObject,
-                        mhObject.asType(MethodType.methodType(String.class, String.class)));
-
+            protected MethodHandle computeValue(Class<?> cl) {
                 if (cl == String.class) {
-                    return mhObject;
+                    return lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, Object.class);
                 } else if (cl == float.class) {
                     return lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, float.class);
                 } else if (cl == double.class) {
                     return lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, double.class);
                 } else if (!cl.isPrimitive()) {
-                    return mhObjectNoNulls;
+                    MethodHandle mhObject = lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, Object.class);
+
+                    // We need the additional conversion here, because String.valueOf(Object) may return null.
+                    // String conversion rules in Java state we need to produce "null" String in this case.
+                    // It can be easily done with applying valueOf the second time.
+                    return MethodHandles.filterReturnValue(mhObject,
+                            mhObject.asType(MethodType.methodType(String.class, String.class)));
                 }
 
                 return null;
             }
-        };
+        }
 
-        // This one is deliberately non-lambdified to optimize startup time:
-        private static final Function<Class<?>, MethodHandle> ANY = new Function<Class<?>, MethodHandle>() {
+        private static class StringifierAny extends ClassValue<MethodHandle> {
             @Override
-            public MethodHandle apply(Class<?> cl) {
-                MethodHandle mh = MOST.apply(cl);
-                if (mh != null) {
-                    return mh;
-                }
-
+            protected MethodHandle computeValue(Class<?> cl) {
                 if (cl == byte.class || cl == short.class || cl == int.class) {
                     return lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, int.class);
                 } else if (cl == boolean.class) {
@@ -1777,13 +1768,18 @@ public final class StringConcatFactory {
                 } else if (cl == long.class) {
                     return lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, long.class);
                 } else {
-                    throw new IllegalStateException("Unknown class: " + cl);
+                    MethodHandle mh = STRINGIFIERS_MOST.get(cl);
+                    if (mh != null) {
+                        return mh;
+                    } else {
+                        throw new IllegalStateException("Unknown class: " + cl);
+                    }
                 }
             }
-        };
+        }
 
-        private static final ConcurrentMap<Class<?>, MethodHandle> STRINGIFIERS_MOST = new ConcurrentHashMap<>();
-        private static final ConcurrentMap<Class<?>, MethodHandle> STRINGIFIERS_ANY = new ConcurrentHashMap<>();
+        private static final ClassValue<MethodHandle> STRINGIFIERS_MOST = new StringifierMost();
+        private static final ClassValue<MethodHandle> STRINGIFIERS_ANY = new StringifierAny();
 
         /**
          * Returns a stringifier for references and floats/doubles only.
@@ -1793,7 +1789,7 @@ public final class StringConcatFactory {
          * @return stringifier; null, if not available
          */
         static MethodHandle forMost(Class<?> t) {
-            return STRINGIFIERS_MOST.computeIfAbsent(t, MOST);
+            return STRINGIFIERS_MOST.get(t);
         }
 
         /**
@@ -1803,7 +1799,7 @@ public final class StringConcatFactory {
          * @return stringifier
          */
         static MethodHandle forAny(Class<?> t) {
-            return STRINGIFIERS_ANY.computeIfAbsent(t, ANY);
+            return STRINGIFIERS_ANY.get(t);
         }
     }
 
