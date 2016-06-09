@@ -28,9 +28,6 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/parallel/gcTaskManager.hpp"
-#endif
 
 void PreservedMarks::restore() {
   while (!_stack.is_empty()) {
@@ -38,6 +35,15 @@ void PreservedMarks::restore() {
     elem.set_mark();
   }
   assert_empty();
+}
+
+void PreservedMarks::restore_and_increment(volatile size_t* const total_size_addr) {
+  const size_t stack_size = size();
+  restore();
+  // Only do the atomic add if the size is > 0.
+  if (stack_size > 0) {
+    Atomic::add(stack_size, total_size_addr);
+  }
 }
 
 #ifndef PRODUCT
@@ -82,13 +88,7 @@ public:
   virtual void work(uint worker_id) {
     uint task_id = 0;
     while (!_sub_tasks.is_task_claimed(/* reference */ task_id)) {
-      PreservedMarks* const preserved_marks = _preserved_marks_set->get(task_id);
-      const size_t size = preserved_marks->size();
-      preserved_marks->restore();
-      // Only do the atomic add if the size is > 0.
-      if (size > 0) {
-        Atomic::add(size, _total_size_addr);
-      }
+      _preserved_marks_set->get(task_id)->restore_and_increment(_total_size_addr);
     }
     _sub_tasks.all_tasks_completed();
   }
@@ -104,53 +104,6 @@ public:
   }
 };
 
-void PreservedMarksSet::restore_internal(WorkGang* workers,
-                                         volatile size_t* total_size_addr) {
-  assert(workers != NULL, "pre-condition");
-  ParRestoreTask task(workers->active_workers(), this, total_size_addr);
-  workers->run_task(&task);
-}
-
-#if INCLUDE_ALL_GCS
-class ParRestoreGCTask : public GCTask {
-private:
-  const uint _id;
-  PreservedMarksSet* const _preserved_marks_set;
-  volatile size_t* const _total_size_addr;
-
-public:
-  virtual char* name() { return (char*) "preserved mark restoration task"; }
-
-  virtual void do_it(GCTaskManager* manager, uint which) {
-    PreservedMarks* const preserved_marks = _preserved_marks_set->get(_id);
-    const size_t size = preserved_marks->size();
-    preserved_marks->restore();
-    // Only do the atomic add if the size is > 0.
-    if (size > 0) {
-      Atomic::add(size, _total_size_addr);
-    }
-  }
-
-  ParRestoreGCTask(uint id,
-                   PreservedMarksSet* preserved_marks_set,
-                   volatile size_t* total_size_addr)
-    : _id(id),
-      _preserved_marks_set(preserved_marks_set),
-      _total_size_addr(total_size_addr) { }
-};
-
-void PreservedMarksSet::restore_internal(GCTaskManager* gc_task_manager,
-                                         volatile size_t* total_size_addr) {
-  // GCTask / GCTaskQueue are ResourceObjs
-  ResourceMark rm;
-
-  GCTaskQueue* q = GCTaskQueue::create();
-  for (uint i = 0; i < num(); i += 1) {
-    q->enqueue(new ParRestoreGCTask(i, this, total_size_addr));
-  }
-  gc_task_manager->execute_and_wait(q);
-}
-#endif
 
 void PreservedMarksSet::reclaim() {
   assert_empty();
@@ -176,3 +129,16 @@ void PreservedMarksSet::assert_empty() {
   }
 }
 #endif // ndef PRODUCT
+
+void SharedRestorePreservedMarksTaskExecutor::restore(PreservedMarksSet* preserved_marks_set,
+                                               volatile size_t* total_size_addr) {
+  if (_workers == NULL) {
+    for (uint i = 0; i < preserved_marks_set->num(); i += 1) {
+      total_size_addr += preserved_marks_set->get(i)->size();
+      preserved_marks_set->get(i)->restore();
+    }
+  } else {
+    ParRestoreTask task(_workers->active_workers(), preserved_marks_set, total_size_addr);
+    _workers->run_task(&task);
+  }
+}
