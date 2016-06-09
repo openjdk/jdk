@@ -3474,7 +3474,8 @@ void G1CollectedHeap::restore_after_evac_failure() {
   double remove_self_forwards_start = os::elapsedTime();
 
   remove_self_forwarding_pointers();
-  _preserved_marks_set.restore(workers());
+  SharedRestorePreservedMarksTaskExecutor task_executor(workers());
+  _preserved_marks_set.restore(&task_executor);
 
   g1_policy()->phase_times()->record_evac_fail_remove_self_forwards((os::elapsedTime() - remove_self_forwards_start) * 1000.0);
 }
