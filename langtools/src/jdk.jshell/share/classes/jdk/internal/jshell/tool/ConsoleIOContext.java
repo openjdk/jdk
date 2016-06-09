@@ -93,7 +93,7 @@ class ConsoleIOContext extends IOContext {
                                               .collect(Collectors.toList());
         in.setHistory(history = new EditingHistory(in, persistenHistory) {
             @Override protected boolean isComplete(CharSequence input) {
-                return repl.analysis.analyzeCompletion(input.toString()).completeness.isComplete;
+                return repl.analysis.analyzeCompletion(input.toString()).completeness().isComplete();
             }
         });
         in.setBellEnabled(true);
@@ -117,24 +117,24 @@ class ConsoleIOContext extends IOContext {
 
                 boolean smart = allowSmart &&
                                 suggestions.stream()
-                                           .anyMatch(s -> s.isSmart);
+                                           .anyMatch(s -> s.matchesType());
 
                 lastTest = test;
                 lastCursor = cursor;
                 allowSmart = !allowSmart;
 
                 suggestions.stream()
-                           .filter(s -> !smart || s.isSmart)
-                           .map(s -> s.continuation)
+                           .filter(s -> !smart || s.matchesType())
+                           .map(s -> s.continuation())
                            .forEach(result::add);
 
                 boolean onlySmart = suggestions.stream()
-                                               .allMatch(s -> s.isSmart);
+                                               .allMatch(s -> s.matchesType());
 
                 if (smart && !onlySmart) {
                     Optional<String> prefix =
                             suggestions.stream()
-                                       .map(s -> s.continuation)
+                                       .map(s -> s.continuation())
                                        .reduce(ConsoleIOContext::commonPrefix);
 
                     String prefixStr = prefix.orElse("").substring(cursor - anchor[0]);
@@ -215,6 +215,7 @@ class ConsoleIOContext extends IOContext {
         } catch (Exception ex) {
             throw new IOException(ex);
         }
+        input.shutdown();
     }
 
     private void bind(String shortcut, Object action) {

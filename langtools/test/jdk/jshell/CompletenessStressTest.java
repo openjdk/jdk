@@ -248,15 +248,15 @@ public class CompletenessStressTest extends KullaTesting {
         }
         String unit = text.substring(start, end);
         SourceCodeAnalysis.CompletionInfo ci = getAnalysis().analyzeCompletion(unit);
-        if (ci.completeness != expected) {
-            if (expected == COMPLETE_WITH_SEMI && (ci.completeness == CONSIDERED_INCOMPLETE || ci.completeness == EMPTY)) {
+        if (ci.completeness() != expected) {
+            if (expected == COMPLETE_WITH_SEMI && (ci.completeness() == CONSIDERED_INCOMPLETE || ci.completeness() == EMPTY)) {
                 writer.write(String.format("Empty statement: row %d, column %d: -- %s\n",
                         start, end, unit));
             } else {
-                String oops = unit.substring(max(0, ci.unitEndPos - 10), ci.unitEndPos) + "|||" +
-                        unit.substring(ci.unitEndPos, min(unit.length(), ci.unitEndPos + 10));
+                String oops = unit.substring(max(0, ci.unitEndPos() - 10), ci.unitEndPos()) + "|||" +
+                        unit.substring(ci.unitEndPos(), min(unit.length(), ci.unitEndPos() + 10));
                 writer.write(String.format("Expected %s got %s: '%s'  row %d, column %d: -- %s\n",
-                        expected, ci.completeness, oops, row, column, unit));
+                        expected, ci.completeness(), oops, row, column, unit));
                 return false;
             }
         }
