@@ -131,10 +131,10 @@ void PreservedMarksSet::assert_empty() {
 #endif // ndef PRODUCT
 
 void SharedRestorePreservedMarksTaskExecutor::restore(PreservedMarksSet* preserved_marks_set,
-                                               volatile size_t* total_size_addr) {
+                                                      volatile size_t* total_size_addr) {
   if (_workers == NULL) {
     for (uint i = 0; i < preserved_marks_set->num(); i += 1) {
-      total_size_addr += preserved_marks_set->get(i)->size();
+      *total_size_addr += preserved_marks_set->get(i)->size();
       preserved_marks_set->get(i)->restore();
     }
   } else {
