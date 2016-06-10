@@ -261,8 +261,7 @@ class CommittedMemoryRegion : public VirtualMemoryRegion {
     VirtualMemoryRegion(addr, size), _stack(stack) { }
 
   inline int compare(const CommittedMemoryRegion& rgn) const {
-    if (overlap_region(rgn.base(), rgn.size()) ||
-        adjacent_to   (rgn.base(), rgn.size())) {
+    if (overlap_region(rgn.base(), rgn.size())) {
       return 0;
     } else {
       if (base() == rgn.base()) {
