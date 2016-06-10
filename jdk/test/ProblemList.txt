@@ -403,4 +403,26 @@ com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8141370 linux-i5
 
 tools/jlink/plugins/IncludeLocalesPluginTest.java               8158272 generic-all
 
+tools/jlink/basic/BasicTest.java                                8159206 generic-all
+
+tools/jlink/IntegrationTest.java                                8159206 generic-all
+
+tools/jlink/JLinkOptimTest.java                                 8159206 generic-all
+
+tools/jlink/JLinkTest.java                                      8159206 generic-all
+
+tools/jlink/plugins/CompressorPluginTest.java                   8159206 generic-all
+
+tools/jlink/plugins/ExcludeFilesPluginTest.java                 8159206 generic-all
+
+tools/jlink/plugins/ExcludePluginTest.java                      8159206 generic-all
+
+tools/jlink/plugins/ExcludeVMPluginTest.java                    8159206 generic-all
+
+tools/jlink/plugins/OrderResourcesPluginTest.java               8159206 generic-all
+
+tools/jlink/plugins/ResourceFilterTest.java                     8159206 generic-all
+
+tools/jlink/plugins/StringSharingPluginTest.java                8159206 generic-all
+
 ############################################################################
