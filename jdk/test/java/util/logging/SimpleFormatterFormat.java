@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     6381464
+ * @bug     6381464 8153666
  * @summary Test the custom simple formatter output
  *
  * @run main/othervm SimpleFormatterFormat
@@ -60,13 +60,19 @@ public class SimpleFormatterFormat {
         "test.foo",
         "test.foo",
         "test.bar",
+        "test.bar",
+        "test.bar",
         "test.bar"
     };
     private static String[] messages = new String[] {
         "severe hello world",
         "warning lost connection",
         "info welcome",
-        "warning exception thrown",
+        "warning beware of traps",
+        "warning { {ok7} }",
+        // keep exception logging as last test case to avoid having
+        // to skip the exception stack trace in the output
+        "warning exception thrown"
     };
     private static void writeLogRecords(PrintStream logps) throws Exception {
         try {
@@ -79,8 +85,11 @@ public class SimpleFormatterFormat {
             Logger bar = Logger.getLogger("test.bar");
             bar.finest("Dummy message");
             bar.info(messages[2]);
-            bar.log(Level.WARNING, messages[3], new IllegalArgumentException());
+            bar.log(Level.WARNING, "{0}", new Object[] { messages[3] });
+            bar.log(Level.WARNING, "warning '{' '{'{7}} }", new Object[] {"ok", "ok1", "ok2", "ok3", "ok4", "ok5", "ok6", "ok7", "ok8", "ok9", "ok10"});
 
+            // Keep this one last - as it also prints the exception stack trace...
+            bar.log(Level.WARNING, messages[messages.length-1], new IllegalArgumentException());
         } finally {
             logps.flush();
             logps.close();
@@ -108,7 +117,7 @@ public class SimpleFormatterFormat {
 
                 Matcher m = p.matcher(line);
                 if (!m.matches()) {
-                    throw new RuntimeException("Unexpected output format");
+                    throw new RuntimeException("Unexpected output format: " + line);
                 }
                 if (m.groupCount() != 3) {
                     throw new RuntimeException("Unexpected group count = " +

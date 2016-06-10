@@ -2204,15 +2204,7 @@ return mh1;
             }
         }
 
-        private static final Class<?> PUBLIC_LOOKUP_CLASS;
-        static {
-            PrivilegedAction<Class<?>> pa = new PrivilegedAction<Class<?>>() {
-                public Class<?> run() {
-                    return createClass();
-                }
-            };
-            PUBLIC_LOOKUP_CLASS = AccessController.doPrivileged(pa);
-        }
+        private static final Class<?> PUBLIC_LOOKUP_CLASS = createClass();
 
         /**
          * Lookup that is trusted minimally. It can only be used to create
@@ -3016,6 +3008,7 @@ assert((int)twice.invokeExact(21) == 42);
      * @throws NullPointerException if the argument is null
      * @see MethodHandles#constant
      * @see MethodHandles#empty
+     * @see MethodHandles#explicitCastArguments
      * @since 9
      */
     public static  MethodHandle zero(Class<?> type) {
@@ -3359,9 +3352,9 @@ assertEquals("xy", h3.invoke("x", "y", 1, "a", "b", "c"));
      * @param pos place in {@code newTypes} where the non-skipped target parameters must occur
      * @return a possibly adapted method handle
      * @throws NullPointerException if either argument is null
-     * @throws IllegalArgumentException
-     *         if either index is out of range in its corresponding list, or
-     *         if the non-skipped target parameter types match the new types at {@code pos}
+     * @throws IllegalArgumentException if any element of {@code newTypes} is {@code void.class},
+     *         or if either index is out of range in its corresponding list,
+     *         or if the non-skipped target parameter types match the new types at {@code pos}
      * @since 9
      */
     public static

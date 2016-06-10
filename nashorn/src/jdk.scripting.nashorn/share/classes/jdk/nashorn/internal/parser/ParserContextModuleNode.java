@@ -28,6 +28,7 @@ package jdk.nashorn.internal.parser;
 import java.util.ArrayList;
 import java.util.List;
 
+import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.Module;
 import jdk.nashorn.internal.ir.Module.ExportEntry;
 import jdk.nashorn.internal.ir.Module.ImportEntry;
@@ -64,8 +65,8 @@ class ParserContextModuleNode extends ParserContextBaseNode {
         return name;
     }
 
-    public void addModuleRequest(final String moduleRequest) {
-        requestedModules.add(moduleRequest);
+    public void addModuleRequest(final IdentNode moduleRequest) {
+        requestedModules.add(moduleRequest.getName());
     }
 
     public void addImportEntry(final ImportEntry importEntry) {

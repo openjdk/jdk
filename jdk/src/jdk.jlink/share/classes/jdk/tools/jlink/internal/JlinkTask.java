@@ -186,7 +186,7 @@ public class JlinkTask {
 
     int run(String[] args) {
         if (log == null) {
-            setLog(new PrintWriter(System.err));
+            setLog(new PrintWriter(System.err, true));
         }
         try {
             optionsHelper.handleOptions(this, args);

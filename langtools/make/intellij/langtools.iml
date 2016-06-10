@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="JAVA_MODULE" version="4">
   <component name="NewModuleRootManager" inherit-compiler-output="true">
-    <output url="file://$MODULE_DIR$/build" />
-    <output-test url="file://$MODULE_DIR$/build" />
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src/java.compiler/share/classes" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/jdk.compiler/share/classes" isTestSource="false" />
@@ -13,6 +11,8 @@
       <sourceFolder url="file://$MODULE_DIR$/build/gensrc/jdk.compiler" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/build/gensrc/jdk.javadoc" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/build/gensrc/jdk.jdeps" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/make/tools" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/make/src/classes" isTestSource="false" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />

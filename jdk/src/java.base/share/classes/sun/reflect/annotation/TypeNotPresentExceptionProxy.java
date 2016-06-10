@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,5 +44,18 @@ public class TypeNotPresentExceptionProxy extends ExceptionProxy {
 
     protected RuntimeException generateException() {
         return new TypeNotPresentException(typeName, cause);
+    }
+
+    public String typeName() {
+        return typeName;
+    }
+
+    public Throwable getCause() {
+        return cause;
+    }
+
+    @Override
+    public String toString() {
+        return typeName + ".class /* Warning: type not present! */";
     }
 }

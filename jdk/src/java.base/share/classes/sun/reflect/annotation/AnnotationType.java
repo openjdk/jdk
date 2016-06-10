@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,16 +118,22 @@ public class AnnotationType {
         members = new HashMap<>(methods.length+1, 1.0f);
 
         for (Method method : methods) {
-            if (method.getParameterTypes().length != 0)
-                throw new IllegalArgumentException(method + " has params");
-            String name = method.getName();
-            Class<?> type = method.getReturnType();
-            memberTypes.put(name, invocationHandlerReturnType(type));
-            members.put(name, method);
+            if (Modifier.isPublic(method.getModifiers()) &&
+                Modifier.isAbstract(method.getModifiers()) &&
+                !method.isSynthetic()) {
+                if (method.getParameterTypes().length != 0) {
+                    throw new IllegalArgumentException(method + " has params");
+                }
+                String name = method.getName();
+                Class<?> type = method.getReturnType();
+                memberTypes.put(name, invocationHandlerReturnType(type));
+                members.put(name, method);
 
-            Object defaultValue = method.getDefaultValue();
-            if (defaultValue != null)
-                memberDefaults.put(name, defaultValue);
+                Object defaultValue = method.getDefaultValue();
+                if (defaultValue != null) {
+                    memberDefaults.put(name, defaultValue);
+                }
+            }
         }
 
         // Initialize retention, & inherited fields.  Special treatment

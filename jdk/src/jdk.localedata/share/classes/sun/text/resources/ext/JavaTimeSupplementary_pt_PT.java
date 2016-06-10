@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -109,8 +109,19 @@ public class JavaTimeSupplementary_pt_PT extends OpenListResourceBundle {
                 new String[] {
                     "GGGG y MMMM d, EEEE",
                     "GGGG y MMMM d",
-                    "d 'de' MMM, y GGGG",
+                    "GGGG y MMM d",
                     "d/M/y GGGG",
+                }
+            },
+            { "islamic.DayAbbreviations",
+                new String[] {
+                    "domingo",
+                    "segunda",
+                    "ter\u00e7a",
+                    "quarta",
+                    "quinta",
+                    "sexta",
+                    "s\u00e1bado",
                 }
             },
             { "islamic.QuarterNames",
@@ -119,6 +130,12 @@ public class JavaTimeSupplementary_pt_PT extends OpenListResourceBundle {
                     "2.\u00ba trimestre",
                     "3.\u00ba trimestre",
                     "4.\u00ba trimestre",
+                }
+            },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "a.m.",
+                    "p.m.",
                 }
             },
             { "islamic.narrow.AmPmMarkers",
@@ -131,7 +148,7 @@ public class JavaTimeSupplementary_pt_PT extends OpenListResourceBundle {
                 new String[] {
                     "G y MMMM d, EEEE",
                     "G y MMMM d",
-                    "d 'de' MMM, y G",
+                    "G y MMM d",
                     "d/M/y G",
                 }
             },
@@ -139,7 +156,7 @@ public class JavaTimeSupplementary_pt_PT extends OpenListResourceBundle {
                 new String[] {
                     "G y MMMM d, EEEE",
                     "G y MMMM d",
-                    "d 'de' MMM, y G",
+                    "G y MMM d",
                     "d/M/y G",
                 }
             },
@@ -147,21 +164,15 @@ public class JavaTimeSupplementary_pt_PT extends OpenListResourceBundle {
                 new String[] {
                     "EEEE, d 'de' MMMM 'de' y G",
                     "d 'de' MMMM 'de' y G",
-                    "d 'de' MMM, y G",
+                    "dd/MM/y G",
                     "d/M/y G",
-                }
-            },
-            { "java.time.long.Eras",
-                new String[] {
-                    "antes de Cristo",
-                    "depois de Cristo",
                 }
             },
             { "java.time.roc.DatePatterns",
                 new String[] {
                     "G y MMMM d, EEEE",
                     "G y MMMM d",
-                    "d 'de' MMM, y G",
+                    "G y MMM d",
                     "d/M/y G",
                 }
             },
@@ -175,8 +186,19 @@ public class JavaTimeSupplementary_pt_PT extends OpenListResourceBundle {
                 new String[] {
                     "GGGG y MMMM d, EEEE",
                     "GGGG y MMMM d",
-                    "d 'de' MMM, y GGGG",
+                    "GGGG y MMM d",
                     "d/M/y GGGG",
+                }
+            },
+            { "roc.DayAbbreviations",
+                new String[] {
+                    "domingo",
+                    "segunda",
+                    "ter\u00e7a",
+                    "quarta",
+                    "quinta",
+                    "sexta",
+                    "s\u00e1bado",
                 }
             },
             { "roc.QuarterNames",
@@ -185,6 +207,12 @@ public class JavaTimeSupplementary_pt_PT extends OpenListResourceBundle {
                     "2.\u00ba trimestre",
                     "3.\u00ba trimestre",
                     "4.\u00ba trimestre",
+                }
+            },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "a.m.",
+                    "p.m.",
                 }
             },
             { "roc.narrow.AmPmMarkers",
