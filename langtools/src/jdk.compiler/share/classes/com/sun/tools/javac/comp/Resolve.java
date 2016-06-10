@@ -1155,12 +1155,18 @@ public class Resolve {
 
             /** Parameters {@code t} and {@code s} are unrelated functional interface types. */
             private boolean functionalInterfaceMostSpecific(Type t, Type s, JCTree tree) {
-                Type tDesc = types.findDescriptorType(t);
+                Type tDesc = types.findDescriptorType(types.capture(t));
+                Type tDescNoCapture = types.findDescriptorType(t);
                 Type sDesc = types.findDescriptorType(s);
-
-                // compare type parameters -- can't use Types.hasSameBounds because bounds may have ivars
                 final List<Type> tTypeParams = tDesc.getTypeArguments();
+                final List<Type> tTypeParamsNoCapture = tDescNoCapture.getTypeArguments();
                 final List<Type> sTypeParams = sDesc.getTypeArguments();
+
+                // compare type parameters
+                if (tDesc.hasTag(FORALL) && !types.hasSameBounds((ForAll) tDesc, (ForAll) tDescNoCapture)) {
+                    return false;
+                }
+                // can't use Types.hasSameBounds on sDesc because bounds may have ivars
                 List<Type> tIter = tTypeParams;
                 List<Type> sIter = sTypeParams;
                 while (tIter.nonEmpty() && sIter.nonEmpty()) {
@@ -1181,20 +1187,26 @@ public class Resolve {
 
                 // compare parameters
                 List<Type> tParams = tDesc.getParameterTypes();
+                List<Type> tParamsNoCapture = tDescNoCapture.getParameterTypes();
                 List<Type> sParams = sDesc.getParameterTypes();
-                while (tParams.nonEmpty() && sParams.nonEmpty()) {
+                while (tParams.nonEmpty() && tParamsNoCapture.nonEmpty() && sParams.nonEmpty()) {
                     Type tParam = tParams.head;
+                    Type tParamNoCapture = types.subst(tParamsNoCapture.head, tTypeParamsNoCapture, tTypeParams);
                     Type sParam = types.subst(sParams.head, sTypeParams, tTypeParams);
                     if (tParam.containsAny(tTypeParams) && inferenceContext().free(sParam)) {
                         return false;
                     }
-                    if (!types.isSameType(tParam, inferenceContext().asUndetVar(sParam))) {
+                    if (!types.isSubtype(inferenceContext().asUndetVar(sParam), tParam)) {
+                        return false;
+                    }
+                    if (!types.isSameType(tParamNoCapture, inferenceContext().asUndetVar(sParam))) {
                         return false;
                     }
                     tParams = tParams.tail;
+                    tParamsNoCapture = tParamsNoCapture.tail;
                     sParams = sParams.tail;
                 }
-                if (!tParams.isEmpty() || !sParams.isEmpty()) {
+                if (!tParams.isEmpty() || !tParamsNoCapture.isEmpty() || !sParams.isEmpty()) {
                     return false;
                 }
 
