@@ -376,6 +376,7 @@ public class WhiteBox {
   public native void freeMetaspace(ClassLoader classLoader, long addr, long size);
   public native long incMetaspaceCapacityUntilGC(long increment);
   public native long metaspaceCapacityUntilGC();
+  public native boolean metaspaceShouldConcurrentCollect();
 
   // Force Young GC
   public native void youngGC();
