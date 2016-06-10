@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.io.*;
 import java.nio.charset.*;
 import java.nio.file.*;
 import java.util.*;
@@ -156,13 +155,10 @@ public class EquivMapsGenerator {
             if (subtags.length == 2) {
                 sortedLanguageMap1.put(subtags[0], subtags[1]);
                 sortedLanguageMap1.put(subtags[1], subtags[0]);
-            } else if (subtags.length == 3) {
-                sortedLanguageMap2.put(subtags[0],
-                                     new String[]{subtags[1], subtags[2]});
-                sortedLanguageMap2.put(subtags[1],
-                                     new String[]{subtags[0], subtags[2]});
-                sortedLanguageMap2.put(subtags[2],
-                                     new String[]{subtags[0], subtags[1]});
+            } else if (subtags.length > 2) {
+                for (int i = 0; i < subtags.length; i++) {
+                    sortedLanguageMap2.put(subtags[i], createLangArray(i, subtags));
+                }
             } else {
                     throw new RuntimeException("New case, need implementation."
                         + " A language subtag \"" + preferred
@@ -191,8 +187,9 @@ public class EquivMapsGenerator {
                 + sortedLanguageMap2.size());
             for (String key : sortedLanguageMap2.keySet()) {
                 String[] s = sortedLanguageMap2.get(key);
-                System.out.println("    " + key + ": \""
-                    + s[0] + "\", \"" + s[1] + "\"");
+                if (s.length >= 2) {
+                    System.out.println("    " + key + ": " + generateValuesString(s) + "");
+                }
             }
 
             System.out.println("\n  Sorted map for region and variant subtags. Size="
@@ -203,6 +200,30 @@ public class EquivMapsGenerator {
             }
         }
         System.out.println();
+    }
+
+    /* create the array of subtags excluding the subtag at index location */
+    private static String[] createLangArray(int index, String[] subtags) {
+        List<String> list = new ArrayList<>();
+        for (int i = 0; i < subtags.length; i++) {
+            if (i != index) {
+                list.add(subtags[i]);
+            }
+        }
+        return list.toArray(new String[list.size()]);
+    }
+
+    private static String generateValuesString(String[] values) {
+        String outputStr = "";
+        for (int i = 0; i < values.length; i++) {
+            if (i != values.length - 1) {
+                outputStr = outputStr + "\"" + values[i] + "\", ";
+            } else {
+                outputStr = outputStr + "\"" + values[i] + "\"";
+            }
+
+        }
+        return outputStr;
     }
 
     private static final String headerText =
@@ -232,9 +253,11 @@ public class EquivMapsGenerator {
         System.out.println();
         for (String key : sortedLanguageMap2.keySet()) {
             String[] values = sortedLanguageMap2.get(key);
-            System.out.println("        multiEquivsMap.put(\""
-                + key + "\", new String[] {\"" + values[0] + "\", \""
-                + values[1] + "\"});");
+
+            if (values.length >= 2) {
+                System.out.println("        multiEquivsMap.put(\""
+                        + key + "\", new String[] {" + generateValuesString(values) + "});");
+            }
         }
         System.out.println();
         for (String key : sortedRegionVariantMap.keySet()) {
