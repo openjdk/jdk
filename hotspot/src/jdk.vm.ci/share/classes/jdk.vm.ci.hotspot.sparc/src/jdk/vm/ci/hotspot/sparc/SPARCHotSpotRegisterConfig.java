@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,19 +78,20 @@ import jdk.vm.ci.code.RegisterAttributes;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.code.ValueKindFactory;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.LIRKind;
 import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.ValueKind;
 import jdk.vm.ci.sparc.SPARC;
 
 public class SPARCHotSpotRegisterConfig implements RegisterConfig {
 
-    private final Architecture architecture;
+    private final TargetDescription target;
 
     private final Register[] allocatable;
 
@@ -110,7 +111,7 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
     public Register[] filterAllocatableRegisters(PlatformKind kind, Register[] registers) {
         ArrayList<Register> list = new ArrayList<>();
         for (Register reg : registers) {
-            if (architecture.canStoreValue(reg.getRegisterCategory(), kind)) {
+            if (target.arch.canStoreValue(reg.getRegisterCategory(), kind)) {
                 list.add(reg);
             }
         }
@@ -166,16 +167,16 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
         return registers;
     }
 
-    public SPARCHotSpotRegisterConfig(Architecture arch, HotSpotVMConfig config) {
-        this(arch, initAllocatable(arch, config.useCompressedOops), config);
+    public SPARCHotSpotRegisterConfig(TargetDescription target, HotSpotVMConfig config) {
+        this(target, initAllocatable(target.arch, config.useCompressedOops), config);
     }
 
-    public SPARCHotSpotRegisterConfig(Architecture arch, Register[] allocatable, HotSpotVMConfig config) {
-        this.architecture = arch;
+    public SPARCHotSpotRegisterConfig(TargetDescription target, Register[] allocatable, HotSpotVMConfig config) {
+        this.target = target;
         this.allocatable = allocatable.clone();
         this.addNativeRegisterArgumentSlots = config.linuxOs;
         HashSet<Register> callerSaveSet = new HashSet<>();
-        Collections.addAll(callerSaveSet, arch.getAvailableValueRegisters());
+        Collections.addAll(callerSaveSet, target.arch.getAvailableValueRegisters());
         for (Register cs : calleeSaveRegisters) {
             callerSaveSet.remove(cs);
         }
@@ -198,18 +199,13 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
     }
 
     @Override
-    public Register getRegisterForRole(int index) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] parameterTypes, TargetDescription target) {
+    public CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] parameterTypes, ValueKindFactory<?> valueKindFactory) {
         HotSpotCallingConventionType hotspotType = (HotSpotCallingConventionType) type;
         if (type == HotSpotCallingConventionType.JavaCall || type == HotSpotCallingConventionType.NativeCall) {
-            return callingConvention(cpuCallerParameterRegisters, returnType, parameterTypes, hotspotType, target);
+            return callingConvention(cpuCallerParameterRegisters, returnType, parameterTypes, hotspotType, valueKindFactory);
         }
         if (type == HotSpotCallingConventionType.JavaCallee) {
-            return callingConvention(cpuCalleeParameterRegisters, returnType, parameterTypes, hotspotType, target);
+            return callingConvention(cpuCalleeParameterRegisters, returnType, parameterTypes, hotspotType, valueKindFactory);
         }
         throw JVMCIError.shouldNotReachHere();
     }
@@ -234,7 +230,8 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
         }
     }
 
-    private CallingConvention callingConvention(Register[] generalParameterRegisters, JavaType returnType, JavaType[] parameterTypes, HotSpotCallingConventionType type, TargetDescription target) {
+    private CallingConvention callingConvention(Register[] generalParameterRegisters, JavaType returnType, JavaType[] parameterTypes, HotSpotCallingConventionType type,
+                    ValueKindFactory<?> valueKindFactory) {
         AllocatableValue[] locations = new AllocatableValue[parameterTypes.length];
 
         int currentGeneral = 0;
@@ -254,7 +251,7 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
                 case Object:
                     if (currentGeneral < generalParameterRegisters.length) {
                         Register register = generalParameterRegisters[currentGeneral++];
-                        locations[i] = register.asValue(target.getLIRKind(kind));
+                        locations[i] = register.asValue(valueKindFactory.getValueKind(kind));
                     }
                     break;
                 case Double:
@@ -265,13 +262,13 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
                         }
                         Register register = fpuDoubleParameterRegisters[currentFloating];
                         currentFloating += 2; // Only every second is a double register
-                        locations[i] = register.asValue(target.getLIRKind(kind));
+                        locations[i] = register.asValue(valueKindFactory.getValueKind(kind));
                     }
                     break;
                 case Float:
                     if (currentFloating < fpuFloatParameterRegisters.length) {
                         Register register = fpuFloatParameterRegisters[currentFloating++];
-                        locations[i] = register.asValue(target.getLIRKind(kind));
+                        locations[i] = register.asValue(valueKindFactory.getValueKind(kind));
                     }
                     break;
                 default:
@@ -279,18 +276,18 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
             }
 
             if (locations[i] == null) {
-                LIRKind lirKind = target.getLIRKind(kind);
+                ValueKind<?> valueKind = valueKindFactory.getValueKind(kind);
                 // Stack slot is always aligned to its size in bytes but minimum wordsize
-                int typeSize = lirKind.getPlatformKind().getSizeInBytes();
+                int typeSize = valueKind.getPlatformKind().getSizeInBytes();
                 currentStackOffset = roundUp(currentStackOffset, typeSize);
                 int slotOffset = currentStackOffset + REGISTER_SAFE_AREA_SIZE;
-                locations[i] = StackSlot.get(lirKind, slotOffset, !type.out);
+                locations[i] = StackSlot.get(valueKind, slotOffset, !type.out);
                 currentStackOffset += typeSize;
             }
         }
 
         JavaKind returnKind = returnType == null ? Void : returnType.getJavaKind();
-        AllocatableValue returnLocation = returnKind == Void ? ILLEGAL : getReturnRegister(returnKind, type).asValue(target.getLIRKind(returnKind.getStackKind()));
+        AllocatableValue returnLocation = returnKind == Void ? ILLEGAL : getReturnRegister(returnKind, type).asValue(valueKindFactory.getValueKind(returnKind.getStackKind()));
 
         int outArgSpillArea;
         if (type == HotSpotCallingConventionType.NativeCall && addNativeRegisterArgumentSlots) {

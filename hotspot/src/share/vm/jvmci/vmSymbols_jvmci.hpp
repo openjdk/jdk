@@ -45,19 +45,18 @@
   template(jdk_vm_ci_hotspot_HotSpotSentinelConstant,             "jdk/vm/ci/hotspot/HotSpotSentinelConstant")             \
   template(jdk_vm_ci_hotspot_HotSpotStackFrameReference,          "jdk/vm/ci/hotspot/HotSpotStackFrameReference")          \
   template(jdk_vm_ci_hotspot_HotSpotMetaData,                     "jdk/vm/ci/hotspot/HotSpotMetaData")                     \
-  template(jdk_vm_ci_hotspot_HotSpotOopMap,                       "jdk/vm/ci/hotspot/HotSpotOopMap")                       \
   template(jdk_vm_ci_hotspot_HotSpotConstantPool,                 "jdk/vm/ci/hotspot/HotSpotConstantPool")                 \
   template(jdk_vm_ci_hotspot_HotSpotJVMCIMetaAccessContext,       "jdk/vm/ci/hotspot/HotSpotJVMCIMetaAccessContext")       \
   template(jdk_vm_ci_hotspot_HotSpotJVMCIRuntime,                 "jdk/vm/ci/hotspot/HotSpotJVMCIRuntime")                 \
   template(jdk_vm_ci_hotspot_HotSpotSpeculationLog,               "jdk/vm/ci/hotspot/HotSpotSpeculationLog")               \
-  template(jdk_vm_ci_hotspot_HotSpotSymbol,                       "jdk/vm/ci/hotspot/HotSpotSymbol")                       \
+  template(jdk_vm_ci_hotspot_HotSpotCompilationRequestResult,     "jdk/vm/ci/hotspot/HotSpotCompilationRequestResult")     \
   template(jdk_vm_ci_meta_JavaConstant,                           "jdk/vm/ci/meta/JavaConstant")                           \
   template(jdk_vm_ci_meta_PrimitiveConstant,                      "jdk/vm/ci/meta/PrimitiveConstant")                      \
   template(jdk_vm_ci_meta_RawConstant,                            "jdk/vm/ci/meta/RawConstant")                            \
   template(jdk_vm_ci_meta_NullConstant,                           "jdk/vm/ci/meta/NullConstant")                           \
   template(jdk_vm_ci_meta_ExceptionHandler,                       "jdk/vm/ci/meta/ExceptionHandler")                       \
   template(jdk_vm_ci_meta_JavaKind,                               "jdk/vm/ci/meta/JavaKind")                               \
-  template(jdk_vm_ci_meta_LIRKind,                                "jdk/vm/ci/meta/LIRKind")                                \
+  template(jdk_vm_ci_meta_ValueKind,                              "jdk/vm/ci/meta/ValueKind")                              \
   template(jdk_vm_ci_meta_Value,                                  "jdk/vm/ci/meta/Value")                                  \
   template(jdk_vm_ci_meta_Assumptions_ConcreteSubtype,            "jdk/vm/ci/meta/Assumptions$ConcreteSubtype")            \
   template(jdk_vm_ci_meta_Assumptions_LeafType,                   "jdk/vm/ci/meta/Assumptions$LeafType")                   \
@@ -67,7 +66,6 @@
   template(jdk_vm_ci_code_Architecture,                           "jdk/vm/ci/code/Architecture")                           \
   template(jdk_vm_ci_code_BytecodeFrame,                          "jdk/vm/ci/code/BytecodeFrame")                          \
   template(jdk_vm_ci_code_BytecodePosition,                       "jdk/vm/ci/code/BytecodePosition")                       \
-  template(jdk_vm_ci_code_CompilationRequestResult,               "jdk/vm/ci/code/CompilationRequestResult")               \
   template(jdk_vm_ci_code_DebugInfo,                              "jdk/vm/ci/code/DebugInfo")                              \
   template(jdk_vm_ci_code_InstalledCode,                          "jdk/vm/ci/code/InstalledCode")                          \
   template(jdk_vm_ci_code_Location,                               "jdk/vm/ci/code/Location")                               \
@@ -89,13 +87,14 @@
   template(jdk_vm_ci_code_site_Site,                              "jdk/vm/ci/code/site/Site")                              \
   template(jdk_vm_ci_code_site_InfopointReason,                   "jdk/vm/ci/code/site/InfopointReason")                   \
   template(jdk_vm_ci_common_JVMCIError,                           "jdk/vm/ci/common/JVMCIError")                           \
+  template(adjustCompilationLevel_name,                           "adjustCompilationLevel")                                \
+  template(adjustCompilationLevel_signature,                      "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/String;ZI)I") \
   template(compileMethod_name,                                    "compileMethod")                                         \
-  template(compileMethod_signature,                               "(Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethod;IJI)Ljdk/vm/ci/code/CompilationRequestResult;") \
+  template(compileMethod_signature,                               "(Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethod;IJI)Ljdk/vm/ci/hotspot/HotSpotCompilationRequestResult;") \
   template(fromMetaspace_name,                                    "fromMetaspace")                                         \
   template(method_fromMetaspace_signature,                        "(J)Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethod;")      \
   template(constantPool_fromMetaspace_signature,                  "(J)Ljdk/vm/ci/hotspot/HotSpotConstantPool;")            \
-  template(klass_fromMetaspace_signature,                         "(Ljava/lang/Class;)Ljdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl;") \
-  template(jdk_vm_ci_hotspot_Stable_signature,                    "Ljdk/vm/ci/hotspot/Stable;")
+  template(klass_fromMetaspace_signature,                         "(Ljava/lang/Class;)Ljdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl;")
 #endif
 
 #endif // SHARE_VM_JVMCI_VMSYMBOLS_JVMCI_HPP

@@ -382,6 +382,10 @@ void ClassLoaderData::unload() {
     }
     log->cr();
   }
+
+  // In some rare cases items added to this list will not be freed elsewhere.
+  // To keep it simple, just free everything in it here.
+  free_deallocate_list();
 }
 
 PackageEntryTable* ClassLoaderData::packages() {

@@ -32,7 +32,6 @@ import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.utils.TypeUtil;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeBoolean;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
 class CompoundShiftAssignmentOperatorFactory extends BinaryOperatorFactory {
@@ -43,11 +42,11 @@ class CompoundShiftAssignmentOperatorFactory extends BinaryOperatorFactory {
 
     @Override
     protected boolean isApplicable(Type resultType) {
-        return TypeList.isBuiltInInt(resultType) && !resultType.equals(new TypeBoolean());
+        return TypeList.isBuiltInInt(resultType) && !resultType.equals(TypeList.BOOLEAN);
     }
 
     @Override
-    protected Pair<Type, Type> generateTypes() throws ProductionFailedException {
+    protected Pair<Type, Type> generateTypes() {
         return new Pair<>(resultType, PseudoRandom.randomElement(
                 TypeUtil.getExplicitlyCastable(TypeList.getBuiltInInt(), resultType)));
     }
@@ -73,6 +72,6 @@ class CompoundShiftAssignmentOperatorFactory extends BinaryOperatorFactory {
                 .setResultType(rightType)
                 .getExpressionFactory()
                 .produce();
-        return new BinaryOperator(opKind, leftExpr, rightExpr);
+        return new BinaryOperator(opKind, resultType, leftExpr, rightExpr);
     }
 }

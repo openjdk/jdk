@@ -933,6 +933,9 @@ class JavaThread: public Thread {
   // Specifies if the DeoptReason for the last uncommon trap was Reason_transfer_to_interpreter
   bool      _pending_transfer_to_interpreter;
 
+  // Guard for re-entrant call to JVMCIRuntime::adjust_comp_level
+  bool      _adjusting_comp_level;
+
   // An object that JVMCI compiled code can use to further describe and
   // uniquely identify the  speculative optimization guarded by the uncommon trap
   oop       _pending_failed_speculation;
@@ -1321,6 +1324,8 @@ class JavaThread: public Thread {
 #if INCLUDE_JVMCI
   int  pending_deoptimization() const             { return _pending_deoptimization; }
   oop  pending_failed_speculation() const         { return _pending_failed_speculation; }
+  bool adjusting_comp_level() const               { return _adjusting_comp_level; }
+  void set_adjusting_comp_level(bool b)           { _adjusting_comp_level = b; }
   bool has_pending_monitorenter() const           { return _pending_monitorenter; }
   void set_pending_monitorenter(bool b)           { _pending_monitorenter = b; }
   void set_pending_deoptimization(int reason)     { _pending_deoptimization = reason; }
@@ -1366,10 +1371,10 @@ class JavaThread: public Thread {
   //  |  reserved pages                      |
   //  |                                      |
   //  --  <-- stack_reserved_zone_base()    ---      ---
-  //                                                 /|\  shadow
+  //                                                 /|\  shadow     <--  stack_overflow_limit() (somewhere in here)
   //                                                  |   zone
   //                                                 \|/  size
-  //  some untouched memory                          ---         <--  stack_overflow_limit()
+  //  some untouched memory                          ---
   //
   //
   //  --
@@ -1517,9 +1522,8 @@ class JavaThread: public Thread {
 
   address stack_overflow_limit() { return _stack_overflow_limit; }
   void set_stack_overflow_limit() {
-    _stack_overflow_limit = stack_end() +
-                            (JavaThread::stack_guard_zone_size() +
-                             JavaThread::stack_shadow_zone_size());
+    _stack_overflow_limit =
+      stack_end() + MAX2(JavaThread::stack_guard_zone_size(), JavaThread::stack_shadow_zone_size());
   }
 
   // Misc. accessors/mutators
