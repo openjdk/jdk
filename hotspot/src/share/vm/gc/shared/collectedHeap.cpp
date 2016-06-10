@@ -386,7 +386,7 @@ size_t CollectedHeap::max_tlab_size() const {
 //     initialized by this point, a fact that we assert when doing the
 //     card-mark.)
 // (c) G1CollectedHeap(G1) uses two kinds of write barriers. When a
-//     G1 concurrent marking is in progress an SATB (pre-write-)barrier is
+//     G1 concurrent marking is in progress an SATB (pre-write-)barrier
 //     is used to remember the pre-value of any store. Initializing
 //     stores will not need this barrier, so we need not worry about
 //     compensating for the missing pre-barrier here. Turning now

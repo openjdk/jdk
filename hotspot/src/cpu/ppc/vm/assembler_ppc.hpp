@@ -503,6 +503,10 @@ class Assembler : public AbstractAssembler {
     LVSL_OPCODE    = (31u << OPCODE_SHIFT |    6u << 1),
     LVSR_OPCODE    = (31u << OPCODE_SHIFT |   38u << 1),
 
+    // Vector-Scalar (VSX) instruction support.
+    LXVD2X_OPCODE  = (31u << OPCODE_SHIFT |  844u << 1),
+    STXVD2X_OPCODE = (31u << OPCODE_SHIFT |  972u << 1),
+
     // Vector Permute and Formatting
     VPKPX_OPCODE   = (4u  << OPCODE_SHIFT |  782u     ),
     VPKSHSS_OPCODE = (4u  << OPCODE_SHIFT |  398u     ),
@@ -1084,6 +1088,19 @@ class Assembler : public AbstractAssembler {
   static int vrc(   VectorRegister r)  { return  vrc(r->encoding());}
   static int vrs(   VectorRegister r)  { return  vrs(r->encoding());}
   static int vrt(   VectorRegister r)  { return  vrt(r->encoding());}
+
+  // Support Vector-Scalar (VSX) instructions.
+  static int vsra(      int         x)  { return  opp_u_field(x,            15, 11); }
+  static int vsrb(      int         x)  { return  opp_u_field(x,            20, 16); }
+  static int vsrc(      int         x)  { return  opp_u_field(x,            25, 21); }
+  static int vsrs(      int         x)  { return  opp_u_field(x,            10,  6); }
+  static int vsrt(      int         x)  { return  opp_u_field(x,            10,  6); }
+
+  static int vsra(   VectorSRegister r)  { return  vsra(r->encoding());}
+  static int vsrb(   VectorSRegister r)  { return  vsrb(r->encoding());}
+  static int vsrc(   VectorSRegister r)  { return  vsrc(r->encoding());}
+  static int vsrs(   VectorSRegister r)  { return  vsrs(r->encoding());}
+  static int vsrt(   VectorSRegister r)  { return  vsrt(r->encoding());}
 
   static int vsplt_uim( int        x)  { return  opp_u_field(x,             15, 12); } // for vsplt* instructions
   static int vsplti_sim(int        x)  { return  opp_u_field(x,             15, 11); } // for vsplti* instructions
@@ -2068,6 +2085,10 @@ class Assembler : public AbstractAssembler {
   // Vector Floating-Point not implemented yet
   inline void mtvscr(   VectorRegister b);
   inline void mfvscr(   VectorRegister d);
+
+  // Vector-Scalar (VSX) instructions.
+  inline void lxvd2x(   VectorSRegister d, Register a, Register b);
+  inline void stxvd2x(  VectorSRegister d, Register a, Register b);
 
   // AES (introduced with Power 8)
   inline void vcipher(     VectorRegister d, VectorRegister a, VectorRegister b);

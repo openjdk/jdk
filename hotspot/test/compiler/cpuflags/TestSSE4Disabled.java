@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,29 +19,19 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/* @test
- * @bug 8022853
- * @library /testlibrary
- * @modules java.base/jdk.internal.misc
- * @build jdk.test.lib.*
- * @run main GetKlassPointerGetJavaMirror
+/*
+ * @test TestSSE4Disabled
+ * @bug 8158214
+ * @requires (os.simpleArch == "x64")
+ * @summary Test correct execution without SSE 4.
+ * @run main/othervm -Xcomp -XX:UseSSE=3 TestSSE4Disabled
  */
-
-import static jdk.test.lib.Asserts.*;
-
-import jdk.test.lib.*;
-import jdk.internal.misc.Unsafe;
-
-public class GetKlassPointerGetJavaMirror {
-
-    public static void main(String args[]) throws Exception {
-        Unsafe unsafe = Utils.getUnsafe();
-        Object o = new GetKlassPointerGetJavaMirror();
-        final long metaspaceKlass = unsafe.getKlassPointer(o);
-        Class<?> c = unsafe.getJavaMirror(metaspaceKlass);
-        assertEquals(o.getClass(), c);
+public class TestSSE4Disabled {
+    public static void main(String args[]) {
+        System.out.println("Passed");
     }
-
 }
+

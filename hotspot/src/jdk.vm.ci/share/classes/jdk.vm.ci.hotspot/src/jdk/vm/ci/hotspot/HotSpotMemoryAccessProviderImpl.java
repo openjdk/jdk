@@ -144,8 +144,18 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
         return ret;
     }
 
-    @Override
-    public JavaConstant readUnsafeConstant(JavaKind kind, JavaConstant baseConstant, long displacement) {
+    /**
+     * Reads a value of this kind using a base address and a displacement. No bounds checking or
+     * type checking is performed. Returns {@code null} if the value is not available at this point.
+     *
+     * @param baseConstant the base address from which the value is read.
+     * @param displacement the displacement within the object in bytes
+     * @return the read value encapsulated in a {@link JavaConstant} object, or {@code null} if the
+     *         value cannot be read.
+     * @throws IllegalArgumentException if {@code kind} is {@code null}, {@link JavaKind#Void}, not
+     *             {@link JavaKind#Object} or not {@linkplain JavaKind#isPrimitive() primitive} kind
+     */
+    JavaConstant readUnsafeConstant(JavaKind kind, JavaConstant baseConstant, long displacement) {
         if (kind == null) {
             throw new IllegalArgumentException("null JavaKind");
         }

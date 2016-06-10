@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,7 +264,7 @@ void Canonicalizer::do_LoadIndexed    (LoadIndexed*     x) {
   assert(array == NULL || FoldStableValues, "not enabled");
 
   // Constant fold loads from stable arrays.
-  if (array != NULL && index != NULL) {
+  if (!x->mismatched() && array != NULL && index != NULL) {
     jint idx = index->value();
     if (idx < 0 || idx >= array->value()->length()) {
       // Leave the load as is. The range check will handle it.
@@ -310,8 +310,6 @@ void Canonicalizer::do_StoreIndexed   (StoreIndexed*    x) {
       return;
     }
   }
-
-
 }
 
 
