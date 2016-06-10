@@ -1718,7 +1718,7 @@ const bool Matcher::match_rule_supported(int opcode) {
         ret_value = false;
       break;
     case Op_StrIndexOfChar:
-      if (!(UseSSE > 4))
+      if (!UseSSE42Intrinsics)
         ret_value = false;
       break;
     case Op_OnSpinWait:

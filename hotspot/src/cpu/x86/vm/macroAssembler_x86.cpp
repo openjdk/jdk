@@ -7046,7 +7046,6 @@ void MacroAssembler::string_indexofC8(Register str1, Register str2,
                                       int ae) {
   ShortBranchVerifier sbv(this);
   assert(UseSSE42Intrinsics, "SSE4.2 intrinsics are required");
-  assert(UseSSE >= 4, "SSE4 must be enabled for SSE4.2 intrinsics to be available");
   assert(ae != StrIntrinsicNode::LU, "Invalid encoding");
 
   // This method uses the pcmpestri instruction with bound registers
@@ -7225,7 +7224,6 @@ void MacroAssembler::string_indexof(Register str1, Register str2,
                                     int ae) {
   ShortBranchVerifier sbv(this);
   assert(UseSSE42Intrinsics, "SSE4.2 intrinsics are required");
-  assert(UseSSE >= 4, "SSE4 must be enabled for SSE4.2 intrinsics to be available");
   assert(ae != StrIntrinsicNode::LU, "Invalid encoding");
 
   //
@@ -7543,7 +7541,6 @@ void MacroAssembler::string_indexof_char(Register str1, Register cnt1, Register 
                                          XMMRegister vec1, XMMRegister vec2, XMMRegister vec3, Register tmp) {
   ShortBranchVerifier sbv(this);
   assert(UseSSE42Intrinsics, "SSE4.2 intrinsics are required");
-  assert(UseSSE >= 4, "SSE4 must be enabled for SSE4.2 intrinsics to be available");
 
   int stride = 8;
 
@@ -7723,7 +7720,6 @@ void MacroAssembler::string_compare(Register str1, Register str2,
   }
 
   if (UseAVX >= 2 && UseSSE42Intrinsics) {
-    assert(UseSSE >= 4, "SSE4 must be enabled for SSE4.2 intrinsics to be available");
     Label COMPARE_WIDE_VECTORS, VECTOR_NOT_EQUAL, COMPARE_WIDE_TAIL, COMPARE_SMALL_STR;
     Label COMPARE_WIDE_VECTORS_LOOP, COMPARE_16_CHARS, COMPARE_INDEX_CHAR;
     Label COMPARE_WIDE_VECTORS_LOOP_AVX2;
@@ -7891,7 +7887,6 @@ void MacroAssembler::string_compare(Register str1, Register str2,
 
     bind(COMPARE_SMALL_STR);
   } else if (UseSSE42Intrinsics) {
-    assert(UseSSE >= 4, "SSE4 must be enabled for SSE4.2 intrinsics to be available");
     Label COMPARE_WIDE_VECTORS, VECTOR_NOT_EQUAL, COMPARE_TAIL;
     int pcmpmask = 0x19;
     // Setup to compare 8-char (16-byte) vectors,
@@ -8179,7 +8174,6 @@ void MacroAssembler::has_negatives(Register ary1, Register len,
       // Fallthru to tail compare
     }
     else if (UseSSE42Intrinsics) {
-      assert(UseSSE >= 4, "SSE4 must be  for SSE4.2 intrinsics to be available");
       // With SSE4.2, use double quad vector compare
       Label COMPARE_WIDE_VECTORS, COMPARE_TAIL;
 
@@ -8383,7 +8377,6 @@ void MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register ar
     movl(limit, result);
     // Fallthru to tail compare
   } else if (UseSSE42Intrinsics) {
-    assert(UseSSE >= 4, "SSE4 must be enabled for SSE4.2 intrinsics to be available");
     // With SSE4.2, use double quad vector compare
     Label COMPARE_WIDE_VECTORS, COMPARE_TAIL;
 
@@ -8747,7 +8740,6 @@ void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
   negptr(len);
 
   if (UseSSE42Intrinsics || UseAVX >= 2) {
-    assert(UseSSE42Intrinsics ? UseSSE >= 4 : true, "SSE4 must be enabled for SSE4.2 intrinsics to be available");
     Label L_chars_8_check, L_copy_8_chars, L_copy_8_chars_exit;
     Label L_chars_16_check, L_copy_16_chars, L_copy_16_chars_exit;
 
@@ -10159,7 +10151,13 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
   movdqa(xmm1, Address(buf, 0));
   movdl(rax, xmm1);
   xorl(crc, rax);
-  pinsrd(xmm1, crc, 0);
+  if (VM_Version::supports_sse4_1()) {
+    pinsrd(xmm1, crc, 0);
+  } else {
+    pinsrw(xmm1, crc, 0);
+    shrl(crc, 16);
+    pinsrw(xmm1, crc, 1);
+  }
   addptr(buf, 16);
   subl(len, 4); // len > 0
   jcc(Assembler::less, L_fold_tail);
@@ -10881,7 +10879,6 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     clear_vector_masking();   // closing of the stub context for programming mask registers
   }
   if (UseSSE42Intrinsics) {
-    assert(UseSSE >= 4, "SSE4 must be enabled for SSE4.2 intrinsics to be available");
     Label copy_32_loop, copy_16, copy_tail;
 
     bind(below_threshold);
@@ -11045,7 +11042,6 @@ void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len
     clear_vector_masking();   // closing of the stub context for programming mask registers
   }
   if (UseSSE42Intrinsics) {
-    assert(UseSSE >= 4, "SSE4 must be enabled for SSE4.2 intrinsics to be available");
     Label copy_16_loop, copy_8_loop, copy_bytes, copy_new_tail, copy_tail;
 
     movl(tmp2, len);
