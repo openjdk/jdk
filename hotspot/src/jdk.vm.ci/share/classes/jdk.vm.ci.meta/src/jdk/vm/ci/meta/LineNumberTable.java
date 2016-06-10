@@ -22,11 +22,30 @@
  */
 package jdk.vm.ci.meta;
 
-public interface LineNumberTable {
+public class LineNumberTable {
 
-    int[] getLineNumberEntries();
+    private final int[] lineNumbers;
+    private final int[] bci;
 
-    int[] getBciEntries();
+    public LineNumberTable(int[] lineNumbers, int[] bci) {
+        this.lineNumbers = lineNumbers;
+        this.bci = bci;
+    }
 
-    int getLineNumber(int bci);
+    public int[] getLineNumberEntries() {
+        return lineNumbers;
+    }
+
+    public int[] getBciEntries() {
+        return bci;
+    }
+
+    public int getLineNumber(int atBci) {
+        for (int i = 0; i < this.bci.length - 1; i++) {
+            if (this.bci[i] <= atBci && atBci < this.bci[i + 1]) {
+                return lineNumbers[i];
+            }
+        }
+        return lineNumbers[lineNumbers.length - 1];
+    }
 }

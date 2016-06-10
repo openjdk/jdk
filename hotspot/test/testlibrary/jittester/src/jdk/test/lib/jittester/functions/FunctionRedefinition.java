@@ -23,16 +23,19 @@
 
 package jdk.test.lib.jittester.functions;
 
-import java.util.ArrayList;
+import java.util.List;
+
 import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.visitors.Visitor;
 
 public class FunctionRedefinition extends IRNode {
     private final FunctionInfo functionInfo;
 
-    protected FunctionRedefinition(FunctionInfo functionInfo,
-            ArrayList<ArgumentDeclaration> argumentsDeclaration, IRNode body, IRNode ret) {
+    public FunctionRedefinition(FunctionInfo functionInfo,
+                                   List<? extends ArgumentDeclaration> argumentsDeclaration, IRNode body, Return ret) {
+        super(functionInfo.type);
         this.functionInfo = functionInfo;
+        this.owner = functionInfo.owner;
         addChild(body);
         addChild(ret);
         addChildren(argumentsDeclaration);

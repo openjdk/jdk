@@ -56,7 +56,7 @@ G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults), _adaptive_size(
                              MAX2((uint) (MaxNewSize / HeapRegion::GrainBytes),
                                   1U);
       _sizer_kind = SizerMaxAndNewSize;
-      _adaptive_size = _min_desired_young_length == _max_desired_young_length;
+      _adaptive_size = _min_desired_young_length != _max_desired_young_length;
     } else {
       _sizer_kind = SizerNewSizeOnly;
     }

@@ -930,8 +930,10 @@ public class PrintStream extends FilterOutputStream
      * format string and arguments.
      *
      * <p> The locale always used is the one returned by {@link
-     * java.util.Locale#getDefault() Locale.getDefault()}, regardless of any
-     * previous invocations of other formatting methods on this object.
+     * java.util.Locale#getDefault(Locale.Category)} with
+     * {@link java.util.Locale.Category#FORMAT FORMAT} category specified,
+     * regardless of any previous invocations of other formatting methods on
+     * this object.
      *
      * @param  format
      *         A format string as described in <a
@@ -969,9 +971,11 @@ public class PrintStream extends FilterOutputStream
             synchronized (this) {
                 ensureOpen();
                 if ((formatter == null)
-                    || (formatter.locale() != Locale.getDefault()))
+                    || (formatter.locale() !=
+                        Locale.getDefault(Locale.Category.FORMAT)))
                     formatter = new Formatter((Appendable) this);
-                formatter.format(Locale.getDefault(), format, args);
+                formatter.format(Locale.getDefault(Locale.Category.FORMAT),
+                                 format, args);
             }
         } catch (InterruptedIOException x) {
             Thread.currentThread().interrupt();

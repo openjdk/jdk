@@ -83,6 +83,14 @@ Zone Australia/Eucla	 8:35:28 -	LMT	1895 Dec
 # Hamilton is the largest, but there is also a Hamilton in Victoria,
 # so use Lindeman.
 #
+# From J William Piggott (2016-02-20):
+# There is no location named Holiday Islands in Queensland Australia; holiday
+# islands is a colloquial term used globally.  Hayman and Lindeman are at the
+# north and south extremes of the Whitsunday Islands archipelago, and
+# Hamilton is in between; it is reasonable to believe that this time zone
+# applies to all of the Whitsundays.
+# http://www.australia.gov.au/about-australia/australian-story/austn-islands
+#
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	AQ	1971	only	-	Oct	lastSun	2:00s	1:00	D
 Rule	AQ	1972	only	-	Feb	lastSun	2:00s	0	S

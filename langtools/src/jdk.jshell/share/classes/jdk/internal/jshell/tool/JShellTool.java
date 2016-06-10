@@ -637,7 +637,7 @@ public class JShellTool implements MessageHandler {
                 .out(userout)
                 .err(usererr)
                 .tempVariableNameGenerator(()-> "$" + currentNameSpace.tidNext())
-                .idGenerator((sn, i) -> (currentNameSpace == startNamespace || state.status(sn).isActive)
+                .idGenerator((sn, i) -> (currentNameSpace == startNamespace || state.status(sn).isActive())
                         ? currentNameSpace.tid(sn)
                         : errorNamespace.tid(sn))
                 .remoteVMOptions(remoteVMOptions.toArray(new String[remoteVMOptions.size()]))
@@ -1026,7 +1026,7 @@ public class JShellTool implements MessageHandler {
 
     List<PersistentSnippet> dropableSnippets() {
         return state.snippets().stream()
-                .filter(sn -> state.status(sn).isActive && sn instanceof PersistentSnippet)
+                .filter(sn -> state.status(sn).isActive() && sn instanceof PersistentSnippet)
                 .map(sn -> (PersistentSnippet) sn)
                 .collect(toList());
     }
@@ -1164,7 +1164,7 @@ public class JShellTool implements MessageHandler {
             }
         }
 
-        return result.sorted((s1, s2) -> s1.continuation.compareTo(s2.continuation))
+        return result.sorted((s1, s2) -> s1.continuation().compareTo(s2.continuation()))
                      .collect(Collectors.toList());
     }
 
@@ -1426,18 +1426,15 @@ public class JShellTool implements MessageHandler {
         live = false;
         if (!replayableHistory.isEmpty()) {
             // Prevent history overflow by calculating what will fit, starting
-            // with must recent
+            // with most recent
             int sepLen = RECORD_SEPARATOR.length();
             int length = 0;
             int first = replayableHistory.size();
             while(length < Preferences.MAX_VALUE_LENGTH && --first >= 0) {
                 length += replayableHistory.get(first).length() + sepLen;
             }
-            String hist = replayableHistory
-                    .subList(first + 1, replayableHistory.size())
-                    .stream()
-                    .reduce( (a, b) -> a + RECORD_SEPARATOR + b)
-                    .get();
+            String hist =  String.join(RECORD_SEPARATOR,
+                    replayableHistory.subList(first + 1, replayableHistory.size()));
             prefs.put(REPLAY_RESTORE_KEY, hist);
         }
         fluffmsg("jshell.msg.goodbye");
@@ -1530,7 +1527,7 @@ public class JShellTool implements MessageHandler {
     }
 
     private boolean isActive(Snippet sn) {
-        return state.status(sn).isActive;
+        return state.status(sn).isActive();
     }
 
     private boolean mainActive(Snippet sn) {
@@ -1739,18 +1736,18 @@ public class JShellTool implements MessageHandler {
                     boolean failed = false;
                     while (true) {
                         CompletionInfo an = analysis.analyzeCompletion(s);
-                        if (!an.completeness.isComplete) {
+                        if (!an.completeness().isComplete()) {
                             break;
                         }
-                        String tsrc = trimNewlines(an.source);
+                        String tsrc = trimNewlines(an.source());
                         if (!failed && !currSrcs.contains(tsrc)) {
                             failed = processCompleteSource(tsrc);
                         }
                         nextSrcs.add(tsrc);
-                        if (an.remaining.isEmpty()) {
+                        if (an.remaining().isEmpty()) {
                             break;
                         }
-                        s = an.remaining;
+                        s = an.remaining();
                     }
                     currSrcs = nextSrcs;
                 } catch (IllegalStateException ex) {
@@ -2096,14 +2093,14 @@ public class JShellTool implements MessageHandler {
     private String processSource(String srcInput) throws IllegalStateException {
         while (true) {
             CompletionInfo an = analysis.analyzeCompletion(srcInput);
-            if (!an.completeness.isComplete) {
-                return an.remaining;
+            if (!an.completeness().isComplete()) {
+                return an.remaining();
             }
-            boolean failed = processCompleteSource(an.source);
-            if (failed || an.remaining.isEmpty()) {
+            boolean failed = processCompleteSource(an.source());
+            if (failed || an.remaining().isEmpty()) {
                 return "";
             }
-            srcInput = an.remaining;
+            srcInput = an.remaining();
         }
     }
     //where
@@ -2119,7 +2116,7 @@ public class JShellTool implements MessageHandler {
             // If any main snippet is active, this should be replayable
             // also ignore var value queries
             isActive |= e.causeSnippet() == null &&
-                    e.status().isActive &&
+                    e.status().isActive() &&
                     e.snippet().subKind() != VAR_VALUE_SUBKIND;
         }
         // If this is an active snippet and it didn't cause the backend to die,
@@ -2235,7 +2232,7 @@ public class JShellTool implements MessageHandler {
             case VALID:
             case RECOVERABLE_DEFINED:
             case RECOVERABLE_NOT_DEFINED:
-                if (previousStatus.isActive) {
+                if (previousStatus.isActive()) {
                     act = isSignatureChange
                             ? FormatAction.REPLACED
                             : FormatAction.MODIFIED;

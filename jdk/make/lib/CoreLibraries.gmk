@@ -212,9 +212,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBZIP, \
         -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjava \
         -I$(SUPPORT_OUTPUTDIR)/headers/java.base, \
     CFLAGS_unix := $(BUILD_LIBZIP_MMAP) -UDEBUG, \
-    DISABLED_WARNINGS_gcc := parentheses, \
-    DISABLED_WARNINGS_clang := dangling-else, \
-    DISABLED_WARNINGS_microsoft := 4267, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libzip/mapfile-vers, \
     REORDER := $(BUILD_LIBZIP_REORDER), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \

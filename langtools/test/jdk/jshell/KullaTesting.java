@@ -139,7 +139,7 @@ public class KullaTesting {
 
     public List<Snippet> getActiveKeys() {
         return allSnippets.stream()
-                .filter(k -> getState().status(k).isActive)
+                .filter(k -> getState().status(k).isActive())
                 .collect(Collectors.toList());
     }
 
@@ -615,7 +615,7 @@ public class KullaTesting {
         return (ImportSnippet) key;
     }
 
-    private Snippet key(List<SnippetEvent> events) {
+    public Snippet key(List<SnippetEvent> events) {
         assertTrue(events.size() >= 1, "Expected at least one event, got none.");
         return events.get(0).snippet();
     }
@@ -757,12 +757,12 @@ public class KullaTesting {
 
     public void assertAnalyze(String input, Completeness status, String source, String remaining, Boolean isComplete) {
         CompletionInfo ci = getAnalysis().analyzeCompletion(input);
-        if (status != null) assertEquals(ci.completeness, status, "Input : " + input + ", status: ");
-        if (source != null) assertEquals(ci.source, source, "Input : " + input + ", source: ");
-        if (remaining != null) assertEquals(ci.remaining, remaining, "Input : " + input + ", remaining: ");
+        if (status != null) assertEquals(ci.completeness(), status, "Input : " + input + ", status: ");
+        if (source != null) assertEquals(ci.source(), source, "Input : " + input + ", source: ");
+        if (remaining != null) assertEquals(ci.remaining(), remaining, "Input : " + input + ", remaining: ");
         if (isComplete != null) {
             boolean isExpectedComplete = isComplete;
-            assertEquals(ci.completeness.isComplete, isExpectedComplete, "Input : " + input + ", isComplete: ");
+            assertEquals(ci.completeness().isComplete(), isExpectedComplete, "Input : " + input + ", isComplete: ");
         }
     }
 
@@ -794,7 +794,7 @@ public class KullaTesting {
         List<Snippet> snippets = getState().snippets();
         assertEquals(allSnippets.size(), snippets.size());
         for (Snippet sn : snippets) {
-            if (sn.kind().isPersistent && getState().status(sn).isActive) {
+            if (sn.kind().isPersistent() && getState().status(sn).isActive()) {
                 MemberInfo actual = getMemberInfo(sn);
                 MemberInfo exp = expected[index];
                 assertEquals(actual, exp, String.format("Difference in #%d. Expected: %s, actual: %s",
@@ -812,7 +812,7 @@ public class KullaTesting {
     public void assertActiveKeys(Snippet... expected) {
         int index = 0;
         for (Snippet key : getState().snippets()) {
-            if (state.status(key).isActive) {
+            if (state.status(key).isActive()) {
                 assertEquals(expected[index], key, String.format("Difference in #%d. Expected: %s, actual: %s", index, key, expected[index]));
                 ++index;
             }
@@ -888,8 +888,8 @@ public class KullaTesting {
         List<Suggestion> completions =
                 getAnalysis().completionSuggestions(code, cursor, new int[1]); //XXX: ignoring anchor for now
         return completions.stream()
-                          .filter(s -> isSmart == null || isSmart == s.isSmart)
-                          .map(s -> s.continuation)
+                          .filter(s -> isSmart == null || isSmart == s.matchesType())
+                          .map(s -> s.continuation())
                           .distinct()
                           .collect(Collectors.toList());
     }
@@ -1071,7 +1071,7 @@ public class KullaTesting {
     }
 
     public static STEInfo added(Status status) {
-        return new STEInfo(MAIN_SNIPPET, NONEXISTENT, status, status.isDefined, null);
+        return new STEInfo(MAIN_SNIPPET, NONEXISTENT, status, status.isDefined(), null);
     }
 
     public static class EventChain {

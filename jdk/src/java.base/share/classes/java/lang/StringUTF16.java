@@ -144,7 +144,7 @@ final class StringUTF16 {
 
     // compressedCopy char[] -> byte[]
     @HotSpotIntrinsicCandidate
-    private static int compress(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
+    public static int compress(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
         for (int i = 0; i < len; i++) {
             char c = src[srcOff];
             if (c > 0xFF) {
@@ -162,7 +162,7 @@ final class StringUTF16 {
     @HotSpotIntrinsicCandidate
     public static int compress(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
         // We need a range check here because 'getChar' has no checks
-        checkBoundsOffCount(srcOff, len, src.length);
+        checkBoundsOffCount(srcOff << 1, len << 1, src.length);
         for (int i = 0; i < len; i++) {
             char c = getChar(src, srcOff);
             if (c > 0xFF) {
@@ -211,7 +211,9 @@ final class StringUTF16 {
     @HotSpotIntrinsicCandidate
     public static void getChars(byte[] value, int srcBegin, int srcEnd, char dst[], int dstBegin) {
         // We need a range check here because 'getChar' has no checks
-        checkBoundsOffCount(srcBegin, srcEnd - srcBegin, value.length);
+        if (srcBegin < srcEnd) {
+            checkBoundsOffCount(srcBegin << 1, (srcEnd - srcBegin) << 1, value.length);
+        }
         for (int i = srcBegin; i < srcEnd; i++) {
             dst[dstBegin++] = getChar(value, i);
         }

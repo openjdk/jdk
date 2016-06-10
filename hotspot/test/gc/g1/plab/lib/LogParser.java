@@ -169,7 +169,12 @@ final public class LogParser {
      * @return
      **/
     public PlabInfo getSpecifiedStats(long specifiedGcId, LogParser.ReportType type, List<String> fieldsName) {
-        return getSpecifiedStats(Arrays.asList(specifiedGcId), type, fieldsName, true).get(specifiedGcId);
+        PlabInfo info = getSpecifiedStats(Arrays.asList(specifiedGcId), type, fieldsName, true).get(specifiedGcId);
+        if (info == null) {
+            System.out.println(log);
+            throw new RuntimeException("Cannot find PLAB statistics in log ( GC_ID=" + specifiedGcId + " type=" + type + " )");
+        }
+        return info;
     }
 
     /**

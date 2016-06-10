@@ -47,7 +47,7 @@
 //
 // The Mutex Module_lock is shared between ModuleEntry and PackageEntry, to lock either
 // data structure.
-class PackageEntry : public HashtableEntry<Symbol*, mtClass> {
+class PackageEntry : public HashtableEntry<Symbol*, mtModule> {
 private:
   ModuleEntry* _module;
   // Used to indicate for packages with classes loaded by the boot loader that
@@ -129,11 +129,11 @@ public:
   void add_qexport(ModuleEntry* m);
 
   PackageEntry* next() const {
-    return (PackageEntry*)HashtableEntry<Symbol*, mtClass>::next();
+    return (PackageEntry*)HashtableEntry<Symbol*, mtModule>::next();
   }
 
   PackageEntry** next_addr() {
-    return (PackageEntry**)HashtableEntry<Symbol*, mtClass>::next_addr();
+    return (PackageEntry**)HashtableEntry<Symbol*, mtModule>::next_addr();
   }
 
   // iteration of qualified exports
@@ -153,7 +153,7 @@ public:
 // by a particular class loader.  Each package is represented as a PackageEntry node.
 // The PackageEntryTable's lookup is lock free.
 //
-class PackageEntryTable : public Hashtable<Symbol*, mtClass> {
+class PackageEntryTable : public Hashtable<Symbol*, mtModule> {
   friend class VMStructs;
 public:
   enum Constants {
@@ -164,10 +164,10 @@ private:
   PackageEntry* new_entry(unsigned int hash, Symbol* name, ModuleEntry* module);
   void add_entry(int index, PackageEntry* new_entry);
 
-  int entry_size() const { return BasicHashtable<mtClass>::entry_size(); }
+  int entry_size() const { return BasicHashtable<mtModule>::entry_size(); }
 
   PackageEntry** bucket_addr(int i) {
-    return (PackageEntry**)Hashtable<Symbol*, mtClass>::bucket_addr(i);
+    return (PackageEntry**)Hashtable<Symbol*, mtModule>::bucket_addr(i);
   }
 
   static unsigned int compute_hash(Symbol* name) { return (unsigned int)(name->identity_hash()); }
@@ -178,7 +178,7 @@ public:
   ~PackageEntryTable();
 
   PackageEntry* bucket(int i) {
-    return (PackageEntry*)Hashtable<Symbol*, mtClass>::bucket(i);
+    return (PackageEntry*)Hashtable<Symbol*, mtModule>::bucket(i);
   }
 
   // Create package in loader's package entry table and return the entry.

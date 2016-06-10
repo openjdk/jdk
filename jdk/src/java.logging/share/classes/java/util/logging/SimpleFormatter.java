@@ -153,7 +153,7 @@ public class SimpleFormatter extends Formatter {
      * @return a formatted log record
      */
     @Override
-    public synchronized String format(LogRecord record) {
+    public String format(LogRecord record) {
         ZonedDateTime zdt = ZonedDateTime.ofInstant(
                 record.getInstant(), ZoneId.systemDefault());
         String source;

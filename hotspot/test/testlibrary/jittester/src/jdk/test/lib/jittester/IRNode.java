@@ -37,16 +37,26 @@ import jdk.test.lib.jittester.visitors.Visitor;
 public abstract class IRNode {
     private IRNode parent;
     private final List<IRNode> children = new ArrayList<>();
-    protected IRNode klass;
+    protected TypeKlass owner;
     protected int level;
+    private final Type resultType;
+
+    protected IRNode(Type resultType) {
+        this.resultType = resultType;
+    }
+
+    public Type getResultType() {
+        return resultType;
+    }
+
     //TODO
     //private boolean isCFDeviation;
 
     public abstract <T> T accept(Visitor<T> v);
 
-    public void setKlass(TypeKlass klass) {
-        this.klass = klass;
-        if (Objects.isNull(klass)) {
+    public void setOwner(TypeKlass owner) {
+        this.owner = owner;
+        if (Objects.isNull(owner)) {
             System.out.println(getClass().getName() + " null");
             for (StackTraceElement s : Thread.currentThread().getStackTrace()) {
                 System.out.println(s.toString());
@@ -55,20 +65,17 @@ public abstract class IRNode {
     }
 
     public void addChild(IRNode child) {
-        children.add(child);
-        if (!Objects.isNull(child)) {
+        if (Objects.nonNull(child)) {
+            children.add(child);
             child.parent = this;
         }
     }
 
     public void addChildren(List<? extends IRNode> ch) {
-        if (!Objects.isNull(ch)) {
-            children.addAll(ch);
-            for (IRNode c : ch) {
-                if (!Objects.isNull(c)) {
-                    c.parent = this;
-                }
-            }
+        if (Objects.nonNull(ch)) {
+            ch.stream()
+                .filter(c -> c != null)
+                .forEach(this::addChild);
         }
     }
 
@@ -80,8 +87,8 @@ public abstract class IRNode {
         return i < children.size() ? children.get(i) : null;
     }
 
-    public IRNode getKlass() {
-        return klass;
+    public TypeKlass getOwner() {
+        return owner;
     }
 
     public IRNode getParent() {
@@ -90,7 +97,7 @@ public abstract class IRNode {
 
     public void setChild(int index, IRNode child) {
         children.set(index, child);
-        if (!Objects.isNull(child)) {
+        if (Objects.nonNull(child)) {
             child.parent = this;
         }
     }
@@ -145,7 +152,7 @@ public abstract class IRNode {
 
     @Override
     public final String toString() {
-        throw new Error("Should be toJavaCode");
+        return getName();
     }
 
     public String getName() {
@@ -154,7 +161,7 @@ public abstract class IRNode {
 
     public static long countDepth(Collection<IRNode> input) {
         return input.stream()
-                .filter(c -> !Objects.isNull(c))
+                .filter(Objects::nonNull)
                 .mapToLong(IRNode::countDepth)
                 .max().orElse(0L);
     }
@@ -166,7 +173,7 @@ public abstract class IRNode {
     public List<IRNode> getStackableLeaves() {
         List<IRNode> result = new ArrayList<>();
         children.stream()
-                .filter(c -> !Objects.isNull(c))
+                .filter(Objects::nonNull)
                 .forEach(c -> {
                     if (countDepth() == c.level && (c instanceof Block)) {
                         result.add(c);

@@ -440,7 +440,7 @@ class Eval {
         ins.add(c);
         Set<Unit> outs = compileAndLoad(ins);
 
-        if (!si.status().isDefined
+        if (!si.status().isDefined()
                 && si.diagnostics().isEmpty()
                 && si.unresolved().isEmpty()) {
             // did not succeed, but no record of it, extract from others
@@ -452,7 +452,7 @@ class Eval {
         // If appropriate, execute the snippet
         String value = null;
         JShellException exception = null;
-        if (si.status().isDefined) {
+        if (si.status().isDefined()) {
             if (si.isExecutable()) {
                 try {
                 value = state.executionControl().invoke(si.classFullName(), DOIT_METHOD_NAME);

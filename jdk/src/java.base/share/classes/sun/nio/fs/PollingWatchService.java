@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,32 @@
 
 package sun.nio.fs;
 
-import java.nio.file.*;
-import java.nio.file.attribute.*;
+import java.nio.file.ClosedWatchServiceException;
+import java.nio.file.DirectoryIteratorException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.Path;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.*;
-import com.sun.nio.file.SensitivityWatchEventModifier;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Simple WatchService implementation that uses periodic tasks to poll
@@ -46,8 +62,7 @@ class PollingWatchService
     extends AbstractWatchService
 {
     // map of registrations
-    private final Map<Object,PollingWatchKey> map =
-        new HashMap<Object,PollingWatchKey>();
+    private final Map<Object, PollingWatchKey> map = new HashMap<>();
 
     // used to execute the periodic tasks that poll for changes
     private final ScheduledExecutorService scheduledExecutor;
@@ -58,7 +73,7 @@ class PollingWatchService
             .newSingleThreadScheduledExecutor(new ThreadFactory() {
                  @Override
                  public Thread newThread(Runnable r) {
-                     Thread t = new Thread(null, r, "FileSystemWatchService", 0, false);
+                     Thread t = new Thread(null, r, "FileSystemWatcher", 0, false);
                      t.setDaemon(true);
                      return t;
                  }});
@@ -74,8 +89,7 @@ class PollingWatchService
          throws IOException
     {
         // check events - CCE will be thrown if there are invalid elements
-        final Set<WatchEvent.Kind<?>> eventSet =
-            new HashSet<WatchEvent.Kind<?>>(events.length);
+        final Set<WatchEvent.Kind<?>> eventSet = new HashSet<>(events.length);
         for (WatchEvent.Kind<?> event: events) {
             // standard events
             if (event == StandardWatchEventKinds.ENTRY_CREATE ||
@@ -99,17 +113,22 @@ class PollingWatchService
         if (eventSet.isEmpty())
             throw new IllegalArgumentException("No events to register");
 
-        // A modifier may be used to specify the sensitivity level
-        SensitivityWatchEventModifier sensivity = SensitivityWatchEventModifier.MEDIUM;
+        // Extended modifiers may be used to specify the sensitivity level
+        int sensitivity = 10;
         if (modifiers.length > 0) {
             for (WatchEvent.Modifier modifier: modifiers) {
                 if (modifier == null)
                     throw new NullPointerException();
-                if (modifier instanceof SensitivityWatchEventModifier) {
-                    sensivity = (SensitivityWatchEventModifier)modifier;
-                    continue;
+
+                if (ExtendedOptions.SENSITIVITY_HIGH.matches(modifier)) {
+                    sensitivity = ExtendedOptions.SENSITIVITY_HIGH.parameter();
+                } else if (ExtendedOptions.SENSITIVITY_MEDIUM.matches(modifier)) {
+                    sensitivity = ExtendedOptions.SENSITIVITY_MEDIUM.parameter();
+                } else if (ExtendedOptions.SENSITIVITY_LOW.matches(modifier)) {
+                    sensitivity = ExtendedOptions.SENSITIVITY_LOW.parameter();
+                } else {
+                    throw new UnsupportedOperationException("Modifier not supported");
                 }
-                throw new UnsupportedOperationException("Modifier not supported");
             }
         }
 
@@ -120,12 +139,12 @@ class PollingWatchService
         // registration is done in privileged block as it requires the
         // attributes of the entries in the directory.
         try {
-            final SensitivityWatchEventModifier s = sensivity;
+            int value = sensitivity;
             return AccessController.doPrivileged(
                 new PrivilegedExceptionAction<PollingWatchKey>() {
                     @Override
                     public PollingWatchKey run() throws IOException {
-                        return doPrivilegedRegister(path, eventSet, s);
+                        return doPrivilegedRegister(path, eventSet, value);
                     }
                 });
         } catch (PrivilegedActionException pae) {
@@ -140,7 +159,7 @@ class PollingWatchService
     // existing key if already registered
     private PollingWatchKey doPrivilegedRegister(Path path,
                                                  Set<? extends WatchEvent.Kind<?>> events,
-                                                 SensitivityWatchEventModifier sensivity)
+                                                 int sensitivityInSeconds)
         throws IOException
     {
         // check file is a directory and get its file key if possible
@@ -169,7 +188,7 @@ class PollingWatchService
                     watchKey.disable();
                 }
             }
-            watchKey.enable(events, sensivity.sensitivityValueInSeconds());
+            watchKey.enable(events, sensitivityInSeconds);
             return watchKey;
         }
 
@@ -178,7 +197,7 @@ class PollingWatchService
     @Override
     void implClose() throws IOException {
         synchronized (map) {
-            for (Map.Entry<Object,PollingWatchKey> entry: map.entrySet()) {
+            for (Map.Entry<Object, PollingWatchKey> entry: map.entrySet()) {
                 PollingWatchKey watchKey = entry.getValue();
                 watchKey.disable();
                 watchKey.invalidate();

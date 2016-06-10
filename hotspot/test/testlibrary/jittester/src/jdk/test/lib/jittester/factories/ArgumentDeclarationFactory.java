@@ -33,7 +33,7 @@ import jdk.test.lib.jittester.functions.ArgumentDeclaration;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class ArgumentDeclarationFactory extends Factory {
+class ArgumentDeclarationFactory extends Factory<ArgumentDeclaration> {
     private final int argumentNumber;
     private final TypeKlass ownerClass;
 
