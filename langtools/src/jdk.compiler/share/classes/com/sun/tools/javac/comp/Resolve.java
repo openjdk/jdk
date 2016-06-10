@@ -1149,8 +1149,28 @@ public class Resolve {
             private boolean unrelatedFunctionalInterfaces(Type t, Type s) {
                 return types.isFunctionalInterface(t.tsym) &&
                        types.isFunctionalInterface(s.tsym) &&
-                       types.asSuper(t, s.tsym) == null &&
-                       types.asSuper(s, t.tsym) == null;
+                       unrelatedInterfaces(t, s);
+            }
+
+            /** Whether {@code t} and {@code s} are unrelated interface types; recurs on intersections. **/
+            private boolean unrelatedInterfaces(Type t, Type s) {
+                if (t.isCompound()) {
+                    for (Type ti : types.interfaces(t)) {
+                        if (!unrelatedInterfaces(ti, s)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                } else if (s.isCompound()) {
+                    for (Type si : types.interfaces(s)) {
+                        if (!unrelatedInterfaces(t, si)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                } else {
+                    return types.asSuper(t, s.tsym) == null && types.asSuper(s, t.tsym) == null;
+                }
             }
 
             /** Parameters {@code t} and {@code s} are unrelated functional interface types. */
