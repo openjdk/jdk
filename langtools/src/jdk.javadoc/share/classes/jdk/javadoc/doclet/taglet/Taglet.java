@@ -87,6 +87,8 @@ public interface Taglet {
     public static enum Location {
         /** In an Overview document. */
         OVERVIEW,
+        /** In the documentation for a module. */
+        MODULE,
         /** In the documentation for a package. */
         PACKAGE,
         /** In the documentation for a class, interface or enum. */

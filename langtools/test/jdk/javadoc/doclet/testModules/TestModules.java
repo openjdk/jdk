@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8154119 8154262
+ * @bug 8154119 8154262 8156077
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -87,12 +87,24 @@ public class TestModules extends JavadocTester {
         testModuleLink();
     }
 
-    @Test
+   @Test
     void test5() {
         javadoc("-d", "out-nomodule", "-use",
                 "-sourcepath", testSrc,
                 "testpkgnomodule");
         checkExit(Exit.OK);
+    }
+
+   @Test
+    void test6() {
+        javadoc("-d", "out-mdltags", "-author", "-version",
+                "-tag", "regular:a:Regular Tag:",
+                "-tag", "moduletag:s:Module Tag:",
+                "-modulesourcepath", testSrc,
+                "-addmods", "moduletags,module2",
+                "testpkgmdltags", "testpkgmdl2");
+        checkExit(Exit.OK);
+        testModuleTags();
     }
 
     void testDescription(boolean found) {
@@ -186,5 +198,39 @@ public class TestModules extends JavadocTester {
         checkOutput("testpkgnomodule/class-use/TestClassNoModule.html", true,
                 "<ul class=\"navList\" title=\"Navigation\">\n"
                 + "<li><a href=\"../../testpkgnomodule/package-summary.html\">Package</a></li>");
+    }
+
+    void testModuleTags() {
+        checkOutput("moduletags-summary.html", true,
+                "Type Link: <a href=\"testpkgmdltags/TestClassInModuleTags.html\" title=\"class in "
+                + "testpkgmdltags\"><code>TestClassInModuleTags</code></a>.");
+        checkOutput("moduletags-summary.html", true,
+                "Member Link: <a href=\"testpkgmdltags/TestClassInModuleTags.html#"
+                + "testMethod-java.lang.String-\"><code>testMethod(String)</code></a>.");
+        checkOutput("moduletags-summary.html", true,
+                "Package Link: <a href=\"testpkgmdltags/package-summary.html\"><code>testpkgmdltags</code></a>.");
+        checkOutput("moduletags-summary.html", true,
+                "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
+                + "<dd>JDK 9</dd>");
+        checkOutput("moduletags-summary.html", true,
+                "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
+                + "<dd>\"Test see tag\", \n"
+                + "<a href=\"testpkgmdltags/TestClassInModuleTags.html\" title=\"class in testpkgmdltags\"><code>"
+                + "TestClassInModuleTags</code></a></dd>");
+        checkOutput("moduletags-summary.html", true,
+                "<dt><span class=\"simpleTagLabel\">Regular Tag:</span></dt>\n"
+                + "<dd>Just a regular simple tag.</dd>");
+        checkOutput("moduletags-summary.html", true,
+                "<dt><span class=\"simpleTagLabel\">Module Tag:</span></dt>\n"
+                + "<dd>Just a simple module tag.</dd>");
+        checkOutput("moduletags-summary.html", true,
+                "<dt><span class=\"simpleTagLabel\">Version:</span></dt>\n"
+                + "<dd>1.0</dd>");
+        checkOutput("moduletags-summary.html", true,
+                "<dt><span class=\"simpleTagLabel\">Author:</span></dt>\n"
+                + "<dd>Bhavesh Patel</dd>");
+        checkOutput("testpkgmdltags/TestClassInModuleTags.html", false,
+                "<dt><span class=\"simpleTagLabel\">Module Tag:</span></dt>\n"
+                + "<dd>Just a simple module tag.</dd>");
     }
 }

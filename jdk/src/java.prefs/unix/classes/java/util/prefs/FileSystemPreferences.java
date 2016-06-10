@@ -94,14 +94,20 @@ class FileSystemPreferences extends AbstractPreferences {
    /**
      * The user root.
      */
-    static Preferences userRoot = null;
+    private static volatile Preferences userRoot;
 
-    static synchronized Preferences getUserRoot() {
-        if (userRoot == null) {
-            setupUserRoot();
-            userRoot = new FileSystemPreferences(true);
+    static Preferences getUserRoot() {
+        Preferences root = userRoot;
+        if (root == null) {
+            synchronized (FileSystemPreferences.class) {
+                root = userRoot;
+                if (root == null) {
+                    setupUserRoot();
+                    userRoot = root = new FileSystemPreferences(true);
+                }
+            }
         }
-        return userRoot;
+        return root;
     }
 
     private static void setupUserRoot() {
@@ -155,14 +161,20 @@ class FileSystemPreferences extends AbstractPreferences {
     /**
      * The system root.
      */
-    static Preferences systemRoot;
+    private static volatile Preferences systemRoot;
 
-    static synchronized Preferences getSystemRoot() {
-        if (systemRoot == null) {
-            setupSystemRoot();
-            systemRoot = new FileSystemPreferences(false);
+    static Preferences getSystemRoot() {
+        Preferences root = systemRoot;
+        if (root == null) {
+            synchronized (FileSystemPreferences.class) {
+                root = systemRoot;
+                if (root == null) {
+                    setupSystemRoot();
+                    systemRoot = root = new FileSystemPreferences(false);
+                }
+            }
         }
-        return systemRoot;
+        return root;
     }
 
     private static void setupSystemRoot() {

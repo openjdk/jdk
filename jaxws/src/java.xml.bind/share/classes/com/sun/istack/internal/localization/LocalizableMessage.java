@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,11 @@
 
 package com.sun.istack.internal.localization;
 
+import com.sun.istack.internal.localization.LocalizableMessageFactory.ResourceBundleSupplier;
+
 import java.util.Arrays;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 /**
  * @author WS Development Team
@@ -33,16 +37,30 @@ import java.util.Arrays;
 public final class LocalizableMessage implements Localizable {
 
     private final String _bundlename;
+    private final ResourceBundleSupplier _rbSupplier;
+
     private final String _key;
     private final Object[] _args;
 
     public LocalizableMessage(String bundlename, String key, Object... args) {
         _bundlename = bundlename;
+        _rbSupplier = null;
         _key = key;
         if(args==null)
             args = new Object[0];
         _args = args;
     }
+
+    public LocalizableMessage(String bundlename, ResourceBundleSupplier rbSupplier,
+                              String key, Object... args) {
+        _bundlename = bundlename;
+        _rbSupplier = rbSupplier;
+        _key = key;
+        if(args==null)
+            args = new Object[0];
+        _args = args;
+    }
+
 
     public String getKey() {
         return _key;
@@ -54,5 +72,13 @@ public final class LocalizableMessage implements Localizable {
 
     public String getResourceBundleName() {
         return _bundlename;
+    }
+
+    @Override
+    public ResourceBundle getResourceBundle(Locale locale) {
+        if (_rbSupplier == null)
+            return null;
+
+        return _rbSupplier.getResourceBundle(locale);
     }
 }

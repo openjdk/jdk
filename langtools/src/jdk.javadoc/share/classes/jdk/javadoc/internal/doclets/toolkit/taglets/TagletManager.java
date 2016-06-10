@@ -31,6 +31,7 @@ import java.util.*;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -79,6 +80,11 @@ public class TagletManager {
      * The map of custom tags.
      */
     private final LinkedHashMap<String,Taglet> customTags;
+
+    /**
+     * The array of custom tags that can appear in modules.
+     */
+    private List<Taglet> moduleTags;
 
     /**
      * The array of custom tags that can appear in packages.
@@ -246,8 +252,7 @@ public class TagletManager {
             }
             tagClassLoader = fileManager.getClassLoader(TAGLET_PATH);
             Class<?> customTagClass = tagClassLoader.loadClass(classname);
-            @SuppressWarnings("deprecation")
-            Object instance = customTagClass.newInstance();
+            Object instance = customTagClass.getConstructor().newInstance();
             Taglet newLegacy = new UserTaglet((jdk.javadoc.doclet.taglet.Taglet)instance);
             String tname = newLegacy.getName();
             Taglet t = customTags.get(tname);
@@ -373,6 +378,14 @@ public class TagletManager {
                 }
                 new SimpleElementVisitor9<Void, Void>() {
                     @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                    public Void visitModule(ModuleElement e, Void p) {
+                        if (!taglet.inModule()) {
+                            printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "module");
+                        }
+                        return null;
+                    }
+
+                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
                     public Void visitPackage(PackageElement e, Void p) {
                         if (!taglet.inPackage()) {
                             printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "package");
@@ -435,6 +448,9 @@ public class TagletManager {
         if (taglet.inOverview()) {
             locationsSet.add("overview");
         }
+        if (taglet.inModule()) {
+            locationsSet.add("module");
+        }
         if (taglet.inPackage()) {
             locationsSet.add("package");
         }
@@ -467,6 +483,19 @@ public class TagletManager {
         }
         message.warning(ch.getDocTreePath(tag), "doclet.tag_misuse",
             "@" + taglet.getName(), holderType, combined_locations.toString());
+    }
+
+    /**
+     * Return the array of <code>Taglet</code>s that can
+     * appear in modules.
+     * @return the array of <code>Taglet</code>s that can
+     * appear in modules.
+     */
+    public List<Taglet> getModuleCustomTaglets() {
+        if (moduleTags == null) {
+            initCustomTaglets();
+        }
+        return moduleTags;
     }
 
     /**
@@ -555,6 +584,8 @@ public class TagletManager {
             case CLASS:
             case ENUM:
                 return getTypeCustomTaglets();
+            case MODULE:
+                return getModuleCustomTaglets();
             case PACKAGE:
                 return getPackageCustomTaglets();
             case OTHER:
@@ -608,6 +639,7 @@ public class TagletManager {
      */
     private void initCustomTaglets() {
 
+        moduleTags = new ArrayList<>();
         packageTags = new ArrayList<>();
         typeTags = new ArrayList<>();
         fieldTags = new ArrayList<>();
@@ -617,6 +649,9 @@ public class TagletManager {
         overviewTags = new ArrayList<>();
 
         for (Taglet current : customTags.values()) {
+            if (current.inModule() && !current.isInlineTag()) {
+                moduleTags.add(current);
+            }
             if (current.inPackage() && !current.isInlineTag()) {
                 packageTags.add(current);
             }
@@ -666,9 +701,9 @@ public class TagletManager {
         addStandardTaglet(!nosince, new SimpleTaglet(SINCE.tagName, message.getText("doclet.Since"),
                 SimpleTaglet.ALL));
         addStandardTaglet(showversion, new SimpleTaglet(VERSION.tagName, message.getText("doclet.Version"),
-                SimpleTaglet.PACKAGE + SimpleTaglet.TYPE + SimpleTaglet.OVERVIEW));
+                SimpleTaglet.MODULE + SimpleTaglet.PACKAGE + SimpleTaglet.TYPE + SimpleTaglet.OVERVIEW));
         addStandardTaglet(showauthor, new SimpleTaglet(AUTHOR.tagName, message.getText("doclet.Author"),
-                SimpleTaglet.PACKAGE + SimpleTaglet.TYPE + SimpleTaglet.OVERVIEW));
+                SimpleTaglet.MODULE + SimpleTaglet.PACKAGE + SimpleTaglet.TYPE + SimpleTaglet.OVERVIEW));
         addStandardTaglet(new SimpleTaglet(SERIAL_DATA.tagName, message.getText("doclet.SerialData"),
                 SimpleTaglet.EXCLUDED));
         addStandardTaglet(new SimpleTaglet(HIDDEN.tagName, message.getText("doclet.Hidden"),

@@ -297,7 +297,7 @@ static final class java_sql_Timestamp_PersistenceDelegate extends java_util_Date
 
     private static Method getNanosMethod() {
         try {
-            Class<?> c = Class.forName("java.sql.Timestamp", true, null);
+            Class<?> c = Class.forName("java.sql.Timestamp", true, ClassLoader.getPlatformClassLoader());
             return c.getMethod("getNanos");
         } catch (ClassNotFoundException e) {
             return null;

@@ -54,7 +54,9 @@ public abstract class EditingHistory implements History {
              (Runnable) () -> moveHistoryToSnippet(in, ((EditingHistory) in.getHistory())::previousSnippet));
         bind(in, CTRL_DOWN,
              (Runnable) () -> moveHistoryToSnippet(in, ((EditingHistory) in.getHistory())::nextSnippet));
-        load(originalHistory);
+        if (originalHistory != null) {
+            load(originalHistory);
+        }
     }
 
     private void moveHistoryToSnippet(ConsoleReader in, Supplier<Boolean> action) {

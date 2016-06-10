@@ -74,7 +74,7 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
           BOOT_JDK_FOUND=no
         else
           # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
-          BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
+          BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | $HEAD -n 1`
 
           # Extra M4 quote needed to protect [] in grep expression.
           [FOUND_CORRECT_VERSION=`$ECHO $BOOT_JDK_VERSION | $EGREP '\"9([\.+-].*)?\"|(1\.[89]\.)'`]
@@ -445,7 +445,7 @@ AC_DEFUN([BOOTJDK_CHECK_BUILD_JDK],
         BUILD_JDK_FOUND=no
       else
         # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
-        BUILD_JDK_VERSION=`"$BUILD_JDK/bin/java" -version 2>&1 | head -n 1`
+        BUILD_JDK_VERSION=`"$BUILD_JDK/bin/java" -version 2>&1 | $HEAD -n 1`
 
         # Extra M4 quote needed to protect [] in grep expression.
         [FOUND_CORRECT_VERSION=`echo $BUILD_JDK_VERSION | $EGREP '\"9([\.+-].*)?\"'`]
