@@ -22,7 +22,7 @@
  */
  /*
  * @test
- * @bug 6529030
+ * @bug 6529030 8159134
  * @summary  Verifies if Java Printing: Selection radiobutton gets enabled.
  * @requires (os.family == "windows")
  * @run main/manual PrintDlgSelectionAttribTest
@@ -83,7 +83,7 @@ public class PrintDlgSelectionAttribTest {
         });
         mainThread = Thread.currentThread();
         try {
-            Thread.sleep(30000);
+            Thread.sleep(60000);
         } catch (InterruptedException e) {
             if (!testPassed && testGeneratedInterrupt) {
                 throw new RuntimeException(""
