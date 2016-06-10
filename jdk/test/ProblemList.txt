@@ -425,4 +425,6 @@ tools/jlink/plugins/ResourceFilterTest.java                     8159206 generic-
 
 tools/jlink/plugins/StringSharingPluginTest.java                8159206 generic-all
 
+tools/jmod/JmodTest.java                                        8159206 generic-all
+
 ############################################################################
