@@ -26,6 +26,7 @@ package jdk.test.lib.jittester.factories;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+
 import jdk.test.lib.jittester.BuiltInType;
 import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.Literal;
@@ -34,21 +35,18 @@ import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Rule;
 import jdk.test.lib.jittester.Switch;
 import jdk.test.lib.jittester.Type;
+import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.utils.TypeUtil;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeByte;
-import jdk.test.lib.jittester.types.TypeChar;
-import jdk.test.lib.jittester.types.TypeInt;
-import jdk.test.lib.jittester.types.TypeShort;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class SwitchFactory extends SafeFactory {
-    private int caseBlockIdx;
-    protected long complexityLimit;
-    protected int statementLimit, operatorLimit;
-    private boolean canHaveReturn = false;
+class SwitchFactory extends SafeFactory<Switch> {
+    private final int statementLimit;
+    private final int operatorLimit;
+    private final boolean canHaveReturn;
     private final TypeKlass ownerClass;
     private final int level;
+    private final long complexityLimit;
 
     SwitchFactory(TypeKlass ownerClass, long complexityLimit, int statementLimit,
             int operatorLimit, int level, boolean canHaveReturn) {
@@ -61,13 +59,13 @@ class SwitchFactory extends SafeFactory {
     }
 
     @Override
-    protected IRNode sproduce() throws ProductionFailedException {
+    protected Switch sproduce() throws ProductionFailedException {
         if (statementLimit > 0 && complexityLimit > 0) {
             List<Type> switchTypes = new ArrayList<>();
-            switchTypes.add(new TypeChar());
-            switchTypes.add(new TypeByte());
-            switchTypes.add(new TypeShort());
-            switchTypes.add(new TypeInt());
+            switchTypes.add(TypeList.CHAR);
+            switchTypes.add(TypeList.BYTE);
+            switchTypes.add(TypeList.SHORT);
+            switchTypes.add(TypeList.INT);
             PseudoRandom.shuffle(switchTypes);
             IRNodeBuilder builder = new IRNodeBuilder()
                     .setOwnerKlass(ownerClass)
@@ -95,8 +93,8 @@ class SwitchFactory extends SafeFactory {
                             .produce();
                     accumulatedComplexity += currentComplexityLimit;
                     List<Type> caseTypes = new ArrayList<>();
-                    caseTypes.add(new TypeByte());
-                    caseTypes.add(new TypeChar());
+                    caseTypes.add(TypeList.BYTE);
+                    caseTypes.add(TypeList.CHAR);
                     caseTypes = new ArrayList<>(TypeUtil.getLessCapaciousOrEqualThan(caseTypes,
                             (BuiltInType) type));
                     if (PseudoRandom.randomBoolean()) { // "default"
@@ -104,7 +102,7 @@ class SwitchFactory extends SafeFactory {
                                 * (statementLimit - accumulatedStatements));
                         currentComplexityLimit = (long) (PseudoRandom.random()
                                 * (complexityLimit - accumulatedComplexity));
-                        caseConsts.add(null);
+                        caseConsts.add(new Nothing());
                         caseBlocks.add(builder.setComplexityLimit(currentComplexityLimit)
                                 .setStatementLimit(currentStatementsLimit)
                                 .setLevel(level + 1)
@@ -128,7 +126,7 @@ class SwitchFactory extends SafeFactory {
                             if (tryCount >= 10) {
                                 continue MAIN_LOOP;
                             }
-                            Literal literal = (Literal) builder.setResultType(caseTypes.get(0))
+                            Literal literal = builder.setResultType(caseTypes.get(0))
                                     .getLiteralFactory().produce();
                             int value = 0;
                             if (literal.value instanceof Integer) {
@@ -149,7 +147,7 @@ class SwitchFactory extends SafeFactory {
                                 break;
                             }
                         }
-                        Rule rule = new Rule("case_block");
+                        Rule<IRNode> rule = new Rule<>("case_block");
                         rule.add("block", builder.setComplexityLimit(currentComplexityLimit)
                                 .setStatementLimit(currentStatementsLimit)
                                 .setLevel(level)
@@ -170,7 +168,7 @@ class SwitchFactory extends SafeFactory {
                     }
                     PseudoRandom.shuffle(caseConsts);
                     List<IRNode> accum = new ArrayList<>();
-                    caseBlockIdx = 1 + caseConsts.size();
+                    int caseBlockIdx = 1 + caseConsts.size();
                     accum.add(switchExp);
                     for (int i = 1; i < caseBlockIdx; ++i) {
                         accum.add(caseConsts.get(i - 1));

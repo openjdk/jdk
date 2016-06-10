@@ -130,6 +130,7 @@ import javax.tools.ToolProvider;
 
 import static jdk.jshell.Util.REPL_DOESNOTMATTER_CLASS_NAME;
 import static java.util.stream.Collectors.joining;
+import static jdk.jshell.SourceCodeAnalysis.Completeness.DEFINITELY_INCOMPLETE;
 
 /**
  * The concrete implementation of SourceCodeAnalysis.
@@ -165,6 +166,10 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     @Override
     public CompletionInfo analyzeCompletion(String srcInput) {
         MaskCommentsAndModifiers mcm = new MaskCommentsAndModifiers(srcInput, false);
+        if (mcm.endsWithOpenComment()) {
+            proc.debug(DBG_COMPA, "Incomplete (open comment): %s\n", srcInput);
+            return new CompletionInfo(DEFINITELY_INCOMPLETE, srcInput.length(), null, srcInput + '\n');
+        }
         String cleared = mcm.cleared();
         String trimmedInput = Util.trimEnd(cleared);
         if (trimmedInput.isEmpty()) {

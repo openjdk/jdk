@@ -25,6 +25,7 @@
  * @test
  * @summary Unit test for java.net.CookieManager
  * @bug 6244040 7150552 7051862
+ * @modules jdk.httpserver
  * @run main/othervm -ea CookieManagerTest
  * @author Edward Wang
  */
@@ -32,11 +33,30 @@
 import com.sun.net.httpserver.*;
 import java.io.IOException;
 import java.net.*;
+import static java.net.Proxy.NO_PROXY;
 
 public class CookieManagerTest {
 
     static CookieTransactionHandler httpTrans;
     static HttpServer server;
+
+    static final String hostAddress = getAddr();
+
+    /** Returns an IP literal suitable for use by the test. */
+    static String getAddr() {
+        try {
+            InetAddress lh = InetAddress.getLocalHost();
+            System.out.println("Trying: " + lh);
+            if (lh.isReachable(5_000)) {
+                System.out.println("Using: " + lh);
+                return lh.getHostAddress();
+            }
+        } catch (IOException x) {
+            System.out.println("Debug: caught:" + x);
+        }
+        System.out.println("Using: \"127.0.0.1\"");
+        return "127.0.0.1";
+    }
 
     public static void main(String[] args) throws Exception {
         startHttpServer();
@@ -78,8 +98,8 @@ public class CookieManagerTest {
 
     public static void makeHttpCall() throws IOException {
         try {
-            System.out.println("http server listenining on: "
-                    + server.getAddress().getPort());
+            int port = server.getAddress().getPort();
+            System.out.println("http server listenining on: " + port);
 
             // install CookieManager to use
             CookieHandler.setDefault(new CookieManager());
@@ -92,11 +112,12 @@ public class CookieManagerTest {
                 ((CookieManager)CookieHandler.getDefault())
                     .getCookieStore().removeAll();
                 URL url = new URL("http" ,
-                                  InetAddress.getLocalHost().getHostAddress(),
+                                  hostAddress,
                                   server.getAddress().getPort(),
                                   CookieTransactionHandler.testCases[i][0]
                                                           .serverPath);
-                HttpURLConnection uc = (HttpURLConnection)url.openConnection();
+                System.out.println("Requesting " + url);
+                HttpURLConnection uc = (HttpURLConnection)url.openConnection(NO_PROXY);
                 uc.getResponseCode();
                 uc.disconnect();
             }
@@ -115,8 +136,6 @@ class CookieTransactionHandler implements HttpHandler {
     // the main test control logic will also loop exactly this number
     // to send http request
     public static final int testCount = 6;
-
-    private String localHostAddr = "127.0.0.1";
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
@@ -188,10 +207,8 @@ class CookieTransactionHandler implements HttpHandler {
         testCases = new CookieTestCase[testCount][];
         testPolicies = new CookiePolicy[testCount];
 
-        try {
-            localHostAddr = InetAddress.getLocalHost().getHostAddress();
-        } catch (Exception ignored) {
-        };
+        String localHostAddr = CookieManagerTest.hostAddress;
+
         int count = 0;
 
         // an http session with Netscape cookies exchanged
