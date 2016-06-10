@@ -27,9 +27,9 @@ public abstract class BuiltInType extends Type {
 
     private static class BuiltInTypeCapacityHelper {
 
-        static String builtInTypes[] = {"boolean", "byte", "short", "char", "int", "long", "float", "double"};
+        private static final String builtInTypes[] = {"boolean", "byte", "short", "char", "int", "long", "float", "double"};
 
-        static private int getIndexFor(String typeName) {
+        private static int getIndexFor(String typeName) {
             for (int i = 0; i < builtInTypes.length; i++) {
                 if (typeName.compareTo(builtInTypes[i]) == 0) {
                     return i;
@@ -38,7 +38,7 @@ public abstract class BuiltInType extends Type {
             return -1;
         }
 
-        static public int compare(String typeName1, String typeName2) {
+        public static int compare(String typeName1, String typeName2) {
             int i1 = getIndexFor(typeName1);
             int i2 = getIndexFor(typeName2);
 

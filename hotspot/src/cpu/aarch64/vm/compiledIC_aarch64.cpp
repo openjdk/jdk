@@ -92,9 +92,11 @@ void CompiledStaticCall::set_to_interpreted(methodHandle callee, address entry) 
 #ifndef PRODUCT
   NativeGeneralJump* jump = nativeGeneralJump_at(method_holder->next_instruction_address());
 
-  assert(method_holder->data() == 0 || method_holder->data() == (intptr_t)callee(),
+  // read the value once
+  volatile intptr_t data = method_holder->data();
+  assert(data == 0 || data == (intptr_t)callee(),
          "a) MT-unsafe modification of inline cache");
-  assert(method_holder->data() == 0 || jump->jump_destination() == entry,
+  assert(data == 0 || jump->jump_destination() == entry,
          "b) MT-unsafe modification of inline cache");
 #endif
   // Update stub.

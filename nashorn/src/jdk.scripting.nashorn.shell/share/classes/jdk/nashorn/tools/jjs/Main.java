@@ -117,7 +117,7 @@ public final class Main extends Shell {
         final PrintWriter err = context.getErr();
         final Global oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != global);
-        final PropertiesHelper propsHelper = new PropertiesHelper(env._classpath);
+        final PropertiesHelper propsHelper = new PropertiesHelper(context);
         final NashornCompleter completer = new NashornCompleter(context, global, this, propsHelper);
 
         try (final Console in = new Console(System.in, System.out, HIST_FILE, completer,

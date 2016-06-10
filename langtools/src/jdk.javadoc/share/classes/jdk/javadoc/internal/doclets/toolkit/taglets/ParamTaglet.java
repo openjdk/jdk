@@ -152,6 +152,13 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     /**
      * {@inheritDoc}
      */
+    public boolean inModule() {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public boolean inPackage() {
         return false;
     }

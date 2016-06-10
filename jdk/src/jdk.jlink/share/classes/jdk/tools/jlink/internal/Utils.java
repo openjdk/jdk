@@ -25,6 +25,10 @@
 package jdk.tools.jlink.internal;
 
 import java.lang.reflect.Module;
+import java.net.URI;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -154,5 +158,21 @@ public class Utils {
     // is this a builtin (jdk.jlink) plugin?
     public static boolean isBuiltin(Plugin prov) {
         return THIS_MODULE.equals(prov.getClass().getModule());
+    }
+
+    public static FileSystem jrtFileSystem() {
+        return FileSystems.getFileSystem(URI.create("jrt:/"));
+    }
+
+    public static PathMatcher getPathMatcher(FileSystem fs, String pattern) {
+        if (!pattern.startsWith("glob:") && !pattern.startsWith("regex:")) {
+            pattern = "glob:" + pattern;
+        }
+
+        return fs.getPathMatcher(pattern);
+    }
+
+    public static PathMatcher getPathMatcher(String pattern) {
+        return getPathMatcher(jrtFileSystem(), pattern);
     }
 }

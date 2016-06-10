@@ -1942,6 +1942,10 @@ public final class System {
      * the application classpath or modulepath.
      */
     private static void initPhase3() {
+        // Initialize publicLookup early, to avoid bootstrapping circularities
+        // with security manager using java.lang.invoke infrastructure.
+        java.lang.invoke.MethodHandles.publicLookup();
+
         // set security manager
         String cn = System.getProperty("java.security.manager");
         if (cn != null) {

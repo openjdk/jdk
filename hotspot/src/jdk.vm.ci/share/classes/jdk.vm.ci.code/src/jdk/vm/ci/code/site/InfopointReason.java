@@ -30,7 +30,6 @@ public enum InfopointReason {
     SAFEPOINT,
     CALL,
     IMPLICIT_EXCEPTION,
-    METASPACE_ACCESS,
     METHOD_START,
     METHOD_END,
     BYTECODE_POSITION;

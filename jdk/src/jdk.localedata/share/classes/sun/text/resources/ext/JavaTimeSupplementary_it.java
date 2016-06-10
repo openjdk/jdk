@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -107,22 +107,30 @@ public class JavaTimeSupplementary_it extends OpenListResourceBundle {
                 "Calendario Minguo" },
             { "field.dayperiod",
                 "AM/PM" },
+            { "field.era",
+                "era" },
             { "field.hour",
-                "Ora" },
+                "ora" },
             { "field.minute",
-                "Minuto" },
+                "minuto" },
             { "field.month",
-                "Mese" },
+                "mese" },
             { "field.second",
                 "Secondo" },
             { "field.week",
-                "Settimana" },
+                "settimana" },
             { "field.weekday",
-                "Giorno della settimana" },
+                "giorno della settimana" },
             { "field.year",
-                "Anno" },
+                "anno" },
             { "field.zone",
-                "Fuso orario" },
+                "fuso orario" },
+            { "islamic.AmPmMarkers",
+                new String[] {
+                    "AM",
+                    "PM",
+                }
+            },
             { "islamic.DatePatterns",
                 new String[] {
                     "EEEE d MMMM y GGGG",
@@ -282,6 +290,12 @@ public class JavaTimeSupplementary_it extends OpenListResourceBundle {
                     "dopo Cristo",
                 }
             },
+            { "roc.AmPmMarkers",
+                new String[] {
+                    "AM",
+                    "PM",
+                }
+            },
             { "roc.DatePatterns",
                 new String[] {
                     "EEEE d MMMM y GGGG",
@@ -325,7 +339,7 @@ public class JavaTimeSupplementary_it extends OpenListResourceBundle {
             },
             { "roc.Eras",
                 new String[] {
-                    "Prima della R.O.C.",
+                    "Prima di R.O.C.",
                     "Minguo",
                 }
             },
@@ -406,7 +420,7 @@ public class JavaTimeSupplementary_it extends OpenListResourceBundle {
             },
             { "roc.long.Eras",
                 new String[] {
-                    "Prima della R.O.C.",
+                    "Prima di R.O.C.",
                     "Minguo",
                 }
             },
@@ -418,13 +432,13 @@ public class JavaTimeSupplementary_it extends OpenListResourceBundle {
             },
             { "roc.narrow.Eras",
                 new String[] {
-                    "Prima della R.O.C.",
+                    "Prima di R.O.C.",
                     "Minguo",
                 }
             },
             { "roc.short.Eras",
                 new String[] {
-                    "Prima della R.O.C.",
+                    "Prima di R.O.C.",
                     "Minguo",
                 }
             },

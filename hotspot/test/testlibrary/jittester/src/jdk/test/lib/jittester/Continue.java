@@ -27,6 +27,10 @@ import jdk.test.lib.jittester.visitors.Visitor;
 
 public class Continue extends IRNode {
 
+    public Continue() {
+        super(TypeList.VOID);
+    }
+
     @Override
     public<T> T accept(Visitor<T> v) {
         return v.visit(this);
