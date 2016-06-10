@@ -28,6 +28,7 @@
  * @summary Verify that heap shrinks after GC in the presence of fragmentation
  * due to humongous objects
  * @library /testlibrary
+ * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
  * @run main/othervm -XX:-ExplicitGCInvokesConcurrent -XX:MinHeapFreeRatio=10
  * -XX:MaxHeapFreeRatio=12 -XX:+UseG1GC -XX:G1HeapRegionSize=1M -verbose:gc

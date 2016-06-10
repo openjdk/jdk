@@ -67,6 +67,7 @@ public class XShareAuto {
             // if sharing failed due to ASLR or similar reasons,
             // check whether sharing was attempted at all (UseSharedSpaces)
             output.shouldContain("UseSharedSpaces:");
+            output.shouldNotContain("Unable to map %s");
         }
         output.shouldHaveExitValue(0);
     }

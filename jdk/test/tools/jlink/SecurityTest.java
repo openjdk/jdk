@@ -25,6 +25,7 @@
  * @test
  * @summary Test JlinkPermission
  * @author Jean-Francois Denise
+ * @modules jdk.jlink/jdk.tools.jlink
  * @run main/othervm SecurityTest
  */
 

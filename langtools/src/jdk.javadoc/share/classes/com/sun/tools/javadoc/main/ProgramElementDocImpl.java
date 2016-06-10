@@ -55,6 +55,7 @@ import com.sun.tools.javac.util.Position;
  * @author Neal Gafter (rewrite)
  * @author Scott Seligman (generics, enums, annotations)
  */
+@Deprecated
 public abstract class ProgramElementDocImpl
         extends DocImpl implements ProgramElementDoc {
 

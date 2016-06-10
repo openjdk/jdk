@@ -27,30 +27,23 @@ package java.util.logging;
 
 
 /**
- * The management interface for the logging facility. It is recommended
- * to use the {@link java.lang.management.PlatformLoggingMXBean} management
- * interface that implements all attributes defined in this
- * {@code LoggingMXBean}.  The
- * {@link java.lang.management.ManagementFactory#getPlatformMXBean(Class)
- * ManagementFactory.getPlatformMXBean} method can be used to obtain
- * the {@code PlatformLoggingMXBean} object representing the management
- * interface for logging.
+ * The management interface for the logging facility.
  *
- * <p>There is a single global instance of the {@code LoggingMXBean}.
- * This instance is an {@link javax.management.MXBean MXBean} that
- * can be obtained by calling the {@link LogManager#getLoggingMXBean}
- * method or from the
- * {@linkplain java.lang.management.ManagementFactory#getPlatformMBeanServer
+ * {@link java.lang.management.PlatformLoggingMXBean
+ * java.lang.management.PlatformLoggingMXBean} is the management interface
+ * for logging facility registered in the {@link
+ * java.lang.management.ManagementFactory#getPlatformMBeanServer()
  * platform MBeanServer}.
- * <p>
- * The {@link javax.management.ObjectName ObjectName} that uniquely identifies
- * the management interface for logging within the {@code MBeanServer} is:
- * <pre>
- *    {@link LogManager#LOGGING_MXBEAN_NAME java.util.logging:type=Logging}
- * </pre>
- * <p>
- * The instance registered in the platform {@code MBeanServer}
- * is also a {@link java.lang.management.PlatformLoggingMXBean}.
+ * It is recommended to use the {@code PlatformLoggingMXBean} obtained via
+ * the {@link java.lang.management.ManagementFactory#getPlatformMXBean(Class)
+ * ManagementFactory.getPlatformMXBean(PlatformLoggingMXBean.class)} method.
+ *
+ * @deprecated {@code LoggingMXBean} is no longer a {@link
+ * java.lang.management.PlatformManagedObject platform MXBean} and is replaced
+ * with {@link java.lang.management.PlatformLoggingMXBean}.
+ * It will not register in the platform {@code MBeanServer}.
+ * Use {@code ManagementFactory.getPlatformMXBean(PlatformLoggingMXBean.class)}
+ * instead.
  *
  * @author  Ron Mann
  * @author  Mandy Chung
@@ -58,6 +51,7 @@ package java.util.logging;
  *
  * @see java.lang.management.PlatformLoggingMXBean
  */
+@Deprecated(since="9")
 public interface LoggingMXBean {
 
     /**

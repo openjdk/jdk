@@ -191,8 +191,8 @@ CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
       max_method = method;
     } else {
       // If a method has been stale for some time, remove it from the queue.
-      // Blocking tasks don't become stale
-      if (!task->is_blocking() && is_stale(t, TieredCompileTaskTimeout, method) && !is_old(method)) {
+      // Blocking tasks and tasks submitted from whitebox API don't become stale
+      if (task->can_become_stale() && is_stale(t, TieredCompileTaskTimeout, method) && !is_old(method)) {
         if (PrintTieredEvents) {
           print_event(REMOVE_FROM_QUEUE, method, method, task->osr_bci(), (CompLevel)task->comp_level());
         }
@@ -491,12 +491,12 @@ CompLevel AdvancedThresholdPolicy::loop_event(Method* method, CompLevel cur_leve
 void AdvancedThresholdPolicy::submit_compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread) {
   int hot_count = (bci == InvocationEntryBci) ? mh->invocation_count() : mh->backedge_count();
   update_rate(os::javaTimeMillis(), mh());
-  CompileBroker::compile_method(mh, bci, level, mh, hot_count, "tiered", thread);
+  CompileBroker::compile_method(mh, bci, level, mh, hot_count, CompileTask::Reason_Tiered, thread);
 }
 
 // Handle the invocation event.
 void AdvancedThresholdPolicy::method_invocation_event(const methodHandle& mh, const methodHandle& imh,
-                                                      CompLevel level, nmethod* nm, JavaThread* thread) {
+                                                      CompLevel level, CompiledMethod* nm, JavaThread* thread) {
   if (should_create_mdo(mh(), level)) {
     create_mdo(mh, thread);
   }
@@ -511,7 +511,7 @@ void AdvancedThresholdPolicy::method_invocation_event(const methodHandle& mh, co
 // Handle the back branch event. Notice that we can compile the method
 // with a regular entry from here.
 void AdvancedThresholdPolicy::method_back_branch_event(const methodHandle& mh, const methodHandle& imh,
-                                                       int bci, CompLevel level, nmethod* nm, JavaThread* thread) {
+                                                       int bci, CompLevel level, CompiledMethod* nm, JavaThread* thread) {
   if (should_create_mdo(mh(), level)) {
     create_mdo(mh, thread);
   }

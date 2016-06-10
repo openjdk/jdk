@@ -46,8 +46,8 @@ import jdk.tools.jlink.internal.plugins.asm.AsmPool.ClassReaderVisitor;
 import jdk.tools.jlink.internal.plugins.asm.AsmPool.ResourceFile;
 import jdk.tools.jlink.internal.plugins.asm.AsmPool.ResourceFileVisitor;
 import jdk.tools.jlink.internal.plugins.asm.AsmPools;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 
 public class VisitorTest extends AsmPluginTestBase {
 
@@ -69,7 +69,7 @@ public class VisitorTest extends AsmPluginTestBase {
         };
         for (TestPlugin p : plugins) {
             System.err.println("Testing: " + p.getName());
-            Pool out = p.visit(getPool());
+            ModulePool out = p.visit(getPool());
             p.test(getPool(), out);
         }
     }
@@ -149,15 +149,15 @@ public class VisitorTest extends AsmPluginTestBase {
         }
 
         @Override
-        public void test(Pool in, Pool out) throws Exception {
-            Collection<ModuleData> inClasses = getPool.apply(getPools()).getClasses();
+        public void test(ModulePool in, ModulePool out) throws Exception {
+            Collection<ModuleEntry> inClasses = getPool.apply(getPools()).getClasses();
             if (inClasses.size() != classReaderVisitor.getAmount()) {
                 throw new AssertionError("Testing " + name + ". Number of visited classes. Expected: " +
                         inClasses.size() + ", got: " + classReaderVisitor.getAmount());
             }
-            Collection<ModuleData> outClasses = extractClasses(out);
+            Collection<ModuleEntry> outClasses = extractClasses(out);
             int changedClasses = 0;
-            for (ModuleData r : outClasses) {
+            for (ModuleEntry r : outClasses) {
                 if (r.getPath().endsWith("Changed.class")) {
                     ++changedClasses;
                 }
@@ -192,15 +192,15 @@ public class VisitorTest extends AsmPluginTestBase {
         }
 
         @Override
-        public void test(Pool in, Pool out) throws Exception {
-            Collection<ModuleData> inResources = getPool.apply(getPools()).getResourceFiles();
+        public void test(ModulePool in, ModulePool out) throws Exception {
+            Collection<ModuleEntry> inResources = getPool.apply(getPools()).getResourceFiles();
             if (inResources.size() != resourceFileVisitor.getAmount()) {
                 throw new AssertionError("Testing " + name + ". Number of visited resources. Expected: " +
                         inResources.size() + ", got: " + resourceFileVisitor.getAmount());
             }
-            Collection<ModuleData> outResources = extractResources(out);
+            Collection<ModuleEntry> outResources = extractResources(out);
             int changedClasses = 0;
-            for (ModuleData r : outResources) {
+            for (ModuleEntry r : outResources) {
                 if (r.getPath().endsWith("Changed")) {
                     ++changedClasses;
                 }

@@ -27,6 +27,8 @@ package javax.annotation.processing;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import java.util.LinkedHashSet;
+import java.util.Collections;
 import java.util.Set;
 import java.lang.annotation.Annotation;
 
@@ -92,6 +94,38 @@ public interface RoundEnvironment {
     Set<? extends Element> getElementsAnnotatedWith(TypeElement a);
 
     /**
+     * Returns the elements annotated with one or more of the given
+     * annotation types.
+     *
+     * @apiNote This method may be useful when processing repeating
+     * annotations by looking for an annotation type and its
+     * containing annotation type at the same time.
+     *
+     * @implSpec The default implementation of this method creates an
+     * empty result set, iterates over the annotations in the argument
+     * set calling {@link #getElementsAnnotatedWith(TypeElement)} on
+     * each annotation and adding those results to the result
+     * set. Finally, the contents of the result set are returned as an
+     * unmodifiable set.
+     *
+     * @param annotations  annotation types being requested
+     * @return the elements annotated with one or more of the given
+     * annotation types, or an empty set if there are none
+     * @throws IllegalArgumentException if the any elements of the
+     * argument set do not represent an annotation type
+     * @jls 9.6.3 Repeatable Annotation Types
+     * @since 9
+     */
+    default Set<? extends Element> getElementsAnnotatedWithAny(TypeElement... annotations){
+        // Use LinkedHashSet rather than HashSet for predictability
+        Set<Element> result = new LinkedHashSet<>();
+        for (TypeElement annotation : annotations) {
+            result.addAll(getElementsAnnotatedWith(annotation));
+        }
+        return Collections.unmodifiableSet(result);
+    }
+
+    /**
      * Returns the elements annotated with the given annotation type.
      * The annotation may appear directly or be inherited.  Only
      * package elements and type elements <i>included</i> in this
@@ -110,4 +144,36 @@ public interface RoundEnvironment {
      * represent an annotation type
      */
     Set<? extends Element> getElementsAnnotatedWith(Class<? extends Annotation> a);
+
+    /**
+     * Returns the elements annotated with one or more of the given
+     * annotation types.
+     *
+     * @apiNote This method may be useful when processing repeating
+     * annotations by looking for an annotation type and its
+     * containing annotation type at the same time.
+     *
+     * @implSpec The default implementation of this method creates an
+     * empty result set, iterates over the annotations in the argument
+     * set calling {@link #getElementsAnnotatedWith(Class)} on
+     * each annotation and adding those results to the result
+     * set. Finally, the contents of the result set are returned as an
+     * unmodifiable set.
+     *
+     * @param annotations  annotation types being requested
+     * @return the elements annotated with one or more of the given
+     * annotation types, or an empty set if there are none
+     * @throws IllegalArgumentException if the any elements of the
+     * argument set do not represent an annotation type
+     * @jls 9.6.3 Repeatable Annotation Types
+     * @since 9
+     */
+    default Set<? extends Element> getElementsAnnotatedWithAny(Set<Class<? extends Annotation>> annotations){
+        // Use LinkedHashSet rather than HashSet for predictability
+        Set<Element> result = new LinkedHashSet<>();
+        for (Class<? extends Annotation> annotation : annotations) {
+            result.addAll(getElementsAnnotatedWith(annotation));
+        }
+        return Collections.unmodifiableSet(result);
+    }
 }

@@ -85,7 +85,9 @@ public class InstanceKlass extends Klass {
     isMarkedDependent    = new CIntField(type.getCIntegerField("_is_marked_dependent"), 0);
     initState            = new CIntField(type.getCIntegerField("_init_state"), 0);
     itableLen            = new CIntField(type.getCIntegerField("_itable_len"), 0);
-    breakpoints          = type.getAddressField("_breakpoints");
+    if (VM.getVM().isJvmtiSupported()) {
+      breakpoints        = type.getAddressField("_breakpoints");
+    }
     genericSignatureIndex = new CIntField(type.getCIntegerField("_generic_signature_index"), 0);
     majorVersion         = new CIntField(type.getCIntegerField("_major_version"), 0);
     minorVersion         = new CIntField(type.getCIntegerField("_minor_version"), 0);
@@ -837,6 +839,9 @@ public class InstanceKlass extends Klass {
 
   /** Breakpoint support (see methods on Method* for details) */
   public BreakpointInfo getBreakpoints() {
+    if (!VM.getVM().isJvmtiSupported()) {
+      return null;
+    }
     Address addr = getAddress().getAddressAt(breakpoints.getOffset());
     return (BreakpointInfo) VMObjectFactory.newObject(BreakpointInfo.class, addr);
   }

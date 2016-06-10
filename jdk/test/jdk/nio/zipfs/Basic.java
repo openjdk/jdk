@@ -31,6 +31,7 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.ProviderMismatchException;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -39,14 +40,15 @@ import java.net.URI;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
-
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 /**
  * @test
- * @bug 8038500 8040059 8150366 8150496
+ * @bug 8038500 8040059 8150366 8150496 8147539
  * @summary Basic test for zip provider
  *
  * @run main Basic
  * @run main/othervm/java.security.policy=test.policy Basic
+ * @modules jdk.zipfs
  */
 
 public class Basic {
@@ -89,7 +91,7 @@ public class Basic {
         found = false;
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(fs.getPath("/"))) {
             for (Path entry: stream) {
-                found = entry.toString().equals("/META-INF/");
+                found = entry.toString().equals("/META-INF");
                 if (found) break;
             }
         }
@@ -116,6 +118,13 @@ public class Basic {
         FileStore store = Files.getFileStore(fs.getPath("/"));
         if (!store.supportsFileAttributeView("basic"))
             throw new RuntimeException("BasicFileAttributeView should be supported");
+
+        // Test: watch register should throw PME
+        try {
+            fs.getPath("/")
+              .register(FileSystems.getDefault().newWatchService(), ENTRY_CREATE);
+            throw new RuntimeException("watch service is not supported");
+        } catch (ProviderMismatchException x) { }
 
         // Test: ClosedFileSystemException
         fs.close();

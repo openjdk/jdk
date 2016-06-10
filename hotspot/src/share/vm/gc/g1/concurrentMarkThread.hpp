@@ -31,7 +31,7 @@
 // as well as handling various marking cleanup.
 
 class G1ConcurrentMark;
-class G1CollectorPolicy;
+class G1Policy;
 
 class ConcurrentMarkThread: public ConcurrentGCThread {
   friend class VMStructs;
@@ -51,7 +51,7 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   volatile State _state;
 
   void sleepBeforeNextCycle();
-  void delay_to_keep_mmu(G1CollectorPolicy* g1_policy, bool remark);
+  void delay_to_keep_mmu(G1Policy* g1_policy, bool remark);
 
   void run_service();
   void stop_service();

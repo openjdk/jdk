@@ -44,6 +44,7 @@ import com.sun.tools.javac.code.Symbol.MethodSymbol;
  * @author Neal Gafter (rewrite)
  */
 
+@Deprecated
 public class ConstructorDocImpl
         extends ExecutableMemberDocImpl implements ConstructorDoc {
 

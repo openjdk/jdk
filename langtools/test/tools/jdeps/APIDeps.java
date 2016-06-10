@@ -25,6 +25,7 @@
  * @test
  * @bug 8015912 8029216 8048063 8050804
  * @summary Test -apionly and -jdkinternals options
+ * @library lib
  * @modules java.base/sun.security.x509
  *          java.management
  *          jdk.jdeps/com.sun.tools.classfile
@@ -154,7 +155,8 @@ public class APIDeps {
     Map<String,String> jdeps(String... args) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
-        System.err.println("jdeps " + Arrays.toString(args));
+        System.err.println("jdeps " + Arrays.stream(args)
+            .collect(Collectors.joining(" ")));
         int rc = com.sun.tools.jdeps.Main.run(args, pw);
         pw.close();
         String out = sw.toString();

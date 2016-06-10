@@ -28,6 +28,7 @@ import jdk.test.lib.cli.*;
  * @test
  * @bug 8066821
  * @summary Test that various options are deprecated. See deprecated_jvm_flags in arguments.cpp.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  */
 public class VMDeprecatedOptions {

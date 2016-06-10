@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ class CompiledIC: public ResourceObj {
   NativeMovConstReg* _value;    // patchable value cell for this IC
   bool          _is_optimized;  // an optimized virtual call (i.e., no compiled IC)
 
-  CompiledIC(nmethod* nm, NativeCall* ic_call);
+  CompiledIC(CompiledMethod* cm, NativeCall* ic_call);
   CompiledIC(RelocIterator* iter);
 
   void initialize_from_iter(RelocIterator* iter);
@@ -169,8 +169,8 @@ class CompiledIC: public ResourceObj {
 
  public:
   // conversion (machine PC to CompiledIC*)
-  friend CompiledIC* CompiledIC_before(nmethod* nm, address return_addr);
-  friend CompiledIC* CompiledIC_at(nmethod* nm, address call_site);
+  friend CompiledIC* CompiledIC_before(CompiledMethod* nm, address return_addr);
+  friend CompiledIC* CompiledIC_at(CompiledMethod* nm, address call_site);
   friend CompiledIC* CompiledIC_at(Relocation* call_site);
   friend CompiledIC* CompiledIC_at(RelocIterator* reloc_iter);
 
@@ -234,13 +234,13 @@ class CompiledIC: public ResourceObj {
   void verify()            PRODUCT_RETURN;
 };
 
-inline CompiledIC* CompiledIC_before(nmethod* nm, address return_addr) {
+inline CompiledIC* CompiledIC_before(CompiledMethod* nm, address return_addr) {
   CompiledIC* c_ic = new CompiledIC(nm, nativeCall_before(return_addr));
   c_ic->verify();
   return c_ic;
 }
 
-inline CompiledIC* CompiledIC_at(nmethod* nm, address call_site) {
+inline CompiledIC* CompiledIC_at(CompiledMethod* nm, address call_site) {
   CompiledIC* c_ic = new CompiledIC(nm, nativeCall_at(call_site));
   c_ic->verify();
   return c_ic;

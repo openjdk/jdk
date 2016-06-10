@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
@@ -105,10 +106,20 @@ void KlassInfoEntry::print_on(outputStream* st) const {
   ResourceMark rm;
 
   // simplify the formatting (ILP32 vs LP64) - always cast the numbers to 64-bit
-  st->print_cr(INT64_FORMAT_W(13) "  " UINT64_FORMAT_W(13) "  %s",
-               (int64_t)_instance_count,
-               (uint64_t)_instance_words * HeapWordSize,
-               name());
+  ModuleEntry* module = _klass->module();
+  if (module->is_named()) {
+    st->print_cr(INT64_FORMAT_W(13) "  " UINT64_FORMAT_W(13) "  %s (%s@%s)",
+                 (int64_t)_instance_count,
+                 (uint64_t)_instance_words * HeapWordSize,
+                 name(),
+                 module->name()->as_C_string(),
+                 module->version() != NULL ? module->version()->as_C_string() : "");
+  } else {
+    st->print_cr(INT64_FORMAT_W(13) "  " UINT64_FORMAT_W(13) "  %s",
+                 (int64_t)_instance_count,
+                 (uint64_t)_instance_words * HeapWordSize,
+                 name());
+  }
 }
 
 KlassInfoEntry* KlassInfoBucket::lookup(Klass* const k) {
@@ -647,8 +658,8 @@ void KlassInfoHisto::print_histo_on(outputStream* st, bool print_stats,
   if (print_stats) {
     print_class_stats(st, csv_format, columns);
   } else {
-    st->print_cr(" num     #instances         #bytes  class name");
-    st->print_cr("----------------------------------------------");
+    st->print_cr(" num     #instances         #bytes  class name (module)");
+    st->print_cr("-------------------------------------------------------");
     print_elements(st);
   }
 }

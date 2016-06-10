@@ -1703,16 +1703,19 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
 
     if (uncasted) {
-      // Wait until after parsing for the type information to propagate from the casts
+      // Add a cast node between the phi to be removed and its unique input.
+      // Wait until after parsing for the type information to propagate from the casts.
       assert(can_reshape, "Invalid during parsing");
       const Type* phi_type = bottom_type();
       assert(phi_type->isa_int() || phi_type->isa_ptr(), "bad phi type");
       int opcode;
+      // Determine the type of cast to be added.
       if (phi_type->isa_int()) {
         opcode = Op_CastII;
       } else {
         const Type* uin_type = phase->type(uin);
-        if (phi_type->join(TypePtr::NOTNULL) == uin_type->join(TypePtr::NOTNULL)) {
+        if ((phi_type->join(TypePtr::NOTNULL) == uin_type->join(TypePtr::NOTNULL)) ||
+            (!phi_type->isa_oopptr() && !uin_type->isa_oopptr())) {
           opcode = Op_CastPP;
         } else {
           opcode = Op_CheckCastPP;

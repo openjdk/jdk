@@ -650,6 +650,7 @@ TEST_JOBS
 JOBS
 MEMORY_SIZE
 NUM_CORES
+ENABLE_GENERATE_CLASSLIST
 BUILD_FAILURE_HANDLER
 ENABLE_INTREE_EC
 STLPORT_LIB
@@ -688,6 +689,7 @@ LIBCXX
 STATIC_CXX_SETTING
 FIXPATH_DETACH_FLAG
 FIXPATH
+BUILD_GTEST
 VALID_JVM_FEATURES
 JVM_FEATURES_custom
 JVM_FEATURES_zeroshark
@@ -949,6 +951,8 @@ OTOOL
 LDD
 ZIP
 UNZIP
+TAR_SUPPORTS_TRANSFORM
+TAR_INCLUDE_PARAM
 FIND_DELETE
 OUTPUT_SYNC
 OUTPUT_SYNC_SUPPORTED
@@ -981,6 +985,9 @@ HOTSPOT_BUILD_CPU_ARCH
 HOTSPOT_BUILD_CPU
 HOTSPOT_BUILD_OS_TYPE
 HOTSPOT_BUILD_OS
+OPENJDK_BUILD_BUNDLE_PLATFORM
+OPENJDK_BUILD_CPU_BUNDLE
+OPENJDK_BUILD_OS_BUNDLE
 OPENJDK_BUILD_OS_EXPORT_DIR
 OPENJDK_BUILD_CPU_JLI_CFLAGS
 OPENJDK_BUILD_CPU_OSARCH
@@ -995,6 +1002,9 @@ HOTSPOT_TARGET_OS_TYPE
 HOTSPOT_TARGET_OS
 DEFINE_CROSS_COMPILE_ARCH
 LP64
+OPENJDK_TARGET_BUNDLE_PLATFORM
+OPENJDK_TARGET_CPU_BUNDLE
+OPENJDK_TARGET_OS_BUNDLE
 OPENJDK_TARGET_OS_EXPORT_DIR
 OPENJDK_TARGET_CPU_JLI_CFLAGS
 OPENJDK_TARGET_CPU_OSARCH
@@ -1064,6 +1074,8 @@ MKTEMP
 MKDIR
 LS
 LN
+GZIP
+GUNZIP
 HEAD
 FIND
 FILE
@@ -1188,6 +1200,7 @@ enable_native_coverage
 enable_dtrace
 with_jvm_features
 with_jvm_interpreter
+enable_hotspot_gtest
 with_stdc__lib
 with_msvcr_dll
 with_msvcp_dll
@@ -1214,6 +1227,7 @@ with_dxsdk
 with_dxsdk_lib
 with_dxsdk_include
 enable_jtreg_failure_handler
+enable_generate_classlist
 with_num_cores
 with_memory_size
 with_jobs
@@ -1246,6 +1260,8 @@ EXPR
 FILE
 FIND
 HEAD
+GUNZIP
+GZIP
 LN
 LS
 MKDIR
@@ -1980,6 +1996,7 @@ Optional Features:
   --enable-dtrace[=yes/no/auto]
                           enable dtrace. Default is auto, where dtrace is
                           enabled if all dependencies are present.
+  --disable-hotspot-gtest Disables building of the Hotspot unit tests
   --disable-freetype-bundling
                           disable bundling of the freetype library with the
                           build result [enabled on Windows or when using
@@ -1990,6 +2007,10 @@ Optional Features:
                           Default is auto, where the failure handler is built
                           if all dependencies are present and otherwise just
                           disabled.
+  --disable-generate-classlist
+                          forces enabling or disabling of the generation of a
+                          CDS classlist at build time. Default is to generate
+                          it when either the server or client JVMs are built.
   --enable-sjavac         use sjavac to do fast incremental compiles
                           [disabled]
   --disable-javac-server  disable javac server [enabled]
@@ -2184,6 +2205,8 @@ Some influential environment variables:
   FILE        Override default value for FILE
   FIND        Override default value for FIND
   HEAD        Override default value for HEAD
+  GUNZIP      Override default value for GUNZIP
+  GZIP        Override default value for GZIP
   LN          Override default value for LN
   LS          Override default value for LS
   MKDIR       Override default value for MKDIR
@@ -3686,6 +3709,8 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
+
+
 # Check if build directory is on local disk. If not possible to determine,
 # we prefer to claim it's local.
 # Argument 1: directory to test
@@ -4282,6 +4307,11 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 #
 
 
+################################################################################
+# Check if gtest should be built
+#
+
+
 #
 # Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -4364,6 +4394,12 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 ################################################################################
 #
 # Check if building of the jtreg failure handler should be enabled.
+#
+
+
+################################################################################
+#
+# Enable or disable generation of the classlist at build time
 #
 
 
@@ -5056,7 +5092,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1463011468
+DATE_WHEN_GENERATED=1465351120
 
 ###############################################################################
 #
@@ -8384,6 +8420,414 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
+  if [ -z "${GUNZIP+x}" ]; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in gunzip
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_GUNZIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $GUNZIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_GUNZIP="$GUNZIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_GUNZIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+GUNZIP=$ac_cv_path_GUNZIP
+if test -n "$GUNZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GUNZIP" >&5
+$as_echo "$GUNZIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$GUNZIP" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !GUNZIP! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!GUNZIP!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xGUNZIP" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of GUNZIP from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of GUNZIP from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in gunzip
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_GUNZIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $GUNZIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_GUNZIP="$GUNZIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_GUNZIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+GUNZIP=$ac_cv_path_GUNZIP
+if test -n "$GUNZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GUNZIP" >&5
+$as_echo "$GUNZIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$GUNZIP" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if we try to supply an empty value
+      if test "x$GUNZIP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool GUNZIP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool GUNZIP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GUNZIP" >&5
+$as_echo_n "checking for GUNZIP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$GUNZIP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool GUNZIP=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool GUNZIP=$tool_basename" >&6;}
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_GUNZIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $GUNZIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_GUNZIP="$GUNZIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_GUNZIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+GUNZIP=$ac_cv_path_GUNZIP
+if test -n "$GUNZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GUNZIP" >&5
+$as_echo "$GUNZIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+          if test "x$GUNZIP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool GUNZIP=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool GUNZIP=$tool_specified" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GUNZIP" >&5
+$as_echo_n "checking for GUNZIP... " >&6; }
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+            as_fn_error $? "User supplied tool GUNZIP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+        fi
+      fi
+    fi
+
+  fi
+
+
+
+  if test "x$GUNZIP" = x; then
+    as_fn_error $? "Could not find required tool for GUNZIP" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if [ -z "${GZIP+x}" ]; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in pigz gzip
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_GZIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $GZIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_GZIP="$GZIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_GZIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+GZIP=$ac_cv_path_GZIP
+if test -n "$GZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GZIP" >&5
+$as_echo "$GZIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$GZIP" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !GZIP! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!GZIP!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xGZIP" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of GZIP from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of GZIP from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in pigz gzip
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_GZIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $GZIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_GZIP="$GZIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_GZIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+GZIP=$ac_cv_path_GZIP
+if test -n "$GZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GZIP" >&5
+$as_echo "$GZIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$GZIP" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if we try to supply an empty value
+      if test "x$GZIP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool GZIP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool GZIP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GZIP" >&5
+$as_echo_n "checking for GZIP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$GZIP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool GZIP=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool GZIP=$tool_basename" >&6;}
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_GZIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $GZIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_GZIP="$GZIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_GZIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+GZIP=$ac_cv_path_GZIP
+if test -n "$GZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GZIP" >&5
+$as_echo "$GZIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+          if test "x$GZIP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool GZIP=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool GZIP=$tool_specified" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GZIP" >&5
+$as_echo_n "checking for GZIP... " >&6; }
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+            as_fn_error $? "User supplied tool GZIP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+        fi
+      fi
+    fi
+
+  fi
+
+
+
+  if test "x$GZIP" = x; then
+    as_fn_error $? "Could not find required tool for GZIP" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
   if [ -z "${LN+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in ln
@@ -10834,7 +11278,7 @@ $as_echo "$tool_specified" >&6; }
 
   if [ -z "${TAR+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
-    for ac_prog in tar
+    for ac_prog in gtar tar
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -10892,7 +11336,7 @@ done
 $as_echo "$as_me: WARNING: Ignoring value of TAR from the environment. Use command line variables instead." >&2;}
       fi
       # Try to locate tool using the code snippet
-      for ac_prog in tar
+      for ac_prog in gtar tar
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -15408,6 +15852,23 @@ $as_echo "$COMPILE_TYPE" >&6; }
   fi
 
 
+  # The new version string in JDK 9 also defined new naming of OS and ARCH for bundles
+  # Macosx is osx and x86_64 is x64
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    OPENJDK_TARGET_OS_BUNDLE="osx"
+  else
+    OPENJDK_TARGET_OS_BUNDLE="$OPENJDK_TARGET_OS"
+  fi
+  if test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+    OPENJDK_TARGET_CPU_BUNDLE="x64"
+  else
+    OPENJDK_TARGET_CPU_BUNDLE="$OPENJDK_TARGET_CPU"
+  fi
+  OPENJDK_TARGET_BUNDLE_PLATFORM="${OPENJDK_TARGET_OS_BUNDLE}-${OPENJDK_TARGET_CPU_BUNDLE}"
+
+
+
+
   if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
     A_LP64="LP64:="
     # -D_LP64=1 is only set on linux and mac. Setting on windows causes diff in
@@ -15562,6 +16023,23 @@ $as_echo "$COMPILE_TYPE" >&6; }
   else
       OPENJDK_BUILD_OS_EXPORT_DIR=${OPENJDK_BUILD_OS_TYPE}
   fi
+
+
+  # The new version string in JDK 9 also defined new naming of OS and ARCH for bundles
+  # Macosx is osx and x86_64 is x64
+  if test "x$OPENJDK_BUILD_OS" = xmacosx; then
+    OPENJDK_BUILD_OS_BUNDLE="osx"
+  else
+    OPENJDK_BUILD_OS_BUNDLE="$OPENJDK_TARGET_OS"
+  fi
+  if test "x$OPENJDK_BUILD_CPU" = xx86_64; then
+    OPENJDK_BUILD_CPU_BUNDLE="x64"
+  else
+    OPENJDK_BUILD_CPU_BUNDLE="$OPENJDK_BUILD_CPU"
+  fi
+  OPENJDK_BUILD_BUNDLE_PLATFORM="${OPENJDK_BUILD_OS_BUNDLE}-${OPENJDK_BUILD_CPU_BUNDLE}"
+
+
 
 
   if test "x$OPENJDK_BUILD_CPU_BITS" = x64; then
@@ -20678,6 +21156,30 @@ $as_echo "no" >&6; }
 $as_echo "yes" >&6; }
   fi
   rmdir $DELETEDIR
+
+
+
+  # Test which kind of tar was found
+  if test "x$($TAR --version | $GREP "GNU tar")" != "x"; then
+    TAR_TYPE="gnu"
+  elif test "x$($TAR -v | $GREP "bsdtar")" != "x"; then
+    TAR_TYPE="bsd"
+  elif test "x$OPENJDK_BUILD_OS" = "xsolaris"; then
+    TAR_TYPE="solaris"
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking what type of tar was found" >&5
+$as_echo_n "checking what type of tar was found... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TAR_TYPE" >&5
+$as_echo "$TAR_TYPE" >&6; }
+
+  if test "x$TAR_TYPE" = "xgnu"; then
+    TAR_INCLUDE_PARAM="T"
+    TAR_SUPPORTS_TRANSFORM="true"
+  else
+    TAR_INCLUDE_PARAM="I"
+    TAR_SUPPORTS_TRANSFORM="false"
+  fi
+
 
 
 
@@ -49111,9 +49613,9 @@ $as_echo "$supports" >&6; }
       fi
       C_O_FLAG_NONE="-O0"
     elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-      C_O_FLAG_HIGHEST_JVM="-O3"
-      C_O_FLAG_HIGHEST="-O3"
-      C_O_FLAG_HI="-O3 -qstrict"
+      C_O_FLAG_HIGHEST_JVM="-O3 -qhot=level=1 -qinline -qinlglue"
+      C_O_FLAG_HIGHEST="-O3 -qhot=level=1 -qinline -qinlglue"
+      C_O_FLAG_HI="-O3 -qinline -qinlglue"
       C_O_FLAG_NORM="-O2"
       C_O_FLAG_DEBUG="-qnoopt"
       # FIXME: Value below not verified.
@@ -50120,8 +50622,8 @@ $as_echo "$supports" >&6; }
   elif test "x$OPENJDK_TARGET_OS" = xaix; then
     JVM_CFLAGS="$JVM_CFLAGS -DAIX"
     # We may need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
-    JVM_CFLAGS="$JVM_CFLAGS -qtune=balanced -qhot=level=1 -qinline \
-        -qinlglue -qalias=noansi -qstrict -qtls=default -qlanglvl=c99vla \
+    JVM_CFLAGS="$JVM_CFLAGS -qtune=balanced \
+        -qalias=noansi -qstrict -qtls=default -qlanglvl=c99vla \
         -qlanglvl=noredefmac -qnortti -qnoeh -qignerrno"
   elif test "x$OPENJDK_TARGET_OS" = xbsd; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE"
@@ -50925,8 +51427,8 @@ $as_echo "$supports" >&6; }
   elif test "x$OPENJDK_BUILD_OS" = xaix; then
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -DAIX"
     # We may need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
-    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -qtune=balanced -qhot=level=1 -qinline \
-        -qinlglue -qalias=noansi -qstrict -qtls=default -qlanglvl=c99vla \
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -qtune=balanced \
+        -qalias=noansi -qstrict -qtls=default -qlanglvl=c99vla \
         -qlanglvl=noredefmac -qnortti -qnoeh -qignerrno"
   elif test "x$OPENJDK_BUILD_OS" = xbsd; then
     OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE"
@@ -52923,6 +53425,49 @@ if test "${with_jvm_interpreter+set}" = set; then :
   withval=$with_jvm_interpreter; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-jvm-interpreter is deprecated and will be ignored." >&5
 $as_echo "$as_me: WARNING: Option --with-jvm-interpreter is deprecated and will be ignored." >&2;}
 fi
+
+
+
+
+  # Check whether --enable-hotspot-gtest was given.
+if test "${enable_hotspot_gtest+set}" = set; then :
+  enableval=$enable_hotspot_gtest;
+fi
+
+
+  if test -e "$HOTSPOT_TOPDIR/test/native"; then
+    GTEST_DIR_EXISTS="true"
+  else
+    GTEST_DIR_EXISTS="false"
+  fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if Hotspot gtest unit tests should be built" >&5
+$as_echo_n "checking if Hotspot gtest unit tests should be built... " >&6; }
+  if test "x$enable_hotspot_gtest" = "xyes"; then
+    if test "x$GTEST_DIR_EXISTS" = "xtrue"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, forced" >&5
+$as_echo "yes, forced" >&6; }
+      BUILD_GTEST="true"
+    else
+      as_fn_error $? "Cannot build gtest without the test source" "$LINENO" 5
+    fi
+  elif test "x$enable_hotspot_gtest" = "xno"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, forced" >&5
+$as_echo "no, forced" >&6; }
+    BUILD_GTEST="false"
+  elif test "x$enable_hotspot_gtest" = "x"; then
+    if test "x$GTEST_DIR_EXISTS" = "xtrue" && test "x$OPENJDK_TARGET_OS" != "xaix"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+      BUILD_GTEST="true"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      BUILD_GTEST="false"
+    fi
+  else
+    as_fn_error $? "--enable-gtest must be either yes or no" "$LINENO" 5
+  fi
 
 
 
@@ -64055,12 +64600,16 @@ fi
 
 
 
-  if test "$OPENJDK_TARGET_OS" = "solaris"; then
+  if test "$OPENJDK_TARGET_OS" = "solaris" && test "x$BUILD_GTEST" = "xtrue"; then
     # Find the root of the Solaris Studio installation from the compiler path
     SOLARIS_STUDIO_DIR="$(dirname $CC)/.."
     STLPORT_LIB="$SOLARIS_STUDIO_DIR/lib/stlport4$OPENJDK_TARGET_CPU_ISADIR/libstlport.so.1"
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libstlport.so.1" >&5
 $as_echo_n "checking for libstlport.so.1... " >&6; }
+    if ! test -f "$STLPORT_LIB" && test "x$OPENJDK_TARGET_CPU_ISADIR" = "x/sparcv9"; then
+      # SS12u3 has libstlport under 'stlport4/v9' instead of 'stlport4/sparcv9'
+      STLPORT_LIB="$SOLARIS_STUDIO_DIR/lib/stlport4/v9/libstlport.so.1"
+    fi
     if test -f "$STLPORT_LIB"; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, $STLPORT_LIB" >&5
 $as_echo "yes, $STLPORT_LIB" >&6; }
@@ -64274,6 +64823,51 @@ $as_echo "yes, jtreg present" >&6; }
     fi
   else
     as_fn_error $? "Invalid value for --enable-jtreg-failure-handler: $enable_jtreg_failure_handler" "$LINENO" 5
+  fi
+
+
+
+
+  # Check whether --enable-generate-classlist was given.
+if test "${enable_generate_classlist+set}" = set; then :
+  enableval=$enable_generate_classlist;
+fi
+
+
+  # Check if it's likely that it's possible to generate the classlist. Depending
+  # on exact jvm configuration it could be possible anyway.
+  if   [[ " $JVM_VARIANTS " =~ " server " ]]   ||   [[ " $JVM_VARIANTS " =~ " client " ]]  ; then
+    ENABLE_GENERATE_CLASSLIST_POSSIBLE="true"
+  else
+    ENABLE_GENERATE_CLASSLIST_POSSIBLE="false"
+  fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the CDS classlist generation should be enabled" >&5
+$as_echo_n "checking if the CDS classlist generation should be enabled... " >&6; }
+  if test "x$enable_generate_classlist" = "xyes"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, forced" >&5
+$as_echo "yes, forced" >&6; }
+    ENABLE_GENERATE_CLASSLIST="true"
+    if test "x$ENABLE_GENERATE_CLASSLIST_POSSIBLE" = "xfalse"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Generation of classlist might not be possible with JVM Variants $JVM_VARIANTS" >&5
+$as_echo "$as_me: WARNING: Generation of classlist might not be possible with JVM Variants $JVM_VARIANTS" >&2;}
+    fi
+  elif test "x$enable_generate_classlist" = "xno"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, forced" >&5
+$as_echo "no, forced" >&6; }
+    ENABLE_GENERATE_CLASSLIST="false"
+  elif test "x$enable_generate_classlist" = "x"; then
+    if test "x$ENABLE_GENERATE_CLASSLIST_POSSIBLE" = "xtrue"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+      ENABLE_GENERATE_CLASSLIST="true"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      ENABLE_GENERATE_CLASSLIST="false"
+    fi
+  else
+    as_fn_error $? "Invalid value for --enable-generate-classlist: $enable_generate_classlist" "$LINENO" 5
   fi
 
 
@@ -65529,6 +66123,10 @@ $as_echo "no, does not work effectively with icecc" >&6; }
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, does not work with Solaris Studio" >&5
 $as_echo "no, does not work with Solaris Studio" >&6; }
+    USE_PRECOMPILED_HEADER=0
+  elif test "x$TOOLCHAIN_TYPE" = xxlc; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, does not work with xlc" >&5
+$as_echo "no, does not work with xlc" >&6; }
     USE_PRECOMPILED_HEADER=0
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5

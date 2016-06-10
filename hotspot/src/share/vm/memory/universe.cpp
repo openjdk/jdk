@@ -55,7 +55,6 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
-#include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/commandLineFlagConstraintList.hpp"

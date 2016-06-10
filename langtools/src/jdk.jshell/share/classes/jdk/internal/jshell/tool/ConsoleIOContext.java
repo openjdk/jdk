@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package jdk.internal.jshell.tool;
 
-import jdk.jshell.SourceCodeAnalysis.CompletionInfo;
 import jdk.jshell.SourceCodeAnalysis.QualifiedNames;
 import jdk.jshell.SourceCodeAnalysis.Suggestion;
 
@@ -36,6 +35,7 @@ import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -44,6 +44,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.prefs.BackingStoreException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jdk.internal.jline.NoInterruptUnixTerminal;
 import jdk.internal.jline.Terminal;
@@ -54,9 +57,12 @@ import jdk.internal.jline.console.ConsoleReader;
 import jdk.internal.jline.console.KeyMap;
 import jdk.internal.jline.console.UserInterruptException;
 import jdk.internal.jline.console.completer.Completer;
+import jdk.internal.jline.extra.EditingHistory;
 import jdk.internal.jshell.tool.StopDetectingInputStream.State;
 
 class ConsoleIOContext extends IOContext {
+
+    private static final String HISTORY_LINE_PREFIX = "HISTORY_LINE_";
 
     final JShellTool repl;
     final StopDetectingInputStream input;
@@ -80,12 +86,18 @@ class ConsoleIOContext extends IOContext {
         in = new ConsoleReader(cmdin, cmdout, term);
         in.setExpandEvents(false);
         in.setHandleUserInterrupt(true);
-        in.setHistory(history = new EditingHistory(repl.prefs) {
-            @Override protected CompletionInfo analyzeCompletion(String input) {
-                return repl.analysis.analyzeCompletion(input);
+        List<String> persistenHistory = Stream.of(repl.prefs.keys())
+                                              .filter(key -> key.startsWith(HISTORY_LINE_PREFIX))
+                                              .sorted()
+                                              .map(key -> repl.prefs.get(key, null))
+                                              .collect(Collectors.toList());
+        in.setHistory(history = new EditingHistory(in, persistenHistory) {
+            @Override protected boolean isComplete(CharSequence input) {
+                return repl.analysis.analyzeCompletion(input.toString()).completeness.isComplete;
             }
         });
         in.setBellEnabled(true);
+        in.setCopyPasteDetection(true);
         in.addCompleter(new Completer() {
             private String lastTest;
             private int lastCursor;
@@ -150,8 +162,6 @@ class ConsoleIOContext extends IOContext {
             }
         });
         bind(DOCUMENTATION_SHORTCUT, (ActionListener) evt -> documentation(repl));
-        bind(CTRL_UP, (ActionListener) evt -> moveHistoryToSnippet(((EditingHistory) in.getHistory())::previousSnippet));
-        bind(CTRL_DOWN, (ActionListener) evt -> moveHistoryToSnippet(((EditingHistory) in.getHistory())::nextSnippet));
         for (FixComputer computer : FIX_COMPUTERS) {
             for (String shortcuts : SHORTCUT_FIXES) {
                 bind(shortcuts + computer.shortcut, (ActionListener) evt -> fixes(computer));
@@ -181,36 +191,29 @@ class ConsoleIOContext extends IOContext {
 
     @Override
     public void close() throws IOException {
-        history.save();
+        //save history:
+        try {
+            for (String key : repl.prefs.keys()) {
+                if (key.startsWith(HISTORY_LINE_PREFIX))
+                    repl.prefs.remove(key);
+            }
+            Collection<? extends String> savedHistory = history.save();
+            if (!savedHistory.isEmpty()) {
+                int len = (int) Math.ceil(Math.log10(savedHistory.size()+1));
+                String format = HISTORY_LINE_PREFIX + "%0" + len + "d";
+                int index = 0;
+                for (String historyLine : savedHistory) {
+                    repl.prefs.put(String.format(format, index++), historyLine);
+                }
+            }
+        } catch (BackingStoreException ex) {
+            throw new IllegalStateException(ex);
+        }
         in.shutdown();
         try {
             in.getTerminal().restore();
         } catch (Exception ex) {
             throw new IOException(ex);
-        }
-    }
-
-    private void moveHistoryToSnippet(Supplier<Boolean> action) {
-        if (!action.get()) {
-            try {
-                in.beep();
-            } catch (IOException ex) {
-                throw new IllegalStateException(ex);
-            }
-        } else {
-            try {
-                //could use:
-                //in.resetPromptLine(in.getPrompt(), in.getHistory().current().toString(), -1);
-                //but that would mean more re-writing on the screen, (and prints an additional
-                //empty line), so using setBuffer directly:
-                Method setBuffer = in.getClass().getDeclaredMethod("setBuffer", String.class);
-
-                setBuffer.setAccessible(true);
-                setBuffer.invoke(in, in.getHistory().current().toString());
-                in.flush();
-            } catch (ReflectiveOperationException | IOException ex) {
-                throw new IllegalStateException(ex);
-            }
         }
     }
 
@@ -227,8 +230,6 @@ class ConsoleIOContext extends IOContext {
     }
 
     private static final String DOCUMENTATION_SHORTCUT = "\033\133\132"; //Shift-TAB
-    private static final String CTRL_UP = "\033\133\061\073\065\101"; //Ctrl-UP
-    private static final String CTRL_DOWN = "\033\133\061\073\065\102"; //Ctrl-DOWN
     private static final String[] SHORTCUT_FIXES = {
         "\033\015", //Alt-Enter (Linux)
         "\033\133\061\067\176", //F6/Alt-F1 (Mac)

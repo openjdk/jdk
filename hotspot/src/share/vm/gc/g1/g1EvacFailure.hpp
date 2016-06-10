@@ -27,7 +27,6 @@
 
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/heapRegionManager.hpp"
- #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -42,14 +41,6 @@ protected:
 
 public:
   G1ParRemoveSelfForwardPtrsTask();
-
-  void work(uint worker_id);
-};
-
-class G1RestorePreservedMarksTask : public AbstractGangTask {
-  OopAndMarkOopStack* _preserved_objs;
- public:
-  G1RestorePreservedMarksTask(OopAndMarkOopStack* preserved_objs);
 
   void work(uint worker_id);
 };

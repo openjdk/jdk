@@ -25,7 +25,7 @@ import java.awt.Component;
 import java.lang.reflect.Field;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import jdk.internal.org.objectweb.asm.*;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /*
  * @test PrimitiveHostClass

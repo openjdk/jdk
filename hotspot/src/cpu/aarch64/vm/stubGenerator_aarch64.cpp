@@ -719,6 +719,48 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
+  address generate_zero_longs(Register base, Register cnt) {
+    Register tmp = rscratch1;
+    Register tmp2 = rscratch2;
+    int zva_length = VM_Version::zva_length();
+    Label initial_table_end, loop_zva;
+    Label fini;
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "zero_longs");
+    address start = __ pc();
+
+    // Base must be 16 byte aligned. If not just return and let caller handle it
+    __ tst(base, 0x0f);
+    __ br(Assembler::NE, fini);
+    // Align base with ZVA length.
+    __ neg(tmp, base);
+    __ andr(tmp, tmp, zva_length - 1);
+
+    // tmp: the number of bytes to be filled to align the base with ZVA length.
+    __ add(base, base, tmp);
+    __ sub(cnt, cnt, tmp, Assembler::ASR, 3);
+    __ adr(tmp2, initial_table_end);
+    __ sub(tmp2, tmp2, tmp, Assembler::LSR, 2);
+    __ br(tmp2);
+
+    for (int i = -zva_length + 16; i < 0; i += 16)
+      __ stp(zr, zr, Address(base, i));
+    __ bind(initial_table_end);
+
+    __ sub(cnt, cnt, zva_length >> 3);
+    __ bind(loop_zva);
+    __ dc(Assembler::ZVA, base);
+    __ subs(cnt, cnt, zva_length >> 3);
+    __ add(base, base, zva_length);
+    __ br(Assembler::GE, loop_zva);
+    __ add(cnt, cnt, zva_length >> 3); // count not zeroed by DC ZVA
+    __ bind(fini);
+    __ ret(lr);
+
+    return start;
+  }
+
   typedef enum {
     copy_forwards = 1,
     copy_backwards = -1
@@ -2021,6 +2063,154 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  //
+  // Generate stub for array fill. If "aligned" is true, the
+  // "to" address is assumed to be heapword aligned.
+  //
+  // Arguments for generated stub:
+  //   to:    c_rarg0
+  //   value: c_rarg1
+  //   count: c_rarg2 treated as signed
+  //
+  address generate_fill(BasicType t, bool aligned, const char *name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    BLOCK_COMMENT("Entry:");
+
+    const Register to        = c_rarg0;  // source array address
+    const Register value     = c_rarg1;  // value
+    const Register count     = c_rarg2;  // elements count
+
+    const Register bz_base = r10;        // base for block_zero routine
+    const Register cnt_words = r11;      // temp register
+
+    __ enter();
+
+    Label L_fill_elements, L_exit1;
+
+    int shift = -1;
+    switch (t) {
+      case T_BYTE:
+        shift = 0;
+        __ cmpw(count, 8 >> shift); // Short arrays (< 8 bytes) fill by element
+        __ bfi(value, value, 8, 8);   // 8 bit -> 16 bit
+        __ bfi(value, value, 16, 16); // 16 bit -> 32 bit
+        __ br(Assembler::LO, L_fill_elements);
+        break;
+      case T_SHORT:
+        shift = 1;
+        __ cmpw(count, 8 >> shift); // Short arrays (< 8 bytes) fill by element
+        __ bfi(value, value, 16, 16); // 16 bit -> 32 bit
+        __ br(Assembler::LO, L_fill_elements);
+        break;
+      case T_INT:
+        shift = 2;
+        __ cmpw(count, 8 >> shift); // Short arrays (< 8 bytes) fill by element
+        __ br(Assembler::LO, L_fill_elements);
+        break;
+      default: ShouldNotReachHere();
+    }
+
+    // Align source address at 8 bytes address boundary.
+    Label L_skip_align1, L_skip_align2, L_skip_align4;
+    if (!aligned) {
+      switch (t) {
+        case T_BYTE:
+          // One byte misalignment happens only for byte arrays.
+          __ tbz(to, 0, L_skip_align1);
+          __ strb(value, Address(__ post(to, 1)));
+          __ subw(count, count, 1);
+          __ bind(L_skip_align1);
+          // Fallthrough
+        case T_SHORT:
+          // Two bytes misalignment happens only for byte and short (char) arrays.
+          __ tbz(to, 1, L_skip_align2);
+          __ strh(value, Address(__ post(to, 2)));
+          __ subw(count, count, 2 >> shift);
+          __ bind(L_skip_align2);
+          // Fallthrough
+        case T_INT:
+          // Align to 8 bytes, we know we are 4 byte aligned to start.
+          __ tbz(to, 2, L_skip_align4);
+          __ strw(value, Address(__ post(to, 4)));
+          __ subw(count, count, 4 >> shift);
+          __ bind(L_skip_align4);
+          break;
+        default: ShouldNotReachHere();
+      }
+    }
+
+    //
+    //  Fill large chunks
+    //
+    __ lsrw(cnt_words, count, 3 - shift); // number of words
+    __ bfi(value, value, 32, 32);         // 32 bit -> 64 bit
+    __ subw(count, count, cnt_words, Assembler::LSL, 3 - shift);
+    if (UseBlockZeroing) {
+      Label non_block_zeroing, rest;
+      // count >= BlockZeroingLowLimit && value == 0
+      __ cmp(cnt_words, BlockZeroingLowLimit >> 3);
+      __ ccmp(value, 0 /* comparing value */, 0 /* NZCV */, Assembler::GE);
+      __ br(Assembler::NE, non_block_zeroing);
+      __ mov(bz_base, to);
+      __ block_zero(bz_base, cnt_words, true);
+      __ mov(to, bz_base);
+      __ b(rest);
+      __ bind(non_block_zeroing);
+      __ fill_words(to, cnt_words, value);
+      __ bind(rest);
+    }
+    else {
+      __ fill_words(to, cnt_words, value);
+    }
+
+    // Remaining count is less than 8 bytes. Fill it by a single store.
+    // Note that the total length is no less than 8 bytes.
+    if (t == T_BYTE || t == T_SHORT) {
+      Label L_exit1;
+      __ cbzw(count, L_exit1);
+      __ add(to, to, count, Assembler::LSL, shift); // points to the end
+      __ str(value, Address(to, -8));    // overwrite some elements
+      __ bind(L_exit1);
+      __ leave();
+      __ ret(lr);
+    }
+
+    // Handle copies less than 8 bytes.
+    Label L_fill_2, L_fill_4, L_exit2;
+    __ bind(L_fill_elements);
+    switch (t) {
+      case T_BYTE:
+        __ tbz(count, 0, L_fill_2);
+        __ strb(value, Address(__ post(to, 1)));
+        __ bind(L_fill_2);
+        __ tbz(count, 1, L_fill_4);
+        __ strh(value, Address(__ post(to, 2)));
+        __ bind(L_fill_4);
+        __ tbz(count, 2, L_exit2);
+        __ strw(value, Address(to));
+        break;
+      case T_SHORT:
+        __ tbz(count, 0, L_fill_4);
+        __ strh(value, Address(__ post(to, 2)));
+        __ bind(L_fill_4);
+        __ tbz(count, 1, L_exit2);
+        __ strw(value, Address(to));
+        break;
+      case T_INT:
+        __ cbzw(count, L_exit2);
+        __ strw(value, Address(to));
+        break;
+      default: ShouldNotReachHere();
+    }
+    __ bind(L_exit2);
+    __ leave();
+    __ ret(lr);
+    return start;
+  }
+
   void generate_arraycopy_stubs() {
     address entry;
     address entry_jbyte_arraycopy;
@@ -2032,6 +2222,8 @@ class StubGenerator: public StubCodeGenerator {
 
     generate_copy_longs(copy_f, r0, r1, rscratch2, copy_forwards);
     generate_copy_longs(copy_b, r0, r1, rscratch2, copy_backwards);
+
+    StubRoutines::aarch64::_zero_longs = generate_zero_longs(r10, r11);
 
     //*** jbyte
     // Always need aligned and unaligned versions
@@ -2124,6 +2316,12 @@ class StubGenerator: public StubCodeGenerator {
                                                                entry_jlong_arraycopy,
                                                                entry_checkcast_arraycopy);
 
+    StubRoutines::_jbyte_fill = generate_fill(T_BYTE, false, "jbyte_fill");
+    StubRoutines::_jshort_fill = generate_fill(T_SHORT, false, "jshort_fill");
+    StubRoutines::_jint_fill = generate_fill(T_INT, false, "jint_fill");
+    StubRoutines::_arrayof_jbyte_fill = generate_fill(T_BYTE, true, "arrayof_jbyte_fill");
+    StubRoutines::_arrayof_jshort_fill = generate_fill(T_SHORT, true, "arrayof_jshort_fill");
+    StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill");
   }
 
   void generate_math_stubs() { Unimplemented(); }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,7 +213,9 @@ public class PolicyParser {
                             new MessageFormat(ResourcesMgr.getString(
                                 "duplicate.keystore.domain.name"));
                         Object[] source = {domainName};
-                        throw new ParsingException(form.format(source));
+                        String msg = "duplicate keystore domain name: " +
+                                     domainName;
+                        throw new ParsingException(msg, form, source);
                     }
                 }
             } else {
@@ -743,7 +745,8 @@ public class PolicyParser {
                     ResourcesMgr.getString
                             ("expected.expect.read.end.of.file."));
             Object[] source = {expect};
-            throw new ParsingException(form.format(source));
+            String msg = "expected [" + expect + "], read [end of file]";
+            throw new ParsingException(msg, form, source);
         case StreamTokenizer.TT_WORD:
             if (expect.equalsIgnoreCase(st.sval)) {
                 lookahead = st.nextToken();
@@ -1244,7 +1247,8 @@ public class PolicyParser {
                 MessageFormat form = new MessageFormat(ResourcesMgr.getString(
                     "duplicate.keystore.name"));
                 Object[] source = {keystoreName};
-                throw new ParsingException(form.format(source));
+                String msg = "duplicate keystore name: " + keystoreName;
+                throw new ParsingException(msg, form, source);
             }
         }
 
@@ -1316,6 +1320,8 @@ public class PolicyParser {
         private static final long serialVersionUID = -4330692689482574072L;
 
         private String i18nMessage;
+        private MessageFormat form;
+        private Object[] source;
 
         /**
          * Constructs a ParsingException with the specified
@@ -1330,26 +1336,34 @@ public class PolicyParser {
             i18nMessage = msg;
         }
 
+        public ParsingException(String msg, MessageFormat form,
+                                Object[] source) {
+            super(msg);
+            this.form = form;
+            this.source = source;
+        }
+
         public ParsingException(int line, String msg) {
             super("line " + line + ": " + msg);
-            MessageFormat form = new MessageFormat
-                (ResourcesMgr.getString("line.number.msg"));
-            Object[] source = {line, msg};
-            i18nMessage = form.format(source);
+            // don't call form.format unless getLocalizedMessage is called
+            // to avoid unnecessary permission checks
+            form = new MessageFormat(ResourcesMgr.getString("line.number.msg"));
+            source = new Object[] {line, msg};
         }
 
         public ParsingException(int line, String expect, String actual) {
             super("line " + line + ": expected [" + expect +
                 "], found [" + actual + "]");
-            MessageFormat form = new MessageFormat(ResourcesMgr.getString
+            // don't call form.format unless getLocalizedMessage is called
+            // to avoid unnecessary permission checks
+            form = new MessageFormat(ResourcesMgr.getString
                 ("line.number.expected.expect.found.actual."));
-            Object[] source = {line, expect, actual};
-            i18nMessage = form.format(source);
+            source = new Object[] {line, expect, actual};
         }
 
         @Override
         public String getLocalizedMessage() {
-            return i18nMessage;
+            return i18nMessage != null ? i18nMessage : form.format(source);
         }
     }
 

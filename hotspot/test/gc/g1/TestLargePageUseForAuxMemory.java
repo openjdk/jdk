@@ -26,6 +26,7 @@
  * @summary Test that auxiliary data structures are allocated using large pages if available.
  * @bug 8058354 8079208
  * @key gc
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @requires (vm.gc=="G1" | vm.gc=="null")
  * @build jdk.test.lib.* sun.hotspot.WhiteBox

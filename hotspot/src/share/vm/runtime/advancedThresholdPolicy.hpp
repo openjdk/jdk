@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,9 +216,9 @@ protected:
   virtual void submit_compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread);
   // event() from SimpleThresholdPolicy would call these.
   virtual void method_invocation_event(const methodHandle& method, const methodHandle& inlinee,
-                                       CompLevel level, nmethod* nm, JavaThread* thread);
+                                       CompLevel level, CompiledMethod* nm, JavaThread* thread);
   virtual void method_back_branch_event(const methodHandle& method, const methodHandle& inlinee,
-                                        int bci, CompLevel level, nmethod* nm, JavaThread* thread);
+                                        int bci, CompLevel level, CompiledMethod* nm, JavaThread* thread);
 public:
   AdvancedThresholdPolicy() : _start_time(0) { }
   // Select task is called by CompileBroker. We should return a task or NULL.

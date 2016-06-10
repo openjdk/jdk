@@ -73,11 +73,9 @@ public abstract class EditorTestBase extends ReplToolTesting {
         for (String edit : new String[] {"/ed", "/edit"}) {
             test(new String[]{"-nostartup"},
                     a -> assertCommandOutputStartsWith(a, edit + " 1",
-                            "|  No definition or id found named: 1"),
-                    a -> assertCommandOutputStartsWith(a, edit + " -1",
-                            "|  No definition or id found named: -1"),
+                            "|  No such snippet: 1"),
                     a -> assertCommandOutputStartsWith(a, edit + " unknown",
-                            "|  No definition or id found named: unknown")
+                            "|  No such snippet: unknown")
             );
         }
     }
@@ -142,7 +140,7 @@ public abstract class EditorTestBase extends ReplToolTesting {
                     exit();
                     loadClass(true, "enum A {}", "enum", "A");
                 }),
-                a -> assertCommandCheckOutput(a, "/classes", assertClasses())
+                a -> assertCommandCheckOutput(a, "/types", assertClasses())
         );
     }
 
@@ -161,7 +159,7 @@ public abstract class EditorTestBase extends ReplToolTesting {
                     exit();
                     loadClass(true, "enum A {}", "enum", "A");
                 }),
-                a -> assertCommandCheckOutput(a, "/classes", assertClasses())
+                a -> assertCommandCheckOutput(a, "/types", assertClasses())
         );
     }
 

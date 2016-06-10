@@ -80,6 +80,10 @@ grant codeBase "jrt:/jdk.naming.dns" {
         permission java.security.AllPermission;
 };
 
+grant codeBase "jrt:/java.scripting" {
+        permission java.security.AllPermission;
+};
+
 grant codeBase "jrt:/jdk.scripting.nashorn" {
         permission java.security.AllPermission;
 };

@@ -390,6 +390,7 @@ public class MethodGenerator extends MethodVisitor {
         return EMPTY_LINK_LOGIC_TYPE.equals(type);
     }
 
+    @SuppressWarnings("deprecation")
     void memberInfoArray(final String className, final List<MemberInfo> mis) {
         if (mis.isEmpty()) {
             pushNull();

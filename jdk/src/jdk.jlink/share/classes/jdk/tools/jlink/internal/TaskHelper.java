@@ -52,7 +52,7 @@ import jdk.internal.module.ConfigurableModuleFinder.Phase;
 import jdk.tools.jlink.Jlink;
 import jdk.tools.jlink.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.plugin.Plugin;
-import jdk.tools.jlink.plugin.Plugin.CATEGORY;
+import jdk.tools.jlink.plugin.Plugin.Category;
 import jdk.tools.jlink.builder.DefaultImageBuilder;
 import jdk.tools.jlink.builder.ImageBuilder;
 import jdk.tools.jlink.plugin.PluginException;
@@ -346,7 +346,6 @@ public final class TaskHelper {
                 }
             }
 
-            PluginContextImpl pluginContext = new PluginContextImpl();
             List<Plugin> pluginsList = new ArrayList<>();
             for (Entry<Plugin, List<Map<String, String>>> entry : pluginToMaps.entrySet()) {
                 Plugin plugin = entry.getKey();
@@ -356,7 +355,7 @@ public final class TaskHelper {
                 // we call configure once for each occurrence. It is upto the plugin
                 // to 'merge' and/or 'override' arguments.
                 for (Map<String, String> map : argsMaps) {
-                    plugin.configure(Collections.unmodifiableMap(map), pluginContext);
+                    plugin.configure(Collections.unmodifiableMap(map));
                 }
 
                 if (!Utils.isDisabled(plugin)) {
@@ -371,7 +370,7 @@ public final class TaskHelper {
 
             }
             return new Jlink.PluginsConfiguration(pluginsList,
-                    builder, lastSorter, pluginContext);
+                    builder, lastSorter);
         }
     }
 
@@ -594,7 +593,7 @@ public final class TaskHelper {
                          + ": " + plugin.getClass().getName());
                     log.println(bundleHelper.getMessage("main.plugin.module")
                          + ": " + plugin.getClass().getModule().getName());
-                    CATEGORY category = Utils.getCategory(plugin);
+                    Category category = Utils.getCategory(plugin);
                     log.println(bundleHelper.getMessage("main.plugin.category")
                          + ": " + category.getName());
                     log.println(bundleHelper.getMessage("main.plugin.state")
@@ -706,7 +705,7 @@ public final class TaskHelper {
         Configuration bootConfiguration = Layer.boot().configuration();
         try {
             Configuration cf = bootConfiguration
-                .resolveRequiresAndUses(ModuleFinder.empty(),
+                .resolveRequiresAndUses(ModuleFinder.of(),
                                         finder,
                                         Collections.emptySet());
             ClassLoader scl = ClassLoader.getSystemClassLoader();

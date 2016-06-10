@@ -41,6 +41,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  *
  * @author Jamie Ho
  */
+@Deprecated
 public abstract class AbstractDoclet {
 
     /**

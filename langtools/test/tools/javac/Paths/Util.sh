@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,10 @@
 # Utilities for shell tests
 
 : ${TESTSRC=.} ${TESTCLASSES=.}
- java="${TESTJAVA+${TESTJAVA}/bin/}java"
-javac="${TESTJAVA+${TESTJAVA}/bin/}javac"
-  jar="${TESTJAVA+${TESTJAVA}/bin/}jar"
+  java="${TESTJAVA+${TESTJAVA}/bin/}java"
+ javac="${TESTJAVA+${TESTJAVA}/bin/}javac"
+   jar="${TESTJAVA+${TESTJAVA}/bin/}jar"
+jimage="${TESTJAVA+${TESTJAVA}/bin/}jimage"
 
 case `uname -s` in
   Windows*|CYGWIN*)
@@ -105,21 +106,6 @@ BadJarFile() {
     for jarfilename in "$@"; do pwd > "$jarfilename"; done
 }
 
-# #----------------------------------------------------------------
-# # Usage: BCP=`DefaultBootClassPath`
-# # Returns default bootclasspath, discarding non-existent entries
-# #----------------------------------------------------------------
-# DefaultBootClassPath() {
-#     echo 'public class B {public static void main(String[] a) {
-#     System.out.println(System.getProperty("sun.boot.class.path"));}}' > B.java
-#     "$javac" ${TESTTOOLVMOPTS} B.java
-#     _BCP_=""
-#     for elt in `"$java" ${TESTVMOPTS} B | tr "${PS}" " "`; do
-#       test -r "$elt" -a -n "$elt" && _BCP_="${_BCP_:+${_BCP_}${PS}}${elt}"
-#     done
-#     rm -f B.java B.class
-#     printf "%s" "$_BCP_"      # Don't use echo -- unsafe on Windows
-# }
 
 #----------------------------------------------------------------
 # Foil message localization

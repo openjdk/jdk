@@ -28,7 +28,15 @@
 //
 // Defines Linux specific flags. They are not available on other platforms.
 //
-#define RUNTIME_OS_FLAGS(develop, develop_pd, product, product_pd, diagnostic, notproduct, range, constraint) \
+#define RUNTIME_OS_FLAGS(develop, \
+                         develop_pd, \
+                         product, \
+                         product_pd, \
+                         diagnostic, \
+                         notproduct, \
+                         range, \
+                         constraint, \
+                         writeable) \
                                                                         \
   product(bool, UseOprofile, false,                                     \
         "enable support for Oprofile profiler")                         \

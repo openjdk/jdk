@@ -29,6 +29,7 @@ import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.Dependencies.ClassFileError;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -48,17 +49,18 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * ClassFileReader reads ClassFile(s) of a given path that can be
  * a .class file, a directory, or a JAR file.
  */
-public class ClassFileReader {
+public class ClassFileReader implements Closeable {
     /**
      * Returns a ClassFileReader instance of a given path.
      */
     public static ClassFileReader newInstance(Path path) throws IOException {
-        if (!Files.exists(path)) {
+        if (Files.notExists(path)) {
             throw new FileNotFoundException(path.toString());
         }
 
@@ -173,7 +175,11 @@ public class ClassFileReader {
 
     static boolean isClass(Path file) {
         String fn = file.getFileName().toString();
-        return fn.endsWith(".class") && !fn.equals(MODULE_INFO);
+        return fn.endsWith(".class");
+    }
+
+    @Override
+    public void close() throws IOException {
     }
 
     class FileIterator implements Iterator<ClassFile> {
@@ -218,13 +224,12 @@ public class ClassFileReader {
         }
 
         protected Set<String> scan() {
-            try {
-                return Files.walk(path, Integer.MAX_VALUE)
-                        .filter(ClassFileReader::isClass)
-                        .map(f -> path.relativize(f))
-                        .map(Path::toString)
-                        .map(p -> p.replace(File.separatorChar, '/'))
-                        .collect(Collectors.toSet());
+            try (Stream<Path> stream = Files.walk(path, Integer.MAX_VALUE)) {
+                return stream.filter(ClassFileReader::isClass)
+                             .map(f -> path.relativize(f))
+                             .map(Path::toString)
+                             .map(p -> p.replace(File.separatorChar, '/'))
+                             .collect(Collectors.toSet());
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -235,7 +240,7 @@ public class ClassFileReader {
                 int i = name.lastIndexOf('.');
                 String pathname = name.replace(".", fsSep) + ".class";
                 Path p = path.resolve(pathname);
-                if (!Files.exists(p)) {
+                if (Files.notExists(p)) {
                     p = path.resolve(pathname.substring(0, i) + "$" +
                             pathname.substring(i+1, pathname.length()));
                 }
@@ -261,13 +266,16 @@ public class ClassFileReader {
         }
 
         class DirectoryIterator implements Iterator<ClassFile> {
-            private List<Path> entries;
+            private final List<Path> entries;
             private int index = 0;
             DirectoryIterator() throws IOException {
-                entries = Files.walk(path, Integer.MAX_VALUE)
-                               .filter(ClassFileReader::isClass)
-                               .collect(Collectors.toList());
-                index = 0;
+                List<Path> paths = null;
+                try (Stream<Path> stream = Files.walk(path, Integer.MAX_VALUE)) {
+                    paths = stream.filter(ClassFileReader::isClass)
+                                  .collect(Collectors.toList());
+                }
+                this.entries = paths;
+                this.index = 0;
             }
 
             public boolean hasNext() {
@@ -303,10 +311,15 @@ public class ClassFileReader {
             this.jarfile = jf;
         }
 
+        @Override
+        public void close() throws IOException {
+            jarfile.close();
+        }
+
         protected Set<String> scan() {
             try (JarFile jf = new JarFile(path.toFile())) {
                 return jf.stream().map(JarEntry::getName)
-                         .filter(n -> n.endsWith(".class") && !n.endsWith(MODULE_INFO))
+                         .filter(n -> n.endsWith(".class"))
                          .collect(Collectors.toSet());
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
@@ -409,7 +422,7 @@ public class ClassFileReader {
             while (entries.hasMoreElements()) {
                 JarEntry e = entries.nextElement();
                 String name = e.getName();
-                if (name.endsWith(".class") && !name.equals(MODULE_INFO)) {
+                if (name.endsWith(".class")) {
                     return e;
                 }
             }

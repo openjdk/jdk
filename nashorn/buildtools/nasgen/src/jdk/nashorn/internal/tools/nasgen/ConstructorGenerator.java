@@ -178,6 +178,7 @@ public class ConstructorGenerator extends ClassGenerator {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void callSuper(final MethodGenerator mi) {
         String superClass, superDesc;
         mi.loadThis();

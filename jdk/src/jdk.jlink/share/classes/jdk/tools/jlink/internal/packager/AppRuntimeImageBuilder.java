@@ -30,7 +30,7 @@ import jdk.tools.jlink.Jlink;
 import jdk.tools.jlink.builder.ImageBuilder;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.builder.*;
-import jdk.tools.jlink.plugin.Pool;
+import jdk.tools.jlink.plugin.ModulePool;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;

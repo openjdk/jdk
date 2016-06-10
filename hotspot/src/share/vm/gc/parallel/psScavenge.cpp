@@ -443,7 +443,7 @@ bool PSScavenge::invoke_no_policy() {
     promotion_failure_occurred = PSPromotionManager::post_scavenge(_gc_tracer);
     if (promotion_failure_occurred) {
       clean_up_failed_promotion();
-      log_info(gc)("Promotion failed");
+      log_info(gc, promotion)("Promotion failed");
     }
 
     _gc_tracer.report_tenuring_threshold(tenuring_threshold());

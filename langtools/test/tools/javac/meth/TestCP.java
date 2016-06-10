@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,9 @@ import java.io.*;
 
 public class TestCP {
 
-    static class TestClass {
+    static class TestMethodHandleInvokeExact {
+        static final String PS_TYPE = "(Ljava/lang/String;IC)Ljava/lang/Number;";
+
         void test(MethodHandle mh) throws Throwable {
             Number n = (Number)mh.invokeExact("daddy",1,'n');
             n = (Number)mh.invokeExact("bunny",1,'d');
@@ -50,9 +52,43 @@ public class TestCP {
         }
     }
 
-    static final String PS_TYPE = "(Ljava/lang/String;IC)Ljava/lang/Number;";
+    static class TestVarHandleGet {
+        static final String PS_TYPE = "(Ljava/lang/String;IC)Ljava/lang/Number;";
+
+        // Test with sig-poly return type
+        void test(VarHandle vh) throws Throwable {
+            Number n = (Number)vh.get("daddy",1,'n');
+            n = (Number)vh.get("bunny",1,'d');
+            n = (Number)(vh.get("foo",1,'d'));
+            n = (Number)((vh.get("bar",1,'d')));
+        }
+    }
+
+    static class TestVarHandleSet {
+        static final String PS_TYPE = "(Ljava/lang/String;IC)V";
+
+        // Test with non-sig-poly void return type
+        void test(VarHandle vh) throws Throwable {
+            vh.set("daddy",1,'n');
+            vh.set("bunny",1,'d');
+            vh.set("foo",1,'d');
+            vh.set("bar",1,'d');
+        }
+    }
+
+    static class TestVarHandleCompareAndSet {
+        static final String PS_TYPE = "(Ljava/lang/String;IC)Z";
+
+        // Test with non-sig-poly boolean return type
+        void test(VarHandle vh) throws Throwable {
+            boolean r = vh.compareAndSet("daddy",1,'n');
+            r = vh.compareAndSet("bunny",1,'d');
+            r = (vh.compareAndSet("foo",1,'d'));
+            r = ((vh.compareAndSet("bar",1,'d')));
+        }
+    }
+
     static final int PS_CALLS_COUNT = 4;
-    static final String SUBTEST_NAME = TestClass.class.getName() + ".class";
     static final String TEST_METHOD_NAME = "test";
 
     public static void main(String... args) throws Exception {
@@ -60,12 +96,32 @@ public class TestCP {
     }
 
     public void run() throws Exception {
-        String workDir = System.getProperty("test.classes");
-        File compiledTest = new File(workDir, SUBTEST_NAME);
-        verifyMethodHandleInvocationDescriptors(compiledTest);
+        verifySigPolyInvokeVirtual(
+                getTestFile(TestMethodHandleInvokeExact.class),
+                TestMethodHandleInvokeExact.PS_TYPE);
+
+        verifySigPolyInvokeVirtual(
+                getTestFile(TestVarHandleGet.class),
+                TestVarHandleGet.PS_TYPE);
+
+        verifySigPolyInvokeVirtual(
+                getTestFile(TestVarHandleSet.class),
+                TestVarHandleSet.PS_TYPE);
+
+        verifySigPolyInvokeVirtual(
+                getTestFile(TestVarHandleCompareAndSet.class),
+                TestVarHandleCompareAndSet.PS_TYPE);
     }
 
-    void verifyMethodHandleInvocationDescriptors(File f) {
+    static File getTestFile(Class<?> c) {
+        String workDir = System.getProperty("test.classes");
+        return new File(workDir, getTestName(c));
+    }
+    static String getTestName(Class<?> c) {
+        return c.getName() + ".class";
+    }
+
+    void verifySigPolyInvokeVirtual(File f, String psType) {
         System.err.println("verify: " + f);
         try {
             int count = 0;
@@ -98,7 +154,7 @@ public class TestCP {
                     CONSTANT_Methodref_info methRef =
                             (CONSTANT_Methodref_info)cf.constant_pool.get(cp_entry);
                     String type = methRef.getNameAndTypeInfo().getType();
-                    if (!type.equals(PS_TYPE)) {
+                    if (!type.equals(psType)) {
                         throw new Error("Unexpected type in polymorphic signature call: " + type);
                     }
                 }

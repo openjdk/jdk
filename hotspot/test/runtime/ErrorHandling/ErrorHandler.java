@@ -27,6 +27,7 @@
  * @bug 8015884
  * @summary Exercise HotSpot error handling code by invoking java with
  *          -XX:ErrorHandlerTest option to cause an error report. Check the results.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @run driver ErrorHandler
  */

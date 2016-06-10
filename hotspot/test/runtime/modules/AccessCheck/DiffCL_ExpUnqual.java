@@ -27,6 +27,7 @@
  * @test
  * @summary Test that if module m1 can read module m2, and package p2 in m2 is
  *          exported unqualifiedly, then class p1.c1 in m1 can read p2.c2 in m2.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @compile myloaders/MyDiffClassLoader.java
  * @compile p2/c2.java
@@ -91,7 +92,7 @@ public class DiffCL_ExpUnqual {
         // Resolves "m1"
         Configuration cf = Layer.boot()
                 .configuration()
-                .resolveRequires(finder, ModuleFinder.empty(), Set.of("m1"));
+                .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
 
         // map each module to differing class loaders for this test
         Map<String, ClassLoader> map = new HashMap<>();

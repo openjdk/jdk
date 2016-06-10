@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -361,14 +361,14 @@ int ciBytecodeStream::get_method_index() {
 ciMethod* ciBytecodeStream::get_method(bool& will_link, ciSignature* *declared_signature_result) {
   VM_ENTRY_MARK;
   ciEnv* env = CURRENT_ENV;
-  constantPoolHandle cpool(_method->get_Method()->constants());
+  constantPoolHandle cpool(THREAD, _method->get_Method()->constants());
   ciMethod* m = env->get_method_by_index(cpool, get_method_index(), cur_bc(), _holder);
   will_link = m->is_loaded();
 
   // Use the MethodType stored in the CP cache to create a signature
   // with correct types (in respect to class loaders).
   if (has_method_type()) {
-    ciSymbol*     sig_sym     = env->get_symbol(cpool->symbol_at(get_method_signature_index()));
+    ciSymbol*     sig_sym     = env->get_symbol(cpool->symbol_at(get_method_signature_index(cpool)));
     ciKlass*      pool_holder = env->get_klass(cpool->pool_holder());
     ciMethodType* method_type = get_method_type();
     ciSignature* declared_signature = new (env->arena()) ciSignature(pool_holder, sig_sym, method_type);
@@ -465,9 +465,8 @@ int ciBytecodeStream::get_method_holder_index() {
 // Get the constant pool index of the signature of the method
 // referenced by the current bytecode.  Used for generating
 // deoptimization information.
-int ciBytecodeStream::get_method_signature_index() {
+int ciBytecodeStream::get_method_signature_index(const constantPoolHandle& cpool) {
   GUARDED_VM_ENTRY(
-    ConstantPool* cpool = _holder->get_instanceKlass()->constants();
     const int method_index = get_method_index();
     const int name_and_type_index = cpool->name_and_type_ref_index_at(method_index);
     return cpool->signature_ref_index_at(name_and_type_index);

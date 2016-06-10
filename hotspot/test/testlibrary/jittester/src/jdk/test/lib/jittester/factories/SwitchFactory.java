@@ -34,7 +34,7 @@ import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Rule;
 import jdk.test.lib.jittester.Switch;
 import jdk.test.lib.jittester.Type;
-import jdk.test.lib.jittester.TypeUtil;
+import jdk.test.lib.jittester.utils.TypeUtil;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.types.TypeByte;
 import jdk.test.lib.jittester.types.TypeChar;
@@ -63,7 +63,7 @@ class SwitchFactory extends SafeFactory {
     @Override
     protected IRNode sproduce() throws ProductionFailedException {
         if (statementLimit > 0 && complexityLimit > 0) {
-            ArrayList<Type> switchTypes = new ArrayList<>();
+            List<Type> switchTypes = new ArrayList<>();
             switchTypes.add(new TypeChar());
             switchTypes.add(new TypeByte());
             switchTypes.add(new TypeShort());
@@ -78,8 +78,8 @@ class SwitchFactory extends SafeFactory {
                     .setCanHaveReturn(canHaveReturn);
             MAIN_LOOP:
             for (Type type : switchTypes) {
-                ArrayList<IRNode> caseConsts = new ArrayList<>();
-                ArrayList<IRNode> caseBlocks = new ArrayList<>();
+                List<IRNode> caseConsts = new ArrayList<>();
+                List<IRNode> caseBlocks = new ArrayList<>();
                 try {
                     int accumulatedStatements = 0;
                     int currentStatementsLimit = 0;
@@ -94,10 +94,10 @@ class SwitchFactory extends SafeFactory {
                             .getLimitedExpressionFactory()
                             .produce();
                     accumulatedComplexity += currentComplexityLimit;
-                    ArrayList<Type> caseTypes = new ArrayList<>();
+                    List<Type> caseTypes = new ArrayList<>();
                     caseTypes.add(new TypeByte());
                     caseTypes.add(new TypeChar());
-                    caseTypes = new ArrayList<>(TypeUtil.getLessCapatiousOrEqualThan(caseTypes,
+                    caseTypes = new ArrayList<>(TypeUtil.getLessCapaciousOrEqualThan(caseTypes,
                             (BuiltInType) type));
                     if (PseudoRandom.randomBoolean()) { // "default"
                         currentStatementsLimit = (int) (PseudoRandom.random()

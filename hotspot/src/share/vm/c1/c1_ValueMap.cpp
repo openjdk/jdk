@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@
 
 ValueMap::ValueMap()
   : _nesting(0)
-  , _entries(ValueMapInitialSize, NULL)
+  , _entries(ValueMapInitialSize, ValueMapInitialSize, NULL)
   , _killed_values()
   , _entry_count(0)
 {
@@ -56,7 +56,7 @@ ValueMap::ValueMap()
 
 ValueMap::ValueMap(ValueMap* old)
   : _nesting(old->_nesting + 1)
-  , _entries(old->_entries.length())
+  , _entries(old->_entries.length(), old->_entries.length(), NULL)
   , _killed_values()
   , _entry_count(old->_entry_count)
 {
@@ -72,7 +72,7 @@ void ValueMap::increase_table_size() {
   int new_size = old_size * 2 + 1;
 
   ValueMapEntryList worklist(8);
-  ValueMapEntryArray new_entries(new_size, NULL);
+  ValueMapEntryArray new_entries(new_size, new_size, NULL);
   int new_entry_count = 0;
 
   TRACE_VALUE_NUMBERING(tty->print_cr("increasing table size from %d to %d", old_size, new_size));
@@ -486,7 +486,7 @@ bool ShortLoopOptimizer::process(BlockBegin* loop_header) {
 
 GlobalValueNumbering::GlobalValueNumbering(IR* ir)
   : _current_map(NULL)
-  , _value_maps(ir->linear_scan_order()->length(), NULL)
+  , _value_maps(ir->linear_scan_order()->length(), ir->linear_scan_order()->length(), NULL)
   , _compilation(ir->compilation())
 {
   TRACE_VALUE_NUMBERING(tty->print_cr("****** start of global value numbering"));

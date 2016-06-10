@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary  /test/lib /compiler/whitebox ..
  * @build sun.hotspot.WhiteBox
  * @compile/module=java.base java/lang/reflect/ModuleHelper.java

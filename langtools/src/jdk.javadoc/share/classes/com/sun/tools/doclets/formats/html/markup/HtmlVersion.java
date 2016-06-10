@@ -30,6 +30,7 @@ package com.sun.tools.doclets.formats.html.markup;
  *
  * @author Bhavesh Patel
  */
+@Deprecated
 public enum HtmlVersion {
     HTML4,
     HTML5,
