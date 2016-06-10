@@ -2182,39 +2182,21 @@ const char* InstanceKlass::signature_name() const {
   return dest;
 }
 
-const jbyte* InstanceKlass::package_from_name(const Symbol* name, int& length) {
-  ResourceMark rm;
-  length = 0;
+// Used to obtain the package name from a fully qualified class name.
+Symbol* InstanceKlass::package_from_name(const Symbol* name, TRAPS) {
   if (name == NULL) {
     return NULL;
   } else {
-    const jbyte* base_name = name->base();
-    const jbyte* last_slash = UTF8::strrchr(base_name, name->utf8_length(), '/');
-
-    if (last_slash == NULL) {
-      // No package name
+    if (name->utf8_length() <= 0) {
       return NULL;
-    } else {
-      // Skip over '['s
-      if (*base_name == '[') {
-        do {
-          base_name++;
-        } while (*base_name == '[');
-        if (*base_name != 'L') {
-          // Fully qualified class names should not contain a 'L'.
-          // Set length to -1 to indicate that the package name
-          // could not be obtained due to an error condition.
-          // In this situtation, is_same_class_package returns false.
-          length = -1;
-          return NULL;
-        }
-      }
-
-      // Found the package name, look it up in the symbol table.
-      length = last_slash - base_name;
-      assert(length > 0, "Bad length for package name");
-      return base_name;
     }
+    ResourceMark rm;
+    const char* package_name = ClassLoader::package_from_name((const char*) name->as_C_string());
+    if (package_name == NULL) {
+      return NULL;
+    }
+    Symbol* pkg_name = SymbolTable::new_symbol(package_name, THREAD);
+    return pkg_name;
   }
 }
 
@@ -2230,12 +2212,9 @@ ModuleEntry* InstanceKlass::module() const {
 }
 
 void InstanceKlass::set_package(ClassLoaderData* loader_data, TRAPS) {
-  int length = 0;
-  const jbyte* base_name = package_from_name(name(), length);
+  TempNewSymbol pkg_name = package_from_name(name(), CHECK);
 
-  if (base_name != NULL && loader_data != NULL) {
-    TempNewSymbol pkg_name = SymbolTable::new_symbol((const char*)base_name, length, CHECK);
-
+  if (pkg_name != NULL && loader_data != NULL) {
     // Find in class loader's package entry table.
     _package_entry = loader_data->packages()->lookup_only(pkg_name);
 
@@ -2331,20 +2310,18 @@ bool InstanceKlass::is_same_class_package(oop class_loader1, const Symbol* class
   if (class_loader1 != class_loader2) {
     return false;
   } else if (class_name1 == class_name2) {
-    return true;                // skip painful bytewise comparison
+    return true;
   } else {
     ResourceMark rm;
 
-    // The Symbol*'s are in UTF8 encoding. Since we only need to check explicitly
-    // for ASCII characters ('/', 'L', '['), we can keep them in UTF8 encoding.
-    // Otherwise, we just compare jbyte values between the strings.
-    int length1 = 0;
-    int length2 = 0;
-    const jbyte *name1 = package_from_name(class_name1, length1);
-    const jbyte *name2 = package_from_name(class_name2, length2);
+    bool bad_class_name = false;
+    const char* name1 = ClassLoader::package_from_name((const char*) class_name1->as_C_string(), &bad_class_name);
+    if (bad_class_name) {
+      return false;
+    }
 
-    if ((length1 < 0) || (length2 < 0)) {
-      // error occurred parsing package name.
+    const char* name2 = ClassLoader::package_from_name((const char*) class_name2->as_C_string(), &bad_class_name);
+    if (bad_class_name) {
       return false;
     }
 
@@ -2354,13 +2331,13 @@ bool InstanceKlass::is_same_class_package(oop class_loader1, const Symbol* class
       return name1 == name2;
     }
 
-    // Check that package part is identical
-    return UTF8::equal(name1, length1, name2, length2);
+    // Check that package is identical
+    return (strcmp(name1, name2) == 0);
   }
 }
 
 // Returns true iff super_method can be overridden by a method in targetclassname
-// See JSL 3rd edition 8.4.6.1
+// See JLS 3rd edition 8.4.6.1
 // Assumes name-signature match
 // "this" is InstanceKlass of super_method which must exist
 // note that the InstanceKlass of the method in the targetclassname has not always been created yet

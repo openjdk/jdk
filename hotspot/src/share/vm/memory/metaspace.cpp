@@ -2933,7 +2933,7 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
   // Don't use large pages for the class space.
   bool large_pages = false;
 
-#ifndef AARCH64
+#if !(defined(AARCH64) || defined(AIX))
   ReservedSpace metaspace_rs = ReservedSpace(compressed_class_space_size(),
                                              _reserve_alignment,
                                              large_pages,
@@ -2945,18 +2945,25 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
   // bits.
   if ((uint64_t)requested_addr + compressed_class_space_size() < 4*G) {
     metaspace_rs = ReservedSpace(compressed_class_space_size(),
-                                             _reserve_alignment,
-                                             large_pages,
-                                             requested_addr);
+                                 _reserve_alignment,
+                                 large_pages,
+                                 requested_addr);
   }
 
   if (! metaspace_rs.is_reserved()) {
-    // Try to align metaspace so that we can decode a compressed klass
-    // with a single MOVK instruction.  We can do this iff the
+    // Aarch64: Try to align metaspace so that we can decode a compressed
+    // klass with a single MOVK instruction.  We can do this iff the
     // compressed class base is a multiple of 4G.
-    for (char *a = (char*)align_ptr_up(requested_addr, 4*G);
+    // Aix: Search for a place where we can find memory. If we need to load
+    // the base, 4G alignment is helpful, too.
+    size_t increment = AARCH64_ONLY(4*)G;
+    for (char *a = (char*)align_ptr_up(requested_addr, increment);
          a < (char*)(1024*G);
-         a += 4*G) {
+         a += increment) {
+      if (a == (char *)(32*G)) {
+        // Go faster from here on. Zero-based is no longer possible.
+        increment = 4*G;
+      }
 
 #if INCLUDE_CDS
       if (UseSharedSpaces
