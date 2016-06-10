@@ -4673,6 +4673,7 @@ void ClassFileParser::verify_legal_utf8(const unsigned char* buffer,
 }
 
 // Unqualified names may not contain the characters '.', ';', '[', or '/'.
+// In class names, '/' separates unqualified names.  This is verified in this function also.
 // Method names also may not contain the characters '<' or '>', unless <init>
 // or <clinit>.  Note that method names may not be <init> or <clinit> in this
 // method.  Because these names have been checked as special cases before
@@ -4698,8 +4699,16 @@ bool ClassFileParser::verify_unqualified_name(const char* name,
       if (ch == ';' || ch == '[' ) {
         return false;   // do not permit '.', ';', or '['
       }
-      if (type != ClassFileParser::LegalClass && ch == '/') {
-        return false;   // do not permit '/' unless it's class name
+      if (ch == '/') {
+        // check for '//' or leading or trailing '/' which are not legal
+        // unqualified name must not be empty
+        if (type == ClassFileParser::LegalClass) {
+          if (p == name || p+1 >= name+length || *(p+1) == '/') {
+           return false;
+          }
+        } else {
+          return false;   // do not permit '/' unless it's class name
+        }
       }
       if (type == ClassFileParser::LegalMethod && (ch == '<' || ch == '>')) {
         return false;   // do not permit '<' or '>' in method names
