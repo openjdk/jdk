@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 6842011
+ * @bug 6842011 8158758
  * @summary Test if StackOverflowError occurs during printing landscape with
  *          scale and transform.
  * @run main LandscapeStackOverflow
@@ -46,9 +46,6 @@ public class LandscapeStackOverflow {
 
         PrintRequestAttributeSet attributes = new HashPrintRequestAttributeSet();
         attributes.add( OrientationRequested.LANDSCAPE );
-
-        boolean print = printjob.printDialog( attributes );
-        if( !print ) return;
 
         try {
             printjob.setPrintable( new Painter() );
