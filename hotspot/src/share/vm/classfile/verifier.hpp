@@ -61,7 +61,7 @@ class Verifier : AllStatic {
   // Relax certain verifier checks to enable some broken 1.1 apps to run on 1.2.
   static bool relax_verify_for(oop class_loader);
 
-  // Print output for classresolve
+  // Print output for class+resolve
   static void trace_class_resolution(Klass* resolve_class, InstanceKlass* verify_class);
 
  private:

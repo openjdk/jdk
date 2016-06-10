@@ -40,6 +40,7 @@ import java.nio.file.Paths;
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @requires vm.opt.G1HeapRegionSize == "null" | vm.opt.G1HeapRegionSize == "1M"
  * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build sun.hotspot.WhiteBox
  *        gc.testlibrary.Helpers

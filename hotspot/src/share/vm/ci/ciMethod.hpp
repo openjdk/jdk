@@ -36,7 +36,6 @@
 
 class ciMethodBlocks;
 class MethodLiveness;
-class BitMap;
 class Arena;
 class BCEscapeAnalyzer;
 class InlineTree;
@@ -233,10 +232,10 @@ class ciMethod : public ciMetadata {
   // used when gc'ing an interpreter frame we need to use its viewpoint
   // during OSR when loading the locals.
 
-  BitMap  live_local_oops_at_bci(int bci);
+  ResourceBitMap live_local_oops_at_bci(int bci);
 
 #ifdef COMPILER1
-  const BitMap  bci_block_start();
+  const BitMap& bci_block_start();
 #endif
 
   ciTypeFlow*   get_flow_analysis();

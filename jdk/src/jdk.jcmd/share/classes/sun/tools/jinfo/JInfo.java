@@ -25,15 +25,14 @@
 
 package sun.tools.jinfo;
 
-import java.util.Arrays;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 
 import com.sun.tools.attach.VirtualMachine;
 
 import sun.tools.attach.HotSpotVirtualMachine;
-import jdk.internal.vm.agent.spi.ToolProvider;
-import jdk.internal.vm.agent.spi.ToolProviderFinder;
+import sun.tools.common.ProcessArgumentMatcher;
 
 /*
  * This class is the main class for the JInfo utility. It parses its arguments
@@ -41,155 +40,94 @@ import jdk.internal.vm.agent.spi.ToolProviderFinder;
  * or an SA tool.
  */
 final public class JInfo {
-    private static final String SA_JINFO_TOOL_NAME = "jinfo";
-    private boolean useSA = false;
-    private String[] args = null;
-
-    private JInfo(String[] args) throws IllegalArgumentException {
-        if (args.length == 0) {
-            throw new IllegalArgumentException();
-        }
-
-        int argCopyIndex = 0;
-        // First determine if we should launch SA or not
-        if (args[0].equals("-F")) {
-            // delete the -F
-            argCopyIndex = 1;
-            useSA = true;
-        } else if (args[0].equals("-flags")
-                   || args[0].equals("-sysprops"))
-        {
-            if (args.length == 2) {
-                if (!isPid(args[1])) {
-                    // If args[1] doesn't parse to a number then
-                    // it must be the SA debug server
-                    // (otherwise it is the pid)
-                    useSA = true;
-                }
-            } else if (args.length == 3) {
-                // arguments include an executable and a core file
-                useSA = true;
-            } else {
-                throw new IllegalArgumentException();
-            }
-        } else if (!args[0].startsWith("-")) {
-            if (args.length == 2) {
-                // the only arguments are an executable and a core file
-                useSA = true;
-            } else if (args.length == 1) {
-                if (!isPid(args[0])) {
-                    // The only argument is not a PID; it must be SA debug
-                    // server
-                    useSA = true;
-                }
-            } else {
-                throw new IllegalArgumentException();
-            }
-        } else if (args[0].equals("-h") || args[0].equals("-help")) {
-            if (args.length > 1) {
-                throw new IllegalArgumentException();
-            }
-        } else if (args[0].equals("-flag")) {
-            if (args.length == 3) {
-                if (!isPid(args[2])) {
-                    throw new IllegalArgumentException();
-                }
-            } else {
-                throw new IllegalArgumentException();
-            }
-        } else {
-            throw new IllegalArgumentException();
-        }
-
-        this.args = Arrays.copyOfRange(args, argCopyIndex, args.length);
-    }
-
-    @SuppressWarnings("fallthrough")
-    private void execute() throws Exception {
-        if (args[0].equals("-h")
-            || args[0].equals("-help")) {
-            usage(0);
-        }
-
-        if (useSA) {
-            // SA only supports -flags or -sysprops
-            if (args[0].startsWith("-")) {
-                if (!(args[0].equals("-flags") || args[0].equals("-sysprops"))) {
-                    usage(1);
-                }
-            }
-
-            // invoke SA which does it's own argument parsing
-            runTool();
-
-        } else {
-            // Now we can parse arguments for the non-SA case
-            String pid = null;
-
-            switch(args[0]) {
-                case "-flag":
-                    if (args.length != 3) {
-                        usage(1);
-                    }
-                    String option = args[1];
-                    pid = args[2];
-                    flag(pid, option);
-                    break;
-                case "-flags":
-                    if (args.length != 2) {
-                        usage(1);
-                    }
-                    pid = args[1];
-                    flags(pid);
-                    break;
-                case "-sysprops":
-                    if (args.length != 2) {
-                        usage(1);
-                    }
-                    pid = args[1];
-                    sysprops(pid);
-                    break;
-                case "-help":
-                case "-h":
-                    usage(0);
-                    // Fall through
-                default:
-                    if (args.length == 1) {
-                        // no flags specified, we do -sysprops and -flags
-                        pid = args[0];
-                        sysprops(pid);
-                        System.out.println();
-                        flags(pid);
-                        System.out.println();
-                        commandLine(pid);
-                    } else {
-                        usage(1);
-                    }
-            }
-        }
-    }
 
     public static void main(String[] args) throws Exception {
-        JInfo jinfo = null;
-        try {
-            jinfo = new JInfo(args);
-            jinfo.execute();
-        } catch (IllegalArgumentException e) {
+        if (args.length == 0) {
+            usage(1); // no arguments
+        }
+        checkForUnsupportedOptions(args);
+
+        boolean doFlag = false;
+        boolean doFlags = false;
+        boolean doSysprops = false;
+
+        // Parse the options (arguments starting with "-" )
+        int optionCount = 0;
+        while (optionCount < args.length) {
+            String arg = args[optionCount];
+            if (!arg.startsWith("-")) {
+                break;
+            }
+
+            optionCount++;
+
+            if (arg.equals("-help") || arg.equals("-h")) {
+                usage(0);
+            }
+
+            if (arg.equals("-flag")) {
+                doFlag = true;
+                continue;
+            }
+
+            if (arg.equals("-flags")) {
+                doFlags = true;
+                continue;
+            }
+
+            if (arg.equals("-sysprops")) {
+                doSysprops = true;
+                continue;
+            }
+        }
+
+        // Next we check the parameter count. -flag allows extra parameters
+        int paramCount = args.length - optionCount;
+        if ((doFlag && paramCount != 2) || ((!doFlag && paramCount != 1))) {
             usage(1);
         }
-    }
 
-    private static boolean isPid(String arg) {
-        return arg.matches("[0-9]+");
-    }
-
-    // Invoke SA tool with the given arguments
-    private void runTool() throws Exception {
-        ToolProvider tool = ToolProviderFinder.find(SA_JINFO_TOOL_NAME);
-        if (tool == null) {
-            usage(1);
+        if (!doFlag && !doFlags && !doSysprops) {
+            // Print flags and sysporps if no options given
+            ProcessArgumentMatcher ap = new ProcessArgumentMatcher(args[optionCount], JInfo.class);
+            Collection<String> pids = ap.getPids();
+            for (String pid : pids) {
+                if (pids.size() > 1) {
+                    System.out.println("Pid:" + pid);
+                }
+                sysprops(pid);
+                System.out.println();
+                flags(pid);
+                System.out.println();
+                commandLine(pid);
+            }
         }
-        tool.run(args);
+
+        if (doFlag) {
+            ProcessArgumentMatcher ap = new ProcessArgumentMatcher(args[optionCount+1], JInfo.class);
+            Collection<String> pids = ap.getPids();
+            for (String pid : pids) {
+                if (pids.size() > 1) {
+                    System.out.println("Pid:" + pid);
+                }
+                flag(pid, args[optionCount]);
+            }
+        }
+        else if (doFlags || doSysprops) {
+            ProcessArgumentMatcher ap = new ProcessArgumentMatcher(args[optionCount], JInfo.class);
+            Collection<String> pids = ap.getPids();
+            for (String pid : pids) {
+                if (pids.size() > 1) {
+                    System.out.println("Pid:" + pid);
+                }
+                if (doFlags) {
+                    flags(pid);
+                }
+                else if (doSysprops) {
+                    sysprops(pid);
+                }
+            }
+        }
     }
 
     private static void flag(String pid, String option) throws IOException {
@@ -274,46 +212,49 @@ final public class JInfo {
         vm.detach();
     }
 
+    private static void checkForUnsupportedOptions(String[] args) {
+        // Check arguments for -F, and non-numeric value
+        // and warn the user that SA is not supported anymore
+        int maxCount = 1;
+        int paramCount = 0;
 
-    // print usage message
-    private static void usage(int exit) {
-        boolean usageSA = ToolProviderFinder.find(SA_JINFO_TOOL_NAME) != null;
-
-        System.err.println("Usage:");
-        if (usageSA) {
-            System.err.println("    jinfo [option] <pid>");
-            System.err.println("        (to connect to a running process)");
-            System.err.println("    jinfo -F [option] <pid>");
-            System.err.println("        (to connect to a hung process)");
-            System.err.println("    jinfo [option] <executable> <core>");
-            System.err.println("        (to connect to a core file)");
-            System.err.println("    jinfo [option] [server_id@]<remote server IP or hostname>");
-            System.err.println("        (to connect to remote debug server)");
-            System.err.println("");
-            System.err.println("where <option> is one of:");
-            System.err.println("  for running processes:");
-            System.err.println("    -flag <name>         to print the value of the named VM flag");
-            System.err.println("    -flag [+|-]<name>    to enable or disable the named VM flag");
-            System.err.println("    -flag <name>=<value> to set the named VM flag to the given value");
-            System.err.println("  for running or hung processes and core files:");
-            System.err.println("    -flags               to print VM flags");
-            System.err.println("    -sysprops            to print Java system properties");
-            System.err.println("    <no option>          to print both VM flags and system properties");
-            System.err.println("    -h | -help           to print this help message");
-        } else {
-            System.err.println("    jinfo <option> <pid>");
-            System.err.println("       (to connect to a running process)");
-            System.err.println("");
-            System.err.println("where <option> is one of:");
-            System.err.println("    -flag <name>         to print the value of the named VM flag");
-            System.err.println("    -flag [+|-]<name>    to enable or disable the named VM flag");
-            System.err.println("    -flag <name>=<value> to set the named VM flag to the given value");
-            System.err.println("    -flags               to print VM flags");
-            System.err.println("    -sysprops            to print Java system properties");
-            System.err.println("    <no option>          to print both VM flags and system properties");
-            System.err.println("    -h | -help           to print this help message");
+        for (String s : args) {
+            if (s.equals("-F")) {
+                SAOptionError("-F option used");
+            }
+            if (s.equals("-flag")) {
+                maxCount = 2;
+            }
+            if (! s.startsWith("-")) {
+                paramCount += 1;
+            }
         }
 
+        if (paramCount > maxCount) {
+            SAOptionError("More than " + maxCount + " non-option argument");
+        }
+    }
+
+    private static void SAOptionError(String msg) {
+        System.err.println("Error: " + msg);
+        System.err.println("Cannot connect to core dump or remote debug server. Use jhsdb jinfo instead");
+        System.exit(1);
+    }
+
+     // print usage message
+    private static void usage(int exit) {
+        System.err.println("Usage:");
+        System.err.println("    jinfo <option> <pid>");
+        System.err.println("       (to connect to a running process)");
+        System.err.println("");
+        System.err.println("where <option> is one of:");
+        System.err.println("    -flag <name>         to print the value of the named VM flag");
+        System.err.println("    -flag [+|-]<name>    to enable or disable the named VM flag");
+        System.err.println("    -flag <name>=<value> to set the named VM flag to the given value");
+        System.err.println("    -flags               to print VM flags");
+        System.err.println("    -sysprops            to print Java system properties");
+        System.err.println("    <no option>          to print both VM flags and system properties");
+        System.err.println("    -h | -help           to print this help message");
         System.exit(exit);
     }
 }

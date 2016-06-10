@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -361,7 +361,7 @@ public final class LocalTime
          Objects.requireNonNull(zone, "zone");
          ZoneOffset offset = zone.getRules().getOffset(instant);
          long localSecond = instant.getEpochSecond() + offset.getTotalSeconds();
-         int secsOfDay = (int) Math.floorMod(localSecond, SECONDS_PER_DAY);
+         int secsOfDay = Math.floorMod(localSecond, SECONDS_PER_DAY);
          return ofNanoOfDay(secsOfDay * NANOS_PER_SECOND + instant.getNano());
      }
 

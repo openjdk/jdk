@@ -75,11 +75,12 @@ import sun.security.util.SecurityConstants;
  *
  * <p> A Java virtual machine has at least one non-empty layer, the {@link
  * #boot() boot} layer, that is created when the Java virtual machine is
- * started. The <em>system modules</em>, including {@code java.base}, are in
- * the boot layer. The modules in the boot layer are mapped to the bootstrap
- * class loader and other class loaders that are built-in into the ava virtual
- * machine. The boot layer will often be the {@link #parent() parent} when
- * creating additional layers. </p>
+ * started. The boot layer contains module {@code java.base} and is the only
+ * layer in the Java virtual machine with a module named "{@code java.base}".
+ * The modules in the boot layer are mapped to the bootstrap class loader and
+ * other class loaders that are <a href="../ClassLoader.html#builtinLoaders">
+ * built-in</a> into the Java virtual machine. The boot layer will often be
+ * the {@link #parent() parent} when creating additional layers. </p>
  *
  * <p> As when creating a {@code Configuration},
  * {@link ModuleDescriptor#isAutomatic() automatic} modules receive
@@ -105,7 +106,7 @@ import sun.security.util.SecurityConstants;
  *     Layer parent = Layer.boot();
  *
  *     Configuration cf = parent.configuration()
- *         .resolveRequires(finder, ModuleFinder.empty(), Set.of("myapp"));
+ *         .resolveRequires(finder, ModuleFinder.of(), Set.of("myapp"));
  *
  *     ClassLoader scl = ClassLoader.getSystemClassLoader();
  *
@@ -204,7 +205,8 @@ public final class Layer {
      *         for this layer
      * @throws LayerInstantiationException
      *         If all modules cannot be defined to the same class loader for any
-     *         of the reasons listed above
+     *         of the reasons listed above or the layer cannot be created because
+     *         the configuration contains a module named "{@code java.base}"
      * @throws SecurityException
      *         If {@code RuntimePermission("createClassLoader")} or
      *         {@code RuntimePermission("getClassLoader")} is denied by
@@ -219,14 +221,13 @@ public final class Layer {
         checkCreateClassLoaderPermission();
         checkGetClassLoaderPermission();
 
-        Loader loader;
         try {
-            loader = new Loader(cf.modules(), parentLoader);
+            Loader loader = new Loader(cf.modules(), parentLoader);
             loader.initRemotePackageMap(cf, this);
+            return new Layer(cf, this, mn -> loader);
         } catch (IllegalArgumentException e) {
             throw new LayerInstantiationException(e.getMessage());
         }
-        return new Layer(cf, this, mn -> loader);
     }
 
 
@@ -266,6 +267,9 @@ public final class Layer {
      * @throws IllegalArgumentException
      *         If the parent of the given configuration is not the configuration
      *         for this layer
+     * @throws LayerInstantiationException
+     *         If the layer cannot be created because the configuration contains
+     *         a module named "{@code java.base}"
      * @throws SecurityException
      *         If {@code RuntimePermission("createClassLoader")} or
      *         {@code RuntimePermission("getClassLoader")} is denied by
@@ -281,7 +285,11 @@ public final class Layer {
         checkGetClassLoaderPermission();
 
         LoaderPool pool = new LoaderPool(cf, this, parentLoader);
-        return new Layer(cf, this, pool::loaderFor);
+        try {
+            return new Layer(cf, this, pool::loaderFor);
+        } catch (IllegalArgumentException e) {
+            throw new LayerInstantiationException(e.getMessage());
+        }
     }
 
 
@@ -330,7 +338,8 @@ public final class Layer {
      *         for this layer
      * @throws LayerInstantiationException
      *         If creating the {@code Layer} fails for any of the reasons
-     *         listed above
+     *         listed above or the layer cannot be created because the
+     *         configuration contains a module named "{@code java.base}"
      * @throws SecurityException
      *         If {@code RuntimePermission("getClassLoader")} is denied by
      *         the security manager

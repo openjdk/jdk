@@ -39,6 +39,7 @@ import com.sun.javadoc.*;
  * @author Jamie Ho
  * @since 1.5
  */
+@Deprecated
 public class TextTag implements Tag {
     protected final String text;
     protected final String name = "Text";

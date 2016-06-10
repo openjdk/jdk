@@ -41,6 +41,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  *
  * @author Bhavesh Patel
  */
+@Deprecated
 public class RawHtml extends Content {
 
     private String rawHtmlContent;

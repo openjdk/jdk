@@ -27,8 +27,6 @@ module java.desktop {
     requires public java.datatransfer;
     requires public java.xml;
     requires java.prefs;
-    // 8147544
-    requires jdk.unsupported;
 
     exports java.applet;
     exports java.awt;

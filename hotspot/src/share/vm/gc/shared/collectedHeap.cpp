@@ -510,10 +510,6 @@ void CollectedHeap::fill_with_objects(HeapWord* start, size_t words, bool zap)
   fill_with_object_impl(start, words, zap);
 }
 
-void CollectedHeap::post_initialize() {
-  collector_policy()->post_heap_initialize();
-}
-
 HeapWord* CollectedHeap::allocate_new_tlab(size_t size) {
   guarantee(false, "thread-local allocation buffers not supported");
   return NULL;

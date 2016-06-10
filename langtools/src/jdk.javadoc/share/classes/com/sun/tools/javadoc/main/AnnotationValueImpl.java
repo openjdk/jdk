@@ -43,6 +43,7 @@ import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
  * @since 1.5
  */
 
+@Deprecated
 public class AnnotationValueImpl implements AnnotationValue {
 
     private final DocEnv env;

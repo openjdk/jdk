@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,9 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
     if (!VM_Version::supports_atomic_getset4()) return false;
 #endif
     break;
+  case vmIntrinsics::_onSpinWait:
+    if (!VM_Version::supports_on_spin_wait()) return false;
+    break;
   case vmIntrinsics::_arraycopy:
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:
@@ -195,20 +198,6 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_putLongVolatile:
   case vmIntrinsics::_putFloatVolatile:
   case vmIntrinsics::_putDoubleVolatile:
-  case vmIntrinsics::_getByte_raw:
-  case vmIntrinsics::_getShort_raw:
-  case vmIntrinsics::_getChar_raw:
-  case vmIntrinsics::_getInt_raw:
-  case vmIntrinsics::_getLong_raw:
-  case vmIntrinsics::_getFloat_raw:
-  case vmIntrinsics::_getDouble_raw:
-  case vmIntrinsics::_putByte_raw:
-  case vmIntrinsics::_putShort_raw:
-  case vmIntrinsics::_putChar_raw:
-  case vmIntrinsics::_putInt_raw:
-  case vmIntrinsics::_putLong_raw:
-  case vmIntrinsics::_putFloat_raw:
-  case vmIntrinsics::_putDouble_raw:
   case vmIntrinsics::_getShortUnaligned:
   case vmIntrinsics::_getCharUnaligned:
   case vmIntrinsics::_getIntUnaligned:
@@ -221,6 +210,11 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
+#ifdef SPARC
+  case vmIntrinsics::_updateBytesCRC32C:
+  case vmIntrinsics::_updateDirectByteBufferCRC32C:
+#endif
+  case vmIntrinsics::_vectorizedMismatch:
   case vmIntrinsics::_compareAndSwapInt:
   case vmIntrinsics::_compareAndSwapObject:
   case vmIntrinsics::_getCharStringU:

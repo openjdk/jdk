@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8138651
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @build IntrinsicDisabledTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

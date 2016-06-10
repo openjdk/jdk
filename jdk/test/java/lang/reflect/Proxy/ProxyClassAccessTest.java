@@ -91,7 +91,7 @@ public class ProxyClassAccessTest {
         Layer bootLayer = Layer.boot();
         Configuration cf = bootLayer
                 .configuration()
-                .resolveRequiresAndUses(ModuleFinder.empty(), finder, modules);
+                .resolveRequiresAndUses(ModuleFinder.of(), finder, modules);
         ClassLoader parentLoader = this.getClass().getClassLoader();
         Layer layer = bootLayer.defineModulesWithOneLoader(cf, parentLoader);
 

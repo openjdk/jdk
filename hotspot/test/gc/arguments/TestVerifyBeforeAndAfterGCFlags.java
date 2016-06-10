@@ -28,6 +28,7 @@
  * @summary Runs an simple application (GarbageProducer) with various
          combinations of -XX:{+|-}Verify{After|Before}GC flags and checks that
          output contain or doesn't contain expected patterns
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @library /testlibrary
  * @run driver TestVerifyBeforeAndAfterGCFlags

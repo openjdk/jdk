@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,7 @@ FrameMap::FrameMap(ciMethod* method, int monitors, int reserved_argument_area_si
   _reserved_argument_area_size = MAX2(4, reserved_argument_area_size) * BytesPerWord;
 
   _argcount = method->arg_size();
-  _argument_locations = new intArray(_argcount, -1);
+  _argument_locations = new intArray(_argcount, _argcount, -1);
   _incoming_arguments = java_calling_convention(signature_type_array_for(method), false);
   _oop_map_arg_count = _incoming_arguments->reserved_stack_slots();
 

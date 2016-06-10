@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,45 +21,52 @@
  * questions.
  */
 
-/*
-  test
-  @bug 4955110
-  @summary tests that a drag ends on button2 release
-  @author Alexander.Gerasimov area=dnd
-  @library    ../../regtesthelpers
-  @build      Util
-  @run applet/othervm Button2DragTest.html
-*/
+import java.awt.Frame;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.datatransfer.StringSelection;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DragGestureEvent;
+import java.awt.dnd.DragGestureListener;
+import java.awt.dnd.DragSource;
+import java.awt.dnd.DragSourceAdapter;
+import java.awt.dnd.DragSourceDropEvent;
+import java.awt.dnd.DragSourceListener;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetAdapter;
+import java.awt.dnd.DropTargetDropEvent;
+import java.awt.event.InputEvent;
 
-
-/**
- * Button2DragTest.java
- *
- * summary: tests that DragSourceDragEvent.getDropAction() accords to its new spec
- *          (does not depend on the user drop action)
- *
- */
-
-import java.applet.Applet;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.datatransfer.*;
-import java.awt.dnd.*;
 import test.java.awt.regtesthelpers.Util;
 
-
-public class Button2DragTest extends Applet {
+/**
+ * @test
+ * @bug 4955110
+ * @summary tests that DragSourceDragEvent.getDropAction() accords to its new
+ *          spec (does not depend on the user drop action)
+ * @library ../../regtesthelpers
+ * @build Util
+ * @run main/othervm Button2DragTest
+ * @author Alexander.Gerasimov area=dnd
+ */
+public final class Button2DragTest {
 
     private volatile boolean dropSuccess;
 
-    private Frame frame;
+    private static Frame frame;
 
+    public static void main(final String[] args) {
+        Button2DragTest test = new Button2DragTest();
+        try {
+            test.run();
+        } finally {
+            if (frame != null) {
+                frame.dispose();
+            }
+        }
+    }
 
-    public void init() {
-        // Set up the environment -- set the layout manager, add
-        // buttons, etc.
-        setLayout(new BorderLayout());
-
+    public void run() {
         frame = new Frame();
 
         final DragSourceListener dragSourceListener = new DragSourceAdapter() {
@@ -84,20 +91,13 @@ public class Button2DragTest extends Applet {
             }
         };
         new DropTarget(frame, dropTargetListener);
-    }
-
-
-    public void start() {
-        //Get things going.  Request focus, set size, et cetera
-        setSize(200,200);
-        setVisible(true);
-        validate();
 
         //What would normally go into main() will probably go here.
         //Use System.out.println for diagnostic messages that you want
         //to read after the test is done.
-
+        frame.setUndecorated(true);
         frame.setBounds(100, 100, 200, 200);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
         Robot robot = Util.createRobot();

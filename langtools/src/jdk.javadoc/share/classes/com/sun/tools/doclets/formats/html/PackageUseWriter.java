@@ -44,6 +44,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @author Robert G. Field
  * @author Bhavesh Patel (Modified)
  */
+@Deprecated
 public class PackageUseWriter extends SubWriterHolderWriter {
 
     final PackageDoc pkgdoc;

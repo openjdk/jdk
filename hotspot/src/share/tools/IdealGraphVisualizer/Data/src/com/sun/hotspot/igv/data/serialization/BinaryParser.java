@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -67,6 +68,8 @@ public class BinaryParser implements GraphParser {
     private static final int PROPERTY_SUBGRAPH = 0x08;
 
     private static final String NO_BLOCK = "noBlock";
+
+    private static final Charset utf8 = Charset.forName("UTF-8");
 
     private final GroupCallback callback;
     private final List<Object> constantPool;
@@ -275,28 +278,36 @@ public class BinaryParser implements GraphParser {
         hashStack = new LinkedList<>();
         this.monitor = monitor;
         try {
-            this.digest = MessageDigest.getInstance("SHA-256");
+            this.digest = MessageDigest.getInstance("SHA-1");
         } catch (NoSuchAlgorithmException e) {
         }
     }
 
     private void fill() throws IOException {
+        // All the data between lastPosition and position has been
+        // used so add it to the digest.
+        int position = buffer.position();
+        buffer.position(lastPosition);
+        byte[] remaining = new byte[position - buffer.position()];
+        buffer.get(remaining);
+        digest.update(remaining);
+        assert position == buffer.position();
+
         buffer.compact();
         if (channel.read(buffer) < 0) {
             throw new EOFException();
         }
         buffer.flip();
+        lastPosition = buffer.position();
     }
 
     private void ensureAvailable(int i) throws IOException {
+        if (i > buffer.capacity()) {
+            throw new IllegalArgumentException(String.format("Can not request %d bytes: buffer capacity is %d", i, buffer.capacity()));
+        }
         while (buffer.remaining() < i) {
             fill();
         }
-        buffer.mark();
-        byte[] result = new byte[i];
-        buffer.get(result);
-        digest.update(result);
-        buffer.reset();
     }
 
     private int readByte() throws IOException {
@@ -330,12 +341,7 @@ public class BinaryParser implements GraphParser {
     }
 
     private String readString() throws IOException {
-        int len = readInt();
-        ensureAvailable(len * 2);
-        char[] chars = new char[len];
-        buffer.asCharBuffer().get(chars);
-        buffer.position(buffer.position() + len * 2);
-        return new String(chars).intern();
+        return new String(readBytes(), utf8).intern();
     }
 
     private byte[] readBytes() throws IOException {
@@ -343,10 +349,15 @@ public class BinaryParser implements GraphParser {
         if (len < 0) {
             return null;
         }
-        ensureAvailable(len);
-        byte[] data = new byte[len];
-        buffer.get(data);
-        return data;
+        byte[] b = new byte[len];
+        int bytesRead = 0;
+        while (bytesRead < b.length) {
+            int toRead = Math.min(b.length - bytesRead, buffer.capacity());
+            ensureAvailable(toRead);
+            buffer.get(b, bytesRead, toRead);
+            bytesRead += toRead;
+        }
+        return b;
     }
 
     private String readIntsToString() throws IOException {
@@ -643,6 +654,7 @@ public class BinaryParser implements GraphParser {
         int bci = readInt();
         Group group = new Group(parent);
         group.getProperties().setProperty("name", name);
+        parseProperties(group.getProperties());
         if (method != null) {
             InputMethod inMethod = new InputMethod(group, method.name, shortName, bci);
             inMethod.setBytecodes("TODO");
@@ -651,13 +663,25 @@ public class BinaryParser implements GraphParser {
         return group;
     }
 
+    int lastPosition = 0;
+
     private InputGraph parseGraph() throws IOException {
         if (monitor != null) {
             monitor.updateProgress();
         }
         String title = readPoolObject(String.class);
         digest.reset();
+        lastPosition = buffer.position();
         InputGraph graph = parseGraph(title);
+
+        int position = buffer.position();
+        buffer.position(lastPosition);
+        byte[] remaining = new byte[position - buffer.position()];
+        buffer.get(remaining);
+        digest.update(remaining);
+        assert position == buffer.position();
+        lastPosition = buffer.position();
+
         byte[] d = digest.digest();
         byte[] hash = hashStack.peek();
         if (hash != null && Arrays.equals(hash, d)) {
@@ -669,11 +693,24 @@ public class BinaryParser implements GraphParser {
         return graph;
     }
 
+    private void parseProperties(Properties properties) throws IOException {
+        int propCount = readShort();
+        for (int j = 0; j < propCount; j++) {
+            String key = readPoolObject(String.class);
+            Object value = readPropertyObject();
+            properties.setProperty(key, value != null ? value.toString() : "null");
+        }
+    }
+
     private InputGraph parseGraph(String title) throws IOException {
         InputGraph graph = new InputGraph(title);
+        parseProperties(graph.getProperties());
         parseNodes(graph);
         parseBlocks(graph);
         graph.ensureNodesInBlocks();
+        for (InputNode node : graph.getNodes()) {
+            node.internProperties();
+        }
         return graph;
     }
 
@@ -822,9 +859,10 @@ public class BinaryParser implements GraphParser {
         }
     }
 
+    static final Pattern templatePattern = Pattern.compile("\\{(p|i)#([a-zA-Z0-9$_]+)(/(l|m|s))?\\}");
+
     private String createName(List<Edge> edges, Map<String, Object> properties, String template) {
-        Pattern p = Pattern.compile("\\{(p|i)#([a-zA-Z0-9$_]+)(/(l|m|s))?\\}");
-        Matcher m = p.matcher(template);
+        Matcher m = templatePattern.matcher(template);
         StringBuffer sb = new StringBuffer();
         while (m.find()) {
             String name = m.group(2);

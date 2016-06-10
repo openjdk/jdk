@@ -27,6 +27,7 @@
  * @test
  * @summary Test that if module m1 can read module m2, AND package p2 in module2 is
  *          exported unqualifiedly, then class p1.c1 in m1 can read p2.c2 in m2.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @compile myloaders/MySameClassLoader.java
  * @compile p2/c2.java
@@ -80,7 +81,7 @@ public class ExpUnqual {
         // Resolves "m1"
         Configuration cf = Layer.boot()
                 .configuration()
-                .resolveRequires(finder, ModuleFinder.empty(), Set.of("m1"));
+                .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
 
         // map each module to the same class loader for this test
         Map<String, ClassLoader> map = new HashMap<>();

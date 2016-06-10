@@ -529,6 +529,7 @@ class LoadVectorNode : public LoadNode {
                               Node* adr, const TypePtr* atyp,
                               uint vlen, BasicType bt,
                               ControlDependency control_dependency = LoadNode::DependsOnlyOnTest);
+  uint element_size(void) { return type2aelembytes(vect_type()->element_basic_type()); }
 };
 
 //------------------------------StoreVectorNode--------------------------------
@@ -553,6 +554,8 @@ class StoreVectorNode : public StoreNode {
   static StoreVectorNode* make(int opc, Node* ctl, Node* mem,
                                Node* adr, const TypePtr* atyp, Node* val,
                                uint vlen);
+
+  uint element_size(void) { return type2aelembytes(vect_type()->element_basic_type()); }
 };
 
 
@@ -789,6 +792,17 @@ class ExtractDNode : public ExtractNode {
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
+};
+
+//------------------------------SetVectMaskINode-------------------------------
+// Provide a mask for a vector predicate machine
+class SetVectMaskINode : public Node {
+public:
+  SetVectMaskINode(Node *c, Node *in1) : Node(c, in1) {}
+  virtual int Opcode() const;
+  const Type *bottom_type() const { return TypeInt::INT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+  virtual const Type *Value(PhaseGVN *phase) const { return TypeInt::INT; }
 };
 
 #endif // SHARE_VM_OPTO_VECTORNODE_HPP

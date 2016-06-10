@@ -26,16 +26,13 @@ package jdk.tools.jlink.internal.plugins;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.internal.PoolImpl;
-import jdk.tools.jlink.plugin.Pool;
+import jdk.tools.jlink.internal.ModulePoolImpl;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 import jdk.tools.jlink.internal.ImagePluginStack;
 import jdk.tools.jlink.internal.ResourcePrevisitor;
@@ -62,10 +59,10 @@ public final class DefaultCompressPlugin implements TransformerPlugin, ResourceP
     }
 
     @Override
-    public void visit(Pool in, Pool out) {
+    public void visit(ModulePool in, ModulePool out) {
         if (ss != null && zip != null) {
-            Pool output = new ImagePluginStack.OrderedResourcePool(in.getByteOrder(),
-                    ((PoolImpl) in).getStringTable());
+            ModulePool output = new ImagePluginStack.OrderedResourcePool(in.getByteOrder(),
+                    ((ModulePoolImpl) in).getStringTable());
             ss.visit(in, output);
             zip.visit(output, out);
         } else if (ss != null) {
@@ -76,16 +73,16 @@ public final class DefaultCompressPlugin implements TransformerPlugin, ResourceP
     }
 
     @Override
-    public void previsit(Pool resources, StringTable strings) {
+    public void previsit(ModulePool resources, StringTable strings) {
         if (ss != null) {
             ss.previsit(resources, strings);
         }
     }
 
     @Override
-    public Set<PluginType> getType() {
-        Set<PluginType> set = new HashSet<>();
-        set.add(CATEGORY.COMPRESSOR);
+    public Set<Category> getType() {
+        Set<Category> set = new HashSet<>();
+        set.add(Category.COMPRESSOR);
         return Collections.unmodifiableSet(set);
     }
 

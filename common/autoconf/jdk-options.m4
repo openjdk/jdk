@@ -491,3 +491,46 @@ AC_DEFUN_ONCE([JDKOPT_ENABLE_DISABLE_FAILURE_HANDLER],
 
   AC_SUBST(BUILD_FAILURE_HANDLER)
 ])
+
+################################################################################
+#
+# Enable or disable generation of the classlist at build time
+#
+AC_DEFUN_ONCE([JDKOPT_ENABLE_DISABLE_GENERATE_CLASSLIST],
+[
+  AC_ARG_ENABLE([generate-classlist], [AS_HELP_STRING([--disable-generate-classlist],
+      [forces enabling or disabling of the generation of a CDS classlist at build time.
+      Default is to generate it when either the server or client JVMs are built.])])
+
+  # Check if it's likely that it's possible to generate the classlist. Depending
+  # on exact jvm configuration it could be possible anyway.
+  if HOTSPOT_CHECK_JVM_VARIANT(server) || HOTSPOT_CHECK_JVM_VARIANT(client); then
+    ENABLE_GENERATE_CLASSLIST_POSSIBLE="true"
+  else
+    ENABLE_GENERATE_CLASSLIST_POSSIBLE="false"
+  fi
+
+  AC_MSG_CHECKING([if the CDS classlist generation should be enabled])
+  if test "x$enable_generate_classlist" = "xyes"; then
+    AC_MSG_RESULT([yes, forced])
+    ENABLE_GENERATE_CLASSLIST="true"
+    if test "x$ENABLE_GENERATE_CLASSLIST_POSSIBLE" = "xfalse"; then
+      AC_MSG_WARN([Generation of classlist might not be possible with JVM Variants $JVM_VARIANTS])
+    fi
+  elif test "x$enable_generate_classlist" = "xno"; then
+    AC_MSG_RESULT([no, forced])
+    ENABLE_GENERATE_CLASSLIST="false"
+  elif test "x$enable_generate_classlist" = "x"; then
+    if test "x$ENABLE_GENERATE_CLASSLIST_POSSIBLE" = "xtrue"; then
+      AC_MSG_RESULT([yes])
+      ENABLE_GENERATE_CLASSLIST="true"
+    else
+      AC_MSG_RESULT([no])
+      ENABLE_GENERATE_CLASSLIST="false"
+    fi
+  else
+    AC_MSG_ERROR([Invalid value for --enable-generate-classlist: $enable_generate_classlist])
+  fi
+
+  AC_SUBST([ENABLE_GENERATE_CLASSLIST])
+])

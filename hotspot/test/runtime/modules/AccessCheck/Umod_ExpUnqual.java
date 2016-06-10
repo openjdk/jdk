@@ -27,6 +27,7 @@
  * @test
  * @summary Test if package p2 in module m2 is exported unqualifiedly,
  *          then class p1.c1 in an unnamed module can read p2.c2 in module m2.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @compile myloaders/MySameClassLoader.java
  * @compile p2/c2.java
@@ -90,7 +91,7 @@ public class Umod_ExpUnqual {
         // Resolves "m1"
         Configuration cf = Layer.boot()
                 .configuration()
-                .resolveRequires(finder, ModuleFinder.empty(), Set.of("m1"));
+                .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
 
         // map each module to differing class loaders for this test
         Map<String, ClassLoader> map = new HashMap<>();

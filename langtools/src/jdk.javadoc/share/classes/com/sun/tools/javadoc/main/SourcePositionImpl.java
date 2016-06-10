@@ -43,6 +43,7 @@ import com.sun.tools.javac.util.Position;
  * @author Neal M Gafter
  * @author Michael Van De Vanter (position representation changed to char offsets)
  */
+@Deprecated
 public class SourcePositionImpl implements SourcePosition {
     FileObject filename;
     int position;

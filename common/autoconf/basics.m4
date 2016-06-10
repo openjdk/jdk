@@ -484,6 +484,8 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   BASIC_REQUIRE_PROGS(FILE, file)
   BASIC_REQUIRE_PROGS(FIND, find)
   BASIC_REQUIRE_PROGS(HEAD, head)
+  BASIC_REQUIRE_PROGS(GUNZIP, gunzip)
+  BASIC_REQUIRE_PROGS(GZIP, pigz gzip)
   BASIC_REQUIRE_PROGS(LN, ln)
   BASIC_REQUIRE_PROGS(LS, ls)
   BASIC_REQUIRE_PROGS(MKDIR, mkdir)
@@ -496,7 +498,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   BASIC_REQUIRE_PROGS(SH, sh)
   BASIC_REQUIRE_PROGS(SORT, sort)
   BASIC_REQUIRE_PROGS(TAIL, tail)
-  BASIC_REQUIRE_PROGS(TAR, tar)
+  BASIC_REQUIRE_PROGS(TAR, gtar tar)
   BASIC_REQUIRE_PROGS(TEE, tee)
   BASIC_REQUIRE_PROGS(TOUCH, touch)
   BASIC_REQUIRE_PROGS(TR, tr)
@@ -1007,11 +1009,36 @@ AC_DEFUN([BASIC_CHECK_FIND_DELETE],
   AC_SUBST(FIND_DELETE)
 ])
 
+AC_DEFUN([BASIC_CHECK_TAR],
+[
+  # Test which kind of tar was found
+  if test "x$($TAR --version | $GREP "GNU tar")" != "x"; then
+    TAR_TYPE="gnu"
+  elif test "x$($TAR -v | $GREP "bsdtar")" != "x"; then
+    TAR_TYPE="bsd"
+  elif test "x$OPENJDK_BUILD_OS" = "xsolaris"; then
+    TAR_TYPE="solaris"
+  fi
+  AC_MSG_CHECKING([what type of tar was found])
+  AC_MSG_RESULT([$TAR_TYPE])
+
+  if test "x$TAR_TYPE" = "xgnu"; then
+    TAR_INCLUDE_PARAM="T"
+    TAR_SUPPORTS_TRANSFORM="true"
+  else
+    TAR_INCLUDE_PARAM="I"
+    TAR_SUPPORTS_TRANSFORM="false"
+  fi
+  AC_SUBST(TAR_INCLUDE_PARAM)
+  AC_SUBST(TAR_SUPPORTS_TRANSFORM)
+])
+
 AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
 [
   BASIC_CHECK_GNU_MAKE
 
   BASIC_CHECK_FIND_DELETE
+  BASIC_CHECK_TAR
 
   # These tools might not be installed by default,
   # need hint on how to install them.

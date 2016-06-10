@@ -99,7 +99,7 @@ address NativeCall::get_trampoline() {
 
   address bl_destination
     = MacroAssembler::pd_call_destination(call_addr);
-  if (code->content_contains(bl_destination) &&
+  if (code->contains(bl_destination) &&
       is_NativeCallTrampolineStub_at(bl_destination))
     return bl_destination;
 

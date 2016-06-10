@@ -25,6 +25,7 @@
 
 package jdk.jshell;
 
+import jdk.jshell.spi.ExecutionControl;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -47,6 +48,8 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
 import static jdk.jshell.Util.expunge;
 import jdk.jshell.Snippet.Status;
+import jdk.internal.jshell.jdi.JDIExecutionControl;
+import jdk.jshell.spi.ExecutionEnv;
 
 /**
  * The JShell evaluation state engine.  This is the central class in the JShell
@@ -71,7 +74,6 @@ import jdk.jshell.Snippet.Status;
  * <p>
  * This class is not thread safe, except as noted, all access should be through
  * a single thread.
- * @see jdk.jshell
  * @author Robert Field
  */
 public class JShell implements AutoCloseable {
@@ -86,16 +88,17 @@ public class JShell implements AutoCloseable {
     final Supplier<String> tempVariableNameGenerator;
     final BiFunction<Snippet, Integer, String> idGenerator;
     final List<String> extraRemoteVMOptions;
+    final ExecutionControl executionControl;
 
     private int nextKeyIndex = 1;
 
     final Eval eval;
-    final ClassTracker classTracker;
+    private final Map<String, byte[]> classnameToBytes = new HashMap<>();
     private final Map<Subscription, Consumer<JShell>> shutdownListeners = new HashMap<>();
     private final Map<Subscription, Consumer<SnippetEvent>> keyStatusListeners = new HashMap<>();
     private boolean closed = false;
 
-    private ExecutionControl executionControl = null;
+    private boolean executionControlLaunched = false;
     private SourceCodeAnalysisImpl sourceCodeAnalysis = null;
 
     private static final String L10N_RB_NAME    = "jdk.jshell.resources.l10n";
@@ -108,13 +111,15 @@ public class JShell implements AutoCloseable {
         this.tempVariableNameGenerator = b.tempVariableNameGenerator;
         this.idGenerator = b.idGenerator;
         this.extraRemoteVMOptions = b.extraRemoteVMOptions;
+        this.executionControl = b.executionControl==null
+                ? new JDIExecutionControl()
+                : b.executionControl;
 
         this.maps = new SnippetMaps(this);
         this.keyMap = new KeyMap(this);
         this.outerMap = new OuterWrapMap(this);
         this.taskFactory = new TaskFactory(this);
         this.eval = new Eval(this);
-        this.classTracker = new ClassTracker(this);
     }
 
     /**
@@ -143,22 +148,23 @@ public class JShell implements AutoCloseable {
         Supplier<String> tempVariableNameGenerator = null;
         BiFunction<Snippet, Integer, String> idGenerator = null;
         List<String> extraRemoteVMOptions = new ArrayList<>();
+        ExecutionControl executionControl;
 
         Builder() { }
 
         /**
-         * Input for the running evaluation (it's <code>System.in</code>). Note:
-         * applications that use <code>System.in</code> for snippet or other
-         * user input cannot use <code>System.in</code> as the input stream for
+         * Sets the input for the running evaluation (it's {@code System.in}). Note:
+         * applications that use {@code System.in} for snippet or other
+         * user input cannot use {@code System.in} as the input stream for
          * the remote process.
          * <p>
          * The default, if this is not set, is to provide an empty input stream
-         * -- <code>new ByteArrayInputStream(new byte[0])</code>.
+         * -- {@code new ByteArrayInputStream(new byte[0])}.
          *
-         * @param in the <code>InputStream</code> to be channelled to
-         * <code>System.in</code> in the remote execution process.
-         * @return the <code>Builder</code> instance (for use in chained
-         * initialization).
+         * @param in the {@code InputStream} to be channelled to
+         * {@code System.in} in the remote execution process
+         * @return the {@code Builder} instance (for use in chained
+         * initialization)
          */
         public Builder in(InputStream in) {
             this.in = in;
@@ -166,16 +172,16 @@ public class JShell implements AutoCloseable {
         }
 
         /**
-         * Output for the running evaluation (it's <code>System.out</code>).
+         * Sets the output for the running evaluation (it's {@code System.out}).
          * The controlling process and
-         * the remote process can share <code>System.out</code>.
+         * the remote process can share {@code System.out}.
          * <p>
-         * The default, if this is not set, is <code>System.out</code>.
+         * The default, if this is not set, is {@code System.out}.
          *
-         * @param out the <code>PrintStream</code> to be channelled to
-         * <code>System.out</code> in the remote execution process.
-         * @return the <code>Builder</code> instance (for use in chained
-         * initialization).
+         * @param out the {@code PrintStream} to be channelled to
+         * {@code System.out} in the remote execution process
+         * @return the {@code Builder} instance (for use in chained
+         * initialization)
          */
         public Builder out(PrintStream out) {
             this.out = out;
@@ -183,16 +189,16 @@ public class JShell implements AutoCloseable {
         }
 
         /**
-         * Error output for the running evaluation (it's
-         * <code>System.err</code>). The controlling process and the remote
-         * process can share <code>System.err</code>.
+         * Sets the error output for the running evaluation (it's
+         * {@code System.err}). The controlling process and the remote
+         * process can share {@code System.err}.
          * <p>
-         * The default, if this is not set, is <code>System.err</code>.
+         * The default, if this is not set, is {@code System.err}.
          *
-         * @param err the <code>PrintStream</code> to be channelled to
-         * <code>System.err</code> in the remote execution process.
-         * @return the <code>Builder</code> instance (for use in chained
-         * initialization).
+         * @param err the {@code PrintStream} to be channelled to
+         * {@code System.err} in the remote execution process
+         * @return the {@code Builder} instance (for use in chained
+         * initialization)
          */
         public Builder err(PrintStream err) {
             this.err = err;
@@ -200,7 +206,7 @@ public class JShell implements AutoCloseable {
         }
 
         /**
-         * Set a generator of temp variable names for
+         * Sets a generator of temp variable names for
          * {@link jdk.jshell.VarSnippet} of
          * {@link jdk.jshell.Snippet.SubKind#TEMP_VAR_EXPRESSION_SUBKIND}.
          * <p>
@@ -221,9 +227,9 @@ public class JShell implements AutoCloseable {
          * prefixing dollar sign ("$").
          *
          * @param generator the <code>Supplier</code> to generate the temporary
-         * variable name string or <code>null</code>.
-         * @return the <code>Builder</code> instance (for use in chained
-         * initialization).
+         * variable name string or <code>null</code>
+         * @return the {@code Builder} instance (for use in chained
+         * initialization)
          */
         public Builder tempVariableNameGenerator(Supplier<String> generator) {
             this.tempVariableNameGenerator = generator;
@@ -231,7 +237,7 @@ public class JShell implements AutoCloseable {
         }
 
         /**
-         * Set the generator of identifying names for Snippets.
+         * Sets the generator of identifying names for Snippets.
          * <p>
          * Do not use this method unless you have explicit need for it.
          * <p>
@@ -258,9 +264,9 @@ public class JShell implements AutoCloseable {
          * is null) is to generate the id as the integer converted to a string.
          *
          * @param generator the <code>BiFunction</code> to generate the id
-         * string or <code>null</code>.
-         * @return the <code>Builder</code> instance (for use in chained
-         * initialization).
+         * string or <code>null</code>
+         * @return the {@code Builder} instance (for use in chained
+         * initialization)
          */
         public Builder idGenerator(BiFunction<Snippet, Integer, String> generator) {
             this.idGenerator = generator;
@@ -268,11 +274,11 @@ public class JShell implements AutoCloseable {
         }
 
         /**
-         * Set additional VM options for launching the VM.
+         * Sets additional VM options for launching the VM.
          *
-         * @param options The options for the remote VM.
-         * @return the <code>Builder</code> instance (for use in chained
-         * initialization).
+         * @param options The options for the remote VM
+         * @return the {@code Builder} instance (for use in chained
+         * initialization)
          */
         public Builder remoteVMOptions(String... options) {
             this.extraRemoteVMOptions.addAll(Arrays.asList(options));
@@ -280,11 +286,24 @@ public class JShell implements AutoCloseable {
         }
 
         /**
-         * Build a JShell state engine. This is the entry-point to all JShell
+         * Sets the custom engine for execution. Snippet execution will be
+         * provided by the specified {@link ExecutionControl} instance.
+         *
+         * @param execEngine the execution engine
+         * @return the {@code Builder} instance (for use in chained
+         * initialization)
+         */
+        public Builder executionEngine(ExecutionControl execEngine) {
+            this.executionControl = execEngine;
+            return this;
+        }
+
+        /**
+         * Builds a JShell state engine. This is the entry-point to all JShell
          * functionality. This creates a remote process for execution. It is
          * thus important to close the returned instance.
          *
-         * @return the state engine.
+         * @return the state engine
          */
         public JShell build() {
             return new JShell(this);
@@ -406,7 +425,7 @@ public class JShell implements AutoCloseable {
      */
     public void addToClasspath(String path) {
         taskFactory.addToClasspath(path);  // Compiler
-        executionControl().commandAddToClasspath(path);       // Runtime
+        executionControl().addToClasspath(path);       // Runtime
         if (sourceCodeAnalysis != null) {
             sourceCodeAnalysis.classpathChanged();
         }
@@ -427,7 +446,7 @@ public class JShell implements AutoCloseable {
      */
     public void stop() {
         if (executionControl != null)
-            executionControl.commandStop();
+            executionControl.stop();
     }
 
     /**
@@ -438,7 +457,7 @@ public class JShell implements AutoCloseable {
     public void close() {
         if (!closed) {
             closeDown();
-            executionControl().commandExit();
+            executionControl().close();
         }
     }
 
@@ -580,7 +599,7 @@ public class JShell implements AutoCloseable {
             throw new IllegalArgumentException(
                     messageFormat("jshell.exc.var.not.valid",  snippet, snippet.status()));
         }
-        String value = executionControl().commandVarValue(snippet.classFullName(), snippet.name());
+        String value = executionControl().varValue(snippet.classFullName(), snippet.name());
         return expunge(value);
     }
 
@@ -633,35 +652,86 @@ public class JShell implements AutoCloseable {
         }
     }
 
-    // --- private / package-private implementation support ---
+    /**
+     * Provide the environment for a execution engine.
+     */
+    class ExecutionEnvImpl implements ExecutionEnv {
 
+        @Override
+        public InputStream userIn() {
+            return in;
+        }
+
+        @Override
+        public PrintStream userOut() {
+            return out;
+        }
+
+        @Override
+        public PrintStream userErr() {
+            return err;
+        }
+
+        @Override
+        public JShell state() {
+            return JShell.this;
+        }
+
+        @Override
+        public List<String> extraRemoteVMOptions() {
+            return extraRemoteVMOptions;
+        }
+
+        @Override
+        public byte[] getClassBytes(String classname) {
+            return classnameToBytes.get(classname);
+        }
+
+        @Override
+        public EvalException createEvalException(String message, String exceptionClass, StackTraceElement[] stackElements) {
+            return new EvalException(message, exceptionClass, stackElements);
+        }
+
+        @Override
+        public UnresolvedReferenceException createUnresolvedReferenceException(int id, StackTraceElement[] stackElements) {
+            DeclarationSnippet sn = (DeclarationSnippet) maps.getSnippetDeadOrAlive(id);
+            return new UnresolvedReferenceException(sn, stackElements);
+        }
+
+        @Override
+        public void closeDown() {
+            JShell.this.closeDown();
+        }
+    }
+
+    // --- private / package-private implementation support ---
     ExecutionControl executionControl() {
-        if (executionControl == null) {
-            this.executionControl = new ExecutionControl(new JDIEnv(this), maps, this, extraRemoteVMOptions);
+        if (!executionControlLaunched) {
             try {
-                executionControl.launch();
+                executionControlLaunched = true;
+                executionControl.start(new ExecutionEnvImpl());
             } catch (Throwable ex) {
-                throw new InternalError("Launching JDI execution engine threw: " + ex.getMessage(), ex);
+                throw new InternalError("Launching execution engine threw: " + ex.getMessage(), ex);
             }
         }
         return executionControl;
     }
 
+    void setClassnameToBytes(String classname, byte[] bytes) {
+        classnameToBytes.put(classname, bytes);
+    }
+
     void debug(int flags, String format, Object... args) {
-        if (InternalDebugControl.debugEnabled(this, flags)) {
-            err.printf(format, args);
-        }
+        InternalDebugControl.debug(this, err, flags, format, args);
     }
 
     void debug(Exception ex, String where) {
-        if (InternalDebugControl.debugEnabled(this, 0xFFFFFFFF)) {
-            err.printf("Fatal error: %s: %s\n", where, ex.getMessage());
-            ex.printStackTrace(err);
-        }
+        InternalDebugControl.debug(this, err, ex, where);
     }
 
     /**
      * Generate the next key index, indicating a unique snippet signature.
+     *
      * @return the next key index
      */
     int nextKeyIndex() {

@@ -106,7 +106,7 @@ done
 # run test
 ${TESTJAVA}${FS}bin${FS}java \
         ${TESTVMOPTS} \
-        -verbose:class -Xlog:classload -cp . \
+        -verbose:class -Xlog:class+load -cp . \
         -Dtest.classes=${TESTCLASSES} \
         Starter cross
 # -XX:+UnlockDiagnosticVMOptions -XX:+UnsyncloadClass \

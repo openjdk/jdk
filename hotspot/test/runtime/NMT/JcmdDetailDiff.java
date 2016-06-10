@@ -45,7 +45,7 @@ public class JcmdDetailDiff {
         ProcessBuilder pb = new ProcessBuilder();
         OutputAnalyzer output;
         // Grab my own PID
-        String pid = Integer.toString(ProcessTools.getProcessId());
+        String pid = Long.toString(ProcessTools.getProcessId());
 
         long commitSize = 128 * 1024;
         long reserveSize = 256 * 1024;

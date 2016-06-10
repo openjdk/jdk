@@ -43,6 +43,7 @@ import com.sun.tools.doclets.internal.toolkit.*;
  *
  * @author Doug Kramer
  */
+@Deprecated
 public class MetaKeywords {
 
     /**

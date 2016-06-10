@@ -48,6 +48,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @author Doug Kramer
  * @author Bhavesh Patel (Modified)
  */
+@Deprecated
 public class AllClassesFrameWriter extends HtmlDocletWriter {
 
     /**

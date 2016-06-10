@@ -83,13 +83,12 @@ class SerialOldTracer;
 class CMSBitMap VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
 
-  HeapWord* _bmStartWord;   // base address of range covered by map
-  size_t    _bmWordSize;    // map size (in #HeapWords covered)
-  const int _shifter;       // shifts to convert HeapWord to bit position
+  HeapWord*    _bmStartWord;   // base address of range covered by map
+  size_t       _bmWordSize;    // map size (in #HeapWords covered)
+  const int    _shifter;       // shifts to convert HeapWord to bit position
   VirtualSpace _virtual_space; // underlying the bit map
-  BitMap    _bm;            // the bit map itself
- public:
-  Mutex* const _lock;       // mutex protecting _bm;
+  BitMapView   _bm;            // the bit map itself
+  Mutex* const _lock;          // mutex protecting _bm;
 
  public:
   // constructor

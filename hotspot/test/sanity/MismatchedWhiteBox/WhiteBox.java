@@ -26,6 +26,7 @@
  * @bug 8011675
  * @summary verify that whitebox can be used even if not all functions are declared in java-part
  * @author igor.ignatyev@oracle.com
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @compile WhiteBox.java
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

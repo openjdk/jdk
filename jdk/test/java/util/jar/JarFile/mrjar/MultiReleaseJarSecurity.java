@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8132734
+ * @bug 8132734 8144062
  * @summary Test potential security related issues
  * @library /lib/testlibrary/java/util/jar
  * @build Compiler JarBuilder CreateMultiReleaseTestJars
@@ -40,7 +40,6 @@ import java.util.Arrays;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipFile;
-import jdk.Version;
 
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -49,7 +48,7 @@ import org.testng.annotations.Test;
 
 public class MultiReleaseJarSecurity {
 
-    static final int MAJOR_VERSION = Version.current().major();
+    static final int MAJOR_VERSION = Runtime.version().major();
 
     String userdir = System.getProperty("user.dir",".");
     File multirelease = new File(userdir, "multi-release.jar");

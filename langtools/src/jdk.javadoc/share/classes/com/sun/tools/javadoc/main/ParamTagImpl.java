@@ -41,6 +41,7 @@ import com.sun.javadoc.*;
  * @author Robert Field
  *
  */
+@Deprecated
 class ParamTagImpl extends TagImpl implements ParamTag {
 
     private static final Pattern typeParamRE = Pattern.compile("<([^<>]+)>");
