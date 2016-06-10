@@ -1426,18 +1426,15 @@ public class JShellTool implements MessageHandler {
         live = false;
         if (!replayableHistory.isEmpty()) {
             // Prevent history overflow by calculating what will fit, starting
-            // with must recent
+            // with most recent
             int sepLen = RECORD_SEPARATOR.length();
             int length = 0;
             int first = replayableHistory.size();
             while(length < Preferences.MAX_VALUE_LENGTH && --first >= 0) {
                 length += replayableHistory.get(first).length() + sepLen;
             }
-            String hist = replayableHistory
-                    .subList(first + 1, replayableHistory.size())
-                    .stream()
-                    .reduce( (a, b) -> a + RECORD_SEPARATOR + b)
-                    .get();
+            String hist =  String.join(RECORD_SEPARATOR,
+                    replayableHistory.subList(first + 1, replayableHistory.size()));
             prefs.put(REPLAY_RESTORE_KEY, hist);
         }
         fluffmsg("jshell.msg.goodbye");
