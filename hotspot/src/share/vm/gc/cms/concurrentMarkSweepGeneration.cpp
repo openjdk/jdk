@@ -1605,6 +1605,9 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
   _inter_sweep_timer.reset();
   _inter_sweep_timer.start();
 
+  // No longer a need to do a concurrent collection for Metaspace.
+  MetaspaceGC::set_should_concurrent_collect(false);
+
   gch->post_full_gc_dump(gc_timer);
 
   gc_timer->register_gc_end();
