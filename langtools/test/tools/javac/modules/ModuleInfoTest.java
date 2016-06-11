@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8158123
  * @summary tests for module declarations
  * @library /tools/lib
  * @modules
@@ -35,6 +36,7 @@
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 
 import toolbox.JavacTask;
 import toolbox.Task;
@@ -322,5 +324,47 @@ public class ModuleInfoTest extends ModuleTestBase {
 
         if (!log.contains("module-info.java:1:30: compiler.err.duplicate.exports: m1"))
             throw new Exception("expected output not found");
+    }
+
+    /**
+     * Verify that annotations are not permitted at
+     * any of the module names or the package names.
+     */
+    @Test
+    public void testAnnotations(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path src_m1 = src.resolve("m1.sub");
+        Path classes = base.resolve("classes");
+        Files.createDirectories(classes);
+
+        String code = "module @m1.@sub { " +
+                "requires @p1.@p2; " +
+                "exports @p1.@p2; " +
+                "exports @p1.@p2 to @m2.@sub; " +
+                "exports @p1.@p2 to @m2.@sub, @m3.@sub; " +
+                "uses @p1.@Interface; " +
+                "provides @p1.@Interface with @p2.@Concrete; " +
+                "}";
+        String[] splittedCode = code.split("@");
+        int length = splittedCode.length;
+        String anno = "@Anno ";
+
+        for (int i = 1; i < length; i++) {
+            String preAnno = String.join("", Arrays.copyOfRange(splittedCode, 0, i));
+            String postAnno = String.join("", Arrays.copyOfRange(splittedCode, i, length));
+            String moduleInfo = preAnno + anno + postAnno;
+            tb.writeFile(src_m1.resolve("module-info.java"), moduleInfo);
+
+            String log = new JavacTask(tb)
+                    .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
+                    .outdir(classes)
+                    .files(findJavaFiles(src))
+                    .run(Task.Expect.FAIL)
+                    .writeAll()
+                    .getOutput(Task.OutputKind.DIRECT);
+
+            if (!log.matches("(?s)^module\\-info\\.java:\\d+:\\d+: compiler\\.err\\.expected: token\\.identifier.*"))
+                throw new Exception("expected output not found");
+        }
     }
 }
