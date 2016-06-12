@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8051408
+ * @bug 8051408 8158534
  * @summary Make sure DrbgParameters coded as specified
  * @library /test/lib/share/classes
  */
@@ -68,6 +68,9 @@ public class DrbgParametersSpec {
         ins = DrbgParameters.instantiation(-1, NONE, null);
         Asserts.assertNull(ins.getPersonalizationString());
 
+        iae(() -> DrbgParameters.instantiation(-2, NONE, null));
+        npe(() -> DrbgParameters.instantiation(-1, null, null));
+
         // NextBytes
         p = "NextBytes".getBytes();
         DrbgParameters.NextBytes nb = DrbgParameters
@@ -85,6 +88,8 @@ public class DrbgParametersSpec {
         np2 = nb.getAdditionalInput();
         Asserts.assertTrue(Arrays.equals(np1, np2));
 
+        iae(() -> DrbgParameters.nextBytes(-2, false, null));
+
         // Reseed
         p = "Reseed".getBytes();
         DrbgParameters.Reseed rs = DrbgParameters
@@ -100,5 +105,30 @@ public class DrbgParametersSpec {
         p[0] = 'X';
         np2 = rs.getAdditionalInput();
         Asserts.assertTrue(Arrays.equals(np1, np2));
+    }
+
+    static void iae(RunnableWithException r) throws Exception {
+        checkException(r, IllegalArgumentException.class);
+    }
+
+    static void npe(RunnableWithException r) throws Exception {
+        checkException(r, NullPointerException.class);
+    }
+
+    interface RunnableWithException {
+        void run() throws Exception;
+    }
+
+    static void checkException(RunnableWithException r, Class ex)
+            throws Exception {
+        try {
+            r.run();
+        } catch (Exception e) {
+            if (ex.isAssignableFrom(e.getClass())) {
+                return;
+            }
+            throw e;
+        }
+        throw new Exception("No exception thrown");
     }
 }
