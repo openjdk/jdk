@@ -252,8 +252,7 @@ public class TagletManager {
             }
             tagClassLoader = fileManager.getClassLoader(TAGLET_PATH);
             Class<?> customTagClass = tagClassLoader.loadClass(classname);
-            @SuppressWarnings("deprecation")
-            Object instance = customTagClass.newInstance();
+            Object instance = customTagClass.getConstructor().newInstance();
             Taglet newLegacy = new UserTaglet((jdk.javadoc.doclet.taglet.Taglet)instance);
             String tname = newLegacy.getName();
             Taglet t = customTags.get(tname);
