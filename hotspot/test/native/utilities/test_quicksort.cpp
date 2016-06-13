@@ -22,6 +22,7 @@
  *
  */
 
+#include "precompiled.hpp"
 #include "prims/jvm.h"
 #include "utilities/quickSort.hpp"
 #include "unittest.hpp"
