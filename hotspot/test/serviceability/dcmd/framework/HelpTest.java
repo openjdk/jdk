@@ -37,7 +37,6 @@ import org.testng.annotations.Test;
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @ignore 8072440
  * @build jdk.test.lib.*
  * @build jdk.test.lib.dcmd.*
  * @run testng/othervm -XX:+UsePerfData HelpTest
