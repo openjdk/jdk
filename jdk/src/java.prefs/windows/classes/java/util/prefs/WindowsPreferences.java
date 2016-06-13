@@ -91,14 +91,40 @@ class WindowsPreferences extends AbstractPreferences {
     /**
      * User root node.
      */
-    static final Preferences userRoot =
-         new WindowsPreferences(USER_ROOT_NATIVE_HANDLE, WINDOWS_ROOT_PATH);
+    private static volatile Preferences userRoot;
+
+    static Preferences getUserRoot() {
+        Preferences root = userRoot;
+        if (root == null) {
+            synchronized (WindowsPreferences.class) {
+                root = userRoot;
+                if (root == null) {
+                    root = new WindowsPreferences(USER_ROOT_NATIVE_HANDLE, WINDOWS_ROOT_PATH);
+                    userRoot = root;
+                }
+            }
+        }
+        return root;
+    }
 
     /**
      * System root node.
      */
-    static final Preferences systemRoot =
-        new WindowsPreferences(SYSTEM_ROOT_NATIVE_HANDLE, WINDOWS_ROOT_PATH);
+    private static volatile Preferences systemRoot;
+
+    static Preferences getSystemRoot() {
+        Preferences root = systemRoot;
+        if (root == null) {
+            synchronized (WindowsPreferences.class) {
+                root = systemRoot;
+                if (root == null) {
+                    root = new WindowsPreferences(SYSTEM_ROOT_NATIVE_HANDLE, WINDOWS_ROOT_PATH);
+                    systemRoot = root;
+                }
+            }
+        }
+        return root;
+    }
 
     /*  Windows error codes. */
     private static final int ERROR_SUCCESS = 0;
