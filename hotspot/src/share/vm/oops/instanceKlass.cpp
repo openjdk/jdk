@@ -3004,7 +3004,11 @@ void InstanceKlass::print_loading_log(LogLevel::type type,
   if (cfs != NULL) {
     if (cfs->source() != NULL) {
       if (module_name != NULL) {
-        log->print(" source: jrt:/%s", module_name);
+        if (ClassLoader::is_jrt(cfs->source())) {
+          log->print(" source: jrt:/%s", module_name);
+        } else {
+          log->print(" source: %s", cfs->source());
+        }
       } else {
         log->print(" source: %s", cfs->source());
       }
