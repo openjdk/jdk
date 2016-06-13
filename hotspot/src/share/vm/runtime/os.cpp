@@ -1325,9 +1325,8 @@ void os::serialize_thread_states() {
 
 // Returns true if the current stack pointer is above the stack shadow
 // pages, false otherwise.
-bool os::stack_shadow_pages_available(Thread *thread, const methodHandle& method) {
+bool os::stack_shadow_pages_available(Thread *thread, const methodHandle& method, address sp) {
   if (!thread->is_Java_thread()) return false;
-  address sp = current_stack_pointer();
   // Check if we have StackShadowPages above the yellow zone.  This parameter
   // is dependent on the depth of the maximum VM call stack possible from
   // the handler for stack overflow.  'instanceof' in the stack overflow

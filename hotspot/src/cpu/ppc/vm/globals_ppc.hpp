@@ -40,9 +40,9 @@ define_pd_global(bool, ImplicitNullChecks,    true);  // Generate code for impli
 define_pd_global(bool, TrapBasedNullChecks,   true);
 define_pd_global(bool, UncommonNullCast,      true);  // Uncommon-trap NULLs passed to check cast.
 
-#define DEFAULT_STACK_YELLOW_PAGES (6)
+#define DEFAULT_STACK_YELLOW_PAGES (2)
 #define DEFAULT_STACK_RED_PAGES (1)
-#define DEFAULT_STACK_SHADOW_PAGES (6 DEBUG_ONLY(+2))
+#define DEFAULT_STACK_SHADOW_PAGES (20 DEBUG_ONLY(+2))
 #define DEFAULT_STACK_RESERVED_PAGES (1)
 
 #define MIN_STACK_YELLOW_PAGES DEFAULT_STACK_YELLOW_PAGES
