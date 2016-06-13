@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2013, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4093,20 +4093,8 @@ void TemplateTable::monitorenter() {
   __ lock_object(Rcurrent_monitor, Robj_to_lock);
 
   // Check if there's enough space on the stack for the monitors after locking.
-  Label Lskip_stack_check;
-  // Optimization: If the monitors stack section is less then a std page size (4K) don't run
-  // the stack check. There should be enough shadow pages to fit that in.
-  __ ld(Rscratch3, 0, R1_SP);
-  __ sub(Rscratch3, Rscratch3, R26_monitor);
-  __ cmpdi(CCR0, Rscratch3, 4*K);
-  __ blt(CCR0, Lskip_stack_check);
-
-  DEBUG_ONLY(__ untested("stack overflow check during monitor enter");)
-  __ li(Rscratch1, 0);
-  __ generate_stack_overflow_check_with_compare_and_throw(Rscratch1, Rscratch2);
-
-  __ align(32, 12);
-  __ bind(Lskip_stack_check);
+  // This emits a single store.
+  __ generate_stack_overflow_check(0);
 
   // The bcp has already been incremented. Just need to dispatch to next instruction.
   __ dispatch_next(vtos);

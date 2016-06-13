@@ -47,7 +47,7 @@ inline bool os::uses_stack_guard_pages() {
   return true;
 }
 
-inline bool os::allocate_stack_guard_pages() {
+inline bool os::must_commit_stack_guard_pages() {
   assert(uses_stack_guard_pages(), "sanity check");
 #if !defined(__FreeBSD__) || __FreeBSD__ < 5
   // Since FreeBSD 4 uses malloc() for allocating the thread stack
@@ -68,7 +68,7 @@ inline void os::pd_split_reserved_memory(char *base, size_t size,
 
 
 // Bang the shadow pages if they need to be touched to be mapped.
-inline void os::map_stack_shadow_pages() {
+inline void os::map_stack_shadow_pages(address sp) {
 }
 
 inline void os::dll_unload(void *lib) {

@@ -221,7 +221,7 @@ int main (int argc, const char** argv) {
   printf("Test started with pid: %ld\n", (long) getpid());
 
   options[0].optionString = "-Xint";
-  options[1].optionString = "-Xss328k";
+  options[1].optionString = "-Xss512k";
 
   vm_args.version = JNI_VERSION_1_2;
   vm_args.ignoreUnrecognized = JNI_TRUE;
