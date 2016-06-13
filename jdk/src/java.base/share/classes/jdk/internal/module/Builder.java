@@ -66,8 +66,7 @@ final class Builder {
     final Set<Requires> requires;
     final Set<Exports> exports;
     final Map<String, Provides> provides;
-    final Set<String> conceals;
-    final int numPackages;
+    Set<String> packages;
     Set<String> uses;
     Version version;
     String mainClass;
@@ -78,14 +77,12 @@ final class Builder {
     Map<String, String> hashes;
 
     Builder(String name, int reqs, int exports,
-            int provides, int conceals, int packages) {
+            int provides, int packages) {
         this.name = name;
         this.requires = reqs > 0 ? new HashSet<>(reqs) : Collections.emptySet();
         this.exports  = exports > 0 ? new HashSet<>(exports) : Collections.emptySet();
         this.provides = provides > 0 ? new HashMap<>(provides) : Collections.emptyMap();
-        this.conceals = conceals > 0 ? new HashSet<>(conceals) : Collections.emptySet();
         this.uses = Collections.emptySet();
-        this.numPackages = packages;
     }
 
     /**
@@ -169,18 +166,10 @@ final class Builder {
     }
 
     /**
-     * Adds a set of (possible empty) concealed packages.
+     * Adds a set of (possible empty) packages.
      */
-    public Builder conceals(Set<String> packages) {
-        conceals.addAll(packages);
-        return this;
-    }
-
-    /**
-     * Adds a concealed package.
-     */
-    public Builder conceals(String pn) {
-        conceals.add(pn);
+    public Builder packages(Set<String> packages) {
+        this.packages = packages;
         return this;
     }
 
@@ -273,22 +262,6 @@ final class Builder {
     }
 
     /**
-     * Returns the set of packages that is the union of the exported and
-     * concealed packages.
-     */
-    private Set<String> computePackages(Set<Exports> exports, Set<String> conceals) {
-        if (exports.isEmpty())
-            return conceals;
-
-        Set<String> pkgs = new HashSet<>(numPackages);
-        pkgs.addAll(conceals);
-        for (Exports e : exports) {
-            pkgs.add(e.source());
-        }
-        return pkgs;
-    }
-
-    /**
      * Builds a {@code ModuleDescriptor} from the components.
      */
     public ModuleDescriptor build() {
@@ -309,8 +282,7 @@ final class Builder {
                                         osName,
                                         osArch,
                                         osVersion,
-                                        conceals,
-                                        computePackages(exports, conceals),
+                                        packages,
                                         moduleHashes);
     }
 }
