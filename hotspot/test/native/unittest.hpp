@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef UNITTEST_HPP
+#define UNITTEST_HPP
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -111,3 +114,5 @@
 #define TEST_VM_ASSERT_MSG(...)                                     \
     TEST_VM_ASSERT_MSG is only available in debug builds
 #endif
+
+#endif // UNITTEST_HPP
