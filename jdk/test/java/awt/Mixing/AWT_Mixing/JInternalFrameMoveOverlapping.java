@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,15 +37,16 @@ import test.java.awt.regtesthelpers.Util;
  * <p>See <a href="http://monaco.sfbay.sun.com/detail.jsf?cr=6985399">CR6768230</a> for details and base class for test info.
  */
 /*
-@test
-@bug 6985399
-@summary Overlapping test for javax.swing.JScrollPane
-@author sergey.grinev@oracle.com: area=awt.mixing
-@library ../../regtesthelpers
-@modules java.desktop/sun.awt
-         java.desktop/java.awt.peer
-@build Util
-@run main JInternalFrameMoveOverlapping
+ * @test
+ * @key headful
+ * @bug 6985399
+ * @summary Overlapping test for javax.swing.JScrollPane
+ * @author sergey.grinev@oracle.com: area=awt.mixing
+ * @library ../../regtesthelpers
+ * @modules java.desktop/sun.awt
+ *          java.desktop/java.awt.peer
+ * @build Util
+ * @run main JInternalFrameMoveOverlapping
  */
 public class JInternalFrameMoveOverlapping extends OverlappingTestBase {
 

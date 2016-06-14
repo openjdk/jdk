@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key headful
  * @bug     4108453 4778440 6304785
  * @summary Test Window.applyResourceBundle orientation support
  *

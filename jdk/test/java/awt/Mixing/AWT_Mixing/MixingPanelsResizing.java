@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,15 @@ import test.java.awt.regtesthelpers.Util;
  * <p>See <a href="https://bugs.openjdk.java.net/browse/JDK-6786219">JDK-6786219</a> for details
  */
 /*
-@test
-@bug 6786219
-@summary Issues when resizing the frame after mixing of heavy weight & light weight components
-@author sergey.grinev@oracle.com: area=awt.mixing
-@library ../../regtesthelpers
-@build Util
-@build FrameBorderCounter
-@run main MixingPanelsResizing
+ * @test
+ * @key headful
+ * @bug 6786219
+ * @summary Issues when resizing the frame after mixing of heavy weight & light weight components
+ * @author sergey.grinev@oracle.com: area=awt.mixing
+ * @library ../../regtesthelpers
+ * @build Util
+ * @build FrameBorderCounter
+ * @run main MixingPanelsResizing
  */
 public class MixingPanelsResizing {
 

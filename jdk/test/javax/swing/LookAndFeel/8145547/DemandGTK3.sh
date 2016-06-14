@@ -27,6 +27,7 @@
 #   @test
 #   @summary  Try to force GTK3. We must bail out to GTK2 if no 3 available.
 #
+#   @key headful
 #   @compile ProvokeGTK.java
 #   @requires os.family == "linux"
 #   @run shell/timeout=400 DemandGTK3.sh

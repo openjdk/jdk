@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 6497109 6734341
   @summary TextArea must have selection expanding, and also be autoscrolled, if mouse is dragged from inside.
   @library ../../regtesthelpers

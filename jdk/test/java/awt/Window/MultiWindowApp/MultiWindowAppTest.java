@@ -23,6 +23,7 @@
 
 /**
  * @test @summary After calling frame.toBack() dialog goes to the back on Ubuntu 12.04
+ * @key headful
  * @bug 8022334
  * @author Semyon Sadetsky
  * @run main MultiWindowAppTest
