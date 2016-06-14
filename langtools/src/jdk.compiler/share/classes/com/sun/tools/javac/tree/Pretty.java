@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -723,8 +723,11 @@ public class Pretty extends JCTree.Visitor {
                     printExpr(tree.init.head);
                     for (List<JCStatement> l = tree.init.tail; l.nonEmpty(); l = l.tail) {
                         JCVariableDecl vdef = (JCVariableDecl)l.head;
-                        print(", " + vdef.name + " = ");
-                        printExpr(vdef.init);
+                        print(", " + vdef.name);
+                        if (vdef.init != null) {
+                            print(" = ");
+                            printExpr(vdef.init);
+                        }
                     }
                 } else {
                     printExprs(tree.init);
