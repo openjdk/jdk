@@ -104,7 +104,7 @@ public final class XSLoaderImpl implements XSLoader, DOMConfiguration {
         try {
             fGrammarPool.clear();
             for (int i = 0; i < length; ++i) {
-                fSchemaLoader.loadGrammar(new XMLInputSource(null, uriList.item(i), null));
+                fSchemaLoader.loadGrammar(new XMLInputSource(null, uriList.item(i), null, false));
             }
             return fGrammarPool.toXSModel();
         }
@@ -146,7 +146,7 @@ public final class XSLoaderImpl implements XSLoader, DOMConfiguration {
     public XSModel loadURI(String uri) {
         try {
             fGrammarPool.clear();
-            return ((XSGrammar) fSchemaLoader.loadGrammar(new XMLInputSource(null, uri, null))).toXSModel();
+            return ((XSGrammar) fSchemaLoader.loadGrammar(new XMLInputSource(null, uri, null, false))).toXSModel();
         }
         catch (Exception e){
             fSchemaLoader.reportDOMFatalError(e);

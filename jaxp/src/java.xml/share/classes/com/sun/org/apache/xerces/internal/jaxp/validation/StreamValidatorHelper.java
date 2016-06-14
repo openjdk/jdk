@@ -130,7 +130,7 @@ final class StreamValidatorHelper implements ValidatorHelper {
                 identityTransformerHandler.setResult(result);
             }
 
-            XMLInputSource input = new XMLInputSource(streamSource.getPublicId(), streamSource.getSystemId(), null);
+            XMLInputSource input = new XMLInputSource(streamSource.getPublicId(), streamSource.getSystemId(), null, false);
             input.setByteStream(streamSource.getInputStream());
             input.setCharacterStream(streamSource.getReader());
 
