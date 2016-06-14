@@ -56,6 +56,11 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
     public static final String EXCLUDED = "x";
 
     /**
+     * The marker in the location string for modules.
+     */
+    public static final String MODULE = "s";
+
+    /**
      * The marker in the location string for packages.
      */
     public static final String PACKAGE = "p";
@@ -120,7 +125,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
         this.header = header;
         locations = Utils.toLowerCase(locations);
         if (locations.contains(ALL) && !locations.contains(EXCLUDED)) {
-            this.locations = PACKAGE + TYPE + FIELD + METHOD + CONSTRUCTOR + OVERVIEW;
+            this.locations = MODULE + PACKAGE + TYPE + FIELD + METHOD + CONSTRUCTOR + OVERVIEW;
         } else {
             this.locations = locations;
         }
@@ -175,6 +180,17 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      */
     public boolean inOverview() {
         return locations.contains(OVERVIEW) && !locations.contains(EXCLUDED);
+    }
+
+    /**
+     * Return true if this <code>SimpleTaglet</code>
+     * is used in module documentation.
+     * @return true if this <code>SimpleTaglet</code>
+     * is used in module documentation and false
+     * otherwise.
+     */
+    public boolean inModule() {
+        return locations.contains(MODULE) && !locations.contains(EXCLUDED);
     }
 
     /**

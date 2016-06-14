@@ -23,12 +23,38 @@
  * questions.
  */
 
+#include <libsoftcrypto.h> // redirects to libucrypto.h starting 11.3
+
 #ifndef _Included_com_oracle_security_ucrypto_NativeCrypto
 #define _Included_com_oracle_security_ucrypto_NativeCrypto
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+// used by nativeCrypto.c
+#ifdef _LIBUCRYPTO_H // workaround for Solaris bug; see 8157627
+#define CK_AES_CTR_PARAMS    crypto_ctr_params_t
+#define ulCounterBits    ct_ctr_bits
+#define cb        ct_cb
+
+#define CK_AES_CCM_PARAMS    crypto_ccm_params_t
+#define ulMACSize    cc_mac_size
+#define ulNonceSize    cc_nonce_size
+#define ulAuthDataSize    cc_auth_data_size
+#define ulDataSize    cc_data_size
+#define nonce        cc_nonce
+#define authData    cc_auth_data
+
+#define CK_AES_GCM_PARAMS    crypto_gcm_params_t
+#define pIv        gc_iv
+#define ulIvLen        gc_iv_len
+#define ulIvBits    gc_iv_bits
+#define pAAD        gc_aad
+#define ulAADLen    gc_aad_len
+#define ulTagBits    gc_tag_bits
+#endif
+
+// used by nativeCryptoMD.c
 #undef com_oracle_security_ucrypto_NativeDigestMD_MECH_MD5
 #define com_oracle_security_ucrypto_NativeDigestMD_MECH_MD5 1L
 #undef com_oracle_security_ucrypto_NativeDigestMD_MECH_SHA1

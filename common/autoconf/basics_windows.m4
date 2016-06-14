@@ -330,7 +330,7 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
     fi
     AC_MSG_CHECKING([cygwin root directory as unix-style path])
     # The cmd output ends with Windows line endings (CR/LF), the grep command will strip that away
-    cygwin_winpath_root=`cd / ; cmd /c cd | grep ".*"`
+    cygwin_winpath_root=`cd / ; cmd /c cd | $GREP ".*"`
     # Force cygpath to report the proper root by including a trailing space, and then stripping it off again.
     CYGWIN_ROOT_PATH=`$CYGPATH -u "$cygwin_winpath_root " | $CUT -f 1 -d " "`
     AC_MSG_RESULT([$CYGWIN_ROOT_PATH])
@@ -349,7 +349,7 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
 
     AC_MSG_CHECKING([msys root directory as unix-style path])
     # The cmd output ends with Windows line endings (CR/LF), the grep command will strip that away
-    MSYS_ROOT_PATH=`cd / ; cmd /c cd | grep ".*"`
+    MSYS_ROOT_PATH=`cd / ; cmd /c cd | $GREP ".*"`
     BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(MSYS_ROOT_PATH)
     AC_MSG_RESULT([$MSYS_ROOT_PATH])
     WINDOWS_ENV_ROOT_PATH="$MSYS_ROOT_PATH"
@@ -392,7 +392,7 @@ AC_DEFUN_ONCE([BASIC_COMPILE_FIXPATH],
       # Take all collected prefixes and turn them into a -m/c/foo@/c/bar@... command line
       # @ was chosen as separator to minimize risk of other tools messing around with it
       all_unique_prefixes=`echo "${all_fixpath_prefixes@<:@@@:>@}" \
-          | tr ' ' '\n' | grep '^/./' | sort | uniq`
+          | tr ' ' '\n' | $GREP '^/./' | $SORT | $UNIQ`
       fixpath_argument_list=`echo $all_unique_prefixes  | tr ' ' '@'`
       FIXPATH="$FIXPATH_BIN -m$fixpath_argument_list"
     fi

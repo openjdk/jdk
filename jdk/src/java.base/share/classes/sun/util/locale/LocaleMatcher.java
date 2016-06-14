@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,7 +228,8 @@ public final class LocaleMatcher {
                     rangeForRegex = rangeForRegex.substring(0, index);
 
                     // if range ends with an extension key, truncate it.
-                    if (rangeForRegex.lastIndexOf('-') == rangeForRegex.length()-2) {
+                    index = rangeForRegex.lastIndexOf('-');
+                    if (index >= 0 && index == rangeForRegex.length()-2) {
                         rangeForRegex =
                             rangeForRegex.substring(0, rangeForRegex.length()-2);
                     }
