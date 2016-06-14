@@ -31,6 +31,13 @@ The test checks that after different type of GC unreachable objects behave as ex
 
 3. Full GC with memory pressure - weakly and softly referenced non-humongous and humongous objects are collected.
 
+4. CMC -  weakly referenced non-humongous objects are collected, other objects are not collected since weak references
+          from Young Gen is handled as strong during CMC.
+
+5. CMC_NO_SURV_ROOTS -  weakly referenced non-humongous and humongous objects are collected, softly referenced
+                        non-humongous and humongous objects are not collected since we make 2 Young GC to promote all
+                        weak references to Old Gen.
+
 The test gets gc type as a command line argument.
 Then the test allocates object graph in heap (currently testing scenarios are pre-generated and stored in
 TestcaseData.getPregeneratedTestcases()) with TestObjectGraphAfterGC::allocateObjectGraph.
