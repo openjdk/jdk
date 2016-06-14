@@ -3404,8 +3404,8 @@ public class Resolve {
                             types.asSuper(env.enclClass.type, c), env.enclClass.sym);
                 }
             }
-            //find a direct superinterface that is a subtype of 'c'
-            for (Type i : types.interfaces(env.enclClass.type)) {
+            //find a direct super type that is a subtype of 'c'
+            for (Type i : types.directSupertypes(env.enclClass.type)) {
                 if (i.tsym.isSubClass(c, types) && i.tsym != c) {
                     log.error(pos, "illegal.default.super.call", c,
                             diags.fragment("redundant.supertype", c, i));
@@ -3422,7 +3422,7 @@ public class Resolve {
         ListBuffer<Type> result = new ListBuffer<>();
         for (Type t1 : types.interfaces(t)) {
             boolean shouldAdd = true;
-            for (Type t2 : types.interfaces(t)) {
+            for (Type t2 : types.directSupertypes(t)) {
                 if (t1 != t2 && types.isSubtypeNoCapture(t2, t1)) {
                     shouldAdd = false;
                 }
