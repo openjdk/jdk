@@ -21,10 +21,12 @@
  * questions.
  */
 
+// Aix commits on touch, so this test won't work.
 /*
  * @test
  * @key regression
  * @bug 8012015
+ * @requires !(os.family == "aix")
  * @summary Make sure reserved (but uncommitted) memory is not accessible
  * @library /testlibrary /test/lib
  * @modules java.base/jdk.internal.misc
@@ -36,18 +38,11 @@
  */
 
 import jdk.test.lib.*;
+import jdk.test.lib.Platform;
 
 import sun.hotspot.WhiteBox;
 
 public class ReserveMemory {
-  private static boolean isWindows() {
-    return System.getProperty("os.name").toLowerCase().startsWith("win");
-  }
-
-  private static boolean isOsx() {
-    return System.getProperty("os.name").toLowerCase().startsWith("mac");
-  }
-
   public static void main(String args[]) throws Exception {
     if (args.length > 0) {
       WhiteBox.getWhiteBox().readReservedMemory();
@@ -66,9 +61,9 @@ public class ReserveMemory {
           "test");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    if (isWindows()) {
+    if (Platform.isWindows()) {
       output.shouldContain("EXCEPTION_ACCESS_VIOLATION");
-    } else if (isOsx()) {
+    } else if (Platform.isOSX()) {
       output.shouldContain("SIGBUS");
     } else {
       output.shouldContain("SIGSEGV");
