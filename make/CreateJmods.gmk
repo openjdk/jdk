@@ -82,6 +82,12 @@ ifeq ($(MODULE), java.base)
   endif
 endif
 
+# Changes to the jmod tool itself should also trigger a rebuild of all jmods
+DEPS += $(JMOD_CMD)
+ifeq ($(EXTERNAL_BUILDJDK), false)
+  DEPS += $(call CacheFind, $(JDK_OUTPUTDIR)/modules/jdk.jlink/jdk/tools/jmod)
+endif
+
 # TODO: What about headers?
 # Create jmods in a temp dir and then move them into place to keep the
 # module path in $(IMAGES_OUTPUTDIR)/jmods valid at all times.

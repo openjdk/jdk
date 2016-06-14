@@ -82,7 +82,7 @@ final class SnippetMaps {
 
     Snippet getSnippet(int ki) {
         Snippet sn = getSnippetDeadOrAlive(ki);
-        return (sn != null && !sn.status().isActive)
+        return (sn != null && !sn.status().isActive())
                 ? null
                 : sn;
     }
@@ -102,7 +102,7 @@ final class SnippetMaps {
         StringBuilder sb = new StringBuilder();
         sb.append("package ").append(REPL_PACKAGE).append(";\n");
         for (Snippet si : keyIndexToSnippet) {
-            if (si != null && si.status().isDefined && (except == null || !except.contains(si.key()))) {
+            if (si != null && si.status().isDefined() && (except == null || !except.contains(si.key()))) {
                 sb.append(si.importLine(state));
             }
         }
@@ -114,7 +114,7 @@ final class SnippetMaps {
     }
 
     List<Snippet> getDependents(Snippet snip) {
-        if (!snip.kind().isPersistent) {
+        if (!snip.kind().isPersistent()) {
             return Collections.emptyList();
         }
         Set<Integer> depset;
@@ -190,6 +190,6 @@ final class SnippetMaps {
     private Stream<ImportSnippet> importSnippets() {
         return state.keyMap.importKeys()
                 .map(key -> (ImportSnippet)getSnippet(key))
-                .filter(sn -> sn != null && state.status(sn).isDefined);
+                .filter(sn -> sn != null && state.status(sn).isDefined());
     }
 }

@@ -89,6 +89,14 @@ public class UserTaglet implements Taglet {
     /**
      * {@inheritDoc}
      */
+    public boolean inModule() {
+        return userTaglet.isInlineTag()
+                || userTaglet.getAllowedLocations().contains(MODULE);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public boolean inPackage() {
         return userTaglet.isInlineTag()
                 || userTaglet.getAllowedLocations().contains(PACKAGE);
