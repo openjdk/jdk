@@ -132,8 +132,18 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         return UNSAFE.getInt(javaClass, config().klassOffset) & 0xFFFFFFFFL;
     }
 
+    @Override
     public long getMetaspacePointer() {
         return getMetaspaceKlass();
+    }
+
+    /**
+     * The Klass* for this object is kept alive by the direct reference to {@link #javaClass} so no
+     * extra work is required.
+     */
+    @Override
+    public boolean isRegistered() {
+        return true;
     }
 
     @Override
@@ -428,7 +438,13 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     public HotSpotConstantPool getConstantPool() {
-        if (constantPool == null) {
+        if (constantPool == null || !isArray() && UNSAFE.getAddress(getMetaspaceKlass() + config().instanceKlassConstantsOffset) != constantPool.getMetaspaceConstantPool()) {
+            /*
+             * If the pointer to the ConstantPool has changed since this was last read refresh the
+             * HotSpotConstantPool wrapper object. This ensures that uses of the constant pool are
+             * operating on the latest one and that HotSpotResolvedJavaMethodImpls will be able to
+             * use the shared copy instead of creating their own instance.
+             */
             constantPool = compilerToVM().getConstantPool(this, config().instanceKlassConstantsOffset);
         }
         return constantPool;

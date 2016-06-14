@@ -135,6 +135,7 @@ public class HotSpotJVMCIMetaAccessContext {
              */
             metadataRoots = list.getHead();
         }
+        assert isRegistered(metaspaceObject);
     }
 
     protected ResolvedJavaType createClass(Class<?> javaClass) {
@@ -208,7 +209,7 @@ public class HotSpotJVMCIMetaAccessContext {
             ChunkIterator() {
                 currentChunk = head;
                 currentIndex = -1;
-                findNext();
+                next = findNext();
             }
 
             Object[] currentChunk;
@@ -244,5 +245,14 @@ public class HotSpotJVMCIMetaAccessContext {
 
         }
 
+    }
+
+    synchronized boolean isRegistered(MetaspaceWrapperObject wrapper) {
+        for (WeakReference<MetaspaceWrapperObject> m : list) {
+            if (m != null && m.get() == wrapper) {
+                return true;
+            }
+        }
+        return false;
     }
 }
