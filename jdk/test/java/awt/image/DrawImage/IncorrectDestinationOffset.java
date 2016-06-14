@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import javax.imageio.ImageIO;
 
 /**
  * @test
+ * @key headful
  * @bug 8041129
  * @summary Destination offset should be correct in case of Surface->SW blit.
  *          Destination outside of the drawing area should be untouched.

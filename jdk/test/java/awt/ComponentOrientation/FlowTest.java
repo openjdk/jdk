@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug     4108453
  * @summary Test ComponentOrientation (Bidi) support in FlowLayout
  */

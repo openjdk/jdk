@@ -31,6 +31,7 @@ import java.io.PrintStream;
 
 /**
  * @test
+ * @key headful
  * @bug 4379403
  * @run main/othervm DumpOnKey false
  * @run main/othervm DumpOnKey -Dsun.awt.nativedebug=true true

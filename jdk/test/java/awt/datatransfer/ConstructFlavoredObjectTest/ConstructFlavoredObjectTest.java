@@ -30,6 +30,7 @@ import javax.swing.JLabel;
 import javax.swing.TransferHandler;
 /*
  * @test
+ * @key headful
  * @bug 8130329
  * @summary  Audit Core Reflection in module java.desktop AWT/Miscellaneous area
  *           for places that will require changes to work with modules

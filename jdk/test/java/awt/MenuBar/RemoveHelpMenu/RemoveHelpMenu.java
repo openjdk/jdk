@@ -27,6 +27,7 @@ import java.awt.MenuBar;
 
 /**
  * @test
+ * @key headful
  * @bug 6475361
  * @author Sergey Bylokhov
  */
