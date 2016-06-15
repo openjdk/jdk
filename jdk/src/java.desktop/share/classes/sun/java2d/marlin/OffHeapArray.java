@@ -25,7 +25,7 @@
 
 package sun.java2d.marlin;
 
-import static sun.java2d.marlin.MarlinConst.logUnsafeMalloc;
+import static sun.java2d.marlin.MarlinConst.LOG_UNSAFE_MALLOC;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.ref.CleanerFactory;
 
@@ -36,12 +36,12 @@ import jdk.internal.ref.CleanerFactory;
 final class OffHeapArray  {
 
     // unsafe reference
-    static final Unsafe unsafe;
+    static final Unsafe UNSAFE;
     // size of int / float
     static final int SIZE_INT;
 
     static {
-        unsafe   = Unsafe.getUnsafe();
+        UNSAFE   = Unsafe.getUnsafe();
         SIZE_INT = Unsafe.ARRAY_INT_INDEX_SCALE;
     }
 
@@ -52,10 +52,10 @@ final class OffHeapArray  {
 
     OffHeapArray(final Object parent, final long len) {
         // note: may throw OOME:
-        this.address = unsafe.allocateMemory(len);
+        this.address = UNSAFE.allocateMemory(len);
         this.length  = len;
         this.used    = 0;
-        if (logUnsafeMalloc) {
+        if (LOG_UNSAFE_MALLOC) {
             MarlinUtils.logInfo(System.currentTimeMillis()
                                 + ": OffHeapArray.allocateMemory =   "
                                 + len + " to addr = " + this.address);
@@ -72,9 +72,9 @@ final class OffHeapArray  {
      */
     void resize(final long len) {
         // note: may throw OOME:
-        this.address = unsafe.reallocateMemory(address, len);
+        this.address = UNSAFE.reallocateMemory(address, len);
         this.length  = len;
-        if (logUnsafeMalloc) {
+        if (LOG_UNSAFE_MALLOC) {
             MarlinUtils.logInfo(System.currentTimeMillis()
                                 + ": OffHeapArray.reallocateMemory = "
                                 + len + " to addr = " + this.address);
@@ -82,8 +82,8 @@ final class OffHeapArray  {
     }
 
     void free() {
-        unsafe.freeMemory(this.address);
-        if (logUnsafeMalloc) {
+        UNSAFE.freeMemory(this.address);
+        if (LOG_UNSAFE_MALLOC) {
             MarlinUtils.logInfo(System.currentTimeMillis()
                                 + ": OffHeapArray.freeMemory =       "
                                 + this.length
@@ -92,6 +92,6 @@ final class OffHeapArray  {
     }
 
     void fill(final byte val) {
-        unsafe.setMemory(this.address, this.length, val);
+        UNSAFE.setMemory(this.address, this.length, val);
     }
 }
