@@ -32,7 +32,7 @@
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm/timeout=600 compiler.compilercontrol.mixed.RandomValidCommandsTest
+ * @run driver/timeout=600 compiler.compilercontrol.mixed.RandomValidCommandsTest
  */
 
 package compiler.compilercontrol.mixed;
