@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -401,10 +401,10 @@ public class DrawImage implements DrawImagePipe
         }
 
         Region clip = sg.getCompClip();
-        final int dx1 = Math.max((int) Math.floor(ddx1), clip.lox);
-        final int dy1 = Math.max((int) Math.floor(ddy1), clip.loy);
-        final int dx2 = Math.min((int) Math.ceil(ddx2), clip.hix);
-        final int dy2 = Math.min((int) Math.ceil(ddy2), clip.hiy);
+        final int dx1 = Math.max((int) Math.floor(ddx1), clip.getLoX());
+        final int dy1 = Math.max((int) Math.floor(ddy1), clip.getLoY());
+        final int dx2 = Math.min((int) Math.ceil(ddx2), clip.getHiX());
+        final int dy2 = Math.min((int) Math.ceil(ddy2), clip.getHiY());
         if (dx2 <= dx1 || dy2 <= dy1) {
             // empty destination means no output
             return;

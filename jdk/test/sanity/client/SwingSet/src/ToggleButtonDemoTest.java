@@ -56,6 +56,8 @@ import org.testng.annotations.Listeners;
  * @library /sanity/client/lib/jemmy/src
  * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
+ * @modules java.desktop
+ *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.togglebutton.ToggleButtonDemo
  * @run testng ToggleButtonDemoTest
@@ -125,12 +127,12 @@ public class ToggleButtonDemoTest {
         }
 
         for (int i = 0; i < radioButtonCount; i++) {
-            jrbo[i].doClick();
-            assertTrue("Radio Button " + i + " is selected", jrbo[i].isSelected());
+            jrbo[i].push();
+            jrbo[i].waitSelected(true);
 
             for (int j = 0; j < radioButtonCount; j++) {
                 if (i != j) {
-                    assertFalse("Radio Button " + j + " is not selected", jrbo[j].isSelected());
+                    jrbo[j].waitSelected(false);
                 }
             }
         }
@@ -146,23 +148,17 @@ public class ToggleButtonDemoTest {
      */
     private void testCheckBox(ContainerOperator<?> parent, String text, boolean expectedValue) {
 
+        System.out.println("Testing " + text);
         parent.setComparator(EXACT_STRING_COMPARATOR);
         JCheckBoxOperator jcbo = new JCheckBoxOperator(parent, text);
-        assertEquals("Initial selection state of the checkbox '" + text + "'", expectedValue, jcbo.isSelected());
+        jcbo.waitSelected(expectedValue);
 
         // click check box (toggle the state)
-        jcbo.doClick();
-        assertEquals("Selection state of the checkbox '" + text + "' after click", !expectedValue, jcbo.isSelected());
-        if (jcbo.isSelected()) {
-            // toggle back to not-selected state
-            jcbo.doClick();
-            assertFalse("Check Box '" + text + "' is not selected", jcbo.isSelected());
-        } else {
-            // toggle back to selected state
-            jcbo.doClick();
+        jcbo.push();
+        jcbo.waitSelected(!expectedValue);
 
-            assertTrue("Check Box '" + text + "' is selected", jcbo.isSelected());
-        }
+        jcbo.push();
+        jcbo.waitSelected(expectedValue);
     }
 
 

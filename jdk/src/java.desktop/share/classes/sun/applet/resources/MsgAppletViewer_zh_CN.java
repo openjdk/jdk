@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,8 @@ public class MsgAppletViewer_zh_CN extends ListResourceBundle {
             {"appletviewer.parse.warning.embed.requiresheight", "\u8B66\u544A: <embed> \u6807\u8BB0\u9700\u8981\u9AD8\u5EA6\u5C5E\u6027\u3002"},
             {"appletviewer.parse.warning.embed.requireswidth", "\u8B66\u544A: <embed> \u6807\u8BB0\u9700\u8981\u5BBD\u5EA6\u5C5E\u6027\u3002"},
             {"appletviewer.parse.warning.appnotLongersupported", "\u8B66\u544A: \u4E0D\u518D\u652F\u6301 <app> \u6807\u8BB0, \u8BF7\u6539\u7528 <applet>:"},
-            {"appletviewer.usage", "\u7528\u6CD5: appletviewer <options> url\n\n\u5176\u4E2D, <options> \u5305\u62EC:\n  -debug                  \u5728 Java \u8C03\u8BD5\u5668\u4E2D\u542F\u52A8\u5C0F\u5E94\u7528\u7A0B\u5E8F\u67E5\u770B\u5668\n  -encoding <encoding>    \u6307\u5B9A HTML \u6587\u4EF6\u4F7F\u7528\u7684\u5B57\u7B26\u7F16\u7801\n  -J<runtime flag>        \u5C06\u53C2\u6570\u4F20\u9012\u5230 java \u89E3\u91CA\u5668\n\n-J \u9009\u9879\u662F\u975E\u6807\u51C6\u9009\u9879, \u5982\u6709\u66F4\u6539, \u6055\u4E0D\u53E6\u884C\u901A\u77E5\u3002"},
+            {"appletviewer.deprecated", "AppletViewer \u5DF2\u8FC7\u65F6\u3002"},
+            {"appletviewer.usage", "\u7528\u6CD5: appletviewer <options> url(s)\n\n\u5176\u4E2D <options> \u5305\u62EC:\n  -encoding <encoding>    \u6307\u5B9A HTML \u6587\u4EF6\u4F7F\u7528\u7684\u5B57\u7B26\u7F16\u7801\n  -J<runtime flag>        \u5C06\u53C2\u6570\u4F20\u9012\u5230 java \u89E3\u91CA\u5668\n\n-J \u9009\u9879\u662F\u975E\u6807\u51C6\u9009\u9879, \u5982\u6709\u66F4\u6539, \u6055\u4E0D\u53E6\u884C\u901A\u77E5\u3002"},
             {"appletviewer.main.err.unsupportedopt", "\u4E0D\u652F\u6301\u7684\u9009\u9879: {0}"},
             {"appletviewer.main.err.unrecognizedarg", "\u65E0\u6CD5\u8BC6\u522B\u7684\u53C2\u6570: {0}"},
             {"appletviewer.main.err.dupoption", "\u91CD\u590D\u4F7F\u7528\u9009\u9879: {0}"},

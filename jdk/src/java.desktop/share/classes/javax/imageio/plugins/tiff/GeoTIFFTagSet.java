@@ -41,7 +41,7 @@ import java.util.List;
  *
  * @since 9
  */
-public class GeoTIFFTagSet extends TIFFTagSet {
+public final class GeoTIFFTagSet extends TIFFTagSet {
 
     private static GeoTIFFTagSet theInstance = null;
 

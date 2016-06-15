@@ -34,7 +34,7 @@ import java.util.List;
  * @since 9
  * @see   ExifTIFFTagSet
  */
-public class ExifInteroperabilityTagSet extends TIFFTagSet {
+public final class ExifInteroperabilityTagSet extends TIFFTagSet {
     /**
      * A tag indicating the identification of the Interoperability rule
      * (type ASCII).

@@ -346,7 +346,7 @@ public abstract class LookAndFeel
     }
 
     /**
-     * Creates a {@code InputMapUIResource} from <code>keys</code>. This is
+     * Creates an {@code InputMapUIResource} from <code>keys</code>. This is
      * a convenience method for creating a new {@code InputMapUIResource},
      * invoking {@code loadKeyBindings(map, keys)}, and returning the
      * {@code InputMapUIResource}.
