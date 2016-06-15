@@ -145,71 +145,71 @@ public class SunMiscUnsafeAccessTestInt {
     static void testAccess(Object base, long offset) {
         // Plain
         {
-            UNSAFE.putInt(base, offset, 1);
+            UNSAFE.putInt(base, offset, 0x01234567);
             int x = UNSAFE.getInt(base, offset);
-            assertEquals(x, 1, "set int value");
+            assertEquals(x, 0x01234567, "set int value");
         }
 
         // Volatile
         {
-            UNSAFE.putIntVolatile(base, offset, 2);
+            UNSAFE.putIntVolatile(base, offset, 0x89ABCDEF);
             int x = UNSAFE.getIntVolatile(base, offset);
-            assertEquals(x, 2, "putVolatile int value");
+            assertEquals(x, 0x89ABCDEF, "putVolatile int value");
         }
 
         // Lazy
         {
-            UNSAFE.putOrderedInt(base, offset, 1);
+            UNSAFE.putOrderedInt(base, offset, 0x01234567);
             int x = UNSAFE.getIntVolatile(base, offset);
-            assertEquals(x, 1, "putRelease int value");
+            assertEquals(x, 0x01234567, "putRelease int value");
         }
 
 
 
-        UNSAFE.putInt(base, offset, 1);
+        UNSAFE.putInt(base, offset, 0x01234567);
 
         // Compare
         {
-            boolean r = UNSAFE.compareAndSwapInt(base, offset, 1, 2);
+            boolean r = UNSAFE.compareAndSwapInt(base, offset, 0x01234567, 0x89ABCDEF);
             assertEquals(r, true, "success compareAndSwap int");
             int x = UNSAFE.getInt(base, offset);
-            assertEquals(x, 2, "success compareAndSwap int value");
+            assertEquals(x, 0x89ABCDEF, "success compareAndSwap int value");
         }
 
         {
-            boolean r = UNSAFE.compareAndSwapInt(base, offset, 1, 3);
+            boolean r = UNSAFE.compareAndSwapInt(base, offset, 0x01234567, 0xCAFEBABE);
             assertEquals(r, false, "failing compareAndSwap int");
             int x = UNSAFE.getInt(base, offset);
-            assertEquals(x, 2, "failing compareAndSwap int value");
+            assertEquals(x, 0x89ABCDEF, "failing compareAndSwap int value");
         }
 
-        UNSAFE.putInt(base, offset, 2);
+        UNSAFE.putInt(base, offset, 0x89ABCDEF);
 
         // Compare set and get
         {
-            int o = UNSAFE.getAndSetInt(base, offset, 1);
-            assertEquals(o, 2, "getAndSet int");
+            int o = UNSAFE.getAndSetInt(base, offset, 0x01234567);
+            assertEquals(o, 0x89ABCDEF, "getAndSet int");
             int x = UNSAFE.getInt(base, offset);
-            assertEquals(x, 1, "getAndSet int value");
+            assertEquals(x, 0x01234567, "getAndSet int value");
         }
 
-        UNSAFE.putInt(base, offset, 1);
+        UNSAFE.putInt(base, offset, 0x01234567);
 
         // get and add, add and get
         {
-            int o = UNSAFE.getAndAddInt(base, offset, 2);
-            assertEquals(o, 1, "getAndAdd int");
+            int o = UNSAFE.getAndAddInt(base, offset, 0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndAdd int");
             int x = UNSAFE.getInt(base, offset);
-            assertEquals(x, 1 + 2, "getAndAdd int");
+            assertEquals(x, (int)(0x01234567 + 0x89ABCDEF), "getAndAdd int");
         }
     }
 
     static void testAccess(long address) {
         // Plain
         {
-            UNSAFE.putInt(address, 1);
+            UNSAFE.putInt(address, 0x01234567);
             int x = UNSAFE.getInt(address);
-            assertEquals(x, 1, "set int value");
+            assertEquals(x, 0x01234567, "set int value");
         }
     }
 }

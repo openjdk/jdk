@@ -145,71 +145,71 @@ public class SunMiscUnsafeAccessTestLong {
     static void testAccess(Object base, long offset) {
         // Plain
         {
-            UNSAFE.putLong(base, offset, 1L);
+            UNSAFE.putLong(base, offset, 0x0123456789ABCDEFL);
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 1L, "set long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "set long value");
         }
 
         // Volatile
         {
-            UNSAFE.putLongVolatile(base, offset, 2L);
+            UNSAFE.putLongVolatile(base, offset, 0xCAFEBABECAFEBABEL);
             long x = UNSAFE.getLongVolatile(base, offset);
-            assertEquals(x, 2L, "putVolatile long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "putVolatile long value");
         }
 
         // Lazy
         {
-            UNSAFE.putOrderedLong(base, offset, 1L);
+            UNSAFE.putOrderedLong(base, offset, 0x0123456789ABCDEFL);
             long x = UNSAFE.getLongVolatile(base, offset);
-            assertEquals(x, 1L, "putRelease long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "putRelease long value");
         }
 
 
 
-        UNSAFE.putLong(base, offset, 1L);
+        UNSAFE.putLong(base, offset, 0x0123456789ABCDEFL);
 
         // Compare
         {
-            boolean r = UNSAFE.compareAndSwapLong(base, offset, 1L, 2L);
+            boolean r = UNSAFE.compareAndSwapLong(base, offset, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
             assertEquals(r, true, "success compareAndSwap long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 2L, "success compareAndSwap long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "success compareAndSwap long value");
         }
 
         {
-            boolean r = UNSAFE.compareAndSwapLong(base, offset, 1L, 3L);
+            boolean r = UNSAFE.compareAndSwapLong(base, offset, 0x0123456789ABCDEFL, 0xDEADBEEFDEADBEEFL);
             assertEquals(r, false, "failing compareAndSwap long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 2L, "failing compareAndSwap long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "failing compareAndSwap long value");
         }
 
-        UNSAFE.putLong(base, offset, 2L);
+        UNSAFE.putLong(base, offset, 0xCAFEBABECAFEBABEL);
 
         // Compare set and get
         {
-            long o = UNSAFE.getAndSetLong(base, offset, 1L);
-            assertEquals(o, 2L, "getAndSet long");
+            long o = UNSAFE.getAndSetLong(base, offset, 0x0123456789ABCDEFL);
+            assertEquals(o, 0xCAFEBABECAFEBABEL, "getAndSet long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 1L, "getAndSet long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "getAndSet long value");
         }
 
-        UNSAFE.putLong(base, offset, 1L);
+        UNSAFE.putLong(base, offset, 0x0123456789ABCDEFL);
 
         // get and add, add and get
         {
-            long o = UNSAFE.getAndAddLong(base, offset, 2L);
-            assertEquals(o, 1L, "getAndAdd long");
+            long o = UNSAFE.getAndAddLong(base, offset, 0xCAFEBABECAFEBABEL);
+            assertEquals(o, 0x0123456789ABCDEFL, "getAndAdd long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 1L + 2L, "getAndAdd long");
+            assertEquals(x, (long)(0x0123456789ABCDEFL + 0xCAFEBABECAFEBABEL), "getAndAdd long");
         }
     }
 
     static void testAccess(long address) {
         // Plain
         {
-            UNSAFE.putLong(address, 1L);
+            UNSAFE.putLong(address, 0x0123456789ABCDEFL);
             long x = UNSAFE.getLong(address);
-            assertEquals(x, 1L, "set long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "set long value");
         }
     }
 }
