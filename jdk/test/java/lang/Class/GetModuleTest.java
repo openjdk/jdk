@@ -25,6 +25,7 @@
  * @test
  * @summary Exercise Class#getModule
  * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.base/jdk.internal.misc
  *          java.desktop
  * @run testng GetModuleTest
  */
@@ -35,7 +36,7 @@ import java.lang.reflect.Module;
 
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
