@@ -406,10 +406,45 @@ void Rewriter::scan_method(Method* method, bool reverse, bool* invokespecial_err
           break;
         }
 
+        case Bytecodes::_putstatic      :
+        case Bytecodes::_putfield       : {
+          if (!reverse) {
+            // Check if any final field of the class given as parameter is modified
+            // outside of initializer methods of the class. Fields that are modified
+            // are marked with a flag. For marked fields, the compilers do not perform
+            // constant folding (as the field can be changed after initialization).
+            //
+            // The check is performed after verification and only if verification has
+            // succeeded. Therefore, the class is guaranteed to be well-formed.
+            InstanceKlass* klass = method->method_holder();
+            u2 bc_index = Bytes::get_Java_u2(bcp + prefix_length + 1);
+            constantPoolHandle cp(method->constants());
+            Symbol* field_name = cp->name_ref_at(bc_index);
+            Symbol* field_sig = cp->signature_ref_at(bc_index);
+            Symbol* ref_class_name = cp->klass_name_at(cp->klass_ref_index_at(bc_index));
+
+            if (klass->name() == ref_class_name) {
+              fieldDescriptor fd;
+              klass->find_field(field_name, field_sig, &fd);
+              if (fd.access_flags().is_final()) {
+                if (fd.access_flags().is_static()) {
+                  assert(c == Bytecodes::_putstatic, "must be putstatic");
+                  if (!method->is_static_initializer()) {
+                    fd.set_has_initialized_final_update(true);
+                  }
+                } else {
+                  assert(c == Bytecodes::_putfield, "must be putfield");
+                  if (!method->is_object_initializer()) {
+                    fd.set_has_initialized_final_update(true);
+                  }
+                }
+              }
+            }
+          }
+        }
+        // fall through
         case Bytecodes::_getstatic      : // fall through
-        case Bytecodes::_putstatic      : // fall through
         case Bytecodes::_getfield       : // fall through
-        case Bytecodes::_putfield       : // fall through
         case Bytecodes::_invokevirtual  : // fall through
         case Bytecodes::_invokestatic   :
         case Bytecodes::_invokeinterface:

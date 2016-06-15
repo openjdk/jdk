@@ -106,6 +106,7 @@ class fieldDescriptor VALUE_OBJ_CLASS_SPEC {
   bool is_field_access_watched()  const    { return access_flags().is_field_access_watched(); }
   bool is_field_modification_watched() const
                                            { return access_flags().is_field_modification_watched(); }
+  bool has_initialized_final_update() const { return access_flags().has_field_initialized_final_update(); }
   bool has_generic_signature()    const    { return access_flags().field_has_generic_signature(); }
 
   void set_is_field_access_watched(const bool value) {
@@ -115,6 +116,11 @@ class fieldDescriptor VALUE_OBJ_CLASS_SPEC {
 
   void set_is_field_modification_watched(const bool value) {
     _access_flags.set_is_field_modification_watched(value);
+    update_klass_field_access_flag();
+  }
+
+  void set_has_initialized_final_update(const bool value) {
+    _access_flags.set_has_field_initialized_final_update(value);
     update_klass_field_access_flag();
   }
 

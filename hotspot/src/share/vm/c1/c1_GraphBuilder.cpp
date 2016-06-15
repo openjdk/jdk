@@ -1600,7 +1600,7 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
   ValueType* type = as_ValueType(field_type);
   // call will_link again to determine if the field is valid.
   const bool needs_patching = !holder->is_loaded() ||
-                              !field->will_link(method()->holder(), code) ||
+                              !field->will_link(method(), code) ||
                               PatchALot;
 
   ValueStack* state_before = NULL;

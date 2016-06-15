@@ -27,6 +27,7 @@ package compiler.jvmci.compilerToVM;
 import java.util.HashMap;
 import java.util.Map;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import sun.hotspot.WhiteBox;
 import jdk.internal.reflect.ConstantPool;
 import jdk.internal.reflect.ConstantPool.Tag;
@@ -184,13 +185,24 @@ public class ConstantPoolTestCase {
         public final String klass;
         public final String name;
         public final String type;
+        public final ResolvedJavaMethod[] methods;
         public final byte[] opcodes;
         public final long accFlags;
 
         public TestedCPEntry(String klass, String name, String type, byte[] opcodes, long accFlags) {
+                this(klass, name, type, null, opcodes, accFlags);
+        }
+
+        public TestedCPEntry(String klass, String name, String type, ResolvedJavaMethod[] methods, byte[] opcodes, long accFlags) {
             this.klass = klass;
             this.name = name;
             this.type = type;
+            if (methods != null) {
+                this.methods = new ResolvedJavaMethod[methods.length];
+                System.arraycopy(methods, 0, this.methods, 0, methods.length);
+            } else {
+                this.methods = null;
+            }
             if (opcodes != null) {
                 this.opcodes = new byte[opcodes.length];
                 System.arraycopy(opcodes, 0, this.opcodes, 0, opcodes.length);
