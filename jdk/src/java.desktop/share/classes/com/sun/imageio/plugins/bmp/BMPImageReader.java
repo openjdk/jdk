@@ -1655,7 +1655,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
 
                     // Whenever end pixels can fit into odd number of bytes,
                     // an extra padding byte will be present, so skip that.
-                    if ((((int)Math.ceil(end/2)) & 1) ==1 ) {
+                    if ((((end + 1) / 2) & 1) == 1) {
                         count++;
                     }
                     break;
