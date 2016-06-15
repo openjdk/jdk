@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,8 @@ public class MsgAppletViewer_it extends ListResourceBundle {
             {"appletviewer.parse.warning.embed.requiresheight", "Avvertenza: la tag <embed> richiede un attributo height."},
             {"appletviewer.parse.warning.embed.requireswidth", "Avvertenza: la tag <embed> richiede un attributo width."},
             {"appletviewer.parse.warning.appnotLongersupported", "Avvertenza: la tag <app> non \u00E8 pi\u00F9 supportata. Utilizzare <applet>:"},
-            {"appletviewer.usage", "Uso: appletviewer <opzioni> url(s)\n\ndove <opzioni> includono:\n  -debug                  Avvia il visualizzatore applet nel debugger Java\n  -encoding <codifica>    Specifica la codifica dei caratteri utilizzata dai file HTML\n  -J<flag runtime>        Passa l'argomento all'interpreter Java\n\nL'opzione -J non \u00E8 standard ed \u00E8 soggetta a modifica senza preavviso."},
+            {"appletviewer.deprecated", "AppletViewer non pi\u00F9 valido."},
+            {"appletviewer.usage", "Uso: appletviewer <options> url(s)\n\ndove <options> includono:\n  -encoding <encoding>    Specifica la codifica dei caratteri utilizzata dai file HTML\n  -J<runtime flag>        Passa l'argomento all'interpreter Java\n\nL'opzione -J non \u00E8 standard ed \u00E8 soggetta a modifica senza preavviso."},
             {"appletviewer.main.err.unsupportedopt", "Opzione non supportata: {0}"},
             {"appletviewer.main.err.unrecognizedarg", "Argomento non riconosciuto: {0}"},
             {"appletviewer.main.err.dupoption", "Uso duplicato dell''opzione: {0}"},

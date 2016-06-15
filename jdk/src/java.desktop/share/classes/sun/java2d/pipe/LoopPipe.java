@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,16 @@
 
 package sun.java2d.pipe;
 
-import java.awt.Font;
 import java.awt.Shape;
 import java.awt.BasicStroke;
-import java.awt.Polygon;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.PathIterator;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Arc2D;
-import java.awt.geom.IllegalPathStateException;
 import java.awt.geom.Path2D;
-import java.awt.font.GlyphVector;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
-import sun.java2d.loops.FontInfo;
-import sun.java2d.loops.DrawPolygons;
 import sun.java2d.loops.FillParallelogram;
 import sun.java2d.loops.DrawParallelogram;
 import sun.awt.SunHints;

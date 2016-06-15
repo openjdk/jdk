@@ -74,7 +74,7 @@ public final class TransformAttribute implements Serializable {
 
     /**
      * Returns a copy of the wrapped transform.
-     * @return a {@code AffineTransform} that is a copy of the wrapped
+     * @return an {@code AffineTransform} that is a copy of the wrapped
      * transform of this {@code TransformAttribute}.
      */
     public AffineTransform getTransform() {

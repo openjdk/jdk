@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,8 +186,21 @@ public class OffScreenImageSource implements ImageProducer {
             theConsumer.setProperties(properties);
             sendPixels();
             theConsumer.imageComplete(ImageConsumer.SINGLEFRAMEDONE);
-            theConsumer.imageComplete(ImageConsumer.STATICIMAGEDONE);
+
+            try {
+                theConsumer.imageComplete(ImageConsumer.STATICIMAGEDONE);
+            } catch (RuntimeException e) {
+                // We did not previously call this method here and
+                // some image consumer filters were not prepared for it to be
+                // called at this time. We allow them to have runtime issues
+                // for this one call only without triggering the IMAGEERROR
+                // condition below.
+                e.printStackTrace();
+            }
+
         } catch (NullPointerException e) {
+            e.printStackTrace();
+
             if (theConsumer != null) {
                 theConsumer.imageComplete(ImageConsumer.IMAGEERROR);
             }

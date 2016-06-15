@@ -134,7 +134,9 @@ public class ServiceUI {
      *
      * @param gc used to select screen. null means primary or default screen.
      * @param x location of dialog including border in screen coordinates
+     * relative to the origin of {@code gc}.
      * @param y location of dialog including border in screen coordinates
+     * relative to the origin of {@code gc}.
      * @param services to be browsable, must be non-null.
      * @param defaultService initial PrintService to display.
      * @param flavor the flavor to be printed, or null.

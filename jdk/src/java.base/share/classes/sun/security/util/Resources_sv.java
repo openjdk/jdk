@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package sun.security.util;
 
 /**
- * <p> This class represents the <code>ResourceBundle</code>
+ * This class represents the <code>ResourceBundle</code>
  * for javax.security.auth and sun.security.
  *
  */
@@ -135,7 +135,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"expected.codeBase.or.SignedBy.or.Principal",
                 "f\u00F6rv\u00E4ntad codeBase eller SignedBy eller identitetshavare"},
         {"expected.permission.entry", "f\u00F6rv\u00E4ntade beh\u00F6righetspost"},
-        {"number.", "antal "},
+        {"number.", "nummer"},
         {"expected.expect.read.end.of.file.",
                 "f\u00F6rv\u00E4ntade [{0}], l\u00E4ste [filslut]"},
         {"expected.read.end.of.file.",
@@ -159,8 +159,6 @@ public class Resources_sv extends java.util.ListResourceBundle {
 
     /**
      * Returns the contents of this <code>ResourceBundle</code>.
-     *
-     * <p>
      *
      * @return the contents of this <code>ResourceBundle</code>.
      */
