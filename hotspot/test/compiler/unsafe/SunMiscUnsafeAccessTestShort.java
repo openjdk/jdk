@@ -145,16 +145,16 @@ public class SunMiscUnsafeAccessTestShort {
     static void testAccess(Object base, long offset) {
         // Plain
         {
-            UNSAFE.putShort(base, offset, (short)1);
+            UNSAFE.putShort(base, offset, (short)0x0123);
             short x = UNSAFE.getShort(base, offset);
-            assertEquals(x, (short)1, "set short value");
+            assertEquals(x, (short)0x0123, "set short value");
         }
 
         // Volatile
         {
-            UNSAFE.putShortVolatile(base, offset, (short)2);
+            UNSAFE.putShortVolatile(base, offset, (short)0x4567);
             short x = UNSAFE.getShortVolatile(base, offset);
-            assertEquals(x, (short)2, "putVolatile short value");
+            assertEquals(x, (short)0x4567, "putVolatile short value");
         }
 
 
@@ -166,9 +166,9 @@ public class SunMiscUnsafeAccessTestShort {
     static void testAccess(long address) {
         // Plain
         {
-            UNSAFE.putShort(address, (short)1);
+            UNSAFE.putShort(address, (short)0x0123);
             short x = UNSAFE.getShort(address);
-            assertEquals(x, (short)1, "set short value");
+            assertEquals(x, (short)0x0123, "set short value");
         }
     }
 }

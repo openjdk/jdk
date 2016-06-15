@@ -2484,14 +2484,20 @@ void IdealLoopTree::adjust_loop_exit_prob( PhaseIdealLoop *phase ) {
             ((bol->in(1)->Opcode() == Op_StorePConditional ) ||
              (bol->in(1)->Opcode() == Op_StoreIConditional ) ||
              (bol->in(1)->Opcode() == Op_StoreLConditional ) ||
+             (bol->in(1)->Opcode() == Op_CompareAndExchangeB ) ||
+             (bol->in(1)->Opcode() == Op_CompareAndExchangeS ) ||
              (bol->in(1)->Opcode() == Op_CompareAndExchangeI ) ||
              (bol->in(1)->Opcode() == Op_CompareAndExchangeL ) ||
              (bol->in(1)->Opcode() == Op_CompareAndExchangeP ) ||
              (bol->in(1)->Opcode() == Op_CompareAndExchangeN ) ||
+             (bol->in(1)->Opcode() == Op_WeakCompareAndSwapB ) ||
+             (bol->in(1)->Opcode() == Op_WeakCompareAndSwapS ) ||
              (bol->in(1)->Opcode() == Op_WeakCompareAndSwapI ) ||
              (bol->in(1)->Opcode() == Op_WeakCompareAndSwapL ) ||
              (bol->in(1)->Opcode() == Op_WeakCompareAndSwapP ) ||
              (bol->in(1)->Opcode() == Op_WeakCompareAndSwapN ) ||
+             (bol->in(1)->Opcode() == Op_CompareAndSwapB ) ||
+             (bol->in(1)->Opcode() == Op_CompareAndSwapS ) ||
              (bol->in(1)->Opcode() == Op_CompareAndSwapI ) ||
              (bol->in(1)->Opcode() == Op_CompareAndSwapL ) ||
              (bol->in(1)->Opcode() == Op_CompareAndSwapP ) ||

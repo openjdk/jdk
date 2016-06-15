@@ -145,16 +145,16 @@ public class SunMiscUnsafeAccessTestChar {
     static void testAccess(Object base, long offset) {
         // Plain
         {
-            UNSAFE.putChar(base, offset, 'a');
+            UNSAFE.putChar(base, offset, '\u0123');
             char x = UNSAFE.getChar(base, offset);
-            assertEquals(x, 'a', "set char value");
+            assertEquals(x, '\u0123', "set char value");
         }
 
         // Volatile
         {
-            UNSAFE.putCharVolatile(base, offset, 'b');
+            UNSAFE.putCharVolatile(base, offset, '\u4567');
             char x = UNSAFE.getCharVolatile(base, offset);
-            assertEquals(x, 'b', "putVolatile char value");
+            assertEquals(x, '\u4567', "putVolatile char value");
         }
 
 
@@ -166,9 +166,9 @@ public class SunMiscUnsafeAccessTestChar {
     static void testAccess(long address) {
         // Plain
         {
-            UNSAFE.putChar(address, 'a');
+            UNSAFE.putChar(address, '\u0123');
             char x = UNSAFE.getChar(address);
-            assertEquals(x, 'a', "set char value");
+            assertEquals(x, '\u0123', "set char value");
         }
     }
 }
