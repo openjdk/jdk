@@ -265,7 +265,7 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, $value3$);
             assertEquals(o, $value1$, "getAndAdd $type$");
             $type$ c = ($type$) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(recv, $value3$);
-            assertEquals(c, $value1$ + $value3$ + $value3$, "getAndAdd $type$ value");
+            assertEquals(c, ($type$)($value1$ + $value3$ + $value3$), "getAndAdd $type$ value");
         }
 #end[AtomicAdd]
     }
@@ -448,7 +448,7 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_ADD).invokeExact( $value3$);
             assertEquals(o, $value1$, "getAndAdd $type$");
             $type$ c = ($type$) hs.get(TestAccessMode.ADD_AND_GET).invokeExact($value3$);
-            assertEquals(c, $value1$ + $value3$ + $value3$, "getAndAdd $type$ value");
+            assertEquals(c, ($type$)($value1$ + $value3$ + $value3$), "getAndAdd $type$ value");
         }
 #end[AtomicAdd]
     }
@@ -634,7 +634,7 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
                 $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, $value3$);
                 assertEquals(o, $value1$, "getAndAdd $type$");
                 $type$ c = ($type$) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(array, i, $value3$);
-                assertEquals(c, $value1$ + $value3$ + $value3$, "getAndAdd $type$ value");
+                assertEquals(c, ($type$)($value1$ + $value3$ + $value3$), "getAndAdd $type$ value");
             }
 #end[AtomicAdd]
         }

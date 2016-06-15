@@ -1400,6 +1400,285 @@ public final class Unsafe {
         return compareAndSwapInt(o, offset, expected, x);
     }
 
+    @HotSpotIntrinsicCandidate
+    public final byte compareAndExchangeByteVolatile(Object o, long offset,
+                                                     byte expected,
+                                                     byte x) {
+        long wordOffset = offset & ~3;
+        int shift = (int) (offset & 3) << 3;
+        if (BE) {
+            shift = 24 - shift;
+        }
+        int mask           = 0xFF << shift;
+        int maskedExpected = (expected & 0xFF) << shift;
+        int maskedX        = (x & 0xFF) << shift;
+        int fullWord;
+        do {
+            fullWord = getIntVolatile(o, wordOffset);
+            if ((fullWord & mask) != maskedExpected)
+                return (byte) ((fullWord & mask) >> shift);
+        } while (!weakCompareAndSwapIntVolatile(o, wordOffset,
+                                                fullWord, (fullWord & ~mask) | maskedX));
+        return expected;
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final boolean compareAndSwapByte(Object o, long offset,
+                                            byte expected,
+                                            byte x) {
+        return compareAndExchangeByteVolatile(o, offset, expected, x) == expected;
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final boolean weakCompareAndSwapByteVolatile(Object o, long offset,
+                                                        byte expected,
+                                                        byte x) {
+        return compareAndSwapByte(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final boolean weakCompareAndSwapByteAcquire(Object o, long offset,
+                                                       byte expected,
+                                                       byte x) {
+        return weakCompareAndSwapByteVolatile(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final boolean weakCompareAndSwapByteRelease(Object o, long offset,
+                                                       byte expected,
+                                                       byte x) {
+        return weakCompareAndSwapByteVolatile(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final boolean weakCompareAndSwapByte(Object o, long offset,
+                                                        byte expected,
+                                                        byte x) {
+        return weakCompareAndSwapByteVolatile(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final byte compareAndExchangeByteAcquire(Object o, long offset,
+                                                    byte expected,
+                                                    byte x) {
+        return compareAndExchangeByteVolatile(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final byte compareAndExchangeByteRelease(Object o, long offset,
+                                                    byte expected,
+                                                    byte x) {
+        return compareAndExchangeByteVolatile(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final short compareAndExchangeShortVolatile(Object o, long offset,
+                                             short expected,
+                                             short x) {
+        if ((offset & 3) == 3) {
+            throw new IllegalArgumentException("Update spans the word, not supported");
+        }
+        long wordOffset = offset & ~3;
+        int shift = (int) (offset & 3) << 3;
+        if (BE) {
+            shift = 16 - shift;
+        }
+        int mask           = 0xFFFF << shift;
+        int maskedExpected = (expected & 0xFFFF) << shift;
+        int maskedX        = (x & 0xFFFF) << shift;
+        int fullWord;
+        do {
+            fullWord = getIntVolatile(o, wordOffset);
+            if ((fullWord & mask) != maskedExpected) {
+                return (short) ((fullWord & mask) >> shift);
+            }
+        } while (!weakCompareAndSwapIntVolatile(o, wordOffset,
+                                                fullWord, (fullWord & ~mask) | maskedX));
+        return expected;
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final boolean compareAndSwapShort(Object o, long offset,
+                                             short expected,
+                                             short x) {
+        return compareAndExchangeShortVolatile(o, offset, expected, x) == expected;
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final boolean weakCompareAndSwapShortVolatile(Object o, long offset,
+                                                         short expected,
+                                                         short x) {
+        return compareAndSwapShort(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final boolean weakCompareAndSwapShortAcquire(Object o, long offset,
+                                                        short expected,
+                                                        short x) {
+        return weakCompareAndSwapShortVolatile(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final boolean weakCompareAndSwapShortRelease(Object o, long offset,
+                                                        short expected,
+                                                        short x) {
+        return weakCompareAndSwapShortVolatile(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final boolean weakCompareAndSwapShort(Object o, long offset,
+                                                 short expected,
+                                                 short x) {
+        return weakCompareAndSwapShortVolatile(o, offset, expected, x);
+    }
+
+
+    @HotSpotIntrinsicCandidate
+    public final short compareAndExchangeShortAcquire(Object o, long offset,
+                                                     short expected,
+                                                     short x) {
+        return compareAndExchangeShortVolatile(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final short compareAndExchangeShortRelease(Object o, long offset,
+                                                    short expected,
+                                                    short x) {
+        return compareAndExchangeShortVolatile(o, offset, expected, x);
+    }
+
+    @ForceInline
+    private char s2c(short s) {
+        return (char) s;
+    }
+
+    @ForceInline
+    private short c2s(char s) {
+        return (short) s;
+    }
+
+    @ForceInline
+    public final boolean compareAndSwapChar(Object o, long offset,
+                                            char expected,
+                                            char x) {
+        return compareAndSwapShort(o, offset, c2s(expected), c2s(x));
+    }
+
+    @ForceInline
+    public final char compareAndExchangeCharVolatile(Object o, long offset,
+                                            char expected,
+                                            char x) {
+        return s2c(compareAndExchangeShortVolatile(o, offset, c2s(expected), c2s(x)));
+    }
+
+    @ForceInline
+    public final char compareAndExchangeCharAcquire(Object o, long offset,
+                                            char expected,
+                                            char x) {
+        return s2c(compareAndExchangeShortAcquire(o, offset, c2s(expected), c2s(x)));
+    }
+
+    @ForceInline
+    public final char compareAndExchangeCharRelease(Object o, long offset,
+                                            char expected,
+                                            char x) {
+        return s2c(compareAndExchangeShortRelease(o, offset, c2s(expected), c2s(x)));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSwapCharVolatile(Object o, long offset,
+                                            char expected,
+                                            char x) {
+        return weakCompareAndSwapShortVolatile(o, offset, c2s(expected), c2s(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSwapCharAcquire(Object o, long offset,
+                                            char expected,
+                                            char x) {
+        return weakCompareAndSwapShortAcquire(o, offset, c2s(expected), c2s(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSwapCharRelease(Object o, long offset,
+                                            char expected,
+                                            char x) {
+        return weakCompareAndSwapShortRelease(o, offset, c2s(expected), c2s(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSwapChar(Object o, long offset,
+                                            char expected,
+                                            char x) {
+        return weakCompareAndSwapShort(o, offset, c2s(expected), c2s(x));
+    }
+
+    @ForceInline
+    private boolean byte2bool(byte b) {
+        return b > 0;
+    }
+
+    @ForceInline
+    private byte bool2byte(boolean b) {
+        return b ? (byte)1 : (byte)0;
+    }
+
+    @ForceInline
+    public final boolean compareAndSwapBoolean(Object o, long offset,
+                                               boolean expected,
+                                               boolean x) {
+        return compareAndSwapByte(o, offset, bool2byte(expected), bool2byte(x));
+    }
+
+    @ForceInline
+    public final boolean compareAndExchangeBooleanVolatile(Object o, long offset,
+                                                        boolean expected,
+                                                        boolean x) {
+        return byte2bool(compareAndExchangeByteVolatile(o, offset, bool2byte(expected), bool2byte(x)));
+    }
+
+    @ForceInline
+    public final boolean compareAndExchangeBooleanAcquire(Object o, long offset,
+                                                    boolean expected,
+                                                    boolean x) {
+        return byte2bool(compareAndExchangeByteAcquire(o, offset, bool2byte(expected), bool2byte(x)));
+    }
+
+    @ForceInline
+    public final boolean compareAndExchangeBooleanRelease(Object o, long offset,
+                                                       boolean expected,
+                                                       boolean x) {
+        return byte2bool(compareAndExchangeByteRelease(o, offset, bool2byte(expected), bool2byte(x)));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSwapBooleanVolatile(Object o, long offset,
+                                                           boolean expected,
+                                                           boolean x) {
+        return weakCompareAndSwapByteVolatile(o, offset, bool2byte(expected), bool2byte(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSwapBooleanAcquire(Object o, long offset,
+                                                          boolean expected,
+                                                          boolean x) {
+        return weakCompareAndSwapByteAcquire(o, offset, bool2byte(expected), bool2byte(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSwapBooleanRelease(Object o, long offset,
+                                                          boolean expected,
+                                                          boolean x) {
+        return weakCompareAndSwapByteRelease(o, offset, bool2byte(expected), bool2byte(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSwapBoolean(Object o, long offset,
+                                                   boolean expected,
+                                                   boolean x) {
+        return weakCompareAndSwapByte(o, offset, bool2byte(expected), bool2byte(x));
+    }
+
     /**
      * Atomically updates Java variable to {@code x} if it is currently
      * holding {@code expected}.
@@ -1840,7 +2119,7 @@ public final class Unsafe {
         int v;
         do {
             v = getIntVolatile(o, offset);
-        } while (!compareAndSwapInt(o, offset, v, v + delta));
+        } while (!weakCompareAndSwapIntVolatile(o, offset, v, v + delta));
         return v;
     }
 
@@ -1860,8 +2139,30 @@ public final class Unsafe {
         long v;
         do {
             v = getLongVolatile(o, offset);
-        } while (!compareAndSwapLong(o, offset, v, v + delta));
+        } while (!weakCompareAndSwapLongVolatile(o, offset, v, v + delta));
         return v;
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final byte getAndAddByte(Object o, long offset, byte delta) {
+        byte v;
+        do {
+            v = getByteVolatile(o, offset);
+        } while (!weakCompareAndSwapByteVolatile(o, offset, v, (byte) (v + delta)));
+        return v;
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final short getAndAddShort(Object o, long offset, short delta) {
+        short v;
+        do {
+            v = getShortVolatile(o, offset);
+        } while (!weakCompareAndSwapShortVolatile(o, offset, v, (short) (v + delta)));
+        return v;
+    }
+
+    public final char getAndAddChar(Object o, long offset, char delta) {
+        return (char) getAndAddShort(o, offset, (short) delta);
     }
 
     /**
@@ -1880,7 +2181,7 @@ public final class Unsafe {
         int v;
         do {
             v = getIntVolatile(o, offset);
-        } while (!compareAndSwapInt(o, offset, v, newValue));
+        } while (!weakCompareAndSwapIntVolatile(o, offset, v, newValue));
         return v;
     }
 
@@ -1900,7 +2201,7 @@ public final class Unsafe {
         long v;
         do {
             v = getLongVolatile(o, offset);
-        } while (!compareAndSwapLong(o, offset, v, newValue));
+        } while (!weakCompareAndSwapLongVolatile(o, offset, v, newValue));
         return v;
     }
 
@@ -1920,10 +2221,35 @@ public final class Unsafe {
         Object v;
         do {
             v = getObjectVolatile(o, offset);
-        } while (!compareAndSwapObject(o, offset, v, newValue));
+        } while (!weakCompareAndSwapObjectVolatile(o, offset, v, newValue));
         return v;
     }
 
+    @HotSpotIntrinsicCandidate
+    public final byte getAndSetByte(Object o, long offset, byte newValue) {
+        byte v;
+        do {
+            v = getByteVolatile(o, offset);
+        } while (!weakCompareAndSwapByteVolatile(o, offset, v, newValue));
+        return v;
+    }
+
+    public final boolean getAndSetBoolean(Object o, long offset, boolean newValue) {
+        return byte2bool(getAndSetByte(o, offset, bool2byte(newValue)));
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final short getAndSetShort(Object o, long offset, short newValue) {
+        short v;
+        do {
+            v = getShortVolatile(o, offset);
+        } while (!weakCompareAndSwapShortVolatile(o, offset, v, newValue));
+        return v;
+    }
+
+    public final char getAndSetChar(Object o, long offset, char newValue) {
+        return s2c(getAndSetShort(o, offset, c2s(newValue)));
+    }
 
     /**
      * Ensures that loads before the fence will not be reordered with loads and

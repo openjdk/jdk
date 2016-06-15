@@ -568,7 +568,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             $type$ o = ($type$) vh.getAndAdd(recv, $value3$);
             assertEquals(o, $value1$, "getAndAdd $type$");
             $type$ c = ($type$) vh.addAndGet(recv, $value3$);
-            assertEquals(c, $value1$ + $value3$ + $value3$, "getAndAdd $type$ value");
+            assertEquals(c, ($type$)($value1$ + $value3$ + $value3$), "getAndAdd $type$ value");
         }
 #end[AtomicAdd]
     }
@@ -771,7 +771,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             $type$ o = ($type$) vh.getAndAdd( $value3$);
             assertEquals(o, $value1$, "getAndAdd $type$");
             $type$ c = ($type$) vh.addAndGet($value3$);
-            assertEquals(c, $value1$ + $value3$ + $value3$, "getAndAdd $type$ value");
+            assertEquals(c, ($type$)($value1$ + $value3$ + $value3$), "getAndAdd $type$ value");
         }
 #end[AtomicAdd]
     }
@@ -977,7 +977,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
                 $type$ o = ($type$) vh.getAndAdd(array, i, $value3$);
                 assertEquals(o, $value1$, "getAndAdd $type$");
                 $type$ c = ($type$) vh.addAndGet(array, i, $value3$);
-                assertEquals(c, $value1$ + $value3$ + $value3$, "getAndAdd $type$ value");
+                assertEquals(c, ($type$)($value1$ + $value3$ + $value3$), "getAndAdd $type$ value");
             }
 #end[AtomicAdd]
         }
