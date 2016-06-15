@@ -267,8 +267,9 @@ final class CompilerToVM {
     native HotSpotResolvedObjectTypeImpl resolveTypeInPool(HotSpotConstantPool constantPool, int cpi) throws LinkageError;
 
     /**
-     * Looks up and attempts to resolve the {@code JVM_CONSTANT_Field} entry at index {@code cpi} in
-     * {@code constantPool}. The values returned in {@code info} are:
+     * Looks up and attempts to resolve the {@code JVM_CONSTANT_Field} entry for at index {@code cpi} in
+     * {@code constantPool}. For some opcodes, checks are performed that require the {@code method}
+     * that contains {@code opcode} to be specified. The values returned in {@code info} are:
      *
      * <pre>
      *     [(int) flags,   // only valid if field is resolved
@@ -281,7 +282,7 @@ final class CompilerToVM {
      * @param info an array in which the details of the field are returned
      * @return the type defining the field if resolution is successful, 0 otherwise
      */
-    native HotSpotResolvedObjectTypeImpl resolveFieldInPool(HotSpotConstantPool constantPool, int cpi, byte opcode, long[] info);
+    native HotSpotResolvedObjectTypeImpl resolveFieldInPool(HotSpotConstantPool constantPool, int cpi, HotSpotResolvedJavaMethodImpl method, byte opcode, long[] info);
 
     /**
      * Converts {@code cpci} from an index into the cache for {@code constantPool} to an index

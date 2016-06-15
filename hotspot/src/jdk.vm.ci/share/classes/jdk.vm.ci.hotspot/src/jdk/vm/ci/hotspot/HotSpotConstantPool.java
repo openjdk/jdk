@@ -587,7 +587,7 @@ final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapperObject 
     }
 
     @Override
-    public JavaField lookupField(int cpi, int opcode) {
+    public JavaField lookupField(int cpi, ResolvedJavaMethod method, int opcode) {
         final int index = rawIndexToConstantPoolIndex(cpi, opcode);
         final int nameAndTypeIndex = getNameAndTypeRefIndexAt(index);
         final int nameIndex = getNameRefIndexAt(nameAndTypeIndex);
@@ -603,7 +603,7 @@ final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapperObject 
             long[] info = new long[2];
             HotSpotResolvedObjectTypeImpl resolvedHolder;
             try {
-                resolvedHolder = compilerToVM().resolveFieldInPool(this, index, (byte) opcode, info);
+                resolvedHolder = compilerToVM().resolveFieldInPool(this, index, (HotSpotResolvedJavaMethodImpl) method, (byte) opcode, info);
             } catch (Throwable t) {
                 /*
                  * If there was an exception resolving the field we give up and return an unresolved

@@ -278,7 +278,7 @@ int ciBytecodeStream::get_field_index() {
 // or put_static, get the referenced field.
 ciField* ciBytecodeStream::get_field(bool& will_link) {
   ciField* f = CURRENT_ENV->get_field_by_index(_holder, get_field_index());
-  will_link = f->will_link(_holder, _bc);
+  will_link = f->will_link(_method, _bc);
   return f;
 }
 

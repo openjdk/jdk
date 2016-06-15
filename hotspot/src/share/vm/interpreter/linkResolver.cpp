@@ -223,6 +223,22 @@ void CallInfo::print() {
 //------------------------------------------------------------------------------------------------------------------------
 // Implementation of LinkInfo
 
+LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, methodHandle current_method, TRAPS) {
+   // resolve klass
+  Klass* result = pool->klass_ref_at(index, CHECK);
+  _resolved_klass = KlassHandle(THREAD, result);
+
+  // Get name, signature, and static klass
+  _name          = pool->name_ref_at(index);
+  _signature     = pool->signature_ref_at(index);
+  _tag           = pool->tag_ref_at(index);
+  _current_klass = KlassHandle(THREAD, pool->pool_holder());
+  _current_method = current_method;
+
+  // Coming from the constant pool always checks access
+  _check_access  = true;
+}
+
 LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, TRAPS) {
    // resolve klass
   Klass* result = pool->klass_ref_at(index, CHECK);
@@ -233,6 +249,7 @@ LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, TRAPS) {
   _signature     = pool->signature_ref_at(index);
   _tag           = pool->tag_ref_at(index);
   _current_klass = KlassHandle(THREAD, pool->pool_holder());
+  _current_method = methodHandle();
 
   // Coming from the constant pool always checks access
   _check_access  = true;
@@ -577,7 +594,7 @@ methodHandle LinkResolver::resolve_method_statically(Bytecodes::Code code,
     return resolve_method(link_info, code, THREAD);
   }
 
-  LinkInfo link_info(pool, index, CHECK_NULL);
+  LinkInfo link_info(pool, index, methodHandle(), CHECK_NULL);
   resolved_klass = link_info.resolved_klass();
 
   if (pool->has_preresolution()
@@ -875,8 +892,8 @@ void LinkResolver::check_field_accessability(KlassHandle ref_klass,
   }
 }
 
-void LinkResolver::resolve_field_access(fieldDescriptor& fd, const constantPoolHandle& pool, int index, Bytecodes::Code byte, TRAPS) {
-  LinkInfo link_info(pool, index, CHECK);
+void LinkResolver::resolve_field_access(fieldDescriptor& fd, const constantPoolHandle& pool, int index, const methodHandle& method, Bytecodes::Code byte, TRAPS) {
+  LinkInfo link_info(pool, index, method, CHECK);
   resolve_field(fd, link_info, byte, true, CHECK);
 }
 
@@ -925,9 +942,39 @@ void LinkResolver::resolve_field(fieldDescriptor& fd,
     THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), msg);
   }
 
-  // Final fields can only be accessed from its own class.
-  if (is_put && fd.access_flags().is_final() && sel_klass() != current_klass()) {
-    THROW(vmSymbols::java_lang_IllegalAccessError());
+  // A final field can be modified only
+  // (1) by methods declared in the class declaring the field and
+  // (2) by the <clinit> method (in case of a static field)
+  //     or by the <init> method (in case of an instance field).
+  if (is_put && fd.access_flags().is_final()) {
+    ResourceMark rm(THREAD);
+    stringStream ss;
+
+    if (sel_klass() != current_klass()) {
+      ss.print("Update to %s final field %s.%s attempted from a different class (%s) than the field's declaring class",
+                is_static ? "static" : "non-static", resolved_klass()->external_name(), fd.name()->as_C_string(),
+                current_klass()->external_name());
+      THROW_MSG(vmSymbols::java_lang_IllegalAccessError(), ss.as_string());
+    }
+
+    if (fd.constants()->pool_holder()->major_version() >= 53) {
+      methodHandle m = link_info.current_method();
+      assert(!m.is_null(), "information about the current method must be available for 'put' bytecodes");
+      bool is_initialized_static_final_update = (byte == Bytecodes::_putstatic &&
+                                                 fd.is_static() &&
+                                                 !m()->is_static_initializer());
+      bool is_initialized_instance_final_update = ((byte == Bytecodes::_putfield || byte == Bytecodes::_nofast_putfield) &&
+                                                   !fd.is_static() &&
+                                                   !m->is_object_initializer());
+
+      if (is_initialized_static_final_update || is_initialized_instance_final_update) {
+        ss.print("Update to %s final field %s.%s attempted from a different method (%s) than the initializer method %s ",
+                 is_static ? "static" : "non-static", resolved_klass()->external_name(), fd.name()->as_C_string(),
+                 current_klass()->external_name(),
+                 is_static ? "<clinit>" : "<init>");
+        THROW_MSG(vmSymbols::java_lang_IllegalAccessError(), ss.as_string());
+      }
+    }
   }
 
   // initialize resolved_klass if necessary

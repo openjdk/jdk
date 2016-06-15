@@ -66,7 +66,8 @@
 
 // ------------------------------------------------------------------
 // ciField::ciField
-ciField::ciField(ciInstanceKlass* klass, int index): _known_to_link_with_put(NULL), _known_to_link_with_get(NULL) {
+ciField::ciField(ciInstanceKlass* klass, int index) :
+    _known_to_link_with_put(NULL), _known_to_link_with_get(NULL) {
   ASSERT_IN_VM;
   CompilerThread *thread = CompilerThread::current();
 
@@ -173,7 +174,8 @@ ciField::ciField(ciInstanceKlass* klass, int index): _known_to_link_with_put(NUL
   initialize_from(&field_desc);
 }
 
-ciField::ciField(fieldDescriptor *fd): _known_to_link_with_put(NULL), _known_to_link_with_get(NULL) {
+ciField::ciField(fieldDescriptor *fd) :
+    _known_to_link_with_put(NULL), _known_to_link_with_get(NULL) {
   ASSERT_IN_VM;
 
   // Get the field's name, signature, and type.
@@ -237,7 +239,7 @@ void ciField::initialize_from(fieldDescriptor* fd) {
   // Check to see if the field is constant.
   Klass* k = _holder->get_Klass();
   bool is_stable_field = FoldStableValues && is_stable();
-  if (is_final() || is_stable_field) {
+  if ((is_final() && !has_initialized_final_update()) || is_stable_field) {
     if (is_static()) {
       // This field just may be constant.  The only case where it will
       // not be constant is when the field is a *special* static & final field
@@ -265,6 +267,7 @@ void ciField::initialize_from(fieldDescriptor* fd) {
     assert(SystemDictionary::CallSite_klass() != NULL, "should be already initialized");
     if (k == SystemDictionary::CallSite_klass() &&
         _offset == java_lang_invoke_CallSite::target_offset_in_bytes()) {
+      assert(!has_initialized_final_update(), "CallSite is not supposed to have writes to final fields outside initializers");
       _is_constant = true;
     } else {
       // Non-final & non-stable fields are not constants.
@@ -340,7 +343,7 @@ ciType* ciField::compute_type_impl() {
 //
 // Can a specific access to this field be made without causing
 // link errors?
-bool ciField::will_link(ciInstanceKlass* accessing_klass,
+bool ciField::will_link(ciMethod* accessing_method,
                         Bytecodes::Code bc) {
   VM_ENTRY_MARK;
   assert(bc == Bytecodes::_getstatic || bc == Bytecodes::_putstatic ||
@@ -363,27 +366,27 @@ bool ciField::will_link(ciInstanceKlass* accessing_klass,
   // Get and put can have different accessibility rules
   bool is_put    = (bc == Bytecodes::_putfield  || bc == Bytecodes::_putstatic);
   if (is_put) {
-    if (_known_to_link_with_put == accessing_klass) {
+    if (_known_to_link_with_put == accessing_method) {
       return true;
     }
   } else {
-    if (_known_to_link_with_get == accessing_klass) {
+    if (_known_to_link_with_get == accessing_method->holder()) {
       return true;
     }
   }
 
   LinkInfo link_info(_holder->get_instanceKlass(),
                      _name->get_symbol(), _signature->get_symbol(),
-                     accessing_klass->get_Klass());
+                     accessing_method->get_Method());
   fieldDescriptor result;
   LinkResolver::resolve_field(result, link_info, bc, false, KILL_COMPILE_ON_FATAL_(false));
 
   // update the hit-cache, unless there is a problem with memory scoping:
-  if (accessing_klass->is_shared() || !is_shared()) {
+  if (accessing_method->holder()->is_shared() || !is_shared()) {
     if (is_put) {
-      _known_to_link_with_put = accessing_klass;
+      _known_to_link_with_put = accessing_method;
     } else {
-      _known_to_link_with_get = accessing_klass;
+      _known_to_link_with_get = accessing_method->holder();
     }
   }
 
