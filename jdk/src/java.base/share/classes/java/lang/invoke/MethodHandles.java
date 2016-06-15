@@ -1208,16 +1208,15 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * <ul>
          * <li>if the field is declared {@code final}, then the write, atomic
          *     update, and numeric atomic update access modes are unsupported.
-         * <li>if the field type is anything other than {@code int},
+         * <li>if the field type is anything other than {@code boolean},
+         *     {@code byte}, {@code short}, {@code char}, {@code int},
          *     {@code long} or a reference type, then atomic update access modes
          *     are unsupported.  (Future major platform releases of the JDK may
          *     support additional types for certain currently unsupported access
          *     modes.)
-         * <li>if the field type is anything other than {@code int} or
-         *     {@code long}, then numeric atomic update access modes are
-         *     unsupported.  (Future major platform releases of the JDK may
-         *     support additional numeric types for certain currently
-         *     unsupported access modes.)
+         * <li>if the field type is anything other than {@code byte},
+         *     {@code short}, {@code char}, {@code int} or {@code long}, then
+         *     numeric atomic update access modes are unsupported.
          * </ul>
          * <p>
          * If the field is declared {@code volatile} then the returned VarHandle
@@ -1306,16 +1305,15 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * <ul>
          * <li>if the field is declared {@code final}, then the write, atomic
          *     update, and numeric atomic update access modes are unsupported.
-         * <li>if the field type is anything other than {@code int},
+         * <li>if the field type is anything other than {@code boolean},
+         *     {@code byte}, {@code short}, {@code char}, {@code int},
          *     {@code long} or a reference type, then atomic update access modes
          *     are unsupported.  (Future major platform releases of the JDK may
          *     support additional types for certain currently unsupported access
          *     modes.)
-         * <li>if the field type is anything other than {@code int} or
-         *     {@code long}, then numeric atomic update access modes are
-         *     unsupported.  (Future major platform releases of the JDK may
-         *     support additional numeric types for certain currently
-         *     unsupported access modes.)
+         * <li>if the field type is anything other than {@code byte},
+         *     {@code short}, {@code char}, {@code int} or {@code long}, then
+         *     numeric atomic update access modes are unsupported.
          * </ul>
          * <p>
          * If the field is declared {@code volatile} then the returned VarHandle
@@ -1590,16 +1588,15 @@ return mh1;
          * <ul>
          * <li>if the field is declared {@code final}, then the write, atomic
          *     update, and numeric atomic update access modes are unsupported.
-         * <li>if the field type is anything other than {@code int},
+         * <li>if the field type is anything other than {@code boolean},
+         *     {@code byte}, {@code short}, {@code char}, {@code int},
          *     {@code long} or a reference type, then atomic update access modes
          *     are unsupported.  (Future major platform releases of the JDK may
          *     support additional types for certain currently unsupported access
          *     modes.)
-         * <li>if the field type is anything other than {@code int} or
-         *     {@code long}, then numeric atomic update access modes are
-         *     unsupported.  (Future major platform releases of the JDK may
-         *     support additional numeric types for certain currently
-         *     unsupported access modes.)
+         * <li>if the field type is anything other than {@code byte},
+         *     {@code short}, {@code char}, {@code int} or {@code long}, then
+         *     numeric atomic update access modes are unsupported.
          * </ul>
          * <p>
          * If the field is declared {@code volatile} then the returned VarHandle
@@ -2297,16 +2294,15 @@ return mh1;
      * Certain access modes of the returned VarHandle are unsupported under
      * the following conditions:
      * <ul>
-     * <li>if the component type is anything other than {@code int},
+     * <li>if the field type is anything other than {@code boolean},
+     *     {@code byte}, {@code short}, {@code char}, {@code int},
      *     {@code long} or a reference type, then atomic update access modes
      *     are unsupported.  (Future major platform releases of the JDK may
      *     support additional types for certain currently unsupported access
      *     modes.)
-     * <li>if the component type is anything other than {@code int} or
-     *     {@code long}, then numeric atomic update access modes are
-     *     unsupported.  (Future major platform releases of the JDK may
-     *     support additional numeric types for certain currently
-     *     unsupported access modes.)
+     * <li>if the component type is anything other than {@code byte},
+     *     {@code short}, {@code char}, {@code int} or {@code long}, then
+     *     numeric atomic update access modes are unsupported.
      * </ul>
      * @param arrayClass the class of an array, of type {@code T[]}
      * @return a VarHandle giving access to elements of an array

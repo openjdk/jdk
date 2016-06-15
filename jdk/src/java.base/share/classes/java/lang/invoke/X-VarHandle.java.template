@@ -205,9 +205,9 @@ final class VarHandle$Type$s {
 
         @ForceInline
         static $type$ addAndGet(FieldInstanceReadWrite handle, Object holder, $type$ value) {
-            return UNSAFE.getAndAdd$Type$(Objects.requireNonNull(handle.receiverType.cast(holder)),
+            return {#if[ShorterThanInt]?($type$)}(UNSAFE.getAndAdd$Type$(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                        handle.fieldOffset,
-                                       value) + value;
+                                       value) + value);
         }
 #end[AtomicAdd]
 
@@ -386,9 +386,9 @@ final class VarHandle$Type$s {
 
         @ForceInline
         static $type$ addAndGet(FieldStaticReadWrite handle, $type$ value) {
-            return UNSAFE.getAndAdd$Type$(handle.base,
+            return {#if[ShorterThanInt]?($type$)}(UNSAFE.getAndAdd$Type$(handle.base,
                                        handle.fieldOffset,
-                                       value) + value;
+                                       value) + value);
         }
 #end[AtomicAdd]
 
@@ -646,9 +646,9 @@ final class VarHandle$Type$s {
 #else[Object]
             $type$[] array = ($type$[]) oarray;
 #end[Object]
-            return UNSAFE.getAndAdd$Type$(array,
+            return {#if[ShorterThanInt]?($type$)}(UNSAFE.getAndAdd$Type$(array,
                     (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
-                    value) + value;
+                    value) + value);
         }
 #end[AtomicAdd]
 
