@@ -139,7 +139,7 @@ public class XMLStreamReaderImpl implements javax.xml.stream.XMLStreamReader {
     public XMLStreamReaderImpl(String systemid, PropertyManager props) throws  XMLStreamException {
         init(props);
         //publicId, systemid, baseSystemId, inputStream, enocding
-        XMLInputSource inputSource = new XMLInputSource(null,systemid,null);
+        XMLInputSource inputSource = new XMLInputSource(null, systemid, null, false);
         //pass the input source to document scanner impl.
         setInputSource(inputSource);
     }
