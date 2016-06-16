@@ -103,6 +103,7 @@ import jdk.internal.module.ConfigurableModuleFinder;
 import jdk.internal.module.ConfigurableModuleFinder.Phase;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleInfoExtender;
+import jdk.tools.jlink.internal.Utils;
 
 import static java.util.stream.Collectors.joining;
 
@@ -1091,13 +1092,7 @@ public class JmodTask {
         @Override
         public PathMatcher convert(String pattern) {
             try {
-                if (!pattern.startsWith("glob:") &&
-                    !pattern.startsWith("regex:")) {
-                    pattern = "glob:" + pattern;
-                }
-
-                return FileSystems.getDefault()
-                                  .getPathMatcher("glob:" + pattern);
+                return Utils.getPathMatcher(FileSystems.getDefault(), pattern);
             } catch (PatternSyntaxException e) {
                 throw new CommandException("err.bad.pattern", pattern);
             }

@@ -167,8 +167,7 @@ public final class OrderResourcesPlugin implements TransformerPlugin {
 
     @Override
     public void configure(Map<String, String> config) {
-        String val = config.get(NAME);
-        String[] patterns = Utils.listParser.apply(val);
+        List<String> patterns = Utils.parseList(config.get(NAME));
         int ordinal = 0;
 
         for (String pattern : patterns) {
