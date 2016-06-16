@@ -93,12 +93,12 @@ static void print_flag_error_message_if_needed(Flag::Error error, const char* na
 
 // set a boolean global flag
 Flag::Error WriteableFlags::set_bool_flag(const char* name, const char* arg, Flag::Flags origin, FormatBuffer<80>& err_msg) {
-  int value = true;
-
-  if (sscanf(arg, "%d", &value)) {
-    return set_bool_flag(name, value != 0, origin, err_msg);
+  if ((strcasecmp(arg, "true") == 0) || (*arg == '1' && *(arg + 1) == 0)) {
+    return set_bool_flag(name, true, origin, err_msg);
+  } else if ((strcasecmp(arg, "false") == 0) || (*arg == '0' && *(arg + 1) == 0)) {
+    return set_bool_flag(name, false, origin, err_msg);
   }
-  err_msg.print("flag value must be a boolean (1 or 0)");
+  err_msg.print("flag value must be a boolean (1/0 or true/false)");
   return Flag::WRONG_FORMAT;
 }
 

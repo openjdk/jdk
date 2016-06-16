@@ -411,6 +411,10 @@ class MacroAssembler: public Assembler {
   // stdux, return the banged address. Otherwise, return 0.
   static address get_stack_bang_address(int instruction, void* ucontext);
 
+  // Check for reserved stack access in method being exited. If the reserved
+  // stack area was accessed, protect it again and throw StackOverflowError.
+  void reserved_stack_check(Register return_pc);
+
   // Atomics
   // CmpxchgX sets condition register to cmpX(current, compare).
   // (flag == ne) => (dest_current_value != compare_value), (!swapped)
