@@ -33,6 +33,7 @@ import sun.hotspot.WhiteBox;
  * @key stress
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @requires os.maxMemory > 2G
+ * @requires vm.opt.MaxGCPauseMillis == "null"
  *
  * @summary Stress G1 Remembered Set using multiple threads
  * @modules java.base/jdk.internal.misc
