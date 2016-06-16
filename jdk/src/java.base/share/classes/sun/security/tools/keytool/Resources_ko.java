@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package sun.security.tools.keytool;
 
 /**
- * This class represents the <code>ResourceBundle</code>
+ * <p> This class represents the <code>ResourceBundle</code>
  * for the keytool.
  *
  */
@@ -48,7 +48,7 @@ public class Resources_ko extends java.util.ListResourceBundle {
                  "\uD0A4 \uBC0F \uC778\uC99D\uC11C \uAD00\uB9AC \uD234"},
         {"Commands.", "\uBA85\uB839:"},
         {"Use.keytool.command.name.help.for.usage.of.command.name",
-                "command_name \uC0AC\uC6A9\uBC95\uC5D0 \"keytool -command_name -help\" \uC0AC\uC6A9"},
+                "command_name \uC0AC\uC6A9\uBC95\uC5D0 \"keytool -command_name -help\"\uB97C \uC0AC\uC6A9\uD569\uB2C8\uB2E4.\n-conf <url> \uC635\uC158\uC744 \uC0AC\uC6A9\uD558\uC5EC \uC0AC\uC804 \uAD6C\uC131\uB41C \uC635\uC158 \uD30C\uC77C\uC744 \uC9C0\uC815\uD569\uB2C8\uB2E4."},
         // keytool: help: commands
         {"Generates.a.certificate.request",
                 "\uC778\uC99D\uC11C \uC694\uCCAD\uC744 \uC0DD\uC131\uD569\uB2C8\uB2E4."}, //-certreq
@@ -306,7 +306,7 @@ public class Resources_ko extends java.util.ListResourceBundle {
         {"Entry.type.type.", "\uD56D\uBAA9 \uC720\uD615: {0}"},
         {"Certificate.chain.length.", "\uC778\uC99D\uC11C \uCCB4\uC778 \uAE38\uC774: "},
         {"Certificate.i.1.", "\uC778\uC99D\uC11C[{0,number,integer}]:"},
-        {"Certificate.fingerprint.SHA1.", "\uC778\uC99D\uC11C \uC9C0\uBB38(SHA1): "},
+        {"Certificate.fingerprint.SHA.256.", "\uC778\uC99D\uC11C \uC9C0\uBB38(SHA-256): "},
         {"Keystore.type.", "\uD0A4 \uC800\uC7A5\uC18C \uC720\uD615: "},
         {"Keystore.provider.", "\uD0A4 \uC800\uC7A5\uC18C \uC81C\uACF5\uC790: "},
         {"Your.keystore.contains.keyStore.size.entry",
@@ -346,7 +346,7 @@ public class Resources_ko extends java.util.ListResourceBundle {
         {".RETURN.if.same.as.for.otherAlias.",
                 "\t(<{0}>\uACFC(\uC640) \uB3D9\uC77C\uD55C \uACBD\uC6B0 Enter \uD0A4\uB97C \uB204\uB984)"},
         {".PATTERN.printX509Cert",
-                "\uC18C\uC720\uC790: {0}\n\uBC1C\uD589\uC790: {1}\n\uC77C\uB828 \uBC88\uD638: {2}\n\uC801\uD569\uD55C \uC2DC\uC791 \uB0A0\uC9DC: {3}, \uC885\uB8CC \uB0A0\uC9DC: {4}\n\uC778\uC99D\uC11C \uC9C0\uBB38:\n\t MD5: {5}\n\t SHA1: {6}\n\t SHA256: {7}\n\t \uC11C\uBA85 \uC54C\uACE0\uB9AC\uC998 \uC774\uB984: {8}\n\t \uBC84\uC804: {9}"},
+                "\uC18C\uC720\uC790: {0}\n\uBC1C\uD589\uC790: {1}\n\uC77C\uB828 \uBC88\uD638: {2}\n\uC801\uD569\uD55C \uC2DC\uC791 \uB0A0\uC9DC: {3} \uC885\uB8CC \uB0A0\uC9DC: {4}\n\uC778\uC99D\uC11C \uC9C0\uBB38:\n\t SHA1: {5}\n\t SHA256: {6}\n\uC11C\uBA85 \uC54C\uACE0\uB9AC\uC998 \uC774\uB984: {7}\n\uC8FC\uCCB4 \uACF5\uC6A9 \uD0A4 \uC54C\uACE0\uB9AC\uC998: {8} ({9,number,#})\n\uBC84\uC804: {10}"},
         {"What.is.your.first.and.last.name.",
                 "\uC774\uB984\uACFC \uC131\uC744 \uC785\uB825\uD558\uC2ED\uC2DC\uC624."},
         {"What.is.the.name.of.your.organizational.unit.",
@@ -432,6 +432,8 @@ public class Resources_ko extends java.util.ListResourceBundle {
 
     /**
      * Returns the contents of this <code>ResourceBundle</code>.
+     *
+     * <p>
      *
      * @return the contents of this <code>ResourceBundle</code>.
      */

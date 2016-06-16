@@ -23,15 +23,17 @@
 
 import jdk.testlibrary.Asserts;
 import jdk.testlibrary.OutputAnalyzer;
+import jdk.test.lib.apps.LingeredApp;
 
 /*
  * @test
  * @summary This test verifies jps usage and checks that appropriate error message is shown
  *          when running jps with illegal arguments.
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib/share/classes
  * @modules jdk.jartool/sun.tools.jar
  *          java.management
- * @build jdk.testlibrary.* JpsHelper
+ *          java.base/jdk.internal.misc
+ * @build jdk.testlibrary.* jdk.test.lib.apps.* JpsHelper
  * @run driver TestJpsSanity
  */
 public class TestJpsSanity {
@@ -40,6 +42,42 @@ public class TestJpsSanity {
         testJpsUsage();
         testJpsVersion();
         testJpsUnknownHost();
+        testJpsShort();
+        testJpsLong();
+        testJpsShortPkg();
+        testJpsLongPkg();
+    }
+
+    private static void testJpsShort() throws Exception {
+        OutputAnalyzer output = JpsHelper.jps();
+        output.shouldMatch("^[0-9]+ Jps$");
+    }
+
+    private static void testJpsLong() throws Exception {
+        OutputAnalyzer output = JpsHelper.jps("-l");
+        output.shouldMatch("^[0-9]+ jdk\\.jcmd/sun\\.tools\\.jps\\.Jps$");
+    }
+
+    private static void testJpsShortPkg() throws Exception {
+        LingeredApp app = null;
+        try {
+            app = LingeredApp.startApp();
+            OutputAnalyzer output = JpsHelper.jps();
+            output.shouldMatch("^[0-9]+ LingeredApp$");
+        } finally {
+            LingeredApp.stopApp(app);
+        }
+    }
+
+    private static void testJpsLongPkg() throws Exception {
+        LingeredApp app = null;
+        try {
+            app = LingeredApp.startApp();
+            OutputAnalyzer output = JpsHelper.jps("-l");
+            output.shouldMatch("^[0-9]+ jdk\\.test\\.lib\\.apps\\.LingeredApp$");
+        } finally {
+            LingeredApp.stopApp(app);
+        }
     }
 
     private static void testJpsUsage() throws Exception {

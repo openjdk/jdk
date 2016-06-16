@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package sun.security.tools.keytool;
 
 /**
- * This class represents the <code>ResourceBundle</code>
+ * <p> This class represents the <code>ResourceBundle</code>
  * for the keytool.
  *
  */
@@ -48,7 +48,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
                  "Hanteringsverktyg f\u00F6r nycklar och certifikat"},
         {"Commands.", "Kommandon:"},
         {"Use.keytool.command.name.help.for.usage.of.command.name",
-                "L\u00E4s \"Hj\u00E4lp - Nyckelverktyg - command_name\" om anv\u00E4ndning av command_name"},
+                "Anv\u00E4nd \"keytool -command_name -help\" f\u00F6r syntax f\u00F6r command_name.\nAnv\u00E4nd alternativet -conf <url> f\u00F6r att ange en f\u00F6rkonfigurerad alternativfil."},
         // keytool: help: commands
         {"Generates.a.certificate.request",
                 "Genererar certifikatbeg\u00E4ran"}, //-certreq
@@ -175,7 +175,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"validity.number.of.days",
                 "antal dagar f\u00F6r giltighet"}, //-validity
         {"Serial.ID.of.cert.to.revoke",
-                 "Seriellt ID f\u00F6r certifikat som ska \u00E5terkallas"}, //-id
+                 "Seriellt id f\u00F6r certifikat som ska \u00E5terkallas"}, //-id
         // keytool: Running part
         {"keytool.error.", "nyckelverktygsfel: "},
         {"Illegal.option.", "Otill\u00E5tet alternativ:  "},
@@ -306,7 +306,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"Entry.type.type.", "Posttyp: {0}"},
         {"Certificate.chain.length.", "L\u00E4ngd p\u00E5 certifikatskedja: "},
         {"Certificate.i.1.", "Certifikat[{0,number,integer}]:"},
-        {"Certificate.fingerprint.SHA1.", "Certifikatets fingeravtryck (SHA1): "},
+        {"Certificate.fingerprint.SHA.256.", "Certifikatfingeravtryck (SHA-256): "},
         {"Keystore.type.", "Nyckellagertyp: "},
         {"Keystore.provider.", "Nyckellagerleverant\u00F6r: "},
         {"Your.keystore.contains.keyStore.size.entry",
@@ -346,7 +346,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {".RETURN.if.same.as.for.otherAlias.",
                 "\t(RETURN om det \u00E4r det samma som f\u00F6r <{0}>)"},
         {".PATTERN.printX509Cert",
-                "\u00C4gare: {0}\nUtf\u00E4rdare: {1}\nSerienummer: {2}\nGiltigt fr\u00E5n den: {3} till: {4}\nCertifikatets fingeravtryck:\n\t MD5: {5}\n\t SHA1: {6}\n\t SHA256: {7}\n\t Namn p\u00E5 signaturalgoritm: {8}\n\t Version: {9}"},
+                "\u00C4gare: {0}\nUtf\u00E4rdare: {1}\nSerienummer: {2}\nGiltigt fr\u00E5n: {3}, till: {4}\nCertifikatfingeravtryck:\n\t SHA1: {5}\n\t SHA256: {6}\nSignaturalgoritmnamn: {7}\n\u00C4mne f\u00F6r algoritm f\u00F6r \u00F6ppen nyckel: {8} ({9,number,#})\nVersion: {10}"},
         {"What.is.your.first.and.last.name.",
                 "Vad heter du i f\u00F6r- och efternamn?"},
         {"What.is.the.name.of.your.organizational.unit.",
@@ -373,7 +373,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
             "*****************  WARNING WARNING WARNING  *****************"},
         {"Signer.d.", "Signerare #%d:"},
         {"Timestamp.", "Tidsst\u00E4mpel:"},
-        {"Signature.", "Underskrift:"},
+        {"Signature.", "Signatur:"},
         {"CRLs.", "CRL:er:"},
         {"Certificate.owner.", "Certifikat\u00E4gare: "},
         {"Not.a.signed.jar.file", "Ingen signerad jar-fil"},
@@ -432,6 +432,8 @@ public class Resources_sv extends java.util.ListResourceBundle {
 
     /**
      * Returns the contents of this <code>ResourceBundle</code>.
+     *
+     * <p>
      *
      * @return the contents of this <code>ResourceBundle</code>.
      */

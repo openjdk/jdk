@@ -843,10 +843,9 @@ public class TIFFField implements Cloneable {
      * Returns the {@code TIFFField} as a node named either
      * <tt>"TIFFField"</tt> or <tt>"TIFFIFD"</tt> as described in the
      * TIFF native image metadata specification. The node will be named
-     * <tt>"TIFFIFD"</tt> if and only if the field's data object is an
-     * instance of {@link TIFFDirectory} or equivalently
-     * {@link TIFFTag#isIFDPointer getTag.isIFDPointer()} returns
-     * {@code true}.
+     * <tt>"TIFFIFD"</tt> if and only if {@link #hasDirectory()} returns
+     * {@code true} and the field's type is either {@link TIFFTag#TIFF_LONG}
+     * or {@link TIFFTag#TIFF_IFD_POINTER}.
      *
      * @return a {@code Node} named <tt>"TIFFField"</tt> or
      * <tt>"TIFFIFD"</tt>.

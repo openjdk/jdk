@@ -770,7 +770,12 @@ class SubRegistry {
         poset.add(provider);
         if (provider instanceof RegisterableService) {
             RegisterableService rs = (RegisterableService)provider;
-            rs.onRegistration(registry, category);
+            try {
+                rs.onRegistration(registry, category);
+            } catch (Throwable t) {
+                System.err.println("Caught and handled this exception :");
+                t.printStackTrace();
+            }
         }
 
         return !present;

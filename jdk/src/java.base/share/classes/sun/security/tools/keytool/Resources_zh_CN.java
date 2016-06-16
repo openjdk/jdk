@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package sun.security.tools.keytool;
 
 /**
- * This class represents the <code>ResourceBundle</code>
+ * <p> This class represents the <code>ResourceBundle</code>
  * for the keytool.
  *
  */
@@ -48,7 +48,7 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
                  "\u5BC6\u94A5\u548C\u8BC1\u4E66\u7BA1\u7406\u5DE5\u5177"},
         {"Commands.", "\u547D\u4EE4:"},
         {"Use.keytool.command.name.help.for.usage.of.command.name",
-                "\u4F7F\u7528 \"keytool -command_name -help\" \u83B7\u53D6 command_name \u7684\u7528\u6CD5"},
+                "\u4F7F\u7528 \"keytool -command_name -help\" \u53EF\u83B7\u53D6 command_name \u7684\u7528\u6CD5\u3002\n\u4F7F\u7528 -conf <url> \u9009\u9879\u53EF\u6307\u5B9A\u9884\u914D\u7F6E\u7684\u9009\u9879\u6587\u4EF6\u3002"},
         // keytool: help: commands
         {"Generates.a.certificate.request",
                 "\u751F\u6210\u8BC1\u4E66\u8BF7\u6C42"}, //-certreq
@@ -306,7 +306,7 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"Entry.type.type.", "\u6761\u76EE\u7C7B\u578B: {0}"},
         {"Certificate.chain.length.", "\u8BC1\u4E66\u94FE\u957F\u5EA6: "},
         {"Certificate.i.1.", "\u8BC1\u4E66[{0,number,integer}]:"},
-        {"Certificate.fingerprint.SHA1.", "\u8BC1\u4E66\u6307\u7EB9 (SHA1): "},
+        {"Certificate.fingerprint.SHA.256.", "\u8BC1\u4E66\u6307\u7EB9 (SHA-256): "},
         {"Keystore.type.", "\u5BC6\u94A5\u5E93\u7C7B\u578B: "},
         {"Keystore.provider.", "\u5BC6\u94A5\u5E93\u63D0\u4F9B\u65B9: "},
         {"Your.keystore.contains.keyStore.size.entry",
@@ -346,7 +346,7 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {".RETURN.if.same.as.for.otherAlias.",
                 "\t(\u5982\u679C\u548C <{0}> \u76F8\u540C, \u5219\u6309\u56DE\u8F66)"},
         {".PATTERN.printX509Cert",
-                "\u6240\u6709\u8005: {0}\n\u53D1\u5E03\u8005: {1}\n\u5E8F\u5217\u53F7: {2}\n\u6709\u6548\u671F\u5F00\u59CB\u65E5\u671F: {3}, \u622A\u6B62\u65E5\u671F: {4}\n\u8BC1\u4E66\u6307\u7EB9:\n\t MD5: {5}\n\t SHA1: {6}\n\t SHA256: {7}\n\t \u7B7E\u540D\u7B97\u6CD5\u540D\u79F0: {8}\n\t \u7248\u672C: {9}"},
+                "\u6240\u6709\u8005: {0}\n\u53D1\u5E03\u8005: {1}\n\u5E8F\u5217\u53F7: {2}\n\u751F\u6548\u65F6\u95F4: {3}, \u5931\u6548\u65F6\u95F4: {4}\n\u8BC1\u4E66\u6307\u7EB9:\n\t SHA1: {5}\n\t SHA256: {6}\n\u7B7E\u540D\u7B97\u6CD5\u540D\u79F0: {7}\n\u4E3B\u4F53\u516C\u5171\u5BC6\u94A5\u7B97\u6CD5: {8} ({9,number,#})\n\u7248\u672C: {10}"},
         {"What.is.your.first.and.last.name.",
                 "\u60A8\u7684\u540D\u5B57\u4E0E\u59D3\u6C0F\u662F\u4EC0\u4E48?"},
         {"What.is.the.name.of.your.organizational.unit.",
@@ -432,6 +432,8 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
 
     /**
      * Returns the contents of this <code>ResourceBundle</code>.
+     *
+     * <p>
      *
      * @return the contents of this <code>ResourceBundle</code>.
      */

@@ -28,6 +28,7 @@ package sun.java2d.xr;
 import java.awt.*;
 import java.awt.geom.*;
 import sun.awt.SunToolkit;
+import sun.java2d.InvalidPipeException;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.loops.*;
 import sun.java2d.pipe.Region;
@@ -69,7 +70,12 @@ public class XRRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe {
      * destination context.
      */
     private final void validateSurface(SunGraphics2D sg2d) {
-        XRSurfaceData xrsd = (XRSurfaceData) sg2d.surfaceData;
+        XRSurfaceData xrsd;
+        try {
+            xrsd = (XRSurfaceData) sg2d.surfaceData;
+        } catch (ClassCastException e) {
+            throw new InvalidPipeException("wrong surface data type: " + sg2d.surfaceData);
+        }
         xrsd.validateAsDestination(sg2d, sg2d.getCompClip());
         xrsd.maskBuffer.validateCompositeState(sg2d.composite, sg2d.transform,
                                                sg2d.paint, sg2d);

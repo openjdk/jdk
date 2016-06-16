@@ -104,6 +104,16 @@ public class MultiResolutionSplashTest {
         int screenX = (int) splashBounds.getCenterX();
         int screenY = (int) splashBounds.getCenterY();
 
+        if (splashBounds.width != IMAGE_WIDTH) {
+            throw new RuntimeException(
+                    "SplashScreen#getBounds has wrong width");
+        }
+
+        if (splashBounds.height != IMAGE_HEIGHT) {
+            throw new RuntimeException(
+                    "SplashScreen#getBounds has wrong height");
+        }
+
         Robot robot = new Robot();
         Color splashScreenColor = robot.getPixelColor(screenX, screenY);
 

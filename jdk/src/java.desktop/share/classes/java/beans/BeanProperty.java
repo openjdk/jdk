@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.beans;
 
 import java.lang.annotation.Documented;
@@ -32,16 +33,16 @@ import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * An annotation used to specify some property-related information
- * for the automatically generated {@link BeanInfo} classes.
- * This annotation is not used if the annotated class
- * has a corresponding user-defined {@code BeanInfo} class,
- * which does not imply the automatic analysis.
- *
- * @see BeanInfo#getPropertyDescriptors
- * @since 9
+ * An annotation used to specify some property-related information for the
+ * automatically generated {@link BeanInfo} classes. This annotation is not used
+ * if the annotated class has a corresponding user-defined {@code BeanInfo}
+ * class, which does not imply the automatic analysis. If both the read and the
+ * write methods of the property are annotated, then the read method annotation
+ * will have more priority and replace the write method annotation.
  *
  * @author Sergey A. Malenkov
+ * @see BeanInfo#getPropertyDescriptors
+ * @since 9
  */
 @Documented
 @Target({METHOD})
