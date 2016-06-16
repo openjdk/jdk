@@ -227,9 +227,12 @@ public class PriorityBlockingQueueTest extends JSR166TestCase {
         PriorityBlockingQueue q = new PriorityBlockingQueue(1);
         try {
             q.offer(new Object());
-            q.offer(new Object());
             shouldThrow();
-        } catch (ClassCastException success) {}
+        } catch (ClassCastException success) {
+            assertTrue(q.isEmpty());
+            assertEquals(0, q.size());
+            assertNull(q.poll());
+        }
     }
 
     /**

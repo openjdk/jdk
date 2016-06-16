@@ -40,9 +40,7 @@ import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import jdk.tools.jlink.plugin.TransformerPlugin;
-import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.internal.Utils;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.PluginException;
 
@@ -184,38 +182,34 @@ public final class ExcludeVMPlugin implements TransformerPlugin {
 
     @Override
     public void configure(Map<String, String> config) {
-        try {
-            String value = config.get(NAME);
-            String exclude = "";
-            switch (value) {
-                case ALL: {
-                    // no filter.
-                    keepAll = true;
-                    break;
-                }
-                case CLIENT: {
-                    target = Jvm.CLIENT;
-                    exclude = "/java.base/native*server/*,/java.base/native*minimal/*";
-                    break;
-                }
-                case SERVER: {
-                    target = Jvm.SERVER;
-                    exclude = "/java.base/native*client/*,/java.base/native*minimal/*";
-                    break;
-                }
-                case MINIMAL: {
-                    target = Jvm.MINIMAL;
-                    exclude = "/java.base/native*server/*,/java.base/native*client/*";
-                    break;
-                }
-                default: {
-                    throw new IllegalArgumentException("Unknown exclude VM option: " + value);
-                }
+        String value = config.get(NAME);
+        String exclude = "";
+        switch (value) {
+            case ALL: {
+                // no filter.
+                keepAll = true;
+                break;
             }
-            predicate = new ResourceFilter(Utils.listParser.apply(exclude), true);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
+            case CLIENT: {
+                target = Jvm.CLIENT;
+                exclude = "/java.base/native**server/**,/java.base/native**minimal/**";
+                break;
+            }
+            case SERVER: {
+                target = Jvm.SERVER;
+                exclude = "/java.base/native**client/**,/java.base/native**minimal/**";
+                break;
+            }
+            case MINIMAL: {
+                target = Jvm.MINIMAL;
+                exclude = "/java.base/native**server/**,/java.base/native**client/**";
+                break;
+            }
+            default: {
+                throw new IllegalArgumentException("Unknown exclude VM option: " + value);
+            }
         }
+        predicate = ResourceFilter.excludeFilter(exclude);
     }
 
     private ModuleEntry handleJvmCfgFile(ModuleEntry orig,

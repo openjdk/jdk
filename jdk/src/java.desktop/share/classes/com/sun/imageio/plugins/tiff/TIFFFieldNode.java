@@ -38,9 +38,14 @@ import javax.imageio.plugins.tiff.TIFFTagSet;
  * wherein the child node is procedural rather than buffered.
  */
 public class TIFFFieldNode extends IIOMetadataNode {
+    private static boolean isIFD(TIFFField f) {
+        int type = f.getType();
+        return f.hasDirectory() &&
+            (type == TIFFTag.TIFF_LONG || type == TIFFTag.TIFF_IFD_POINTER);
+    }
+
     private static String getNodeName(TIFFField f) {
-        return (f.hasDirectory() || f.getData() instanceof TIFFDirectory) ?
-            "TIFFIFD" : "TIFFField";
+        return isIFD(f) ? "TIFFIFD" : "TIFFField";
     }
 
     private boolean isIFD;
@@ -52,8 +57,7 @@ public class TIFFFieldNode extends IIOMetadataNode {
     public TIFFFieldNode(TIFFField field) {
         super(getNodeName(field));
 
-        isIFD = field.hasDirectory() ||
-            field.getData() instanceof TIFFDirectory;
+        isIFD = isIFD(field);
 
         this.field = field;
 

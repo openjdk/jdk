@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ abstract class AbstractLine implements Line {
     protected final Line.Info info;
     protected Control[] controls;
     AbstractMixer mixer;
-    private boolean open     = false;
+    private volatile boolean open;
     private final Vector<Object> listeners = new Vector<>();
 
     /**

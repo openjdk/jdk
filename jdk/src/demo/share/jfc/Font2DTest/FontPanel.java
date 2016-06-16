@@ -128,7 +128,6 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
     /// General Graphics Variable
     private final JScrollBar verticalBar;
     private final FontCanvas fc;
-    private boolean updateBackBuffer = true;
     private boolean updateFontMetrics = true;
     private boolean updateFont = true;
     private boolean force16Cols = false;
@@ -178,7 +177,6 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
         verticalBar.addAdjustmentListener( this );
         this.addComponentListener( new ComponentAdapter() {
             public void componentResized( ComponentEvent e ) {
-                updateBackBuffer = true;
                 updateFontMetrics = true;
             }
         });
@@ -199,7 +197,6 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
 
     public void setTransformG2( int transform ) {
         g2Transform = transform;
-        updateBackBuffer = true;
         updateFontMetrics = true;
         fc.repaint();
     }
@@ -252,7 +249,6 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
             AffineTransform at = getAffineTransform( fontTransform );
             testFont = testFont.deriveFont( at );
         }
-        updateBackBuffer = true;
         updateFontMetrics = true;
         fc.repaint();
         if ( fontModified ) {
@@ -266,14 +262,12 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
         antiAliasType = ((AAValues)aa).getHint();
         fractionalMetricsType = ((FMValues)fm).getHint();
         lcdContrast = contrast;
-        updateBackBuffer = true;
         updateFontMetrics = true;
         fc.repaint();
     }
 
     public void setDrawMethod( int i ) {
         drawMethod = i;
-        updateBackBuffer = true;
         fc.repaint();
     }
 
@@ -292,7 +286,6 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
             drawMethod = TL_DRAW;
         }
 
-        updateBackBuffer = true;
         updateFontMetrics = true;
         fc.repaint();
         updateFontInfo();
@@ -300,13 +293,11 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
 
     public void setGridDisplay( boolean b ) {
         showGrid = b;
-        updateBackBuffer = true;
         fc.repaint();
     }
 
     public void setForce16Columns( boolean b ) {
         force16Cols = b;
-        updateBackBuffer = true;
         updateFontMetrics = true;
         fc.repaint();
     }
@@ -411,7 +402,6 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
 
     /// When scrolled using the scroll bar, update the backbuffer
     public void adjustmentValueChanged( AdjustmentEvent e ) {
-        updateBackBuffer = true;
         fc.repaint();
     }
 
@@ -442,9 +432,6 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
 
         /// Offset from the top left edge of the canvas where the draw will start
         private int canvasInset_X = 5, canvasInset_Y = 5;
-
-        /// Offscreen buffer of this canvas
-        private BufferedImage backBuffer = null;
 
         /// LineBreak'ed TextLayout vector
         private Vector lineBreakTLs = null;
@@ -509,7 +496,6 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
         public boolean firstTime() { return firstTime; }
         public void refresh() {
             firstTime = false;
-            updateBackBuffer = true;
             repaint();
         }
 
@@ -895,19 +881,10 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
 
         /// Draws text according to the parameters set by Font2DTest GUI
         private void drawText( Graphics g, int w, int h ) {
-            Graphics2D g2;
-
-            /// Create back buffer when not printing, and its Graphics2D
-            /// Then set drawing parameters for that Graphics2D object
-            if ( isPrinting )
-              g2 = (Graphics2D) g;
-            else  {
-                backBuffer = (BufferedImage) this.createImage( w, h );
-                g2 = backBuffer.createGraphics();
-                g2.setColor(Color.white);
-                g2.fillRect(0, 0, w, h);
-                g2.setColor(Color.black);
-            }
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setColor(Color.white);
+            g2.fillRect(0, 0, w, h);
+            g2.setColor(Color.black);
 
             /// sets font, RenderingHints.
             setParams( g2 );
@@ -927,8 +904,6 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
                 int charToDraw = drawStart;
                 if ( showGrid )
                   drawGrid( g2 );
-                if ( !isPrinting )
-                  g.drawImage( backBuffer, 0, 0, this );
 
                 for ( int i = 0; i < numCharDown && charToDraw <= drawEnd; i++ ) {
                   for ( int j = 0; j < numCharAcross && charToDraw <= drawEnd; j++, charToDraw++ ) {
@@ -938,19 +913,12 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
                       modeSpecificDrawChar( g2, charToDraw,
                                             gridLocX + gridWidth / 2,
                                             gridLocY + maxAscent );
-                      //if ( !isPrinting ) {
-                      //    g.setClip( gridLocX, gridLocY, gridWidth + 1, gridHeight + 1 );
-                      //    g.drawImage( backBuffer, 0, 0, this );
-                            //}
 
                   }
                 }
             }
             else if ( textToUse == USER_TEXT ) {
                 g2.drawRect( 0, 0, w - 1, h - 1 );
-                if ( !isPrinting )
-                  g.drawImage( backBuffer, 0, 0, this );
-
                 for ( int i = drawStart; i <= drawEnd; i++ ) {
                     int lineStartX = canvasInset_Y;
                     int lineStartY = ( i - drawStart ) * gridHeight + maxAscent;
@@ -960,9 +928,6 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
             else {
                 float xPos, yPos = (float) canvasInset_Y;
                 g2.drawRect( 0, 0, w - 1, h - 1 );
-                if ( !isPrinting )
-                  g.drawImage( backBuffer, 0, 0, this );
-
                 for ( int i = drawStart; i <= drawEnd; i++ ) {
                     TextLayout oneLine = (TextLayout) lineBreakTLs.elementAt( i );
                     xPos =
@@ -982,33 +947,26 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
                     yPos += fmData[3] + fmData[5]; // descent + leading
                 }
             }
-                if ( !isPrinting )
-                g.drawImage( backBuffer, 0, 0, this );
             g2.dispose();
         }
 
         /// Component paintComponent function...
         /// Draws/Refreshes canvas according to flag(s) set by other functions
         public void paintComponent( Graphics g ) {
-            if ( updateBackBuffer ) {
+              super.paintComponent(g);
+
                 Dimension d = this.getSize();
                 isPrinting = false;
                 try {
                     drawText( g, d.width, d.height );
                 }
                 catch ( CannotDrawException e ) {
-                    f2dt.fireChangeStatus( ERRORS[ e.id ], true );
                     super.paintComponent(g);
+                    f2dt.fireChangeStatus( ERRORS[ e.id ], true );
                     return;
                 }
-            }
-            else {
-              /// Screen refresh
-              g.drawImage( backBuffer, 0, 0, this );
-            }
 
             showingError = false;
-            updateBackBuffer = false;
         }
 
         /// Printable interface function
@@ -1087,7 +1045,17 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
         /// Ouputs the current canvas into a given PNG file
         public void writePNG( String fileName ) {
             try {
-                ImageIO.write(backBuffer, "png", new java.io.File(fileName));
+                int w = this.getSize().width;
+                int h = this.getSize().height;
+                BufferedImage buffer = (BufferedImage) this.createImage( w, h );
+                Graphics2D g2 = buffer.createGraphics();
+                g2.setColor(Color.white);
+                g2.fillRect(0, 0, w, h);
+                g2.setColor(Color.black);
+                updateFontMetrics = true;
+                drawText(g2, w, h);
+                updateFontMetrics = true;
+                ImageIO.write(buffer, "png", new java.io.File(fileName));
             }
             catch ( Exception e ) {
                 f2dt.fireChangeStatus( "ERROR: Failed to Save PNG image; See stack trace", true );

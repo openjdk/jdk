@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package sun.security.tools.keytool;
 
 /**
- * This class represents the <code>ResourceBundle</code>
+ * <p> This class represents the <code>ResourceBundle</code>
  * for the keytool.
  *
  */
@@ -48,7 +48,7 @@ public class Resources_es extends java.util.ListResourceBundle {
                  "Herramienta de Gesti\u00F3n de Certificados y Claves"},
         {"Commands.", "Comandos:"},
         {"Use.keytool.command.name.help.for.usage.of.command.name",
-                "Utilice \"keytool -command_name -help\" para la sintaxis de nombre_comando"},
+                "Utilice \"keytool -command_name -help\" para la sintaxis de nombre_comando.\nUtilice la opci\u00F3n -conf <url> para especificar un archivo de opciones preconfigurado."},
         // keytool: help: commands
         {"Generates.a.certificate.request",
                 "Genera una solicitud de certificado"}, //-certreq
@@ -306,7 +306,7 @@ public class Resources_es extends java.util.ListResourceBundle {
         {"Entry.type.type.", "Tipo de Entrada: {0}"},
         {"Certificate.chain.length.", "Longitud de la Cadena de Certificado: "},
         {"Certificate.i.1.", "Certificado[{0,number,integer}]:"},
-        {"Certificate.fingerprint.SHA1.", "Huella Digital de Certificado (SHA1): "},
+        {"Certificate.fingerprint.SHA.256.", "Huella de certificado (SHA-256): "},
         {"Keystore.type.", "Tipo de Almac\u00E9n de Claves: "},
         {"Keystore.provider.", "Proveedor de Almac\u00E9n de Claves: "},
         {"Your.keystore.contains.keyStore.size.entry",
@@ -346,7 +346,7 @@ public class Resources_es extends java.util.ListResourceBundle {
         {".RETURN.if.same.as.for.otherAlias.",
                 "\t(INTRO si es el mismo que para <{0}>)"},
         {".PATTERN.printX509Cert",
-                "Propietario: {0}\nEmisor: {1}\nN\u00FAmero de serie: {2}\nV\u00E1lido desde: {3} hasta: {4}\nHuellas digitales del Certificado:\n\t MD5: {5}\n\t SHA1: {6}\n\t SHA256: {7}\n\t Nombre del Algoritmo de Firma: {8}\n\t Versi\u00F3n: {9}"},
+                "Propietario: {0}\nEmisor: {1}\nN\u00FAmero de serie: {2}\nV\u00E1lido desde: {3} hasta: {4}\nHuellas digitales del certificado:\n\t SHA1: {5}\n\t SHA256: {6}\nNombre del algoritmo de firma: {7}\nAlgoritmo de clave p\u00FAblica de asunto: {8} ({9,number,#})\nVersi\u00F3n: {10}"},
         {"What.is.your.first.and.last.name.",
                 "\u00BFCu\u00E1les son su nombre y su apellido?"},
         {"What.is.the.name.of.your.organizational.unit.",
@@ -432,6 +432,8 @@ public class Resources_es extends java.util.ListResourceBundle {
 
     /**
      * Returns the contents of this <code>ResourceBundle</code>.
+     *
+     * <p>
      *
      * @return the contents of this <code>ResourceBundle</code>.
      */

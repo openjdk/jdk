@@ -360,8 +360,7 @@ public abstract class GraphicsConfiguration {
     public abstract AffineTransform getDefaultTransform();
 
     /**
-     *
-     * Returns a {@code AffineTransform} that can be concatenated
+     * Returns an {@code AffineTransform} that can be concatenated
      * with the default {@code AffineTransform}
      * of a {@code GraphicsConfiguration} so that 72 units in user
      * space equals 1 inch in device space.

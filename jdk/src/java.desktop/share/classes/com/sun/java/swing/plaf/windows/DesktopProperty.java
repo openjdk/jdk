@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.beans.*;
 import java.lang.ref.*;
 import javax.swing.*;
 import javax.swing.plaf.*;
+import sun.awt.AppContext;
 
 /**
  * Wrapper for a value from the desktop. The value is lazily looked up, and
@@ -41,10 +42,8 @@ import javax.swing.plaf.*;
 // NOTE: Don't rely on this class staying in this location. It is likely
 // to move to a different package in the future.
 public class DesktopProperty implements UIDefaults.ActiveValue {
-    /**
-     * Indicates if an updateUI call is pending.
-     */
-    private static boolean updatePending;
+    private static final StringBuilder DESKTOP_PROPERTY_UPDATE_PENDING_KEY =
+            new StringBuilder("DesktopPropertyUpdatePending");
 
     /**
      * ReferenceQueue of unreferenced WeakPCLs.
@@ -86,14 +85,16 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
      * Sets whether or not an updateUI call is pending.
      */
     private static synchronized void setUpdatePending(boolean update) {
-        updatePending = update;
+        AppContext.getAppContext()
+                .put(DESKTOP_PROPERTY_UPDATE_PENDING_KEY, update);
     }
 
     /**
      * Returns true if a UI update is pending.
      */
     private static synchronized boolean isUpdatePending() {
-        return updatePending;
+        return Boolean.TRUE.equals(AppContext.getAppContext()
+                .get(DESKTOP_PROPERTY_UPDATE_PENDING_KEY));
     }
 
     /**
