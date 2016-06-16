@@ -175,7 +175,15 @@ void VM_Version::get_processor_features() {
   }
 
   // Enable vendor specific features
-  if (_cpu == CPU_CAVIUM && _variant == 0) _features |= CPU_DMB_ATOMICS;
+  if (_cpu == CPU_CAVIUM) {
+    if (_variant == 0) _features |= CPU_DMB_ATOMICS;
+    if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
+      FLAG_SET_DEFAULT(AvoidUnalignedAccesses, true);
+    }
+    if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
+      FLAG_SET_DEFAULT(UseSIMDForMemoryOps, (_variant > 0));
+    }
+  }
   if (_cpu == CPU_ARM && (_model == 0xd03 || _model2 == 0xd03)) _features |= CPU_A53MAC;
   if (_cpu == CPU_ARM && (_model == 0xd07 || _model2 == 0xd07)) _features |= CPU_STXR_PREFETCH;
   // If an olde style /proc/cpuinfo (cpu_lines == 1) then if _model is an A57 (0xd07)
