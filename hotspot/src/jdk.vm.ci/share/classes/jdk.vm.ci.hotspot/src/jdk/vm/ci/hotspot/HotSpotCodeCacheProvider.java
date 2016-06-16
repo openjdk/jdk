@@ -42,7 +42,7 @@ import jdk.vm.ci.meta.SpeculationLog;
 public class HotSpotCodeCacheProvider implements CodeCacheProvider {
 
     protected final HotSpotJVMCIRuntimeProvider runtime;
-    public final HotSpotVMConfig config;
+    protected final HotSpotVMConfig config;
     protected final TargetDescription target;
     protected final RegisterConfig regConfig;
 

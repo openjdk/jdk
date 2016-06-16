@@ -22,8 +22,6 @@
  */
 package jdk.vm.ci.hotspot;
 
-import java.lang.reflect.Module;
-
 import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
@@ -68,7 +66,6 @@ final class HotSpotJVMCICompilerConfig {
             if (compilerName != null) {
                 for (JVMCICompilerFactory f : Services.load(JVMCICompilerFactory.class)) {
                     if (f.getCompilerName().equals(compilerName)) {
-                        Module jvmciModule = JVMCICompilerFactory.class.getModule();
                         Services.exportJVMCITo(f.getClass());
                         f.onSelection();
                         factory = f;

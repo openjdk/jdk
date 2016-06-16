@@ -182,6 +182,7 @@ public abstract class TestAssembler {
     private final ArrayList<DataPatch> dataPatches;
 
     protected final CodeCacheProvider codeCache;
+    protected final TestHotSpotVMConfig config;
 
     private final Register[] registers;
     private int nextRegister;
@@ -204,7 +205,7 @@ public abstract class TestAssembler {
         }
     }
 
-    protected TestAssembler(CodeCacheProvider codeCache, int initialFrameSize, int stackAlignment, PlatformKind narrowOopKind, Register... registers) {
+    protected TestAssembler(CodeCacheProvider codeCache, TestHotSpotVMConfig config, int initialFrameSize, int stackAlignment, PlatformKind narrowOopKind, Register... registers) {
         this.narrowOopKind = new TestValueKind(narrowOopKind);
 
         this.code = new Buffer();
@@ -213,6 +214,7 @@ public abstract class TestAssembler {
         this.dataPatches = new ArrayList<>();
 
         this.codeCache = codeCache;
+        this.config = config;
 
         this.registers = registers;
         this.nextRegister = 0;

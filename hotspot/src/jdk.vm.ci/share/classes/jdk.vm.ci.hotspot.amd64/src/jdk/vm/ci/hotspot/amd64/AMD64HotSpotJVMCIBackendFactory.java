@@ -38,13 +38,12 @@ import jdk.vm.ci.hotspot.HotSpotJVMCIBackendFactory;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.hotspot.HotSpotStackIntrospection;
-import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.runtime.JVMCIBackend;
 
 public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFactory {
 
-    protected EnumSet<AMD64.CPUFeature> computeFeatures(HotSpotVMConfig config) {
+    protected EnumSet<AMD64.CPUFeature> computeFeatures(AMD64HotSpotVMConfig config) {
         // Configure the feature set using the HotSpot flag settings.
         EnumSet<AMD64.CPUFeature> features = EnumSet.noneOf(AMD64.CPUFeature.class);
         if ((config.vmVersionFeatures & config.amd643DNOWPREFETCH) != 0) {
@@ -128,7 +127,7 @@ public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
         return features;
     }
 
-    protected EnumSet<AMD64.Flag> computeFlags(HotSpotVMConfig config) {
+    protected EnumSet<AMD64.Flag> computeFlags(AMD64HotSpotVMConfig config) {
         EnumSet<AMD64.Flag> flags = EnumSet.noneOf(AMD64.Flag.class);
         if (config.useCountLeadingZerosInstruction) {
             flags.add(AMD64.Flag.UseCountLeadingZerosInstruction);
@@ -139,7 +138,7 @@ public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
         return flags;
     }
 
-    protected TargetDescription createTarget(HotSpotVMConfig config) {
+    protected TargetDescription createTarget(AMD64HotSpotVMConfig config) {
         final int stackFrameAlignment = 16;
         final int implicitNullCheckLimit = 4096;
         final boolean inlineObjects = true;
@@ -151,8 +150,8 @@ public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
         return new HotSpotConstantReflectionProvider(runtime);
     }
 
-    protected RegisterConfig createRegisterConfig(HotSpotJVMCIRuntimeProvider runtime, TargetDescription target) {
-        return new AMD64HotSpotRegisterConfig(target, runtime.getConfig());
+    protected RegisterConfig createRegisterConfig(AMD64HotSpotVMConfig config, TargetDescription target) {
+        return new AMD64HotSpotRegisterConfig(target, config.useCompressedOops, config.windowsOs);
     }
 
     protected HotSpotCodeCacheProvider createCodeCache(HotSpotJVMCIRuntimeProvider runtime, TargetDescription target, RegisterConfig regConfig) {
@@ -175,9 +174,9 @@ public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
 
     @SuppressWarnings("try")
     public JVMCIBackend createJVMCIBackend(HotSpotJVMCIRuntimeProvider runtime, JVMCIBackend host) {
-
         assert host == null;
-        TargetDescription target = createTarget(runtime.getConfig());
+        AMD64HotSpotVMConfig config = new AMD64HotSpotVMConfig(runtime.getConfigStore());
+        TargetDescription target = createTarget(config);
 
         RegisterConfig regConfig;
         HotSpotCodeCacheProvider codeCache;
@@ -189,7 +188,7 @@ public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
                 metaAccess = createMetaAccess(runtime);
             }
             try (InitTimer rt = timer("create RegisterConfig")) {
-                regConfig = createRegisterConfig(runtime, target);
+                regConfig = createRegisterConfig(config, target);
             }
             try (InitTimer rt = timer("create CodeCache provider")) {
                 codeCache = createCodeCache(runtime, target, regConfig);

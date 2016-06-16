@@ -35,11 +35,9 @@ import jdk.vm.ci.code.InvalidInstalledCodeException;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.hotspotvmconfig.HotSpotVMField;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.internal.misc.Unsafe;
 
 /**
  * Calls from Java into HotSpot. The behavior of all the methods in this class that take a native
@@ -339,9 +337,22 @@ final class CompilerToVM {
     native void resetCompilationStatistics();
 
     /**
-     * Initializes the fields of {@code config}.
+     * Reads the database of VM info. The return value encodes the info in a nested object array
+     * that is described by the pseudo Java object {@code info} below:
+     *
+     * <pre>
+     *     info = [
+     *         VMField[] vmFields,
+     *         [String name, Long size, ...] vmTypeSizes,
+     *         [String name, Long value, ...] vmConstants,
+     *         [String name, Long value, ...] vmAddresses,
+     *         VMFlag[] vmFlags
+     *     ]
+     * </pre>
+     *
+     * @return VM info as encoded above
      */
-    native long initializeConfiguration(HotSpotVMConfig config);
+    native Object[] readConfiguration();
 
     /**
      * Resolves the implementation of {@code method} for virtual dispatches on objects of dynamic
@@ -429,7 +440,6 @@ final class CompilerToVM {
      * <li>{@link HotSpotVMConfig#localVariableTableElementLengthOffset}</li>
      * <li>{@link HotSpotVMConfig#localVariableTableElementNameCpIndexOffset}</li>
      * <li>{@link HotSpotVMConfig#localVariableTableElementDescriptorCpIndexOffset}</li>
-     * <li>{@link HotSpotVMConfig#localVariableTableElementSignatureCpIndexOffset}
      * <li>{@link HotSpotVMConfig#localVariableTableElementSlotOffset}
      * <li>{@link HotSpotVMConfig#localVariableTableElementStartBciOffset}
      * </ul>

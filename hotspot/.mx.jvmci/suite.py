@@ -149,7 +149,6 @@ suite = {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : [
-        "jdk.vm.ci.hotspotvmconfig",
         "jdk.vm.ci.common",
         "jdk.vm.ci.runtime",
         "jdk.vm.ci.services",
@@ -173,14 +172,6 @@ suite = {
       "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "9",
       "workingSets" : "API,JVMCI",
-    },
-
-    "jdk.vm.ci.hotspotvmconfig" : {
-      "subDir" : "src/jdk.vm.ci/share/classes",
-      "sourceDirs" : ["src"],
-      "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "9",
-      "workingSets" : "JVMCI,HotSpot",
     },
 
     "jdk.vm.ci.hotspot.aarch64" : {
@@ -248,13 +239,6 @@ suite = {
       ],
     },
 
-    "JVMCI_HOTSPOTVMCONFIG" : {
-      "subDir" : "src/jdk.vm.ci/share/classes",
-      "dependencies" : [
-        "jdk.vm.ci.hotspotvmconfig",
-      ],
-    },
-
     "JVMCI_HOTSPOT" : {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "dependencies" : [
@@ -263,7 +247,6 @@ suite = {
         "jdk.vm.ci.hotspot.sparc",
       ],
       "distDependencies" : [
-        "JVMCI_HOTSPOTVMCONFIG",
         "JVMCI_SERVICES",
         "JVMCI_API",
       ],

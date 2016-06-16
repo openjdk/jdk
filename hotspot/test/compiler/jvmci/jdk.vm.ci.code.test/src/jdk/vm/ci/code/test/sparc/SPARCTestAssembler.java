@@ -30,12 +30,12 @@ import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.site.ConstantReference;
 import jdk.vm.ci.code.site.DataSectionReference;
 import jdk.vm.ci.code.test.TestAssembler;
+import jdk.vm.ci.code.test.TestHotSpotVMConfig;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 import jdk.vm.ci.hotspot.HotSpotConstant;
 import jdk.vm.ci.hotspot.HotSpotForeignCallTarget;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.VMConstant;
 import jdk.vm.ci.sparc.SPARC;
@@ -45,8 +45,8 @@ public class SPARCTestAssembler extends TestAssembler {
 
     private static final int MASK13 = (1 << 13) - 1;
 
-    public SPARCTestAssembler(CodeCacheProvider codeCache) {
-        super(codeCache, 0, 16, SPARCKind.WORD, SPARC.l0, SPARC.l1, SPARC.l2, SPARC.l3, SPARC.l4, SPARC.l5, SPARC.l6, SPARC.l7);
+    public SPARCTestAssembler(CodeCacheProvider codeCache, TestHotSpotVMConfig config) {
+        super(codeCache, config, 0, 16, SPARCKind.WORD, SPARC.l0, SPARC.l1, SPARC.l2, SPARC.l3, SPARC.l4, SPARC.l5, SPARC.l6, SPARC.l7);
     }
 
     private void emitOp2(Register rd, int op2, int imm22) {
@@ -74,7 +74,6 @@ public class SPARCTestAssembler extends TestAssembler {
 
     @Override
     public void emitEpilogue() {
-        HotSpotVMConfig config = HotSpotVMConfig.config();
         recordMark(config.MARKID_DEOPT_HANDLER_ENTRY);
         recordCall(new HotSpotForeignCallTarget(config.handleDeoptStub), 4, true, null);
         code.emitInt(1 << 30); // CALL

@@ -49,6 +49,7 @@ import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.services.HotSpotJVMCICompilerFactory;
 import jdk.vm.ci.hotspot.services.HotSpotVMEventListener;
+import jdk.vm.ci.hotspot.services.HotSpotJVMCICompilerFactory.CompilationLevel;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -200,6 +201,7 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider {
 
     protected final CompilerToVM compilerToVm;
 
+    protected final HotSpotVMConfigStore configStore;
     protected final HotSpotVMConfig config;
     private final JVMCIBackend hostBackend;
 
@@ -244,7 +246,8 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider {
         compilerToVm = new CompilerToVM();
 
         try (InitTimer t = timer("HotSpotVMConfig<init>")) {
-            config = new HotSpotVMConfig(compilerToVm);
+            configStore = new HotSpotVMConfigStore(compilerToVm);
+            config = new HotSpotVMConfig(configStore);
         }
 
         String hostArchitecture = config.getHostArchitectureName();
@@ -277,11 +280,24 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider {
         if (compilerFactory instanceof HotSpotJVMCICompilerFactory) {
             hsCompilerFactory = (HotSpotJVMCICompilerFactory) compilerFactory;
             trivialPrefixes = hsCompilerFactory.getTrivialPrefixes();
-            compilationLevelAdjustment = hsCompilerFactory.getCompilationLevelAdjustment(config);
+            switch (hsCompilerFactory.getCompilationLevelAdjustment()) {
+                case None:
+                    compilationLevelAdjustment = config.compLevelAdjustmentNone;
+                    break;
+                case ByHolder:
+                    compilationLevelAdjustment = config.compLevelAdjustmentByHolder;
+                    break;
+                case ByFullSignature:
+                    compilationLevelAdjustment = config.compLevelAdjustmentByFullSignature;
+                    break;
+                default:
+                    compilationLevelAdjustment = config.compLevelAdjustmentNone;
+                    break;
+            }
         } else {
             hsCompilerFactory = null;
             trivialPrefixes = null;
-            compilationLevelAdjustment = 0;
+            compilationLevelAdjustment = config.compLevelAdjustmentNone;
         }
     }
 
@@ -294,6 +310,10 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider {
 
     public ResolvedJavaType fromClass(Class<?> javaClass) {
         return metaAccessContext.fromClass(javaClass);
+    }
+
+    public HotSpotVMConfigStore getConfigStore() {
+        return configStore;
     }
 
     public HotSpotVMConfig getConfig() {
@@ -352,7 +372,35 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider {
      */
     @SuppressWarnings({"unused"})
     private int adjustCompilationLevel(Class<?> declaringClass, String name, String signature, boolean isOsr, int level) {
-        return hsCompilerFactory.adjustCompilationLevel(config, declaringClass, name, signature, isOsr, level);
+        CompilationLevel curLevel;
+        if (level == config.compilationLevelNone) {
+            curLevel = CompilationLevel.None;
+        } else if (level == config.compilationLevelSimple) {
+            curLevel = CompilationLevel.Simple;
+        } else if (level == config.compilationLevelLimitedProfile) {
+            curLevel = CompilationLevel.LimitedProfile;
+        } else if (level == config.compilationLevelFullProfile) {
+            curLevel = CompilationLevel.FullProfile;
+        } else if (level == config.compilationLevelFullOptimization) {
+            curLevel = CompilationLevel.FullOptimization;
+        } else {
+            throw JVMCIError.shouldNotReachHere();
+        }
+
+        switch (hsCompilerFactory.adjustCompilationLevel(declaringClass, name, signature, isOsr, curLevel)) {
+            case None:
+                return config.compilationLevelNone;
+            case Simple:
+                return config.compilationLevelSimple;
+            case LimitedProfile:
+                return config.compilationLevelLimitedProfile;
+            case FullProfile:
+                return config.compilationLevelFullProfile;
+            case FullOptimization:
+                return config.compilationLevelFullOptimization;
+            default:
+                return level;
+        }
     }
 
     /**
