@@ -1623,7 +1623,7 @@ public class XIncludeHandler
                 includedSource = createInputSource(null, href, fCurrentBaseURI.getExpandedSystemId(), accept, acceptLanguage);
             }
             else {
-                includedSource = new XMLInputSource(null, href, fCurrentBaseURI.getExpandedSystemId());
+                includedSource = new XMLInputSource(null, href, fCurrentBaseURI.getExpandedSystemId(), false);
             }
         }
 

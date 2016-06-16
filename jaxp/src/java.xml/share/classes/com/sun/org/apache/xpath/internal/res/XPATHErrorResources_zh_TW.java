@@ -3,7 +3,7 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
+ * Copyright 1999-2005 The Apache Software Foundation.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: XPATHErrorResources_zh_TW.java,v 1.2.4.1 2005/09/15 00:39:22 jeffsuttor Exp $
+ * $Id: XPATHErrorResources_zh_TW.java /st_wptg_1.9.0.0.0jdk/2 2016/04/11 20:46:43 gmolloy Exp $
  */
 package com.sun.org.apache.xpath.internal.res;
 

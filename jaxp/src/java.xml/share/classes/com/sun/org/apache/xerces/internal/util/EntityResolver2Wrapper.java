@@ -204,7 +204,7 @@ public class EntityResolver2Wrapper
         Reader charStream = source.getCharacterStream();
         String encoding = source.getEncoding();
         XMLInputSource xmlInputSource =
-            new XMLInputSource(publicId, systemId, baseSystemId);
+            new XMLInputSource(publicId, systemId, baseSystemId, false);
         xmlInputSource.setByteStream(byteStream);
         xmlInputSource.setCharacterStream(charStream);
         xmlInputSource.setEncoding(encoding);

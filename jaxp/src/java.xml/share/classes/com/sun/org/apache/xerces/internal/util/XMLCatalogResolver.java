@@ -395,8 +395,7 @@ public class XMLCatalogResolver
         String resolvedId = resolveIdentifier(resourceIdentifier);
         if (resolvedId != null) {
             return new XMLInputSource(resourceIdentifier.getPublicId(),
-                                      resolvedId,
-                                      resourceIdentifier.getBaseSystemId());
+                    resolvedId, resourceIdentifier.getBaseSystemId(), false);
         }
         return null;
     }
