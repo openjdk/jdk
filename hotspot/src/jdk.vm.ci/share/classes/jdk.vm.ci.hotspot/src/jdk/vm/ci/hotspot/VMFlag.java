@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,41 +20,36 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.hotspotvmconfig;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package jdk.vm.ci.hotspot;
 
 /**
- * Refers to a C++ type in the VM.
+ * Describes a VM flag exposed via {@link HotSpotVMConfigAccess}.
  */
-@Target(ElementType.FIELD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface HotSpotVMType {
+public final class VMFlag {
 
     /**
-     * Types of information this annotation can return.
+     * The name of the flag.
      */
-    enum Type {
-        /**
-         * Returns the size of the type (C++ {@code sizeof()}).
-         */
-        SIZE;
+    public final String name;
+
+    /**
+     * The C++ type of the flag.
+     */
+    public final String type;
+
+    /**
+     * The flag's value.
+     */
+    public final Object value;
+
+    VMFlag(String name, String type, Object value) {
+        this.name = name;
+        this.type = type;
+        this.value = value;
     }
 
-    /**
-     * Specifies what type of information to return.
-     *
-     * @see Type
-     */
-    Type get();
-
-    /**
-     * Returns the name of the type.
-     *
-     * @return name of type
-     */
-    String name();
+    @Override
+    public String toString() {
+        return String.format("Flag[type=%s, name=%s, value=%s]", type, name, value);
+    }
 }

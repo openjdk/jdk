@@ -22,7 +22,6 @@
  */
 package jdk.vm.ci.hotspot.services;
 
-import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.runtime.services.JVMCICompilerFactory;
 
 /**
@@ -42,35 +41,54 @@ public abstract class HotSpotJVMCICompilerFactory extends JVMCICompilerFactory {
         return null;
     }
 
+    public enum CompilationLevelAdjustment {
+        /**
+         * No adjustment.
+         */
+        None,
+
+        /**
+         * Adjust based on declaring class of method.
+         */
+        ByHolder,
+
+        /**
+         * Adjust based on declaring class, name and signature of method.
+         */
+        ByFullSignature
+    }
+
     /**
      * Determines if this object may want to adjust the compilation level for a method that is being
-     * scheduled by the VM for compilation. The legal return values and their meanings are:
-     * <ul>
-     * <li>0 - no adjustment</li>
-     * <li>1 - adjust based on declaring class of method</li>
-     * <li>2 - adjust based on declaring class, name and signature of method</li>
-     * </ul>
+     * scheduled by the VM for compilation.
      */
-    public int getCompilationLevelAdjustment(HotSpotVMConfig config) {
-        return config.compLevelAdjustmentNone;
+    public CompilationLevelAdjustment getCompilationLevelAdjustment() {
+        return CompilationLevelAdjustment.None;
+    }
+
+    public enum CompilationLevel {
+        None,
+        Simple,
+        LimitedProfile,
+        FullProfile,
+        FullOptimization
     }
 
     /**
      * Potentially modifies the compilation level currently selected by the VM compilation policy
      * for a method.
      *
-     * @param config object for reading HotSpot {@code CompLevel} enum values
      * @param declaringClass the class in which the method is declared
      * @param name the name of the method or {@code null} depending on the value that was returned
-     *            by {@link #getCompilationLevelAdjustment(HotSpotVMConfig)}
+     *            by {@link #getCompilationLevelAdjustment()}
      * @param signature the signature of the method or {@code null} depending on the value that was
-     *            returned by {@link #getCompilationLevelAdjustment(HotSpotVMConfig)}
+     *            returned by {@link #getCompilationLevelAdjustment()}
      * @param isOsr specifies if the compilation being scheduled in an OSR compilation
      * @param level the compilation level currently selected by the VM compilation policy
      * @return the compilation level to use for the compilation being scheduled (must be a valid
      *         {@code CompLevel} enum value)
      */
-    public int adjustCompilationLevel(HotSpotVMConfig config, Class<?> declaringClass, String name, String signature, boolean isOsr, int level) {
+    public CompilationLevel adjustCompilationLevel(Class<?> declaringClass, String name, String signature, boolean isOsr, CompilationLevel level) {
         throw new InternalError("Should not reach here");
     }
 }

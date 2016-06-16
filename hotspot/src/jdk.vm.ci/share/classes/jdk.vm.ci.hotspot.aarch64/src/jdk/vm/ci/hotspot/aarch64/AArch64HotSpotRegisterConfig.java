@@ -67,7 +67,6 @@ import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.code.ValueKindFactory;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
-import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
@@ -81,8 +80,6 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
 
     private final Register[] allocatable;
 
-    private final int maxFrameSize;
-
     /**
      * The caller saved registers always include all parameter registers.
      */
@@ -91,10 +88,6 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
     private final boolean allAllocatableAreCallerSaved;
 
     private final RegisterAttributes[] attributesMap;
-
-    public int getMaximumFrameSize() {
-        return maxFrameSize;
-    }
 
     @Override
     public Register[] getAllocatableRegisters() {
@@ -160,14 +153,13 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
         return registers;
     }
 
-    public AArch64HotSpotRegisterConfig(TargetDescription target, HotSpotVMConfig config) {
-        this(target, config, initAllocatable(target.arch, config.useCompressedOops));
+    public AArch64HotSpotRegisterConfig(TargetDescription target, boolean useCompressedOops) {
+        this(target, initAllocatable(target.arch, useCompressedOops));
         assert callerSaved.length >= allocatable.length;
     }
 
-    public AArch64HotSpotRegisterConfig(TargetDescription target, HotSpotVMConfig config, Register[] allocatable) {
+    public AArch64HotSpotRegisterConfig(TargetDescription target, Register[] allocatable) {
         this.target = target;
-        this.maxFrameSize = config.maxFrameSize;
 
         this.allocatable = allocatable.clone();
         Set<Register> callerSaveSet = new HashSet<>();

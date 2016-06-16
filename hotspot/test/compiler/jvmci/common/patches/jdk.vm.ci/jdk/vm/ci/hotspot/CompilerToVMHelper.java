@@ -152,8 +152,8 @@ public class CompilerToVMHelper {
         CTVM.resetCompilationStatistics();
     }
 
-    public static long initializeConfiguration(HotSpotVMConfig config) {
-        return CTVM.initializeConfiguration(config);
+    public static Object[] readConfiguration() {
+        return CTVM.readConfiguration();
     }
 
     public static HotSpotResolvedJavaMethod resolveMethod(

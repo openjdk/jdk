@@ -81,7 +81,6 @@ import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.code.ValueKindFactory;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
-import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
@@ -167,14 +166,14 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
         return registers;
     }
 
-    public SPARCHotSpotRegisterConfig(TargetDescription target, HotSpotVMConfig config) {
-        this(target, initAllocatable(target.arch, config.useCompressedOops), config);
+    public SPARCHotSpotRegisterConfig(TargetDescription target, boolean useCompressedOops) {
+        this(target, initAllocatable(target.arch, useCompressedOops));
     }
 
-    public SPARCHotSpotRegisterConfig(TargetDescription target, Register[] allocatable, HotSpotVMConfig config) {
+    public SPARCHotSpotRegisterConfig(TargetDescription target, Register[] allocatable) {
         this.target = target;
         this.allocatable = allocatable.clone();
-        this.addNativeRegisterArgumentSlots = config.linuxOs;
+        this.addNativeRegisterArgumentSlots = false;
         HashSet<Register> callerSaveSet = new HashSet<>();
         Collections.addAll(callerSaveSet, target.arch.getAvailableValueRegisters());
         for (Register cs : calleeSaveRegisters) {
