@@ -751,24 +751,24 @@ public class Types {
      * Is t an unchecked subtype of s?
      */
     public boolean isSubtypeUnchecked(Type t, Type s, Warner warn) {
-        boolean result = isSubtypeUncheckedInternal(t, s, warn);
+        boolean result = isSubtypeUncheckedInternal(t, s, true, warn);
         if (result) {
             checkUnsafeVarargsConversion(t, s, warn);
         }
         return result;
     }
     //where
-        private boolean isSubtypeUncheckedInternal(Type t, Type s, Warner warn) {
+        private boolean isSubtypeUncheckedInternal(Type t, Type s, boolean capture, Warner warn) {
             if (t.hasTag(ARRAY) && s.hasTag(ARRAY)) {
                 if (((ArrayType)t).elemtype.isPrimitive()) {
                     return isSameType(elemtype(t), elemtype(s));
                 } else {
-                    return isSubtypeUnchecked(elemtype(t), elemtype(s), warn);
+                    return isSubtypeUncheckedInternal(elemtype(t), elemtype(s), false, warn);
                 }
-            } else if (isSubtype(t, s)) {
+            } else if (isSubtype(t, s, capture)) {
                 return true;
             } else if (t.hasTag(TYPEVAR)) {
-                return isSubtypeUnchecked(t.getUpperBound(), s, warn);
+                return isSubtypeUncheckedInternal(t.getUpperBound(), s, false, warn);
             } else if (!s.isRaw()) {
                 Type t2 = asSuper(t, s.tsym);
                 if (t2 != null && t2.isRaw()) {
