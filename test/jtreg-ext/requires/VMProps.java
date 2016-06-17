@@ -23,6 +23,8 @@
 package requires;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -52,6 +54,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.flavor", vmFlavor());
         map.put("vm.compMode", vmCompMode());
         map.put("vm.bits", vmBits());
+        map.put("vm.flightRecorder", vmFlightRecorder());
         map.put("vm.simpleArch", vmArch());
         dump(map);
         return map;
@@ -123,6 +126,27 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
+     * @return "true" if Flight Recorder is enabled, "false" if is disabled.
+     */
+    protected String vmFlightRecorder() {
+        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+        List<String> arguments = runtimeMxBean.getInputArguments();
+        if (arguments.contains("-XX:+UnlockCommercialFeatures")) {
+            if (arguments.contains("-XX:+FlightRecorder")) {
+                return "true";
+            }
+            if (arguments.contains("-XX:-FlightRecorder")) {
+                return "false";
+            }
+            if (arguments.stream()
+                    .anyMatch(option -> option.startsWith("-XX:StartFlightRecording"))) {
+                return "true";
+            }
+        }
+        return "false";
+    }
+
+    /**
      * Dumps the map to the file if the file name is given as the property.
      * This functionality could be helpful to know context in the real
      * execution.
@@ -135,9 +159,9 @@ public class VMProps implements Callable<Map<String, String>> {
             return;
         }
         List<String> lines = new ArrayList<>();
-        map.forEach((k,v) -> lines.add(k + ":" + v));
+        map.forEach((k, v) -> lines.add(k + ":" + v));
         try {
-             Files.write(Paths.get(dumpFileName), lines);
+            Files.write(Paths.get(dumpFileName), lines);
         } catch (IOException e) {
             throw new RuntimeException("Failed to dump properties into '"
                     + dumpFileName + "'", e);
@@ -150,6 +174,6 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     public static void main(String args[]) {
         Map<String, String> map = new VMProps().call();
-        map.forEach((k,v) -> System.out.println(k + ": '" + v + "'"));
+        map.forEach((k, v) -> System.out.println(k + ": '" + v + "'"));
     }
 }
