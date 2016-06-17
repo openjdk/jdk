@@ -649,7 +649,7 @@ final class ProcessImpl extends Process {
         private final Object closeLock = new Object();
 
         ProcessPipeInputStream(int fd) {
-            super(new FileInputStream(newFileDescriptor(fd)));
+            super(new PipeInputStream(newFileDescriptor(fd)));
         }
         private static byte[] drainInputStream(InputStream in)
                 throws IOException {
@@ -725,8 +725,7 @@ final class ProcessImpl extends Process {
     // behavior.  By deferring the close we allow any pending reads to see -1
     // (EOF) as they did before.
     //
-    private static class DeferredCloseInputStream extends FileInputStream
-    {
+    private static class DeferredCloseInputStream extends PipeInputStream {
         DeferredCloseInputStream(FileDescriptor fd) {
             super(fd);
         }
@@ -848,7 +847,7 @@ final class ProcessImpl extends Process {
         private boolean closePending = false;
 
         DeferredCloseProcessPipeInputStream(int fd) {
-            super(new FileInputStream(newFileDescriptor(fd)));
+            super(new PipeInputStream(newFileDescriptor(fd)));
         }
 
         private InputStream drainInputStream(InputStream in)
