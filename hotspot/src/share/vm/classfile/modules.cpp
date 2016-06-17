@@ -568,8 +568,8 @@ void Modules::add_module_exports(jobject from_module, jstring package, jobject t
                       to_module_entry->is_named() ?
                         to_module_entry->name()->as_C_string() : UNNAMED_MODULE);
 
-  // Do nothing if modules are the same or if package is already exported unqualifiedly.
-  if (from_module_entry != to_module_entry && !package_entry->is_unqual_exported()) {
+  // Do nothing if modules are the same.
+  if (from_module_entry != to_module_entry) {
     package_entry->set_exported(to_module_entry);
   }
 }

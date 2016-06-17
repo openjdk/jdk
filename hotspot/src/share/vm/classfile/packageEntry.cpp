@@ -49,7 +49,7 @@ bool PackageEntry::is_qexported_to(ModuleEntry* m) const {
 
 // Add a module to the package's qualified export list.
 void PackageEntry::add_qexport(ModuleEntry* m) {
-  assert_locked_or_safepoint(Module_lock);
+  assert(Module_lock->owned_by_self(), "should have the Module_lock");
   if (!has_qual_exports_list()) {
     // Lazily create a package's qualified exports list.
     // Initial size is small, do not anticipate export lists to be large.
@@ -157,7 +157,7 @@ PackageEntryTable::~PackageEntryTable() {
 }
 
 PackageEntry* PackageEntryTable::new_entry(unsigned int hash, Symbol* name, ModuleEntry* module) {
-  assert_locked_or_safepoint(Module_lock);
+  assert(Module_lock->owned_by_self(), "should have the Module_lock");
   PackageEntry* entry = (PackageEntry*) NEW_C_HEAP_ARRAY(char, entry_size(), mtModule);
 
   // Initialize everything BasicHashtable would
@@ -180,14 +180,14 @@ PackageEntry* PackageEntryTable::new_entry(unsigned int hash, Symbol* name, Modu
 }
 
 void PackageEntryTable::add_entry(int index, PackageEntry* new_entry) {
-  assert_locked_or_safepoint(Module_lock);
+  assert(Module_lock->owned_by_self(), "should have the Module_lock");
   Hashtable<Symbol*, mtModule>::add_entry(index, (HashtableEntry<Symbol*, mtModule>*)new_entry);
 }
 
 // Create package in loader's package entry table and return the entry.
 // If entry already exists, return null.  Assume Module lock was taken by caller.
 PackageEntry* PackageEntryTable::locked_create_entry_or_null(Symbol* name, ModuleEntry* module) {
-  assert_locked_or_safepoint(Module_lock);
+  assert(Module_lock->owned_by_self(), "should have the Module_lock");
   // Check if package already exists.  Return NULL if it does.
   if (lookup_only(name) != NULL) {
     return NULL;
