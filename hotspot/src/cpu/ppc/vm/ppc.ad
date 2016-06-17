@@ -5416,7 +5416,7 @@ instruct loadUI2L(iRegLdst dst, memory mem, immL_32bits mask) %{
 %}
 
 // Match loading integer and casting it to long.
-instruct loadI2L(iRegLdst dst, memory mem) %{
+instruct loadI2L(iRegLdst dst, memoryAlg4 mem) %{
   match(Set dst (ConvI2L (LoadI mem)));
   predicate(_kids[0]->_leaf->as_Load()->is_unordered());
   ins_cost(MEMORY_REF_COST);
@@ -5432,7 +5432,7 @@ instruct loadI2L(iRegLdst dst, memory mem) %{
 %}
 
 // Match loading integer and casting it to long - acquire.
-instruct loadI2L_ac(iRegLdst dst, memory mem) %{
+instruct loadI2L_ac(iRegLdst dst, memoryAlg4 mem) %{
   match(Set dst (ConvI2L (LoadI mem)));
   ins_cost(3*MEMORY_REF_COST);
 
