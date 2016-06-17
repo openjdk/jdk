@@ -2888,7 +2888,7 @@ public final class Locale implements Cloneable, Serializable {
                 throw new IllegalArgumentException("weight=" + weight);
             }
 
-            range = range.toLowerCase();
+            range = range.toLowerCase(Locale.ROOT);
 
             // Do syntax check.
             boolean isIllFormed = false;

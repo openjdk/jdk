@@ -118,7 +118,7 @@ public final class LocaleMatcher {
                 return new ArrayList<String>(tags);
             } else {
                 for (String tag : tags) {
-                    tag = tag.toLowerCase();
+                    tag = tag.toLowerCase(Locale.ROOT);
                     if (tag.startsWith(range)) {
                         int len = range.length();
                         if ((tag.length() == len || tag.charAt(len) == '-')
@@ -143,7 +143,7 @@ public final class LocaleMatcher {
             }
             String[] rangeSubtags = range.split("-");
             for (String tag : tags) {
-                tag = tag.toLowerCase();
+                tag = tag.toLowerCase(Locale.ROOT);
                 String[] tagSubtags = tag.split("-");
                 if (!rangeSubtags[0].equals(tagSubtags[0])
                     && !rangeSubtags[0].equals("*")) {
@@ -216,7 +216,7 @@ public final class LocaleMatcher {
             String rangeForRegex = range.replaceAll("\\x2A", "\\\\p{Alnum}*");
             while (rangeForRegex.length() > 0) {
                 for (String tag : tags) {
-                    tag = tag.toLowerCase();
+                    tag = tag.toLowerCase(Locale.ROOT);
                     if (tag.matches(rangeForRegex)) {
                         return tag;
                     }
@@ -243,7 +243,7 @@ public final class LocaleMatcher {
     }
 
     public static List<LanguageRange> parse(String ranges) {
-        ranges = ranges.replaceAll(" ", "").toLowerCase();
+        ranges = ranges.replaceAll(" ", "").toLowerCase(Locale.ROOT);
         if (ranges.startsWith("accept-language:")) {
             ranges = ranges.substring(16); // delete unnecessary prefix
         }
@@ -410,7 +410,7 @@ public final class LocaleMatcher {
         // Create a map, key=originalKey.toLowerCaes(), value=originalKey
         Map<String, String> keyMap = new HashMap<>();
         for (String key : map.keySet()) {
-            keyMap.put(key.toLowerCase(), key);
+            keyMap.put(key.toLowerCase(Locale.ROOT), key);
         }
 
         List<LanguageRange> list = new ArrayList<>();
@@ -426,7 +426,7 @@ public final class LocaleMatcher {
                     if (equivalents != null) {
                         int len = r.length();
                         for (String equivalent : equivalents) {
-                            list.add(new LanguageRange(equivalent.toLowerCase()
+                            list.add(new LanguageRange(equivalent.toLowerCase(Locale.ROOT)
                                      + range.substring(len),
                                      lr.getWeight()));
                         }
