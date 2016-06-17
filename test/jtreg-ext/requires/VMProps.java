@@ -52,9 +52,28 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.flavor", vmFlavor());
         map.put("vm.compMode", vmCompMode());
         map.put("vm.bits", vmBits());
+        map.put("vm.simpleArch", vmArch());
         dump(map);
         return map;
     }
+
+
+    /**
+     * @return vm.simpleArch value of "os.simpleArch" property of tested JDK.
+     */
+    protected String vmArch() {
+        String arch = System.getProperty("os.arch");
+        if (arch.equals("x86_64") || arch.equals("amd64")) {
+            return "x64";
+        }
+        else if (arch.contains("86")) {
+            return "x86";
+        } else {
+            return arch;
+        }
+    }
+
+
 
     /**
      * @return VM type value extracted from the "java.vm.name" property.
