@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @modules java.base/jdk.internal.module
  * @run testng ModuleDescriptorTest
  * @summary Basic test for java.lang.module.ModuleDescriptor and its builder
  */
@@ -47,6 +48,7 @@ import java.util.Set;
 
 import static java.lang.module.ModuleDescriptor.Requires.Modifier.*;
 
+import jdk.internal.module.ModuleInfoWriter;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -667,6 +669,37 @@ public class ModuleDescriptorTest {
         ByteBuffer bb = ByteBuffer.allocate(0);
         ModuleDescriptor.read(bb);
     }
+
+    // The requires table for java.base must be 0 length
+    @Test(expectedExceptions = InvalidModuleDescriptorException.class)
+    public void testReadOfJavaBaseWithRequires() {
+        ModuleDescriptor descriptor
+            = new ModuleDescriptor.Builder("java.base")
+                .requires("other")
+                .build();
+        ByteBuffer bb = ModuleInfoWriter.toByteBuffer(descriptor);
+        ModuleDescriptor.read(bb);
+    }
+
+    // The requires table must have an entry for java.base
+    @Test(expectedExceptions = InvalidModuleDescriptorException.class)
+    public void testReadWithEmptyRequires() {
+        ModuleDescriptor descriptor = new ModuleDescriptor.Builder("m1").build();
+        ByteBuffer bb = ModuleInfoWriter.toByteBuffer(descriptor);
+        ModuleDescriptor.read(bb);
+    }
+
+    // The requires table must have an entry for java.base
+    @Test(expectedExceptions = InvalidModuleDescriptorException.class)
+    public void testReadWithNoRequiresBase() {
+        ModuleDescriptor descriptor
+            = new ModuleDescriptor.Builder("m1")
+                .requires("m2")
+                .build();
+        ByteBuffer bb = ModuleInfoWriter.toByteBuffer(descriptor);
+        ModuleDescriptor.read(bb);
+    }
+
 
     public void testReadWithNull() throws Exception {
         Module base = Object.class.getModule();
