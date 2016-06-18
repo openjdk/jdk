@@ -303,7 +303,7 @@ public class ModulePathTest extends ModuleTestBase {
 
     @Test
     public void relativePath(Path base) throws Exception {
-        final Path modules = base.resolve("modules");
+        Path modules = base.resolve("modules");
         new ModuleBuilder(tb, "m1").build(modules);
 
         Path src = base.resolve("src");
@@ -319,7 +319,7 @@ public class ModulePathTest extends ModuleTestBase {
 
     @Test
     public void duplicatePaths_1(Path base) throws Exception {
-        final Path modules = base.resolve("modules");
+        Path modules = base.resolve("modules");
         new ModuleBuilder(tb, "m1").build(modules);
 
         Path src = base.resolve("src");
@@ -335,7 +335,7 @@ public class ModulePathTest extends ModuleTestBase {
 
     @Test
     public void duplicatePaths_2(Path base) throws Exception {
-        final Path modules = base.resolve("modules");
+        Path modules = base.resolve("modules");
         new ModuleBuilder(tb, "m1").build(modules);
 
         Path src = base.resolve("src");
@@ -352,24 +352,25 @@ public class ModulePathTest extends ModuleTestBase {
 
     @Test
     public void oneModuleHidesAnother(Path base) throws Exception {
-        final Path module = base.resolve("modules");
+        Path modules = base.resolve("modules");
         new ModuleBuilder(tb, "m1")
                 .exports("pkg1")
                 .classes("package pkg1; public class E { }")
-                .build(module);
+                .build(modules);
 
-        final Path deepModuleDir = module.resolve("deepModuleDir");
+        Path deepModuleDirSrc = base.resolve("deepModuleDirSrc");
+        Path deepModuleDir = modules.resolve("deepModuleDir");
         new ModuleBuilder(tb, "m1")
                 .exports("pkg2")
                 .classes("package pkg2; public class E { }")
-                .build(deepModuleDir);
+                .build(deepModuleDirSrc, deepModuleDir);
 
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "module m2 { requires m1; }", " package p; class A { void main() { pkg2.E.class.getName(); } }");
 
         new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulepath", deepModuleDir + PATH_SEP + module)
+                        "-modulepath", deepModuleDir + PATH_SEP + modules)
                 .files(findJavaFiles(src))
                 .run()
                 .writeAll();
@@ -377,7 +378,7 @@ public class ModulePathTest extends ModuleTestBase {
 
     @Test
     public void modulesInDifferentContainers(Path base) throws Exception {
-        final Path modules = base.resolve("modules");
+        Path modules = base.resolve("modules");
         new ModuleBuilder(tb, "m1")
                 .exports("one")
                 .classes("package one; public class A { }")

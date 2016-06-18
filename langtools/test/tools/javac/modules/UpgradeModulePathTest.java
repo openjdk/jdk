@@ -49,25 +49,25 @@ public class UpgradeModulePathTest extends ModuleTestBase {
 
     @Test
     public void simpleUsage(Path base) throws Exception {
-        final Path module = base.resolve("modules");
+        Path modules = base.resolve("modules");
         new ModuleBuilder(tb, "m1")
                 .exports("pkg1")
                 .classes("package pkg1; public class E { }")
-                .build(module);
+                .build(modules);
 
-        final Path upgradeModule = base.resolve("upgradeModule");
+        final Path upgradeModules = base.resolve("upgradeModules");
         new ModuleBuilder(tb, "m1")
                 .exports("pkg2")
                 .classes("package pkg2; public class E { }")
-                .build(upgradeModule);
+                .build(upgradeModules);
 
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "module m2 { requires m1; }",
                 "package p; class A { void main() { pkg2.E.class.getName(); } }");
 
         new JavacTask(tb, Task.Mode.CMDLINE)
-                .options("-modulepath", module.toString(),
-                        "-upgrademodulepath", upgradeModule.toString())
+                .options("-modulepath", modules.toString(),
+                        "-upgrademodulepath", upgradeModules.toString())
                 .files(findJavaFiles(src))
                 .run()
                 .writeAll();
