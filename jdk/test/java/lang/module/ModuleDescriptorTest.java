@@ -135,8 +135,8 @@ public class ModuleDescriptorTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testRequiresSelfWithRequires() {
-        Requires r = requires(null, "m");
-        new Builder("m").requires(r);
+        Requires r = requires(null, "foo");
+        new Builder("foo").requires(r);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -171,6 +171,21 @@ public class ModuleDescriptorTest {
         int n = "foo".compareTo("bar");
         assertTrue(r1.compareTo(r2) == n);
         assertTrue(r2.compareTo(r1) == -n);
+    }
+
+    public void testRequiresCompareWithDifferentModifiers() {
+        Requires r1 = requires(EnumSet.of(PUBLIC), "foo");
+        Requires r2 = requires(EnumSet.of(SYNTHETIC), "foo");
+        int n = Integer.compare(1 << PUBLIC.ordinal(), 1 << SYNTHETIC.ordinal());
+        assertTrue(r1.compareTo(r2) == n);
+        assertTrue(r2.compareTo(r1) == -n);
+    }
+
+    public void testRequiresCompareWithSameModifiers() {
+        Requires r1 = requires(EnumSet.of(SYNTHETIC), "foo");
+        Requires r2 = requires(EnumSet.of(SYNTHETIC), "foo");
+        assertTrue(r1.compareTo(r2) == 0);
+        assertTrue(r2.compareTo(r1) == 0);
     }
 
     public void testRequiresToString() {
@@ -332,7 +347,7 @@ public class ModuleDescriptorTest {
 
     private Provides provides(String st, String pc) {
         return new Builder("foo")
-            .provides("p.S", pc)
+            .provides(st, pc)
             .build()
             .provides()
             .values()
