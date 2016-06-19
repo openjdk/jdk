@@ -27,36 +27,19 @@ package jdk.tools.jlink.internal.packager;
 
 
 import jdk.tools.jlink.Jlink;
-import jdk.tools.jlink.builder.ImageBuilder;
+import jdk.tools.jlink.builder.DefaultImageBuilder;
+import jdk.tools.jlink.internal.JlinkTask;
 import jdk.tools.jlink.plugin.Plugin;
-import jdk.tools.jlink.builder.*;
-import jdk.tools.jlink.plugin.ModulePool;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringReader;
+import java.lang.module.ModuleFinder;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-import java.util.ResourceBundle;
 import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 /**
  * AppRuntimeImageBuilder is a private API used only by the Java Packager to generate
@@ -142,5 +125,15 @@ public final class AppRuntimeImageBuilder {
             plugins, new DefaultImageBuilder(outputDir), null);
         Jlink jlink = new Jlink();
         jlink.build(jlinkConfig, pluginConfig);
+    }
+
+    /**
+     * Returns a ModuleFinder that limits observability to the given root
+     * modules, their transitive dependences, plus a set of other modules.
+     */
+    public static ModuleFinder moduleFinder(List<Path> modulepaths,
+                                            Set<String> roots,
+                                            Set<String> otherModules) {
+        return JlinkTask.newModuleFinder(modulepaths, roots, otherModules);
     }
 }
