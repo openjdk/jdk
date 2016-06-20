@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1240,19 +1240,22 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
             } else if (currentEvent instanceof ActionEvent) {
                 modifiers = ((ActionEvent)currentEvent).getModifiers();
             }
-            // Process the listeners last to first, notifying
-            // those that are interested in this event
-            for ( int i = listeners.length-2; i>=0; i-=2 ) {
-                if ( listeners[i]==ActionListener.class ) {
-                    // Lazily create the event:
-                    if ( e == null )
-                        e = new ActionEvent(this,ActionEvent.ACTION_PERFORMED,
-                                            getActionCommand(),
-                                            mostRecentEventTime, modifiers);
-                    ((ActionListener)listeners[i+1]).actionPerformed(e);
+            try {
+                // Process the listeners last to first, notifying
+                // those that are interested in this event
+                for ( int i = listeners.length-2; i>=0; i-=2 ) {
+                    if ( listeners[i]==ActionListener.class ) {
+                        // Lazily create the event:
+                        if ( e == null )
+                            e = new ActionEvent(this,ActionEvent.ACTION_PERFORMED,
+                                                getActionCommand(),
+                                                mostRecentEventTime, modifiers);
+                        ((ActionListener)listeners[i+1]).actionPerformed(e);
+                    }
                 }
+            } finally {
+                firingActionEvent = false;
             }
-            firingActionEvent = false;
         }
     }
 
