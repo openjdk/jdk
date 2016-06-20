@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -354,7 +354,10 @@ public class RunExamples {
                 html.write(title);
                 html.endTag(HTMLWriter.TITLE);
             }
+            html.startTag(HTMLWriter.META);
+            html.writeAttr(HTMLWriter.CHARSET, "UTF-8");
             html.startTag(HTMLWriter.STYLE);
+            html.write(null); // revert to body text
             html.newLine();
             html.writeLine("div.file { background-color:#e0ffe0; margin-left:30px; margin-right:30px;\n"
                     + "  padding: 3px; border: thin solid silver; }");
