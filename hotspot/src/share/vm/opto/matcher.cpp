@@ -124,7 +124,7 @@ OptoReg::Name Matcher::warp_incoming_stk_arg( VMReg reg ) {
       _in_arg_limit = OptoReg::add(warped, 1); // Bump max stack slot seen
     if (!RegMask::can_represent_arg(warped)) {
       // the compiler cannot represent this method's calling sequence
-      C->record_method_not_compilable_all_tiers("unsupported incoming calling sequence");
+      C->record_method_not_compilable("unsupported incoming calling sequence");
       return OptoReg::Bad;
     }
     return warped;
@@ -1120,7 +1120,7 @@ OptoReg::Name Matcher::warp_outgoing_stk_arg( VMReg reg, OptoReg::Name begin_out
     if( warped >= out_arg_limit_per_call )
       out_arg_limit_per_call = OptoReg::add(warped,1);
     if (!RegMask::can_represent_arg(warped)) {
-      C->record_method_not_compilable_all_tiers("unsupported calling sequence");
+      C->record_method_not_compilable("unsupported calling sequence");
       return OptoReg::Bad;
     }
     return warped;
@@ -1300,7 +1300,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     uint r_cnt = mcall->tf()->range()->cnt();
     MachProjNode *proj = new MachProjNode( mcall, r_cnt+10000, RegMask::Empty, MachProjNode::fat_proj );
     if (!RegMask::can_represent_arg(OptoReg::Name(out_arg_limit_per_call-1))) {
-      C->record_method_not_compilable_all_tiers("unsupported outgoing calling sequence");
+      C->record_method_not_compilable("unsupported outgoing calling sequence");
     } else {
       for (int i = begin_out_arg_area; i < out_arg_limit_per_call; i++)
         proj->_rout.Insert(OptoReg::Name(i));
@@ -1488,7 +1488,7 @@ Node *Matcher::Label_Root( const Node *n, State *svec, Node *control, const Node
   // out of stack space.  See bugs 6272980 & 6227033 for more info.
   LabelRootDepth++;
   if (LabelRootDepth > MaxLabelRootDepth) {
-    C->record_method_not_compilable_all_tiers("Out of stack space, increase MaxLabelRootDepth");
+    C->record_method_not_compilable("Out of stack space, increase MaxLabelRootDepth");
     return NULL;
   }
   uint care = 0;                // Edges matcher cares about
