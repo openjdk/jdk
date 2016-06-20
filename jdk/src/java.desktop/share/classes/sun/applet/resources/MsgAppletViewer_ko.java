@@ -73,7 +73,7 @@ public class MsgAppletViewer_ko extends ListResourceBundle {
             {"appletviewer.parse.warning.embed.requiresheight", "\uACBD\uACE0: <embed> \uD0DC\uADF8\uC5D0\uB294 height \uC18D\uC131\uC774 \uD544\uC694\uD569\uB2C8\uB2E4."},
             {"appletviewer.parse.warning.embed.requireswidth", "\uACBD\uACE0: <embed> \uD0DC\uADF8\uC5D0\uB294 width \uC18D\uC131\uC774 \uD544\uC694\uD569\uB2C8\uB2E4."},
             {"appletviewer.parse.warning.appnotLongersupported", "\uACBD\uACE0: <app> \uD0DC\uADF8\uB294 \uB354 \uC774\uC0C1 \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4. \uB300\uC2E0 <applet>\uC744 \uC0AC\uC6A9\uD558\uC2ED\uC2DC\uC624."},
-            {"appletviewer.deprecated", "AppletViewer\uB294 \uB354 \uC774\uC0C1 \uC0AC\uC6A9\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+            {"appletviewer.deprecated", "\uACBD\uACE0: \uC560\uD50C\uB9BF API \uBC0F AppletViewer\uAC00 \uC0AC\uC6A9\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
             {"appletviewer.usage", "\uC0AC\uC6A9\uBC95: appletviewer <options> url(s)\n\n\uC5EC\uAE30\uC11C <options>\uB294 \uB2E4\uC74C\uACFC \uAC19\uC2B5\uB2C8\uB2E4.\n  -encoding <encoding>    HTML \uD30C\uC77C\uC5D0 \uC0AC\uC6A9\uB420 \uBB38\uC790 \uC778\uCF54\uB529\uC744 \uC9C0\uC815\uD569\uB2C8\uB2E4.\n  -J<runtime flag>        Java \uC778\uD130\uD504\uB9AC\uD130\uB85C \uC778\uC218\uB97C \uC804\uB2EC\uD569\uB2C8\uB2E4.\n\n-J \uC635\uC158\uC740 \uD45C\uC900\uC774 \uC544\uB2C8\uBA70 \uC608\uACE0 \uC5C6\uC774 \uBCC0\uACBD\uB420 \uC218 \uC788\uC2B5\uB2C8\uB2E4."},
             {"appletviewer.main.err.unsupportedopt", "\uC9C0\uC6D0\uB418\uC9C0 \uC54A\uB294 \uC635\uC158: {0}"},
             {"appletviewer.main.err.unrecognizedarg", "\uC54C \uC218 \uC5C6\uB294 \uC778\uC218: {0}"},

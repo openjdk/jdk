@@ -73,7 +73,7 @@ public class MsgAppletViewer_pt_BR extends ListResourceBundle {
             {"appletviewer.parse.warning.embed.requiresheight", "Advert\u00EAncia: a tag <embed> requer um atributo de altura."},
             {"appletviewer.parse.warning.embed.requireswidth", "Advert\u00EAncia: a tag <embed> requer um atributo de largura."},
             {"appletviewer.parse.warning.appnotLongersupported", "Advert\u00EAncia: a tag <app> n\u00E3o \u00E9 mais suportada; use <applet>:"},
-            {"appletviewer.deprecated", "O AppletViewer est\u00E1 obsoleto."},
+            {"appletviewer.deprecated", "Advert\u00EAncia: A API do e o AppletViewer est\u00E3o obsoletos."},
             {"appletviewer.usage", "Uso: appletviewer <op\u00E7\u00F5es> url(s)\n\nem que as <op\u00E7\u00F5es> incluem:\n  -encoding <codifica\u00E7\u00E3o>    Especifica a codifica\u00E7\u00E3o de caractere usada pelos arquivos HTML\n  -J<flag de runtime>        Informa o argumento ao intepretador java\n\nA op\u00E7\u00E3o -J n\u00E3o \u00E9 padr\u00E3o e est\u00E1 sujeita \u00E0 altera\u00E7\u00E3o sem notifica\u00E7\u00E3o."},
             {"appletviewer.main.err.unsupportedopt", "Op\u00E7\u00E3o n\u00E3o suportada: {0}"},
             {"appletviewer.main.err.unrecognizedarg", "Argumento n\u00E3o reconhecido: {0}"},
