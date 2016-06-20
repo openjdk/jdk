@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -359,10 +359,10 @@ class BufferedInputStream extends FilterInputStream {
      * See the general contract of the <code>skip</code>
      * method of <code>InputStream</code>.
      *
-     * @exception  IOException  if the stream does not support seek,
-     *                          or if this input stream has been closed by
-     *                          invoking its {@link #close()} method, or an
-     *                          I/O error occurs.
+     * @throws IOException  if this input stream has been closed by
+     *                      invoking its {@link #close()} method,
+     *                      {@code in.skip(n)} throws an IOException,
+     *                      or an I/O error occurs.
      */
     public synchronized long skip(long n) throws IOException {
         getBufIfOpen(); // Check for closed stream
