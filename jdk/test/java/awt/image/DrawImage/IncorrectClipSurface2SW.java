@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import static java.awt.geom.Rectangle2D.Double;
 
 /**
  * @test
+ * @key headful
  * @bug 8041644 8044788
  * @summary Tests drawing volatile image to BI using different clip.
  *          Results of the blit compatibleImage to BI used for comparison.

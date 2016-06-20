@@ -12,8 +12,6 @@ class MostSpecific28 {
     static void m1(Pred<? super Integer> f) {}
     static void m1(Fun<Number, Boolean> f) {}
 
-    static String foo(Object in) { return "a"; }
-
     void test() {
         m1((Number n) -> true);
     }

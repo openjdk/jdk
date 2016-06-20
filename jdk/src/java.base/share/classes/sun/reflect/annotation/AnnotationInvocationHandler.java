@@ -62,7 +62,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         // Handle Object and Annotation methods
         if (member.equals("equals") && paramTypes.length == 1 &&
             paramTypes[0] == Object.class)
-            return equalsImpl(args[0]);
+            return equalsImpl(proxy, args[0]);
         if (paramTypes.length != 0)
             throw new AssertionError("Too many parameters for an annotation method");
 
@@ -209,8 +209,8 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
     /**
      * Implementation of dynamicProxy.equals(Object o)
      */
-    private Boolean equalsImpl(Object o) {
-        if (o == this)
+    private Boolean equalsImpl(Object proxy, Object o) {
+        if (o == proxy)
             return true;
 
         if (!type.isInstance(o))

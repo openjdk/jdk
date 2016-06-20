@@ -21,12 +21,14 @@
  * questions.
  */
 
-/* @test
-   @bug 8011616
-   @summary JWindow.getLocation and JWindow.getLocationOnScreen return different
-            values on Unity
-   @author Semyon Sadetsky
-  */
+/*
+ * @test
+ * @key headful
+ * @bug 8011616
+ * @summary JWindow.getLocation and JWindow.getLocationOnScreen return different
+ *          values on Unity
+ * @author Semyon Sadetsky
+ */
 
 import java.awt.*;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,15 +45,16 @@ import test.java.awt.regtesthelpers.Util;
  * <p>See base class for test info.
  */
 /*
-@test
-@bug 6986109
-@summary Overlapping test for javax.swing.JSplitPane
-@author sergey.grinev@oracle.com: area=awt.mixing
-@library ../../regtesthelpers
-@modules java.desktop/sun.awt
-         java.desktop/java.awt.peer
-@build Util
-@run main JSplitPaneOverlapping
+ * @test
+ * @key headful
+ * @bug 6986109
+ * @summary Overlapping test for javax.swing.JSplitPane
+ * @author sergey.grinev@oracle.com: area=awt.mixing
+ * @library ../../regtesthelpers
+ * @modules java.desktop/sun.awt
+ *          java.desktop/java.awt.peer
+ * @build Util
+ * @run main JSplitPaneOverlapping
  */
 public class JSplitPaneOverlapping extends OverlappingTestBase {
 

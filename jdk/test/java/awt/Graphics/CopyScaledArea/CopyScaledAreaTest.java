@@ -28,6 +28,7 @@ import static sun.awt.OSInfo.*;
 
 /**
  * @test
+ * @key headful
  * @bug 8069348
  * @summary SunGraphics2D.copyArea() does not properly work for scaled graphics
  * @modules java.desktop/sun.awt

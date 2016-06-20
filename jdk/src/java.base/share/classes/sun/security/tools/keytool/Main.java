@@ -206,7 +206,7 @@ public final class Main {
         IMPORTKEYSTORE("Imports.one.or.all.entries.from.another.keystore",
             SRCKEYSTORE, DESTKEYSTORE, SRCSTORETYPE,
             DESTSTORETYPE, SRCSTOREPASS, DESTSTOREPASS,
-            SRCPROTECTED, SRCPROVIDERNAME, DESTPROVIDERNAME,
+            SRCPROTECTED, DESTPROTECTED, SRCPROVIDERNAME, DESTPROVIDERNAME,
             SRCALIAS, DESTALIAS, SRCKEYPASS, DESTKEYPASS,
             NOPROMPT, PROVIDERCLASS, PROVIDERARG, PROVIDERPATH,
             V),
@@ -3274,6 +3274,11 @@ public final class Main {
         // we parsed them using an X.509 certificate factory
         int i;
         PublicKey userPubKey = userCert.getPublicKey();
+
+        // Remove duplicated certificates.
+        HashSet<Certificate> nodup = new HashSet<>(Arrays.asList(replyCerts));
+        replyCerts = nodup.toArray(new Certificate[nodup.size()]);
+
         for (i=0; i<replyCerts.length; i++) {
             if (userPubKey.equals(replyCerts[i].getPublicKey())) {
                 break;

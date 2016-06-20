@@ -21,12 +21,14 @@
  * questions.
  */
 
-/* @test
-   @bug 8077409
-   @summary Drawing deviates when validate() is invoked on java.awt.ScrollPane
-   @author mikhail.cherkasov@oracle.com
-   @run main bug8077409Test
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 8077409
+ * @summary Drawing deviates when validate() is invoked on java.awt.ScrollPane
+ * @author mikhail.cherkasov@oracle.com
+ * @run main bug8077409Test
+ */
 
 
 import java.awt.*;

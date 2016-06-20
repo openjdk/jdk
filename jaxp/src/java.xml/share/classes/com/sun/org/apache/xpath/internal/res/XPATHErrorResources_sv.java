@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: XPATHErrorResources_sv.java /st_wptg_1.8.0.0.0jdk/2 2013/09/16 06:50:58 gmolloy Exp $
+ * $Id: XPATHErrorResources_sv.java /st_wptg_1.9.0.0.0jdk/2 2016/04/14 01:57:20 gmolloy Exp $
  */
 package com.sun.org.apache.xpath.internal.res;
 
@@ -483,7 +483,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
       "FEL! Hittade inte ENDOP efter OP_LOCATIONPATH"},
 
   { ER_ERROR_OCCURED,
-     "Fel intr\u00E4ffade!"},
+     "Ett fel har intr\u00E4ffat!"},
 
   { ER_ILLEGAL_VARIABLE_REFERENCE,
       "VariableReference angiven f\u00F6r variabel som \u00E4r utanf\u00F6r kontext eller som saknar definition! Namn = {0}"},
@@ -828,7 +828,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   // Warnings...
 
   { WG_LOCALE_NAME_NOT_HANDLED,
-      "spr\u00E5knamnet i funktionen format-number har \u00E4nnu inte hanterats!"},
+      "spr\u00E5kkonventionsnamnet i funktionen format-number har \u00E4nnu inte hanterats!"},
 
   { WG_PROPERTY_NOT_SUPPORTED,
       "XSL-egenskapen st\u00F6ds inte: {0}"},
@@ -874,8 +874,8 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   { "version", ">>>>>>> Xalan version "},
   { "version2", "<<<<<<<"},
   { "yes", "ja"},
-  { "line", "Rad #"},
-  { "column", "Kolumn #"},
+  { "line", "Rad nr"},
+  { "column", "Kolumn nr"},
   { "xsldone", "XSLProcessor: utf\u00F6rd"},
   { "xpath_option", "xpath-alternativ: "},
   { "optionIN", "   [-in inputXMLURL]"},

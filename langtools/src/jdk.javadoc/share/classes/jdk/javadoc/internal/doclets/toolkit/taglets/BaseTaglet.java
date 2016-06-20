@@ -90,6 +90,17 @@ public abstract class BaseTaglet implements Taglet {
 
     /**
      * Return true if this <code>Taglet</code>
+     * is used in module documentation.
+     * @return true if this <code>Taglet</code>
+     * is used in module documentation and false
+     * otherwise.
+     */
+    public boolean inModule() {
+        return true;
+    }
+
+    /**
+     * Return true if this <code>Taglet</code>
      * is used in package documentation.
      * @return true if this <code>Taglet</code>
      * is used in package documentation and false

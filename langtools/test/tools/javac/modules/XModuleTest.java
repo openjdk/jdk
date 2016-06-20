@@ -237,16 +237,17 @@ public class XModuleTest extends ModuleTestBase {
 
     @Test
     public void testWithModulePath(Path base) throws Exception {
-        Path module = base.resolve("modules");
+        Path modSrc = base.resolve("modSrc");
+        Path modules = base.resolve("modules");
         new ModuleBuilder(tb, "m1")
                 .classes("package pkg1; public interface E { }")
-                .build(module);
+                .build(modSrc, modules);
 
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "package p; interface A extends pkg1.E { }");
 
         new JavacTask(tb, Task.Mode.CMDLINE)
-                .options("-modulepath", module.toString(),
+                .options("-modulepath", modules.toString(),
                         "-Xmodule:m1")
                 .files(findJavaFiles(src))
                 .run()
@@ -255,14 +256,14 @@ public class XModuleTest extends ModuleTestBase {
         //checks module bounds still exist
         new ModuleBuilder(tb, "m2")
                 .classes("package pkg2; public interface D { }")
-                .build(module);
+                .build(modSrc, modules);
 
         Path src2 = base.resolve("src2");
         tb.writeJavaFiles(src2, "package p; interface A extends pkg2.D { }");
 
         List<String> log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                        "-modulepath", module.toString(),
+                        "-modulepath", modules.toString(),
                         "-Xmodule:m1")
                 .files(findJavaFiles(src2))
                 .run(Task.Expect.FAIL)
@@ -278,21 +279,23 @@ public class XModuleTest extends ModuleTestBase {
 
     @Test
     public void testWithUpgradeModulePath(Path base) throws Exception {
-        Path module = base.resolve("modules");
+        Path modSrc = base.resolve("modSrc");
+        Path modules = base.resolve("modules");
         new ModuleBuilder(tb, "m1")
                 .classes("package pkg1; public interface E { }")
-                .build(module);
+                .build(modSrc, modules);
 
+        Path upgrSrc = base.resolve("upgradeSrc");
         Path upgrade = base.resolve("upgrade");
         new ModuleBuilder(tb, "m1")
                 .classes("package pkg1; public interface D { }")
-                .build(upgrade);
+                .build(upgrSrc, upgrade);
 
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "package p; interface A extends pkg1.D { }");
 
         new JavacTask(tb, Task.Mode.CMDLINE)
-                .options("-modulepath", module.toString(),
+                .options("-modulepath", modules.toString(),
                         "-upgrademodulepath", upgrade.toString(),
                         "-Xmodule:m1")
                 .files(findJavaFiles(src))

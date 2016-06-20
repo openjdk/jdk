@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ public interface RoundEnvironment {
      *
      * @implSpec The default implementation of this method creates an
      * empty result set, iterates over the annotations in the argument
-     * set calling {@link #getElementsAnnotatedWith(TypeElement)} on
+     * array calling {@link #getElementsAnnotatedWith(TypeElement)} on
      * each annotation and adding those results to the result
      * set. Finally, the contents of the result set are returned as an
      * unmodifiable set.

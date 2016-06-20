@@ -28,7 +28,7 @@
  * @run main/timeout=300 SupportedDSAParamGen 1024 160
  * @run main/timeout=300 SupportedDSAParamGen 2048 224
  * @run main/timeout=300 SupportedDSAParamGen 2048 256
- * @run main/timeout=450 SupportedDSAParamGen 3072 256
+ * @run main/timeout=700 SupportedDSAParamGen 3072 256
  */
 import java.security.*;
 import java.security.spec.*;

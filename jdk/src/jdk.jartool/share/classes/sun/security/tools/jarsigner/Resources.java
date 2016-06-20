@@ -249,7 +249,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"no.timestamp.signing",
                 "No -tsa or -tsacert is provided and this jar is not timestamped. Without a timestamp, users may not be able to validate this jar after the signer certificate's expiration date (%1$tY-%1$tm-%1$td)."},
         {"no.timestamp.verifying",
-                "This jar contains signatures that does not include a timestamp. Without a timestamp, users may not be able to validate this jar after the signer certificate's expiration date (%1$tY-%1$tm-%1$td)."},
+                "This jar contains signatures that do not include a timestamp. Without a timestamp, users may not be able to validate this jar after any of the signer certificates expire (as early as %1$tY-%1$tm-%1$td)."},
         {"Unknown.password.type.", "Unknown password type: "},
         {"Cannot.find.environment.variable.",
                 "Cannot find environment variable: "},

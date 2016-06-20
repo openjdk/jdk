@@ -926,7 +926,7 @@ public interface IntStream extends BaseStream<Integer, IntStream> {
      * {@code IntStream.iterate} should produce the same sequence of elements
      * as produced by the corresponding for-loop:
      * <pre>{@code
-     *     for (int index=seed; predicate.test(index); index = f.apply(index)) {
+     *     for (int index=seed; predicate.test(index); index = f.applyAsInt(index)) {
      *         ...
      *     }
      * }</pre>
