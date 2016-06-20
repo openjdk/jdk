@@ -25,15 +25,13 @@
 
 package jdk.internal.misc;
 
-import java.lang.reflect.Field;
-import java.security.ProtectionDomain;
-
+import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
-import jdk.internal.misc.VM;
-
-import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.vm.annotation.ForceInline;
+
+import java.lang.reflect.Field;
+import java.security.ProtectionDomain;
 
 
 /**
@@ -1688,6 +1686,174 @@ public final class Unsafe {
      *
      * @return {@code true} if successful
      */
+    @ForceInline
+    public final boolean compareAndSwapFloat(Object o, long offset,
+                                             float expected,
+                                             float x) {
+        return compareAndSwapInt(o, offset,
+                                 Float.floatToRawIntBits(expected),
+                                 Float.floatToRawIntBits(x));
+    }
+
+    @ForceInline
+    public final float compareAndExchangeFloatVolatile(Object o, long offset,
+                                                       float expected,
+                                                       float x) {
+        int w = compareAndExchangeIntVolatile(o, offset,
+                                              Float.floatToRawIntBits(expected),
+                                              Float.floatToRawIntBits(x));
+        return Float.intBitsToFloat(w);
+    }
+
+    @ForceInline
+    public final float compareAndExchangeFloatAcquire(Object o, long offset,
+                                                  float expected,
+                                                  float x) {
+        int w = compareAndExchangeIntVolatile(o, offset,
+                                              Float.floatToRawIntBits(expected),
+                                              Float.floatToRawIntBits(x));
+        return Float.intBitsToFloat(w);
+    }
+
+    @ForceInline
+    public final float compareAndExchangeFloatRelease(Object o, long offset,
+                                                  float expected,
+                                                  float x) {
+        int w = compareAndExchangeIntRelease(o, offset,
+                                             Float.floatToRawIntBits(expected),
+                                             Float.floatToRawIntBits(x));
+        return Float.intBitsToFloat(w);
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSwapFloat(Object o, long offset,
+                                               float expected,
+                                               float x) {
+        return weakCompareAndSwapInt(o, offset,
+                                     Float.floatToRawIntBits(expected),
+                                     Float.floatToRawIntBits(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSwapFloatAcquire(Object o, long offset,
+                                                      float expected,
+                                                      float x) {
+        return weakCompareAndSwapIntAcquire(o, offset,
+                                            Float.floatToRawIntBits(expected),
+                                            Float.floatToRawIntBits(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSwapFloatRelease(Object o, long offset,
+                                                      float expected,
+                                                      float x) {
+        return weakCompareAndSwapIntRelease(o, offset,
+                                            Float.floatToRawIntBits(expected),
+                                            Float.floatToRawIntBits(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSwapFloatVolatile(Object o, long offset,
+                                                       float expected,
+                                                       float x) {
+        return weakCompareAndSwapIntVolatile(o, offset,
+                                             Float.floatToRawIntBits(expected),
+                                             Float.floatToRawIntBits(x));
+    }
+
+    /**
+     * Atomically updates Java variable to {@code x} if it is currently
+     * holding {@code expected}.
+     *
+     * <p>This operation has memory semantics of a {@code volatile} read
+     * and write.  Corresponds to C11 atomic_compare_exchange_strong.
+     *
+     * @return {@code true} if successful
+     */
+    @ForceInline
+    public final boolean compareAndSwapDouble(Object o, long offset,
+                                              double expected,
+                                              double x) {
+        return compareAndSwapLong(o, offset,
+                                  Double.doubleToRawLongBits(expected),
+                                  Double.doubleToRawLongBits(x));
+    }
+
+    @ForceInline
+    public final double compareAndExchangeDoubleVolatile(Object o, long offset,
+                                                         double expected,
+                                                         double x) {
+        long w = compareAndExchangeLongVolatile(o, offset,
+                                                Double.doubleToRawLongBits(expected),
+                                                Double.doubleToRawLongBits(x));
+        return Double.longBitsToDouble(w);
+    }
+
+    @ForceInline
+    public final double compareAndExchangeDoubleAcquire(Object o, long offset,
+                                                        double expected,
+                                                        double x) {
+        long w = compareAndExchangeLongVolatile(o, offset,
+                                                Double.doubleToRawLongBits(expected),
+                                                Double.doubleToRawLongBits(x));
+        return Double.longBitsToDouble(w);
+    }
+
+    @ForceInline
+    public final double compareAndExchangeDoubleRelease(Object o, long offset,
+                                                        double expected,
+                                                        double x) {
+        long w = compareAndExchangeLongRelease(o, offset,
+                                               Double.doubleToRawLongBits(expected),
+                                               Double.doubleToRawLongBits(x));
+        return Double.longBitsToDouble(w);
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSwapDouble(Object o, long offset,
+                                                  double expected,
+                                                  double x) {
+        return weakCompareAndSwapLong(o, offset,
+                                     Double.doubleToRawLongBits(expected),
+                                     Double.doubleToRawLongBits(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSwapDoubleAcquire(Object o, long offset,
+                                                         double expected,
+                                                         double x) {
+        return weakCompareAndSwapLongAcquire(o, offset,
+                                             Double.doubleToRawLongBits(expected),
+                                             Double.doubleToRawLongBits(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSwapDoubleRelease(Object o, long offset,
+                                                         double expected,
+                                                         double x) {
+        return weakCompareAndSwapLongRelease(o, offset,
+                                             Double.doubleToRawLongBits(expected),
+                                             Double.doubleToRawLongBits(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSwapDoubleVolatile(Object o, long offset,
+                                                          double expected,
+                                                          double x) {
+        return weakCompareAndSwapLongVolatile(o, offset,
+                                              Double.doubleToRawLongBits(expected),
+                                              Double.doubleToRawLongBits(x));
+    }
+
+    /**
+     * Atomically updates Java variable to {@code x} if it is currently
+     * holding {@code expected}.
+     *
+     * <p>This operation has memory semantics of a {@code volatile} read
+     * and write.  Corresponds to C11 atomic_compare_exchange_strong.
+     *
+     * @return {@code true} if successful
+     */
     @HotSpotIntrinsicCandidate
     public final native boolean compareAndSwapLong(Object o, long offset,
                                                    long expected,
@@ -2161,8 +2327,39 @@ public final class Unsafe {
         return v;
     }
 
+    @ForceInline
     public final char getAndAddChar(Object o, long offset, char delta) {
         return (char) getAndAddShort(o, offset, (short) delta);
+    }
+
+    @ForceInline
+    public final float getAndAddFloat(Object o, long offset, float delta) {
+        int expectedBits;
+        float v;
+        do {
+            // Load and CAS with the raw bits to avoid issues with NaNs and
+            // possible bit conversion from signaling NaNs to quiet NaNs that
+            // may result in the loop not terminating.
+            expectedBits = getIntVolatile(o, offset);
+            v = Float.intBitsToFloat(expectedBits);
+        } while (!weakCompareAndSwapIntVolatile(o, offset,
+                                                expectedBits, Float.floatToRawIntBits(v + delta)));
+        return v;
+    }
+
+    @ForceInline
+    public final double getAndAddDouble(Object o, long offset, double delta) {
+        long expectedBits;
+        double v;
+        do {
+            // Load and CAS with the raw bits to avoid issues with NaNs and
+            // possible bit conversion from signaling NaNs to quiet NaNs that
+            // may result in the loop not terminating.
+            expectedBits = getLongVolatile(o, offset);
+            v = Double.longBitsToDouble(expectedBits);
+        } while (!weakCompareAndSwapLongVolatile(o, offset,
+                                                 expectedBits, Double.doubleToRawLongBits(v + delta)));
+        return v;
     }
 
     /**
@@ -2234,6 +2431,7 @@ public final class Unsafe {
         return v;
     }
 
+    @ForceInline
     public final boolean getAndSetBoolean(Object o, long offset, boolean newValue) {
         return byte2bool(getAndSetByte(o, offset, bool2byte(newValue)));
     }
@@ -2247,8 +2445,21 @@ public final class Unsafe {
         return v;
     }
 
+    @ForceInline
     public final char getAndSetChar(Object o, long offset, char newValue) {
         return s2c(getAndSetShort(o, offset, c2s(newValue)));
+    }
+
+    @ForceInline
+    public final float getAndSetFloat(Object o, long offset, float newValue) {
+        int v = getAndSetInt(o, offset, Float.floatToRawIntBits(newValue));
+        return Float.intBitsToFloat(v);
+    }
+
+    @ForceInline
+    public final double getAndSetDouble(Object o, long offset, double newValue) {
+        long v = getAndSetLong(o, offset, Double.doubleToRawLongBits(newValue));
+        return Double.longBitsToDouble(v);
     }
 
     /**
