@@ -38,7 +38,7 @@ public class TestThrowable {
   // Inner class that throws a lot of exceptions
   static class Thrower {
     static int MaxJavaStackTraceDepth = 1024; // as above
-    int[] depths = {10, 34, 100, 1024, 2042};
+    int[] depths = {10, 34, 100, 1023, 1024, 1025};
     int count = 0;
 
     int getDepth(Throwable t) throws Exception {
