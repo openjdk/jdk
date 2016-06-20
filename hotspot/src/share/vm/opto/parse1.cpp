@@ -425,7 +425,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   _iter.reset_to_method(method());
   _flow = method()->get_flow_analysis();
   if (_flow->failing()) {
-    C->record_method_not_compilable_all_tiers(_flow->failure_reason());
+    C->record_method_not_compilable(_flow->failure_reason());
   }
 
 #ifndef PRODUCT
@@ -1118,7 +1118,7 @@ SafePointNode* Parse::create_entry_map() {
   // Check for really stupid bail-out cases.
   uint len = TypeFunc::Parms + method()->max_locals() + method()->max_stack();
   if (len >= 32760) {
-    C->record_method_not_compilable_all_tiers("too many local variables");
+    C->record_method_not_compilable("too many local variables");
     return NULL;
   }
 

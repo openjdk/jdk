@@ -778,7 +778,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
     }
     if (failing())  return;
     if (cg == NULL) {
-      record_method_not_compilable_all_tiers("cannot parse method");
+      record_method_not_compilable("cannot parse method");
       return;
     }
     JVMState* jvms = build_start_state(start(), tf());
