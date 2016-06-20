@@ -173,7 +173,125 @@ public class JdkInternalMiscUnsafeAccessTestDouble {
         }
 
 
+        UNSAFE.putDouble(base, offset, 1.0d);
 
+        // Compare
+        {
+            boolean r = UNSAFE.compareAndSwapDouble(base, offset, 1.0d, 2.0d);
+            assertEquals(r, true, "success compareAndSwap double");
+            double x = UNSAFE.getDouble(base, offset);
+            assertEquals(x, 2.0d, "success compareAndSwap double value");
+        }
+
+        {
+            boolean r = UNSAFE.compareAndSwapDouble(base, offset, 1.0d, 3.0d);
+            assertEquals(r, false, "failing compareAndSwap double");
+            double x = UNSAFE.getDouble(base, offset);
+            assertEquals(x, 2.0d, "failing compareAndSwap double value");
+        }
+
+        // Advanced compare
+        {
+            double r = UNSAFE.compareAndExchangeDoubleVolatile(base, offset, 2.0d, 1.0d);
+            assertEquals(r, 2.0d, "success compareAndExchangeVolatile double");
+            double x = UNSAFE.getDouble(base, offset);
+            assertEquals(x, 1.0d, "success compareAndExchangeVolatile double value");
+        }
+
+        {
+            double r = UNSAFE.compareAndExchangeDoubleVolatile(base, offset, 2.0d, 3.0d);
+            assertEquals(r, 1.0d, "failing compareAndExchangeVolatile double");
+            double x = UNSAFE.getDouble(base, offset);
+            assertEquals(x, 1.0d, "failing compareAndExchangeVolatile double value");
+        }
+
+        {
+            double r = UNSAFE.compareAndExchangeDoubleAcquire(base, offset, 1.0d, 2.0d);
+            assertEquals(r, 1.0d, "success compareAndExchangeAcquire double");
+            double x = UNSAFE.getDouble(base, offset);
+            assertEquals(x, 2.0d, "success compareAndExchangeAcquire double value");
+        }
+
+        {
+            double r = UNSAFE.compareAndExchangeDoubleAcquire(base, offset, 1.0d, 3.0d);
+            assertEquals(r, 2.0d, "failing compareAndExchangeAcquire double");
+            double x = UNSAFE.getDouble(base, offset);
+            assertEquals(x, 2.0d, "failing compareAndExchangeAcquire double value");
+        }
+
+        {
+            double r = UNSAFE.compareAndExchangeDoubleRelease(base, offset, 2.0d, 1.0d);
+            assertEquals(r, 2.0d, "success compareAndExchangeRelease double");
+            double x = UNSAFE.getDouble(base, offset);
+            assertEquals(x, 1.0d, "success compareAndExchangeRelease double value");
+        }
+
+        {
+            double r = UNSAFE.compareAndExchangeDoubleRelease(base, offset, 2.0d, 3.0d);
+            assertEquals(r, 1.0d, "failing compareAndExchangeRelease double");
+            double x = UNSAFE.getDouble(base, offset);
+            assertEquals(x, 1.0d, "failing compareAndExchangeRelease double value");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapDouble(base, offset, 1.0d, 2.0d);
+            }
+            assertEquals(success, true, "weakCompareAndSwap double");
+            double x = UNSAFE.getDouble(base, offset);
+            assertEquals(x, 2.0d, "weakCompareAndSwap double value");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapDoubleAcquire(base, offset, 2.0d, 1.0d);
+            }
+            assertEquals(success, true, "weakCompareAndSwapAcquire double");
+            double x = UNSAFE.getDouble(base, offset);
+            assertEquals(x, 1.0d, "weakCompareAndSwapAcquire double");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapDoubleRelease(base, offset, 1.0d, 2.0d);
+            }
+            assertEquals(success, true, "weakCompareAndSwapRelease double");
+            double x = UNSAFE.getDouble(base, offset);
+            assertEquals(x, 2.0d, "weakCompareAndSwapRelease double");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapDoubleVolatile(base, offset, 2.0d, 1.0d);
+            }
+            assertEquals(success, true, "weakCompareAndSwapVolatile double");
+            double x = UNSAFE.getDouble(base, offset);
+            assertEquals(x, 1.0d, "weakCompareAndSwapVolatile double");
+        }
+
+        UNSAFE.putDouble(base, offset, 2.0d);
+
+        // Compare set and get
+        {
+            double o = UNSAFE.getAndSetDouble(base, offset, 1.0d);
+            assertEquals(o, 2.0d, "getAndSet double");
+            double x = UNSAFE.getDouble(base, offset);
+            assertEquals(x, 1.0d, "getAndSet double value");
+        }
+
+        UNSAFE.putDouble(base, offset, 1.0d);
+
+        // get and add, add and get
+        {
+            double o = UNSAFE.getAndAddDouble(base, offset, 2.0d);
+            assertEquals(o, 1.0d, "getAndAdd double");
+            double x = UNSAFE.getDouble(base, offset);
+            assertEquals(x, (double)(1.0d + 2.0d), "getAndAdd double");
+        }
     }
 
     static void testAccess(long address) {

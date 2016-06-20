@@ -55,12 +55,12 @@ function generate {
 
       if [ "$package" == "jdk.internal.misc" ]; then
         case $type in
-          boolean|byte|char|short)
+          boolean|byte|char|short|float|double)
             args="$args -KCAS"
             ;;
         esac
         case $type in
-          byte|char|short)
+          byte|char|short|float|double)
             args="$args -KAtomicAdd"
             ;;
         esac
