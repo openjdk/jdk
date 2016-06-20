@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,8 +67,7 @@ printLastError(jdwpTransportEnv *t, jdwpTransportError err)
         maxlen = len+len/2+2; /* Should allow for plenty of room */
         utf8msg = (jbyte*)jvmtiAllocate(maxlen+1);
         if (utf8msg != NULL) {
-           (void)utf8FromPlatform(msg, len, utf8msg, maxlen);
-           utf8msg[maxlen] = 0;
+           (void)utf8FromPlatform(msg, len, utf8msg, maxlen+1);
         }
     }
     if (rv == JDWPTRANSPORT_ERROR_NONE) {
