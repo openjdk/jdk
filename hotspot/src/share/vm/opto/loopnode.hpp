@@ -468,9 +468,6 @@ public:
   // Check for Node being a loop-breaking test
   Node *is_loop_exit(Node *iff) const;
 
-  // Returns true if ctrl is executed on every complete iteration
-  bool dominates_backedge(Node* ctrl);
-
   // Remove simplistic dead code from loop body
   void DCE_loop_body();
 
