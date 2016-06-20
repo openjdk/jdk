@@ -691,16 +691,21 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp, in
                               ref_kind, index, this_cp->method_handle_index_at(index),
                               callee_index, name->as_C_string(), signature->as_C_string());
       }
-      KlassHandle callee;
-      { Klass* k = klass_at_impl(this_cp, callee_index, true, CHECK_NULL);
-        callee = KlassHandle(THREAD, k);
-      }
+
+      Klass* k = klass_at_impl(this_cp, callee_index, true, CHECK_NULL);
+      KlassHandle callee(THREAD, k);
+
+      // Check constant pool method consistency
       if ((callee->is_interface() && m_tag.is_method()) ||
-          (!callee->is_interface() && m_tag.is_interface_method())) {
+          ((!callee->is_interface() && m_tag.is_interface_method()))) {
         ResourceMark rm(THREAD);
-        char buf[200];
-        jio_snprintf(buf, sizeof(buf), "Inconsistent constant data for %s.%s%s at index %d",
-          callee->name()->as_C_string(), name->as_C_string(), signature->as_C_string(), index);
+        char buf[400];
+        jio_snprintf(buf, sizeof(buf),
+          "Inconsistent constant pool data in classfile for class %s. "
+          "Method %s%s at index %d is %s and should be %s",
+          callee->name()->as_C_string(), name->as_C_string(), signature->as_C_string(), index,
+          callee->is_interface() ? "CONSTANT_MethodRef" : "CONSTANT_InterfaceMethodRef",
+          callee->is_interface() ? "CONSTANT_InterfaceMethodRef" : "CONSTANT_MethodRef");
         THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
       }
 
