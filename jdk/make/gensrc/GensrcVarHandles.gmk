@@ -38,11 +38,9 @@ define GenerateVarHandle
 
   $1_FILENAME := $(VARHANDLES_GENSRC_DIR)/VarHandle$$($1_Type)s.java
 
-  ifneq ($$(findstring $$($1_Type), Object Boolean Byte Short Char Int Long), )
-    $1_ARGS += -KCAS
-  endif
+  $1_ARGS += -KCAS
 
-  ifneq ($$(findstring $$($1_Type), Byte Short Char Int Long), )
+  ifneq ($$(findstring $$($1_Type), Byte Short Char Int Long Float Double), )
     $1_ARGS += -KAtomicAdd
   endif
 

@@ -14,14 +14,10 @@ do
   Type="$(tr '[:lower:]' '[:upper:]' <<< ${type:0:1})${type:1}"
   args="-K$type -Dtype=$type -DType=$Type"
 
-  case $type in
-    String|boolean|byte|short|char|int|long)
-      args="$args -KCAS"
-      ;;
-  esac
+  args="$args -KCAS"
 
   case $type in
-    byte|short|char|int|long)
+    byte|short|char|int|long|float|double)
       args="$args -KAtomicAdd"
       ;;
   esac
