@@ -33,7 +33,6 @@ import utils.*;
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
  * @build common.*
  * @build utils.*
- * @ignore 8149778
  * @run main/othervm -XX:+UsePerfData -Xmx128M GcCapacityTest
  */
 public class GcCapacityTest {
