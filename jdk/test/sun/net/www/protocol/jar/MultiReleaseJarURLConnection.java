@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8132734 8144062
+ * @bug 8132734 8144062 8159785
  * @summary Test that URL connections to multi-release jars can be runtime versioned
  * @library /lib/testlibrary/java/util/jar
  * @modules java.compiler
@@ -44,6 +44,7 @@ import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Enumeration;
 import java.util.jar.JarFile;
 
 import org.testng.Assert;
@@ -191,26 +192,36 @@ public class MultiReleaseJarURLConnection {
                 style.equals("unversioned") ? 8 : Runtime.version().major());
 
         // now get a resource and verify that we don't have a fragment attached
-        URL vclsUrl = vcls.getResource("/version/Version.class");
-        String fragment = vclsUrl.getRef();
-        Assert.assertNull(fragment);
+        Enumeration<URL> vclsUrlEnum = cldr.getResources("version/Version.class");
+        Assert.assertTrue(vclsUrlEnum.hasMoreElements());
+        URL vclsUrls[] = new URL[] {
+            vcls.getResource("/version/Version.class"),
+            vcls.getResource("Version.class"),
+            cldr.getResource("version/Version.class"),
+            vclsUrlEnum.nextElement()
+        };
+        Assert.assertFalse(vclsUrlEnum.hasMoreElements());
+        for (URL vclsUrl : vclsUrls) {
+            String fragment = vclsUrl.getRef();
+            Assert.assertNull(fragment);
 
-        // and verify that the the url is a reified pointer to the runtime entry
-        String rep = vclsUrl.toString();
-        //System.out.println("    getResource(\"/version/Version.class\") returned: " + rep);
-        if (style.equals("http")) {
-            Assert.assertTrue(rep.startsWith("jar:http:"));
-        } else {
-            Assert.assertTrue(rep.startsWith("jar:file:"));
+            // and verify that the the url is a reified pointer to the runtime entry
+            String rep = vclsUrl.toString();
+            //System.out.println("    getResource(\"/version/Version.class\") returned: " + rep);
+            if (style.equals("http")) {
+                Assert.assertTrue(rep.startsWith("jar:http:"));
+            } else {
+                Assert.assertTrue(rep.startsWith("jar:file:"));
+            }
+            String suffix;
+            if (style.equals("unversioned")) {
+                suffix = ".jar!/version/Version.class";
+            } else {
+                suffix = ".jar!/META-INF/versions/" + Runtime.version().major()
+                        + "/version/Version.class";
+            }
+            Assert.assertTrue(rep.endsWith(suffix));
         }
-        String suffix;
-        if (style.equals("unversioned")) {
-            suffix = ".jar!/version/Version.class";
-        } else {
-            suffix = ".jar!/META-INF/versions/" + Runtime.version().major()
-                    + "/version/Version.class";
-        }
-        Assert.assertTrue(rep.endsWith(suffix));
         cldr.close();
     }
 

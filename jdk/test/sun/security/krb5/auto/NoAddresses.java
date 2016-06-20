@@ -25,9 +25,9 @@
  * @test
  * @bug 7032354
  * @run main/othervm NoAddresses setup
- * @run main/othervm NoAddresses 1
- * @run main/othervm NoAddresses 2
- * @run main/othervm/fail NoAddresses 3
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts NoAddresses 1
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts NoAddresses 2
+ * @run main/othervm/fail -Djdk.net.hosts.file=TestHosts NoAddresses 3
  * @summary no-addresses should not be used on acceptor side
  */
 
@@ -38,6 +38,7 @@ import sun.security.krb5.Config;
 import java.io.PrintWriter;
 import java.io.FileWriter;
 import java.io.BufferedWriter;
+import java.nio.file.*;
 
 public class NoAddresses {
 
@@ -49,9 +50,10 @@ public class NoAddresses {
             InetAddress localHost = InetAddress.getLocalHost();
             String localHostName = localHost.getHostName();
             String hostsFileName = System.getProperty("test.src", ".") + "/TestHosts";
+            String hostsFileNameLocal = "TestHosts";
             String loopBackAddress = "127.0.0.1";
-            System.setProperty("jdk.net.hosts.file", hostsFileName);
-            addMappingToHostsFile(localHostName, loopBackAddress, hostsFileName, true);
+            Files.copy(Paths.get(hostsFileName), Paths.get(hostsFileNameLocal));
+            addMappingToHostsFile(localHostName, loopBackAddress, hostsFileNameLocal, true);
         } else {
         OneKDC kdc = new OneKDC(null);
         kdc.writeJAASConf();

@@ -103,6 +103,7 @@ import jdk.internal.module.ConfigurableModuleFinder;
 import jdk.internal.module.ConfigurableModuleFinder.Phase;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleInfoExtender;
+import jdk.tools.jlink.internal.Utils;
 
 import static java.util.stream.Collectors.joining;
 
@@ -1072,6 +1073,10 @@ public class JmodTask {
         @Override
         public Pattern convert(String value) {
             try {
+                if (value.startsWith("regex:")) {
+                    value = value.substring("regex:".length()).trim();
+                }
+
                 return Pattern.compile(value);
             } catch (PatternSyntaxException e) {
                 throw new CommandException("err.bad.pattern", value);
@@ -1083,12 +1088,11 @@ public class JmodTask {
         @Override public String valuePattern() { return "pattern"; }
     }
 
-    static class GlobConverter implements ValueConverter<PathMatcher> {
+    static class PathMatcherConverter implements ValueConverter<PathMatcher> {
         @Override
         public PathMatcher convert(String pattern) {
             try {
-                return FileSystems.getDefault()
-                                  .getPathMatcher("glob:" + pattern);
+                return Utils.getPathMatcher(FileSystems.getDefault(), pattern);
             } catch (PatternSyntaxException e) {
                 throw new CommandException("err.bad.pattern", pattern);
             }
@@ -1194,7 +1198,7 @@ public class JmodTask {
         OptionSpec<PathMatcher> excludes
                 = parser.accepts("exclude", getMessage("main.opt.exclude"))
                         .withRequiredArg()
-                        .withValuesConvertedBy(new GlobConverter());
+                        .withValuesConvertedBy(new PathMatcherConverter());
 
         OptionSpec<Pattern> hashModules
                 = parser.accepts("hash-modules", getMessage("main.opt.hash-modules"))

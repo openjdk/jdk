@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,16 @@
  * questions.
  */
 
-/* @test
-   @bug 6683775 6794764
-   @summary Painting artifacts is seen when panel is made setOpaque(false) for a translucent window
-   @author Alexander Potochkin
-   @modules java.desktop/com.sun.awt
-            java.desktop/sun.awt
-   @run main bug6683775
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 6683775 6794764
+ * @summary Painting artifacts is seen when panel is made setOpaque(false) for a translucent window
+ * @author Alexander Potochkin
+ * @modules java.desktop/com.sun.awt
+ *          java.desktop/sun.awt
+ * @run main bug6683775
+ */
 
 import com.sun.awt.AWTUtilities;
 

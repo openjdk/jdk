@@ -34,6 +34,7 @@ import javax.swing.SwingUtilities;
 
 /**
  * @test
+ * @key headful
  * @bug 8080405
  * @run main/othervm/policy=java.policy -Djava.security.manager PropertyPermissionOnEDT
  */

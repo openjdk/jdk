@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: XSLTErrorResources_fr.java /st_wptg_1.8.0.0.0jdk/2 2013/09/16 07:05:15 gmolloy Exp $
+ * $Id: XSLTErrorResources_fr.java /st_wptg_1.9.0.0.0jdk/2 2016/04/12 05:13:35 gmolloy Exp $
  */
 package com.sun.org.apache.xalan.internal.res;
 
@@ -1213,7 +1213,7 @@ public class XSLTErrorResources_fr extends ListResourceBundle
       "Le nom de fonction ne peut pas \u00EAtre NULL."},
 
     { ER_XPATH_RESOLVER_NEGATIVE_ARITY,
-      "Le nombre d'arguments ne peut pas \u00EAtre n\u00E9gatif."},
+      "L'arit\u00E9 ne peut pas \u00EAtre n\u00E9gative."},
   // Warnings...
 
     { WG_FOUND_CURLYBRACE,

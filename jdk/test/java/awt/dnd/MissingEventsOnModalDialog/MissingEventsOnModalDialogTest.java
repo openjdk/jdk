@@ -43,6 +43,7 @@ import java.awt.event.MouseEvent;
 
 /*
  * @test
+ * @key headful
  * @bug 8134917
  * @summary [macosx] JOptionPane doesn't receive mouse events when opened from a drop event
  * @author Alexandr Scherbatiy

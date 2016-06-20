@@ -121,10 +121,10 @@ public abstract class Test {
             + "(%1$tY-%1$tm-%1$td).";
 
     static final String NO_TIMESTAMP_VERIFYING_WARN_TEMPLATE
-            = "This jar contains signatures that does not include a timestamp. "
+            = "This jar contains signatures that do not include a timestamp. "
             + "Without a timestamp, users may not be able to validate this jar "
-            + "after the signer certificate's expiration date "
-            + "(%1$tY-%1$tm-%1$td).";
+            + "after any of the signer certificates expire "
+            + "(as early as %1$tY-%1$tm-%1$td).";
 
     static final String NOT_YET_VALID_CERT_SIGNING_WARNING
             = "The signer certificate is not yet valid.";

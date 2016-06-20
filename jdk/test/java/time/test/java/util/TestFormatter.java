@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import org.testng.annotations.Test;
 
 /* @test
  * @summary Unit test for j.u.Formatter threeten date/time support
- * @bug 8003680 8012638
+ * @bug 8003680 8043387 8012638
  */
 @Test
 public class TestFormatter {
@@ -235,10 +235,6 @@ public class TestFormatter {
         }
     }
 
-    private String toZoneIdStr(String expected) {
-        return expected.replaceAll("(?:GMT|UTC)(?<off>[+\\-]?[0-9]{2}:[0-9]{2})", "${off}");
-    }
-
     private String toZoneOffsetStr(String expected) {
         return expected.replaceAll("(?:GMT|UTC)(?<off>[+\\-]?[0-9]{2}:[0-9]{2})", "${off}")
                        .replaceAll("GMT|UTC|UT", "Z");
@@ -247,7 +243,7 @@ public class TestFormatter {
     private void testZoneId(Locale locale, ChronoZonedDateTime<?> zdt, Calendar cal) {
         String fmtStr = "z:[%tz] z:[%1$Tz] Z:[%1$tZ] Z:[%1$TZ]";
         printFmtStr(locale, fmtStr);
-        String expected = toZoneIdStr(test(fmtStr, locale, null, cal));
+        String expected = test(fmtStr, locale, null, cal);
         test(fmtStr, locale, expected, zdt);
         // get a new cal with fixed tz
         Calendar cal0 = Calendar.getInstance();
@@ -263,7 +259,7 @@ public class TestFormatter {
         // datetime + zid
         fmtStr = "c:[%tc] c:[%1$Tc]";
         printFmtStr(locale, fmtStr);
-        expected = toZoneIdStr(test(fmtStr, locale, null, cal));
+        expected = test(fmtStr, locale, null, cal);
         test(fmtStr, locale, expected, zdt);
     }
 

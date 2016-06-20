@@ -209,13 +209,14 @@ import javax.security.auth.Subject;
  * @deprecated As of JDK&nbsp;1.4, replaced by
  *             {@code sun.security.provider.PolicyFile}.
  *             This class is entirely deprecated.
+ * This class is subject to removal in a future version of Java SE.
  *
  * @see java.security.CodeSource
  * @see java.security.Permissions
  * @see java.security.ProtectionDomain
  * @see java.security.Security security properties
  */
-@Deprecated
+@Deprecated(since="1.4", forRemoval=true)
 public class PolicyFile extends javax.security.auth.Policy {
 
     private final sun.security.provider.AuthPolicyFile apf;

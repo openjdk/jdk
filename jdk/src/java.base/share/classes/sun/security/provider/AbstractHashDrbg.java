@@ -32,8 +32,6 @@ import java.util.Locale;
 
 public abstract class AbstractHashDrbg extends AbstractDrbg {
 
-    private static final long serialVersionUID = 9L;
-
     protected int outLen;
     protected int seedLen;
 

@@ -125,6 +125,7 @@ public class PackageConflictTest extends ModuleTestBase {
 
     @Test
     public void testSimple2(Path base) throws Exception {
+        Path modSrc = base.resolve("modSrc");
         Path modules = base.resolve("modules");
         new ModuleBuilder(tb, "N")
                 .exports("pack")
@@ -133,12 +134,12 @@ public class PackageConflictTest extends ModuleTestBase {
         new ModuleBuilder(tb, "M")
                 .requires("N")
                 .classes("package pack; public class B { pack.A f; }")
-                .write(modules);
+                .write(modSrc);
 
         String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-mp", modules.toString())
                 .outdir(Files.createDirectories(base.resolve("classes")))
-                .files(findJavaFiles(modules.resolve("M")))
+                .files(findJavaFiles(modSrc.resolve("M")))
                 .run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
@@ -149,21 +150,21 @@ public class PackageConflictTest extends ModuleTestBase {
 
     @Test
     public void testPrivateConflict(Path base) throws Exception {
-        Path modules = base.resolve("modules");
+        Path modSrc = base.resolve("modSrc");
         new ModuleBuilder(tb, "N")
                 .exports("publ")
                 .classes("package pack; public class A { }")
                 .classes("package publ; public class B { }")
-                .write(modules);
+                .write(modSrc);
         new ModuleBuilder(tb, "M")
                 .requires("N")
                 .classes("package pack; public class C { publ.B b; }")
-                .write(modules);
+                .write(modSrc);
 
         String log = new JavacTask(tb)
-                .options("-XDrawDiagnostics", "-modulesourcepath", modules + "/*/src")
+                .options("-XDrawDiagnostics", "-modulesourcepath", modSrc.toString())
                 .outdir(Files.createDirectories(base.resolve("classes")))
-                .files(findJavaFiles(modules))
+                .files(findJavaFiles(modSrc))
                 .run(Task.Expect.SUCCESS)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
@@ -175,6 +176,7 @@ public class PackageConflictTest extends ModuleTestBase {
 
     @Test
     public void testPrivateConflictOnModulePath(Path base) throws Exception {
+        Path modSrc = base.resolve("modSrc");
         Path modules = base.resolve("modules");
         new ModuleBuilder(tb, "N")
                 .exports("publ")
@@ -184,12 +186,12 @@ public class PackageConflictTest extends ModuleTestBase {
         new ModuleBuilder(tb, "M")
                 .requires("N")
                 .classes("package pack; public class C { publ.B b; }")
-                .write(modules);
+                .write(modSrc);
 
         String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-mp", modules.toString())
                 .outdir(Files.createDirectories(base.resolve("classes")))
-                .files(findJavaFiles(modules.resolve("M")))
+                .files(findJavaFiles(modSrc.resolve("M")))
                 .run(Task.Expect.SUCCESS)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
@@ -201,6 +203,7 @@ public class PackageConflictTest extends ModuleTestBase {
 
     @Test
     public void testRequiresConflictExports(Path base) throws Exception {
+        Path modSrc = base.resolve("modSrc");
         Path modules = base.resolve("modules");
         new ModuleBuilder(tb, "M")
                 .exports("pack")
@@ -214,12 +217,12 @@ public class PackageConflictTest extends ModuleTestBase {
                 .requires("M")
                 .requires("N")
                 .classes("package pkg; public class C { pack.A a; pack.B b; }")
-                .write(modules);
+                .write(modSrc);
 
         List<String> log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-mp", modules.toString())
                 .outdir(Files.createDirectories(base.resolve("classes")))
-                .files(findJavaFiles(modules.resolve("K")))
+                .files(findJavaFiles(modSrc.resolve("K")))
                 .run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
@@ -232,39 +235,39 @@ public class PackageConflictTest extends ModuleTestBase {
     }
 
     @Test
-    public void testQulifiedExportsToDifferentModules(Path base) throws Exception {
-        Path modules = base.resolve("modules");
-        new ModuleBuilder(tb, "U").write(modules);
+    public void testQualifiedExportsToDifferentModules(Path base) throws Exception {
+        Path modSrc = base.resolve("modSrc");
+        new ModuleBuilder(tb, "U").write(modSrc);
         new ModuleBuilder(tb, "M")
                 .exports("pkg to U")
                 .classes("package pkg; public class A { public static boolean flagM; }")
-                .write(modules);
+                .write(modSrc);
         new ModuleBuilder(tb, "N")
                 .exports("pkg to K")
                 .classes("package pkg; public class A { public static boolean flagN; }")
-                .write(modules);
+                .write(modSrc);
         ModuleBuilder moduleK = new ModuleBuilder(tb, "K");
         moduleK.requires("M")
                 .requires("N")
                 .classes("package p; public class DependsOnN { boolean f = pkg.A.flagN; } ")
-                .write(modules);
+                .write(modSrc);
         new JavacTask(tb)
-                .options("-modulesourcepath", modules + "/*/src")
+                .options("-modulesourcepath", modSrc.toString())
                 .outdir(Files.createDirectories(base.resolve("classes")))
-                .files(findJavaFiles(modules.resolve("K")))
+                .files(findJavaFiles(modSrc.resolve("K")))
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
 
         //negative case
         moduleK.classes("package pkg; public class DuplicatePackage { } ")
                 .classes("package p; public class DependsOnM { boolean f = pkg.A.flagM; } ")
-                .write(modules);
+                .write(modSrc);
 
         List<String> output = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
-                        "-modulesourcepath", modules + "/*/src")
+                        "-modulesourcepath", modSrc.toString())
                 .outdir(Files.createDirectories(base.resolve("classes")))
-                .files(findJavaFiles(modules.resolve("K")))
+                .files(findJavaFiles(modSrc.resolve("K")))
                 .run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);

@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
+import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -282,9 +283,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         if (options.isSet(XPRINT)) {
             try {
-                @SuppressWarnings("deprecation")
-                Processor processor = PrintingProcessor.class.newInstance();
-                processorIterator = List.of(processor).iterator();
+                processorIterator = List.of(new PrintingProcessor()).iterator();
             } catch (Throwable t) {
                 AssertionError assertError =
                     new AssertionError("Problem instantiating PrintingProcessor.");
@@ -540,38 +539,40 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             if (nextProc != null)
                 return true;
             else {
-                if (!names.hasNext())
+                if (!names.hasNext()) {
                     return false;
-                else {
-                    String processorName = names.next();
-
-                    Processor processor;
-                    try {
-                        try {
-                            Class<?> processorClass = processorCL.loadClass(processorName);
-                            ensureReadable(processorClass);
-                            @SuppressWarnings("deprecation")
-                            Object tmp = processorClass.newInstance();
-                            processor = (Processor) tmp;
-                        } catch (ClassNotFoundException cnfe) {
-                            log.error("proc.processor.not.found", processorName);
-                            return false;
-                        } catch (ClassCastException cce) {
-                            log.error("proc.processor.wrong.type", processorName);
-                            return false;
-                        } catch (Exception e ) {
-                            log.error("proc.processor.cant.instantiate", processorName);
-                            return false;
-                        }
-                    } catch(ClientCodeException e) {
-                        throw e;
-                    } catch(Throwable t) {
-                        throw new AnnotationProcessingError(t);
+                } else {
+                    Processor processor = getNextProcessor(names.next());
+                    if (processor == null) {
+                        return false;
+                    } else {
+                        nextProc = processor;
+                        return true;
                     }
-                    nextProc = processor;
-                    return true;
                 }
+            }
+        }
 
+        private Processor getNextProcessor(String processorName) {
+            try {
+                try {
+                    Class<?> processorClass = processorCL.loadClass(processorName);
+                    ensureReadable(processorClass);
+                    return (Processor) processorClass.getConstructor().newInstance();
+                } catch (ClassNotFoundException cnfe) {
+                    log.error("proc.processor.not.found", processorName);
+                    return null;
+                } catch (ClassCastException cce) {
+                    log.error("proc.processor.wrong.type", processorName);
+                    return null;
+                } catch (Exception e ) {
+                    log.error("proc.processor.cant.instantiate", processorName);
+                    return null;
+                }
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (Throwable t) {
+                throw new AnnotationProcessingError(t);
             }
         }
 

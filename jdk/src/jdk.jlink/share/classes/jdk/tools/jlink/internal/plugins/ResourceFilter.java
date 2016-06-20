@@ -24,113 +24,100 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Predicate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import jdk.tools.jlink.internal.Utils;
+import jdk.tools.jlink.plugin.PluginException;
 
 /**
  *
- * Filter in or out a resource
+ * Filter resource resources using path matcher.
  */
 public class ResourceFilter implements Predicate<String> {
+    private final static List<String> EMPTY_LIST = Collections.emptyList();
 
-    private final Pattern inPatterns;
-    private final Pattern outPatterns;
+    private final List<PathMatcher> matchers;
+    private final boolean include;
+    private final boolean otherwise;
 
-    static final String NEG = "^";
+    private ResourceFilter(List<String> patterns, boolean exclude) {
+        Objects.requireNonNull(patterns);
+        this.matchers = new ArrayList<>();
 
-    public ResourceFilter(String[] patterns) throws IOException {
-        this(patterns, false);
-    }
+        for (String pattern : patterns) {
+            if (pattern.startsWith("@")) {
+                File file = new File(pattern.substring(1));
 
-    public ResourceFilter(String[] patterns, boolean negateAll) throws IOException {
+                if (file.exists()) {
+                    List<String> lines;
 
-        // Get the patterns from a file
-        if (patterns != null && patterns.length == 1) {
-            String filePath = patterns[0];
-            File f = new File(filePath);
-            if (f.exists()) {
-                List<String> pats;
-                try (FileInputStream fis = new FileInputStream(f);
-                        InputStreamReader ins = new InputStreamReader(fis,
-                                StandardCharsets.UTF_8);
-                        BufferedReader reader = new BufferedReader(ins)) {
-                    pats = reader.lines().collect(Collectors.toList());
+                    try {
+                        lines = Files.readAllLines(file.toPath());
+                    } catch (IOException ex) {
+                        throw new PluginException(ex);
+                    }
+
+                    lines.stream().forEach((line) -> {
+                        matchers.add(Utils.getJRTFSPathMatcher(line.trim()));
+                    });
+                } else {
+                    System.err.println("warning - the filter file " + file +
+                                       " is empty or not present.");
                 }
-                patterns = new String[pats.size()];
-                pats.toArray(patterns);
+            } else {
+                matchers.add(Utils.getJRTFSPathMatcher(pattern));
             }
         }
 
-        if (patterns != null && negateAll) {
-            String[] excluded = new String[patterns.length];
-            for (int i = 0; i < patterns.length; i++) {
-                excluded[i] = ResourceFilter.NEG + patterns[i];
-            }
-            patterns = excluded;
-        }
-
-        StringBuilder inPatternsBuilder = new StringBuilder();
-        StringBuilder outPatternsBuilder = new StringBuilder();
-        if (patterns != null) {
-            for (int i = 0; i < patterns.length; i++) {
-                String p = patterns[i];
-                p = p.replaceAll(" ", "");
-                StringBuilder builder = p.startsWith(NEG)
-                        ? outPatternsBuilder : inPatternsBuilder;
-                String pat = p.startsWith(NEG) ? p.substring(NEG.length()) : p;
-                builder.append(escape(pat));
-                if (i < patterns.length - 1) {
-                    builder.append("|");
-                }
-            }
-        }
-        this.inPatterns = inPatternsBuilder.length() == 0 ? null
-                : Pattern.compile(inPatternsBuilder.toString());
-        this.outPatterns = outPatternsBuilder.length() == 0 ? null
-                : Pattern.compile(outPatternsBuilder.toString());
+        this.include = !exclude;
+        this.otherwise = exclude || this.matchers.isEmpty();
     }
 
-    public static String escape(String s) {
-        s = s.replaceAll(" ", "");
-        s = s.replaceAll("\\$", Matcher.quoteReplacement("\\$"));
-        s = s.replaceAll("\\.", Matcher.quoteReplacement("\\."));
-        s = s.replaceAll("\\*", ".+");
-        return s;
+    public static ResourceFilter includeFilter(List<String> patterns) {
+        Objects.requireNonNull(patterns);
+        return new ResourceFilter(patterns, false);
     }
 
-    private boolean accept(String path) {
-        if (outPatterns != null) {
-            Matcher mout = outPatterns.matcher(path);
-            if (mout.matches()) {
-                //System.out.println("Excluding file " + resource.getPath());
-                return false;
-            }
+    public static ResourceFilter includeFilter(String patterns) {
+        if (patterns == null) {
+            return includeFilter(EMPTY_LIST);
         }
-        boolean accepted = false;
-        // If the inPatterns is null, means that all resources are accepted.
-        if (inPatterns == null) {
-            accepted = true;
-        } else {
-            Matcher m = inPatterns.matcher(path);
-            if (m.matches()) {
-                //System.out.println("Including file " + resource.getPath());
-                accepted = true;
-            }
+
+        return includeFilter(Utils.parseList(patterns));
+    }
+
+    public static ResourceFilter excludeFilter(List<String> patterns) {
+        Objects.requireNonNull(patterns);
+        return new ResourceFilter(patterns, true);
+    }
+
+    public static ResourceFilter excludeFilter(String patterns) {
+        if (patterns == null) {
+            return excludeFilter(EMPTY_LIST);
         }
-        return accepted;
+
+        return excludeFilter(Utils.parseList(patterns));
     }
 
     @Override
-    public boolean test(String path) {
-        return accept(path);
+    public boolean test(String name) {
+        Objects.requireNonNull(name);
+        Path path = Utils.getJRTFSPath(name);
+
+        for (PathMatcher matcher : matchers) {
+            if (matcher.matches(path)) {
+                return include;
+            }
+        }
+
+        return otherwise;
     }
 }

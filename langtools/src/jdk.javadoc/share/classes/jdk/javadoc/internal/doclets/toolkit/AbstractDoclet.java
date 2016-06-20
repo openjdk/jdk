@@ -126,7 +126,7 @@ public abstract class AbstractDoclet {
      * @return SourceVersion
      */
     public SourceVersion sourceVersion() {
-        return SourceVersion.RELEASE_8;
+        return SourceVersion.RELEASE_9;
     }
 
 

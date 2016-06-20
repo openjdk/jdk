@@ -1,5 +1,6 @@
 /*
   @test
+  @key headful
   @bug 4932376
   @summary verifies that data transfer within one JVM works correctly if
            the transfer data was created with a custom class loader.

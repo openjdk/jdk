@@ -34,6 +34,7 @@ import static java.awt.GraphicsEnvironment.*;
 
 /**
  * @test
+ * @key headful
  * @bug 6778087
  */
 public final class MouseWheelAbsXY {

@@ -35,6 +35,7 @@ import javax.swing.JTextField;
 
 /**
  * @test
+ * @key headful
  * @bug 8143054
  */
 public final class MouseModifiersInKeyEvent {

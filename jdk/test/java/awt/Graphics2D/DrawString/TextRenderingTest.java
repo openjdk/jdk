@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.awt.image.VolatileImage;
 
 /*
  * @test
+ * @key headful
  * @bug 7189452 8024767
  * @summary Check if source offset for text rendering is handled correctly
  *          (shouldn't see the text on a similarly colored background).
