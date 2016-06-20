@@ -201,7 +201,7 @@ ModuleEntryTable::~ModuleEntryTable() {
 }
 
 void ModuleEntryTable::create_unnamed_module(ClassLoaderData* loader_data) {
-  assert_locked_or_safepoint(Module_lock);
+  assert(Module_lock->owned_by_self(), "should have the Module_lock");
 
   // Each ModuleEntryTable has exactly one unnamed module
   if (loader_data->is_the_null_class_loader_data()) {
@@ -227,7 +227,7 @@ void ModuleEntryTable::create_unnamed_module(ClassLoaderData* loader_data) {
 ModuleEntry* ModuleEntryTable::new_entry(unsigned int hash, Handle module_handle, Symbol* name,
                                          Symbol* version, Symbol* location,
                                          ClassLoaderData* loader_data) {
-  assert_locked_or_safepoint(Module_lock);
+  assert(Module_lock->owned_by_self(), "should have the Module_lock");
   ModuleEntry* entry = (ModuleEntry*) NEW_C_HEAP_ARRAY(char, entry_size(), mtModule);
 
   // Initialize everything BasicHashtable would
@@ -258,7 +258,7 @@ ModuleEntry* ModuleEntryTable::new_entry(unsigned int hash, Handle module_handle
 }
 
 void ModuleEntryTable::add_entry(int index, ModuleEntry* new_entry) {
-  assert_locked_or_safepoint(Module_lock);
+  assert(Module_lock->owned_by_self(), "should have the Module_lock");
   Hashtable<Symbol*, mtModule>::add_entry(index, (HashtableEntry<Symbol*, mtModule>*)new_entry);
 }
 
@@ -268,7 +268,7 @@ ModuleEntry* ModuleEntryTable::locked_create_entry_or_null(Handle module_handle,
                                                            Symbol* module_location,
                                                            ClassLoaderData* loader_data) {
   assert(module_name != NULL, "ModuleEntryTable locked_create_entry_or_null should never be called for unnamed module.");
-  assert_locked_or_safepoint(Module_lock);
+  assert(Module_lock->owned_by_self(), "should have the Module_lock");
   // Check if module already exists.
   if (lookup_only(module_name) != NULL) {
     return NULL;
@@ -309,7 +309,7 @@ void ModuleEntryTable::purge_all_module_reads() {
 }
 
 void ModuleEntryTable::finalize_javabase(Handle module_handle, Symbol* version, Symbol* location) {
-  assert_locked_or_safepoint(Module_lock);
+  assert(Module_lock->owned_by_self(), "should have the Module_lock");
   ClassLoaderData* boot_loader_data = ClassLoaderData::the_null_class_loader_data();
   ModuleEntryTable* module_table = boot_loader_data->modules();
 
