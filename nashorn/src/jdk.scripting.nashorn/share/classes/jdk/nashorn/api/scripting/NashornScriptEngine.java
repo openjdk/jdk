@@ -318,6 +318,9 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         // Create new global instance mirror and associate with the Bindings.
         final ScriptObjectMirror mirror = createGlobalMirror();
         bindings.put(NASHORN_GLOBAL, mirror);
+        // Since we created this global explicitly for the non-default script context we set the
+        // current script context in global permanently so that invokes work as expected. See JDK-8150219
+        mirror.getHomeGlobal().setInitScriptContext(ctxt);
         return mirror.getHomeGlobal();
     }
 
