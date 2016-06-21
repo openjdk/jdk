@@ -1,0 +1,25 @@
+<!-- 
+The following live template declarations allow for automatic generation of jtreg test headers.
+Unfortunately, live templates cannot be shared on a per project base, but they can be easily imported
+by cutting and paste the following lines inside IntelliJ LiveTemplate settings (this will need to be done only once).
+-->
+     
+<template name="@test" value="@test&#10;* @bug $BUG_ID$&#10;* @summary $BUG_SUMMARY$&#10;* $JTREG_ACTION$ $FILE_NAME$" description="jtreg header (positive test)" toReformat="false" toShortenFQNames="true">
+  <variable name="BUG_ID" expression="groovyScript(&quot;_1 ==~ /T\\d{7}/ ? _1.substring(1).take(7) : 'NNNNNNN'&quot;, fileNameWithoutExtension())" defaultValue="" alwaysStopAt="true" />
+  <variable name="BUG_SUMMARY" expression="&quot;Bug summary&quot;" defaultValue="" alwaysStopAt="true" />
+  <variable name="JTREG_ACTION" expression="&quot;@compile&quot;" defaultValue="" alwaysStopAt="true" />
+  <variable name="FILE_NAME" expression="fileName()" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="JAVA_COMMENT" value="true" />
+  </context>
+</template>
+<template name="@test /nodynamiccopyright/" value="@test&#10;* @bug $BUG_ID$&#10;* @summary $BUG_SUMMARY$&#10;* $JTREG_ACTION$/fail/ref=$GOLDEN_NAME$ -XDrawDiagnostics $FILE_NAME$" description="jtreg header (negative test)" toReformat="false" toShortenFQNames="true">
+  <variable name="BUG_ID" expression="groovyScript(&quot;_1 ==~ /T\\d{7}/ ? _1.substring(1).take(7) : 'NNNNNNN'&quot;, fileNameWithoutExtension())" defaultValue="NNNNNNN" alwaysStopAt="true" />
+  <variable name="BUG_SUMMARY" expression="&quot;Bug summary&quot;" defaultValue="" alwaysStopAt="true" />
+  <variable name="JTREG_ACTION" expression="&quot;@compile&quot;" defaultValue="" alwaysStopAt="true" />
+  <variable name="GOLDEN_NAME" expression="groovyScript(&quot;_1 + '.out'&quot;, fileNameWithoutExtension())" defaultValue="out.txt" alwaysStopAt="true" />
+  <variable name="FILE_NAME" expression="fileName()" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="JAVA_COMMENT" value="true" />
+  </context>
+</template>
