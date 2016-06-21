@@ -354,7 +354,6 @@
   template(groups_name,                               "groups")                                   \
   template(maxPriority_name,                          "maxPriority")                              \
   template(destroyed_name,                            "destroyed")                                \
-  template(vmAllowSuspension_name,                    "vmAllowSuspension")                        \
   template(nthreads_name,                             "nthreads")                                 \
   template(ngroups_name,                              "ngroups")                                  \
   template(shutdown_method_name,                      "shutdown")                                 \
