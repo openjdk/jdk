@@ -260,8 +260,8 @@ public class PluginOrderTest {
         }
 
         @Override
-        public Set<Category> getType() {
-            return Collections.singleton(category);
+        public Category getType() {
+            return category;
         }
 
         @Override

@@ -27,7 +27,6 @@ package jdk.tools.jlink.internal.plugins;
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.IllformedLocaleException;
 import java.util.Locale;
 import java.util.List;
@@ -134,10 +133,8 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
     }
 
     @Override
-    public Set<Category> getType() {
-        Set<Category> set = new HashSet<>();
-        set.add(Category.FILTER);
-        return Collections.unmodifiableSet(set);
+    public Category getType() {
+        return Category.FILTER;
     }
 
     @Override
