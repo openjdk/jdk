@@ -101,11 +101,10 @@ final class WSReceiver {
         }
     }
 
-    long request(long n) {
+    void request(long n) {
         long newDemand = demand.accumulateAndGet(n, (p, i) -> p + i < 0 ? Long.MAX_VALUE : p + i);
         handler.signal();
         assert newDemand >= 0 : newDemand;
-        return newDemand;
     }
 
     private boolean getData() throws IOException {
