@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -455,15 +455,11 @@ public final class URLPermission extends Permission {
     }
 
     private String actions() {
-        StringBuilder b = new StringBuilder();
-        for (String s : methods) {
-            b.append(s);
+        String b = String.join(",", methods);
+        if (!requestHeaders.isEmpty()) {
+            b += ":" + String.join(",", requestHeaders);
         }
-        b.append(":");
-        for (String s : requestHeaders) {
-            b.append(s);
-        }
-        return b.toString();
+        return b;
     }
 
     /**

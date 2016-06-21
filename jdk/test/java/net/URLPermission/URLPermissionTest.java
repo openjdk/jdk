@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ import java.io.*;
 
 /**
  * @test
- * @bug 8010464 8027570 8027687 8029354
+ * @bug 8010464 8027570 8027687 8029354 8114860
  */
 
 public class URLPermissionTest {
@@ -126,6 +126,28 @@ public class URLPermissionTest {
             boolean result = p1.implies(p2);
 
             return result == expected;
+        }
+    }
+
+    static ActionsStringTest actionstest(String arg, String expectedActions) {
+        return new ActionsStringTest(arg, expectedActions);
+    }
+
+    static class ActionsStringTest extends Test {
+
+        String expectedActions;
+        String arg;
+
+        public ActionsStringTest(String arg, String expectedActions) {
+            this.arg = arg;
+            this.expectedActions = expectedActions;
+        }
+
+        @Override
+        boolean execute() {
+            String url = "http://www.foo.com/";
+            URLPermission urlp = new URLPermission(url, arg);
+            return (expectedActions.equals(urlp.getActions()));
         }
     }
 
@@ -308,6 +330,20 @@ public class URLPermissionTest {
         actest("*:*", "GET:x-bar,x-foo", true)
     };
 
+    static Test[] actionsStringTest = {
+        actionstest("", ""),
+        actionstest(":X-Bar", ":X-Bar"),
+        actionstest("GET", "GET"),
+        actionstest("get", "GET"),
+        actionstest("GET,POST", "GET,POST"),
+        actionstest("GET,post", "GET,POST"),
+        actionstest("get,post", "GET,POST"),
+        actionstest("get,post,DELETE", "DELETE,GET,POST"),
+        actionstest("GET,POST:", "GET,POST"),
+        actionstest("GET:X-Foo,X-bar", "GET:X-Bar,X-Foo"),
+        actionstest("GET,POST,DELETE:X-Bar,X-Foo,X-Bar,Y-Foo", "DELETE,GET,POST:X-Bar,X-Bar,X-Foo,Y-Foo")
+    };
+
     static Test[] equalityTests = {
         eqtest("http://www.foo.com", "http://www.FOO.CoM", true),
         eqtest("http://[fe80:0:0::]:1-2", "HTTP://[FE80::]:1-2", true),
@@ -447,6 +483,23 @@ public class URLPermissionTest {
                         test.arg2 + " Exception: " + caught);
             }
             System.out.println ("action test " + i + " OK");
+        }
+
+        for (int i = 0; i < actionsStringTest.length; i++) {
+            ActionsStringTest test = (ActionsStringTest) actionsStringTest[i];
+            Exception caught = null;
+            boolean result = false;
+            try {
+                result = test.execute();
+            } catch (Exception e) {
+                caught = e;
+            }
+            if (!result) {
+                failed = true;
+                System.out.println("test failed: " + test.arg + ": "
+                        + test.expectedActions + " Exception: " + caught);
+            }
+            System.out.println("Actions String test " + i + " OK");
         }
 
         serializationTest("http://www.foo.com/-", "GET,DELETE:*");
