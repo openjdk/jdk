@@ -49,8 +49,8 @@ public final class ReleaseInfoPlugin implements TransformerPlugin {
     private final Map<String, String> release = new HashMap<>();
 
     @Override
-    public Set<Category> getType() {
-        return Collections.singleton(Category.METAINFO_ADDER);
+    public Category getType() {
+        return Category.METAINFO_ADDER;
     }
 
     @Override

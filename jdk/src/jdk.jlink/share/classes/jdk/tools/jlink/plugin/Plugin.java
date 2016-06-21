@@ -57,18 +57,28 @@ public interface Plugin {
         SORTER("SORTER"),
         COMPRESSOR("COMPRESSOR"),
         METAINFO_ADDER("METAINFO_ADDER"),
-        VERIFIER("VERIFIER"),
-        PROCESSOR("PROCESSOR"),
-        PACKAGER("PACKAGER");
+        VERIFIER("VERIFIER", true),
+        PROCESSOR("PROCESSOR", true),
+        PACKAGER("PACKAGER", true);
 
         private final String name;
+        private final boolean postProcessor;
+
+        Category(String name, boolean postProcessor) {
+            this.name = name;
+            this.postProcessor = postProcessor;
+        }
 
         Category(String name) {
-            this.name = name;
+            this(name, false);
         }
 
         public String getName() {
             return name;
+        }
+
+        public boolean isPostProcessor() {
+            return postProcessor;
         }
     }
 
@@ -90,11 +100,12 @@ public interface Plugin {
     }
 
     /**
-     * The Plugin set of types.
-     * @return The set of types.
+     * The type of this plugin.
+     *
+     * @return The type of this plugin
      */
-    public default Set<Category> getType() {
-        return Collections.emptySet();
+    public default Category getType() {
+        return Category.TRANSFORMER;
     }
 
     /**

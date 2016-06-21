@@ -31,7 +31,6 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -283,12 +282,5 @@ public final class OptimizationPlugin extends AsmPlugin {
                 throw new UncheckedIOException(ex);
             }
         }
-    }
-
-    @Override
-    public Set<Category> getType() {
-        Set<Category> set = new HashSet<>();
-        set.add(Category.TRANSFORMER);
-        return Collections.unmodifiableSet(set);
     }
 }

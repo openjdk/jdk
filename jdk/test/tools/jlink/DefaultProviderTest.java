@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -63,13 +62,6 @@ public class DefaultProviderTest {
 
     private static class Custom implements TransformerPlugin {
         private boolean enabled = true;
-
-        @Override
-        public Set<Category> getType() {
-            Set<Category> set = new HashSet<>();
-            set.add(Category.TRANSFORMER);
-            return Collections.unmodifiableSet(set);
-        }
 
         @Override
         public Set<State> getState() {
