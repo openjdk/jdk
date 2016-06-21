@@ -21,7 +21,7 @@
  * questions.
  */
 
-package uncommontrap;
+package compiler.testlibrary.uncommontrap;
 
 import java.io.FileReader;
 import java.io.IOException;

@@ -22,7 +22,7 @@
  *
  */
 
-package rtm;
+package compiler.testlibrary.rtm;
 
 import java.io.IOException;
 import java.nio.file.Files;

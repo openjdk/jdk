@@ -22,7 +22,7 @@
  *
  */
 
-package rtm.predicate;
+package compiler.testlibrary.rtm.predicate;
 
 import jdk.test.lib.Platform;
 
