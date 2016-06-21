@@ -927,8 +927,23 @@ public:
 
     save_flags();
 
+    // If NewSize has been ergonomically set, the collector policy
+    // should use it for min but calculate the initial young size
+    // using NewRatio.
+    flag_value = 20 * M;
+    set_basic_flag_values();
+    FLAG_SET_ERGO(size_t, NewSize, flag_value);
+    verify_young_min(flag_value);
+
+    set_basic_flag_values();
+    FLAG_SET_ERGO(size_t, NewSize, flag_value);
+    verify_scaled_young_initial(InitialHeapSize);
+
     // If NewSize is set on the command line, it should be used
     // for both min and initial young size if less than min heap.
+    // Note that once a flag has been set with FLAG_SET_CMDLINE it
+    // will be treated as it have been set on the command line for
+    // the rest of the VM lifetime. This is an irreversible change.
     flag_value = 20 * M;
     set_basic_flag_values();
     FLAG_SET_CMDLINE(size_t, NewSize, flag_value);
@@ -944,18 +959,6 @@ public:
     set_basic_flag_values();
     FLAG_SET_CMDLINE(size_t, NewSize, flag_value);
     verify_young_initial(flag_value);
-
-    // If NewSize has been ergonomically set, the collector policy
-    // should use it for min but calculate the initial young size
-    // using NewRatio.
-    flag_value = 20 * M;
-    set_basic_flag_values();
-    FLAG_SET_ERGO(size_t, NewSize, flag_value);
-    verify_young_min(flag_value);
-
-    set_basic_flag_values();
-    FLAG_SET_ERGO(size_t, NewSize, flag_value);
-    verify_scaled_young_initial(InitialHeapSize);
 
     restore_flags();
   }
