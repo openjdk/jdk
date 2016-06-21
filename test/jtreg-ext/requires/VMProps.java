@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import sun.hotspot.gc.GC;
 
 /**
  * The Class to be invoked by jtreg prior Test Suite execution to
@@ -56,10 +57,11 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.bits", vmBits());
         map.put("vm.flightRecorder", vmFlightRecorder());
         map.put("vm.simpleArch", vmArch());
+        vmGC(map); // vm.gc.X = true/false
+
         dump(map);
         return map;
     }
-
 
     /**
      * @return vm.simpleArch value of "os.simpleArch" property of tested JDK.
@@ -144,6 +146,24 @@ public class VMProps implements Callable<Map<String, String>> {
             }
         }
         return "false";
+    }
+
+    /**
+     * For all existing GC sets vm.gc.X property.
+     * Example vm.gc.G1=true means:
+     *    VM supports G1
+     *    User either set G1 explicitely (-XX:+UseG1GC) or did not set any GC
+     * @param map - property-value pairs
+     */
+    protected void vmGC(Map<String, String> map){
+        GC currentGC = GC.current();
+        boolean isByErgo = GC.currentSetByErgo();
+        List<GC> supportedGC = GC.allSupported();
+        for (GC gc: GC.values()) {
+            boolean isSupported = supportedGC.contains(gc);
+            boolean isAcceptable = isSupported && (gc == currentGC || isByErgo);
+            map.put("vm.gc." + gc.name(), "" + isAcceptable);
+        }
     }
 
     /**
