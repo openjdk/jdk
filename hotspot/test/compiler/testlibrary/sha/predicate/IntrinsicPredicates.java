@@ -21,7 +21,7 @@
  * questions.
  */
 
-package sha.predicate;
+package compiler.testlibrary.sha.predicate;
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.cli.predicate.AndPredicate;
