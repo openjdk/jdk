@@ -44,4 +44,7 @@ public class TestHotSpotVMConfig extends HotSpotVMConfigAccess {
 
     public final int MARKID_DEOPT_HANDLER_ENTRY = getConstant("CodeInstaller::DEOPT_HANDLER_ENTRY", Integer.class);
     public final long handleDeoptStub = getFieldValue("CompilerToVM::Data::SharedRuntime_deopt_blob_unpack", Long.class, "address");
+
+    public final int maxOopMapStackOffset = getFieldValue("CompilerToVM::Data::_max_oop_map_stack_offset", Integer.class, "int");
+    public final int heapWordSize = getConstant("HeapWordSize", Integer.class);
 }
