@@ -71,6 +71,8 @@
   static_field(CompilerToVM::Data,             _heap_end_addr,                         HeapWord**)                                   \
   static_field(CompilerToVM::Data,             _heap_top_addr,                         HeapWord**)                                   \
                                                                                                                                      \
+  static_field(CompilerToVM::Data,             _max_oop_map_stack_offset,              int)                                          \
+                                                                                                                                     \
   static_field(CompilerToVM::Data,             cardtable_start_address,                jbyte*)                                       \
   static_field(CompilerToVM::Data,             cardtable_shift,                        int)                                          \
                                                                                                                                      \
