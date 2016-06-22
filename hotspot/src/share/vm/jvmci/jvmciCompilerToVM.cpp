@@ -113,6 +113,7 @@ uintptr_t CompilerToVM::Data::Universe_verify_oop_bits;
 bool       CompilerToVM::Data::_supports_inline_contig_alloc;
 HeapWord** CompilerToVM::Data::_heap_end_addr;
 HeapWord** CompilerToVM::Data::_heap_top_addr;
+int CompilerToVM::Data::_max_oop_map_stack_offset;
 
 jbyte* CompilerToVM::Data::cardtable_start_address;
 int CompilerToVM::Data::cardtable_shift;
@@ -153,6 +154,11 @@ void CompilerToVM::Data::initialize() {
   _supports_inline_contig_alloc = Universe::heap()->supports_inline_contig_alloc();
   _heap_end_addr = _supports_inline_contig_alloc ? Universe::heap()->end_addr() : (HeapWord**) -1;
   _heap_top_addr = _supports_inline_contig_alloc ? Universe::heap()->top_addr() : (HeapWord**) -1;
+
+  _max_oop_map_stack_offset = (OopMapValue::register_mask - VMRegImpl::stack2reg(0)->value()) * VMRegImpl::stack_slot_size;
+  int max_oop_map_stack_index = _max_oop_map_stack_offset / VMRegImpl::stack_slot_size;
+  assert(OopMapValue::legal_vm_reg_name(VMRegImpl::stack2reg(max_oop_map_stack_index)), "should be valid");
+  assert(!OopMapValue::legal_vm_reg_name(VMRegImpl::stack2reg(max_oop_map_stack_index + 1)), "should be invalid");
 
   BarrierSet* bs = Universe::heap()->barrier_set();
   switch (bs->kind()) {

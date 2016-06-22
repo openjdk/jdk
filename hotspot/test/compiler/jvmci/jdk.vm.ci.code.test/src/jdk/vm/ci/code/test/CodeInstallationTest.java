@@ -89,17 +89,17 @@ public class CodeInstallationTest {
     }
 
     protected void test(TestCompiler compiler, Method method, Object... args) {
-        HotSpotResolvedJavaMethod resolvedMethod = (HotSpotResolvedJavaMethod) metaAccess.lookupJavaMethod(method);
-        TestAssembler asm = createAssembler();
-
-        asm.emitPrologue();
-        compiler.compile(asm);
-        asm.emitEpilogue();
-
-        HotSpotCompiledCode code = asm.finish(resolvedMethod);
-        InstalledCode installed = codeCache.addCode(resolvedMethod, code, null, null);
-
         try {
+            HotSpotResolvedJavaMethod resolvedMethod = (HotSpotResolvedJavaMethod) metaAccess.lookupJavaMethod(method);
+            TestAssembler asm = createAssembler();
+
+            asm.emitPrologue();
+            compiler.compile(asm);
+            asm.emitEpilogue();
+
+            HotSpotCompiledCode code = asm.finish(resolvedMethod);
+            InstalledCode installed = codeCache.addCode(resolvedMethod, code, null, null);
+
             Object expected = method.invoke(null, args);
             Object actual = installed.executeVarargs(args);
             Assert.assertEquals(expected, actual);
