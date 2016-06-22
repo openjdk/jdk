@@ -233,7 +233,12 @@ public abstract class TestAssembler {
     }
 
     protected StackSlot newStackSlot(PlatformKind kind) {
-        curStackSlot += kind.getSizeInBytes();
+        growFrame(kind.getSizeInBytes());
+        return StackSlot.get(new TestValueKind(kind), -curStackSlot, true);
+    }
+
+    protected void growFrame(int sizeInBytes) {
+        curStackSlot += sizeInBytes;
         if (curStackSlot > frameSize) {
             int newFrameSize = curStackSlot;
             if (newFrameSize % stackAlignment != 0) {
@@ -242,7 +247,6 @@ public abstract class TestAssembler {
             emitGrowStack(newFrameSize - frameSize);
             frameSize = newFrameSize;
         }
-        return StackSlot.get(new TestValueKind(kind), -curStackSlot, true);
     }
 
     protected void setDeoptRescueSlot(StackSlot deoptRescue) {
