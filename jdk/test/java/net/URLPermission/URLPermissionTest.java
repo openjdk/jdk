@@ -26,7 +26,7 @@ import java.io.*;
 
 /**
  * @test
- * @bug 8010464 8027570 8027687 8029354 8114860
+ * @bug 8010464 8027570 8027687 8029354 8114860 8071660
  */
 
 public class URLPermissionTest {
@@ -110,6 +110,8 @@ public class URLPermissionTest {
 
     static class ActionImpliesTest extends Test {
         String arg1, arg2;
+        String url1 = "http://www.foo.com/-";
+        String url2 = "http://www.foo.com/a/b";
 
         ActionImpliesTest(String arg1, String arg2, boolean expected) {
             this.arg1 = arg1;
@@ -117,10 +119,17 @@ public class URLPermissionTest {
             this.expected = expected;
         }
 
+        ActionImpliesTest(String ur11, String url2, String arg1, String arg2,
+            boolean expected) {
+            this.url1 = ur11;
+            this.url2 = url2;
+            this.arg1 = arg1;
+            this.arg2 = arg2;
+            this.expected = expected;
+        }
+
         @Override
           boolean execute() {
-            String url1 = "http://www.foo.com/-";
-            String url2 = "http://www.foo.com/a/b";
             URLPermission p1 = new URLPermission(url1, arg1);
             URLPermission p2 = new URLPermission(url2, arg2);
             boolean result = p1.implies(p2);
@@ -153,6 +162,11 @@ public class URLPermissionTest {
 
     static ActionImpliesTest actest(String arg1, String arg2, boolean expected) {
         return new ActionImpliesTest(arg1, arg2, expected);
+    }
+
+    static ActionImpliesTest actest(String url1, String url2, String arg1,
+        String arg2, boolean expected) {
+        return new ActionImpliesTest(url1, url2, arg1, arg2, expected);
     }
 
     static class HashCodeTest extends Test {
@@ -314,6 +328,9 @@ public class URLPermissionTest {
         imtest("https:*", "http:*", false)
     };
 
+    static final String FOO_URL = "http://www.foo.com/";
+    static final String BAR_URL = "http://www.bar.com/";
+
     static Test[] actionImplies = {
         actest("GET", "GET", true),
         actest("GET", "POST", false),
@@ -327,7 +344,14 @@ public class URLPermissionTest {
         actest("GET:X-Foo,X-Bar", "GET:x-bar,x-foo", true),
         actest("GET:X-Bar,X-Foo,X-Bar,Y-Foo", "GET:x-bar,x-foo", true),
         actest("GET:*", "GET:x-bar,x-foo", true),
-        actest("*:*", "GET:x-bar,x-foo", true)
+        actest("*:*", "GET:x-bar,x-foo", true),
+        actest("", "GET:x-bar,x-foo", false),
+        actest("GET:x-bar,x-foo", "", true),
+        actest("", "", true),
+        actest("GET,DELETE", "GET,DELETE:x-foo", false),
+        actest(FOO_URL, BAR_URL, "", "GET:x-bar,x-foo", false),
+        actest(FOO_URL, BAR_URL, "GET:x-bar,x-foo", "", false),
+        actest(FOO_URL, BAR_URL, "", "", false)
     };
 
     static Test[] actionsStringTest = {
