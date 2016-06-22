@@ -139,6 +139,9 @@ java/lang/instrument/BootClassPath/BootClassPathTest.sh         8072130 macosx-a
 
 java/lang/management/MemoryMXBean/LowMemoryTest.java            8130339 generic-all
 
+java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
+java/lang/management/MemoryMXBean/PendingAllGC.sh               8158760 generic-all
+
 ############################################################################
 
 # jdk_io
