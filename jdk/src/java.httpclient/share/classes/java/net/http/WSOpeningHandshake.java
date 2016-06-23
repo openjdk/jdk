@@ -32,11 +32,14 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -77,8 +80,12 @@ final class WSOpeningHandshake {
     WSOpeningHandshake(WSBuilder b) {
         URI httpURI = createHttpUri(b.getUri());
         HttpRequest.Builder requestBuilder = b.getClient().request(httpURI);
-        if (b.getTimeUnit() != null) {
-            requestBuilder.timeout(b.getTimeUnit(), b.getTimeout());
+        Duration connectTimeout = b.getConnectTimeout();
+        if (connectTimeout != null) {
+            requestBuilder.timeout(
+                    TimeUnit.of(ChronoUnit.MILLIS),
+                    connectTimeout.get(ChronoUnit.MILLIS)
+            );
         }
         Collection<String> s = b.getSubprotocols();
         if (!s.isEmpty()) {

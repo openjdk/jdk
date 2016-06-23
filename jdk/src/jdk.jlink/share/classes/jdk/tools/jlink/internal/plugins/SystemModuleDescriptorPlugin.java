@@ -83,11 +83,6 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
     }
 
     @Override
-    public Set<Category> getType() {
-        return Collections.singleton(Category.TRANSFORMER);
-    }
-
-    @Override
     public String getName() {
         return NAME;
     }

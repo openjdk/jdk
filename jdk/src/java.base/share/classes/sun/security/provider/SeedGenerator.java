@@ -354,8 +354,8 @@ abstract class SeedGenerator {
                         // We wait 250milli quanta, so the minimum wait time
                         // cannot be under 250milli.
                         int latch = 0;
-                        long l = System.currentTimeMillis() + 250;
-                        while (System.currentTimeMillis() < l) {
+                        long startTime = System.nanoTime();
+                        while (System.nanoTime() - startTime < 250000000) {
                             synchronized(this){};
                             latch++;
                         }

@@ -36,11 +36,9 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import jdk.tools.jlink.internal.ModuleEntryImpl;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ModuleEntry;
@@ -185,13 +183,6 @@ public class FileCopierPlugin implements TransformerPlugin {
         } catch (Exception ex) {
             throw new IOException(ex);
         }
-    }
-
-    @Override
-    public Set<Category> getType() {
-        Set<Category> set = new HashSet<>();
-        set.add(Category.TRANSFORMER);
-        return Collections.unmodifiableSet(set);
     }
 
     @Override
