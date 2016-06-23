@@ -166,17 +166,17 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
         }
 
         {
-            float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(recv, 2.0f, 1.0f);
-            assertEquals(r, 2.0f, "success compareAndExchangeVolatile float");
+            float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, 2.0f, 1.0f);
+            assertEquals(r, 2.0f, "success compareAndExchange float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1.0f, "success compareAndExchangeVolatile float value");
+            assertEquals(x, 1.0f, "success compareAndExchange float value");
         }
 
         {
-            float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(recv, 2.0f, 3.0f);
-            assertEquals(r, 1.0f, "failing compareAndExchangeVolatile float");
+            float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, 2.0f, 3.0f);
+            assertEquals(r, 1.0f, "failing compareAndExchange float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1.0f, "failing compareAndExchangeVolatile float value");
+            assertEquals(x, 1.0f, "failing compareAndExchange float value");
         }
 
         {
@@ -319,17 +319,17 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
         }
 
         {
-            float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(2.0f, 1.0f);
-            assertEquals(r, 2.0f, "success compareAndExchangeVolatile float");
+            float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(2.0f, 1.0f);
+            assertEquals(r, 2.0f, "success compareAndExchange float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1.0f, "success compareAndExchangeVolatile float value");
+            assertEquals(x, 1.0f, "success compareAndExchange float value");
         }
 
         {
-            float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(2.0f, 3.0f);
-            assertEquals(r, 1.0f, "failing compareAndExchangeVolatile float");
+            float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(2.0f, 3.0f);
+            assertEquals(r, 1.0f, "failing compareAndExchange float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1.0f, "failing compareAndExchangeVolatile float value");
+            assertEquals(x, 1.0f, "failing compareAndExchange float value");
         }
 
         {
@@ -475,17 +475,17 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
             }
 
             {
-                float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(array, i, 2.0f, 1.0f);
-                assertEquals(r, 2.0f, "success compareAndExchangeVolatile float");
+                float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, 2.0f, 1.0f);
+                assertEquals(r, 2.0f, "success compareAndExchange float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1.0f, "success compareAndExchangeVolatile float value");
+                assertEquals(x, 1.0f, "success compareAndExchange float value");
             }
 
             {
-                float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(array, i, 2.0f, 3.0f);
-                assertEquals(r, 1.0f, "failing compareAndExchangeVolatile float");
+                float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, 2.0f, 3.0f);
+                assertEquals(r, 1.0f, "failing compareAndExchange float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1.0f, "failing compareAndExchangeVolatile float value");
+                assertEquals(x, 1.0f, "failing compareAndExchange float value");
             }
 
             {

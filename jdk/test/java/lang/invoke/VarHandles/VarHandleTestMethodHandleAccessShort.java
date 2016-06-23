@@ -166,17 +166,17 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
         }
 
         {
-            short r = (short) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(recv, (short)0x4567, (short)0x0123);
-            assertEquals(r, (short)0x4567, "success compareAndExchangeVolatile short");
+            short r = (short) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, (short)0x4567, (short)0x0123);
+            assertEquals(r, (short)0x4567, "success compareAndExchange short");
             short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, (short)0x0123, "success compareAndExchangeVolatile short value");
+            assertEquals(x, (short)0x0123, "success compareAndExchange short value");
         }
 
         {
-            short r = (short) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(recv, (short)0x4567, (short)0x89AB);
-            assertEquals(r, (short)0x0123, "failing compareAndExchangeVolatile short");
+            short r = (short) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, (short)0x4567, (short)0x89AB);
+            assertEquals(r, (short)0x0123, "failing compareAndExchange short");
             short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, (short)0x0123, "failing compareAndExchangeVolatile short value");
+            assertEquals(x, (short)0x0123, "failing compareAndExchange short value");
         }
 
         {
@@ -319,17 +319,17 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
         }
 
         {
-            short r = (short) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact((short)0x4567, (short)0x0123);
-            assertEquals(r, (short)0x4567, "success compareAndExchangeVolatile short");
+            short r = (short) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact((short)0x4567, (short)0x0123);
+            assertEquals(r, (short)0x4567, "success compareAndExchange short");
             short x = (short) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, (short)0x0123, "success compareAndExchangeVolatile short value");
+            assertEquals(x, (short)0x0123, "success compareAndExchange short value");
         }
 
         {
-            short r = (short) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact((short)0x4567, (short)0x89AB);
-            assertEquals(r, (short)0x0123, "failing compareAndExchangeVolatile short");
+            short r = (short) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact((short)0x4567, (short)0x89AB);
+            assertEquals(r, (short)0x0123, "failing compareAndExchange short");
             short x = (short) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, (short)0x0123, "failing compareAndExchangeVolatile short value");
+            assertEquals(x, (short)0x0123, "failing compareAndExchange short value");
         }
 
         {
@@ -475,17 +475,17 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
             }
 
             {
-                short r = (short) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(array, i, (short)0x4567, (short)0x0123);
-                assertEquals(r, (short)0x4567, "success compareAndExchangeVolatile short");
+                short r = (short) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, (short)0x4567, (short)0x0123);
+                assertEquals(r, (short)0x4567, "success compareAndExchange short");
                 short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, (short)0x0123, "success compareAndExchangeVolatile short value");
+                assertEquals(x, (short)0x0123, "success compareAndExchange short value");
             }
 
             {
-                short r = (short) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(array, i, (short)0x4567, (short)0x89AB);
-                assertEquals(r, (short)0x0123, "failing compareAndExchangeVolatile short");
+                short r = (short) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, (short)0x4567, (short)0x89AB);
+                assertEquals(r, (short)0x0123, "failing compareAndExchange short");
                 short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, (short)0x0123, "failing compareAndExchangeVolatile short value");
+                assertEquals(x, (short)0x0123, "failing compareAndExchange short value");
             }
 
             {

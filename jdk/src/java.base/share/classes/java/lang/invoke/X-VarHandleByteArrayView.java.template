@@ -193,7 +193,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         }
 
         @ForceInline
-        static $type$ compareAndExchangeVolatile(ArrayHandle handle, Object oba, int index, $type$ expected, $type$ value) {
+        static $type$ compareAndExchange(ArrayHandle handle, Object oba, int index, $type$ expected, $type$ value) {
             byte[] ba = (byte[]) oba;
             return convEndian(handle.be,
                               UNSAFE.compareAndExchange$RawType$Volatile(
@@ -436,7 +436,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         }
 
         @ForceInline
-        static $type$ compareAndExchangeVolatile(ByteBufferHandle handle, Object obb, int index, $type$ expected, $type$ value) {
+        static $type$ compareAndExchange(ByteBufferHandle handle, Object obb, int index, $type$ expected, $type$ value) {
             ByteBuffer bb = (ByteBuffer) obb;
             return convEndian(handle.be,
                               UNSAFE.compareAndExchange$RawType$Volatile(

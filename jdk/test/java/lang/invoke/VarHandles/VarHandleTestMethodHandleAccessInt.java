@@ -166,17 +166,17 @@ public class VarHandleTestMethodHandleAccessInt extends VarHandleBaseTest {
         }
 
         {
-            int r = (int) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(recv, 0x89ABCDEF, 0x01234567);
-            assertEquals(r, 0x89ABCDEF, "success compareAndExchangeVolatile int");
+            int r = (int) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, 0x89ABCDEF, 0x01234567);
+            assertEquals(r, 0x89ABCDEF, "success compareAndExchange int");
             int x = (int) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 0x01234567, "success compareAndExchangeVolatile int value");
+            assertEquals(x, 0x01234567, "success compareAndExchange int value");
         }
 
         {
-            int r = (int) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(recv, 0x89ABCDEF, 0xCAFEBABE);
-            assertEquals(r, 0x01234567, "failing compareAndExchangeVolatile int");
+            int r = (int) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, 0x89ABCDEF, 0xCAFEBABE);
+            assertEquals(r, 0x01234567, "failing compareAndExchange int");
             int x = (int) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 0x01234567, "failing compareAndExchangeVolatile int value");
+            assertEquals(x, 0x01234567, "failing compareAndExchange int value");
         }
 
         {
@@ -319,17 +319,17 @@ public class VarHandleTestMethodHandleAccessInt extends VarHandleBaseTest {
         }
 
         {
-            int r = (int) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(0x89ABCDEF, 0x01234567);
-            assertEquals(r, 0x89ABCDEF, "success compareAndExchangeVolatile int");
+            int r = (int) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(0x89ABCDEF, 0x01234567);
+            assertEquals(r, 0x89ABCDEF, "success compareAndExchange int");
             int x = (int) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 0x01234567, "success compareAndExchangeVolatile int value");
+            assertEquals(x, 0x01234567, "success compareAndExchange int value");
         }
 
         {
-            int r = (int) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(0x89ABCDEF, 0xCAFEBABE);
-            assertEquals(r, 0x01234567, "failing compareAndExchangeVolatile int");
+            int r = (int) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(0x89ABCDEF, 0xCAFEBABE);
+            assertEquals(r, 0x01234567, "failing compareAndExchange int");
             int x = (int) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 0x01234567, "failing compareAndExchangeVolatile int value");
+            assertEquals(x, 0x01234567, "failing compareAndExchange int value");
         }
 
         {
@@ -475,17 +475,17 @@ public class VarHandleTestMethodHandleAccessInt extends VarHandleBaseTest {
             }
 
             {
-                int r = (int) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(array, i, 0x89ABCDEF, 0x01234567);
-                assertEquals(r, 0x89ABCDEF, "success compareAndExchangeVolatile int");
+                int r = (int) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, 0x89ABCDEF, 0x01234567);
+                assertEquals(r, 0x89ABCDEF, "success compareAndExchange int");
                 int x = (int) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 0x01234567, "success compareAndExchangeVolatile int value");
+                assertEquals(x, 0x01234567, "success compareAndExchange int value");
             }
 
             {
-                int r = (int) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(array, i, 0x89ABCDEF, 0xCAFEBABE);
-                assertEquals(r, 0x01234567, "failing compareAndExchangeVolatile int");
+                int r = (int) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, 0x89ABCDEF, 0xCAFEBABE);
+                assertEquals(r, 0x01234567, "failing compareAndExchange int");
                 int x = (int) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 0x01234567, "failing compareAndExchangeVolatile int value");
+                assertEquals(x, 0x01234567, "failing compareAndExchange int value");
             }
 
             {

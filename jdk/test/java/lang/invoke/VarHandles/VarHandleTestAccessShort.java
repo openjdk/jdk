@@ -100,7 +100,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
 
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
@@ -360,17 +360,17 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         }
 
         {
-            short r = (short) vh.compareAndExchangeVolatile(recv, (short)0x4567, (short)0x0123);
-            assertEquals(r, (short)0x4567, "success compareAndExchangeVolatile short");
+            short r = (short) vh.compareAndExchange(recv, (short)0x4567, (short)0x0123);
+            assertEquals(r, (short)0x4567, "success compareAndExchange short");
             short x = (short) vh.get(recv);
-            assertEquals(x, (short)0x0123, "success compareAndExchangeVolatile short value");
+            assertEquals(x, (short)0x0123, "success compareAndExchange short value");
         }
 
         {
-            short r = (short) vh.compareAndExchangeVolatile(recv, (short)0x4567, (short)0x89AB);
-            assertEquals(r, (short)0x0123, "failing compareAndExchangeVolatile short");
+            short r = (short) vh.compareAndExchange(recv, (short)0x4567, (short)0x89AB);
+            assertEquals(r, (short)0x0123, "failing compareAndExchange short");
             short x = (short) vh.get(recv);
-            assertEquals(x, (short)0x0123, "failing compareAndExchangeVolatile short value");
+            assertEquals(x, (short)0x0123, "failing compareAndExchange short value");
         }
 
         {
@@ -513,17 +513,17 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         }
 
         {
-            short r = (short) vh.compareAndExchangeVolatile((short)0x4567, (short)0x0123);
-            assertEquals(r, (short)0x4567, "success compareAndExchangeVolatile short");
+            short r = (short) vh.compareAndExchange((short)0x4567, (short)0x0123);
+            assertEquals(r, (short)0x4567, "success compareAndExchange short");
             short x = (short) vh.get();
-            assertEquals(x, (short)0x0123, "success compareAndExchangeVolatile short value");
+            assertEquals(x, (short)0x0123, "success compareAndExchange short value");
         }
 
         {
-            short r = (short) vh.compareAndExchangeVolatile((short)0x4567, (short)0x89AB);
-            assertEquals(r, (short)0x0123, "failing compareAndExchangeVolatile short");
+            short r = (short) vh.compareAndExchange((short)0x4567, (short)0x89AB);
+            assertEquals(r, (short)0x0123, "failing compareAndExchange short");
             short x = (short) vh.get();
-            assertEquals(x, (short)0x0123, "failing compareAndExchangeVolatile short value");
+            assertEquals(x, (short)0x0123, "failing compareAndExchange short value");
         }
 
         {
@@ -669,17 +669,17 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             }
 
             {
-                short r = (short) vh.compareAndExchangeVolatile(array, i, (short)0x4567, (short)0x0123);
-                assertEquals(r, (short)0x4567, "success compareAndExchangeVolatile short");
+                short r = (short) vh.compareAndExchange(array, i, (short)0x4567, (short)0x0123);
+                assertEquals(r, (short)0x4567, "success compareAndExchange short");
                 short x = (short) vh.get(array, i);
-                assertEquals(x, (short)0x0123, "success compareAndExchangeVolatile short value");
+                assertEquals(x, (short)0x0123, "success compareAndExchange short value");
             }
 
             {
-                short r = (short) vh.compareAndExchangeVolatile(array, i, (short)0x4567, (short)0x89AB);
-                assertEquals(r, (short)0x0123, "failing compareAndExchangeVolatile short");
+                short r = (short) vh.compareAndExchange(array, i, (short)0x4567, (short)0x89AB);
+                assertEquals(r, (short)0x0123, "failing compareAndExchange short");
                 short x = (short) vh.get(array, i);
-                assertEquals(x, (short)0x0123, "failing compareAndExchangeVolatile short value");
+                assertEquals(x, (short)0x0123, "failing compareAndExchange short value");
             }
 
             {
@@ -820,7 +820,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                short r = (short) vh.compareAndExchangeVolatile(array, ci, (short)0x4567, (short)0x0123);
+                short r = (short) vh.compareAndExchange(array, ci, (short)0x4567, (short)0x0123);
             });
 
             checkIOOBE(() -> {

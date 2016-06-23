@@ -166,17 +166,17 @@ public class VarHandleTestMethodHandleAccessDouble extends VarHandleBaseTest {
         }
 
         {
-            double r = (double) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(recv, 2.0d, 1.0d);
-            assertEquals(r, 2.0d, "success compareAndExchangeVolatile double");
+            double r = (double) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, 2.0d, 1.0d);
+            assertEquals(r, 2.0d, "success compareAndExchange double");
             double x = (double) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1.0d, "success compareAndExchangeVolatile double value");
+            assertEquals(x, 1.0d, "success compareAndExchange double value");
         }
 
         {
-            double r = (double) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(recv, 2.0d, 3.0d);
-            assertEquals(r, 1.0d, "failing compareAndExchangeVolatile double");
+            double r = (double) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, 2.0d, 3.0d);
+            assertEquals(r, 1.0d, "failing compareAndExchange double");
             double x = (double) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1.0d, "failing compareAndExchangeVolatile double value");
+            assertEquals(x, 1.0d, "failing compareAndExchange double value");
         }
 
         {
@@ -319,17 +319,17 @@ public class VarHandleTestMethodHandleAccessDouble extends VarHandleBaseTest {
         }
 
         {
-            double r = (double) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(2.0d, 1.0d);
-            assertEquals(r, 2.0d, "success compareAndExchangeVolatile double");
+            double r = (double) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(2.0d, 1.0d);
+            assertEquals(r, 2.0d, "success compareAndExchange double");
             double x = (double) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1.0d, "success compareAndExchangeVolatile double value");
+            assertEquals(x, 1.0d, "success compareAndExchange double value");
         }
 
         {
-            double r = (double) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(2.0d, 3.0d);
-            assertEquals(r, 1.0d, "failing compareAndExchangeVolatile double");
+            double r = (double) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(2.0d, 3.0d);
+            assertEquals(r, 1.0d, "failing compareAndExchange double");
             double x = (double) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1.0d, "failing compareAndExchangeVolatile double value");
+            assertEquals(x, 1.0d, "failing compareAndExchange double value");
         }
 
         {
@@ -475,17 +475,17 @@ public class VarHandleTestMethodHandleAccessDouble extends VarHandleBaseTest {
             }
 
             {
-                double r = (double) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(array, i, 2.0d, 1.0d);
-                assertEquals(r, 2.0d, "success compareAndExchangeVolatile double");
+                double r = (double) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, 2.0d, 1.0d);
+                assertEquals(r, 2.0d, "success compareAndExchange double");
                 double x = (double) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1.0d, "success compareAndExchangeVolatile double value");
+                assertEquals(x, 1.0d, "success compareAndExchange double value");
             }
 
             {
-                double r = (double) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(array, i, 2.0d, 3.0d);
-                assertEquals(r, 1.0d, "failing compareAndExchangeVolatile double");
+                double r = (double) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, 2.0d, 3.0d);
+                assertEquals(r, 1.0d, "failing compareAndExchange double");
                 double x = (double) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1.0d, "failing compareAndExchangeVolatile double value");
+                assertEquals(x, 1.0d, "failing compareAndExchange double value");
             }
 
             {

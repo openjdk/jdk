@@ -166,17 +166,17 @@ public class VarHandleTestMethodHandleAccessByte extends VarHandleBaseTest {
         }
 
         {
-            byte r = (byte) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(recv, (byte)0x23, (byte)0x01);
-            assertEquals(r, (byte)0x23, "success compareAndExchangeVolatile byte");
+            byte r = (byte) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, (byte)0x23, (byte)0x01);
+            assertEquals(r, (byte)0x23, "success compareAndExchange byte");
             byte x = (byte) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, (byte)0x01, "success compareAndExchangeVolatile byte value");
+            assertEquals(x, (byte)0x01, "success compareAndExchange byte value");
         }
 
         {
-            byte r = (byte) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(recv, (byte)0x23, (byte)0x45);
-            assertEquals(r, (byte)0x01, "failing compareAndExchangeVolatile byte");
+            byte r = (byte) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, (byte)0x23, (byte)0x45);
+            assertEquals(r, (byte)0x01, "failing compareAndExchange byte");
             byte x = (byte) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, (byte)0x01, "failing compareAndExchangeVolatile byte value");
+            assertEquals(x, (byte)0x01, "failing compareAndExchange byte value");
         }
 
         {
@@ -319,17 +319,17 @@ public class VarHandleTestMethodHandleAccessByte extends VarHandleBaseTest {
         }
 
         {
-            byte r = (byte) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact((byte)0x23, (byte)0x01);
-            assertEquals(r, (byte)0x23, "success compareAndExchangeVolatile byte");
+            byte r = (byte) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact((byte)0x23, (byte)0x01);
+            assertEquals(r, (byte)0x23, "success compareAndExchange byte");
             byte x = (byte) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, (byte)0x01, "success compareAndExchangeVolatile byte value");
+            assertEquals(x, (byte)0x01, "success compareAndExchange byte value");
         }
 
         {
-            byte r = (byte) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact((byte)0x23, (byte)0x45);
-            assertEquals(r, (byte)0x01, "failing compareAndExchangeVolatile byte");
+            byte r = (byte) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact((byte)0x23, (byte)0x45);
+            assertEquals(r, (byte)0x01, "failing compareAndExchange byte");
             byte x = (byte) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, (byte)0x01, "failing compareAndExchangeVolatile byte value");
+            assertEquals(x, (byte)0x01, "failing compareAndExchange byte value");
         }
 
         {
@@ -475,17 +475,17 @@ public class VarHandleTestMethodHandleAccessByte extends VarHandleBaseTest {
             }
 
             {
-                byte r = (byte) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(array, i, (byte)0x23, (byte)0x01);
-                assertEquals(r, (byte)0x23, "success compareAndExchangeVolatile byte");
+                byte r = (byte) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, (byte)0x23, (byte)0x01);
+                assertEquals(r, (byte)0x23, "success compareAndExchange byte");
                 byte x = (byte) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, (byte)0x01, "success compareAndExchangeVolatile byte value");
+                assertEquals(x, (byte)0x01, "success compareAndExchange byte value");
             }
 
             {
-                byte r = (byte) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(array, i, (byte)0x23, (byte)0x45);
-                assertEquals(r, (byte)0x01, "failing compareAndExchangeVolatile byte");
+                byte r = (byte) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, (byte)0x23, (byte)0x45);
+                assertEquals(r, (byte)0x01, "failing compareAndExchange byte");
                 byte x = (byte) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, (byte)0x01, "failing compareAndExchangeVolatile byte value");
+                assertEquals(x, (byte)0x01, "failing compareAndExchange byte value");
             }
 
             {

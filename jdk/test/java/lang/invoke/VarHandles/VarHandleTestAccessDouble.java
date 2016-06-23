@@ -100,7 +100,7 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
 
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
@@ -360,17 +360,17 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
         }
 
         {
-            double r = (double) vh.compareAndExchangeVolatile(recv, 2.0d, 1.0d);
-            assertEquals(r, 2.0d, "success compareAndExchangeVolatile double");
+            double r = (double) vh.compareAndExchange(recv, 2.0d, 1.0d);
+            assertEquals(r, 2.0d, "success compareAndExchange double");
             double x = (double) vh.get(recv);
-            assertEquals(x, 1.0d, "success compareAndExchangeVolatile double value");
+            assertEquals(x, 1.0d, "success compareAndExchange double value");
         }
 
         {
-            double r = (double) vh.compareAndExchangeVolatile(recv, 2.0d, 3.0d);
-            assertEquals(r, 1.0d, "failing compareAndExchangeVolatile double");
+            double r = (double) vh.compareAndExchange(recv, 2.0d, 3.0d);
+            assertEquals(r, 1.0d, "failing compareAndExchange double");
             double x = (double) vh.get(recv);
-            assertEquals(x, 1.0d, "failing compareAndExchangeVolatile double value");
+            assertEquals(x, 1.0d, "failing compareAndExchange double value");
         }
 
         {
@@ -513,17 +513,17 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
         }
 
         {
-            double r = (double) vh.compareAndExchangeVolatile(2.0d, 1.0d);
-            assertEquals(r, 2.0d, "success compareAndExchangeVolatile double");
+            double r = (double) vh.compareAndExchange(2.0d, 1.0d);
+            assertEquals(r, 2.0d, "success compareAndExchange double");
             double x = (double) vh.get();
-            assertEquals(x, 1.0d, "success compareAndExchangeVolatile double value");
+            assertEquals(x, 1.0d, "success compareAndExchange double value");
         }
 
         {
-            double r = (double) vh.compareAndExchangeVolatile(2.0d, 3.0d);
-            assertEquals(r, 1.0d, "failing compareAndExchangeVolatile double");
+            double r = (double) vh.compareAndExchange(2.0d, 3.0d);
+            assertEquals(r, 1.0d, "failing compareAndExchange double");
             double x = (double) vh.get();
-            assertEquals(x, 1.0d, "failing compareAndExchangeVolatile double value");
+            assertEquals(x, 1.0d, "failing compareAndExchange double value");
         }
 
         {
@@ -669,17 +669,17 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
             }
 
             {
-                double r = (double) vh.compareAndExchangeVolatile(array, i, 2.0d, 1.0d);
-                assertEquals(r, 2.0d, "success compareAndExchangeVolatile double");
+                double r = (double) vh.compareAndExchange(array, i, 2.0d, 1.0d);
+                assertEquals(r, 2.0d, "success compareAndExchange double");
                 double x = (double) vh.get(array, i);
-                assertEquals(x, 1.0d, "success compareAndExchangeVolatile double value");
+                assertEquals(x, 1.0d, "success compareAndExchange double value");
             }
 
             {
-                double r = (double) vh.compareAndExchangeVolatile(array, i, 2.0d, 3.0d);
-                assertEquals(r, 1.0d, "failing compareAndExchangeVolatile double");
+                double r = (double) vh.compareAndExchange(array, i, 2.0d, 3.0d);
+                assertEquals(r, 1.0d, "failing compareAndExchange double");
                 double x = (double) vh.get(array, i);
-                assertEquals(x, 1.0d, "failing compareAndExchangeVolatile double value");
+                assertEquals(x, 1.0d, "failing compareAndExchange double value");
             }
 
             {
@@ -820,7 +820,7 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                double r = (double) vh.compareAndExchangeVolatile(array, ci, 2.0d, 1.0d);
+                double r = (double) vh.compareAndExchange(array, ci, 2.0d, 1.0d);
             });
 
             checkIOOBE(() -> {

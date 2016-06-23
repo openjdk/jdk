@@ -166,17 +166,17 @@ public class VarHandleTestMethodHandleAccessBoolean extends VarHandleBaseTest {
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(recv, false, true);
-            assertEquals(r, false, "success compareAndExchangeVolatile boolean");
+            boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, false, true);
+            assertEquals(r, false, "success compareAndExchange boolean");
             boolean x = (boolean) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, true, "success compareAndExchangeVolatile boolean value");
+            assertEquals(x, true, "success compareAndExchange boolean value");
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(recv, false, false);
-            assertEquals(r, true, "failing compareAndExchangeVolatile boolean");
+            boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, false, false);
+            assertEquals(r, true, "failing compareAndExchange boolean");
             boolean x = (boolean) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, true, "failing compareAndExchangeVolatile boolean value");
+            assertEquals(x, true, "failing compareAndExchange boolean value");
         }
 
         {
@@ -315,17 +315,17 @@ public class VarHandleTestMethodHandleAccessBoolean extends VarHandleBaseTest {
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(false, true);
-            assertEquals(r, false, "success compareAndExchangeVolatile boolean");
+            boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(false, true);
+            assertEquals(r, false, "success compareAndExchange boolean");
             boolean x = (boolean) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, true, "success compareAndExchangeVolatile boolean value");
+            assertEquals(x, true, "success compareAndExchange boolean value");
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(false, false);
-            assertEquals(r, true, "failing compareAndExchangeVolatile boolean");
+            boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(false, false);
+            assertEquals(r, true, "failing compareAndExchange boolean");
             boolean x = (boolean) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, true, "failing compareAndExchangeVolatile boolean value");
+            assertEquals(x, true, "failing compareAndExchange boolean value");
         }
 
         {
@@ -467,17 +467,17 @@ public class VarHandleTestMethodHandleAccessBoolean extends VarHandleBaseTest {
             }
 
             {
-                boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(array, i, false, true);
-                assertEquals(r, false, "success compareAndExchangeVolatile boolean");
+                boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, false, true);
+                assertEquals(r, false, "success compareAndExchange boolean");
                 boolean x = (boolean) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, true, "success compareAndExchangeVolatile boolean value");
+                assertEquals(x, true, "success compareAndExchange boolean value");
             }
 
             {
-                boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(array, i, false, false);
-                assertEquals(r, true, "failing compareAndExchangeVolatile boolean");
+                boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, false, false);
+                assertEquals(r, true, "failing compareAndExchange boolean");
                 boolean x = (boolean) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, true, "failing compareAndExchangeVolatile boolean value");
+                assertEquals(x, true, "failing compareAndExchange boolean value");
             }
 
             {

@@ -100,7 +100,7 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
 
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
@@ -374,17 +374,17 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
         }
 
         {
-            boolean r = (boolean) vh.compareAndExchangeVolatile(recv, false, true);
-            assertEquals(r, false, "success compareAndExchangeVolatile boolean");
+            boolean r = (boolean) vh.compareAndExchange(recv, false, true);
+            assertEquals(r, false, "success compareAndExchange boolean");
             boolean x = (boolean) vh.get(recv);
-            assertEquals(x, true, "success compareAndExchangeVolatile boolean value");
+            assertEquals(x, true, "success compareAndExchange boolean value");
         }
 
         {
-            boolean r = (boolean) vh.compareAndExchangeVolatile(recv, false, false);
-            assertEquals(r, true, "failing compareAndExchangeVolatile boolean");
+            boolean r = (boolean) vh.compareAndExchange(recv, false, false);
+            assertEquals(r, true, "failing compareAndExchange boolean");
             boolean x = (boolean) vh.get(recv);
-            assertEquals(x, true, "failing compareAndExchangeVolatile boolean value");
+            assertEquals(x, true, "failing compareAndExchange boolean value");
         }
 
         {
@@ -525,17 +525,17 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
         }
 
         {
-            boolean r = (boolean) vh.compareAndExchangeVolatile(false, true);
-            assertEquals(r, false, "success compareAndExchangeVolatile boolean");
+            boolean r = (boolean) vh.compareAndExchange(false, true);
+            assertEquals(r, false, "success compareAndExchange boolean");
             boolean x = (boolean) vh.get();
-            assertEquals(x, true, "success compareAndExchangeVolatile boolean value");
+            assertEquals(x, true, "success compareAndExchange boolean value");
         }
 
         {
-            boolean r = (boolean) vh.compareAndExchangeVolatile(false, false);
-            assertEquals(r, true, "failing compareAndExchangeVolatile boolean");
+            boolean r = (boolean) vh.compareAndExchange(false, false);
+            assertEquals(r, true, "failing compareAndExchange boolean");
             boolean x = (boolean) vh.get();
-            assertEquals(x, true, "failing compareAndExchangeVolatile boolean value");
+            assertEquals(x, true, "failing compareAndExchange boolean value");
         }
 
         {
@@ -679,17 +679,17 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
             }
 
             {
-                boolean r = (boolean) vh.compareAndExchangeVolatile(array, i, false, true);
-                assertEquals(r, false, "success compareAndExchangeVolatile boolean");
+                boolean r = (boolean) vh.compareAndExchange(array, i, false, true);
+                assertEquals(r, false, "success compareAndExchange boolean");
                 boolean x = (boolean) vh.get(array, i);
-                assertEquals(x, true, "success compareAndExchangeVolatile boolean value");
+                assertEquals(x, true, "success compareAndExchange boolean value");
             }
 
             {
-                boolean r = (boolean) vh.compareAndExchangeVolatile(array, i, false, false);
-                assertEquals(r, true, "failing compareAndExchangeVolatile boolean");
+                boolean r = (boolean) vh.compareAndExchange(array, i, false, false);
+                assertEquals(r, true, "failing compareAndExchange boolean");
                 boolean x = (boolean) vh.get(array, i);
-                assertEquals(x, true, "failing compareAndExchangeVolatile boolean value");
+                assertEquals(x, true, "failing compareAndExchange boolean value");
             }
 
             {
@@ -828,7 +828,7 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                boolean r = (boolean) vh.compareAndExchangeVolatile(array, ci, false, true);
+                boolean r = (boolean) vh.compareAndExchange(array, ci, false, true);
             });
 
             checkIOOBE(() -> {

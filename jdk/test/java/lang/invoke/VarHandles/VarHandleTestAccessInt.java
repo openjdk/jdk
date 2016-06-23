@@ -100,7 +100,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
 
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
@@ -360,17 +360,17 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         }
 
         {
-            int r = (int) vh.compareAndExchangeVolatile(recv, 0x89ABCDEF, 0x01234567);
-            assertEquals(r, 0x89ABCDEF, "success compareAndExchangeVolatile int");
+            int r = (int) vh.compareAndExchange(recv, 0x89ABCDEF, 0x01234567);
+            assertEquals(r, 0x89ABCDEF, "success compareAndExchange int");
             int x = (int) vh.get(recv);
-            assertEquals(x, 0x01234567, "success compareAndExchangeVolatile int value");
+            assertEquals(x, 0x01234567, "success compareAndExchange int value");
         }
 
         {
-            int r = (int) vh.compareAndExchangeVolatile(recv, 0x89ABCDEF, 0xCAFEBABE);
-            assertEquals(r, 0x01234567, "failing compareAndExchangeVolatile int");
+            int r = (int) vh.compareAndExchange(recv, 0x89ABCDEF, 0xCAFEBABE);
+            assertEquals(r, 0x01234567, "failing compareAndExchange int");
             int x = (int) vh.get(recv);
-            assertEquals(x, 0x01234567, "failing compareAndExchangeVolatile int value");
+            assertEquals(x, 0x01234567, "failing compareAndExchange int value");
         }
 
         {
@@ -513,17 +513,17 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         }
 
         {
-            int r = (int) vh.compareAndExchangeVolatile(0x89ABCDEF, 0x01234567);
-            assertEquals(r, 0x89ABCDEF, "success compareAndExchangeVolatile int");
+            int r = (int) vh.compareAndExchange(0x89ABCDEF, 0x01234567);
+            assertEquals(r, 0x89ABCDEF, "success compareAndExchange int");
             int x = (int) vh.get();
-            assertEquals(x, 0x01234567, "success compareAndExchangeVolatile int value");
+            assertEquals(x, 0x01234567, "success compareAndExchange int value");
         }
 
         {
-            int r = (int) vh.compareAndExchangeVolatile(0x89ABCDEF, 0xCAFEBABE);
-            assertEquals(r, 0x01234567, "failing compareAndExchangeVolatile int");
+            int r = (int) vh.compareAndExchange(0x89ABCDEF, 0xCAFEBABE);
+            assertEquals(r, 0x01234567, "failing compareAndExchange int");
             int x = (int) vh.get();
-            assertEquals(x, 0x01234567, "failing compareAndExchangeVolatile int value");
+            assertEquals(x, 0x01234567, "failing compareAndExchange int value");
         }
 
         {
@@ -669,17 +669,17 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             }
 
             {
-                int r = (int) vh.compareAndExchangeVolatile(array, i, 0x89ABCDEF, 0x01234567);
-                assertEquals(r, 0x89ABCDEF, "success compareAndExchangeVolatile int");
+                int r = (int) vh.compareAndExchange(array, i, 0x89ABCDEF, 0x01234567);
+                assertEquals(r, 0x89ABCDEF, "success compareAndExchange int");
                 int x = (int) vh.get(array, i);
-                assertEquals(x, 0x01234567, "success compareAndExchangeVolatile int value");
+                assertEquals(x, 0x01234567, "success compareAndExchange int value");
             }
 
             {
-                int r = (int) vh.compareAndExchangeVolatile(array, i, 0x89ABCDEF, 0xCAFEBABE);
-                assertEquals(r, 0x01234567, "failing compareAndExchangeVolatile int");
+                int r = (int) vh.compareAndExchange(array, i, 0x89ABCDEF, 0xCAFEBABE);
+                assertEquals(r, 0x01234567, "failing compareAndExchange int");
                 int x = (int) vh.get(array, i);
-                assertEquals(x, 0x01234567, "failing compareAndExchangeVolatile int value");
+                assertEquals(x, 0x01234567, "failing compareAndExchange int value");
             }
 
             {
@@ -820,7 +820,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                int r = (int) vh.compareAndExchangeVolatile(array, ci, 0x89ABCDEF, 0x01234567);
+                int r = (int) vh.compareAndExchange(array, ci, 0x89ABCDEF, 0x01234567);
             });
 
             checkIOOBE(() -> {
