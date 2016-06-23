@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,46 @@
  * questions.
  */
 
-package com.sun.tools.doclets.standard;
+package jdk.javadoc.doclets;
 
-import com.sun.javadoc.*;
-import com.sun.tools.doclets.formats.html.*;
+import java.util.Locale;
+import java.util.Set;
+
+import javax.lang.model.SourceVersion;
+
+import jdk.javadoc.doclet.Doclet;
+import jdk.javadoc.doclet.DocletEnvironment;
+import jdk.javadoc.doclet.Reporter;
+import jdk.javadoc.internal.doclets.formats.html.HtmlDoclet;
 
 /**
- * This doclet generates HTML-formatted documentation for the specified packages and types.
- * @deprecated The doclet has been superseded by its replacement,
- * {@code jdk.javadoc.doclets.StandardDoclet}.
+ * This doclet generates HTML-formatted documentation for the specified modules, packages and types.
  */
-@Deprecated
-public class Standard {
+public class StandardDoclet implements Doclet {
 
-    public static int optionLength(String option) {
-        return HtmlDoclet.optionLength(option);
+    private final HtmlDoclet htmlDoclet;
+
+    public StandardDoclet() {
+        htmlDoclet = new HtmlDoclet();
     }
 
-    public static boolean start(RootDoc root) {
-        return HtmlDoclet.start(root);
+    public void init(Locale locale, Reporter reporter) {
+        htmlDoclet.init(locale, reporter);
     }
 
-    public static boolean validOptions(String[][] options,
-                                   DocErrorReporter reporter) {
-        return HtmlDoclet.validOptions(options, reporter);
+    public String getName() {
+        return "Standard";
     }
 
-    public static LanguageVersion languageVersion() {
-        return HtmlDoclet.languageVersion();
+    public Set<Doclet.Option> getSupportedOptions() {
+        return htmlDoclet.getSupportedOptions();
     }
 
+    public SourceVersion getSupportedSourceVersion() {
+        return htmlDoclet.sourceVersion();
+    }
+
+    public boolean run(DocletEnvironment root) {
+        return htmlDoclet.run(root);
+    }
 }
