@@ -880,11 +880,6 @@ final class TextLine {
         return dstShape;
     }
 
-    public int hashCode() {
-        return (fComponents.length << 16) ^
-                    (fComponents[0].hashCode() << 3) ^ (fCharsLimit-fCharsStart);
-    }
-
     public String toString() {
         StringBuilder buf = new StringBuilder();
 
