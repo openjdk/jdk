@@ -101,14 +101,16 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_Double_longBitsToDouble_entry();
   address generate_Double_doubleToRawLongBits_entry();
 #endif // IA32
+  // Some platforms don't need registers, other need two. Unused function is
+  // left unimplemented.
   void generate_stack_overflow_check(void);
+  void generate_stack_overflow_check(Register Rframe_size, Register Rscratch);
 
   void generate_counter_incr(Label* overflow, Label* profile_method, Label* profile_method_continue);
   void generate_counter_overflow(Label& continue_entry);
 
   void generate_fixed_frame(bool native_call);
 #ifdef SPARC
-  void generate_stack_overflow_check(Register Rframe_size, Register Rscratch);
   void save_native_result(void);
   void restore_native_result(void);
 #endif // SPARC
@@ -119,10 +121,7 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
 
 #ifdef PPC
   void lock_method(Register Rflags, Register Rscratch1, Register Rscratch2, bool flags_preloaded=false);
-  void unlock_method(bool check_exceptions = true);
-
   void generate_fixed_frame(bool native_call, Register Rsize_of_parameters, Register Rsize_of_locals);
-  void generate_stack_overflow_check(Register Rframe_size, Register Rscratch1);
 #endif // PPC
 
  public:
