@@ -29,8 +29,9 @@
  * @library ..
  * @library /lib/testlibrary
  * @build jdk.testlibrary.*
- * @run main/othervm TestKeyPairGenerator
- * @run main/othervm TestKeyPairGenerator sm TestKeyPairGenerator.policy
+ * @run main/othervm -Djava.security.debug=sunpkcs11 TestKeyPairGenerator
+ * @run main/othervm -Djava.security.debug=sunpkcs11 TestKeyPairGenerator
+ *                                                   sm TestKeyPairGenerator.policy
  * @key intermittent randomness
  */
 
