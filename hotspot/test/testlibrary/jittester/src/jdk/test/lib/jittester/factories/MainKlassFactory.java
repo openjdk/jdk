@@ -112,19 +112,14 @@ class MainKlassFactory extends Factory<MainKlass> {
                 functionDefinitions, testFunction, printVariables);
     }
 
-    private void ensureMaxDepth(List<IRNode> childs) {
+    private void ensureMaxDepth(List<IRNode> children) {
         int maxDepth = ProductionParams.maxCfgDepth.value();
-        List<IRNode> filtered = childs.stream()
-            .filter(c -> c.isCFDeviation() && c.countDepth() > maxDepth)
-            .collect(Collectors.toList());
-        for (IRNode child : filtered) {
-            List<IRNode> leaves;
-            do {
-                long depth = Math.max(child.countDepth(), maxDepth + 1);
-                leaves = child.getDeviantBlocks(depth);
-                leaves.get(0).removeSelf();
-            } while (!leaves.isEmpty() && child.countDepth() > maxDepth);
-        }
+        List<IRNode> filtered = children.stream()
+                .filter(c -> c.isCFDeviation() && c.countDepth() > maxDepth)
+                .collect(Collectors.toList());
+        /* Now attempt to reduce depth by removing optional parts of control deviation
+           blocks in case IRTree has oversized depth */
+        IRNode.tryToReduceNodesDepth(filtered, maxDepth);
     }
 
     private void ensureMinDepth(List<IRNode> childs, IRNodeBuilder builder)
@@ -134,10 +129,15 @@ class MainKlassFactory extends Factory<MainKlass> {
         addMoreChildren(filtered, minDepth, builder);
     }
 
-    private void addMoreChildren(List<IRNode> childs, int minDepth, IRNodeBuilder builder)
+    private void addMoreChildren(List<IRNode> children, int minDepth, IRNodeBuilder builder)
             throws ProductionFailedException {
-        while (!childs.isEmpty() && IRNode.countDepth(childs) < minDepth) {
-            IRNode randomChild = childs.get(PseudoRandom.randomNotNegative(childs.size()));
+        /* check situation when no stackable leaves available in all children */
+        if (IRNode.getModifiableNodesCount(children) == 0L) {
+            return;
+        }
+        /* now let's try to add children */
+        while (!children.isEmpty() && IRNode.countDepth(children) < minDepth) {
+            IRNode randomChild = children.get(PseudoRandom.randomNotNegative(children.size()));
             List<IRNode> leaves = randomChild.getStackableLeaves();
             if (!leaves.isEmpty()) {
                 Block randomLeaf = (Block) leaves.get(PseudoRandom.randomNotNegative(leaves.size()));
