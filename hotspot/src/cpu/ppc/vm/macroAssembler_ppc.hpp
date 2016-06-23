@@ -431,10 +431,81 @@ class MacroAssembler: public Assembler {
     MemBarAcq  = 2,
     MemBarFenceAfter = 4 // use powers of 2
   };
+ private:
+  // Helper functions for word/sub-word atomics.
+  void atomic_get_and_modify_generic(Register dest_current_value, Register exchange_value,
+                                     Register addr_base, Register tmp1, Register tmp2, Register tmp3,
+                                     bool cmpxchgx_hint, bool is_add, int size);
+  void cmpxchg_loop_body(ConditionRegister flag, Register dest_current_value,
+                         Register compare_value, Register exchange_value,
+                         Register addr_base, Register tmp1, Register tmp2,
+                         Label &retry, Label &failed, bool cmpxchgx_hint, int size);
+  void cmpxchg_generic(ConditionRegister flag,
+                       Register dest_current_value, Register compare_value, Register exchange_value, Register addr_base,
+                       Register tmp1, Register tmp2,
+                       int semantics, bool cmpxchgx_hint, Register int_flag_success, bool contention_hint, bool weak, int size);
+ public:
+  // Temps and addr_base are killed if processor does not support Power 8 instructions.
+  // Result will be sign extended.
+  void getandsetb(Register dest_current_value, Register exchange_value, Register addr_base,
+                  Register tmp1, Register tmp2, Register tmp3, bool cmpxchgx_hint) {
+    atomic_get_and_modify_generic(dest_current_value, exchange_value, addr_base, tmp1, tmp2, tmp3, cmpxchgx_hint, false, 1);
+  }
+  // Temps and addr_base are killed if processor does not support Power 8 instructions.
+  // Result will be sign extended.
+  void getandseth(Register dest_current_value, Register exchange_value, Register addr_base,
+                  Register tmp1, Register tmp2, Register tmp3, bool cmpxchgx_hint) {
+    atomic_get_and_modify_generic(dest_current_value, exchange_value, addr_base, tmp1, tmp2, tmp3, cmpxchgx_hint, false, 2);
+  }
+  void getandsetw(Register dest_current_value, Register exchange_value, Register addr_base,
+                  bool cmpxchgx_hint) {
+    atomic_get_and_modify_generic(dest_current_value, exchange_value, addr_base, noreg, noreg, noreg, cmpxchgx_hint, false, 4);
+  }
+  void getandsetd(Register dest_current_value, Register exchange_value, Register addr_base,
+                  bool cmpxchgx_hint);
+  // tmp2/3 and addr_base are killed if processor does not support Power 8 instructions (tmp1 is always needed).
+  // Result will be sign extended.
+  void getandaddb(Register dest_current_value, Register inc_value, Register addr_base,
+                  Register tmp1, Register tmp2, Register tmp3, bool cmpxchgx_hint) {
+    atomic_get_and_modify_generic(dest_current_value, inc_value, addr_base, tmp1, tmp2, tmp3, cmpxchgx_hint, true, 1);
+  }
+  // tmp2/3 and addr_base are killed if processor does not support Power 8 instructions (tmp1 is always needed).
+  // Result will be sign extended.
+  void getandaddh(Register dest_current_value, Register inc_value, Register addr_base,
+                  Register tmp1, Register tmp2, Register tmp3, bool cmpxchgx_hint) {
+    atomic_get_and_modify_generic(dest_current_value, inc_value, addr_base, tmp1, tmp2, tmp3, cmpxchgx_hint, true, 2);
+  }
+  void getandaddw(Register dest_current_value, Register inc_value, Register addr_base,
+                  Register tmp1, bool cmpxchgx_hint) {
+    atomic_get_and_modify_generic(dest_current_value, inc_value, addr_base, tmp1, noreg, noreg, cmpxchgx_hint, true, 4);
+  }
+  void getandaddd(Register dest_current_value, Register exchange_value, Register addr_base,
+                  Register tmp, bool cmpxchgx_hint);
+  // Temps, addr_base and exchange_value are killed if processor does not support Power 8 instructions.
+  // compare_value must be at least 32 bit sign extended. Result will be sign extended.
+  void cmpxchgb(ConditionRegister flag,
+                Register dest_current_value, Register compare_value, Register exchange_value, Register addr_base,
+                Register tmp1, Register tmp2, int semantics, bool cmpxchgx_hint = false,
+                Register int_flag_success = noreg, bool contention_hint = false, bool weak = false) {
+    cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, tmp1, tmp2,
+                    semantics, cmpxchgx_hint, int_flag_success, contention_hint, weak, 1);
+  }
+  // Temps, addr_base and exchange_value are killed if processor does not support Power 8 instructions.
+  // compare_value must be at least 32 bit sign extended. Result will be sign extended.
+  void cmpxchgh(ConditionRegister flag,
+                Register dest_current_value, Register compare_value, Register exchange_value, Register addr_base,
+                Register tmp1, Register tmp2, int semantics, bool cmpxchgx_hint = false,
+                Register int_flag_success = noreg, bool contention_hint = false, bool weak = false) {
+    cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, tmp1, tmp2,
+                    semantics, cmpxchgx_hint, int_flag_success, contention_hint, weak, 2);
+  }
   void cmpxchgw(ConditionRegister flag,
                 Register dest_current_value, Register compare_value, Register exchange_value, Register addr_base,
                 int semantics, bool cmpxchgx_hint = false,
-                Register int_flag_success = noreg, bool contention_hint = false, bool weak = false);
+                Register int_flag_success = noreg, bool contention_hint = false, bool weak = false) {
+    cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, noreg, noreg,
+                    semantics, cmpxchgx_hint, int_flag_success, contention_hint, weak, 4);
+  }
   void cmpxchgd(ConditionRegister flag,
                 Register dest_current_value, RegisterOrConstant compare_value, Register exchange_value,
                 Register addr_base, int semantics, bool cmpxchgx_hint = false,
@@ -717,23 +788,6 @@ class MacroAssembler: public Assembler {
                            Register needle, jchar needleChar, Register tmp1, Register tmp2, bool is_byte);
 
   void has_negatives(Register src, Register cnt, Register result, Register tmp1, Register tmp2);
-
-  // Intrinsics for non-CompactStrings
-  // Needle of length 1.
-  void string_indexof_1(Register result, Register haystack, Register haycnt,
-                        Register needle, jchar needleChar,
-                        Register tmp1, Register tmp2);
-  // General indexof, eventually with constant needle length.
-  void string_indexof(Register result, Register haystack, Register haycnt,
-                      Register needle, ciTypeArray* needle_values, Register needlecnt, int needlecntval,
-                      Register tmp1, Register tmp2, Register tmp3, Register tmp4);
-  void string_compare(Register str1_reg, Register str2_reg, Register cnt1_reg, Register cnt2_reg,
-                      Register result_reg, Register tmp_reg);
-  void char_arrays_equals(Register str1_reg, Register str2_reg, Register cnt_reg, Register result_reg,
-                          Register tmp1_reg, Register tmp2_reg, Register tmp3_reg, Register tmp4_reg,
-                          Register tmp5_reg);
-  void char_arrays_equalsImm(Register str1_reg, Register str2_reg, int cntval, Register result_reg,
-                             Register tmp1_reg, Register tmp2_reg);
 #endif
 
   // Emitters for BigInteger.multiplyToLen intrinsic.
