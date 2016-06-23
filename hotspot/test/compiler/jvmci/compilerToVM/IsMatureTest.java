@@ -74,11 +74,16 @@ public class IsMatureTest {
         }
         methodData = WB.getMethodData(method);
         isMature = CompilerToVMHelper.isMature(methodData);
-        Asserts.assertNE(methodData, 0L,
-                "Multiple times invoked method should have method data");
-        /* a method is not mature for -Xcomp and -Tiered,
-           see NonTieredCompPolicy::is_mature */
-        Asserts.assertEQ(isMature, !(IS_XCOMP && !TIERED),
-                "Unexpected isMature state for multiple times invoked method");
+        int compLevel = WB.getMethodCompilationLevel(method);
+        // methodData doesn't necessarily exist for interpreter and compilation level 1
+        if (compLevel != CompilerWhiteBoxTest.COMP_LEVEL_NONE
+                && compLevel != CompilerWhiteBoxTest.COMP_LEVEL_SIMPLE) {
+            Asserts.assertNE(methodData, 0L,
+                    "Multiple times invoked method should have method data");
+            /* a method is not mature in Xcomp mode with tiered compilation disabled,
+               see NonTieredCompPolicy::is_mature */
+            Asserts.assertEQ(isMature, !(IS_XCOMP && !TIERED),
+                    "Unexpected isMature state for multiple times invoked method");
+        }
     }
 }
