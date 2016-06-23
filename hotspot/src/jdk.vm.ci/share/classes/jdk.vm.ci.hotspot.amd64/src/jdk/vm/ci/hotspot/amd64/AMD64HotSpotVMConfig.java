@@ -31,11 +31,6 @@ class AMD64HotSpotVMConfig extends HotSpotVMConfigAccess {
         super(config);
     }
 
-    /**
-     * Maximum allowed size of allocated area for a frame.
-     */
-    final int maxFrameSize = 16 * 1024;
-
     final boolean windowsOs = System.getProperty("os.name", "").startsWith("Windows");
 
     final boolean useCountLeadingZerosInstruction = getFlag("UseCountLeadingZerosInstruction", Boolean.class);

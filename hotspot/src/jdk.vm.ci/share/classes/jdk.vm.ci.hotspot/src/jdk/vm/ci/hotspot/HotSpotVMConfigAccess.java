@@ -126,7 +126,7 @@ public class HotSpotVMConfigAccess {
         if (entry.address != 0) {
             throw new JVMCIError("cannot get offset of static field " + name);
         }
-        return entry == null ? notPresent : type.cast(convertValue(name, type, entry.offset, cppType));
+        return type.cast(convertValue(name, type, entry.offset, cppType));
     }
 
     /**
@@ -173,7 +173,7 @@ public class HotSpotVMConfigAccess {
         if (entry.address == 0) {
             throw new JVMCIError(name + " is not a static field");
         }
-        return entry == null ? notPresent : entry.address;
+        return entry.address;
     }
 
     /**
@@ -313,7 +313,7 @@ public class HotSpotVMConfigAccess {
                 return (int) (long) value;
             }
         } else if (toType == Long.class) {
-            return (long) value;
+            return value;
         }
 
         throw new JVMCIError("cannot convert " + name + " of type " + value.getClass().getSimpleName() + (cppType == null ? "" : " [" + cppType + "]") + " to " + toType.getSimpleName());
