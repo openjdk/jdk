@@ -1293,11 +1293,12 @@ void PhaseCFG::call_catch_cleanup(Block* block) {
     Block *sb = block->_succs[i];
     // Clone the entire area; ignoring the edge fixup for now.
     for( uint j = end; j > beg; j-- ) {
-      // It is safe here to clone a node with anti_dependence
-      // since clones dominate on each path.
       Node *clone = block->get_node(j-1)->clone();
       sb->insert_node(clone, 1);
       map_node_to_block(clone, sb);
+      if (clone->needs_anti_dependence_check()) {
+        insert_anti_dependences(sb, clone);
+      }
     }
   }
 
