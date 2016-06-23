@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,22 @@
 
 /**
  * @test
- * @bug 6543815
+ * @bug 6543815 6601097
  * @summary Image should be sent to printer, no exceptions thrown.
- *    The 2 printouts should have a rectangle which is the minimum
- *    possible margin.
+ *    The 3 printouts should have a rectangle which is the minimum
+ *    possible margins ie, the margins should be hardware margins
+ *    and not java default 1 inch margins.
  * @run main/manual Margins
  */
 
-import java.awt.*;
-import java.awt.print.*;
+import java.awt.print.PrinterJob;
+import java.awt.print.Printable;
+import java.awt.print.PageFormat;
+import java.awt.print.Paper;
+import java.awt.print.PrinterException;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Color;
 
 public class Margins implements Printable {
 
@@ -59,7 +66,22 @@ public class Margins implements Printable {
            job.print();
         } catch (PrinterException e) {
         }
-   }
+
+        pageFormat = job.defaultPage();
+        paper = pageFormat.getPaper();
+        wid = paper.getWidth();
+        hgt = paper.getHeight();
+
+        paper.setImageableArea(0, -10, -wid, hgt);
+        pageFormat = job.pageDialog(pageFormat);
+        pageFormat.setPaper(paper);
+
+        job.setPrintable(new Margins(), pageFormat);
+        try {
+           job.print();
+        } catch (PrinterException e) {
+        }
+    }
 
    public int print(Graphics g, PageFormat pf, int page)
        throws PrinterException {
@@ -76,12 +98,22 @@ public class Margins implements Printable {
            throw new RuntimeException("Imageable x or y is a negative value.");
        }
 
+
        Paper paper = pf.getPaper();
        double wid = paper.getWidth();
        double hgt = paper.getHeight();
 
+       /* If imageable width/height is -ve, then print was done with 1" margin
+        * ie ix=72 iy=72 iw=451 ih=697 and wid=595
+        * but with fix, we get print with hardware margin ie
+        * ix=12, iy=12, iw=571, ih=817
+        */
+       if ((wid - iw > 72) || (hgt - ih > 72)) {
+           throw new RuntimeException("Imageable width or height is negative value");
+       }
        if ((ix+iw > wid) || (iy+ih > hgt)) {
-           throw new RuntimeException("Printable width or height exceeds paper width or height.");
+           throw new RuntimeException("Printable width or height "
+                   + "exceeds paper width or height.");
        }
 
        Graphics2D g2d = (Graphics2D)g;
