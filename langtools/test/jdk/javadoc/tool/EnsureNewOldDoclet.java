@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8035473 8154482
+ * @bug 8035473 8154482 8154399 8159096
  * @summary make sure the javadoc tool responds correctly to Xold,
  *          old doclets and taglets.
  * @library /tools/lib
@@ -87,7 +87,7 @@ public class EnsureNewOldDoclet extends TestRunner {
             CLASS_NAME + "\\$OldTaglet.*");
 
     final static String OLD_STDDOCLET = "com.sun.tools.doclets.standard.Standard";
-    final static String NEW_STDDOCLET = "jdk.javadoc.internal.doclets.standard.Standard";
+    final static String NEW_STDDOCLET = "jdk.javadoc.doclets.StandardDoclet";
 
 
     public EnsureNewOldDoclet() throws Exception {
