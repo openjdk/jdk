@@ -454,40 +454,40 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
         });
 
 
-        // CompareAndExchangeVolatile
+        // CompareAndExchange
         // Incorrect argument types
         checkNPE(() -> { // null receiver
-            float x = (float) vh.compareAndExchangeVolatile(null, 1.0f, 1.0f);
+            float x = (float) vh.compareAndExchange(null, 1.0f, 1.0f);
         });
         checkCCE(() -> { // receiver reference class
-            float x = (float) vh.compareAndExchangeVolatile(Void.class, 1.0f, 1.0f);
+            float x = (float) vh.compareAndExchange(Void.class, 1.0f, 1.0f);
         });
         checkWMTE(() -> { // expected reference class
-            float x = (float) vh.compareAndExchangeVolatile(recv, Void.class, 1.0f);
+            float x = (float) vh.compareAndExchange(recv, Void.class, 1.0f);
         });
         checkWMTE(() -> { // actual reference class
-            float x = (float) vh.compareAndExchangeVolatile(recv, 1.0f, Void.class);
+            float x = (float) vh.compareAndExchange(recv, 1.0f, Void.class);
         });
         checkWMTE(() -> { // reciever primitive class
-            float x = (float) vh.compareAndExchangeVolatile(0, 1.0f, 1.0f);
+            float x = (float) vh.compareAndExchange(0, 1.0f, 1.0f);
         });
         // Incorrect return type
         checkWMTE(() -> { // reference class
-            Void r = (Void) vh.compareAndExchangeVolatile(recv, 1.0f, 1.0f);
+            Void r = (Void) vh.compareAndExchange(recv, 1.0f, 1.0f);
         });
         checkWMTE(() -> { // primitive class
-            boolean x = (boolean) vh.compareAndExchangeVolatile(recv, 1.0f, 1.0f);
+            boolean x = (boolean) vh.compareAndExchange(recv, 1.0f, 1.0f);
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
-            float x = (float) vh.compareAndExchangeVolatile();
+            float x = (float) vh.compareAndExchange();
         });
         checkWMTE(() -> { // >
-            float x = (float) vh.compareAndExchangeVolatile(recv, 1.0f, 1.0f, Void.class);
+            float x = (float) vh.compareAndExchange(recv, 1.0f, 1.0f, Void.class);
         });
 
 
-        // CompareAndExchangeVolatileAcquire
+        // CompareAndExchangeAcquire
         // Incorrect argument types
         checkNPE(() -> { // null receiver
             float x = (float) vh.compareAndExchangeAcquire(null, 1.0f, 1.0f);
@@ -1051,27 +1051,27 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
         });
 
 
-        // CompareAndExchangeVolatile
+        // CompareAndExchange
         // Incorrect argument types
         checkWMTE(() -> { // expected reference class
-            float x = (float) vh.compareAndExchangeVolatile(Void.class, 1.0f);
+            float x = (float) vh.compareAndExchange(Void.class, 1.0f);
         });
         checkWMTE(() -> { // actual reference class
-            float x = (float) vh.compareAndExchangeVolatile(1.0f, Void.class);
+            float x = (float) vh.compareAndExchange(1.0f, Void.class);
         });
         // Incorrect return type
         checkWMTE(() -> { // reference class
-            Void r = (Void) vh.compareAndExchangeVolatile(1.0f, 1.0f);
+            Void r = (Void) vh.compareAndExchange(1.0f, 1.0f);
         });
         checkWMTE(() -> { // primitive class
-            boolean x = (boolean) vh.compareAndExchangeVolatile(1.0f, 1.0f);
+            boolean x = (boolean) vh.compareAndExchange(1.0f, 1.0f);
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
-            float x = (float) vh.compareAndExchangeVolatile();
+            float x = (float) vh.compareAndExchange();
         });
         checkWMTE(() -> { // >
-            float x = (float) vh.compareAndExchangeVolatile(1.0f, 1.0f, Void.class);
+            float x = (float) vh.compareAndExchange(1.0f, 1.0f, Void.class);
         });
 
 
@@ -1698,39 +1698,39 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
         });
 
 
-        // CompareAndExchangeVolatile
+        // CompareAndExchange
         // Incorrect argument types
         checkNPE(() -> { // null receiver
-            float x = (float) vh.compareAndExchangeVolatile(null, 0, 1.0f, 1.0f);
+            float x = (float) vh.compareAndExchange(null, 0, 1.0f, 1.0f);
         });
         checkCCE(() -> { // array reference class
-            float x = (float) vh.compareAndExchangeVolatile(Void.class, 0, 1.0f, 1.0f);
+            float x = (float) vh.compareAndExchange(Void.class, 0, 1.0f, 1.0f);
         });
         checkWMTE(() -> { // expected reference class
-            float x = (float) vh.compareAndExchangeVolatile(array, 0, Void.class, 1.0f);
+            float x = (float) vh.compareAndExchange(array, 0, Void.class, 1.0f);
         });
         checkWMTE(() -> { // actual reference class
-            float x = (float) vh.compareAndExchangeVolatile(array, 0, 1.0f, Void.class);
+            float x = (float) vh.compareAndExchange(array, 0, 1.0f, Void.class);
         });
         checkWMTE(() -> { // array primitive class
-            float x = (float) vh.compareAndExchangeVolatile(0, 0, 1.0f, 1.0f);
+            float x = (float) vh.compareAndExchange(0, 0, 1.0f, 1.0f);
         });
         checkWMTE(() -> { // index reference class
-            float x = (float) vh.compareAndExchangeVolatile(array, Void.class, 1.0f, 1.0f);
+            float x = (float) vh.compareAndExchange(array, Void.class, 1.0f, 1.0f);
         });
         // Incorrect return type
         checkWMTE(() -> { // reference class
-            Void r = (Void) vh.compareAndExchangeVolatile(array, 0, 1.0f, 1.0f);
+            Void r = (Void) vh.compareAndExchange(array, 0, 1.0f, 1.0f);
         });
         checkWMTE(() -> { // primitive class
-            boolean x = (boolean) vh.compareAndExchangeVolatile(array, 0, 1.0f, 1.0f);
+            boolean x = (boolean) vh.compareAndExchange(array, 0, 1.0f, 1.0f);
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
-            float x = (float) vh.compareAndExchangeVolatile();
+            float x = (float) vh.compareAndExchange();
         });
         checkWMTE(() -> { // >
-            float x = (float) vh.compareAndExchangeVolatile(array, 0, 1.0f, 1.0f, Void.class);
+            float x = (float) vh.compareAndExchange(array, 0, 1.0f, 1.0f, Void.class);
         });
 
 

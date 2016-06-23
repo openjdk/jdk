@@ -166,17 +166,17 @@ public class VarHandleTestMethodHandleAccessChar extends VarHandleBaseTest {
         }
 
         {
-            char r = (char) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(recv, '\u4567', '\u0123');
-            assertEquals(r, '\u4567', "success compareAndExchangeVolatile char");
+            char r = (char) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, '\u4567', '\u0123');
+            assertEquals(r, '\u4567', "success compareAndExchange char");
             char x = (char) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, '\u0123', "success compareAndExchangeVolatile char value");
+            assertEquals(x, '\u0123', "success compareAndExchange char value");
         }
 
         {
-            char r = (char) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(recv, '\u4567', '\u89AB');
-            assertEquals(r, '\u0123', "failing compareAndExchangeVolatile char");
+            char r = (char) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, '\u4567', '\u89AB');
+            assertEquals(r, '\u0123', "failing compareAndExchange char");
             char x = (char) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, '\u0123', "failing compareAndExchangeVolatile char value");
+            assertEquals(x, '\u0123', "failing compareAndExchange char value");
         }
 
         {
@@ -319,17 +319,17 @@ public class VarHandleTestMethodHandleAccessChar extends VarHandleBaseTest {
         }
 
         {
-            char r = (char) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact('\u4567', '\u0123');
-            assertEquals(r, '\u4567', "success compareAndExchangeVolatile char");
+            char r = (char) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact('\u4567', '\u0123');
+            assertEquals(r, '\u4567', "success compareAndExchange char");
             char x = (char) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, '\u0123', "success compareAndExchangeVolatile char value");
+            assertEquals(x, '\u0123', "success compareAndExchange char value");
         }
 
         {
-            char r = (char) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact('\u4567', '\u89AB');
-            assertEquals(r, '\u0123', "failing compareAndExchangeVolatile char");
+            char r = (char) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact('\u4567', '\u89AB');
+            assertEquals(r, '\u0123', "failing compareAndExchange char");
             char x = (char) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, '\u0123', "failing compareAndExchangeVolatile char value");
+            assertEquals(x, '\u0123', "failing compareAndExchange char value");
         }
 
         {
@@ -475,17 +475,17 @@ public class VarHandleTestMethodHandleAccessChar extends VarHandleBaseTest {
             }
 
             {
-                char r = (char) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(array, i, '\u4567', '\u0123');
-                assertEquals(r, '\u4567', "success compareAndExchangeVolatile char");
+                char r = (char) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, '\u4567', '\u0123');
+                assertEquals(r, '\u4567', "success compareAndExchange char");
                 char x = (char) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, '\u0123', "success compareAndExchangeVolatile char value");
+                assertEquals(x, '\u0123', "success compareAndExchange char value");
             }
 
             {
-                char r = (char) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(array, i, '\u4567', '\u89AB');
-                assertEquals(r, '\u0123', "failing compareAndExchangeVolatile char");
+                char r = (char) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, '\u4567', '\u89AB');
+                assertEquals(r, '\u0123', "failing compareAndExchange char");
                 char x = (char) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, '\u0123', "failing compareAndExchangeVolatile char value");
+                assertEquals(x, '\u0123', "failing compareAndExchange char value");
             }
 
             {

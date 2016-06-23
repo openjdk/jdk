@@ -100,7 +100,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
 
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
@@ -360,17 +360,17 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         }
 
         {
-            char r = (char) vh.compareAndExchangeVolatile(recv, '\u4567', '\u0123');
-            assertEquals(r, '\u4567', "success compareAndExchangeVolatile char");
+            char r = (char) vh.compareAndExchange(recv, '\u4567', '\u0123');
+            assertEquals(r, '\u4567', "success compareAndExchange char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u0123', "success compareAndExchangeVolatile char value");
+            assertEquals(x, '\u0123', "success compareAndExchange char value");
         }
 
         {
-            char r = (char) vh.compareAndExchangeVolatile(recv, '\u4567', '\u89AB');
-            assertEquals(r, '\u0123', "failing compareAndExchangeVolatile char");
+            char r = (char) vh.compareAndExchange(recv, '\u4567', '\u89AB');
+            assertEquals(r, '\u0123', "failing compareAndExchange char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u0123', "failing compareAndExchangeVolatile char value");
+            assertEquals(x, '\u0123', "failing compareAndExchange char value");
         }
 
         {
@@ -513,17 +513,17 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         }
 
         {
-            char r = (char) vh.compareAndExchangeVolatile('\u4567', '\u0123');
-            assertEquals(r, '\u4567', "success compareAndExchangeVolatile char");
+            char r = (char) vh.compareAndExchange('\u4567', '\u0123');
+            assertEquals(r, '\u4567', "success compareAndExchange char");
             char x = (char) vh.get();
-            assertEquals(x, '\u0123', "success compareAndExchangeVolatile char value");
+            assertEquals(x, '\u0123', "success compareAndExchange char value");
         }
 
         {
-            char r = (char) vh.compareAndExchangeVolatile('\u4567', '\u89AB');
-            assertEquals(r, '\u0123', "failing compareAndExchangeVolatile char");
+            char r = (char) vh.compareAndExchange('\u4567', '\u89AB');
+            assertEquals(r, '\u0123', "failing compareAndExchange char");
             char x = (char) vh.get();
-            assertEquals(x, '\u0123', "failing compareAndExchangeVolatile char value");
+            assertEquals(x, '\u0123', "failing compareAndExchange char value");
         }
 
         {
@@ -669,17 +669,17 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             }
 
             {
-                char r = (char) vh.compareAndExchangeVolatile(array, i, '\u4567', '\u0123');
-                assertEquals(r, '\u4567', "success compareAndExchangeVolatile char");
+                char r = (char) vh.compareAndExchange(array, i, '\u4567', '\u0123');
+                assertEquals(r, '\u4567', "success compareAndExchange char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u0123', "success compareAndExchangeVolatile char value");
+                assertEquals(x, '\u0123', "success compareAndExchange char value");
             }
 
             {
-                char r = (char) vh.compareAndExchangeVolatile(array, i, '\u4567', '\u89AB');
-                assertEquals(r, '\u0123', "failing compareAndExchangeVolatile char");
+                char r = (char) vh.compareAndExchange(array, i, '\u4567', '\u89AB');
+                assertEquals(r, '\u0123', "failing compareAndExchange char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u0123', "failing compareAndExchangeVolatile char value");
+                assertEquals(x, '\u0123', "failing compareAndExchange char value");
             }
 
             {
@@ -820,7 +820,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                char r = (char) vh.compareAndExchangeVolatile(array, ci, '\u4567', '\u0123');
+                char r = (char) vh.compareAndExchange(array, ci, '\u4567', '\u0123');
             });
 
             checkIOOBE(() -> {

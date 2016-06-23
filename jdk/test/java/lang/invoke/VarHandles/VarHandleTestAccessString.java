@@ -100,7 +100,7 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
 
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
@@ -374,17 +374,17 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         }
 
         {
-            String r = (String) vh.compareAndExchangeVolatile(recv, "bar", "foo");
-            assertEquals(r, "bar", "success compareAndExchangeVolatile String");
+            String r = (String) vh.compareAndExchange(recv, "bar", "foo");
+            assertEquals(r, "bar", "success compareAndExchange String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "foo", "success compareAndExchangeVolatile String value");
+            assertEquals(x, "foo", "success compareAndExchange String value");
         }
 
         {
-            String r = (String) vh.compareAndExchangeVolatile(recv, "bar", "baz");
-            assertEquals(r, "foo", "failing compareAndExchangeVolatile String");
+            String r = (String) vh.compareAndExchange(recv, "bar", "baz");
+            assertEquals(r, "foo", "failing compareAndExchange String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "foo", "failing compareAndExchangeVolatile String value");
+            assertEquals(x, "foo", "failing compareAndExchange String value");
         }
 
         {
@@ -525,17 +525,17 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         }
 
         {
-            String r = (String) vh.compareAndExchangeVolatile("bar", "foo");
-            assertEquals(r, "bar", "success compareAndExchangeVolatile String");
+            String r = (String) vh.compareAndExchange("bar", "foo");
+            assertEquals(r, "bar", "success compareAndExchange String");
             String x = (String) vh.get();
-            assertEquals(x, "foo", "success compareAndExchangeVolatile String value");
+            assertEquals(x, "foo", "success compareAndExchange String value");
         }
 
         {
-            String r = (String) vh.compareAndExchangeVolatile("bar", "baz");
-            assertEquals(r, "foo", "failing compareAndExchangeVolatile String");
+            String r = (String) vh.compareAndExchange("bar", "baz");
+            assertEquals(r, "foo", "failing compareAndExchange String");
             String x = (String) vh.get();
-            assertEquals(x, "foo", "failing compareAndExchangeVolatile String value");
+            assertEquals(x, "foo", "failing compareAndExchange String value");
         }
 
         {
@@ -679,17 +679,17 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
             }
 
             {
-                String r = (String) vh.compareAndExchangeVolatile(array, i, "bar", "foo");
-                assertEquals(r, "bar", "success compareAndExchangeVolatile String");
+                String r = (String) vh.compareAndExchange(array, i, "bar", "foo");
+                assertEquals(r, "bar", "success compareAndExchange String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "foo", "success compareAndExchangeVolatile String value");
+                assertEquals(x, "foo", "success compareAndExchange String value");
             }
 
             {
-                String r = (String) vh.compareAndExchangeVolatile(array, i, "bar", "baz");
-                assertEquals(r, "foo", "failing compareAndExchangeVolatile String");
+                String r = (String) vh.compareAndExchange(array, i, "bar", "baz");
+                assertEquals(r, "foo", "failing compareAndExchange String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "foo", "failing compareAndExchangeVolatile String value");
+                assertEquals(x, "foo", "failing compareAndExchange String value");
             }
 
             {
@@ -828,7 +828,7 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                String r = (String) vh.compareAndExchangeVolatile(array, ci, "bar", "foo");
+                String r = (String) vh.compareAndExchange(array, ci, "bar", "foo");
             });
 
             checkIOOBE(() -> {

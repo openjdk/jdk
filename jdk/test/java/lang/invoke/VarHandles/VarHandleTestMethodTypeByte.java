@@ -454,40 +454,40 @@ public class VarHandleTestMethodTypeByte extends VarHandleBaseTest {
         });
 
 
-        // CompareAndExchangeVolatile
+        // CompareAndExchange
         // Incorrect argument types
         checkNPE(() -> { // null receiver
-            byte x = (byte) vh.compareAndExchangeVolatile(null, (byte)0x01, (byte)0x01);
+            byte x = (byte) vh.compareAndExchange(null, (byte)0x01, (byte)0x01);
         });
         checkCCE(() -> { // receiver reference class
-            byte x = (byte) vh.compareAndExchangeVolatile(Void.class, (byte)0x01, (byte)0x01);
+            byte x = (byte) vh.compareAndExchange(Void.class, (byte)0x01, (byte)0x01);
         });
         checkWMTE(() -> { // expected reference class
-            byte x = (byte) vh.compareAndExchangeVolatile(recv, Void.class, (byte)0x01);
+            byte x = (byte) vh.compareAndExchange(recv, Void.class, (byte)0x01);
         });
         checkWMTE(() -> { // actual reference class
-            byte x = (byte) vh.compareAndExchangeVolatile(recv, (byte)0x01, Void.class);
+            byte x = (byte) vh.compareAndExchange(recv, (byte)0x01, Void.class);
         });
         checkWMTE(() -> { // reciever primitive class
-            byte x = (byte) vh.compareAndExchangeVolatile(0, (byte)0x01, (byte)0x01);
+            byte x = (byte) vh.compareAndExchange(0, (byte)0x01, (byte)0x01);
         });
         // Incorrect return type
         checkWMTE(() -> { // reference class
-            Void r = (Void) vh.compareAndExchangeVolatile(recv, (byte)0x01, (byte)0x01);
+            Void r = (Void) vh.compareAndExchange(recv, (byte)0x01, (byte)0x01);
         });
         checkWMTE(() -> { // primitive class
-            boolean x = (boolean) vh.compareAndExchangeVolatile(recv, (byte)0x01, (byte)0x01);
+            boolean x = (boolean) vh.compareAndExchange(recv, (byte)0x01, (byte)0x01);
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
-            byte x = (byte) vh.compareAndExchangeVolatile();
+            byte x = (byte) vh.compareAndExchange();
         });
         checkWMTE(() -> { // >
-            byte x = (byte) vh.compareAndExchangeVolatile(recv, (byte)0x01, (byte)0x01, Void.class);
+            byte x = (byte) vh.compareAndExchange(recv, (byte)0x01, (byte)0x01, Void.class);
         });
 
 
-        // CompareAndExchangeVolatileAcquire
+        // CompareAndExchangeAcquire
         // Incorrect argument types
         checkNPE(() -> { // null receiver
             byte x = (byte) vh.compareAndExchangeAcquire(null, (byte)0x01, (byte)0x01);
@@ -1051,27 +1051,27 @@ public class VarHandleTestMethodTypeByte extends VarHandleBaseTest {
         });
 
 
-        // CompareAndExchangeVolatile
+        // CompareAndExchange
         // Incorrect argument types
         checkWMTE(() -> { // expected reference class
-            byte x = (byte) vh.compareAndExchangeVolatile(Void.class, (byte)0x01);
+            byte x = (byte) vh.compareAndExchange(Void.class, (byte)0x01);
         });
         checkWMTE(() -> { // actual reference class
-            byte x = (byte) vh.compareAndExchangeVolatile((byte)0x01, Void.class);
+            byte x = (byte) vh.compareAndExchange((byte)0x01, Void.class);
         });
         // Incorrect return type
         checkWMTE(() -> { // reference class
-            Void r = (Void) vh.compareAndExchangeVolatile((byte)0x01, (byte)0x01);
+            Void r = (Void) vh.compareAndExchange((byte)0x01, (byte)0x01);
         });
         checkWMTE(() -> { // primitive class
-            boolean x = (boolean) vh.compareAndExchangeVolatile((byte)0x01, (byte)0x01);
+            boolean x = (boolean) vh.compareAndExchange((byte)0x01, (byte)0x01);
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
-            byte x = (byte) vh.compareAndExchangeVolatile();
+            byte x = (byte) vh.compareAndExchange();
         });
         checkWMTE(() -> { // >
-            byte x = (byte) vh.compareAndExchangeVolatile((byte)0x01, (byte)0x01, Void.class);
+            byte x = (byte) vh.compareAndExchange((byte)0x01, (byte)0x01, Void.class);
         });
 
 
@@ -1698,39 +1698,39 @@ public class VarHandleTestMethodTypeByte extends VarHandleBaseTest {
         });
 
 
-        // CompareAndExchangeVolatile
+        // CompareAndExchange
         // Incorrect argument types
         checkNPE(() -> { // null receiver
-            byte x = (byte) vh.compareAndExchangeVolatile(null, 0, (byte)0x01, (byte)0x01);
+            byte x = (byte) vh.compareAndExchange(null, 0, (byte)0x01, (byte)0x01);
         });
         checkCCE(() -> { // array reference class
-            byte x = (byte) vh.compareAndExchangeVolatile(Void.class, 0, (byte)0x01, (byte)0x01);
+            byte x = (byte) vh.compareAndExchange(Void.class, 0, (byte)0x01, (byte)0x01);
         });
         checkWMTE(() -> { // expected reference class
-            byte x = (byte) vh.compareAndExchangeVolatile(array, 0, Void.class, (byte)0x01);
+            byte x = (byte) vh.compareAndExchange(array, 0, Void.class, (byte)0x01);
         });
         checkWMTE(() -> { // actual reference class
-            byte x = (byte) vh.compareAndExchangeVolatile(array, 0, (byte)0x01, Void.class);
+            byte x = (byte) vh.compareAndExchange(array, 0, (byte)0x01, Void.class);
         });
         checkWMTE(() -> { // array primitive class
-            byte x = (byte) vh.compareAndExchangeVolatile(0, 0, (byte)0x01, (byte)0x01);
+            byte x = (byte) vh.compareAndExchange(0, 0, (byte)0x01, (byte)0x01);
         });
         checkWMTE(() -> { // index reference class
-            byte x = (byte) vh.compareAndExchangeVolatile(array, Void.class, (byte)0x01, (byte)0x01);
+            byte x = (byte) vh.compareAndExchange(array, Void.class, (byte)0x01, (byte)0x01);
         });
         // Incorrect return type
         checkWMTE(() -> { // reference class
-            Void r = (Void) vh.compareAndExchangeVolatile(array, 0, (byte)0x01, (byte)0x01);
+            Void r = (Void) vh.compareAndExchange(array, 0, (byte)0x01, (byte)0x01);
         });
         checkWMTE(() -> { // primitive class
-            boolean x = (boolean) vh.compareAndExchangeVolatile(array, 0, (byte)0x01, (byte)0x01);
+            boolean x = (boolean) vh.compareAndExchange(array, 0, (byte)0x01, (byte)0x01);
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
-            byte x = (byte) vh.compareAndExchangeVolatile();
+            byte x = (byte) vh.compareAndExchange();
         });
         checkWMTE(() -> { // >
-            byte x = (byte) vh.compareAndExchangeVolatile(array, 0, (byte)0x01, (byte)0x01, Void.class);
+            byte x = (byte) vh.compareAndExchange(array, 0, (byte)0x01, (byte)0x01, Void.class);
         });
 
 

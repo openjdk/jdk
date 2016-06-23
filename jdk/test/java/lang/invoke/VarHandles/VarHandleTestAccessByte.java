@@ -100,7 +100,7 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
 
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
@@ -360,17 +360,17 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         }
 
         {
-            byte r = (byte) vh.compareAndExchangeVolatile(recv, (byte)0x23, (byte)0x01);
-            assertEquals(r, (byte)0x23, "success compareAndExchangeVolatile byte");
+            byte r = (byte) vh.compareAndExchange(recv, (byte)0x23, (byte)0x01);
+            assertEquals(r, (byte)0x23, "success compareAndExchange byte");
             byte x = (byte) vh.get(recv);
-            assertEquals(x, (byte)0x01, "success compareAndExchangeVolatile byte value");
+            assertEquals(x, (byte)0x01, "success compareAndExchange byte value");
         }
 
         {
-            byte r = (byte) vh.compareAndExchangeVolatile(recv, (byte)0x23, (byte)0x45);
-            assertEquals(r, (byte)0x01, "failing compareAndExchangeVolatile byte");
+            byte r = (byte) vh.compareAndExchange(recv, (byte)0x23, (byte)0x45);
+            assertEquals(r, (byte)0x01, "failing compareAndExchange byte");
             byte x = (byte) vh.get(recv);
-            assertEquals(x, (byte)0x01, "failing compareAndExchangeVolatile byte value");
+            assertEquals(x, (byte)0x01, "failing compareAndExchange byte value");
         }
 
         {
@@ -513,17 +513,17 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         }
 
         {
-            byte r = (byte) vh.compareAndExchangeVolatile((byte)0x23, (byte)0x01);
-            assertEquals(r, (byte)0x23, "success compareAndExchangeVolatile byte");
+            byte r = (byte) vh.compareAndExchange((byte)0x23, (byte)0x01);
+            assertEquals(r, (byte)0x23, "success compareAndExchange byte");
             byte x = (byte) vh.get();
-            assertEquals(x, (byte)0x01, "success compareAndExchangeVolatile byte value");
+            assertEquals(x, (byte)0x01, "success compareAndExchange byte value");
         }
 
         {
-            byte r = (byte) vh.compareAndExchangeVolatile((byte)0x23, (byte)0x45);
-            assertEquals(r, (byte)0x01, "failing compareAndExchangeVolatile byte");
+            byte r = (byte) vh.compareAndExchange((byte)0x23, (byte)0x45);
+            assertEquals(r, (byte)0x01, "failing compareAndExchange byte");
             byte x = (byte) vh.get();
-            assertEquals(x, (byte)0x01, "failing compareAndExchangeVolatile byte value");
+            assertEquals(x, (byte)0x01, "failing compareAndExchange byte value");
         }
 
         {
@@ -669,17 +669,17 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             }
 
             {
-                byte r = (byte) vh.compareAndExchangeVolatile(array, i, (byte)0x23, (byte)0x01);
-                assertEquals(r, (byte)0x23, "success compareAndExchangeVolatile byte");
+                byte r = (byte) vh.compareAndExchange(array, i, (byte)0x23, (byte)0x01);
+                assertEquals(r, (byte)0x23, "success compareAndExchange byte");
                 byte x = (byte) vh.get(array, i);
-                assertEquals(x, (byte)0x01, "success compareAndExchangeVolatile byte value");
+                assertEquals(x, (byte)0x01, "success compareAndExchange byte value");
             }
 
             {
-                byte r = (byte) vh.compareAndExchangeVolatile(array, i, (byte)0x23, (byte)0x45);
-                assertEquals(r, (byte)0x01, "failing compareAndExchangeVolatile byte");
+                byte r = (byte) vh.compareAndExchange(array, i, (byte)0x23, (byte)0x45);
+                assertEquals(r, (byte)0x01, "failing compareAndExchange byte");
                 byte x = (byte) vh.get(array, i);
-                assertEquals(x, (byte)0x01, "failing compareAndExchangeVolatile byte value");
+                assertEquals(x, (byte)0x01, "failing compareAndExchange byte value");
             }
 
             {
@@ -820,7 +820,7 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                byte r = (byte) vh.compareAndExchangeVolatile(array, ci, (byte)0x23, (byte)0x01);
+                byte r = (byte) vh.compareAndExchange(array, ci, (byte)0x23, (byte)0x01);
             });
 
             checkIOOBE(() -> {
