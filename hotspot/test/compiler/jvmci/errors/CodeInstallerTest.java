@@ -28,6 +28,7 @@ import java.lang.reflect.Method;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.RegisterArray;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.site.DataPatch;
 import jdk.vm.ci.code.site.Site;
@@ -80,11 +81,11 @@ public class CodeInstallerTest {
 
     protected Register getRegister(PlatformKind kind, int index) {
         int idx = index;
-        Register[] allRegs = arch.getAvailableValueRegisters();
-        for (int i = 0; i < allRegs.length; i++) {
-            if (arch.canStoreValue(allRegs[i].getRegisterCategory(), kind)) {
+        RegisterArray allRegs = arch.getAvailableValueRegisters();
+        for (Register reg : allRegs) {
+            if (arch.canStoreValue(reg.getRegisterCategory(), kind)) {
                 if (idx-- == 0) {
-                    return allRegs[i];
+                    return reg;
                 }
             }
         }

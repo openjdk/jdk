@@ -80,12 +80,13 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
         for (Field f : fields) {
             if (f.getName().endsWith("Stub")) {
                 f.setAccessible(true);
+                Object address;
                 try {
-                    Object address = f.get(runtime.getConfig());
+                    address = f.get(runtime.getConfig());
                     if (address.equals(call.target)) {
                         return f.getName() + ":0x" + Long.toHexString((Long) address);
                     }
-                } catch (Exception e) {
+                } catch (IllegalArgumentException | IllegalAccessException e) {
                 }
             }
         }

@@ -48,8 +48,10 @@ public final class DebugInfo {
      *
      * @param codePos the {@linkplain BytecodePosition code position} or {@linkplain BytecodeFrame
      *            frame} info
-     * @param virtualObjectMapping the mapping of {@link VirtualObject}s to their real values
+     * @param virtualObjectMapping the mapping of {@link VirtualObject}s to their real values. This
+     *            array is now owned by this object and must not be mutated by the caller.
      */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `virtualObjectMapping`")
     public DebugInfo(BytecodePosition codePos, VirtualObject[] virtualObjectMapping) {
         this.bytecodePosition = codePos;
         this.virtualObjectMapping = virtualObjectMapping;

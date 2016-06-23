@@ -35,7 +35,7 @@ public class HotSpotSpeculationLog implements SpeculationLog {
     /** Written by the C++ code that performs deoptimization. */
     private volatile Object lastFailed;
 
-    /** All speculations that have been a deoptimization reason. */
+    /** All speculations that have caused a deoptimization. */
     private Set<SpeculationReason> failedSpeculations;
 
     /** Strong references to all reasons embedded in the current nmethod. */
@@ -54,7 +54,7 @@ public class HotSpotSpeculationLog implements SpeculationLog {
     }
 
     @Override
-    public boolean maySpeculate(SpeculationReason reason) {
+    public synchronized boolean maySpeculate(SpeculationReason reason) {
         if (failedSpeculations != null && failedSpeculations.contains(reason)) {
             return false;
         }

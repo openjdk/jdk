@@ -37,6 +37,12 @@ public abstract class AbstractJavaProfile<T extends AbstractProfiledItem<U>, U> 
     private final double notRecordedProbability;
     private final T[] pitems;
 
+    /**
+     *
+     * @param notRecordedProbability
+     * @param pitems
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of the `pitems` array parameter")
     public AbstractJavaProfile(double notRecordedProbability, T[] pitems) {
         this.pitems = pitems;
         assert !Double.isNaN(notRecordedProbability);

@@ -121,12 +121,12 @@ public class SPARCTestAssembler extends TestAssembler {
 
     @Override
     public Register emitIntArg0() {
-        return codeCache.getRegisterConfig().getCallingConventionRegisters(HotSpotCallingConventionType.JavaCallee, JavaKind.Int)[0];
+        return codeCache.getRegisterConfig().getCallingConventionRegisters(HotSpotCallingConventionType.JavaCallee, JavaKind.Int).get(0);
     }
 
     @Override
     public Register emitIntArg1() {
-        return codeCache.getRegisterConfig().getCallingConventionRegisters(HotSpotCallingConventionType.JavaCallee, JavaKind.Int)[1];
+        return codeCache.getRegisterConfig().getCallingConventionRegisters(HotSpotCallingConventionType.JavaCallee, JavaKind.Int).get(1);
     }
 
     @Override

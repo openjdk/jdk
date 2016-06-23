@@ -42,8 +42,6 @@ import static jdk.vm.ci.amd64.AMD64.xmm6;
 import static jdk.vm.ci.amd64.AMD64.xmm7;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -52,6 +50,7 @@ import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CallingConvention.Type;
 import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.RegisterArray;
 import jdk.vm.ci.code.RegisterAttributes;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.StackSlot;
@@ -70,24 +69,24 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
 
     private final TargetDescription target;
 
-    private final Register[] allocatable;
+    private final RegisterArray allocatable;
 
     /**
      * The caller saved registers always include all parameter registers.
      */
-    private final Register[] callerSaved;
+    private final RegisterArray callerSaved;
 
     private final boolean allAllocatableAreCallerSaved;
 
     private final RegisterAttributes[] attributesMap;
 
     @Override
-    public Register[] getAllocatableRegisters() {
-        return allocatable.clone();
+    public RegisterArray getAllocatableRegisters() {
+        return allocatable;
     }
 
     @Override
-    public Register[] filterAllocatableRegisters(PlatformKind kind, Register[] registers) {
+    public RegisterArray filterAllocatableRegisters(PlatformKind kind, RegisterArray registers) {
         ArrayList<Register> list = new ArrayList<>();
         for (Register reg : registers) {
             if (target.arch.canStoreValue(reg.getRegisterCategory(), kind)) {
@@ -95,7 +94,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
             }
         }
 
-        Register[] ret = list.toArray(new Register[list.size()]);
+        RegisterArray ret = new RegisterArray(list);
         return ret;
     }
 
@@ -104,9 +103,9 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
         return attributesMap.clone();
     }
 
-    private final Register[] javaGeneralParameterRegisters;
-    private final Register[] nativeGeneralParameterRegisters;
-    private final Register[] xmmParameterRegisters = {xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7};
+    private final RegisterArray javaGeneralParameterRegisters;
+    private final RegisterArray nativeGeneralParameterRegisters;
+    private final RegisterArray xmmParameterRegisters = new RegisterArray(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7);
 
     /*
      * Some ABIs (e.g. Windows) require a so-called "home space", that is a save area on the stack
@@ -114,12 +113,12 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
      */
     private final boolean needsNativeStackHomeSpace;
 
-    private static final Register[] reservedRegisters = {rsp, r15};
+    private static final RegisterArray reservedRegisters = new RegisterArray(rsp, r15);
 
-    private static Register[] initAllocatable(Architecture arch, boolean reserveForHeapBase) {
-        Register[] allRegisters = arch.getAvailableValueRegisters();
-        Register[] registers = new Register[allRegisters.length - reservedRegisters.length - (reserveForHeapBase ? 1 : 0)];
-        List<Register> reservedRegistersList = Arrays.asList(reservedRegisters);
+    private static RegisterArray initAllocatable(Architecture arch, boolean reserveForHeapBase) {
+        RegisterArray allRegisters = arch.getAvailableValueRegisters();
+        Register[] registers = new Register[allRegisters.size() - reservedRegisters.size() - (reserveForHeapBase ? 1 : 0)];
+        List<Register> reservedRegistersList = reservedRegisters.asList();
 
         int idx = 0;
         for (Register reg : allRegisters) {
@@ -136,46 +135,46 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
         }
 
         assert idx == registers.length;
-        return registers;
+        return new RegisterArray(registers);
     }
 
     public AMD64HotSpotRegisterConfig(TargetDescription target, boolean useCompressedOops, boolean windowsOs) {
         this(target, initAllocatable(target.arch, useCompressedOops), windowsOs);
-        assert callerSaved.length >= allocatable.length;
+        assert callerSaved.size() >= allocatable.size();
     }
 
-    public AMD64HotSpotRegisterConfig(TargetDescription target, Register[] allocatable, boolean windowsOs) {
+    public AMD64HotSpotRegisterConfig(TargetDescription target, RegisterArray allocatable, boolean windowsOs) {
         this.target = target;
 
         if (windowsOs) {
-            javaGeneralParameterRegisters = new Register[]{rdx, r8, r9, rdi, rsi, rcx};
-            nativeGeneralParameterRegisters = new Register[]{rcx, rdx, r8, r9};
+            javaGeneralParameterRegisters = new RegisterArray(rdx, r8, r9, rdi, rsi, rcx);
+            nativeGeneralParameterRegisters = new RegisterArray(rcx, rdx, r8, r9);
             this.needsNativeStackHomeSpace = true;
         } else {
-            javaGeneralParameterRegisters = new Register[]{rsi, rdx, rcx, r8, r9, rdi};
-            nativeGeneralParameterRegisters = new Register[]{rdi, rsi, rdx, rcx, r8, r9};
+            javaGeneralParameterRegisters = new RegisterArray(rsi, rdx, rcx, r8, r9, rdi);
+            nativeGeneralParameterRegisters = new RegisterArray(rdi, rsi, rdx, rcx, r8, r9);
             this.needsNativeStackHomeSpace = false;
         }
 
         this.allocatable = allocatable;
         Set<Register> callerSaveSet = new HashSet<>();
-        Collections.addAll(callerSaveSet, allocatable);
-        Collections.addAll(callerSaveSet, xmmParameterRegisters);
-        Collections.addAll(callerSaveSet, javaGeneralParameterRegisters);
-        Collections.addAll(callerSaveSet, nativeGeneralParameterRegisters);
-        callerSaved = callerSaveSet.toArray(new Register[callerSaveSet.size()]);
+        allocatable.addTo(callerSaveSet);
+        xmmParameterRegisters.addTo(callerSaveSet);
+        callerSaveSet.addAll(javaGeneralParameterRegisters.asList());
+        nativeGeneralParameterRegisters.addTo(callerSaveSet);
+        callerSaved = new RegisterArray(callerSaveSet);
 
         allAllocatableAreCallerSaved = true;
         attributesMap = RegisterAttributes.createMap(this, target.arch.getRegisters());
     }
 
     @Override
-    public Register[] getCallerSaveRegisters() {
+    public RegisterArray getCallerSaveRegisters() {
         return callerSaved;
     }
 
     @Override
-    public Register[] getCalleeSaveRegisters() {
+    public RegisterArray getCalleeSaveRegisters() {
         return null;
     }
 
@@ -196,7 +195,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
     }
 
     @Override
-    public Register[] getCallingConventionRegisters(Type type, JavaKind kind) {
+    public RegisterArray getCallingConventionRegisters(Type type, JavaKind kind) {
         HotSpotCallingConventionType hotspotType = (HotSpotCallingConventionType) type;
         switch (kind) {
             case Boolean:
@@ -215,13 +214,13 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
         }
     }
 
-    private CallingConvention callingConvention(Register[] generalParameterRegisters, JavaType returnType, JavaType[] parameterTypes, HotSpotCallingConventionType type,
+    private CallingConvention callingConvention(RegisterArray generalParameterRegisters, JavaType returnType, JavaType[] parameterTypes, HotSpotCallingConventionType type,
                     ValueKindFactory<?> valueKindFactory) {
         AllocatableValue[] locations = new AllocatableValue[parameterTypes.length];
 
         int currentGeneral = 0;
         int currentXMM = 0;
-        int currentStackOffset = type == HotSpotCallingConventionType.NativeCall && needsNativeStackHomeSpace ? generalParameterRegisters.length * target.wordSize : 0;
+        int currentStackOffset = type == HotSpotCallingConventionType.NativeCall && needsNativeStackHomeSpace ? generalParameterRegisters.size() * target.wordSize : 0;
 
         for (int i = 0; i < parameterTypes.length; i++) {
             final JavaKind kind = parameterTypes[i].getJavaKind().getStackKind();
@@ -234,15 +233,15 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
                 case Int:
                 case Long:
                 case Object:
-                    if (currentGeneral < generalParameterRegisters.length) {
-                        Register register = generalParameterRegisters[currentGeneral++];
+                    if (currentGeneral < generalParameterRegisters.size()) {
+                        Register register = generalParameterRegisters.get(currentGeneral++);
                         locations[i] = register.asValue(valueKindFactory.getValueKind(kind));
                     }
                     break;
                 case Float:
                 case Double:
-                    if (currentXMM < xmmParameterRegisters.length) {
-                        Register register = xmmParameterRegisters[currentXMM++];
+                    if (currentXMM < xmmParameterRegisters.size()) {
+                        Register register = xmmParameterRegisters.get(currentXMM++);
                         locations[i] = register.asValue(valueKindFactory.getValueKind(kind));
                     }
                     break;
@@ -291,6 +290,6 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
 
     @Override
     public String toString() {
-        return String.format("Allocatable: " + Arrays.toString(getAllocatableRegisters()) + "%n" + "CallerSave:  " + Arrays.toString(getCallerSaveRegisters()) + "%n");
+        return String.format("Allocatable: " + getAllocatableRegisters() + "%n" + "CallerSave:  " + getCallerSaveRegisters() + "%n");
     }
 }
