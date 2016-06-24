@@ -336,9 +336,6 @@ com/sun/jdi/GetLocalVariables4Test.sh                           8067354 windows-
 
 # jdk_time
 
-java/time/test/java/time/TestClock_System.java                  8158128 solaris-all
-
-
 ############################################################################
 
 # jdk_util
