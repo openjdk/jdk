@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package sun.security.tools.keytool;
 
 /**
- * This class represents the <code>ResourceBundle</code>
+ * <p> This class represents the <code>ResourceBundle</code>
  * for the keytool.
  *
  */
@@ -48,7 +48,7 @@ public class Resources_it extends java.util.ListResourceBundle {
                  "Strumento di gestione di chiavi e certificati"},
         {"Commands.", "Comandi:"},
         {"Use.keytool.command.name.help.for.usage.of.command.name",
-                "Utilizzare \"keytool -command_name -help\" per informazioni sull'uso di command_name"},
+                "Utilizzare \"keytool -command_name -help\" per informazioni sull'uso di command_name.\nUtilizzare l'opzione -conf <url> per specificare un file di opzioni preconfigurato."},
         // keytool: help: commands
         {"Generates.a.certificate.request",
                 "Genera una richiesta di certificato"}, //-certreq
@@ -306,7 +306,7 @@ public class Resources_it extends java.util.ListResourceBundle {
         {"Entry.type.type.", "Tipo di voce: {0}"},
         {"Certificate.chain.length.", "Lunghezza catena certificati: "},
         {"Certificate.i.1.", "Certificato[{0,number,integer}]:"},
-        {"Certificate.fingerprint.SHA1.", "Impronta digitale certificato (SHA1): "},
+        {"Certificate.fingerprint.SHA.256.", "Copia di certificato (SHA-256): "},
         {"Keystore.type.", "Tipo keystore: "},
         {"Keystore.provider.", "Provider keystore: "},
         {"Your.keystore.contains.keyStore.size.entry",
@@ -346,7 +346,7 @@ public class Resources_it extends java.util.ListResourceBundle {
         {".RETURN.if.same.as.for.otherAlias.",
                 "\t(INVIO se corrisponde al nome di <{0}>)"},
         {".PATTERN.printX509Cert",
-                "Proprietario: {0}\nAutorit\u00E0 emittente: {1}\nNumero di serie: {2}\nValido da: {3} a: {4}\nImpronte digitali certificato:\n\t MD5:  {5}\n\t SHA1: {6}\n\t SHA256: {7}\n\t Nome algoritmo firma: {8}\n\t Versione: {9}"},
+                "Proprietario: {0}\nEmittente: {1}\nNumero di serie: {2}\nValido da: {3} a: {4}\nCopie di certificato:\n\t SHA1: {5}\n\t SHA256: {6}\nNome algoritmo firma: {7}\nAlgoritmo di chiave pubblica oggetto: {8} ({9,number,#})\nVersione: {10}"},
         {"What.is.your.first.and.last.name.",
                 "Specificare nome e cognome"},
         {"What.is.the.name.of.your.organizational.unit.",
@@ -432,6 +432,8 @@ public class Resources_it extends java.util.ListResourceBundle {
 
     /**
      * Returns the contents of this <code>ResourceBundle</code>.
+     *
+     * <p>
      *
      * @return the contents of this <code>ResourceBundle</code>.
      */

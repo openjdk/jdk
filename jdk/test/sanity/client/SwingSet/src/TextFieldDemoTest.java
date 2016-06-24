@@ -21,20 +21,22 @@
  * questions.
  */
 
-import org.jtregext.GuiTestListener;
 import com.sun.swingset3.demos.textfield.JHistoryTextField;
 import com.sun.swingset3.demos.textfield.TextFieldDemo;
 import static com.sun.swingset3.demos.textfield.TextFieldDemo.*;
+
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.event.KeyEvent;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import javax.swing.JFormattedTextField;
+
 import static org.jemmy2ext.JemmyExt.*;
-import static org.testng.AssertJUnit.*;
-import org.testng.annotations.Test;
+
 import org.netbeans.jemmy.ClassReference;
+import org.netbeans.jemmy.ComponentChooser;
 import org.netbeans.jemmy.QueueTool;
 import org.netbeans.jemmy.operators.ContainerOperator;
 import org.netbeans.jemmy.operators.JButtonOperator;
@@ -42,7 +44,12 @@ import org.netbeans.jemmy.operators.JFrameOperator;
 import org.netbeans.jemmy.operators.JLabelOperator;
 import org.netbeans.jemmy.operators.JPasswordFieldOperator;
 import org.netbeans.jemmy.operators.JTextFieldOperator;
+
+import org.jtregext.GuiTestListener;
+
 import org.testng.annotations.Listeners;
+import org.testng.annotations.Test;
+import static org.testng.AssertJUnit.*;
 
 /*
  * @test
@@ -53,6 +60,8 @@ import org.testng.annotations.Listeners;
  * @library /sanity/client/lib/jemmy/src
  * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
+ * @modules java.desktop
+ *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.textfield.TextFieldDemo
  * @run testng TextFieldDemoTest
@@ -95,9 +104,7 @@ public class TextFieldDemoTest {
 
         // Check default date Day of the Week
         jbo.push();
-        assertEquals("Default DOW",
-                calendar.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, Locale.ENGLISH),
-                dowLabel.getText());
+        dowLabel.waitText(calendar.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, Locale.ENGLISH));
 
         // Check Custom Day of the Week
         calendar.set(2012, 9, 11); // Represents "Oct 11, 2012"
@@ -114,7 +121,7 @@ public class TextFieldDemoTest {
         jtfo.enterText(dateString);
 
         jbo.push();
-        assertEquals("Custom DOW", "Thursday", dowLabel.getText());
+        dowLabel.waitText("Thursday");
     }
 
     public void passwordField(JFrameOperator jfo) throws Exception {
@@ -125,13 +132,27 @@ public class TextFieldDemoTest {
         password2.typeText("password");
 
         // Check Matching Passwords
-        assertEquals("Matching Passwords", Color.green, password1.getBackground());
-        assertEquals("Matching Passwords", Color.green, password2.getBackground());
+        password1.waitState(new ComponentChooser() {
+            public boolean checkComponent(Component comp) {
+                return password1.getBackground().equals(Color.green) &&
+                       password2.getBackground().equals(Color.green);
+            }
+            public String getDescription() {
+                return "Passwords to match";
+            }
+        });
 
         // Check non-matching passwords
         password2.typeText("passwereertegrs");
-        assertEquals("Non-Matching Passwords", Color.white, password1.getBackground());
-        assertEquals("Non-Matching Passwords", Color.white, password2.getBackground());
+        password1.waitState(new ComponentChooser() {
+            public boolean checkComponent(Component comp) {
+                return password1.getBackground().equals(Color.white) &&
+                       password2.getBackground().equals(Color.white);
+            }
+            public String getDescription() {
+                return "Passwords not to match";
+            }
+        });
     }
 
 }

@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 8051636
   @summary DataTransferer optional dependency on RMI
   @author Semyon Sadetsky

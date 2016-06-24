@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,8 @@ import java.awt.event.*;
 
 import sun.awt.AWTAccessor;
 
-class XCheckboxMenuItemPeer extends XMenuItemPeer implements CheckboxMenuItemPeer {
+final class XCheckboxMenuItemPeer extends XMenuItemPeer
+        implements CheckboxMenuItemPeer {
 
     /************************************************
      *
@@ -49,6 +50,7 @@ class XCheckboxMenuItemPeer extends XMenuItemPeer implements CheckboxMenuItemPee
      ************************************************/
 
     //Prom CheckboxMenuItemtPeer
+    @Override
     public void setState(boolean t) {
         repaintIfShowing();
     }
@@ -72,8 +74,10 @@ class XCheckboxMenuItemPeer extends XMenuItemPeer implements CheckboxMenuItemPee
     /**
      * Toggles state and generates ItemEvent
      */
-    void action(final long when) {
+    @Override
+    void action(long when, int modifiers) {
         XToolkit.executeOnEventHandlerThread((CheckboxMenuItem)getTarget(), new Runnable() {
+                @Override
                 public void run() {
                     doToggleState(when);
                 }

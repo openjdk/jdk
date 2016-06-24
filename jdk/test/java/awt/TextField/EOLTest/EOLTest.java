@@ -23,6 +23,7 @@
 
 /*
  @test
+ @key headful
  @bug 8055197 7186036
  @summary TextField should replace EOL character with space character
  @run main EOLTest

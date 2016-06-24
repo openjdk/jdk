@@ -1852,12 +1852,14 @@ public final class WPrinterJob extends RasterPrinterJob
             setCollateAttrib(SheetCollate.UNCOLLATED, attributes);
         }
 
-        if ((flags & PD_PAGENUMS) != 0) {
-            attributes.add(SunPageSelection.RANGE);
-        } else if ((flags & PD_SELECTION) != 0) {
-            attributes.add(SunPageSelection.SELECTION);
-        } else {
-            attributes.add(SunPageSelection.ALL);
+        if ((flags & PD_NOSELECTION) != PD_NOSELECTION) {
+            if ((flags & PD_PAGENUMS) != 0) {
+                attributes.add(SunPageSelection.RANGE);
+            } else if ((flags & PD_SELECTION) != 0) {
+                attributes.add(SunPageSelection.SELECTION);
+            } else {
+                attributes.add(SunPageSelection.ALL);
+            }
         }
 
         if ((fields & DM_ORIENTATION) != 0) {

@@ -47,27 +47,27 @@ public class ExcludePluginTest {
     }
 
     public void test() throws Exception {
-        check("*.jcov", "/num/toto.jcov", true);
-        check("*.jcov", "//toto.jcov", true);
-        check("*.jcov", "/toto.jcov/tutu/tata", false);
+        check("**.jcov", "/num/toto.jcov", true);
+        check("**.jcov", "/toto.jcov/", true);
+        check("**.jcov", "/toto.jcov/tutu/tata", false);
         check("/java.base/*.jcov", "/java.base/toto.jcov", true);
-        check("/java.base/toto.jcov", "t/java.base/iti.jcov", false);
+        check("/java.base/toto.jcov", "/tjava.base/iti.jcov", false);
         check("/java.base/*/toto.jcov", "/java.base/toto.jcov", false);
         check("/java.base/*/toto.jcov", "/java.base/tutu/toto.jcov", true);
-        check("*/java.base/*/toto.jcov", "/tutu/java.base/tutu/toto.jcov", true);
-        check("*/META-INF/*", "/META-INF/services/  MyProvider ", false);
-        check("*/META-INF/*", "/META-INF/services/MyProvider", false);
-        check("*/META-INF", " /META-INF/services/MyProvider", false);
-        check("*/META-INF/*", "/java.base//META-INF/services/MyProvider", true);
+        check("**/java.base/*/toto.jcov", "/tutu/java.base/tutu/toto.jcov", true);
+        check("/META-INF/**", "/META-INF/services/  MyProvider ", true);
+        check("/META-INF/**", "/META-INF/services/MyProvider", true);
+        check("**/META-INF", "/ META-INF/services/MyProvider", false);
+        check("**/META-INF/**", "/java.base//META-INF/services/MyProvider", true);
         check("/java.base/*/Toto$Titi.class", "/java.base/tutu/Toto$Titi.class", true);
-        check("/*$*.class", "/java.base/tutu/Toto$Titi.class", true);
-        check("*$*.class", "/java.base/tutu/Toto$Titi.class", true);
+        check("/**$**.class", "/java.base/tutu/Toto$Titi.class", true);
+        check("**$**.class", "/java.base/tutu/Toto$Titi.class", true);
 
         // Excluded resource list in a file
         File order = new File("resources.exc");
         order.createNewFile();
-        Files.write(order.toPath(), "*.jcov".getBytes());
-        check(order.getAbsolutePath(), "/num/toto.jcov", true);
+        Files.write(order.toPath(), "**.jcov".getBytes());
+        check("@" + order.getAbsolutePath(), "/num/toto.jcov", true);
     }
 
     public void check(String s, String sample, boolean exclude) throws Exception {

@@ -1160,10 +1160,18 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
     }
 
     /**
-     * Returns the X coordinate scaling element (m00) of the 3x3
-     * affine transformation matrix.
-     * @return a double value that is the X coordinate of the scaling
-     *  element of the affine transformation matrix.
+     * Returns the {@code m00} element of the 3x3 affine transformation matrix.
+     * This matrix factor determines how input X coordinates will affect output
+     * X coordinates and is one element of the scale of the transform.
+     * To measure the full amount by which X coordinates are stretched or
+     * contracted by this transform, use the following code:
+     * <pre>
+     *     Point2D p = new Point2D.Double(1, 0);
+     *     p = tx.deltaTransform(p, p);
+     *     double scaleX = p.distance(0, 0);
+     * </pre>
+     * @return a double value that is {@code m00} element of the
+     *         3x3 affine transformation matrix.
      * @see #getMatrix
      * @since 1.2
      */
@@ -1172,10 +1180,18 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
     }
 
     /**
-     * Returns the Y coordinate scaling element (m11) of the 3x3
-     * affine transformation matrix.
-     * @return a double value that is the Y coordinate of the scaling
-     *  element of the affine transformation matrix.
+     * Returns the {@code m11} element of the 3x3 affine transformation matrix.
+     * This matrix factor determines how input Y coordinates will affect output
+     * Y coordinates and is one element of the scale of the transform.
+     * To measure the full amount by which Y coordinates are stretched or
+     * contracted by this transform, use the following code:
+     * <pre>
+     *     Point2D p = new Point2D.Double(0, 1);
+     *     p = tx.deltaTransform(p, p);
+     *     double scaleY = p.distance(0, 0);
+     * </pre>
+     * @return a double value that is {@code m11} element of the
+     *         3x3 affine transformation matrix.
      * @see #getMatrix
      * @since 1.2
      */

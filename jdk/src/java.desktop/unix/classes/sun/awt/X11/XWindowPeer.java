@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,26 +174,23 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
         cachedFocusableWindow = isFocusableWindow();
 
-        Font f = target.getFont();
-        if (f == null) {
-            f = XWindow.getDefaultFont();
-            target.setFont(f);
-            // we should not call setFont because it will call a repaint
-            // which the peer may not be ready to do yet.
+        if (!target.isFontSet()) {
+               target.setFont(XWindow.getDefaultFont());
+               // we should not call setFont because it will call a repaint
+               // which the peer may not be ready to do yet.
         }
-        Color c = target.getBackground();
-        if (c == null) {
-            Color background = SystemColor.window;
-            target.setBackground(background);
-            // we should not call setBackGround because it will call a repaint
-            // which the peer may not be ready to do yet.
+        if (!target.isBackgroundSet()) {
+               target.setBackground(SystemColor.window);
+               // we should not call setBackGround because it will call a repaint
+               // which the peer may not be ready to do yet.
+
         }
-        c = target.getForeground();
-        if (c == null) {
-            target.setForeground(SystemColor.windowText);
-            // we should not call setForeGround because it will call a repaint
-            // which the peer may not be ready to do yet.
+        if (!target.isForegroundSet()) {
+               target.setForeground(SystemColor.windowText);
+               // we should not call setForeGround because it will call a repaint
+               // which the peer may not be ready to do yet.
         }
+
 
         alwaysOnTop = ((Window)target).isAlwaysOnTop() && ((Window)target).isAlwaysOnTopSupported();
 

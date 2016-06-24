@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,32 +28,27 @@
    @author Semyon Sadetsky
 */
 
-import javax.swing.*;
+import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.text.BadLocationException;
-import java.lang.Override;
-import java.lang.Runnable;
 
 public class I18NViewNoWrapMinSpan {
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    JTextField textField = new JTextField(15);
-                    textField.setText("ม12345");
-                    float noSpaceMin = textField.getUI().getRootView(textField)
-                            .getMinimumSpan(0);
-                    textField.getDocument().insertString(3, " ", null);
-                    if (noSpaceMin > textField.getUI().getRootView(textField)
-                            .getMinimumSpan(0)) {
-                        throw new RuntimeException(
-                                "Minimum span is calculated for wrapped text");
-                    }
-                } catch (BadLocationException e) {
-                    throw new RuntimeException(e);
+        SwingUtilities.invokeAndWait(() -> {
+            try {
+                JTextField textField = new JTextField(15);
+                textField.setText("\u0E2112345");
+                float noSpaceMin = textField.getUI().getRootView(textField)
+                        .getMinimumSpan(0);
+                textField.getDocument().insertString(3, " ", null);
+                if (noSpaceMin > textField.getUI().getRootView(textField)
+                        .getMinimumSpan(0)) {
+                    throw new RuntimeException(
+                            "Minimum span is calculated for wrapped text");
                 }
+            } catch (BadLocationException e) {
+                throw new RuntimeException(e);
             }
         });
         System.out.println("ok");

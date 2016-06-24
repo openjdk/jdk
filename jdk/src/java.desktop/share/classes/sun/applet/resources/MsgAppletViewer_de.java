@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ public class MsgAppletViewer_de extends ListResourceBundle {
             {"appletviewer.menuitem.stop", "Stoppen"},
             {"appletviewer.menuitem.save", "Speichern..."},
             {"appletviewer.menuitem.start", "Starten..."},
-            {"appletviewer.menuitem.clone", "Clonen..."},
+            {"appletviewer.menuitem.clone", "Klonen..."},
             {"appletviewer.menuitem.tag", "Tag..."},
             {"appletviewer.menuitem.info", "Informationen..."},
             {"appletviewer.menuitem.edit", "Bearbeiten"},
@@ -73,7 +73,8 @@ public class MsgAppletViewer_de extends ListResourceBundle {
             {"appletviewer.parse.warning.embed.requiresheight", "Warnung: F\u00FCr <embed>-Tag ist ein \"height\"-Attribut erforderlich."},
             {"appletviewer.parse.warning.embed.requireswidth", "Warnung: F\u00FCr <embed>-Tag ist ein \"width\"-Attribut erforderlich."},
             {"appletviewer.parse.warning.appnotLongersupported", "Warnung: <app>-Tag wird nicht mehr unterst\u00FCtzt. Verwenden Sie stattdessen <applet>:"},
-            {"appletviewer.usage", "Verwendung: appletviewer <Optionen> url(s)\n\nwobei die <Optionen> Folgendes umfassen:\n  -debug                  Applet Viewer im Java-Debugger starten\n  -encoding <Codierung>    Zeichencodierung f\u00FCr HTML-Dateien angeben\n  -J<Laufzeitkennzeichen>        Argument an den Java-Interpreter \u00FCbergeben\n\nDie Option \"-J\" ist nicht standardm\u00E4\u00DFig und kann ohne vorherige Ank\u00FCndigung ge\u00E4ndert werden."},
+            {"appletviewer.deprecated", "AppletViewer ist veraltet."},
+            {"appletviewer.usage", "Verwendung: appletviewer <Optionen> url(s)\n\nwobei die <Optionen> Folgendes umfassen:\n  -encoding <Codierung>    Zeichencodierung f\u00FCr HTML-Dateien angeben\n  -J<Laufzeitkennzeichen>        Argument an den Java-Interpreter \u00FCbergeben\n\nDie Option \"-J\" ist nicht standardm\u00E4\u00DFig und kann ohne vorherige Ank\u00FCndigung ge\u00E4ndert werden."},
             {"appletviewer.main.err.unsupportedopt", "Nicht unterst\u00FCtzte Option: {0}"},
             {"appletviewer.main.err.unrecognizedarg", "Unbekanntes Argument: {0}"},
             {"appletviewer.main.err.dupoption", "Doppelte Verwendung von Option: {0}"},

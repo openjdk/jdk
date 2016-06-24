@@ -34,7 +34,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.WARNING;
@@ -100,15 +99,6 @@ final class WS implements WebSocket {
         synchronized (stateLock) {
             checkState();
             return transmitter.sendText(message, isLast);
-        }
-    }
-
-    @Override
-    public CompletableFuture<WebSocket> sendText(Stream<? extends CharSequence> message) {
-        requireNonNull(message, "message");
-        synchronized (stateLock) {
-            checkState();
-            return transmitter.sendText(message);
         }
     }
 
@@ -179,11 +169,11 @@ final class WS implements WebSocket {
     }
 
     @Override
-    public long request(long n) {
+    public void request(long n) {
         if (n < 0L) {
             throw new IllegalArgumentException("The number must not be negative: " + n);
         }
-        return receiver.request(n);
+        receiver.request(n);
     }
 
     @Override

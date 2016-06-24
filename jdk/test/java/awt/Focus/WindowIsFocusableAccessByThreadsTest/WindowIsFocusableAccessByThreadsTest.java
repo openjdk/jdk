@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug      8047288
   @summary  Tests method isFocusable of Window component. It should be accessed only from EDT
   @author   artem.malinko@oracle.com

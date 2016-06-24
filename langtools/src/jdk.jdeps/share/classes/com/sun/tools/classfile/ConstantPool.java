@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,22 +119,20 @@ public class ConstantPool {
     public static final int CONSTANT_InvokeDynamic = 18;
 
     public static enum RefKind {
-        REF_getField(1, "getfield"),
-        REF_getStatic(2, "getstatic"),
-        REF_putField(3, "putfield"),
-        REF_putStatic(4, "putstatic"),
-        REF_invokeVirtual(5, "invokevirtual"),
-        REF_invokeStatic(6, "invokestatic"),
-        REF_invokeSpecial(7, "invokespecial"),
-        REF_newInvokeSpecial(8, "newinvokespecial"),
-        REF_invokeInterface(9, "invokeinterface");
+        REF_getField(1),
+        REF_getStatic(2),
+        REF_putField(3),
+        REF_putStatic(4),
+        REF_invokeVirtual(5),
+        REF_invokeStatic(6),
+        REF_invokeSpecial(7),
+        REF_newInvokeSpecial(8),
+        REF_invokeInterface(9);
 
         public final int tag;
-        public final String name;
 
-        RefKind(int tag, String name) {
+        RefKind(int tag) {
             this.tag = tag;
-            this.name = name;
         }
 
         static RefKind getRefkind(int tag) {
