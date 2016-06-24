@@ -793,7 +793,6 @@ public final class Scanner implements Iterator<String>, Closeable {
     private void readInput() {
         if (buf.limit() == buf.capacity())
             makeSpace();
-
         // Prepare to receive data
         int p = buf.position();
         buf.position(buf.limit());
@@ -806,15 +805,12 @@ public final class Scanner implements Iterator<String>, Closeable {
             lastException = ioe;
             n = -1;
         }
-
         if (n == -1) {
             sourceClosed = true;
             needInput = false;
         }
-
         if (n > 0)
             needInput = false;
-
         // Restore current position and limit for reading
         buf.limit(buf.position());
         buf.position(p);
@@ -871,15 +867,20 @@ public final class Scanner implements Iterator<String>, Closeable {
         matchValid = false;
         matcher.usePattern(delimPattern);
         matcher.region(position, buf.limit());
-
         // Skip delims first
-        if (matcher.lookingAt())
+        if (matcher.lookingAt()) {
+            if (matcher.hitEnd() && !sourceClosed) {
+                // more input might change the match of delims, in which
+                // might change whether or not if there is token left in
+                // buffer (don't update the "position" in this case)
+                needInput = true;
+                return false;
+            }
             position = matcher.end();
-
+        }
         // If we are sitting at the end, no more tokens in buffer
         if (position == buf.limit())
             return false;
-
         return true;
     }
 
@@ -900,7 +901,6 @@ public final class Scanner implements Iterator<String>, Closeable {
      */
     private String getCompleteTokenInBuffer(Pattern pattern) {
         matchValid = false;
-
         // Skip delims first
         matcher.usePattern(delimPattern);
         if (!skipped) { // Enforcing only one skip of leading delims
@@ -941,13 +941,16 @@ public final class Scanner implements Iterator<String>, Closeable {
             foundNextDelim = matcher.find();
         }
         if (foundNextDelim) {
-            // In the rare case that more input could cause the match
-            // to be lost and there is more input coming we must wait
-            // for more input. Note that hitting the end is okay as long
-            // as the match cannot go away. It is the beginning of the
-            // next delims we want to be sure about, we don't care if
-            // they potentially extend further.
-            if (matcher.requireEnd() && !sourceClosed) {
+            // In two rare cases that more input might cause the match to be
+            // lost or change.
+            // (1) if requireEnd() is true, more input might cause the match
+            // to be lost, we must wait for more input.
+            // (2) while hitting the end is okay IF the match does not
+            // go away AND the beginning of the next delims does not change
+            // (we don't care if they potentially extend further). But it's
+            // possible that more input could cause the beginning of the
+            // delims change, so have to wait for more input as well.
+            if ((matcher.requireEnd() || matcher.hitEnd()) && !sourceClosed) {
                 needInput = true;
                 return null;
             }
@@ -1341,8 +1344,9 @@ public final class Scanner implements Iterator<String>, Closeable {
         saveState();
         modCount++;
         while (!sourceClosed) {
-            if (hasTokenInBuffer())
+            if (hasTokenInBuffer()) {
                 return revertState(true);
+            }
             readInput();
         }
         boolean result = hasTokenInBuffer();
@@ -1365,7 +1369,6 @@ public final class Scanner implements Iterator<String>, Closeable {
         ensureOpen();
         clearCaches();
         modCount++;
-
         while (true) {
             String token = getCompleteTokenInBuffer(null);
             if (token != null) {

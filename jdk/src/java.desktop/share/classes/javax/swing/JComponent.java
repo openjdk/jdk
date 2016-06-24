@@ -3587,7 +3587,7 @@ public abstract class JComponent extends Container implements Serializable,
                     SwingUtilities.appContextPut(INPUT_VERIFIER_SOURCE_KEY,
                                                  jFocusOwner);
                     try {
-                        return iv.shouldYieldFocus(jFocusOwner);
+                        return iv.shouldYieldFocus(jFocusOwner, target);
                     } finally {
                         if (currentSource != null) {
                             // We're already in the InputVerifier for

@@ -30,6 +30,8 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 import javax.script.Bindings;
+import javax.script.Compilable;
+import javax.script.CompiledScript;
 import javax.script.Invocable;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
@@ -910,5 +912,28 @@ public class ScopeTest {
          // call "newfunc" and check the return value
          Object value = ((Invocable)engine).invokeFunction("newfunc");
          assertTrue(((Number)value).intValue() == 42);
+    }
+
+    // @bug 8150219 ReferenceError in 1.8.0_72
+    // When we create a Global for a non-default ScriptContext that needs one keep the
+    // ScriptContext associated with the Global so that invoke methods work as expected.
+    @Test
+    public void invokeFunctionWithCustomScriptContextTest() throws Exception {
+        final ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
+
+        // create an engine and a ScriptContext, but don't set it as default
+        ScriptContext scriptContext = new SimpleScriptContext();
+
+        // Set some value in the context
+        scriptContext.setAttribute("myString", "foo", ScriptContext.ENGINE_SCOPE);
+
+        // Evaluate script with custom context and get back a function
+        final String script = "function (c) { return myString.indexOf(c); }";
+        CompiledScript compiledScript = ((Compilable)engine).compile(script);
+        Object func = compiledScript.eval(scriptContext);
+
+        // Invoked function should be able to see context it was evaluated with
+        Object result = ((Invocable) engine).invokeMethod(func, "call", func, "o", null);
+        assertTrue(((Number)result).intValue() == 1);
     }
 }

@@ -25,6 +25,7 @@
  * @test TestLogging
  * @summary Check that a mixed GC is reflected in the gc logs
  * @requires vm.gc=="G1" | vm.gc=="null"
+ * @requires vm.opt.MaxGCPauseMillis == "null"
  * @library /testlibrary /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.management

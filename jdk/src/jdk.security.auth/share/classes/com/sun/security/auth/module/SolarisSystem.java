@@ -30,8 +30,9 @@ package com.sun.security.auth.module;
  * UID/GID/groups information for the current user.
  *
  * @deprecated replaced by {@link UnixSystem}.
+ * This class is subject to removal in a future version of Java SE.
  */
-@Deprecated
+@Deprecated(since="1.4", forRemoval=true)
 public class SolarisSystem {
 
     private native void getSolarisInfo();

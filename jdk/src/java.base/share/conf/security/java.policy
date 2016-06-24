@@ -100,6 +100,18 @@ grant codeBase "jrt:/jdk.scripting.nashorn.shell" {
         permission java.security.AllPermission;
 };
 
+grant codeBase "jrt:/java.smartcardio" {
+        permission javax.smartcardio.CardPermission "*", "*";
+        permission java.lang.RuntimePermission "loadLibrary.j2pcsc";
+        permission java.lang.RuntimePermission "accessClassInPackage.sun.security.*";
+        permission java.util.PropertyPermission "*", "read";
+        // needed for looking up native PC/SC library
+        permission java.io.FilePermission "<<ALL FILES>>","read";
+        permission java.security.SecurityPermission "putProviderProperty.SunPCSC";
+        permission java.security.SecurityPermission "clearProviderProperties.SunPCSC";
+        permission java.security.SecurityPermission "removeProviderProperty.SunPCSC";
+};
+
 grant codeBase "jrt:/java.xml.bind" {
         permission java.lang.RuntimePermission "accessClassInPackage.com.sun.xml.internal.*";
         permission java.lang.RuntimePermission "accessClassInPackage.com.sun.istack.internal";

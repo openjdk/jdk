@@ -36,7 +36,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -454,17 +453,13 @@ final class Resolver {
 
 
     /**
-     * Computes and sets the readability graph for the modules in the given
-     * Resolution object.
+     * Computes the readability graph for the modules in the given Configuration.
      *
      * The readability graph is created by propagating "requires" through the
      * "public requires" edges of the module dependence graph. So if the module
      * dependence graph has m1 requires m2 && m2 requires public m3 then the
-     * resulting readability graph will contain m1 reads m2, m1
-     * reads m3, and m2 reads m3.
-     *
-     * TODO: Use a more efficient algorithm, maybe cache the requires public
-     *       in parent configurations.
+     * resulting readability graph will contain m1 reads m2, m1 reads m3, and
+     * m2 reads m3.
      */
     private Map<ResolvedModule, Set<ResolvedModule>> makeGraph(Configuration cf) {
 
@@ -483,16 +478,15 @@ final class Resolver {
         Configuration p = parent;
         while (p != null) {
             for (ModuleDescriptor descriptor : p.descriptors()) {
-                ResolvedModule x = p.findModule(descriptor.name()).orElse(null);
-                if (x == null)
-                    throw new InternalError();
+                String name = descriptor.name();
+                ResolvedModule m1 = p.findModule(name)
+                    .orElseThrow(() -> new InternalError(name + " not found"));
                 for (ModuleDescriptor.Requires requires : descriptor.requires()) {
                     if (requires.modifiers().contains(Modifier.PUBLIC)) {
                         String dn = requires.name();
-                        ResolvedModule y = p.findModule(dn).orElse(null);
-                        if (y == null)
-                            throw new InternalError(dn + " not found");
-                        g2.computeIfAbsent(x, k -> new HashSet<>()).add(y);
+                        ResolvedModule m2 = p.findModule(dn)
+                            .orElseThrow(() -> new InternalError(dn + " not found"));
+                        g2.computeIfAbsent(m1, k -> new HashSet<>()).add(m2);
                     }
                 }
             }
@@ -501,53 +495,60 @@ final class Resolver {
         }
 
         // populate g1 and g2 with the dependences from the selected modules
+
+        Map<String, ResolvedModule> nameToResolved = new HashMap<>();
+
         for (ModuleReference mref : nameToReference.values()) {
             ModuleDescriptor descriptor = mref.descriptor();
-            ResolvedModule x = new ResolvedModule(cf, mref);
+            String name = descriptor.name();
+
+            ResolvedModule m1 = computeIfAbsent(nameToResolved, name, cf, mref);
 
             Set<ResolvedModule> reads = new HashSet<>();
-            g1.put(x, reads);
-
             Set<ResolvedModule> requiresPublic = new HashSet<>();
-            g2.put(x, requiresPublic);
 
             for (ModuleDescriptor.Requires requires : descriptor.requires()) {
                 String dn = requires.name();
 
-                ResolvedModule y;
-                ModuleReference other = nameToReference.get(dn);
-                if (other != null) {
-                    y = new ResolvedModule(cf, other);  // cache?
+                ResolvedModule m2;
+                ModuleReference mref2 = nameToReference.get(dn);
+                if (mref2 != null) {
+                    // same configuration
+                    m2 = computeIfAbsent(nameToResolved, dn, cf, mref2);
                 } else {
-                    y = parent.findModule(dn).orElse(null);
-                    if (y == null)
-                        throw new InternalError("unable to find " + dn);
+                    // parent configuration
+                    m2 = parent.findModule(dn).orElse(null);
+                    if (m2 == null) {
+                        continue;
+                    }
                 }
 
-                // m requires other => m reads other
-                reads.add(y);
+                // m1 requires m2 => m1 reads m2
+                reads.add(m2);
 
-                // m requires public other
+                // m1 requires public m2
                 if (requires.modifiers().contains(Modifier.PUBLIC)) {
-                    requiresPublic.add(y);
+                    requiresPublic.add(m2);
                 }
 
             }
 
-            // automatic modules reads all selected modules and all modules
+            // automatic modules read all selected modules and all modules
             // in parent configurations
             if (descriptor.isAutomatic()) {
-                String name = descriptor.name();
 
                 // reads all selected modules
-                // requires public` all selected automatic modules
+                // `requires public` all selected automatic modules
                 for (ModuleReference mref2 : nameToReference.values()) {
                     ModuleDescriptor descriptor2 = mref2.descriptor();
-                    if (!name.equals(descriptor2.name())) {
-                        ResolvedModule m = new ResolvedModule(cf, mref2);
-                        reads.add(m);
+                    String name2 = descriptor2.name();
+
+                    if (!name.equals(name2)) {
+                        ResolvedModule m2
+                            = computeIfAbsent(nameToResolved, name2, cf, mref2);
+                        reads.add(m2);
                         if (descriptor2.isAutomatic())
-                            requiresPublic.add(m);
+                            requiresPublic.add(m2);
                     }
                 }
 
@@ -565,52 +566,56 @@ final class Resolver {
 
             }
 
+            g1.put(m1, reads);
+            g2.put(m1, requiresPublic);
         }
 
         // Iteratively update g1 until there are no more requires public to propagate
         boolean changed;
-        Map<ResolvedModule, Set<ResolvedModule>> changes = new HashMap<>();
+        Set<ResolvedModule> toAdd = new HashSet<>();
         do {
             changed = false;
-            for (Entry<ResolvedModule, Set<ResolvedModule>> entry : g1.entrySet()) {
-
-                ResolvedModule m1 = entry.getKey();
-                Set<ResolvedModule> m1Reads = entry.getValue();
-
+            for (Set<ResolvedModule> m1Reads : g1.values()) {
                 for (ResolvedModule m2 : m1Reads) {
                     Set<ResolvedModule> m2RequiresPublic = g2.get(m2);
                     if (m2RequiresPublic != null) {
                         for (ResolvedModule m3 : m2RequiresPublic) {
                             if (!m1Reads.contains(m3)) {
-
-                                // computeIfAbsent
-                                Set<ResolvedModule> s = changes.get(m1);
-                                if (s == null) {
-                                    s = new HashSet<>();
-                                    changes.put(m1, s);
-                                }
-                                s.add(m3);
-                                changed = true;
-
+                                // m1 reads m2, m2 requires public m3
+                                // => need to add m1 reads m3
+                                toAdd.add(m3);
                             }
                         }
                     }
                 }
-            }
-
-            if (changed) {
-                for (Map.Entry<ResolvedModule, Set<ResolvedModule>> e :
-                        changes.entrySet()) {
-                    ResolvedModule m = e.getKey();
-                    g1.get(m).addAll(e.getValue());
+                if (!toAdd.isEmpty()) {
+                    m1Reads.addAll(toAdd);
+                    toAdd.clear();
+                    changed = true;
                 }
-                changes.clear();
             }
-
         } while (changed);
 
-
         return g1;
+    }
+
+    /**
+     * Equivalent to
+     * <pre>{@code
+     *     map.computeIfAbsent(name, k -> new ResolvedModule(cf, mref))
+     * </pre>}
+     */
+    private ResolvedModule computeIfAbsent(Map<String, ResolvedModule> map,
+                                           String name,
+                                           Configuration cf,
+                                           ModuleReference mref)
+    {
+        ResolvedModule m = map.get(name);
+        if (m == null) {
+            m = new ResolvedModule(cf, mref);
+            map.put(name, m);
+        }
+        return m;
     }
 
 

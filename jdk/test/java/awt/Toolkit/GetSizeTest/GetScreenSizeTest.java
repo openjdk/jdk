@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 8144074 8145785 8149151
   @summary Crash while getting screen size during Toolkit initialisation
   @run main/othervm GetScreenSizeTest

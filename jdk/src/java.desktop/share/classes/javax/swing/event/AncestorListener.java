@@ -57,7 +57,7 @@ public interface AncestorListener extends EventListener {
     /**
      * Called when the source or one of its ancestors is made invisible
      * either by setVisible(false) being called or by its being
-     * remove from the component hierarchy.  The method is only called
+     * removed from the component hierarchy.  The method is only called
      * if the source has actually become invisible.  For this to be true
      * at least one of its parents must by invisible or it is not in
      * a hierarchy rooted at a Window

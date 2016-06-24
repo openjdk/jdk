@@ -45,7 +45,7 @@ final class JrtUtils {
     private static boolean isGlobMeta(char c) {
         return globMetaChars.indexOf(c) != -1;
     }
-    private static final char EOL = 0;  //TBD
+    private static final char EOL = 0;
     private static char next(String glob, int i) {
         if (i < glob.length()) {
             return glob.charAt(i);

@@ -45,6 +45,8 @@ class Arguments {
     public Arguments(String[] args) {
         if (args.length == 0 || args[0].equals("-l")) {
             listProcesses = true;
+            /* list all processes */
+            processString = "0";
             return;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,24 @@
  */
 
 /* @test
- * @bug 4313887 6838333 6925932 7006126 8037945 8072495
+ * @bug 4313887 6838333 6925932 7006126 8037945 8072495 8140449
  * @summary Unit test for java.nio.file.Path path operations
  */
 
-import java.nio.file.*;
+import java.nio.file.FileSystems;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class PathOps {
 
     static final java.io.PrintStream out = System.out;
 
-    private String input;
     private Path path;
     private Exception exc;
 
     private PathOps(String first, String... more) {
         out.println();
-        input = first;
         try {
             path = FileSystems.getDefault().getPath(first, more);
             out.format("%s -> %s", first, path);
@@ -84,6 +85,14 @@ public class PathOps {
         out.println("check root");
         checkPath();
         check(path.getRoot(), expected);
+        return this;
+    }
+
+    PathOps hasRoot() {
+        out.println("check has root");
+        checkPath();
+        if (path.getRoot() == null)
+            fail();
         return this;
     }
 
@@ -144,6 +153,11 @@ public class PathOps {
         checkPath();
         Path s = FileSystems.getDefault().getPath(suffix);
         check(path.endsWith(s), false);
+        return this;
+    }
+
+    PathOps makeAbsolute() {
+        this.path = path.toAbsolutePath();
         return this;
     }
 
@@ -209,6 +223,11 @@ public class PathOps {
         return new PathOps(first, more);
     }
 
+    static PathOps test(Path path) {
+        return new PathOps(path.toString());
+    }
+
+
     // -- PathOpss --
 
     static void header(String s) {
@@ -219,6 +238,7 @@ public class PathOps {
 
     static void doWindowsTests() {
         header("Windows specific tests");
+        Path cwd = Paths.get("").toAbsolutePath();
 
         // construction
         test("C:\\")
@@ -417,6 +437,52 @@ public class PathOps {
         test("C:\\abc").absolute();
         test("\\\\server\\share\\").absolute();
         test("").notAbsolute();
+        test(cwd).absolute();
+
+        // toAbsolutePath
+        test("")
+            .makeAbsolute()
+            .absolute()
+            .hasRoot()
+            .string(cwd.toString());
+        test(".")
+            .makeAbsolute()
+            .absolute()
+            .hasRoot()
+            .string(cwd.toString() + "\\.");
+        test("foo")
+            .makeAbsolute()
+            .absolute()
+            .hasRoot()
+            .string(cwd.toString() + "\\foo");
+
+        String rootAsString = cwd.getRoot().toString();
+        if (rootAsString.length() == 3
+                && rootAsString.charAt(1) == ':'
+                && rootAsString.charAt(2) == '\\') {
+            Path root = Paths.get(rootAsString.substring(0, 2));
+
+            // C:
+            test(root)
+                .makeAbsolute()
+                .absolute()
+                .hasRoot()
+                .string(cwd.toString());
+
+            // C:.
+            test(root + ".")
+                .makeAbsolute()
+                .absolute()
+                .hasRoot()
+                .string(cwd.toString() + "\\.");
+
+            // C:foo
+            test(root + "foo")
+                .makeAbsolute()
+                .absolute()
+                .hasRoot()
+                .string(cwd.toString() + "\\foo");
+        }
 
         // resolve
         test("C:\\")
@@ -506,19 +572,29 @@ public class PathOps {
             .resolveSibling("C:\\", "C:\\");
 
         // relativize
+        test("foo")
+            .relativize("foo", "")
+            .relativize("bar", "..\\bar")
+            .relativize("..", "..\\..")
+            .relativize("", "..");
         test("foo\\bar")
             .relativize("foo\\bar", "")
-            .relativize("foo", "..");
+            .relativize("foo", "..")
+            .relativize("gus", "..\\..\\gus")
+            .relativize("..", "..\\..\\..")
+            .relativize("", "..\\..");
         test("C:\\a\\b\\c")
             .relativize("C:\\a", "..\\..")
-            .relativize("C:\\a\\b\\c", "");
+            .relativize("C:\\a\\b\\c", "")
+            .relativize("C:\\x", "..\\..\\..\\x");
         test("\\\\server\\share\\foo")
             .relativize("\\\\server\\share\\bar", "..\\bar")
             .relativize("\\\\server\\share\\foo", "");
         test("")
-            .relativize("", "")
             .relativize("a", "a")
-            .relativize("a\\b\\c", "a\\b\\c");
+            .relativize("a\\b\\c", "a\\b\\c")
+            .relativize("..", "..")
+            .relativize("", "");
 
         // normalize
         test("C:\\")
@@ -672,6 +748,7 @@ public class PathOps {
 
     static void doUnixTests() {
         header("Unix specific tests");
+        Path cwd = Paths.get("").toAbsolutePath();
 
         // construction
         test("/")
@@ -840,7 +917,22 @@ public class PathOps {
             .notAbsolute();
         test("")
             .notAbsolute();
+        test(cwd)
+            .absolute();
 
+        // toAbsolutePath
+        test("/")
+            .makeAbsolute()
+            .absolute();
+        test("/tmp")
+            .makeAbsolute()
+            .absolute();
+        test("tmp")
+            .makeAbsolute()
+            .absolute();
+        test("")
+            .makeAbsolute()
+            .absolute();
 
         // resolve
         test("/tmp")

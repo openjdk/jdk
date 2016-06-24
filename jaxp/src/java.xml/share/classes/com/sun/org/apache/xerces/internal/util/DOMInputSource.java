@@ -36,12 +36,12 @@ public final class DOMInputSource extends XMLInputSource {
     }
 
     public DOMInputSource(Node node) {
-        super(null, getSystemIdFromNode(node), null);
+        super(null, getSystemIdFromNode(node), null, false);
         fNode = node;
     }
 
     public DOMInputSource(Node node, String systemId) {
-        super(null, systemId, null);
+        super(null, systemId, null, false);
         fNode = node;
     }
 

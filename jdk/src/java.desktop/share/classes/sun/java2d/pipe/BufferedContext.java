@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ import static sun.java2d.pipe.BufferedOpCodes.*;
 import static sun.java2d.pipe.BufferedRenderPipe.BYTES_PER_SPAN;
 
 import java.lang.annotation.Native;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 
 /**
  * Base context class for managing state in a single-threaded rendering
@@ -87,11 +89,11 @@ public abstract class BufferedContext {
      */
     protected static BufferedContext currentContext;
 
-    private AccelSurface    validatedSrcData;
-    private AccelSurface    validatedDstData;
-    private Region          validatedClip;
-    private Composite       validatedComp;
-    private Paint           validatedPaint;
+    private Reference<AccelSurface> validSrcDataRef = new WeakReference<>(null);
+    private Reference<AccelSurface> validDstDataRef = new WeakReference<>(null);
+    private Reference<Region> validClipRef = new WeakReference<>(null);
+    private Reference<Composite> validCompRef = new WeakReference<>(null);
+    private Reference<Paint> validPaintRef = new WeakReference<>(null);
     // renamed from isValidatedPaintAColor as part of a work around for 6764257
     private boolean         isValidatedPaintJustAColor;
     private int             validatedRGB;
@@ -127,9 +129,9 @@ public abstract class BufferedContext {
                                        int flags)
     {
         // assert rq.lock.isHeldByCurrentThread();
-        BufferedContext d3dc = dstData.getContext();
-        d3dc.validate(srcData, dstData,
-                      clip, comp, xform, paint, sg2d, flags);
+        BufferedContext context = dstData.getContext();
+        context.validate(srcData, dstData,
+                         clip, comp, xform, paint, sg2d, flags);
     }
 
     /**
@@ -200,13 +202,15 @@ public abstract class BufferedContext {
                 updatePaint = true;
                 isValidatedPaintJustAColor = true;
             }
-        } else if (validatedPaint != paint) {
+        } else if (validPaintRef.get() != paint) {
             updatePaint = true;
             // this should be set when we are switching from paint to color
             // in which case this condition will be true
             isValidatedPaintJustAColor = false;
         }
 
+        final AccelSurface validatedSrcData = validSrcDataRef.get();
+        final AccelSurface validatedDstData = validDstDataRef.get();
         if ((currentContext != this) ||
             (srcData != validatedSrcData) ||
             (dstData != validatedDstData))
@@ -228,11 +232,12 @@ public abstract class BufferedContext {
             setSurfaces(srcData, dstData);
 
             currentContext = this;
-            validatedSrcData = srcData;
-            validatedDstData = dstData;
+            validSrcDataRef = new WeakReference<>(srcData);
+            validDstDataRef = new WeakReference<>(dstData);
         }
 
         // validate clip
+        final Region validatedClip = validClipRef.get();
         if ((clip != validatedClip) || updateClip) {
             if (clip != null) {
                 if (updateClip ||
@@ -248,13 +253,13 @@ public abstract class BufferedContext {
             } else {
                 resetClip();
             }
-            validatedClip = clip;
+            validClipRef = new WeakReference<>(clip);
         }
 
         // validate composite (note that a change in the context flags
         // may require us to update the composite state, even if the
         // composite has not changed)
-        if ((comp != validatedComp) || (flags != validatedFlags)) {
+        if ((comp != validCompRef.get()) || (flags != validatedFlags)) {
             if (comp != null) {
                 setComposite(comp, flags);
             } else {
@@ -263,7 +268,7 @@ public abstract class BufferedContext {
             // the paint state is dependent on the composite state, so make
             // sure we update the color below
             updatePaint = true;
-            validatedComp = comp;
+            validCompRef = new WeakReference<>(comp);
             validatedFlags = flags;
         }
 
@@ -297,7 +302,7 @@ public abstract class BufferedContext {
             } else {
                 BufferedPaints.resetPaint(rq);
             }
-            validatedPaint = paint;
+            validPaintRef = new WeakReference<>(paint);
         }
 
         // mark dstData dirty
@@ -315,9 +320,9 @@ public abstract class BufferedContext {
      * @see RenderQueue#lock
      * @see RenderQueue#unlock
      */
-    public void invalidateSurfaces() {
-        validatedSrcData = null;
-        validatedDstData = null;
+    private void invalidateSurfaces() {
+        validSrcDataRef.clear();
+        validDstDataRef.clear();
     }
 
     private void setSurfaces(AccelSurface srcData,
@@ -434,9 +439,9 @@ public abstract class BufferedContext {
         resetClip();
         BufferedPaints.resetPaint(rq);
         invalidateSurfaces();
-        validatedComp = null;
-        validatedClip = null;
-        validatedPaint = null;
+        validCompRef.clear();
+        validClipRef.clear();
+        validPaintRef.clear();
         isValidatedPaintJustAColor = false;
         xformInUse = false;
     }

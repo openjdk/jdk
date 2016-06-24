@@ -196,14 +196,13 @@ public class FileCopierPlugin implements TransformerPlugin {
 
     @Override
     public void configure(Map<String, String> config) {
-        String val = config.get(NAME);
-        String[] argument = Utils.listParser.apply(val);
-        if (argument == null || argument.length == 0) {
+        List<String> arguments = Utils.parseList(config.get(NAME));
+        if (arguments.isEmpty()) {
             throw new RuntimeException("Invalid argument for " + NAME);
         }
 
         String javahome = System.getProperty("java.home");
-        for (String a : argument) {
+        for (String a : arguments) {
             int i = a.indexOf("=");
             CopiedFile cf = new CopiedFile();
             if (i == -1) {
