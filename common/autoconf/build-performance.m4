@@ -367,6 +367,9 @@ AC_DEFUN_ONCE([BPERF_SETUP_PRECOMPILED_HEADERS],
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     AC_MSG_RESULT([no, does not work with Solaris Studio])
     USE_PRECOMPILED_HEADER=0
+  elif test "x$TOOLCHAIN_TYPE" = xxlc; then
+    AC_MSG_RESULT([no, does not work with xlc])
+    USE_PRECOMPILED_HEADER=0
   else
     AC_MSG_RESULT([yes])
   fi
