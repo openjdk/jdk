@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public:
   static bool is_shared_class_visible_for_classloader(
                                       instanceKlassHandle ik,
                                       Handle class_loader,
-                                      const jbyte* pkg_string,
+                                      const char* pkg_string,
                                       Symbol* pkg_name,
                                       PackageEntry* pkg_entry,
                                       ModuleEntry* mod_entry,

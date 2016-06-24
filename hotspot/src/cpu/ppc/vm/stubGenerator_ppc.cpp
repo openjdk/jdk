@@ -1341,10 +1341,13 @@ class StubGenerator: public StubCodeGenerator {
     Register tmp3 = R8_ARG6;
     Register tmp4 = R9_ARG7;
 
+    VectorSRegister tmp_vsr1  = VSR1;
+    VectorSRegister tmp_vsr2  = VSR2;
+
     address start = __ function_entry();
     assert_positive_int(R5_ARG3);
 
-      Label l_1, l_2, l_3, l_4, l_5, l_6, l_7, l_8;
+    Label l_1, l_2, l_3, l_4, l_5, l_6, l_7, l_8, l_9;
 
     // don't try anything fancy if arrays don't have many elements
     __ li(tmp3, 0);
@@ -1403,22 +1406,60 @@ class StubGenerator: public StubCodeGenerator {
       __ andi_(R5_ARG3, R5_ARG3, 15);
       __ mtctr(tmp1);
 
-      __ bind(l_8);
-      // Use unrolled version for mass copying (copy 16 elements a time).
-      // Load feeding store gets zero latency on Power6, however not on Power5.
-      // Therefore, the following sequence is made for the good of both.
-      __ ld(tmp1, 0, R3_ARG1);
-      __ ld(tmp2, 8, R3_ARG1);
-      __ ld(tmp3, 16, R3_ARG1);
-      __ ld(tmp4, 24, R3_ARG1);
-      __ std(tmp1, 0, R4_ARG2);
-      __ std(tmp2, 8, R4_ARG2);
-      __ std(tmp3, 16, R4_ARG2);
-      __ std(tmp4, 24, R4_ARG2);
-      __ addi(R3_ARG1, R3_ARG1, 32);
-      __ addi(R4_ARG2, R4_ARG2, 32);
-      __ bdnz(l_8);
-    }
+      if (!VM_Version::has_vsx()) {
+
+        __ bind(l_8);
+        // Use unrolled version for mass copying (copy 16 elements a time).
+        // Load feeding store gets zero latency on Power6, however not on Power5.
+        // Therefore, the following sequence is made for the good of both.
+        __ ld(tmp1, 0, R3_ARG1);
+        __ ld(tmp2, 8, R3_ARG1);
+        __ ld(tmp3, 16, R3_ARG1);
+        __ ld(tmp4, 24, R3_ARG1);
+        __ std(tmp1, 0, R4_ARG2);
+        __ std(tmp2, 8, R4_ARG2);
+        __ std(tmp3, 16, R4_ARG2);
+        __ std(tmp4, 24, R4_ARG2);
+        __ addi(R3_ARG1, R3_ARG1, 32);
+        __ addi(R4_ARG2, R4_ARG2, 32);
+        __ bdnz(l_8);
+
+      } else { // Processor supports VSX, so use it to mass copy.
+
+        // Prefetch src data into L2 cache.
+        __ dcbt(R3_ARG1, 0);
+
+        // If supported set DSCR pre-fetch to deepest.
+        if (VM_Version::has_mfdscr()) {
+          __ load_const_optimized(tmp2, VM_Version::_dscr_val | 7);
+          __ mtdscr(tmp2);
+        }
+        __ li(tmp1, 16);
+
+        // Backbranch target aligned to 32-byte. It's not aligned 16-byte
+        // as loop contains < 8 instructions that fit inside a single
+        // i-cache sector.
+        __ align(32);
+
+        __ bind(l_9);
+        // Use loop with VSX load/store instructions to
+        // copy 16 elements a time.
+        __ lxvd2x(tmp_vsr1, 0, R3_ARG1);     // Load from src.
+        __ stxvd2x(tmp_vsr1, 0, R4_ARG2);    // Store to dst.
+        __ lxvd2x(tmp_vsr2, R3_ARG1, tmp1);  // Load from src + 16.
+        __ stxvd2x(tmp_vsr2, R4_ARG2, tmp1); // Store to dst + 16.
+        __ addi(R3_ARG1, R3_ARG1, 32);       // Update src+=32.
+        __ addi(R4_ARG2, R4_ARG2, 32);       // Update dsc+=32.
+        __ bdnz(l_9);                        // Dec CTR and loop if not zero.
+
+        // Restore DSCR pre-fetch value.
+        if (VM_Version::has_mfdscr()) {
+          __ load_const_optimized(tmp2, VM_Version::_dscr_val);
+          __ mtdscr(tmp2);
+        }
+
+      }
+    } // FasterArrayCopy
     __ bind(l_6);
 
     // copy 2 elements at a time

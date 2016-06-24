@@ -2190,9 +2190,8 @@ void TemplateTable::_return(TosState state)
     __ ldr(c_rarg1, aaddress(0));
     __ load_klass(r3, c_rarg1);
     __ ldrw(r3, Address(r3, Klass::access_flags_offset()));
-    __ tst(r3, JVM_ACC_HAS_FINALIZER);
     Label skip_register_finalizer;
-    __ br(Assembler::EQ, skip_register_finalizer);
+    __ tbz(r3, exact_log2(JVM_ACC_HAS_FINALIZER), skip_register_finalizer);
 
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::register_finalizer), c_rarg1);
 
