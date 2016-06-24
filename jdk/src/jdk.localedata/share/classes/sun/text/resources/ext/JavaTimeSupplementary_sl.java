@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -73,6 +73,14 @@ public class JavaTimeSupplementary_sl extends OpenListResourceBundle {
     @Override
     protected final Object[][] getContents() {
         return new Object[][] {
+            { "QuarterAbbreviations",
+                new String[] {
+                    "1. \u010det.",
+                    "2. \u010det.",
+                    "3. \u010det.",
+                    "4. \u010det.",
+                }
+            },
             { "QuarterNames",
                 new String[] {
                     "1. \u010detrtletje",
@@ -98,23 +106,23 @@ public class JavaTimeSupplementary_sl extends OpenListResourceBundle {
             { "field.dayperiod",
                 "\u010cas dneva" },
             { "field.era",
-                "Doba" },
+                "doba" },
             { "field.hour",
-                "Ura" },
+                "ura" },
             { "field.minute",
-                "Minuta" },
+                "minuta" },
             { "field.month",
-                "Mesec" },
+                "mesec" },
             { "field.second",
-                "Sekunda" },
+                "sekunda" },
             { "field.week",
-                "Teden" },
+                "teden" },
             { "field.weekday",
-                "Dan v tednu" },
+                "dan v tednu" },
             { "field.year",
-                "Leto" },
+                "leto" },
             { "field.zone",
-                "\u010casovni pas" },
+                "\u010dasovni pas" },
             { "islamic.AmPmMarkers",
                 new String[] {
                     "dop.",
@@ -164,10 +172,10 @@ public class JavaTimeSupplementary_sl extends OpenListResourceBundle {
             },
             { "islamic.QuarterAbbreviations",
                 new String[] {
-                    "Q1",
-                    "Q2",
-                    "Q3",
-                    "Q4",
+                    "1. \u010det.",
+                    "2. \u010det.",
+                    "3. \u010det.",
+                    "4. \u010det.",
                 }
             },
             { "islamic.QuarterNames",
@@ -192,6 +200,12 @@ public class JavaTimeSupplementary_sl extends OpenListResourceBundle {
                     "HH:mm:ss z",
                     "HH:mm:ss",
                     "HH:mm",
+                }
+            },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "dop.",
+                    "pop.",
                 }
             },
             { "islamic.narrow.AmPmMarkers",
@@ -226,7 +240,7 @@ public class JavaTimeSupplementary_sl extends OpenListResourceBundle {
             },
             { "java.time.long.Eras",
                 new String[] {
-                    "pred na\u0161im \u0161tetjem",
+                    "pred Kristusom",
                     "na\u0161e \u0161tetje",
                 }
             },
@@ -344,10 +358,10 @@ public class JavaTimeSupplementary_sl extends OpenListResourceBundle {
             },
             { "roc.QuarterAbbreviations",
                 new String[] {
-                    "Q1",
-                    "Q2",
-                    "Q3",
-                    "Q4",
+                    "1. \u010det.",
+                    "2. \u010det.",
+                    "3. \u010det.",
+                    "4. \u010det.",
                 }
             },
             { "roc.QuarterNames",
@@ -364,6 +378,12 @@ public class JavaTimeSupplementary_sl extends OpenListResourceBundle {
                     "HH:mm:ss z",
                     "HH:mm:ss",
                     "HH:mm",
+                }
+            },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "dop.",
+                    "pop.",
                 }
             },
             { "roc.narrow.AmPmMarkers",

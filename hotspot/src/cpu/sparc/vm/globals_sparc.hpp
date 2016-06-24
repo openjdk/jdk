@@ -59,11 +59,11 @@ define_pd_global(intx, InlineSmallCode,       1500);
 // Stack slots are 2X larger in LP64 than in the 32 bit VM.
 define_pd_global(intx, ThreadStackSize,       1024);
 define_pd_global(intx, VMThreadStackSize,     1024);
-#define DEFAULT_STACK_SHADOW_PAGES (10 DEBUG_ONLY(+1))
+#define DEFAULT_STACK_SHADOW_PAGES (20 DEBUG_ONLY(+2))
 #else
 define_pd_global(intx, ThreadStackSize,       512);
 define_pd_global(intx, VMThreadStackSize,     512);
-#define DEFAULT_STACK_SHADOW_PAGES (3 DEBUG_ONLY(+1))
+#define DEFAULT_STACK_SHADOW_PAGES (6 DEBUG_ONLY(+2))
 #endif // _LP64
 
 #define MIN_STACK_YELLOW_PAGES DEFAULT_STACK_YELLOW_PAGES

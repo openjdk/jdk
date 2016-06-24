@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -184,6 +184,23 @@ public class JavaTimeSupplementary_ko extends OpenListResourceBundle {
                     "AH",
                 }
             },
+            { "islamic.MonthNames",
+                new String[] {
+                    "\ubb34\ud558\ub78c",
+                    "\uc0ac\ud30c\ub974",
+                    "\ub77c\ube44 \uc54c \uc544\uc648",
+                    "\ub77c\ube44 \uc54c \uc384\ub2c8",
+                    "\uc8fc\ub9c8\ub2e4 \uc54c \uc544\uc648",
+                    "\uc8fc\ub9c8\ub2e4 \uc54c \uc384\ub2c8",
+                    "\ub77c\uc7a1",
+                    "\uc250\uc544\ubc18",
+                    "\ub77c\ub9c8\ub2e8",
+                    "\uc250\uc648",
+                    "\ub4c0 \uc54c \uae4c\ub2e4",
+                    "\ub4c0 \uc54c \ud788\uc790",
+                    "",
+                }
+            },
             { "islamic.QuarterAbbreviations",
                 new String[] {
                     "1\ubd84\uae30",
@@ -224,8 +241,8 @@ public class JavaTimeSupplementary_ko extends OpenListResourceBundle {
             },
             { "islamic.narrow.AmPmMarkers",
                 new String[] {
-                    "\uc624\uc804",
-                    "\uc624\ud6c4",
+                    "AM",
+                    "PM",
                 }
             },
             { "islamic.narrow.Eras",
@@ -434,8 +451,8 @@ public class JavaTimeSupplementary_ko extends OpenListResourceBundle {
             },
             { "roc.narrow.AmPmMarkers",
                 new String[] {
-                    "\uc624\uc804",
-                    "\uc624\ud6c4",
+                    "AM",
+                    "PM",
                 }
             },
             { "roc.narrow.Eras",

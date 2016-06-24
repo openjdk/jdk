@@ -41,7 +41,7 @@ class ResolutionChecker {
     static void checkExtIdResolution(CatalogResolver resolver,
             String publicId, String systemId, String matchedUri) {
         Assert.assertEquals(
-                resolver.resolveEntity(publicId, systemId).getSystemId(),
+                resolver.resolveEntity(publicId, getNotSpecified(systemId)).getSystemId(),
                 matchedUri);
     }
 
@@ -95,7 +95,7 @@ class ResolutionChecker {
      * CatalogUriResolver should throw CatalogException.
      */
     static void checkNoMatch(CatalogUriResolver resolver) {
-        resolver.resolve("http://uri/noMatch/docNoMatch.dtd", null);
+        resolver.resolve("http://uri/noMatch/docNoMatch.dtd", getNotSpecified(null));
     }
 
     /* ********** Checks expected exception ********** */
@@ -108,7 +108,7 @@ class ResolutionChecker {
             CatalogResolver resolver, String publicId, String systemId,
             Class<T> expectedExceptionClass) {
         expectThrows(expectedExceptionClass, () -> {
-            resolver.resolveEntity(publicId, systemId);
+            resolver.resolveEntity(publicId, getNotSpecified(systemId));
         });
     }
 
@@ -179,6 +179,18 @@ class ResolutionChecker {
                 "Expected %s to be thrown, but nothing was thrown",
                 throwableClass.getSimpleName());
         throw new AssertionError(message);
+    }
+
+    /*
+     * SystemId can never be null in XML. For publicId tests, if systemId is null,
+     * it will be considered as not-specified instead. A non-existent systemId
+     * is returned to make sure there's no match by the systemId.
+    */
+    private static String getNotSpecified(String systemId) {
+        if (systemId == null) {
+            return "not-specified-systemId.dtd";
+        }
+        return systemId;
     }
 
     private interface ThrowingRunnable {

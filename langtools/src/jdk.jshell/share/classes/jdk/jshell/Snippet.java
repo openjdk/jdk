@@ -36,9 +36,9 @@ import java.util.List;
  * An instance of Snippet (including its subclasses) is immutable: an access to
  * any of its methods will always return the same result.
  * For information about the current state of the snippet within the JShell
- * state engine, query <code>JShell</code> passing the Snippet.
+ * state engine, query {@code JShell} passing the Snippet.
  * <p>
- * Because it is immutable, <code>Snippet</code> (and subclasses) is thread-safe.
+ * Because it is immutable, {@code Snippet} (and subclasses) is thread-safe.
  * @author Robert Field
  * @see jdk.jshell.JShell#status
  */
@@ -46,20 +46,21 @@ public abstract class Snippet {
 
     /**
      * Describes the general kind of snippet.
-     * The <code>Kind</code> is an immutable property of a Snippet.
+     * The {@code Kind} is an immutable property of a Snippet.
      * It is accessed with {@link jdk.jshell.Snippet#kind()}.
-     * The <code>Kind</code> can be used to determine which
+     * The {@code Kind} can be used to determine which
      * subclass of Snippet it is. For example,
      * {@link jdk.jshell.JShell#eval eval("int three() { return 3; }")} will
-     * return a snippet creation event.  The <code>Kind</code> of that Snippet
-     * will be <code>METHOD</code>, from which you know that the subclass
-     * of <code>Snippet</code> is <code>MethodSnippet</code> and it can be
+     * return a snippet creation event.  The {@code Kind} of that Snippet
+     * will be {@code METHOD}, from which you know that the subclass
+     * of {@code Snippet} is {@code MethodSnippet} and it can be
      * cast as such.
      */
     public enum Kind {
         /**
-         * An import declaration: <code>import</code> ...
+         * An import declaration: {@code import} ...
          * The snippet is an instance of {@link jdk.jshell.ImportSnippet}.
+         * <P>
          * An import can be a single type import
          * ({@link jdk.jshell.Snippet.SubKind#SINGLE_TYPE_IMPORT_SUBKIND}),
          * a static single import
@@ -69,7 +70,10 @@ public abstract class Snippet {
          * or a static on-demand type import
          * ({@link jdk.jshell.Snippet.SubKind#SINGLE_STATIC_IMPORT_SUBKIND}) --
          * use {@link jdk.jshell.Snippet#subKind()} to distinguish.
+         * <P>
          * @jls 8.3: importDeclaration.
+         * <P>
+         * An import declaration is {@linkplain Kind#isPersistent() persistent}.
          */
         IMPORT(true),
 
@@ -78,19 +82,26 @@ public abstract class Snippet {
          * Which includes: NormalClassDeclaration, EnumDeclaration,
          * NormalInterfaceDeclaration, and AnnotationTypeDeclaration.
          * The snippet is an instance of {@link jdk.jshell.TypeDeclSnippet}.
+         * <P>
          * A type declaration may be an interface
          * {@link jdk.jshell.Snippet.SubKind#INTERFACE_SUBKIND},
          * classes {@link jdk.jshell.Snippet.SubKind#CLASS_SUBKIND}, enums, and
          * annotation interfaces -- see {@link jdk.jshell.Snippet.SubKind} to
          * differentiate.
+         * <P>
          * @jls 7.6: TypeDeclaration.
+         * <P>
+         * A type declaration is {@linkplain Kind#isPersistent() persistent}.
          */
         TYPE_DECL(true),
 
         /**
          * A method declaration.
          * The snippet is an instance of {@link jdk.jshell.MethodSnippet}.
+         * <P>
          * @jls 8.4: MethodDeclaration.
+         * <P>
+         * A method declaration is {@linkplain Kind#isPersistent() persistent}.
          */
         METHOD(true),
 
@@ -98,20 +109,28 @@ public abstract class Snippet {
          * One variable declaration.
          * Corresponding to one <i>VariableDeclarator</i>.
          * The snippet is an instance of {@link jdk.jshell.VarSnippet}.
+         * <P>
          * The variable may be with or without initializer, or be a temporary
          * variable representing an expression -- see
          * {@link jdk.jshell.Snippet.SubKind}to differentiate.
+         * <P>
          * @jls 8.3: FieldDeclaration.
+         * <P>
+         * A variable declaration is {@linkplain Kind#isPersistent() persistent}.
          */
         VAR(true),
 
         /**
          * An expression, with or without side-effects.
          * The snippet is an instance of {@link jdk.jshell.ExpressionSnippet}.
+         * <P>
          * The expression is currently either a simple named reference to a
          * variable ({@link jdk.jshell.Snippet.SubKind#VAR_VALUE_SUBKIND}) or an
          * assignment (both of which have natural referencing
          * names) -- see {@link jdk.jshell.Snippet.SubKind} to differentiate.
+         * All other expression forms (operators, method calls, ...) generate a
+         * scratch variable and so are instead of the VAR Kind.
+         * <P>
          * @jls 15: Expression.
          */
         EXPRESSION(false),
@@ -119,6 +138,7 @@ public abstract class Snippet {
         /**
          * A statement.
          * The snippet is an instance of {@link jdk.jshell.StatementSnippet}.
+         * <P>
          * @jls 14.5: Statement.
          */
         STATEMENT(false),
@@ -130,14 +150,26 @@ public abstract class Snippet {
          */
         ERRONEOUS(false);
 
-        /**
-         * True if this kind of snippet adds a declaration or declarations
-         * which are visible to subsequent evaluations.
-         */
-        public final boolean isPersistent;
+        private final boolean isPersistent;
 
         Kind(boolean isPersistent) {
             this.isPersistent = isPersistent;
+        }
+
+        /**
+         * Indicates whether this {@code Kind} of Snippet is persistent. Only
+         * declarations are persistent because they influence future Snippets.
+         * <p>
+         * Note that though the {@code Kind} of
+         * a Snippet may be persistent, that does not mean that the Snippet will
+         * persist; For example it may be invalid or have been dropped.  See:
+         * {@link jdk.jshell.Snippet.Status#isDefined()}.
+         *
+         * @return {@code true} if this {@code Kind} of {@code Snippet} is
+         * visible to subsequent evaluations; otherwise {@code false}
+         */
+        public boolean isPersistent() {
+            return isPersistent;
         }
     }
 
@@ -178,41 +210,41 @@ public abstract class Snippet {
 
         /**
          * A class declaration.
-         * A <code>SubKind</code> of {@link Kind#TYPE_DECL}.
+         * A {@code SubKind} of {@link Kind#TYPE_DECL}.
          * @jls 8.1. NormalClassDeclaration.
          */
         CLASS_SUBKIND(Kind.TYPE_DECL),
 
         /**
          * An interface declaration.
-         * A <code>SubKind</code> of {@link Kind#TYPE_DECL}.
+         * A {@code SubKind} of {@link Kind#TYPE_DECL}.
          * @jls 9.1. NormalInterfaceDeclaration.
          */
         INTERFACE_SUBKIND(Kind.TYPE_DECL),
 
         /**
          * An enum declaration.
-         * A <code>SubKind</code> of {@link Kind#TYPE_DECL}.
+         * A {@code SubKind} of {@link Kind#TYPE_DECL}.
          * @jls 8.9. EnumDeclaration.
          */
         ENUM_SUBKIND(Kind.TYPE_DECL),
 
         /**
-         * An annotation interface declaration. A <code>SubKind</code> of
+         * An annotation interface declaration. A {@code SubKind} of
          * {@link Kind#TYPE_DECL}.
          * @jls 9.6. AnnotationTypeDeclaration.
          */
         ANNOTATION_TYPE_SUBKIND(Kind.TYPE_DECL),
 
         /**
-         * A method. The only <code>SubKind</code> for {@link Kind#METHOD}.
+         * A method. The only {@code SubKind} for {@link Kind#METHOD}.
          * @jls 8.4. MethodDeclaration.
          */
         METHOD_SUBKIND(Kind.METHOD),
 
         /**
          * A variable declaration without initializer.
-         * A <code>SubKind</code> of {@link Kind#VAR}.
+         * A {@code SubKind} of {@link Kind#VAR}.
          * @jls 8.3. VariableDeclarator without VariableInitializer in
          * FieldDeclaration.
          */
@@ -220,7 +252,7 @@ public abstract class Snippet {
 
         /**
          * A variable declaration with an initializer expression. A
-         * <code>SubKind</code> of {@link Kind#VAR}.
+         * {@code SubKind} of {@link Kind#VAR}.
          * @jls 8.3. VariableDeclarator with VariableInitializer in
          * FieldDeclaration.
          */
@@ -228,20 +260,20 @@ public abstract class Snippet {
 
         /**
          * An expression whose value has been stored in a temporary variable. A
-         * <code>SubKind</code> of {@link Kind#VAR}.
+         * {@code SubKind} of {@link Kind#VAR}.
          * @jls 15. Primary.
          */
         TEMP_VAR_EXPRESSION_SUBKIND(Kind.VAR, true, true),
 
         /**
-         * A simple variable reference expression. A <code>SubKind</code> of
+         * A simple variable reference expression. A {@code SubKind} of
          * {@link Kind#EXPRESSION}.
          * @jls 15.11. Field Access as 3.8. Identifier.
          */
         VAR_VALUE_SUBKIND(Kind.EXPRESSION, true, true),
 
         /**
-         * An assignment expression. A <code>SubKind</code> of
+         * An assignment expression. A {@code SubKind} of
          * {@link Kind#EXPRESSION}.
          * @jls 15.26. Assignment.
          */
@@ -249,18 +281,18 @@ public abstract class Snippet {
 
         /**
          * An expression which has not been wrapped in a temporary variable
-         * (reserved). A <code>SubKind</code> of {@link Kind#EXPRESSION}.
+         * (reserved). A {@code SubKind} of {@link Kind#EXPRESSION}.
          */
         OTHER_EXPRESSION_SUBKIND(Kind.EXPRESSION, true, true),
 
         /**
-         * A statement. The only <code>SubKind</code> for {@link Kind#STATEMENT}.
+         * A statement. The only {@code SubKind} for {@link Kind#STATEMENT}.
          * @jls 14.5. Statement.
          */
         STATEMENT_SUBKIND(Kind.STATEMENT, true, false),
 
         /**
-         * An unknown snippet. The only <code>SubKind</code> for
+         * An unknown snippet. The only {@code SubKind} for
          * {@link Kind#ERRONEOUS}.
          */
         UNKNOWN_SUBKIND(Kind.ERRONEOUS, false, false);
@@ -282,27 +314,30 @@ public abstract class Snippet {
         }
 
         /**
-         * Is this <code>SubKind</code> executable?
+         * Indicates whether this {@code SubKind} is executable.
          *
-         * @return true if this <code>SubKind</code> can be executed.
+         * @return {@code true} if this {@code SubKind} can
+         * be executed; otherwise {@code false}
          */
         public boolean isExecutable() {
             return isExecutable;
         }
 
         /**
-         * Is this <code>SubKind</code> executable and is non-<code>void</code>.
+         * Indicates whether this {@code SubKind} is executable and
+         * is non-{@code void}.
          *
-         * @return true if this <code>SubKind</code> has a value.
+         * @return {@code true} if this {@code SubKind} has
+         * a value; otherwise {@code false}
          */
         public boolean hasValue() {
             return hasValue;
         }
 
         /**
-         * The {@link Snippet.Kind} that corresponds to this <code>SubKind</code>.
+         * The {@link Snippet.Kind} that corresponds to this {@code SubKind}.
          *
-         * @return the fixed <code>Kind</code> for this <code>SubKind</code>
+         * @return the fixed {@code Kind} for this {@code SubKind}
          */
         public Kind kind() {
             return kind;
@@ -313,104 +348,112 @@ public abstract class Snippet {
      * Describes the current state of a Snippet.
      * This is a dynamic property of a Snippet within the JShell state --
      * thus is retrieved with a {@linkplain
-     * jdk.jshell.JShell#status(jdk.jshell.Snippet) query on <code>JShell</code>}.
+     * jdk.jshell.JShell#status(jdk.jshell.Snippet) query on {@code JShell}}.
      * <p>
-     * The <code>Status</code> changes as the state changes.
+     * The {@code Status} changes as the state changes.
      * For example, creation of another snippet with
      * {@link jdk.jshell.JShell#eval(java.lang.String) eval}
      * may resolve dependencies of this Snippet (or invalidate those dependencies), or
      * {@linkplain jdk.jshell.Snippet.Status#OVERWRITTEN overwrite}
      * this Snippet changing its
-     * <code>Status</code>.
+     * {@code Status}.
      * <p>
-     * Important properties associated with <code>Status</code> are:
-     * {@link jdk.jshell.Snippet.Status#isDefined}, if it is visible to other
+     * Important properties associated with {@code Status} are:
+     * {@link jdk.jshell.Snippet.Status#isDefined()}, if it is visible to other
      * existing and new snippets; and
-     * {@link jdk.jshell.Snippet.Status#isActive}, if, as the
+     * {@link jdk.jshell.Snippet.Status#isActive()}, if, as the
      * JShell state changes, the snippet will update, possibly
-     * changing <code>Status</code>.
+     * changing {@code Status}.
      * An executable Snippet can only be executed if it is in the the
-     * {@link jdk.jshell.Snippet.Status#VALID} <code>Status</code>.
+     * {@link jdk.jshell.Snippet.Status#VALID} {@code Status}.
      * @see JShell#status(jdk.jshell.Snippet)
      */
     public enum Status {
         /**
          * The snippet is a valid snippet
-         * (in the context of current <code>JShell</code> state).
-         * Only snippets with <code>VALID</code>
-         * <code>Status</code> can be executed (though not all
-         * <code>VALID</code> snippets have executable code).
-         * If the snippet is a declaration or import, it is visible to other
-         * snippets ({@link Status#isDefined isDefined} <code> == true</code>).
+         * (in the context of current {@code JShell} state).
+         * Only snippets with {@code VALID}
+         * {@code Status} can be executed (though not all
+         * {@code VALID} snippets have executable code).
+         * <p>
+         * The snippet is defined
+         * ({@link Status#isDefined() isDefined() == true}).
+         * If the snippet is a declaration or import
+         * ({@link Snippet.Kind#isPersistent()}),
+         * it is visible to other snippets
          * <p>
          * The snippet will update as dependents change
-         * ({@link Status#isActive isActive} <code> == true</code>), its
-         * status could become <code>RECOVERABLE_DEFINED</code>, <code>RECOVERABLE_NOT_DEFINED</code>,
-         * <code>DROPPED</code>, or <code>OVERWRITTEN</code>.
+         * ({@link Status#isActive() isActive() == true}), its
+         * status could become {@code RECOVERABLE_DEFINED}, {@code RECOVERABLE_NOT_DEFINED},
+         * {@code DROPPED}, or {@code OVERWRITTEN}.
          */
         VALID(true, true),
 
         /**
          * The snippet is a declaration snippet with potentially recoverable
          * unresolved references or other issues in its body
-         * (in the context of current <code>JShell</code> state).
+         * (in the context of current {@code JShell} state).
          * Only a {@link jdk.jshell.DeclarationSnippet} can have this
-         * <code>Status</code>.
+         * {@code Status}.
+         * <p>
          * The snippet has a valid signature and it is visible to other
-         * snippets ({@link Status#isDefined isDefined} <code> == true</code>)
+         * snippets
+         * ({@link Status#isDefined() isDefined() == true})
          * and thus can be referenced in existing or new snippets
          * but the snippet cannot be executed.
          * An {@link UnresolvedReferenceException} will be thrown on an attempt
          * to execute it.
          * <p>
          * The snippet will update as dependents change
-         * ({@link Status#isActive isActive} <code> == true</code>), its
-         * status could become <code>VALID</code>, <code>RECOVERABLE_NOT_DEFINED</code>,
-         * <code>DROPPED</code>, or <code>OVERWRITTEN</code>.
+         * ({@link Status#isActive() isActive() == true}), its
+         * status could become {@code VALID}, {@code RECOVERABLE_NOT_DEFINED},
+         * {@code DROPPED}, or {@code OVERWRITTEN}.
          * <p>
-         * Note: both <code>RECOVERABLE_DEFINED</code> and <code>RECOVERABLE_NOT_DEFINED</code>
+         * Note: both {@code RECOVERABLE_DEFINED} and {@code RECOVERABLE_NOT_DEFINED}
          * indicate potentially recoverable errors, they differ in that, for
-         * <code>RECOVERABLE_DEFINED</code>, the snippet is
-         * {@linkplain Status#isDefined defined}.
+         * {@code RECOVERABLE_DEFINED}, the snippet is
+         * {@linkplain Status#isDefined() defined}.
          */
         RECOVERABLE_DEFINED(true, true),
 
         /**
          * The snippet is a declaration snippet with potentially recoverable
          * unresolved references or other issues
-         * (in the context of current <code>JShell</code> state).
+         * (in the context of current {@code JShell} state).
          * Only a {@link jdk.jshell.DeclarationSnippet} can have this
-         * <code>Status</code>.
+         * {@code Status}.
+         * <p>
          * The snippet has an invalid signature or the implementation is
          * otherwise unable to define it.
          * The snippet it is not visible to other snippets
-         * ({@link Status#isDefined isDefined} <code> == false</code>)
+         * ({@link Status#isDefined() isDefined() == false})
          * and thus cannot be referenced or executed.
          * <p>
          * The snippet will update as dependents change
-         * ({@link Status#isActive isActive} <code> == true</code>), its
-         * status could become <code>VALID</code>, <code>RECOVERABLE_DEFINED</code>,
-         * <code>DROPPED</code>, or <code>OVERWRITTEN</code>.
+         * ({@link Status#isActive() isActive() == true}), its
+         * status could become {@code VALID}, {@code RECOVERABLE_DEFINED},
+         * {@code DROPPED}, or {@code OVERWRITTEN}.
          * <p>
-         * Note: both <code>RECOVERABLE_DEFINED</code> and <code>RECOVERABLE_NOT_DEFINED</code>
+         * Note: both {@code RECOVERABLE_DEFINED} and {@code RECOVERABLE_NOT_DEFINED}
          * indicate potentially recoverable errors, they differ in that, for
-         * <code>RECOVERABLE_DEFINED</code>, the snippet is
-         * {@linkplain Status#isDefined defined}.
+         * {@code RECOVERABLE_DEFINED}, the snippet is
+         * {@linkplain Status#isDefined() defined}.
          */
         RECOVERABLE_NOT_DEFINED(true, false),
 
         /**
          * The snippet is inactive because of an explicit call to
-         * the {@link JShell#drop(jdk.jshell.PersistentSnippet)}.
+         * the {@link JShell#drop(PersistentSnippet)}.
          * Only a {@link jdk.jshell.PersistentSnippet} can have this
-         * <code>Status</code>.
+         * {@code Status}.
+         * <p>
          * The snippet is not visible to other snippets
-         * ({@link Status#isDefined isDefined} <code> == false</code>)
+         * ({@link Status#isDefined() isDefined() == false})
          * and thus cannot be referenced or executed.
          * <p>
          * The snippet will not update as dependents change
-         * ({@link Status#isActive isActive} <code> == false</code>), its
-         * <code>Status</code> will never change again.
+         * ({@link Status#isActive() isActive() == false}), its
+         * {@code Status} will never change again.
          */
         DROPPED(false, false),
 
@@ -418,29 +461,30 @@ public abstract class Snippet {
          * The snippet is inactive because it has been replaced by a new
          * snippet.  This occurs when the new snippet added with
          * {@link jdk.jshell.JShell#eval} matches a previous snippet.
-         * A <code>TypeDeclSnippet</code> will match another
-         * <code>TypeDeclSnippet</code> if the names match.
-         * For example <code>class X { }</code> will overwrite
-         * <code>class X { int ii; }</code> or
-         * <code>interface X { }</code>.
-         * A <code>MethodSnippet</code> will match another
-         * <code>MethodSnippet</code> if the names and parameter types
+         * A {@code TypeDeclSnippet} will match another
+         * {@code TypeDeclSnippet} if the names match.
+         * For example {@code class X { }} will overwrite
+         * {@code class X { int ii; }} or
+         * {@code interface X { }}.
+         * A {@code MethodSnippet} will match another
+         * {@code MethodSnippet} if the names and parameter types
          * match.
-         * For example <code>void m(int a) { }</code> will overwrite
-         * <code>int m(int a) { return a+a; }</code>.
-         * A <code>VarSnippet</code> will match another
-         * <code>VarSnippet</code> if the names match.
-         * For example <code>double z;</code> will overwrite
-         * <code>long z = 2L;</code>.
+         * For example {@code void m(int a) { }} will overwrite
+         * {@code int m(int a) { return a+a; }}.
+         * A {@code VarSnippet} will match another
+         * {@code VarSnippet} if the names match.
+         * For example {@code double z;} will overwrite
+         * {@code long z = 2L;}.
          * Only a {@link jdk.jshell.PersistentSnippet} can have this
-         * <code>Status</code>.
+         * {@code Status}.
+         * <p>
          * The snippet is not visible to other snippets
-         * ({@link Status#isDefined isDefined} <code> == false</code>)
+         * ({@link Status#isDefined() isDefined() == false})
          * and thus cannot be referenced or executed.
          * <p>
          * The snippet will not update as dependents change
-         * ({@link Status#isActive isActive} <code> == false</code>), its
-         * <code>Status</code> will never change again.
+         * ({@link Status#isActive() isActive() == false}), its
+         * {@code Status} will never change again.
          */
         OVERWRITTEN(false, false),
 
@@ -448,13 +492,14 @@ public abstract class Snippet {
          * The snippet is inactive because it failed compilation on initial
          * evaluation and it is not capable of becoming valid with further
          * changes to the JShell state.
+         * <p>
          * The snippet is not visible to other snippets
-         * ({@link Status#isDefined isDefined} <code> == false</code>)
+         * ({@link Status#isDefined() isDefined() == false})
          * and thus cannot be referenced or executed.
          * <p>
          * The snippet will not update as dependents change
-         * ({@link Status#isActive isActive} <code> == false</code>), its
-         * <code>Status</code> will never change again.
+         * ({@link Status#isActive() isActive() == false}), its
+         * {@code Status} will never change again.
          */
         REJECTED(false, false),
 
@@ -463,34 +508,46 @@ public abstract class Snippet {
          * Used only in {@link SnippetEvent#previousStatus} for new
          * snippets.
          * {@link jdk.jshell.JShell#status(jdk.jshell.Snippet) JShell.status(Snippet)}
-         * will never return this <code>Status</code>.
-         * Vacuously, {@link Status#isDefined isDefined} and
-         * {@link Status#isActive isActive} are both defined <code>false</code>.
+         * will never return this {@code Status}.
+         * <p>
+         * Vacuously, {@link Status#isDefined() isDefined()} and
+         * {@link Status#isActive() isActive()} are both defined {@code false}.
          */
         NONEXISTENT(false, false);
 
-        /**
-         * Is the Snippet active, that is, will the snippet
-         * be re-evaluated when a new
-         * {@link JShell#eval(java.lang.String) JShell.eval(String)} or
-         * {@link JShell#drop(jdk.jshell.PersistentSnippet)
-         * JShell.drop(PersistentSnippet)} that could change
-         * its status is invoked?  This is more broad than
-         * {@link Status#isDefined} since a Snippet which is
-         * {@link Status#RECOVERABLE_NOT_DEFINED}
-         * will be updated.
-         */
-        public final boolean isActive;
-
-        /**
-         * Is the snippet currently part of the defined state of the JShell?
-         * Is it visible to compilation of other snippets?
-         */
-        public final boolean isDefined;
+        private final boolean isActive;
+        private final boolean isDefined;
 
         Status(boolean isActive, boolean isDefined) {
             this.isActive = isActive;
             this.isDefined = isDefined;
+        }
+
+        /**
+         * Indicates whether the Snippet is active, that is,
+         * will the snippet be re-evaluated when a new
+         * {@link JShell#eval(java.lang.String) JShell.eval(String)} or
+         * {@link JShell#drop(jdk.jshell.PersistentSnippet)
+         * JShell.drop(PersistentSnippet)} that could change
+         * its status is invoked.  This is more broad than
+         * {@link Status#isDefined()} since a Snippet which is
+         * {@link Status#RECOVERABLE_NOT_DEFINED}
+         * will be updated.
+         *
+         * @return {@code true} if the Snippet is active; otherwise {@code false}
+         */
+        public boolean isActive() {
+            return isActive;
+        }
+
+        /**
+         * Indicates whether the snippet is currently part of the defined state
+         * of the JShell. Is it visible to compilation of other snippets?
+         * @return {@code true} if the Snippet is defined; otherwise
+         * {@code false}
+         */
+        public boolean isDefined() {
+            return isDefined;
         }
     }
 

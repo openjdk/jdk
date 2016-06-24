@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test TestG1HeapRegionSize
  * @key gc
  * @bug 8021879
- * @requires vm.gc=="null" | vm.gc=="G1"
+ * @requires vm.gc.G1
  * @summary Verify that the flag G1HeapRegionSize is updated properly
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management

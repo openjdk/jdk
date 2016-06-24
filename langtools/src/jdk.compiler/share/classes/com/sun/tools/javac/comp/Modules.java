@@ -68,6 +68,7 @@ import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.jvm.ClassWriter;
 import com.sun.tools.javac.jvm.JNIWriter;
 import com.sun.tools.javac.main.Option;
@@ -123,6 +124,7 @@ public class Modules extends JCTree.Visitor {
     private final Symtab syms;
     private final Attr attr;
     private final TypeEnvs typeEnvs;
+    private final Types types;
     private final JavaFileManager fileManager;
     private final ModuleFinder moduleFinder;
     private final boolean allowModules;
@@ -160,6 +162,7 @@ public class Modules extends JCTree.Visitor {
         attr = Attr.instance(context);
         typeEnvs = TypeEnvs.instance(context);
         moduleFinder = ModuleFinder.instance(context);
+        types = Types.instance(context);
         fileManager = context.get(JavaFileManager.class);
         allowModules = Source.instance(context).allowModules();
         Options options = Options.instance(context);
@@ -713,9 +716,12 @@ public class Modules extends JCTree.Visitor {
         @Override
         public void visitProvides(JCProvides tree) {
             Type st = attr.attribType(tree.serviceName, env, syms.objectType);
-            Type it = attr.attribType(tree.implName, env, st);
+            Type it = attr.attribType(tree.implName, env, syms.objectType);
             ClassSymbol service = (ClassSymbol) st.tsym;
             ClassSymbol impl = (ClassSymbol) it.tsym;
+            if (!types.isSubtype(it, st)) {
+                log.error(tree.implName.pos(), Errors.ServiceImplementationMustBeSubtypeOfServiceInterface);
+            }
             if ((impl.flags() & ABSTRACT) != 0) {
                 log.error(tree.implName.pos(), Errors.ServiceImplementationIsAbstract(impl));
             } else if (impl.isInner()) {

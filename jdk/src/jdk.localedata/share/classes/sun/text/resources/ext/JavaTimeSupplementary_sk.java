@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -117,15 +117,15 @@ public class JavaTimeSupplementary_sk extends OpenListResourceBundle {
                 "\u010dasov\u00e9 p\u00e1smo" },
             { "islamic.AmPmMarkers",
                 new String[] {
-                    "dopoludnia",
-                    "odpoludnia",
+                    "AM",
+                    "PM",
                 }
             },
             { "islamic.DatePatterns",
                 new String[] {
-                    "EEEE, d. MMMM y GGGG",
-                    "d. MMMM y GGGG",
-                    "d.M.y GGGG",
+                    "EEEE, d. M. y GGGG",
+                    "d. M. y GGGG",
+                    "d. M. y GGGG",
                     "d.M.y G",
                 }
             },
@@ -153,13 +153,13 @@ public class JavaTimeSupplementary_sk extends OpenListResourceBundle {
             },
             { "islamic.DayNarrows",
                 new String[] {
-                    "N",
-                    "P",
-                    "U",
-                    "S",
-                    "\u0160",
-                    "P",
-                    "S",
+                    "n",
+                    "p",
+                    "u",
+                    "s",
+                    "\u0161",
+                    "p",
+                    "s",
                 }
             },
             { "islamic.QuarterAbbreviations",
@@ -196,31 +196,31 @@ public class JavaTimeSupplementary_sk extends OpenListResourceBundle {
             },
             { "islamic.narrow.AmPmMarkers",
                 new String[] {
-                    "dop.",
-                    "odp.",
+                    "AM",
+                    "PM",
                 }
             },
             { "java.time.buddhist.DatePatterns",
                 new String[] {
-                    "EEEE, d. MMMM y G",
-                    "d. MMMM y G",
-                    "d.M.y G",
+                    "EEEE, d. M. y G",
+                    "d. M. y G",
+                    "d. M. y G",
                     "d.M.y GGGGG",
                 }
             },
             { "java.time.islamic.DatePatterns",
                 new String[] {
-                    "EEEE, d. MMMM y G",
-                    "d. MMMM y G",
-                    "d.M.y G",
+                    "EEEE, d. M. y G",
+                    "d. M. y G",
+                    "d. M. y G",
                     "d.M.y GGGGG",
                 }
             },
             { "java.time.japanese.DatePatterns",
                 new String[] {
-                    "EEEE, d. MMMM y G",
-                    "d. MMMM y G",
-                    "d.M.y G",
+                    "EEEE, d. M. y G",
+                    "d. M. y G",
+                    "d. M. y G",
                     "d.M.y GGGGG",
                 }
             },
@@ -232,9 +232,9 @@ public class JavaTimeSupplementary_sk extends OpenListResourceBundle {
             },
             { "java.time.roc.DatePatterns",
                 new String[] {
-                    "EEEE, d. MMMM y G",
-                    "d. MMMM y G",
-                    "d.M.y G",
+                    "EEEE, d. M. y G",
+                    "d. M. y G",
+                    "d. M. y G",
                     "d.M.y GGGGG",
                 }
             },
@@ -246,15 +246,15 @@ public class JavaTimeSupplementary_sk extends OpenListResourceBundle {
             },
             { "roc.AmPmMarkers",
                 new String[] {
-                    "dopoludnia",
-                    "odpoludnia",
+                    "AM",
+                    "PM",
                 }
             },
             { "roc.DatePatterns",
                 new String[] {
-                    "EEEE, d. MMMM y GGGG",
-                    "d. MMMM y GGGG",
-                    "d.M.y GGGG",
+                    "EEEE, d. M. y GGGG",
+                    "d. M. y GGGG",
+                    "d. M. y GGGG",
                     "d.M.y G",
                 }
             },
@@ -282,13 +282,13 @@ public class JavaTimeSupplementary_sk extends OpenListResourceBundle {
             },
             { "roc.DayNarrows",
                 new String[] {
-                    "N",
-                    "P",
-                    "U",
-                    "S",
-                    "\u0160",
-                    "P",
-                    "S",
+                    "n",
+                    "p",
+                    "u",
+                    "s",
+                    "\u0161",
+                    "p",
+                    "s",
                 }
             },
             { "roc.MonthAbbreviations",
@@ -368,8 +368,8 @@ public class JavaTimeSupplementary_sk extends OpenListResourceBundle {
             },
             { "roc.narrow.AmPmMarkers",
                 new String[] {
-                    "dop.",
-                    "odp.",
+                    "AM",
+                    "PM",
                 }
             },
         };

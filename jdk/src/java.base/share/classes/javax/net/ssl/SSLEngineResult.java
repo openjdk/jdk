@@ -151,7 +151,7 @@ public class SSLEngineResult {
 
         /**
          * The {@code SSLEngine} needs to unwrap before handshaking can
-         * can continue.
+         * continue.
          * <P>
          * This value is used to indicate that not-yet-interpreted data
          * has been previously received from the remote side, and does

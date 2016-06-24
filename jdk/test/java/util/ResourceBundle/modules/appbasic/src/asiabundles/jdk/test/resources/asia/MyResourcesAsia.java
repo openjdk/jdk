@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,33 @@
 
 package jdk.test.resources.asia;
 
-import java.io.IOException;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.ResourceBundle.Control;
-import jdk.test.resources.MyControl;
+import java.util.Set;
+import java.util.spi.AbstractResourceBundleProvider;
+
 import jdk.test.resources.MyResourcesProvider;
 
-public class MyResourcesAsia extends MyControl implements MyResourcesProvider {
+public class MyResourcesAsia extends AbstractResourceBundleProvider
+    implements MyResourcesProvider
+{
+    private static Set<Locale> asiaLocales
+        = Set.of(Locale.JAPANESE, Locale.CHINESE, Locale.TAIWAN);
+
+    @Override
+    public String toBundleName(String baseName, Locale locale) {
+        String bundleName = super.toBundleName(baseName, locale);
+        if (asiaLocales.contains(locale)) {
+            int index = bundleName.lastIndexOf('.');
+            return bundleName.substring(0, index + 1) + "asia" + bundleName.substring(index);
+        }
+        return bundleName;
+    }
+
     @Override
     public ResourceBundle getBundle(String baseName, Locale locale) {
-        if (isAsiaLocale(locale)) {
-            try {
-                ClassLoader loader = MyResourcesAsia.class.getClassLoader();
-                return newBundle(baseName, locale, "java.properties", loader, false);
-            } catch (IllegalAccessException | InstantiationException | IOException e) {
-                System.out.println(e);
-            }
+        if (asiaLocales.contains(locale)) {
+            return super.getBundle(baseName, locale);
         }
         return null;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -219,6 +219,12 @@ public class JavaTimeSupplementary_bg extends OpenListResourceBundle {
                     "H:mm",
                 }
             },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "\u043f\u0440.\u043e\u0431.",
+                    "\u0441\u043b.\u043e\u0431.",
+                }
+            },
             { "islamic.narrow.AmPmMarkers",
                 new String[] {
                     "\u043f\u0440.\u043e\u0431.",
@@ -318,18 +324,18 @@ public class JavaTimeSupplementary_bg extends OpenListResourceBundle {
             },
             { "roc.MonthAbbreviations",
                 new String[] {
-                    "\u044f\u043d.",
-                    "\u0444\u0435\u0432\u0440.",
+                    "\u044f\u043d\u0443",
+                    "\u0444\u0435\u0432",
                     "\u043c\u0430\u0440\u0442",
-                    "\u0430\u043f\u0440.",
+                    "\u0430\u043f\u0440",
                     "\u043c\u0430\u0439",
                     "\u044e\u043d\u0438",
                     "\u044e\u043b\u0438",
-                    "\u0430\u0432\u0433.",
-                    "\u0441\u0435\u043f\u0442.",
-                    "\u043e\u043a\u0442.",
-                    "\u043d\u043e\u0435\u043c.",
-                    "\u0434\u0435\u043a.",
+                    "\u0430\u0432\u0433",
+                    "\u0441\u0435\u043f",
+                    "\u043e\u043a\u0442",
+                    "\u043d\u043e\u0435",
+                    "\u0434\u0435\u043a",
                     "",
                 }
             },
@@ -389,6 +395,12 @@ public class JavaTimeSupplementary_bg extends OpenListResourceBundle {
                     "H:mm:ss z",
                     "H:mm:ss",
                     "H:mm",
+                }
+            },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "\u043f\u0440.\u043e\u0431.",
+                    "\u0441\u043b.\u043e\u0431.",
                 }
             },
             { "roc.narrow.AmPmMarkers",

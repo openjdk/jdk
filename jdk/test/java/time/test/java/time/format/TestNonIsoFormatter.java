@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ public class TestNonIsoFormatter {
               "\u0627\u0644\u0627\u062b\u0646\u064a\u0646\u060c \u0661 \u0631\u0628\u064a\u0639 "
               + "\u0627\u0644\u0622\u062e\u0631\u060c \u0661\u0664\u0663\u0664 \u0647\u0640" }, // Hijrah AH 1434-04-01 (Mon)
             { MINGUO, Locale.TAIWAN, Locale.TAIWAN, MINGUO.date(IsoDate),
-              "\u6c11\u570b102\u5e742\u670811\u65e5\u661f\u671f\u4e00" }, // Minguo ROC 102-02-11 (Mon)
+              "\u6c11\u570b102\u5e742\u670811\u65e5 \u661f\u671f\u4e00" }, // Minguo ROC 102-02-11 (Mon)
             { BUDDHIST, thTH, thTH, BUDDHIST.date(IsoDate),
               "\u0e27\u0e31\u0e19\u0e08\u0e31\u0e19\u0e17\u0e23\u0e4c\u0e17\u0e35\u0e48"
               + " 11 \u0e01\u0e38\u0e21\u0e20\u0e32\u0e1e\u0e31\u0e19\u0e18\u0e4c"

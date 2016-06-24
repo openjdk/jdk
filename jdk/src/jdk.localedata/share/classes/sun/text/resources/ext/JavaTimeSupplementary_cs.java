@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -96,29 +96,29 @@ public class JavaTimeSupplementary_cs extends OpenListResourceBundle {
             { "calendarname.roc",
                 "Kalend\u00e1\u0159 \u010c\u00ednsk\u00e9 republiky" },
             { "field.dayperiod",
-                "dop./odp." },
+                "\u010d\u00e1st dne" },
             { "field.era",
-                "Letopo\u010det" },
+                "letopo\u010det" },
             { "field.hour",
-                "Hodina" },
+                "hodina" },
             { "field.minute",
-                "Minuta" },
+                "minuta" },
             { "field.month",
-                "M\u011bs\u00edc" },
+                "m\u011bs\u00edc" },
             { "field.second",
-                "Sekunda" },
+                "sekunda" },
             { "field.week",
-                "T\u00fdden" },
+                "t\u00fdden" },
             { "field.weekday",
-                "Den v t\u00fddnu" },
+                "den v t\u00fddnu" },
             { "field.year",
-                "Rok" },
+                "rok" },
             { "field.zone",
-                "\u010casov\u00e9 p\u00e1smo" },
+                "\u010dasov\u00e9 p\u00e1smo" },
             { "islamic.AmPmMarkers",
                 new String[] {
-                    "dopoledne",
-                    "odpoledne",
+                    "dop.",
+                    "odp.",
                 }
             },
             { "islamic.DatePatterns",
@@ -198,6 +198,12 @@ public class JavaTimeSupplementary_cs extends OpenListResourceBundle {
                     "H:mm:ss z",
                     "H:mm:ss",
                     "H:mm",
+                }
+            },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "dop.",
+                    "odp.",
                 }
             },
             { "islamic.long.Eras",
@@ -282,8 +288,8 @@ public class JavaTimeSupplementary_cs extends OpenListResourceBundle {
             },
             { "roc.AmPmMarkers",
                 new String[] {
-                    "dopoledne",
-                    "odpoledne",
+                    "dop.",
+                    "odp.",
                 }
             },
             { "roc.DatePatterns",
@@ -406,6 +412,12 @@ public class JavaTimeSupplementary_cs extends OpenListResourceBundle {
                     "H:mm:ss z",
                     "H:mm:ss",
                     "H:mm",
+                }
+            },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "dop.",
+                    "odp.",
                 }
             },
             { "roc.long.Eras",

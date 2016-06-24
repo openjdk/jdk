@@ -40,34 +40,51 @@ class MaskCommentsAndModifiers {
             Stream.of( "public", "protected", "private", "static", "final" )
                     .collect( Collectors.toSet() );
 
+    // Builder to accumulate non-masked characters
     private final StringBuilder sbCleared = new StringBuilder();
+
+    // Builder to accumulate masked characters
     private final StringBuilder sbMask = new StringBuilder();
+
+    // The input string
     private final String str;
+
+    // Entire input string length
     private final int length;
+
+    // Should leading modifiers be masked away
     private final boolean maskModifiers;
+
+    // The next character
     private int next = 0;
-    private boolean wasMasked = false;
+
+    // We have past any point where a top-level modifier could be
     private boolean inside = false;
 
+    // Does the string end with an unclosed '/*' style comment?
+    private boolean openComment = false;
+
     @SuppressWarnings("empty-statement")
-    public MaskCommentsAndModifiers(String s, boolean maskModifiers) {
+    MaskCommentsAndModifiers(String s, boolean maskModifiers) {
         this.str = s;
         this.length = s.length();
         this.maskModifiers = maskModifiers;
         do { } while (next());
     }
 
-    public String cleared() {
+    String cleared() {
         return sbCleared.toString();
     }
 
-    public String mask() {
+    String mask() {
         return sbMask.toString();
     }
 
-    public boolean wasMasked() {
-        return wasMasked;
+    boolean endsWithOpenComment() {
+        return openComment;
     }
+
+    /****** private implementation methods ******/
 
     /**
      * Read the next character
@@ -89,7 +106,6 @@ class MaskCommentsAndModifiers {
     }
 
     private void writeMask(int ch) {
-        wasMasked = true;
         write(sbMask, ch);
         write(sbCleared, Character.isWhitespace(ch) ? ch : ' ');
     }
@@ -147,6 +163,7 @@ class MaskCommentsAndModifiers {
                 int prevc = 0;
                 while ((c = read()) != '/' || prevc != '*') {
                     if (c < 0) {
+                        openComment = true;
                         return false;
                     }
                     writeMask(c);

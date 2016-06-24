@@ -645,7 +645,7 @@ public abstract class MethodHandle {
      * <p>
      * This method is also equivalent to the following code:
      * <blockquote><pre>{@code
-     *   invokeWithArguments(arguments.toArray()
+     *   invokeWithArguments(arguments.toArray())
      * }</pre></blockquote>
      *
      * @param arguments the arguments to pass to the target

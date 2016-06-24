@@ -90,6 +90,15 @@ public abstract class BasePropertyTaglet extends BaseTaglet {
      * only appear in Methods.
      * @return false since this is not a method.
      */
+    public boolean inModule() {
+        return false;
+    }
+
+    /**
+     * Will return false because this tag may
+     * only appear in Methods.
+     * @return false since this is not a method.
+     */
     public boolean inPackage() {
         return false;
     }

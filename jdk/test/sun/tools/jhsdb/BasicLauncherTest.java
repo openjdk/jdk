@@ -49,14 +49,26 @@ import jdk.testlibrary.Platform;
 
 public class BasicLauncherTest {
 
-    private final static String toolName = "jhsdb";
     private static LingeredApp theApp = null;
+    private static boolean useJavaLauncher = false;
 
-    /**
-     *
-     * @return exit code of tool
-     */
-    public static int launchCLHSDB()
+    private static JDKToolLauncher createSALauncher() {
+        JDKToolLauncher launcher = null;
+        if (useJavaLauncher) {
+            // Use java launcher if we need to pass additional parameters to VM
+            // for debugging purpose
+            // e.g. -Xlog:class+load=info:file=/tmp/BasicLauncherTest.log
+            launcher = JDKToolLauncher.createUsingTestJDK("java");
+            launcher.addToolArg("sun.jvm.hotspot.SALauncher");
+        }
+        else {
+            launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");
+        }
+
+        return launcher;
+    }
+
+    public static void launchCLHSDB()
         throws IOException {
 
         System.out.println("Starting LingeredApp");
@@ -64,7 +76,7 @@ public class BasicLauncherTest {
             theApp = LingeredApp.startApp();
 
             System.out.println("Starting clhsdb against " + theApp.getPid());
-            JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK(toolName);
+            JDKToolLauncher launcher = createSALauncher();
             launcher.addToolArg("clhsdb");
             launcher.addToolArg("--pid=" + Long.toString(theApp.getPid()));
 
@@ -84,7 +96,9 @@ public class BasicLauncherTest {
 
             toolProcess.waitFor();
 
-            return toolProcess.exitValue();
+            if (toolProcess.exitValue() != 0) {
+                throw new RuntimeException("FAILED CLHSDB terminated with non-zero exit code " + toolProcess.exitValue());
+            }
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);
         } finally {
@@ -104,8 +118,8 @@ public class BasicLauncherTest {
         try {
             theApp = LingeredApp.startApp(Arrays.asList("-Xmx256m"));
 
-            System.out.println("Starting " + toolName + " " + toolArgs.get(0) + " against " + theApp.getPid());
-            JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK(toolName);
+            System.out.println("Starting " + toolArgs.get(0) + " against " + theApp.getPid());
+            JDKToolLauncher launcher = createSALauncher();
 
             for (String cmd : toolArgs) {
                 launcher.addToolArg(cmd);
@@ -130,6 +144,16 @@ public class BasicLauncherTest {
         throws IOException {
 
         launch(expectedMessage, Arrays.asList(toolArgs));
+    }
+
+    public static void launchNotOSX(String expectedMessage, String... toolArgs)
+        throws IOException {
+
+        if (Platform.isOSX()) {
+            // Coredump stackwalking is not implemented for Darwin
+            System.out.println("This test is not expected to work on OS X. Skipping");
+            return;
+        }
     }
 
     public static void testHeapDump() throws IOException {
@@ -158,7 +182,7 @@ public class BasicLauncherTest {
 
         launchCLHSDB();
 
-        launch("No deadlocks found", "jstack");
+        launchNotOSX("No deadlocks found", "jstack");
         launch("compiler detected", "jmap");
         launch("Java System Properties", "jinfo");
         launch("java.threads", "jsnap");

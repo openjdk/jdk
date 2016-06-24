@@ -257,7 +257,7 @@ final class Unit {
     }
 
     boolean isDefined() {
-        return status.isDefined;
+        return status.isDefined();
     }
 
     /**
@@ -268,7 +268,7 @@ final class Unit {
     Stream<String> classesToLoad(List<String> classnames) {
         toRedefine = new ArrayList<>();
         List<String> toLoad = new ArrayList<>();
-        if (status.isDefined && !isImport()) {
+        if (status.isDefined() && !isImport()) {
             // Classes should only be loaded/redefined if the compile left them
             // in a defined state.  Imports do not have code and are not loaded.
             for (String cn : classnames) {
@@ -312,8 +312,8 @@ final class Unit {
     }
 
     private boolean sigChanged() {
-        return (status.isDefined != prevStatus.isDefined)
-                || (status.isDefined && !si.className().equals(classNameInitial))
+        return (status.isDefined() != prevStatus.isDefined())
+                || (status.isDefined() && !si.className().equals(classNameInitial))
                 || signatureChanged;
     }
 
@@ -328,7 +328,7 @@ final class Unit {
     Stream<Unit> dependents() {
         return state.maps.getDependents(si)
                     .stream()
-                    .filter(xsi -> xsi != si && xsi.status().isActive)
+                    .filter(xsi -> xsi != si && xsi.status().isActive())
                     .map(xsi -> new Unit(state, xsi, si, new DiagList()));
     }
 
@@ -338,7 +338,7 @@ final class Unit {
     }
 
     private void markOldDeclarationOverwritten() {
-        if (si != siOld && siOld != null && siOld.status().isActive) {
+        if (si != siOld && siOld != null && siOld.status().isActive()) {
             // Mark the old declaraion as replaced
             replaceOldEvent = new SnippetEvent(siOld,
                     siOld.status(), OVERWRITTEN,
@@ -374,7 +374,7 @@ final class Unit {
         if (replaceOldEvent != null) secondaryEvents.add(replaceOldEvent);
 
         // Defined methods can overwrite methods of other (equivalent) snippets
-        if (isNew && si.kind() == Kind.METHOD && status.isDefined) {
+        if (isNew && si.kind() == Kind.METHOD && status.isDefined()) {
             MethodSnippet msi = (MethodSnippet)si;
             String oqpt = msi.qualifiedParameterTypes();
             String nqpt = computeQualifiedParameterTypes(at, msi);
@@ -399,7 +399,7 @@ final class Unit {
         // same computed qualified parameter types
         Status overwrittenStatus = null;
         for (MethodSnippet sn : state.methods()) {
-            if (sn != null && sn != msi && sn.status().isActive && sn.name().equals(msi.name())) {
+            if (sn != null && sn != msi && sn.status().isActive() && sn.name().equals(msi.name())) {
                 if (qpt.equals(sn.qualifiedParameterTypes())) {
                     overwrittenStatus = sn.status();
                     SnippetEvent se = new SnippetEvent(

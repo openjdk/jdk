@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -72,10 +72,6 @@ import sun.util.resources.OpenListResourceBundle;
 public class JavaTimeSupplementary_hr extends OpenListResourceBundle {
     @Override
     protected final Object[][] getContents() {
-        final String[] javatimelongEras = {
-            "Prije Krista",
-            "Poslije Krista",
-        };
         return new Object[][] {
             { "QuarterAbbreviations",
                 new String[] {
@@ -117,22 +113,30 @@ public class JavaTimeSupplementary_hr extends OpenListResourceBundle {
                 "kalendar Republike Kine" },
             { "field.dayperiod",
                 "AM/PM" },
+            { "field.era",
+                "era" },
             { "field.hour",
-                "Sat" },
+                "sat" },
             { "field.minute",
-                "Minuta" },
+                "minuta" },
             { "field.month",
-                "Mjesec" },
+                "mjesec" },
             { "field.second",
-                "Sekunda" },
+                "sekunda" },
             { "field.week",
-                "Tjedan" },
+                "tjedan" },
             { "field.weekday",
-                "Dan u tjednu" },
+                "dan u tjednu" },
             { "field.year",
-                "Godina" },
+                "godina" },
             { "field.zone",
-                "Vremenska zona" },
+                "vremenska zona" },
+            { "islamic.AmPmMarkers",
+                new String[] {
+                    "AM",
+                    "PM",
+                }
+            },
             { "islamic.DatePatterns",
                 new String[] {
                     "EEEE, d. MMMM y. GGGG",
@@ -240,7 +244,7 @@ public class JavaTimeSupplementary_hr extends OpenListResourceBundle {
                 new String[] {
                     "EEEE, d. MMMM y. G",
                     "d. MMMM y. G",
-                    "d. M. y. G",
+                    "d. MMM y. G",
                     "dd.MM.y. GGGGG",
                 }
             },
@@ -274,7 +278,7 @@ public class JavaTimeSupplementary_hr extends OpenListResourceBundle {
             },
             { "java.time.japanese.long.Eras",
                 new String[] {
-                    "Poslije Krista",
+                    "poslije Krista",
                     "Meiji",
                     "Taish\u014d",
                     "Sh\u014dwa",
@@ -291,22 +295,36 @@ public class JavaTimeSupplementary_hr extends OpenListResourceBundle {
                 }
             },
             { "java.time.long.Eras",
-                javatimelongEras },
+                new String[] {
+                    "prije Krista",
+                    "poslije Krista",
+                }
+            },
             { "java.time.roc.DatePatterns",
                 new String[] {
                     "EEEE, d. MMMM y. G",
                     "d. MMMM y. G",
-                    "d. M. y. G",
+                    "d. MMM y. G",
                     "dd.MM.y. GGGGG",
                 }
             },
             { "java.time.short.Eras",
-                javatimelongEras },
+                new String[] {
+                    "Prije Krista",
+                    "Poslije Krista",
+                }
+            },
+            { "roc.AmPmMarkers",
+                new String[] {
+                    "AM",
+                    "PM",
+                }
+            },
             { "roc.DatePatterns",
                 new String[] {
                     "EEEE, d. MMMM y. GGGG",
                     "d. MMMM y. GGGG",
-                    "d. M. y. GGGG",
+                    "d. MMM y. GGGG",
                     "dd.MM.y. G",
                 }
             },

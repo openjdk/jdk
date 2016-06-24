@@ -1085,6 +1085,8 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
               }),
             "FormattedTextField.inactiveBackground", ReadOnlyTextBackground,
             "FormattedTextField.disabledBackground", DisabledTextBackground,
+            "FormattedTextField.background", TextBackground,
+            "FormattedTextField.foreground", WindowTextColor,
 
             // *** Panel
             "Panel.font", ControlFont,

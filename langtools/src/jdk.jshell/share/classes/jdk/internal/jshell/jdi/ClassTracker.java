@@ -28,17 +28,18 @@ import java.util.HashMap;
 import java.util.Objects;
 import com.sun.jdi.ReferenceType;
 import java.util.List;
+import com.sun.jdi.VirtualMachine;
 
 /**
  * Tracks the state of a class.
  */
 class ClassTracker {
 
-    private final JDIEnv jdiEnv;
+    private final VirtualMachine vm;
     private final HashMap<String, ClassInfo> map;
 
-    ClassTracker(JDIEnv jdiEnv) {
-        this.jdiEnv = jdiEnv;
+    ClassTracker(VirtualMachine vm) {
+        this.vm = vm;
         this.map = new HashMap<>();
     }
 
@@ -96,7 +97,7 @@ class ClassTracker {
         }
 
         private ReferenceType nameToRef(String name) {
-            List<ReferenceType> rtl = jdiEnv.vm().classesByName(name);
+            List<ReferenceType> rtl = vm.classesByName(name);
             if (rtl.size() != 1) {
                 return null;
             }

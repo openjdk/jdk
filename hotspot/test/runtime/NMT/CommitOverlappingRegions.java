@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,12 @@ public class CommitOverlappingRegions {
     public static WhiteBox wb = WhiteBox.getWhiteBox();
     public static void main(String args[]) throws Exception {
         OutputAnalyzer output;
+
         long size = 32 * 1024;
+        int pagesize = wb.getVMPageSize();
+        if (size < pagesize) { size = pagesize; }  // Should be aligned.
+        long sizek = size / 1024;
+
         long addr = wb.NMTReserveMemory(8*size);
 
         String pid = Long.toString(ProcessTools.getProcessId());
@@ -52,93 +57,93 @@ public class CommitOverlappingRegions {
 
         // Start: . . . . . . . .
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=256KB, committed=0KB)");
+        output.shouldContain("Test (reserved=" + 8*sizek + "KB, committed=0KB)");
 
         // Committing: * * * . . . . .
         // Region:     * * * . . . . .
-        // Expected Total: 3 x 32KB = 96KB
+        // Expected Total: 3 x sizek KB
         wb.NMTCommitMemory(addr + 0*size, 3*size);
 
         // Committing: . . . . * * * .
         // Region:     * * * . * * * .
-        // Expected Total: 6 x 32KB = 192KB
+        // Expected Total: 6 x sizek KB
         wb.NMTCommitMemory(addr + 4*size, 3*size);
 
         // Check output after first 2 commits.
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=256KB, committed=192KB)");
+        output.shouldContain("Test (reserved=" + 8*sizek + "KB, committed=" + 6*sizek + "KB)");
 
         // Committing: . . * * * . . .
         // Region:     * * * * * * * .
-        // Expected Total: 7 x 32KB = 224KB
+        // Expected Total: 7 x sizek KB
         wb.NMTCommitMemory(addr + 2*size, 3*size);
 
         // Check output after overlapping commit.
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=256KB, committed=224KB)");
+        output.shouldContain("Test (reserved=" + 8*sizek + "KB, committed=" + 7*sizek + "KB)");
 
         // Uncommitting: * * * * * * * *
         // Region:       . . . . . . . .
-        // Expected Total: 0 x 32KB = 0KB
+        // Expected Total: 0 x sizek KB
         wb.NMTUncommitMemory(addr + 0*size, 8*size);
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=256KB, committed=0KB)");
+        output.shouldContain("Test (reserved=" + 8*sizek + "KB, committed=0KB)");
 
         // Committing: * * . . . . . .
         // Region:     * * . . . . . .
-        // Expected Total: 2 x 32KB = 64KB
+        // Expected Total: 2 x sizek KB
         wb.NMTCommitMemory(addr + 0*size, 2*size);
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=256KB, committed=64KB)");
+        output.shouldContain("Test (reserved=" + 8*sizek + "KB, committed=" + 2*sizek + "KB)");
 
         // Committing: . * * * . . . .
         // Region:     * * * * . . . .
-        // Expected Total: 4 x 32KB = 128KB
+        // Expected Total: 4 x sizek KB
         wb.NMTCommitMemory(addr + 1*size, 3*size);
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=256KB, committed=128KB)");
+        output.shouldContain("Test (reserved=" + 8*sizek + "KB, committed=" + 4*sizek + "KB)");
 
         // Uncommitting: * * * . . . . .
         // Region:       . . . * . . . .
-        // Expected Total: 1 x 32KB = 32KB
+        // Expected Total: 1 x sizek KB
         wb.NMTUncommitMemory(addr + 0*size, 3*size);
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=256KB, committed=32KB)");
+        output.shouldContain("Test (reserved=" + 8*sizek + "KB, committed=" + 1*sizek + "KB)");
 
         // Committing: . . . * * . . .
         // Region:     . . . * * . . .
-        // Expected Total: 2 x 32KB = 64KB
+        // Expected Total: 2 x sizek KB
         wb.NMTCommitMemory(addr + 3*size, 2*size);
         System.out.println("Address is " + Long.toHexString(addr + 3*size));
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=256KB, committed=64KB)");
+        output.shouldContain("Test (reserved=" + 8*sizek + "KB, committed=" + 2*sizek + "KB)");
 
         // Committing: . . . . * * . .
         // Region:     . . . * * * . .
-        // Expected Total: 3 x 32KB = 96KB
+        // Expected Total: 3 x sizek KB
         wb.NMTCommitMemory(addr + 4*size, 2*size);
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=256KB, committed=96KB)");
+        output.shouldContain("Test (reserved=" + 8*sizek + "KB, committed=" + 3*sizek + "KB)");
 
         // Committing: . . . . . * * .
         // Region:     . . . * * * * .
-        // Expected Total: 4 x 32KB = 128KB
+        // Expected Total: 4 x sizek KB
         wb.NMTCommitMemory(addr + 5*size, 2*size);
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=256KB, committed=128KB)");
+        output.shouldContain("Test (reserved=" + 8*sizek + "KB, committed=" + 4*sizek + "KB)");
 
         // Committing: . . . . . . * *
         // Region:     . . . * * * * *
-        // Expected Total: 5 x 32KB = 160KB
+        // Expected Total: 5 x sizek KB
         wb.NMTCommitMemory(addr + 6*size, 2*size);
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=256KB, committed=160KB)");
+        output.shouldContain("Test (reserved=" + 8*sizek + "KB, committed=" + 5*sizek + "KB)");
 
         // Uncommitting: * * * * * * * *
         // Region:       . . . . . . . .
-        // Expected Total: 0 x 32KB = 32KB
+        // Expected Total: 0 x sizek KB
         wb.NMTUncommitMemory(addr + 0*size, 8*size);
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=256KB, committed=0KB)");
+        output.shouldContain("Test (reserved=" + 8*sizek + "KB, committed=0KB)");
     }
 }

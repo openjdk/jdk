@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -537,7 +538,7 @@ class Stream extends ExchangeImpl {
      * getResponseAsync()
      */
 
-    final List<CompletableFuture<HttpResponseImpl>> response_cfs = new LinkedList<>();
+    final List<CompletableFuture<HttpResponseImpl>> response_cfs = new ArrayList<>(5);
 
     @Override
     CompletableFuture<HttpResponseImpl> getResponseAsync(Void v) {
@@ -565,17 +566,16 @@ class Stream extends ExchangeImpl {
     void completeResponse(HttpResponse r) {
         HttpResponseImpl resp = (HttpResponseImpl)r;
         synchronized (response_cfs) {
-            for (CompletableFuture<HttpResponseImpl> cf : response_cfs) {
+            int cfs_len = response_cfs.size();
+            for (int i=0; i<cfs_len; i++) {
+                CompletableFuture<HttpResponseImpl> cf = response_cfs.get(i);
                 if (!cf.isDone()) {
                     cf.complete(resp);
                     response_cfs.remove(cf);
-                    //responseHeaders = new HttpHeadersImpl(); // for any following header blocks
                     return;
-                } else
-                    System.err.println("Stream: " + this + " ALREADY DONE");
+                }
             }
             response_cfs.add(CompletableFuture.completedFuture(resp));
-            //responseHeaders = new HttpHeadersImpl(); // for any following header blocks
         }
     }
 
@@ -617,6 +617,7 @@ class Stream extends ExchangeImpl {
     void sendBodyImpl() throws IOException, InterruptedException {
         if (requestContentLen == 0) {
             // no body
+            requestSent();
             return;
         }
         DataFrame df;
@@ -667,7 +668,7 @@ class Stream extends ExchangeImpl {
                     responseFlowController); // TODO: filter headers
         if (body == null) {
             receiveData();
-            return processor.onResponseComplete();
+            body = processor.onResponseComplete();
         } else
             receiveDataAsync(processor);
         responseReceived();

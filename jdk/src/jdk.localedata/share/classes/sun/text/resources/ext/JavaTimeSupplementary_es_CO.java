@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -81,10 +81,23 @@ public class JavaTimeSupplementary_es_CO extends OpenListResourceBundle {
                     "d/MM/yy G",
                 }
             },
-            { "islamic.narrow.AmPmMarkers",
+            { "islamic.DayNarrows",
                 new String[] {
-                    "a. m.",
-                    "p. m.",
+                    "d",
+                    "l",
+                    "m",
+                    "m",
+                    "j",
+                    "v",
+                    "s",
+                }
+            },
+            { "islamic.TimePatterns",
+                new String[] {
+                    "h:mm:ss a zzzz",
+                    "h:mm:ss a z",
+                    "h:mm:ss a",
+                    "h:mm a",
                 }
             },
             { "java.time.buddhist.DatePatterns",
@@ -127,10 +140,23 @@ public class JavaTimeSupplementary_es_CO extends OpenListResourceBundle {
                     "d/MM/yy G",
                 }
             },
-            { "roc.narrow.AmPmMarkers",
+            { "roc.DayNarrows",
                 new String[] {
-                    "a. m.",
-                    "p. m.",
+                    "d",
+                    "l",
+                    "m",
+                    "m",
+                    "j",
+                    "v",
+                    "s",
+                }
+            },
+            { "roc.TimePatterns",
+                new String[] {
+                    "h:mm:ss a zzzz",
+                    "h:mm:ss a z",
+                    "h:mm:ss a",
+                    "h:mm a",
                 }
             },
         };

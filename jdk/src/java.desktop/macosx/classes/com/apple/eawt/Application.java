@@ -372,7 +372,6 @@ public class Application {
      * Acceptable values are from 0 to 100, any other disables progress indication.
      *
      * @param value progress value
-     * @since 1.9
      */
     public void setDockIconProgress(final int value) {
         iconHandler.setDockIconProgress(value);

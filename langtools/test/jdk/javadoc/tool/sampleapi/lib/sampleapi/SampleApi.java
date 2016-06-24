@@ -24,6 +24,7 @@
 package sampleapi;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.nio.file.Path;
 
 import sampleapi.generator.PackageGenerator;
@@ -32,21 +33,21 @@ public class SampleApi {
 
     PackageGenerator pkgGen = new PackageGenerator();
 
-    public void generate(File dir) throws Fault {
-        pkgGen.processDataSet("simple");
-        pkgGen.generate(dir);
-        pkgGen.processDataSet("tiny");
-        pkgGen.generate(dir);
-        pkgGen.processDataSet("fx");
-        pkgGen.generate(dir);
+    public void generate(File resDir, File outDir) throws Fault {
+        FilenameFilter filter = (dir, name) -> { return name.endsWith(".xml"); };
+        File[] resFiles = resDir.listFiles(filter);
+        for (File resFile : resFiles) {
+            pkgGen.processDataSet(resFile);
+            pkgGen.generate(outDir);
+        }
     }
 
-    public void generate(Path dir) throws Fault {
-        generate(dir.toFile());
+    public void generate(Path res, Path dir) throws Fault {
+        generate(res.toFile(), dir.toFile());
     }
 
-    public void generate(String dir) throws Fault {
-        generate(new File(dir));
+    public void generate(String res, String dir) throws Fault {
+        generate(new File(res), new File(dir));
     }
 
     public static class Fault extends Exception {

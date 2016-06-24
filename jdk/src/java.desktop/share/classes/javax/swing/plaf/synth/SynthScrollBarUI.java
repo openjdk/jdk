@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,9 +201,12 @@ public class SynthScrollBarUI extends BasicScrollBarUI
     }
 
     private int getComponentState(JComponent c, Region region) {
-        if (region == Region.SCROLL_BAR_THUMB && isThumbRollover() &&
-                                                 c.isEnabled()) {
-            return MOUSE_OVER;
+        if (region == Region.SCROLL_BAR_THUMB && c.isEnabled()) {
+            if (isDragging) {
+                return PRESSED;
+            } else if (isThumbRollover()) {
+                return MOUSE_OVER;
+            }
         }
         return SynthLookAndFeel.getComponentState(c);
     }

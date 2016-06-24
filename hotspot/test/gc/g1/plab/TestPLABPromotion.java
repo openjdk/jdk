@@ -25,8 +25,8 @@
  * @test TestPLABPromotion
  * @bug 8141278 8141141
  * @summary Test PLAB promotion
- * @requires vm.gc=="G1" | vm.gc=="null"
- * @requires vm.opt.FlightRecorder != true
+ * @requires vm.gc.G1
+ * @requires !vm.flightRecorder
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management

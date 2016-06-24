@@ -130,6 +130,7 @@ import javax.tools.ToolProvider;
 
 import static jdk.jshell.Util.REPL_DOESNOTMATTER_CLASS_NAME;
 import static java.util.stream.Collectors.joining;
+import static jdk.jshell.SourceCodeAnalysis.Completeness.DEFINITELY_INCOMPLETE;
 
 /**
  * The concrete implementation of SourceCodeAnalysis.
@@ -165,6 +166,10 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     @Override
     public CompletionInfo analyzeCompletion(String srcInput) {
         MaskCommentsAndModifiers mcm = new MaskCommentsAndModifiers(srcInput, false);
+        if (mcm.endsWithOpenComment()) {
+            proc.debug(DBG_COMPA, "Incomplete (open comment): %s\n", srcInput);
+            return new CompletionInfo(DEFINITELY_INCOMPLETE, srcInput.length(), null, srcInput + '\n');
+        }
         String cleared = mcm.cleared();
         String trimmedInput = Util.trimEnd(cleared);
         if (trimmedInput.isEmpty()) {
@@ -271,8 +276,8 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         }
         String requiredPrefix = identifier;
         return computeSuggestions(codeWrap, cursor, anchor).stream()
-                .filter(s -> s.continuation.startsWith(requiredPrefix) && !s.continuation.equals(REPL_DOESNOTMATTER_CLASS_NAME))
-                .sorted(Comparator.comparing(s -> s.continuation))
+                .filter(s -> s.continuation().startsWith(requiredPrefix) && !s.continuation().equals(REPL_DOESNOTMATTER_CLASS_NAME))
+                .sorted(Comparator.comparing(s -> s.continuation()))
                 .collect(collectingAndThen(toList(), Collections::unmodifiableList));
     }
 
@@ -1218,9 +1223,9 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     public String analyzeType(String code, int cursor) {
         code = code.substring(0, cursor);
         CompletionInfo completionInfo = analyzeCompletion(code);
-        if (!completionInfo.completeness.isComplete)
+        if (!completionInfo.completeness().isComplete())
             return null;
-        if (completionInfo.completeness == Completeness.COMPLETE_WITH_SEMI) {
+        if (completionInfo.completeness() == Completeness.COMPLETE_WITH_SEMI) {
             code += ";";
         }
 

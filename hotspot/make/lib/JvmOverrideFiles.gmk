@@ -35,6 +35,7 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), linux)
   BUILD_LIBJVM_ostream.cpp_CXXFLAGS := -D_FILE_OFFSET_BITS=64
+  BUILD_LIBJVM_logFileOutput.cpp_CXXFLAGS := -D_FILE_OFFSET_BITS=64
 
   ifeq ($(OPENJDK_TARGET_CPU_ARCH), x86)
     BUILD_LIBJVM_sharedRuntimeTrig.cpp_CXXFLAGS := -DNO_PCH $(CXX_O_FLAG_NONE)
@@ -152,6 +153,13 @@ else ifeq ($(OPENJDK_TARGET_OS), aix)
   # in javasoft.sqe.tests.api.java.lang.Math.sin5Tests when run in compile-all
   # mode, so don't optimize sharedRuntimeTrig.cpp at all.
   BUILD_LIBJVM_sharedRuntimeTrig.cpp_CXXFLAGS := $(CXX_O_FLAG_NONE)
+
+  ifneq ($(DEBUG_LEVEL),slowdebug)
+    # Compiling jvmtiEnterTrace.cpp with full optimization needs more than 30min
+    # (mostly because of '-qhot=level=1' and the more than 1300 'log_trace' calls
+    # which cause a lot of template expansion).
+    BUILD_LIBJVM_jvmtiEnterTrace.cpp_OPTIMIZATION := LOW
+  endif
 
   # Disable ELF decoder on AIX (AIX uses XCOFF).
   JVM_EXCLUDE_PATTERNS += elf

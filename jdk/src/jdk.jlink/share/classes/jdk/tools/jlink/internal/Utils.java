@@ -25,76 +25,57 @@
 package jdk.tools.jlink.internal;
 
 import java.lang.reflect.Module;
+import java.net.URI;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.function.Function;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import jdk.tools.jlink.plugin.Plugin;
+import jdk.tools.jlink.plugin.Plugin.Category;
 
 public class Utils {
 
     private Utils() {}
 
+    // jrt-fs file system
+    private static FileSystem JRT_FILE_SYSTEM;
+
     // current module
     private static final Module THIS_MODULE = Utils.class.getModule();
 
-    public static final Function<String, String[]> listParser = (argument) -> {
-        String[] arguments = null;
-        if (argument != null) {
-            arguments = argument.split(",");
-            for (int i = 0; i < arguments.length; i++) {
-                arguments[i] = arguments[i].trim();
-            }
-        }
-        return arguments;
-    };
-
-    public static boolean isPostProcessor(Plugin.Category category) {
-        return category.equals(Plugin.Category.VERIFIER)
-                || category.equals(Plugin.Category.PROCESSOR)
-                || category.equals(Plugin.Category.PACKAGER);
+    public static List<String> parseList(String arguments) {
+        return Arrays.stream(arguments.split(","))
+                     .map((p) -> p.trim())
+                     .filter((p) -> !p.isEmpty())
+                     .collect(Collectors.toList());
     }
 
-    public static boolean isPreProcessor(Plugin.Category category) {
-        return category.equals(Plugin.Category.COMPRESSOR)
-                || category.equals(Plugin.Category.FILTER)
-                || category.equals(Plugin.Category.MODULEINFO_TRANSFORMER)
-                || category.equals(Plugin.Category.SORTER)
-                || category.equals(Plugin.Category.TRANSFORMER)
-                || category.equals(Plugin.Category.METAINFO_ADDER);
+    public static boolean isPostProcessor(Plugin provider) {
+        return provider.getType().isPostProcessor();
     }
 
-    public static boolean isPostProcessor(Plugin prov) {
-        if (prov.getType() != null) {
-            for (Plugin.Category pt : prov.getType()) {
-                if (pt instanceof Plugin.Category) {
-                    return isPostProcessor(pt);
-                }
-            }
-        }
-        return false;
+    public static boolean isPreProcessor(Plugin provider) {
+        return !isPostProcessor(provider);
     }
 
-    public static boolean isPreProcessor(Plugin prov) {
-        if (prov.getType() != null) {
-            for (Plugin.Category pt : prov.getType()) {
-                if (pt instanceof Plugin.Category) {
-                    return isPreProcessor(pt);
-                }
-            }
-        }
-        return false;
+    public static Category getCategory(Plugin provider) {
+        return provider.getType();
     }
 
-    public static Plugin.Category getCategory(Plugin provider) {
-        if (provider.getType() != null) {
-            for (Plugin.Category t : provider.getType()) {
-                if (t instanceof Plugin.Category) {
-                    return t;
-                }
+    public static List<Plugin> getPreProcessors(List<Plugin> plugins) {
+        List<Plugin> res = new ArrayList<>();
+        for (Plugin p : plugins) {
+            if (isPreProcessor(p)) {
+                res.add(p);
             }
         }
-        return null;
+        return res;
     }
 
     public static List<Plugin> getPostProcessors(List<Plugin> plugins) {
@@ -129,16 +110,6 @@ public class Utils {
         return res;
     }
 
-    public static List<Plugin> getPreProcessors(List<Plugin> plugins) {
-        List<Plugin> res = new ArrayList<>();
-        for (Plugin p : plugins) {
-            if (isPreProcessor(p)) {
-                res.add(p);
-            }
-        }
-        return res;
-    }
-
     public static boolean isFunctional(Plugin prov) {
         return prov.getState().contains(Plugin.State.FUNCTIONAL);
     }
@@ -154,5 +125,29 @@ public class Utils {
     // is this a builtin (jdk.jlink) plugin?
     public static boolean isBuiltin(Plugin prov) {
         return THIS_MODULE.equals(prov.getClass().getModule());
+    }
+
+    public static FileSystem jrtFileSystem() {
+        if (JRT_FILE_SYSTEM == null) {
+            JRT_FILE_SYSTEM = FileSystems.getFileSystem(URI.create("jrt:/"));
+        }
+
+        return JRT_FILE_SYSTEM;
+    }
+
+    public static PathMatcher getPathMatcher(FileSystem fs, String pattern) {
+        if (!pattern.startsWith("glob:") && !pattern.startsWith("regex:")) {
+            pattern = "glob:" + pattern;
+        }
+
+        return fs.getPathMatcher(pattern);
+    }
+
+    public static PathMatcher getJRTFSPathMatcher(String pattern) {
+        return getPathMatcher(jrtFileSystem(), pattern);
+    }
+
+    public static Path getJRTFSPath(String first, String... more) {
+        return jrtFileSystem().getPath(first, more);
     }
 }

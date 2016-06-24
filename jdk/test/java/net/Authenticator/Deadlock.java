@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6648001
+ * @modules jdk.httpserver
  * @run main/othervm/timeout=20 -ea:sun.net.www.protocol.http.AuthenticationInfo -Dhttp.auth.serializeRequests=true Deadlock
  * @summary  cancelling HTTP authentication causes deadlock
  */

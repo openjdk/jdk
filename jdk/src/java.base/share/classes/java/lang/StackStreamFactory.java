@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -680,7 +680,8 @@ final class StackStreamFactory {
             // 1: caller-sensitive method
             // 2: caller class
             while (n < 2 && (caller = nextFrame()) != null) {
-                if (isMethodHandleFrame(caller)) continue;
+                if (isMethodHandleFrame(caller)) { continue; }
+                if (isReflectionFrame(caller)) { continue; }
                 frames[n++] = caller;
             }
             if (frames[1] == null) {

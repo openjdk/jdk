@@ -917,7 +917,7 @@ extends AbstractDOMParser implements LSParser, DOMConfiguration {
             throw new DOMException ( DOMException.INVALID_STATE_ERR,msg);
         }
 
-        XMLInputSource source = new XMLInputSource (null, uri, null);
+        XMLInputSource source = new XMLInputSource (null, uri, null, false);
         try {
             currentThread = Thread.currentThread();
                         fBusy = true;
@@ -1082,7 +1082,7 @@ extends AbstractDOMParser implements LSParser, DOMConfiguration {
         else if ((is.getSystemId() != null && is.getSystemId().length() > 0) ||
             (is.getPublicId() != null && is.getPublicId().length() > 0)) {
             xis = new XMLInputSource (is.getPublicId (), is.getSystemId (),
-            is.getBaseURI ());
+            is.getBaseURI(), false);
         }
         else {
             // all inputs are null

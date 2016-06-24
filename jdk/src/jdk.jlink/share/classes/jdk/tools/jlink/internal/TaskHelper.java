@@ -136,6 +136,10 @@ public final class TaskHelper {
         void process(T task, String opt, String arg) throws BadArgs {
             processing.process(task, opt, arg);
         }
+
+        public String[] aliases() {
+            return aliases;
+        }
     }
 
     private static class PlugOption extends Option<PluginsOptions> {
@@ -580,6 +584,8 @@ public final class TaskHelper {
                     showPlugin(plugin, log, showsImageBuilder);
                 }
             }
+
+            log.println("\n" + bundleHelper.getMessage("main.extended.help.footer"));
         }
 
         private void showPlugin(Plugin plugin, PrintWriter log, boolean showsImageBuilder) {

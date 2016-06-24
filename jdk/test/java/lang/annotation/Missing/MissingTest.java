@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,16 @@
 
 /*
  * @test
- * @bug 6322301
+ * @bug 6322301 5041778
  * @summary Verify when missing annotation classes cause exceptions
  * @author Joseph D. Darcy
- * @compile MissingTest.java A.java B.java C.java D.java Marker.java Missing.java MissingWrapper.java
+ * @compile MissingTest.java A.java B.java C.java D.java Marker.java Missing.java MissingWrapper.java MissingDefault.java
  * @clean Missing
  * @run main MissingTest
  */
 
 import java.lang.reflect.*;
+import java.lang.annotation.*;
 
 /**
  * This test verifies that a missing annotation class leads to the
@@ -112,7 +113,20 @@ public class MissingTest {
         }
     }
 
-    public static void main(String argv[]) throws Exception {
+    private static void testMethodGetDefaultValue(Class<?> clazz) throws Exception{
+        Method m = clazz.getMethod("value", (Class<?>[])null);
+
+        try {
+            System.out.println(m.getDefaultValue());
+            throw new RuntimeException("Expected exception not thrown");
+        } catch (TypeNotPresentException tnpe) {
+            ; // Expected
+        } catch (AnnotationFormatError afe) {
+            throw new RuntimeException(afe);
+        }
+    }
+
+    public static void main(String... args) throws Exception {
         // Class A has a directly applied annotation whose class is
         // missing.
         testAnnotation(A.class, false);
@@ -131,5 +145,7 @@ public class MissingTest {
         // includes to an annotation class that is missing.
         testParameterAnnotation(D.class.getDeclaredMethod("method1", Object.class),
                                 true);
+        // The MissingDefault annotation type has a default value of the Missing class.
+        testMethodGetDefaultValue(MissingDefault.class);
     }
 }

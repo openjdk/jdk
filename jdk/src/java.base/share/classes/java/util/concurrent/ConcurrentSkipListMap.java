@@ -840,6 +840,9 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
                         break; // restart if lost race to replace value
                     }
                     // else c < 0; fall through
+                } else if (b == head.node) {
+                    // map is empty, so type check key now
+                    cpr(cmp, key, key);
                 }
 
                 z = new Node<K,V>(key, value, n);

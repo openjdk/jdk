@@ -25,20 +25,30 @@
 
 package sun.security.provider;
 
+import java.io.IOException;
+import java.io.Serializable;
 import java.security.DrbgParameters;
 import java.security.SecureRandomParameters;
 
 /**
- * Extra non-standard parameters that can be used by DRBGs.
+ * Exported and non-exported parameters that can be used by DRBGs.
  */
-public class MoreDrbgParameters implements SecureRandomParameters {
+public class MoreDrbgParameters implements SecureRandomParameters, Serializable {
+
+    private static final long serialVersionUID = 9L;
+
+    final transient EntropySource es;
 
     final String mech;
     final String algorithm;
-    final EntropySource es;
-    final byte[] nonce;
     final boolean usedf;
-    final DrbgParameters.Instantiation config;
+    final int strength;
+    final DrbgParameters.Capability capability;
+
+    // The following 2 fields will be reassigned in readObject and
+    // thus cannot be final
+    byte[] nonce;
+    byte[] personalizationString;
 
     /**
      * Creates a new {@code MoreDrbgParameters} object.
@@ -61,13 +71,31 @@ public class MoreDrbgParameters implements SecureRandomParameters {
         this.mech = mech;
         this.algorithm = algorithm;
         this.es = es;
-        this.nonce = nonce;
+        this.nonce = (nonce == null) ? null : nonce.clone();
         this.usedf = usedf;
-        this.config = config;
+
+        this.strength = config.getStrength();
+        this.capability = config.getCapability();
+        this.personalizationString = config.getPersonalizationString();
     }
 
     @Override
     public String toString() {
-        return mech + "," + algorithm + "," + usedf + "," + config;
+        return mech + "," + algorithm + "," + usedf + "," + strength
+                + "," + capability + "," + personalizationString;
+    }
+
+    private void readObject(java.io.ObjectInputStream s)
+            throws IOException, ClassNotFoundException {
+        s.defaultReadObject();
+        if (nonce != null) {
+            nonce = nonce.clone();
+        }
+        if (personalizationString != null) {
+            personalizationString = personalizationString.clone();
+        }
+        if (capability == null) {
+            throw new IllegalArgumentException("Input data is corrupted");
+        }
     }
 }

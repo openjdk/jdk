@@ -25,8 +25,8 @@
  * @test TestIHOPStatic
  * @bug 8148397
  * @summary Test checks concurrent cycle initiation which depends on IHOP value.
- * @requires vm.gc=="G1" | vm.gc=="null"
- * @requires vm.opt.FlightRecorder != true
+ * @requires vm.gc.G1
+ * @requires !vm.flightRecorder
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
  * @library /testlibrary /
  * @modules java.base/jdk.internal.misc

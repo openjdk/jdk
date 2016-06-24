@@ -34,7 +34,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.WARNING;
@@ -86,7 +85,7 @@ final class WS implements WebSocket {
                 }
             }
         };
-        transmitter = new WSTransmitter(executor, channel, errorHandler);
+        transmitter = new WSTransmitter(this, executor, channel, errorHandler);
         receiver = new WSReceiver(this.listener, this, executor, channel);
     }
 
@@ -95,12 +94,7 @@ final class WS implements WebSocket {
     }
 
     @Override
-    public CompletableFuture<Void> sendText(ByteBuffer message, boolean isLast) {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
-    @Override
-    public CompletableFuture<Void> sendText(CharSequence message, boolean isLast) {
+    public CompletableFuture<WebSocket> sendText(CharSequence message, boolean isLast) {
         requireNonNull(message, "message");
         synchronized (stateLock) {
             checkState();
@@ -109,16 +103,7 @@ final class WS implements WebSocket {
     }
 
     @Override
-    public CompletableFuture<Void> sendText(Stream<? extends CharSequence> message) {
-        requireNonNull(message, "message");
-        synchronized (stateLock) {
-            checkState();
-            return transmitter.sendText(message);
-        }
-    }
-
-    @Override
-    public CompletableFuture<Void> sendBinary(ByteBuffer message, boolean isLast) {
+    public CompletableFuture<WebSocket> sendBinary(ByteBuffer message, boolean isLast) {
         requireNonNull(message, "message");
         synchronized (stateLock) {
             checkState();
@@ -127,7 +112,7 @@ final class WS implements WebSocket {
     }
 
     @Override
-    public CompletableFuture<Void> sendPing(ByteBuffer message) {
+    public CompletableFuture<WebSocket> sendPing(ByteBuffer message) {
         requireNonNull(message, "message");
         synchronized (stateLock) {
             checkState();
@@ -136,7 +121,7 @@ final class WS implements WebSocket {
     }
 
     @Override
-    public CompletableFuture<Void> sendPong(ByteBuffer message) {
+    public CompletableFuture<WebSocket> sendPong(ByteBuffer message) {
         requireNonNull(message, "message");
         synchronized (stateLock) {
             checkState();
@@ -145,7 +130,7 @@ final class WS implements WebSocket {
     }
 
     @Override
-    public CompletableFuture<Void> sendClose(CloseCode code, CharSequence reason) {
+    public CompletableFuture<WebSocket> sendClose(CloseCode code, CharSequence reason) {
         requireNonNull(code, "code");
         requireNonNull(reason, "reason");
         synchronized (stateLock) {
@@ -154,13 +139,13 @@ final class WS implements WebSocket {
     }
 
     @Override
-    public CompletableFuture<Void> sendClose() {
+    public CompletableFuture<WebSocket> sendClose() {
         synchronized (stateLock) {
             return doSendClose(() -> transmitter.sendClose());
         }
     }
 
-    private CompletableFuture<Void> doSendClose(Supplier<CompletableFuture<Void>> s) {
+    private CompletableFuture<WebSocket> doSendClose(Supplier<CompletableFuture<WebSocket>> s) {
         checkState();
         boolean closeChannel = false;
         synchronized (stateLock) {
@@ -170,7 +155,7 @@ final class WS implements WebSocket {
                 tryChangeState(State.CLOSED_LOCALLY);
             }
         }
-        CompletableFuture<Void> sent = s.get();
+        CompletableFuture<WebSocket> sent = s.get();
         if (closeChannel) {
             sent.whenComplete((v, t) -> {
                 try {
@@ -184,11 +169,11 @@ final class WS implements WebSocket {
     }
 
     @Override
-    public long request(long n) {
+    public void request(long n) {
         if (n < 0L) {
             throw new IllegalArgumentException("The number must not be negative: " + n);
         }
-        return receiver.request(n);
+        receiver.request(n);
     }
 
     @Override
@@ -239,7 +224,7 @@ final class WS implements WebSocket {
             }
 
             @Override
-            public CompletionStage<?> onText(WebSocket webSocket, Text message,
+            public CompletionStage<?> onText(WebSocket webSocket, CharSequence message,
                                              MessagePart part) {
                 synchronized (visibilityLock) {
                     return listener.onText(webSocket, message, part);

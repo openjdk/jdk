@@ -28,14 +28,12 @@ package sun.security.provider;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.IOException;
 import java.security.*;
 import java.util.Arrays;
 import java.util.Locale;
 
 public class CtrDrbg extends AbstractDrbg {
 
-    private static final long serialVersionUID = 9L;
     private static final int AES_LIMIT;
 
     static {
@@ -47,7 +45,7 @@ public class CtrDrbg extends AbstractDrbg {
         }
     }
 
-    private transient Cipher cipher;
+    private Cipher cipher;
 
     private String cipherAlg;
     private String keyAlg;
@@ -57,8 +55,8 @@ public class CtrDrbg extends AbstractDrbg {
     private int keyLen;
     private int seedLen;
 
-    private transient byte[] v;
-    private transient byte[] k;
+    private byte[] v;
+    private byte[] k;
 
     public CtrDrbg(SecureRandomParameters params) {
         mechName = "CTR_DRBG";
@@ -165,7 +163,7 @@ public class CtrDrbg extends AbstractDrbg {
     protected void initEngine() {
         try {
             /*
-             * Use the local SUN implementation to avoid native
+             * Use the local SunJCE implementation to avoid native
              * performance overhead.
              */
             cipher = Cipher.getInstance(cipherAlg, "SunJCE");
@@ -461,12 +459,6 @@ public class CtrDrbg extends AbstractDrbg {
         //status();
 
         // Step 8. Return
-    }
-
-    private void readObject(java.io.ObjectInputStream s)
-            throws IOException, ClassNotFoundException {
-        s.defaultReadObject ();
-        initEngine();
     }
 
     @Override

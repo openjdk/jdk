@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,7 @@ package sun.java2d.pipe;
 
 import java.awt.Rectangle;
 import java.awt.Shape;
-import java.awt.Font;
-import java.awt.font.GlyphVector;
 import sun.java2d.SunGraphics2D;
-import sun.java2d.loops.FontInfo;
 import sun.font.GlyphList;
 
 /*

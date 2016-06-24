@@ -31,9 +31,6 @@ import java.security.NoSuchProviderException;
 import java.security.spec.DSAGenParameterSpec;
 import java.security.spec.DSAParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /*
  * @test
@@ -43,8 +40,15 @@ import java.util.stream.Collectors;
  *          DSA within some certain range of key sizes as described in the class
  *          specification (L, N) as (1024, 160), (2048, 224), (2048, 256) and
  *          (3072, 256) should be OK for DSAGenParameterSpec.
- * @run main TestDSAGenParameterSpec 2048,256,true 2048,224,true 1024,160,true 4096,256 3072,224 2048,160 1024,224 512,160
- * @run main TestDSAGenParameterSpec 3072,256,true
+ * @run main TestDSAGenParameterSpec 512 160
+ * @run main TestDSAGenParameterSpec 1024 160 true
+ * @run main TestDSAGenParameterSpec 1024 224
+ * @run main TestDSAGenParameterSpec 2048 160
+ * @run main/timeout=300 TestDSAGenParameterSpec 2048 224 true
+ * @run main/timeout=300 TestDSAGenParameterSpec 2048 256 true
+ * @run main TestDSAGenParameterSpec 3072 224
+ * @run main/timeout=700 TestDSAGenParameterSpec 3072 256 true
+ * @run main TestDSAGenParameterSpec 4096 256
  */
 public class TestDSAGenParameterSpec {
 
@@ -57,8 +61,8 @@ public class TestDSAGenParameterSpec {
         System.out.printf("Test case: primePLen=%d, " + "subprimeQLen=%d%n",
                 dataTuple.primePLen, dataTuple.subprimeQLen);
 
-        AlgorithmParameterGenerator apg =
-                AlgorithmParameterGenerator.getInstance(ALGORITHM_NAME,
+        AlgorithmParameterGenerator apg
+                = AlgorithmParameterGenerator.getInstance(ALGORITHM_NAME,
                         PROVIDER_NAME);
 
         DSAGenParameterSpec genParamSpec = createGenParameterSpec(dataTuple);
@@ -80,8 +84,8 @@ public class TestDSAGenParameterSpec {
 
     private static void checkParam(AlgorithmParameters param,
             DSAGenParameterSpec genParam) throws InvalidParameterSpecException,
-                    NoSuchAlgorithmException, NoSuchProviderException,
-                    InvalidAlgorithmParameterException {
+            NoSuchAlgorithmException, NoSuchProviderException,
+            InvalidAlgorithmParameterException {
         String algorithm = param.getAlgorithm();
         if (!algorithm.equalsIgnoreCase(ALGORITHM_NAME)) {
             throw new RuntimeException(
@@ -139,21 +143,25 @@ public class TestDSAGenParameterSpec {
     }
 
     public static void main(String[] args) throws Exception {
-        List<DataTuple> dataTuples = Arrays.stream(args)
-                .map(arg -> arg.split(",")).map(params -> {
-                    int primePLen = Integer.valueOf(params[0]);
-                    int subprimeQLen = Integer.valueOf(params[1]);
-                    boolean isDSASpecSupported = false;
-                    if (params.length == 3) {
-                        isDSASpecSupported = Boolean.valueOf(params[2]);
-                    }
-                    return new DataTuple(primePLen, subprimeQLen,
-                            isDSASpecSupported);
-                }).collect(Collectors.toList());
-
-        for (DataTuple dataTuple : dataTuples) {
-            testDSAGenParameterSpec(dataTuple);
+        if (args == null || args.length < 2) {
+            throw new RuntimeException("Invalid number of arguments to generate"
+                    + " DSA parameter.");
         }
+        DataTuple dataTuple = null;
+        switch (args.length) {
+            case 3:
+                dataTuple = new DataTuple(Integer.valueOf(args[0]),
+                        Integer.valueOf(args[1]), Boolean.valueOf(args[2]));
+                break;
+            case 2:
+                dataTuple = new DataTuple(Integer.valueOf(args[0]),
+                        Integer.valueOf(args[1]), false);
+                break;
+            default:
+                throw new RuntimeException("Unsupported arguments found.");
+        }
+        testDSAGenParameterSpec(dataTuple);
+
     }
 
     private static class DataTuple {
@@ -170,4 +178,3 @@ public class TestDSAGenParameterSpec {
         }
     }
 }
-

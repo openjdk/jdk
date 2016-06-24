@@ -36,11 +36,6 @@ import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import javax.tools.JavaCompiler;
-import javax.tools.JavaFileObject;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.StandardLocation;
-import javax.tools.ToolProvider;
 
 import jdk.testlibrary.FileUtils;
 import jdk.testlibrary.JDKToolFinder;
@@ -66,6 +61,10 @@ public class Basic {
     static final Path TEST_CLASSES = Paths.get(System.getProperty("test.classes", "."));
     static final Path MODULE_CLASSES = TEST_CLASSES.resolve("build");
     static final Path MRJAR_DIR = MODULE_CLASSES.resolve("mrjar");
+
+    static final String VM_OPTIONS = System.getProperty("test.vm.opts", "");
+    static final String TOOL_VM_OPTIONS = System.getProperty("test.tool.vm.opts", "");
+    static final String JAVA_OPTIONS = System.getProperty("test.java.opts", "");
 
     // Details based on the checked in module source
     static TestModuleData FOO = new TestModuleData("foo",
@@ -730,7 +729,10 @@ public class Basic {
         String jar = getJDKTool("jar");
         List<String> commands = new ArrayList<>();
         commands.add(jar);
-        Stream.of(args).forEach(x -> commands.add(x));
+        if (!TOOL_VM_OPTIONS.isEmpty()) {
+            commands.addAll(Arrays.asList(TOOL_VM_OPTIONS.split("\\s+", -1)));
+        }
+        Stream.of(args).forEach(commands::add);
         ProcessBuilder p = new ProcessBuilder(commands);
         if (stdinSource != null)
             p.redirectInput(stdinSource);
@@ -808,6 +810,9 @@ public class Basic {
 
         List<String> commands = new ArrayList<>();
         commands.add(javac);
+        if (!TOOL_VM_OPTIONS.isEmpty()) {
+            commands.addAll(Arrays.asList(TOOL_VM_OPTIONS.split("\\s+", -1)));
+        }
         commands.add("-d");
         commands.add(dest.toString());
         if (dest.toString().contains("bar"))
@@ -826,6 +831,12 @@ public class Basic {
 
         List<String> commands = new ArrayList<>();
         commands.add(java);
+        if (!VM_OPTIONS.isEmpty()) {
+            commands.addAll(Arrays.asList(VM_OPTIONS.split("\\s+", -1)));
+        }
+        if (!JAVA_OPTIONS.isEmpty()) {
+            commands.addAll(Arrays.asList(JAVA_OPTIONS.split("\\s+", -1)));
+        }
         Stream.of(args).forEach(x -> commands.add(x));
         commands.add("-mp");
         commands.add(modulePath.toString());

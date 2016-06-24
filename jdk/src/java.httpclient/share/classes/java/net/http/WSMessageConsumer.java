@@ -27,10 +27,11 @@ package java.net.http;
 import java.net.http.WebSocket.CloseCode;
 import java.net.http.WebSocket.MessagePart;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 
 interface WSMessageConsumer {
 
-    void onText(MessagePart part, WSDisposableText data);
+    void onText(MessagePart part, WSShared<CharBuffer> data);
 
     void onBinary(MessagePart part, WSShared<ByteBuffer> data);
 

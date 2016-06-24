@@ -25,7 +25,7 @@
 # @bug 6802846
 # @summary jarsigner needs enhanced cert validation(options)
 #
-# @run shell concise_jarsigner.sh
+# @run shell/timeout=240 concise_jarsigner.sh
 #
 
 if [ "${TESTJAVA}" = "" ] ; then

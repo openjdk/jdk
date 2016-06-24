@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -105,22 +105,30 @@ public class JavaTimeSupplementary_pt extends OpenListResourceBundle {
                 "Calend\u00e1rio da Rep\u00fablica da China" },
             { "field.dayperiod",
                 "AM/PM" },
+            { "field.era",
+                "era" },
             { "field.hour",
-                "Hora" },
+                "hora" },
             { "field.minute",
-                "Minuto" },
+                "minuto" },
             { "field.month",
-                "M\u00eas" },
+                "m\u00eas" },
             { "field.second",
-                "Segundo" },
+                "segundo" },
             { "field.week",
-                "Semana" },
+                "semana" },
             { "field.weekday",
-                "Dia da semana" },
+                "dia da semana" },
             { "field.year",
-                "Ano" },
+                "ano" },
             { "field.zone",
-                "Fuso hor\u00e1rio" },
+                "fuso hor\u00e1rio" },
+            { "islamic.AmPmMarkers",
+                new String[] {
+                    "AM",
+                    "PM",
+                }
+            },
             { "islamic.DatePatterns",
                 new String[] {
                     "EEEE, d 'de' MMMM 'de' y GGGG",
@@ -206,6 +214,12 @@ public class JavaTimeSupplementary_pt extends OpenListResourceBundle {
                     "AH",
                 }
             },
+            { "islamic.narrow.AmPmMarkers",
+                new String[] {
+                    "a",
+                    "p",
+                }
+            },
             { "islamic.narrow.Eras",
                 new String[] {
                     "",
@@ -256,8 +270,8 @@ public class JavaTimeSupplementary_pt extends OpenListResourceBundle {
             },
             { "java.time.long.Eras",
                 new String[] {
-                    "Antes de Cristo",
-                    "Ano do Senhor",
+                    "antes de Cristo",
+                    "depois de Cristo",
                 }
             },
             { "java.time.roc.DatePatterns",
@@ -272,6 +286,12 @@ public class JavaTimeSupplementary_pt extends OpenListResourceBundle {
                 new String[] {
                     "a.C.",
                     "d.C.",
+                }
+            },
+            { "roc.AmPmMarkers",
+                new String[] {
+                    "AM",
+                    "PM",
                 }
             },
             { "roc.DatePatterns",
@@ -400,6 +420,12 @@ public class JavaTimeSupplementary_pt extends OpenListResourceBundle {
                 new String[] {
                     "Antes de R.O.C.",
                     "R.O.C.",
+                }
+            },
+            { "roc.narrow.AmPmMarkers",
+                new String[] {
+                    "a",
+                    "p",
                 }
             },
             { "roc.narrow.Eras",

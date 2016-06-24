@@ -83,11 +83,6 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
     }
 
     @Override
-    public Set<Category> getType() {
-        return Collections.singleton(Category.TRANSFORMER);
-    }
-
-    @Override
     public String getName() {
         return NAME;
     }
@@ -144,11 +139,7 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
                     ModuleInfoRewriter minfoWriter =
                         new ModuleInfoRewriter(bain, mbuilder.conceals());
                     // replace with the overridden version
-                    data = ModuleEntry.create(data.getModule(),
-                                               data.getPath(),
-                                               data.getType(),
-                                               minfoWriter.stream(),
-                                               minfoWriter.size());
+                    data = data.create(minfoWriter.getBytes());
                 }
                 out.add(data);
             } catch (IOException e) {
@@ -163,12 +154,7 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
                 return;
             if (builder.isOverriddenClass(data.getPath())) {
                 byte[] bytes = cwriter.toByteArray();
-                ModuleEntry ndata =
-                    ModuleEntry.create(data.getModule(),
-                                        data.getPath(),
-                                        data.getType(),
-                                        new ByteArrayInputStream(bytes),
-                                        bytes.length);
+                ModuleEntry ndata = data.create(bytes);
                 out.add(ndata);
             } else {
                 out.add(data);
@@ -188,8 +174,8 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
             this.extender.write(this);
         }
 
-        InputStream stream() {
-            return new ByteArrayInputStream(buf);
+        byte[] getBytes() {
+            return buf;
         }
     }
 
@@ -448,29 +434,27 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
             }
 
             void newBuilder(String name, int reqs, int exports, int provides,
-                            int conceals, int packages) {
+                            int packages) {
                 mv.visitTypeInsn(NEW, MODULE_DESCRIPTOR_BUILDER);
                 mv.visitInsn(DUP);
                 mv.visitLdcInsn(name);
                 pushInt(initialCapacity(reqs));
                 pushInt(initialCapacity(exports));
                 pushInt(initialCapacity(provides));
-                pushInt(initialCapacity(conceals));
                 pushInt(initialCapacity(packages));
                 mv.visitMethodInsn(INVOKESPECIAL, MODULE_DESCRIPTOR_BUILDER,
-                                   "<init>", "(Ljava/lang/String;IIIII)V", false);
+                                   "<init>", "(Ljava/lang/String;IIII)V", false);
                 mv.visitVarInsn(ASTORE, BUILDER_VAR);
                 mv.visitVarInsn(ALOAD, BUILDER_VAR);
             }
 
             /*
              * Returns the set of concealed packages from ModuleDescriptor, if present
-             * or compute it if the module oes not have ConcealedPackages attribute
+             * or compute it if the module does not have ConcealedPackages attribute
              */
             Set<String> conceals() {
                 Set<String> conceals = md.conceals();
-                if (md.conceals().isEmpty() &&
-                        (md.exports().size() + md.conceals().size()) != packages.size()) {
+                if (conceals.isEmpty() && md.exports().size() != packages.size()) {
                     Set<String> exports = md.exports().stream()
                                             .map(Exports::source)
                                             .collect(Collectors.toSet());
@@ -492,8 +476,7 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
                 newBuilder(md.name(), md.requires().size(),
                            md.exports().size(),
                            md.provides().size(),
-                           conceals().size(),
-                           conceals().size() + md.exports().size());
+                           packages.size());
 
                 // requires
                 for (ModuleDescriptor.Requires req : md.requires()) {
@@ -528,10 +511,8 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
                     provides(p.service(), p.providers());
                 }
 
-                // concealed packages
-                for (String pn : conceals()) {
-                    conceals(pn);
-                }
+                // all packages
+                packages(packages);
 
                 // version
                 md.version().ifPresent(this::version);
@@ -675,11 +656,13 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
             /*
              * Invoke Builder.conceals(String pn)
              */
-            void conceals(String pn) {
+            void packages(Set<String> packages) {
                 mv.visitVarInsn(ALOAD, BUILDER_VAR);
-                mv.visitLdcInsn(pn);
+                int varIndex = new StringSetBuilder(packages).build();
+                assert varIndex == STRING_SET_VAR;
+                mv.visitVarInsn(ALOAD, varIndex);
                 mv.visitMethodInsn(INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                                   "conceals", STRING_SIG, false);
+                                   "packages", SET_SIG, false);
                 mv.visitInsn(POP);
             }
 
@@ -761,7 +744,7 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
                 if (localVarIndex == 0) {
                     // if non-empty and more than one set reference this builder,
                     // emit to a unique local
-                    index = refCount == 1 ? STRING_SET_VAR
+                    index = refCount <= 1 ? STRING_SET_VAR
                                           : nextLocalVar++;
                     if (index < MAX_LOCAL_VARS) {
                         localVarIndex = index;

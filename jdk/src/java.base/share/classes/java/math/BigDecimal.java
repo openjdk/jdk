@@ -2026,7 +2026,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * <li> The square root of a number numerically equal to {@code
      * ZERO} is numerically equal to {@code ZERO} with a preferred
      * scale according to the general rule above. In particular, for
-     * {@code ZERO}}, {@code ZERO.sqrt(mc).equals(ZERO)} is true with
+     * {@code ZERO}, {@code ZERO.sqrt(mc).equals(ZERO)} is true with
      * any {@code MathContext} as an argument.
      * </ul>
      *

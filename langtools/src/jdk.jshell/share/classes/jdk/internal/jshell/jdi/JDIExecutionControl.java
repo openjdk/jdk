@@ -34,13 +34,20 @@ import java.io.ObjectOutputStream;
 import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import com.sun.jdi.*;
 import java.io.EOFException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.sun.jdi.BooleanValue;
+import com.sun.jdi.ClassNotLoadedException;
+import com.sun.jdi.IncompatibleThreadStateException;
+import com.sun.jdi.InvalidTypeException;
+import com.sun.jdi.ObjectReference;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.StackFrame;
+import com.sun.jdi.ThreadReference;
+import com.sun.jdi.VirtualMachine;
 import static java.util.stream.Collectors.toList;
 import jdk.jshell.JShellException;
 import jdk.jshell.spi.ExecutionControl;
@@ -59,13 +66,28 @@ import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
 public class JDIExecutionControl implements ExecutionControl {
 
     ExecutionEnv execEnv;
-    JDIEnv jdiEnv;
-    private ClassTracker tracker;
-    private JDIEventHandler handler;
+    private final boolean isLaunch;
+    private JDIConnection connection;
+    private ClassTracker classTracker;
     private Socket socket;
     private ObjectInputStream remoteIn;
     private ObjectOutputStream remoteOut;
-    private String remoteVMOptions;
+
+    /**
+     * Creates an ExecutionControl instance based on JDI.
+     *
+     * @param isLaunch true for LaunchingConnector; false for ListeningConnector
+     */
+    public JDIExecutionControl(boolean isLaunch) {
+        this.isLaunch = isLaunch;
+    }
+
+    /**
+     * Creates an ExecutionControl instance based on a JDI LaunchingConnector.
+     */
+    public JDIExecutionControl() {
+        this.isLaunch = true;
+    }
 
     /**
      * Initializes the launching JDI execution engine. Initialize JDI and use it
@@ -79,20 +101,12 @@ public class JDIExecutionControl implements ExecutionControl {
     @Override
     public void start(ExecutionEnv execEnv) throws IOException {
         this.execEnv = execEnv;
-        this.jdiEnv = new JDIEnv(this);
-        this.tracker = new ClassTracker(jdiEnv);
         StringBuilder sb = new StringBuilder();
-        execEnv.extraRemoteVMOptions().stream()
-                .forEach(s -> {
-                    sb.append(" ");
-                    sb.append(s);
-                });
-        this.remoteVMOptions = sb.toString();
         try (ServerSocket listener = new ServerSocket(0)) {
             // timeout after 60 seconds
             listener.setSoTimeout(60000);
             int port = listener.getLocalPort();
-            jdiGo(port);
+            connection = new JDIConnection(this, port, execEnv.extraRemoteVMOptions(), isLaunch);
             this.socket = listener.accept();
             // out before in -- match remote creation so we don't hang
             this.remoteOut = new ObjectOutputStream(socket.getOutputStream());
@@ -109,16 +123,15 @@ public class JDIExecutionControl implements ExecutionControl {
     @Override
     public void close() {
         try {
-            JDIConnection c = jdiEnv.connection();
-            if (c != null) {
-                c.beginShutdown();
+            if (connection != null) {
+                connection.beginShutdown();
             }
             if (remoteOut != null) {
                 remoteOut.writeInt(CMD_EXIT);
                 remoteOut.flush();
             }
-            if (c != null) {
-                c.disposeVM();
+            if (connection != null) {
+                connection.disposeVM();
             }
         } catch (IOException ex) {
             debug(DBG_GEN, "Exception on JDI exit: %s\n", ex);
@@ -185,9 +198,9 @@ public class JDIExecutionControl implements ExecutionControl {
                 return result;
             }
         } catch (IOException | RuntimeException ex) {
-            if (!jdiEnv.connection().isRunning()) {
+            if (!connection.isRunning()) {
                 // The JDI connection is no longer live, shutdown.
-                jdiEnv.shutdown();
+                handleVMExit();
             } else {
                 debug(DBG_GEN, "Exception on remote invoke: %s\n", ex);
                 return "Execution failure: " + ex.getMessage();
@@ -221,7 +234,7 @@ public class JDIExecutionControl implements ExecutionControl {
                 return result;
             }
         } catch (EOFException ex) {
-            jdiEnv.shutdown();
+            handleVMExit();
         } catch (IOException ex) {
             debug(DBG_GEN, "Exception on remote var value: %s\n", ex);
             return "Execution failure: " + ex.getMessage();
@@ -273,7 +286,7 @@ public class JDIExecutionControl implements ExecutionControl {
                             ci -> ci.getReferenceTypeOrNull(),
                             ci -> ci.getBytes()));
             // Attempt redefine.  Throws exceptions on failure.
-            jdiEnv.vm().redefineClasses(rmp);
+            connection.vm().redefineClasses(rmp);
             // Successful: mark the bytes as loaded.
             infos.stream()
                     .forEach(ci -> ci.markLoaded());
@@ -287,6 +300,24 @@ public class JDIExecutionControl implements ExecutionControl {
         }
     }
 
+    // the VM has gone down in flames or because user evaled System.exit() or the like
+    void handleVMExit() {
+        if (connection != null) {
+            // If there is anything left dispose of it
+            connection.disposeVM();
+        }
+        // Tell JShell-core that the VM has died
+        execEnv.closeDown();
+    }
+
+    // Lazy init class tracker
+    private ClassTracker classTracker() {
+        if (classTracker == null) {
+            classTracker = new ClassTracker(connection.vm());
+        }
+        return classTracker;
+    }
+
     /**
      * Converts a collection of class names into ClassInfo instances associated
      * with the most recently compiled class bytes.
@@ -296,7 +327,7 @@ public class JDIExecutionControl implements ExecutionControl {
      */
     private List<ClassInfo> withBytes(Collection<String> classes) {
         return classes.stream()
-                .map(cn -> tracker.classInfo(cn, execEnv.getClassBytes(cn)))
+                .map(cn -> classTracker().classInfo(cn, execEnv.getClassBytes(cn)))
                 .collect(toList());
     }
 
@@ -310,7 +341,7 @@ public class JDIExecutionControl implements ExecutionControl {
      */
     @Override
     public ClassStatus getClassStatus(String classname) {
-        ClassInfo ci = tracker.get(classname);
+        ClassInfo ci = classTracker().get(classname);
         if (ci.getReferenceTypeOrNull() == null) {
             // If the class does not have a JDI ReferenceType it has not been loaded
             return ClassStatus.UNKNOWN;
@@ -403,37 +434,6 @@ public class JDIExecutionControl implements ExecutionControl {
         return elems;
     }
 
-    /**
-     * Launch the remote agent as a JDI connection.
-     *
-     * @param port the socket port for (non-JDI) commands
-     */
-    private void jdiGo(int port) {
-        //MessageOutput.textResources = ResourceBundle.getBundle("impl.TTYResources",
-        //        Locale.getDefault());
-
-        // Set-up for a fresh launch of a remote agent with any user-specified VM options.
-        String connectorName = "com.sun.jdi.CommandLineLaunch";
-        Map<String, String> argumentName2Value = new HashMap<>();
-        argumentName2Value.put("main", "jdk.internal.jshell.remote.RemoteAgent " + port);
-        argumentName2Value.put("options", remoteVMOptions);
-
-        boolean launchImmediately = true;
-        int traceFlags = 0;// VirtualMachine.TRACE_SENDS | VirtualMachine.TRACE_EVENTS;
-
-        // Launch.
-        jdiEnv.init(connectorName, argumentName2Value, launchImmediately, traceFlags);
-
-        if (jdiEnv.connection().isOpen() && jdiEnv.vm().canBeModified()) {
-            /*
-             * Connection opened on startup. Start event handler
-             * immediately, telling it (through arg 2) to stop on the
-             * VM start event.
-             */
-            handler = new JDIEventHandler(jdiEnv);
-        }
-    }
-
     private final Object STOP_LOCK = new Object();
     private boolean userCodeRunning = false;
 
@@ -447,7 +447,7 @@ public class JDIExecutionControl implements ExecutionControl {
                 return;
             }
 
-            VirtualMachine vm = handler.env.vm();
+            VirtualMachine vm = connection.vm();
             vm.suspend();
             try {
                 OUTER:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -127,6 +127,12 @@ public class JavaTimeSupplementary_fr extends OpenListResourceBundle {
                 "ann\u00e9e" },
             { "field.zone",
                 "fuseau horaire" },
+            { "islamic.AmPmMarkers",
+                new String[] {
+                    "AM",
+                    "PM",
+                }
+            },
             { "islamic.DatePatterns",
                 new String[] {
                     "EEEE d MMMM y GGGG",
@@ -246,6 +252,12 @@ public class JavaTimeSupplementary_fr extends OpenListResourceBundle {
                     "AH",
                 }
             },
+            { "islamic.narrow.AmPmMarkers",
+                new String[] {
+                    "AM",
+                    "PM",
+                }
+            },
             { "islamic.narrow.Eras",
                 new String[] {
                     "",
@@ -304,6 +316,12 @@ public class JavaTimeSupplementary_fr extends OpenListResourceBundle {
                 new String[] {
                     "BC",
                     "ap. J.-C.",
+                }
+            },
+            { "roc.AmPmMarkers",
+                new String[] {
+                    "AM",
+                    "PM",
                 }
             },
             { "roc.DatePatterns",
@@ -432,6 +450,12 @@ public class JavaTimeSupplementary_fr extends OpenListResourceBundle {
                 new String[] {
                     "avant RdC",
                     "RdC",
+                }
+            },
+            { "roc.narrow.AmPmMarkers",
+                new String[] {
+                    "AM",
+                    "PM",
                 }
             },
             { "roc.narrow.Eras",

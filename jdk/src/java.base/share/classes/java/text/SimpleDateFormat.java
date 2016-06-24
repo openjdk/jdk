@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1491,22 +1491,18 @@ public class SimpleDateFormat extends DateFormat {
 
                 if (i < compiledPattern.length) {
                     int nextTag = compiledPattern[i] >>> 8;
-                    if (!(nextTag == TAG_QUOTE_ASCII_CHAR ||
-                          nextTag == TAG_QUOTE_CHARS)) {
-                        obeyCount = true;
-                    }
+                    int nextCount = compiledPattern[i] & 0xff;
+                    obeyCount = shouldObeyCount(nextTag, nextCount);
 
                     if (hasFollowingMinusSign &&
                         (nextTag == TAG_QUOTE_ASCII_CHAR ||
                          nextTag == TAG_QUOTE_CHARS)) {
-                        int c;
-                        if (nextTag == TAG_QUOTE_ASCII_CHAR) {
-                            c = compiledPattern[i] & 0xff;
-                        } else {
-                            c = compiledPattern[i+1];
+
+                        if (nextTag != TAG_QUOTE_ASCII_CHAR) {
+                            nextCount = compiledPattern[i+1];
                         }
 
-                        if (c == minusSign) {
+                        if (nextCount == minusSign) {
                             useFollowingMinusSignAsDelimiter = true;
                         }
                     }
@@ -1547,6 +1543,36 @@ public class SimpleDateFormat extends DateFormat {
         }
 
         return parsedDate;
+    }
+
+    /* If the next tag/pattern is a <Numeric_Field> then the parser
+     * should consider the count of digits while parsing the contigous digits
+     * for the current tag/pattern
+     */
+    private boolean shouldObeyCount(int tag, int count) {
+        switch (tag) {
+            case PATTERN_MONTH:
+            case PATTERN_MONTH_STANDALONE:
+                return count <= 2;
+            case PATTERN_YEAR:
+            case PATTERN_DAY_OF_MONTH:
+            case PATTERN_HOUR_OF_DAY1:
+            case PATTERN_HOUR_OF_DAY0:
+            case PATTERN_MINUTE:
+            case PATTERN_SECOND:
+            case PATTERN_MILLISECOND:
+            case PATTERN_DAY_OF_YEAR:
+            case PATTERN_DAY_OF_WEEK_IN_MONTH:
+            case PATTERN_WEEK_OF_YEAR:
+            case PATTERN_WEEK_OF_MONTH:
+            case PATTERN_HOUR1:
+            case PATTERN_HOUR0:
+            case PATTERN_WEEK_YEAR:
+            case PATTERN_ISO_DAY_OF_WEEK:
+                return true;
+            default:
+                return false;
+        }
     }
 
     /**

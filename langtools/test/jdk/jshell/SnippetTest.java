@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8139829
  * @summary test accessors of Snippet
  * @build KullaTesting TestingInputStream
  * @run testng SnippetTest
@@ -32,9 +33,14 @@ import jdk.jshell.Snippet;
 import jdk.jshell.DeclarationSnippet;
 import org.testng.annotations.Test;
 
+import jdk.jshell.MethodSnippet;
+import jdk.jshell.Snippet.Status;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 import static jdk.jshell.Snippet.Status.VALID;
 import static jdk.jshell.Snippet.Status.RECOVERABLE_DEFINED;
 import static jdk.jshell.Snippet.Status.OVERWRITTEN;
+import static jdk.jshell.Snippet.Status.RECOVERABLE_NOT_DEFINED;
 import static jdk.jshell.Snippet.SubKind.*;
 
 @Test
@@ -146,5 +152,28 @@ public class SnippetTest extends KullaTesting {
         assertKeys(method("()void", "g"), clazz(KullaTesting.ClassType.INTERFACE, "A"),
                 method("()double", "f"));
         assertActiveKeys();
+    }
+
+    public void testBooleanSnippetQueries() {
+        Snippet nd = varKey(assertEval("blort x;", added(RECOVERABLE_NOT_DEFINED)));
+        assertTrue(nd.kind().isPersistent(), "nd.isPersistent");
+        Status ndstat = getState().status(nd);
+        assertTrue(ndstat.isActive(), "nd.isActive");
+        assertFalse(ndstat.isDefined(), "nd.isDefined");
+        MethodSnippet g = methodKey(assertEval("void g() { f(); }", added(RECOVERABLE_DEFINED)));
+        assertTrue(g.kind().isPersistent(), "g.isPersistent");
+        Status gstat = getState().status(g);
+        assertTrue(gstat.isActive(), "g.isActive");
+        assertTrue(gstat.isDefined(), "g.isDefined");
+        getState().drop(g);
+        assertTrue(g.kind().isPersistent(), "drop isPersistent");
+        gstat = getState().status(g);
+        assertFalse(gstat.isActive(), "drop isActive");
+        assertFalse(gstat.isDefined(), "drop isDefined");
+        Snippet stmt = key(assertEval("if (true) {}", added(VALID)));
+        assertFalse(stmt.kind().isPersistent(), "stmt isPersistent");
+        Status stmtstat = getState().status(stmt);
+        assertTrue(stmtstat.isActive(), "stmt isActive");
+        assertTrue(stmtstat.isDefined(), "stmt isDefined");
     }
 }

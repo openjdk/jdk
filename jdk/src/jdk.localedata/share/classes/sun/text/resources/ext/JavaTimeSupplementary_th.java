@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -182,10 +182,10 @@ public class JavaTimeSupplementary_th extends OpenListResourceBundle {
                 new String[] {
                     "\u0e21\u0e38\u0e2e\u0e31\u0e23.",
                     "\u0e40\u0e28\u0e32\u0e30.",
-                    "\u0e23\u0e2d\u0e1a\u0e35 1",
-                    "\u0e23\u0e2d\u0e1a\u0e35 2",
-                    "\u0e0d\u0e38\u0e21\u0e32 1",
-                    "\u0e0d\u0e38\u0e21\u0e32 2",
+                    "\u0e23\u0e2d\u0e1a\u0e35 I",
+                    "\u0e23\u0e2d\u0e1a\u0e35 II",
+                    "\u0e08\u0e38\u0e21\u0e32\u0e14\u0e32 I",
+                    "\u0e08\u0e38\u0e21\u0e32\u0e14\u0e32 II",
                     "\u0e40\u0e23\u0e32\u0e30.",
                     "\u0e0a\u0e30\u0e2d\u0e4c.",
                     "\u0e40\u0e23\u0e32\u0e30\u0e21\u0e30.",
@@ -244,10 +244,22 @@ public class JavaTimeSupplementary_th extends OpenListResourceBundle {
                     "HH:mm",
                 }
             },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "\u0e01\u0e48\u0e2d\u0e19\u0e40\u0e17\u0e35\u0e48\u0e22\u0e07",
+                    "\u0e2b\u0e25\u0e31\u0e07\u0e40\u0e17\u0e35\u0e48\u0e22\u0e07",
+                }
+            },
             { "islamic.long.Eras",
                 new String[] {
                     "",
                     "\u0e2e\u0e34\u0e08\u0e40\u0e23\u0e32\u0e30\u0e2b\u0e4c\u0e28\u0e31\u0e01\u0e23\u0e32\u0e0a",
+                }
+            },
+            { "islamic.narrow.AmPmMarkers",
+                new String[] {
+                    "a",
+                    "p",
                 }
             },
             { "islamic.narrow.Eras",
@@ -464,10 +476,22 @@ public class JavaTimeSupplementary_th extends OpenListResourceBundle {
                     "HH:mm",
                 }
             },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "\u0e01\u0e48\u0e2d\u0e19\u0e40\u0e17\u0e35\u0e48\u0e22\u0e07",
+                    "\u0e2b\u0e25\u0e31\u0e07\u0e40\u0e17\u0e35\u0e48\u0e22\u0e07",
+                }
+            },
             { "roc.long.Eras",
                 new String[] {
                     "\u0e1b\u0e35\u0e01\u0e48\u0e2d\u0e19\u0e44\u0e15\u0e49\u0e2b\u0e27\u0e31\u0e19",
                     "\u0e44\u0e15\u0e49\u0e2b\u0e27\u0e31\u0e19",
+                }
+            },
+            { "roc.narrow.AmPmMarkers",
+                new String[] {
+                    "a",
+                    "p",
                 }
             },
             { "roc.narrow.Eras",

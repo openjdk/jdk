@@ -43,6 +43,8 @@ import org.testng.annotations.Listeners;
  * @library /sanity/client/lib/jemmy/src
  * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
+ * @modules java.desktop
+ *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.progressbar.ProgressBarDemo
  * @run testng ProgressBarDemoTest
@@ -81,7 +83,6 @@ public class ProgressBarDemoTest {
             @Override
             public boolean checkComponent(Component comp) {
                 int value = progressBar.getValue();
-                System.out.println("checkComponent1 value = " + value);
                 return value < maximum;
             }
 
@@ -98,7 +99,6 @@ public class ProgressBarDemoTest {
             @Override
             public boolean checkComponent(Component comp) {
                 int value = progressBar.getValue();
-                System.out.println("checkComponent2 value = " + value);
                 return value > 0;
             }
 

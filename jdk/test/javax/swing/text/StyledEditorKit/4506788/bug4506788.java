@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,15 @@
  * questions.
  */
 
-/* @test
- @bug 4506788 7147408
- @summary  Tests if cursor gets stuck after insertion a character
- @author Denis Sharypov
- @run applet bug4506788.html
+/*
+ * @test
+ * @key headful
+ * @bug 4506788 7147408
+ * @summary  Tests if cursor gets stuck after insertion a character
+ * @author Denis Sharypov
+ * @run applet bug4506788.html
  */
+
 import java.awt.*;
 import java.awt.event.*;
 import java.lang.reflect.InvocationTargetException;

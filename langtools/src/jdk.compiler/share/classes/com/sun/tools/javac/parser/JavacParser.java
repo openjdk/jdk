@@ -3216,7 +3216,7 @@ public class JavacParser implements Parser {
                 List<JCExpression> moduleNames = null;
                 if (token.kind == IDENTIFIER && token.name() == names.to) {
                     nextToken();
-                    moduleNames = qualidentList();
+                    moduleNames = qualidentList(false);
                 }
                 accept(SEMI);
                 defs.append(toP(F.at(pos).Exports(pkgName, moduleNames)));
@@ -3635,7 +3635,7 @@ public class JavacParser implements Parser {
             List<JCExpression> thrown = List.nil();
             if (token.kind == THROWS) {
                 nextToken();
-                thrown = qualidentList();
+                thrown = qualidentList(true);
             }
             JCBlock body = null;
             JCExpression defaultValue;
@@ -3672,11 +3672,11 @@ public class JavacParser implements Parser {
 
     /** QualidentList = [Annotations] Qualident {"," [Annotations] Qualident}
      */
-    List<JCExpression> qualidentList() {
+    List<JCExpression> qualidentList(boolean allowAnnos) {
         ListBuffer<JCExpression> ts = new ListBuffer<>();
 
-        List<JCAnnotation> typeAnnos = typeAnnotationsOpt();
-        JCExpression qi = qualident(true);
+        List<JCAnnotation> typeAnnos = allowAnnos ? typeAnnotationsOpt() : List.nil();
+        JCExpression qi = qualident(allowAnnos);
         if (!typeAnnos.isEmpty()) {
             JCExpression at = insertAnnotationsToMostInner(qi, typeAnnos, false);
             ts.append(at);
@@ -3686,8 +3686,8 @@ public class JavacParser implements Parser {
         while (token.kind == COMMA) {
             nextToken();
 
-            typeAnnos = typeAnnotationsOpt();
-            qi = qualident(true);
+            typeAnnos = allowAnnos ? typeAnnotationsOpt() : List.nil();
+            qi = qualident(allowAnnos);
             if (!typeAnnos.isEmpty()) {
                 JCExpression at = insertAnnotationsToMostInner(qi, typeAnnos, false);
                 ts.append(at);

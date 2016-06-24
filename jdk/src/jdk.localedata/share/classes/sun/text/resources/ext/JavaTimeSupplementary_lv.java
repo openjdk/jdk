@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -112,25 +112,25 @@ public class JavaTimeSupplementary_lv extends OpenListResourceBundle {
             { "calendarname.roc",
                 "\u0136\u012bnas Republikas kalend\u0101rs" },
             { "field.dayperiod",
-                "Priek\u0161pusdien\u0101/p\u0113cpusdien\u0101" },
+                "priek\u0161pusdien\u0101/p\u0113cpusdien\u0101" },
             { "field.era",
-                "\u0112ra" },
+                "\u0113ra" },
             { "field.hour",
-                "Stundas" },
+                "stundas" },
             { "field.minute",
-                "Min\u016btes" },
+                "min\u016btes" },
             { "field.month",
-                "M\u0113nesis" },
+                "m\u0113nesis" },
             { "field.second",
-                "Sekundes" },
+                "sekundes" },
             { "field.week",
                 "ned\u0113\u013ca" },
             { "field.weekday",
                 "ned\u0113\u013cas diena" },
             { "field.year",
-                "Gads" },
+                "gads" },
             { "field.zone",
-                "Laika josla" },
+                "laika josla" },
             { "islamic.AmPmMarkers",
                 new String[] {
                     "priek\u0161pusdien\u0101",
@@ -225,6 +225,12 @@ public class JavaTimeSupplementary_lv extends OpenListResourceBundle {
                     "HH:mm:ss z",
                     "HH:mm:ss",
                     "HH:mm",
+                }
+            },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "priek\u0161p.",
+                    "p\u0113cp.",
                 }
             },
             { "islamic.narrow.AmPmMarkers",
@@ -405,6 +411,12 @@ public class JavaTimeSupplementary_lv extends OpenListResourceBundle {
                     "HH:mm:ss z",
                     "HH:mm:ss",
                     "HH:mm",
+                }
+            },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "priek\u0161p.",
+                    "p\u0113cp.",
                 }
             },
             { "roc.narrow.AmPmMarkers",

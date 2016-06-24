@@ -1387,7 +1387,6 @@ Instruction* LIRGenerator::instruction_for_vreg(int reg_num) {
 void LIRGenerator::set_vreg_flag(int vreg_num, VregFlag f) {
   if (_vreg_flags.size_in_bits() == 0) {
     BitMap2D temp(100, num_vreg_flags);
-    temp.clear();
     _vreg_flags = temp;
   }
   _vreg_flags.at_put_grow(vreg_num, f, true);

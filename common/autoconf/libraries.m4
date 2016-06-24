@@ -122,7 +122,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LLVM],
         fi
       fi
     done
-    llvm_version=$("${LLVM_CONFIG}" --version | sed 's/\.//; s/svn.*//')
+    llvm_version=$("${LLVM_CONFIG}" --version | $SED 's/\.//; s/svn.*//')
     LLVM_CFLAGS="${LLVM_CFLAGS} -DSHARK_LLVM_VERSION=${llvm_version}"
 
     unset LLVM_LDFLAGS

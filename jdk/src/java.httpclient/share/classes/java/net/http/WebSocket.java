@@ -28,13 +28,11 @@ import java.io.IOException;
 import java.net.ProtocolException;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.time.Duration;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 /**
  * A WebSocket client conforming to RFC&nbsp;6455.
@@ -47,13 +45,14 @@ import java.util.stream.Stream;
  * receive messages. When the {@code WebSocket} is no longer
  * needed it must be closed: a Close message must both be {@linkplain
  * #sendClose() sent} and {@linkplain Listener#onClose(WebSocket, Optional,
- * String) received}. Or to close abruptly, {@link #abort()} is called. Once
- * closed it remains closed, cannot be reopened.
+ * String) received}. Otherwise, invoke {@link #abort() abort} to close abruptly.
+ *
+ * <p> Once closed the {@code WebSocket} remains closed and cannot be reopened.
  *
  * <p> Messages of type {@code X} are sent through the {@code WebSocket.sendX}
  * methods and received through {@link WebSocket.Listener}{@code .onX} methods
- * asynchronously. Each of the methods begins the operation and returns a {@link
- * CompletionStage} which completes when the operation has completed.
+ * asynchronously. Each of the methods returns a {@link CompletionStage} which
+ * completes when the operation has completed.
  *
  * <p> Messages are received only if {@linkplain #request(long) requested}.
  *
@@ -71,13 +70,12 @@ import java.util.stream.Stream;
  * arranged from the {@code buffer}'s {@link ByteBuffer#position() position} to
  * the {@code buffer}'s {@link ByteBuffer#limit() limit}.
  *
- * <p> All message exchange is run by the threads belonging to the {@linkplain
- * HttpClient#executorService() executor service} of {@code WebSocket}'s {@link
- * HttpClient}.
- *
  * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
  * or method of this type will cause a {@link NullPointerException
  * NullPointerException} to be thrown.
+ *
+ * @implNote The default implementation's methods do not block before returning
+ * a {@code CompletableFuture}.
  *
  * @since 9
  */
@@ -214,29 +212,24 @@ public interface WebSocket {
          * Sets a timeout for the opening handshake.
          *
          * <p> If the opening handshake is not finished within the specified
-         * timeout then {@link #buildAsync()} completes exceptionally with a
-         * {@code HttpTimeoutException}.
+         * amount of time then {@link #buildAsync()} completes exceptionally
+         * with a {@code HttpTimeoutException}.
          *
-         * <p> If the timeout is not specified then it's deemed infinite.
+         * <p> If this method is not invoked then the timeout is deemed infinite.
          *
          * @param timeout
-         *         the maximum time to wait
-         * @param unit
-         *         the time unit of the timeout argument
+         *         the timeout
          *
          * @return this builder
-         *
-         * @throws IllegalArgumentException
-         *         if the {@code timeout} is negative
          */
-        Builder connectTimeout(long timeout, TimeUnit unit);
+        Builder connectTimeout(Duration timeout);
 
         /**
          * Builds a {@code WebSocket}.
          *
-         * <p> Returns immediately with a {@code CompletableFuture<WebSocket>}
-         * which completes with the {@code WebSocket} when it is connected, or
-         * completes exceptionally if an error occurs.
+         * <p> Returns a {@code CompletableFuture<WebSocket>} which completes
+         * normally with the {@code WebSocket} when it is connected or completes
+         * exceptionally if an error occurs.
          *
          * <p> {@code CompletableFuture} may complete exceptionally with the
          * following errors:
@@ -252,7 +245,7 @@ public interface WebSocket {
          *          if the opening handshake fails
          * </ul>
          *
-         * @return a {@code CompletableFuture} of {@code WebSocket}
+         * @return a {@code CompletableFuture} with the {@code WebSocket}
          */
         CompletableFuture<WebSocket> buildAsync();
     }
@@ -264,7 +257,7 @@ public interface WebSocket {
      * <ul>
      * <li> {@link #onOpen onOpen} <br>
      * This method is always the first to be invoked.
-     * <li> {@link #onText(WebSocket, WebSocket.Text, WebSocket.MessagePart)
+     * <li> {@link #onText(WebSocket, CharSequence, WebSocket.MessagePart)
      * onText}, {@link #onBinary(WebSocket, ByteBuffer, WebSocket.MessagePart)
      * onBinary}, {@link #onPing(WebSocket, ByteBuffer) onPing} and {@link
      * #onPong(WebSocket, ByteBuffer) onPong} <br>
@@ -375,6 +368,9 @@ public interface WebSocket {
          * @implSpec The default implementation {@linkplain WebSocket#request(long)
          * requests one more message}.
          *
+         * @implNote This implementation passes only complete UTF-16 sequences
+         * to the {@code onText} method.
+         *
          * @param webSocket
          *         the WebSocket
          * @param message
@@ -386,7 +382,7 @@ public interface WebSocket {
          * is done; or {@code null} if already done
          */
         default CompletionStage<?> onText(WebSocket webSocket,
-                                          Text message,
+                                          CharSequence message,
                                           MessagePart part) {
             webSocket.request(1);
             return null;
@@ -500,7 +496,7 @@ public interface WebSocket {
          * <p> Once a Close message is received, the server will not send any
          * more messages.
          *
-         * <p> A Close message may consist of a close code and a reason for
+         * <p> A Close message may consist of a status code and a reason for
          * closing. The reason will have a UTF-8 representation not longer than
          * {@code 123} bytes. The reason may be useful for debugging or passing
          * information relevant to the connection but is not necessarily human
@@ -539,12 +535,8 @@ public interface WebSocket {
          * the time {@code onError} is invoked, no more messages can be sent on
          * this {@code WebSocket}.
          *
-         * @apiNote Errors associated with send operations ({@link
-         * WebSocket#sendText(CharSequence, boolean) sendText}, {@link
-         * #sendBinary(ByteBuffer, boolean) sendBinary}, {@link
-         * #sendPing(ByteBuffer) sendPing}, {@link #sendPong(ByteBuffer)
-         * sendPong} and {@link #sendClose(CloseCode, CharSequence) sendClose})
-         * are reported to the {@code CompletionStage} operations return.
+         * @apiNote Errors associated with {@code sendX} methods are reported to
+         * the {@code CompletableFuture} these methods return.
          *
          * @implSpec The default implementation does nothing.
          *
@@ -557,8 +549,8 @@ public interface WebSocket {
     }
 
     /**
-     * A marker used by {@link WebSocket.Listener} for partial message
-     * receiving.
+     * A marker used by {@link WebSocket.Listener} in cases where a partial
+     * message may be received.
      *
      * @since 9
      */
@@ -580,75 +572,17 @@ public interface WebSocket {
         LAST,
 
         /**
-         * A whole message. The message consists of a single part.
+         * A whole message consisting of a single part.
          */
-        WHOLE;
-
-        /**
-         * Tells whether a part of a message received with this marker is the
-         * last part.
-         *
-         * @return {@code true} if LAST or WHOLE, {@code false} otherwise
-         */
-        public boolean isLast() {
-            return this == LAST || this == WHOLE;
-        }
+        WHOLE
     }
 
     /**
-     * Sends a Text message with bytes from the given {@code ByteBuffer}.
+     * Sends a Text message with characters from the given {@code CharSequence}.
      *
-     * <p> Returns immediately with a {@code CompletableFuture<Void>} which
-     * completes normally when the message has been sent, or completes
-     * exceptionally if an error occurs.
-     *
-     * <p> This message may be a partial UTF-8 sequence. However, the
-     * concatenation of all messages through the last must be a whole UTF-8
-     * sequence.
-     *
-     * <p> The {@code ByteBuffer} should not be modified until the returned
-     * {@code CompletableFuture} completes (either normally or exceptionally).
-     *
-     * <p> The returned {@code CompletableFuture} can complete exceptionally
-     * with:
-     * <ul>
-     * <li> {@link IOException}
-     *          if an I/O error occurs during this operation; or the
-     *          {@code WebSocket} closes while this operation is in progress;
-     *          or the {@code message} is a malformed UTF-8 sequence
-     * </ul>
-     *
-     * @param message
-     *         the message
-     * @param isLast
-     *         {@code true} if this is the final part of the message,
-     *         {@code false} otherwise
-     *
-     * @return a CompletableFuture of Void
-     *
-     * @throws IllegalStateException
-     *         if the WebSocket is closed
-     * @throws IllegalStateException
-     *         if a Close message has been sent already
-     * @throws IllegalStateException
-     *         if there is an outstanding send operation
-     * @throws IllegalStateException
-     *         if a previous Binary message
-     *         was not sent with {@code isLast == true}
-     */
-    CompletableFuture<Void> sendText(ByteBuffer message, boolean isLast);
-
-    /**
-     * Sends a Text message with characters from the given {@code
-     * CharSequence}.
-     *
-     * <p> Returns immediately with a {@code CompletableFuture<Void>} which
-     * completes normally when the message has been sent, or completes
-     * exceptionally if an error occurs.
-     *
-     * <p> This message may be a partial UTF-16 sequence. However, the
-     * concatenation of all messages through the last must be a whole UTF-16
-     * sequence.
+     * <p> Returns a {@code CompletableFuture<WebSocket>} which completes
+     * normally when the message has been sent or completes exceptionally if an
+     * error occurs.
      *
      * <p> The {@code CharSequence} should not be modified until the returned
      * {@code CompletableFuture} completes (either normally or exceptionally).
@@ -657,30 +591,30 @@ public interface WebSocket {
      * with:
      * <ul>
      * <li> {@link IOException}
-     *          if an I/O error occurs during this operation; or the
-     *          {@code WebSocket} closes while this operation is in progress;
-     *          or the {@code message} is a malformed UTF-16 sequence
+     *          if an I/O error occurs during this operation
+     * <li> {@link IllegalStateException}
+     *          if the {@code WebSocket} closes while this operation is in progress;
+     *          or if a Close message has been sent already;
+     *          or if there is an outstanding send operation;
+     *          or if a previous Binary message was not sent with {@code isLast == true}
      * </ul>
+     *
+     * @implNote This implementation does not accept partial UTF-16
+     * sequences. In case such a sequence is passed, a returned {@code
+     * CompletableFuture} completes exceptionally.
      *
      * @param message
      *         the message
      * @param isLast
-     *         {@code true} if this is the final part of the message
+     *         {@code true} if this is the last part of the message,
      *         {@code false} otherwise
      *
-     * @return a CompletableFuture of Void
+     * @return a CompletableFuture with this WebSocket
      *
-     * @throws IllegalStateException
-     *         if the WebSocket is closed
-     * @throws IllegalStateException
-     *         if a Close message has been already sent
-     * @throws IllegalStateException
-     *         if there is an outstanding send operation
-     * @throws IllegalStateException
-     *         if a previous Binary message was not sent
-     *         with {@code isLast == true}
+     * @throws IllegalArgumentException
+     *         if {@code message} is a malformed (or an incomplete) UTF-16 sequence
      */
-    CompletableFuture<Void> sendText(CharSequence message, boolean isLast);
+    CompletableFuture<WebSocket> sendText(CharSequence message, boolean isLast);
 
     /**
      * Sends a whole Text message with characters from the given {@code
@@ -689,9 +623,9 @@ public interface WebSocket {
      * <p> This is a convenience method. For the general case, use {@link
      * #sendText(CharSequence, boolean)}.
      *
-     * <p> Returns immediately with a {@code CompletableFuture<Void>} which
-     * completes normally when the message has been sent, or completes
-     * exceptionally if an error occurs.
+     * <p> Returns a {@code CompletableFuture<WebSocket>} which completes
+     * normally when the message has been sent or completes exceptionally if an
+     * error occurs.
      *
      * <p> The {@code CharSequence} should not be modified until the returned
      * {@code CompletableFuture} completes (either normally or exceptionally).
@@ -700,155 +634,61 @@ public interface WebSocket {
      * with:
      * <ul>
      * <li> {@link IOException}
-     *          if an I/O error occurs during this operation; or the
-     *          {@code WebSocket} closes while this operation is in progress;
-     *          or the message is a malformed UTF-16 sequence
+     *          if an I/O error occurs during this operation
+     * <li> {@link IllegalStateException}
+     *          if the {@code WebSocket} closes while this operation is in progress;
+     *          or if a Close message has been sent already;
+     *          or if there is an outstanding send operation;
+     *          or if a previous Binary message was not sent with {@code isLast == true}
      * </ul>
      *
      * @param message
      *         the message
      *
-     * @return a CompletableFuture of Void
+     * @return a CompletableFuture with this WebSocket
      *
-     * @throws IllegalStateException
-     *         if the WebSocket is closed
-     * @throws IllegalStateException
-     *         if a Close message has been already sent
-     * @throws IllegalStateException
-     *         if there is an outstanding send operation
-     * @throws IllegalStateException
-     *         if a previous Binary message was not sent
-     *         with {@code isLast == true}
+     * @throws IllegalArgumentException
+     *         if {@code message} is a malformed (or an incomplete) UTF-16 sequence
      */
-    default CompletableFuture<Void> sendText(CharSequence message) {
+    default CompletableFuture<WebSocket> sendText(CharSequence message) {
         return sendText(message, true);
     }
 
     /**
-     * Sends a whole Text message with characters from {@code
-     * CharacterSequence}s provided by the given {@code Stream}.
-     *
-     * <p> This is a convenience method. For the general case use {@link
-     * #sendText(CharSequence, boolean)}.
-     *
-     * <p> Returns immediately with a {@code CompletableFuture<Void>} which
-     * completes normally when the message has been sent, or completes
-     * exceptionally if an error occurs.
-     *
-     * <p> Streamed character sequences should not be modified until the
-     * returned {@code CompletableFuture} completes (either normally or
-     * exceptionally).
-     *
-     * <p> The returned {@code CompletableFuture} can complete exceptionally
-     * with:
-     * <ul>
-     * <li> {@link IOException}
-     *          if an I/O error occurs during this operation; or the
-     *          {@code WebSocket} closes while this operation is in progress;
-     *          or the message is a malformed UTF-16 sequence
-     * </ul>
-     *
-     * @param message
-     *         the message
-     *
-     * @return a CompletableFuture of Void
-     *
-     * @throws IllegalStateException
-     *         if the WebSocket is closed
-     * @throws IllegalStateException
-     *         if a Close message has been already sent
-     * @throws IllegalStateException
-     *         if there is an outstanding send operation
-     * @throws IllegalStateException
-     *         if a previous Binary message was not sent
-     *         with {@code isLast == true}
-     */
-    CompletableFuture<Void> sendText(Stream<? extends CharSequence> message);
-
-    /**
      * Sends a Binary message with bytes from the given {@code ByteBuffer}.
      *
-     * <p> Returns immediately with a {@code CompletableFuture<Void>} which
-     * completes normally when the message has been sent, or completes
-     * exceptionally if an error occurs.
+     * <p> Returns a {@code CompletableFuture<WebSocket>} which completes
+     * normally when the message has been sent or completes exceptionally if an
+     * error occurs.
      *
      * <p> The returned {@code CompletableFuture} can complete exceptionally
      * with:
      * <ul>
      * <li> {@link IOException}
-     *          if an I/O error occurs during this operation or the
-     *          {@code WebSocket} closes while this operation is in progress
+     *          if an I/O error occurs during this operation
+     * <li> {@link IllegalStateException}
+     *          if the {@code WebSocket} closes while this operation is in progress;
+     *          or if a Close message has been sent already;
+     *          or if there is an outstanding send operation;
+     *          or if a previous Text message was not sent with {@code isLast == true}
      * </ul>
      *
      * @param message
      *         the message
      * @param isLast
-     *         {@code true} if this is the final part of the message,
+     *         {@code true} if this is the last part of the message,
      *         {@code false} otherwise
      *
-     * @return a CompletableFuture of Void
-     *
-     * @throws IllegalStateException
-     *         if the WebSocket is closed
-     * @throws IllegalStateException
-     *         if a Close message has been already sent
-     * @throws IllegalStateException
-     *         if there is an outstanding send operation
-     * @throws IllegalStateException
-     *         if a previous Text message was not sent
-     *         with {@code isLast == true}
+     * @return a CompletableFuture with this WebSocket
      */
-    CompletableFuture<Void> sendBinary(ByteBuffer message, boolean isLast);
-
-    /**
-     * Sends a Binary message with bytes from the given {@code byte[]}.
-     *
-     * <p> Returns immediately with a {@code CompletableFuture<Void>} which
-     * completes normally when the message has been sent, or completes
-     * exceptionally if an error occurs.
-     *
-     * <p> The returned {@code CompletableFuture} can complete exceptionally
-     * with:
-     * <ul>
-     * <li> {@link IOException}
-     *          if an I/O error occurs during this operation or the
-     *          {@code WebSocket} closes while this operation is in progress
-     * </ul>
-     *
-     * @implSpec This is equivalent to:
-     * <pre>{@code
-     *     sendBinary(ByteBuffer.wrap(message), isLast)
-     * }</pre>
-     *
-     * @param message
-     *         the message
-     * @param isLast
-     *         {@code true} if this is the final part of the message,
-     *         {@code false} otherwise
-     *
-     * @return a CompletableFuture of Void
-     *
-     * @throws IllegalStateException
-     *         if the WebSocket is closed
-     * @throws IllegalStateException
-     *         if a Close message has been already sent
-     * @throws IllegalStateException
-     *         if there is an outstanding send operation
-     * @throws IllegalStateException
-     *         if a previous Text message was not sent
-     *         with {@code isLast == true}
-     */
-    default CompletableFuture<Void> sendBinary(byte[] message, boolean isLast) {
-        Objects.requireNonNull(message, "message");
-        return sendBinary(ByteBuffer.wrap(message), isLast);
-    }
+    CompletableFuture<WebSocket> sendBinary(ByteBuffer message, boolean isLast);
 
     /**
      * Sends a Ping message.
      *
-     * <p> Returns immediately with a {@code CompletableFuture<Void>} which
-     * completes normally when the message has been sent, or completes
-     * exceptionally if an error occurs.
+     * <p> Returns a {@code CompletableFuture<WebSocket>} which completes
+     * normally when the message has been sent or completes exceptionally if an
+     * error occurs.
      *
      * <p> A Ping message may be sent or received by either client or server.
      * It may serve either as a keepalive or as a means to verify that the
@@ -861,32 +701,29 @@ public interface WebSocket {
      * with:
      * <ul>
      * <li> {@link IOException}
-     *          if an I/O error occurs during this operation or the
-     *          {@code WebSocket} closes while this operation is in progress
+     *          if an I/O error occurs during this operation
+     * <li> {@link IllegalStateException}
+     *          if the {@code WebSocket} closes while this operation is in progress;
+     *          or if a Close message has been sent already;
+     *          or if there is an outstanding send operation
      * </ul>
      *
      * @param message
      *         the message
      *
-     * @return a CompletableFuture of Void
+     * @return a CompletableFuture with this WebSocket
      *
-     * @throws IllegalStateException
-     *         if the WebSocket is closed
-     * @throws IllegalStateException
-     *         if a Close message has been already sent
-     * @throws IllegalStateException
-     *         if there is an outstanding send operation
      * @throws IllegalArgumentException
      *         if {@code message.remaining() > 125}
      */
-    CompletableFuture<Void> sendPing(ByteBuffer message);
+    CompletableFuture<WebSocket> sendPing(ByteBuffer message);
 
     /**
      * Sends a Pong message.
      *
-     * <p> Returns immediately with a {@code CompletableFuture<Void>} which
-     * completes normally when the message has been sent, or completes
-     * exceptionally if an error occurs.
+     * <p> Returns a {@code CompletableFuture<WebSocket>} which completes
+     * normally when the message has been sent or completes exceptionally if an
+     * error occurs.
      *
      * <p> A Pong message may be unsolicited or may be sent in response to a
      * previously received Ping. In latter case the contents of the Pong is
@@ -899,44 +736,45 @@ public interface WebSocket {
      * with:
      * <ul>
      * <li> {@link IOException}
-     *          if an I/O error occurs during this operation or the
-     *          {@code WebSocket} closes while this operation is in progress
+     *          if an I/O error occurs during this operation
+     * <li> {@link IllegalStateException}
+     *          if the {@code WebSocket} closes while this operation is in progress;
+     *          or if a Close message has been sent already;
+     *          or if there is an outstanding send operation
      * </ul>
      *
      * @param message
      *         the message
      *
-     * @return a CompletableFuture of Void
+     * @return a CompletableFuture with this WebSocket
      *
-     * @throws IllegalStateException
-     *         if the WebSocket is closed
-     * @throws IllegalStateException
-     *         if a Close message has been already sent
-     * @throws IllegalStateException
-     *         if there is an outstanding send operation
      * @throws IllegalArgumentException
      *         if {@code message.remaining() > 125}
      */
-    CompletableFuture<Void> sendPong(ByteBuffer message);
+    CompletableFuture<WebSocket> sendPong(ByteBuffer message);
 
     /**
      * Sends a Close message with the given close code and the reason.
      *
-     * <p> Returns immediately with a {@code CompletableFuture<Void>} which
-     * completes normally when the message has been sent, or completes
-     * exceptionally if an error occurs.
+     * <p> Returns a {@code CompletableFuture<WebSocket>} which completes
+     * normally when the message has been sent or completes exceptionally if an
+     * error occurs.
      *
-     * <p> A Close message may consist of a close code and a reason for closing.
-     * The reason must have a valid UTF-8 representation not longer than {@code
-     * 123} bytes. The reason may be useful for debugging or passing information
-     * relevant to the connection but is not necessarily human readable.
+     * <p> A Close message may consist of a status code and a reason for
+     * closing. The reason must have a UTF-8 representation not longer than
+     * {@code 123} bytes. The reason may be useful for debugging or passing
+     * information relevant to the connection but is not necessarily human
+     * readable.
      *
      * <p> The returned {@code CompletableFuture} can complete exceptionally
      * with:
      * <ul>
      * <li> {@link IOException}
-     *          if an I/O error occurs during this operation or the
-     *          {@code WebSocket} closes while this operation is in progress
+     *          if an I/O error occurs during this operation
+     * <li> {@link IllegalStateException}
+     *          if the {@code WebSocket} closes while this operation is in progress;
+     *          or if a Close message has been sent already;
+     *          or if there is an outstanding send operation
      * </ul>
      *
      * @param code
@@ -944,64 +782,52 @@ public interface WebSocket {
      * @param reason
      *         the reason; can be empty
      *
-     * @return a CompletableFuture of Void
+     * @return a CompletableFuture with this WebSocket
      *
-     * @throws IllegalStateException
-     *         if the WebSocket is closed
-     * @throws IllegalStateException
-     *         if a Close message has been already sent
-     * @throws IllegalStateException
-     *         if there is an outstanding send operation
      * @throws IllegalArgumentException
-     *         if the {@code reason} doesn't have a valid UTF-8
-     *         representation not longer than {@code 123} bytes
+     *         if {@code reason} doesn't have an UTF-8 representation not longer
+     *         than {@code 123} bytes
      */
-    CompletableFuture<Void> sendClose(CloseCode code, CharSequence reason);
+    CompletableFuture<WebSocket> sendClose(CloseCode code, CharSequence reason);
 
     /**
      * Sends an empty Close message.
      *
-     * <p> Returns immediately with a {@code CompletableFuture<Void>} which
-     * completes normally when the message has been sent, or completes
-     * exceptionally if an error occurs.
+     * <p> Returns a {@code CompletableFuture<WebSocket>} which completes
+     * normally when the message has been sent or completes exceptionally if an
+     * error occurs.
      *
      * <p> The returned {@code CompletableFuture} can complete exceptionally
      * with:
      * <ul>
      * <li> {@link IOException}
-     *          if an I/O error occurs during this operation or the
-     *          {@code WebSocket} closes while this operation is in progress
+     *          if an I/O error occurs during this operation
+     * <li> {@link IllegalStateException}
+     *          if the {@code WebSocket} closes while this operation is in progress;
+     *          or if a Close message has been sent already;
+     *          or if there is an outstanding send operation
      * </ul>
      *
-     * @return a CompletableFuture of Void
-     *
-     * @throws IllegalStateException
-     *         if the WebSocket is closed
-     * @throws IllegalStateException
-     *         if a Close message has been already sent
-     * @throws IllegalStateException
-     *         if there is an outstanding send operation
+     * @return a CompletableFuture with this WebSocket
      */
-    CompletableFuture<Void> sendClose();
+    CompletableFuture<WebSocket> sendClose();
 
     /**
-     * Requests {@code n} more messages to be received by the {@link Listener
+     * Allows {@code n} more messages to be received by the {@link Listener
      * Listener}.
      *
-     * <p> The actual number might be fewer if either of the endpoints decide to
-     * close the connection before that or an error occurs.
+     * <p> The actual number of received messages might be fewer if a Close
+     * message is received, the connection closes or an error occurs.
      *
      * <p> A {@code WebSocket} that has just been created, hasn't requested
      * anything yet. Usually the initial request for messages is done in {@link
      * Listener#onOpen(java.net.http.WebSocket) Listener.onOpen}.
      *
-     * If all requested messages have been received, and the server sends more,
-     * then these messages are queued.
-     *
      * @implNote This implementation does not distinguish between partial and
      * whole messages, because it's not known beforehand how a message will be
      * received.
-     * <p> If a server sends more messages than requested, the implementation
+     *
+     * <p> If a server sends more messages than requested, this implementation
      * queues up these messages on the TCP connection and may eventually force
      * the sender to stop sending through TCP flow control.
      *
@@ -1010,12 +836,8 @@ public interface WebSocket {
      *
      * @throws IllegalArgumentException
      *         if {@code n < 0}
-     *
-     * @return resulting unfulfilled demand with this request taken into account
      */
-    // TODO return void as it's breaking encapsulation (leaking info when exactly something deemed delivered)
-    // or demand behaves after LONG.MAX_VALUE
-    long request(long n);
+    void request(long n);
 
     /**
      * Returns a {@linkplain Builder#subprotocols(String, String...) subprotocol}
@@ -1241,48 +1063,5 @@ public interface WebSocket {
         private static Map.Entry<Integer, CloseCode> entry(CloseCode cc) {
             return Map.entry(cc.getCode(), cc);
         }
-    }
-
-    /**
-     * A character sequence that provides access to the characters UTF-8 decoded
-     * from a message in a {@code ByteBuffer}.
-     *
-     * @since 9
-     */
-    interface Text extends CharSequence {
-
-        // Methods from the CharSequence below are mentioned explicitly for the
-        // purpose of documentation, so when looking at javadoc it immediately
-        // obvious what methods Text has
-
-        @Override
-        int length();
-
-        @Override
-        char charAt(int index);
-
-        @Override
-        CharSequence subSequence(int start, int end);
-
-        /**
-         * Returns a string containing the characters in this sequence in the
-         * same order as this sequence. The length of the string will be the
-         * length of this sequence.
-         *
-         * @return a string consisting of exactly this sequence of characters
-         */
-        @Override
-        // TODO: remove the explicit javadoc above when:
-        // (JDK-8144034 has been resolved) AND (the comment is still identical
-        // to CharSequence#toString)
-        String toString();
-
-        /**
-         * Returns a read-only {@code ByteBuffer} containing the message encoded
-         * in UTF-8.
-         *
-         * @return a read-only ByteBuffer
-         */
-        ByteBuffer asByteBuffer();
     }
 }

@@ -39,14 +39,21 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UncheckedIOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
+import java.lang.module.Configuration;
+import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReference;
 import java.lang.reflect.Field;
+import java.lang.reflect.Layer;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Module;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.AccessControlContext;
@@ -60,9 +67,12 @@ import java.security.PrivilegedExceptionAction;
 import java.security.ProtectionDomain;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -337,7 +347,7 @@ public final class Context {
             return new NamedContextCodeInstaller(context, codeSource, context.createNewLoader());
         }
 
-        private static final byte[] getAnonymousHostClassBytes() {
+        private static byte[] getAnonymousHostClassBytes() {
             final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
             cw.visit(V1_7, Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, ANONYMOUS_HOST_CLASS_NAME.replace('.', '/'), null, "java/lang/Object", null);
             cw.visitEnd();
@@ -471,6 +481,11 @@ public final class Context {
     /** class loader to resolve classes from script. */
     private final ClassLoader appLoader;
 
+    /*package-private*/
+    ClassLoader getAppLoader() {
+        return appLoader;
+    }
+
     /** Class loader to load classes compiled from scripts. */
     private final ScriptLoader scriptLoader;
 
@@ -486,13 +501,13 @@ public final class Context {
     /** Optional class filter to use for Java classes. Can be null. */
     private final ClassFilter classFilter;
 
-    private static final ClassLoader myLoader = Context.class.getClassLoader();
-    private static final StructureLoader sharedLoader;
+    /** Process-wide singleton structure loader */
+    private static final StructureLoader theStructLoader;
     private static final ConcurrentMap<String, Class<?>> structureClasses = new ConcurrentHashMap<>();
 
     /*package-private*/ @SuppressWarnings("static-method")
-    StructureLoader getSharedLoader() {
-        return sharedLoader;
+    StructureLoader getStructLoader() {
+        return theStructLoader;
     }
 
     private static AccessControlContext createNoPermAccCtxt() {
@@ -508,9 +523,11 @@ public final class Context {
     private static final AccessControlContext NO_PERMISSIONS_ACC_CTXT = createNoPermAccCtxt();
     private static final AccessControlContext CREATE_LOADER_ACC_CTXT  = createPermAccCtxt("createClassLoader");
     private static final AccessControlContext CREATE_GLOBAL_ACC_CTXT  = createPermAccCtxt(NASHORN_CREATE_GLOBAL);
+    private static final AccessControlContext GET_LOADER_ACC_CTXT     = createPermAccCtxt("getClassLoader");
 
     static {
-        sharedLoader = AccessController.doPrivileged(new PrivilegedAction<StructureLoader>() {
+        final ClassLoader myLoader = Context.class.getClassLoader();
+        theStructLoader = AccessController.doPrivileged(new PrivilegedAction<StructureLoader>() {
             @Override
             public StructureLoader run() {
                 return new StructureLoader(myLoader);
@@ -791,7 +808,7 @@ public final class Context {
         // Nashorn extension: any 'eval' is unconditionally strict when -strict is specified.
         boolean strictFlag = strict || this._strict;
 
-        Class<?> clazz = null;
+        Class<?> clazz;
         try {
             clazz = compile(source, new ThrowErrorManager(), strictFlag, true);
         } catch (final ParserException e) {
@@ -1022,7 +1039,7 @@ public final class Context {
         }
         return (Class<? extends ScriptObject>)structureClasses.computeIfAbsent(fullName, (name) -> {
             try {
-                return Class.forName(name, true, sharedLoader);
+                return Class.forName(name, true, theStructLoader);
             } catch (final ClassNotFoundException e) {
                 throw new AssertionError(e);
             }
@@ -1144,7 +1161,17 @@ public final class Context {
         }
 
         // Try finding using the "app" loader.
-        return Class.forName(fullName, true, appLoader);
+        if (appLoader != null) {
+            return Class.forName(fullName, true, appLoader);
+        } else {
+            final Class<?> cl = Class.forName(fullName);
+            // return the Class only if it was loaded by boot loader
+            if (cl.getClassLoader() == null) {
+                return cl;
+            } else {
+                throw new ClassNotFoundException(fullName);
+            }
+        }
     }
 
     /**
@@ -1175,7 +1202,7 @@ public final class Context {
             // No verification when security manager is around as verifier
             // may load further classes - which should be avoided.
             if (System.getSecurityManager() == null) {
-                CheckClassAdapter.verify(new ClassReader(bytecode), sharedLoader, false, new PrintWriter(System.err, true));
+                CheckClassAdapter.verify(new ClassReader(bytecode), theStructLoader, false, new PrintWriter(System.err, true));
             }
         }
     }
@@ -1279,6 +1306,62 @@ public final class Context {
      */
     public static DynamicLinker getDynamicLinker() {
         return getContextTrusted().dynamicLinker;
+    }
+
+    /**
+     * Creates a module layer with one module that is defined to the given class
+     * loader.
+     *
+     * @param descriptor the module descriptor for the newly created module
+     * @param loader the class loader of the module
+     * @return the new Module
+     */
+    static Module createModuleTrusted(final ModuleDescriptor descriptor, final ClassLoader loader) {
+        return createModuleTrusted(Layer.boot(), descriptor, loader);
+    }
+
+    /**
+     * Creates a module layer with one module that is defined to the given class
+     * loader.
+     *
+     * @param parent the parent layer of the new module
+     * @param descriptor the module descriptor for the newly created module
+     * @param loader the class loader of the module
+     * @return the new Module
+     */
+    static Module createModuleTrusted(final Layer parent, final ModuleDescriptor descriptor, final ClassLoader loader) {
+        final String mn = descriptor.name();
+
+        final ModuleReference mref = new ModuleReference(descriptor, null, () -> {
+            IOException ioe = new IOException("<dynamic module>");
+            throw new UncheckedIOException(ioe);
+        });
+
+        final ModuleFinder finder = new ModuleFinder() {
+            @Override
+            public Optional<ModuleReference> find(String name) {
+                if (name.equals(mn)) {
+                    return Optional.of(mref);
+                } else {
+                    return Optional.empty();
+                }
+            }
+            @Override
+            public Set<ModuleReference> findAll() {
+                return Set.of(mref);
+            }
+        };
+
+        final Configuration cf = parent.configuration()
+                .resolveRequires(finder, ModuleFinder.of(), Set.of(mn));
+
+        final PrivilegedAction<Layer> pa = () -> parent.defineModules(cf, name -> loader);
+        final Layer layer = AccessController.doPrivileged(pa, GET_LOADER_ACC_CTXT);
+
+        final Module m = layer.findModule(mn).get();
+        assert m.getLayer() == layer;
+
+        return m;
     }
 
     static Context getContextTrustedOrNull() {
@@ -1463,7 +1546,7 @@ public final class Context {
              new PrivilegedAction<ScriptLoader>() {
                 @Override
                 public ScriptLoader run() {
-                    return new ScriptLoader(appLoader, Context.this);
+                    return new ScriptLoader(Context.this);
                 }
              }, CREATE_LOADER_ACC_CTXT);
     }
