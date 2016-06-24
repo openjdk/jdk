@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: XMLErrorResources_sv.java /st_wptg_1.8.0.0.0jdk/2 2013/09/16 06:50:58 gmolloy Exp $
+ * $Id: XMLErrorResources_sv.java /st_wptg_1.9.0.0.0jdk/2 2016/04/14 01:57:20 gmolloy Exp $
  */
 package com.sun.org.apache.xml.internal.res;
 
@@ -378,8 +378,8 @@ public class XMLErrorResources_sv extends ListResourceBundle
 
     { "BAD_CODE", "Parameter f\u00F6r createMessage ligger utanf\u00F6r gr\u00E4nsv\u00E4rdet"},
     { "FORMAT_FAILED", "Undantag utl\u00F6st vid messageFormat-anrop"},
-    { "line", "Rad #"},
-    { "column","Kolumn #"},
+    { "line", "Rad nr"},
+    { "column","Kolumn nr"},
 
     {ER_SERIALIZER_NOT_CONTENTHANDLER,
       "Serializerklassen ''{0}'' implementerar inte org.xml.sax.ContentHandler."},

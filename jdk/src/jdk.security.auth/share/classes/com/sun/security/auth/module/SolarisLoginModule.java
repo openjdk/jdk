@@ -50,9 +50,10 @@ import com.sun.security.auth.SolarisNumericGroupPrincipal;
  *             This LoginModule is entirely deprecated and
  *             is here to allow for a smooth transition to the new
  *             UnixLoginModule.
+ * This class is subject to removal in a future version of Java SE.
  *
  */
-@Deprecated
+@Deprecated(since="1.4", forRemoval=true)
 public class SolarisLoginModule implements LoginModule {
 
     // initial state

@@ -76,8 +76,8 @@ public class ComputeFQNsTest extends KullaTesting {
         assertInferredFQNs("class X { ArrayList", "ArrayList".length(), false, "java.util.ArrayList");
     }
 
-    @Test(enabled = false) //JDK-8150860
-    public void testSuspendIndexing() throws Exception {
+    @Test
+    public void testSuspendIndexing() throws Throwable {
         compiler.compile(outDir, "package test; public class FQNTest { }");
         String jarName = "test.jar";
         compiler.jar(outDir, jarName, "test/FQNTest.class");
@@ -90,15 +90,35 @@ public class ComputeFQNsTest extends KullaTesting {
 
         getState().sourceCodeAnalysis();
 
+        Throwable[] evalException = new Throwable[1];
+
         new Thread() {
             @Override public void run() {
-                assertEval("{new java.io.FileOutputStream(\"" + runMarkFile.toAbsolutePath().toString() + "\").close();" +
-                           " while (java.nio.file.Files.exists(java.nio.file.Paths.get(\"" + continueMarkFile.toString() + "\"))) Thread.sleep(100); }");
+                try {
+                    assertEval("{new java.io.FileOutputStream(\"" + runMarkFile.toAbsolutePath().toString().replace("\\", "\\\\") + "\").close();" +
+                               " while (java.nio.file.Files.exists(java.nio.file.Paths.get(\"" + continueMarkFile.toAbsolutePath().toString().replace("\\", "\\\\") + "\"))) Thread.sleep(100); }");
+                } catch (Throwable t) {
+                    evalException[0] = t;
+                }
             }
         }.start();
 
-        while (!Files.exists(runMarkFile))
-            Thread.sleep(100);
+        while (true) {
+            if (Files.exists(runMarkFile))
+                break;
+            try {
+                Thread.sleep(100);
+            } catch (Throwable t) {
+                if (evalException[0] != null) {
+                    evalException[0].addSuppressed(t);
+                } else {
+                    throw t;
+                }
+            }
+            if (evalException[0] != null) {
+                throw evalException[0];
+            }
+        }
 
         addToClasspath(compiler.getPath(outDir).resolve(jarName));
 

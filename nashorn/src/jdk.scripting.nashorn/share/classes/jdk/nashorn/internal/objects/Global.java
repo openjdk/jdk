@@ -1087,6 +1087,8 @@ public final class Global extends Scope {
     private ThreadLocal<ScriptContext> scontext;
     // current ScriptEngine associated - can be null.
     private ScriptEngine engine;
+    // initial ScriptContext - usually null and only used for special case
+    private volatile ScriptContext initscontext;
 
     // ES6 global lexical scope.
     private final LexicalScope lexicalScope;
@@ -1112,9 +1114,22 @@ public final class Global extends Scope {
         return scontext.get();
     }
 
+    /**
+     * Set the initial script context
+     * @param ctxt initial script context
+     */
+    public void setInitScriptContext(final ScriptContext ctxt) {
+        this.initscontext = ctxt;
+    }
+
     private ScriptContext currentContext() {
         final ScriptContext sc = scontext != null? scontext.get() : null;
-        return (sc != null)? sc : (engine != null? engine.getContext() : null);
+        if (sc != null) {
+            return sc;
+        } else if (initscontext != null) {
+            return initscontext;
+        }
+        return engine != null? engine.getContext() : null;
     }
 
     @Override
@@ -2459,14 +2474,14 @@ public final class Global extends Scope {
     }
 
     @Override
-    protected FindProperty findProperty(final Object key, final boolean deep, final ScriptObject start) {
-        if (lexicalScope != null && start != this && start.isScope()) {
+    protected FindProperty findProperty(final Object key, final boolean deep, boolean isScope, final ScriptObject start) {
+        if (lexicalScope != null && isScope) {
             final FindProperty find = lexicalScope.findProperty(key, false);
             if (find != null) {
                 return find;
             }
         }
-        return super.findProperty(key, deep, start);
+        return super.findProperty(key, deep, isScope, start);
     }
 
     @Override
@@ -2839,8 +2854,7 @@ public final class Global extends Scope {
             sb.append("$Constructor");
 
             final Class<?> funcClass = Class.forName(sb.toString());
-            @SuppressWarnings("deprecation")
-            final T res = clazz.cast(funcClass.newInstance());
+            final T res = clazz.cast(funcClass.getDeclaredConstructor().newInstance());
 
             if (res instanceof ScriptFunction) {
                 // All global constructor prototypes are not-writable,
@@ -2856,8 +2870,12 @@ public final class Global extends Scope {
             res.setIsBuiltin();
 
             return res;
-        } catch (final ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+        } catch (final Exception e) {
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException)e;
+            } else {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -2867,14 +2885,17 @@ public final class Global extends Scope {
             final String className = PACKAGE_PREFIX + name + "$Prototype";
 
             final Class<?> funcClass = Class.forName(className);
-            @SuppressWarnings("deprecation")
-            final ScriptObject res = (ScriptObject) funcClass.newInstance();
+            final ScriptObject res = (ScriptObject) funcClass.getDeclaredConstructor().newInstance();
 
             res.setIsBuiltin();
             res.setInitialProto(prototype);
             return res;
-        } catch (final ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+        } catch (final Exception e) {
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException)e;
+            } else {
+                throw new RuntimeException(e);
+            }
         }
     }
 

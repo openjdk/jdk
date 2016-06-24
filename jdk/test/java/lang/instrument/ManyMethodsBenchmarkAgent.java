@@ -29,6 +29,7 @@
  *
  * @modules jdk.compiler
  *          java.instrument
+ *          jdk.zipfs
  * @run build ManyMethodsBenchmarkApp ManyMethodsBenchmarkAgent
  * @run shell MakeJAR3.sh ManyMethodsBenchmarkAgent 'Can-Retransform-Classes: true'
  * @run main/othervm -javaagent:ManyMethodsBenchmarkAgent.jar ManyMethodsBenchmarkApp

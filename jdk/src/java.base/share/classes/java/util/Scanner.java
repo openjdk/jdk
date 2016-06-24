@@ -793,7 +793,6 @@ public final class Scanner implements Iterator<String>, Closeable {
     private void readInput() {
         if (buf.limit() == buf.capacity())
             makeSpace();
-
         // Prepare to receive data
         int p = buf.position();
         buf.position(buf.limit());
@@ -806,15 +805,12 @@ public final class Scanner implements Iterator<String>, Closeable {
             lastException = ioe;
             n = -1;
         }
-
         if (n == -1) {
             sourceClosed = true;
             needInput = false;
         }
-
         if (n > 0)
             needInput = false;
-
         // Restore current position and limit for reading
         buf.limit(buf.position());
         buf.position(p);
@@ -871,15 +867,20 @@ public final class Scanner implements Iterator<String>, Closeable {
         matchValid = false;
         matcher.usePattern(delimPattern);
         matcher.region(position, buf.limit());
-
         // Skip delims first
-        if (matcher.lookingAt())
+        if (matcher.lookingAt()) {
+            if (matcher.hitEnd() && !sourceClosed) {
+                // more input might change the match of delims, in which
+                // might change whether or not if there is token left in
+                // buffer (don't update the "position" in this case)
+                needInput = true;
+                return false;
+            }
             position = matcher.end();
-
+        }
         // If we are sitting at the end, no more tokens in buffer
         if (position == buf.limit())
             return false;
-
         return true;
     }
 
@@ -900,7 +901,6 @@ public final class Scanner implements Iterator<String>, Closeable {
      */
     private String getCompleteTokenInBuffer(Pattern pattern) {
         matchValid = false;
-
         // Skip delims first
         matcher.usePattern(delimPattern);
         if (!skipped) { // Enforcing only one skip of leading delims
@@ -925,7 +925,6 @@ public final class Scanner implements Iterator<String>, Closeable {
             needInput = true;
             return null;
         }
-
         // Must look for next delims. Simply attempting to match the
         // pattern at this point may find a match but it might not be
         // the first longest match because of missing input, or it might
@@ -1341,8 +1340,9 @@ public final class Scanner implements Iterator<String>, Closeable {
         saveState();
         modCount++;
         while (!sourceClosed) {
-            if (hasTokenInBuffer())
+            if (hasTokenInBuffer()) {
                 return revertState(true);
+            }
             readInput();
         }
         boolean result = hasTokenInBuffer();
@@ -1365,7 +1365,6 @@ public final class Scanner implements Iterator<String>, Closeable {
         ensureOpen();
         clearCaches();
         modCount++;
-
         while (true) {
             String token = getCompleteTokenInBuffer(null);
             if (token != null) {

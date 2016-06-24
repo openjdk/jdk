@@ -127,6 +127,7 @@ static void displaycb_handle
                     jc_CGraphicsEnvironment, "_displayReconfiguration","(IZ)V");
             JNFCallVoidMethod(env, graphicsEnv, jm_displayReconfiguration,
                     (jint) display, (jboolean) flags & kCGDisplayRemoveFlag);
+            (*env)->DeleteLocalRef(env, graphicsEnv);
         });
     }];
 }

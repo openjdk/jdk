@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -73,6 +73,8 @@ jclass jLongClass;
 
 JavaVM* jvm = NULL;
 
+jboolean debug = 0;
+
 JNIEXPORT jint JNICALL DEF_JNI_OnLoad(JavaVM *vm, void *reserved) {
     jvm = vm;
     return JNI_VERSION_1_4;
@@ -92,7 +94,7 @@ JNIEXPORT jint JNICALL DEF_JNI_OnLoad(JavaVM *vm, void *reserved) {
  */
 JNIEXPORT void JNICALL
 Java_sun_security_pkcs11_wrapper_PKCS11_initializeLibrary
-(JNIEnv *env, jclass thisClass)
+(JNIEnv *env, jclass thisClass, jboolean enableDebug)
 {
 #ifndef NO_CALLBACKS
     if (notifyListLock == NULL) {
@@ -101,6 +103,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_initializeLibrary
 #endif
 
     prefetchFields(env, thisClass);
+    debug = enableDebug;
 }
 
 jclass fetchClass(JNIEnv *env, const char *name) {

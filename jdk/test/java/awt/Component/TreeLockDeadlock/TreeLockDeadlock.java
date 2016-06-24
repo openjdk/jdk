@@ -30,6 +30,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * @test
+ * @key headful
  * @bug 8138764
  */
 public final class TreeLockDeadlock extends Frame {

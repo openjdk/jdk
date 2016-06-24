@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package sun.security.util;
 
 /**
- * <p> This class represents the <code>ResourceBundle</code>
+ * This class represents the <code>ResourceBundle</code>
  * for javax.security.auth and sun.security.
  *
  */
@@ -159,8 +159,6 @@ public class Resources_fr extends java.util.ListResourceBundle {
 
     /**
      * Returns the contents of this <code>ResourceBundle</code>.
-     *
-     * <p>
      *
      * @return the contents of this <code>ResourceBundle</code>.
      */

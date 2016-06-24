@@ -135,7 +135,7 @@ public class DOMEntityResolverWrapper
                  * stringData, systemId, publicId.
                  */
                 XMLInputSource xmlInputSource =
-                    new XMLInputSource(publicId, systemId, baseSystemId);
+                    new XMLInputSource(publicId, systemId, baseSystemId, true);
 
                 if (charStream != null) {
                     xmlInputSource.setCharacterStream(charStream);

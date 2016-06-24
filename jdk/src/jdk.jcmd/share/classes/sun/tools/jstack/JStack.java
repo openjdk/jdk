@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.util.Collection;
 
 import com.sun.tools.attach.VirtualMachine;
+import com.sun.tools.attach.VirtualMachineDescriptor;
 import sun.tools.attach.HotSpotVirtualMachine;
 import sun.tools.common.ProcessArgumentMatcher;
 
@@ -82,13 +83,19 @@ public class JStack {
         } else {
             params = new String[0];
         }
-        ProcessArgumentMatcher ap = new ProcessArgumentMatcher(pidArg, JStack.class);
-        Collection<String> pids = ap.getPids();
-        for (String pid : pids) {
-            if (pids.size() > 1) {
-                System.out.println("Pid:" + pid);
+        ProcessArgumentMatcher ap = new ProcessArgumentMatcher(pidArg);
+        Collection<VirtualMachineDescriptor> vids = ap.getVirtualMachineDescriptors(JStack.class);
+
+        if (vids.isEmpty()) {
+            System.err.println("Could not find any processes matching : '" + pidArg + "'");
+            System.exit(1);
+        }
+
+        for (VirtualMachineDescriptor vid : vids) {
+            if (vids.size() > 1) {
+                System.out.println("Pid:" + vid.id());
             }
-            runThreadDump(pid, params);
+            runThreadDump(vid.id(), params);
         }
     }
 

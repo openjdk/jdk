@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,8 +165,10 @@ public class NetworkClient {
                 // server & port will be the proxy address and port
                 s = new Socket(Proxy.NO_PROXY);
             }
-        } else
+        } else {
             s = createSocket();
+        }
+
         // Instance specific timeouts do have priority, that means
         // connectTimeout & readTimeout (-1 means not set)
         // Then global default timeouts
@@ -194,7 +196,7 @@ public class NetworkClient {
      * to create the socket.
      */
     protected Socket createSocket() throws IOException {
-        return new java.net.Socket();
+        return new java.net.Socket(Proxy.NO_PROXY);  // direct connection
     }
 
     protected InetAddress getLocalAddress() throws IOException {

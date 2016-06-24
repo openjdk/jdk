@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: XMLErrorResources_pt_BR.java /st_wptg_1.8.0.0.0jdk/2 2013/09/11 12:46:54 gmolloy Exp $
+ * $Id: XMLErrorResources_pt_BR.java /st_wptg_1.9.0.0.0jdk/2 2016/04/12 18:01:34 gmolloy Exp $
  */
 package com.sun.org.apache.xml.internal.res;
 
@@ -191,7 +191,7 @@ public class XMLErrorResources_pt_BR extends ListResourceBundle
       "N\u00E3o \u00E9 poss\u00EDvel substituir a causa"},
 
     { ER_NO_DEFAULT_IMPL,
-      "Nenhuma implementa\u00E7\u00E3o default encontrada "},
+      "Nenhuma implementa\u00E7\u00E3o padr\u00E3o encontrada "},
 
     { ER_CHUNKEDINTARRAY_NOT_SUPPORTED,
       "ChunkedIntArray({0}) n\u00E3o suportado atualmente"},
@@ -429,7 +429,7 @@ public class XMLErrorResources_pt_BR extends ListResourceBundle
       "Declara\u00E7\u00E3o de namespace ''{0}''=''{1}'' fora do elemento." },
 
     {ER_COULD_NOT_LOAD_RESOURCE,
-      "N\u00E3o foi poss\u00EDvel carregar ''{0}'' (verificar CLASSPATH); usando agora apenas os defaults"},
+      "N\u00E3o foi poss\u00EDvel carregar ''{0}'' (verificar CLASSPATH); usando agora apenas os padr\u00F5es"},
 
     { ER_ILLEGAL_CHARACTER,
        "Tentativa de exibir um caractere de valor integral {0} que n\u00E3o est\u00E1 representado na codifica\u00E7\u00E3o de sa\u00EDda especificada de {1}."},

@@ -44,7 +44,7 @@ import java.io.IOException;
  * a non-zero bit offset before a byte-aligned read.  When reading bytes,
  * any bit offset is set to 0 before the read; when writing bytes, a
  * non-zero bit offset causes the remaining bits in the byte to be written
- * as 0s.  The byte-aligned write then starts at the next byte position.
+ * as 0s. The byte-aligned write then starts at the next byte position.
  *
  * @see ImageInputStream
  *
@@ -290,7 +290,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
     /**
      * Writes a {@code double} value, which is comprised of four
      * bytes, to the output stream. It does this as if it first
-     * converts this {@code double} value to an {@code long}
+     * converts this {@code double} value to a {@code long}
      * in exactly the manner of the
      * {@code Double.doubleToLongBits} method and then writes the
      * long value in exactly the manner of the {@code writeLong}

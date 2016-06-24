@@ -23,6 +23,7 @@
 
 /*
  @test
+ @key headful
  @bug 6176814 8132766
  @summary Metalworks frame maximizes after the move
  @run main MaximizedFrameTest

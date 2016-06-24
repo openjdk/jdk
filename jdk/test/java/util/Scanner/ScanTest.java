@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 4313885 4926319 4927634 5032610 5032622 5049968 5059533 6223711 6277261 6269946 6288823
- *      8072722
+ *      8072722 8139414
  * @summary Basic tests of java.util.Scanner methods
  * @key randomness
  * @modules jdk.localedata
@@ -70,6 +70,7 @@ public class ScanTest {
             ioExceptionTest();
             matchTest();
             delimiterTest();
+            boundaryDelimTest();
             useLocaleTest();
             closeTest();
             cacheTest();
@@ -502,6 +503,36 @@ public class ScanTest {
             }
         }
         report("Single delim test");
+    }
+
+    private static void append(StringBuilder sb, char c, int n) {
+        for (int i = 0; i < n; i++) {
+            sb.append(c);
+        }
+    }
+
+    public static void boundaryDelimTest() throws Exception {
+        // 8139414
+        int i = 1019;
+        StringBuilder sb = new StringBuilder();
+        sb.append("--;");
+        for (int j = 0; j < 1019; ++j) {
+            sb.append(j%10);
+        }
+        sb.append("-;-");
+        String text = sb.toString();
+        try (Scanner scanner = new Scanner(text)) {
+            scanner.useDelimiter("-;(-)?");
+            while (scanner.hasNext()) {
+                scanner.next();
+            }
+        } catch (NoSuchElementException e) {
+            System.out.println("Caught NoSuchElementException " + e);
+            e.printStackTrace();
+            failCount++;
+        }
+
+        report("delim at boundary test");
     }
 
     /*
