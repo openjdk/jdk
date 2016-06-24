@@ -480,6 +480,24 @@ public final class Class<T> implements java.io.Serializable,
      * any exception thrown by the constructor in a (checked) {@link
      * java.lang.reflect.InvocationTargetException}.
      *
+     * <p>The call
+     *
+     * <pre>{@code
+     * clazz.newInstance()
+     * }</pre>
+     *
+     * can be replaced by
+     *
+     * <pre>{@code
+     * clazz.getConstructor().newInstance()
+     * }</pre>
+     *
+     * The latter sequence of calls is inferred to be able to throw
+     * the additional exception types {@link
+     * InvocationTargetException} and {@link
+     * NoSuchMethodException}. Both of these exception types are
+     * subclasses of {@link ReflectiveOperationException}.
+     *
      * @return  a newly allocated instance of the class represented by this
      *          object.
      * @throws  IllegalAccessException  if the class or its nullary

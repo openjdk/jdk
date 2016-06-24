@@ -198,4 +198,16 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
             moduleWriter.addModuleDescription(moduleContentTree);
         }
     }
+
+    /**
+     * Build the tags of the summary.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param moduleContentTree the tree to which the module tags will be added
+     */
+    public void buildModuleTags(XMLNode node, Content moduleContentTree) {
+        if (!configuration.nocomment) {
+            moduleWriter.addModuleTags(moduleContentTree);
+        }
+    }
 }

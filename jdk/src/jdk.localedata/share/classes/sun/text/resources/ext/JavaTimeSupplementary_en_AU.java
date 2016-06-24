@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -73,52 +73,120 @@ public class JavaTimeSupplementary_en_AU extends OpenListResourceBundle {
     @Override
     protected final Object[][] getContents() {
         return new Object[][] {
-            { "islamic.DatePatterns",
+            { "field.dayperiod",
+                "am/pm" },
+            { "islamic.AmPmMarkers",
                 new String[] {
-                    "GGGG y MMMM d, EEEE",
-                    "GGGG y MMMM d",
-                    "GGGG y MMM d",
-                    "d/MM/y G",
+                    "am",
+                    "pm",
                 }
             },
-            { "java.time.buddhist.DatePatterns",
+            { "islamic.DayAbbreviations",
                 new String[] {
-                    "G y MMMM d, EEEE",
-                    "G y MMMM d",
-                    "G y MMM d",
-                    "d/MM/y GGGGG",
+                    "Sun.",
+                    "Mon.",
+                    "Tue.",
+                    "Wed.",
+                    "Thu.",
+                    "Fri.",
+                    "Sat.",
                 }
             },
-            { "java.time.islamic.DatePatterns",
+            { "islamic.DayNarrows",
                 new String[] {
-                    "G y MMMM d, EEEE",
-                    "G y MMMM d",
-                    "G y MMM d",
-                    "d/MM/y GGGGG",
+                    "Su.",
+                    "M.",
+                    "Tu.",
+                    "W.",
+                    "Th.",
+                    "F.",
+                    "Sa.",
                 }
             },
-            { "java.time.japanese.DatePatterns",
+            { "islamic.abbreviated.AmPmMarkers",
                 new String[] {
-                    "EEEE, MMMM d, y G",
-                    "MMMM d, y G",
-                    "MMM d, y G",
-                    "d/MM/y GGGGG",
+                    "am",
+                    "pm",
                 }
             },
-            { "java.time.roc.DatePatterns",
+            { "islamic.narrow.AmPmMarkers",
                 new String[] {
-                    "G y MMMM d, EEEE",
-                    "G y MMMM d",
-                    "G y MMM d",
-                    "d/MM/y GGGGG",
+                    "am",
+                    "pm",
                 }
             },
-            { "roc.DatePatterns",
+            { "roc.AmPmMarkers",
                 new String[] {
-                    "GGGG y MMMM d, EEEE",
-                    "GGGG y MMMM d",
-                    "GGGG y MMM d",
-                    "d/MM/y G",
+                    "am",
+                    "pm",
+                }
+            },
+            { "roc.DayAbbreviations",
+                new String[] {
+                    "Sun.",
+                    "Mon.",
+                    "Tue.",
+                    "Wed.",
+                    "Thu.",
+                    "Fri.",
+                    "Sat.",
+                }
+            },
+            { "roc.DayNarrows",
+                new String[] {
+                    "Su.",
+                    "M.",
+                    "Tu.",
+                    "W.",
+                    "Th.",
+                    "F.",
+                    "Sa.",
+                }
+            },
+            { "roc.MonthAbbreviations",
+                new String[] {
+                    "Jan.",
+                    "Feb.",
+                    "Mar.",
+                    "Apr.",
+                    "May",
+                    "Jun.",
+                    "Jul.",
+                    "Aug.",
+                    "Sep.",
+                    "Oct.",
+                    "Nov.",
+                    "Dec.",
+                    "",
+                }
+            },
+            { "roc.MonthNarrows",
+                new String[] {
+                    "Jan.",
+                    "Feb.",
+                    "Mar.",
+                    "Apr.",
+                    "May",
+                    "Jun.",
+                    "Jul.",
+                    "Aug.",
+                    "Sep.",
+                    "Oct.",
+                    "Nov.",
+                    "Dec.",
+                    "",
+                }
+            },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "am",
+                    "pm",
+                }
+            },
+            { "roc.narrow.AmPmMarkers",
+                new String[] {
+                    "am",
+                    "pm",
                 }
             },
         };

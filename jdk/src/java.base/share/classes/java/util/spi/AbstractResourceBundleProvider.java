@@ -40,6 +40,36 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * {@code AbstractResourceBundleProvider} is an abstract class for helping
  * implement the {@link ResourceBundleProvider} interface.
  *
+ * <p>
+ * Resource bundles can be packaged in a named module separated from
+ * the <em>caller module</em> loading the resource bundle, i.e. the module
+ * calling {@link ResourceBundle#getBundle(String)}.  For the caller module
+ * to load a resource bundle "{@code com.example.app.MyResources}"
+ * from another module and a service interface named
+ * "{@code com.example.app.MyResourcesProvider}",
+ * the <em>bundle provider module</em> can provide the implementation class
+ * as follows:
+ *
+ * <pre><code>
+ * import com.example.app.MyResourcesProvider;
+ * class MyResourcesProviderImpl extends AbstractResourceBundleProvider
+ *     implements MyResourcesProvider
+ * {</code>
+ *     {@code @Override
+ *     public ResourceBundle getBundle(String baseName, Locale locale) {
+ *         // this module only provides bundles in french
+ *         if (locale.equals(Locale.FRENCH)) {
+ *              return super.getBundle(baseName, locale);
+ *         }
+ *         return null;
+ *     }
+ * }}</pre>
+ *
+ * @see <a href="../ResourceBundle.html#bundleprovider">
+ *     Resource Bundles in Named Modules</a>
+ * @see <a href="../ResourceBundle.html#RBP_support">
+ *     ResourceBundleProvider Service Providers</a>
+ *
  * @since 9
  */
 public abstract class AbstractResourceBundleProvider implements ResourceBundleProvider {
@@ -125,6 +155,7 @@ public abstract class AbstractResourceBundleProvider implements ResourceBundlePr
         Module module = this.getClass().getModule();
         String bundleName = toBundleName(baseName, locale);
         ResourceBundle bundle = null;
+
         for (String format : formats) {
             try {
                 if (FORMAT_CLASS.equals(format)) {

@@ -497,7 +497,8 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
             String identificationProtocol,
             AlgorithmConstraints algorithmConstraints,
             Collection<SNIMatcher> sniMatchers,
-            boolean preferLocalCipherSuites) throws IOException {
+            boolean preferLocalCipherSuites,
+            String[] applicationProtocols) throws IOException {
 
         super();
         doClientAuth = clientAuth;
@@ -506,6 +507,7 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
         this.algorithmConstraints = algorithmConstraints;
         this.sniMatchers = sniMatchers;
         this.preferLocalCipherSuites = preferLocalCipherSuites;
+        this.applicationProtocols = applicationProtocols;
         init(context, serverMode);
 
         /*

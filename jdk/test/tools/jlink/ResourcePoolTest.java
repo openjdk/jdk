@@ -66,9 +66,7 @@ public class ResourcePoolTest {
             String module = "/module" + (i / 10);
             String resourcePath = module + "/java/package" + i;
             byte[] bytes = resourcePath.getBytes();
-            input.add(ModuleEntry.create(module, resourcePath,
-                    ModuleEntry.Type.CLASS_OR_RESOURCE,
-                    new ByteArrayInputStream(bytes), bytes.length));
+            input.add(ModuleEntry.create(resourcePath, bytes));
         }
         ModulePool output = new ModulePoolImpl();
         ResourceVisitor visitor = new ResourceVisitor();
@@ -103,12 +101,11 @@ public class ResourcePoolTest {
             switch (index) {
                 case 0:
                     ++amountAfter;
-                    return ModuleEntry.create(resource.getModule(), resource.getPath() + SUFFIX,
-                            resource.getType(), resource.stream(), resource.getLength());
+                    return ModuleEntry.create(resource.getPath() + SUFFIX,
+                            resource.getType(), resource.getBytes());
                 case 1:
                     ++amountAfter;
-                    return ModuleEntry.create(resource.getModule(), resource.getPath(),
-                            resource.getType(), resource.stream(), resource.getLength());
+                    return resource.create(resource.getBytes());
             }
             return null;
         }
@@ -132,9 +129,7 @@ public class ResourcePoolTest {
         samples.add("javax/management/ObjectName");
         test(samples, (resources, module, path) -> {
             try {
-                resources.add(ModuleEntry.create(module, path,
-                        ModuleEntry.Type.CLASS_OR_RESOURCE,
-                        new ByteArrayInputStream(new byte[0]), 0));
+                resources.add(ModuleEntry.create(path, new byte[0]));
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
@@ -142,9 +137,7 @@ public class ResourcePoolTest {
         test(samples, (resources, module, path) -> {
             try {
                 resources.add(ModulePoolImpl.
-                        newCompressedResource(ModuleEntry.create(module, path,
-                                ModuleEntry.Type.CLASS_OR_RESOURCE,
-                                new ByteArrayInputStream(new byte[0]), 0),
+                        newCompressedResource(ModuleEntry.create(path, new byte[0]),
                                 ByteBuffer.allocate(99), "bitcruncher", null,
                                 ((ModulePoolImpl)resources).getStringTable(), ByteOrder.nativeOrder()));
             } catch (Exception ex) {
@@ -203,20 +196,14 @@ public class ResourcePoolTest {
 
     private void checkResourcesAfterCompression() throws Exception {
         ModulePoolImpl resources1 = new ModulePoolImpl();
-        ModuleEntry res1 = ModuleEntry.create("module1", "/module1/toto1",
-                ModuleEntry.Type.CLASS_OR_RESOURCE,
-                new ByteArrayInputStream(new byte[0]), 0);
-        ModuleEntry res2 = ModuleEntry.create("module2", "/module2/toto1",
-                ModuleEntry.Type.CLASS_OR_RESOURCE,
-                new ByteArrayInputStream(new byte[0]), 0);
+        ModuleEntry res1 = ModuleEntry.create("/module1/toto1", new byte[0]);
+        ModuleEntry res2 = ModuleEntry.create("/module2/toto1", new byte[0]);
         resources1.add(res1);
         resources1.add(res2);
 
         checkResources(resources1, res1, res2);
         ModulePool resources2 = new ModulePoolImpl();
-        ModuleEntry res3 = ModuleEntry.create("module2", "/module2/toto1",
-                ModuleEntry.Type.CLASS_OR_RESOURCE,
-                new ByteArrayInputStream(new byte[7]), 7);
+        ModuleEntry res3 = ModuleEntry.create("/module2/toto1", new byte[7]);
         resources2.add(res3);
         resources2.add(ModulePoolImpl.newCompressedResource(res1,
                 ByteBuffer.allocate(7), "zip", null, resources1.getStringTable(),
@@ -260,8 +247,7 @@ public class ResourcePoolTest {
 
         ((ModulePoolImpl) resources).setReadOnly();
         try {
-            resources.add(ModuleEntry.create("module2",  "/module2/toto1",
-                    ModuleEntry.Type.CLASS_OR_RESOURCE, new ByteArrayInputStream(new byte[0]), 0));
+            resources.add(ModuleEntry.create("/module2/toto1", new byte[0]));
             throw new AssertionError("ModulePool is read-only, but an exception is not thrown");
         } catch (Exception ex) {
             // Expected

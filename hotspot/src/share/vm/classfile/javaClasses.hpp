@@ -413,7 +413,6 @@ class java_lang_ThreadGroup : AllStatic {
   static int _maxPriority_offset;
   static int _destroyed_offset;
   static int _daemon_offset;
-  static int _vmAllowSuspension_offset;
   static int _nthreads_offset;
   static int _ngroups_offset;
 
@@ -439,8 +438,6 @@ class java_lang_ThreadGroup : AllStatic {
   static bool is_destroyed(oop java_thread_group);
   // Daemon
   static bool is_daemon(oop java_thread_group);
-  // vmAllowSuspension
-  static bool is_vmAllowSuspension(oop java_thread_group);
   // Debugging
   friend class JavaClasses;
 };
@@ -1114,6 +1111,8 @@ class java_lang_invoke_MemberName: AllStatic {
   static int flags_offset_in_bytes()            { return _flags_offset; }
   static int vmtarget_offset_in_bytes()         { return _vmtarget_offset; }
   static int vmindex_offset_in_bytes()          { return _vmindex_offset; }
+
+  static bool equals(oop mt1, oop mt2);
 };
 
 

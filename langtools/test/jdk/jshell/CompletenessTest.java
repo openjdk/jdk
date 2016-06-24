@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8149524
+ * @bug 8149524 8131024
  * @summary Test SourceCodeAnalysis
  * @build KullaTesting TestingInputStream
  * @run testng CompletenessTest
@@ -283,6 +283,11 @@ public class CompletenessTest extends KullaTesting {
 
     public void testTrailingSlash() {
         assertStatus("\"abc\\", UNKNOWN, "\"abc\\");
+    }
+
+    public void testOpenComment() {
+        assertStatus("int xx; /* hello", DEFINITELY_INCOMPLETE, null);
+        assertStatus("/**  test", DEFINITELY_INCOMPLETE, null);
     }
 
     public void testMiscSource() {

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382 8153920 8156910
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -58,6 +58,16 @@ public class ToolSimpleTest extends ReplToolTesting {
                 (a) -> assertCommand(a, "int v; int c",
                         "v ==> 0\n" +
                         "c ==> 0")
+        );
+    }
+
+    public void testOpenComment() {
+        test(
+                (a) -> assertCommand(a, "int z = /* blah", ""),
+                (a) -> assertCommand(a, "baz */ 5", "z ==> 5"),
+                (a) -> assertCommand(a, "/** hoge ", ""),
+                (a) -> assertCommand(a, "baz **/", ""),
+                (a) -> assertCommand(a, "int v", "v ==> 0")
         );
     }
 

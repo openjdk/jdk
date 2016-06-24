@@ -205,7 +205,7 @@ public class XMLGrammarCachingConfiguration
      */
     public Grammar parseGrammar(String type, String uri)
                               throws XNIException, IOException {
-        XMLInputSource source = new XMLInputSource(null, uri, null);
+        XMLInputSource source = new XMLInputSource(null, uri, null, false);
         return parseGrammar(type, source);
 
     }

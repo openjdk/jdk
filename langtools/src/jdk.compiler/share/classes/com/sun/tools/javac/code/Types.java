@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -509,9 +509,9 @@ public class Types {
 
             //merge thrown types - form the intersection of all the thrown types in
             //all the signatures in the list
-            boolean toErase = !bestSoFar.type.hasTag(FORALL);
             List<Type> thrown = null;
             Type mt1 = memberType(origin.type, bestSoFar);
+            boolean toErase = !mt1.hasTag(FORALL);
             for (Symbol msym2 : methodSyms) {
                 Type mt2 = memberType(origin.type, msym2);
                 List<Type> thrown_mt2 = mt2.getThrownTypes();
@@ -751,24 +751,24 @@ public class Types {
      * Is t an unchecked subtype of s?
      */
     public boolean isSubtypeUnchecked(Type t, Type s, Warner warn) {
-        boolean result = isSubtypeUncheckedInternal(t, s, warn);
+        boolean result = isSubtypeUncheckedInternal(t, s, true, warn);
         if (result) {
             checkUnsafeVarargsConversion(t, s, warn);
         }
         return result;
     }
     //where
-        private boolean isSubtypeUncheckedInternal(Type t, Type s, Warner warn) {
+        private boolean isSubtypeUncheckedInternal(Type t, Type s, boolean capture, Warner warn) {
             if (t.hasTag(ARRAY) && s.hasTag(ARRAY)) {
                 if (((ArrayType)t).elemtype.isPrimitive()) {
                     return isSameType(elemtype(t), elemtype(s));
                 } else {
-                    return isSubtypeUnchecked(elemtype(t), elemtype(s), warn);
+                    return isSubtypeUncheckedInternal(elemtype(t), elemtype(s), false, warn);
                 }
-            } else if (isSubtype(t, s)) {
+            } else if (isSubtype(t, s, capture)) {
                 return true;
             } else if (t.hasTag(TYPEVAR)) {
-                return isSubtypeUnchecked(t.getUpperBound(), s, warn);
+                return isSubtypeUncheckedInternal(t.getUpperBound(), s, false, warn);
             } else if (!s.isRaw()) {
                 Type t2 = asSuper(t, s.tsym);
                 if (t2 != null && t2.isRaw()) {

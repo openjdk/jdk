@@ -82,6 +82,15 @@ public interface ModuleSummaryWriter {
     public abstract void addModuleDescription(Content moduleContentTree);
 
     /**
+     * Adds the tag information from the "module-info.java" file to the documentation
+     * tree.
+     *
+     * @param moduleContentTree the content tree to which the module tags will
+     *                           be added
+     */
+    public abstract void addModuleTags(Content moduleContentTree);
+
+    /**
      * Adds the table of packages to the documentation tree.
      *
      * @param packages the set of packages that should be added.

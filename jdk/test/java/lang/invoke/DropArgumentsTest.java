@@ -25,7 +25,7 @@
 
 /* @test
  * @summary unit tests for java.lang.invoke.MethodHandles
- * @run testng/othervm -ea -esa test.java.lang.invoke.DropArgumentsTest
+ * @run testng test.java.lang.invoke.DropArgumentsTest
  */
 package test.java.lang.invoke;
 
@@ -86,5 +86,14 @@ public class DropArgumentsTest {
     @ExpectedExceptions(IllegalArgumentException.class)
     public void dropArgumentsToMatchIAE(MethodHandle target, int pos, List<Class<?>> valueType, int skip) {
         MethodHandles.dropArgumentsToMatch(target, pos, valueType , skip);
+    }
+
+    @Test
+    @ExpectedExceptions(IllegalArgumentException.class)
+    public void dropArgumentsToMatchTestWithVoid() throws Throwable {
+        MethodHandle cat = lookup().findVirtual(String.class, "concat",
+                                   MethodType.methodType(String.class, String.class));
+        MethodType bigTypewithVoid = cat.type().insertParameterTypes(0, void.class, String.class, int.class);
+        MethodHandle handle2 = MethodHandles.dropArgumentsToMatch(cat, 0, bigTypewithVoid.parameterList(), 1);
     }
 }

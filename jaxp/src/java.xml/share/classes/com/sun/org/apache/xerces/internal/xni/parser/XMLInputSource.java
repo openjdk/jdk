@@ -62,6 +62,8 @@ public class XMLInputSource {
     /** Encoding. */
     protected String fEncoding;
 
+    //indicates whether the source is created by a resolver
+    boolean fIsCreatedByResolver = false;
     //
     // Constructors
     //
@@ -80,12 +82,15 @@ public class XMLInputSource {
      * @param baseSystemId The base system identifier. This value should
      *                     always be set to the fully expanded URI of the
      *                     base system identifier, if possible.
+     * @param isCreatedByResolver a flag to indicate whether the source is
+     * created by a resolver
      */
     public XMLInputSource(String publicId, String systemId,
-                          String baseSystemId) {
+                          String baseSystemId, boolean isCreatedByResolver) {
         fPublicId = publicId;
         fSystemId = systemId;
         fBaseSystemId = baseSystemId;
+        fIsCreatedByResolver = isCreatedByResolver;
     } // <init>(String,String,String)
 
     /**
@@ -250,5 +255,20 @@ public class XMLInputSource {
     public String getEncoding() {
         return fEncoding;
     } // getEncoding():String
+
+    /**
+     * Sets the flag to indicate whether this source is created by a resolver
+     * @param createdByResolver the flag
+     */
+    public void setCreatedByResolver(boolean createdByResolver) {
+        fIsCreatedByResolver = createdByResolver;
+    }
+    /**
+     * Returns a boolean to indicate whether this source is created by a resolver.
+     * @return true if the source is created by a resolver, false otherwise
+     */
+    public boolean isCreatedByResolver() {
+        return fIsCreatedByResolver;
+    }
 
 } // class XMLInputSource

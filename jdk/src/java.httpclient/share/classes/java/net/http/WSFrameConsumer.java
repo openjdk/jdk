@@ -206,7 +206,7 @@ final class WSFrameConsumer implements WSFrame.Consumer {
                 boolean binaryNonEmpty = data.hasRemaining();
                 WSShared<CharBuffer> textData;
                 try {
-                    textData = decoder.decode(data, part.isLast());
+                    textData = decoder.decode(data, part == MessagePart.WHOLE || part == MessagePart.LAST);
                 } catch (CharacterCodingException e) {
                     throw new WSProtocolException
                             ("5.6.", "Invalid UTF-8 sequence in frame " + opcode, NOT_CONSISTENT, e);
@@ -214,7 +214,7 @@ final class WSFrameConsumer implements WSFrame.Consumer {
                 if (!(binaryNonEmpty && !textData.hasRemaining())) {
                     // If there's a binary data, that result in no text, then we
                     // don't deliver anything
-                    output.onText(part, new WSDisposableText(textData));
+                    output.onText(part, textData);
                 }
             }
         }

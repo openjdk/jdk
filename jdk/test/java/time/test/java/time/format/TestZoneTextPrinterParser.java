@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import org.testng.annotations.Test;
 
 /*
  * @test
- * @bug 8081022
+ * @bug 8081022 8151876
  * @key randomness
  */
 
@@ -84,6 +84,14 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
                 TimeZone tz = TimeZone.getTimeZone(zid);
                 boolean isDST = tz.inDaylightTime(new Date(zdt.toInstant().toEpochMilli()));
                 for (Locale locale : locales) {
+                    String longDisplayName = tz.getDisplayName(isDST, TimeZone.LONG, locale);
+                    String shortDisplayName = tz.getDisplayName(isDST, TimeZone.SHORT, locale);
+                    if ((longDisplayName.startsWith("GMT+") && shortDisplayName.startsWith("GMT+"))
+                            || (longDisplayName.startsWith("GMT-") && shortDisplayName.startsWith("GMT-"))) {
+                        printText(locale, zdt, TextStyle.FULL, tz, tz.getID());
+                        printText(locale, zdt, TextStyle.SHORT, tz, tz.getID());
+                        continue;
+                    }
                     printText(locale, zdt, TextStyle.FULL, tz,
                             tz.getDisplayName(isDST, TimeZone.LONG, locale));
                     printText(locale, zdt, TextStyle.SHORT, tz,

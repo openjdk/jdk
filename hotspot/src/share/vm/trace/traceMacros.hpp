@@ -33,6 +33,9 @@ typedef u8 traceid;
 #define TRACE_KLASS_DEFINITION(k, t)
 
 #define TRACE_INIT_KLASS_ID(k)
+#define TRACE_REMOVE_KLASS_ID(k)
+#define TRACE_RESTORE_KLASS_ID(k)
+
 #define TRACE_INIT_MODULE_ID(m)
 #define TRACE_INIT_PACKAGE_ID(p)
 #define TRACE_INIT_THREAD_ID(td)
@@ -43,6 +46,8 @@ extern "C" void JNICALL trace_register_natives(JNIEnv*, jclass);
 #define TRACE_REGISTER_NATIVES ((void*)((address_word)(&trace_register_natives)))
 #define TRACE_START() JNI_OK
 #define TRACE_INITIALIZE() JNI_OK
+#define TRACE_VM_EXIT()
+#define TRACE_VM_ERROR()
 
 #define TRACE_DEFINE_TRACE_ID_METHODS typedef int ___IGNORED_hs_trace_type1
 #define TRACE_DEFINE_TRACE_ID_FIELD typedef int ___IGNORED_hs_trace_type2

@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: XSLTErrorResources_ja.java /st_wptg_1.8.0.0.0jdk/2 2013/09/12 17:39:58 gmolloy Exp $
+ * $Id: XSLTErrorResources_ja.java /st_wptg_1.9.0.0.0jdk/2 2016/04/12 00:37:07 gmolloy Exp $
  */
 package com.sun.org.apache.xalan.internal.res;
 
@@ -775,7 +775,7 @@ public class XSLTErrorResources_ja extends ListResourceBundle
       "\u5165\u529BDOM\u30CE\u30FC\u30C9\u306BDTMLiaison\u3092\u4F7F\u7528\u3067\u304D\u307E\u305B\u3093...\u304B\u308F\u308A\u306Bcom.sun.org.apache.xpath.internal.DOM2Helper\u3092\u6E21\u3057\u3066\u304F\u3060\u3055\u3044\u3002"},
 
     { ER_CALL_TO_EXT_FAILED,
-      "\u62E1\u5F35\u8981\u7D20\u306E\u547C\u51FA\u3057\u306B\u5931\u6557\u3057\u307E\u3057\u305F: {0}"},
+      "\u62E1\u5F35\u8981\u7D20\u306E\u547C\u51FA\u3057\u304C\u5931\u6557\u3057\u307E\u3057\u305F: {0}"},
 
     { ER_PREFIX_MUST_RESOLVE,
       "\u63A5\u982D\u8F9E\u306F\u30CD\u30FC\u30E0\u30B9\u30DA\u30FC\u30B9\u306B\u89E3\u6C7A\u3055\u308C\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059: {0}"},
@@ -1337,8 +1337,8 @@ public class XSLTErrorResources_ja extends ListResourceBundle
   // Note to translators:  The following messages provide usage information
   // for the Xalan Process command line.  "Process" is the name of a Java class,
   // and should not be translated.
-  { "xslProc_option", "Xalan-J\u30B3\u30DE\u30F3\u30C9\u30E9\u30A4\u30F3\u30FB\u30D7\u30ED\u30BB\u30B9\u30FB\u30AF\u30E9\u30B9\u306E\u30AA\u30D7\u30B7\u30E7\u30F3:"},
-  { "xslProc_option", "Xalan-J\u30B3\u30DE\u30F3\u30C9\u30E9\u30A4\u30F3\u30FB\u30D7\u30ED\u30BB\u30B9\u30FB\u30AF\u30E9\u30B9\u306E\u30AA\u30D7\u30B7\u30E7\u30F3:"},
+  { "xslProc_option", "Xalan-J\u30B3\u30DE\u30F3\u30C9\u884C\u30D7\u30ED\u30BB\u30B9\u30FB\u30AF\u30E9\u30B9\u306E\u30AA\u30D7\u30B7\u30E7\u30F3:"},
+  { "xslProc_option", "Xalan-J\u30B3\u30DE\u30F3\u30C9\u884C\u30D7\u30ED\u30BB\u30B9\u30FB\u30AF\u30E9\u30B9\u306E\u30AA\u30D7\u30B7\u30E7\u30F3:"},
   { "xslProc_invalid_xsltc_option", "\u30AA\u30D7\u30B7\u30E7\u30F3{0}\u306FXSLTC\u30E2\u30FC\u30C9\u3067\u30B5\u30DD\u30FC\u30C8\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002"},
   { "xslProc_invalid_xalan_option", "\u30AA\u30D7\u30B7\u30E7\u30F3{0}\u306F-XSLTC\u3068\u3068\u3082\u306B\u306E\u307F\u4F7F\u7528\u3067\u304D\u307E\u3059\u3002"},
   { "xslProc_no_input", "\u30A8\u30E9\u30FC: \u30B9\u30BF\u30A4\u30EB\u30B7\u30FC\u30C8\u307E\u305F\u306F\u5165\u529Bxml\u304C\u6307\u5B9A\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002\u4F7F\u7528\u65B9\u6CD5\u306E\u6307\u793A\u306B\u3064\u3044\u3066\u306F\u30AA\u30D7\u30B7\u30E7\u30F3\u3092\u4ED8\u3051\u305A\u306B\u3053\u306E\u30B3\u30DE\u30F3\u30C9\u3092\u5B9F\u884C\u3057\u3066\u304F\u3060\u3055\u3044\u3002"},

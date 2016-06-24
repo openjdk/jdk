@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@ package com.sun.tools.internal.ws.processor;
 
 import com.sun.xml.internal.ws.util.exception.JAXWSExceptionBase;
 
+import java.util.Locale;
+import java.util.ResourceBundle;
+
 /**
  * ProcessorException represents an exception that occurred while processing
  * a web service.
@@ -51,5 +54,10 @@ public class ProcessorException extends JAXWSExceptionBase {
 
     public String getDefaultResourceBundleName() {
         return "com.sun.tools.internal.ws.resources.processor";
+    }
+
+    @Override
+    public ResourceBundle getResourceBundle(Locale locale) {
+        return ResourceBundle.getBundle(getDefaultResourceBundleName(), locale);
     }
 }

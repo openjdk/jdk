@@ -86,7 +86,7 @@ public class Start extends ToolOption.Helper {
             com.sun.tools.doclets.standard.Standard.class;
 
     private static final Class<?> StdDoclet =
-            jdk.javadoc.internal.doclets.standard.Standard.class;
+            jdk.javadoc.doclets.StandardDoclet.class;
     /** Context for this invocation. */
     private final Context context;
 
@@ -273,9 +273,9 @@ public class Start extends ToolOption.Helper {
             initMessager();
             messager.setLocale(locale);
             try {
-                Object o = docletClass.newInstance();
+                Object o = docletClass.getConstructor().newInstance();
                 doclet = (Doclet) o;
-            } catch (InstantiationException | IllegalAccessException exc) {
+            } catch (ReflectiveOperationException exc) {
                 exc.printStackTrace();
                 if (!apiMode) {
                     error("main.could_not_instantiate_class", docletClass);

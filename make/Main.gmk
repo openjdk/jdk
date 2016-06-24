@@ -65,20 +65,24 @@ ALL_MODULES := $(call FindAllModules)
 ################################################################################
 # Interim/build tools targets, compiling tools used during the build
 
-buildtools-langtools:
+# When creating a BUILDJDK, the buildtools and interim targets have already
+# been built and should not be built again.
+ifneq ($(CREATING_BUILDJDK), true)
+  buildtools-langtools:
 	+($(CD) $(LANGTOOLS_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Tools.gmk)
 
-interim-langtools:
+  interim-langtools:
 	+($(CD) $(LANGTOOLS_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileInterim.gmk)
 
-interim-rmic:
+  interim-rmic:
 	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileInterimRmic.gmk)
 
-interim-cldrconverter:
+  interim-cldrconverter:
 	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CopyInterimCLDRConverter.gmk)
 
-buildtools-jdk:
+  buildtools-jdk:
 	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileTools.gmk)
+endif
 
 ALL_TARGETS += buildtools-langtools interim-langtools \
     interim-rmic interim-cldrconverter buildtools-jdk
@@ -99,35 +103,40 @@ ALL_TARGETS += import-hotspot unpack-sec generate-exported-symbols
 
 ################################################################################
 # Gensrc targets, generating source before java compilation can be done
-$(eval $(call DeclareRecipesForPhase, GENSRC, \
-    TARGET_SUFFIX := gensrc, \
-    FILE_PREFIX := Gensrc, \
-    MAKE_SUBDIR := gensrc, \
-    CHECK_MODULES := $(ALL_MODULES), \
-    MULTIPLE_MAKEFILES := true))
+#
+# When creating a BUILDJDK, the java targets have already been built and copied
+# into the buildjdk so no need to generate sources.
+ifneq ($(CREATING_BUILDJDK), true)
+  $(eval $(call DeclareRecipesForPhase, GENSRC, \
+      TARGET_SUFFIX := gensrc, \
+      FILE_PREFIX := Gensrc, \
+      MAKE_SUBDIR := gensrc, \
+      CHECK_MODULES := $(ALL_MODULES), \
+      MULTIPLE_MAKEFILES := true))
 
-JDK_GENSRC_TARGETS := $(filter %-gensrc-jdk, $(GENSRC_TARGETS))
-LANGTOOLS_GENSRC_TARGETS := $(filter %-gensrc-langtools, $(GENSRC_TARGETS))
-CORBA_GENSRC_TARGETS := $(filter %-gensrc-corba, $(GENSRC_TARGETS))
-HOTSPOT_GENSRC_TARGETS := $(filter %-gensrc-hotspot, $(GENSRC_TARGETS))
+  JDK_GENSRC_TARGETS := $(filter %-gensrc-jdk, $(GENSRC_TARGETS))
+  LANGTOOLS_GENSRC_TARGETS := $(filter %-gensrc-langtools, $(GENSRC_TARGETS))
+  CORBA_GENSRC_TARGETS := $(filter %-gensrc-corba, $(GENSRC_TARGETS))
+  HOTSPOT_GENSRC_TARGETS := $(filter %-gensrc-hotspot, $(GENSRC_TARGETS))
 
-GENSRC_MODULEINFO_MODULES := $(ALL_MODULES)
-GENSRC_MODULEINFO_TARGETS := $(addsuffix -gensrc-moduleinfo, \
-    $(GENSRC_MODULEINFO_MODULES))
+  GENSRC_MODULEINFO_MODULES := $(ALL_MODULES)
+  GENSRC_MODULEINFO_TARGETS := $(addsuffix -gensrc-moduleinfo, \
+      $(GENSRC_MODULEINFO_MODULES))
 
-GENSRC_MODULES := $(GENSRC_MODULEINFO_MODULES)
-GENSRC_TARGETS += $(sort $(GENSRC_MODULEINFO_TARGETS) \
-    $(addsuffix -gensrc, $(GENSRC_MODULES)))
+  GENSRC_MODULES := $(GENSRC_MODULEINFO_MODULES)
+  GENSRC_TARGETS += $(sort $(GENSRC_MODULEINFO_TARGETS) \
+      $(addsuffix -gensrc, $(GENSRC_MODULES)))
 
-define DeclareModuleInfoRecipe
-  $1-gensrc-moduleinfo:
+  define DeclareModuleInfoRecipe
+    $1-gensrc-moduleinfo:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) \
 	    -f GensrcModuleInfo.gmk MODULE=$1)
 
-  $1-gensrc: $1-gensrc-moduleinfo
-endef
+    $1-gensrc: $1-gensrc-moduleinfo
+  endef
 
-$(foreach m, $(GENSRC_MODULEINFO_MODULES), $(eval $(call DeclareModuleInfoRecipe,$m)))
+  $(foreach m, $(GENSRC_MODULEINFO_MODULES), $(eval $(call DeclareModuleInfoRecipe,$m)))
+endif
 
 ALL_TARGETS += $(GENSRC_TARGETS)
 
@@ -292,13 +301,16 @@ ALL_TARGETS += $(JMOD_TARGETS)
 ################################################################################
 # Images targets
 
-# Stores the tips for each repository. This file is be used when constructing the jdk image and can be
-# used to track the exact sources used to build that image.
+# Stores the tips for each repository. This file is be used when constructing
+# the jdk image and can be used to track the exact sources used to build that
+# image.
 source-tips: $(SUPPORT_OUTPUTDIR)/source_tips
 $(SUPPORT_OUTPUTDIR)/source_tips: FRC
 	$(call MakeDir, $(@D))
-	@$(RM) $@
-	@$(call GetSourceTips)
+	$(call GetSourceTips)
+
+create-hgtip-files:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f CreateHgtipFiles.gmk)
 
 BOOTCYCLE_TARGET := product-images
 bootcycle-images:
@@ -328,8 +340,8 @@ profiles:
 mac-bundles-jdk:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f MacBundles.gmk)
 
-ALL_TARGETS += source-tips bootcycle-images zip-security zip-source \
-    jrtfs-jar jimages profiles mac-bundles-jdk
+ALL_TARGETS += source-tips create-hgtip-files bootcycle-images zip-security \
+     zip-source jrtfs-jar jimages profiles mac-bundles-jdk
 
 ################################################################################
 # Docs targets

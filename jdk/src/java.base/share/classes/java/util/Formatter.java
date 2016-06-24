@@ -285,10 +285,10 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * lower-case conversion characters except that the result is converted to
  * upper case according to the rules of the prevailing {@link java.util.Locale
  * Locale}.  The result is equivalent to the following invocation of {@link
- * String#toUpperCase()}
+ * String#toUpperCase(Locale)}
  *
  * <pre>
- *    out.toUpperCase() </pre>
+ *    out.toUpperCase(Locale.getDefault(Locale.Category.FORMAT)) </pre>
  *
  * <table cellpadding=5 summary="genConv">
  *
@@ -696,10 +696,10 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * corresponding lower-case conversion characters except that the result is
  * converted to upper case according to the rules of the prevailing {@link
  * java.util.Locale Locale}.  The result is equivalent to the following
- * invocation of {@link String#toUpperCase()}
+ * invocation of {@link String#toUpperCase(Locale)}
  *
  * <pre>
- *    out.toUpperCase() </pre>
+ *    out.toUpperCase(Locale.getDefault(Locale.Category.FORMAT)) </pre>
  *
  * <h4><a name="dgen">General</a></h4>
  *
@@ -2906,7 +2906,7 @@ public final class Formatter implements Closeable, Flushable {
             if (precision != -1 && precision < s.length())
                 s = s.substring(0, precision);
             if (f.contains(Flags.UPPERCASE))
-                s = s.toUpperCase();
+                s = s.toUpperCase(Locale.getDefault(Locale.Category.FORMAT));
             appendJustified(a, s);
         }
 
@@ -3130,7 +3130,7 @@ public final class Formatter implements Closeable, Flushable {
                     trailingZeros(sb, width - len);
                 }
                 if (f.contains(Flags.UPPERCASE))
-                    s = s.toUpperCase();
+                    s = s.toUpperCase(Locale.getDefault(Locale.Category.FORMAT));
                 sb.append(s);
             }
 
@@ -3205,7 +3205,7 @@ public final class Formatter implements Closeable, Flushable {
                     trailingZeros(sb, width - len);
                 }
                 if (f.contains(Flags.UPPERCASE))
-                    s = s.toUpperCase();
+                    s = s.toUpperCase(Locale.getDefault(Locale.Category.FORMAT));
                 sb.append(s);
             }
 
@@ -3383,7 +3383,7 @@ public final class Formatter implements Closeable, Flushable {
                 if (upper) {
                     String tmp = s.substring(0, idx);
                     // don't localize hex
-                    tmp = tmp.toUpperCase(Locale.US);
+                    tmp = tmp.toUpperCase(Locale.ROOT);
                     va.append(tmp);
                 } else {
                     va.append(s, 0, idx);
@@ -3804,7 +3804,7 @@ public final class Formatter implements Closeable, Flushable {
 
             // justify based on width
             if (f.contains(Flags.UPPERCASE)) {
-                appendJustified(a, sb.toString().toUpperCase());
+                appendJustified(a, sb.toString().toUpperCase(Locale.getDefault(Locale.Category.FORMAT)));
             } else {
                 appendJustified(a, sb);
             }
@@ -3861,7 +3861,8 @@ public final class Formatter implements Closeable, Flushable {
                     ampm = dfs.getAmPmStrings();
                 }
                 String s = ampm[t.get(Calendar.AM_PM)];
-                sb.append(s.toLowerCase(Objects.requireNonNullElse(l, Locale.US)));
+                sb.append(s.toLowerCase(Objects.requireNonNullElse(l,
+                            Locale.getDefault(Locale.Category.FORMAT))));
                 break;
             }
             case DateTime.SECONDS_SINCE_EPOCH: { // 's' (0 - 99...?)
@@ -3985,7 +3986,8 @@ public final class Formatter implements Closeable, Flushable {
                 StringBuilder tsb = new StringBuilder();
                 print(tsb, t, DateTime.AM_PM, l);
 
-                sb.append(tsb.toString().toUpperCase(Objects.requireNonNullElse(l, Locale.US)));
+                sb.append(tsb.toString().toUpperCase(Objects.requireNonNullElse(l,
+                                               Locale.getDefault(Locale.Category.FORMAT))));
                 break;
             }
             case DateTime.DATE_TIME:    { // 'c' (Sat Nov 04 12:02:33 EST 1999)
@@ -4023,7 +4025,7 @@ public final class Formatter implements Closeable, Flushable {
             print(sb, t, c, l);
             // justify based on width
             if (f.contains(Flags.UPPERCASE)) {
-                appendJustified(a, sb.toString().toUpperCase());
+                appendJustified(a, sb.toString().toUpperCase(Locale.getDefault(Locale.Category.FORMAT)));
             } else {
                 appendJustified(a, sb);
             }
@@ -4093,7 +4095,8 @@ public final class Formatter implements Closeable, Flushable {
                         ampm = dfs.getAmPmStrings();
                     }
                     String s = ampm[t.get(ChronoField.AMPM_OF_DAY)];
-                    sb.append(s.toLowerCase(Objects.requireNonNullElse(l, Locale.US)));
+                    sb.append(s.toLowerCase(Objects.requireNonNullElse(l,
+                            Locale.getDefault(Locale.Category.FORMAT))));
                     break;
                 }
                 case DateTime.SECONDS_SINCE_EPOCH: { // 's' (0 - 99...?)
@@ -4224,7 +4227,8 @@ public final class Formatter implements Closeable, Flushable {
                     // this may be in wrong place for some locales
                     StringBuilder tsb = new StringBuilder();
                     print(tsb, t, DateTime.AM_PM, l);
-                    sb.append(tsb.toString().toUpperCase(Objects.requireNonNullElse(l, Locale.US)));
+                    sb.append(tsb.toString().toUpperCase(Objects.requireNonNullElse(l,
+                                        Locale.getDefault(Locale.Category.FORMAT))));
                     break;
                 }
                 case DateTime.DATE_TIME:    { // 'c' (Sat Nov 04 12:02:33 EST 1999)

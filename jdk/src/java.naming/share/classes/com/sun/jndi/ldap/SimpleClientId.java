@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,21 +49,23 @@ class SimpleClientId extends ClientId {
                 socketFactory);
 
         this.username = username;
+        int pwdHashCode = 0;
         if (passwd == null) {
             this.passwd = null;
-        } else if (passwd instanceof String) {
-            this.passwd = passwd;
         } else if (passwd instanceof byte[]) {
             this.passwd = ((byte[])passwd).clone();
+            pwdHashCode = Arrays.hashCode((byte[])passwd);
         } else if (passwd instanceof char[]) {
             this.passwd = ((char[])passwd).clone();
+            pwdHashCode = Arrays.hashCode((char[])passwd);
         } else {
             this.passwd = passwd;
+            pwdHashCode = passwd.hashCode();
         }
 
         myHash = super.hashCode()
-            + (username != null ? username.hashCode() : 0)
-            + (passwd != null ? passwd.hashCode() : 0);
+            ^ (username != null ? username.hashCode() : 0)
+            ^ pwdHashCode;
     }
 
     public boolean equals(Object obj) {

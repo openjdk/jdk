@@ -34,7 +34,7 @@
  * 7067045 7014640 7189363 8007395 8013252 8013254 8012646 8023647 6559590
  * 8027645 8035076 8039124 8035975 8074678 6854417 8143854 8147531 7071819
  * 8151481 4867170 7080302 6728861 6995635 6736245 4916384
- * 6328855 6192895 6345469 6988218 6693451 7006761 8140212 8143282
+ * 6328855 6192895 6345469 6988218 6693451 7006761 8140212 8143282 8158482
  *
  * @library /lib/testlibrary
  * @build jdk.testlibrary.*
@@ -164,6 +164,7 @@ public class RegExTest {
         groupCurlyBackoffTest();
         patternAsPredicate();
         invalidFlags();
+        embeddedFlags();
         grapheme();
         expoBacktracking();
 
@@ -4673,6 +4674,24 @@ public class RegExTest {
             }
         }
         report("Invalid compile flags");
+    }
+
+    // This test is for 8158482
+    private static void embeddedFlags() throws Exception {
+        try {
+            Pattern.compile("(?i).(?-i).");
+            Pattern.compile("(?m).(?-m).");
+            Pattern.compile("(?s).(?-s).");
+            Pattern.compile("(?d).(?-d).");
+            Pattern.compile("(?u).(?-u).");
+            Pattern.compile("(?c).(?-c).");
+            Pattern.compile("(?x).(?-x).");
+            Pattern.compile("(?U).(?-U).");
+            Pattern.compile("(?imsducxU).(?-imsducxU).");
+        } catch (PatternSyntaxException x) {
+            failCount++;
+        }
+        report("Embedded flags");
     }
 
     private static void grapheme() throws Exception {

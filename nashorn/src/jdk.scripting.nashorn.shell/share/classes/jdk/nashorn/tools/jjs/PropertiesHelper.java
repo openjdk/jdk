@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.WeakHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.NativeJavaPackage;
 import jdk.nashorn.internal.runtime.PropertyMap;
@@ -52,11 +53,11 @@ final class PropertiesHelper {
     /**
      * Construct a new PropertiesHelper.
      *
-     * @param classPath Class path to compute properties of java package objects
+     * @param context the current nashorn Context
      */
-    PropertiesHelper(final String classPath) {
+    PropertiesHelper(final Context context) {
         try {
-            this.pkgsHelper = new PackagesHelper(classPath);
+            this.pkgsHelper = new PackagesHelper(context);
         } catch (final IOException exp) {
             if (Main.DEBUG) {
                 exp.printStackTrace();

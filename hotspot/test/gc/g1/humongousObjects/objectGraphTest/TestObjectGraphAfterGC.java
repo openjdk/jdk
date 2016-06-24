@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 /**
  * @test TestObjectGraphAfterGC
  * @summary Checks that objects' graph behave as expected after gc
- * @requires vm.gc=="G1" | vm.gc=="null"
+ * @requires vm.gc.G1
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
  * @library /testlibrary /test/lib /
  * @modules java.management java.base/jdk.internal.misc
@@ -76,6 +76,14 @@ import java.util.stream.Collectors;
  * @run main/othervm -Xms200M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  * -XX:G1HeapRegionSize=1M -Xlog:gc=info:file=TestObjectGraphAfterGC_FULL_GC_MEMORY_PRESSURE.gc.log
  * gc.g1.humongousObjects.objectGraphTest.TestObjectGraphAfterGC FULL_GC_MEMORY_PRESSURE
+ *
+ * @run main/othervm -Xms200M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ * -XX:G1HeapRegionSize=1M -Xlog:gc=info:file=TestObjectGraphAfterGC_CMC.gc.log -XX:MaxTenuringThreshold=16
+ * gc.g1.humongousObjects.objectGraphTest.TestObjectGraphAfterGC CMC
+ *
+ * @run main/othervm -Xms200M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ * -XX:G1HeapRegionSize=1M -Xlog:gc=info:file=TestObjectGraphAfterGC_CMC_NO_SURV_ROOTS.gc.log -XX:MaxTenuringThreshold=1
+ * gc.g1.humongousObjects.objectGraphTest.TestObjectGraphAfterGC CMC_NO_SURV_ROOTS
  *
  */
 

@@ -310,14 +310,14 @@ final class HeaderTable {
 
         @Override
         public int hashCode() {
-            return 31 * (name.hashCode()) + value.hashCode();
+            return 31 * name.hashCode() + value.hashCode();
         }
     }
 
     //
-    // In order to be able to find an index of an entry with the given contents
-    // in the dynamic table an effective inverse mapping is needed. Here's a
-    // simple idea behind such a mapping.
+    // To quickly find an index of an entry in the dynamic table with the given
+    // contents an effective inverse mapping is needed. Here's a simple idea
+    // behind such a mapping.
     //
     // # The problem:
     //
@@ -325,21 +325,21 @@ final class HeaderTable {
     //
     //     get: index -> x
     //
-    // What we also want is an O(1) reverse lookup:
+    // What we want is an O(1) reverse lookup:
     //
     //     indexOf: x -> index
     //
     // # Solution:
     //
-    // Let's store an inverse mapping as a Map<X, Integer>. This have a problem
-    // that when a new element is added to the queue all indexes in the map
-    // becomes invalid. Namely, each i becomes shifted by 1 to the right:
+    // Let's store an inverse mapping in a Map<x, Integer>. This have a problem
+    // that when a new element is added to the queue, all indexes in the map
+    // become invalid. Namely, the new element is assigned with an index of 1,
+    // and each index i, i > 1 becomes shifted by 1 to the left:
     //
-    //     i -> i + 1
+    //     1, 1, 2, 3, ... , n-1, n
     //
-    // And the new element is assigned with an index of 1. This would seem to
-    // require a pass through the map incrementing all indexes (map values) by
-    // 1, which is O(n).
+    // Re-establishing the invariant would seem to require a pass through the
+    // map incrementing all indexes (map values) by 1, which is O(n).
     //
     // The good news is we can do much better then this!
     //
@@ -373,7 +373,7 @@ final class HeaderTable {
     //
     // Where 'recalibrate()' goes through the table doing this:
     //
-    //  value -= counter
+    //     value -= counter
     //
     // That's given, of course, the size of the table itself is less than
     // Long.MAX_VALUE :-)

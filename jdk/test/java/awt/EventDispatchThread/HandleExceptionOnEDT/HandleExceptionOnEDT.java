@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 6304473 6727884
   @summary Tests that an exception on EDT is handled with ThreadGroup.uncaughtException()
   @author artem.ananiev: area=awt.eventdispatching

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,11 +150,6 @@ public abstract class TestCipher {
         }
 
         // Encryption
-        int PAD_LEN = 0;
-        if (pad.equalsIgnoreCase("PKCS5Padding")) {
-            // Need to consider pad bytes
-            PAD_LEN = 8;
-        }
 
         byte[] plainText = INPUT_TEXT.clone();
 
@@ -162,12 +157,13 @@ public abstract class TestCipher {
         byte[] cipherText = ci.doFinal(INPUT_TEXT, ENC_OFFSET, TEXT_LEN);
 
         // Generate cipher and save to same buffer
-        int offset = ci.update(
+        int enc_bytes = ci.update(
                 INPUT_TEXT, ENC_OFFSET, TEXT_LEN, INPUT_TEXT, STORAGE_OFFSET);
-        ci.doFinal(INPUT_TEXT, offset + STORAGE_OFFSET);
+        enc_bytes += ci.doFinal(INPUT_TEXT, enc_bytes + STORAGE_OFFSET);
 
         if (!equalsBlock(
-                INPUT_TEXT, STORAGE_OFFSET, cipherText, 0, cipherText.length)) {
+                INPUT_TEXT, STORAGE_OFFSET, enc_bytes,
+                cipherText, 0, cipherText.length)) {
             throw new RuntimeException(
                     "Different ciphers generated with same buffer");
         }
@@ -183,8 +179,8 @@ public abstract class TestCipher {
         byte[] recoveredText = ci.doFinal(cipherText, 0, cipherText.length);
 
         if (!equalsBlock(
-                plainText, ENC_OFFSET, recoveredText, 0,
-                recoveredText.length)) {
+                plainText, ENC_OFFSET, TEXT_LEN,
+                recoveredText, 0, recoveredText.length)) {
             throw new RuntimeException(
                     "Recovered text not same as plain text");
         } else {
@@ -192,13 +188,13 @@ public abstract class TestCipher {
         }
 
         // Recover text from cipher and save to same buffer
-        ci.update(INPUT_TEXT, STORAGE_OFFSET, TEXT_LEN + PAD_LEN, INPUT_TEXT,
-                ENC_OFFSET);
-        ci.doFinal(INPUT_TEXT, ENC_OFFSET);
+        int dec_bytes = ci.update(
+                INPUT_TEXT, STORAGE_OFFSET, enc_bytes, INPUT_TEXT, ENC_OFFSET);
+        dec_bytes += ci.doFinal(INPUT_TEXT, dec_bytes + ENC_OFFSET);
 
         if (!equalsBlock(
-                plainText, ENC_OFFSET, recoveredText, 0,
-                recoveredText.length)) {
+                plainText, ENC_OFFSET, TEXT_LEN,
+                INPUT_TEXT, ENC_OFFSET, dec_bytes)) {
             throw new RuntimeException(
                     "Recovered text not same as plain text with same buffer");
         } else {
@@ -208,9 +204,12 @@ public abstract class TestCipher {
         out.println("Test Passed.");
     }
 
-    private static boolean equalsBlock(byte[] b1, int off1, byte[] b2, int off2,
-            int len) {
-        for (int i = off1, j = off2, k = 0; k < len; i++, j++, k++) {
+    private static boolean equalsBlock(byte[] b1, int off1, int len1,
+            byte[] b2, int off2, int len2) {
+        if (len1 != len2) {
+            return false;
+        }
+        for (int i = off1, j = off2, k = 0; k < len1; i++, j++, k++) {
             if (b1[i] != b2[j]) {
                 return false;
             }

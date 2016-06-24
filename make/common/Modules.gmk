@@ -57,7 +57,6 @@ BOOT_MODULES += \
     java.rmi \
     java.security.jgss \
     java.security.sasl \
-    java.sql \
     java.xml \
     java.xml.crypto \
     jdk.httpserver \
@@ -72,7 +71,6 @@ BOOT_MODULES += \
 
 # to be deprivileged
 BOOT_MODULES += \
-    java.sql.rowset \
     java.smartcardio \
     jdk.naming.rmi \
     #
@@ -106,6 +104,8 @@ PLATFORM_MODULES += \
 PLATFORM_MODULES += \
     java.compiler \
     java.scripting \
+    java.sql \
+    java.sql.rowset \
     jdk.accessibility \
     jdk.charsets \
     jdk.crypto.ec \

@@ -367,7 +367,7 @@ class Http2Connection implements BufferHandler {
         Log.logError(t);
         closed = true;
         client2.deleteConnection(this);
-        Collection<Stream> c = streams.values();
+        List<Stream> c = new LinkedList<>(streams.values());
         for (Stream s : c) {
             s.cancelImpl(t);
         }

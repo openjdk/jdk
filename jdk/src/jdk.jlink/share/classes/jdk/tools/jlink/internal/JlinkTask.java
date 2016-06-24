@@ -39,15 +39,7 @@ import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Date;
-import java.util.Formatter;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import jdk.internal.module.ConfigurableModuleFinder;
@@ -96,11 +88,9 @@ public class JlinkTask {
         }, "--help"),
         new Option<JlinkTask>(true, (task, opt, arg) -> {
             String[] dirs = arg.split(File.pathSeparator);
-            task.options.modulePath = new Path[dirs.length];
-            int i = 0;
-            for (String dir : dirs) {
-                task.options.modulePath[i++] = Paths.get(dir);
-            }
+            Arrays.stream(dirs)
+                  .map(Paths::get)
+                  .forEach(task.options.modulePath::add);
         }, "--modulepath", "--mp"),
         new Option<JlinkTask>(true, (task, opt, arg) -> {
             for (String mn : arg.split(",")) {
@@ -176,7 +166,7 @@ public class JlinkTask {
         String  saveoptsfile;
         boolean version;
         boolean fullVersion;
-        Path[] modulePath;
+        List<Path> modulePath = new ArrayList<>();
         Set<String> limitMods = new HashSet<>();
         Set<String> addMods = new HashSet<>();
         Path output;
@@ -186,7 +176,7 @@ public class JlinkTask {
 
     int run(String[] args) {
         if (log == null) {
-            setLog(new PrintWriter(System.err));
+            setLog(new PrintWriter(System.out, true));
         }
         try {
             optionsHelper.handleOptions(this, args);
@@ -203,7 +193,7 @@ public class JlinkTask {
                 return EXIT_OK;
             }
             if (taskHelper.getExistingImage() == null) {
-                if (options.modulePath == null || options.modulePath.length == 0) {
+                if (options.modulePath == null || options.modulePath.isEmpty()) {
                     throw taskHelper.newBadArgs("err.modulepath.must.be.specified").showUsage(true);
                 }
                 createImage();
@@ -245,7 +235,7 @@ public class JlinkTask {
      * Jlink API entry point.
      */
     public static void createImage(JlinkConfiguration config,
-            PluginsConfiguration plugins)
+                                   PluginsConfiguration plugins)
             throws Exception {
         Objects.requireNonNull(config);
         Objects.requireNonNull(config.getOutput());
@@ -254,10 +244,9 @@ public class JlinkTask {
         if (config.getModulepaths().isEmpty()) {
             throw new Exception("Empty module paths");
         }
-        Path[] arr = new Path[config.getModulepaths().size()];
-        arr = config.getModulepaths().toArray(arr);
+
         ModuleFinder finder
-                = newModuleFinder(arr, config.getLimitmods(), config.getModules());
+                = newModuleFinder(config.getModulepaths(), config.getLimitmods(), config.getModules());
 
         // First create the image provider
         ImageProvider imageProvider
@@ -332,10 +321,12 @@ public class JlinkTask {
         return addMods;
     }
 
-    private static ModuleFinder newModuleFinder(Path[] paths,
-            Set<String> limitMods,
-            Set<String> addMods) {
-        ModuleFinder finder = ModuleFinder.of(paths);
+    public static ModuleFinder newModuleFinder(List<Path> paths,
+                                               Set<String> limitMods,
+                                               Set<String> addMods)
+    {
+
+        ModuleFinder finder = ModuleFinder.of(paths.toArray(new Path[0]));
 
         // jmods are located at link-time
         if (finder instanceof ConfigurableModuleFinder) {

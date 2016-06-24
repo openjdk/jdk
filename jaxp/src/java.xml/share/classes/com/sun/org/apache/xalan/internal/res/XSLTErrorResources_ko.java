@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: XSLTErrorResources_ko.java /st_wptg_1.8.0.0.0jdk/2 2013/09/16 02:31:33 gmolloy Exp $
+ * $Id: XSLTErrorResources_ko.java /st_wptg_1.9.0.0.0jdk/2 2016/04/12 02:39:50 gmolloy Exp $
  */
 package com.sun.org.apache.xalan.internal.res;
 
@@ -591,7 +591,7 @@ public class XSLTErrorResources_ko extends ListResourceBundle
      "\uC2A4\uD0C0\uC77C\uC2DC\uD2B8 \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC74C: {0}"},
 
     { ER_IOEXCEPTION,
-      "\uC2A4\uD0C0\uC77C\uC2DC\uD2B8 \uD30C\uC77C\uC5D0 IO \uC608\uC678 \uC0AC\uD56D \uBC1C\uC0DD: {0}"},
+      "\uC2A4\uD0C0\uC77C\uC2DC\uD2B8 \uD30C\uC77C\uC5D0 IO \uC608\uC678\uC0AC\uD56D \uBC1C\uC0DD: {0}"},
 
     { ER_NO_HREF_ATTRIB,
       "(StylesheetHandler) {0}\uC5D0 \uB300\uD55C href \uC18D\uC131\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
@@ -717,7 +717,7 @@ public class XSLTErrorResources_ko extends ListResourceBundle
       "processStylesheet\uB97C \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4!"},
 
     { ER_SAX_EXCEPTION,
-     "SAX \uC608\uC678 \uC0AC\uD56D"},
+     "SAX \uC608\uC678\uC0AC\uD56D"},
 
 //  add this message to fix bug 21478
     { ER_FUNCTION_NOT_SUPPORTED,
@@ -1325,7 +1325,7 @@ public class XSLTErrorResources_ko extends ListResourceBundle
   {  "help_language",  "ko" },
   {  "language",  "ko" },
   { "BAD_CODE", "createMessage\uC5D0 \uB300\uD55C \uB9E4\uAC1C\uBCC0\uC218\uAC00 \uBC94\uC704\uB97C \uBC97\uC5B4\uB0AC\uC2B5\uB2C8\uB2E4."},
-  {  "FORMAT_FAILED", "messageFormat \uD638\uCD9C \uC911 \uC608\uC678 \uC0AC\uD56D\uC774 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."},
+  {  "FORMAT_FAILED", "messageFormat \uD638\uCD9C \uC911 \uC608\uC678\uC0AC\uD56D\uC774 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."},
   {  "version", ">>>>>>> Xalan \uBC84\uC804 "},
   {  "version2",  "<<<<<<<"},
   {  "yes", "\uC608"},

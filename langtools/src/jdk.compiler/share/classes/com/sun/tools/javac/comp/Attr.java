@@ -3469,7 +3469,6 @@ public class Attr extends JCTree.Visitor {
             } else {
                 // Check if type-qualified fields or methods are static (JLS)
                 if ((sym.flags() & STATIC) == 0 &&
-                    !env.next.tree.hasTag(REFERENCE) &&
                     sym.name != names._super &&
                     (sym.kind == VAR || sym.kind == MTH)) {
                     rs.accessBase(rs.new StaticError(sym),

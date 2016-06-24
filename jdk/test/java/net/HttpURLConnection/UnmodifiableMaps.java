@@ -24,11 +24,11 @@
 /**
  * @test
  * @bug 7128648
+ * @modules jdk.httpserver
  * @summary HttpURLConnection.getHeaderFields should return an unmodifiable Map
  */
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.HttpURLConnection;
@@ -40,6 +40,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.Headers;
+import static java.net.Proxy.NO_PROXY;
 
 public class UnmodifiableMaps {
 
@@ -47,8 +48,7 @@ public class UnmodifiableMaps {
         HttpServer server = startHttpServer();
         try {
             InetSocketAddress address = server.getAddress();
-            URI uri = new URI("http://" + InetAddress.getLocalHost().getHostAddress()
-                              + ":" + address.getPort() + "/foo");
+            URI uri = new URI("http://localhost:" + address.getPort() + "/foo");
             doClient(uri);
         } finally {
             server.stop(0);
@@ -56,7 +56,7 @@ public class UnmodifiableMaps {
     }
 
     void doClient(URI uri) throws Exception {
-        HttpURLConnection uc = (HttpURLConnection) uri.toURL().openConnection();
+        HttpURLConnection uc = (HttpURLConnection) uri.toURL().openConnection(NO_PROXY);
 
         // Test1: getRequestProperties is unmodifiable
         System.out.println("Check getRequestProperties");

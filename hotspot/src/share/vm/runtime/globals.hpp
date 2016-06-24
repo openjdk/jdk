@@ -463,6 +463,29 @@ class SizeTFlagSetting {
   ~SizeTFlagSetting()                           { *flag = val; }
 };
 
+// Helper class for temporarily saving the value of a flag during a scope.
+template <size_t SIZE>
+class FlagGuard {
+  unsigned char _value[SIZE];
+  void* const _addr;
+
+  // Hide operator new, this class should only be allocated on the stack.
+  // NOTE: Cannot include memory/allocation.hpp here due to circular
+  //       dependencies.
+  void* operator new(size_t size) throw();
+  void* operator new [](size_t size) throw();
+
+ public:
+  FlagGuard(void* flag_addr) : _addr(flag_addr) {
+    memcpy(_value, _addr, SIZE);
+  }
+
+  ~FlagGuard() {
+    memcpy(_addr, _value, SIZE);
+  }
+};
+
+#define FLAG_GUARD(f) FlagGuard<sizeof(f)> f ## _guard(&f)
 
 class CommandLineFlags {
 public:
@@ -644,6 +667,7 @@ public:
                       product, \
                       product_pd, \
                       diagnostic, \
+                      diagnostic_pd, \
                       experimental, \
                       notproduct, \
                       manageable, \
@@ -2529,7 +2553,7 @@ public:
   develop(bool, GenerateRangeChecks, true,                                  \
           "Generate range checks for array accesses")                       \
                                                                             \
-  develop_pd(bool, ImplicitNullChecks,                                      \
+  diagnostic_pd(bool, ImplicitNullChecks,                                   \
           "Generate code for implicit null checks")                         \
                                                                             \
   product_pd(bool, TrapBasedNullChecks,                                     \
@@ -3163,7 +3187,7 @@ public:
           "Ratio of call site execution to caller method invocation")       \
           range(0, max_jint)                                                \
                                                                             \
-  develop_pd(intx, InlineFrequencyCount,                                    \
+  diagnostic_pd(intx, InlineFrequencyCount,                                 \
           "Count of call site execution necessary to trigger frequent "     \
           "inlining")                                                       \
           range(0, max_jint)                                                \
@@ -4144,7 +4168,7 @@ public:
              "in the loaded class C. "                                      \
              "Check (3) is available only in debug builds.")                \
                                                                             \
-  develop_pd(intx, InitArrayShortSize,                                      \
+  diagnostic_pd(intx, InitArrayShortSize,                                   \
           "Threshold small size (in bytes) for clearing arrays. "           \
           "Anything this size or smaller may get converted to discrete "    \
           "scalar stores.")                                                 \
@@ -4168,6 +4192,7 @@ public:
 #define DECLARE_PRODUCT_FLAG(type, name, value, doc)      extern "C" type name;
 #define DECLARE_PD_PRODUCT_FLAG(type, name, doc)          extern "C" type name;
 #define DECLARE_DIAGNOSTIC_FLAG(type, name, value, doc)   extern "C" type name;
+#define DECLARE_PD_DIAGNOSTIC_FLAG(type, name, doc)       extern "C" type name;
 #define DECLARE_EXPERIMENTAL_FLAG(type, name, value, doc) extern "C" type name;
 #define DECLARE_MANAGEABLE_FLAG(type, name, value, doc)   extern "C" type name;
 #define DECLARE_PRODUCT_RW_FLAG(type, name, value, doc)   extern "C" type name;
@@ -4191,6 +4216,7 @@ public:
 #define MATERIALIZE_PRODUCT_FLAG(type, name, value, doc)      type name = value;
 #define MATERIALIZE_PD_PRODUCT_FLAG(type, name, doc)          type name = pd_##name;
 #define MATERIALIZE_DIAGNOSTIC_FLAG(type, name, value, doc)   type name = value;
+#define MATERIALIZE_PD_DIAGNOSTIC_FLAG(type, name, doc)       type name = pd_##name;
 #define MATERIALIZE_EXPERIMENTAL_FLAG(type, name, value, doc) type name = value;
 #define MATERIALIZE_MANAGEABLE_FLAG(type, name, value, doc)   type name = value;
 #define MATERIALIZE_PRODUCT_RW_FLAG(type, name, value, doc)   type name = value;
@@ -4221,6 +4247,7 @@ RUNTIME_FLAGS(DECLARE_DEVELOPER_FLAG, \
               DECLARE_PRODUCT_FLAG, \
               DECLARE_PD_PRODUCT_FLAG, \
               DECLARE_DIAGNOSTIC_FLAG, \
+              DECLARE_PD_DIAGNOSTIC_FLAG, \
               DECLARE_EXPERIMENTAL_FLAG, \
               DECLARE_NOTPRODUCT_FLAG, \
               DECLARE_MANAGEABLE_FLAG, \
@@ -4235,6 +4262,7 @@ RUNTIME_OS_FLAGS(DECLARE_DEVELOPER_FLAG, \
                  DECLARE_PRODUCT_FLAG, \
                  DECLARE_PD_PRODUCT_FLAG, \
                  DECLARE_DIAGNOSTIC_FLAG, \
+                 DECLARE_PD_DIAGNOSTIC_FLAG, \
                  DECLARE_NOTPRODUCT_FLAG, \
                  IGNORE_RANGE, \
                  IGNORE_CONSTRAINT, \

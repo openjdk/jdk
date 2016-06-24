@@ -59,7 +59,8 @@ class Console implements AutoCloseable {
         in.setHandleUserInterrupt(true);
         in.setBellEnabled(true);
         in.setCopyPasteDetection(true);
-        in.setHistory(new EditingHistory(in, Files.readAllLines(historyFile.toPath())) {
+        final Iterable<String> existingHistory = historyFile.exists() ? Files.readAllLines(historyFile.toPath()) : null;
+        in.setHistory(new EditingHistory(in, existingHistory) {
             @Override protected boolean isComplete(CharSequence input) {
                 return completer.isComplete(input.toString());
             }

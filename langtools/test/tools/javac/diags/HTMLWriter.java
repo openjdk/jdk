@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class HTMLWriter
      * @throws IOException if there is a problem writing to the underlying stream
      */
     public HTMLWriter(Writer out) throws IOException {
-        this(out, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2//EN\">");
+        this(out, "<!DOCTYPE html\">");
     }
 
     /**
@@ -328,7 +328,7 @@ public class HTMLWriter
      */
     public void writeLink(File file, String body) throws IOException {
         startTag(A);
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         String path = file.getPath().replace(File.separatorChar, '/');
         if (file.isAbsolute() && !path.startsWith("/"))
             sb.append('/');
@@ -472,13 +472,15 @@ public class HTMLWriter
     public static final String BORDER = "border";
     /** The HTML "br" tag. */
     public static final String BR = "br";
+    /** The HTML "charset" attribute. */
+    public static final String CHARSET  = "charset";
     /** The HTML "class" attribute. */
     public static final String CLASS  = "class";
     /** The HTML "classid" attribute. */
     public static final String CLASSID  = "classid";
     /** The HTML "code" tag. */
     public static final String CODE  = "code";
-    /** The HTML "color" attribte. */
+    /** The HTML "color" attribute. */
     public static final String COLOR  = "color";
     /** The HTML "col" attribute value. */
     public static final String COL = "col";
@@ -522,6 +524,8 @@ public class HTMLWriter
     public static final String LI = "li";
     /** The HTML "link" tag. */
     public static final String LINK = "link";
+    /** The HTML "meta" attribute. */
+    public static final String META = "meta";
     /** The HTML "name" attribute. */
     public static final String NAME = "name";
     /** The HTML "object" tag. */

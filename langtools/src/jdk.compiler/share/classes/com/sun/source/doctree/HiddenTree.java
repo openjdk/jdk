@@ -34,7 +34,7 @@ import java.util.List;
  * <p>
  * &#064;hidden
  *
- * @since 1.9
+ * @since 9
  */
 public interface HiddenTree extends BlockTagTree {
     /**

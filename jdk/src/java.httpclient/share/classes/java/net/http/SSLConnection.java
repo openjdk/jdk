@@ -142,6 +142,9 @@ class SSLConnection extends HttpConnection {
         // TODO: check for closure
         String s = "Receive) ";
         //debugPrint(s, r.buf);
+        if (r.result.bytesProduced() > 0) {
+            assert buf == r.buf;
+        }
         return r.result.bytesProduced();
     }
 

@@ -29,6 +29,7 @@
 # leap-seconds.list file available from most NIST time servers.
 # If the URL <ftp://time.nist.gov/pub/leap-seconds.list> does not work,
 # you should be able to pick up leap-seconds.list from a secondary NIST server.
+# See <http://tf.nist.gov/tf-cgi/servers.cgi> for a list of secondary servers.
 # For more about leap-seconds.list, please see
 # The NTP Timescale and Leap Seconds
 # http://www.eecis.udel.edu/~mills/leap.html
@@ -79,5 +80,5 @@ Leap	2008	Dec	31	23:59:60	+	S
 Leap	2012	Jun	30	23:59:60	+	S
 Leap	2015	Jun	30	23:59:60	+	S
 
-#	Updated through IERS Bulletin C50
-#	File expires on:  28 June 2016
+#	Updated through IERS Bulletin C51
+#	File expires on:  28 December 2016

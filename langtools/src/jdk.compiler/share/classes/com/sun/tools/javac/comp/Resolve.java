@@ -1149,18 +1149,44 @@ public class Resolve {
             private boolean unrelatedFunctionalInterfaces(Type t, Type s) {
                 return types.isFunctionalInterface(t.tsym) &&
                        types.isFunctionalInterface(s.tsym) &&
-                       types.asSuper(t, s.tsym) == null &&
-                       types.asSuper(s, t.tsym) == null;
+                       unrelatedInterfaces(t, s);
+            }
+
+            /** Whether {@code t} and {@code s} are unrelated interface types; recurs on intersections. **/
+            private boolean unrelatedInterfaces(Type t, Type s) {
+                if (t.isCompound()) {
+                    for (Type ti : types.interfaces(t)) {
+                        if (!unrelatedInterfaces(ti, s)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                } else if (s.isCompound()) {
+                    for (Type si : types.interfaces(s)) {
+                        if (!unrelatedInterfaces(t, si)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                } else {
+                    return types.asSuper(t, s.tsym) == null && types.asSuper(s, t.tsym) == null;
+                }
             }
 
             /** Parameters {@code t} and {@code s} are unrelated functional interface types. */
             private boolean functionalInterfaceMostSpecific(Type t, Type s, JCTree tree) {
-                Type tDesc = types.findDescriptorType(t);
+                Type tDesc = types.findDescriptorType(types.capture(t));
+                Type tDescNoCapture = types.findDescriptorType(t);
                 Type sDesc = types.findDescriptorType(s);
-
-                // compare type parameters -- can't use Types.hasSameBounds because bounds may have ivars
                 final List<Type> tTypeParams = tDesc.getTypeArguments();
+                final List<Type> tTypeParamsNoCapture = tDescNoCapture.getTypeArguments();
                 final List<Type> sTypeParams = sDesc.getTypeArguments();
+
+                // compare type parameters
+                if (tDesc.hasTag(FORALL) && !types.hasSameBounds((ForAll) tDesc, (ForAll) tDescNoCapture)) {
+                    return false;
+                }
+                // can't use Types.hasSameBounds on sDesc because bounds may have ivars
                 List<Type> tIter = tTypeParams;
                 List<Type> sIter = sTypeParams;
                 while (tIter.nonEmpty() && sIter.nonEmpty()) {
@@ -1181,20 +1207,26 @@ public class Resolve {
 
                 // compare parameters
                 List<Type> tParams = tDesc.getParameterTypes();
+                List<Type> tParamsNoCapture = tDescNoCapture.getParameterTypes();
                 List<Type> sParams = sDesc.getParameterTypes();
-                while (tParams.nonEmpty() && sParams.nonEmpty()) {
+                while (tParams.nonEmpty() && tParamsNoCapture.nonEmpty() && sParams.nonEmpty()) {
                     Type tParam = tParams.head;
+                    Type tParamNoCapture = types.subst(tParamsNoCapture.head, tTypeParamsNoCapture, tTypeParams);
                     Type sParam = types.subst(sParams.head, sTypeParams, tTypeParams);
                     if (tParam.containsAny(tTypeParams) && inferenceContext().free(sParam)) {
                         return false;
                     }
-                    if (!types.isSameType(tParam, inferenceContext().asUndetVar(sParam))) {
+                    if (!types.isSubtype(inferenceContext().asUndetVar(sParam), tParam)) {
+                        return false;
+                    }
+                    if (!types.isSameType(tParamNoCapture, inferenceContext().asUndetVar(sParam))) {
                         return false;
                     }
                     tParams = tParams.tail;
+                    tParamsNoCapture = tParamsNoCapture.tail;
                     sParams = sParams.tail;
                 }
-                if (!tParams.isEmpty() || !sParams.isEmpty()) {
+                if (!tParams.isEmpty() || !tParamsNoCapture.isEmpty() || !sParams.isEmpty()) {
                     return false;
                 }
 
@@ -3372,8 +3404,8 @@ public class Resolve {
                             types.asSuper(env.enclClass.type, c), env.enclClass.sym);
                 }
             }
-            //find a direct superinterface that is a subtype of 'c'
-            for (Type i : types.interfaces(env.enclClass.type)) {
+            //find a direct super type that is a subtype of 'c'
+            for (Type i : types.directSupertypes(env.enclClass.type)) {
                 if (i.tsym.isSubClass(c, types) && i.tsym != c) {
                     log.error(pos, "illegal.default.super.call", c,
                             diags.fragment("redundant.supertype", c, i));
@@ -3390,7 +3422,7 @@ public class Resolve {
         ListBuffer<Type> result = new ListBuffer<>();
         for (Type t1 : types.interfaces(t)) {
             boolean shouldAdd = true;
-            for (Type t2 : types.interfaces(t)) {
+            for (Type t2 : types.directSupertypes(t)) {
                 if (t1 != t2 && types.isSubtypeNoCapture(t2, t1)) {
                     shouldAdd = false;
                 }

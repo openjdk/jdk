@@ -383,7 +383,7 @@ AC_DEFUN_ONCE([BPERF_SETUP_PRECOMPILED_HEADERS],
       else
         AC_MSG_RESULT([yes])
       fi
-      rm -f conftest.h conftest.hpp.gch
+      $RM conftest.h conftest.hpp.gch
     fi
   fi
 

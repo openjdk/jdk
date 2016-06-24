@@ -318,7 +318,8 @@ var getJibProfilesProfiles = function (input, common) {
         },
 
         "linux-x86-open": {
-            default_make_targets: "profiles"
+            default_make_targets: "profiles",
+            configure_args: "--with-jvm-variants=client,server"
         }
     };
     var openOnlyProfiles = concatObjects(openOnlyProfiles, openOnlyProfilesExtra);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,6 +164,25 @@ public class JavaVM {
         }
         vm = null;
     }
+
+    /**
+     * Destroys the VM, waits for it to terminate, and returns
+     * its exit status.
+     *
+     * @throws IllegalStateException if the VM has already been destroyed
+     * @throws InterruptedException if the caller is interrupted while waiting
+     */
+    public int terminate() throws InterruptedException {
+        if (vm == null) {
+            throw new IllegalStateException("JavaVM already destroyed");
+        }
+
+        vm.destroy();
+        int status = waitFor();
+        vm = null;
+        return status;
+    }
+
 
     /**
      * Waits for the subprocess to exit, joins the pipe threads to ensure that

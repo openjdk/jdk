@@ -69,7 +69,8 @@ NIO_PKGS = com.sun.nio.file
 OLD_DOCLETAPI_PKGS = com.sun.javadoc
 
 DOCLETAPI_PKGS = jdk.javadoc.doclet \
-    jdk.javadoc.doclet.taglet
+    jdk.javadoc.doclet.taglet \
+    jdk.javadoc.doclets
 
 TAGLETAPI_FILE = com/sun/tools/doclets/Taglet.java
 

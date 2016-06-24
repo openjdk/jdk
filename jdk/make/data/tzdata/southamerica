@@ -1244,6 +1244,20 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # From Paul Eggert (2015-03-03):
 # For now, assume that the extension will persist indefinitely.
 
+# From Juan Correa (2016-03-18):
+# The decree regarding DST has been published in today's Official Gazette:
+# http://www.diariooficial.interior.gob.cl/versiones-anteriores/do/20160318/
+# http://www.leychile.cl/Navegar?idNorma=1088502
+# It does consider the second Saturday of May and August as the dates
+# for the transition; and it lists DST dates until 2019, but I think
+# this scheme will stick.
+#
+# From Paul Eggert (2016-03-18):
+# For now, assume the pattern holds for the indefinite future.
+# The decree says transitions occur at 24:00; in practice this appears
+# to mean 24:00 mainland time, not 24:00 local time, so that Easter
+# Island is always two hours behind the mainland.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Chile	1927	1931	-	Sep	 1	0:00	1:00	S
 Rule	Chile	1928	1932	-	Apr	 1	0:00	0	-
@@ -1275,8 +1289,10 @@ Rule	Chile	2009	only	-	Mar	Sun>=9	3:00u	0	-
 Rule	Chile	2010	only	-	Apr	Sun>=1	3:00u	0	-
 Rule	Chile	2011	only	-	May	Sun>=2	3:00u	0	-
 Rule	Chile	2011	only	-	Aug	Sun>=16	4:00u	1:00	S
-Rule	Chile	2012	2015	-	Apr	Sun>=23	3:00u	0	-
+Rule	Chile	2012	2014	-	Apr	Sun>=23	3:00u	0	-
 Rule	Chile	2012	2014	-	Sep	Sun>=2	4:00u	1:00	S
+Rule	Chile	2016	max	-	May	Sun>=9	3:00u	0	-
+Rule	Chile	2016	max	-	Aug	Sun>=9	4:00u	1:00	S
 # IATA SSIM anomalies: (1992-02) says 1992-03-14;
 # (1996-09) says 1998-03-08.  Ignore these.
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -1293,13 +1309,11 @@ Zone America/Santiago	-4:42:46 -	LMT	1890
 			-4:00	1:00	CLST	1946 Sep  1 # central Chile
 			-4:00	-	CLT	1947 Apr  1
 			-5:00	-	CLT	1947 May 21 23:00
-			-4:00	Chile	CL%sT	2015 Apr 26  3:00u
-			-3:00	-	CLT
+			-4:00	Chile	CL%sT
 Zone Pacific/Easter	-7:17:28 -	LMT	1890
 			-7:17:28 -	EMT	1932 Sep    # Easter Mean Time
 			-7:00	Chile	EAS%sT	1982 Mar 14 3:00u # Easter Time
-			-6:00	Chile	EAS%sT	2015 Apr 26 3:00u
-			-5:00	-	EAST
+			-6:00	Chile	EAS%sT
 #
 # Salas y Gómez Island is uninhabited.
 # Other Chilean locations, including Juan Fernández Is, Desventuradas Is,
@@ -1321,8 +1335,7 @@ Zone Pacific/Easter	-7:17:28 -	LMT	1890
 Zone Antarctica/Palmer	0	-	zzz	1965
 			-4:00	Arg	AR%sT	1969 Oct  5
 			-3:00	Arg	AR%sT	1982 May
-			-4:00	Chile	CL%sT	2015 Apr 26 3:00u
-			-3:00	-	CLT
+			-4:00	Chile	CL%sT
 
 # Colombia
 
@@ -1765,9 +1778,25 @@ Zone America/Montevideo	-3:44:44 -	LMT	1898 Jun 28
 # resolution publication)
 # http://www.globovision.com/news.php?nid=72208
 
+# From Alexander Krivenyshev (2016-04-15):
+# https://actualidad.rt.com/actualidad/204758-venezuela-modificar-huso-horario-sequia-elnino
+#
+# From Paul Eggert (2016-04-15):
+# Clocks advance 30 minutes on 2016-05-01 at 02:30. See:
+# Barboza AD. Huso horario en Venezuela volverá a 4 horas menos con
+# respecto al "Greenwich". Panorama 2016-04-15 12:20 -0430.
+# http://www.panorama.com.ve/ciudad/Huso-horario-en-Venezuela-volvera-a-4-horas-menos-con-respecto-al-Greenwich-20160415-0032.html
+#
+# "'Venezuela's new time-zone: hours without light, hours without water,
+# hours of presidential broadcasts, hours of lines," quipped comedian
+# Jean Mary Curro ...". See: Cawthorne A, Kai D. Venezuela scraps
+# half-hour time difference set by Chavez. Reuters 2016-04-15 14:50 -0400
+# http://www.reuters.com/article/us-venezuela-timezone-idUSKCN0XC2BE
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Caracas	-4:27:44 -	LMT	1890
 			-4:27:40 -	CMT	1912 Feb 12 # Caracas Mean Time?
 			-4:30	-	VET	1965 Jan  1  0:00 # Venezuela T.
 			-4:00	-	VET	2007 Dec  9  3:00
-			-4:30	-	VET
+			-4:30	-	VET	2016 May  1  2:30
+			-4:00	-	VET

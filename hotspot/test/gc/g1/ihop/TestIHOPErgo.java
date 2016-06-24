@@ -25,8 +25,8 @@
  * @test TestIHOPErgo
  * @bug 8148397
  * @summary Test checks that behavior of Adaptive and Static IHOP at concurrent cycle initiation
- * @requires vm.gc=="G1" | vm.gc=="null"
- * @requires vm.opt.FlightRecorder != true
+ * @requires vm.gc.G1
+ * @requires !vm.flightRecorder
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
  * @requires vm.opt.MaxGCPauseMillis == "null"
  * @library /testlibrary /test/lib /

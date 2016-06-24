@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -129,7 +129,7 @@ public class JavaTimeSupplementary_vi extends OpenListResourceBundle {
             },
             { "islamic.DatePatterns",
                 new String[] {
-                    "EEEE, 'ng\u00e0y' dd MMMM 'n\u0103m' y GGGG",
+                    "EEEE, 'ng\u00e0y' dd 'th\u00e1ng' MM 'n\u0103m' y GGGG",
                     "'Ng\u00e0y' dd 'th\u00e1ng' M 'n\u0103m' y GGGG",
                     "dd-MM-y GGGG",
                     "dd/MM/y G",
@@ -206,6 +206,12 @@ public class JavaTimeSupplementary_vi extends OpenListResourceBundle {
                     "HH:mm",
                 }
             },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "SA",
+                    "CH",
+                }
+            },
             { "islamic.long.Eras",
                 new String[] {
                     "",
@@ -252,7 +258,7 @@ public class JavaTimeSupplementary_vi extends OpenListResourceBundle {
             },
             { "java.time.islamic.DatePatterns",
                 new String[] {
-                    "EEEE, 'ng\u00e0y' dd MMMM 'n\u0103m' y G",
+                    "EEEE, 'ng\u00e0y' dd 'th\u00e1ng' MM 'n\u0103m' y G",
                     "'Ng\u00e0y' dd 'th\u00e1ng' M 'n\u0103m' y G",
                     "dd-MM-y G",
                     "dd/MM/y GGGGG",
@@ -404,6 +410,12 @@ public class JavaTimeSupplementary_vi extends OpenListResourceBundle {
                     "HH:mm:ss z",
                     "HH:mm:ss",
                     "HH:mm",
+                }
+            },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "SA",
+                    "CH",
                 }
             },
             { "roc.long.Eras",

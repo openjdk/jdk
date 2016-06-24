@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.io.InputStream;
 
 /*
  * @test
+ * @key headful
  * @bug 4532299 4648733
  * @summary Tests that getting clipboard contents on the interrupted thread will
  *          not cause deadlock.Also check that lostOwnership event occurs while

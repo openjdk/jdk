@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,7 +198,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *
  * <p>The keywords are mapped to a BCP 47 extension value using the
  * extension key 'u' ({@link #UNICODE_LOCALE_EXTENSION}).  The above
- * example, "nu-thai", becomes the extension "u-nu-thai".code
+ * example, "nu-thai", becomes the extension "u-nu-thai".
  *
  * <p>Thus, when a <code>Locale</code> object contains Unicode locale
  * attributes and keywords,
@@ -2858,6 +2858,8 @@ public final class Locale implements Cloneable, Serializable {
          * @param range a language range
          * @throws NullPointerException if the given {@code range} is
          *     {@code null}
+         * @throws IllegalArgumentException if the given {@code range} does not
+         * comply with the syntax of the language range mentioned in RFC 4647
          */
         public LanguageRange(String range) {
             this(range, MAX_WEIGHT);
@@ -2873,8 +2875,10 @@ public final class Locale implements Cloneable, Serializable {
          *     {@code MAX_WEIGHT}
          * @throws NullPointerException if the given {@code range} is
          *     {@code null}
-         * @throws IllegalArgumentException if the given {@code weight} is less
-         *     than {@code MIN_WEIGHT} or greater than {@code MAX_WEIGHT}
+         * @throws IllegalArgumentException if the given {@code range} does not
+         * comply with the syntax of the language range mentioned in RFC 4647
+         * or if the given {@code weight} is less than {@code MIN_WEIGHT}
+         * or greater than {@code MAX_WEIGHT}
          */
         public LanguageRange(String range, double weight) {
             if (range == null) {
@@ -2884,7 +2888,7 @@ public final class Locale implements Cloneable, Serializable {
                 throw new IllegalArgumentException("weight=" + weight);
             }
 
-            range = range.toLowerCase();
+            range = range.toLowerCase(Locale.ROOT);
 
             // Do syntax check.
             boolean isIllFormed = false;

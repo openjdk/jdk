@@ -26,7 +26,8 @@
  * @key gc
  * @key stress
  * @summary Stress G1 by humongous allocations in situation near OOM
- * @requires vm.gc=="G1" | vm.gc=="null"
+ * @requires vm.gc.G1
+ * @requires !vm.flightRecorder
  * @run main/othervm/timeout=200 -Xlog:gc=debug -Xmx1g -XX:+UseG1GC -XX:G1HeapRegionSize=4m
  *              -Dtimeout=120 -Dthreads=3 -Dhumongoussize=1.1 -Dregionsize=4 TestStressG1Humongous
  * @run main/othervm/timeout=200 -Xlog:gc=debug -Xmx1g -XX:+UseG1GC -XX:G1HeapRegionSize=16m

@@ -163,6 +163,7 @@ public class UsesTest extends ModuleTestBase {
 
     @Test
     public void testMultiOnModulePath(Path base) throws Exception {
+        Path modSrc = base.resolve("modSrc");
         Path modules = base.resolve("modules");
         new ModuleBuilder(tb, "m1")
                 .exports("p")
@@ -171,18 +172,19 @@ public class UsesTest extends ModuleTestBase {
         new ModuleBuilder(tb, "m2")
                 .requires("m1")
                 .uses("p.C")
-                .write(modules);
+                .write(modSrc);
 
         new JavacTask(tb)
                 .options("-mp", modules.toString())
                 .outdir(modules)
-                .files(findJavaFiles(modules.resolve("m2")))
+                .files(findJavaFiles(modSrc.resolve("m2")))
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
     }
 
     @Test
     public void testMultiOnModulePathInner(Path base) throws Exception {
+        Path modSrc = base.resolve("modSrc");
         Path modules = base.resolve("modules");
         new ModuleBuilder(tb, "m1")
                 .exports("p")
@@ -191,12 +193,12 @@ public class UsesTest extends ModuleTestBase {
         new ModuleBuilder(tb, "m2")
                 .requires("m1")
                 .uses("p.C.Inner")
-                .write(modules);
+                .write(modSrc);
 
         new JavacTask(tb)
                 .options("-mp", modules.toString())
                 .outdir(modules)
-                .files(findJavaFiles(modules.resolve("m2")))
+                .files(findJavaFiles(modSrc.resolve("m2")))
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
     }

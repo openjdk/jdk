@@ -2498,13 +2498,22 @@ Zone America/Merida	-5:58:28 -	LMT	1922 Jan  1  0:01:32
 			-6:00	-	CST	1981 Dec 23
 			-5:00	-	EST	1982 Dec  2
 			-6:00	Mexico	C%sT
-# Coahuila, Durango, Nuevo León, Tamaulipas (near US border)
+# Coahuila, Nuevo León, Tamaulipas (near US border)
+# This includes the following municipalities:
+#   in Coahuila: Ocampo, Acuña, Zaragoza, Jiménez, Piedras Negras, Nava,
+#     Guerrero, Hidalgo.
+#   in Nuevo León: Anáhuac, Los Aldama.
+#   in Tamaulipas: Nuevo Laredo, Guerrero, Mier, Miguel Alemán, Camargo,
+#     Gustavo Díaz Ordaz, Reynosa, Río Bravo, Valle Hermoso, Matamoros.
+# See: Inicia mañana Horario de Verano en zona fronteriza, El Universal,
+# 2016-03-12
+# http://www.eluniversal.com.mx/articulo/estados/2016/03/12/inicia-manana-horario-de-verano-en-zona-fronteriza
 Zone America/Matamoros	-6:40:00 -	LMT	1921 Dec 31 23:20:00
 			-6:00	-	CST	1988
 			-6:00	US	C%sT	1989
 			-6:00	Mexico	C%sT	2010
 			-6:00	US	C%sT
-# Coahuila, Durango, Nuevo León, Tamaulipas (away from US border)
+# Durango; Coahuila, Nuevo León, Tamaulipas (away from US border)
 Zone America/Monterrey	-6:41:16 -	LMT	1921 Dec 31 23:18:44
 			-6:00	-	CST	1988
 			-6:00	US	C%sT	1989
@@ -2520,6 +2529,9 @@ Zone America/Mexico_City -6:36:36 -	LMT	1922 Jan  1  0:23:24
 			-6:00	-	CST	2002 Feb 20
 			-6:00	Mexico	C%sT
 # Chihuahua (near US border)
+# This includes the municipalities of Janos, Ascensión, Juárez, Guadalupe,
+# Práxedis G Guerrero, Coyame del Sotol, Ojinaga, and Manuel Benavides.
+# (See the 2016-03-12 El Universal source mentioned above.)
 Zone America/Ojinaga	-6:57:40 -	LMT	1922 Jan  1  0:02:20
 			-7:00	-	MST	1927 Jun 10 23:00
 			-6:00	-	CST	1930 Nov 15
@@ -2607,7 +2619,7 @@ Zone America/Bahia_Banderas	-7:01:00 -	LMT	1921 Dec 31 23:59:00
 			-7:00	Mexico	M%sT	2010 Apr  4  2:00
 			-6:00	Mexico	C%sT
 
-# Baja California (near US border)
+# Baja California
 Zone America/Tijuana	-7:48:04 -	LMT	1922 Jan  1  0:11:56
 			-7:00	-	MST	1924
 			-8:00	-	PST	1927 Jun 10 23:00
@@ -3083,6 +3095,13 @@ Zone America/Guatemala	-6:02:04 -	LMT	1918 Oct 5
 # http://radiovision2000haiti.net/public/haiti-avis-changement-dheure-dimanche/
 # http://www.canalplushaiti.net/?p=6714
 
+# From Steffen Thorsen (2016-03-12):
+# Jean Antoine, editor of www.haiti-reference.com informed us that Haiti
+# are not going on DST this year.  Several other resources confirm this: ...
+# http://www.radiotelevisioncaraibes.com/presse/heure_d_t_pas_de_changement_d_heure_pr_vu_pour_cet_ann_e.html
+# http://www.vantbefinfo.com/changement-dheure-pas-pour-haiti/
+# http://news.anmwe.com/haiti-lheure-nationale-ne-sera-ni-avancee-ni-reculee-cette-annee/
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Haiti	1983	only	-	May	8	0:00	1:00	D
 Rule	Haiti	1984	1987	-	Apr	lastSun	0:00	1:00	D
@@ -3093,8 +3112,8 @@ Rule	Haiti	1988	1997	-	Apr	Sun>=1	1:00s	1:00	D
 Rule	Haiti	1988	1997	-	Oct	lastSun	1:00s	0	S
 Rule	Haiti	2005	2006	-	Apr	Sun>=1	0:00	1:00	D
 Rule	Haiti	2005	2006	-	Oct	lastSun	0:00	0	S
-Rule	Haiti	2012	max	-	Mar	Sun>=8	2:00	1:00	D
-Rule	Haiti	2012	max	-	Nov	Sun>=1	2:00	0	S
+Rule	Haiti	2012	2015	-	Mar	Sun>=8	2:00	1:00	D
+Rule	Haiti	2012	2015	-	Nov	Sun>=1	2:00	0	S
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Port-au-Prince -4:49:20 -	LMT	1890
 			-4:49	-	PPMT	1917 Jan 24 12:00 # P-a-P MT

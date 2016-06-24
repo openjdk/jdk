@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,21 +30,30 @@
  *          jdk.compiler/com.sun.tools.javac.parser
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
- * @run main sampleapi.SampleApiDefaultRunner -o:out/src
+ *          jdk.javadoc/jdk.javadoc.internal.tool
  * @run main SampleApiTest
  */
+import java.io.File;
 
-import com.sun.tools.javadoc.*;
-import java.nio.file.Paths;
+import jdk.javadoc.internal.tool.Main;
+import sampleapi.SampleApiDefaultRunner;
 
 public class SampleApiTest {
 
-    public static void main(String... args) {
+    public static void main(String... args) throws Exception {
 
-        // html4
-        Main.execute(
+        // generate
+        SampleApiDefaultRunner.execute(
             new String[] {
-                "-d", "out/doc.html4",
+                "-o=out/src",
+                "-r=" + System.getProperty("test.src") + "/res"
+            });
+
+        // html4 / unnamed modules
+        System.err.println(">> HTML4, unnamed modules");
+        int res1 = Main.execute(
+            new String[] {
+                "-d", "out/doc.html4.unnamed",
                 "-verbose",
                 "-private",
                 "-use",
@@ -53,16 +62,20 @@ public class SampleApiTest {
                 "-html4",
                 "-javafx",
                 "-windowtitle", "SampleAPI",
-                "-sourcepath", "out/src",
+                "-overview", "overview.html",
+                "-sourcepath", "out/src" + File.pathSeparator + "out/src/sat.sampleapi",
                 "sampleapi.simple",
+                "sampleapi.simple.sub",
                 "sampleapi.tiny",
+                "sampleapi.tiny.sub",
                 "sampleapi.fx"
             });
 
-        // html5
-        Main.execute(
+        // html5 / unnamed modules
+        System.err.println(">> HTML5, unnamed modules");
+        int res2 = Main.execute(
             new String[] {
-                "-d", "out/doc.html5",
+                "-d", "out/doc.html5.unnamed",
                 "-verbose",
                 "-private",
                 "-use",
@@ -71,10 +84,17 @@ public class SampleApiTest {
                 "-html5",
                 "-javafx",
                 "-windowtitle", "SampleAPI",
-                "-sourcepath", "out/src",
+                "-overview", "overview.html",
+                "-sourcepath", "out/src" + File.pathSeparator + "out/src/sat.sampleapi",
                 "sampleapi.simple",
+                "sampleapi.simple.sub",
                 "sampleapi.tiny",
+                "sampleapi.tiny.sub",
                 "sampleapi.fx"
             });
+
+        if (res1 > 0 || res2 > 0)
+            throw new Exception("One of exit statuses is non-zero: "
+                + res1 + " for HTML4, " + res2 + " for HTML5.");
     }
 }

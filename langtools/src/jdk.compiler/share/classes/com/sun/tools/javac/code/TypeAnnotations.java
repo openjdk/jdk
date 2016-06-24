@@ -1332,7 +1332,9 @@ public class TypeAnnotations {
 
             scan(tree.encl);
             scan(tree.typeargs);
-            scan(tree.clazz);
+            if (tree.def == null) {
+                scan(tree.clazz);
+            } // else super type will already have been scanned in the context of the anonymous class.
             scan(tree.args);
 
             // The class body will already be scanned.

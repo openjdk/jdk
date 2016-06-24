@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ inline bool os::uses_stack_guard_pages() {
 // Whether or not calling code should/can commit/uncommit stack pages
 // before guarding them. Answer for AIX is definitly no, because memory
 // is automatically committed on touch.
-inline bool os::allocate_stack_guard_pages() {
+inline bool os::must_commit_stack_guard_pages() {
   assert(uses_stack_guard_pages(), "sanity check");
   return false;
 }
@@ -65,7 +65,7 @@ inline void os::pd_split_reserved_memory(char *base, size_t size,
 }
 
 // Bang the shadow pages if they need to be touched to be mapped.
-inline void os::map_stack_shadow_pages() {
+inline void os::map_stack_shadow_pages(address sp) {
 }
 
 inline void os::dll_unload(void *lib) {

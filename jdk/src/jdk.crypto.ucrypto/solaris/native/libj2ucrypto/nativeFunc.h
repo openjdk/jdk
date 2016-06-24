@@ -28,7 +28,7 @@
 #include <md5.h>
 #include <sha1.h>
 #include <sha2.h>
-#include <libsoftcrypto.h>
+#include <libsoftcrypto.h> // redirects to libucrypto.h starting 11.3
 
 jboolean* loadNative();
 

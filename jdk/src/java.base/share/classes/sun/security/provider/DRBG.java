@@ -25,6 +25,7 @@
 
 package sun.security.provider;
 
+import java.io.IOException;
 import java.security.AccessController;
 import java.security.DrbgParameters;
 import java.security.PrivilegedAction;
@@ -61,11 +62,12 @@ public final class DRBG extends SecureRandomSpi {
 
     private static final long serialVersionUID = 9L;
 
-    private final AbstractDrbg impl;
+    private transient AbstractDrbg impl;
 
-    private final String mechName;
-
-    private final String algorithmName;
+    /**
+     * @serial
+     */
+    private final MoreDrbgParameters mdp;
 
     public DRBG(SecureRandomParameters params) {
 
@@ -91,7 +93,7 @@ public final class DRBG extends SecureRandomSpi {
         // Can be configured with a security property
 
         String config = AccessController.doPrivileged((PrivilegedAction<String>)
-                    () -> Security.getProperty(PROP_NAME));
+                () -> Security.getProperty(PROP_NAME));
 
         if (config != null && !config.isEmpty()) {
             for (String part : config.split(",")) {
@@ -151,8 +153,9 @@ public final class DRBG extends SecureRandomSpi {
         if (params != null) {
             // MoreDrbgParameters is used for testing.
             if (params instanceof MoreDrbgParameters) {
-                MoreDrbgParameters m = (MoreDrbgParameters)params;
-                params = m.config;
+                MoreDrbgParameters m = (MoreDrbgParameters) params;
+                params = DrbgParameters.instantiation(m.strength,
+                        m.capability, m.personalizationString);
 
                 // No need to check null for es and nonce, they are still null
                 es = m.es;
@@ -197,26 +200,27 @@ public final class DRBG extends SecureRandomSpi {
             usedf = true;
         }
 
-        MoreDrbgParameters m = new MoreDrbgParameters(
+        mdp = new MoreDrbgParameters(
                 es, mech, algorithm, nonce, usedf,
                 DrbgParameters.instantiation(strength, cap, ps));
 
-        switch (mech.toLowerCase(Locale.ROOT)) {
+        createImpl();
+    }
+
+    private void createImpl() {
+        switch (mdp.mech.toLowerCase(Locale.ROOT)) {
             case "hash_drbg":
-                impl = new HashDrbg(m);
+                impl = new HashDrbg(mdp);
                 break;
             case "hmac_drbg":
-                impl = new HmacDrbg(m);
+                impl = new HmacDrbg(mdp);
                 break;
             case "ctr_drbg":
-                impl = new CtrDrbg(m);
+                impl = new CtrDrbg(mdp);
                 break;
             default:
-                throw new IllegalArgumentException("Unsupported mech: " + mech);
+                throw new IllegalArgumentException("Unsupported mech: " + mdp.mech);
         }
-
-        mechName = mech;
-        algorithmName = impl.algorithm;
     }
 
     @Override
@@ -267,5 +271,14 @@ public final class DRBG extends SecureRandomSpi {
             throw new IllegalArgumentException(name
                     + " cannot be provided more than once in " + PROP_NAME);
         }
+    }
+
+    private void readObject(java.io.ObjectInputStream s)
+            throws IOException, ClassNotFoundException {
+        s.defaultReadObject();
+        if (mdp.mech == null) {
+            throw new IllegalArgumentException("Input data is corrupted");
+        }
+        createImpl();
     }
 }

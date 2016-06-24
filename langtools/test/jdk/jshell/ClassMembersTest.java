@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8139829
  * @summary Test access to members of user defined class.
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng/timeout=600 ClassMembersTest
@@ -61,8 +62,8 @@ public class ClassMembersTest extends KullaTesting {
         String source = input;
         while (!source.trim().isEmpty()) {
             SourceCodeAnalysis.CompletionInfo info = codeAnalysis.analyzeCompletion(source);
-            list.add(info.source);
-            source = info.remaining;
+            list.add(info.source());
+            source = info.remaining();
         }
         return list;
     }

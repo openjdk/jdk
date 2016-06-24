@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -132,12 +132,6 @@ public class JavaTimeSupplementary extends OpenListResourceBundle {
                 "Year" },
             { "field.zone",
                 "Zone" },
-            { "islamic.AmPmMarkers",
-                new String[] {
-                    "AM",
-                    "PM",
-                }
-            },
             { "islamic.DatePatterns",
                 new String[] {
                     "GGGG y MMMM d, EEEE",
@@ -245,16 +239,16 @@ public class JavaTimeSupplementary extends OpenListResourceBundle {
                     "HH:mm",
                 }
             },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "AM",
+                    "PM",
+                }
+            },
             { "islamic.long.Eras",
                 new String[] {
                     "",
                     "AH",
-                }
-            },
-            { "islamic.narrow.AmPmMarkers",
-                new String[] {
-                    "a",
-                    "p",
                 }
             },
             { "islamic.narrow.Eras",
@@ -387,35 +381,35 @@ public class JavaTimeSupplementary extends OpenListResourceBundle {
             },
             { "roc.MonthAbbreviations",
                 new String[] {
-                    "M01",
-                    "M02",
-                    "M03",
-                    "M04",
-                    "M05",
-                    "M06",
-                    "M07",
-                    "M08",
-                    "M09",
-                    "M10",
-                    "M11",
-                    "M12",
+                    "Jan",
+                    "Feb",
+                    "Mar",
+                    "Apr",
+                    "May",
+                    "Jun",
+                    "Jul",
+                    "Aug",
+                    "Sep",
+                    "Oct",
+                    "Nov",
+                    "Dec",
                     "",
                 }
             },
             { "roc.MonthNames",
                 new String[] {
-                    "M01",
-                    "M02",
-                    "M03",
-                    "M04",
-                    "M05",
-                    "M06",
-                    "M07",
-                    "M08",
-                    "M09",
-                    "M10",
-                    "M11",
-                    "M12",
+                    "Jan",
+                    "Feb",
+                    "Mar",
+                    "Apr",
+                    "May",
+                    "Jun",
+                    "Jul",
+                    "Aug",
+                    "Sep",
+                    "Oct",
+                    "Nov",
+                    "Dec",
                     "",
                 }
             },
@@ -445,6 +439,12 @@ public class JavaTimeSupplementary extends OpenListResourceBundle {
                     "HH:mm",
                 }
             },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "AM",
+                    "PM",
+                }
+            },
             { "roc.long.Eras",
                 new String[] {
                     "Before R.O.C.",
@@ -453,8 +453,8 @@ public class JavaTimeSupplementary extends OpenListResourceBundle {
             },
             { "roc.narrow.AmPmMarkers",
                 new String[] {
-                    "a",
-                    "p",
+                    "AM",
+                    "PM",
                 }
             },
             { "roc.narrow.Eras",

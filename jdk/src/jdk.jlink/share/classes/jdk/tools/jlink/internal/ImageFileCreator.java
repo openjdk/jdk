@@ -233,8 +233,7 @@ public final class ImageFileCreator {
 
         // write module content
         for (ModuleEntry res : content) {
-            byte[] buf = res.getBytes();
-            out.write(buf, 0, buf.length);
+            res.write(out);
         }
 
         tree.addContent(out);
@@ -242,21 +241,6 @@ public final class ImageFileCreator {
         out.close();
 
         return resultResources;
-    }
-
-    private static ModuleEntry.Type mapImageFileType(EntryType type) {
-        switch(type) {
-            case CONFIG: {
-                return ModuleEntry.Type.CONFIG;
-            }
-            case NATIVE_CMD: {
-                return ModuleEntry.Type.NATIVE_CMD;
-            }
-            case NATIVE_LIB: {
-                return ModuleEntry.Type.NATIVE_LIB;
-            }
-        }
-        return null;
     }
 
     private static ModulePoolImpl createPools(Set<Archive> archives,
@@ -278,34 +262,22 @@ public final class ImageFileCreator {
         for (Archive archive : archives) {
             String mn = archive.moduleName();
             for (Entry entry : entriesForModule.get(mn)) {
-
+                String path;
                 if (entry.type() == EntryType.CLASS_OR_RESOURCE) {
                     // Removal of "classes/" radical.
-                    String path = entry.name();
-                    try (InputStream stream = entry.stream()) {
-                        byte[] bytes = readAllBytes(stream);
-                        if (path.endsWith("module-info.class")) {
-                            path = "/" + path;
-                        } else {
-                            path = "/" + mn + "/" + path;
-                        }
-                        try {
-                            resources.add(ModuleEntry.create(path, bytes));
-                        } catch (Exception ex) {
-                            throw new IOException(ex);
-                        }
+                    path = entry.name();
+                    if (path.endsWith("module-info.class")) {
+                        path = "/" + path;
+                    } else {
+                        path = "/" + mn + "/" + path;
                     }
                 } else {
-                    try {
-                        // Entry.path() contains the kind of file native, conf, bin, ...
-                        // Keep it to avoid naming conflict (eg: native/jvm.cfg and config/jvm.cfg
-                        resources.add(ModuleEntry.create(mn,
-                                "/" + mn + "/" + entry.path(), mapImageFileType(entry.type()),
-                                entry.stream(), entry.size()));
-                    } catch (Exception ex) {
-                        throw new IOException(ex);
-                    }
+                    // Entry.path() contains the kind of file native, conf, bin, ...
+                    // Keep it to avoid naming conflict (eg: native/jvm.cfg and config/jvm.cfg
+                    path = "/" + mn + "/" + entry.path();
                 }
+
+                resources.add(new ArchiveEntryModuleEntry(mn, path, entry));
             }
         }
         return resources;

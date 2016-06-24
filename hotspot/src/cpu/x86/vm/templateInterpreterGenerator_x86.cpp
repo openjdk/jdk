@@ -473,7 +473,11 @@ void TemplateInterpreterGenerator::generate_counter_overflow(Label& do_continue)
   __ jmp(do_continue, relocInfo::none);
 }
 
-// See if we've got enough room on the stack for locals plus overhead.
+// See if we've got enough room on the stack for locals plus overhead below
+// JavaThread::stack_overflow_limit(). If not, throw a StackOverflowError
+// without going through the signal handler, i.e., reserved and yellow zones
+// will not be made usable. The shadow zone must suffice to handle the
+// overflow.
 // The expression stack grows down incrementally, so the normal guard
 // page mechanism will work for that.
 //
@@ -518,40 +522,26 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   __ get_thread(thread);
 #endif
 
-  const Address stack_base(thread, Thread::stack_base_offset());
-  const Address stack_size(thread, Thread::stack_size_offset());
+  const Address stack_limit(thread, JavaThread::stack_overflow_limit_offset());
 
   // locals + overhead, in bytes
   __ mov(rax, rdx);
-  __ shlptr(rax, Interpreter::logStackElementSize);  // 2 slots per parameter.
+  __ shlptr(rax, Interpreter::logStackElementSize); // Convert parameter count to bytes.
   __ addptr(rax, overhead_size);
 
 #ifdef ASSERT
-  Label stack_base_okay, stack_size_okay;
-  // verify that thread stack base is non-zero
-  __ cmpptr(stack_base, (int32_t)NULL_WORD);
-  __ jcc(Assembler::notEqual, stack_base_okay);
-  __ stop("stack base is zero");
-  __ bind(stack_base_okay);
-  // verify that thread stack size is non-zero
-  __ cmpptr(stack_size, 0);
-  __ jcc(Assembler::notEqual, stack_size_okay);
-  __ stop("stack size is zero");
-  __ bind(stack_size_okay);
+  Label limit_okay;
+  // Verify that thread stack overflow limit is non-zero.
+  __ cmpptr(stack_limit, (int32_t)NULL_WORD);
+  __ jcc(Assembler::notEqual, limit_okay);
+  __ stop("stack overflow limit is zero");
+  __ bind(limit_okay);
 #endif
 
-  // Add stack base to locals and subtract stack size
-  __ addptr(rax, stack_base);
-  __ subptr(rax, stack_size);
+  // Add locals/frame size to stack limit.
+  __ addptr(rax, stack_limit);
 
-  // Use the bigger size for banging.
-  const int max_bang_size = (int)MAX2(JavaThread::stack_shadow_zone_size(),
-                                      JavaThread::stack_guard_zone_size());
-
-  // add in the red and yellow zone sizes
-  __ addptr(rax, max_bang_size);
-
-  // check against the current stack bottom
+  // Check against the current stack bottom.
   __ cmpptr(rsp, rax);
 
   __ jcc(Assembler::above, after_frame_check_pop);
@@ -782,8 +772,6 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   return NULL;
 }
 
-// TODO: rather than touching all pages, check against stack_overflow_limit and bang yellow page to
-// generate exception.  Windows might need this to map the shadow pages though.
 void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Quick & dirty stack overflow checking: bang the stack & handle trap.
   // Note that we do the banging after the frame is setup, since the exception
@@ -945,7 +933,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ load_unsigned_short(t, Address(t, ConstMethod::size_of_parameters_offset()));
 
 #ifndef _LP64
-  __ shlptr(t, Interpreter::logStackElementSize);
+  __ shlptr(t, Interpreter::logStackElementSize); // Convert parameter count to bytes.
   __ addptr(t, 2*wordSize);     // allocate two more slots for JNIEnv and possible mirror
   __ subptr(rsp, t);
   __ andptr(rsp, -(StackAlignmentInBytes)); // gcc needs 16 byte aligned stacks to do XMM intrinsics

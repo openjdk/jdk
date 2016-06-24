@@ -44,48 +44,51 @@ public final class Module {
     /**
      * A module ExportEntry record.
      *
-     * @link http://www.ecma-international.org/ecma-262/6.0/#sec-source-text-module-records
+     * @see <a href="http://www.ecma-international.org/ecma-262/6.0/#sec-source-text-module-records">es6 modules</a>
      */
     public static final class ExportEntry {
-        private final String exportName;
-        private final String moduleRequest;
-        private final String importName;
-        private final String localName;
+        private final IdentNode exportName;
+        private final IdentNode moduleRequest;
+        private final IdentNode importName;
+        private final IdentNode localName;
 
-        private ExportEntry(final String exportName, final String moduleRequest, final String importName, final String localName) {
+        private final int startPosition;
+        private final int endPosition;
+
+        private ExportEntry(final IdentNode exportName, final IdentNode moduleRequest, final IdentNode importName,
+                            final IdentNode localName, final int startPosition, final int endPosition) {
             this.exportName = exportName;
             this.moduleRequest = moduleRequest;
             this.importName = importName;
             this.localName = localName;
+            this.startPosition = startPosition;
+            this.endPosition = endPosition;
         }
 
         /**
          * Creates a {@code export *} export entry.
          *
+         * @param starName the star name
          * @param moduleRequest the module request
+         * @param startPosition the start position
+         * @param endPosition the end position
          * @return the export entry
          */
-        public static ExportEntry exportStarFrom(final String moduleRequest) {
-            return new ExportEntry(null, moduleRequest, STAR_NAME, null);
-        }
-
-        /**
-         * Creates a {@code export default} export entry.
-         *
-         * @return the export entry
-         */
-        public static ExportEntry exportDefault() {
-            return exportDefault(DEFAULT_EXPORT_BINDING_NAME);
+        public static ExportEntry exportStarFrom(final IdentNode starName, final IdentNode moduleRequest, final int startPosition, final int endPosition) {
+            return new ExportEntry(null, moduleRequest, starName, null, startPosition, endPosition);
         }
 
         /**
          * Creates a {@code export default} export entry with a local name.
          *
+         * @param defaultName the default name
          * @param localName the local name
+         * @param startPosition the start position
+         * @param endPosition the end position
          * @return the export entry
          */
-        public static ExportEntry exportDefault(final String localName) {
-            return new ExportEntry(DEFAULT_NAME, null, null, localName);
+        public static ExportEntry exportDefault(final IdentNode defaultName, final IdentNode localName, final int startPosition, final int endPosition) {
+            return new ExportEntry(defaultName, null, null, localName, startPosition, endPosition);
         }
 
         /**
@@ -93,30 +96,37 @@ public final class Module {
          *
          * @param exportName the export name
          * @param localName the local name
+         * @param startPosition the start position
+         * @param endPosition the end position
          * @return the export entry
          */
-        public static ExportEntry exportSpecifier(final String exportName, final String localName) {
-            return new ExportEntry(exportName, null, null, localName);
+        public static ExportEntry exportSpecifier(final IdentNode exportName, final IdentNode localName, final int startPosition, final int endPosition) {
+            return new ExportEntry(exportName, null, null, localName, startPosition, endPosition);
         }
+
 
         /**
          * Creates a export entry with an export name.
          *
          * @param exportName the export name
+         * @param startPosition the start position
+         * @param endPosition the end position
          * @return the export entry
          */
-        public static ExportEntry exportSpecifier(final String exportName) {
-            return exportSpecifier(exportName, exportName);
+        public static ExportEntry exportSpecifier(final IdentNode exportName, final int startPosition, final int endPosition) {
+            return exportSpecifier(exportName, exportName, startPosition, endPosition);
         }
 
         /**
          * Create a copy of this entry with the specified {@code module request} string.
          *
          * @param moduleRequest the module request
+         * @param endPosition the new endPosition
          * @return the new export entry
          */
-        public ExportEntry withFrom(@SuppressWarnings("hiding") final String moduleRequest) {
-            return new ExportEntry(exportName, moduleRequest, localName, null);
+        public ExportEntry withFrom(@SuppressWarnings("hiding") final IdentNode moduleRequest, final int endPosition) {
+            // Note that "from" moves localName to inputName, and localName becomes null
+            return new ExportEntry(exportName, moduleRequest, localName, null, startPosition, endPosition);
         }
 
         /**
@@ -124,7 +134,7 @@ public final class Module {
          *
          * @return the export name
          */
-        public String getExportName() {
+        public IdentNode getExportName() {
             return exportName;
         }
 
@@ -133,7 +143,7 @@ public final class Module {
          *
          * @return the module request
          */
-        public String getModuleRequest() {
+        public IdentNode getModuleRequest() {
             return moduleRequest;
         }
 
@@ -142,7 +152,7 @@ public final class Module {
          *
          * @return the import name
          */
-        public String getImportName() {
+        public IdentNode getImportName() {
             return importName;
         }
 
@@ -151,8 +161,26 @@ public final class Module {
          *
          * @return the local name
          */
-        public String getLocalName() {
+        public IdentNode getLocalName() {
             return localName;
+        }
+
+        /**
+         * Returns the entry's start position.
+         *
+         * @return the start position
+         */
+        public int getStartPosition() {
+            return startPosition;
+        }
+
+        /**
+         * Returns the entry's end position.
+         *
+         * @return the end position
+         */
+        public int getEndPosition() {
+            return endPosition;
         }
 
         @Override
@@ -164,37 +192,23 @@ public final class Module {
     /**
      * An ImportEntry record.
      *
-     * @link http://www.ecma-international.org/ecma-262/6.0/#sec-source-text-module-records
+     * @see <a href="http://www.ecma-international.org/ecma-262/6.0/#sec-source-text-module-records">es6 modules</a>
      */
     public static final class ImportEntry {
-        private final String moduleRequest;
-        private final String importName;
-        private final String localName;
+        private final IdentNode moduleRequest;
+        private final IdentNode importName;
+        private final IdentNode localName;
 
-        private ImportEntry(final String moduleRequest, final String importName, final String localName) {
+        private final int startPosition;
+        private final int endPosition;
+
+        private ImportEntry(final IdentNode moduleRequest, final IdentNode importName, final IdentNode localName,
+                            final int startPosition, final int endPosition) {
             this.moduleRequest = moduleRequest;
             this.importName = importName;
             this.localName = localName;
-        }
-
-        /**
-         * Creates an import entry with default name.
-         *
-         * @param localName the local name
-         * @return the import entry
-         */
-        public static ImportEntry importDefault(final String localName) {
-            return new ImportEntry(null, DEFAULT_NAME, localName);
-        }
-
-        /**
-         * Creates an import entry with {@code *} import name.
-         *
-         * @param localName the local name
-         * @return the import entry
-         */
-        public static ImportEntry importStarAsNameSpaceFrom(final String localName) {
-            return new ImportEntry(null, STAR_NAME, localName);
+            this.startPosition = startPosition;
+            this.endPosition = endPosition;
         }
 
         /**
@@ -202,30 +216,35 @@ public final class Module {
          *
          * @param importName the import name
          * @param localName the local name
+         * @param startPosition the start position
+         * @param endPosition the end position
          * @return the import entry
          */
-        public static ImportEntry importSpecifier(final String importName, final String localName) {
-            return new ImportEntry(null, importName, localName);
+        public static ImportEntry importSpecifier(final IdentNode importName, final IdentNode localName, final int startPosition, final int endPosition) {
+            return new ImportEntry(null, importName, localName, startPosition, endPosition);
         }
 
         /**
          * Creates a new import entry with the given import name.
          *
          * @param importName the import name
+         * @param startPosition the start position
+         * @param endPosition the end position
          * @return the import entry
          */
-        public static ImportEntry importSpecifier(final String importName) {
-            return importSpecifier(importName, importName);
+        public static ImportEntry importSpecifier(final IdentNode importName, final int startPosition, final int endPosition) {
+            return importSpecifier(importName, importName, startPosition, endPosition);
         }
 
         /**
-         * Returns a copy of this import entry with the given module request.
+         * Returns a copy of this import entry with the given module request and end position.
          *
          * @param moduleRequest the module request
+         * @param endPosition the new end position
          * @return the new import entry
          */
-        public ImportEntry withFrom(@SuppressWarnings("hiding") final String moduleRequest) {
-            return new ImportEntry(moduleRequest, importName, localName);
+        public ImportEntry withFrom(@SuppressWarnings("hiding") final IdentNode moduleRequest, final int endPosition) {
+            return new ImportEntry(moduleRequest, importName, localName, startPosition, endPosition);
         }
 
         /**
@@ -233,7 +252,7 @@ public final class Module {
          *
          * @return the module request
          */
-        public String getModuleRequest() {
+        public IdentNode getModuleRequest() {
             return moduleRequest;
         }
 
@@ -242,7 +261,7 @@ public final class Module {
          *
          * @return the import name
          */
-        public String getImportName() {
+        public IdentNode getImportName() {
             return importName;
         }
 
@@ -251,8 +270,26 @@ public final class Module {
          *
          * @return the local name
          */
-        public String getLocalName() {
+        public IdentNode getLocalName() {
             return localName;
+        }
+
+        /**
+         * Returns the entry's start position.
+         *
+         * @return the start position
+         */
+        public int getStartPosition() {
+            return startPosition;
+        }
+
+        /**
+         * Returns the entry's end position.
+         *
+         * @return the end position
+         */
+        public int getEndPosition() {
+            return endPosition;
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.BitSet;
 
 /*
  * @test
+ * @key headful
  * @summary Check if a translucent shaped window trigger events correctly.
  *
  * Test Description: Check if TRANSLUCENT and PERPIXEL_TRANSPARENT traslucency

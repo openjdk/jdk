@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.lang.annotation.*;
 import java.lang.reflect.*;
 import java.io.Serializable;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -61,7 +62,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         // Handle Object and Annotation methods
         if (member.equals("equals") && paramTypes.length == 1 &&
             paramTypes[0] == Object.class)
-            return equalsImpl(args[0]);
+            return equalsImpl(proxy, args[0]);
         if (paramTypes.length != 0)
             throw new AssertionError("Too many parameters for an annotation method");
 
@@ -158,13 +159,17 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
     }
 
     /**
-     * Translates a member value (in "dynamic proxy return form") into a string
+     * Translates a member value (in "dynamic proxy return form") into a string.
      */
     private static String memberValueToString(Object value) {
         Class<?> type = value.getClass();
-        if (!type.isArray())    // primitive, string, class, enum const,
-                                // or annotation
-            return value.toString();
+        if (!type.isArray()) {   // primitive, string, class, enum const,
+                                 // or annotation
+            if (type == Class.class)
+                return classValueToString((Class<?>) value);
+            else
+                return value.toString();
+        }
 
         if (type == byte[].class)
             return Arrays.toString((byte[]) value);
@@ -182,14 +187,30 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
             return Arrays.toString((short[]) value);
         if (type == boolean[].class)
             return Arrays.toString((boolean[]) value);
+        if (type == Class[].class)
+            return classArrayValueToString((Class<?>[])value);
         return Arrays.toString((Object[]) value);
+    }
+
+    /**
+     * Translates a Class value to a form suitable for use in the
+     * string representation of an annotation.
+     */
+    private static String classValueToString(Class<?> clazz) {
+        return clazz.getName() + ".class" ;
+    }
+
+    private static String classArrayValueToString(Class<?>[] classes) {
+        return Arrays.stream(classes)
+            .map(AnnotationInvocationHandler::classValueToString)
+            .collect(Collectors.joining(", ", "{", "}"));
     }
 
     /**
      * Implementation of dynamicProxy.equals(Object o)
      */
-    private Boolean equalsImpl(Object o) {
-        if (o == this)
+    private Boolean equalsImpl(Object proxy, Object o) {
+        if (o == proxy)
             return true;
 
         if (!type.isInstance(o))
