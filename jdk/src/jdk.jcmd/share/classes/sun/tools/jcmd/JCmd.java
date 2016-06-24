@@ -65,36 +65,37 @@ public class JCmd {
             System.exit(1);
         }
 
+        ProcessArgumentMatcher ap = null;
+        try {
+            ap = new ProcessArgumentMatcher(arg.getProcessString());
+        } catch (IllegalArgumentException iae) {
+            System.err.println("Invalid pid '" + arg.getProcessString()  + "' specified");
+            System.exit(1);
+        }
+
         if (arg.isListProcesses()) {
-            List<VirtualMachineDescriptor> vmds = VirtualMachine.list();
-            for (VirtualMachineDescriptor vmd : vmds) {
+            for (VirtualMachineDescriptor vmd : ap.getVirtualMachineDescriptors(/* include jcmd in listing */)) {
                 System.out.println(vmd.id() + " " + vmd.displayName());
             }
             System.exit(0);
         }
 
-        Collection<String> pids = Collections.emptyList();
-        try {
-            ProcessArgumentMatcher ap = new ProcessArgumentMatcher(arg.getProcessString(), JCmd.class);
-            pids = ap.getPids();
-        } catch (IllegalArgumentException iae) {
-            System.err.println("Invalid pid specified");
-            System.exit(1);
-        }
-        if (pids.isEmpty()) {
+        Collection<VirtualMachineDescriptor> vids = ap.getVirtualMachineDescriptors(JCmd.class);
+
+        if (vids.isEmpty()) {
             System.err.println("Could not find any processes matching : '"
                                + arg.getProcessString() + "'");
             System.exit(1);
         }
 
         boolean success = true;
-        for (String pid : pids) {
-            System.out.println(pid + ":");
+        for (VirtualMachineDescriptor vid : vids) {
+            System.out.println(vid.id() + ":");
             if (arg.isListCounters()) {
-                listCounters(pid);
+                listCounters(vid.id());
             } else {
                 try {
-                    executeCommandForPid(pid, arg.getCommand());
+                    executeCommandForPid(vid.id(), arg.getCommand());
                 } catch(AttachOperationFailedException ex) {
                     System.err.println(ex.getMessage());
                     success = false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,13 @@
  * questions.
  */
 /*
-@test
-@bug 4799136
-@summary Tests that type-ahead for dialog works and doesn't block program
-@author Dmitry.Cherepanov@SUN.COM area=awt.focus
-@run main FreezeTest
-*/
+ * @test
+ * @key headful
+ * @bug 4799136
+ * @summary Tests that type-ahead for dialog works and doesn't block program
+ * @author Dmitry.Cherepanov@SUN.COM area=awt.focus
+ * @run main FreezeTest
+ */
 
 import java.awt.*;
 import java.lang.reflect.InvocationTargetException;

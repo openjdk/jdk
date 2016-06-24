@@ -146,6 +146,16 @@ public class BasicLauncherTest {
         launch(expectedMessage, Arrays.asList(toolArgs));
     }
 
+    public static void launchNotOSX(String expectedMessage, String... toolArgs)
+        throws IOException {
+
+        if (Platform.isOSX()) {
+            // Coredump stackwalking is not implemented for Darwin
+            System.out.println("This test is not expected to work on OS X. Skipping");
+            return;
+        }
+    }
+
     public static void testHeapDump() throws IOException {
         File dump = new File("jhsdb.jmap.dump." +
                              System.currentTimeMillis() + ".hprof");
@@ -172,7 +182,7 @@ public class BasicLauncherTest {
 
         launchCLHSDB();
 
-        launch("No deadlocks found", "jstack");
+        launchNotOSX("No deadlocks found", "jstack");
         launch("compiler detected", "jmap");
         launch("Java System Properties", "jinfo");
         launch("java.threads", "jsnap");

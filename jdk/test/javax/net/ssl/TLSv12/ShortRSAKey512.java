@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
  *
  *     SunJSSE does not support dynamic system properties, no way to re-use
  *     system properties in samevm/agentvm mode.
+ * @key intermittent
  * @run main/othervm ShortRSAKey512 PKIX
  * @run main/othervm ShortRSAKey512 SunX509
  */
@@ -125,7 +126,7 @@ public class ShortRSAKey512 {
     /*
      * Turn on SSL debugging?
      */
-    static boolean debug = false;
+    static boolean debug = true;
 
     /*
      * Define the server side of the test.
@@ -137,24 +138,26 @@ public class ShortRSAKey512 {
         SSLContext context = generateSSLContext(null, targetCertStr,
                                             targetPrivateKey);
         SSLServerSocketFactory sslssf = context.getServerSocketFactory();
-        SSLServerSocket sslServerSocket =
-            (SSLServerSocket)sslssf.createServerSocket(serverPort);
-        serverPort = sslServerSocket.getLocalPort();
+        try (SSLServerSocket sslServerSocket =
+                (SSLServerSocket) sslssf.createServerSocket(serverPort)) {
 
-        /*
-         * Signal Client, we're ready for his connect.
-         */
-        serverReady = true;
+            serverPort = sslServerSocket.getLocalPort();
+            System.out.println("Start server on port " + serverPort);
 
-        SSLSocket sslSocket = (SSLSocket)sslServerSocket.accept();
-        InputStream sslIS = sslSocket.getInputStream();
-        OutputStream sslOS = sslSocket.getOutputStream();
+            /*
+            * Signal Client, we're ready for his connect.
+            */
+            serverReady = true;
 
-        sslIS.read();
-        sslOS.write('A');
-        sslOS.flush();
+            try (SSLSocket sslSocket = (SSLSocket)sslServerSocket.accept()) {
+                InputStream sslIS = sslSocket.getInputStream();
+                OutputStream sslOS = sslSocket.getOutputStream();
 
-        sslSocket.close();
+                sslIS.read();
+                sslOS.write('A');
+                sslOS.flush();
+            }
+        }
     }
 
     /*
@@ -175,24 +178,24 @@ public class ShortRSAKey512 {
         SSLContext context = generateSSLContext(trustedCertStr, null, null);
         SSLSocketFactory sslsf = context.getSocketFactory();
 
-        SSLSocket sslSocket =
-            (SSLSocket)sslsf.createSocket("localhost", serverPort);
+        System.out.println("Client connects to port " + serverPort);
+        try (SSLSocket sslSocket =
+                (SSLSocket) sslsf.createSocket("localhost", serverPort)) {
 
-        // enable TLSv1.2 only
-        sslSocket.setEnabledProtocols(new String[] {"TLSv1.2"});
+            // enable TLSv1.2 only
+            sslSocket.setEnabledProtocols(new String[] {"TLSv1.2"});
 
-        // enable a block cipher
-        sslSocket.setEnabledCipherSuites(
-            new String[] {"TLS_DHE_RSA_WITH_AES_128_CBC_SHA"});
+            // enable a block cipher
+            sslSocket.setEnabledCipherSuites(
+                new String[] {"TLS_DHE_RSA_WITH_AES_128_CBC_SHA"});
 
-        InputStream sslIS = sslSocket.getInputStream();
-        OutputStream sslOS = sslSocket.getOutputStream();
+            InputStream sslIS = sslSocket.getInputStream();
+            OutputStream sslOS = sslSocket.getOutputStream();
 
-        sslOS.write('B');
-        sslOS.flush();
-        sslIS.read();
-
-        sslSocket.close();
+            sslOS.write('B');
+            sslOS.flush();
+            sslIS.read();
+        }
     }
 
     /*
@@ -308,16 +311,12 @@ public class ShortRSAKey512 {
      * Fork off the other side, then do your work.
      */
     ShortRSAKey512() throws Exception {
-        try {
-            if (separateServerThread) {
-                startServer(true);
-                startClient(false);
-            } else {
-                startClient(true);
-                startServer(false);
-            }
-        } catch (Exception e) {
-            // swallow for now.  Show later
+        if (separateServerThread) {
+            startServer(true);
+            startClient(false);
+        } else {
+            startClient(true);
+            startServer(false);
         }
 
         /*
@@ -335,16 +334,13 @@ public class ShortRSAKey512 {
          */
         Exception local;
         Exception remote;
-        String whichRemote;
 
         if (separateServerThread) {
             remote = serverException;
             local = clientException;
-            whichRemote = "server";
         } else {
             remote = clientException;
             local = serverException;
-            whichRemote = "client";
         }
 
         /*
@@ -352,9 +348,6 @@ public class ShortRSAKey512 {
          * print the remote side Exception
          */
         if ((local != null) && (remote != null)) {
-            System.out.println(whichRemote + " also threw:");
-            remote.printStackTrace();
-            System.out.println();
             throw local;
         }
 
@@ -367,7 +360,7 @@ public class ShortRSAKey512 {
         }
     }
 
-    void startServer(boolean newThread) throws Exception {
+    void startServer(boolean newThread) {
         if (newThread) {
             serverThread = new Thread() {
                 public void run() {
@@ -380,11 +373,13 @@ public class ShortRSAKey512 {
                          * Release the client, if not active already...
                          */
                         System.err.println("Server died...");
+                        e.printStackTrace(System.err);
                         serverReady = true;
                         serverException = e;
                     }
                 }
             };
+            serverThread.setDaemon(true);
             serverThread.start();
         } else {
             try {
@@ -397,7 +392,7 @@ public class ShortRSAKey512 {
         }
     }
 
-    void startClient(boolean newThread) throws Exception {
+    void startClient(boolean newThread) {
         if (newThread) {
             clientThread = new Thread() {
                 public void run() {
@@ -408,10 +403,12 @@ public class ShortRSAKey512 {
                          * Our client thread just died.
                          */
                         System.err.println("Client died...");
+                        e.printStackTrace(System.err);
                         clientException = e;
                     }
                 }
             };
+            clientThread.setDaemon(true);
             clientThread.start();
         } else {
             try {

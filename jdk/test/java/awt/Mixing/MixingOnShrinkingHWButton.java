@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
   @test %W% %E%
+  @key headful
   @bug 6777320
   @summary PIT : Canvas is not fully painted on the internal frame & internal frame goes behind the canvas
   @author dmitry.cherepanov@...: area=awt.mixing

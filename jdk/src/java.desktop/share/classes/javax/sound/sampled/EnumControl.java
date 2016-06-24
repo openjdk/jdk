@@ -26,8 +26,8 @@
 package javax.sound.sampled;
 
 /**
- * A {@code EnumControl} provides control over a set of discrete possible values
- * , each represented by an object. In a graphical user interface, such a
+ * An {@code EnumControl} provides control over a set of discrete possible
+ * values, each represented by an object. In a graphical user interface, such a
  * control might be represented by a set of buttons, each of which chooses one
  * value or setting. For example, a reverb control might provide several preset
  * reverberation settings, instead of providing continuously adjustable

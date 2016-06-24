@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.beans.introspect;
 
 import java.beans.BeanProperty;
@@ -40,7 +41,11 @@ import java.util.TreeMap;
 import static com.sun.beans.finder.ClassFinder.findClass;
 
 public final class PropertyInfo {
-    public enum Name {bound, expert, hidden, preferred, required, visualUpdate, description, enumerationValues}
+
+    public enum Name {
+        bound, expert, hidden, preferred, required, visualUpdate, description,
+        enumerationValues
+    }
 
     private static final String VETO_EXCEPTION_NAME = "java.beans.PropertyVetoException";
     private static final Class<?> VETO_EXCEPTION;
@@ -107,12 +112,14 @@ public final class PropertyInfo {
         if ((this.type == null) && (this.indexed == null)) {
             return false;
         }
-        initialize(this.write);
-        initialize(this.read);
+        boolean done = initialize(this.read);
+        if (!done) {
+            initialize(this.write);
+        }
         return true;
     }
 
-    private void initialize(MethodInfo info) {
+    private boolean initialize(MethodInfo info) {
         if (info != null) {
             BeanProperty annotation = info.method.getAnnotation(BeanProperty.class);
             if (annotation != null) {
@@ -157,8 +164,10 @@ public final class PropertyInfo {
                 } catch (Exception ignored) {
                     ignored.printStackTrace();
                 }
+                return true;
             }
         }
+        return false;
     }
 
     public Class<?> getPropertyType() {

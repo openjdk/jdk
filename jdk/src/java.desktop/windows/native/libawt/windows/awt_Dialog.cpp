@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,6 @@ AwtDialog* AwtDialog::Create(jobject peer, jobject parent)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    jobject background = NULL;
     jobject target = NULL;
     AwtDialog* dialog = NULL;
 
@@ -181,22 +180,13 @@ AwtDialog* AwtDialog::Create(jobject peer, jobject parent)
             }
             dialog->DoUpdateIcon();
 
-
-            background = env->GetObjectField(target,
-                                             AwtComponent::backgroundID);
-            if (background == NULL) {
-                JNU_CallMethodByName(env, NULL,
-                                     peer, "setDefaultColor", "()V");
-            }
         }
     } catch (...) {
-        env->DeleteLocalRef(background);
         env->DeleteLocalRef(target);
         throw;
     }
 
 done:
-    env->DeleteLocalRef(background);
     env->DeleteLocalRef(target);
 
     return dialog;

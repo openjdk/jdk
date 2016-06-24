@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,8 @@ public class MsgAppletViewer_es extends ListResourceBundle {
             {"appletviewer.parse.warning.embed.requiresheight", "Advertencia: la etiqueta <embed> requiere el atributo height."},
             {"appletviewer.parse.warning.embed.requireswidth", "Advertencia: la etiqueta <embed> requiere el atributo width."},
             {"appletviewer.parse.warning.appnotLongersupported", "Advertencia: la etiqueta <app> ya no est\u00E1 soportada, utilice <applet> en su lugar:"},
-            {"appletviewer.usage", "Sintaxis: appletviewer <opciones> url(s)\n\ndonde <opciones> incluye:\n  -debug                  Iniciar el visor de applet en el depurador Java\n  -encoding <codificaci\u00F3n>    Especificar la codificaci\u00F3n de caracteres utilizada por los archivos HTML\n  -J<indicador de tiempo de ejecuci\u00F3n>        Transferir argumento al int\u00E9rprete de Java\n\nLa opci\u00F3n -J es no est\u00E1ndar y est\u00E1 sujeta a cambios sin previo aviso."},
+            {"appletviewer.deprecated", "AppletViewer est\u00E1 anticuado."},
+            {"appletviewer.usage", "Sintaxis: appletviewer <opciones> url(s)\n\ndonde <opciones> incluye:\n  -encoding <codificaci\u00F3n>    Especificar la codificaci\u00F3n de caracteres utilizada por los archivos HTML\n  -J<indicador de tiempo de ejecuci\u00F3n>        Transferir argumento al int\u00E9rprete de Java\n\nLa opci\u00F3n -J es no est\u00E1ndar y est\u00E1 sujeta a cambios sin previo aviso."},
             {"appletviewer.main.err.unsupportedopt", "Opci\u00F3n no soportada: {0}"},
             {"appletviewer.main.err.unrecognizedarg", "Argumento no reconocido: {0}"},
             {"appletviewer.main.err.dupoption", "Uso duplicado de la opci\u00F3n: {0}"},

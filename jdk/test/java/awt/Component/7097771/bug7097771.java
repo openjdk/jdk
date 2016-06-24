@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.awt.event.ActionListener;
 
 /*
   @test
+  @key headful
   @bug 7097771
   @summary setEnabled does not work for components in disabled containers.
   @author sergey.bylokhov@oracle.com: area=awt.component

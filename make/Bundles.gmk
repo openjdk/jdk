@@ -52,7 +52,7 @@ $(eval $(call IncludeCustomExtension, , Bundles-pre.gmk))
 SetupBundleFile = $(NamedParamsMacroTemplate)
 define SetupBundleFileBody
 
-  $1_RELATIVE_FILES := $$(patsubst $$($1_BASE_DIR)/%, ./%, $$($1_FILES))
+  $1_RELATIVE_FILES := $$(patsubst $$($1_BASE_DIR)/%, %, $$($1_FILES))
 
   ifneq ($$(filter %.tar.gz, $$($1_BUNDLE_NAME)), )
     $1_TYPE := tar.gz
@@ -71,13 +71,14 @@ define SetupBundleFileBody
 	$$(call MakeDir, $$(@D))
         ifneq ($$($1_SPECIAL_INCLUDES), )
 	  $$(foreach i, $$($1_SPECIAL_INCLUDES), \
-	      ($(CD) $$($1_BASE_DIR) && $(FIND) ./$$i \
+	      ($(CD) $$($1_BASE_DIR) && $(FIND) $$i \
 	          >> $(SUPPORT_OUTPUTDIR)/bundles/_$1_files ) ; )
         endif
         ifneq ($$($1_SUBDIR), )
           ifeq ($$($1_TYPE)-$(TAR_SUPPORTS_TRANSFORM)-$$($1_UNZIP_DEBUGINFO), tar.gz-true-false)
 	    $(CD) $$($1_BASE_DIR) \
-	        && ( $(TAR) cf - -$(TAR_INCLUDE_PARAM) $(SUPPORT_OUTPUTDIR)/bundles/_$1_files \
+	        && ( $(TAR) cf - $(TAR_CREATE_EXTRA_PARAM) \
+                    -$(TAR_INCLUDE_PARAM) $(SUPPORT_OUTPUTDIR)/bundles/_$1_files \
 	            --transform 's|^|$$($1_SUBDIR)/|' $(TAR_IGNORE_EXIT_VALUE) ) \
 	        | $(GZIP) > $$@
           else
@@ -97,7 +98,8 @@ define SetupBundleFileBody
             endif
             ifeq ($$($1_TYPE), tar.gz)
 	      $(CD) $(SUPPORT_OUTPUTDIR)/bundles/$1 && \
-	          ( $(TAR) cf - $$($1_SUBDIR) $(TAR_IGNORE_EXIT_VALUE) ) | $(GZIP) > $$@
+	          ( $(TAR) cf - $(TAR_CREATE_EXTRA_PARAM) $$($1_SUBDIR) $(TAR_IGNORE_EXIT_VALUE) ) \
+	          | $(GZIP) > $$@
             else ifeq ($$($1_TYPE), zip)
 	      $(CD) $(SUPPORT_OUTPUTDIR)/bundles/$1 && $(ZIP) -qr $$@ .
             endif
@@ -105,7 +107,8 @@ define SetupBundleFileBody
         else
           ifeq ($$($1_TYPE), tar.gz)
 	    $(CD) $$($1_BASE_DIR) \
-	        && ( $(TAR) cf - -$(TAR_INCLUDE_PARAM) $(SUPPORT_OUTPUTDIR)/bundles/_$1_files \
+	        && ( $(TAR) cf - $(TAR_CREATE_EXTRA_PARAM) \
+	            -$(TAR_INCLUDE_PARAM) $(SUPPORT_OUTPUTDIR)/bundles/_$1_files \
 	            $(TAR_IGNORE_EXIT_VALUE) ) \
 	        | $(GZIP) > $$@
           else ifeq ($$($1_TYPE), zip)

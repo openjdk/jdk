@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.awt.image.VolatileImage;
 
 /**
  * @test
+ * @key headful
  * @bug 8039774
  * @summary Verifies that we get no exception, when we draw with scale
  *          BufferedImage to VolatileImage via intermediate texture.

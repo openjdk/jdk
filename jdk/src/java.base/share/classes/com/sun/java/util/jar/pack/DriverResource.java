@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,17 +61,25 @@ public class DriverResource extends ListResourceBundle {
                 "Usage:  pack200 [-opt... | --option=value]... x.pack[.gz] y.jar",
                 "",
                 "Packing Options",
-                "  -g, --no-gzip                   output a plain *.pack file with no zipping",
-                "  --gzip                          (default) post-process the pack output with gzip",
-                "  -G, --strip-debug               remove debugging attributes while packing",
+                "  -r, --repack                    repack or normalize a jar, suitable for ",
+                "                                  signing with jarsigner",
+                "  -g, --no-gzip                   output a plain pack file, suitable to be",
+                "                                  compressed with a file compression utility",
+                "  --gzip                          (default) post compress the pack output",
+                "                                  with gzip",
+                "  -G, --strip-debug               remove debugging attributes (SourceFile,",
+                "                                  LineNumberTable, LocalVariableTable",
+                "                                  and LocalVariableTypeTable) while packing",
                 "  -O, --no-keep-file-order        do not transmit file ordering information",
                 "  --keep-file-order               (default) preserve input file ordering",
-                "  -S{N}, --segment-limit={N}      output segment limit (default N=1Mb)",
+                "  -S{N}, --segment-limit={N}      limit segment sizes (default unlimited)",
                 "  -E{N}, --effort={N}             packing effort (default N=5)",
-                "  -H{h}, --deflate-hint={h}       transmit deflate hint: true, false, or keep (default)",
+                "  -H{h}, --deflate-hint={h}       transmit deflate hint: true, false,",
+                "                                  or keep (default)",
                 "  -m{V}, --modification-time={V}  transmit modtimes: latest or keep (default)",
-                "  -P{F}, --pass-file={F}          transmit the given input element(s) uncompressed",
-                "  -U{a}, --unknown-attribute={a}  unknown attribute action: error, strip, or pass (default)",
+                "  -P{F}, --pass-file={F}          transmit the given input element(s) unchanged",
+                "  -U{a}, --unknown-attribute={a}  unknown attribute action: error, strip,",
+                "                                  or pass (default)",
                 "  -C{N}={L}, --class-attribute={N}={L}  (user-defined attribute)",
                 "  -F{N}={L}, --field-attribute={N}={L}  (user-defined attribute)",
                 "  -M{N}={L}, --method-attribute={N}={L} (user-defined attribute)",
@@ -79,7 +87,8 @@ public class DriverResource extends ListResourceBundle {
                 "  -f{F}, --config-file={F}        read file F for Pack200.Packer properties",
                 "  -v, --verbose                   increase program verbosity",
                 "  -q, --quiet                     set verbosity to lowest level",
-                "  -l{F}, --log-file={F}           output to the given log file, or '-' for System.out",
+                "  -l{F}, --log-file={F}           output to the given log file, ",
+                "                                  or '-' for System.out",
                 "  -?, -h, --help                  print this message",
                 "  -V, --version                   print program version",
                 "  -J{X}                           pass option X to underlying Java VM",
@@ -92,18 +101,23 @@ public class DriverResource extends ListResourceBundle {
                 "  Layout definitions (like RUH) are defined by JSR 200.",
                 "",
                 "Repacking mode updates the JAR file with a pack/unpack cycle:",
-                "    pack200 [-r|--repack] [-opt | --option=value]... [repackedy.jar] y.jar\n"
+                "    pack200 [-r|--repack] [-opt | --option=value]... [repackedy.jar] y.jar\n",
+                "",
+                "Exit Status:",
+                "  0 if successful, >0 if an error occurred"
             }
         },
         {UNPACK_HELP, new String[] {
                 "Usage:  unpack200 [-opt... | --option=value]... x.pack[.gz] y.jar\n",
                 "",
                 "Unpacking Options",
-                "  -H{h}, --deflate-hint={h}     override transmitted deflate hint: true, false, or keep (default)",
+                "  -H{h}, --deflate-hint={h}     override transmitted deflate hint:",
+                "                                true, false, or keep (default)",
                 "  -r, --remove-pack-file        remove input file after unpacking",
                 "  -v, --verbose                 increase program verbosity",
                 "  -q, --quiet                   set verbosity to lowest level",
-                "  -l{F}, --log-file={F}         output to the given log file, or '-' for System.out",
+                "  -l{F}, --log-file={F}         output to the given log file, or",
+                "                                '-' for System.out",
                 "  -?, -h, --help                print this message",
                 "  -V, --version                 print program version",
                 "  -J{X}                         pass option X to underlying Java VM"

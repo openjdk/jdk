@@ -27,6 +27,7 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.vm.annotation
  * @build jdk.test.lib.*
+ * @run main/othervm -Xint ReservedStackTest
  * @run main/othervm -XX:-Inline -XX:CompileCommand=exclude,java/util/concurrent/locks/AbstractOwnableSynchronizer.setExclusiveOwnerThread ReservedStackTest
  */
 
@@ -196,9 +197,12 @@ public class ReservedStackTest {
             System.out.println("Test started execution at frame = " + (counter - deframe));
             String result = test.getResult();
             // The feature is not fully implemented on all platforms,
-            // corruptions are still possible
-            boolean supportedPlatform = Platform.isSolaris() || Platform.isOSX()
-                || (Platform.isLinux() && (Platform.isX86() || Platform.isX64()));
+            // corruptions are still possible.
+            boolean supportedPlatform =
+                Platform.isAix() ||
+                (Platform.isLinux() && (Platform.isPPC() || Platform.isX64() || Platform.isX86())) ||
+                Platform.isOSX() ||
+                Platform.isSolaris();
             if (supportedPlatform && !result.contains("PASSED")) {
                 System.out.println(result);
                 throw new Error(result);

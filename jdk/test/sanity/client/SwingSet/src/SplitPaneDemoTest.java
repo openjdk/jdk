@@ -21,22 +21,29 @@
  * questions.
  */
 
-import org.jtregext.GuiTestListener;
 import com.sun.swingset3.demos.splitpane.SplitPaneDemo;
 import static com.sun.swingset3.demos.splitpane.SplitPaneDemo.*;
+
+import java.awt.Component;
 import java.awt.event.KeyEvent;
 import javax.swing.JSplitPane;
-import static org.testng.AssertJUnit.*;
-import org.testng.annotations.Test;
+
+import static org.jemmy2ext.JemmyExt.*;
+
+import org.jtregext.GuiTestListener;
+
 import org.netbeans.jemmy.ClassReference;
+import org.netbeans.jemmy.ComponentChooser;
 import org.netbeans.jemmy.operators.JButtonOperator;
 import org.netbeans.jemmy.operators.JCheckBoxOperator;
 import org.netbeans.jemmy.operators.JFrameOperator;
 import org.netbeans.jemmy.operators.JRadioButtonOperator;
 import org.netbeans.jemmy.operators.JSplitPaneOperator;
 import org.netbeans.jemmy.operators.JTextFieldOperator;
-import static org.jemmy2ext.JemmyExt.*;
+
 import org.testng.annotations.Listeners;
+import org.testng.annotations.Test;
+import static org.testng.AssertJUnit.*;
 
 /*
  * @test
@@ -48,6 +55,8 @@ import org.testng.annotations.Listeners;
  * @library /sanity/client/lib/jemmy/src
  * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
+ * @modules java.desktop
+ *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.splitpane.SplitPaneDemo
  * @run testng SplitPaneDemoTest
@@ -115,14 +124,33 @@ public class SplitPaneDemoTest {
                 (splitPane.getMaximumDividerLocation() + splitPane.getMinimumDividerLocation()) / 2, splitPane.getDividerLocation());
     }
 
+    private void waitDividerSize(JSplitPaneOperator splitPane, int size) {
+        splitPane.waitState(new ComponentChooser() {
+            public boolean checkComponent(Component c) {
+                return splitPane.getDividerSize() == size;
+            }
+            public String getDescription() {
+                return "Divider size to be " + size;
+            }
+        });
+    }
+
     // Check changing the size of the divider
     public void changeDividerSize(JFrameOperator frame, JSplitPaneOperator splitPane, int amount) throws Exception {
         JTextFieldOperator size = new JTextFieldOperator(getLabeledContainerOperator(frame, DIVIDER_SIZE));
-        size.clearText();
-        size.typeText(Integer.toString(amount));
-        size.pressKey(KeyEvent.VK_ENTER);
+        size.enterText(Integer.toString(amount));
+        waitDividerSize(splitPane, amount);
+    }
 
-        assertEquals("Change Divider Size", amount, splitPane.getDividerSize());
+    private void waitDividerLocation(JSplitPaneOperator splitPane, int location) {
+        splitPane.waitState(new ComponentChooser() {
+            public boolean checkComponent(Component c) {
+                return splitPane.getDividerLocation() == location;
+            }
+            public String getDescription() {
+                return "Divider location to be " + location;
+            }
+        });
     }
 
     public void checkOneTouch(JFrameOperator frame, JSplitPaneOperator splitPane, boolean oneTouch) throws Exception {
@@ -144,23 +172,19 @@ public class SplitPaneDemoTest {
 
             // expand full left
             buttonLeft.push();
-            assertEquals("Expandable Left", left, splitPane.getDividerLocation());
+            waitDividerLocation(splitPane, left);
 
             // expand back from full left
             buttonRight.push();
-            assertEquals("Expandable Back to Original from Left",
-                    initDividerLocation, splitPane.getDividerLocation());
+            waitDividerLocation(splitPane, initDividerLocation);
 
             // expand all the way right
             buttonRight.push();
-            assertEquals("Expandable Right",
-                    splitPane.getWidth() - splitPane.getDividerSize() - right,
-                    splitPane.getDividerLocation());
+            waitDividerLocation(splitPane, splitPane.getWidth() - splitPane.getDividerSize() - right);
 
             // Click to move back from right expansion
             buttonLeft.push();
-            assertEquals("Expandable Back to Original from Right",
-                    initDividerLocation, splitPane.getDividerLocation());
+            waitDividerLocation(splitPane, initDividerLocation);
         }
 
         // Test for case where one touch expandable is disabled
@@ -169,7 +193,14 @@ public class SplitPaneDemoTest {
                 // uncheck
                 checkBox.doClick();
             }
-            assertFalse("One Touch Expandable Off", splitPane.isOneTouchExpandable());
+            splitPane.waitState(new ComponentChooser() {
+                public boolean checkComponent(Component c) {
+                    return !splitPane.isOneTouchExpandable();
+                }
+                public String getDescription() {
+                    return "Split pane not to be one touch expandable";
+                }
+            });
         }
     }
 

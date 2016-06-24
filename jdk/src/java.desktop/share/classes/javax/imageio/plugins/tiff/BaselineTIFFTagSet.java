@@ -58,7 +58,7 @@ import java.util.List;
  * @since 9
  * @see   <a href="http://partners.adobe.com/public/developer/en/tiff/TIFF6.pdf">  TIFF 6.0 Specification</a>
  */
-public class BaselineTIFFTagSet extends TIFFTagSet {
+public final class BaselineTIFFTagSet extends TIFFTagSet {
 
     private static BaselineTIFFTagSet theInstance = null;
 

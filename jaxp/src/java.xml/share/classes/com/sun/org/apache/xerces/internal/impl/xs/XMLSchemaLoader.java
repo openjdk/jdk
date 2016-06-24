@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -601,7 +601,7 @@ XSLoader, DOMConfiguration {
             processJAXPSchemaSource(locationPairs);
         }
 
-        if (desc.isExternal()) {
+        if (desc.isExternal() && !source.isCreatedByResolver()) {
             String accessError = SecuritySupport.checkAccess(desc.getExpandedSystemId(), faccessExternalSchema, Constants.ACCESS_EXTERNAL_ALL);
             if (accessError != null) {
                 throw new XNIException(fErrorReporter.reportError(XSMessageFormatter.SCHEMA_DOMAIN,
@@ -882,7 +882,7 @@ XSLoader, DOMConfiguration {
             if (xis == null) {
                 // REVISIT: can this happen?
                 // Treat value as a URI and pass in as systemId
-                return new XMLInputSource(null, loc, null);
+                return new XMLInputSource(null, loc, null, false);
             }
             return xis;
         }
@@ -931,7 +931,7 @@ XSLoader, DOMConfiguration {
                     sis.getEncoding());
         }
 
-        return new XMLInputSource(publicId, systemId, null);
+        return new XMLInputSource(publicId, systemId, null, false);
     }
 
     public static class LocationArray{
@@ -1170,7 +1170,7 @@ XSLoader, DOMConfiguration {
      */
     public XSModel loadURI(String uri) {
         try {
-            Grammar g = loadGrammar(new XMLInputSource(null, uri, null));
+            Grammar g = loadGrammar(new XMLInputSource(null, uri, null, false));
             return ((XSGrammar)g).toXSModel();
         }
         catch (Exception e){
@@ -1188,7 +1188,7 @@ XSLoader, DOMConfiguration {
         for (int i = 0; i < length; i++) {
             try {
                 gs[i] =
-                    (SchemaGrammar) loadGrammar(new XMLInputSource(null, uriList.item(i), null));
+                    (SchemaGrammar) loadGrammar(new XMLInputSource(null, uriList.item(i), null, false));
             } catch (Exception e) {
                 reportDOMFatalError(e);
                 return null;
@@ -1415,7 +1415,7 @@ XSLoader, DOMConfiguration {
         // otherwise, just use the public/system/base Ids
         else {
             xis = new XMLInputSource(is.getPublicId(), is.getSystemId(),
-                    is.getBaseURI());
+                    is.getBaseURI(), false);
         }
 
         return xis;

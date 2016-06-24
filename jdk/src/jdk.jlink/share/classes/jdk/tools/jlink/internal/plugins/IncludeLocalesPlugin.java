@@ -25,8 +25,6 @@
 package jdk.tools.jlink.internal.plugins;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -44,7 +42,6 @@ import java.util.stream.Stream;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.tools.jlink.internal.ResourcePrevisitor;
 import jdk.tools.jlink.internal.StringTable;
-import jdk.tools.jlink.internal.Utils;
 import jdk.tools.jlink.plugin.LinkModule;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.PluginException;
@@ -209,14 +206,10 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
                 String.format(PluginsResourceBundle.getMessage(NAME + ".nomatchinglocales"), userParam));
         }
 
-        try {
-            String value = META_FILES + filtered.stream()
-                .map(s -> includeLocaleFilePatterns(s))
-                .collect(Collectors.joining(","));
-            predicate = new ResourceFilter(Utils.listParser.apply(value), false);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
+        String value = META_FILES + filtered.stream()
+            .map(s -> includeLocaleFilePatterns(s))
+            .collect(Collectors.joining(","));
+        predicate = ResourceFilter.includeFilter(value);
     }
 
     private String includeLocaleFilePatterns(String tag) {

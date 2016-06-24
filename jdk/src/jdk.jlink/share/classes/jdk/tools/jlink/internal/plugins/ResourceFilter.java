@@ -26,12 +26,13 @@ package jdk.tools.jlink.internal.plugins;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Predicate;
 import jdk.tools.jlink.internal.Utils;
 import jdk.tools.jlink.plugin.PluginException;
@@ -41,17 +42,14 @@ import jdk.tools.jlink.plugin.PluginException;
  * Filter resource resources using path matcher.
  */
 public class ResourceFilter implements Predicate<String> {
-    private static final FileSystem JRT_FILE_SYSTEM = Utils.jrtFileSystem();
+    private final static List<String> EMPTY_LIST = Collections.emptyList();
 
-    final boolean negate;
-    final List<PathMatcher> matchers;
+    private final List<PathMatcher> matchers;
+    private final boolean include;
+    private final boolean otherwise;
 
-    public ResourceFilter(String[] patterns) throws IOException {
-        this(patterns, false);
-    }
-
-    public ResourceFilter(String[] patterns, boolean negate) throws IOException {
-        this.negate = negate;
+    private ResourceFilter(List<String> patterns, boolean exclude) {
+        Objects.requireNonNull(patterns);
         this.matchers = new ArrayList<>();
 
         for (String pattern : patterns) {
@@ -67,28 +65,59 @@ public class ResourceFilter implements Predicate<String> {
                         throw new PluginException(ex);
                     }
 
-                    for (String line : lines) {
-                        PathMatcher matcher = Utils.getPathMatcher(JRT_FILE_SYSTEM, line);
-                        matchers.add(matcher);
-                    }
+                    lines.stream().forEach((line) -> {
+                        matchers.add(Utils.getJRTFSPathMatcher(line.trim()));
+                    });
+                } else {
+                    System.err.println("warning - the filter file " + file +
+                                       " is empty or not present.");
                 }
             } else {
-                PathMatcher matcher = Utils.getPathMatcher(JRT_FILE_SYSTEM, pattern);
-                matchers.add(matcher);
+                matchers.add(Utils.getJRTFSPathMatcher(pattern));
             }
         }
+
+        this.include = !exclude;
+        this.otherwise = exclude || this.matchers.isEmpty();
+    }
+
+    public static ResourceFilter includeFilter(List<String> patterns) {
+        Objects.requireNonNull(patterns);
+        return new ResourceFilter(patterns, false);
+    }
+
+    public static ResourceFilter includeFilter(String patterns) {
+        if (patterns == null) {
+            return includeFilter(EMPTY_LIST);
+        }
+
+        return includeFilter(Utils.parseList(patterns));
+    }
+
+    public static ResourceFilter excludeFilter(List<String> patterns) {
+        Objects.requireNonNull(patterns);
+        return new ResourceFilter(patterns, true);
+    }
+
+    public static ResourceFilter excludeFilter(String patterns) {
+        if (patterns == null) {
+            return excludeFilter(EMPTY_LIST);
+        }
+
+        return excludeFilter(Utils.parseList(patterns));
     }
 
     @Override
     public boolean test(String name) {
-        Path path = JRT_FILE_SYSTEM.getPath(name);
+        Objects.requireNonNull(name);
+        Path path = Utils.getJRTFSPath(name);
 
         for (PathMatcher matcher : matchers) {
             if (matcher.matches(path)) {
-                return !negate;
+                return include;
             }
         }
 
-        return negate;
+        return otherwise;
     }
 }

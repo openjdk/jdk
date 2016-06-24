@@ -24,7 +24,6 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.HashSet;
@@ -84,11 +83,6 @@ public final class ExcludeFilesPlugin implements TransformerPlugin {
 
     @Override
     public void configure(Map<String, String> config) {
-        try {
-            String value = config.get(NAME);
-            predicate = new ResourceFilter(Utils.listParser.apply(value), true);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
+        predicate = ResourceFilter.excludeFilter(config.get(NAME));
     }
 }

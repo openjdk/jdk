@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,7 @@ public class LambdaTranslationTest1 extends LT1Sub {
 
         LT1IA da = LambdaTranslationTest1::deye;
         da.doit(1234);
-        assertResult("d:1234.000000");
+        assertResult(String.format("d:%f", 1234.0));
 
         LT1SA a = LambdaTranslationTest1::count;
         assertEquals((Integer) 5, a.doit("howdy"));
