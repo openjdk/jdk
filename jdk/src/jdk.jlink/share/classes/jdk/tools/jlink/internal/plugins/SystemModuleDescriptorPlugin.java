@@ -139,11 +139,7 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
                     ModuleInfoRewriter minfoWriter =
                         new ModuleInfoRewriter(bain, mbuilder.conceals());
                     // replace with the overridden version
-                    data = ModuleEntry.create(data.getModule(),
-                                               data.getPath(),
-                                               data.getType(),
-                                               minfoWriter.stream(),
-                                               minfoWriter.size());
+                    data = data.create(minfoWriter.getBytes());
                 }
                 out.add(data);
             } catch (IOException e) {
@@ -158,12 +154,7 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
                 return;
             if (builder.isOverriddenClass(data.getPath())) {
                 byte[] bytes = cwriter.toByteArray();
-                ModuleEntry ndata =
-                    ModuleEntry.create(data.getModule(),
-                                        data.getPath(),
-                                        data.getType(),
-                                        new ByteArrayInputStream(bytes),
-                                        bytes.length);
+                ModuleEntry ndata = data.create(bytes);
                 out.add(ndata);
             } else {
                 out.add(data);
@@ -183,8 +174,8 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
             this.extender.write(this);
         }
 
-        InputStream stream() {
-            return new ByteArrayInputStream(buf);
+        byte[] getBytes() {
+            return buf;
         }
     }
 

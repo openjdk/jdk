@@ -123,9 +123,7 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
                     if (Arrays.stream(cr.getInterfaces())
                         .anyMatch(i -> i.contains(METAINFONAME)) &&
                         stripUnsupportedLocales(bytes, cr)) {
-                        resource = ModuleEntry.create(MODULENAME, path,
-                            resource.getType(),
-                            new ByteArrayInputStream(bytes), bytes.length);
+                        resource = resource.create(bytes);
                     }
                 }
             }

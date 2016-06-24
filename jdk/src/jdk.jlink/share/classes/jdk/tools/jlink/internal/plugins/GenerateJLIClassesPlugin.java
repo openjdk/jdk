@@ -171,10 +171,9 @@ public final class GenerateJLIClassesPlugin implements TransformerPlugin {
             byte[] bytes = result.getValue();
 
             // Add class to pool
-            ModuleEntry ndata = ModuleEntry.create(data.getModule(),
+            ModuleEntry ndata = ModuleEntry.create(
                     "/java.base/" + className + ".class",
-                    ModuleEntry.Type.CLASS_OR_RESOURCE,
-                    new ByteArrayInputStream(bytes), bytes.length);
+                    bytes);
             if (!out.contains(ndata)) {
                 out.add(ndata);
             }

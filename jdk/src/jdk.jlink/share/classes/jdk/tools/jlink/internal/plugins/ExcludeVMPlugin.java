@@ -244,10 +244,7 @@ public final class ExcludeVMPlugin implements TransformerPlugin {
 
         byte[] content = builder.toString().getBytes(StandardCharsets.UTF_8);
 
-        return ModuleEntry.create(orig.getModule(),
-                orig.getPath(),
-                orig.getType(),
-                new ByteArrayInputStream(content), content.length);
+        return orig.create(content);
     }
 
     private static String jvmlib() {
