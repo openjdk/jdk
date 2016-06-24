@@ -27,8 +27,8 @@ import sun.hotspot.code.BlobType;
 
 /*
  * @test PeakUsageTest
- * @ignore 8151345
  * @library /testlibrary /test/lib
+ * @ignore 8151345
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build PeakUsageTest

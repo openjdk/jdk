@@ -24,10 +24,10 @@
 /*
  * @test
  * @bug 8136421
- * @ignore 8158860
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @library / /testlibrary /test/lib
  * @library ../common/patches
+ * @ignore 8158860
  * @modules java.base/jdk.internal.misc
  * @modules jdk.vm.ci/jdk.vm.ci.hotspot
  *          jdk.vm.ci/jdk.vm.ci.meta
