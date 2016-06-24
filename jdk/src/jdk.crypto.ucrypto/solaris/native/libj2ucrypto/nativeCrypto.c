@@ -28,7 +28,6 @@
 #include <strings.h>
 #include <jni.h>
 #include "jni_util.h"
-#include <libsoftcrypto.h>
 #include "nativeCrypto.h"
 #include "nativeFunc.h"
 

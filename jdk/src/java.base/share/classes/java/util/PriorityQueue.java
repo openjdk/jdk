@@ -337,11 +337,8 @@ public class PriorityQueue<E> extends AbstractQueue<E>
         int i = size;
         if (i >= queue.length)
             grow(i + 1);
+        siftUp(i, e);
         size = i + 1;
-        if (i == 0)
-            queue[0] = e;
-        else
-            siftUp(i, e);
         return true;
     }
 

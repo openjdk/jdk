@@ -25,11 +25,8 @@
 
 package com.sun.tools.jdeps;
 
-import static com.sun.tools.jdeps.Analyzer.NOT_FOUND;
-import static com.sun.tools.jdeps.Analyzer.REMOVED_JDK_INTERNALS;
 import static com.sun.tools.jdeps.Analyzer.Type.*;
 import static com.sun.tools.jdeps.JdepsWriter.*;
-import static com.sun.tools.jdeps.JdepsConfiguration.ALL_MODULE_PATH;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -38,17 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.function.Function;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -598,24 +585,32 @@ class JdepsTask {
                                          name, archive.getPathName())));
 
         if (options.findJDKInternals && !options.nowarning) {
-            Map<String, String> jdkInternals = analyzer.dependences()
-                .collect(Collectors.toMap(Function.identity(), this::replacementFor));
+            Map<String, String> jdkInternals = new TreeMap<>();
+            Set<String> deps = analyzer.dependences();
+            // find the ones with replacement
+            deps.forEach(cn -> replacementFor(cn).ifPresent(
+                repl -> jdkInternals.put(cn, repl))
+            );
+
+            if (!deps.isEmpty()) {
+                log.println();
+                warning("warn.replace.useJDKInternals", getMessage("jdeps.wiki.url"));
+            }
 
             if (!jdkInternals.isEmpty()) {
                 log.println();
-                warning("warn.replace.useJDKInternals", getMessage("jdeps.wiki.url"));
-
-                if (jdkInternals.values().stream().anyMatch(repl -> repl != null)) {
-                    log.println();
-                    log.format("%-40s %s%n", "JDK Internal API", "Suggested Replacement");
-                    log.format("%-40s %s%n", "----------------", "---------------------");
-                        jdkInternals.entrySet().stream()
-                            .filter(e -> e.getValue() != null)
-                            .sorted(Map.Entry.comparingByKey())
-                            .forEach(e -> log.format("%-40s %s%n", e.getKey(), e.getValue()));
-                }
+                log.format("%-40s %s%n", "JDK Internal API", "Suggested Replacement");
+                log.format("%-40s %s%n", "----------------", "---------------------");
+                jdkInternals.entrySet().stream()
+                    .forEach(e -> {
+                        String key = e.getKey();
+                        String[] lines = e.getValue().split("\\n");
+                        for (String s : lines) {
+                            log.format("%-40s %s%n", key, s);
+                            key = "";
+                        }
+                    });
             }
-
         }
         return ok;
     }
@@ -887,7 +882,7 @@ class JdepsTask {
      * Returns the recommended replacement API for the given classname;
      * or return null if replacement API is not known.
      */
-    private String replacementFor(String cn) {
+    private Optional<String> replacementFor(String cn) {
         String name = cn;
         String value = null;
         while (value == null && name != null) {
@@ -899,6 +894,6 @@ class JdepsTask {
                 name = i > 0 ? name.substring(0, i) : null;
             }
         }
-        return value;
+        return Optional.ofNullable(value);
     }
 }

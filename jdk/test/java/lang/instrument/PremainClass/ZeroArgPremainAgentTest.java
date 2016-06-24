@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import jdk.testlibrary.Utils;
  * @summary test when the agent's class has a zero arg premain() function.
  * @library /lib/testlibrary
  * @modules java.management
+ *          java.instrument
  * @run build jdk.testlibrary.* DummyMain
  * @run shell ../MakeJAR3.sh ZeroArgPremainAgent
  * @run main/othervm -XX:-CreateCoredumpOnCrash ZeroArgPremainAgentTest

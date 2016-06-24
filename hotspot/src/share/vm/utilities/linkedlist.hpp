@@ -259,6 +259,11 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
 
   virtual bool remove(LinkedListNode<E>* node) {
     LinkedListNode<E>* p = this->head();
+    if (p == node) {
+      this->set_head(p->next());
+      delete_node(node);
+      return true;
+    }
     while (p != NULL && p->next() != node) {
       p = p->next();
     }

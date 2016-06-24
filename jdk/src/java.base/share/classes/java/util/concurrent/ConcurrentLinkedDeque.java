@@ -66,7 +66,7 @@ import java.util.function.Consumer;
  * inaccurate results if this collection is modified during traversal.
  * Additionally, the bulk operations {@code addAll},
  * {@code removeAll}, {@code retainAll}, {@code containsAll},
- * {@code equals}, and {@code toArray} are <em>not</em> guaranteed
+ * and {@code toArray} are <em>not</em> guaranteed
  * to be performed atomically. For example, an iterator operating
  * concurrently with an {@code addAll} operation might view only some
  * of the added elements.

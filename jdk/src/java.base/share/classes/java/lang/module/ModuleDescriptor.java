@@ -790,9 +790,9 @@ public class ModuleDescriptor
     private final String osName;
     private final String osArch;
     private final String osVersion;
-    private final Set<String> conceals;
     private final Set<String> packages;
     private final ModuleHashes hashes;
+
 
     private ModuleDescriptor(String name,
                              boolean automatic,
@@ -806,7 +806,7 @@ public class ModuleDescriptor
                              String osName,
                              String osArch,
                              String osVersion,
-                             Set<String> conceals,
+                             Set<String> packages,
                              ModuleHashes hashes)
     {
 
@@ -836,10 +836,7 @@ public class ModuleDescriptor
         this.osVersion = osVersion;
         this.hashes = hashes;
 
-        assert !exports.keySet().stream().anyMatch(conceals::contains)
-            : "Module " + name + ": Package sets overlap";
-        this.conceals = emptyOrUnmodifiableSet(conceals);
-        this.packages = computePackages(this.exports, this.conceals);
+        this.packages = emptyOrUnmodifiableSet(packages);
     }
 
     /**
@@ -862,8 +859,9 @@ public class ModuleDescriptor
         this.osVersion = md.osVersion;
         this.hashes = null; // need to ignore
 
-        this.packages = emptyOrUnmodifiableSet(pkgs);
-        this.conceals = computeConcealedPackages(this.exports, this.packages);
+        Set<String> packages = new HashSet<>(md.packages);
+        packages.addAll(pkgs);
+        this.packages = emptyOrUnmodifiableSet(packages);
     }
 
     /**
@@ -882,7 +880,6 @@ public class ModuleDescriptor
                      String osName,
                      String osArch,
                      String osVersion,
-                     Set<String> conceals,
                      Set<String> packages,
                      ModuleHashes hashes) {
         this.name = name;
@@ -892,7 +889,6 @@ public class ModuleDescriptor
         this.exports = Collections.unmodifiableSet(exports);
         this.uses = Collections.unmodifiableSet(uses);
         this.provides = Collections.unmodifiableMap(provides);
-        this.conceals = Collections.unmodifiableSet(conceals);
         this.packages = Collections.unmodifiableSet(packages);
 
         this.version = version;
@@ -1055,7 +1051,9 @@ public class ModuleDescriptor
      * @return A possibly-empty unmodifiable set of the concealed packages
      */
     public Set<String> conceals() {
-        return conceals;
+        Set<String> conceals = new HashSet<>(packages);
+        exports.stream().map(Exports::source).forEach(conceals::remove);
+        return emptyOrUnmodifiableSet(conceals);
     }
 
     /**
@@ -1097,7 +1095,7 @@ public class ModuleDescriptor
     public static final class Builder {
 
         final String name;
-        final boolean automatic;
+        boolean automatic;
         boolean synthetic;
         final Map<String, Requires> requires = new HashMap<>();
         final Set<String> uses = new HashSet<>();
@@ -1122,12 +1120,19 @@ public class ModuleDescriptor
          *         identifier
          */
         public Builder(String name) {
-            this(name, false);
+            this.name = requireModuleName(name);
         }
 
-        /* package */ Builder(String name, boolean automatic) {
-            this.name = requireModuleName(name);
-            this.automatic = automatic;
+        /**
+         * Updates the builder so that it builds an automatic module.
+         *
+         * @return This builder
+         *
+         * @see ModuleDescriptor#isAutomatic()
+         */
+        /* package */ Builder automatic() {
+            this.automatic = true;
+            return this;
         }
 
         /**
@@ -1605,6 +1610,8 @@ public class ModuleDescriptor
         public ModuleDescriptor build() {
             assert name != null;
 
+            Set<String> packages = new HashSet<>(conceals);
+            packages.addAll(exportedPackages());
             return new ModuleDescriptor(name,
                                         automatic,
                                         synthetic,
@@ -1617,7 +1624,7 @@ public class ModuleDescriptor
                                         osName,
                                         osArch,
                                         osVersion,
-                                        conceals,
+                                        packages,
                                         hashes);
         }
 
@@ -1692,7 +1699,7 @@ public class ModuleDescriptor
                 && Objects.equals(osName, that.osName)
                 && Objects.equals(osArch, that.osArch)
                 && Objects.equals(osVersion, that.osVersion)
-                && Objects.equals(conceals, that.conceals)
+                && Objects.equals(packages, that.packages)
                 && Objects.equals(hashes, that.hashes));
     }
 
@@ -1723,7 +1730,7 @@ public class ModuleDescriptor
             hc = hc * 43 + Objects.hashCode(osName);
             hc = hc * 43 + Objects.hashCode(osArch);
             hc = hc * 43 + Objects.hashCode(osVersion);
-            hc = hc * 43 + Objects.hashCode(conceals);
+            hc = hc * 43 + Objects.hashCode(packages);
             hc = hc * 43 + Objects.hashCode(hashes);
             if (hc == 0)
                 hc = -1;
@@ -1879,37 +1886,6 @@ public class ModuleDescriptor
         return ModuleInfo.read(bb, null);
     }
 
-
-    /**
-     * Computes the set of packages from exports and concealed packages.
-     * It returns the concealed packages set if there is no exported package.
-     */
-    private static Set<String> computePackages(Set<Exports> exports,
-                                               Set<String> conceals)
-    {
-        if (exports.isEmpty())
-            return conceals;
-
-        Set<String> pkgs = new HashSet<>(conceals);
-        exports.stream().map(Exports::source).forEach(pkgs::add);
-        return emptyOrUnmodifiableSet(pkgs);
-    }
-
-    /**
-     * Computes the set of concealed packages from exports and all packages.
-     * It returns the packages set if there are no exported packages.
-     */
-    private static Set<String> computeConcealedPackages(Set<Exports> exports,
-                                                        Set<String> pkgs)
-    {
-        if (exports.isEmpty())
-            return pkgs;
-
-        Set<String> conceals = new HashSet<>(pkgs);
-        exports.stream().map(Exports::source).forEach(conceals::remove);
-        return emptyOrUnmodifiableSet(conceals);
-    }
-
     private static <K,V> Map<K,V> emptyOrUnmodifiableMap(Map<K,V> map) {
         if (map.isEmpty()) {
             return Collections.emptyMap();
@@ -1975,14 +1951,14 @@ public class ModuleDescriptor
                                                             boolean automatic,
                                                             boolean synthetic,
                                                             Set<Requires> requires,
-                                                            Set<String> uses, Set<Exports> exports,
+                                                            Set<String> uses,
+                                                            Set<Exports> exports,
                                                             Map<String, Provides> provides,
                                                             Version version,
                                                             String mainClass,
                                                             String osName,
                                                             String osArch,
                                                             String osVersion,
-                                                            Set<String> conceals,
                                                             Set<String> packages,
                                                             ModuleHashes hashes) {
                     return new ModuleDescriptor(name,
@@ -1997,7 +1973,6 @@ public class ModuleDescriptor
                                                 osName,
                                                 osArch,
                                                 osVersion,
-                                                conceals,
                                                 packages,
                                                 hashes);
                 }

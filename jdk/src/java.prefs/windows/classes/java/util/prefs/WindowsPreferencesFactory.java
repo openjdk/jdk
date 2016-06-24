@@ -39,13 +39,13 @@ class WindowsPreferencesFactory implements PreferencesFactory  {
      * Returns WindowsPreferences.userRoot
      */
     public Preferences userRoot() {
-        return WindowsPreferences.userRoot;
+        return WindowsPreferences.getUserRoot();
     }
 
     /**
      * Returns WindowsPreferences.systemRoot
      */
     public Preferences systemRoot() {
-        return WindowsPreferences.systemRoot;
+        return WindowsPreferences.getSystemRoot();
     }
 }

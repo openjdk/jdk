@@ -1400,6 +1400,28 @@ address MacroAssembler::get_stack_bang_address(int instruction, void *ucontext) 
 #endif
 }
 
+void MacroAssembler::reserved_stack_check(Register return_pc) {
+  // Test if reserved zone needs to be enabled.
+  Label no_reserved_zone_enabling;
+
+  ld_ptr(R0, JavaThread::reserved_stack_activation_offset(), R16_thread);
+  cmpld(CCR0, R1_SP, R0);
+  blt_predict_taken(CCR0, no_reserved_zone_enabling);
+
+  // Enable reserved zone again, throw stack overflow exception.
+  push_frame_reg_args(0, R0);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), R16_thread);
+  pop_frame();
+  mtlr(return_pc);
+  load_const_optimized(R0, StubRoutines::throw_delayed_StackOverflowError_entry());
+  mtctr(R0);
+  bctr();
+
+  should_not_reach_here();
+
+  bind(no_reserved_zone_enabling);
+}
+
 // CmpxchgX sets condition register to cmpX(current, compare).
 void MacroAssembler::cmpxchgw(ConditionRegister flag, Register dest_current_value,
                               Register compare_value, Register exchange_value,

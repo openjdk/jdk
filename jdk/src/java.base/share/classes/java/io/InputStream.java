@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -325,7 +325,7 @@ public abstract class InputStream implements Closeable {
      * returns 0, and no bytes are skipped. Subclasses may handle the negative
      * value differently.
      *
-     * <p> The <code>skip</code> method of this class creates a
+     * <p> The <code>skip</code> method implementation of this class creates a
      * byte array and then repeatedly reads into it until <code>n</code> bytes
      * have been read or the end of the stream has been reached. Subclasses are
      * encouraged to provide a more efficient implementation of this method.
@@ -333,8 +333,7 @@ public abstract class InputStream implements Closeable {
      *
      * @param      n   the number of bytes to be skipped.
      * @return     the actual number of bytes skipped.
-     * @exception  IOException  if the stream does not support seek,
-     *                          or if some other I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      */
     public long skip(long n) throws IOException {
 

@@ -36,9 +36,6 @@ import java.util.*;
 public class StrongSecureRandom {
 
     private static final String os = System.getProperty("os.name", "unknown");
-    private static final String DRBG_CONFIG = "securerandom.drbg.config";
-    private static final String DRBG_CONFIG_VALUE
-            = Security.getProperty(DRBG_CONFIG);
 
     private static void testDefaultEgd() throws Exception {
         // No SecurityManager installed.
@@ -47,55 +44,6 @@ public class StrongSecureRandom {
         System.out.println("Testing:  default EGD: " + s);
         if (!s.equals("file:/dev/random")) {
             throw new Exception("Default is not 'file:/dev/random'");
-        }
-    }
-
-    /**
-     * Verify if the mechanism is DRBG type.
-     * @param mech Mechanism name
-     * @return True if the mechanism name is DRBG type else False.
-     */
-    private static boolean isDRBG(String mech) {
-        return mech.contains("_DRBG");
-    }
-
-    private static void testSecureRandomImpl(String algo, boolean drbg)
-            throws Exception {
-
-        byte[] ba;
-        final String secureRandomSource
-                = Security.getProperty("securerandom.source");
-        try {
-            String urandom = "file:/dev/urandom";
-
-            System.out.println("Testing new SeedGenerator and EGD");
-
-            Security.setProperty("securerandom.source", urandom);
-            if (!Security.getProperty("securerandom.source").equals(urandom)) {
-                throw new Exception("Couldn't set securerandom.source");
-            }
-
-            /*
-             * Take out a large number of bytes in hopes of blocking.
-             * Don't expect this to happen, unless something is broken on Linux
-             */
-            SecureRandom sr = null;
-            if (drbg) {
-                Security.setProperty(DRBG_CONFIG, algo);
-                sr = SecureRandom.getInstance("DRBG");
-            } else {
-                sr = SecureRandom.getInstance(algo);
-            }
-            if (!sr.getAlgorithm().equals(isDRBG(algo) ? "DRBG" : algo)) {
-                throw new Exception("sr.getAlgorithm(): " + sr.getAlgorithm());
-            }
-
-            ba = sr.generateSeed(4096);
-            sr.nextBytes(ba);
-            sr.setSeed(ba);
-        } finally {
-            Security.setProperty("securerandom.source", secureRandomSource);
-            Security.setProperty(DRBG_CONFIG, DRBG_CONFIG_VALUE);
         }
     }
 
@@ -259,10 +207,7 @@ public class StrongSecureRandom {
 
     public static void main(String args[]) throws Exception {
         testDefaultEgd();
-        for (String algo : new String[]{
-            "SHA1PRNG", "Hash_DRBG", "HMAC_DRBG", "CTR_DRBG"}) {
-            testSecureRandomImpl(algo, isDRBG(algo));
-        }
+
         testNativePRNGImpls();
         testAllImpls();
 

@@ -92,7 +92,7 @@ public class OrderResourcesPluginTest {
         {
             ModulePool out = new ModulePoolImpl();
             Map<String, String> config = new HashMap<>();
-            config.put(OrderResourcesPlugin.NAME, "/zazou/*,*/module-info.class");
+            config.put(OrderResourcesPlugin.NAME, "/zazou/**,**/module-info.class");
             TransformerPlugin p = new OrderResourcesPlugin();
             p.configure(config);
             p.visit(resources, out);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,11 @@
  */
 
 /*
- *  @test
- *  @bug 8033936
- *  @summary Verify that correct ItemEvent is received while selection &
- *           deselection of multi select List items.
+ * @test
+ * @key headful
+ * @bug 8033936
+ * @summary Verify that correct ItemEvent is received while selection &
+ *          deselection of multi select List items.
  */
 
 import java.awt.AWTException;

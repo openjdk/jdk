@@ -43,7 +43,7 @@ typedef struct {
     gboolean (*check)(const char* lib_name, gboolean load);
 } GtkLib;
 
-static GtkLib libs[] = {
+static GtkLib gtk_libs[] = {
     {
         GTK_2,
         JNI_LIB_NAME("gtk-x11-2.0"),
@@ -57,26 +57,42 @@ static GtkLib libs[] = {
         VERSIONED_JNI_LIB_NAME("gtk-3", "0"),
         &gtk3_load,
         &gtk3_check
-    },
-    {
-        0,
-        NULL,
-        NULL,
-        NULL,
-        NULL
     }
 };
 
+static GtkLib** get_libs_order(GtkVersion version) {
+    static GtkLib** load_order;
+    static int n_libs = 0;
+    if (!n_libs) {
+        n_libs = sizeof(gtk_libs) / sizeof(GtkLib);
+        load_order = calloc(n_libs + 1, sizeof(GtkLib *));
+    }
+    int i, first = 0;
+    for (i = 0; i < n_libs; i++) {
+        load_order[i] = &gtk_libs[i];
+        if (load_order[i]->version == version) {
+            first = i;
+        }
+    }
+    if (first) {
+        for (i = first; i > 0; i--) {
+            load_order[i] = load_order[i - 1];
+        }
+        load_order[0] = &gtk_libs[first];
+    }
+    return load_order;
+}
+
 static GtkLib* get_loaded() {
-    GtkLib* lib = libs;
-    while(!gtk && lib->version) {
+    GtkLib** libs = get_libs_order(GTK_ANY);
+    while(!gtk && *libs) {
+        GtkLib* lib = *libs++;
         if (lib->check(lib->vname, /* load = */FALSE)) {
             return lib;
         }
         if (lib->check(lib->name, /* load = */FALSE)) {
             return lib;
         }
-        lib++;
     }
     return NULL;
 }
@@ -85,23 +101,18 @@ gboolean gtk_load(JNIEnv *env, GtkVersion version, gboolean verbose) {
     if (gtk == NULL) {
         GtkLib* lib = get_loaded();
         if (lib) {
-            if (version != GTK_ANY && lib->version != version) {
-                if (verbose) {
-                    fprintf(stderr, "WARNING: Cannot load GTK%d library: \
-                         GTK%d has already been loaded\n", version, lib->version);
-                }
-                return FALSE;
-            }
             if (verbose) {
-                fprintf(stderr, "Looking for GTK%d library...\n", version);
+                fprintf(stderr, "Looking for GTK%d library...\n",
+                                                                 lib->version);
             }
             gtk = lib->load(env, lib->vname);
             if (!gtk) {
                 gtk = lib->load(env, lib->name);
             }
         } else {
-            lib = libs;
-            while (!gtk && lib->version) {
+            GtkLib** libs = get_libs_order(version);
+            while (!gtk && *libs) {
+                lib = *libs++;
                 if (version == GTK_ANY || lib->version == version) {
                     if (verbose) {
                         fprintf(stderr, "Looking for GTK%d library...\n",
@@ -115,9 +126,7 @@ gboolean gtk_load(JNIEnv *env, GtkVersion version, gboolean verbose) {
                         fprintf(stderr, "Not found.\n");
                     }
                 }
-                lib++;
             }
-            lib--;
         }
         if (verbose) {
             if (gtk) {
@@ -131,23 +140,21 @@ gboolean gtk_load(JNIEnv *env, GtkVersion version, gboolean verbose) {
 }
 
 static gboolean check_version(GtkVersion version) {
-    GtkLib* lib = libs;
-    while (lib->version) {
-        if (version == GTK_ANY || lib->version == version) {
-            if (lib->check(lib->vname, /* load = */TRUE)) {
-                return TRUE;
-            }
-            if (lib->check(lib->name, /* load = */TRUE)) {
-                return TRUE;
-            }
+    GtkLib** libs = get_libs_order(version);
+    while (*libs) {
+        GtkLib* lib = *libs++;
+        if (lib->check(lib->vname, /* load = */TRUE)) {
+            return TRUE;
         }
-        lib++;
+        if (lib->check(lib->name, /* load = */TRUE)) {
+            return TRUE;
+        }
     }
     return FALSE;
 }
 
 gboolean gtk_check_version(GtkVersion version) {
-    if (gtk) {
+    if (gtk || get_loaded()) {
         return TRUE;
     }
     return check_version(version);

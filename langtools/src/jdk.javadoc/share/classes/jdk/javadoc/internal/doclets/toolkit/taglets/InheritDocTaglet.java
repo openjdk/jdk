@@ -95,6 +95,15 @@ public class InheritDocTaglet extends BaseInlineTaglet {
 
     /**
      * Will return false because this inline tag may
+     * not appear in Modules.
+     * @return false
+     */
+    public boolean inModule() {
+        return false;
+    }
+
+    /**
+     * Will return false because this inline tag may
      * not appear in Packages.
      * @return false
      */

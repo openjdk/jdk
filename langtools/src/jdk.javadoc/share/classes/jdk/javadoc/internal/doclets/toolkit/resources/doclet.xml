@@ -31,6 +31,7 @@
     <ModuleDoc>
         <Content>
             <ModuleDescription/>
+            <ModuleTags/>
             <Summary>
                 <PackageSummary/>
             </Summary>

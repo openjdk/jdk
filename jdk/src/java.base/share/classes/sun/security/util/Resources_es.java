@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package sun.security.util;
 
 /**
- * <p> This class represents the <code>ResourceBundle</code>
+ * This class represents the <code>ResourceBundle</code>
  * for javax.security.auth and sun.security.
  *
  */
@@ -134,7 +134,7 @@ public class Resources_es extends java.util.ListResourceBundle {
                 "no se puede especificar Principal con una clase de comod\u00EDn sin un nombre de comod\u00EDn"},
         {"expected.codeBase.or.SignedBy.or.Principal",
                 "se esperaba codeBase o SignedBy o Principal"},
-        {"expected.permission.entry", "se esperaba una entrada de permiso"},
+        {"expected.permission.entry", "se esperaba un permiso de entrada"},
         {"number.", "n\u00FAmero "},
         {"expected.expect.read.end.of.file.",
                 "se esperaba [{0}], se ha le\u00EDdo [final de archivo]"},
@@ -159,8 +159,6 @@ public class Resources_es extends java.util.ListResourceBundle {
 
     /**
      * Returns the contents of this <code>ResourceBundle</code>.
-     *
-     * <p>
      *
      * @return the contents of this <code>ResourceBundle</code>.
      */

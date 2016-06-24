@@ -46,7 +46,8 @@ public final class SAXInputSource extends XMLInputSource {
 
     public SAXInputSource(XMLReader reader, InputSource inputSource) {
         super(inputSource != null ? inputSource.getPublicId() : null,
-                inputSource != null ? inputSource.getSystemId() : null, null);
+                inputSource != null ? inputSource.getSystemId() : null, null,
+                false);
         if (inputSource != null) {
             setByteStream(inputSource.getByteStream());
             setCharacterStream(inputSource.getCharacterStream());

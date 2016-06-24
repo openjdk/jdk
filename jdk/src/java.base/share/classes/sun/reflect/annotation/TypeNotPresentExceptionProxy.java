@@ -46,6 +46,14 @@ public class TypeNotPresentExceptionProxy extends ExceptionProxy {
         return new TypeNotPresentException(typeName, cause);
     }
 
+    public String typeName() {
+        return typeName;
+    }
+
+    public Throwable getCause() {
+        return cause;
+    }
+
     @Override
     public String toString() {
         return typeName + ".class /* Warning: type not present! */";

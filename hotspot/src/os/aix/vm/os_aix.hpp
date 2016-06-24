@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2013, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,6 +127,8 @@ class Aix {
   static intptr_t* ucontext_get_fp(const ucontext_t* uc);
   // Set PC into context. Needed for continuation after signal.
   static void ucontext_set_pc(ucontext_t* uc, address pc);
+
+  static bool get_frame_at_stack_banging_point(JavaThread* thread, ucontext_t* uc, frame* fr);
 
   // This boolean allows users to forward their own non-matching signals
   // to JVM_handle_aix_signal, harmlessly.

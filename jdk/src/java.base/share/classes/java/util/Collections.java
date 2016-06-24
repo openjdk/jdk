@@ -4324,6 +4324,7 @@ public class Collections {
 
         public int size() {return 0;}
         public boolean isEmpty() {return true;}
+        public void clear() {}
 
         public boolean contains(Object obj) {return false;}
         public boolean containsAll(Collection<?> c) { return c.isEmpty(); }
@@ -4447,6 +4448,7 @@ public class Collections {
 
         public int size() {return 0;}
         public boolean isEmpty() {return true;}
+        public void clear() {}
 
         public boolean contains(Object obj) {return false;}
         public boolean containsAll(Collection<?> c) { return c.isEmpty(); }
@@ -4582,6 +4584,7 @@ public class Collections {
 
         public int size()                          {return 0;}
         public boolean isEmpty()                   {return true;}
+        public void clear()                        {}
         public boolean containsKey(Object key)     {return false;}
         public boolean containsValue(Object value) {return false;}
         public V get(Object key)                   {return null;}

@@ -38,7 +38,7 @@ import java.util.List;
  * @since 9
  * @see   ExifTIFFTagSet
  */
-public class ExifGPSTagSet extends TIFFTagSet {
+public final class ExifGPSTagSet extends TIFFTagSet {
     private static ExifGPSTagSet theInstance = null;
 
     /**

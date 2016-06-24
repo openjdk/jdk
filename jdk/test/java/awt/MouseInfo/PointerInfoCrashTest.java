@@ -30,6 +30,7 @@ import sun.awt.ComponentFactory;
 
 /**
  * @test
+ * @key headful
  * @bug 8143316
  * @modules java.desktop/java.awt.peer
  *          java.desktop/sun.awt

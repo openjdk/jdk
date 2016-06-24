@@ -34,15 +34,13 @@
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/ostream.hpp"
 
-// Return true if this package is exported to m.
+// Returns true if this package specifies m as a qualified export, including through an unnamed export
 bool PackageEntry::is_qexported_to(ModuleEntry* m) const {
   assert(m != NULL, "No module to lookup in this package's qualified exports list");
   MutexLocker m1(Module_lock);
-  if (!_is_exported) {
-    return false;
-  } else if (_is_exported_allUnnamed && !m->is_named()) {
+  if (is_exported_allUnnamed() && !m->is_named()) {
     return true;
-  } else if (_qualified_exports == NULL) {
+  } else if (!has_qual_exports_list()) {
     return false;
   } else {
     return _qualified_exports->contains(m);
@@ -52,8 +50,7 @@ bool PackageEntry::is_qexported_to(ModuleEntry* m) const {
 // Add a module to the package's qualified export list.
 void PackageEntry::add_qexport(ModuleEntry* m) {
   assert_locked_or_safepoint(Module_lock);
-  assert(_is_exported == true, "Adding a qualified export to a package that is not exported");
-  if (_qualified_exports == NULL) {
+  if (!has_qual_exports_list()) {
     // Lazily create a package's qualified exports list.
     // Initial size is small, do not anticipate export lists to be large.
     _qualified_exports =
@@ -62,7 +59,7 @@ void PackageEntry::add_qexport(ModuleEntry* m) {
   _qualified_exports->append_if_missing(m);
 }
 
-// Set the package's exported state based on the value of the ModuleEntry.
+// Set the package's exported states based on the value of the ModuleEntry.
 void PackageEntry::set_exported(ModuleEntry* m) {
   MutexLocker m1(Module_lock);
   if (is_unqual_exported()) {
@@ -73,7 +70,7 @@ void PackageEntry::set_exported(ModuleEntry* m) {
 
   if (m == NULL) {
     // NULL indicates the package is being unqualifiedly exported
-    if (_is_exported && _qualified_exports != NULL) {
+    if (has_qual_exports_list()) {
       // Legit to transition a package from being qualifiedly exported
       // to unqualified.  Clean up the qualified lists at the next
       // safepoint.
@@ -85,8 +82,14 @@ void PackageEntry::set_exported(ModuleEntry* m) {
 
   } else {
     // Add the exported module
-    _is_exported = true;
     add_qexport(m);
+  }
+}
+
+void PackageEntry::set_is_exported_allUnnamed() {
+  MutexLocker m1(Module_lock);
+  if (!is_unqual_exported()) {
+   _is_exported_allUnnamed = true;
   }
 }
 
@@ -170,7 +173,7 @@ PackageEntry* PackageEntryTable::new_entry(unsigned int hash, Symbol* name, Modu
   if (!module->is_named()) {
     // Set the exported state to true because all packages
     // within the unnamed module are unqualifiedly exported
-    entry->set_exported(true);
+    entry->set_unqual_exported();
   }
   entry->set_module(module);
   return entry;
@@ -248,6 +251,20 @@ void PackageEntryTable::verify_javabase_packages(GrowableArray<Symbol*> *pkg_lis
 
 }
 
+// iteration of qualified exports
+void PackageEntry::package_exports_do(ModuleClosure* const f) {
+  assert_locked_or_safepoint(Module_lock);
+  assert(f != NULL, "invariant");
+
+  if (has_qual_exports_list()) {
+    int qe_len = _qualified_exports->length();
+
+    for (int i = 0; i < qe_len; ++i) {
+      f->do_module(_qualified_exports->at(i));
+    }
+  }
+}
+
 // Remove dead entries from all packages' exported list
 void PackageEntryTable::purge_all_package_exports() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
@@ -281,10 +298,10 @@ void PackageEntryTable::print(outputStream* st) {
 void PackageEntry::print(outputStream* st) {
   ResourceMark rm;
   st->print_cr("package entry "PTR_FORMAT" name %s module %s classpath_index "
-               INT32_FORMAT " is_exported %d is_exported_allUnnamed %d " "next "PTR_FORMAT,
+               INT32_FORMAT " is_exported_unqualified %d is_exported_allUnnamed %d " "next "PTR_FORMAT,
                p2i(this), name()->as_C_string(),
                (module()->is_named() ? module()->name()->as_C_string() : UNNAMED_MODULE),
-               _classpath_index, _is_exported, _is_exported_allUnnamed, p2i(next()));
+               _classpath_index, _is_exported_unqualified, _is_exported_allUnnamed, p2i(next()));
 }
 
 void PackageEntryTable::verify() {
@@ -304,18 +321,4 @@ void PackageEntryTable::verify() {
 
 void PackageEntry::verify() {
   guarantee(name() != NULL, "A package entry must have a corresponding symbol name.");
-}
-
-// iteration of qualified exports
-void PackageEntry::package_exports_do(ModuleClosure* const f) {
-  assert_locked_or_safepoint(Module_lock);
-  assert(f != NULL, "invariant");
-
-  if (is_qual_exported()) {
-    int qe_len = _qualified_exports->length();
-
-    for (int i = 0; i < qe_len; ++i) {
-      f->do_module(_qualified_exports->at(i));
-    }
-  }
 }
