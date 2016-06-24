@@ -105,7 +105,7 @@ public class ApiTest {
 
     private static void runForEachAlg(String mech, String alg)
             throws Exception {
-        for (int strength : new int[]{Integer.MIN_VALUE, -1, 0, 1, 223, 224,
+        for (int strength : new int[]{-1, 0, 1, 223, 224,
             192, 255, 256}) {
             for (Capability cp : Capability.values()) {
                 for (byte[] pr : new byte[][]{null, new byte[]{},

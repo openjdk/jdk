@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 4832224 6322584 6328478 6328481 6322580 6588884 6587863
  * @summary Verifies that the pixelization of simple primitives (drawLine,
  * fillRect, drawRect, fill, draw) with the OGL pipeline enabled

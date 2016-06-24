@@ -619,9 +619,9 @@ public class ParameterBlock implements Cloneable, Serializable {
      *
      * @param index the index of the parameter to be returned.
      * @return the parameter at the specified index
-     *         as a {@code int} value.
+     *         as an {@code int} value.
      * @throws ClassCastException if the parameter at the
-     *         specified index is not a {@code Integer}
+     *         specified index is not an {@code Integer}
      * @throws NullPointerException if the parameter at the specified
      *         index is {@code null}
      * @throws ArrayIndexOutOfBoundsException if {@code index}

@@ -27,18 +27,15 @@ package jdk.tools.jlink.internal.plugins;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Predicate;
 import java.util.zip.Deflater;
-import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.internal.ModulePoolImpl;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.TransformerPlugin;
-import jdk.tools.jlink.internal.Utils;
 
 /**
  *
@@ -53,8 +50,8 @@ public final class ZipPlugin implements TransformerPlugin {
 
     }
 
-    ZipPlugin(String[] patterns) throws IOException {
-        this(new ResourceFilter(patterns));
+    ZipPlugin(String[] patterns) {
+        this(ResourceFilter.includeFilter(Arrays.asList(patterns)));
     }
 
     ZipPlugin(Predicate<String> predicate) {
@@ -67,10 +64,8 @@ public final class ZipPlugin implements TransformerPlugin {
     }
 
     @Override
-    public Set<Category> getType() {
-        Set<Category> set = new HashSet<>();
-        set.add(Category.COMPRESSOR);
-        return Collections.unmodifiableSet(set);
+    public Category getType() {
+        return Category.COMPRESSOR;
     }
 
     @Override
@@ -90,12 +85,7 @@ public final class ZipPlugin implements TransformerPlugin {
 
     @Override
     public void configure(Map<String, String> config) {
-        try {
-            String val = config.get(NAME);
-            predicate = new ResourceFilter(Utils.listParser.apply(val));
-        } catch (IOException ex) {
-            throw new PluginException(ex);
-        }
+        predicate = ResourceFilter.includeFilter(config.get(NAME));
     }
 
     static byte[] compress(byte[] bytesIn) {

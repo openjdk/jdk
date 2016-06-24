@@ -191,7 +191,12 @@ static void rewrite_nofast_bytecode(Method* method) {
     case Bytecodes::_getfield:      *bcs.bcp() = Bytecodes::_nofast_getfield;      break;
     case Bytecodes::_putfield:      *bcs.bcp() = Bytecodes::_nofast_putfield;      break;
     case Bytecodes::_aload_0:       *bcs.bcp() = Bytecodes::_nofast_aload_0;       break;
-    case Bytecodes::_iload:         *bcs.bcp() = Bytecodes::_nofast_iload;         break;
+    case Bytecodes::_iload: {
+      if (!bcs.is_wide()) {
+        *bcs.bcp() = Bytecodes::_nofast_iload;
+      }
+      break;
+    }
     default: break;
     }
   }

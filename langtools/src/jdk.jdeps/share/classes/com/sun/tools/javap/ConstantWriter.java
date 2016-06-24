@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ public class ConstantWriter extends BasicWriter {
             }
 
             public Integer visitMethodHandle(CONSTANT_MethodHandle_info info, Void p) {
-                print("#" + info.reference_kind.tag + ":#" + info.reference_index);
+                print(info.reference_kind.tag + ":#" + info.reference_index);
                 tab();
                 println("// " + stringValue(info));
                 return 1;
@@ -326,7 +326,7 @@ public class ConstantWriter extends BasicWriter {
 
         public String visitMethodHandle(CONSTANT_MethodHandle_info info, Void p) {
             try {
-                return info.reference_kind.name + " " + stringValue(info.getCPRefInfo());
+                return info.reference_kind + " " + stringValue(info.getCPRefInfo());
             } catch (ConstantPoolException e) {
                 return report(e);
             }

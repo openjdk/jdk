@@ -171,8 +171,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   Dependencies _dependencies; // holds dependencies from this class loader
                               // data to others.
 
-  Metaspace * _metaspace;  // Meta-space where meta-data defined by the
-                           // classes in the class loader are allocated.
+  Metaspace * volatile _metaspace;  // Meta-space where meta-data defined by the
+                                    // classes in the class loader are allocated.
   Mutex* _metaspace_lock;  // Locks the metaspace for allocations and setup.
   bool _unloading;         // true if this class loader goes away
   bool _is_anonymous;      // if this CLD is for an anonymous class
@@ -186,9 +186,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   JNIHandleBlock* _handles; // Handles to constant pool arrays, Modules, etc, which
                             // have the same life cycle of the corresponding ClassLoader.
 
-  Klass* _klasses;         // The classes defined by the class loader.
-  PackageEntryTable* _packages; // The packages defined by the class loader.
-  ModuleEntryTable* _modules;   // The modules defined by the class loader.
+  Klass* volatile _klasses;              // The classes defined by the class loader.
+  PackageEntryTable* volatile _packages; // The packages defined by the class loader.
+  ModuleEntryTable* volatile _modules;   // The modules defined by the class loader.
 
   // These method IDs are created for the class loader and set to NULL when the
   // class loader is unloaded.  They are rarely freed, only for redefine classes
@@ -215,8 +215,6 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   ClassLoaderData(Handle h_class_loader, bool is_anonymous, Dependencies dependencies);
   ~ClassLoaderData();
-
-  void set_metaspace(Metaspace* m) { _metaspace = m; }
 
   JNIHandleBlock* handles() const;
   void set_handles(JNIHandleBlock* handles);

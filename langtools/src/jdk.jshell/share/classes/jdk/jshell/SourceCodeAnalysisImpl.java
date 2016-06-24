@@ -276,8 +276,8 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         }
         String requiredPrefix = identifier;
         return computeSuggestions(codeWrap, cursor, anchor).stream()
-                .filter(s -> s.continuation.startsWith(requiredPrefix) && !s.continuation.equals(REPL_DOESNOTMATTER_CLASS_NAME))
-                .sorted(Comparator.comparing(s -> s.continuation))
+                .filter(s -> s.continuation().startsWith(requiredPrefix) && !s.continuation().equals(REPL_DOESNOTMATTER_CLASS_NAME))
+                .sorted(Comparator.comparing(s -> s.continuation()))
                 .collect(collectingAndThen(toList(), Collections::unmodifiableList));
     }
 
@@ -1223,9 +1223,9 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     public String analyzeType(String code, int cursor) {
         code = code.substring(0, cursor);
         CompletionInfo completionInfo = analyzeCompletion(code);
-        if (!completionInfo.completeness.isComplete)
+        if (!completionInfo.completeness().isComplete())
             return null;
-        if (completionInfo.completeness == Completeness.COMPLETE_WITH_SEMI) {
+        if (completionInfo.completeness() == Completeness.COMPLETE_WITH_SEMI) {
             code += ";";
         }
 

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,13 +33,11 @@ import javax.net.ssl.TrustManager;
 public class JSSEServer extends CipherTestUtils.Server {
 
     private final SSLServerSocket serverSocket;
-    private final int serverPort;
-    static volatile boolean closeServer = false;
+    private static volatile boolean closeServer = false;
 
     JSSEServer(CipherTestUtils cipherTest, int serverPort,
             String protocol, String cipherSuite) throws Exception {
         super(cipherTest);
-        this.serverPort = serverPort;
         SSLContext serverContext = SSLContext.getInstance("TLS");
         serverContext.init(new KeyManager[]{cipherTest.getServerKeyManager()},
                 new TrustManager[]{cipherTest.getServerTrustManager()},
@@ -56,7 +54,7 @@ public class JSSEServer extends CipherTestUtils.Server {
 
     @Override
     public void run() {
-        System.out.println("JSSE Server listening on port " + serverPort);
+        System.out.println("JSSE Server listening on port " + getPort());
         while (!closeServer) {
             try (final SSLSocket socket = (SSLSocket) serverSocket.accept()) {
                 socket.setSoTimeout(CipherTestUtils.TIMEOUT);
@@ -68,17 +66,25 @@ public class JSSEServer extends CipherTestUtils.Server {
                 } catch (IOException e) {
                     CipherTestUtils.addFailure(e);
                     System.out.println("Got IOException:");
-                    e.printStackTrace(System.err);
+                    e.printStackTrace(System.out);
                 }
             } catch (Exception e) {
                 CipherTestUtils.addFailure(e);
                 System.out.println("Exception:");
-                e.printStackTrace(System.err);
+                e.printStackTrace(System.out);
             }
         }
     }
 
     int getPort() {
         return serverSocket.getLocalPort();
+    }
+
+    @Override
+    public void close() throws IOException {
+        closeServer = true;
+        if (serverSocket != null && !serverSocket.isClosed()) {
+            serverSocket.close();
+        }
     }
 }

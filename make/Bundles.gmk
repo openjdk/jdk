@@ -77,7 +77,8 @@ define SetupBundleFileBody
         ifneq ($$($1_SUBDIR), )
           ifeq ($$($1_TYPE)-$(TAR_SUPPORTS_TRANSFORM)-$$($1_UNZIP_DEBUGINFO), tar.gz-true-false)
 	    $(CD) $$($1_BASE_DIR) \
-	        && ( $(TAR) cf - -$(TAR_INCLUDE_PARAM) $(SUPPORT_OUTPUTDIR)/bundles/_$1_files \
+	        && ( $(TAR) cf - $(TAR_CREATE_EXTRA_PARAM) \
+                    -$(TAR_INCLUDE_PARAM) $(SUPPORT_OUTPUTDIR)/bundles/_$1_files \
 	            --transform 's|^|$$($1_SUBDIR)/|' $(TAR_IGNORE_EXIT_VALUE) ) \
 	        | $(GZIP) > $$@
           else
@@ -97,7 +98,8 @@ define SetupBundleFileBody
             endif
             ifeq ($$($1_TYPE), tar.gz)
 	      $(CD) $(SUPPORT_OUTPUTDIR)/bundles/$1 && \
-	          ( $(TAR) cf - $$($1_SUBDIR) $(TAR_IGNORE_EXIT_VALUE) ) | $(GZIP) > $$@
+	          ( $(TAR) cf - $(TAR_CREATE_EXTRA_PARAM) $$($1_SUBDIR) $(TAR_IGNORE_EXIT_VALUE) ) \
+	          | $(GZIP) > $$@
             else ifeq ($$($1_TYPE), zip)
 	      $(CD) $(SUPPORT_OUTPUTDIR)/bundles/$1 && $(ZIP) -qr $$@ .
             endif
@@ -105,7 +107,8 @@ define SetupBundleFileBody
         else
           ifeq ($$($1_TYPE), tar.gz)
 	    $(CD) $$($1_BASE_DIR) \
-	        && ( $(TAR) cf - -$(TAR_INCLUDE_PARAM) $(SUPPORT_OUTPUTDIR)/bundles/_$1_files \
+	        && ( $(TAR) cf - $(TAR_CREATE_EXTRA_PARAM) \
+	            -$(TAR_INCLUDE_PARAM) $(SUPPORT_OUTPUTDIR)/bundles/_$1_files \
 	            $(TAR_IGNORE_EXIT_VALUE) ) \
 	        | $(GZIP) > $$@
           else ifeq ($$($1_TYPE), zip)

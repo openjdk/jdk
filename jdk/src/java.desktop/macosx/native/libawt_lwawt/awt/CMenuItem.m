@@ -63,6 +63,7 @@
 - (BOOL) worksWhenModal {
     return YES;
 }
+
 // Events
 - (void)handleAction:(NSMenuItem *)sender {
     AWT_ASSERT_APPKIT_THREAD;
@@ -91,7 +92,6 @@
     }
     else {
         if ([currEvent type] == NSKeyDown) {
-            
             // Event available through sender variable hence NSApplication
             // not needed for checking the keyboard input sans the modifier keys
             // Also, the method used to fetch eventKey earlier would be locale dependent
@@ -99,7 +99,6 @@
             // is not U.S. (Devanagari in this case)
             // With current implementation, EventKey = MenuKey = e irrespective of
             // input method
-            
             NSString *eventKey = [sender keyEquivalent];
             // Apple uses characters from private Unicode range for some of the
             // keys, so we need to do the same translation here that we do
@@ -116,15 +115,15 @@
             if (keyWindow != nil) {
                 return;
             }
-            else {
-                static JNF_CLASS_CACHE(jc_CMenuItem, "sun/lwawt/macosx/CMenuItem");
-                static JNF_MEMBER_CACHE(jm_handleAction, jc_CMenuItem, "handleAction", "(JI)V"); // AWT_THREADING Safe (event)
-                
-                NSUInteger modifiers = [currEvent modifierFlags];
-                jint javaModifiers = NsKeyModifiersToJavaModifiers(modifiers, NO);
-                
-                JNFCallVoidMethod(env, fPeer, jm_handleAction, UTC(currEvent), javaModifiers); // AWT_THREADING Safe (event)
-            }
+        }
+        else {
+            static JNF_CLASS_CACHE(jc_CMenuItem, "sun/lwawt/macosx/CMenuItem");
+            static JNF_MEMBER_CACHE(jm_handleAction, jc_CMenuItem, "handleAction", "(JI)V"); // AWT_THREADING Safe (event)
+            
+            NSUInteger modifiers = [currEvent modifierFlags];
+            jint javaModifiers = NsKeyModifiersToJavaModifiers(modifiers, NO);
+            
+            JNFCallVoidMethod(env, fPeer, jm_handleAction, UTC(currEvent), javaModifiers); // AWT_THREADING Safe (event)
         }
     }
     JNF_COCOA_EXIT(env);

@@ -33,9 +33,9 @@ import jdk.jshell.Snippet.Status;
  * {@link JShell#drop(jdk.jshell.PersistentSnippet) JShell.drop(PersistentSnippet)},
  * or indirectly by these same methods as
  * dependencies change or Snippets are overwritten. For direct changes, the
- * {@link SnippetEvent#causeSnippet()} is <code>null</code>.
+ * {@link SnippetEvent#causeSnippet()} is {@code null}.
  * <p>
- * <code>SnippetEvent</code> is immutable: an access to
+ * {@code SnippetEvent} is immutable: an access to
  * any of its methods will always return the same result.
  * and thus is thread-safe.
  * @author Robert Field
@@ -64,7 +64,7 @@ public class SnippetEvent {
 
     /**
      * The Snippet which has changed
-     * @return the return the Snippet whose <code>Status</code> has changed.
+     * @return the return the Snippet whose {@code Status} has changed.
      */
     public Snippet snippet() {
         return snippet;
@@ -81,7 +81,7 @@ public class SnippetEvent {
 
     /**
      * The after status. Note: this may be the same as the previous status (not
-     * all changes cause a <code>Status</code> change.
+     * all changes cause a {@code Status} change.
      * @return the status
      */
     public Status status() {
@@ -89,12 +89,14 @@ public class SnippetEvent {
     }
 
     /**
-     * Has the signature changed? Coming in or out of definition
-     * (status.isDefined) is always a signature change. An overwritten Snippet
+     * Indicates whether the signature has changed. Coming in or out of
+     * {@linkplain Status#isDefined() definition} is always a signature change.
+     * An overwritten Snippet
      * {@link jdk.jshell.Snippet.Status#OVERWRITTEN (status == OVERWRITTEN)}
-     * is always <code>false</code> as responsibility for the
+     * is always {@code false} as responsibility for the
      * definition has passed to the overwriting definition.
-     * @return <code>true</code> if the signature changed.
+     *
+     * @return {@code true} if the signature changed; otherwise {@code false}
      */
     public boolean isSignatureChange() {
         return isSignatureChange;
@@ -102,13 +104,13 @@ public class SnippetEvent {
 
     /**
      * Either the snippet whose change caused this update or
-     * <code>null</code>. This returns <code>null</code> if this change is the
+     * {@code null}. This returns {@code null} if this change is the
      * creation of a new Snippet via
      * {@link jdk.jshell.JShell#eval(java.lang.String) eval} or it is the
      * explicit drop of a Snippet with
      * {@link jdk.jshell.JShell#drop(jdk.jshell.PersistentSnippet) drop}.
      *
-     * @return the Snippet which caused this change or <code>null</code> if
+     * @return the Snippet which caused this change or {@code null} if
      * directly caused by an API action.
      */
     public Snippet causeSnippet() {
@@ -118,8 +120,8 @@ public class SnippetEvent {
     /**
      * An instance of {@link jdk.jshell.UnresolvedReferenceException}, if an unresolved reference was
      * encountered, or an instance of {@link jdk.jshell.EvalException} if an exception was thrown
-     * during execution, otherwise <code>null</code>.
-     * @return the exception or <code>null</code>.
+     * during execution, otherwise {@code null}.
+     * @return the exception or {@code null}.
      */
     public JShellException exception() {
         return exception;
@@ -128,7 +130,7 @@ public class SnippetEvent {
     /**
      * The result value of successful run. The value is null if not executed
      * or an exception was thrown.
-     * @return the value or <code>null</code>.
+     * @return the value or {@code null}.
      */
     public String value() {
         return value;

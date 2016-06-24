@@ -36,11 +36,9 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import jdk.tools.jlink.internal.ModuleEntryImpl;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ModuleEntry;
@@ -188,22 +186,14 @@ public class FileCopierPlugin implements TransformerPlugin {
     }
 
     @Override
-    public Set<Category> getType() {
-        Set<Category> set = new HashSet<>();
-        set.add(Category.TRANSFORMER);
-        return Collections.unmodifiableSet(set);
-    }
-
-    @Override
     public void configure(Map<String, String> config) {
-        String val = config.get(NAME);
-        String[] argument = Utils.listParser.apply(val);
-        if (argument == null || argument.length == 0) {
+        List<String> arguments = Utils.parseList(config.get(NAME));
+        if (arguments.isEmpty()) {
             throw new RuntimeException("Invalid argument for " + NAME);
         }
 
         String javahome = System.getProperty("java.home");
-        for (String a : argument) {
+        for (String a : arguments) {
             int i = a.indexOf("=");
             CopiedFile cf = new CopiedFile();
             if (i == -1) {

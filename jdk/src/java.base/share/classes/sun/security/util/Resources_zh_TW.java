@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package sun.security.util;
 
 /**
- * <p> This class represents the <code>ResourceBundle</code>
+ * This class represents the <code>ResourceBundle</code>
  * for javax.security.auth and sun.security.
  *
  */
@@ -83,7 +83,7 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
         // javax.security.auth.login.LoginContext
         {"Invalid.null.input.name", "\u7121\u6548\u7A7A\u503C\u8F38\u5165: \u540D\u7A31"},
         {"No.LoginModules.configured.for.name",
-         "\u7121\u91DD\u5C0D {0} \u914D\u7F6E\u7684 LoginModules"},
+         "\u7121\u91DD\u5C0D {0} \u8A2D\u5B9A\u7684 LoginModules"},
         {"invalid.null.Subject.provided", "\u63D0\u4F9B\u7121\u6548\u7A7A\u503C\u4E3B\u984C"},
         {"invalid.null.CallbackHandler.provided",
                 "\u63D0\u4F9B\u7121\u6548\u7A7A\u503C CallbackHandler"},
@@ -159,8 +159,6 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
 
     /**
      * Returns the contents of this <code>ResourceBundle</code>.
-     *
-     * <p>
      *
      * @return the contents of this <code>ResourceBundle</code>.
      */

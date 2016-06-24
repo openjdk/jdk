@@ -696,7 +696,7 @@ public class DOMNormalizer implements XMLDocumentHandler {
         preParser.setProperty(Constants.XERCES_PROPERTY_PREFIX + Constants.XMLGRAMMAR_POOL_PROPERTY, pool);
 
         String internalSubset = docType.getInternalSubset();
-        XMLInputSource is = new XMLInputSource(docType.getPublicId(), docType.getSystemId(), null);
+        XMLInputSource is = new XMLInputSource(docType.getPublicId(), docType.getSystemId(), null, false);
 
         if(internalSubset != null)
             is.setCharacterStream(new StringReader(internalSubset));

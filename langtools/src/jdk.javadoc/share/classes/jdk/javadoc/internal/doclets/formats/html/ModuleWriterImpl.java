@@ -183,6 +183,19 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public void addModuleTags(Content moduleContentTree) {
+        Content tree = (configuration.allowTag(HtmlTag.SECTION))
+                ? HtmlTree.SECTION()
+                : moduleContentTree;
+        addTagsInfo(mdle, tree);
+        if (configuration.allowTag(HtmlTag.SECTION)) {
+            moduleContentTree.addContent(tree);
+        }
+    }
+
+    /**
      * Adds list of packages in the package summary table. Generate link to each package.
      *
      * @param packages Packages to which link is to be generated

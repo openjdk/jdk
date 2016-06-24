@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 7191662 8157469
+ * @bug 7191662 8157469 8157489
  * @summary Ensure non-java.base providers can be found by ServiceLoader
  * @author Valerie Peng
  */
@@ -33,6 +33,7 @@ import java.security.Security;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.ServiceLoader;
+import java.lang.reflect.Module;
 
 public class DefaultProviderList {
 
@@ -43,37 +44,54 @@ public class DefaultProviderList {
 
         ServiceLoader<Provider> sl = ServiceLoader.load(Provider.class);
         boolean failed = false;
+
+        Module baseMod = Object.class.getModule();
+
+        // Test#1: check that all non-base security providers can be found
+        // through ServiceLoader
         for (Provider p : defaultProvs) {
             String pName = p.getName();
-            // only providers outside java.base are loaded by ServiceLoader
-            if (pName.equals("SUN") || pName.equals("SunRsaSign") ||
-                pName.equals("SunJCE") || pName.equals("SunJSSE") ||
-                pName.equals("Apple")) {
-                System.out.println("Skip test for provider " + pName);
-                continue;
-            }
-            String pClassName = p.getClass().getName();
-            // Should be able to find each one through ServiceLoader
-            Iterator<Provider> provIter = sl.iterator();
-            boolean found = false;
-            while (provIter.hasNext()) {
-                Provider pFromSL = provIter.next();
-                if (pFromSL.getClass().getName().equals(pClassName)) {
-                    found = true;
-                    break;
+            Class pClass = p.getClass();
+
+            if (pClass.getModule() != baseMod) {
+                String pClassName = pClass.getName();
+                Iterator<Provider> provIter = sl.iterator();
+                boolean found = false;
+                while (provIter.hasNext()) {
+                    Provider pFromSL = provIter.next();
+
+                    // check for match by class name because PKCS11 provider
+                    // will have a different name after being configured.
+                    if (pFromSL.getClass().getName().equals(pClassName)) {
+                        found = true;
+                        System.out.println("SL found provider " + pName);
+                        break;
+                    }
+                }
+                if (!found) {
+                    failed = true;
+                    System.out.println("Error: SL cannot find provider " +
+                        pName);
                 }
             }
-            System.out.println("Found " + p.getName() + " = " + found);
-            if (!found) {
+        }
+
+        // Test#2: check that all security providers found through ServiceLoader
+        // are not from base module
+        Iterator<Provider> provIter = sl.iterator();
+        while (provIter.hasNext()) {
+            Provider pFromSL = provIter.next();
+            if (pFromSL.getClass().getModule() == baseMod) {
                 failed = true;
-                System.out.println("Error: no provider class " + pClassName +
-                    " found");
+                System.out.println("Error: base provider " +
+                    pFromSL.getName() + " loaded by SL");
             }
         }
+
         if (!failed) {
             System.out.println("Test Passed");
         } else {
-            throw new Exception("One or more provider not loaded by SL");
+            throw new Exception("One or more tests failed");
         }
     }
 }

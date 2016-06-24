@@ -335,9 +335,9 @@ public class FontFamily {
         case Font.BOLD|Font.ITALIC:
             if (bolditalic != null) {
                 return bolditalic;
-            } else if (italic != null && italic.canDoStyle(style)) {
-                    return italic;
             } else if (bold != null && bold.canDoStyle(style)) {
+                return bold;
+            } else if (italic != null && italic.canDoStyle(style)) {
                     return italic;
             } else if (plain != null && plain.canDoStyle(style)) {
                     return plain;

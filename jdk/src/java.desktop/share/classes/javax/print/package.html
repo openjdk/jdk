@@ -122,7 +122,7 @@ Doc myDoc = new SimpleDoc(psStream, psInFormat, null);
 PrintRequestAttributeSet aset = 
 	new HashPrintRequestAttributeSet();
 aset.add(new Copies(5));
-aset.add(MediaSize.A4);
+aset.add(MediaSizeName.ISO_A4);
 aset.add(Sides.DUPLEX);
 PrintService[] services = 
   PrintServiceLookup.lookupPrintServices(psInFormat, aset);

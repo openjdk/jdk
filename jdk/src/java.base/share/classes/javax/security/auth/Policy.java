@@ -152,10 +152,11 @@ import sun.security.util.Debug;
  *
  * These two APIs provide callers the means to query the
  * Policy for Principal-based Permission entries.
+ * This class is subject to removal in a future version of Java SE.
  *
  * @see java.security.Security security properties
  */
-@Deprecated
+@Deprecated(since="1.4", forRemoval=true)
 public abstract class Policy {
 
     private static Policy policy;

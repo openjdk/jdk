@@ -25,6 +25,7 @@
 
 package jdk.nashorn.tools.jjs;
 
+import java.lang.reflect.Modifier;
 import java.io.IOException;
 import java.io.File;
 import java.net.URI;
@@ -49,6 +50,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
+import jdk.nashorn.internal.runtime.Context;
 
 /**
  * A helper class to compute properties of a Java package object. Properties of
@@ -72,6 +74,7 @@ final class PackagesHelper {
         return compiler != null;
     }
 
+    private final Context context;
     private final StandardJavaFileManager fm;
     private final Set<JavaFileObject.Kind> fileKinds;
     private final FileSystem jrtfs;
@@ -79,9 +82,11 @@ final class PackagesHelper {
     /**
      * Construct a new PackagesHelper.
      *
-     * @param classPath Class path to compute properties of java package objects
+     * @param context the current Nashorn Context
      */
-    PackagesHelper(final String classPath) throws IOException {
+    PackagesHelper(final Context context) throws IOException {
+        this.context = context;
+        final String classPath = context.getEnv()._classpath;
         if (isJavacAvailable()) {
             fm = compiler.getStandardFileManager(null, null, null);
             fileKinds = EnumSet.of(JavaFileObject.Kind.CLASS);
@@ -166,8 +171,11 @@ final class PackagesHelper {
                                 String str = p.getFileName().toString();
                                 // get rid of ".class", if any
                                 if (str.endsWith(".class")) {
-                                    props.add(str.substring(0, str.length() - ".class".length()));
-                                } else {
+                                    final String clsName = str.substring(0, str.length() - ".class".length());
+                                    if (clsName.indexOf('$') == -1 && isClassAccessible(pkg + "." + clsName)) {
+                                        props.add(str);
+                                    }
+                                } else if (isPackageAccessible(pkg + "." + str)) {
                                     props.add(str);
                                 }
                             }
@@ -193,7 +201,10 @@ final class PackagesHelper {
 
             if (nextDot != -1) {
                 // subpackage - eg. "regex" for "java.util"
-                props.add(binaryName.substring(start, nextDot));
+                final String pkgName = binaryName.substring(start, nextDot);
+                if (isPackageAccessible(binaryName.substring(0, nextDot))) {
+                    props.add(binaryName.substring(start, nextDot));
+                }
             } else {
                 // class - filter out nested, inner, anonymous, local classes.
                 // Dynalink supported public nested classes as properties of
@@ -201,7 +212,7 @@ final class PackagesHelper {
                 // "$" internal names as properties of package object.
 
                 final String clsName = binaryName.substring(start);
-                if (clsName.indexOf('$') == -1) {
+                if (clsName.indexOf('$') == -1 && isClassAccessible(binaryName)) {
                     props.add(clsName);
                 }
             }
@@ -213,5 +224,23 @@ final class PackagesHelper {
         return Stream.of(classPath.split(File.pathSeparator))
                     .map(File::new)
                     .collect(Collectors.toList());
+    }
+
+    private boolean isClassAccessible(final String className) {
+        try {
+            final Class<?> clz = context.findClass(className);
+            return Modifier.isPublic(clz.getModifiers());
+        } catch (final ClassNotFoundException cnfe) {
+        }
+        return false;
+    }
+
+    private boolean isPackageAccessible(final String pkgName) {
+        try {
+            Context.checkPackageAccess(pkgName);
+            return true;
+        } catch (final SecurityException se) {
+            return false;
+        }
     }
 }

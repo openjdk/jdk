@@ -151,8 +151,8 @@ public enum Option {
             // Construct transformer
             try {
                 Class<?> trCls = Class.forName(classname);
-                @SuppressWarnings("deprecation")
-                Transformer transformer = (Transformer) trCls.newInstance();
+                Transformer transformer =
+                    (Transformer) trCls.getConstructor().newInstance();
                 transformer.setExtra(extra);
                 helper.addTransformer(suffix, transformer);
             } catch (Exception e) {

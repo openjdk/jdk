@@ -681,7 +681,7 @@ public class XSDHandler {
             createAnnotationValidator();
         }
         final int size = annotationInfo.size();
-        final XMLInputSource src = new XMLInputSource(null, null, null);
+        final XMLInputSource src = new XMLInputSource(null, null, null, false);
         fGrammarBucketAdapter.refreshGrammars(fGrammarBucket);
         for (int i = 0; i < size; i += 2) {
             src.setSystemId((String) annotationInfo.get(i));
@@ -2041,7 +2041,7 @@ public class XSDHandler {
 
     /**
      * resolveSchema method is responsible for resolving location of the schema (using XMLEntityResolver),
-     * and if it was succefully resolved getting the schema Document.
+     * and if it was successfully resolved getting the schema Document.
      * @param desc
      * @param mustResolve
      * @param referElement
@@ -2164,8 +2164,9 @@ public class XSDHandler {
                         fLastSchemaWasDuplicate = true;
                         return schemaElement;
                     }
-                    if (referType == XSDDescription.CONTEXT_IMPORT || referType == XSDDescription.CONTEXT_INCLUDE
-                            || referType == XSDDescription.CONTEXT_REDEFINE) {
+                    if ((!schemaSource.isCreatedByResolver()) &&
+                            (referType == XSDDescription.CONTEXT_IMPORT || referType == XSDDescription.CONTEXT_INCLUDE
+                            || referType == XSDDescription.CONTEXT_REDEFINE)) {
                         String accessError = SecuritySupport.checkAccess(schemaId, fAccessExternalSchema, Constants.ACCESS_EXTERNAL_ALL);
                         if (accessError != null) {
                             reportSchemaFatalError("schema_reference.access",

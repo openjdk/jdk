@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,23 +101,23 @@ public abstract class Formatter {
      * formatting.
      * <ul>
      * <li>If there are no parameters, no formatter is used.
-     * <li>Otherwise, if the string contains "{0" then
-     *     java.text.MessageFormat  is used to format the string.
+     * <li>Otherwise, if the string contains "{{@literal<digit>}"
+     *     where {@literal <digit>} is in [0-9],
+     *     java.text.MessageFormat is used to format the string.
      * <li>Otherwise no formatting is performed.
      * </ul>
      *
      * @param  record  the log record containing the raw message
      * @return   a localized and formatted message
      */
-    public synchronized String formatMessage(LogRecord record) {
+    public String formatMessage(LogRecord record) {
         String format = record.getMessage();
         java.util.ResourceBundle catalog = record.getResourceBundle();
         if (catalog != null) {
             try {
-                format = catalog.getString(record.getMessage());
+                format = catalog.getString(format);
             } catch (java.util.MissingResourceException ex) {
                 // Drop through.  Use record message as format
-                format = record.getMessage();
             }
         }
         // Do the formatting.
@@ -130,11 +130,16 @@ public abstract class Formatter {
             // Is it a java.text style format?
             // Ideally we could match with
             // Pattern.compile("\\{\\d").matcher(format).find())
-            // However the cost is 14% higher, so we cheaply check for
-            // 1 of the first 4 parameters
-            if (format.indexOf("{0") >= 0 || format.indexOf("{1") >=0 ||
-                        format.indexOf("{2") >=0|| format.indexOf("{3") >=0) {
-                return java.text.MessageFormat.format(format, parameters);
+            // However the cost is 14% higher, so we cheaply use indexOf
+            // and charAt to look for that pattern.
+            int index = -1;
+            int fence = format.length() - 1;
+            while ((index = format.indexOf('{', index+1)) > -1) {
+                if (index >= fence) break;
+                char digit = format.charAt(index+1);
+                if (digit >= '0' & digit <= '9') {
+                   return java.text.MessageFormat.format(format, parameters);
+                }
             }
             return format;
 

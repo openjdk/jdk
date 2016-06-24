@@ -95,6 +95,15 @@ public class ValueTaglet extends BaseInlineTaglet {
     /**
      * Will return false because this inline tag may
      * only appear in Fields.
+     * @return false since this is not a field.
+     */
+    public boolean inModule() {
+        return false;
+    }
+
+    /**
+     * Will return false because this inline tag may
+     * only appear in Fields.
      * @return false since this is not a method.
      */
     public boolean inPackage() {

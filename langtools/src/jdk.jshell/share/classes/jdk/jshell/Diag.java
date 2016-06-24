@@ -47,8 +47,10 @@ public abstract class Diag {
     public final static long NOPOS = Diagnostic.NOPOS;
 
     /**
-     * Is this diagnostic an error (as opposed to a warning or note)
-     * @return true if this diagnostic is an error
+     * Indicates whether this diagnostic is an error (as opposed to a warning or
+     * note).
+     *
+     * @return {@code true} if this diagnostic is an error; otherwise {@code false}
      */
     public abstract boolean isError();
 

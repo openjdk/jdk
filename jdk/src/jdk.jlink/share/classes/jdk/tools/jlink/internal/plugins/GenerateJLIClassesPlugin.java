@@ -61,11 +61,6 @@ public final class GenerateJLIClassesPlugin implements TransformerPlugin {
     }
 
     @Override
-    public Set<Category> getType() {
-        return Collections.singleton(Category.TRANSFORMER);
-    }
-
-    @Override
     public String getName() {
         return NAME;
     }

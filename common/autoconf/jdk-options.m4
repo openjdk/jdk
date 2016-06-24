@@ -224,7 +224,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   elif test "x$with_copyright_year" != x; then
     COPYRIGHT_YEAR="$with_copyright_year"
   else
-    COPYRIGHT_YEAR=`date +'%Y'`
+    COPYRIGHT_YEAR=`$DATE +'%Y'`
   fi
   AC_SUBST(COPYRIGHT_YEAR)
 ])
