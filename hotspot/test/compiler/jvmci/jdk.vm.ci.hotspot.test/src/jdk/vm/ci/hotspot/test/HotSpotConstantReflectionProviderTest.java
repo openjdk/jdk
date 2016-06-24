@@ -120,12 +120,6 @@ public class HotSpotConstantReflectionProviderTest {
         Assert.assertEquals(actual, expected, "Unexpected result:");
     }
 
-    @Test(dataProvider = "isEmbeddableDataProvider", dataProviderClass = IsEmbeddableDataProvider.class)
-    public void testIsEmbeddable(JavaConstant constant, boolean expected) {
-        boolean actual = CONSTANT_REFLECTION_PROVIDER.isEmbeddable(constant);
-        Assert.assertEquals(actual, expected, "Unexpected result:");
-    }
-
     @Test
     public void testGetMemoryAccessProvider() {
         MemoryAccessProvider actual = CONSTANT_REFLECTION_PROVIDER.getMemoryAccessProvider();
