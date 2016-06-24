@@ -63,7 +63,6 @@ import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.internal.ResourcePrevisitor;
 import jdk.tools.jlink.internal.StringTable;
-import jdk.tools.jlink.internal.Utils;
 
 /**
  *
@@ -335,12 +334,8 @@ public class StringSharingPlugin implements TransformerPlugin, ResourcePrevisito
 
     private Predicate<String> predicate;
 
-    public StringSharingPlugin() throws IOException {
-        this(new String[0]);
-    }
-
-    StringSharingPlugin(String[] patterns) throws IOException {
-        this(new ResourceFilter(patterns));
+    public StringSharingPlugin() {
+        this((path) -> true);
     }
 
     StringSharingPlugin(Predicate<String> predicate) {
@@ -348,10 +343,8 @@ public class StringSharingPlugin implements TransformerPlugin, ResourcePrevisito
     }
 
     @Override
-    public Set<Category> getType() {
-        Set<Category> set = new HashSet<>();
-        set.add(Category.COMPRESSOR);
-        return Collections.unmodifiableSet(set);
+    public Category getType() {
+        return Category.COMPRESSOR;
     }
 
     @Override
@@ -396,12 +389,7 @@ public class StringSharingPlugin implements TransformerPlugin, ResourcePrevisito
 
     @Override
     public void configure(Map<String, String> config) {
-        try {
-            String val = config.get(NAME);
-            predicate = new ResourceFilter(Utils.listParser.apply(val));
-        } catch (IOException ex) {
-            throw new PluginException(ex);
-        }
+        predicate = ResourceFilter.includeFilter(config.get(NAME));
     }
 
     @Override

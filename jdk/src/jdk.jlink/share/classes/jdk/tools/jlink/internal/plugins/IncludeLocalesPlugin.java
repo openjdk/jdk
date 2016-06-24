@@ -25,11 +25,9 @@
 package jdk.tools.jlink.internal.plugins;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.IllformedLocaleException;
 import java.util.Locale;
 import java.util.List;
@@ -44,7 +42,6 @@ import java.util.stream.Stream;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.tools.jlink.internal.ResourcePrevisitor;
 import jdk.tools.jlink.internal.StringTable;
-import jdk.tools.jlink.internal.Utils;
 import jdk.tools.jlink.plugin.LinkModule;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.PluginException;
@@ -85,15 +82,15 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
         "sun.util.resources.ext",
         "sun.util.resources.provider");
     private static final String METAINFONAME = "LocaleDataMetaInfo";
-    private static final String META_FILES =
-        "*module-info.class," +
-        "*LocaleDataProvider.class," +
-        "*" + METAINFONAME + ".class,";
-    private static final String INCLUDE_LOCALE_FILES =
-        "*sun/text/resources/ext/[^\\/]+_%%.class," +
-        "*sun/util/resources/ext/[^\\/]+_%%.class," +
-        "*sun/text/resources/cldr/ext/[^\\/]+_%%.class," +
-        "*sun/util/resources/cldr/ext/[^\\/]+_%%.class,";
+    private static final List<String> META_FILES = List.of(
+        ".+module-info.class",
+        ".+LocaleDataProvider.class",
+        ".+" + METAINFONAME + ".class");
+    private static final List<String> INCLUDE_LOCALE_FILES = List.of(
+        ".+sun/text/resources/ext/[^_]+_",
+        ".+sun/util/resources/ext/[^_]+_",
+        ".+sun/text/resources/cldr/ext/[^_]+_",
+        ".+sun/util/resources/cldr/ext/[^_]+_");
     private Predicate<String> predicate;
     private String userParam;
     private List<Locale.LanguageRange> priorityList;
@@ -126,9 +123,7 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
                     if (Arrays.stream(cr.getInterfaces())
                         .anyMatch(i -> i.contains(METAINFONAME)) &&
                         stripUnsupportedLocales(bytes, cr)) {
-                        resource = ModuleEntry.create(MODULENAME, path,
-                            resource.getType(),
-                            new ByteArrayInputStream(bytes), bytes.length);
+                        resource = resource.create(bytes);
                     }
                 }
             }
@@ -137,10 +132,8 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
     }
 
     @Override
-    public Set<Category> getType() {
-        Set<Category> set = new HashSet<>();
-        set.add(Category.FILTER);
-        return Collections.unmodifiableSet(set);
+    public Category getType() {
+        return Category.FILTER;
     }
 
     @Override
@@ -209,19 +202,17 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
                 String.format(PluginsResourceBundle.getMessage(NAME + ".nomatchinglocales"), userParam));
         }
 
-        try {
-            String value = META_FILES + filtered.stream()
-                .map(s -> includeLocaleFilePatterns(s))
-                .collect(Collectors.joining(","));
-            predicate = new ResourceFilter(Utils.listParser.apply(value), false);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
+        List<String> value = Stream.concat(
+                META_FILES.stream(),
+                filtered.stream().flatMap(s -> includeLocaleFilePatterns(s).stream()))
+            .map(s -> "regex:" + s)
+            .collect(Collectors.toList());
+        predicate = ResourceFilter.includeFilter(value);
     }
 
-    private String includeLocaleFilePatterns(String tag) {
+    private List<String> includeLocaleFilePatterns(String tag) {
+        List<String> files = new ArrayList<>();
         String pTag = tag.replaceAll("-", "_");
-        String files = "";
         int lastDelimiter = tag.length();
         String isoSpecial = pTag.matches("^(he|yi|id).*") ?
                             pTag.replaceFirst("he", "iw")
@@ -231,11 +222,11 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
         // Add tag patterns including parents
         while (true) {
             pTag = pTag.substring(0, lastDelimiter);
-            files += INCLUDE_LOCALE_FILES.replaceAll("%%", pTag);
+            files.addAll(includeLocaleFiles(pTag));
 
             if (!isoSpecial.isEmpty()) {
                 isoSpecial = isoSpecial.substring(0, lastDelimiter);
-                files += INCLUDE_LOCALE_FILES.replaceAll("%%", isoSpecial);
+                files.addAll(includeLocaleFiles(isoSpecial));
             }
 
             lastDelimiter = pTag.lastIndexOf('_');
@@ -247,29 +238,35 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
         final String lang = pTag;
 
         // Add possible special locales of the COMPAT provider
-        files += Set.of(jaJPJPTag, noNONYTag, thTHTHTag).stream()
+        Set.of(jaJPJPTag, noNONYTag, thTHTHTag).stream()
             .filter(stag -> lang.equals(stag.substring(0,2)))
-            .map(t -> INCLUDE_LOCALE_FILES.replaceAll("%%", t.replaceAll("-", "_")))
-            .collect(Collectors.joining(","));
+            .map(t -> includeLocaleFiles(t.replaceAll("-", "_")))
+            .forEach(files::addAll);
 
         // Add possible UN.M49 files (unconditional for now) for each language
-        files += INCLUDE_LOCALE_FILES.replaceAll("%%", lang + "_[0-9]{3}");
+        files.addAll(includeLocaleFiles(lang + "_[0-9]{3}"));
         if (!isoSpecial.isEmpty()) {
-            files += INCLUDE_LOCALE_FILES.replaceAll("%%", isoSpecial + "_[0-9]{3}");
+            files.addAll(includeLocaleFiles(isoSpecial + "_[0-9]{3}"));
         }
 
         // Add Thai BreakIterator related data files
         if (lang.equals("th")) {
-            files += "*sun/text/resources/thai_dict," +
-                     "*sun/text/resources/[^\\/]+BreakIteratorData_th,";
+            files.add(".+sun/text/resources/thai_dict");
+            files.add(".+sun/text/resources/[^_]+BreakIteratorData_th");
         }
 
         // Add Taiwan resource bundles for Hong Kong
         if (tag.startsWith("zh-HK")) {
-            files += INCLUDE_LOCALE_FILES.replaceAll("%%", "zh_TW");
+            files.addAll(includeLocaleFiles("zh_TW"));
         }
 
         return files;
+    }
+
+    private List<String> includeLocaleFiles(String localeStr) {
+        return INCLUDE_LOCALE_FILES.stream()
+            .map(s -> s + localeStr + ".class")
+            .collect(Collectors.toList());
     }
 
     private boolean stripUnsupportedLocales(byte[] bytes, ClassReader cr) {

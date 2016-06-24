@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @modules java.base/jdk.internal.module
  * @run testng ModuleDescriptorTest
  * @summary Basic test for java.lang.module.ModuleDescriptor and its builder
  */
@@ -47,6 +48,7 @@ import java.util.Set;
 
 import static java.lang.module.ModuleDescriptor.Requires.Modifier.*;
 
+import jdk.internal.module.ModuleInfoWriter;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -133,8 +135,8 @@ public class ModuleDescriptorTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testRequiresSelfWithRequires() {
-        Requires r = requires(null, "m");
-        new Builder("m").requires(r);
+        Requires r = requires(null, "foo");
+        new Builder("foo").requires(r);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -169,6 +171,21 @@ public class ModuleDescriptorTest {
         int n = "foo".compareTo("bar");
         assertTrue(r1.compareTo(r2) == n);
         assertTrue(r2.compareTo(r1) == -n);
+    }
+
+    public void testRequiresCompareWithDifferentModifiers() {
+        Requires r1 = requires(EnumSet.of(PUBLIC), "foo");
+        Requires r2 = requires(EnumSet.of(SYNTHETIC), "foo");
+        int n = Integer.compare(1 << PUBLIC.ordinal(), 1 << SYNTHETIC.ordinal());
+        assertTrue(r1.compareTo(r2) == n);
+        assertTrue(r2.compareTo(r1) == -n);
+    }
+
+    public void testRequiresCompareWithSameModifiers() {
+        Requires r1 = requires(EnumSet.of(SYNTHETIC), "foo");
+        Requires r2 = requires(EnumSet.of(SYNTHETIC), "foo");
+        assertTrue(r1.compareTo(r2) == 0);
+        assertTrue(r2.compareTo(r1) == 0);
     }
 
     public void testRequiresToString() {
@@ -330,7 +347,7 @@ public class ModuleDescriptorTest {
 
     private Provides provides(String st, String pc) {
         return new Builder("foo")
-            .provides("p.S", pc)
+            .provides(st, pc)
             .build()
             .provides()
             .values()
@@ -667,6 +684,37 @@ public class ModuleDescriptorTest {
         ByteBuffer bb = ByteBuffer.allocate(0);
         ModuleDescriptor.read(bb);
     }
+
+    // The requires table for java.base must be 0 length
+    @Test(expectedExceptions = InvalidModuleDescriptorException.class)
+    public void testReadOfJavaBaseWithRequires() {
+        ModuleDescriptor descriptor
+            = new ModuleDescriptor.Builder("java.base")
+                .requires("other")
+                .build();
+        ByteBuffer bb = ModuleInfoWriter.toByteBuffer(descriptor);
+        ModuleDescriptor.read(bb);
+    }
+
+    // The requires table must have an entry for java.base
+    @Test(expectedExceptions = InvalidModuleDescriptorException.class)
+    public void testReadWithEmptyRequires() {
+        ModuleDescriptor descriptor = new ModuleDescriptor.Builder("m1").build();
+        ByteBuffer bb = ModuleInfoWriter.toByteBuffer(descriptor);
+        ModuleDescriptor.read(bb);
+    }
+
+    // The requires table must have an entry for java.base
+    @Test(expectedExceptions = InvalidModuleDescriptorException.class)
+    public void testReadWithNoRequiresBase() {
+        ModuleDescriptor descriptor
+            = new ModuleDescriptor.Builder("m1")
+                .requires("m2")
+                .build();
+        ByteBuffer bb = ModuleInfoWriter.toByteBuffer(descriptor);
+        ModuleDescriptor.read(bb);
+    }
+
 
     public void testReadWithNull() throws Exception {
         Module base = Object.class.getModule();

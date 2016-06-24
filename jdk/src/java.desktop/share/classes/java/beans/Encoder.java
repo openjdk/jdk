@@ -136,7 +136,7 @@ public class Encoder {
      * a shared internal persistence delegate is returned
      * that encodes {@code null} value.
      * <li>
-     * If the type is a {@code enum} declaration,
+     * If the type is an {@code enum} declaration,
      * a shared internal persistence delegate is returned
      * that encodes constants of this enumeration
      * by their names.

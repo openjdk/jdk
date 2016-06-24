@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package sun.security.tools.keytool;
 
 /**
- * This class represents the <code>ResourceBundle</code>
+ * <p> This class represents the <code>ResourceBundle</code>
  * for the keytool.
  *
  */
@@ -48,7 +48,7 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
                  "\u91D1\u9470\u8207\u6191\u8B49\u7BA1\u7406\u5DE5\u5177"},
         {"Commands.", "\u547D\u4EE4:"},
         {"Use.keytool.command.name.help.for.usage.of.command.name",
-                "\u4F7F\u7528 \"keytool -command_name -help\" \u53D6\u5F97 command_name \u7684\u7528\u6CD5"},
+                "\u4F7F\u7528 \"keytool -command_name -help\" \u53D6\u5F97 command_name \u7684\u7528\u6CD5\u3002\n\u4F7F\u7528 -conf <url> \u9078\u9805\u6307\u5B9A\u9810\u5148\u8A2D\u5B9A\u7684\u9078\u9805\u6A94\u6848\u3002"},
         // keytool: help: commands
         {"Generates.a.certificate.request",
                 "\u7522\u751F\u6191\u8B49\u8981\u6C42"}, //-certreq
@@ -306,7 +306,7 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
         {"Entry.type.type.", "\u9805\u76EE\u985E\u578B: {0}"},
         {"Certificate.chain.length.", "\u6191\u8B49\u93C8\u9577\u5EA6: "},
         {"Certificate.i.1.", "\u6191\u8B49 [{0,number,integer}]:"},
-        {"Certificate.fingerprint.SHA1.", "\u6191\u8B49\u6307\u7D0B (SHA1): "},
+        {"Certificate.fingerprint.SHA.256.", "\u6191\u8B49\u6307\u7D0B (SHA-256): "},
         {"Keystore.type.", "\u91D1\u9470\u5132\u5B58\u5EAB\u985E\u578B: "},
         {"Keystore.provider.", "\u91D1\u9470\u5132\u5B58\u5EAB\u63D0\u4F9B\u8005: "},
         {"Your.keystore.contains.keyStore.size.entry",
@@ -346,7 +346,7 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
         {".RETURN.if.same.as.for.otherAlias.",
                 "\t(RETURN \u5982\u679C\u548C <{0}> \u7684\u76F8\u540C)"},
         {".PATTERN.printX509Cert",
-                "\u64C1\u6709\u8005: {0}\n\u767C\u51FA\u8005: {1}\n\u5E8F\u865F: {2}\n\u6709\u6548\u671F\u81EA: {3} \u5230: {4}\n\u6191\u8B49\u6307\u7D0B:\n\t MD5:  {5}\n\t SHA1: {6}\n\t SHA256: {7}\n\t \u7C3D\u7AE0\u6F14\u7B97\u6CD5\u540D\u7A31: {8}\n\t \u7248\u672C: {9}"},
+                "\u64C1\u6709\u8005: {0}\n\u767C\u51FA\u8005: {1}\n\u5E8F\u865F: {2}\n\u6709\u6548\u671F\u81EA: {3} \u5230: {4}\n\u6191\u8B49\u6307\u7D0B:\n\t SHA1: {5}\n\t SHA256: {6}\n\u7C3D\u7AE0\u6F14\u7B97\u6CD5\u540D\u7A31: {7}\n\u4E3B\u9AD4\u516C\u958B\u91D1\u9470\u6F14\u7B97\u6CD5: {8} ({9,number,#})\n\u7248\u672C: {10}"},
         {"What.is.your.first.and.last.name.",
                 "\u60A8\u7684\u540D\u5B57\u8207\u59D3\u6C0F\u70BA\u4F55\uFF1F"},
         {"What.is.the.name.of.your.organizational.unit.",
@@ -381,9 +381,9 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
                 "\u6C92\u6709\u4F86\u81EA SSL \u4F3A\u670D\u5668\u7684\u6191\u8B49"},
 
         {".The.integrity.of.the.information.stored.in.your.keystore.",
-            "* \u5C1A\u672A\u9A57\u8B49\u5132\u5B58\u65BC\u91D1\u9470\u5132\u5B58\u5EAB\u4E2D\u8CC7\u8A0A  *\n* \u7684\u5B8C\u6574\u6027\uFF01\u82E5\u8981\u9A57\u8B49\u5176\u5B8C\u6574\u6027\uFF0C*\n* \u60A8\u5FC5\u9808\u63D0\u4F9B\u60A8\u7684\u91D1\u9470\u5132\u5B58\u5EAB\u5BC6\u78BC\u3002                  *"},
+            "* \u5C1A\u672A\u9A57\u8B49\u5132\u5B58\u65BC\u91D1\u9470\u5132\u5B58\u5EAB\u4E2D\u8CC7\u8A0A  *\n* \u7684\u5B8C\u6574\u6027\uFF01\u82E5\u8981\u9A57\u8B49\u5176\u5B8C\u6574\u6027\uFF0C    *\n* \u60A8\u5FC5\u9808\u63D0\u4F9B\u60A8\u7684\u91D1\u9470\u5132\u5B58\u5EAB\u5BC6\u78BC\u3002  *"},
         {".The.integrity.of.the.information.stored.in.the.srckeystore.",
-            "* \u5C1A\u672A\u9A57\u8B49\u5132\u5B58\u65BC srckeystore \u4E2D\u8CC7\u8A0A*\n* \u7684\u5B8C\u6574\u6027\uFF01\u82E5\u8981\u9A57\u8B49\u5176\u5B8C\u6574\u6027\uFF0C\u60A8\u5FC5\u9808 *\n* \u63D0\u4F9B srckeystore \u5BC6\u78BC\u3002          *"},
+            "* \u5C1A\u672A\u9A57\u8B49\u5132\u5B58\u65BC srckeystore \u4E2D\u8CC7\u8A0A *\n* \u7684\u5B8C\u6574\u6027\uFF01\u82E5\u8981\u9A57\u8B49\u5176\u5B8C\u6574\u6027\uFF0C\u60A8    *\n* \u5FC5\u9808\u63D0\u4F9B srckeystore \u5BC6\u78BC\u3002       *"},
 
         {"Certificate.reply.does.not.contain.public.key.for.alias.",
                 "\u6191\u8B49\u56DE\u8986\u4E26\u672A\u5305\u542B <{0}> \u7684\u516C\u958B\u91D1\u9470"},
@@ -432,6 +432,8 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
 
     /**
      * Returns the contents of this <code>ResourceBundle</code>.
+     *
+     * <p>
      *
      * @return the contents of this <code>ResourceBundle</code>.
      */

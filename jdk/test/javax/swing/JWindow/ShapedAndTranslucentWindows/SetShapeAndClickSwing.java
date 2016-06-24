@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.awt.geom.Rectangle2D;
 
 /*
  * @test
+ * @key headful
  * @summary Check if a window set with shape clips the contents
  * Test Description: Check if PERPIXEL_TRANSPARENT translucency type is supported
  *      by the current platform. Proceed if it is supported. Apply different types

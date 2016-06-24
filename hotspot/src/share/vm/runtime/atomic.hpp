@@ -27,10 +27,13 @@
 
 #include "memory/allocation.hpp"
 
-class Atomic : AllStatic {
- private:
-  static jbyte cmpxchg_general(jbyte exchange_value, volatile jbyte* dest, jbyte compare_value);
+enum cmpxchg_memory_order {
+  memory_order_relaxed,
+  // Use value which doesn't interfere with C++2011. We need to be more conservative.
+  memory_order_conservative = 8
+};
 
+class Atomic : AllStatic {
  public:
   // Atomic operations on jlong types are not available on all 32-bit
   // platforms. If atomic ops on jlongs are defined here they must only
@@ -77,12 +80,12 @@ class Atomic : AllStatic {
   inline static intptr_t add_ptr(intptr_t add_value, volatile intptr_t* dest);
   inline static void*    add_ptr(intptr_t add_value, volatile void*     dest);
   // See comment above about using jlong atomics on 32-bit platforms
-  static jlong           add    (jlong    add_value, volatile jlong*    dest);
+  inline static jlong    add    (jlong    add_value, volatile jlong*    dest);
 
   // Atomically increment location. inc*() provide:
   // <fence> increment-dest <membar StoreLoad|StoreStore>
   inline static void inc    (volatile jint*     dest);
-  static void        inc    (volatile jshort*   dest);
+  inline static void inc    (volatile jshort*   dest);
   inline static void inc    (volatile size_t*   dest);
   inline static void inc_ptr(volatile intptr_t* dest);
   inline static void inc_ptr(volatile void*     dest);
@@ -90,7 +93,7 @@ class Atomic : AllStatic {
   // Atomically decrement a location. dec*() provide:
   // <fence> decrement-dest <membar StoreLoad|StoreStore>
   inline static void dec    (volatile jint*     dest);
-  static void        dec    (volatile jshort*   dest);
+  inline static void dec    (volatile jshort*   dest);
   inline static void dec    (volatile size_t*   dest);
   inline static void dec_ptr(volatile intptr_t* dest);
   inline static void dec_ptr(volatile void*     dest);
@@ -98,22 +101,22 @@ class Atomic : AllStatic {
   // Performs atomic exchange of *dest with exchange_value. Returns old
   // prior value of *dest. xchg*() provide:
   // <fence> exchange-value-with-dest <membar StoreLoad|StoreStore>
-  inline static jint     xchg    (jint         exchange_value, volatile jint*         dest);
-  static unsigned int    xchg    (unsigned int exchange_value, volatile unsigned int* dest);
-  inline static intptr_t xchg_ptr(intptr_t     exchange_value, volatile intptr_t*     dest);
-  inline static void*    xchg_ptr(void*        exchange_value, volatile void*         dest);
+  inline static jint         xchg    (jint         exchange_value, volatile jint*         dest);
+  inline static unsigned int xchg    (unsigned int exchange_value, volatile unsigned int* dest);
+  inline static intptr_t     xchg_ptr(intptr_t     exchange_value, volatile intptr_t*     dest);
+  inline static void*        xchg_ptr(void*        exchange_value, volatile void*         dest);
 
   // Performs atomic compare of *dest and compare_value, and exchanges
   // *dest with exchange_value if the comparison succeeded. Returns prior
   // value of *dest. cmpxchg*() provide:
   // <fence> compare-and-exchange <membar StoreLoad|StoreStore>
-  inline static jbyte    cmpxchg    (jbyte        exchange_value, volatile jbyte*        dest, jbyte        compare_value);
-  inline static jint     cmpxchg    (jint         exchange_value, volatile jint*         dest, jint         compare_value);
+  inline static jbyte        cmpxchg    (jbyte        exchange_value, volatile jbyte*        dest, jbyte        compare_value, cmpxchg_memory_order order = memory_order_conservative);
+  inline static jint         cmpxchg    (jint         exchange_value, volatile jint*         dest, jint         compare_value, cmpxchg_memory_order order = memory_order_conservative);
   // See comment above about using jlong atomics on 32-bit platforms
-  inline static jlong    cmpxchg    (jlong        exchange_value, volatile jlong*        dest, jlong        compare_value);
-  static unsigned int    cmpxchg    (unsigned int exchange_value, volatile unsigned int* dest, unsigned int compare_value);
-  inline static intptr_t cmpxchg_ptr(intptr_t     exchange_value, volatile intptr_t*     dest, intptr_t     compare_value);
-  inline static void*    cmpxchg_ptr(void*        exchange_value, volatile void*         dest, void*        compare_value);
+  inline static jlong        cmpxchg    (jlong        exchange_value, volatile jlong*        dest, jlong        compare_value, cmpxchg_memory_order order = memory_order_conservative);
+  inline static unsigned int cmpxchg    (unsigned int exchange_value, volatile unsigned int* dest, unsigned int compare_value, cmpxchg_memory_order order = memory_order_conservative);
+  inline static intptr_t     cmpxchg_ptr(intptr_t     exchange_value, volatile intptr_t*     dest, intptr_t     compare_value, cmpxchg_memory_order order = memory_order_conservative);
+  inline static void*        cmpxchg_ptr(void*        exchange_value, volatile void*         dest, void*        compare_value, cmpxchg_memory_order order = memory_order_conservative);
 };
 
 // To use Atomic::inc(jshort* dest) and Atomic::dec(jshort* dest), the address must be specially

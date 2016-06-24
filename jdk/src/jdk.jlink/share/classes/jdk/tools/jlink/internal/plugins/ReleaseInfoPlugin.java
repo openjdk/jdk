@@ -49,8 +49,8 @@ public final class ReleaseInfoPlugin implements TransformerPlugin {
     private final Map<String, String> release = new HashMap<>();
 
     @Override
-    public Set<Category> getType() {
-        return Collections.singleton(Category.METAINFO_ADDER);
+    public Category getType() {
+        return Category.METAINFO_ADDER;
     }
 
     @Override
@@ -97,10 +97,9 @@ public final class ReleaseInfoPlugin implements TransformerPlugin {
 
             case "del": {
                 // --release-info del:keys=openjdk,java_version
-                String[] keys = Utils.listParser.apply(config.get(KEYS));
-                for (String k : keys) {
+                Utils.parseList(config.get(KEYS)).stream().forEach((k) -> {
                     release.remove(k);
-                }
+                });
             }
             break;
 

@@ -428,16 +428,18 @@ public final class URL implements java.io.Serializable {
             authority = (port == -1) ? host : host + ":" + port;
         }
 
-        Parts parts = new Parts(file);
-        path = parts.getPath();
-        query = parts.getQuery();
-
-        if (query != null) {
+        int index = file.indexOf('#');
+        this.ref = index < 0 ? null : file.substring(index + 1);
+        file = index < 0 ? file : file.substring(0, index);
+        int q = file.lastIndexOf('?');
+        if (q != -1) {
+            this.query = file.substring(q + 1);
+            this.path = file.substring(0, q);
             this.file = path + "?" + query;
         } else {
+            this.path = file;
             this.file = path;
         }
-        ref = parts.getRef();
 
         // Note: we don't do validation of the URL here. Too risky to change
         // right now, but worth considering for future reference. -br
@@ -1614,35 +1616,6 @@ public final class URL implements java.io.Serializable {
 
     private void setSerializedHashCode(int hc) {
         this.hashCode = hc;
-    }
-}
-
-class Parts {
-    String path, query, ref;
-
-    Parts(String file) {
-        int ind = file.indexOf('#');
-        ref = ind < 0 ? null: file.substring(ind + 1);
-        file = ind < 0 ? file: file.substring(0, ind);
-        int q = file.lastIndexOf('?');
-        if (q != -1) {
-            query = file.substring(q+1);
-            path = file.substring(0, q);
-        } else {
-            path = file;
-        }
-    }
-
-    String getPath() {
-        return path;
-    }
-
-    String getQuery() {
-        return query;
-    }
-
-    String getRef() {
-        return ref;
     }
 }
 

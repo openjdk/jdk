@@ -1022,13 +1022,21 @@ AC_DEFUN([BASIC_CHECK_TAR],
   AC_MSG_CHECKING([what type of tar was found])
   AC_MSG_RESULT([$TAR_TYPE])
 
+  TAR_CREATE_FILE_PARAM=""
+
   if test "x$TAR_TYPE" = "xgnu"; then
     TAR_INCLUDE_PARAM="T"
     TAR_SUPPORTS_TRANSFORM="true"
+    if test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
+      # When using gnu tar for Solaris targets, need to use compatibility mode
+      TAR_CREATE_EXTRA_PARAM="--format=ustar"
+    fi
   else
     TAR_INCLUDE_PARAM="I"
     TAR_SUPPORTS_TRANSFORM="false"
   fi
+  AC_SUBST(TAR_TYPE)
+  AC_SUBST(TAR_CREATE_EXTRA_PARAM)
   AC_SUBST(TAR_INCLUDE_PARAM)
   AC_SUBST(TAR_SUPPORTS_TRANSFORM)
 ])

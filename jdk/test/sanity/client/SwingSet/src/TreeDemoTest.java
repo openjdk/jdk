@@ -21,16 +21,22 @@
  * questions.
  */
 
-import org.jtregext.GuiTestListener;
 import com.sun.swingset3.demos.tree.TreeDemo;
 import static com.sun.swingset3.demos.tree.TreeDemo.DEMO_TITLE;
+
+import java.awt.Component;
 import javax.swing.tree.TreePath;
-import static org.testng.AssertJUnit.*;
-import org.testng.annotations.Test;
+
+import org.jtregext.GuiTestListener;
+
 import org.netbeans.jemmy.ClassReference;
+import org.netbeans.jemmy.ComponentChooser;
 import org.netbeans.jemmy.operators.JFrameOperator;
 import org.netbeans.jemmy.operators.JTreeOperator;
+
 import org.testng.annotations.Listeners;
+import org.testng.annotations.Test;
+import static org.testng.AssertJUnit.*;
 
 /*
  * @test
@@ -45,12 +51,28 @@ import org.testng.annotations.Listeners;
  * @library /sanity/client/lib/jemmy/src
  * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
+ * @modules java.desktop
+ *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.tree.TreeDemo
  * @run testng TreeDemoTest
  */
 @Listeners(GuiTestListener.class)
 public class TreeDemoTest {
+
+    private static final int NODES_TO_EXPAND = 75;
+    private static final int NODES_TOTAL = 616;
+
+    private void waitRowCount(JTreeOperator tree, int count) {
+        tree.waitState(new ComponentChooser() {
+            public boolean checkComponent(Component comp) {
+                return tree.getRowCount() == count;
+            }
+            public String getDescription() {
+                return "A tree to have " + count + " rows";
+            }
+        });
+    }
 
     @Test
     public void test() throws Exception {
@@ -75,9 +97,8 @@ public class TreeDemoTest {
             }
         }
 
-        assertEquals("Number of rows expanded", 75, expandsCount);
-        assertEquals("Number of rows in the tree after expanding all of them",
-                616, tree.getRowCount());
+        assertEquals("Number of rows expanded", NODES_TO_EXPAND, expandsCount);
+        waitRowCount(tree, NODES_TOTAL);
 
         int expandedTreeHeight = tree.getHeight();
         assertTrue("Expanded tree height has increased, current "
@@ -94,9 +115,8 @@ public class TreeDemoTest {
             }
         }
 
-        assertEquals("Number of rows collapsed", 76, collapsesCount);
-        assertEquals("Number of rows in the tree after collapsing all of them",
-                1, tree.getRowCount());
+        assertEquals("Number of rows collapsed", NODES_TO_EXPAND + 1, collapsesCount);
+        waitRowCount(tree, 1);
 
         int collapsedTreeHeight = tree.getHeight();
         assertTrue("Collpased tree height is not longer than initial, "

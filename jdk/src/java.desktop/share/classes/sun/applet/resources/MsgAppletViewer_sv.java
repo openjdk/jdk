@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,8 @@ public class MsgAppletViewer_sv extends ListResourceBundle {
             {"appletviewer.parse.warning.embed.requiresheight", "Varning: <embed>-taggen kr\u00E4ver ett h\u00F6jdattribut."},
             {"appletviewer.parse.warning.embed.requireswidth", "Varning: <embed>-taggen kr\u00E4ver ett breddattribut."},
             {"appletviewer.parse.warning.appnotLongersupported", "Varning: <app>-taggen st\u00F6ds inte l\u00E4ngre, anv\u00E4nd <applet> ist\u00E4llet:"},
-            {"appletviewer.usage", "Syntax: appletviewer-<alternativ> url:er \n\nd\u00E4r <alternativ> inkluderar:\n  -debug                  Startar appletvisning i Java-fels\u00F6kningen\n  -encoding <kodning>    Anger teckenkodning  som anv\u00E4nds i HTML-filer\n  -J<k\u00F6rningsflagga>        \u00D6verf\u00F6r argument till Java-tolkningen\n\nAlternativet -J \u00E4r inte standard och kan \u00E4ndras utan f\u00F6reg\u00E5ende meddelande."},
+            {"appletviewer.deprecated", "AppletViewer \u00E4r inaktuellt."},
+            {"appletviewer.usage", "Syntax: appletviewer <options> url(s)\n\nd\u00E4r <options> \u00E4r:\n  -encoding <encoding>    Ange teckenkodning som anv\u00E4nds av HTML-filer\n  -J<runtime flag>        \u00D6verf\u00F6r argument till java-tolken\n\nAlternativet -J \u00E4r inte standard och kan \u00E4ndras utan f\u00F6reg\u00E5ende meddelande."},
             {"appletviewer.main.err.unsupportedopt", "Alternativ som inte st\u00F6ds: {0}"},
             {"appletviewer.main.err.unrecognizedarg", "Ok\u00E4nt argument: {0}"},
             {"appletviewer.main.err.dupoption", "Duplicerat alternativ: {0}"},
@@ -85,17 +86,17 @@ public class MsgAppletViewer_sv extends ListResourceBundle {
             {"appletviewer.main.prop.store", "Anv\u00E4ndarspecifika egenskaper f\u00F6r AppletViewer"},
             {"appletviewer.main.err.prop.cantread", "Kan inte l\u00E4sa egenskapsfilen: {0}"},
             {"appletviewer.main.err.prop.cantsave", "Kan inte spara egenskapsfilen: {0}"},
-            {"appletviewer.main.warn.nosecmgr", "Varning: s\u00E4kerheten inaktiveras."},
+            {"appletviewer.main.warn.nosecmgr", "Varning! S\u00E4kerheten avaktiveras."},
             {"appletviewer.main.debug.cantfinddebug", "Hittar inte fels\u00F6kningsprogrammet!"},
             {"appletviewer.main.debug.cantfindmain", "Hittar inte huvudmetoden i fels\u00F6kningsprogrammet!"},
             {"appletviewer.main.debug.exceptionindebug", "Undantag i fels\u00F6kningsprogrammet!"},
             {"appletviewer.main.debug.cantaccess", "Det finns ingen \u00E5tkomst till fels\u00F6kningsprogrammet!"},
             {"appletviewer.main.nosecmgr", "Varning: SecurityManager har inte installerats!"},
             {"appletviewer.main.warning", "Varning: Inga appletar har startats. Kontrollera att indata inneh\u00E5ller <applet>-tagg."},
-            {"appletviewer.main.warn.prop.overwrite", "Varning: Skriver tillf\u00E4lligt \u00F6ver systemegenskap enligt beg\u00E4ran fr\u00E5n anv\u00E4ndare: nyckel: {0} gammalt v\u00E4rde: {1} nytt v\u00E4rde: {2}"},
+            {"appletviewer.main.warn.prop.overwrite", "Varning: Skriver tillf\u00E4lligt \u00F6ver systemegenskap enligt beg\u00E4ran fr\u00E5n anv\u00E4ndare: nyckel: {0} tidigare v\u00E4rde: {1} nytt v\u00E4rde: {2}"},
             {"appletviewer.main.warn.cantreadprops", "Varning: Kan inte l\u00E4sa egenskapsfil f\u00F6r AppletViewer: {0} Standardv\u00E4rden anv\u00E4nds."},
-            {"appletioexception.loadclass.throw.interrupted", "klassinl\u00E4sning avbr\u00F6ts: {0}"},
-            {"appletioexception.loadclass.throw.notloaded", "klass inte inl\u00E4st: {0}"},
+            {"appletioexception.loadclass.throw.interrupted", "klassladdning avbr\u00F6ts: {0}"},
+            {"appletioexception.loadclass.throw.notloaded", "klass inte laddad: {0}"},
             {"appletclassloader.loadcode.verbose", "\u00D6ppnar str\u00F6m till: {0} f\u00F6r h\u00E4mtning av {1}"},
             {"appletclassloader.filenotfound", "Hittade inte fil vid s\u00F6kning efter: {0}"},
             {"appletclassloader.fileformat", "Undantag av filformat vid laddning av: {0}"},
@@ -124,7 +125,7 @@ public class MsgAppletViewer_sv extends ListResourceBundle {
             {"appletpanel.exception2", "undantag: {0}: {1}."},
             {"appletpanel.error", "fel: {0}."},
             {"appletpanel.error2", "fel {0}: {1}."},
-            {"appletpanel.notloaded", "Initiera: applet \u00E4r inte inl\u00E4st."},
+            {"appletpanel.notloaded", "Initiera: applet \u00E4r inte laddad."},
             {"appletpanel.notinited", "Starta: applet \u00E4r inte initierad."},
             {"appletpanel.notstarted", "Stoppa: applet har inte startats."},
             {"appletpanel.notstopped", "Radera: applet har inte stoppats."},
