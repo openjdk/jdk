@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.nio.file.Paths;
 /**
  * @test gc.g1.humongousObjects.TestHumongousNonArrayAllocation
  * @summary Checks that huge class' instances (ie with huge amount of fields) are allocated successfully
- * @requires vm.gc=="G1" | vm.gc=="null"
+ * @requires vm.gc.G1
  * @requires vm.opt.G1HeapRegionSize == "null" | vm.opt.G1HeapRegionSize == "1M"
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
