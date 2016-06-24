@@ -40,6 +40,8 @@ import org.testng.annotations.Listeners;
  * @library /sanity/client/lib/jemmy/src
  * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
+ * @modules java.desktop
+ *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.scrollpane.ScrollPaneDemo
  * @run testng ScrollPaneDemoTest

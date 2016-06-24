@@ -102,35 +102,42 @@ public class MonitoredVmUtil {
      */
     public static String mainClass(MonitoredVm vm, boolean fullPath)
                          throws MonitorException {
-        String commandLine = commandLine(vm);
-        String arg0 = commandLine;
-
-        int firstSpace = commandLine.indexOf(' ');
+        String cmdLine = commandLine(vm);
+        int firstSpace = cmdLine.indexOf(' ');
         if (firstSpace > 0) {
-            arg0 = commandLine.substring(0, firstSpace);
+            cmdLine = cmdLine.substring(0, firstSpace);
         }
-        if (!fullPath) {
+        if (fullPath) {
+            return cmdLine;
+        }
+        /*
+         * Can't use File.separator() here because the separator for the target
+         * jvm may be different than the separator for the monitoring jvm.
+         * And we also strip embedded module e.g. "module/MainClass"
+         */
+        int lastSlash = cmdLine.lastIndexOf("/");
+        int lastBackslash = cmdLine.lastIndexOf("\\");
+        int lastSeparator = lastSlash > lastBackslash ? lastSlash : lastBackslash;
+        if (lastSeparator > 0) {
+            cmdLine = cmdLine.substring(lastSeparator + 1);
+        }
+
+        int lastPackageSeparator = cmdLine.lastIndexOf('.');
+        if (lastPackageSeparator > 0) {
+            String lastPart = cmdLine.substring(lastPackageSeparator + 1);
             /*
-             * can't use File.separator() here because the separator
-             * for the target jvm may be different than the separator
-             * for the monitoring jvm.
+             * We could have a relative path "my.module" or
+             * a module called "my.module" and a jar file called "my.jar" or
+             * class named "jar" in package "my", e.g. "my.jar".
+             * We can never be sure here, but we assume *.jar is a jar file
              */
-            int lastFileSeparator = arg0.lastIndexOf('/');
-            if (lastFileSeparator > 0) {
-                 return arg0.substring(lastFileSeparator + 1);
+            if (lastPart.equals("jar")) {
+                return cmdLine; /* presumably a file name without path */
             }
-
-            lastFileSeparator = arg0.lastIndexOf('\\');
-            if (lastFileSeparator > 0) {
-                 return arg0.substring(lastFileSeparator + 1);
-            }
-
-            int lastPackageSeparator = arg0.lastIndexOf('.');
-            if (lastPackageSeparator > 0) {
-                 return arg0.substring(lastPackageSeparator + 1);
-            }
+            return lastPart; /* presumably a class name without package */
         }
-        return arg0;
+
+        return cmdLine;
     }
 
     /**

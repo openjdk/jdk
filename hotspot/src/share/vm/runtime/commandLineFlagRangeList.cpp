@@ -278,6 +278,7 @@ void emit_range_double(const char* name, double min, double max) {
 #define EMIT_RANGE_MANAGEABLE_FLAG(type, name, value, doc)   ); emit_range_##type(#name
 #define EMIT_RANGE_PRODUCT_RW_FLAG(type, name, value, doc)   ); emit_range_##type(#name
 #define EMIT_RANGE_PD_PRODUCT_FLAG(type, name, doc)          ); emit_range_##type(#name
+#define EMIT_RANGE_PD_DIAGNOSTIC_FLAG(type, name, doc)       ); emit_range_##type(#name
 #define EMIT_RANGE_DEVELOPER_FLAG(type, name, value, doc)    ); emit_range_##type(#name
 #define EMIT_RANGE_PD_DEVELOPER_FLAG(type, name, doc)        ); emit_range_##type(#name
 #define EMIT_RANGE_NOTPRODUCT_FLAG(type, name, value, doc)   ); emit_range_##type(#name
@@ -299,6 +300,7 @@ void CommandLineFlagRangeList::init(void) {
                                    EMIT_RANGE_PRODUCT_FLAG,
                                    EMIT_RANGE_PD_PRODUCT_FLAG,
                                    EMIT_RANGE_DIAGNOSTIC_FLAG,
+                                   EMIT_RANGE_PD_DIAGNOSTIC_FLAG,
                                    EMIT_RANGE_EXPERIMENTAL_FLAG,
                                    EMIT_RANGE_NOTPRODUCT_FLAG,
                                    EMIT_RANGE_MANAGEABLE_FLAG,
@@ -325,6 +327,7 @@ void CommandLineFlagRangeList::init(void) {
                                  EMIT_RANGE_PRODUCT_FLAG,
                                  EMIT_RANGE_PD_PRODUCT_FLAG,
                                  EMIT_RANGE_DIAGNOSTIC_FLAG,
+                                 EMIT_RANGE_PD_DIAGNOSTIC_FLAG,
                                  EMIT_RANGE_EXPERIMENTAL_FLAG,
                                  EMIT_RANGE_NOTPRODUCT_FLAG,
                                  EMIT_RANGE_CHECK,
@@ -338,6 +341,7 @@ void CommandLineFlagRangeList::init(void) {
                               EMIT_RANGE_PRODUCT_FLAG,
                               EMIT_RANGE_PD_PRODUCT_FLAG,
                               EMIT_RANGE_DIAGNOSTIC_FLAG,
+                              EMIT_RANGE_PD_DIAGNOSTIC_FLAG,
                               EMIT_RANGE_NOTPRODUCT_FLAG,
                               EMIT_RANGE_CHECK,
                               IGNORE_CONSTRAINT,
@@ -350,6 +354,7 @@ void CommandLineFlagRangeList::init(void) {
                               EMIT_RANGE_PRODUCT_FLAG,
                               EMIT_RANGE_PD_PRODUCT_FLAG,
                               EMIT_RANGE_DIAGNOSTIC_FLAG,
+                              EMIT_RANGE_PD_DIAGNOSTIC_FLAG,
                               EMIT_RANGE_EXPERIMENTAL_FLAG,
                               EMIT_RANGE_NOTPRODUCT_FLAG,
                               EMIT_RANGE_CHECK,
@@ -363,6 +368,7 @@ void CommandLineFlagRangeList::init(void) {
                               EMIT_RANGE_PRODUCT_FLAG,
                               EMIT_RANGE_PD_PRODUCT_FLAG,
                               EMIT_RANGE_DIAGNOSTIC_FLAG,
+                              EMIT_RANGE_PD_DIAGNOSTIC_FLAG,
                               EMIT_RANGE_EXPERIMENTAL_FLAG,
                               EMIT_RANGE_NOTPRODUCT_FLAG,
                               EMIT_RANGE_MANAGEABLE_FLAG,

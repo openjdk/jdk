@@ -30,6 +30,7 @@ import sun.awt.SunToolkit;
 
 /**
  * @test
+ * @key headful
  * @bug 8136858
  * @modules java.desktop/sun.awt
  * @run main/othervm/java.security.policy=java.policy -Djava.security.manager ApplicationThreadsStop

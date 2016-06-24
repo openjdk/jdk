@@ -41,6 +41,7 @@ import test.java.awt.regtesthelpers.Util;
 
 /**
  * @test
+ * @key headful
  * @bug 4955110
  * @summary tests that DragSourceDragEvent.getDropAction() accords to its new
  *          spec (does not depend on the user drop action)

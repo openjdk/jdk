@@ -148,9 +148,20 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
         Component toFocus =
             KeyboardFocusManager.getMostRecentFocusOwner(aWindow);
 
-        if (toFocus != null && toFocus != vetoedComponent && doRestoreFocus(toFocus, vetoedComponent, false)) {
-            return true;
-        } else if (clearOnFailure) {
+        if (toFocus != null && toFocus != vetoedComponent) {
+            Component heavyweight = getHeavyweight(aWindow);
+            if (heavyweight != null) {
+                setNativeFocusOwner(heavyweight);
+                Toolkit.getEventQueue().createSecondaryLoop(
+                        () -> getGlobalFocusedWindow() != aWindow, null, 50)
+                        .enter();
+            }
+            if (getGlobalFocusedWindow() == aWindow &&
+                              doRestoreFocus(toFocus, vetoedComponent, false)) {
+                return true;
+            }
+        }
+        if (clearOnFailure) {
             clearGlobalFocusOwnerPriv();
             return true;
         } else {

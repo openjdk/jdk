@@ -584,6 +584,8 @@ public final class TaskHelper {
                     showPlugin(plugin, log, showsImageBuilder);
                 }
             }
+
+            log.println("\n" + bundleHelper.getMessage("main.extended.help.footer"));
         }
 
         private void showPlugin(Plugin plugin, PrintWriter log, boolean showsImageBuilder) {

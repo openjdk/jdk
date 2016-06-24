@@ -24,6 +24,7 @@
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.Layer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,6 +35,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import jdk.tools.jlink.plugin.Plugin;
+import jdk.tools.jlink.plugin.TransformerPlugin;
 import jdk.tools.jlink.internal.PluginRepository;
 import tests.Helper;
 import tests.JImageGenerator;
@@ -54,6 +56,13 @@ import tests.JImageGenerator.InMemoryFile;
  * @run main/othervm -verbose:gc -Xmx1g JLinkTest
  */
 public class JLinkTest {
+    // number of built-in plugins from jdk.jlink module
+    private static int getNumJlinkPlugins() {
+        ModuleDescriptor desc = Plugin.class.getModule().getDescriptor();
+        return desc.provides().
+                    get(TransformerPlugin.class.getName()).
+                    providers().size();
+    }
 
     public static void main(String[] args) throws Exception {
 
@@ -63,7 +72,7 @@ public class JLinkTest {
             return;
         }
         helper.generateDefaultModules();
-        int numPlugins = 13;
+        int numPlugins = getNumJlinkPlugins();
         {
             // number of built-in plugins
             List<Plugin> builtInPlugins = new ArrayList<>();
@@ -72,7 +81,9 @@ public class JLinkTest {
                 p.getState();
                 p.getType();
             }
-            if (builtInPlugins.size() != numPlugins) {
+            // Note: other boot layer modules may provide jlink plugins.
+            // We should at least see the builtin plugins from jdk.jlink.
+            if (builtInPlugins.size() < numPlugins) {
                 throw new AssertionError("Found plugins doesn't match expected number : " +
                         numPlugins + "\n" + builtInPlugins);
             }

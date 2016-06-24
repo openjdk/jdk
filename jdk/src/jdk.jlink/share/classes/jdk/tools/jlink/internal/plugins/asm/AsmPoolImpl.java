@@ -93,8 +93,7 @@ final class AsmPoolImpl implements AsmModulePool {
             }
 
             byte[] content = writer.toByteArray();
-            ModuleEntry res = ModuleEntry.create(path,
-                    new ByteArrayInputStream(content), content.length);
+            ModuleEntry res = ModuleEntry.create(path, content);
             transformedClasses.put(className, res);
         }
 

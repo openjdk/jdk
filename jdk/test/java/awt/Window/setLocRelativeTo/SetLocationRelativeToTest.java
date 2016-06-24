@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,16 @@ import java.util.ArrayList;
 import javax.swing.*;
 
 /*
-@test
-@summary Toplevel should be correctly positioned as relative to a component:
-       so that their centers coincide
-       or, if the component is hidden, centered on the screen.
-@bug 8036915
-@library ../../../../lib/testlibrary
-@build ExtendedRobot
-@run main/timeout=1200 SetLocationRelativeToTest
-*/
+ * @test
+ * @key headful
+ * @summary Toplevel should be correctly positioned as relative to a component:
+ *          so that their centers coincide
+ *          or, if the component is hidden, centered on the screen.
+ * @bug 8036915
+ * @library ../../../../lib/testlibrary
+ * @build ExtendedRobot
+ * @run main/timeout=1200 SetLocationRelativeToTest
+ */
 
 public class SetLocationRelativeToTest {
     private static int delay = 500;

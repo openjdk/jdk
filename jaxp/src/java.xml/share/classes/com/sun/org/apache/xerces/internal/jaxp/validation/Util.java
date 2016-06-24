@@ -51,7 +51,7 @@ final class Util {
             in.getInputStream(), null );
 
         return new XMLInputSource(
-        in.getPublicId(), in.getSystemId(), in.getSystemId() );
+        in.getPublicId(), in.getSystemId(), in.getSystemId(), false );
     }
 
     /**

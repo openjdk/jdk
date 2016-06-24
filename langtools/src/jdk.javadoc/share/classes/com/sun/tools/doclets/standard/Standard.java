@@ -28,6 +28,11 @@ package com.sun.tools.doclets.standard;
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.*;
 
+/**
+ * This doclet generates HTML-formatted documentation for the specified packages and types.
+ * @deprecated The doclet has been superseded by its replacement,
+ * {@code jdk.javadoc.doclets.StandardDoclet}.
+ */
 @Deprecated
 public class Standard {
 

@@ -93,6 +93,8 @@ public abstract class ScriptFunctionData implements Serializable {
     public static final int IS_VARIABLE_ARITY    = 1 << 5;
     /** Is this a object literal property getter or setter? */
     public static final int IS_PROPERTY_ACCESSOR = 1 << 6;
+    /** Is this an ES6 method? */
+    public static final int IS_ES6_METHOD        = 1 << 7;
 
     /** Flag for strict or built-in functions */
     public static final int IS_STRICT_OR_BUILTIN = IS_STRICT | IS_BUILTIN;
@@ -130,10 +132,6 @@ public abstract class ScriptFunctionData implements Serializable {
         return (flags & IS_VARIABLE_ARITY) != 0;
     }
 
-    final boolean isPropertyAccessor() {
-        return (flags & IS_PROPERTY_ACCESSOR) != 0;
-    }
-
     /**
      * Used from e.g. Native*$Constructors as an explicit call. TODO - make arity immutable and final
      * @param arity new arity
@@ -148,7 +146,7 @@ public abstract class ScriptFunctionData implements Serializable {
     /**
      * Used from nasgen generated code.
      *
-     * @param doc documentation for this function
+     * @param docKey documentation key for this function
      */
     void setDocumentationKey(final String docKey) {
     }

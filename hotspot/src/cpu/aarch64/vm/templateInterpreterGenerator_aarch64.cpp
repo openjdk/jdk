@@ -682,7 +682,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   __ mov(r0, overhead_size);
   __ add(r0, r0, r3, Assembler::LSL, Interpreter::logStackElementSize);  // 2 slots per parameter.
 
-  const Address stack_limit(rthread, Thread::stack_overflow_limit_offset());
+  const Address stack_limit(rthread, JavaThread::stack_overflow_limit_offset());
   __ ldr(rscratch1, stack_limit);
 
 #ifdef ASSERT
@@ -690,7 +690,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   // Verify that thread stack limit is non-zero.
   __ cbnz(rscratch1, limit_okay);
   __ stop("stack overflow limit is zero");
-  __ bind(stack_base_okay);
+  __ bind(limit_okay);
 #endif
 
   // Add stack limit to locals.

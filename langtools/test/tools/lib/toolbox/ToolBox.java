@@ -369,13 +369,25 @@ public class ToolBox {
      * @throws IOException if an error occurred while searching for files
      */
     public Path[] findJavaFiles(Path... paths) throws IOException {
+        return findFiles(".java", paths);
+    }
+
+    /**
+     * Find files matching the file extension, in one or more directories.
+     * <p>Similar to the shell "find" command: {@code find paths -name \*.ext}.
+     * @param fileExtension the extension to search for
+     * @param paths the directories in which to search for files
+     * @return the files matching the file extension
+     * @throws IOException if an error occurred while searching for files
+     */
+    public Path[] findFiles(String fileExtension, Path... paths) throws IOException {
         Set<Path> files = new TreeSet<>();  // use TreeSet to force a consistent order
         for (Path p : paths) {
             Files.walkFileTree(p, new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                         throws IOException {
-                    if (file.getFileName().toString().endsWith(".java")) {
+                    if (file.getFileName().toString().endsWith(fileExtension)) {
                         files.add(file);
                     }
                     return FileVisitResult.CONTINUE;

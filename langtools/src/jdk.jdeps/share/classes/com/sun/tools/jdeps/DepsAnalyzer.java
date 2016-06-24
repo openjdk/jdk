@@ -181,11 +181,11 @@ public class DepsAnalyzer {
      * Returns the dependences, either class name or package name
      * as specified in the given verbose level.
      */
-    Stream<String> dependences() {
+    Set<String> dependences() {
         return analyzer.archives().stream()
                        .map(analyzer::dependences)
                        .flatMap(Set::stream)
-                       .distinct();
+                       .collect(Collectors.toSet());
     }
 
     /**
