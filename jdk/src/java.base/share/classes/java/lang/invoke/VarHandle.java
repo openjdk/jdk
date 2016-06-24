@@ -139,7 +139,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * {@link #weakCompareAndSetAcquire weakCompareAndSetAcquire},
  * {@link #weakCompareAndSetRelease weakCompareAndSetRelease},
  * {@link #compareAndExchangeAcquire compareAndExchangeAcquire},
- * {@link #compareAndExchangeVolatile compareAndExchangeVolatile},
+ * {@link #compareAndExchange compareAndExchange},
  * {@link #compareAndExchangeRelease compareAndExchangeRelease},
  * {@link #getAndSet getAndSet}.
  * <li>numeric atomic update access modes that, for example, atomically get and
@@ -706,9 +706,9 @@ public abstract class VarHandle {
      * <p>The method signature is of the form {@code (CT, T expectedValue, T newValue)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code
-     * compareAndExchangeVolatile}
+     * compareAndExchange}
      * must match the access mode type that is the result of calling
-     * {@code accessModeType(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE)}
+     * {@code accessModeType(VarHandle.AccessMode.COMPARE_AND_EXCHANGE)}
      * on this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
@@ -729,7 +729,7 @@ public abstract class VarHandle {
     public final native
     @MethodHandle.PolymorphicSignature
     @HotSpotIntrinsicCandidate
-    Object compareAndExchangeVolatile(Object... args);
+    Object compareAndExchange(Object... args);
 
     /**
      * Atomically sets the value of a variable to the {@code newValue} with the
@@ -1199,9 +1199,9 @@ public abstract class VarHandle {
         /**
          * The access mode whose access is specified by the corresponding
          * method
-         * {@link VarHandle#compareAndExchangeVolatile VarHandle.compareAndExchangeVolatile}
+         * {@link VarHandle#compareAndExchange VarHandle.compareAndExchange}
          */
-        COMPARE_AND_EXCHANGE_VOLATILE("compareAndExchangeVolatile", AccessType.COMPARE_AND_EXCHANGE),
+        COMPARE_AND_EXCHANGE("compareAndExchange", AccessType.COMPARE_AND_EXCHANGE),
         /**
          * The access mode whose access is specified by the corresponding
          * method
