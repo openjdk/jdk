@@ -24,10 +24,10 @@
 /*
  * @test
  * @bug 8137167
- * @ignore 8140405
  * @summary Tests jcmd to be able to clear directives added via options
  * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib ../share /
+ * @ignore 8140405
  * @build compiler.compilercontrol.jcmd.ClearDirectivesFileStackTest
  *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
