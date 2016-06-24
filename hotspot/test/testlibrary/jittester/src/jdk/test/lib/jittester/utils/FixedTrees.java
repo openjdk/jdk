@@ -23,9 +23,11 @@
 
 package jdk.test.lib.jittester.utils;
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+
 import jdk.test.lib.jittester.BinaryOperator;
 import jdk.test.lib.jittester.Block;
 import jdk.test.lib.jittester.CatchBlock;
@@ -60,6 +62,8 @@ import jdk.test.lib.jittester.types.TypeArray;
 import jdk.test.lib.jittester.types.TypeKlass;
 
 public class FixedTrees {
+    private static final Literal EOL = new Literal("\n", TypeList.STRING);
+
     public static FunctionDefinition printVariablesAsFunction(PrintVariables node) {
         TypeKlass owner = node.getOwner();
 
@@ -72,7 +76,6 @@ public class FixedTrees {
         List<Symbol> vars = node.getVars();
 
         TypeKlass printerKlass = new TypeKlass(Printer.class.getName());
-        Literal EOL = new Literal("\n", TypeList.STRING);
         VariableInfo thisInfo = new VariableInfo("this", node.getOwner(),
                 node.getOwner(), VariableInfo.LOCAL | VariableInfo.INITIALIZED);
 
@@ -109,6 +112,7 @@ public class FixedTrees {
         FunctionInfo toStringInfo = new FunctionInfo("toString", owner, TypeList.STRING, 0L, FunctionInfo.PUBLIC, thisInfo);
         return new FunctionDefinition(toStringInfo, new ArrayList<>(), block, new Return(resultVar));
     }
+
     public static FunctionDefinition generateMainOrExecuteMethod(TypeKlass owner, boolean isMain) {
         Nothing nothing = new Nothing();
         ArrayList<IRNode> testCallNodeContent = new ArrayList<>();
@@ -149,39 +153,50 @@ public class FixedTrees {
         List<Type> throwables = new ArrayList<>();
         throwables.add(throwableKlass);
 
-        VariableInfo exInfo = new VariableInfo("ex", owner, throwableKlass,
-                VariableInfo.LOCAL | VariableInfo.INITIALIZED);
-        FunctionInfo printStackTraceInfo = new FunctionInfo("printStackTrace", throwableKlass,
-                TypeList.VOID, 0, FunctionInfo.PUBLIC, exInfo);
-        Function printStackTraceCall = new Function(throwableKlass, printStackTraceInfo, null);
-        printStackTraceCall.addChild(new LocalVariable(exInfo));
-        ArrayList<IRNode> printStackTraceCallBlockContent = new ArrayList<>();
-        // { ex.printStackTrace(); }
-        printStackTraceCallBlockContent.add(new Statement(printStackTraceCall, true));
-
-        Block printStackTraceCallBlock = new Block(owner, TypeList.VOID, printStackTraceCallBlockContent, 3);
-        List<CatchBlock> catchBlocks1 = new ArrayList<>();
-        catchBlocks1.add(new CatchBlock(printStackTraceCallBlock, throwables, 3));
-        List<CatchBlock> catchBlocks2 = new ArrayList<>();
-        catchBlocks2.add(new CatchBlock(printStackTraceCallBlock, throwables, 3));
-        List<CatchBlock> catchBlocks3 = new ArrayList<>();
-        catchBlocks3.add(new CatchBlock(printStackTraceCallBlock, throwables, 2));
-
-        TryCatchBlock tryCatch1 = new TryCatchBlock(tryNode, nothing, catchBlocks1, 3);
         TypeKlass printStreamKlass = new TypeKlass("java.io.PrintStream");
-        TypeKlass systemKlass = new TypeKlass("java.lang.System");
-        FunctionInfo systemOutPrintInfo = new FunctionInfo("print", printStreamKlass,
+        FunctionInfo printInfo = new FunctionInfo("print", printStreamKlass,
                 TypeList.VOID, 0, FunctionInfo.PUBLIC,
                 new VariableInfo("this", owner, printStreamKlass, VariableInfo.LOCAL | VariableInfo.INITIALIZED),
                 new VariableInfo("t", owner, TypeList.OBJECT,
                         VariableInfo.LOCAL  | VariableInfo.INITIALIZED));
+        TypeKlass systemKlass = new TypeKlass("java.lang.System");
+        StaticMemberVariable systemErrVar = new StaticMemberVariable(owner,
+                new VariableInfo("err", systemKlass, printStreamKlass, VariableInfo.STATIC | VariableInfo.PUBLIC));
+
+        LocalVariable exVar = new LocalVariable(
+                new VariableInfo("ex", owner, throwableKlass, VariableInfo.LOCAL | VariableInfo.INITIALIZED));
+        TypeKlass classKlass = new TypeKlass("java.lang.Class");
+        FunctionInfo getClassInfo = new FunctionInfo("getClass", TypeList.OBJECT,
+                classKlass, 0, FunctionInfo.PUBLIC,
+                new VariableInfo("this", owner, TypeList.OBJECT, VariableInfo.LOCAL | VariableInfo.INITIALIZED));
+        Function getClass = new Function(TypeList.OBJECT, getClassInfo, Arrays.asList(exVar));
+        FunctionInfo getNameInfo = new FunctionInfo("getName", classKlass,
+                TypeList.STRING, 0, FunctionInfo.PUBLIC,
+                new VariableInfo("this", owner, TypeList.OBJECT, VariableInfo.LOCAL | VariableInfo.INITIALIZED));
+        Function getName = new Function(classKlass, getNameInfo, Arrays.asList(getClass));
+        ArrayList<IRNode> printExceptionBlockContent = new ArrayList<>();
+        // { System.err.print(ex.getClass().getName()); System.err.print("\n"); }
+        printExceptionBlockContent.add(new Statement(
+            new Function(printStreamKlass, printInfo, Arrays.asList(systemErrVar, getName)), true));
+        printExceptionBlockContent.add(new Statement(
+            new Function(printStreamKlass, printInfo, Arrays.asList(systemErrVar, EOL)), true));
+
+        Block printExceptionBlock = new Block(owner, TypeList.VOID, printExceptionBlockContent, 3);
+        List<CatchBlock> catchBlocks1 = new ArrayList<>();
+        catchBlocks1.add(new CatchBlock(printExceptionBlock, throwables, 3));
+        List<CatchBlock> catchBlocks2 = new ArrayList<>();
+        catchBlocks2.add(new CatchBlock(printExceptionBlock, throwables, 3));
+        List<CatchBlock> catchBlocks3 = new ArrayList<>();
+        catchBlocks3.add(new CatchBlock(printExceptionBlock, throwables, 2));
+
+        TryCatchBlock tryCatch1 = new TryCatchBlock(tryNode, nothing, catchBlocks1, 3);
         List<IRNode> printArgs = new ArrayList<>();
         VariableInfo systemOutInfo = new VariableInfo("out", systemKlass, printStreamKlass,
                 VariableInfo.STATIC | VariableInfo.PUBLIC);
         StaticMemberVariable systemOutVar = new StaticMemberVariable(owner, systemOutInfo);
         printArgs.add(systemOutVar);
         printArgs.add(tVar);
-        Function print = new Function(printStreamKlass, systemOutPrintInfo, printArgs);
+        Function print = new Function(printStreamKlass, printInfo, printArgs);
         ArrayList<IRNode> printBlockContent = new ArrayList<>();
         printBlockContent.add(new Statement(print, true));
         Block printBlock = new Block(owner, TypeList.VOID, printBlockContent, 3);
