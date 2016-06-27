@@ -5094,7 +5094,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1466007828
+DATE_WHEN_GENERATED=1467039751
 
 ###############################################################################
 #
@@ -36621,7 +36621,6 @@ $as_echo "yes" >&6; }
   # Setup the assembler (AS)
   #
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    # FIXME: should this really be solaris, or solstudio?
 
 
   # Publish this variable in the help.
@@ -37105,6 +37104,9 @@ $as_echo "$as_me: Rewriting AS to \"$new_complete\"" >&6;}
     fi
   fi
 
+    if test "x$AS" = x; then
+      as_fn_error $? "Solaris assembler (as) is required. Please install via \"pkg install pkg:/developer/assembler\"." "$LINENO" 5
+    fi
   else
     # FIXME: is this correct for microsoft?
     AS="$CC -c"
