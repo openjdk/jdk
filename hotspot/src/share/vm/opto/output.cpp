@@ -952,7 +952,7 @@ CodeBuffer* Compile::init_buffer(uint* blk_starts) {
   // Set the initially allocated size
   int  code_req   = initial_code_capacity;
   int  locs_req   = initial_locs_capacity;
-  int  stub_req   = TraceJumps ? initial_stub_capacity * 10 : initial_stub_capacity;
+  int  stub_req   = initial_stub_capacity;
   int  const_req  = initial_const_capacity;
 
   int  pad_req    = NativeCall::instruction_size;

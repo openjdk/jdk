@@ -3368,9 +3368,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   // setup code generation tools
   // Measured 8/7/03 at 896 in 32bit debug build (no VerifyThread)
   // Measured 8/7/03 at 1080 in 32bit debug build (VerifyThread)
-  // even larger with TraceJumps
-  int pad = TraceJumps ? 512 : 0;
-  CodeBuffer buffer("handler_blob", 1600 + pad, 512);
+  CodeBuffer buffer("handler_blob", 1600, 512);
   MacroAssembler* masm                = new MacroAssembler(&buffer);
   int             frame_size_words;
   OopMapSet *oop_maps = new OopMapSet();
@@ -3462,9 +3460,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   // setup code generation tools
   // Measured 8/7/03 at 896 in 32bit debug build (no VerifyThread)
   // Measured 8/7/03 at 1080 in 32bit debug build (VerifyThread)
-  // even larger with TraceJumps
-  int pad = TraceJumps ? 512 : 0;
-  CodeBuffer buffer(name, 1600 + pad, 512);
+  CodeBuffer buffer(name, 1600, 512);
   MacroAssembler* masm                = new MacroAssembler(&buffer);
   int             frame_size_words;
   OopMapSet *oop_maps = new OopMapSet();

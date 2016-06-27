@@ -33,12 +33,10 @@
 
 int InlineCacheBuffer::ic_stub_code_size() {
 #ifdef _LP64
-  if (TraceJumps) return 600 * wordSize;
   return (NativeMovConstReg::instruction_size +  // sethi;add
           NativeJump::instruction_size +          // sethi; jmp; delay slot
           (1*BytesPerInstWord) + 1);            // flush + 1 extra byte
 #else
-  if (TraceJumps) return 300 * wordSize;
   return (2+2+ 1) * wordSize + 1; // set/jump_to/nop + 1 byte so that code_end can be set in CodeBuffer
 #endif
 }
