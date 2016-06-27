@@ -165,11 +165,11 @@ public class ExcludeVMPluginTest {
         // Create a pool with jvm.cfg and the input paths.
         byte[] jvmcfgContent = jvmcfg.getBytes();
         ModulePool pool = new ModulePoolImpl();
-        pool.add(ModuleEntry.create("java.base", "/java.base/native/jvm.cfg",
-                ModuleEntry.Type.NATIVE_LIB, new ByteArrayInputStream(jvmcfgContent), jvmcfgContent.length));
+        pool.add(ModuleEntry.create("/java.base/native/jvm.cfg",
+                ModuleEntry.Type.NATIVE_LIB, jvmcfgContent));
         for (String in : input) {
-            pool.add(ModuleEntry.create("java.base", in,
-                    ModuleEntry.Type.NATIVE_LIB, new ByteArrayInputStream(new byte[0]), 0));
+            pool.add(ModuleEntry.create(in,
+                    ModuleEntry.Type.NATIVE_LIB, new byte[0]));
         }
         ModulePool out = new ModulePoolImpl();
 

@@ -280,12 +280,11 @@ public class ClassGenerator {
         addField(cv, name, OBJECT_DESC);
     }
 
-    @SuppressWarnings("deprecation")
     static void newFunction(final MethodGenerator mi, final String objName, final String className, final MemberInfo memInfo, final List<MemberInfo> specs) {
         final boolean arityFound = (memInfo.getArity() != MemberInfo.DEFAULT_ARITY);
 
         loadFunctionName(mi, memInfo.getName());
-        mi.visitLdcInsn(new Handle(H_INVOKESTATIC, className, memInfo.getJavaName(), memInfo.getJavaDesc()));
+        mi.visitLdcInsn(new Handle(H_INVOKESTATIC, className, memInfo.getJavaName(), memInfo.getJavaDesc(), false));
 
         assert specs != null;
         if (!specs.isEmpty()) {
@@ -306,7 +305,6 @@ public class ClassGenerator {
         mi.invokeVirtual(SCRIPTFUNCTION_TYPE, SCRIPTFUNCTION_SETDOCUMENTATIONKEY, SCRIPTFUNCTION_SETDOCUMENTATIONKEY_DESC);
     }
 
-    @SuppressWarnings("deprecation")
     static void linkerAddGetterSetter(final MethodGenerator mi, final String className, final MemberInfo memInfo) {
         final String propertyName = memInfo.getName();
         // stack: Collection
@@ -319,13 +317,13 @@ public class ClassGenerator {
         mi.push(memInfo.getAttributes());
         // setup getter method handle
         String javaName = GETTER_PREFIX + memInfo.getJavaName();
-        mi.visitLdcInsn(new Handle(H_INVOKEVIRTUAL, className, javaName, getterDesc(memInfo)));
+        mi.visitLdcInsn(new Handle(H_INVOKEVIRTUAL, className, javaName, getterDesc(memInfo), false));
         // setup setter method handle
         if (memInfo.isFinal()) {
             mi.pushNull();
         } else {
             javaName = SETTER_PREFIX + memInfo.getJavaName();
-            mi.visitLdcInsn(new Handle(H_INVOKEVIRTUAL, className, javaName, setterDesc(memInfo)));
+            mi.visitLdcInsn(new Handle(H_INVOKEVIRTUAL, className, javaName, setterDesc(memInfo), false));
         }
         // property = AccessorProperty.create(key, flags, getter, setter);
         mi.invokeStatic(ACCESSORPROPERTY_TYPE, ACCESSORPROPERTY_CREATE, ACCESSORPROPERTY_CREATE_DESC);
@@ -336,7 +334,6 @@ public class ClassGenerator {
         // stack: Collection
     }
 
-    @SuppressWarnings("deprecation")
     static void linkerAddGetterSetter(final MethodGenerator mi, final String className, final MemberInfo getter, final MemberInfo setter) {
         final String propertyName = getter.getName();
         // stack: Collection
@@ -349,13 +346,13 @@ public class ClassGenerator {
         mi.push(getter.getAttributes());
         // setup getter method handle
         mi.visitLdcInsn(new Handle(H_INVOKESTATIC, className,
-                getter.getJavaName(), getter.getJavaDesc()));
+                getter.getJavaName(), getter.getJavaDesc(), false));
         // setup setter method handle
         if (setter == null) {
             mi.pushNull();
         } else {
             mi.visitLdcInsn(new Handle(H_INVOKESTATIC, className,
-                    setter.getJavaName(), setter.getJavaDesc()));
+                    setter.getJavaName(), setter.getJavaDesc(), false));
         }
         // property = AccessorProperty.create(key, flags, getter, setter);
         mi.invokeStatic(ACCESSORPROPERTY_TYPE, ACCESSORPROPERTY_CREATE, ACCESSORPROPERTY_CREATE_DESC);

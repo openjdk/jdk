@@ -715,5 +715,14 @@ public class Basic {
         assertTrue(childCount != 0);
         assertEquals(dirPrefixOkayCount, childCount);
     }
+
+    @Test
+    public void objectClassSizeTest() throws Exception {
+        String path = "/modules/java.base/java/lang/Object.class";
+        FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
+        Path classFile = fs.getPath(path);
+
+        assertTrue(Files.size(classFile) > 0L);
+    }
 }
 

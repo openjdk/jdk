@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
-import sun.util.logging.PlatformLogger;
 
 /**
  * A Charset implementation for reading PropertyResourceBundle, in order
@@ -94,12 +93,11 @@ public class PropertyResourceBundleCharset extends Charset {
                 return cr;
             }
 
+            // Invalid or unmappable UTF-8 sequence detected.
+            // Switching to the ISO 8859-1 decorder.
+            assert cr.isMalformed() || cr.isUnmappable();
             in.reset();
             out.reset();
-
-            PlatformLogger.getLogger(getClass().getCanonicalName()).info(
-                "Invalid or unmappable UTF-8 sequence detected. " +
-                "Switching encoding from UTF-8 to ISO-8859-1");
             cdISO_8859_1 = StandardCharsets.ISO_8859_1.newDecoder();
             return cdISO_8859_1.decode(in, out, false);
         }

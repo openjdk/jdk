@@ -80,8 +80,17 @@ final class RegExpScanner extends Scanner {
             this.negLookaheadLevel = negLookaheadLevel;
         }
 
-        boolean isContained(final int group, final int level) {
-            return group == this.negLookaheadGroup && level >= this.negLookaheadLevel;
+        /**
+         * Returns true if this Capture can be referenced from the position specified by the
+         * group and level parameters. This is the case if either the group is not within
+         * a negative lookahead, or the position of the referrer is in the same negative lookahead.
+         *
+         * @param group current negative lookahead group
+         * @param level current negative lokahead level
+         * @return true if this capture group can be referenced from the given position
+         */
+        boolean canBeReferencedFrom(final int group, final int level) {
+            return this.negLookaheadLevel == 0 || (group == this.negLookaheadGroup && level >= this.negLookaheadLevel);
         }
 
     }
@@ -671,8 +680,9 @@ final class RegExpScanner extends Scanner {
 
                 } else if (decimalValue <= caps.size()) {
                     //  Captures inside a negative lookahead are undefined when referenced from the outside.
-                    if (!caps.get(decimalValue - 1).isContained(negLookaheadGroup, negLookaheadLevel)) {
-                        // Reference to capture in negative lookahead, omit from output buffer.
+                    final Capture capture = caps.get(decimalValue - 1);
+                    if (!capture.canBeReferencedFrom(negLookaheadGroup, negLookaheadLevel)) {
+                        // Outside reference to capture in negative lookahead, omit from output buffer.
                         sb.setLength(sb.length() - 1);
                     } else {
                         // Append backreference to output buffer.

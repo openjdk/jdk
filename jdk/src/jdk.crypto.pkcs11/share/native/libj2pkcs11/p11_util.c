@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -1142,4 +1142,16 @@ void p11free(void *p, char *file, int line) {
 }
 
 #endif
+
+// prints a message to stdout if debug output is enabled
+void printDebug(const char *format, ...) {
+    if (debug == JNI_TRUE) {
+        va_list args;
+        fprintf(stdout, "sunpkcs11: ");
+        va_start(args, format);
+        vfprintf(stdout, format, args);
+        va_end(args);
+        fflush(stdout);
+    }
+}
 

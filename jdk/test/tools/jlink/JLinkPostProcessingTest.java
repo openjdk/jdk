@@ -26,10 +26,8 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import jdk.tools.jlink.internal.PluginRepository;
 import jdk.tools.jlink.plugin.ExecutableImage;
@@ -75,10 +73,8 @@ public class JLinkPostProcessingTest {
         }
 
         @Override
-        public Set<Category> getType() {
-            Set<Category> set = new HashSet<>();
-            set.add(Category.PROCESSOR);
-            return Collections.unmodifiableSet(set);
+        public Category getType() {
+            return Category.PROCESSOR;
         }
 
         @Override
