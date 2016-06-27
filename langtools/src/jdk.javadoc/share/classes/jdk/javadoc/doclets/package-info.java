@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,43 +23,8 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.standard;
+/**
+ * This package contains standard, supported doclets.
+ */
+package jdk.javadoc.doclets;
 
-import java.util.Locale;
-import java.util.Set;
-
-import javax.lang.model.SourceVersion;
-
-import jdk.javadoc.doclet.Doclet;
-import jdk.javadoc.doclet.DocletEnvironment;
-import jdk.javadoc.doclet.Reporter;
-import jdk.javadoc.internal.doclets.formats.html.HtmlDoclet;
-
-public class Standard implements Doclet {
-
-    private final HtmlDoclet htmlDoclet;
-
-    public Standard() {
-        htmlDoclet = new HtmlDoclet();
-    }
-
-    public void init(Locale locale, Reporter reporter) {
-        htmlDoclet.init(locale, reporter);
-    }
-
-    public String getName() {
-        return "Standard";
-    }
-
-    public Set<Doclet.Option> getSupportedOptions() {
-        return htmlDoclet.getSupportedOptions();
-    }
-
-    public SourceVersion getSupportedSourceVersion() {
-        return htmlDoclet.sourceVersion();
-    }
-
-    public boolean run(DocletEnvironment root) {
-        return htmlDoclet.run(root);
-    }
-}
