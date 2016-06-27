@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.KeyEvent;
+import java.util.Locale;
 
 /**
  * Translates NSEvents/NPCocoaEvents into AWT events.
@@ -168,6 +169,16 @@ final class CPlatformResponder {
                 if(testChar == 0){
                     return;
                 }
+            }
+
+            // If Pinyin Simplified input method is selected, CAPS_LOCK key is supposed to switch
+            // input to latin letters.
+            // It is necessary to use testCharIgnoringModifiers instead of testChar for event
+            // generation in such case to avoid uppercase letters in text components.
+            LWCToolkit lwcToolkit = (LWCToolkit)Toolkit.getDefaultToolkit();
+            if (lwcToolkit.getLockingKeyState(KeyEvent.VK_CAPS_LOCK) &&
+                    Locale.SIMPLIFIED_CHINESE.equals(lwcToolkit.getDefaultKeyboardLocale())) {
+                testChar = testCharIgnoringModifiers;
             }
 
             jkeyCode = out[0];
