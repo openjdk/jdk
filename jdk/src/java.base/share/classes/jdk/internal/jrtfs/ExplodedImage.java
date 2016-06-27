@@ -25,6 +25,7 @@
 package jdk.internal.jrtfs;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystemException;
@@ -137,6 +138,15 @@ class ExplodedImage extends SystemImage {
                 children = list;
             }
             return children;
+        }
+
+        @Override
+        public long size() {
+            try {
+                return isDirectory() ? 0 : Files.size(path);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
         }
     }
 
