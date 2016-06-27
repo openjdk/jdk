@@ -54,8 +54,8 @@ class JImageTask {
         }, "--dir"),
 
         new Option<JImageTask>(true, (task, option, arg) -> {
-            task.options.filters = arg;
-        }, "--filter"),
+            task.options.include = arg;
+        }, "--include"),
 
         new Option<JImageTask>(false, (task, option, arg) -> {
             task.options.fullVersion = true;
@@ -81,12 +81,12 @@ class JImageTask {
     private static final FileSystem JRT_FILE_SYSTEM = Utils.jrtFileSystem();
 
     private final OptionsValues options;
-    private final List<Predicate<String>> filterPredicates;
+    private final List<Predicate<String>> includePredicates;
     private PrintWriter log;
 
     JImageTask() {
         this.options = new OptionsValues();
-        this.filterPredicates = new ArrayList<>();
+        this.includePredicates = new ArrayList<>();
         log = null;
     }
 
@@ -98,7 +98,7 @@ class JImageTask {
     static class OptionsValues {
         Task task = Task.LIST;
         String directory = ".";
-        String filters = "";
+        String include = "";
         boolean fullVersion;
         boolean help;
         boolean verbose;
@@ -200,6 +200,8 @@ class JImageTask {
 
                         log.println(TASK_HELPER.getMessage("main.opt." + name));
                     }
+
+                    log.println(TASK_HELPER.getMessage("main.opt.footer"));
                 } else {
                     try {
                         log.println(TASK_HELPER.getMessage("main.usage." +
@@ -219,7 +221,7 @@ class JImageTask {
                 }
             }
 
-            processFilter(options.filters);
+            processInclude(options.include);
 
             return run() ? EXIT_OK : EXIT_ERROR;
         } catch (BadArgs e) {
@@ -239,15 +241,15 @@ class JImageTask {
         }
     }
 
-    private void processFilter(String filters) {
-        if (filters.isEmpty()) {
+    private void processInclude(String include) {
+        if (include.isEmpty()) {
             return;
         }
 
-        for (String filter : filters.split(",")) {
+        for (String filter : include.split(",")) {
             final PathMatcher matcher = Utils.getPathMatcher(JRT_FILE_SYSTEM, filter);
             Predicate<String> predicate = (path) -> matcher.matches(JRT_FILE_SYSTEM.getPath(path));
-            filterPredicates.add(predicate);
+            includePredicates.add(predicate);
         }
     }
 
@@ -388,9 +390,9 @@ class JImageTask {
                     String oldModule = "";
 
                     for (String name : entryNames) {
-                        boolean match = filterPredicates.isEmpty();
+                        boolean match = includePredicates.isEmpty();
 
-                        for (Predicate<String> predicate : filterPredicates) {
+                        for (Predicate<String> predicate : includePredicates) {
                             if (predicate.test(name)) {
                                 match = true;
                                 break;

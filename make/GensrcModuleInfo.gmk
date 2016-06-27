@@ -95,6 +95,7 @@ ifneq ($(MOD_FILES), )
       $(strip $(wildcard $(addsuffix $(subst .,/,/$(strip $1)), \
           $(MODULE_CLASSES_DIRS) \
           $(addsuffix /$(MODULE), $(IMPORT_MODULES_CLASSES)) \
+          $(JDK_OUTPUTDIR)/modules/$(MODULE) \
       )))
 
   # Convert the modification lines into arguments for the modification tool.
