@@ -25,9 +25,7 @@
 package jdk.tools.jlink.internal.plugins;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import jdk.tools.jlink.internal.ModulePoolImpl;
 import jdk.tools.jlink.plugin.ModulePool;
@@ -77,10 +75,8 @@ public final class DefaultCompressPlugin implements TransformerPlugin, ResourceP
     }
 
     @Override
-    public Set<Category> getType() {
-        Set<Category> set = new HashSet<>();
-        set.add(Category.COMPRESSOR);
-        return Collections.unmodifiableSet(set);
+    public Category getType() {
+        return Category.COMPRESSOR;
     }
 
     @Override
