@@ -545,10 +545,6 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
     // factor me: setPC
     os::Solaris::ucontext_set_pc(uc, stub);
 
-#ifndef PRODUCT
-    if (TraceJumps) thread->record_jump(stub, NULL, __FILE__, __LINE__);
-#endif /* PRODUCT */
-
     return true;
   }
 

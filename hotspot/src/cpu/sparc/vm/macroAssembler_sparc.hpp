@@ -703,8 +703,8 @@ class MacroAssembler : public Assembler {
 
   inline void tst( Register s );
 
-  inline void ret(  bool trace = TraceJumps );
-  inline void retl( bool trace = TraceJumps );
+  inline void ret(  bool trace = false );
+  inline void retl( bool trace = false );
 
   // Required platform-specific helpers for Label::patch_instructions.
   // They _shadow_ the declarations in AbstractAssembler, which are undefined.

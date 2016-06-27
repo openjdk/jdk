@@ -802,9 +802,6 @@ public:
   develop(bool, TracePcPatching, false,                                     \
           "Trace usage of frame::patch_pc")                                 \
                                                                             \
-  develop(bool, TraceJumps, false,                                          \
-          "Trace assembly jumps in thread ring buffer")                     \
-                                                                            \
   develop(bool, TraceRelocator, false,                                      \
           "Trace the bytecode relocator")                                   \
                                                                             \

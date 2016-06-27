@@ -501,16 +501,10 @@ class HandlerImpl {
   static int emit_deopt_handler(CodeBuffer& cbuf);
 
   static uint size_exception_handler() {
-    if (TraceJumps) {
-      return (400); // just a guess
-    }
     return ( NativeJump::instruction_size ); // sethi;jmp;nop
   }
 
   static uint size_deopt_handler() {
-    if (TraceJumps) {
-      return (400); // just a guess
-    }
     return ( 4+  NativeJump::instruction_size ); // save;sethi;jmp;restore
   }
 };
@@ -2661,8 +2655,7 @@ encode %{
 
       // Emit stub for static call.
       address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
-      // Stub does not fit into scratch buffer if TraceJumps is enabled
-      if (stub == NULL && !(TraceJumps && Compile::current()->in_scratch_emit_size())) {
+      if (stub == NULL) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
