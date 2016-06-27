@@ -46,8 +46,8 @@ import static org.testng.Assert.assertEquals;
 public class LexicalBindingTest {
 
     final static String LANGUAGE_ES6 = "--language=es6";
-    final static int NUMBER_OF_CONTEXTS = 20;
-    final static int MEGAMORPHIC_LOOP_COUNT = 20;
+    final static int NUMBER_OF_CONTEXTS = 40;
+    final static int MEGAMORPHIC_LOOP_COUNT = 40;
 
     /**
      * Test access to global var-declared variables for shared script classes with multiple globals.
@@ -57,19 +57,21 @@ public class LexicalBindingTest {
         final NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
         final ScriptEngine e = factory.getScriptEngine();
         final ScriptContext[] contexts = new ScriptContext[NUMBER_OF_CONTEXTS];
-        final String sharedScript = "foo";
+        final String sharedScript1 = "foo";
+        final String sharedScript2 = "bar = foo; bar";
 
 
         for (int i = 0; i < NUMBER_OF_CONTEXTS; i++) {
             final ScriptContext context = contexts[i] = new SimpleScriptContext();
             final Bindings b = e.createBindings();
             context.setBindings(b, ScriptContext.ENGINE_SCOPE);
-            assertEquals(e.eval("var foo = '" + i + "';", context), null);
+            assertEquals(e.eval("var foo = '" + i + "'; var bar;", context), null);
         }
 
         for (int i = 0; i < NUMBER_OF_CONTEXTS; i++) {
             final ScriptContext context = contexts[i];
-            assertEquals(e.eval(sharedScript, context), String.valueOf(i));
+            assertEquals(e.eval(sharedScript1, context), String.valueOf(i));
+            assertEquals(e.eval(sharedScript2, context), String.valueOf(i));
         }
     }
 
@@ -81,19 +83,21 @@ public class LexicalBindingTest {
         final NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
         final ScriptEngine e = factory.getScriptEngine(LANGUAGE_ES6);
         final ScriptContext[] contexts = new ScriptContext[NUMBER_OF_CONTEXTS];
-        final String sharedScript = "foo";
+        final String sharedScript1 = "foo";
+        final String sharedScript2 = "bar = foo; bar";
 
 
         for (int i = 0; i < NUMBER_OF_CONTEXTS; i++) {
             final ScriptContext context = contexts[i] = new SimpleScriptContext();
             final Bindings b = e.createBindings();
             context.setBindings(b, ScriptContext.ENGINE_SCOPE);
-            assertEquals(e.eval("let foo = '" + i + "';", context), null);
+            assertEquals(e.eval("let foo = '" + i + "'; let bar; ", context), null);
         }
 
         for (int i = 0; i < NUMBER_OF_CONTEXTS; i++) {
             final ScriptContext context = contexts[i];
-            assertEquals(e.eval(sharedScript, context), String.valueOf(i));
+            assertEquals(e.eval(sharedScript1, context), String.valueOf(i));
+            assertEquals(e.eval(sharedScript2, context), String.valueOf(i));
         }
     }
 
@@ -180,6 +184,27 @@ public class LexicalBindingTest {
 
         assertEquals(e.eval(sharedScript), "original context");
         assertEquals(e.eval(sharedScript, newCtxt), "newer context");
+    }
+
+    /**
+     * Make sure lexically defined variables are accessible in other scripts.
+     */
+    @Test
+    public void lexicalScopeTest() throws ScriptException {
+        final NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
+        final ScriptEngine e = factory.getScriptEngine(LANGUAGE_ES6);
+
+        e.eval("let x; const y = 'world';");
+
+        assertEquals(e.eval("x = 'hello'"), "hello");
+        assertEquals(e.eval("typeof x"), "string");
+        assertEquals(e.eval("typeof y"), "string");
+        assertEquals(e.eval("x"), "hello");
+        assertEquals(e.eval("y"), "world");
+        assertEquals(e.eval("typeof this.x"), "undefined");
+        assertEquals(e.eval("typeof this.y"), "undefined");
+        assertEquals(e.eval("this.x"), null);
+        assertEquals(e.eval("this.y"), null);
     }
 
     private static class ScriptRunner implements Runnable {

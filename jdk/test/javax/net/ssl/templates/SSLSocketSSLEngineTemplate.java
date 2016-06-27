@@ -178,8 +178,11 @@ public class SSLSocketSSLEngineTemplate {
 
         char[] passphrase = "passphrase".toCharArray();
 
-        ks.load(new FileInputStream(keyFilename), passphrase);
-        ts.load(new FileInputStream(trustFilename), passphrase);
+        try (FileInputStream keyFile = new FileInputStream(keyFilename);
+                FileInputStream trustFile = new FileInputStream(trustFilename)) {
+            ks.load(keyFile, passphrase);
+            ts.load(trustFile, passphrase);
+        }
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);
@@ -310,6 +313,7 @@ public class SSLSocketSSLEngineTemplate {
                             if (retry &&
                                     serverIn.remaining() < clientMsg.length) {
                                 log("Need to read more from client");
+                                serverIn.compact();
                                 retry = false;
                                 continue;
                             } else {
