@@ -23,17 +23,22 @@
 
 /**
  * @test
- * @bug 8146156
+ * @bug 8146156 8159548
  * @summary test whether uppercasing follows Locale.Category.FORMAT locale.
  * @run main/othervm FormatLocale
  */
 
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
 import java.time.Month;
+import java.util.Calendar;
 import java.util.Formatter;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.Locale.Category;
+import java.util.TimeZone;
 import java.util.stream.IntStream;
 
 public class FormatLocale {
@@ -61,7 +66,7 @@ public class FormatLocale {
         "N\u0130SAN",
         "1,00000E+08");
 
-    public static void main(String [] args) {
+    static void formatLocaleTest() {
         StringBuilder sb = new StringBuilder();
 
         IntStream.range(0, src.size()).forEach(i -> {
@@ -78,5 +83,45 @@ public class FormatLocale {
                     " Returned: " + sb.toString());
             }
         });
+    }
+
+    static void nullLocaleTest() {
+        String fmt = "%1$ta %1$tA %1$th %1$tB %1tZ";
+        String expected = "Fri Friday Jan January PST";
+        StringBuilder sb = new StringBuilder();
+        Locale orig = Locale.getDefault();
+
+        try {
+            Locale.setDefault(Locale.JAPAN);
+            Formatter f = new Formatter(sb, (Locale)null);
+            ZoneId zid = ZoneId.of("America/Los_Angeles");
+            Calendar c = new GregorianCalendar(TimeZone.getTimeZone(zid), Locale.US);
+            c.set(2016, 0, 1, 0, 0, 0);
+            f.format(fmt, c);
+            if (!sb.toString().equals(expected)) {
+                throw new RuntimeException(
+                    "Localized text returned with null locale.\n" +
+                    "    expected: " + expected + "\n" +
+                    "    returned: " + sb.toString());
+            }
+
+            sb.setLength(0);
+            ZonedDateTime zdt = ZonedDateTime.of(2016, 1, 1, 0, 0, 0, 0, zid);
+            f.format(fmt, zdt);
+
+            if (!sb.toString().equals(expected)) {
+                throw new RuntimeException(
+                    "Localized text returned with null locale.\n" +
+                    "    expected: " + expected + "\n" +
+                    "    returned: " + sb.toString());
+            }
+        } finally {
+            Locale.setDefault(orig);
+        }
+    }
+
+    public static void main(String [] args) {
+        formatLocaleTest();
+        nullLocaleTest();
     }
 }

@@ -775,7 +775,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      * @return FindPropertyData or null if not found.
      */
     public final FindProperty findProperty(final Object key, final boolean deep) {
-        return findProperty(key, deep, this);
+        return findProperty(key, deep, false, this);
     }
 
     /**
@@ -791,12 +791,12 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      * @see jdk.nashorn.internal.objects.NativeArray
      *
      * @param key  Property key.
-     * @param deep Whether the search should look up proto chain.
+     * @param deep true if the search should look up proto chain
+     * @param isScope true if this is a scope access
      * @param start the object on which the lookup was originally initiated
-     *
      * @return FindPropertyData or null if not found.
      */
-    protected FindProperty findProperty(final Object key, final boolean deep, final ScriptObject start) {
+    protected FindProperty findProperty(final Object key, final boolean deep, boolean isScope, final ScriptObject start) {
 
         final PropertyMap selfMap  = getMap();
         final Property    property = selfMap.findProperty(key);
@@ -807,7 +807,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
 
         if (deep) {
             final ScriptObject myProto = getProto();
-            final FindProperty find = myProto == null ? null : myProto.findProperty(key, true, start);
+            final FindProperty find = myProto == null ? null : myProto.findProperty(key, true, isScope, start);
             // checkSharedProtoMap must be invoked after myProto.checkSharedProtoMap to propagate
             // shared proto invalidation up the prototype chain. It also must be invoked when prototype is null.
             checkSharedProtoMap();
@@ -1977,7 +1977,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
             return findMegaMorphicGetMethod(desc, name, operation == StandardOperation.GET_METHOD);
         }
 
-        final FindProperty find = findProperty(name, true);
+        final FindProperty find = findProperty(name, true, NashornCallSiteDescriptor.isScope(desc), this);
         MethodHandle mh;
 
         if (find == null) {
@@ -2035,7 +2035,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     }
 
     private static GuardedInvocation findMegaMorphicGetMethod(final CallSiteDescriptor desc, final String name, final boolean isMethod) {
-        Context.getContextTrusted().getLogger(ObjectClassGenerator.class).warning("Megamorphic getter: " + desc + " " + name + " " +isMethod);
+        Context.getContextTrusted().getLogger(ObjectClassGenerator.class).warning("Megamorphic getter: ", desc, " ", name + " ", isMethod);
         final MethodHandle invoker = MH.insertArguments(MEGAMORPHIC_GET, 1, name, isMethod, NashornCallSiteDescriptor.isScope(desc));
         final MethodHandle guard   = getScriptObjectGuard(desc.getMethodType(), true);
         return new GuardedInvocation(invoker, guard);
@@ -2043,7 +2043,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
 
     @SuppressWarnings("unused")
     private Object megamorphicGet(final String key, final boolean isMethod, final boolean isScope) {
-        final FindProperty find = findProperty(key, true);
+        final FindProperty find = findProperty(key, true, isScope, this);
         if (find != null) {
             return find.getObjectValue();
         }
@@ -2181,7 +2181,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
          *
          * toString = function() { print("global toString"); } // don't affect Object.prototype.toString
          */
-        FindProperty find = findProperty(name, true, this);
+        FindProperty find = findProperty(name, true, NashornCallSiteDescriptor.isScope(desc), this);
 
         // If it's not a scope search, then we don't want any inherited properties except those with user defined accessors.
         if (find != null && find.isInherited() && !find.getProperty().isAccessorProperty()) {
@@ -2258,6 +2258,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     }
 
     private GuardedInvocation findMegaMorphicSetMethod(final CallSiteDescriptor desc, final String name) {
+        Context.getContextTrusted().getLogger(ObjectClassGenerator.class).warning("Megamorphic setter: ", desc, " ", name);
         final MethodType        type = desc.getMethodType().insertParameterTypes(1, Object.class);
         //never bother with ClassCastExceptionGuard for megamorphic callsites
         final GuardedInvocation inv = findSetIndexMethod(getClass(), desc, false, type);
@@ -2734,7 +2735,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         if (isValidArrayIndex(index)) {
             for (ScriptObject object = this; ; ) {
                 if (object.getMap().containsArrayKeys()) {
-                    final FindProperty find = object.findProperty(key, false, this);
+                    final FindProperty find = object.findProperty(key, false);
 
                     if (find != null) {
                         return getIntValue(find, programPoint);
@@ -2805,7 +2806,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         if (isValidArrayIndex(index)) {
             for (ScriptObject object = this; ; ) {
                 if (object.getMap().containsArrayKeys()) {
-                    final FindProperty find = object.findProperty(key, false, this);
+                    final FindProperty find = object.findProperty(key, false);
                     if (find != null) {
                         return getDoubleValue(find, programPoint);
                     }
@@ -2875,7 +2876,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         if (isValidArrayIndex(index)) {
             for (ScriptObject object = this; ; ) {
                 if (object.getMap().containsArrayKeys()) {
-                    final FindProperty find = object.findProperty(key, false, this);
+                    final FindProperty find = object.findProperty(key, false);
 
                     if (find != null) {
                         return find.getObjectValue();

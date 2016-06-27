@@ -30,7 +30,6 @@ import java.net.http.WSOutgoingMessage.Binary;
 import java.net.http.WSOutgoingMessage.Close;
 import java.net.http.WSOutgoingMessage.Ping;
 import java.net.http.WSOutgoingMessage.Pong;
-import java.net.http.WSOutgoingMessage.StreamedText;
 import java.net.http.WSOutgoingMessage.Text;
 import java.net.http.WSOutgoingMessage.Visitor;
 import java.nio.ByteBuffer;
@@ -120,11 +119,6 @@ final class WSMessageSender {
                     .mask(mask)
                     .build(buffers[0]);
             previousIsLast = message.isLast;
-        }
-
-        @Override
-        public void visit(StreamedText streamedText) {
-            throw new IllegalArgumentException("Not yet implemented");
         }
 
         @Override
