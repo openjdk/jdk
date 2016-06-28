@@ -26,7 +26,6 @@ package jdk.tools.jlink.internal.plugins;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;

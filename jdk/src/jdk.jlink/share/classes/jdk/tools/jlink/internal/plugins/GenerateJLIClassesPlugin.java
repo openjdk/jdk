@@ -24,10 +24,8 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import java.io.ByteArrayInputStream;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;

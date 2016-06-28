@@ -44,9 +44,15 @@ class ImageStringsWriter implements ImageStrings {
 
         // Reserve 0 offset for empty string.
         int offset = addString("");
-        assert offset == 0 : "Empty string not zero offset";
+        if (offset != 0) {
+            throw new InternalError("Empty string not offset zero");
+        }
+
         // Reserve 1 offset for frequently used ".class".
-        addString("class");
+        offset = addString("class");
+        if (offset != 1) {
+            throw new InternalError("'class' string not offset one");
+        }
     }
 
     private int addString(final String string) {
@@ -76,7 +82,9 @@ class ImageStringsWriter implements ImageStrings {
     public String get(int offset) {
         ByteBuffer buffer = stream.getBuffer();
         int capacity = buffer.capacity();
-        assert 0 <= offset && offset < capacity : "String buffer offset out of range";
+        if (offset < 0 || offset >= capacity) {
+            throw new InternalError("String buffer offset out of range");
+        }
         int zero = NOT_FOUND;
         for (int i = offset; i < capacity; i++) {
             if (buffer.get(i) == '\0') {
@@ -84,7 +92,9 @@ class ImageStringsWriter implements ImageStrings {
                 break;
             }
         }
-        assert zero != NOT_FOUND;
+        if (zero == NOT_FOUND) {
+            throw new InternalError("String zero terminator not found");
+        }
         int length = zero - offset;
         byte[] bytes = new byte[length];
         int mark = buffer.position();

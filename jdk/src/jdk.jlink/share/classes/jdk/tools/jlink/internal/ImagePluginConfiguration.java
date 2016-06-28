@@ -47,18 +47,18 @@ import jdk.tools.jlink.plugin.TransformerPlugin;
  */
 public final class ImagePluginConfiguration {
 
-    private static final List<Plugin.Category> CATEGORIES_ORDER = new ArrayList<>();
+    private static final List<Category> CATEGORIES_ORDER = new ArrayList<>();
 
     static {
-        CATEGORIES_ORDER.add(Plugin.Category.FILTER);
-        CATEGORIES_ORDER.add(Plugin.Category.TRANSFORMER);
-        CATEGORIES_ORDER.add(Plugin.Category.MODULEINFO_TRANSFORMER);
-        CATEGORIES_ORDER.add(Plugin.Category.SORTER);
-        CATEGORIES_ORDER.add(Plugin.Category.COMPRESSOR);
-        CATEGORIES_ORDER.add(Plugin.Category.METAINFO_ADDER);
-        CATEGORIES_ORDER.add(Plugin.Category.VERIFIER);
-        CATEGORIES_ORDER.add(Plugin.Category.PROCESSOR);
-        CATEGORIES_ORDER.add(Plugin.Category.PACKAGER);
+        CATEGORIES_ORDER.add(Category.FILTER);
+        CATEGORIES_ORDER.add(Category.TRANSFORMER);
+        CATEGORIES_ORDER.add(Category.MODULEINFO_TRANSFORMER);
+        CATEGORIES_ORDER.add(Category.SORTER);
+        CATEGORIES_ORDER.add(Category.COMPRESSOR);
+        CATEGORIES_ORDER.add(Category.METAINFO_ADDER);
+        CATEGORIES_ORDER.add(Category.VERIFIER);
+        CATEGORIES_ORDER.add(Category.PROCESSOR);
+        CATEGORIES_ORDER.add(Category.PACKAGER);
     }
 
     private ImagePluginConfiguration() {
@@ -72,8 +72,8 @@ public final class ImagePluginConfiguration {
         if (pluginsConfiguration == null) {
             return new ImagePluginStack();
         }
-        Map<Plugin.Category, List<Plugin>> plugins = new LinkedHashMap<>();
-        for (Plugin.Category cat : CATEGORIES_ORDER) {
+        Map<Category, List<Plugin>> plugins = new LinkedHashMap<>();
+        for (Category cat : CATEGORIES_ORDER) {
             plugins.put(cat, new ArrayList<>());
         }
 
@@ -96,22 +96,22 @@ public final class ImagePluginConfiguration {
 
         List<TransformerPlugin> transformerPlugins = new ArrayList<>();
         List<PostProcessorPlugin> postProcessingPlugins = new ArrayList<>();
-        for (Entry<Plugin.Category, List<Plugin>> entry : plugins.entrySet()) {
+        plugins.entrySet().stream().forEach((entry) -> {
             // Sort according to plugin constraints
             List<Plugin> orderedPlugins = PluginOrderingGraph.sort(entry.getValue());
             Category category = entry.getKey();
-            for (Plugin p : orderedPlugins) {
+            orderedPlugins.stream().forEach((p) -> {
                 if (category.isPostProcessor()) {
                     @SuppressWarnings("unchecked")
-                    PostProcessorPlugin pp = (PostProcessorPlugin) p;
+                            PostProcessorPlugin pp = (PostProcessorPlugin) p;
                     postProcessingPlugins.add(pp);
                 } else {
                     @SuppressWarnings("unchecked")
-                    TransformerPlugin trans = (TransformerPlugin) p;
+                            TransformerPlugin trans = (TransformerPlugin) p;
                     transformerPlugins.add(trans);
                 }
-            }
-        }
+            });
+        });
         Plugin lastSorter = null;
         for (Plugin plugin : transformerPlugins) {
             if (plugin.getName().equals(pluginsConfiguration.getLastSorterPluginName())) {

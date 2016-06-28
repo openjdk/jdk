@@ -24,9 +24,6 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import java.io.ByteArrayInputStream;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.function.Predicate;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassWriter;
