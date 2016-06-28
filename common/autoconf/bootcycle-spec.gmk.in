@@ -66,3 +66,5 @@ SJAVAC_SERVER_JAVA_CMD:=$(JAVA_CMD)
 ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
   SJAVAC_SERVER_JAVA_FLAGS:= -Xms256M -Xmx1500M
 endif
+# The bootcycle JVM arguments may differ from the original boot jdk.
+JAVA_FLAGS_BIG := @BOOTCYCLE_JVM_ARGS_BIG@
