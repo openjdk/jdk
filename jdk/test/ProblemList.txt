@@ -164,6 +164,10 @@ java/net/MulticastSocket/Test.java                              7145658 macosx-a
 
 java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
 
+java/net/httpclient/http2/BasicTest.java                        8157408 linux-all
+java/net/httpclient/http2/ErrorTest.java                        8158127 solaris-all,windows-all
+java/net/httpclient/http2/TLSConnection.java                    8157482 macosx-all
+
 ############################################################################
 
 # jdk_nio
