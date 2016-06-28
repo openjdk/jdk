@@ -157,6 +157,9 @@ class JVMCIRuntime: public AllStatic {
   static void throw_klass_external_name_exception(JavaThread* thread, const char* exception, Klass* klass);
   static void throw_class_cast_exception(JavaThread* thread, const char* exception, Klass* caster_klass, Klass* target_klass);
 
+  // Forces initialization of the JVMCI runtime.
+  static void force_initialization(TRAPS);
+
   // Test only function
   static int test_deoptimize_call_int(JavaThread* thread, int value);
 };

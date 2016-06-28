@@ -44,6 +44,8 @@
  * @run main ClassFileInstaller
  *     compiler.jvmci.common.JVMCIHelpers$EmptyHotspotCompiler
  *     compiler.jvmci.common.JVMCIHelpers$EmptyCompilerFactory
+ *     compiler.jvmci.common.JVMCIHelpers$EmptyCompilationRequestResult
+ *     compiler.jvmci.common.JVMCIHelpers$EmptyVMEventListener
  *     compiler.jvmci.events.JvmciNotifyInstallEventTest
  *     compiler.jvmci.common.CTVMUtilities
  *     compiler.jvmci.common.testcases.SimpleClass

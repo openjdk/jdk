@@ -40,6 +40,8 @@
  * @run main ClassFileInstaller
  *     compiler.jvmci.common.JVMCIHelpers$EmptyHotspotCompiler
  *     compiler.jvmci.common.JVMCIHelpers$EmptyCompilerFactory
+ *     compiler.jvmci.common.JVMCIHelpers$EmptyCompilationRequestResult
+ *     compiler.jvmci.common.JVMCIHelpers$EmptyVMEventListener
  *     compiler.jvmci.events.JvmciShutdownEventListener
  * @run main/othervm compiler.jvmci.events.JvmciShutdownEventTest
  */
