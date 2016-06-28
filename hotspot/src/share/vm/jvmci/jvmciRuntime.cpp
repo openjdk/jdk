@@ -612,6 +612,17 @@ JRT_ENTRY(jint, JVMCIRuntime::test_deoptimize_call_int(JavaThread* thread, int v
   return value;
 JRT_END
 
+void JVMCIRuntime::force_initialization(TRAPS) {
+  JVMCIRuntime::initialize_well_known_classes(CHECK);
+
+  ResourceMark rm;
+  TempNewSymbol getCompiler = SymbolTable::new_symbol("getCompiler", CHECK);
+  TempNewSymbol sig = SymbolTable::new_symbol("()Ljdk/vm/ci/runtime/JVMCICompiler;", CHECK);
+  Handle jvmciRuntime = JVMCIRuntime::get_HotSpotJVMCIRuntime(CHECK);
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_virtual(&result, jvmciRuntime, HotSpotJVMCIRuntime::klass(), getCompiler, sig, CHECK);
+}
+
 // private static JVMCIRuntime JVMCI.initializeRuntime()
 JVM_ENTRY(jobject, JVM_GetJVMCIRuntime(JNIEnv *env, jclass c))
   if (!EnableJVMCI) {

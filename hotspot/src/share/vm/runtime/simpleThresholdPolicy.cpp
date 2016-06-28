@@ -238,9 +238,14 @@ void SimpleThresholdPolicy::compile(const methodHandle& mh, int bci, CompLevel l
   }
 
 #if INCLUDE_JVMCI
-  // We can't compile with a JVMCI compiler until the module system is initialized.
-  if (level == CompLevel_full_optimization && UseJVMCICompiler && !Universe::is_module_initialized()) {
-    return;
+  // We can't compile with a JVMCI compiler until the module system is initialized past
+  // phase 3.  The JVMCI API itself isn't available until phase 2 and ServiceLoader isn't
+  // usable until after phase 3.
+  if (level == CompLevel_full_optimization && EnableJVMCI && UseJVMCICompiler) {
+    if (SystemDictionary::java_system_loader() == NULL) {
+      return;
+     }
+     assert(Universe::is_module_initialized(), "must be");
   }
 #endif
 
