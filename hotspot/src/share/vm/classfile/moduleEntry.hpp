@@ -43,6 +43,7 @@ class ModuleClosure;
 // It contains:
 //   - Symbol* containing the module's name.
 //   - pointer to the java.lang.reflect.Module for this module.
+//   - pointer to the java.security.ProtectionDomain shared by classes defined to this module.
 //   - ClassLoaderData*, class loader of this module.
 //   - a growable array containg other module entries that this module can read.
 //   - a flag indicating if this module can read all unnamed modules.
@@ -54,56 +55,58 @@ private:
   jobject _module;                     // java.lang.reflect.Module
   jobject _pd;                         // java.security.ProtectionDomain, cached
                                        // for shared classes from this module
-  ClassLoaderData* _loader;
+  ClassLoaderData* _loader_data;
   GrowableArray<ModuleEntry*>* _reads; // list of modules that are readable by this module
   Symbol* _version;                    // module version number
   Symbol* _location;                   // module location
   bool _can_read_all_unnamed;
   bool _has_default_read_edges;        // JVMTI redefine/retransform support
+  bool _must_walk_reads;               // walk module's reads list at GC safepoints to purge out dead modules
   TRACE_DEFINE_TRACE_ID_FIELD;
   enum {MODULE_READS_SIZE = 101};      // Initial size of list of modules that the module can read.
 
 public:
   void init() {
     _module = NULL;
-    _loader = NULL;
+    _loader_data = NULL;
     _pd = NULL;
     _reads = NULL;
     _version = NULL;
     _location = NULL;
     _can_read_all_unnamed = false;
     _has_default_read_edges = false;
+    _must_walk_reads = false;
   }
 
-  Symbol*            name() const          { return literal(); }
-  void               set_name(Symbol* n)   { set_literal(n); }
+  Symbol*          name() const          { return literal(); }
+  void             set_name(Symbol* n)   { set_literal(n); }
 
-  jobject            module() const        { return _module; }
-  void               set_module(jobject j) { _module = j; }
+  jobject          module() const        { return _module; }
+  void             set_module(jobject j) { _module = j; }
 
   // The shared ProtectionDomain reference is set once the VM loads a shared class
   // originated from the current Module. The referenced ProtectionDomain object is
   // created by the ClassLoader when loading a class (shared or non-shared) from the
   // Module for the first time. This ProtectionDomain object is used for all
   // classes from the Module loaded by the same ClassLoader.
-  Handle             shared_protection_domain();
-  void               set_shared_protection_domain(ClassLoaderData *loader_data,
-                                                  Handle pd);
+  Handle           shared_protection_domain();
+  void             set_shared_protection_domain(ClassLoaderData *loader_data, Handle pd);
 
-  ClassLoaderData*   loader() const                 { return _loader; }
-  void               set_loader(ClassLoaderData* l) { _loader = l; }
+  ClassLoaderData* loader_data() const                 { return _loader_data; }
+  void             set_loader_data(ClassLoaderData* l) { _loader_data = l; }
 
-  Symbol*            version() const                { return _version; }
-  void               set_version(Symbol* version);
+  Symbol*          version() const                     { return _version; }
+  void             set_version(Symbol* version);
 
-  Symbol*            location() const               { return _location; }
-  void               set_location(Symbol* location);
+  Symbol*          location() const                    { return _location; }
+  void             set_location(Symbol* location);
 
-  bool               can_read(ModuleEntry* m) const;
-  bool               has_reads() const;
-  void               add_read(ModuleEntry* m);
+  bool             can_read(ModuleEntry* m) const;
+  bool             has_reads() const;
+  void             add_read(ModuleEntry* m);
+  void             set_read_walk_required(ClassLoaderData* m_loader_data);
 
-  bool               is_named() const               { return (literal() != NULL); }
+  bool             is_named() const                    { return (name() != NULL); }
 
   bool can_read_all_unnamed() const {
     assert(is_named() || _can_read_all_unnamed == true,
@@ -178,7 +181,7 @@ private:
   ModuleEntry* _unnamed_module;
 
   ModuleEntry* new_entry(unsigned int hash, Handle module_handle, Symbol* name, Symbol* version,
-                         Symbol* location, ClassLoaderData* class_loader);
+                         Symbol* location, ClassLoaderData* loader_data);
   void add_entry(int index, ModuleEntry* new_entry);
 
   int entry_size() const { return BasicHashtable<mtModule>::entry_size(); }

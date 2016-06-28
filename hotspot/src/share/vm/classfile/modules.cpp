@@ -113,7 +113,7 @@ static PackageEntry* get_package_entry(ModuleEntry* module_entry, jstring packag
   const char *package_name = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(package));
   if (package_name == NULL) return NULL;
   TempNewSymbol pkg_symbol = SymbolTable::new_symbol(package_name, CHECK_NULL);
-  PackageEntryTable* package_entry_table = module_entry->loader()->packages();
+  PackageEntryTable* package_entry_table = module_entry->loader_data()->packages();
   assert(package_entry_table != NULL, "Unexpected null package entry table");
   return package_entry_table->lookup_only(pkg_symbol);
 }
@@ -868,7 +868,7 @@ void Modules::add_module_package(jobject module, jstring package, TRAPS) {
                      package_name, module_entry->name()->as_C_string());
 
   TempNewSymbol pkg_symbol = SymbolTable::new_symbol(package_name, CHECK);
-  PackageEntryTable* package_table = module_entry->loader()->packages();
+  PackageEntryTable* package_table = module_entry->loader_data()->packages();
   assert(package_table != NULL, "Missing package_table");
 
   bool pkg_exists = false;
