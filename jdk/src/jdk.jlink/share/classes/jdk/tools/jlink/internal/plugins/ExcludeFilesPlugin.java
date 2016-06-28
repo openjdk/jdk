@@ -24,14 +24,11 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import java.io.UncheckedIOException;
-import java.util.Collections;
 import java.util.Map;
 import java.util.function.Predicate;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.ModuleEntry;
-import jdk.tools.jlink.internal.Utils;
 
 /**
  *

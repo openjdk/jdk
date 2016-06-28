@@ -82,7 +82,7 @@ public class JlinkTask {
     private static final TaskHelper taskHelper
             = new TaskHelper(JLINK_BUNDLE);
 
-    static Option<?>[] recognizedOptions = {
+    private static final Option<?>[] recognizedOptions = {
         new Option<JlinkTask>(false, (task, opt, arg) -> {
             task.options.help = true;
         }, "--help"),
@@ -325,7 +325,6 @@ public class JlinkTask {
                                                Set<String> limitMods,
                                                Set<String> addMods)
     {
-
         ModuleFinder finder = ModuleFinder.of(paths.toArray(new Path[0]));
 
         // jmods are located at link-time
