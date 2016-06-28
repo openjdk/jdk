@@ -148,7 +148,7 @@ public class CommentHelper {
             if (symbol == null) {
                 return null;
             }
-            return  c.root.getTypeUtils().asElement(symbol);
+            return  c.docEnv.getTypeUtils().asElement(symbol);
         }
         // case A: the element contains no comments associated and
         // the comments need to be copied from ancestor
@@ -172,7 +172,7 @@ public class CommentHelper {
             }
             return null;
         }
-        DocTrees doctrees = c.root.getDocTrees();
+        DocTrees doctrees = c.docEnv.getDocTrees();
         return doctrees.getElement(docTreePath);
     }
 
@@ -419,7 +419,7 @@ public class CommentHelper {
     }
 
     public List<? extends DocTree> getFirstSentenceTrees(Configuration c, List<? extends DocTree> body) {
-        List<DocTree> firstSentence = c.root.getDocTrees().getFirstSentence(body);
+        List<DocTree> firstSentence = c.docEnv.getDocTrees().getFirstSentence(body);
         return firstSentence;
     }
 

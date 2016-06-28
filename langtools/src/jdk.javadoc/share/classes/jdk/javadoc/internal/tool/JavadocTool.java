@@ -74,7 +74,7 @@ import jdk.javadoc.doclet.DocletEnvironment;
  *  @author Neal Gafter
  */
 public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
-    DocEnv docenv;
+    ToolEnvironment toolEnv;
 
     final Messager messager;
     final ClassFinder javadocFinder;
@@ -138,8 +138,8 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
                                       List<String> excludedPackages,
                                       boolean docClasses,
                                       boolean quiet) throws IOException {
-        docenv = DocEnv.instance(context);
-        docenv.intialize(encoding, showAccess, overviewpath, args, fileObjects,
+        toolEnv = ToolEnvironment.instance(context);
+        toolEnv.intialize(encoding, showAccess, overviewpath, args, fileObjects,
                          subPackages, excludedPackages, docClasses, quiet);
 
         javadocFinder.sourceCompleter = docClasses ? Completer.NULL_COMPLETER : sourceCompleter;
@@ -148,12 +148,12 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             // If -Xclasses is set, the args should be a series of class names
             for (String arg: args) {
                 if (!isValidPackageName(arg)) // checks
-                    docenv.error(null, "main.illegal_class_name", arg);
+                    toolEnv.error(null, "main.illegal_class_name", arg);
             }
             if (messager.nerrors() != 0) {
                 return null;
             }
-            return new RootDocImpl(docenv, args);
+            return new DocEnvImpl(toolEnv, args);
         }
 
         ListBuffer<JCCompilationUnit> classTrees = new ListBuffer<>();
@@ -161,15 +161,15 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
 
         try {
 
-            StandardJavaFileManager fm = docenv.fileManager instanceof StandardJavaFileManager
-                    ? (StandardJavaFileManager) docenv.fileManager : null;
+            StandardJavaFileManager fm = toolEnv.fileManager instanceof StandardJavaFileManager
+                    ? (StandardJavaFileManager) toolEnv.fileManager : null;
             Set<String> packageNames = new LinkedHashSet<>();
             // Normally, the args should be a series of package names or file names.
             // Parse the files and collect the package names.
             for (String arg: args) {
                 if (fm != null && arg.endsWith(".java") && new File(arg).exists()) {
                     if (new File(arg).getName().equals("module-info.java")) {
-                        docenv.warning("main.file_ignored", arg);
+                        toolEnv.warning("main.file_ignored", arg);
                     } else {
                         parse(fm.getJavaFileObjects(arg), classTrees, true);
                     }
@@ -179,9 +179,9 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
                     if (fm == null)
                         throw new IllegalArgumentException();
                     else
-                        docenv.error(null, "main.file_not_found", arg);
+                        toolEnv.error(null, "main.file_not_found", arg);
                 } else {
-                    docenv.error(null, "main.illegal_package_name", arg);
+                    toolEnv.error(null, "main.illegal_package_name", arg);
                 }
             }
 
@@ -193,10 +193,10 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
 
             // Build up the complete list of any packages to be documented
             Location location = modules.multiModuleMode ? StandardLocation.MODULE_SOURCE_PATH
-                    : docenv.fileManager.hasLocation(StandardLocation.SOURCE_PATH) ? StandardLocation.SOURCE_PATH
+                    : toolEnv.fileManager.hasLocation(StandardLocation.SOURCE_PATH) ? StandardLocation.SOURCE_PATH
                     : StandardLocation.CLASS_PATH;
 
-            PackageTable t = new PackageTable(docenv.fileManager, location)
+            PackageTable t = new PackageTable(toolEnv.fileManager, location)
                     .packages(packageNames)
                     .subpackages(subPackages, excludedPackages);
 
@@ -206,9 +206,9 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             ListBuffer<JCCompilationUnit> packageTrees = new ListBuffer<>();
             for (String packageName: includedPackages) {
                 List<JavaFileObject> files = t.getFiles(packageName);
-                docenv.notice("main.Loading_source_files_for_package", packageName);
+                toolEnv.notice("main.Loading_source_files_for_package", packageName);
                 if (files.isEmpty())
-                    docenv.warning("main.no_source_files_for_package", packageName);
+                    toolEnv.warning("main.no_source_files_for_package", packageName);
                 parse(files, packageTrees, false);
             }
             modules.enter(packageTrees.toList(), null);
@@ -218,7 +218,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             }
 
             // Enter symbols for all files
-            docenv.notice("main.Building_tree");
+            toolEnv.notice("main.Building_tree");
             javadocEnter.main(classTrees.toList().appendList(packageTrees.toList()));
 
             enterDone = true;
@@ -226,9 +226,9 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
 
         if (messager.nerrors() != 0)
             return null;
-        docenv.root = new RootDocImpl(docenv, listClasses(classTrees.toList()),
+        toolEnv.docEnv = new DocEnvImpl(toolEnv, listClasses(classTrees.toList()),
                                       new ArrayList<>(includedPackages));
-        return docenv.root;
+        return toolEnv.docEnv;
     }
 
     /** Is the given string a valid package name? */
@@ -246,7 +246,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
         for (JavaFileObject fo: files) {
             if (uniquefiles.add(fo)) { // ignore duplicates
                 if (trace)
-                    docenv.notice("main.Loading_source_file", fo.getName());
+                    toolEnv.notice("main.Loading_source_file", fo.getName());
                 trees.append(parse(fo));
             }
         }

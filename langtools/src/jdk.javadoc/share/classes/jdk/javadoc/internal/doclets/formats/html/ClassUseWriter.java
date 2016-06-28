@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,7 +178,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     public static void generate(ConfigurationImpl configuration, ClassTree classtree)  {
         ClassUseMapper mapper = new ClassUseMapper(configuration, classtree);
-        for (TypeElement aClass : configuration.root.getIncludedClasses()) {
+        for (TypeElement aClass : configuration.docEnv.getIncludedClasses()) {
             // If -nodeprecated option is set and the containing package is marked
             // as deprecated, do not generate the class-use page. We will still generate
             // the class-use page if the class is marked as deprecated but the containing
