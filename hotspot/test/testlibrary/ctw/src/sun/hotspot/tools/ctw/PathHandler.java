@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,14 @@
 
 package sun.hotspot.tools.ctw;
 
+import jdk.internal.misc.Unsafe;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.io.File;
 
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.concurrent.Executor;
@@ -38,6 +40,8 @@ import java.util.concurrent.Executor;
  * Concrete subclasses should implement method {@link #process()}.
  */
 public abstract class PathHandler {
+    private static final AtomicLong CLASS_COUNT = new AtomicLong(0L);
+    private static volatile boolean CLASSES_LIMIT_REACHED = false;
     private static final Pattern JAR_IN_DIR_PATTERN
             = Pattern.compile("^(.*[/\\\\])?\\*$");
     protected final Path root;
@@ -81,6 +85,8 @@ public abstract class PathHandler {
                 return new ClassPathJarEntry(p, executor);
             } else if (isListFile(p)) {
                 return new ClassesListInFile(p, executor);
+            } else if (isJimageFile(p)) {
+                return new ClassPathJimageEntry(p, executor);
             } else {
                 return new ClassPathDirEntry(p, executor);
             }
@@ -94,6 +100,13 @@ public abstract class PathHandler {
                     || Utils.endsWithIgnoreCase(name, ".jar");
         }
         return false;
+    }
+
+    private static boolean isJimageFile(Path path) {
+        String filename = path.getFileName().toString();
+        return Files.isRegularFile(path)
+                && ("modules".equals(filename)
+                || Utils.endsWithIgnoreCase(filename, ".jimage"));
     }
 
     private static boolean isListFile(Path path) {
@@ -122,24 +135,50 @@ public abstract class PathHandler {
     }
 
     /**
-     * Processes specificed class.
+     * Processes specified class.
      * @param name fully qualified name of class to process
      */
     protected final void processClass(String name) {
-        try {
-            Class aClass = Class.forName(name, true, loader);
-            Compiler.compileClass(aClass, executor);
-        } catch (ClassNotFoundException | LinkageError e) {
-            System.out.printf("Class %s loading failed : %s%n", name,
-                e.getMessage());
+        Objects.requireNonNull(name);
+        if (CLASSES_LIMIT_REACHED) {
+            return;
+        }
+        long id = CLASS_COUNT.incrementAndGet();
+        if (id > Utils.COMPILE_THE_WORLD_STOP_AT) {
+            CLASSES_LIMIT_REACHED = true;
+            return;
+        }
+        if (id >= Utils.COMPILE_THE_WORLD_START_AT) {
+            try {
+                Class<?> aClass = loader.loadClass(name);
+                CompileTheWorld.OUT.printf("[%d]\t%s%n", id, name);
+                Compiler.compileClass(aClass, id, executor);
+            } catch (ClassNotFoundException e) {
+                CompileTheWorld.OUT.printf("Class %s loading failed : %s%n",
+                        name, e.getMessage());
+            }
         }
     }
 
     /**
-     * @return {@code true} if processing should be stopped
+     * @return count of processed classes
+     */
+    public static long getClassCount() {
+        long id = CLASS_COUNT.get();
+        if (id < Utils.COMPILE_THE_WORLD_START_AT) {
+            return 0;
+        }
+        if (id > Utils.COMPILE_THE_WORLD_STOP_AT) {
+            return Utils.COMPILE_THE_WORLD_STOP_AT - Utils.COMPILE_THE_WORLD_START_AT + 1;
+        }
+        return id - Utils.COMPILE_THE_WORLD_START_AT + 1;
+    }
+
+    /**
+     * @return {@code true} if classes limit is reached and processing should be stopped
      */
     public static boolean isFinished() {
-        return Compiler.isLimitReached();
+        return CLASSES_LIMIT_REACHED;
     }
 
 }
