@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 4241361 4842702 4985614 6646605 5032358 6923692
+   @bug 4241361 4842702 4985614 6646605 5032358 6923692 6233323 8144977
    @summary Make sure we can read a zip file.
    @key randomness
  */
@@ -104,6 +104,40 @@ public class ReadZip {
         } finally {
             newZip.delete();
         }
+
+        // Read directory entry
+        try {
+            try (FileOutputStream fos = new FileOutputStream(newZip);
+                 ZipOutputStream zos = new ZipOutputStream(fos))
+            {
+                ZipEntry ze = new ZipEntry("directory/");
+                zos.putNextEntry(ze);
+                zos.closeEntry();
+            }
+            try (ZipFile zf = new ZipFile(newZip)) {
+                ZipEntry ze = zf.getEntry("directory/");
+                if (ze == null || !ze.isDirectory())
+                    throw new RuntimeException("read entry \"directory/\" failed");
+                try (InputStream is = zf.getInputStream(ze)) {
+                    is.available();
+                } catch (Exception x) {
+                    x.printStackTrace();
+                }
+
+                ze = zf.getEntry("directory");
+                if (ze == null || !ze.isDirectory())
+                    throw new RuntimeException("read entry \"directory\" failed");
+                try (InputStream is = zf.getInputStream(ze)) {
+                    is.available();
+                } catch (Exception x) {
+                    x.printStackTrace();
+                }
+            }
+        } finally {
+            newZip.delete();
+        }
+
+
 
         // Throw a FNF exception when read a non-existing zip file
         try { unreached (new ZipFile(
