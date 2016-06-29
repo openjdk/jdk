@@ -23,10 +23,12 @@
 
 /*
  @test
- @bug 8041928
+ @bug 8041928 8158616
  @summary Confirm that the Alt-Gr Modifier bit is set correctly.
+ @requires (os.family != "windows" & os.family != "mac")
  @run main/manual AltGraphModifierTest
  */
+
 import java.awt.Button;
 import java.awt.Dialog;
 import java.awt.Frame;
@@ -43,10 +45,6 @@ public class AltGraphModifierTest {
         String[] instructions
                 = {
                     "This test is for verifying Alt-Gr modifier of an event.",
-                    "Windows :-",
-                    "1. Click Pass.",
-                    "2. Alt-Gr modifier is tested under Robot tests.",
-                    " ",
                     "Linux :-",
                     "1. Please check if Alt-Gr key is present on keyboard.",
                     "2. If present, press the Alt-Gr key and perform",
@@ -60,10 +58,6 @@ public class AltGraphModifierTest {
                     "   TestWindow",
                     "7. Test will exit by itself with appropriate result.",
                     " ",
-                    "Mac :-",
-                    "1. Press Right Option key on the keyboard and mouse click",
-                    "   on the TestWindow",
-                    "3. Test will exit by itself with appropriate result.",
                 };
 
         Sysout.createDialog();
