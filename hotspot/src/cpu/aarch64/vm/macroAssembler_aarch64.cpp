@@ -36,6 +36,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "opto/compile.hpp"
+#include "opto/intrinsicnode.hpp"
 #include "opto/node.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/icache.hpp"
