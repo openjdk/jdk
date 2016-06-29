@@ -289,10 +289,21 @@ public final class CompositeFont extends Font2D {
                 if (componentNames[slot] == null) {
                     componentNames[slot] = name;
                 } else if (!componentNames[slot].equalsIgnoreCase(name)) {
-                    components[slot] =
-                        (PhysicalFont) fm.findFont2D(componentNames[slot],
-                                                     style,
+                    /* If a component specifies the file with a bad font,
+                     * the corresponding slot will be initialized by
+                     * default physical font. In such case findFont2D may
+                     * return composite font which cannot be casted to
+                     * physical font.
+                     */
+                    try {
+                        components[slot] =
+                            (PhysicalFont) fm.findFont2D(componentNames[slot],
+                                                         style,
                                                 FontManager.PHYSICAL_FALLBACK);
+                    } catch (ClassCastException cce) {
+                        /* Assign default physical font to the slot */
+                        components[slot] = fm.getDefaultPhysicalFont();
+                    }
                 }
             }
             deferredInitialisation[slot] = false;
