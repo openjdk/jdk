@@ -74,7 +74,7 @@ class VersionProps {
         while (index > 0) {
             versionNumbers.add(
                     Integer.parseInt(VERSION_NUMBER, prevIndex, index, 10));
-            prevIndex = index;
+            prevIndex = index + 1; // Skip the period
             index = VERSION_NUMBER.indexOf('.', prevIndex);
         }
         versionNumbers.add(Integer.parseInt(VERSION_NUMBER,
