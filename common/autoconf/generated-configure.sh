@@ -5095,7 +5095,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1467116399
+DATE_WHEN_GENERATED=1467223237
 
 ###############################################################################
 #
@@ -65122,7 +65122,7 @@ $as_echo_n "checking flags for boot jdk java command for big workloads... " >&6;
   BOOTCYCLE_JVM_ARGS_BIG=-Xms64M
 
   # Maximum amount of heap memory and stack size.
-  JVM_HEAP_LIMIT_32="1100"
+  JVM_HEAP_LIMIT_32="1024"
   # Running a 64 bit JVM allows for and requires a bigger heap
   JVM_HEAP_LIMIT_64="1600"
   STACK_SIZE_32=768
