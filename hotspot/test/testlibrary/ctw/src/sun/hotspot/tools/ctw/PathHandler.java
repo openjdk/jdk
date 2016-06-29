@@ -40,6 +40,7 @@ import java.util.concurrent.Executor;
  * Concrete subclasses should implement method {@link #process()}.
  */
 public abstract class PathHandler {
+    private static final Unsafe UNSAFE = jdk.test.lib.Utils.getUnsafe();
     private static final AtomicLong CLASS_COUNT = new AtomicLong(0L);
     private static volatile boolean CLASSES_LIMIT_REACHED = false;
     private static final Pattern JAR_IN_DIR_PATTERN
@@ -151,6 +152,7 @@ public abstract class PathHandler {
         if (id >= Utils.COMPILE_THE_WORLD_START_AT) {
             try {
                 Class<?> aClass = loader.loadClass(name);
+                UNSAFE.ensureClassInitialized(aClass);
                 CompileTheWorld.OUT.printf("[%d]\t%s%n", id, name);
                 Compiler.compileClass(aClass, id, executor);
             } catch (ClassNotFoundException e) {

@@ -68,6 +68,11 @@ public class Compiler {
             if (Utils.COMPILE_THE_WORLD_PRELOAD_CLASSES) {
                 preloadClasses(aClass.getName(), id, constantPool);
             }
+            int startLevel = Utils.INITIAL_COMP_LEVEL;
+            int endLevel = Utils.TIERED_COMPILATION ? Utils.TIERED_STOP_AT_LEVEL : startLevel;
+            for (int i = startLevel; i <= endLevel; ++i) {
+                WHITE_BOX.enqueueInitializerForCompilation(aClass, i);
+            }
             long methodCount = 0;
             for (Executable e : aClass.getDeclaredConstructors()) {
                 ++methodCount;
