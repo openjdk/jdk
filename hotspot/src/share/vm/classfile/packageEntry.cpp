@@ -346,8 +346,8 @@ void PackageEntryTable::print(outputStream* st) {
 
 void PackageEntry::print(outputStream* st) {
   ResourceMark rm;
-  st->print_cr("package entry "PTR_FORMAT" name %s module %s classpath_index "
-               INT32_FORMAT " is_exported_unqualified %d is_exported_allUnnamed %d " "next "PTR_FORMAT,
+  st->print_cr("package entry " PTR_FORMAT " name %s module %s classpath_index "
+               INT32_FORMAT " is_exported_unqualified %d is_exported_allUnnamed %d " "next " PTR_FORMAT,
                p2i(this), name()->as_C_string(),
                (module()->is_named() ? module()->name()->as_C_string() : UNNAMED_MODULE),
                _classpath_index, _is_exported_unqualified, _is_exported_allUnnamed, p2i(next()));
