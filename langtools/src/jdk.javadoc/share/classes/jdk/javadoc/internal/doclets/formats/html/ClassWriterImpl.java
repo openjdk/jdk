@@ -208,7 +208,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         bodyTree.addContent(HtmlConstants.START_OF_CLASS_DATA);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.header);
-        ModuleElement mdle = configuration.root.getElementUtils().getModuleOf(typeElement);
+        ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(typeElement);
         if (mdle != null && !mdle.isUnnamed()) {
             Content classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInClass, moduleLabel);
             Content moduleNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classModuleLabel);

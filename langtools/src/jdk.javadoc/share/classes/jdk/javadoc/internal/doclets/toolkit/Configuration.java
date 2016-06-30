@@ -179,7 +179,7 @@ public abstract class Configuration {
     /**
      * The Root of the generated Program Structure from the Doclet API.
      */
-    public DocletEnvironment root;
+    public DocletEnvironment docEnv;
 
     /**
      * An utility class for commonly used helpers
@@ -365,7 +365,7 @@ public abstract class Configuration {
         metakeywords = new MetaKeywords(this);
         optionsProcessed = new ArrayList<>();
         groups = new ArrayList<>(0);
-        overviewElement = new OverviewElement(root);
+        overviewElement = new OverviewElement(docEnv);
     }
 
     /**
@@ -388,7 +388,7 @@ public abstract class Configuration {
         // Build the modules structure used by the doclet
         modulePackages = new TreeMap<>(utils.makeModuleComparator());
         for (PackageElement p: packages) {
-            ModuleElement mdle = root.getElementUtils().getModuleOf(p);
+            ModuleElement mdle = docEnv.getElementUtils().getModuleOf(p);
             if (mdle != null && !mdle.isUnnamed()) {
                 Set<PackageElement> s = modulePackages.get(mdle);
                 if (s == null)
