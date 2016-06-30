@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,8 +114,8 @@ Java_java_net_SocketOutputStream_socketWrite0(JNIEnv *env, jobject this,
                 JNU_ThrowByName(env, "sun/net/ConnectionResetException",
                     "Connection reset");
             } else {
-                NET_ThrowByNameWithLastError(env, "java/net/SocketException",
-                    "Write failed");
+                JNU_ThrowByNameWithMessageAndLastError
+                    (env, "java/net/SocketException", "Write failed");
             }
             if (bufP != BUF) {
                 free(bufP);

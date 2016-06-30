@@ -37,14 +37,14 @@ import java.util.function.ToIntFunction;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.internal.Utils;
 
 /**
  *
  * Order Resources plugin
  */
-public final class OrderResourcesPlugin implements TransformerPlugin {
+public final class OrderResourcesPlugin implements Plugin {
     public static final String NAME = "order-resources";
     private static final FileSystem JRT_FILE_SYSTEM = Utils.jrtFileSystem();
 

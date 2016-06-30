@@ -34,12 +34,12 @@ import java.util.stream.Collectors;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 
 /**
  * Plugin to generate java.lang.invoke classes.
  */
-public final class GenerateJLIClassesPlugin implements TransformerPlugin {
+public final class GenerateJLIClassesPlugin implements Plugin {
 
     private static final String NAME = "generate-jli-classes";
 

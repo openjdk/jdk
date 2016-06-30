@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.PluginException;
@@ -44,7 +44,7 @@ import jdk.tools.jlink.plugin.PluginException;
  *
  * Exclude VM plugin
  */
-public final class ExcludeVMPlugin implements TransformerPlugin {
+public final class ExcludeVMPlugin implements Plugin {
 
     private static final class JvmComparator implements Comparator<Jvm> {
 

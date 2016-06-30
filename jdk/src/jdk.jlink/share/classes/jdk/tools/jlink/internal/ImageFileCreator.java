@@ -43,7 +43,6 @@ import java.util.stream.Stream;
 import jdk.tools.jlink.internal.Archive.Entry;
 import jdk.tools.jlink.internal.Archive.Entry.EntryType;
 import jdk.tools.jlink.internal.ModulePoolImpl.CompressedModuleData;
-import jdk.tools.jlink.plugin.ExecutableImage;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ModuleEntry;
 

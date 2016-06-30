@@ -41,14 +41,14 @@ import jdk.tools.jlink.internal.PathModuleEntry;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.internal.Utils;
 
 /**
  *
  * Copy files to image from various locations.
  */
-public class FileCopierPlugin implements TransformerPlugin {
+public class FileCopierPlugin implements Plugin {
 
     public static final String NAME = "copy-files";
 

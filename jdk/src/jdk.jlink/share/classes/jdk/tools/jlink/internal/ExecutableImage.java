@@ -22,23 +22,43 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.tools.jlink.plugin;
+package jdk.tools.jlink.internal;
 
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Set;
 
 /**
- * Implement this interface to develop a Transformer plugin.
- * TransformerPlugin are called during image creation. This kind of plugin aims to
- * modify the content of the runtime image.
+ * An executable runtime image. Contains the information about the executable
+ * image created.
  */
-public interface TransformerPlugin extends Plugin {
+public interface ExecutableImage {
+
     /**
-     * Visit the content of the modules that are composing the image.
+     * Image home directory,
      *
-     * @param in Read only content.
-     * @param out The pool to fill with content. This pool must contain
-     * the result of the visit.
-     *
-     * @throws PluginException
+     * @return The home directory.
      */
-    public void visit(ModulePool in, ModulePool out);
+    public Path getHome();
+
+    /**
+     * The names of the modules located in the image.
+     *
+     * @return The set of modules.
+     */
+    public Set<String> getModules();
+
+    /**
+     * The list of arguments required to execute the image.
+     *
+     * @return The list of arguments.
+     */
+    public List<String> getExecutionArgs();
+
+    /**
+     * Store new arguments required to execute the image.
+     *
+     * @param args Additional arguments
+     */
+    public void storeLaunchArgs(List<String> args);
 }
