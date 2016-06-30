@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 8136421
- * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
+ * @ignore 8158860
+ * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9" | vm.simpleArch == "aarch64")
  * @library / /testlibrary /test/lib
  * @library ../common/patches
  * @modules java.base/jdk.internal.misc
@@ -149,25 +150,12 @@ public class GetResolvedJavaTypeTest {
                         ptr, COMPRESSED);
             }
         },
-        OBJECT_TYPE_BASE {
-            @Override
-            HotSpotResolvedObjectType getResolvedJavaType() {
-                HotSpotResolvedObjectType type
-                        = HotSpotResolvedObjectType.fromObjectClass(
-                        OBJECT_TYPE_BASE.getClass());
-                long ptrToClass = UNSAFE.getKlassPointer(OBJECT_TYPE_BASE);
-                return CompilerToVMHelper.getResolvedJavaType(type,
-                        getPtrToKlass() - ptrToClass, COMPRESSED);
-            }
-        },
         ;
         abstract HotSpotResolvedObjectType getResolvedJavaType();
     }
 
     private static final Unsafe UNSAFE = Utils.getUnsafe();
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
-    private static final long PTR = UNSAFE.getKlassPointer(
-            new GetResolvedJavaTypeTest());
     private static final Class TEST_CLASS = GetResolvedJavaTypeTest.class;
     /* a compressed parameter for tested method is set to false because
        unsafe.getKlassPointer always returns uncompressed pointer */
