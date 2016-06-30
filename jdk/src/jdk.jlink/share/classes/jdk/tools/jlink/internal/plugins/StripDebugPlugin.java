@@ -24,9 +24,6 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import java.io.ByteArrayInputStream;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.function.Predicate;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassWriter;
@@ -75,7 +72,7 @@ public final class StripDebugPlugin implements TransformerPlugin {
                         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
                         reader.accept(writer, ClassReader.SKIP_DEBUG);
                         byte[] content = writer.toByteArray();
-                        res = ModuleEntry.create(path, new ByteArrayInputStream(content), content.length);
+                        res = resource.create(content);
                     }
                 }
             } else if (predicate.test(res.getPath())) {

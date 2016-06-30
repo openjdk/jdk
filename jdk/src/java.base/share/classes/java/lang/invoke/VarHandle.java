@@ -1275,8 +1275,6 @@ public abstract class VarHandle {
             this.methodName = methodName;
             this.at = at;
 
-            // Assert method name is correctly derived from value name
-            assert methodName.equals(toMethodName(name()));
             // Assert that return type is correct
             // Otherwise, when disabled avoid using reflection
             assert at.returnType == getReturnType(methodName);
@@ -1309,16 +1307,6 @@ public abstract class VarHandle {
             AccessMode am = methodNameToAccessMode.get(methodName);
             if (am != null) return am;
             throw new IllegalArgumentException("No AccessMode value for method name " + methodName);
-        }
-
-        private static String toMethodName(String name) {
-            StringBuilder s = new StringBuilder(name.toLowerCase());
-            int i;
-            while ((i = s.indexOf("_")) !=  -1) {
-                s.deleteCharAt(i);
-                s.setCharAt(i, Character.toUpperCase(s.charAt(i)));
-            }
-            return s.toString();
         }
 
         private static Class<?> getReturnType(String name) {

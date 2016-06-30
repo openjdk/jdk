@@ -211,6 +211,7 @@ void emit_constraint_double(const char* name, CommandLineFlagConstraintFunc_doub
 #define EMIT_CONSTRAINT_MANAGEABLE_FLAG(type, name, value, doc)   ); emit_constraint_##type(#name
 #define EMIT_CONSTRAINT_PRODUCT_RW_FLAG(type, name, value, doc)   ); emit_constraint_##type(#name
 #define EMIT_CONSTRAINT_PD_PRODUCT_FLAG(type, name, doc)          ); emit_constraint_##type(#name
+#define EMIT_CONSTRAINT_PD_DIAGNOSTIC_FLAG(type, name, doc)       ); emit_constraint_##type(#name
 #define EMIT_CONSTRAINT_DEVELOPER_FLAG(type, name, value, doc)    ); emit_constraint_##type(#name
 #define EMIT_CONSTRAINT_PD_DEVELOPER_FLAG(type, name, doc)        ); emit_constraint_##type(#name
 #define EMIT_CONSTRAINT_NOTPRODUCT_FLAG(type, name, value, doc)   ); emit_constraint_##type(#name
@@ -233,6 +234,7 @@ void CommandLineFlagConstraintList::init(void) {
                                         EMIT_CONSTRAINT_PRODUCT_FLAG,
                                         EMIT_CONSTRAINT_PD_PRODUCT_FLAG,
                                         EMIT_CONSTRAINT_DIAGNOSTIC_FLAG,
+                                        EMIT_CONSTRAINT_PD_DIAGNOSTIC_FLAG,
                                         EMIT_CONSTRAINT_EXPERIMENTAL_FLAG,
                                         EMIT_CONSTRAINT_NOTPRODUCT_FLAG,
                                         EMIT_CONSTRAINT_MANAGEABLE_FLAG,
@@ -260,6 +262,7 @@ void CommandLineFlagConstraintList::init(void) {
                                    EMIT_CONSTRAINT_PRODUCT_FLAG,
                                    EMIT_CONSTRAINT_PD_PRODUCT_FLAG,
                                    EMIT_CONSTRAINT_DIAGNOSTIC_FLAG,
+                                   EMIT_CONSTRAINT_PD_DIAGNOSTIC_FLAG,
                                    EMIT_CONSTRAINT_NOTPRODUCT_FLAG,
                                    IGNORE_RANGE,
                                    EMIT_CONSTRAINT_CHECK,
@@ -272,6 +275,7 @@ void CommandLineFlagConstraintList::init(void) {
                                    EMIT_CONSTRAINT_PRODUCT_FLAG,
                                    EMIT_CONSTRAINT_PD_PRODUCT_FLAG,
                                    EMIT_CONSTRAINT_DIAGNOSTIC_FLAG,
+                                   EMIT_CONSTRAINT_PD_DIAGNOSTIC_FLAG,
                                    EMIT_CONSTRAINT_EXPERIMENTAL_FLAG,
                                    EMIT_CONSTRAINT_NOTPRODUCT_FLAG,
                                    IGNORE_RANGE,
@@ -285,6 +289,7 @@ void CommandLineFlagConstraintList::init(void) {
                                    EMIT_CONSTRAINT_PRODUCT_FLAG,
                                    EMIT_CONSTRAINT_PD_PRODUCT_FLAG,
                                    EMIT_CONSTRAINT_DIAGNOSTIC_FLAG,
+                                   EMIT_CONSTRAINT_PD_DIAGNOSTIC_FLAG,
                                    EMIT_CONSTRAINT_EXPERIMENTAL_FLAG,
                                    EMIT_CONSTRAINT_NOTPRODUCT_FLAG,
                                    EMIT_CONSTRAINT_MANAGEABLE_FLAG,

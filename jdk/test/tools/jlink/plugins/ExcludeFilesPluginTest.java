@@ -74,8 +74,8 @@ public class ExcludeFilesPluginTest {
         fplug.configure(prop);
         ModulePoolImpl files = new ModulePoolImpl();
         ModulePoolImpl fresult = new ModulePoolImpl();
-        ModuleEntry f = ModuleEntry.create(module, "/" + module + "/" + sample,
-                ModuleEntry.Type.CONFIG, new ByteArrayInputStream(new byte[0]), 0);
+        ModuleEntry f = ModuleEntry.create("/" + module + "/" + sample,
+                ModuleEntry.Type.CONFIG, new byte[0]);
         files.add(f);
 
         fplug.visit(files, fresult);

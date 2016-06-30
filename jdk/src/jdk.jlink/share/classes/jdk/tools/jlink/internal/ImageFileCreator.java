@@ -25,10 +25,8 @@
 package jdk.tools.jlink.internal;
 
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
@@ -47,7 +45,6 @@ import jdk.tools.jlink.internal.Archive.Entry.EntryType;
 import jdk.tools.jlink.internal.ModulePoolImpl.CompressedModuleData;
 import jdk.tools.jlink.plugin.ExecutableImage;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.ModuleEntry;
 
 /**
@@ -73,7 +70,7 @@ public final class ImageFileCreator {
     private final Map<String, List<Entry>> entriesForModule = new HashMap<>();
     private final ImagePluginStack plugins;
     private ImageFileCreator(ImagePluginStack plugins) {
-        this.plugins = plugins;
+        this.plugins = Objects.requireNonNull(plugins);
     }
 
     public static ExecutableImage create(Set<Archive> archives,
@@ -232,31 +229,15 @@ public final class ImageFileCreator {
         out.write(bytes, 0, bytes.length);
 
         // write module content
-        for (ModuleEntry res : content) {
-            byte[] buf = res.getBytes();
-            out.write(buf, 0, buf.length);
-        }
+        content.stream().forEach((res) -> {
+            res.write(out);
+        });
 
         tree.addContent(out);
 
         out.close();
 
         return resultResources;
-    }
-
-    private static ModuleEntry.Type mapImageFileType(EntryType type) {
-        switch(type) {
-            case CONFIG: {
-                return ModuleEntry.Type.CONFIG;
-            }
-            case NATIVE_CMD: {
-                return ModuleEntry.Type.NATIVE_CMD;
-            }
-            case NATIVE_LIB: {
-                return ModuleEntry.Type.NATIVE_LIB;
-            }
-        }
-        return null;
     }
 
     private static ModulePoolImpl createPools(Set<Archive> archives,
@@ -278,52 +259,25 @@ public final class ImageFileCreator {
         for (Archive archive : archives) {
             String mn = archive.moduleName();
             for (Entry entry : entriesForModule.get(mn)) {
-
+                String path;
                 if (entry.type() == EntryType.CLASS_OR_RESOURCE) {
                     // Removal of "classes/" radical.
-                    String path = entry.name();
-                    try (InputStream stream = entry.stream()) {
-                        byte[] bytes = readAllBytes(stream);
-                        if (path.endsWith("module-info.class")) {
-                            path = "/" + path;
-                        } else {
-                            path = "/" + mn + "/" + path;
-                        }
-                        try {
-                            resources.add(ModuleEntry.create(path, bytes));
-                        } catch (Exception ex) {
-                            throw new IOException(ex);
-                        }
+                    path = entry.name();
+                    if (path.endsWith("module-info.class")) {
+                        path = "/" + path;
+                    } else {
+                        path = "/" + mn + "/" + path;
                     }
                 } else {
-                    try {
-                        // Entry.path() contains the kind of file native, conf, bin, ...
-                        // Keep it to avoid naming conflict (eg: native/jvm.cfg and config/jvm.cfg
-                        resources.add(ModuleEntry.create(mn,
-                                "/" + mn + "/" + entry.path(), mapImageFileType(entry.type()),
-                                entry.stream(), entry.size()));
-                    } catch (Exception ex) {
-                        throw new IOException(ex);
-                    }
+                    // Entry.path() contains the kind of file native, conf, bin, ...
+                    // Keep it to avoid naming conflict (eg: native/jvm.cfg and config/jvm.cfg
+                    path = "/" + mn + "/" + entry.path();
                 }
+
+                resources.add(new ArchiveEntryModuleEntry(mn, path, entry));
             }
         }
         return resources;
-    }
-
-    private static final int BUF_SIZE = 8192;
-
-    private static byte[] readAllBytes(InputStream is) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        byte[] buf = new byte[BUF_SIZE];
-        while (true) {
-            int n = is.read(buf);
-            if (n < 0) {
-                break;
-            }
-            baos.write(buf, 0, n);
-        }
-        return baos.toByteArray();
     }
 
     /**

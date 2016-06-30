@@ -33,7 +33,7 @@
 import java.io.ByteArrayInputStream;
 import java.util.Optional;
 import java.util.function.Function;
-import jdk.tools.jlink.internal.ModuleEntryImpl;
+import jdk.tools.jlink.internal.ModuleEntryFactory;
 import jdk.tools.jlink.internal.ModulePoolImpl;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
@@ -54,7 +54,7 @@ public class ImageFilePoolTest {
         ModulePool input = new ModulePoolImpl();
         for (int i = 0; i < 1000; ++i) {
             String module = "module" + (i / 100);
-            input.add(new InMemoryImageFile(module, "/" + module + "/java/class" + i,
+            input.add(newInMemoryImageFile("/" + module + "/java/class" + i,
                     ModuleEntry.Type.CONFIG, "class" + i));
         }
         if (input.getEntryCount() != 1000) {
@@ -94,11 +94,11 @@ public class ImageFilePoolTest {
             switch (index) {
                 case 0:
                     ++amountAfter;
-                    return new InMemoryImageFile(file.getModule(), file.getPath() + SUFFIX,
+                    return newInMemoryImageFile(file.getPath() + SUFFIX,
                             file.getType(), file.getPath());
                 case 1:
                     ++amountAfter;
-                    return new InMemoryImageFile(file.getModule(), file.getPath(),
+                    return newInMemoryImageFile(file.getPath(),
                             file.getType(), file.getPath());
             }
             return null;
@@ -130,28 +130,27 @@ public class ImageFilePoolTest {
         if (input.findEntry("unknown").isPresent()) {
             throw new AssertionError("ImageFileModulePool does not return null for unknown file");
         }
-        if (input.contains(new InMemoryImageFile("", "unknown", ModuleEntry.Type.CONFIG, "unknown"))) {
-            throw new AssertionError("'contain' returns true for unknown file");
+        if (input.contains(newInMemoryImageFile("/unknown/foo", ModuleEntry.Type.CONFIG, "unknown"))) {
+            throw new AssertionError("'contain' returns true for /unknown/foo file");
         }
-        input.add(new InMemoryImageFile("", "/aaa/bbb", ModuleEntry.Type.CONFIG, ""));
+        input.add(newInMemoryImageFile("/aaa/bbb", ModuleEntry.Type.CONFIG, ""));
         try {
-            input.add(new InMemoryImageFile("", "/aaa/bbb", ModuleEntry.Type.CONFIG, ""));
+            input.add(newInMemoryImageFile("/aaa/bbb", ModuleEntry.Type.CONFIG, ""));
             throw new AssertionError("Exception expected");
         } catch (Exception e) {
             // expected
         }
         input.setReadOnly();
         try {
-            input.add(new InMemoryImageFile("", "/aaa/ccc", ModuleEntry.Type.CONFIG, ""));
+            input.add(newInMemoryImageFile("/aaa/ccc", ModuleEntry.Type.CONFIG, ""));
             throw new AssertionError("Exception expected");
         } catch (Exception e) {
             // expected
         }
     }
 
-    private static class InMemoryImageFile extends ModuleEntryImpl {
-        public InMemoryImageFile(String module, String path, ModuleEntry.Type type, String content) {
-            super(module, path, type, new ByteArrayInputStream(content.getBytes()), content.getBytes().length);
-        }
+    private static ModuleEntry newInMemoryImageFile(String path,
+            ModuleEntry.Type type, String content) {
+        return ModuleEntryFactory.create(path, type, content.getBytes());
     }
 }
