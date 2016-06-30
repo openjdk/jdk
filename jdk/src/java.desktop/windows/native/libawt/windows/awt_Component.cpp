@@ -3541,7 +3541,7 @@ UINT AwtComponent::WindowsKeyToJavaChar(UINT wkey, UINT modifiers, TransOps ops,
     BOOL deadKeyFlag = (converted == 2);
 
     // Dead Key
-    if (converted < 0 || wChar[0] == 0 || isDeadKey) {
+    if (converted < 0 || isDeadKey) {
         translation = java_awt_event_KeyEvent_CHAR_UNDEFINED;
     } else
     // No translation available -- try known conversions or else punt.
