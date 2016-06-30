@@ -912,14 +912,16 @@ BASE(AccessIndexed, AccessArray)
   Value     _index;
   Value     _length;
   BasicType _elt_type;
+  bool      _mismatched;
 
  public:
   // creation
-  AccessIndexed(Value array, Value index, Value length, BasicType elt_type, ValueStack* state_before)
+  AccessIndexed(Value array, Value index, Value length, BasicType elt_type, ValueStack* state_before, bool mismatched)
   : AccessArray(as_ValueType(elt_type), array, state_before)
   , _index(index)
   , _length(length)
   , _elt_type(elt_type)
+  , _mismatched(mismatched)
   {
     set_flag(Instruction::NeedsRangeCheckFlag, true);
     ASSERT_VALUES
@@ -929,6 +931,7 @@ BASE(AccessIndexed, AccessArray)
   Value index() const                            { return _index; }
   Value length() const                           { return _length; }
   BasicType elt_type() const                     { return _elt_type; }
+  bool mismatched() const                        { return _mismatched; }
 
   void clear_length()                            { _length = NULL; }
   // perform elimination of range checks involving constants
@@ -945,8 +948,8 @@ LEAF(LoadIndexed, AccessIndexed)
 
  public:
   // creation
-  LoadIndexed(Value array, Value index, Value length, BasicType elt_type, ValueStack* state_before)
-  : AccessIndexed(array, index, length, elt_type, state_before)
+  LoadIndexed(Value array, Value index, Value length, BasicType elt_type, ValueStack* state_before, bool mismatched = false)
+  : AccessIndexed(array, index, length, elt_type, state_before, mismatched)
   , _explicit_null_check(NULL) {}
 
   // accessors
@@ -974,8 +977,9 @@ LEAF(StoreIndexed, AccessIndexed)
 
  public:
   // creation
-  StoreIndexed(Value array, Value index, Value length, BasicType elt_type, Value value, ValueStack* state_before, bool check_boolean)
-  : AccessIndexed(array, index, length, elt_type, state_before)
+  StoreIndexed(Value array, Value index, Value length, BasicType elt_type, Value value, ValueStack* state_before,
+               bool check_boolean, bool mismatched = false)
+  : AccessIndexed(array, index, length, elt_type, state_before, mismatched)
   , _value(value), _profiled_method(NULL), _profiled_bci(0), _check_boolean(check_boolean)
   {
     set_flag(NeedsWriteBarrierFlag, (as_ValueType(elt_type)->is_object()));
