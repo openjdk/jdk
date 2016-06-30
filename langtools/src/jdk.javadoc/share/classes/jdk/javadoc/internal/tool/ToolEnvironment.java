@@ -89,13 +89,13 @@ import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
  * @author Neal Gafter (rewrite)
  * @author Scott Seligman (generics)
  */
-public class DocEnv {
-    protected static final Context.Key<DocEnv> docEnvKey = new Context.Key<>();
+public class ToolEnvironment {
+    protected static final Context.Key<ToolEnvironment> ToolEnvKey = new Context.Key<>();
 
-    public static DocEnv instance(Context context) {
-        DocEnv instance = context.get(docEnvKey);
+    public static ToolEnvironment instance(Context context) {
+        ToolEnvironment instance = context.get(ToolEnvKey);
         if (instance == null)
-            instance = new DocEnv(context);
+            instance = new ToolEnvironment(context);
         return instance;
     }
 
@@ -147,7 +147,7 @@ public class DocEnv {
 
     public final JavacTypes typeutils;
 
-    protected RootDocImpl root;
+    protected DocEnvImpl docEnv;
 
     public final DocTrees docTrees;
 
@@ -158,8 +158,8 @@ public class DocEnv {
      *
      * @param context      Context for this javadoc instance.
      */
-    protected DocEnv(Context context) {
-        context.put(docEnvKey, this);
+    protected ToolEnvironment(Context context) {
+        context.put(ToolEnvKey, this);
         this.context = context;
 
         messager = Messager.instance0(context);
