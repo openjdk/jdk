@@ -46,7 +46,6 @@ import jdk.tools.jlink.internal.PluginOrderingGraph;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.Plugin.Category;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
 
 public class PluginOrderTest {
 
@@ -225,7 +224,7 @@ public class PluginOrderTest {
         PluginOrderingGraph.sort(plugins);
     }
 
-    private static class Plug implements TransformerPlugin {
+    private static class Plug implements Plugin {
 
         private final Set<String> isBefore;
         private final Set<String> isAfter;

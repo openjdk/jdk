@@ -49,7 +49,6 @@ import static jdk.tools.jlink.internal.TaskHelper.JLINK_BUNDLE;
 import jdk.tools.jlink.internal.TaskHelper.Option;
 import jdk.tools.jlink.internal.TaskHelper.OptionsHelper;
 import jdk.tools.jlink.internal.ImagePluginStack.ImageProvider;
-import jdk.tools.jlink.plugin.ExecutableImage;
 import jdk.tools.jlink.Jlink.JlinkConfiguration;
 import jdk.tools.jlink.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.plugin.PluginException;
@@ -184,8 +183,8 @@ public class JlinkTask {
                 optionsHelper.showHelp(PROGNAME);
                 return EXIT_OK;
             }
-            if (optionsHelper.listPlugins()) {
-                optionsHelper.listPlugins(true);
+            if (optionsHelper.shouldListPlugins()) {
+                optionsHelper.listPlugins();
                 return EXIT_OK;
             }
             if (options.version || options.fullVersion) {

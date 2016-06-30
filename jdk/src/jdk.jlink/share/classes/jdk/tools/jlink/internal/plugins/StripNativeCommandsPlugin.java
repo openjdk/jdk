@@ -26,13 +26,13 @@ package jdk.tools.jlink.internal.plugins;
 
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 
 /**
  *
  * Strip Native Commands plugin
  */
-public final class StripNativeCommandsPlugin implements TransformerPlugin {
+public final class StripNativeCommandsPlugin implements Plugin {
 
     public static final String NAME = "strip-native-commands";
 
