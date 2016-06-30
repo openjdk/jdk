@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -54,6 +54,8 @@ import java.util.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
+import sun.security.util.Debug;
+
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
 /**
@@ -85,7 +87,8 @@ public class PKCS11 {
                 return null;
             }
         });
-        initializeLibrary();
+        boolean enableDebug = Debug.getInstance("sunpkcs11") != null;
+        initializeLibrary(enableDebug);
     }
 
     public static void loadNative() {
@@ -109,7 +112,7 @@ public class PKCS11 {
      * @preconditions
      * @postconditions
      */
-    private static native void initializeLibrary();
+    private static native void initializeLibrary(boolean debug);
 
     // XXX
     /**

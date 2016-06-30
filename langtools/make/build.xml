@@ -235,7 +235,10 @@
     <target name="idea" depends="-check-langtools.jdk.home">
         <mkdir dir=".idea"/>
         <copy todir=".idea" >
-            <fileset dir="make/intellij" excludes="**/src/**"/>
+            <fileset dir="make/intellij">
+               <exclude name="**/src/**"/>
+               <exclude name="**/utils/**"/>
+            </fileset>
         </copy>
         <condition property="idea.jtreg.home" value="${jtreg.home}" else = "[jtreg.home]">
             <isset property="jtreg.home"/>

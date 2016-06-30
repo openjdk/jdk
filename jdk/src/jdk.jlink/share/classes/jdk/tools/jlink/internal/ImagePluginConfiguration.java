@@ -101,7 +101,7 @@ public final class ImagePluginConfiguration {
             List<Plugin> orderedPlugins = PluginOrderingGraph.sort(entry.getValue());
             Category category = entry.getKey();
             for (Plugin p : orderedPlugins) {
-                if (Utils.isPostProcessor(category)) {
+                if (category.isPostProcessor()) {
                     @SuppressWarnings("unchecked")
                     PostProcessorPlugin pp = (PostProcessorPlugin) p;
                     postProcessingPlugins.add(pp);
