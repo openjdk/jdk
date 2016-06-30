@@ -40,7 +40,6 @@ import jdk.tools.jlink.internal.ModulePoolImpl;
 import jdk.tools.jlink.internal.plugins.ExcludeFilesPlugin;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
 
 public class ExcludeFilesPluginTest {
     public static void main(String[] args) throws Exception {

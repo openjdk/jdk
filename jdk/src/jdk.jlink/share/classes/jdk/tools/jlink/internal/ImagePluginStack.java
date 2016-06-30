@@ -44,14 +44,11 @@ import java.util.stream.Stream;
 
 import jdk.internal.jimage.decompressor.Decompressor;
 import jdk.tools.jlink.plugin.Plugin;
-import jdk.tools.jlink.plugin.ExecutableImage;
 import jdk.tools.jlink.builder.ImageBuilder;
-import jdk.tools.jlink.plugin.TransformerPlugin;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.LinkModule;
 import jdk.tools.jlink.plugin.ModuleEntry;
-import jdk.tools.jlink.plugin.PostProcessorPlugin;
 
 /**
  * Plugins Stack. Plugins entry point to apply transformations onto resources
@@ -161,42 +158,34 @@ public final class ImagePluginStack {
 
     private final ImageBuilder imageBuilder;
     private final Plugin lastSorter;
-    private final List<TransformerPlugin> contentPlugins = new ArrayList<>();
-    private final List<PostProcessorPlugin> postProcessingPlugins = new ArrayList<>();
+    private final List<Plugin> plugins = new ArrayList<>();
     private final List<ResourcePrevisitor> resourcePrevisitors = new ArrayList<>();
 
 
     public ImagePluginStack() {
-        this(null, Collections.emptyList(), null,
-                Collections.emptyList());
+        this(null, Collections.emptyList(), null);
     }
 
     public ImagePluginStack(ImageBuilder imageBuilder,
-            List<TransformerPlugin> contentPlugins,
-            Plugin lastSorter,
-            List<PostProcessorPlugin> postprocessingPlugins) {
+            List<Plugin> plugins,
+            Plugin lastSorter) {
         this.imageBuilder = Objects.requireNonNull(imageBuilder);
         this.lastSorter = lastSorter;
-        Objects.requireNonNull(contentPlugins);
-        Objects.requireNonNull(postprocessingPlugins);
-        contentPlugins.stream().forEach((p) -> {
+        this.plugins.addAll(Objects.requireNonNull(plugins));
+        plugins.stream().forEach((p) -> {
             Objects.requireNonNull(p);
             if (p instanceof ResourcePrevisitor) {
                 resourcePrevisitors.add((ResourcePrevisitor) p);
             }
-            this.contentPlugins.add(p);
-        });
-        postprocessingPlugins.stream().forEach((p) -> {
-            Objects.requireNonNull(p);
-            this.postProcessingPlugins.add(p);
         });
     }
 
     public void operate(ImageProvider provider) throws Exception {
         ExecutableImage img = provider.retrieve(this);
         List<String> arguments = new ArrayList<>();
-        postProcessingPlugins.stream()
-                .map((plugin) -> plugin.process(img))
+        plugins.stream()
+                .filter(PostProcessor.class::isInstance)
+                .map((plugin) -> ((PostProcessor)plugin).process(img))
                 .filter((lst) -> (lst != null))
                 .forEach((lst) -> {
                      arguments.addAll(lst);
@@ -241,7 +230,7 @@ public final class ImagePluginStack {
 
         ModulePoolImpl current = resources;
         List<ModuleEntry> frozenOrder = null;
-        for (TransformerPlugin p : contentPlugins) {
+        for (Plugin p : plugins) {
             current.setReadOnly();
             ModulePoolImpl output = null;
             if (p == lastSorter) {

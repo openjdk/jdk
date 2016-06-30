@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import jdk.tools.jlink.plugin.Plugin;
-import jdk.tools.jlink.plugin.TransformerPlugin;
 import jdk.tools.jlink.internal.PluginRepository;
 import tests.Helper;
 import tests.JImageGenerator;
@@ -60,7 +59,7 @@ public class JLinkTest {
     private static int getNumJlinkPlugins() {
         ModuleDescriptor desc = Plugin.class.getModule().getDescriptor();
         return desc.provides().
-                    get(TransformerPlugin.class.getName()).
+                    get(Plugin.class.getName()).
                     providers().size();
     }
 

@@ -22,43 +22,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.tools.jlink.plugin;
+package jdk.tools.jlink.internal;
 
-import java.nio.file.Path;
 import java.util.List;
-import java.util.Set;
 
 /**
- * An executable runtime image. Contains the information about the executable
- * image created.
- */
-public interface ExecutableImage {
+ * Plugin wishing to post-proces must implement this interface. PostProcessors
+ * are called once the image has been generated and is executable.
+ **/
+public interface PostProcessor {
 
     /**
-     * Image home directory,
+     * Post process an image.
      *
-     * @return The home directory.
+     * @param image The executable image.
+     * @return The list of arguments to add to launchers (if any).
      */
-    public Path getHome();
-
-    /**
-     * The names of the modules located in the image.
-     *
-     * @return The set of modules.
-     */
-    public Set<String> getModules();
-
-    /**
-     * The list of arguments required to execute the image.
-     *
-     * @return The list of arguments.
-     */
-    public List<String> getExecutionArgs();
-
-    /**
-     * Store new arguments required to execute the image.
-     *
-     * @param args Additional arguments
-     */
-    public void storeLaunchArgs(List<String> args);
+    public List<String> process(ExecutableImage image);
 }

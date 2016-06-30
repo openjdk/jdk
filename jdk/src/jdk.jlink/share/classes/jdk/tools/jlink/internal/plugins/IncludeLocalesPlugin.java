@@ -44,7 +44,7 @@ import jdk.tools.jlink.plugin.LinkModule;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 
 /**
  * Plugin to explicitly specify the locale data included in jdk.localedata
@@ -68,7 +68,7 @@ import jdk.tools.jlink.plugin.TransformerPlugin;
  *     start with at least one white space character, e.g., " ar ar-EG ..."
  *                                                           ^
  */
-public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePrevisitor {
+public final class IncludeLocalesPlugin implements Plugin, ResourcePrevisitor {
 
     public static final String NAME = "include-locales";
     private static final String MODULENAME = "jdk.localedata";
