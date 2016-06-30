@@ -644,6 +644,7 @@ SJAVAC_SERVER_JAVA
 JAVA_TOOL_FLAGS_SMALL
 JAVA_FLAGS_SMALL
 JAVA_FLAGS_JAVAC
+BOOTCYCLE_JVM_ARGS_BIG
 JAVA_FLAGS_BIG
 JAVA_FLAGS
 TEST_JOBS
@@ -5094,7 +5095,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1466007828
+DATE_WHEN_GENERATED=1467223237
 
 ###############################################################################
 #
@@ -36621,7 +36622,6 @@ $as_echo "yes" >&6; }
   # Setup the assembler (AS)
   #
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    # FIXME: should this really be solaris, or solstudio?
 
 
   # Publish this variable in the help.
@@ -37105,6 +37105,9 @@ $as_echo "$as_me: Rewriting AS to \"$new_complete\"" >&6;}
     fi
   fi
 
+    if test "x$AS" = x; then
+      as_fn_error $? "Solaris assembler (as) is required. Please install via \"pkg install pkg:/developer/assembler\"." "$LINENO" 5
+    fi
   else
     # FIXME: is this correct for microsoft?
     AS="$CC -c"
@@ -65120,25 +65123,32 @@ $as_echo_n "checking flags for boot jdk java command for big workloads... " >&6;
     JVM_ARG_OK=false
   fi
 
+  BOOTCYCLE_JVM_ARGS_BIG=-Xms64M
 
-  # Maximum amount of heap memory.
-  # Maximum stack size.
-  JVM_MAX_HEAP=`expr $MEMORY_SIZE / 2`
+  # Maximum amount of heap memory and stack size.
+  JVM_HEAP_LIMIT_32="1024"
+  # Running a 64 bit JVM allows for and requires a bigger heap
+  JVM_HEAP_LIMIT_64="1600"
+  STACK_SIZE_32=768
+  STACK_SIZE_64=1536
+  JVM_HEAP_LIMIT_GLOBAL=`expr $MEMORY_SIZE / 2`
+  if test "$JVM_HEAP_LIMIT_GLOBAL" -lt "$JVM_HEAP_LIMIT_32"; then
+    JVM_HEAP_LIMIT_32=$JVM_HEAP_LIMIT_GLOBAL
+  fi
+  if test "$JVM_HEAP_LIMIT_GLOBAL" -lt "$JVM_HEAP_LIMIT_64"; then
+    JVM_HEAP_LIMIT_64=$JVM_HEAP_LIMIT_GLOBAL
+  fi
+  if test "$JVM_HEAP_LIMIT_GLOBAL" -lt "512"; then
+    JVM_HEAP_LIMIT_32=512
+    JVM_HEAP_LIMIT_64=512
+  fi
+
   if test "x$BOOT_JDK_BITS" = "x32"; then
-    if test "$JVM_MAX_HEAP" -gt "1100"; then
-      JVM_MAX_HEAP=1100
-    elif test "$JVM_MAX_HEAP" -lt "512"; then
-      JVM_MAX_HEAP=512
-    fi
-    STACK_SIZE=768
+    STACK_SIZE=$STACK_SIZE_32
+    JVM_MAX_HEAP=$JVM_HEAP_LIMIT_32
   else
-    # Running a 64 bit JVM allows for and requires a bigger heap
-    if test "$JVM_MAX_HEAP" -gt "1600"; then
-      JVM_MAX_HEAP=1600
-    elif test "$JVM_MAX_HEAP" -lt "512"; then
-      JVM_MAX_HEAP=512
-    fi
-    STACK_SIZE=1536
+    STACK_SIZE=$STACK_SIZE_64
+    JVM_MAX_HEAP=$JVM_HEAP_LIMIT_64
   fi
 
   $ECHO "Check if jvm arg is ok: -Xmx${JVM_MAX_HEAP}M" >&5
@@ -65175,6 +65185,21 @@ $as_echo_n "checking flags for boot jdk java command for big workloads... " >&6;
 $as_echo "$boot_jdk_jvmargs_big" >&6; }
 
   JAVA_FLAGS_BIG=$boot_jdk_jvmargs_big
+
+
+  if test "x$OPENJDK_TARGET_CPU_BITS" = "x32"; then
+    BOOTCYCLE_MAX_HEAP=$JVM_HEAP_LIMIT_32
+    BOOTCYCLE_STACK_SIZE=$STACK_SIZE_32
+  else
+    BOOTCYCLE_MAX_HEAP=$JVM_HEAP_LIMIT_64
+    BOOTCYCLE_STACK_SIZE=$STACK_SIZE_64
+  fi
+  BOOTCYCLE_JVM_ARGS_BIG="$BOOTCYCLE_JVM_ARGS_BIG -Xmx${BOOTCYCLE_MAX_HEAP}M"
+  BOOTCYCLE_JVM_ARGS_BIG="$BOOTCYCLE_JVM_ARGS_BIG -XX:ThreadStackSize=$BOOTCYCLE_STACK_SIZE"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking flags for bootcycle boot jdk java command for big workloads" >&5
+$as_echo_n "checking flags for bootcycle boot jdk java command for big workloads... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOTCYCLE_JVM_ARGS_BIG" >&5
+$as_echo "$BOOTCYCLE_JVM_ARGS_BIG" >&6; }
 
 
   # By default, the main javac compilations use big

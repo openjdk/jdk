@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ import java.io.*;
 
 /**
  * @test
- * @bug 8010464 8027570 8027687 8029354
+ * @bug 8010464 8027570 8027687 8029354 8114860 8071660
  */
 
 public class URLPermissionTest {
@@ -110,6 +110,8 @@ public class URLPermissionTest {
 
     static class ActionImpliesTest extends Test {
         String arg1, arg2;
+        String url1 = "http://www.foo.com/-";
+        String url2 = "http://www.foo.com/a/b";
 
         ActionImpliesTest(String arg1, String arg2, boolean expected) {
             this.arg1 = arg1;
@@ -117,10 +119,17 @@ public class URLPermissionTest {
             this.expected = expected;
         }
 
+        ActionImpliesTest(String ur11, String url2, String arg1, String arg2,
+            boolean expected) {
+            this.url1 = ur11;
+            this.url2 = url2;
+            this.arg1 = arg1;
+            this.arg2 = arg2;
+            this.expected = expected;
+        }
+
         @Override
           boolean execute() {
-            String url1 = "http://www.foo.com/-";
-            String url2 = "http://www.foo.com/a/b";
             URLPermission p1 = new URLPermission(url1, arg1);
             URLPermission p2 = new URLPermission(url2, arg2);
             boolean result = p1.implies(p2);
@@ -129,8 +138,35 @@ public class URLPermissionTest {
         }
     }
 
+    static ActionsStringTest actionstest(String arg, String expectedActions) {
+        return new ActionsStringTest(arg, expectedActions);
+    }
+
+    static class ActionsStringTest extends Test {
+
+        String expectedActions;
+        String arg;
+
+        public ActionsStringTest(String arg, String expectedActions) {
+            this.arg = arg;
+            this.expectedActions = expectedActions;
+        }
+
+        @Override
+        boolean execute() {
+            String url = "http://www.foo.com/";
+            URLPermission urlp = new URLPermission(url, arg);
+            return (expectedActions.equals(urlp.getActions()));
+        }
+    }
+
     static ActionImpliesTest actest(String arg1, String arg2, boolean expected) {
         return new ActionImpliesTest(arg1, arg2, expected);
+    }
+
+    static ActionImpliesTest actest(String url1, String url2, String arg1,
+        String arg2, boolean expected) {
+        return new ActionImpliesTest(url1, url2, arg1, arg2, expected);
     }
 
     static class HashCodeTest extends Test {
@@ -292,6 +328,9 @@ public class URLPermissionTest {
         imtest("https:*", "http:*", false)
     };
 
+    static final String FOO_URL = "http://www.foo.com/";
+    static final String BAR_URL = "http://www.bar.com/";
+
     static Test[] actionImplies = {
         actest("GET", "GET", true),
         actest("GET", "POST", false),
@@ -305,7 +344,28 @@ public class URLPermissionTest {
         actest("GET:X-Foo,X-Bar", "GET:x-bar,x-foo", true),
         actest("GET:X-Bar,X-Foo,X-Bar,Y-Foo", "GET:x-bar,x-foo", true),
         actest("GET:*", "GET:x-bar,x-foo", true),
-        actest("*:*", "GET:x-bar,x-foo", true)
+        actest("*:*", "GET:x-bar,x-foo", true),
+        actest("", "GET:x-bar,x-foo", false),
+        actest("GET:x-bar,x-foo", "", true),
+        actest("", "", true),
+        actest("GET,DELETE", "GET,DELETE:x-foo", false),
+        actest(FOO_URL, BAR_URL, "", "GET:x-bar,x-foo", false),
+        actest(FOO_URL, BAR_URL, "GET:x-bar,x-foo", "", false),
+        actest(FOO_URL, BAR_URL, "", "", false)
+    };
+
+    static Test[] actionsStringTest = {
+        actionstest("", ""),
+        actionstest(":X-Bar", ":X-Bar"),
+        actionstest("GET", "GET"),
+        actionstest("get", "GET"),
+        actionstest("GET,POST", "GET,POST"),
+        actionstest("GET,post", "GET,POST"),
+        actionstest("get,post", "GET,POST"),
+        actionstest("get,post,DELETE", "DELETE,GET,POST"),
+        actionstest("GET,POST:", "GET,POST"),
+        actionstest("GET:X-Foo,X-bar", "GET:X-Bar,X-Foo"),
+        actionstest("GET,POST,DELETE:X-Bar,X-Foo,X-Bar,Y-Foo", "DELETE,GET,POST:X-Bar,X-Bar,X-Foo,Y-Foo")
     };
 
     static Test[] equalityTests = {
@@ -447,6 +507,23 @@ public class URLPermissionTest {
                         test.arg2 + " Exception: " + caught);
             }
             System.out.println ("action test " + i + " OK");
+        }
+
+        for (int i = 0; i < actionsStringTest.length; i++) {
+            ActionsStringTest test = (ActionsStringTest) actionsStringTest[i];
+            Exception caught = null;
+            boolean result = false;
+            try {
+                result = test.execute();
+            } catch (Exception e) {
+                caught = e;
+            }
+            if (!result) {
+                failed = true;
+                System.out.println("test failed: " + test.arg + ": "
+                        + test.expectedActions + " Exception: " + caught);
+            }
+            System.out.println("Actions String test " + i + " OK");
         }
 
         serializationTest("http://www.foo.com/-", "GET,DELETE:*");

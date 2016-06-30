@@ -40,10 +40,11 @@ import java.net.StandardSocketOptions;      // javadoc
  * address.
  *
  * <p> In the case of a channel to an {@link StandardProtocolFamily#INET IPv4} socket,
- * the underlying operating system supports <a href="http://www.ietf.org/rfc/rfc2236.txt">
- * <i>RFC&nbsp;2236: Internet Group Management Protocol, Version 2 (IGMPv2)</i></a>.
- * It may optionally support source filtering as specified by <a
- * href="http://www.ietf.org/rfc/rfc3376.txt"> <i>RFC&nbsp;3376: Internet Group
+ * the underlying operating system optionally supports
+ * <a href="http://www.ietf.org/rfc/rfc2236.txt"> <i>RFC&nbsp;2236: Internet Group
+ * Management Protocol, Version 2 (IGMPv2)</i></a>. When IGMPv2 is supported then
+ * the operating system may additionally support source filtering as specified by
+ * <a href="http://www.ietf.org/rfc/rfc3376.txt"> <i>RFC&nbsp;3376: Internet Group
  * Management Protocol, Version 3 (IGMPv3)</i></a>.
  * For channels to an {@link StandardProtocolFamily#INET6 IPv6} socket, the equivalent
  * standards are <a href="http://www.ietf.org/rfc/rfc2710.txt"> <i>RFC&nbsp;2710:
@@ -167,7 +168,8 @@ public interface MulticastChannel
      *          If the channel already has source-specific membership of the
      *          group on the interface
      * @throws  UnsupportedOperationException
-     *          If the channel's socket is not an Internet Protocol socket
+     *          If the channel's socket is not an Internet Protocol socket, or
+     *          the platform does not support multicasting
      * @throws  ClosedChannelException
      *          If this channel is closed
      * @throws  IOException
@@ -214,8 +216,9 @@ public interface MulticastChannel
      *          If the channel is currently a member of the group on the given
      *          interface to receive all datagrams
      * @throws  UnsupportedOperationException
-     *          If the channel's socket is not an Internet Protocol socket or
-     *          source filtering is not supported
+     *          If the channel's socket is not an Internet Protocol socket, or
+     *          source filtering is not supported, or the platform does not
+     *          support multicasting
      * @throws  ClosedChannelException
      *          If this channel is closed
      * @throws  IOException

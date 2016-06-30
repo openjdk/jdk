@@ -617,6 +617,7 @@ class Stream extends ExchangeImpl {
     void sendBodyImpl() throws IOException, InterruptedException {
         if (requestContentLen == 0) {
             // no body
+            requestSent();
             return;
         }
         DataFrame df;
@@ -667,7 +668,7 @@ class Stream extends ExchangeImpl {
                     responseFlowController); // TODO: filter headers
         if (body == null) {
             receiveData();
-            return processor.onResponseComplete();
+            body = processor.onResponseComplete();
         } else
             receiveDataAsync(processor);
         responseReceived();

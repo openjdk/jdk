@@ -1085,7 +1085,7 @@ public class JmodTask {
 
         @Override public Class<Pattern> valueType() { return Pattern.class; }
 
-        @Override public String valuePattern() { return "pattern"; }
+        @Override public String valuePattern() { return "regex-pattern"; }
     }
 
     static class PathMatcherConverter implements ValueConverter<PathMatcher> {
@@ -1100,7 +1100,7 @@ public class JmodTask {
 
         @Override public Class<PathMatcher> valueType() { return PathMatcher.class; }
 
-        @Override public String valuePattern() { return "pattern"; }
+        @Override public String valuePattern() { return "pattern-list"; }
     }
 
     /* Support for @<file> in jmod help */
@@ -1145,7 +1145,7 @@ public class JmodTask {
             String content = super.format(all);
             StringBuilder builder = new StringBuilder();
 
-            builder.append("\n").append(" Main operation modes:\n  ");
+            builder.append(getMessage("main.opt.mode")).append("\n  ");
             builder.append(getMessage("main.opt.mode.create")).append("\n  ");
             builder.append(getMessage("main.opt.mode.list")).append("\n  ");
             builder.append(getMessage("main.opt.mode.describe")).append("\n  ");
