@@ -714,7 +714,7 @@ intptr_t get_offset_from_base_2(const MachNode* n, const TypePtr* atype, int dis
   return offset;
 }
 
-static inline jdouble replicate_immI(int con, int count, int width) {
+static inline jlong replicate_immI(int con, int count, int width) {
   // Load a constant replicated "count" times with width "width"
   assert(count*width == 8 && width <= 4, "sanity");
   int bit_width = width * 8;
@@ -723,17 +723,15 @@ static inline jdouble replicate_immI(int con, int count, int width) {
   for (int i = 0; i < count - 1; i++) {
     val |= (val << bit_width);
   }
-  jdouble dval = *((jdouble*) &val);  // coerce to double type
-  return dval;
+  return val;
 }
 
-static inline jdouble replicate_immF(float con) {
+static inline jlong replicate_immF(float con) {
   // Replicate float con 2 times and pack into vector.
   int val = *((int*)&con);
   jlong lval = val;
   lval = (lval << 32) | (lval & 0xFFFFFFFFl);
-  jdouble dval = *((jdouble*) &lval);  // coerce to double type
-  return dval;
+  return lval;
 }
 
 // Standard Sparc opcode form2 field breakdown

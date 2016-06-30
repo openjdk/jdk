@@ -337,6 +337,15 @@ class AbstractAssembler : public ResourceObj  {
   //
   // We must remember the code section (insts or stubs) in c1
   // so we can reset to the proper section in end_a_const().
+  address int_constant(jint c) {
+    CodeSection* c1 = _code_section;
+    address ptr = start_a_const(sizeof(c), sizeof(c));
+    if (ptr != NULL) {
+      emit_int32(c);
+      end_a_const(c1);
+    }
+    return ptr;
+  }
   address long_constant(jlong c) {
     CodeSection* c1 = _code_section;
     address ptr = start_a_const(sizeof(c), sizeof(c));
