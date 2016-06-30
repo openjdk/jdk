@@ -89,7 +89,9 @@ public class MotifCheckBoxMenuItemUI extends BasicCheckBoxMenuItemUI
             Point p = e.getPoint();
             if(p.x >= 0 && p.x < menuItem.getWidth() &&
                p.y >= 0 && p.y < menuItem.getHeight()) {
-                manager.clearSelectedPath();
+                if (UIManager.getBoolean("CheckBoxMenuItem.closeOnMouseClick")) {
+                    manager.clearSelectedPath();
+                }
                 menuItem.doClick(0);
             } else {
                 manager.processMouseEvent(e);

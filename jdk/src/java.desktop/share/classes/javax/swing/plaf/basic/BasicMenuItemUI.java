@@ -936,6 +936,15 @@ public class BasicMenuItemUI extends MenuItemUI
         }
     }
 
+    boolean closeOnMouseClick() {
+        if (menuItem instanceof JCheckBoxMenuItem) {
+            return UIManager.getBoolean("CheckBoxMenuItem.closeOnMouseClick");
+        } else if (menuItem instanceof JRadioButtonMenuItem) {
+            return UIManager.getBoolean("RadioButtonMenuItem.closeOnMouseClick");
+        }
+        return true;
+    }
+
     /**
      * Call this method when a menu item is to be activated.
      * This method handles some of the details of menu item activation
@@ -958,11 +967,14 @@ public class BasicMenuItemUI extends MenuItemUI
             BasicLookAndFeel.playSound(menuItem, getPropertyPrefix() +
                                        ".commandSound");
         }
-        // Visual feedback
-        if (msm == null) {
-            msm = MenuSelectionManager.defaultManager();
+        if (closeOnMouseClick()) {
+            // Visual feedback
+            if (msm == null) {
+                msm = MenuSelectionManager.defaultManager();
+            }
+
+            msm.clearSelectedPath();
         }
-        msm.clearSelectedPath();
         menuItem.doClick(0);
     }
 

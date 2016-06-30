@@ -97,7 +97,10 @@ public class MotifRadioButtonMenuItemUI extends BasicRadioButtonMenuItemUI
             Point p = e.getPoint();
             if(p.x >= 0 && p.x < menuItem.getWidth() &&
                p.y >= 0 && p.y < menuItem.getHeight()) {
-                manager.clearSelectedPath();
+                String property = "RadioButtonMenuItem.closeOnMouseClick";
+                if (UIManager.getBoolean(property)) {
+                    manager.clearSelectedPath();
+                }
                 menuItem.doClick(0);
             } else {
                 manager.processMouseEvent(e);
