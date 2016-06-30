@@ -413,7 +413,7 @@ void ModuleEntryTable::print(outputStream* st) {
 
 void ModuleEntry::print(outputStream* st) {
   ResourceMark rm;
-  st->print_cr("entry "PTR_FORMAT" name %s module "PTR_FORMAT" loader %s version %s location %s strict %s next "PTR_FORMAT,
+  st->print_cr("entry " PTR_FORMAT " name %s module " PTR_FORMAT " loader %s version %s location %s strict %s next " PTR_FORMAT,
                p2i(this),
                name() == NULL ? UNNAMED_MODULE : name()->as_C_string(),
                p2i(module()),
