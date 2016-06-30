@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 /**
  *  @test
  *  @bug 4446677
- *  @summary debuggee crashes when debugging under jbuilder
+ *  @bug 8158237
+ *  @summary debuggee used to crash when debugging under jbuilder
  *
  *  @author jjh
  *
@@ -101,6 +102,16 @@ public class BacktraceFieldTest extends TestScaffold {
         new BacktraceFieldTest(args).startTests();
     }
 
+    private void printval(ArrayReference backTraceVal, int index) throws Exception {
+        ArrayReference val = (ArrayReference)backTraceVal.getValue(index);
+        println("BT: val at " + index + " = " + val);
+
+        // The segv used to happen here for index = 0
+        // Now all objects in the backtrace are objects.
+        Object xVal = (Object)val.getValue(0);
+        println("BT: xVal = " + xVal);
+    }
+
     /********** test core **********/
 
     protected void runTests() throws Exception {
@@ -128,40 +139,43 @@ public class BacktraceFieldTest extends TestScaffold {
          * Search through the fields of ee to verify that
          * java.lang.Throwable.backtrace isn't there.
          */
+        boolean backtrace_found = false;
         Iterator iter = allFields.iterator();
         while(iter.hasNext()) {
             Field ff = (Field)iter.next();
             if (ff.toString().equals("java.lang.Throwable.backtrace")) {
-                failure("ERROR: java.lang.Throwable.backtrace field not filtered out.");
+                backtrace_found = true;
+                println("java.lang.Throwable.backtrace field not filtered out.");
 
                 /*
                  * If you want to experience the segv this bug causes, change
                  * this test to 1 == 1 and run it with jdk 1.4, build 74 or earlier
                  */
-                if (1 == 0) {
+                if (1 == 1) {
                     // The following code will show the segv that this can cause.
                     ObjectReference myVal = (ObjectReference)myFrame.getValue(lv);
                     println("BT: myVal = " + myVal);
 
-                    ArrayReference backTraceVal = null;
-                    backTraceVal = (ArrayReference)myVal.getValue(ff);
+                    ArrayReference backTraceVal = (ArrayReference)myVal.getValue(ff);
                     println("BT: backTraceVal = " + backTraceVal);
 
-                    ArrayReference secondVal = (ArrayReference)backTraceVal.getValue(1);
-                    println("BT: secondVal = " + secondVal);
+                    printval(backTraceVal, 0);
+                    printval(backTraceVal, 1);
+                    printval(backTraceVal, 2);
+                    printval(backTraceVal, 3);  // backtrace has 4 elements
 
-                    Object x2Val = (Object)secondVal.getValue(0);
-                    println("BT: x2Val = " + x2Val);
-
-                    ArrayReference firstVal = (ArrayReference)backTraceVal.getValue(0);
-                    println("BT: firstVal = " + firstVal);
-
-                    // The segv happens here.
-                    Object xVal = (Object)firstVal.getValue(0);
-                    println("BT: xVal = " + xVal);
+                    try {
+                        printval(backTraceVal, 4);
+                    } catch (Exception e) {
+                        println("Exception " + e);
+                    }
                 }
                 break;
             }
+        }
+
+        if (!backtrace_found) {
+            failure("ERROR: java.lang.Throwable.backtrace field filtered out.");
         }
 
         // Next, verify that we don't accidently discard a field that we shouldn't
