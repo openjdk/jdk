@@ -56,6 +56,7 @@ SUNWprivate_1.1 {
 		JNU_ThrowArrayIndexOutOfBoundsException;
 		JNU_ThrowByName;
 		JNU_ThrowByNameWithLastError;
+		JNU_ThrowByNameWithMessageAndLastError;
 		JNU_ThrowClassNotFoundException;
 		JNU_ThrowIllegalAccessError;
 		JNU_ThrowIllegalAccessException;
