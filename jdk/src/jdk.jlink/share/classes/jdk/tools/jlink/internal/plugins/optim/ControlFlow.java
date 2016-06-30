@@ -76,9 +76,7 @@ public final class ControlFlow {
 
         @Override
         public int hashCode() {
-            int hash = 3;
-            hash = 79 * hash + Objects.hashCode(this.firstInstruction);
-            return hash;
+            return Objects.hashCode(this.firstInstruction);
         }
 
         @Override
@@ -214,9 +212,7 @@ public final class ControlFlow {
 
         @Override
         public int hashCode() {
-            int hash = 3;
-            hash = 89 * hash + this.getIndex();
-            return hash;
+            return this.getIndex();
         }
 
         @Override

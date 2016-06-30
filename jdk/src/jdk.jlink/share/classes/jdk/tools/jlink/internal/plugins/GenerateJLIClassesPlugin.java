@@ -24,10 +24,8 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import java.io.ByteArrayInputStream;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -36,12 +34,12 @@ import java.util.stream.Collectors;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 
 /**
  * Plugin to generate java.lang.invoke classes.
  */
-public final class GenerateJLIClassesPlugin implements TransformerPlugin {
+public final class GenerateJLIClassesPlugin implements Plugin {
 
     private static final String NAME = "generate-jli-classes";
 
