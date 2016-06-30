@@ -419,21 +419,20 @@ void Rewriter::scan_method(Method* method, bool reverse, bool* invokespecial_err
             InstanceKlass* klass = method->method_holder();
             u2 bc_index = Bytes::get_Java_u2(bcp + prefix_length + 1);
             constantPoolHandle cp(method->constants());
-            Symbol* field_name = cp->name_ref_at(bc_index);
-            Symbol* field_sig = cp->signature_ref_at(bc_index);
             Symbol* ref_class_name = cp->klass_name_at(cp->klass_ref_index_at(bc_index));
 
             if (klass->name() == ref_class_name) {
+              Symbol* field_name = cp->name_ref_at(bc_index);
+              Symbol* field_sig = cp->signature_ref_at(bc_index);
+
               fieldDescriptor fd;
               klass->find_field(field_name, field_sig, &fd);
               if (fd.access_flags().is_final()) {
                 if (fd.access_flags().is_static()) {
-                  assert(c == Bytecodes::_putstatic, "must be putstatic");
                   if (!method->is_static_initializer()) {
                     fd.set_has_initialized_final_update(true);
                   }
                 } else {
-                  assert(c == Bytecodes::_putfield, "must be putfield");
                   if (!method->is_object_initializer()) {
                     fd.set_has_initialized_final_update(true);
                   }
