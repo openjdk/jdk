@@ -24,7 +24,6 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import java.util.Collections;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.TransformerPlugin;

@@ -24,7 +24,6 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.function.Predicate;
 import jdk.tools.jlink.plugin.TransformerPlugin;

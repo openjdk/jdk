@@ -24,10 +24,8 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.IllformedLocaleException;
 import java.util.Locale;
 import java.util.List;
@@ -123,9 +121,7 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
                     if (Arrays.stream(cr.getInterfaces())
                         .anyMatch(i -> i.contains(METAINFONAME)) &&
                         stripUnsupportedLocales(bytes, cr)) {
-                        resource = ModuleEntry.create(MODULENAME, path,
-                            resource.getType(),
-                            new ByteArrayInputStream(bytes), bytes.length);
+                        resource = resource.create(bytes);
                     }
                 }
             }

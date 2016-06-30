@@ -24,7 +24,6 @@
  */
 package jdk.tools.jlink.internal;
 
-import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.module.ModuleDescriptor;
@@ -96,7 +95,7 @@ public final class ImagePluginStack {
 
         public CheckOrderResourcePool(ByteOrder order, List<ModuleEntry> orderedList, StringTable table) {
             super(order, table);
-            this.orderedList = orderedList;
+            this.orderedList = Objects.requireNonNull(orderedList);
         }
 
         /**
@@ -119,7 +118,6 @@ public final class ImagePluginStack {
 
         private int currentid = 0;
         private final Map<String, Integer> stringsUsage = new HashMap<>();
-
         private final Map<String, Integer> stringsMap = new HashMap<>();
         private final Map<Integer, String> reverseMap = new HashMap<>();
 
@@ -161,12 +159,12 @@ public final class ImagePluginStack {
         }
     }
 
+    private final ImageBuilder imageBuilder;
     private final Plugin lastSorter;
     private final List<TransformerPlugin> contentPlugins = new ArrayList<>();
     private final List<PostProcessorPlugin> postProcessingPlugins = new ArrayList<>();
     private final List<ResourcePrevisitor> resourcePrevisitors = new ArrayList<>();
 
-    private final ImageBuilder imageBuilder;
 
     public ImagePluginStack() {
         this(null, Collections.emptyList(), null,
@@ -177,31 +175,32 @@ public final class ImagePluginStack {
             List<TransformerPlugin> contentPlugins,
             Plugin lastSorter,
             List<PostProcessorPlugin> postprocessingPlugins) {
-        Objects.requireNonNull(contentPlugins);
+        this.imageBuilder = Objects.requireNonNull(imageBuilder);
         this.lastSorter = lastSorter;
-        for (TransformerPlugin p : contentPlugins) {
+        Objects.requireNonNull(contentPlugins);
+        Objects.requireNonNull(postprocessingPlugins);
+        contentPlugins.stream().forEach((p) -> {
             Objects.requireNonNull(p);
             if (p instanceof ResourcePrevisitor) {
                 resourcePrevisitors.add((ResourcePrevisitor) p);
             }
             this.contentPlugins.add(p);
-        }
-        for (PostProcessorPlugin p : postprocessingPlugins) {
+        });
+        postprocessingPlugins.stream().forEach((p) -> {
             Objects.requireNonNull(p);
             this.postProcessingPlugins.add(p);
-        }
-        this.imageBuilder = imageBuilder;
+        });
     }
 
     public void operate(ImageProvider provider) throws Exception {
         ExecutableImage img = provider.retrieve(this);
         List<String> arguments = new ArrayList<>();
-        for (PostProcessorPlugin plugin : postProcessingPlugins) {
-            List<String> lst = plugin.process(img);
-            if (lst != null) {
-                arguments.addAll(lst);
-            }
-        }
+        postProcessingPlugins.stream()
+                .map((plugin) -> plugin.process(img))
+                .filter((lst) -> (lst != null))
+                .forEach((lst) -> {
+                     arguments.addAll(lst);
+                });
         img.storeLaunchArgs(arguments);
     }
 
@@ -230,15 +229,15 @@ public final class ImagePluginStack {
                     resources.getStringTable());
         }
         PreVisitStrings previsit = new PreVisitStrings();
-        for (ResourcePrevisitor p : resourcePrevisitors) {
+        resourcePrevisitors.stream().forEach((p) -> {
             p.previsit(resources, previsit);
-        }
+        });
 
         // Store the strings resulting from the previsit.
         List<String> sorted = previsit.getSortedStrings();
-        for (String s : sorted) {
+        sorted.stream().forEach((s) -> {
             resources.getStringTable().addString(s);
-        }
+        });
 
         ModulePoolImpl current = resources;
         List<ModuleEntry> frozenOrder = null;
@@ -443,9 +442,7 @@ public final class ImagePluginStack {
                         byte[] bytes = decompressor.decompressResource(getByteOrder(),
                                 (int offset) -> pool.getStringTable().getString(offset),
                                 res.getBytes());
-                        res = ModuleEntry.create(res.getPath(),
-                                new ByteArrayInputStream(bytes),
-                                bytes.length);
+                        res = res.create(bytes);
                     } catch (IOException ex) {
                         throw new PluginException(ex);
                     }
