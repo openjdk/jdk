@@ -52,7 +52,7 @@ import jdk.internal.org.objectweb.asm.Opcodes;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.internal.plugins.SystemModuleDescriptorPlugin.Builder.*;
 import jdk.tools.jlink.plugin.ModuleEntry;
 
@@ -67,7 +67,7 @@ import jdk.tools.jlink.plugin.ModuleEntry;
  * @see java.lang.module.SystemModuleFinder
  * @see SystemModules
  */
-public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
+public final class SystemModuleDescriptorPlugin implements Plugin {
     private static final JavaLangModuleAccess JLMA = SharedSecrets.getJavaLangModuleAccess();
 
     // TODO: packager has the dependency on the plugin name

@@ -56,7 +56,7 @@ import jdk.internal.jimage.decompressor.CompressIndexes;
 import jdk.internal.jimage.decompressor.SignatureParser;
 import jdk.internal.jimage.decompressor.StringSharingDecompressor;
 import jdk.tools.jlink.internal.ModulePoolImpl;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
@@ -68,7 +68,7 @@ import jdk.tools.jlink.internal.StringTable;
  * A Plugin that stores the image classes constant pool UTF_8 entries into the
  * Image StringsTable.
  */
-public class StringSharingPlugin implements TransformerPlugin, ResourcePrevisitor {
+public class StringSharingPlugin implements Plugin, ResourcePrevisitor {
 
     public static final String NAME = "compact-cp";
 

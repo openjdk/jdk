@@ -57,7 +57,7 @@ import java.util.Set;
 import jdk.tools.jlink.internal.BasicImageWriter;
 import jdk.tools.jlink.internal.plugins.FileCopierPlugin;
 import jdk.tools.jlink.internal.plugins.FileCopierPlugin.SymImageFile;
-import jdk.tools.jlink.plugin.ExecutableImage;
+import jdk.tools.jlink.internal.ExecutableImage;
 import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.PluginException;
