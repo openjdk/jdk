@@ -25,6 +25,7 @@
 # @summary (almost) all keytool behaviors
 # @author Weijun Wang
 # @run shell/timeout=600 standard.sh
+# @key intermittent
 #
 # This test is always excecuted.
 #
