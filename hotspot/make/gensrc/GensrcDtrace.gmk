@@ -45,7 +45,8 @@ ifeq ($(call check-jvm-feature, dtrace), true)
   $(DTRACE_GENSRC_DIR)/%.h: $(DTRACE_SOURCE_DIR)/%.d
 	$(call LogInfo, Generating dtrace header file $(@F))
 	$(call MakeDir, $(@D) $(DTRACE_SUPPORT_DIR))
-	$(call ExecuteWithLog, $(DTRACE_SUPPORT_DIR)/$(@F).d, $(CC) -E $(DTRACE_CPP_FLAGS) $< > $(DTRACE_SUPPORT_DIR)/$(@F).d)
+	$(call ExecuteWithLog, $(DTRACE_SUPPORT_DIR)/$(@F).d, \
+	    ( $(CC) -E $(DTRACE_CPP_FLAGS) $< > $(DTRACE_SUPPORT_DIR)/$(@F).d ) )
 	$(call ExecuteWithLog, $@, $(DTRACE) $(DTRACE_FLAGS) -h -o $@ -s $(DTRACE_SUPPORT_DIR)/$(@F).d)
 
   # Process all .d files in DTRACE_SOURCE_DIR. They are:
