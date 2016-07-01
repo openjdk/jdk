@@ -377,7 +377,9 @@ public class JShell implements AutoCloseable {
      * Evaluate the input String, including definition and/or execution, if
      * applicable. The input is checked for errors, unless the errors can be
      * deferred (as is the case with some unresolvedDependencies references),
-     * errors will abort evaluation. The input should be
+     * errors will abort evaluation.
+     * <p>
+     * The input should be
      * exactly one complete snippet of source code, that is, one expression,
      * statement, variable declaration, method declaration, class declaration,
      * or import.
