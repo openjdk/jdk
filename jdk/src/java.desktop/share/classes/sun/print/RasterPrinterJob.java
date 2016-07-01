@@ -1627,6 +1627,9 @@ public abstract class RasterPrinterJob extends PrinterJob {
              (!f.isFile() || !f.canWrite())) ||
             ((pFile != null) &&
              (!pFile.exists() || (pFile.exists() && !pFile.canWrite())))) {
+            if (f.exists()) {
+                f.delete();
+            }
             throw new PrinterException("Cannot write to file:"+
                                        dest);
         }

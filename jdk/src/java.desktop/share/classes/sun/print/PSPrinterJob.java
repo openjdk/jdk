@@ -501,7 +501,7 @@ public class PSPrinterJob extends RasterPrinterJob {
         // Note that we only open a file if it has been nominated by
         // the end-user in a dialog that we ouselves put up.
 
-        OutputStream output;
+        OutputStream output = null;
 
         if (epsPrinter == null) {
             if (getPrintService() instanceof PSStreamPrintService) {
@@ -526,6 +526,7 @@ public class PSPrinterJob extends RasterPrinterJob {
                         spoolFile = new File(mDestination);
                         output =  new FileOutputStream(spoolFile);
                     } catch (IOException ex) {
+                        abortDoc();
                         throw new PrinterIOException(ex);
                     }
                 } else {
@@ -771,6 +772,10 @@ public class PSPrinterJob extends RasterPrinterJob {
         if (mPSStream != null) {
             mPSStream.println(EOF_COMMENT);
             mPSStream.flush();
+            if (mPSStream.checkError()) {
+                abortDoc();
+                throw new PrinterException("Error while writing to file");
+            }
             if (mDestType != RasterPrinterJob.STREAM) {
                 mPSStream.close();
             }
