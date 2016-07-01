@@ -99,18 +99,18 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_OPAQUE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
 
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
 
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
     }
 
 
@@ -260,49 +260,7 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
             vh.setOpaque(recv, 2.0d);
         });
 
-        checkUOE(() -> {
-            boolean r = vh.compareAndSet(recv, 1.0d, 2.0d);
-        });
 
-        checkUOE(() -> {
-            double r = (double) vh.compareAndExchangeVolatile(recv, 1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            double r = (double) vh.compareAndExchangeAcquire(recv, 1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            double r = (double) vh.compareAndExchangeRelease(recv, 1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSet(recv, 1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetVolatile(recv, 1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetAcquire(recv, 1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetRelease(recv, 1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            double r = (double) vh.getAndSet(recv, 1.0d);
-        });
-
-        checkUOE(() -> {
-            double o = (double) vh.getAndAdd(recv, 1.0d);
-        });
-
-        checkUOE(() -> {
-            double o = (double) vh.addAndGet(recv, 1.0d);
-        });
     }
 
 
@@ -350,49 +308,7 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
             vh.setOpaque(2.0d);
         });
 
-        checkUOE(() -> {
-            boolean r = vh.compareAndSet(1.0d, 2.0d);
-        });
 
-        checkUOE(() -> {
-            double r = (double) vh.compareAndExchangeVolatile(1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            double r = (double) vh.compareAndExchangeAcquire(1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            double r = (double) vh.compareAndExchangeRelease(1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSet(1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetVolatile(1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetAcquire(1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetRelease(1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            double r = (double) vh.getAndSet(1.0d);
-        });
-
-        checkUOE(() -> {
-            double o = (double) vh.getAndAdd(1.0d);
-        });
-
-        checkUOE(() -> {
-            double o = (double) vh.addAndGet(1.0d);
-        });
     }
 
 
@@ -426,53 +342,126 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
             assertEquals(x, 2.0d, "setOpaque double value");
         }
 
+        vh.set(recv, 1.0d);
 
+        // Compare
+        {
+            boolean r = vh.compareAndSet(recv, 1.0d, 2.0d);
+            assertEquals(r, true, "success compareAndSet double");
+            double x = (double) vh.get(recv);
+            assertEquals(x, 2.0d, "success compareAndSet double value");
+        }
+
+        {
+            boolean r = vh.compareAndSet(recv, 1.0d, 3.0d);
+            assertEquals(r, false, "failing compareAndSet double");
+            double x = (double) vh.get(recv);
+            assertEquals(x, 2.0d, "failing compareAndSet double value");
+        }
+
+        {
+            double r = (double) vh.compareAndExchange(recv, 2.0d, 1.0d);
+            assertEquals(r, 2.0d, "success compareAndExchange double");
+            double x = (double) vh.get(recv);
+            assertEquals(x, 1.0d, "success compareAndExchange double value");
+        }
+
+        {
+            double r = (double) vh.compareAndExchange(recv, 2.0d, 3.0d);
+            assertEquals(r, 1.0d, "failing compareAndExchange double");
+            double x = (double) vh.get(recv);
+            assertEquals(x, 1.0d, "failing compareAndExchange double value");
+        }
+
+        {
+            double r = (double) vh.compareAndExchangeAcquire(recv, 1.0d, 2.0d);
+            assertEquals(r, 1.0d, "success compareAndExchangeAcquire double");
+            double x = (double) vh.get(recv);
+            assertEquals(x, 2.0d, "success compareAndExchangeAcquire double value");
+        }
+
+        {
+            double r = (double) vh.compareAndExchangeAcquire(recv, 1.0d, 3.0d);
+            assertEquals(r, 2.0d, "failing compareAndExchangeAcquire double");
+            double x = (double) vh.get(recv);
+            assertEquals(x, 2.0d, "failing compareAndExchangeAcquire double value");
+        }
+
+        {
+            double r = (double) vh.compareAndExchangeRelease(recv, 2.0d, 1.0d);
+            assertEquals(r, 2.0d, "success compareAndExchangeRelease double");
+            double x = (double) vh.get(recv);
+            assertEquals(x, 1.0d, "success compareAndExchangeRelease double value");
+        }
+
+        {
+            double r = (double) vh.compareAndExchangeRelease(recv, 2.0d, 3.0d);
+            assertEquals(r, 1.0d, "failing compareAndExchangeRelease double");
+            double x = (double) vh.get(recv);
+            assertEquals(x, 1.0d, "failing compareAndExchangeRelease double value");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSet(recv, 1.0d, 2.0d);
+            }
+            assertEquals(success, true, "weakCompareAndSet double");
+            double x = (double) vh.get(recv);
+            assertEquals(x, 2.0d, "weakCompareAndSet double value");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetAcquire(recv, 2.0d, 1.0d);
+            }
+            assertEquals(success, true, "weakCompareAndSetAcquire double");
+            double x = (double) vh.get(recv);
+            assertEquals(x, 1.0d, "weakCompareAndSetAcquire double");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetRelease(recv, 1.0d, 2.0d);
+            }
+            assertEquals(success, true, "weakCompareAndSetRelease double");
+            double x = (double) vh.get(recv);
+            assertEquals(x, 2.0d, "weakCompareAndSetRelease double");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetVolatile(recv, 2.0d, 1.0d);
+            }
+            assertEquals(success, true, "weakCompareAndSetVolatile double");
+            double x = (double) vh.get(recv);
+            assertEquals(x, 1.0d, "weakCompareAndSetVolatile double value");
+        }
+
+        // Compare set and get
+        {
+            double o = (double) vh.getAndSet(recv, 2.0d);
+            assertEquals(o, 1.0d, "getAndSet double");
+            double x = (double) vh.get(recv);
+            assertEquals(x, 2.0d, "getAndSet double value");
+        }
+
+        vh.set(recv, 1.0d);
+
+        // get and add, add and get
+        {
+            double o = (double) vh.getAndAdd(recv, 3.0d);
+            assertEquals(o, 1.0d, "getAndAdd double");
+            double c = (double) vh.addAndGet(recv, 3.0d);
+            assertEquals(c, (double)(1.0d + 3.0d + 3.0d), "getAndAdd double value");
+        }
     }
 
     static void testInstanceFieldUnsupported(VarHandleTestAccessDouble recv, VarHandle vh) {
-        checkUOE(() -> {
-            boolean r = vh.compareAndSet(recv, 1.0d, 2.0d);
-        });
 
-        checkUOE(() -> {
-            double r = (double) vh.compareAndExchangeVolatile(recv, 1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            double r = (double) vh.compareAndExchangeAcquire(recv, 1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            double r = (double) vh.compareAndExchangeRelease(recv, 1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSet(recv, 1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetVolatile(recv, 1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetAcquire(recv, 1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetRelease(recv, 1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            double r = (double) vh.getAndSet(recv, 1.0d);
-        });
-
-        checkUOE(() -> {
-            double o = (double) vh.getAndAdd(recv, 1.0d);
-        });
-
-        checkUOE(() -> {
-            double o = (double) vh.addAndGet(recv, 1.0d);
-        });
     }
 
 
@@ -506,53 +495,126 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
             assertEquals(x, 2.0d, "setOpaque double value");
         }
 
+        vh.set(1.0d);
 
+        // Compare
+        {
+            boolean r = vh.compareAndSet(1.0d, 2.0d);
+            assertEquals(r, true, "success compareAndSet double");
+            double x = (double) vh.get();
+            assertEquals(x, 2.0d, "success compareAndSet double value");
+        }
+
+        {
+            boolean r = vh.compareAndSet(1.0d, 3.0d);
+            assertEquals(r, false, "failing compareAndSet double");
+            double x = (double) vh.get();
+            assertEquals(x, 2.0d, "failing compareAndSet double value");
+        }
+
+        {
+            double r = (double) vh.compareAndExchange(2.0d, 1.0d);
+            assertEquals(r, 2.0d, "success compareAndExchange double");
+            double x = (double) vh.get();
+            assertEquals(x, 1.0d, "success compareAndExchange double value");
+        }
+
+        {
+            double r = (double) vh.compareAndExchange(2.0d, 3.0d);
+            assertEquals(r, 1.0d, "failing compareAndExchange double");
+            double x = (double) vh.get();
+            assertEquals(x, 1.0d, "failing compareAndExchange double value");
+        }
+
+        {
+            double r = (double) vh.compareAndExchangeAcquire(1.0d, 2.0d);
+            assertEquals(r, 1.0d, "success compareAndExchangeAcquire double");
+            double x = (double) vh.get();
+            assertEquals(x, 2.0d, "success compareAndExchangeAcquire double value");
+        }
+
+        {
+            double r = (double) vh.compareAndExchangeAcquire(1.0d, 3.0d);
+            assertEquals(r, 2.0d, "failing compareAndExchangeAcquire double");
+            double x = (double) vh.get();
+            assertEquals(x, 2.0d, "failing compareAndExchangeAcquire double value");
+        }
+
+        {
+            double r = (double) vh.compareAndExchangeRelease(2.0d, 1.0d);
+            assertEquals(r, 2.0d, "success compareAndExchangeRelease double");
+            double x = (double) vh.get();
+            assertEquals(x, 1.0d, "success compareAndExchangeRelease double value");
+        }
+
+        {
+            double r = (double) vh.compareAndExchangeRelease(2.0d, 3.0d);
+            assertEquals(r, 1.0d, "failing compareAndExchangeRelease double");
+            double x = (double) vh.get();
+            assertEquals(x, 1.0d, "failing compareAndExchangeRelease double value");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSet(1.0d, 2.0d);
+            }
+            assertEquals(success, true, "weakCompareAndSet double");
+            double x = (double) vh.get();
+            assertEquals(x, 2.0d, "weakCompareAndSet double value");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetAcquire(2.0d, 1.0d);
+            }
+            assertEquals(success, true, "weakCompareAndSetAcquire double");
+            double x = (double) vh.get();
+            assertEquals(x, 1.0d, "weakCompareAndSetAcquire double");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetRelease(1.0d, 2.0d);
+            }
+            assertEquals(success, true, "weakCompareAndSetRelease double");
+            double x = (double) vh.get();
+            assertEquals(x, 2.0d, "weakCompareAndSetRelease double");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetRelease(2.0d, 1.0d);
+            }
+            assertEquals(success, true, "weakCompareAndSetVolatile double");
+            double x = (double) vh.get();
+            assertEquals(x, 1.0d, "weakCompareAndSetVolatile double");
+        }
+
+        // Compare set and get
+        {
+            double o = (double) vh.getAndSet(2.0d);
+            assertEquals(o, 1.0d, "getAndSet double");
+            double x = (double) vh.get();
+            assertEquals(x, 2.0d, "getAndSet double value");
+        }
+
+        vh.set(1.0d);
+
+        // get and add, add and get
+        {
+            double o = (double) vh.getAndAdd( 3.0d);
+            assertEquals(o, 1.0d, "getAndAdd double");
+            double c = (double) vh.addAndGet(3.0d);
+            assertEquals(c, (double)(1.0d + 3.0d + 3.0d), "getAndAdd double value");
+        }
     }
 
     static void testStaticFieldUnsupported(VarHandle vh) {
-        checkUOE(() -> {
-            boolean r = vh.compareAndSet(1.0d, 2.0d);
-        });
 
-        checkUOE(() -> {
-            double r = (double) vh.compareAndExchangeVolatile(1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            double r = (double) vh.compareAndExchangeAcquire(1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            double r = (double) vh.compareAndExchangeRelease(1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSet(1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetVolatile(1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetAcquire(1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetRelease(1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            double r = (double) vh.getAndSet(1.0d);
-        });
-
-        checkUOE(() -> {
-            double o = (double) vh.getAndAdd(1.0d);
-        });
-
-        checkUOE(() -> {
-            double o = (double) vh.addAndGet(1.0d);
-        });
     }
 
 
@@ -589,7 +651,122 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
                 assertEquals(x, 2.0d, "setOpaque double value");
             }
 
+            vh.set(array, i, 1.0d);
 
+            // Compare
+            {
+                boolean r = vh.compareAndSet(array, i, 1.0d, 2.0d);
+                assertEquals(r, true, "success compareAndSet double");
+                double x = (double) vh.get(array, i);
+                assertEquals(x, 2.0d, "success compareAndSet double value");
+            }
+
+            {
+                boolean r = vh.compareAndSet(array, i, 1.0d, 3.0d);
+                assertEquals(r, false, "failing compareAndSet double");
+                double x = (double) vh.get(array, i);
+                assertEquals(x, 2.0d, "failing compareAndSet double value");
+            }
+
+            {
+                double r = (double) vh.compareAndExchange(array, i, 2.0d, 1.0d);
+                assertEquals(r, 2.0d, "success compareAndExchange double");
+                double x = (double) vh.get(array, i);
+                assertEquals(x, 1.0d, "success compareAndExchange double value");
+            }
+
+            {
+                double r = (double) vh.compareAndExchange(array, i, 2.0d, 3.0d);
+                assertEquals(r, 1.0d, "failing compareAndExchange double");
+                double x = (double) vh.get(array, i);
+                assertEquals(x, 1.0d, "failing compareAndExchange double value");
+            }
+
+            {
+                double r = (double) vh.compareAndExchangeAcquire(array, i, 1.0d, 2.0d);
+                assertEquals(r, 1.0d, "success compareAndExchangeAcquire double");
+                double x = (double) vh.get(array, i);
+                assertEquals(x, 2.0d, "success compareAndExchangeAcquire double value");
+            }
+
+            {
+                double r = (double) vh.compareAndExchangeAcquire(array, i, 1.0d, 3.0d);
+                assertEquals(r, 2.0d, "failing compareAndExchangeAcquire double");
+                double x = (double) vh.get(array, i);
+                assertEquals(x, 2.0d, "failing compareAndExchangeAcquire double value");
+            }
+
+            {
+                double r = (double) vh.compareAndExchangeRelease(array, i, 2.0d, 1.0d);
+                assertEquals(r, 2.0d, "success compareAndExchangeRelease double");
+                double x = (double) vh.get(array, i);
+                assertEquals(x, 1.0d, "success compareAndExchangeRelease double value");
+            }
+
+            {
+                double r = (double) vh.compareAndExchangeRelease(array, i, 2.0d, 3.0d);
+                assertEquals(r, 1.0d, "failing compareAndExchangeRelease double");
+                double x = (double) vh.get(array, i);
+                assertEquals(x, 1.0d, "failing compareAndExchangeRelease double value");
+            }
+
+            {
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = vh.weakCompareAndSet(array, i, 1.0d, 2.0d);
+                }
+                assertEquals(success, true, "weakCompareAndSet double");
+                double x = (double) vh.get(array, i);
+                assertEquals(x, 2.0d, "weakCompareAndSet double value");
+            }
+
+            {
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = vh.weakCompareAndSetAcquire(array, i, 2.0d, 1.0d);
+                }
+                assertEquals(success, true, "weakCompareAndSetAcquire double");
+                double x = (double) vh.get(array, i);
+                assertEquals(x, 1.0d, "weakCompareAndSetAcquire double");
+            }
+
+            {
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = vh.weakCompareAndSetRelease(array, i, 1.0d, 2.0d);
+                }
+                assertEquals(success, true, "weakCompareAndSetRelease double");
+                double x = (double) vh.get(array, i);
+                assertEquals(x, 2.0d, "weakCompareAndSetRelease double");
+            }
+
+            {
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = vh.weakCompareAndSetVolatile(array, i, 2.0d, 1.0d);
+                }
+                assertEquals(success, true, "weakCompareAndSetVolatile double");
+                double x = (double) vh.get(array, i);
+                assertEquals(x, 1.0d, "weakCompareAndSetVolatile double");
+            }
+
+            // Compare set and get
+            {
+                double o = (double) vh.getAndSet(array, i, 2.0d);
+                assertEquals(o, 1.0d, "getAndSet double");
+                double x = (double) vh.get(array, i);
+                assertEquals(x, 2.0d, "getAndSet double value");
+            }
+
+            vh.set(array, i, 1.0d);
+
+            // get and add, add and get
+            {
+                double o = (double) vh.getAndAdd(array, i, 3.0d);
+                assertEquals(o, 1.0d, "getAndAdd double");
+                double c = (double) vh.addAndGet(array, i, 3.0d);
+                assertEquals(c, (double)(1.0d + 3.0d + 3.0d), "getAndAdd double value");
+            }
         }
     }
 
@@ -597,49 +774,7 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
         double[] array = new double[10];
 
         int i = 0;
-        checkUOE(() -> {
-            boolean r = vh.compareAndSet(array, i, 1.0d, 2.0d);
-        });
 
-        checkUOE(() -> {
-            double r = (double) vh.compareAndExchangeVolatile(array, i, 1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            double r = (double) vh.compareAndExchangeAcquire(array, i, 1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            double r = (double) vh.compareAndExchangeRelease(array, i, 1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSet(array, i, 1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetVolatile(array, i, 1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetAcquire(array, i, 1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetRelease(array, i, 1.0d, 2.0d);
-        });
-
-        checkUOE(() -> {
-            double r = (double) vh.getAndSet(array, i, 1.0d);
-        });
-
-        checkUOE(() -> {
-            double o = (double) vh.getAndAdd(array, i, 1.0d);
-        });
-
-        checkUOE(() -> {
-            double o = (double) vh.addAndGet(array, i, 1.0d);
-        });
     }
 
     static void testArrayIndexOutOfBounds(VarHandle vh) throws Throwable {
@@ -680,7 +815,49 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
                 vh.setOpaque(array, ci, 1.0d);
             });
 
+            checkIOOBE(() -> {
+                boolean r = vh.compareAndSet(array, ci, 1.0d, 2.0d);
+            });
 
+            checkIOOBE(() -> {
+                double r = (double) vh.compareAndExchange(array, ci, 2.0d, 1.0d);
+            });
+
+            checkIOOBE(() -> {
+                double r = (double) vh.compareAndExchangeAcquire(array, ci, 2.0d, 1.0d);
+            });
+
+            checkIOOBE(() -> {
+                double r = (double) vh.compareAndExchangeRelease(array, ci, 2.0d, 1.0d);
+            });
+
+            checkIOOBE(() -> {
+                boolean r = vh.weakCompareAndSet(array, ci, 1.0d, 2.0d);
+            });
+
+            checkIOOBE(() -> {
+                boolean r = vh.weakCompareAndSetVolatile(array, ci, 1.0d, 2.0d);
+            });
+
+            checkIOOBE(() -> {
+                boolean r = vh.weakCompareAndSetAcquire(array, ci, 1.0d, 2.0d);
+            });
+
+            checkIOOBE(() -> {
+                boolean r = vh.weakCompareAndSetRelease(array, ci, 1.0d, 2.0d);
+            });
+
+            checkIOOBE(() -> {
+                double o = (double) vh.getAndSet(array, ci, 1.0d);
+            });
+
+            checkIOOBE(() -> {
+                double o = (double) vh.getAndAdd(array, ci, 3.0d);
+            });
+
+            checkIOOBE(() -> {
+                double o = (double) vh.addAndGet(array, ci, 3.0d);
+            });
         }
     }
 }
