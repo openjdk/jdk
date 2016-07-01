@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4124769
+ * @bug 4124769 8160312
  * @summary Test ignore-case comparison
  *
  */
@@ -45,6 +45,10 @@ public class CompareIC {
         comparer.testTriplet(test1, test2, test3);
         test2 = test2.toLowerCase();
         comparer.testTriplet(test1, test2, test3);
+
+        // toLowerCase -> non-latin1
+        if ("\u00b5".compareToIgnoreCase("X") < 0)
+            throw new RuntimeException("Comparison failure1");
     }
 
     private void testTriplet(String one, String two, String three)

@@ -35,27 +35,28 @@ import jdk.testlibrary.ProcessTools;
  */
 public final class JpsBase {
 
-    private static final String shortProcessName;
-    private static final String fullProcessName;
-
     /**
      * The jps output should contain processes' names
      * (except when jps is started in quite mode).
      * The expected name of the test process is prepared here.
      */
-    static {
+
+    private static String getShortProcessName() {
         URL url = JpsBase.class.getResource("JpsBase.class");
         boolean isJar = url.getProtocol().equals("jar");
+        return (isJar) ? JpsBase.class.getSimpleName() + ".jar" : JpsBase.class.getSimpleName();
+    }
 
+    private static String getFullProcessName() {
+        URL url = JpsBase.class.getResource("JpsBase.class");
+        boolean isJar = url.getProtocol().equals("jar");
         if (isJar) {
-            shortProcessName = JpsBase.class.getSimpleName() + ".jar";
             String urlPath = url.getPath();
             File jar = new File(urlPath.substring(urlPath.indexOf("file:") + 5, urlPath.indexOf("jar!") + 3));
-            fullProcessName = jar.getAbsolutePath();
-        } else {
-            shortProcessName = JpsBase.class.getSimpleName();
-            fullProcessName = JpsBase.class.getName();
+            return jar.getAbsolutePath();
         }
+
+        return JpsBase.class.getName();
     }
 
     public static void main(String[] args) throws Exception {
@@ -83,6 +84,7 @@ public final class JpsBase {
                     // or the full path name to the application's JAR file:
                     // 30673 /tmp/jtreg/jtreg-workdir/scratch/JpsBase.jar ...
                     isFull = true;
+                    String fullProcessName = getFullProcessName();
                     pattern = "^" + pid + "\\s+" + replaceSpecialChars(fullProcessName) + ".*";
                     output.shouldMatch(pattern);
                     break;
@@ -120,6 +122,7 @@ public final class JpsBase {
                 // Output should only contain lines with pids after the first line with pid.
                 JpsHelper.verifyJpsOutput(output, "^\\d+\\s+.*");
                 if (!isFull) {
+                    String shortProcessName = getShortProcessName();
                     pattern = "^" + pid + "\\s+" + replaceSpecialChars(shortProcessName);
                     if (combination.isEmpty()) {
                         // If no arguments are specified output should only contain
