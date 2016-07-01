@@ -359,25 +359,32 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
 
   # Starting amount of heap memory.
   ADD_JVM_ARG_IF_OK([-Xms64M],boot_jdk_jvmargs_big,[$JAVA])
+  BOOTCYCLE_JVM_ARGS_BIG=-Xms64M
 
-  # Maximum amount of heap memory.
-  # Maximum stack size.
-  JVM_MAX_HEAP=`expr $MEMORY_SIZE / 2`
+  # Maximum amount of heap memory and stack size.
+  JVM_HEAP_LIMIT_32="1024"
+  # Running a 64 bit JVM allows for and requires a bigger heap
+  JVM_HEAP_LIMIT_64="1600"
+  STACK_SIZE_32=768
+  STACK_SIZE_64=1536
+  JVM_HEAP_LIMIT_GLOBAL=`expr $MEMORY_SIZE / 2`
+  if test "$JVM_HEAP_LIMIT_GLOBAL" -lt "$JVM_HEAP_LIMIT_32"; then
+    JVM_HEAP_LIMIT_32=$JVM_HEAP_LIMIT_GLOBAL
+  fi
+  if test "$JVM_HEAP_LIMIT_GLOBAL" -lt "$JVM_HEAP_LIMIT_64"; then
+    JVM_HEAP_LIMIT_64=$JVM_HEAP_LIMIT_GLOBAL
+  fi
+  if test "$JVM_HEAP_LIMIT_GLOBAL" -lt "512"; then
+    JVM_HEAP_LIMIT_32=512
+    JVM_HEAP_LIMIT_64=512
+  fi
+
   if test "x$BOOT_JDK_BITS" = "x32"; then
-    if test "$JVM_MAX_HEAP" -gt "1100"; then
-      JVM_MAX_HEAP=1100
-    elif test "$JVM_MAX_HEAP" -lt "512"; then
-      JVM_MAX_HEAP=512
-    fi
-    STACK_SIZE=768
+    STACK_SIZE=$STACK_SIZE_32
+    JVM_MAX_HEAP=$JVM_HEAP_LIMIT_32
   else
-    # Running a 64 bit JVM allows for and requires a bigger heap
-    if test "$JVM_MAX_HEAP" -gt "1600"; then
-      JVM_MAX_HEAP=1600
-    elif test "$JVM_MAX_HEAP" -lt "512"; then
-      JVM_MAX_HEAP=512
-    fi
-    STACK_SIZE=1536
+    STACK_SIZE=$STACK_SIZE_64
+    JVM_MAX_HEAP=$JVM_HEAP_LIMIT_64
   fi
   ADD_JVM_ARG_IF_OK([-Xmx${JVM_MAX_HEAP}M],boot_jdk_jvmargs_big,[$JAVA])
   ADD_JVM_ARG_IF_OK([-XX:ThreadStackSize=$STACK_SIZE],boot_jdk_jvmargs_big,[$JAVA])
@@ -386,6 +393,19 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
 
   JAVA_FLAGS_BIG=$boot_jdk_jvmargs_big
   AC_SUBST(JAVA_FLAGS_BIG)
+
+  if test "x$OPENJDK_TARGET_CPU_BITS" = "x32"; then
+    BOOTCYCLE_MAX_HEAP=$JVM_HEAP_LIMIT_32
+    BOOTCYCLE_STACK_SIZE=$STACK_SIZE_32
+  else
+    BOOTCYCLE_MAX_HEAP=$JVM_HEAP_LIMIT_64
+    BOOTCYCLE_STACK_SIZE=$STACK_SIZE_64
+  fi
+  BOOTCYCLE_JVM_ARGS_BIG="$BOOTCYCLE_JVM_ARGS_BIG -Xmx${BOOTCYCLE_MAX_HEAP}M"
+  BOOTCYCLE_JVM_ARGS_BIG="$BOOTCYCLE_JVM_ARGS_BIG -XX:ThreadStackSize=$BOOTCYCLE_STACK_SIZE"
+  AC_MSG_CHECKING([flags for bootcycle boot jdk java command for big workloads])
+  AC_MSG_RESULT([$BOOTCYCLE_JVM_ARGS_BIG])
+  AC_SUBST(BOOTCYCLE_JVM_ARGS_BIG)
 
   # By default, the main javac compilations use big
   JAVA_FLAGS_JAVAC="$JAVA_FLAGS_BIG"

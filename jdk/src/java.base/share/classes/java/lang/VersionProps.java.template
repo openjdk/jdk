@@ -26,6 +26,9 @@
 package java.lang;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 class VersionProps {
 
@@ -42,6 +45,18 @@ class VersionProps {
     private static final String java_runtime_version =
         "@@VERSION_STRING@@";
 
+    private static final String VERSION_NUMBER =
+        "@@VERSION_NUMBER@@";
+
+    private static final String VERSION_BUILD =
+        "@@VERSION_BUILD@@";
+
+    private static final String VERSION_PRE =
+        "@@VERSION_PRE@@";
+
+    private static final String VERSION_OPT =
+        "@@VERSION_OPT@@";
+
     static {
         init();
     }
@@ -50,6 +65,44 @@ class VersionProps {
         System.setProperty("java.version", java_version);
         System.setProperty("java.runtime.version", java_runtime_version);
         System.setProperty("java.runtime.name", java_runtime_name);
+    }
+
+    static List<Integer> versionNumbers() {
+        List<Integer> versionNumbers = new ArrayList<>(4);
+        int prevIndex = 0;
+        int index = VERSION_NUMBER.indexOf('.');
+        while (index > 0) {
+            versionNumbers.add(
+                    Integer.parseInt(VERSION_NUMBER, prevIndex, index, 10));
+            prevIndex = index + 1; // Skip the period
+            index = VERSION_NUMBER.indexOf('.', prevIndex);
+        }
+        versionNumbers.add(Integer.parseInt(VERSION_NUMBER,
+                prevIndex, VERSION_NUMBER.length(), 10));
+        return versionNumbers;
+    }
+
+    static Optional<String> pre() {
+        return optionalOf(VERSION_PRE);
+    }
+
+    static Optional<Integer> build() {
+        return VERSION_BUILD.isEmpty() ?
+                Optional.empty() :
+                Optional.of(Integer.parseInt(VERSION_BUILD));
+    }
+
+    static Optional<String> optional() {
+        return optionalOf(VERSION_OPT);
+    }
+
+    // Treat empty strings as value not being present
+    private static Optional<String> optionalOf(String value) {
+        if (!value.isEmpty()) {
+            return Optional.of(value);
+        } else {
+            return Optional.empty();
+        }
     }
 
     /**

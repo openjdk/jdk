@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,8 +111,8 @@ Java_java_net_SocketInputStream_socketRead0(JNIEnv *env, jobject this,
                 } else if (errno == ENOMEM) {
                     JNU_ThrowOutOfMemoryError(env, "NET_Timeout native heap allocation failed");
                 } else {
-                    NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                                  "select/poll failed");
+                    JNU_ThrowByNameWithMessageAndLastError
+                        (env, JNU_JAVANETPKG "SocketException", "select/poll failed");
                 }
             }
             if (bufP != BUF) {
@@ -145,8 +145,8 @@ Java_java_net_SocketInputStream_socketRead0(JNIEnv *env, jobject this,
                      break;
 
                 default:
-                    NET_ThrowByNameWithLastError(env,
-                        JNU_JAVANETPKG "SocketException", "Read failed");
+                    JNU_ThrowByNameWithMessageAndLastError
+                        (env, JNU_JAVANETPKG "SocketException", "Read failed");
             }
         }
     } else {

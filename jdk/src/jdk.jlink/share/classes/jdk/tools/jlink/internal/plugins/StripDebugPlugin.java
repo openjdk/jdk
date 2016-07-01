@@ -24,21 +24,18 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import java.io.ByteArrayInputStream;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.function.Predicate;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 
 /**
  *
  * Strip debug attributes plugin
  */
-public final class StripDebugPlugin implements TransformerPlugin {
+public final class StripDebugPlugin implements Plugin {
     public static final String NAME = "strip-debug";
     private final Predicate<String> predicate;
 

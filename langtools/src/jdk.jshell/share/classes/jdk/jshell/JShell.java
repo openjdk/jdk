@@ -89,6 +89,7 @@ public class JShell implements AutoCloseable {
     final Supplier<String> tempVariableNameGenerator;
     final BiFunction<Snippet, Integer, String> idGenerator;
     final List<String> extraRemoteVMOptions;
+    final List<String> extraCompilerOptions;
     final ExecutionControl executionControl;
 
     private int nextKeyIndex = 1;
@@ -112,6 +113,7 @@ public class JShell implements AutoCloseable {
         this.tempVariableNameGenerator = b.tempVariableNameGenerator;
         this.idGenerator = b.idGenerator;
         this.extraRemoteVMOptions = b.extraRemoteVMOptions;
+        this.extraCompilerOptions = b.extraCompilerOptions;
         this.executionControl = b.executionControl==null
                 ? new FailOverExecutionControl(
                         new JDIExecutionControl(),
@@ -151,6 +153,7 @@ public class JShell implements AutoCloseable {
         Supplier<String> tempVariableNameGenerator = null;
         BiFunction<Snippet, Integer, String> idGenerator = null;
         List<String> extraRemoteVMOptions = new ArrayList<>();
+        List<String> extraCompilerOptions = new ArrayList<>();
         ExecutionControl executionControl;
 
         Builder() { }
@@ -289,6 +292,21 @@ public class JShell implements AutoCloseable {
         }
 
         /**
+         * Adds compiler options.  These additional options will be used on
+         * parsing, analysis, and code generation calls to the compiler.
+         * Options which interfere with results are not supported and have
+         * undefined effects on JShell's operation.
+         *
+         * @param options the addition options for compiler invocations
+         * @return the {@code Builder} instance (for use in chained
+         * initialization)
+         */
+        public Builder compilerOptions(String... options) {
+            this.extraCompilerOptions.addAll(Arrays.asList(options));
+            return this;
+        }
+
+        /**
          * Sets the custom engine for execution. Snippet execution will be
          * provided by the specified {@link ExecutionControl} instance.
          *
@@ -359,7 +377,9 @@ public class JShell implements AutoCloseable {
      * Evaluate the input String, including definition and/or execution, if
      * applicable. The input is checked for errors, unless the errors can be
      * deferred (as is the case with some unresolvedDependencies references),
-     * errors will abort evaluation. The input should be
+     * errors will abort evaluation.
+     * <p>
+     * The input should be
      * exactly one complete snippet of source code, that is, one expression,
      * statement, variable declaration, method declaration, class declaration,
      * or import.

@@ -72,23 +72,79 @@ import sun.util.resources.OpenListResourceBundle;
 public class JavaTimeSupplementary_mk extends OpenListResourceBundle {
     @Override
     protected final Object[][] getContents() {
+        final String[] sharedQuarterAbbreviations = {
+            "\u0458\u0430\u043d-\u043c\u0430\u0440",
+            "\u0430\u043f\u0440-\u0458\u0443\u043d",
+            "\u0458\u0443\u043b-\u0441\u0435\u043f",
+            "\u043e\u043a\u0442-\u0434\u0435\u043a",
+        };
+
+        final String[] sharedQuarterNames = {
+            "\u043f\u0440\u0432\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
+            "\u0432\u0442\u043e\u0440\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
+            "\u0442\u0440\u0435\u0442\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
+            "\u0447\u0435\u0442\u0432\u0440\u0442\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
+        };
+
+        final String[] sharedAmPmMarkers = {
+            "\u043f\u0440\u0435\u0442\u043f\u043b\u0430\u0434\u043d\u0435",
+            "\u043f\u043e\u043f\u043b\u0430\u0434\u043d\u0435",
+        };
+
+        final String[] sharedDatePatterns = {
+            "EEEE, dd MMMM y '\u0433'. GGGG",
+            "dd MMMM y '\u0433'. GGGG",
+            "dd.M.y GGGG",
+            "dd.M.y G",
+        };
+
+        final String[] sharedDayAbbreviations = {
+            "\u043d\u0435\u0434.",
+            "\u043f\u043e\u043d.",
+            "\u0432\u0442.",
+            "\u0441\u0440\u0435.",
+            "\u0447\u0435\u0442.",
+            "\u043f\u0435\u0442.",
+            "\u0441\u0430\u0431.",
+        };
+
+        final String[] sharedDayNames = {
+            "\u043d\u0435\u0434\u0435\u043b\u0430",
+            "\u043f\u043e\u043d\u0435\u0434\u0435\u043b\u043d\u0438\u043a",
+            "\u0432\u0442\u043e\u0440\u043d\u0438\u043a",
+            "\u0441\u0440\u0435\u0434\u0430",
+            "\u0447\u0435\u0442\u0432\u0440\u0442\u043e\u043a",
+            "\u043f\u0435\u0442\u043e\u043a",
+            "\u0441\u0430\u0431\u043e\u0442\u0430",
+        };
+
+        final String[] sharedDayNarrows = {
+            "\u043d",
+            "\u043f",
+            "\u0432",
+            "\u0441",
+            "\u0447",
+            "\u043f",
+            "\u0441",
+        };
+
+        final String[] sharedNarrowAmPmMarkers = {
+            "\u043f\u0440\u0435\u0442.",
+            "\u043f\u043e\u043f\u043b.",
+        };
+
+        final String[] sharedJavaTimeDatePatterns = {
+            "EEEE, dd MMMM y '\u0433'. G",
+            "dd MMMM y '\u0433'. G",
+            "dd.M.y G",
+            "dd.M.y GGGGG",
+        };
+
         return new Object[][] {
             { "QuarterAbbreviations",
-                new String[] {
-                    "\u0458\u0430\u043d-\u043c\u0430\u0440",
-                    "\u0430\u043f\u0440-\u0458\u0443\u043d",
-                    "\u0458\u0443\u043b-\u0441\u0435\u043f",
-                    "\u043e\u043a\u0442-\u0434\u0435\u043a",
-                }
-            },
+                sharedQuarterAbbreviations },
             { "QuarterNames",
-                new String[] {
-                    "\u043f\u0440\u0432\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
-                    "\u0432\u0442\u043e\u0440\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
-                    "\u0442\u0440\u0435\u0442\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
-                    "\u0447\u0435\u0442\u0432\u0440\u0442\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
-                }
-            },
+                sharedQuarterNames },
             { "calendarname.buddhist",
                 "\u0411\u0443\u0434\u0438\u0441\u0442\u0438\u0447\u043a\u0438 \u043a\u0430\u043b\u0435\u043d\u0434\u0430\u0440" },
             { "calendarname.gregorian",
@@ -124,120 +180,29 @@ public class JavaTimeSupplementary_mk extends OpenListResourceBundle {
             { "field.zone",
                 "\u0432\u0440\u0435\u043c\u0435\u043d\u0441\u043a\u0430 \u0437\u043e\u043d\u0430" },
             { "islamic.AmPmMarkers",
-                new String[] {
-                    "\u043f\u0440\u0435\u0442\u043f\u043b\u0430\u0434\u043d\u0435",
-                    "\u043f\u043e\u043f\u043b\u0430\u0434\u043d\u0435",
-                }
-            },
+                sharedAmPmMarkers },
             { "islamic.DatePatterns",
-                new String[] {
-                    "EEEE, dd MMMM y '\u0433'. GGGG",
-                    "dd MMMM y '\u0433'. GGGG",
-                    "dd.M.y GGGG",
-                    "dd.M.y G",
-                }
-            },
+                sharedDatePatterns },
             { "islamic.DayAbbreviations",
-                new String[] {
-                    "\u043d\u0435\u0434.",
-                    "\u043f\u043e\u043d.",
-                    "\u0432\u0442.",
-                    "\u0441\u0440\u0435.",
-                    "\u0447\u0435\u0442.",
-                    "\u043f\u0435\u0442.",
-                    "\u0441\u0430\u0431.",
-                }
-            },
+                sharedDayAbbreviations },
             { "islamic.DayNames",
-                new String[] {
-                    "\u043d\u0435\u0434\u0435\u043b\u0430",
-                    "\u043f\u043e\u043d\u0435\u0434\u0435\u043b\u043d\u0438\u043a",
-                    "\u0432\u0442\u043e\u0440\u043d\u0438\u043a",
-                    "\u0441\u0440\u0435\u0434\u0430",
-                    "\u0447\u0435\u0442\u0432\u0440\u0442\u043e\u043a",
-                    "\u043f\u0435\u0442\u043e\u043a",
-                    "\u0441\u0430\u0431\u043e\u0442\u0430",
-                }
-            },
+                sharedDayNames },
             { "islamic.DayNarrows",
-                new String[] {
-                    "\u043d",
-                    "\u043f",
-                    "\u0432",
-                    "\u0441",
-                    "\u0447",
-                    "\u043f",
-                    "\u0441",
-                }
-            },
+                sharedDayNarrows },
             { "islamic.QuarterAbbreviations",
-                new String[] {
-                    "\u0458\u0430\u043d-\u043c\u0430\u0440",
-                    "\u0430\u043f\u0440-\u0458\u0443\u043d",
-                    "\u0458\u0443\u043b-\u0441\u0435\u043f",
-                    "\u043e\u043a\u0442-\u0434\u0435\u043a",
-                }
-            },
+                sharedQuarterAbbreviations },
             { "islamic.QuarterNames",
-                new String[] {
-                    "\u043f\u0440\u0432\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
-                    "\u0432\u0442\u043e\u0440\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
-                    "\u0442\u0440\u0435\u0442\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
-                    "\u0447\u0435\u0442\u0432\u0440\u0442\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
-                }
-            },
-            { "islamic.QuarterNarrows",
-                new String[] {
-                    "1",
-                    "2",
-                    "3",
-                    "4",
-                }
-            },
-            { "islamic.TimePatterns",
-                new String[] {
-                    "HH:mm:ss zzzz",
-                    "HH:mm:ss z",
-                    "HH:mm:ss",
-                    "HH:mm",
-                }
-            },
+                sharedQuarterNames },
             { "islamic.abbreviated.AmPmMarkers",
-                new String[] {
-                    "\u043f\u0440\u0435\u0442\u043f\u043b\u0430\u0434\u043d\u0435",
-                    "\u043f\u043e\u043f\u043b\u0430\u0434\u043d\u0435",
-                }
-            },
+                sharedAmPmMarkers },
             { "islamic.narrow.AmPmMarkers",
-                new String[] {
-                    "\u043f\u0440\u0435\u0442.",
-                    "\u043f\u043e\u043f\u043b.",
-                }
-            },
+                sharedNarrowAmPmMarkers },
             { "java.time.buddhist.DatePatterns",
-                new String[] {
-                    "EEEE, dd MMMM y '\u0433'. G",
-                    "dd MMMM y '\u0433'. G",
-                    "dd.M.y G",
-                    "dd.M.y GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
             { "java.time.islamic.DatePatterns",
-                new String[] {
-                    "EEEE, dd MMMM y '\u0433'. G",
-                    "dd MMMM y '\u0433'. G",
-                    "dd.M.y G",
-                    "dd.M.y GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
             { "java.time.japanese.DatePatterns",
-                new String[] {
-                    "EEEE, dd MMMM y '\u0433'. G",
-                    "dd MMMM y '\u0433'. G",
-                    "dd.M.y G",
-                    "dd.M.y GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
             { "java.time.long.Eras",
                 new String[] {
                     "\u043f\u0440\u0435\u0434 \u043d\u0430\u0448\u0430\u0442\u0430 \u0435\u0440\u0430",
@@ -245,13 +210,7 @@ public class JavaTimeSupplementary_mk extends OpenListResourceBundle {
                 }
             },
             { "java.time.roc.DatePatterns",
-                new String[] {
-                    "EEEE, dd MMMM y '\u0433'. G",
-                    "dd MMMM y '\u0433'. G",
-                    "dd.M.y G",
-                    "dd.M.y GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
             { "java.time.short.Eras",
                 new String[] {
                     "\u043f\u0440.\u043d.\u0435.",
@@ -259,52 +218,15 @@ public class JavaTimeSupplementary_mk extends OpenListResourceBundle {
                 }
             },
             { "roc.AmPmMarkers",
-                new String[] {
-                    "\u043f\u0440\u0435\u0442\u043f\u043b\u0430\u0434\u043d\u0435",
-                    "\u043f\u043e\u043f\u043b\u0430\u0434\u043d\u0435",
-                }
-            },
+                sharedAmPmMarkers },
             { "roc.DatePatterns",
-                new String[] {
-                    "EEEE, dd MMMM y '\u0433'. GGGG",
-                    "dd MMMM y '\u0433'. GGGG",
-                    "dd.M.y GGGG",
-                    "dd.M.y G",
-                }
-            },
+                sharedDatePatterns },
             { "roc.DayAbbreviations",
-                new String[] {
-                    "\u043d\u0435\u0434.",
-                    "\u043f\u043e\u043d.",
-                    "\u0432\u0442.",
-                    "\u0441\u0440\u0435.",
-                    "\u0447\u0435\u0442.",
-                    "\u043f\u0435\u0442.",
-                    "\u0441\u0430\u0431.",
-                }
-            },
+                sharedDayAbbreviations },
             { "roc.DayNames",
-                new String[] {
-                    "\u043d\u0435\u0434\u0435\u043b\u0430",
-                    "\u043f\u043e\u043d\u0435\u0434\u0435\u043b\u043d\u0438\u043a",
-                    "\u0432\u0442\u043e\u0440\u043d\u0438\u043a",
-                    "\u0441\u0440\u0435\u0434\u0430",
-                    "\u0447\u0435\u0442\u0432\u0440\u0442\u043e\u043a",
-                    "\u043f\u0435\u0442\u043e\u043a",
-                    "\u0441\u0430\u0431\u043e\u0442\u0430",
-                }
-            },
+                sharedDayNames },
             { "roc.DayNarrows",
-                new String[] {
-                    "\u043d",
-                    "\u043f",
-                    "\u0432",
-                    "\u0441",
-                    "\u0447",
-                    "\u043f",
-                    "\u0441",
-                }
-            },
+                sharedDayNarrows },
             { "roc.MonthAbbreviations",
                 new String[] {
                     "\u0458\u0430\u043d.",
@@ -357,41 +279,13 @@ public class JavaTimeSupplementary_mk extends OpenListResourceBundle {
                 }
             },
             { "roc.QuarterAbbreviations",
-                new String[] {
-                    "\u0458\u0430\u043d-\u043c\u0430\u0440",
-                    "\u0430\u043f\u0440-\u0458\u0443\u043d",
-                    "\u0458\u0443\u043b-\u0441\u0435\u043f",
-                    "\u043e\u043a\u0442-\u0434\u0435\u043a",
-                }
-            },
+                sharedQuarterAbbreviations },
             { "roc.QuarterNames",
-                new String[] {
-                    "\u043f\u0440\u0432\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
-                    "\u0432\u0442\u043e\u0440\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
-                    "\u0442\u0440\u0435\u0442\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
-                    "\u0447\u0435\u0442\u0432\u0440\u0442\u043e \u0442\u0440\u043e\u043c\u0435\u0441\u0435\u0447\u0458\u0435",
-                }
-            },
-            { "roc.TimePatterns",
-                new String[] {
-                    "HH:mm:ss zzzz",
-                    "HH:mm:ss z",
-                    "HH:mm:ss",
-                    "HH:mm",
-                }
-            },
+                sharedQuarterNames },
             { "roc.abbreviated.AmPmMarkers",
-                new String[] {
-                    "\u043f\u0440\u0435\u0442\u043f\u043b\u0430\u0434\u043d\u0435",
-                    "\u043f\u043e\u043f\u043b\u0430\u0434\u043d\u0435",
-                }
-            },
+                sharedAmPmMarkers },
             { "roc.narrow.AmPmMarkers",
-                new String[] {
-                    "\u043f\u0440\u0435\u0442.",
-                    "\u043f\u043e\u043f\u043b.",
-                }
-            },
+                sharedNarrowAmPmMarkers },
         };
     }
 }

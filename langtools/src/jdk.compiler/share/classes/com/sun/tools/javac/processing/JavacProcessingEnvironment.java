@@ -1506,7 +1506,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             }
             public void visitClassDef(JCClassDecl node) {
                 if (node.sym != null) {
-                    node.sym.reset();
                     node.sym.completer = new ImplicitCompleter(topLevel);
                 }
                 node.sym = null;
@@ -1605,7 +1604,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
     /**
      * Convert import-style string for supported annotations into a
-     * regex matching that string.  If the string is a valid
+     * regex matching that string.  If the string is not a valid
      * import-style string, return a regex that won't match anything.
      */
     private static Pattern importStringToPattern(String s, Processor p, Log log) {

@@ -68,6 +68,7 @@ static jboolean printVersion = JNI_FALSE; /* print and exit */
 static jboolean showVersion = JNI_FALSE;  /* print but continue */
 static jboolean printUsage = JNI_FALSE;   /* print and exit*/
 static jboolean printXUsage = JNI_FALSE;  /* print and exit*/
+static jboolean dryRun = JNI_FALSE;       /* initialize VM and exit */
 static char     *showSettings = NULL;      /* print but continue */
 static char     *listModules = NULL;
 
@@ -434,7 +435,8 @@ JavaMain(void * _args)
     ret = 1;
 
     /*
-     * Get the application's main class.
+     * Get the application's main class. It also checks if the main
+     * method exists.
      *
      * See bugid 5030265.  The Main-Class name has already been parsed
      * from the manifest, but not parsed properly for UTF-8 support.
@@ -466,6 +468,16 @@ JavaMain(void * _args)
      */
     appClass = GetApplicationClass(env);
     NULL_CHECK_RETURN_VALUE(appClass, -1);
+
+    /* Build platform specific argument array */
+    mainArgs = CreateApplicationArgs(env, argv, argc);
+    CHECK_EXCEPTION_NULL_LEAVE(mainArgs);
+
+    if (dryRun) {
+        ret = 0;
+        LEAVE();
+    }
+
     /*
      * PostJVMInit uses the class name as the application name for GUI purposes,
      * for example, on OSX this sets the application name in the menu bar for
@@ -475,6 +487,7 @@ JavaMain(void * _args)
      */
     PostJVMInit(env, appClass, vm);
     CHECK_EXCEPTION_LEAVE(1);
+
     /*
      * The LoadMainClass not only loads the main class, it will also ensure
      * that the main method's signature is correct, therefore further checking
@@ -485,10 +498,6 @@ JavaMain(void * _args)
                                        "([Ljava/lang/String;)V");
     CHECK_EXCEPTION_NULL_LEAVE(mainID);
 
-    /* Build platform specific argument array */
-    mainArgs = CreateApplicationArgs(env, argv, argc);
-    CHECK_EXCEPTION_NULL_LEAVE(mainArgs);
-
     /* Invoke main method. */
     (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
 
@@ -497,6 +506,7 @@ JavaMain(void * _args)
      * System.exit) will be non-zero if main threw an exception.
      */
     ret = (*env)->ExceptionOccurred(env) == NULL ? 0 : 1;
+
     LEAVE();
 }
 
@@ -1203,6 +1213,8 @@ ParseArguments(int *pargc, char ***pargv,
             return JNI_TRUE;
         } else if (JLI_StrCmp(arg, "-showversion") == 0) {
             showVersion = JNI_TRUE;
+        } else if (JLI_StrCmp(arg, "--dry-run") == 0) {
+            dryRun = JNI_TRUE;
         } else if (JLI_StrCmp(arg, "-X") == 0) {
             printXUsage = JNI_TRUE;
             return JNI_TRUE;

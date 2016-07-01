@@ -113,7 +113,7 @@ public class ClassTree {
         baseEnums = new TreeSet<>(comparator);
         baseClasses = new TreeSet<>(comparator);
         baseInterfaces = new TreeSet<>(comparator);
-        buildTree(configuration.root.getIncludedClasses());
+        buildTree(configuration.docEnv.getIncludedClasses());
     }
 
     /**
@@ -130,7 +130,7 @@ public class ClassTree {
         baseEnums = new TreeSet<>(comparator);
         baseClasses = new TreeSet<>(comparator);
         baseInterfaces = new TreeSet<>(comparator);
-        buildTree(configuration.root.getIncludedClasses());
+        buildTree(configuration.docEnv.getIncludedClasses());
     }
 
     /**

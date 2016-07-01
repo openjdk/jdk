@@ -72,55 +72,33 @@ import sun.util.resources.OpenListResourceBundle;
 public class JavaTimeSupplementary_it_CH extends OpenListResourceBundle {
     @Override
     protected final Object[][] getContents() {
+        final String[] sharedDatePatterns = {
+            "EEEE, d MMMM y GGGG",
+            "d MMMM y GGGG",
+            "d MMM y GGGG",
+            "dd.MM.yy G",
+        };
+
+        final String[] sharedJavaTimeDatePatterns = {
+            "EEEE, d MMMM y G",
+            "d MMMM y G",
+            "d MMM y G",
+            "dd.MM.yy GGGGG",
+        };
+
         return new Object[][] {
             { "islamic.DatePatterns",
-                new String[] {
-                    "EEEE, d MMMM y GGGG",
-                    "d MMMM y GGGG",
-                    "d MMM y GGGG",
-                    "dd.MM.yy G",
-                }
-            },
+                sharedDatePatterns },
             { "java.time.buddhist.DatePatterns",
-                new String[] {
-                    "EEEE, d MMMM y G",
-                    "d MMMM y G",
-                    "d MMM y G",
-                    "dd.MM.yy GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
             { "java.time.islamic.DatePatterns",
-                new String[] {
-                    "EEEE, d MMMM y G",
-                    "d MMMM y G",
-                    "d MMM y G",
-                    "dd.MM.yy GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
             { "java.time.japanese.DatePatterns",
-                new String[] {
-                    "EEEE, d MMMM y G",
-                    "d MMMM y G",
-                    "d MMM y G",
-                    "dd.MM.yy GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
             { "java.time.roc.DatePatterns",
-                new String[] {
-                    "EEEE, d MMMM y G",
-                    "d MMMM y G",
-                    "d MMM y G",
-                    "dd.MM.yy GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
             { "roc.DatePatterns",
-                new String[] {
-                    "EEEE, d MMMM y GGGG",
-                    "d MMMM y GGGG",
-                    "d MMM y GGGG",
-                    "dd.MM.yy G",
-                }
-            },
+                sharedDatePatterns },
         };
     }
 }

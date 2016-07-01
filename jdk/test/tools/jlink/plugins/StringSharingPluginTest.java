@@ -57,7 +57,7 @@ import jdk.tools.jlink.internal.StringTable;
 import jdk.tools.jlink.internal.plugins.StringSharingPlugin;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 import tests.Helper;
 import tests.JImageValidator;
 
@@ -119,7 +119,7 @@ public class StringSharingPluginTest {
         try (java.util.stream.Stream<Path> stream = Files.walk(compiledClasses)) {
             stream.forEach(c);
         }
-        TransformerPlugin plugin = new StringSharingPlugin();
+        Plugin plugin = new StringSharingPlugin();
         ModulePoolImpl result = new ModulePoolImpl(resources.getByteOrder(), resources.getStringTable());
         plugin.visit(resources, result);
 

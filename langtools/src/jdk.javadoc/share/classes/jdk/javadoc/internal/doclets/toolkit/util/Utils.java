@@ -108,9 +108,9 @@ public class Utils {
 
     public Utils(Configuration c) {
         configuration = c;
-        elementUtils = c.root.getElementUtils();
-        typeUtils = c.root.getTypeUtils();
-        docTrees = c.root.getDocTrees();
+        elementUtils = c.docEnv.getElementUtils();
+        typeUtils = c.docEnv.getTypeUtils();
+        docTrees = c.docEnv.getDocTrees();
     }
 
     // our own little symbol table
@@ -530,7 +530,7 @@ public class Utils {
 
     public boolean isFunctionalInterface(AnnotationMirror amirror) {
         return amirror.getAnnotationType().equals(getFunctionalInterface()) &&
-                configuration.root.getSourceVersion()
+                configuration.docEnv.getSourceVersion()
                         .compareTo(SourceVersion.RELEASE_8) >= 0;
     }
 
@@ -2223,9 +2223,9 @@ public class Utils {
 
     private void initSpecifiedElements() {
         specifiedClasses = new LinkedHashSet<>(
-                ElementFilter.typesIn(configuration.root.getSpecifiedElements()));
+                ElementFilter.typesIn(configuration.docEnv.getSpecifiedElements()));
         specifiedPackages = new LinkedHashSet<>(
-                ElementFilter.packagesIn(configuration.root.getSpecifiedElements()));
+                ElementFilter.packagesIn(configuration.docEnv.getSpecifiedElements()));
     }
 
     public Set<TypeElement> getSpecifiedClasses() {
@@ -2571,7 +2571,7 @@ public class Utils {
     }
 
     public boolean isIncluded(Element e) {
-        return configuration.root.isIncluded(e);
+        return configuration.docEnv.isIncluded(e);
     }
 
     /**

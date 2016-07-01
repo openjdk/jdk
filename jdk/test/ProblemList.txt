@@ -164,6 +164,10 @@ java/net/MulticastSocket/Test.java                              7145658 macosx-a
 
 java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
 
+java/net/httpclient/http2/BasicTest.java                        8157408 linux-all
+java/net/httpclient/http2/ErrorTest.java                        8158127 solaris-all,windows-all
+java/net/httpclient/http2/TLSConnection.java                    8157482 macosx-all
+
 ############################################################################
 
 # jdk_nio
@@ -207,8 +211,6 @@ sun/security/pkcs11/ec/TestKeyFactory.java                      7157786 generic-
 sun/security/krb5/auto/Unreachable.java                         7164518 macosx-all no PortUnreachableException on Mac
 
 sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
-
-sun/security/mscapi/ShortRSAKey1024.sh                          8153948 windows-all
 
 sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-all
 

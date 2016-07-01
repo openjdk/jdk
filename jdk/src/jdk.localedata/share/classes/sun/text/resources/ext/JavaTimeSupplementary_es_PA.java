@@ -72,63 +72,76 @@ import sun.util.resources.OpenListResourceBundle;
 public class JavaTimeSupplementary_es_PA extends OpenListResourceBundle {
     @Override
     protected final Object[][] getContents() {
+        final String[] sharedQuarterNames = {
+            "1er. trimestre",
+            "2do. trimestre",
+            "3er. trimestre",
+            "4.\u00ba trimestre",
+        };
+
+        final String[] sharedAmPmMarkers = {
+            "a.m.",
+            "p.m.",
+        };
+
+        final String[] sharedDatePatterns = {
+            "GGGG y MMMM d, EEEE",
+            "GGGG y MMMM d",
+            "MM/dd/y GGGG",
+            "MM/dd/yy G",
+        };
+
+        final String[] sharedDayNarrows = {
+            "d",
+            "l",
+            "m",
+            "m",
+            "j",
+            "v",
+            "s",
+        };
+
+        final String[] sharedTimePatterns = {
+            "h:mm:ss a zzzz",
+            "h:mm:ss a z",
+            "h:mm:ss a",
+            "h:mm a",
+        };
+
+        final String[] sharedJavaTimeDatePatterns = {
+            "G y MMMM d, EEEE",
+            "G y MMMM d",
+            "MM/dd/y G",
+            "MM/dd/yy GGGGG",
+        };
+
         return new Object[][] {
             { "QuarterAbbreviations",
-                new String[] {
-                    "1er. trimestre",
-                    "2do. trimestre",
-                    "3er. trimestre",
-                    "4.\u00ba trimestre",
-                }
-            },
+                sharedQuarterNames },
             { "QuarterNames",
-                new String[] {
-                    "1er. trimestre",
-                    "2do. trimestre",
-                    "3er. trimestre",
-                    "4.\u00ba trimestre",
-                }
-            },
+                sharedQuarterNames },
+            { "field.dayperiod",
+                "a.m./p.m." },
+            { "field.zone",
+                "Zona horaria" },
+            { "islamic.AmPmMarkers",
+                sharedAmPmMarkers },
             { "islamic.DatePatterns",
-                new String[] {
-                    "GGGG y MMMM d, EEEE",
-                    "GGGG y MMMM d",
-                    "MM/dd/y GGGG",
-                    "MM/dd/yy G",
-                }
-            },
+                sharedDatePatterns },
+            { "islamic.DayNarrows",
+                sharedDayNarrows },
             { "islamic.QuarterNames",
-                new String[] {
-                    "1er. trimestre",
-                    "2do. trimestre",
-                    "3er. trimestre",
-                    "4.\u00ba trimestre",
-                }
-            },
+                sharedQuarterNames },
             { "islamic.TimePatterns",
-                new String[] {
-                    "h:mm:ss a zzzz",
-                    "h:mm:ss a z",
-                    "h:mm:ss a",
-                    "h:mm a",
-                }
-            },
+                sharedTimePatterns },
+            { "islamic.abbreviated.AmPmMarkers",
+                sharedAmPmMarkers },
+            { "islamic.narrow.AmPmMarkers",
+                sharedAmPmMarkers },
             { "java.time.buddhist.DatePatterns",
-                new String[] {
-                    "G y MMMM d, EEEE",
-                    "G y MMMM d",
-                    "MM/dd/y G",
-                    "MM/dd/yy GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
             { "java.time.islamic.DatePatterns",
-                new String[] {
-                    "G y MMMM d, EEEE",
-                    "G y MMMM d",
-                    "MM/dd/y G",
-                    "MM/dd/yy GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
             { "java.time.japanese.DatePatterns",
                 new String[] {
                     "EEEE, d 'de' MMMM 'de' y G",
@@ -138,37 +151,55 @@ public class JavaTimeSupplementary_es_PA extends OpenListResourceBundle {
                 }
             },
             { "java.time.roc.DatePatterns",
+                sharedJavaTimeDatePatterns },
+            { "roc.AmPmMarkers",
+                sharedAmPmMarkers },
+            { "roc.DatePatterns",
+                sharedDatePatterns },
+            { "roc.DayNarrows",
+                sharedDayNarrows },
+            { "roc.MonthAbbreviations",
                 new String[] {
-                    "G y MMMM d, EEEE",
-                    "G y MMMM d",
-                    "MM/dd/y G",
-                    "MM/dd/yy GGGGG",
+                    "ene.",
+                    "feb.",
+                    "mar.",
+                    "abr.",
+                    "may.",
+                    "jun.",
+                    "jul.",
+                    "ago.",
+                    "sep.",
+                    "oct.",
+                    "nov.",
+                    "dic.",
+                    "",
                 }
             },
-            { "roc.DatePatterns",
+            { "roc.MonthNarrows",
                 new String[] {
-                    "GGGG y MMMM d, EEEE",
-                    "GGGG y MMMM d",
-                    "MM/dd/y GGGG",
-                    "MM/dd/yy G",
+                    "e",
+                    "f",
+                    "m",
+                    "a",
+                    "m",
+                    "j",
+                    "j",
+                    "a",
+                    "s",
+                    "o",
+                    "n",
+                    "d",
+                    "",
                 }
             },
             { "roc.QuarterNames",
-                new String[] {
-                    "1er. trimestre",
-                    "2do. trimestre",
-                    "3er. trimestre",
-                    "4.\u00ba trimestre",
-                }
-            },
+                sharedQuarterNames },
             { "roc.TimePatterns",
-                new String[] {
-                    "h:mm:ss a zzzz",
-                    "h:mm:ss a z",
-                    "h:mm:ss a",
-                    "h:mm a",
-                }
-            },
+                sharedTimePatterns },
+            { "roc.abbreviated.AmPmMarkers",
+                sharedAmPmMarkers },
+            { "roc.narrow.AmPmMarkers",
+                sharedAmPmMarkers },
         };
     }
 }

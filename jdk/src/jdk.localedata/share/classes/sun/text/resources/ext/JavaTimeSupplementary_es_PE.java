@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -72,31 +72,63 @@ import sun.util.resources.OpenListResourceBundle;
 public class JavaTimeSupplementary_es_PE extends OpenListResourceBundle {
     @Override
     protected final Object[][] getContents() {
+        final String[] sharedAmPmMarkers = {
+            "a.m.",
+            "p.m.",
+        };
+
+        final String[] sharedDatePatterns = {
+            "GGGG y MMMM d, EEEE",
+            "GGGG y MMMM d",
+            "GGGG y MMM d",
+            "d/MM/yy G",
+        };
+
+        final String[] sharedDayNarrows = {
+            "d",
+            "l",
+            "m",
+            "m",
+            "j",
+            "v",
+            "s",
+        };
+
+        final String[] sharedTimePatterns = {
+            "HH:mm:ss zzzz",
+            "HH:mm:ss z",
+            "HH:mm:ss",
+            "HH:mm",
+        };
+
+        final String[] sharedJavaTimeDatePatterns = {
+            "G y MMMM d, EEEE",
+            "G y MMMM d",
+            "G y MMM d",
+            "d/MM/yy GGGGG",
+        };
+
         return new Object[][] {
+            { "field.dayperiod",
+                "a.m./p.m." },
+            { "field.zone",
+                "Zona horaria" },
+            { "islamic.AmPmMarkers",
+                sharedAmPmMarkers },
             { "islamic.DatePatterns",
-                new String[] {
-                    "GGGG y MMMM d, EEEE",
-                    "GGGG y MMMM d",
-                    "GGGG y MMM d",
-                    "d/MM/yy G",
-                }
-            },
+                sharedDatePatterns },
+            { "islamic.DayNarrows",
+                sharedDayNarrows },
+            { "islamic.TimePatterns",
+                sharedTimePatterns },
+            { "islamic.abbreviated.AmPmMarkers",
+                sharedAmPmMarkers },
+            { "islamic.narrow.AmPmMarkers",
+                sharedAmPmMarkers },
             { "java.time.buddhist.DatePatterns",
-                new String[] {
-                    "G y MMMM d, EEEE",
-                    "G y MMMM d",
-                    "G y MMM d",
-                    "d/MM/yy GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
             { "java.time.islamic.DatePatterns",
-                new String[] {
-                    "G y MMMM d, EEEE",
-                    "G y MMMM d",
-                    "G y MMM d",
-                    "d/MM/yy GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
             { "java.time.japanese.DatePatterns",
                 new String[] {
                     "EEEE, d 'de' MMMM 'de' y G",
@@ -106,21 +138,13 @@ public class JavaTimeSupplementary_es_PE extends OpenListResourceBundle {
                 }
             },
             { "java.time.roc.DatePatterns",
-                new String[] {
-                    "G y MMMM d, EEEE",
-                    "G y MMMM d",
-                    "G y MMM d",
-                    "d/MM/yy GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
+            { "roc.AmPmMarkers",
+                sharedAmPmMarkers },
             { "roc.DatePatterns",
-                new String[] {
-                    "GGGG y MMMM d, EEEE",
-                    "GGGG y MMMM d",
-                    "GGGG y MMM d",
-                    "d/MM/yy G",
-                }
-            },
+                sharedDatePatterns },
+            { "roc.DayNarrows",
+                sharedDayNarrows },
             { "roc.MonthAbbreviations",
                 new String[] {
                     "ene.",
@@ -155,6 +179,29 @@ public class JavaTimeSupplementary_es_PE extends OpenListResourceBundle {
                     "",
                 }
             },
+            { "roc.MonthNarrows",
+                new String[] {
+                    "e",
+                    "f",
+                    "m",
+                    "a",
+                    "m",
+                    "j",
+                    "j",
+                    "a",
+                    "s",
+                    "o",
+                    "n",
+                    "d",
+                    "",
+                }
+            },
+            { "roc.TimePatterns",
+                sharedTimePatterns },
+            { "roc.abbreviated.AmPmMarkers",
+                sharedAmPmMarkers },
+            { "roc.narrow.AmPmMarkers",
+                sharedAmPmMarkers },
         };
     }
 }

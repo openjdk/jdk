@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,11 +63,11 @@ public class JavadocMemberEnter extends MemberEnter {
         });
     }
 
-    final DocEnv docenv;
+    final ToolEnvironment toolEnv;
 
     protected JavadocMemberEnter(Context context) {
         super(context);
-        docenv = DocEnv.instance(context);
+        toolEnv = ToolEnvironment.instance(context);
     }
 
     @Override
@@ -75,12 +75,12 @@ public class JavadocMemberEnter extends MemberEnter {
         super.visitMethodDef(tree);
         MethodSymbol meth = tree.sym;
         if (meth == null || meth.kind != MTH) return;
-        TreePath treePath = docenv.getTreePath(env.toplevel, env.enclClass, tree);
+        TreePath treePath = toolEnv.getTreePath(env.toplevel, env.enclClass, tree);
         // do not add those methods that may be mandated by the spec,
         // or those that are synthesized, thus if it does not exist in
         // tree best to let other logic determine the TreePath.
         if (env.enclClass.defs.contains(tree)) {
-            docenv.setElementToTreePath(meth, treePath);
+            toolEnv.setElementToTreePath(meth, treePath);
         }
         // release resources
         tree.body = null;
@@ -101,7 +101,7 @@ public class JavadocMemberEnter extends MemberEnter {
         }
         super.visitVarDef(tree);
         if (tree.sym != null && tree.sym.kind == VAR && !isParameter(tree.sym)) {
-            docenv.setElementToTreePath(tree.sym, docenv.getTreePath(env.toplevel, env.enclClass, tree));
+            toolEnv.setElementToTreePath(tree.sym, toolEnv.getTreePath(env.toplevel, env.enclClass, tree));
         }
     }
 
