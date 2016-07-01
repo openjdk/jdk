@@ -24,10 +24,8 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import java.io.ByteArrayInputStream;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -36,12 +34,12 @@ import java.util.stream.Collectors;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 
 /**
  * Plugin to generate java.lang.invoke classes.
  */
-public final class GenerateJLIClassesPlugin implements TransformerPlugin {
+public final class GenerateJLIClassesPlugin implements Plugin {
 
     private static final String NAME = "generate-jli-classes";
 
@@ -58,11 +56,6 @@ public final class GenerateJLIClassesPlugin implements TransformerPlugin {
     List<String> speciesTypes;
 
     public GenerateJLIClassesPlugin() {
-    }
-
-    @Override
-    public Set<Category> getType() {
-        return Collections.singleton(Category.TRANSFORMER);
     }
 
     @Override
@@ -176,10 +169,9 @@ public final class GenerateJLIClassesPlugin implements TransformerPlugin {
             byte[] bytes = result.getValue();
 
             // Add class to pool
-            ModuleEntry ndata = ModuleEntry.create(data.getModule(),
+            ModuleEntry ndata = ModuleEntry.create(
                     "/java.base/" + className + ".class",
-                    ModuleEntry.Type.CLASS_OR_RESOURCE,
-                    new ByteArrayInputStream(bytes), bytes.length);
+                    bytes);
             if (!out.contains(ndata)) {
                 out.add(ndata);
             }

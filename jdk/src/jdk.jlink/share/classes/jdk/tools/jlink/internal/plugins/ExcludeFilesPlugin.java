@@ -24,22 +24,17 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import java.io.UncheckedIOException;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Predicate;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.ModuleEntry;
-import jdk.tools.jlink.internal.Utils;
 
 /**
  *
  * Exclude files plugin
  */
-public final class ExcludeFilesPlugin implements TransformerPlugin {
+public final class ExcludeFilesPlugin implements Plugin {
 
     public static final String NAME = "exclude-files";
     private Predicate<String> predicate;
@@ -60,10 +55,8 @@ public final class ExcludeFilesPlugin implements TransformerPlugin {
     }
 
     @Override
-    public Set<Category> getType() {
-        Set<Category> set = new HashSet<>();
-        set.add(Category.FILTER);
-        return Collections.unmodifiableSet(set);
+    public Category getType() {
+        return Category.FILTER;
     }
 
     @Override

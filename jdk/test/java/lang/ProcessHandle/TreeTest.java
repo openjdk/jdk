@@ -50,7 +50,6 @@ import org.testng.annotations.Test;
  * @build jdk.test.lib.Utils
  * @run testng/othervm TreeTest
  * @summary Test counting and JavaChild.spawning and counting of Processes.
- * @key intermittent
  * @author Roger Riggs
  */
 public class TreeTest extends ProcessUtil {

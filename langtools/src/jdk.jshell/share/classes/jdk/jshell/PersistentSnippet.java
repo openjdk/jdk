@@ -37,8 +37,9 @@ package jdk.jshell;
  */
 public abstract class PersistentSnippet extends Snippet {
 
-    PersistentSnippet(Key key, String userSource, Wrap guts, String unitName, SubKind subkind) {
-        super(key, userSource, guts, unitName, subkind);
+    PersistentSnippet(Key key, String userSource, Wrap guts, String unitName,
+            SubKind subkind, DiagList syntheticDiags) {
+        super(key, userSource, guts, unitName, subkind, syntheticDiags);
     }
 
     /**

@@ -28,22 +28,19 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Predicate;
 import java.util.zip.Deflater;
 import jdk.tools.jlink.internal.ModulePoolImpl;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 
 /**
  *
  * ZIP Compression plugin
  */
-public final class ZipPlugin implements TransformerPlugin {
+public final class ZipPlugin implements Plugin {
 
     public static final String NAME = "zip";
     private Predicate<String> predicate;
@@ -66,10 +63,8 @@ public final class ZipPlugin implements TransformerPlugin {
     }
 
     @Override
-    public Set<Category> getType() {
-        Set<Category> set = new HashSet<>();
-        set.add(Category.COMPRESSOR);
-        return Collections.unmodifiableSet(set);
+    public Category getType() {
+        return Category.COMPRESSOR;
     }
 
     @Override

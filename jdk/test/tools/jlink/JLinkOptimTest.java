@@ -9,11 +9,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.Opcodes;
@@ -131,13 +129,6 @@ public class JLinkOptimTest {
         @Override
         public String getName() {
             return NAME;
-        }
-
-        @Override
-        public Set<Category> getType() {
-            Set<Category> set = new HashSet<>();
-            set.add(Category.TRANSFORMER);
-            return Collections.unmodifiableSet(set);
         }
     }
 

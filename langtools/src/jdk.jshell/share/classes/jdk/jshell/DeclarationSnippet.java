@@ -55,8 +55,9 @@ public abstract class DeclarationSnippet extends PersistentSnippet {
     DeclarationSnippet(DeclarationKey key, String userSource, Wrap guts,
             String unitName, SubKind subkind, Wrap corralled,
             Collection<String> declareReferences,
-            Collection<String> bodyReferences) {
-        super(key, userSource, guts, unitName, subkind);
+            Collection<String> bodyReferences,
+            DiagList syntheticDiags) {
+        super(key, userSource, guts, unitName, subkind, syntheticDiags);
         this.corralled = corralled;
         this.declareReferences = declareReferences;
         this.bodyReferences = bodyReferences;

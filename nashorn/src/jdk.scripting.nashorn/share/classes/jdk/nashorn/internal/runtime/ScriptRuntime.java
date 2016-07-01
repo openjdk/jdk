@@ -704,7 +704,17 @@ public final class ScriptRuntime {
 
         if (property != null) {
             if (obj instanceof ScriptObject) {
-                obj = ((ScriptObject)obj).get(property);
+                // this is a scope identifier
+                assert property instanceof String;
+                final ScriptObject sobj = (ScriptObject) obj;
+
+                final FindProperty find = sobj.findProperty(property, true, true, sobj);
+                if (find != null) {
+                    obj = find.getObjectValue();
+                } else {
+                    obj = sobj.invokeNoSuchProperty(property, false, UnwarrantedOptimismException.INVALID_PROGRAM_POINT);
+                }
+
                 if(Global.isLocationPropertyPlaceholder(obj)) {
                     if(CompilerConstants.__LINE__.name().equals(property)) {
                         obj = 0;

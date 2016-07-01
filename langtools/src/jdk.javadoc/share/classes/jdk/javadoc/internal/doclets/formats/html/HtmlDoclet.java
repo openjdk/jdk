@@ -82,12 +82,12 @@ public class HtmlDoclet extends AbstractDoclet {
     /**
      * The "start" method as required by Javadoc.
      *
-     * @param root the root of the documentation tree.
+     * @param docEnv the root of the documentation tree.
      * @see jdk.doclet.DocletEnvironment
      * @return true if the doclet ran without encountering any errors.
      */
-    public boolean run(DocletEnvironment root) {
-        return startDoclet(root);
+    public boolean run(DocletEnvironment docEnv) {
+        return startDoclet(docEnv);
     }
 
     /**
@@ -109,12 +109,12 @@ public class HtmlDoclet extends AbstractDoclet {
      *
      * @see jdk.doclet.RootDoc
      */
-    protected void generateOtherFiles(DocletEnvironment root, ClassTree classtree)
+    protected void generateOtherFiles(DocletEnvironment docEnv, ClassTree classtree)
             throws Exception {
-        super.generateOtherFiles(root, classtree);
+        super.generateOtherFiles(docEnv, classtree);
         if (configuration.linksource) {
             SourceToHTMLConverter.convertRoot(configuration,
-                root, DocPaths.SOURCE_OUTPUT);
+                docEnv, DocPaths.SOURCE_OUTPUT);
         }
 
         if (configuration.topFile.isEmpty()) {

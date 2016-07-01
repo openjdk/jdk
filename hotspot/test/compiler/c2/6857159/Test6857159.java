@@ -34,12 +34,12 @@
 import jdk.test.lib.*;
 
 public class Test6857159 {
-    public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xbatch", "-XX:+PrintCompilation",
-                                                                  "-XX:CompileOnly=Test$ct.run", "Test");
-        OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
+    public static void main(String[] args) throws Throwable {
+        OutputAnalyzer analyzer = ProcessTools.executeTestJvm("-Xbatch",
+                "-XX:+PrintCompilation", "-XX:CompileOnly=Test$ct.run", "Test");
         analyzer.shouldNotContain("COMPILE SKIPPED");
         analyzer.shouldContain("Test$ct0::run (16 bytes)");
+        analyzer.shouldHaveExitValue(0);
     }
 }
 

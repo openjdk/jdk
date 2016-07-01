@@ -34,17 +34,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import jdk.tools.jlink.Jlink;
 import jdk.tools.jlink.Jlink.JlinkConfiguration;
 import jdk.tools.jlink.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.builder.DefaultImageBuilder;
-import jdk.tools.jlink.plugin.ExecutableImage;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.PostProcessorPlugin;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
+import jdk.tools.jlink.internal.ExecutableImage;
+import jdk.tools.jlink.internal.PostProcessor;
 import jdk.tools.jlink.internal.plugins.DefaultCompressPlugin;
 import jdk.tools.jlink.internal.plugins.StripDebugPlugin;
-import jdk.tools.jlink.plugin.Plugin;
 
 import tests.Helper;
 import tests.JImageGenerator;
@@ -70,7 +70,7 @@ public class IntegrationTest {
 
     private static final List<Integer> ordered = new ArrayList<>();
 
-    public static class MyPostProcessor implements PostProcessorPlugin {
+    public static class MyPostProcessor implements PostProcessor, Plugin {
 
         public static final String NAME = "mypostprocessor";
 
@@ -90,19 +90,22 @@ public class IntegrationTest {
         }
 
         @Override
-        public Set<Category> getType() {
-            Set<Category> set = new HashSet<>();
-            set.add(Category.PROCESSOR);
-            return Collections.unmodifiableSet(set);
+        public Category getType() {
+            return Category.PROCESSOR;
         }
 
         @Override
         public void configure(Map<String, String> config) {
             throw new UnsupportedOperationException("Shouldn't be called");
         }
+
+        @Override
+        public void visit(ModulePool in, ModulePool out) {
+            in.transformAndCopy(Function.identity(), out);
+        }
     }
 
-    public static class MyPlugin1 implements TransformerPlugin {
+    public static class MyPlugin1 implements Plugin {
 
         Integer index;
         Set<String> after;
@@ -136,13 +139,6 @@ public class IntegrationTest {
             in.transformAndCopy((file) -> {
                 return file;
             }, out);
-        }
-
-        @Override
-        public Set<Category> getType() {
-            Set<Category> set = new HashSet<>();
-            set.add(Category.TRANSFORMER);
-            return Collections.unmodifiableSet(set);
         }
 
         @Override

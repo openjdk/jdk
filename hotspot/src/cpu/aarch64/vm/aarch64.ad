@@ -12179,21 +12179,21 @@ instruct rolL_rReg_Var_C0(iRegLNoSp dst, iRegL src, iRegI shift, immI0 c0, rFlag
   %}
 %}
 
-instruct rolI_rReg_Var_C_32(iRegLNoSp dst, iRegL src, iRegI shift, immI_32 c_32, rFlagsReg cr)
+instruct rolI_rReg_Var_C_32(iRegINoSp dst, iRegI src, iRegI shift, immI_32 c_32, rFlagsReg cr)
 %{
   match(Set dst (OrI (LShiftI src shift) (URShiftI src (SubI c_32 shift))));
 
   expand %{
-    rolL_rReg(dst, src, shift, cr);
+    rolI_rReg(dst, src, shift, cr);
   %}
 %}
 
-instruct rolI_rReg_Var_C0(iRegLNoSp dst, iRegL src, iRegI shift, immI0 c0, rFlagsReg cr)
+instruct rolI_rReg_Var_C0(iRegINoSp dst, iRegI src, iRegI shift, immI0 c0, rFlagsReg cr)
 %{
   match(Set dst (OrI (LShiftI src shift) (URShiftI src (SubI c0 shift))));
 
   expand %{
-    rolL_rReg(dst, src, shift, cr);
+    rolI_rReg(dst, src, shift, cr);
   %}
 %}
 

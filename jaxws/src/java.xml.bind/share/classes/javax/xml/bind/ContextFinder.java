@@ -193,7 +193,7 @@ class ContextFinder {
             try {
                 Method m = spFactory.getMethod("createContext", String.class, ClassLoader.class, Map.class);
                 // any failure in invoking this method would be considered fatal
-                Object obj = instantiateProviderIfNecessary(m);
+                Object obj = instantiateProviderIfNecessary(spFactory);
                 context = m.invoke(obj, contextPath, classLoader, properties);
             } catch (NoSuchMethodException ignored) {
                 // it's not an error for the provider not to have this method.
@@ -203,7 +203,7 @@ class ContextFinder {
                 // try the old method that doesn't take properties. compatible with 1.0.
                 // it is an error for an implementation not to have both forms of the createContext method.
                 Method m = spFactory.getMethod("createContext", String.class, ClassLoader.class);
-                Object obj = instantiateProviderIfNecessary(m);
+                Object obj = instantiateProviderIfNecessary(spFactory);
                 // any failure in invoking this method would be considered fatal
                 context = m.invoke(obj, contextPath, classLoader);
             }
@@ -228,20 +228,20 @@ class ContextFinder {
         }
     }
 
-    private static Object instantiateProviderIfNecessary(Method m) throws JAXBException {
-        Class<?> declaringClass = m.getDeclaringClass();
+    private static Object instantiateProviderIfNecessary(Class<?> implClass) throws JAXBException {
         try {
-            if (JAXBContextFactory.class.isAssignableFrom(declaringClass)) {
+            if (JAXBContextFactory.class.isAssignableFrom(implClass)) {
                 return AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
                     @Override
                     public Object run() throws Exception {
-                        return declaringClass.newInstance();
+                        return implClass.newInstance();
                     }
                 });
             }
             return null;
-        } catch (PrivilegedActionException e) {
-            throw new JAXBException(Messages.format(Messages.COULD_NOT_INSTANTIATE, declaringClass, e), e);
+        } catch (PrivilegedActionException x) {
+            Throwable e = (x.getCause() == null) ? x : x.getCause();
+            throw new JAXBException(Messages.format(Messages.COULD_NOT_INSTANTIATE, implClass, e), e);
         }
     }
 
@@ -271,7 +271,7 @@ class ContextFinder {
         try {
 
             Method m = spFactory.getMethod("createContext", Class[].class, Map.class);
-            Object obj = instantiateProviderIfNecessary(m);
+            Object obj = instantiateProviderIfNecessary(spFactory);
             Object context = m.invoke(obj, classes, properties);
             if (!(context instanceof JAXBContext)) {
                 // the cast would fail, so generate an exception with a nice message
@@ -392,7 +392,7 @@ class ContextFinder {
 
 
     /**
-     * first factoryId should be the preffered one,
+     * first factoryId should be the preferred one,
      * more of those can be provided to support backwards compatibility
      */
     private static String classNameFromPackageProperties(ClassLoader classLoader,

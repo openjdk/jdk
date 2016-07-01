@@ -33,10 +33,8 @@
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import jdk.tools.jlink.internal.ImagePluginConfiguration;
 import jdk.tools.jlink.internal.PluginRepository;
@@ -47,7 +45,6 @@ import jdk.tools.jlink.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
 
 public class LastSorterTest {
 
@@ -169,7 +166,7 @@ public class LastSorterTest {
         }
     }
 
-    public static class SorterPlugin implements TransformerPlugin {
+    public static class SorterPlugin implements Plugin {
 
         private final String name;
         private String starts;
@@ -197,13 +194,6 @@ public class LastSorterTest {
         @Override
         public String getName() {
             return name;
-        }
-
-        @Override
-        public Set<Category> getType() {
-            Set<Category> set = new HashSet<>();
-            set.add(Category.TRANSFORMER);
-            return Collections.unmodifiableSet(set);
         }
 
         @Override
