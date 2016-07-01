@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  */
 
+import java.net.URI;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import javax.tools.JavaFileObject;
+import javax.tools.SimpleJavaFileObject;
+
 import com.sun.tools.javac.code.BoundKind;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.util.Context;
@@ -29,12 +36,22 @@ import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.Check;
+import com.sun.tools.javac.comp.Infer;
+import com.sun.tools.javac.comp.InferenceContext;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.main.JavaCompiler;
+import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
+import com.sun.tools.javac.util.Abort;
+import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+
+import static com.sun.tools.javac.util.List.*;
 
 /**
  * Test harness whose goal is to simplify the task of writing type-system
@@ -72,12 +89,18 @@ public class TypeHarness {
     protected Check chk;
     protected Symtab predef;
     protected Names names;
+    protected ReusableJavaCompiler tool;
+    protected Infer infer;
+
     protected Factory fac;
 
     protected TypeHarness() {
         Context ctx = new Context();
         JavacFileManager.preRegister(ctx);
+        MyAttr.preRegister(ctx);
+        tool = new ReusableJavaCompiler(ctx);
         types = Types.instance(ctx);
+        infer = Infer.instance(ctx);
         chk = Check.instance(ctx);
         predef = Symtab.instance(ctx);
         names = Names.instance(ctx);
@@ -176,6 +199,23 @@ public class TypeHarness {
         }
     }
     // </editor-fold>
+
+    /** Creates an inference context given a list of type variables and performs the given action on it.
+     *  The intention is to provide a way to do unit testing on inference contexts.
+     *  @param typeVars  a list of type variables to create the inference context from
+     *  @param consumer  the action to be performed on the inference context
+     */
+    protected void withInferenceContext(List<Type> typeVars, Consumer<InferenceContext> consumer) {
+        Assert.check(!typeVars.isEmpty(), "invalid parameter, empty type variables list");
+        ListBuffer undetVarsBuffer = new ListBuffer();
+        typeVars.stream().map((tv) -> new UndetVar((TypeVar)tv, null, types)).forEach((undetVar) -> {
+            undetVarsBuffer.add(undetVar);
+        });
+        List<Type> undetVarsList = undetVarsBuffer.toList();
+        InferenceContext inferenceContext = new InferenceContext(infer, nil(), undetVarsList);
+        inferenceContext.rollback(undetVarsList);
+        consumer.accept(inferenceContext);
+    }
 
     private void error(String msg) {
         throw new AssertionError("Unexpected result: " + msg);
@@ -327,6 +367,173 @@ public class TypeHarness {
             ct.supertype_field = classBound;
             ct.interfaces_field = List.from(intfBounds);
             return ct;
+        }
+    }
+    // </editor-fold>
+
+    // <editor-fold defaultstate="collapsed" desc="StrToTypeFactory">
+    /**
+     * StrToTypeFactory is a class provided to ease the creation of complex types from Strings.
+     * The client code can specify a package, a list of imports and a list of type variables when
+     * creating an instance of StrToTypeFactory. Later types including, or not, these type variables
+     * can be created by the factory. All occurrences of the same type variable in a type defined
+     * using a String are guaranteed to refer to the same type variable in the created type.
+     *
+     * An example is reported below:
+     *
+     * <pre>
+     * List<String> imports = new ArrayList<>();
+     * imports.add("java.util.*");
+     * List<String> typeVars = new ArrayList<>();
+     * typeVars.add("T");
+     * strToTypeFactory = new StrToTypeFactory(null, imports, typeVars);
+     *
+     * Type freeType = strToTypeFactory.getType("List<? extends T>");
+     * Type aType = strToTypeFactory.getType("List<? extends String>");
+     *
+     * // method withInferenceContext() belongs to TypeHarness
+     * withInferenceContext(strToTypeFactory.getTypeVars(), inferenceContext -> {
+     *     assertSameType(inferenceContext.asUndetVar(freeType), aType);
+     *     UndetVar undetVarForT = (UndetVar)inferenceContext.undetVars().head;
+     *     com.sun.tools.javac.util.List<Type> equalBounds = undetVarForT.getBounds(InferenceBound.EQ);
+     *     Assert.check(!equalBounds.isEmpty() && equalBounds.length() == 1,
+     *          "undetVar must have only one equality bound");
+     * });
+     * </pre>
+     */
+    public class StrToTypeFactory {
+        int id = 0;
+        String pkg;
+        java.util.List<String> imports;
+        public java.util.List<String> typeVarDecls;
+        public List<Type> typeVariables;
+
+        public StrToTypeFactory(String pkg, java.util.List<String> imports, java.util.List<String> typeVarDecls) {
+            this.pkg = pkg;
+            this.imports = imports;
+            this.typeVarDecls = typeVarDecls;
+            this.typeVariables = from(typeVarDecls.stream()
+                    .map(this::typeVarName)
+                    .map(this::getType)
+                    .collect(Collectors.toList())
+            );
+        }
+
+        TypeVar getTypeVarFromStr(String name) {
+            if (typeVarDecls == null) {
+                return null;
+            }
+            int index = typeVarDecls.indexOf(name);
+            if (index != -1) {
+                return (TypeVar)typeVariables.get(index);
+            }
+            return null;
+        }
+
+        List<Type> getTypeVars() {
+            return typeVariables;
+        }
+
+        String typeVarName(String typeVarDecl) {
+            String[] ss = typeVarDecl.split(" ");
+            return ss[0];
+        }
+
+        public final Type getType(String type) {
+            JavaSource source = new JavaSource(type);
+            MyAttr.theType = null;
+            MyAttr.typeParameters = List.nil();
+            tool.clear();
+            List<JavaFileObject> inputs = of(source);
+            try {
+                tool.compile(inputs);
+            } catch (Throwable ex) {
+                throw new Abort(ex);
+            }
+            if (typeVariables != null) {
+                return types.subst(MyAttr.theType, MyAttr.typeParameters, typeVariables);
+            }
+            return MyAttr.theType;
+        }
+
+        class JavaSource extends SimpleJavaFileObject {
+
+            String id;
+            String type;
+            String template = "#Package;\n" +
+                    "#Imports\n" +
+                    "class G#Id#TypeVars {\n" +
+                    "   #FieldType var;" +
+                    "}";
+
+            JavaSource(String type) {
+                super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
+                this.id = String.valueOf(StrToTypeFactory.this.id++);
+                this.type = type;
+            }
+
+            @Override
+            public CharSequence getCharContent(boolean ignoreEncodingErrors) {
+                String impStmts = imports.size() > 0 ?
+                        imports.stream().map(i -> "import " + i + ";").collect(Collectors.joining("\n")) : "";
+                String tvars = typeVarDecls.size() > 0 ?
+                        typeVarDecls.stream().collect(Collectors.joining(",", "<", ">")) : "";
+                return template
+                        .replace("#Package", (pkg == null) ? "" : "package " + pkg + ";")
+                        .replace("#Imports", impStmts)
+                        .replace("#Id", id)
+                        .replace("#TypeVars", tvars)
+                        .replace("#FieldType", type);
+            }
+        }
+    }
+    // </editor-fold>
+
+    // <editor-fold defaultstate="collapsed" desc="helper classes">
+    static class MyAttr extends Attr {
+
+        private static Type theType;
+        private static List<Type> typeParameters = List.nil();
+
+        static void preRegister(Context context) {
+            context.put(attrKey, (com.sun.tools.javac.util.Context.Factory<Attr>) c -> new MyAttr(c));
+        }
+
+        MyAttr(Context context) {
+            super(context);
+        }
+
+        @Override
+        public void visitVarDef(JCVariableDecl tree) {
+            super.visitVarDef(tree);
+            theType = tree.type;
+        }
+
+        @Override
+        public void attribClass(DiagnosticPosition pos, ClassSymbol c) {
+            super.attribClass(pos, c);
+            ClassType ct = (ClassType)c.type;
+            typeParameters = ct.typarams_field;
+        }
+    }
+
+    static class ReusableJavaCompiler extends JavaCompiler {
+        ReusableJavaCompiler(Context context) {
+            super(context);
+        }
+
+        @Override
+        protected void checkReusable() {
+            // do nothing
+        }
+
+        @Override
+        public void close() {
+            //do nothing
+        }
+
+        void clear() {
+            newRound();
         }
     }
     // </editor-fold>
