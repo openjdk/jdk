@@ -71,7 +71,7 @@ public interface RegisterConfig {
      * @return the ordered set of registers that may be used to pass parameters in a call conforming
      *         to {@code type}
      */
-    Register[] getCallingConventionRegisters(Type type, JavaKind kind);
+    RegisterArray getCallingConventionRegisters(Type type, JavaKind kind);
 
     /**
      * Gets the set of all registers that might be used by the register allocator.
@@ -80,23 +80,23 @@ public interface RegisterConfig {
      * {@link RegisterAllocationConfig#getAllocatableRegisters()}
      */
     @SuppressWarnings("javadoc")
-    Register[] getAllocatableRegisters();
+    RegisterArray getAllocatableRegisters();
 
     /**
      * Filters a set of registers and returns only those that can be used by the register allocator
      * for a value of a particular kind.
      */
-    Register[] filterAllocatableRegisters(PlatformKind kind, Register[] registers);
+    RegisterArray filterAllocatableRegisters(PlatformKind kind, RegisterArray registers);
 
     /**
      * Gets the registers whose values must be preserved by a method across any call it makes.
      */
-    Register[] getCallerSaveRegisters();
+    RegisterArray getCallerSaveRegisters();
 
     /**
      * Gets the registers whose values must be preserved by the callee.
      */
-    Register[] getCalleeSaveRegisters();
+    RegisterArray getCalleeSaveRegisters();
 
     /**
      * Gets a map from register {@linkplain Register#number numbers} to register

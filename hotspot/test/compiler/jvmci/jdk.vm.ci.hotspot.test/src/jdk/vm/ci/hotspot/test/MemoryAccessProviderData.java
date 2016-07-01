@@ -24,15 +24,18 @@
 package jdk.vm.ci.hotspot.test;
 
 import java.lang.reflect.Field;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.runtime.JVMCI;
+
 import org.testng.annotations.DataProvider;
+
+import jdk.internal.misc.Unsafe;
 import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
+import jdk.vm.ci.hotspot.HotSpotVMConfigAccess;
 import jdk.vm.ci.meta.Constant;
-import jdk.internal.misc.Unsafe;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.runtime.JVMCI;
 
 public class MemoryAccessProviderData {
     private static final Unsafe UNSAFE = getUnsafe();
@@ -54,7 +57,7 @@ public class MemoryAccessProviderData {
     @DataProvider(name = "positiveObject")
     public static Object[][] getPositiveObjectJavaKind() {
         HotSpotJVMCIRuntimeProvider runtime = (HotSpotJVMCIRuntimeProvider) JVMCI.getRuntime();
-        int offset = runtime.getConfig().classMirrorOffset;
+        int offset = new HotSpotVMConfigAccess(runtime.getConfigStore()).getFieldOffset("Klass::_java_mirror", Integer.class, "oop");
         Constant wrappedKlassPointer = ((HotSpotResolvedObjectType) runtime.fromClass(TestClass.class)).klass();
         return new Object[][]{new Object[]{JavaKind.Object, wrappedKlassPointer, (long) offset, TEST_CLASS_CONSTANT, 0}};
     }

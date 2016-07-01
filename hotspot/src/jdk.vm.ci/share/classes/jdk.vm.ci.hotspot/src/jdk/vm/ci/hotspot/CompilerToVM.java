@@ -35,11 +35,9 @@ import jdk.vm.ci.code.InvalidInstalledCodeException;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.hotspotvmconfig.HotSpotVMField;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.internal.misc.Unsafe;
 
 /**
  * Calls from Java into HotSpot. The behavior of all the methods in this class that take a native
@@ -267,8 +265,9 @@ final class CompilerToVM {
     native HotSpotResolvedObjectTypeImpl resolveTypeInPool(HotSpotConstantPool constantPool, int cpi) throws LinkageError;
 
     /**
-     * Looks up and attempts to resolve the {@code JVM_CONSTANT_Field} entry at index {@code cpi} in
-     * {@code constantPool}. The values returned in {@code info} are:
+     * Looks up and attempts to resolve the {@code JVM_CONSTANT_Field} entry for at index {@code cpi} in
+     * {@code constantPool}. For some opcodes, checks are performed that require the {@code method}
+     * that contains {@code opcode} to be specified. The values returned in {@code info} are:
      *
      * <pre>
      *     [(int) flags,   // only valid if field is resolved
@@ -281,7 +280,7 @@ final class CompilerToVM {
      * @param info an array in which the details of the field are returned
      * @return the type defining the field if resolution is successful, 0 otherwise
      */
-    native HotSpotResolvedObjectTypeImpl resolveFieldInPool(HotSpotConstantPool constantPool, int cpi, byte opcode, long[] info);
+    native HotSpotResolvedObjectTypeImpl resolveFieldInPool(HotSpotConstantPool constantPool, int cpi, HotSpotResolvedJavaMethodImpl method, byte opcode, long[] info);
 
     /**
      * Converts {@code cpci} from an index into the cache for {@code constantPool} to an index
@@ -338,9 +337,22 @@ final class CompilerToVM {
     native void resetCompilationStatistics();
 
     /**
-     * Initializes the fields of {@code config}.
+     * Reads the database of VM info. The return value encodes the info in a nested object array
+     * that is described by the pseudo Java object {@code info} below:
+     *
+     * <pre>
+     *     info = [
+     *         VMField[] vmFields,
+     *         [String name, Long size, ...] vmTypeSizes,
+     *         [String name, Long value, ...] vmConstants,
+     *         [String name, Long value, ...] vmAddresses,
+     *         VMFlag[] vmFlags
+     *     ]
+     * </pre>
+     *
+     * @return VM info as encoded above
      */
-    native long initializeConfiguration(HotSpotVMConfig config);
+    native Object[] readConfiguration();
 
     /**
      * Resolves the implementation of {@code method} for virtual dispatches on objects of dynamic
@@ -428,7 +440,6 @@ final class CompilerToVM {
      * <li>{@link HotSpotVMConfig#localVariableTableElementLengthOffset}</li>
      * <li>{@link HotSpotVMConfig#localVariableTableElementNameCpIndexOffset}</li>
      * <li>{@link HotSpotVMConfig#localVariableTableElementDescriptorCpIndexOffset}</li>
-     * <li>{@link HotSpotVMConfig#localVariableTableElementSignatureCpIndexOffset}
      * <li>{@link HotSpotVMConfig#localVariableTableElementSlotOffset}
      * <li>{@link HotSpotVMConfig#localVariableTableElementStartBciOffset}
      * </ul>

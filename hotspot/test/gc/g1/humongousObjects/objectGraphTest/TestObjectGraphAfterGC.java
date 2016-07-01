@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 /**
  * @test TestObjectGraphAfterGC
  * @summary Checks that objects' graph behave as expected after gc
- * @requires vm.gc=="G1" | vm.gc=="null"
+ * @requires vm.gc.G1
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
  * @library /testlibrary /test/lib /
  * @modules java.management java.base/jdk.internal.misc

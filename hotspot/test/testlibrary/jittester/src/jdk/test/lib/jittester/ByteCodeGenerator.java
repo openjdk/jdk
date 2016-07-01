@@ -78,7 +78,7 @@ class ByteCodeGenerator extends TestsGenerator {
         } catch (Throwable t) {
             Path errFile = generatorDir.resolve(mainClassName + ".err");
             try (PrintWriter pw = new PrintWriter(Files.newOutputStream(errFile,
-                    StandardOpenOption.CREATE_NEW))) {
+                    StandardOpenOption.CREATE, StandardOpenOption.WRITE))) {
                 t.printStackTrace(pw);
             } catch (IOException e) {
                 t.printStackTrace();

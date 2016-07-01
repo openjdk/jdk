@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1958,6 +1958,12 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
     // Initialize the string
     kit.store_String_value(kit.control(), result, dst_array);
     kit.store_String_coder(kit.control(), result, coder);
+
+    // The value field is final. Emit a barrier here to ensure that the effect
+    // of the initialization is committed to memory before any code publishes
+    // a reference to the newly constructed object (see Parse::do_exits()).
+    assert(AllocateNode::Ideal_allocation(result, _gvn) != NULL, "should be newly allocated");
+    kit.insert_mem_bar(Op_MemBarRelease, result);
   } else {
     result = C->top();
   }

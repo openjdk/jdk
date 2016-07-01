@@ -53,7 +53,7 @@ inline bool os::uses_stack_guard_pages() {
   return true;
 }
 
-inline bool os::allocate_stack_guard_pages() {
+inline bool os::must_commit_stack_guard_pages() {
   return true;
 }
 
@@ -66,14 +66,16 @@ inline int os::readdir_buf_size(const char *path)
 }
 
 // Bang the shadow pages if they need to be touched to be mapped.
-inline void os::map_stack_shadow_pages() {
+inline void os::map_stack_shadow_pages(address sp) {
   // Write to each page of our new frame to force OS mapping.
   // If we decrement stack pointer more than one page
   // the OS may not map an intervening page into our space
   // and may fault on a memory access to interior of our frame.
-  address sp = current_stack_pointer();
-  for (size_t pages = 1; pages <= (JavaThread::stack_shadow_zone_size() / os::vm_page_size()); pages++) {
-    *((int *)(sp - (pages * vm_page_size()))) = 0;
+  const int page_size = os::win32::vm_page_size();
+  const size_t n_pages = JavaThread::stack_shadow_zone_size() / page_size;
+  for (size_t pages = 1; pages <= n_pages; pages++) {
+    sp -= page_size;
+    *sp = 0;
   }
 }
 

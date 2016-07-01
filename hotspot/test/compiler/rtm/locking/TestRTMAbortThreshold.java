@@ -27,11 +27,11 @@
  * @bug 8031320
  * @summary Verify that RTMAbortThreshold option affects
  *          amount of aborts after which abort ratio is calculated.
- * @library /testlibrary /test/lib /compiler/testlibrary
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestRTMAbortThreshold
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI TestRTMAbortThreshold
@@ -41,9 +41,9 @@ import java.util.List;
 import jdk.test.lib.*;
 import jdk.test.lib.cli.CommandLineOptionTest;
 import jdk.test.lib.cli.predicate.AndPredicate;
-import rtm.*;
-import rtm.predicate.SupportedCPU;
-import rtm.predicate.SupportedVM;
+import compiler.testlibrary.rtm.*;
+import compiler.testlibrary.rtm.predicate.SupportedCPU;
+import compiler.testlibrary.rtm.predicate.SupportedVM;
 
 /**
  * Test verifies that on RTMAbortThreshold option actually affects how soon
