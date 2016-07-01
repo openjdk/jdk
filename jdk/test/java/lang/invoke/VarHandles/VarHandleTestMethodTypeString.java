@@ -454,40 +454,40 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
         });
 
 
-        // CompareAndExchangeVolatile
+        // CompareAndExchange
         // Incorrect argument types
         checkNPE(() -> { // null receiver
-            String x = (String) vh.compareAndExchangeVolatile(null, "foo", "foo");
+            String x = (String) vh.compareAndExchange(null, "foo", "foo");
         });
         checkCCE(() -> { // receiver reference class
-            String x = (String) vh.compareAndExchangeVolatile(Void.class, "foo", "foo");
+            String x = (String) vh.compareAndExchange(Void.class, "foo", "foo");
         });
         checkCCE(() -> { // expected reference class
-            String x = (String) vh.compareAndExchangeVolatile(recv, Void.class, "foo");
+            String x = (String) vh.compareAndExchange(recv, Void.class, "foo");
         });
         checkCCE(() -> { // actual reference class
-            String x = (String) vh.compareAndExchangeVolatile(recv, "foo", Void.class);
+            String x = (String) vh.compareAndExchange(recv, "foo", Void.class);
         });
         checkWMTE(() -> { // reciever primitive class
-            String x = (String) vh.compareAndExchangeVolatile(0, "foo", "foo");
+            String x = (String) vh.compareAndExchange(0, "foo", "foo");
         });
         // Incorrect return type
         checkCCE(() -> { // reference class
-            Void r = (Void) vh.compareAndExchangeVolatile(recv, "foo", "foo");
+            Void r = (Void) vh.compareAndExchange(recv, "foo", "foo");
         });
         checkWMTE(() -> { // primitive class
-            boolean x = (boolean) vh.compareAndExchangeVolatile(recv, "foo", "foo");
+            boolean x = (boolean) vh.compareAndExchange(recv, "foo", "foo");
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
-            String x = (String) vh.compareAndExchangeVolatile();
+            String x = (String) vh.compareAndExchange();
         });
         checkWMTE(() -> { // >
-            String x = (String) vh.compareAndExchangeVolatile(recv, "foo", "foo", Void.class);
+            String x = (String) vh.compareAndExchange(recv, "foo", "foo", Void.class);
         });
 
 
-        // CompareAndExchangeVolatileAcquire
+        // CompareAndExchangeAcquire
         // Incorrect argument types
         checkNPE(() -> { // null receiver
             String x = (String) vh.compareAndExchangeAcquire(null, "foo", "foo");
@@ -957,27 +957,27 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
         });
 
 
-        // CompareAndExchangeVolatile
+        // CompareAndExchange
         // Incorrect argument types
         checkCCE(() -> { // expected reference class
-            String x = (String) vh.compareAndExchangeVolatile(Void.class, "foo");
+            String x = (String) vh.compareAndExchange(Void.class, "foo");
         });
         checkCCE(() -> { // actual reference class
-            String x = (String) vh.compareAndExchangeVolatile("foo", Void.class);
+            String x = (String) vh.compareAndExchange("foo", Void.class);
         });
         // Incorrect return type
         checkCCE(() -> { // reference class
-            Void r = (Void) vh.compareAndExchangeVolatile("foo", "foo");
+            Void r = (Void) vh.compareAndExchange("foo", "foo");
         });
         checkWMTE(() -> { // primitive class
-            boolean x = (boolean) vh.compareAndExchangeVolatile("foo", "foo");
+            boolean x = (boolean) vh.compareAndExchange("foo", "foo");
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
-            String x = (String) vh.compareAndExchangeVolatile();
+            String x = (String) vh.compareAndExchange();
         });
         checkWMTE(() -> { // >
-            String x = (String) vh.compareAndExchangeVolatile("foo", "foo", Void.class);
+            String x = (String) vh.compareAndExchange("foo", "foo", Void.class);
         });
 
 
@@ -1539,39 +1539,39 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
         });
 
 
-        // CompareAndExchangeVolatile
+        // CompareAndExchange
         // Incorrect argument types
         checkNPE(() -> { // null receiver
-            String x = (String) vh.compareAndExchangeVolatile(null, 0, "foo", "foo");
+            String x = (String) vh.compareAndExchange(null, 0, "foo", "foo");
         });
         checkCCE(() -> { // array reference class
-            String x = (String) vh.compareAndExchangeVolatile(Void.class, 0, "foo", "foo");
+            String x = (String) vh.compareAndExchange(Void.class, 0, "foo", "foo");
         });
         checkCCE(() -> { // expected reference class
-            String x = (String) vh.compareAndExchangeVolatile(array, 0, Void.class, "foo");
+            String x = (String) vh.compareAndExchange(array, 0, Void.class, "foo");
         });
         checkCCE(() -> { // actual reference class
-            String x = (String) vh.compareAndExchangeVolatile(array, 0, "foo", Void.class);
+            String x = (String) vh.compareAndExchange(array, 0, "foo", Void.class);
         });
         checkWMTE(() -> { // array primitive class
-            String x = (String) vh.compareAndExchangeVolatile(0, 0, "foo", "foo");
+            String x = (String) vh.compareAndExchange(0, 0, "foo", "foo");
         });
         checkWMTE(() -> { // index reference class
-            String x = (String) vh.compareAndExchangeVolatile(array, Void.class, "foo", "foo");
+            String x = (String) vh.compareAndExchange(array, Void.class, "foo", "foo");
         });
         // Incorrect return type
         checkCCE(() -> { // reference class
-            Void r = (Void) vh.compareAndExchangeVolatile(array, 0, "foo", "foo");
+            Void r = (Void) vh.compareAndExchange(array, 0, "foo", "foo");
         });
         checkWMTE(() -> { // primitive class
-            boolean x = (boolean) vh.compareAndExchangeVolatile(array, 0, "foo", "foo");
+            boolean x = (boolean) vh.compareAndExchange(array, 0, "foo", "foo");
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
-            String x = (String) vh.compareAndExchangeVolatile();
+            String x = (String) vh.compareAndExchange();
         });
         checkWMTE(() -> { // >
-            String x = (String) vh.compareAndExchangeVolatile(array, 0, "foo", "foo", Void.class);
+            String x = (String) vh.compareAndExchange(array, 0, "foo", "foo", Void.class);
         });
 
 

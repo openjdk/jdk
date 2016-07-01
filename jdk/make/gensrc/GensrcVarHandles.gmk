@@ -38,12 +38,14 @@ define GenerateVarHandle
 
   $1_FILENAME := $(VARHANDLES_GENSRC_DIR)/VarHandle$$($1_Type)s.java
 
-  ifneq ($$(findstring $$($1_Type), Object Int Long), )
-    $1_ARGS += -KCAS
+  $1_ARGS += -KCAS
+
+  ifneq ($$(findstring $$($1_Type), Byte Short Char Int Long Float Double), )
+    $1_ARGS += -KAtomicAdd
   endif
 
-  ifneq ($$(findstring $$($1_Type), Int Long), )
-    $1_ARGS += -KAtomicAdd
+  ifneq ($$(findstring $$($1_Type), Byte Short Char), )
+    $1_ARGS += -KShorterThanInt
   endif
 
   $$($1_FILENAME): $(VARHANDLES_SRC_DIR)/X-VarHandle.java.template $(BUILD_TOOLS_JDK)
