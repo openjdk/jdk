@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.internal.PluginRepository;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 
 import tests.Helper;
 
@@ -46,7 +46,7 @@ import tests.Helper;
  */
 public class JLinkOptionsTest {
 
-    private static class TestPlugin implements TransformerPlugin {
+    private static class TestPlugin implements Plugin {
         private final String name;
         private final String option;
 

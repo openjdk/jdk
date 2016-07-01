@@ -68,6 +68,7 @@ static jboolean printVersion = JNI_FALSE; /* print and exit */
 static jboolean showVersion = JNI_FALSE;  /* print but continue */
 static jboolean printUsage = JNI_FALSE;   /* print and exit*/
 static jboolean printXUsage = JNI_FALSE;  /* print and exit*/
+static jboolean dryRun = JNI_FALSE;       /* initialize VM and exit */
 static char     *showSettings = NULL;      /* print but continue */
 static char     *listModules = NULL;
 
@@ -489,14 +490,18 @@ JavaMain(void * _args)
     mainArgs = CreateApplicationArgs(env, argv, argc);
     CHECK_EXCEPTION_NULL_LEAVE(mainArgs);
 
-    /* Invoke main method. */
-    (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
+    if (dryRun) {
+        ret = 0;
+    } else {
+        /* Invoke main method. */
+        (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
 
-    /*
-     * The launcher's exit code (in the absence of calls to
-     * System.exit) will be non-zero if main threw an exception.
-     */
-    ret = (*env)->ExceptionOccurred(env) == NULL ? 0 : 1;
+        /*
+         * The launcher's exit code (in the absence of calls to
+         * System.exit) will be non-zero if main threw an exception.
+         */
+        ret = (*env)->ExceptionOccurred(env) == NULL ? 0 : 1;
+    }
     LEAVE();
 }
 
@@ -1203,6 +1208,8 @@ ParseArguments(int *pargc, char ***pargv,
             return JNI_TRUE;
         } else if (JLI_StrCmp(arg, "-showversion") == 0) {
             showVersion = JNI_TRUE;
+        } else if (JLI_StrCmp(arg, "--dry-run") == 0) {
+            dryRun = JNI_TRUE;
         } else if (JLI_StrCmp(arg, "-X") == 0) {
             printXUsage = JNI_TRUE;
             return JNI_TRUE;
