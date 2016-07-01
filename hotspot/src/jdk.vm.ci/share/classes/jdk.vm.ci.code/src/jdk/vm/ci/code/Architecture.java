@@ -23,7 +23,6 @@
 package jdk.vm.ci.code;
 
 import java.nio.ByteOrder;
-import java.util.Arrays;
 
 import jdk.vm.ci.code.Register.RegisterCategory;
 import jdk.vm.ci.meta.JavaKind;
@@ -46,10 +45,10 @@ public abstract class Architecture {
     private final String name;
 
     /**
-     * Array of all available registers on this architecture. The index of each register in this
-     * array is equal to its {@linkplain Register#number number}.
+     * List of all available registers on this architecture. The index of each register in this list
+     * is equal to its {@linkplain Register#number number}.
      */
-    private final Register[] registers;
+    private final RegisterArray registers;
 
     /**
      * The byte ordering can be either little or big endian.
@@ -78,7 +77,8 @@ public abstract class Architecture {
      */
     private final int returnAddressSize;
 
-    protected Architecture(String name, PlatformKind wordKind, ByteOrder byteOrder, boolean unalignedMemoryAccess, Register[] registers, int implicitMemoryBarriers, int nativeCallDisplacementOffset,
+    protected Architecture(String name, PlatformKind wordKind, ByteOrder byteOrder, boolean unalignedMemoryAccess, RegisterArray registers, int implicitMemoryBarriers,
+                    int nativeCallDisplacementOffset,
                     int returnAddressSize) {
         this.name = name;
         this.registers = registers;
@@ -120,20 +120,20 @@ public abstract class Architecture {
     }
 
     /**
-     * Gets an array of all registers that exist on this architecture. This contains all registers
+     * Gets the list of all registers that exist on this architecture. This contains all registers
      * that exist in the specification of this architecture. Not all of them may be available on
-     * this particular architecture instance. The index of each register in this array is equal to
+     * this particular architecture instance. The index of each register in this list is equal to
      * its {@linkplain Register#number number}.
      */
-    public Register[] getRegisters() {
-        return registers.clone();
+    public RegisterArray getRegisters() {
+        return registers;
     }
 
     /**
-     * Gets an array of all registers available for storing values on this architecture. This may be
-     * a subset of {@link #getRegisters()}, depending on the capabilities of this particular CPU.
+     * Gets a list of all registers available for storing values on this architecture. This may be a
+     * subset of {@link #getRegisters()}, depending on the capabilities of this particular CPU.
      */
-    public Register[] getAvailableValueRegisters() {
+    public RegisterArray getAvailableValueRegisters() {
         return getRegisters();
     }
 
@@ -206,7 +206,7 @@ public abstract class Architecture {
                 assert this.byteOrder.equals(that.byteOrder);
                 assert this.implicitMemoryBarriers == that.implicitMemoryBarriers;
                 assert this.machineCodeCallDisplacementOffset == that.machineCodeCallDisplacementOffset;
-                assert Arrays.equals(this.registers, that.registers);
+                assert this.registers.equals(that.registers);
                 assert this.returnAddressSize == that.returnAddressSize;
                 assert this.unalignedMemoryAccess == that.unalignedMemoryAccess;
                 assert this.wordKind == that.wordKind;

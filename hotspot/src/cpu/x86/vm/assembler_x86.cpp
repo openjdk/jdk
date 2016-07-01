@@ -1173,6 +1173,23 @@ void Assembler::addl(Address dst, int32_t imm32) {
   emit_arith_operand(0x81, rax, dst, imm32);
 }
 
+void Assembler::addb(Address dst, int imm8) {
+  InstructionMark im(this);
+  prefix(dst);
+  emit_int8((unsigned char)0x80);
+  emit_operand(rax, dst, 1);
+  emit_int8(imm8);
+}
+
+void Assembler::addw(Address dst, int imm16) {
+  InstructionMark im(this);
+  emit_int8(0x66);
+  prefix(dst);
+  emit_int8((unsigned char)0x81);
+  emit_operand(rax, dst, 2);
+  emit_int16(imm16);
+}
+
 void Assembler::addl(Address dst, Register src) {
   InstructionMark im(this);
   prefix(dst, src);
@@ -4567,6 +4584,23 @@ void Assembler::xabort(int8_t imm8) {
   emit_int8((unsigned char)(imm8 & 0xFF));
 }
 
+void Assembler::xaddb(Address dst, Register src) {
+  InstructionMark im(this);
+  prefix(dst, src, true);
+  emit_int8(0x0F);
+  emit_int8((unsigned char)0xC0);
+  emit_operand(src, dst);
+}
+
+void Assembler::xaddw(Address dst, Register src) {
+  InstructionMark im(this);
+  emit_int8(0x66);
+  prefix(dst, src);
+  emit_int8(0x0F);
+  emit_int8((unsigned char)0xC1);
+  emit_operand(src, dst);
+}
+
 void Assembler::xaddl(Address dst, Register src) {
   InstructionMark im(this);
   prefix(dst, src);
@@ -4591,6 +4625,21 @@ void Assembler::xbegin(Label& abort, relocInfo::relocType rtype) {
     emit_int8((unsigned char)0xF8);
     emit_int32(0);
   }
+}
+
+void Assembler::xchgb(Register dst, Address src) { // xchg
+  InstructionMark im(this);
+  prefix(src, dst, true);
+  emit_int8((unsigned char)0x86);
+  emit_operand(dst, src);
+}
+
+void Assembler::xchgw(Register dst, Address src) { // xchg
+  InstructionMark im(this);
+  emit_int8(0x66);
+  prefix(src, dst);
+  emit_int8((unsigned char)0x87);
+  emit_operand(dst, src);
 }
 
 void Assembler::xchgl(Register dst, Address src) { // xchg

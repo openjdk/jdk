@@ -4477,13 +4477,15 @@ jint os::init_2(void) {
 
   // Check minimum allowable stack size for thread creation and to initialize
   // the java system classes, including StackOverflowError - depends on page
-  // size.  Add a page for compiler2 recursion in main thread.
-  // Add in 2*BytesPerWord times page size to account for VM stack during
+  // size.  Add two 4K pages for compiler2 recursion in main thread.
+  // Add in 4*BytesPerWord 4K pages to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   os::Solaris::min_stack_allowed = MAX2(os::Solaris::min_stack_allowed,
                                         JavaThread::stack_guard_zone_size() +
                                         JavaThread::stack_shadow_zone_size() +
-                                        (2*BytesPerWord COMPILER2_PRESENT(+1)) * page_size);
+                                        (4*BytesPerWord COMPILER2_PRESENT(+2)) * 4 * K);
+
+  os::Solaris::min_stack_allowed = align_size_up(os::Solaris::min_stack_allowed, os::vm_page_size());
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;
   if (threadStackSizeInBytes != 0 &&

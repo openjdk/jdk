@@ -108,8 +108,7 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
 
   void generate_fixed_frame(bool native_call);
 #ifdef SPARC
-  void generate_stack_overflow_check(Register Rframe_size, Register Rscratch,
-                                     Register Rscratch2);
+  void generate_stack_overflow_check(Register Rframe_size, Register Rscratch);
   void save_native_result(void);
   void restore_native_result(void);
 #endif // SPARC

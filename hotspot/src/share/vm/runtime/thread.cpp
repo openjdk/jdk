@@ -2493,10 +2493,10 @@ void JavaThread::create_stack_guard_pages() {
   address low_addr = stack_end();
   size_t len = stack_guard_zone_size();
 
-  int allocate = os::allocate_stack_guard_pages();
+  int must_commit = os::must_commit_stack_guard_pages();
   // warning("Guarding at " PTR_FORMAT " for len " SIZE_FORMAT "\n", low_addr, len);
 
-  if (allocate && !os::create_stack_guard_pages((char *) low_addr, len)) {
+  if (must_commit && !os::create_stack_guard_pages((char *) low_addr, len)) {
     log_warning(os, thread)("Attempt to allocate stack guard pages failed.");
     return;
   }
@@ -2515,7 +2515,6 @@ void JavaThread::create_stack_guard_pages() {
   log_debug(os, thread)("Thread " UINTX_FORMAT " stack guard pages activated: "
     PTR_FORMAT "-" PTR_FORMAT ".",
     os::current_thread_id(), p2i(low_addr), p2i(low_addr + len));
-
 }
 
 void JavaThread::remove_stack_guard_pages() {
@@ -2524,7 +2523,7 @@ void JavaThread::remove_stack_guard_pages() {
   address low_addr = stack_end();
   size_t len = stack_guard_zone_size();
 
-  if (os::allocate_stack_guard_pages()) {
+  if (os::must_commit_stack_guard_pages()) {
     if (os::remove_stack_guard_pages((char *) low_addr, len)) {
       _stack_guard_state = stack_guard_unused;
     } else {
@@ -2546,7 +2545,6 @@ void JavaThread::remove_stack_guard_pages() {
   log_debug(os, thread)("Thread " UINTX_FORMAT " stack guard pages removed: "
     PTR_FORMAT "-" PTR_FORMAT ".",
     os::current_thread_id(), p2i(low_addr), p2i(low_addr + len));
-
 }
 
 void JavaThread::enable_stack_reserved_zone() {

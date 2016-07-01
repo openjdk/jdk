@@ -28,6 +28,7 @@
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.vm.annotation
  * @library /testlibrary /test/lib / ../patches
+ * @requires vm.flavor != "minimal"
  * @build sun.hotspot.WhiteBox
  * @build java.base/java.lang.invoke.MethodHandleHelper
  * @build compiler.jsr292.NonInlinedCall.RedefineTest

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,34 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
-import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
-import jdk.internal.misc.Unsafe;
-
 /**
- * Class to access the C++ {@code vmSymbols} table.
+ * Describes a VM flag exposed via {@link HotSpotVMConfigAccess}.
  */
-final class HotSpotVmSymbols {
+public final class VMFlag {
 
     /**
-     * Returns the symbol in the {@code vmSymbols} table at position {@code index} as {@link String}
-     * .
-     *
-     * @param index position in the symbol table
-     * @return the symbol at position id
+     * The name of the flag.
      */
-    static String symbolAt(int index) {
-        HotSpotJVMCIRuntimeProvider runtime = runtime();
-        HotSpotVMConfig config = runtime.getConfig();
-        assert config.vmSymbolsFirstSID <= index && index < config.vmSymbolsSIDLimit : "index " + index + " is out of bounds";
-        assert config.symbolPointerSize == Unsafe.ADDRESS_SIZE : "the following address read is broken";
-        return runtime.getCompilerToVM().getSymbol(UNSAFE.getAddress(config.vmSymbolsSymbols + index * config.symbolPointerSize));
+    public final String name;
+
+    /**
+     * The C++ type of the flag.
+     */
+    public final String type;
+
+    /**
+     * The flag's value.
+     */
+    public final Object value;
+
+    VMFlag(String name, String type, Object value) {
+        this.name = name;
+        this.type = type;
+        this.value = value;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Flag[type=%s, name=%s, value=%s]", type, name, value);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,41 +20,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.hotspotvmconfig;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package jdk.vm.ci.code;
 
 /**
- * Refers to a C++ type in the VM.
+ * Used to suppress <a href="http://findbugs.sourceforge.net">FindBugs</a> warnings.
  */
-@Target(ElementType.FIELD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface HotSpotVMType {
+@interface SuppressFBWarnings {
+    /**
+     * The set of FindBugs
+     * <a href="http://findbugs.sourceforge.net/bugDescriptions.html">warnings</a> that are to be
+     * suppressed in annotated element. The value can be a bug category, kind or pattern.
+     */
+    String[] value();
 
     /**
-     * Types of information this annotation can return.
+     * Reason why the warning is suppressed.
      */
-    enum Type {
-        /**
-         * Returns the size of the type (C++ {@code sizeof()}).
-         */
-        SIZE;
-    }
-
-    /**
-     * Specifies what type of information to return.
-     *
-     * @see Type
-     */
-    Type get();
-
-    /**
-     * Returns the name of the type.
-     *
-     * @return name of type
-     */
-    String name();
+    String justification();
 }

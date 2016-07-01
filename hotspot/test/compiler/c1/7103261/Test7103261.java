@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ public class Test7103261 {
     char c;
     short s;
     boolean z;
+    Object o;
 
     public static void main(String[] args) {
         constantStore();
@@ -51,7 +52,7 @@ public class Test7103261 {
         valueTest(true);
     }
     static void constantStore() {
-        for (int field = 0; field < 8; field++) {
+        for (int field = 0; field < 9; field++) {
             try {
                 Test7103261 o = nonnull_value;
                 for (int i = 0; i < 100000; i++) {
@@ -64,6 +65,7 @@ public class Test7103261 {
                     case 5: o.c = 0; break;
                     case 6: o.s = 0; break;
                     case 7: o.z = false; break;
+                    case 8: o.o = null; break;
                     default: throw new InternalError();
                     }
                     if (i == 90000) {
@@ -76,7 +78,7 @@ public class Test7103261 {
         }
     }
     static void valueTest(boolean store) {
-        for (int field = 0; field < 8; field++) {
+        for (int field = 0; field < 9; field++) {
             try {
                 Test7103261 o  = nonnull_value;
                 Test7103261 o2 = nonnull_value2;
@@ -90,6 +92,7 @@ public class Test7103261 {
                     case 5: o.c = o2.c; break;
                     case 6: o.s = o2.s; break;
                     case 7: o.z = o2.z; break;
+                    case 8: o.o = o2.o; break;
                     default: throw new InternalError();
                     }
                     if (i == 90000) {

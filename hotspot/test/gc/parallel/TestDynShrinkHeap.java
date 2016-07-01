@@ -24,7 +24,7 @@
 /**
  * @test TestDynShrinkHeap
  * @bug 8016479
- * @requires vm.gc=="Parallel" | vm.gc=="null"
+ * @requires vm.gc.Parallel
  * @summary Verify that the heap shrinks after full GC according to the current values of the Min/MaxHeapFreeRatio flags
  * @modules java.base/jdk.internal.misc
  * @modules jdk.management

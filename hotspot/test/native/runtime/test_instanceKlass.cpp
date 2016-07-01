@@ -22,6 +22,7 @@
  *
  */
 
+#include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
