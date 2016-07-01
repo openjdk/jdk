@@ -96,7 +96,7 @@ public class DeprecatedAPIListBuilder {
             }
         }
         deprecatedMap.put(DeprElementKind.PACKAGE, pset);
-        for (Element e : configuration.root.getIncludedClasses()) {
+        for (Element e : configuration.docEnv.getIncludedClasses()) {
             TypeElement te = (TypeElement)e;
             SortedSet<Element> eset;
             if (utils.isDeprecated(e)) {
