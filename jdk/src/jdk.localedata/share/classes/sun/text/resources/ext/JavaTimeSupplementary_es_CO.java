@@ -72,50 +72,61 @@ import sun.util.resources.OpenListResourceBundle;
 public class JavaTimeSupplementary_es_CO extends OpenListResourceBundle {
     @Override
     protected final Object[][] getContents() {
+        final String[] sharedAmPmMarkers = {
+            "a.m.",
+            "p.m.",
+        };
+
+        final String[] sharedDatePatterns = {
+            "GGGG y MMMM d, EEEE",
+            "GGGG y MMMM d",
+            "d/MM/y GGGG",
+            "d/MM/yy G",
+        };
+
+        final String[] sharedDayNarrows = {
+            "d",
+            "l",
+            "m",
+            "m",
+            "j",
+            "v",
+            "s",
+        };
+
+        final String[] sharedTimePatterns = {
+            "h:mm:ss a zzzz",
+            "h:mm:ss a z",
+            "h:mm:ss a",
+            "h:mm a",
+        };
+
+        final String[] sharedJavaTimeDatePatterns = {
+            "G y MMMM d, EEEE",
+            "G y MMMM d",
+            "d/MM/y G",
+            "d/MM/yy GGGGG",
+        };
+
         return new Object[][] {
+            { "field.zone",
+                "Zona horaria" },
+            { "islamic.AmPmMarkers",
+                sharedAmPmMarkers },
             { "islamic.DatePatterns",
-                new String[] {
-                    "GGGG y MMMM d, EEEE",
-                    "GGGG y MMMM d",
-                    "d/MM/y GGGG",
-                    "d/MM/yy G",
-                }
-            },
+                sharedDatePatterns },
             { "islamic.DayNarrows",
-                new String[] {
-                    "d",
-                    "l",
-                    "m",
-                    "m",
-                    "j",
-                    "v",
-                    "s",
-                }
-            },
+                sharedDayNarrows },
             { "islamic.TimePatterns",
-                new String[] {
-                    "h:mm:ss a zzzz",
-                    "h:mm:ss a z",
-                    "h:mm:ss a",
-                    "h:mm a",
-                }
-            },
+                sharedTimePatterns },
+            { "islamic.abbreviated.AmPmMarkers",
+                sharedAmPmMarkers },
+            { "islamic.narrow.AmPmMarkers",
+                sharedAmPmMarkers },
             { "java.time.buddhist.DatePatterns",
-                new String[] {
-                    "G y MMMM d, EEEE",
-                    "G y MMMM d",
-                    "d/MM/y G",
-                    "d/MM/yy GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
             { "java.time.islamic.DatePatterns",
-                new String[] {
-                    "G y MMMM d, EEEE",
-                    "G y MMMM d",
-                    "d/MM/y G",
-                    "d/MM/yy GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
             { "java.time.japanese.DatePatterns",
                 new String[] {
                     "EEEE, d 'de' MMMM 'de' y G",
@@ -125,40 +136,36 @@ public class JavaTimeSupplementary_es_CO extends OpenListResourceBundle {
                 }
             },
             { "java.time.roc.DatePatterns",
-                new String[] {
-                    "G y MMMM d, EEEE",
-                    "G y MMMM d",
-                    "d/MM/y G",
-                    "d/MM/yy GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
+            { "roc.AmPmMarkers",
+                sharedAmPmMarkers },
             { "roc.DatePatterns",
-                new String[] {
-                    "GGGG y MMMM d, EEEE",
-                    "GGGG y MMMM d",
-                    "d/MM/y GGGG",
-                    "d/MM/yy G",
-                }
-            },
+                sharedDatePatterns },
             { "roc.DayNarrows",
+                sharedDayNarrows },
+            { "roc.MonthNarrows",
                 new String[] {
-                    "d",
-                    "l",
+                    "e",
+                    "f",
                     "m",
+                    "a",
                     "m",
                     "j",
-                    "v",
+                    "j",
+                    "a",
                     "s",
+                    "o",
+                    "n",
+                    "d",
+                    "",
                 }
             },
             { "roc.TimePatterns",
-                new String[] {
-                    "h:mm:ss a zzzz",
-                    "h:mm:ss a z",
-                    "h:mm:ss a",
-                    "h:mm a",
-                }
-            },
+                sharedTimePatterns },
+            { "roc.abbreviated.AmPmMarkers",
+                sharedAmPmMarkers },
+            { "roc.narrow.AmPmMarkers",
+                sharedAmPmMarkers },
         };
     }
 }

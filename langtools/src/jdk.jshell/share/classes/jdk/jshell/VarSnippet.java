@@ -43,8 +43,10 @@ public class VarSnippet extends DeclarationSnippet {
 
      VarSnippet(VarKey key, String userSource, Wrap guts,
             String name, SubKind subkind, String typeName,
-            Collection<String> declareReferences) {
-        super(key, userSource, guts, name, subkind, null, declareReferences, null);
+            Collection<String> declareReferences,
+            DiagList syntheticDiags) {
+        super(key, userSource, guts, name, subkind, null, declareReferences,
+                null, syntheticDiags);
         this.typeName = typeName;
     }
 

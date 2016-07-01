@@ -50,6 +50,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 import javax.tools.StandardLocation;
 
+import com.sun.tools.javac.code.ClassFinder;
 import com.sun.tools.javac.code.Directive;
 import com.sun.tools.javac.code.Directive.ExportsDirective;
 import com.sun.tools.javac.code.Directive.RequiresDirective;
@@ -101,6 +102,8 @@ import static com.sun.tools.javac.code.TypeTag.CLASS;
 
 import com.sun.tools.javac.tree.JCTree.JCDirective;
 import com.sun.tools.javac.tree.JCTree.Tag;
+import com.sun.tools.javac.util.Abort;
+import com.sun.tools.javac.util.Position;
 
 import static com.sun.tools.javac.code.Flags.ABSTRACT;
 import static com.sun.tools.javac.code.Flags.ENUM;
@@ -217,6 +220,9 @@ public class Modules extends JCTree.Visitor {
             for (ModuleSymbol msym: roots) {
                 msym.complete();
             }
+        } catch (CompletionFailure ex) {
+            log.error(JCDiagnostic.DiagnosticFlag.NON_DEFERRABLE, Position.NOPOS, "cant.access", ex.sym, ex.getDetailValue());
+            if (ex instanceof ClassFinder.BadClassFile) throw new Abort();
         } finally {
             depth--;
         }
@@ -503,7 +509,9 @@ public class Modules extends JCTree.Visitor {
             for (ModuleSymbol ms : allModules()) {
                 if (ms == syms.unnamedModule || ms == msym)
                     continue;
-                RequiresDirective d = new RequiresDirective(ms, EnumSet.of(RequiresFlag.PUBLIC));
+                Set<RequiresFlag> flags = (ms.flags_field & Flags.AUTOMATIC_MODULE) != 0 ?
+                        EnumSet.of(RequiresFlag.PUBLIC) : EnumSet.noneOf(RequiresFlag.class);
+                RequiresDirective d = new RequiresDirective(ms, flags);
                 directives.add(d);
                 requires.add(d);
             }
@@ -1000,29 +1008,19 @@ public class Modules extends JCTree.Visitor {
 
         Set<ModuleSymbol> readable = new LinkedHashSet<>();
         Set<ModuleSymbol> requiresPublic = new HashSet<>();
-        if ((msym.flags() & Flags.AUTOMATIC_MODULE) == 0) {
-            for (RequiresDirective d : msym.requires) {
-                d.module.complete();
-                readable.add(d.module);
-                Set<ModuleSymbol> s = retrieveRequiresPublic(d.module);
-                Assert.checkNonNull(s, () -> "no entry in cache for " + d.module);
-                readable.addAll(s);
-                if (d.flags.contains(RequiresFlag.PUBLIC)) {
-                    requiresPublic.add(d.module);
-                    requiresPublic.addAll(s);
-                }
-            }
-        } else {
-            //the module graph may contain cycles involving automatic modules
-            //handle automatic modules separatelly:
-            Set<ModuleSymbol> s = retrieveRequiresPublic(msym);
 
+        for (RequiresDirective d : msym.requires) {
+            d.module.complete();
+            readable.add(d.module);
+            Set<ModuleSymbol> s = retrieveRequiresPublic(d.module);
+            Assert.checkNonNull(s, () -> "no entry in cache for " + d.module);
             readable.addAll(s);
-            requiresPublic.addAll(s);
-
-            //ensure the unnamed module is added (it is not requires public):
-            readable.add(syms.unnamedModule);
+            if (d.flags.contains(RequiresFlag.PUBLIC)) {
+                requiresPublic.add(d.module);
+                requiresPublic.addAll(s);
+            }
         }
+
         requiresPublicCache.put(msym, requiresPublic);
         initVisiblePackages(msym, readable);
         for (ExportsDirective d: msym.exports) {

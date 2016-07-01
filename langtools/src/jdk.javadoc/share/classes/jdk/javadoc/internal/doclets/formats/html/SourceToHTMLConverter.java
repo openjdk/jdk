@@ -75,7 +75,7 @@ public class SourceToHTMLConverter {
     private final ConfigurationImpl configuration;
     private final Utils utils;
 
-    private final DocletEnvironment rootDoc;
+    private final DocletEnvironment docEnv;
 
     private DocPath outputdir;
 
@@ -89,7 +89,7 @@ public class SourceToHTMLConverter {
             DocPath outputdir) {
         this.configuration  = configuration;
         this.utils = configuration.utils;
-        this.rootDoc = rd;
+        this.docEnv = rd;
         this.outputdir = outputdir;
     }
 
@@ -97,16 +97,16 @@ public class SourceToHTMLConverter {
      * Translate the TypeElements in the given DocletEnvironment to HTML representation.
      *
      * @param configuration the configuration.
-     * @param root the DocletEnvironment to convert.
+     * @param docEnv the DocletEnvironment to convert.
      * @param outputdir the name of the directory to output to.
      */
-    public static void convertRoot(ConfigurationImpl configuration, DocletEnvironment root,
+    public static void convertRoot(ConfigurationImpl configuration, DocletEnvironment docEnv,
             DocPath outputdir) {
-        new SourceToHTMLConverter(configuration, root, outputdir).generate();
+        new SourceToHTMLConverter(configuration, docEnv, outputdir).generate();
     }
 
     void generate() {
-        if (rootDoc == null || outputdir == null) {
+        if (docEnv == null || outputdir == null) {
             return;
         }
         for (PackageElement pkg : utils.getSpecifiedPackages()) {

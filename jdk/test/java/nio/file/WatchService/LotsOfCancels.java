@@ -50,7 +50,7 @@ public class LotsOfCancels {
         // one to bash on cancel, the other to poll the events
         ExecutorService pool = Executors.newCachedThreadPool();
         try {
-            Path top = Files.createTempDirectory("work");
+            Path top = Files.createTempDirectory("LotsOfCancels");
             top.toFile().deleteOnExit();
             for (int i=1; i<=16; i++) {
                 Path dir = Files.createDirectory(top.resolve("dir-" + i));

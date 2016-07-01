@@ -127,7 +127,7 @@ public final class AppRuntimeImageBuilder {
         jlink.build(jlinkConfig, pluginConfig);
     }
 
-    /**
+    /*
      * Returns a ModuleFinder that limits observability to the given root
      * modules, their transitive dependences, plus a set of other modules.
      */

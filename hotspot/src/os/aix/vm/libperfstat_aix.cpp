@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,10 +180,12 @@ bool libperfstat::get_cpuinfo(cpuinfo_t* pci) {
   memset (&psct, '\0', sizeof(psct));
 
   if (-1 == libperfstat::perfstat_cpu_total(NULL, &psct, sizeof(PERFSTAT_CPU_TOTAL_T_LATEST), 1)) {
-    if (-1 == libperfstat::perfstat_cpu_total(NULL, &psct, sizeof(perfstat_cpu_total_t_61), 1)) {
-      if (-1 == libperfstat::perfstat_cpu_total(NULL, &psct, sizeof(perfstat_cpu_total_t_53), 1)) {
+    if (-1 == libperfstat::perfstat_cpu_total(NULL, &psct, sizeof(perfstat_cpu_total_t_71), 1)) {
+      if (-1 == libperfstat::perfstat_cpu_total(NULL, &psct, sizeof(perfstat_cpu_total_t_61), 1)) {
+        if (-1 == libperfstat::perfstat_cpu_total(NULL, &psct, sizeof(perfstat_cpu_total_t_53), 1)) {
           trcVerbose("perfstat_cpu_total() failed (errno=%d)", errno);
           return false;
+        }
       }
     }
   }

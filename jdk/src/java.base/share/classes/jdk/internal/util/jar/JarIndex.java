@@ -222,7 +222,8 @@ public class JarIndex {
                 // Any files in META-INF/ will be indexed explicitly
                 if (fileName.equals("META-INF/") ||
                     fileName.equals(INDEX_NAME) ||
-                    fileName.equals(JarFile.MANIFEST_NAME))
+                    fileName.equals(JarFile.MANIFEST_NAME) ||
+                    fileName.startsWith("META-INF/versions/"))
                     continue;
 
                 if (!metaInfFilenames || !fileName.startsWith("META-INF/")) {

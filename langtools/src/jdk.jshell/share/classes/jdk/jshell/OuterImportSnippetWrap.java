@@ -25,8 +25,6 @@
 
 package jdk.jshell;
 
-import java.util.IdentityHashMap;
-import java.util.List;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 

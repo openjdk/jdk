@@ -94,6 +94,9 @@ import java.util.Set;
  * <li>   &lt;handler-name&gt;.append
  *        specifies whether the FileHandler should append onto
  *        any existing files (defaults to false). </li>
+ * <li>   &lt;handler-name&gt;.maxLocks
+ *        specifies the maximum number of concurrent locks held by
+ *        FileHandler (defaults to 100). </li>
  * </ul>
  * <p>
  * For example, the properties for {@code FileHandler} would be:
@@ -157,6 +160,7 @@ public class FileHandler extends StreamHandler {
     private FileChannel lockFileChannel;
     private File files[];
     private static final int MAX_LOCKS = 100;
+    private int maxLocks = MAX_LOCKS;
     private static final Set<String> locks = new HashSet<>();
 
     /**
@@ -235,6 +239,12 @@ public class FileHandler extends StreamHandler {
         setLevel(manager.getLevelProperty(cname + ".level", Level.ALL));
         setFilter(manager.getFilterProperty(cname + ".filter", null));
         setFormatter(manager.getFormatterProperty(cname + ".formatter", new XMLFormatter()));
+        // Initialize maxLocks from the logging.properties file.
+        // If invalid/no property is provided 100 will be used as a default value.
+        maxLocks = manager.getIntProperty(cname + ".maxLocks", MAX_LOCKS);
+        if(maxLocks <= 0) {
+            maxLocks = MAX_LOCKS;
+        }
         try {
             setEncoding(manager.getStringProperty(cname +".encoding", null));
         } catch (Exception ex) {
@@ -476,7 +486,7 @@ public class FileHandler extends StreamHandler {
         int unique = -1;
         for (;;) {
             unique++;
-            if (unique > MAX_LOCKS) {
+            if (unique > maxLocks) {
                 throw new IOException("Couldn't get lock for " + pattern);
             }
             // Generate a lock file name from the "unique" int.

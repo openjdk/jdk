@@ -59,7 +59,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     /**
      * Root of the program structure. Used for "overview" documentation.
      */
-    private DocletEnvironment root;
+    private DocletEnvironment docEnv;
 
     /**
      * Map representing the group of packages as specified on the command line.
@@ -87,7 +87,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      */
     public PackageIndexWriter(ConfigurationImpl configuration, DocPath filename) throws IOException {
         super(configuration, filename);
-        this.root = configuration.root;
+        this.docEnv = configuration.docEnv;
         groupPackageMap = configuration.group.groupPackages(packages);
         groupList = configuration.group.getGroupList();
     }

@@ -58,7 +58,7 @@ import jdk.javadoc.doclet.DocletEnvironment;
  * @author Atul M Dambalkar
  * @author Neal Gafter (rewrite)
  */
-public class RootDocImpl implements DocletEnvironment {
+public class DocEnvImpl implements DocletEnvironment {
 
     /**
      * list of classes specified on the command line.
@@ -70,36 +70,36 @@ public class RootDocImpl implements DocletEnvironment {
      */
     private  Set<PackageElement> cmdLinePackages;
 
-    public final DocEnv env;
+    public final ToolEnvironment toolEnv;
 
     /**
      * Constructor used when reading source files.
      *
-     * @param env the documentation environment, state for this javadoc run
+     * @param toolEnv the documentation environment, state for this javadoc run
      * @param classes list of classes specified on the commandline
      * @param packages list of package names specified on the commandline
      */
-    public RootDocImpl(DocEnv env, List<JCClassDecl> classes, List<String> packages) {
-        this.env = env;
-        setPackages(env, packages);
-        setClasses(env, classes);
+    public DocEnvImpl(ToolEnvironment toolEnv, List<JCClassDecl> classes, List<String> packages) {
+        this.toolEnv = toolEnv;
+        setPackages(toolEnv, packages);
+        setClasses(toolEnv, classes);
     }
 
     /**
      * Constructor used when reading class files.
      *
-     * @param env the documentation environment, state for this javadoc run
+     * @param toolEnv the documentation environment, state for this javadoc run
      * @param classes list of class names specified on the commandline
      */
-    public RootDocImpl(DocEnv env, List<String> classes) {
+    public DocEnvImpl(ToolEnvironment toolEnv, List<String> classes) {
         //super(env, null);
-        this.env = env;
+        this.toolEnv = toolEnv;
 
         Set<TypeElement> classList = new LinkedHashSet<>();
         for (String className : classes) {
-            TypeElement c = env.loadClass(className);
+            TypeElement c = toolEnv.loadClass(className);
             if (c == null)
-                env.error(null, "javadoc.class_not_found", className);
+                toolEnv.error(null, "javadoc.class_not_found", className);
             else
                 classList.add(c);
         }
@@ -110,15 +110,15 @@ public class RootDocImpl implements DocletEnvironment {
      * Initialize classes information. Those classes are input from
      * command line.
      *
-     * @param env the compilation environment
+     * @param toolEnv the compilation environment
      * @param classes a list of ClassDeclaration
      */
-    private void setClasses(DocEnv env, List<JCClassDecl> classes) {
+    private void setClasses(ToolEnvironment toolEnv, List<JCClassDecl> classes) {
         Set<TypeElement> result = new LinkedHashSet<>();
-        classes.stream().filter((def) -> (env.shouldDocument(def.sym))).forEach((def) -> {
+        classes.stream().filter((def) -> (toolEnv.shouldDocument(def.sym))).forEach((def) -> {
             TypeElement te = (TypeElement)def.sym;
             if (te != null) {
-                env.setIncluded((Element)def.sym);
+                toolEnv.setIncluded((Element)def.sym);
                 result.add(te);
             }
         });
@@ -128,18 +128,18 @@ public class RootDocImpl implements DocletEnvironment {
     /**
      * Initialize packages information.
      *
-     * @param env the compilation environment
+     * @param toolEnv the compilation environment
      * @param packages a list of package names (String)
      */
-    private void setPackages(DocEnv env, List<String> packages) {
+    private void setPackages(ToolEnvironment toolEnv, List<String> packages) {
         Set<PackageElement> packlist = new LinkedHashSet<>();
         packages.stream().forEach((name) -> {
             PackageElement pkg =  getElementUtils().getPackageElement(name);
             if (pkg != null) {
-                env.setIncluded(pkg);
+                toolEnv.setIncluded(pkg);
                 packlist.add(pkg);
             } else {
-                env.warning("main.no_source_files_for_package", name);
+                toolEnv.warning("main.no_source_files_for_package", name);
             }
         });
         cmdLinePackages = Collections.unmodifiableSet(packlist);
@@ -159,7 +159,7 @@ public class RootDocImpl implements DocletEnvironment {
     public Set<TypeElement> specifiedClasses() {
        Set<TypeElement> out = new LinkedHashSet<>();
        cmdLineClasses.stream().forEach((te) -> {
-            env.addAllClasses(out, te, true);
+            toolEnv.addAllClasses(out, te, true);
         });
        return out;
     }
@@ -174,10 +174,10 @@ public class RootDocImpl implements DocletEnvironment {
             Set<TypeElement> classes = new LinkedHashSet<>();
 
             cmdLineClasses.stream().forEach((te) -> {
-                env.addAllClasses(classes, te, true);
+                toolEnv.addAllClasses(classes, te, true);
             });
             cmdLinePackages.stream().forEach((pkg) -> {
-                env.addAllClasses(classes, pkg);
+                toolEnv.addAllClasses(classes, pkg);
             });
             classesToDocument = Collections.unmodifiableSet(classes);
         }
@@ -208,7 +208,7 @@ public class RootDocImpl implements DocletEnvironment {
      */
     @Override
     public boolean isIncluded(Element e) {
-        return env.isIncluded(e);
+        return toolEnv.isIncluded(e);
     }
 
 //    Note: these reporting methods are no longer used.
@@ -255,17 +255,17 @@ public class RootDocImpl implements DocletEnvironment {
      * Return the current file manager.
      */
     public JavaFileManager getFileManager() {
-        return env.fileManager;
+        return toolEnv.fileManager;
     }
 
     @Override
     public DocTrees getDocTrees() {
-        return env.docTrees;
+        return toolEnv.docTrees;
     }
 
     @Override
     public Elements getElementUtils() {
-        return env.elements;
+        return toolEnv.elements;
     }
 
     @Override
@@ -289,16 +289,16 @@ public class RootDocImpl implements DocletEnvironment {
 
     @Override
     public Types getTypeUtils() {
-        return env.typeutils;
+        return toolEnv.typeutils;
     }
 
     @Override
     public JavaFileManager getJavaFileManager() {
-        return env.fileManager;
+        return toolEnv.fileManager;
     }
 
     @Override
     public SourceVersion getSourceVersion() {
-        return Source.toSourceVersion(env.source);
+        return Source.toSourceVersion(toolEnv.source);
     }
 }

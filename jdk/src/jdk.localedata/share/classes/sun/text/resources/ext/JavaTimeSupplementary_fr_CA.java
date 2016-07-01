@@ -72,6 +72,18 @@ import sun.util.resources.OpenListResourceBundle;
 public class JavaTimeSupplementary_fr_CA extends OpenListResourceBundle {
     @Override
     protected final Object[][] getContents() {
+        final String[] sharedNarrowAmPmMarkers = {
+            "a",
+            "p",
+        };
+
+        final String[] sharedJavaTimeDatePatterns = {
+            "EEEE d MMMM y G",
+            "d MMMM y G",
+            "d MMM y G",
+            "yy-MM-dd GGGGG",
+        };
+
         return new Object[][] {
             { "islamic.DatePatterns",
                 new String[] {
@@ -82,19 +94,9 @@ public class JavaTimeSupplementary_fr_CA extends OpenListResourceBundle {
                 }
             },
             { "islamic.narrow.AmPmMarkers",
-                new String[] {
-                    "a",
-                    "p",
-                }
-            },
+                sharedNarrowAmPmMarkers },
             { "java.time.buddhist.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "d MMMM y G",
-                    "d MMM y G",
-                    "yy-MM-dd GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
             { "java.time.islamic.DatePatterns",
                 new String[] {
                     "EEEE d MMMM y G",
@@ -104,13 +106,7 @@ public class JavaTimeSupplementary_fr_CA extends OpenListResourceBundle {
                 }
             },
             { "java.time.japanese.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "d MMMM y G",
-                    "d MMM y G",
-                    "yy-MM-dd GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
             { "java.time.roc.DatePatterns",
                 new String[] {
                     "G y MMMM d, EEEE",
@@ -128,11 +124,7 @@ public class JavaTimeSupplementary_fr_CA extends OpenListResourceBundle {
                 }
             },
             { "roc.narrow.AmPmMarkers",
-                new String[] {
-                    "a",
-                    "p",
-                }
-            },
+                sharedNarrowAmPmMarkers },
         };
     }
 }

@@ -328,7 +328,9 @@ class TaskFactory {
                 SourceHandler<T> sh,
                 String... extraOptions) {
             this.sourceHandler = sh;
-            List<String> options = Arrays.asList(extraOptions);
+            List<String> options = new ArrayList<>(extraOptions.length + state.extraCompilerOptions.size());
+            options.addAll(Arrays.asList(extraOptions));
+            options.addAll(state.extraCompilerOptions);
             Iterable<? extends JavaFileObject> compilationUnits = inputs
                             .map(in -> sh.sourceToFileObject(fileManager, in))
                             .collect(Collectors.toList());

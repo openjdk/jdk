@@ -102,10 +102,13 @@ diff_text() {
     # Ignore date strings in class files.
     # Anonymous lambda classes get randomly assigned counters in their names.
     if test "x$SUFFIX" = "xclass"; then
-        if [ "$NAME" = "module-info.class" ] || [ "$NAME" = "SystemModules.class" ]
-        then
-            # The SystemModules.class and module-info.class have several issues
-            # with random ordering of elements in HashSets.
+        if [ "$NAME" = "SystemModules.class" ]; then
+            # The SystemModules.class is not comparable. The way it is generated is
+            # too random. It can even be of different size for no apparent reason.
+            TMP=""
+        elif [ "$NAME" = "module-info.class" ]; then
+            # The module-info.class have several issues with random ordering of
+            # elements in HashSets.
             MODULES_CLASS_FILTER="$SED \
                 -e 's/,$//' \
                 -e 's/;$//' \
@@ -369,6 +372,14 @@ compare_general_files() {
                 $CAT $OTHER_DIR/$f | eval "$HTML_FILTER" > $OTHER_FILE &
                 $CAT $THIS_DIR/$f  | eval "$HTML_FILTER" > $THIS_FILE &
                 wait
+            elif [ "$f" = "./lib/classlist" ]; then
+                # The classlist files may have some lines in random order
+                OTHER_FILE=$WORK_DIR/$f.other
+                THIS_FILE=$WORK_DIR/$f.this
+                $MKDIR -p $(dirname $OTHER_FILE) $(dirname $THIS_FILE)
+                $RM $OTHER_FILE $THIS_FILE
+                $CAT $OTHER_DIR/$f | $SORT > $OTHER_FILE
+                $CAT $THIS_DIR/$f  | $SORT > $THIS_FILE
             else
                 OTHER_FILE=$OTHER_DIR/$f
                 THIS_FILE=$THIS_DIR/$f
@@ -651,7 +662,7 @@ compare_bin_file() {
             OTHER_DIZ_FILE=${OTHER_FILE_BASE}.diz
         else
             # Some files, jli.dll, appears twice in the image but only one of
-            # thme has a diz file next to it.
+            # them has a diz file next to it.
             OTHER_DIZ_FILE="$($FIND $OTHER_DIR -name $DIZ_NAME | $SED 1q)"
             if [ ! -f "$OTHER_DIZ_FILE" ]; then
                 # As a last resort, look for diz file in the whole build output
@@ -1335,6 +1346,24 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
         OTHER_JDK="$OTHER/images/jdk"
         OTHER_JRE="$OTHER/images/jre"
         echo "Selecting jdk images for compare"
+    elif [ -d "$(ls -d $THIS/licensee-src/build/*/images/jdk)" ] \
+        && [ -d "$(ls -d $OTHER/licensee-src/build/*/images/jdk)" ]
+    then
+        echo "Selecting licensee images for compare"
+        # Simply override the THIS and OTHER dir with the build dir from
+        # the nested licensee source build for the rest of the script
+        # execution.
+        OLD_THIS="$THIS"
+        OLD_OTHER="$OTHER"
+        THIS="$(ls -d $THIS/licensee-src/build/*)"
+        OTHER="$(ls -d $OTHER/licensee-src/build/*)"
+        THIS_JDK="$THIS/images/jdk"
+        THIS_JRE="$THIS/images/jre"
+        OTHER_JDK="$OTHER/images/jdk"
+        OTHER_JRE="$OTHER/images/jre"
+        # Rewrite the path to tools that are used from the build
+        JIMAGE="$(echo "$JIMAGE" | $SED "s|$OLD_THIS|$THIS|g")"
+        JAVAP="$(echo "$JAVAP" | $SED "s|$OLD_THIS|$THIS|g")"
     else
         echo "No common images found."
         exit 1

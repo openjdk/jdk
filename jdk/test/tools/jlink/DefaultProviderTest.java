@@ -33,7 +33,6 @@ import jdk.tools.jlink.internal.PluginRepository;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
 import tests.Helper;
 
 /*
@@ -60,7 +59,7 @@ public class DefaultProviderTest {
         expectedOptions.put("option2", "value2");
     }
 
-    private static class Custom implements TransformerPlugin {
+    private static class Custom implements Plugin {
         private boolean enabled = true;
 
         @Override
