@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,7 +204,8 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
   }
 
   if (!finish_transform(phase, can_reshape, ctl, mem)) {
-    return NULL;
+    // Return NodeSentinel to indicate that the transform failed
+    return NodeSentinel;
   }
 
   return mem;
@@ -222,6 +223,7 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
   Node* dest = in(ArrayCopyNode::Dest);
   const Type* src_type = phase->type(src);
   const TypeAryPtr* ary_src = src_type->isa_aryptr();
+  assert(ary_src != NULL, "should be an array copy/clone");
 
   if (is_arraycopy() || is_copyofrange() || is_copyof()) {
     const Type* dest_type = phase->type(dest);
@@ -520,7 +522,7 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   Node* mem = try_clone_instance(phase, can_reshape, count);
   if (mem != NULL) {
-    return mem;
+    return (mem == NodeSentinel) ? NULL : mem;
   }
 
   Node* adr_src = NULL;
@@ -627,31 +629,37 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
   return CallNode::may_modify_arraycopy_helper(dest_t, t_oop, phase);
 }
 
-bool ArrayCopyNode::may_modify_helper(const TypeOopPtr *t_oop, Node* n, PhaseTransform *phase) {
+bool ArrayCopyNode::may_modify_helper(const TypeOopPtr *t_oop, Node* n, PhaseTransform *phase, ArrayCopyNode*& ac) {
   if (n->is_Proj()) {
     n = n->in(0);
     if (n->is_Call() && n->as_Call()->may_modify(t_oop, phase)) {
+      if (n->isa_ArrayCopy() != NULL) {
+        ac = n->as_ArrayCopy();
+      }
       return true;
     }
   }
   return false;
 }
 
-bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTransform *phase) {
+bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTransform *phase, ArrayCopyNode*& ac) {
   Node* mem = mb->in(TypeFunc::Memory);
 
   if (mem->is_MergeMem()) {
     Node* n = mem->as_MergeMem()->memory_at(Compile::AliasIdxRaw);
-    if (may_modify_helper(t_oop, n, phase)) {
+    if (may_modify_helper(t_oop, n, phase, ac)) {
       return true;
     } else if (n->is_Phi()) {
       for (uint i = 1; i < n->req(); i++) {
         if (n->in(i) != NULL) {
-          if (may_modify_helper(t_oop, n->in(i), phase)) {
+          if (may_modify_helper(t_oop, n->in(i), phase, ac)) {
             return true;
           }
         }
       }
+    } else if (n->Opcode() == Op_StoreCM) {
+      // Ignore card mark stores
+      return may_modify_helper(t_oop, n->in(MemNode::Memory), phase, ac);
     }
   }
 

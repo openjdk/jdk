@@ -621,8 +621,8 @@ static int getFlags0(JNIEnv *env, jstring name) {
     (*env)->ReleaseStringUTFChars(env, name, name_utf);
 
     if (ret < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "ioctl SIOCGLIFFLAGS failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "getFlags() failed");
         return -1;
     }
 
@@ -1061,8 +1061,8 @@ static int openSocket(JNIEnv *env, int proto) {
         // If EPROTONOSUPPORT is returned it means we don't have
         // support for this proto so don't throw an exception.
         if (errno != EPROTONOSUPPORT) {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                         "Socket creation failed");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "Socket creation failed");
         }
         return -1;
     }
@@ -1087,13 +1087,13 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname) {
     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
         if (errno == EPROTONOSUPPORT) {
             if ((sock = socket(AF_INET6, SOCK_DGRAM, 0)) < 0) {
-                NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                             "IPV6 Socket creation failed");
+                JNU_ThrowByNameWithMessageAndLastError
+                    (env, JNU_JAVANETPKG "SocketException", "IPV6 Socket creation failed");
                 return -1;
             }
         } else { // errno is not NOSUPPORT
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                         "IPV4 Socket creation failed");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "IPV4 Socket creation failed");
             return -1;
         }
     }
@@ -1122,15 +1122,15 @@ static netif *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs) {
     // SIOCGIFCOUNT doesn't work
     ifc.ifc_buf = NULL;
     if (ioctl(sock, SIOCGIFCONF, (char *)&ifc) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "ioctl SIOCGIFCONF failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGIFCONF) failed");
         return ifs;
     }
 #elif defined(_AIX)
     ifc.ifc_buf = NULL;
     if (ioctl(sock, SIOCGSIZIFCONF, &(ifc.ifc_len)) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "ioctl SIOCGSIZIFCONF failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGSIZIFCONF) failed");
         return ifs;
     }
 #endif /* __linux__ */
@@ -1142,8 +1142,8 @@ static netif *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs) {
     siocgifconfRequest = CSIOCGIFCONF;
 #endif
     if (ioctl(sock, siocgifconfRequest, (char *)&ifc) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "ioctl SIOCGIFCONF failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGIFCONF) failed");
         free(buf);
         return ifs;
     }
@@ -1268,8 +1268,8 @@ static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
 
     ifc.ifc_buf = NULL;
     if (ioctl(sock, SIOCGSIZIFCONF, &(ifc.ifc_len)) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                    "ioctl SIOCGSIZIFCONF failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGSIZIFCONF) failed");
         return ifs;
     }
     bufsize = ifc.ifc_len;
@@ -1282,8 +1282,8 @@ static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
     ifc.ifc_len = bufsize;
     ifc.ifc_buf = buf;
     if (ioctl(sock, SIOCGIFCONF, (char *)&ifc) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "ioctl CSIOCGIFCONF failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGIFCONF) failed");
         free(buf);
         return ifs;
     }
@@ -1368,16 +1368,16 @@ static struct sockaddr *getBroadcast
 
     // Let's make sure the interface does have a broadcast address.
     if (ioctl(sock, SIOCGIFFLAGS, (char *)&if2)  < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "ioctl SIOCGIFFLAGS failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGIFFLAGS) failed");
         return ret;
     }
 
     if (if2.ifr_flags & IFF_BROADCAST) {
         // It does, let's retrieve it
         if (ioctl(sock, SIOCGIFBRDADDR, (char *)&if2) < 0) {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                         "ioctl SIOCGIFBRDADDR failed");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGIFBRDADDR) failed");
             return ret;
         }
 
@@ -1400,8 +1400,8 @@ static short getSubnet(JNIEnv *env, int sock, const char *ifname) {
     strncpy(if2.ifr_name, ifname, sizeof(if2.ifr_name) - 1);
 
     if (ioctl(sock, SIOCGIFNETMASK, (char *)&if2) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "ioctl SIOCGIFNETMASK failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGIFNETMASK) failed");
         return -1;
     }
 
@@ -1463,8 +1463,8 @@ static int getMacAddress
     memset((char *)&ifr, 0, sizeof(ifr));
     strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name) - 1);
     if (ioctl(sock, SIOCGIFHWADDR, &ifr) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "ioctl SIOCGIFHWADDR failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGIFHWADDR) failed");
         return -1;
     }
 
@@ -1493,8 +1493,8 @@ static int getMTU(JNIEnv *env, int sock,  const char *ifname) {
     }
 
     if (ioctl(sock, SIOCGIFMTU, (char *)&if2) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "ioctl SIOCGIFMTU failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGIFMTU) failed");
         return -1;
     }
 
@@ -1535,15 +1535,15 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname) {
     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
         if (errno == EPROTONOSUPPORT) {
             if ((sock = socket(AF_INET6, SOCK_DGRAM, 0)) < 0) {
-                NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                             "IPV6 Socket creation failed");
+                JNU_ThrowByNameWithMessageAndLastError
+                    (env, JNU_JAVANETPKG "SocketException", "IPV6 Socket creation failed");
                 return -1;
             }
 
             alreadyV6=1;
         } else { // errno is not NOSUPPORT
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                         "IPV4 Socket creation failed");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "IPV4 Socket creation failed");
             return -1;
         }
     }
@@ -1562,8 +1562,8 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname) {
         if (ioctl(sock, SIOCGLIFNETMASK, (char *)&if2) < 0) {
             close(sock);
             if ((sock = socket(AF_INET6, SOCK_DGRAM, 0)) < 0) {
-                NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                             "IPV6 Socket creation failed");
+                JNU_ThrowByNameWithMessageAndLastError
+                    (env, JNU_JAVANETPKG "SocketException", "IPV6 Socket creation failed");
                 return -1;
             }
         }
@@ -1607,8 +1607,8 @@ static netif *enumIPvXInterfaces(JNIEnv *env, int sock, netif *ifs, int family) 
     numifs.lifn_family = family;
     numifs.lifn_flags = 0;
     if (ioctl(sock, SIOCGLIFNUM, (char *)&numifs) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "ioctl SIOCGLIFNUM failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGLIFNUM) failed");
         return ifs;
     }
 
@@ -1621,8 +1621,8 @@ static netif *enumIPvXInterfaces(JNIEnv *env, int sock, netif *ifs, int family) 
     ifc.lifc_len = bufsize;
     ifc.lifc_buf = buf;
     if (ioctl(sock, SIOCGLIFCONF, (char *)&ifc) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "ioctl SIOCGLIFCONF failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGLIFCONF) failed");
         free(buf);
         return ifs;
     }
@@ -1689,16 +1689,16 @@ static struct sockaddr *getBroadcast
 
     // Let's make sure the interface does have a broadcast address
     if (ioctl(sock, SIOCGLIFFLAGS, (char *)&if2)  < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "ioctl SIOCGLIFFLAGS failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGLIFFLAGS) failed");
         return ret;
     }
 
     if (if2.lifr_flags & IFF_BROADCAST) {
         // It does, let's retrieve it
         if (ioctl(sock, SIOCGLIFBRDADDR, (char *)&if2) < 0) {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                         "ioctl SIOCGLIFBRDADDR failed");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGLIFBRDADDR) failed");
             return ret;
         }
 
@@ -1721,8 +1721,8 @@ static short getSubnet(JNIEnv *env, int sock, const char *ifname) {
     strncpy(if2.lifr_name, ifname, sizeof(if2.lifr_name) - 1);
 
     if (ioctl(sock, SIOCGLIFNETMASK, (char *)&if2) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "ioctl SIOCGLIFNETMASK failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGLIFNETMASK) failed");
         return -1;
     }
 
@@ -1764,8 +1764,8 @@ static int getMacFromDevice
     msg.len = DL_PHYS_ADDR_REQ_SIZE;
 
     if (putmsg(fd, &msg, NULL, 0) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "putmsg failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "putmsg() failed");
         return -1;
     }
 
@@ -1775,8 +1775,8 @@ static int getMacFromDevice
     msg.len = 0;
     msg.maxlen = sizeof (buf);
     if (getmsg(fd, &msg, NULL, &flags) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "getmsg failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "getmsg() failed");
         return -1;
     }
 
@@ -1860,8 +1860,8 @@ static int getMTU(JNIEnv *env, int sock,  const char *ifname) {
     strncpy(if2.lifr_name, ifname, sizeof(if2.lifr_name) - 1);
 
     if (ioctl(sock, SIOCGLIFMTU, (char *)&if2) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                    "ioctl SIOCGLIFMTU failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGLIFMTU) failed");
         return -1;
     }
 
@@ -1900,13 +1900,13 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname) {
      if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
          if (errno == EPROTONOSUPPORT) {
               if ((sock = socket(AF_INET6, SOCK_DGRAM, 0)) < 0) {
-                 NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                              "IPV6 Socket creation failed");
+                 JNU_ThrowByNameWithMessageAndLastError
+                     (env, JNU_JAVANETPKG "SocketException", "IPV6 Socket creation failed");
                  return -1;
               }
          } else { // errno is not NOSUPPORT
-             NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                          "IPV4 Socket creation failed");
+             JNU_ThrowByNameWithMessageAndLastError
+                 (env, JNU_JAVANETPKG "SocketException", "IPV4 Socket creation failed");
              return -1;
          }
    }
@@ -1927,8 +1927,8 @@ static netif *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs) {
     struct ifaddrs *ifa, *origifa;
 
     if (getifaddrs(&origifa) != 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "getifaddrs() function failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "getifaddrs() failed");
         return ifs;
     }
 
@@ -1997,8 +1997,8 @@ static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
     struct in6_ifreq ifr6;
 
     if (getifaddrs(&origifa) != 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "getifaddrs() function failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "getifaddrs() failed");
         return ifs;
     }
 
@@ -2014,8 +2014,8 @@ static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
                MIN(sizeof(ifr6.ifr_addr), ifa->ifa_addr->sa_len));
 
         if (ioctl(sock, SIOCGIFNETMASK_IN6, (caddr_t)&ifr6) < 0) {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                         "ioctl SIOCGIFNETMASK_IN6 failed");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGIFNETMASK_IN6) failed");
             freeifaddrs(origifa);
             freeif(ifs);
             return NULL;
@@ -2075,16 +2075,16 @@ static struct sockaddr *getBroadcast
 
     // Make sure the interface does have a broadcast address
     if (ioctl(sock, SIOCGIFFLAGS, (char *)&if2) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "ioctl SIOCGIFFLAGS failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGIFFLAGS) failed");
         return ret;
     }
 
     if (if2.ifr_flags & IFF_BROADCAST) {
         // It does, let's retrieve it
         if (ioctl(sock, SIOCGIFBRDADDR, (char *)&if2) < 0) {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                         "ioctl SIOCGIFBRDADDR failed");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGIFBRDADDR) failed");
             return ret;
         }
 
@@ -2107,8 +2107,8 @@ static short getSubnet(JNIEnv *env, int sock, const char *ifname) {
     strncpy(if2.ifr_name, ifname, sizeof(if2.ifr_name) - 1);
 
     if (ioctl(sock, SIOCGIFNETMASK, (char *)&if2) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "ioctl SIOCGIFNETMASK failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGIFNETMASK) failed");
         return -1;
     }
 
@@ -2156,8 +2156,8 @@ static int getMTU(JNIEnv *env, int sock,  const char *ifname) {
     strncpy(if2.ifr_name, ifname, sizeof(if2.ifr_name) - 1);
 
     if (ioctl(sock, SIOCGIFMTU, (char *)&if2) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "ioctl SIOCGIFMTU failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGIFMTU) failed");
         return -1;
     }
 

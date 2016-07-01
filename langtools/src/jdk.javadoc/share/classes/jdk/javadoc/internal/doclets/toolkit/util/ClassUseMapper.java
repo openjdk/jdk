@@ -187,15 +187,15 @@ public class ClassUseMapper {
      */
     public final Map<TypeElement, List<VariableElement>> annotationToField = new HashMap<>();
 
-    private final DocletEnvironment root;
+    private final DocletEnvironment docEnv;
     private final Elements elementUtils;
     private final Types typeUtils;
     private final Utils utils;
 
     public ClassUseMapper(ConfigurationImpl configuration, ClassTree classtree) {
-        root = configuration.root;
-        elementUtils = root.getElementUtils();
-        typeUtils = root.getTypeUtils();
+        docEnv = configuration.docEnv;
+        elementUtils = docEnv.getElementUtils();
+        typeUtils = docEnv.getTypeUtils();
         utils = configuration.utils;
         this.classtree = classtree;
         classToPackage = new TreeMap<>(utils.makeClassUseComparator());
@@ -208,7 +208,7 @@ public class ClassUseMapper {
             implementingClasses(intfc);
         }
         // Map methods, fields, constructors using a class.
-        Set<TypeElement> classes = root.getIncludedClasses();
+        Set<TypeElement> classes = docEnv.getIncludedClasses();
         for (TypeElement aClass : classes) {
             PackageElement pkg = elementUtils.getPackageOf(aClass);
             mapAnnotations(classToPackageAnnotations, pkg, pkg);

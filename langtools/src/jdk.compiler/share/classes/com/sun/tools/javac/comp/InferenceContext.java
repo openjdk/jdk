@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ import com.sun.tools.javac.util.Warner;
  * This code and its internal interfaces are subject to change or
  * deletion without notice.</b>
  */
-class InferenceContext {
+public class InferenceContext {
 
     /** list of inference vars as undet vars */
     List<Type> undetvars;
@@ -109,6 +109,13 @@ class InferenceContext {
      */
     List<Type> inferenceVars() {
         return inferencevars;
+    }
+
+    /**
+     * returns the list of undetermined variables in this inference context
+     */
+    public List<Type> undetVars() {
+        return undetvars;
     }
 
     /**
@@ -208,7 +215,7 @@ class InferenceContext {
      * undet vars (used ahead of subtyping/compatibility checks to allow propagation
      * of inference constraints).
      */
-    final Type asUndetVar(Type t) {
+    public final Type asUndetVar(Type t) {
         return types.subst(t, inferencevars, undetvars);
     }
 
@@ -286,7 +293,7 @@ class InferenceContext {
     /**
      * Save the state of this inference context
      */
-    List<Type> save() {
+    public List<Type> save() {
         ListBuffer<Type> buf = new ListBuffer<>();
         for (Type t : undetvars) {
             buf.add(((UndetVar)t).dup(infer.types));
@@ -298,7 +305,7 @@ class InferenceContext {
     *  Consider that the number of saved undetermined variables can be different to the current
     *  amount. This is because new captured variables could have been added.
     */
-    void rollback(List<Type> saved_undet) {
+    public void rollback(List<Type> saved_undet) {
         Assert.check(saved_undet != null);
         //restore bounds (note: we need to preserve the old instances)
         ListBuffer<Type> newUndetVars = new ListBuffer<>();

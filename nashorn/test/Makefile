@@ -118,19 +118,6 @@ ifdef JPRT_PRODUCT_VM_ARGS
   JAVA_VM_ARGS = $(JPRT_PRODUCT_VM_ARGS)
 endif
 
-# jtreg -nativepath <dir>
-#
-# Local make tests will be TEST_IMAGE_DIR and JPRT with jprt.use.reg.test.bundle=true
-# should be JPRT_TESTNATIVE_PATH
-ifdef TEST_IMAGE_DIR
-  TESTNATIVE_DIR = $(TEST_IMAGE_DIR)
-else ifdef JPRT_TESTNATIVE_PATH
-  TESTNATIVE_DIR = $(JPRT_TESTNATIVE_PATH)
-endif
-ifdef TESTNATIVE_DIR
-  JTREG_NATIVE_PATH = -nativepath:$(shell $(GETMIXEDPATH) "$(TESTNATIVE_DIR)/nashorn/jtreg/native")
-endif
-
 # jtreg failure handler config
 ifeq ($(FAILURE_HANDLER_DIR), )
   ifneq ($(TESTNATIVE_DIR), )

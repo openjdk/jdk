@@ -498,6 +498,19 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   }
 #endif
 
+  if (thread->frames_to_pop_failed_realloc() > 0 && exec_mode != Unpack_uncommon_trap) {
+    assert(thread->has_pending_exception(), "should have thrown OOME");
+    thread->set_exception_oop(thread->pending_exception());
+    thread->clear_pending_exception();
+    exec_mode = Unpack_exception;
+  }
+
+#if INCLUDE_JVMCI
+  if (thread->frames_to_pop_failed_realloc() > 0) {
+    thread->set_pending_monitorenter(false);
+  }
+#endif
+
   UnrollBlock* info = new UnrollBlock(array->frame_size() * BytesPerWord,
                                       caller_adjustment * BytesPerWord,
                                       caller_was_method_handle ? 0 : callee_parameters,

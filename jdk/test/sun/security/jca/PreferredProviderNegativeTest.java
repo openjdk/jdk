@@ -62,7 +62,7 @@ public class PreferredProviderNegativeTest {
             }
         } else {
             if (!cipher.getProvider().getName().equals(arrays[1])) {
-                throw new RuntimeException("Test Faild:The provider could be "
+                throw new RuntimeException("Test Failed:The provider could be "
                         + "set by valid provider.");
             }
         }
@@ -73,13 +73,13 @@ public class PreferredProviderNegativeTest {
      * Test that the setting of the security property after Cipher.getInstance()
      * does not influence previously loaded instances
      */
-    public static void afterJCESet(String value)
+    public static void afterJCESet(String value, String expected)
             throws NoSuchAlgorithmException, NoSuchPaddingException {
         String[] arrays = value.split(":");
         Cipher cipher = Cipher.getInstance(arrays[0]);
 
         Security.setProperty(SEC_PREF_PROP, value);
-        if (!cipher.getProvider().getName().equals("SunJCE")) {
+        if (!cipher.getProvider().getName().equals(expected)) {
             throw new RuntimeException("Test Failed:The security property can't"
                     + " be updated after JCE load.");
         }
@@ -105,25 +105,28 @@ public class PreferredProviderNegativeTest {
     public static void main(String[] args)
             throws NoSuchAlgorithmException, NoSuchPaddingException {
 
+        String expected;
+        String value = args[1];
+        // If OS is solaris, expect OracleUcrypto, otherwise SunJCE
+        if (System.getProperty("os.name").toLowerCase().contains("sun")) {
+            expected = "OracleUcrypto";
+        } else {
+            expected = "SunJCE";
+        }
+
         if (args.length >= 2) {
             switch (args[0]) {
                 case "preSet":
                     boolean negativeProvider = Boolean.valueOf(args[2]);
-                    boolean solaris = System.getProperty("os.name")
-                            .toLowerCase().contains("sun");
-                    String value = args[1];
-                    if (args[1].split(":").length < 2) {
-                        if (solaris) {
-                            value += ":OracleUcrypto";
-                        } else {
-                            value += ":SunJCE";
-                        }
+                    if (!args[1].contains(":")) {
+                        value += ":" + expected;
                     }
                     PreferredProviderNegativeTest.preJCESet(
                             value, negativeProvider);
                     break;
                 case "afterSet":
-                    PreferredProviderNegativeTest.afterJCESet(args[1]);
+                    PreferredProviderNegativeTest.afterJCESet(args[1],
+                            expected);
                     break;
                 case "invalidAlg":
                     PreferredProviderNegativeTest.invalidAlg(args[1]);
