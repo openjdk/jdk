@@ -30,24 +30,21 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.PathMatcher;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.ToIntFunction;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.internal.Utils;
 
 /**
  *
  * Order Resources plugin
  */
-public final class OrderResourcesPlugin implements TransformerPlugin {
+public final class OrderResourcesPlugin implements Plugin {
     public static final String NAME = "order-resources";
     private static final FileSystem JRT_FILE_SYSTEM = Utils.jrtFileSystem();
 
@@ -143,11 +140,8 @@ public final class OrderResourcesPlugin implements TransformerPlugin {
     }
 
     @Override
-    public Set<Category> getType() {
-        Set<Category> set = new HashSet<>();
-        set.add(Category.SORTER);
-
-        return Collections.unmodifiableSet(set);
+    public Category getType() {
+        return Category.SORTER;
     }
 
     @Override

@@ -125,7 +125,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
         }
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.header);
-        ModuleElement mdle = configuration.root.getElementUtils().getModuleOf(packageElement);
+        ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(packageElement);
         if (mdle != null && !mdle.isUnnamed()) {
             Content classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInClass, moduleLabel);
             Content moduleNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classModuleLabel);

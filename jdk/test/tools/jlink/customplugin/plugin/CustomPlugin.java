@@ -23,15 +23,13 @@
 package plugin;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 
-public class CustomPlugin implements TransformerPlugin {
+public class CustomPlugin implements Plugin {
 
     private final static String NAME = "custom-plugin";
 
@@ -58,9 +56,7 @@ public class CustomPlugin implements TransformerPlugin {
     }
 
     @Override
-    public Set<Category> getType() {
-        Set<Category> set = new HashSet<>();
-        set.add(Category.PROCESSOR);
-        return Collections.unmodifiableSet(set);
+    public Category getType() {
+        return Category.PROCESSOR;
     }
 }

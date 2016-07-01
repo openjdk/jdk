@@ -24,23 +24,18 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import java.io.ByteArrayInputStream;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.function.Predicate;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 
 /**
  *
  * Strip debug attributes plugin
  */
-public final class StripDebugPlugin implements TransformerPlugin {
+public final class StripDebugPlugin implements Plugin {
     public static final String NAME = "strip-debug";
     private final Predicate<String> predicate;
 
@@ -55,13 +50,6 @@ public final class StripDebugPlugin implements TransformerPlugin {
     @Override
     public String getName() {
         return NAME;
-    }
-
-    @Override
-    public Set<Category> getType() {
-        Set<Category> set = new HashSet<>();
-        set.add(Category.TRANSFORMER);
-        return Collections.unmodifiableSet(set);
     }
 
     @Override
@@ -84,7 +72,7 @@ public final class StripDebugPlugin implements TransformerPlugin {
                         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
                         reader.accept(writer, ClassReader.SKIP_DEBUG);
                         byte[] content = writer.toByteArray();
-                        res = ModuleEntry.create(path, new ByteArrayInputStream(content), content.length);
+                        res = resource.create(content);
                     }
                 }
             } else if (predicate.test(res.getPath())) {

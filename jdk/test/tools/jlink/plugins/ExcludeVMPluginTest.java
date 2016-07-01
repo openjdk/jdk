@@ -38,7 +38,6 @@ import jdk.tools.jlink.internal.plugins.ExcludeVMPlugin;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.ModuleEntry;
-import jdk.tools.jlink.plugin.TransformerPlugin;
 
 public class ExcludeVMPluginTest {
 
@@ -165,15 +164,15 @@ public class ExcludeVMPluginTest {
         // Create a pool with jvm.cfg and the input paths.
         byte[] jvmcfgContent = jvmcfg.getBytes();
         ModulePool pool = new ModulePoolImpl();
-        pool.add(ModuleEntry.create("java.base", "/java.base/native/jvm.cfg",
-                ModuleEntry.Type.NATIVE_LIB, new ByteArrayInputStream(jvmcfgContent), jvmcfgContent.length));
+        pool.add(ModuleEntry.create("/java.base/native/jvm.cfg",
+                ModuleEntry.Type.NATIVE_LIB, jvmcfgContent));
         for (String in : input) {
-            pool.add(ModuleEntry.create("java.base", in,
-                    ModuleEntry.Type.NATIVE_LIB, new ByteArrayInputStream(new byte[0]), 0));
+            pool.add(ModuleEntry.create(in,
+                    ModuleEntry.Type.NATIVE_LIB, new byte[0]));
         }
         ModulePool out = new ModulePoolImpl();
 
-        TransformerPlugin p = new ExcludeVMPlugin();
+        Plugin p = new ExcludeVMPlugin();
         Map<String, String> config = new HashMap<>();
         if (vm != null) {
             config.put(ExcludeVMPlugin.NAME, vm);

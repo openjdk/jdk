@@ -40,7 +40,6 @@ import jdk.tools.jlink.internal.ModulePoolImpl;
 import jdk.tools.jlink.internal.plugins.ExcludeFilesPlugin;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
 
 public class ExcludeFilesPluginTest {
     public static void main(String[] args) throws Exception {
@@ -74,8 +73,8 @@ public class ExcludeFilesPluginTest {
         fplug.configure(prop);
         ModulePoolImpl files = new ModulePoolImpl();
         ModulePoolImpl fresult = new ModulePoolImpl();
-        ModuleEntry f = ModuleEntry.create(module, "/" + module + "/" + sample,
-                ModuleEntry.Type.CONFIG, new ByteArrayInputStream(new byte[0]), 0);
+        ModuleEntry f = ModuleEntry.create("/" + module + "/" + sample,
+                ModuleEntry.Type.CONFIG, new byte[0]);
         files.add(f);
 
         fplug.visit(files, fresult);

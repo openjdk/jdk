@@ -1039,7 +1039,8 @@ public class ClassReader {
                             if (start_pc == 0) {
                                 // ensure array large enough
                                 if (register >= parameterNameIndices.length) {
-                                    int newSize = Math.max(register, parameterNameIndices.length + 8);
+                                    int newSize =
+                                            Math.max(register + 1, parameterNameIndices.length + 8);
                                     parameterNameIndices =
                                             Arrays.copyOf(parameterNameIndices, newSize);
                                 }
@@ -2417,6 +2418,9 @@ public class ClassReader {
         // reset and read rest of classinfo
         bp = startbp;
         int n = nextChar();
+        if ((flags & MODULE) != 0 && n > 0) {
+            throw badClassFile("module.info.invalid.super.class");
+        }
         if (ct.supertype_field == null)
             ct.supertype_field = (n == 0)
                 ? Type.noType

@@ -34,11 +34,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import jdk.tools.jlink.internal.ImagePluginConfiguration;
@@ -51,7 +49,6 @@ import jdk.tools.jlink.Jlink;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
 
 public class PrevisitorTest {
 
@@ -109,7 +106,7 @@ public class PrevisitorTest {
         }
     }
 
-    private static class CustomPlugin implements TransformerPlugin, ResourcePrevisitor {
+    private static class CustomPlugin implements Plugin, ResourcePrevisitor {
 
         private static String NAME = "plugin";
 
@@ -159,13 +156,6 @@ public class PrevisitorTest {
                     strings.addString(s.substring(0, lastIndexOf));
                 }
             });
-        }
-
-        @Override
-        public Set<Category> getType() {
-            Set<Category> set = new HashSet<>();
-            set.add(Category.TRANSFORMER);
-            return Collections.unmodifiableSet(set);
         }
     }
 }

@@ -52,7 +52,7 @@ import jdk.internal.org.objectweb.asm.Opcodes;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.internal.plugins.SystemModuleDescriptorPlugin.Builder.*;
 import jdk.tools.jlink.plugin.ModuleEntry;
 
@@ -67,7 +67,7 @@ import jdk.tools.jlink.plugin.ModuleEntry;
  * @see java.lang.module.SystemModuleFinder
  * @see SystemModules
  */
-public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
+public final class SystemModuleDescriptorPlugin implements Plugin {
     private static final JavaLangModuleAccess JLMA = SharedSecrets.getJavaLangModuleAccess();
 
     // TODO: packager has the dependency on the plugin name
@@ -80,11 +80,6 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
 
     public SystemModuleDescriptorPlugin() {
         this.enabled = true;
-    }
-
-    @Override
-    public Set<Category> getType() {
-        return Collections.singleton(Category.TRANSFORMER);
     }
 
     @Override
@@ -144,11 +139,7 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
                     ModuleInfoRewriter minfoWriter =
                         new ModuleInfoRewriter(bain, mbuilder.conceals());
                     // replace with the overridden version
-                    data = ModuleEntry.create(data.getModule(),
-                                               data.getPath(),
-                                               data.getType(),
-                                               minfoWriter.stream(),
-                                               minfoWriter.size());
+                    data = data.create(minfoWriter.getBytes());
                 }
                 out.add(data);
             } catch (IOException e) {
@@ -163,12 +154,7 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
                 return;
             if (builder.isOverriddenClass(data.getPath())) {
                 byte[] bytes = cwriter.toByteArray();
-                ModuleEntry ndata =
-                    ModuleEntry.create(data.getModule(),
-                                        data.getPath(),
-                                        data.getType(),
-                                        new ByteArrayInputStream(bytes),
-                                        bytes.length);
+                ModuleEntry ndata = data.create(bytes);
                 out.add(ndata);
             } else {
                 out.add(data);
@@ -188,8 +174,8 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
             this.extender.write(this);
         }
 
-        InputStream stream() {
-            return new ByteArrayInputStream(buf);
+        byte[] getBytes() {
+            return buf;
         }
     }
 

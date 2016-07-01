@@ -24,14 +24,11 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import jdk.tools.jlink.internal.ModulePoolImpl;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.internal.ImagePluginStack;
 import jdk.tools.jlink.internal.ResourcePrevisitor;
 import jdk.tools.jlink.internal.StringTable;
@@ -40,7 +37,7 @@ import jdk.tools.jlink.internal.StringTable;
  *
  * ZIP and String Sharing compression plugin
  */
-public final class DefaultCompressPlugin implements TransformerPlugin, ResourcePrevisitor {
+public final class DefaultCompressPlugin implements Plugin, ResourcePrevisitor {
     public static final String NAME = "compress";
     public static final String FILTER = "filter";
     public static final String LEVEL_0 = "0";
@@ -77,10 +74,8 @@ public final class DefaultCompressPlugin implements TransformerPlugin, ResourceP
     }
 
     @Override
-    public Set<Category> getType() {
-        Set<Category> set = new HashSet<>();
-        set.add(Category.COMPRESSOR);
-        return Collections.unmodifiableSet(set);
+    public Category getType() {
+        return Category.COMPRESSOR;
     }
 
     @Override

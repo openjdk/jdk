@@ -30,9 +30,12 @@ module jdk.javadoc {
 
     exports com.sun.javadoc;
     exports com.sun.tools.doclets;
+    exports com.sun.tools.doclets.standard;
     exports com.sun.tools.javadoc;
+
     exports jdk.javadoc.doclet;
     exports jdk.javadoc.doclet.taglet;
+    exports jdk.javadoc.doclets;
 
     provides javax.tools.DocumentationTool
         with jdk.javadoc.internal.api.JavadocTool;

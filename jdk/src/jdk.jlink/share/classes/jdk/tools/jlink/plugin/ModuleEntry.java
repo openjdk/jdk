@@ -26,16 +26,18 @@ package jdk.tools.jlink.plugin;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.Objects;
-import jdk.tools.jlink.internal.ImageFileCreator;
-import jdk.tools.jlink.internal.ModuleEntryImpl;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import jdk.tools.jlink.internal.ModuleEntryFactory;
 
 /**
- * A LinkModuleEntry is the elementary unit of data inside an image. It is
- * generally a file. e.g.: a java class file, a resource file, a shared library,
- * ...
+ * A ModuleEntry is the elementary unit of data inside an image. It is
+ * generally a file. e.g.: a java class file, a resource file, a shared library.
  * <br>
- * A LinkModuleEntry is identified by a path of the form:
+ * A ModuleEntry is identified by a path of the form:
  * <ul>
  * <li>For jimage content: /{module name}/{package1}/.../{packageN}/{file
  * name}</li>
@@ -63,93 +65,133 @@ public interface ModuleEntry {
         OTHER
     }
     /**
-     * The LinkModuleEntry module name.
+     * The ModuleEntry module name.
      *
      * @return The module name.
      */
     public String getModule();
 
     /**
-     * The LinkModuleEntry path.
+     * The ModuleEntry path.
      *
      * @return The module path.
      */
     public String getPath();
 
     /**
-     * The LinkModuleEntry's type.
+     * The ModuleEntry's type.
      *
      * @return The data type.
      */
     public Type getType();
 
     /**
-     * The LinkModuleEntry content as an array of byte.
+     * The ModuleEntry content as an array of bytes.
      *
      * @return An Array of bytes.
      */
-    public byte[] getBytes();
+    public default byte[] getBytes() {
+        try (InputStream is = stream()) {
+            return is.readAllBytes();
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
 
     /**
-     * The LinkModuleEntry content length.
+     * The ModuleEntry content length.
      *
      * @return The length.
      */
     public long getLength();
 
     /**
-     * The LinkModuleEntry stream.
+     * The ModuleEntry stream.
      *
      * @return The module data stream.
      */
     public InputStream stream();
 
-
     /**
-     * Create a LinkModuleEntry located inside a jimage file. Such
-     * LinkModuleEntry has a Type being equals to CLASS_OR_RESOURCE.
+     * Write the content of this ModuleEntry to stream.
      *
-     * @param path The complete resource path (contains the module radical).
-     * @param content The resource content.
-     * @param size The content size.
-     * @return A new LinkModuleEntry.
+     * @param out the output stream
      */
-    public static ModuleEntry create(String path, InputStream content, long size) {
-        Objects.requireNonNull(path);
-        Objects.requireNonNull(content);
-        String[] split = ImageFileCreator.splitPath(path);
-        String module = split[0];
-        return new ModuleEntryImpl(module, path, Type.CLASS_OR_RESOURCE, content, size);
+    public default void write(OutputStream out) {
+        try {
+            out.write(getBytes());
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
     }
 
     /**
-     * Create a LinkModuleEntry for a file that will be located inside a jimage
-     * file.
+     * Create a ModuleEntry with new content but other information
+     * copied from this ModuleEntry.
+     *
+     * @param content The new resource content.
+     * @return A new ModuleEntry.
+     */
+    public default ModuleEntry create(byte[] content) {
+        return ModuleEntryFactory.create(this, content);
+    }
+
+    /**
+     * Create a ModuleEntry with new content but other information
+     * copied from this ModuleEntry.
+     *
+     * @param file The new resource content.
+     * @return A new ModuleEntry.
+     */
+    public default ModuleEntry create(Path file) {
+        return ModuleEntryFactory.create(this, file);
+    }
+
+    /**
+     * Create a ModuleEntry for a resource of the given type.
+     *
+     * @param path The resource path.
+     * @param type The ModuleEntry type.
+     * @param content The resource content.
+     * @return A new ModuleEntry.
+     */
+    public static ModuleEntry create(String path,
+            ModuleEntry.Type type, byte[] content) {
+        return ModuleEntryFactory.create(path, type, content);
+    }
+
+    /**
+     * Create a ModuleEntry for a resource of type {@link Type#CLASS_OR_RESOURCE}.
      *
      * @param path The resource path.
      * @param content The resource content.
-     * @return A new LinkModuleEntry.
+     * @return A new ModuleEntry.
      */
     public static ModuleEntry create(String path, byte[] content) {
-        return create(path, new ByteArrayInputStream(content),
-                content.length);
+        return create(path, Type.CLASS_OR_RESOURCE, content);
     }
 
     /**
-     * Create a LinkModuleEntry for a file that will be located outside a jimage
-     * file.
+     * Create a ModuleEntry for a resource of the given type.
      *
-     * @param module The module in which this files is located.
-     * @param path The file path locator (doesn't contain the module name).
-     * @param type The LinkModuleEntry type.
-     * @param content The file content.
-     * @param size The content size.
-     * @return A new LinkModuleEntry.
+     * @param path The resource path.
+     * @param type The ModuleEntry type.
+     * @param file The resource file.
+     * @return A new ModuleEntry.
      */
-    public static ModuleEntry create(String module, String path, ModuleEntry.Type type,
-            InputStream content, long size) {
-        Objects.requireNonNull(path);
-        Objects.requireNonNull(content);
-        return new ModuleEntryImpl(module, path, type, content, size);
+    public static ModuleEntry create(String path,
+            ModuleEntry.Type type, Path file) {
+        return ModuleEntryFactory.create(path, type, file);
+    }
+
+    /**
+     * Create a ModuleEntry for a resource of type {@link Type#CLASS_OR_RESOURCE}.
+     *
+     * @param path The resource path.
+     * @param file The resource file.
+     * @return A new ModuleEntry.
+     */
+    public static ModuleEntry create(String path, Path file) {
+        return create(path, Type.CLASS_OR_RESOURCE, file);
     }
 }
