@@ -65,8 +65,8 @@ import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.util.Names;
 
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
-import jdk.javadoc.internal.tool.DocEnv;
-import jdk.javadoc.internal.tool.RootDocImpl;
+import jdk.javadoc.internal.tool.ToolEnvironment;
+import jdk.javadoc.internal.tool.DocEnvImpl;
 
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
@@ -87,7 +87,7 @@ import static javax.lang.model.element.ElementKind.*;
 public class WorkArounds {
 
     public final Configuration configuration;
-    public final DocEnv env;
+    public final ToolEnvironment toolEnv;
     public final Utils utils;
 
     private DocLint doclint;
@@ -95,7 +95,7 @@ public class WorkArounds {
     public WorkArounds(Configuration configuration) {
         this.configuration = configuration;
         this.utils = this.configuration.utils;
-        this.env = ((RootDocImpl)this.configuration.root).env;
+        this.toolEnv = ((DocEnvImpl)this.configuration.docEnv).toolEnv;
     }
 
     Map<CompilationUnitTree, Boolean> shouldCheck = new HashMap<>();
@@ -135,7 +135,7 @@ public class WorkArounds {
         doclintOpts.add(DocLint.XCUSTOM_TAGS_PREFIX + customTags.toString());
         doclintOpts.add(DocLint.XHTML_VERSION_PREFIX + htmlVersion);
 
-        JavacTask t = BasicJavacTask.instance(env.context);
+        JavacTask t = BasicJavacTask.instance(toolEnv.context);
         doclint = new DocLint();
         // standard doclet normally generates H1, H2
         doclintOpts.add(DocLint.XIMPLICIT_HEADERS + "2");
@@ -151,7 +151,7 @@ public class WorkArounds {
     // so we use javac directly, investigate why jx.l.m is not cutting it.
     public List<TypeMirror> interfaceTypesOf(TypeMirror type) {
         com.sun.tools.javac.util.List<com.sun.tools.javac.code.Type> interfaces =
-                ((RootDocImpl)configuration.root).env.getTypes().interfaces((com.sun.tools.javac.code.Type)type);
+                ((DocEnvImpl)configuration.docEnv).toolEnv.getTypes().interfaces((com.sun.tools.javac.code.Type)type);
         if (interfaces.isEmpty()) {
             return Collections.emptyList();
         }
@@ -171,7 +171,7 @@ public class WorkArounds {
         if (!utils.getDeprecatedTrees(e).isEmpty()) {
             return true;
         }
-        JavacTypes jctypes = ((RootDocImpl)configuration.root).env.typeutils;
+        JavacTypes jctypes = ((DocEnvImpl)configuration.docEnv).toolEnv.typeutils;
         TypeMirror deprecatedType = utils.getDeprecatedType();
         for (AnnotationMirror anno : e.getAnnotationMirrors()) {
             if (jctypes.isSameType(anno.getAnnotationType().asElement().asType(), deprecatedType))
@@ -187,7 +187,7 @@ public class WorkArounds {
 
     // TODO: implement using jx.l.model
     public boolean isVisible(TypeElement te) {
-        return env.isVisible((ClassSymbol)te);
+        return toolEnv.isVisible((ClassSymbol)te);
     }
 
     // TODO: fix the caller
@@ -197,13 +197,13 @@ public class WorkArounds {
 
     //TODO: DocTrees: Trees.getPath(Element e) is slow a factor 4-5 times.
     public Map<Element, TreePath> getElementToTreePath() {
-        return env.elementToTreePath;
+        return toolEnv.elementToTreePath;
     }
 
     // TODO: needs to ported to jx.l.m.
     public TypeElement searchClass(TypeElement klass, String className) {
         // search by qualified name first
-        TypeElement te = configuration.root.getElementUtils().getTypeElement(className);
+        TypeElement te = configuration.docEnv.getElementUtils().getTypeElement(className);
         if (te != null) {
             return te;
         }
@@ -233,7 +233,7 @@ public class WorkArounds {
         if (tsym.sourcefile != null) {
 
             //### This information is available only for source classes.
-            Env<AttrContext> compenv = env.getEnv(tsym);
+            Env<AttrContext> compenv = toolEnv.getEnv(tsym);
             if (compenv == null) {
                 return null;
             }
@@ -271,12 +271,12 @@ public class WorkArounds {
         }
         MethodSymbol sym = (MethodSymbol)method;
         ClassSymbol origin = (ClassSymbol) sym.owner;
-        for (com.sun.tools.javac.code.Type t = env.getTypes().supertype(origin.type);
+        for (com.sun.tools.javac.code.Type t = toolEnv.getTypes().supertype(origin.type);
                 t.hasTag(com.sun.tools.javac.code.TypeTag.CLASS);
-                t = env.getTypes().supertype(t)) {
+                t = toolEnv.getTypes().supertype(t)) {
             ClassSymbol c = (ClassSymbol) t.tsym;
             for (com.sun.tools.javac.code.Symbol sym2 : c.members().getSymbolsByName(sym.name)) {
-                if (sym.overrides(sym2, origin, env.getTypes(), true)) {
+                if (sym.overrides(sym2, origin, toolEnv.getTypes(), true)) {
                     return t;
                 }
             }
@@ -286,7 +286,7 @@ public class WorkArounds {
 
     // TODO: investigate and reimplement without javac dependencies.
     public boolean shouldDocument(Element e) {
-        return env.shouldDocument(e);
+        return toolEnv.shouldDocument(e);
     }
 
     //------------------Start of Serializable Implementation---------------------//
@@ -295,7 +295,7 @@ public class WorkArounds {
     public SortedSet<VariableElement> getSerializableFields(Utils utils, TypeElement klass) {
         NewSerializedForm sf = serializedForms.get(klass);
         if (sf == null) {
-            sf = new NewSerializedForm(utils, configuration.root.getElementUtils(), klass);
+            sf = new NewSerializedForm(utils, configuration.docEnv.getElementUtils(), klass);
             serializedForms.put(klass, sf);
         }
         return sf.fields;
@@ -304,7 +304,7 @@ public class WorkArounds {
     public SortedSet<ExecutableElement>  getSerializationMethods(Utils utils, TypeElement klass) {
         NewSerializedForm sf = serializedForms.get(klass);
         if (sf == null) {
-            sf = new NewSerializedForm(utils, configuration.root.getElementUtils(), klass);
+            sf = new NewSerializedForm(utils, configuration.docEnv.getElementUtils(), klass);
             serializedForms.put(klass, sf);
         }
         return sf.methods;
@@ -316,7 +316,7 @@ public class WorkArounds {
         } else {
             NewSerializedForm sf = serializedForms.get(klass);
             if (sf == null) {
-                sf = new NewSerializedForm(utils, configuration.root.getElementUtils(), klass);
+                sf = new NewSerializedForm(utils, configuration.docEnv.getElementUtils(), klass);
                 serializedForms.put(klass, sf);
             }
             return sf.definesSerializableFields;
@@ -533,7 +533,7 @@ public class WorkArounds {
     // TODO: this is a fast way to get the JavaFileObject for
     // a package.html file, however we need to eliminate this.
     public JavaFileObject getJavaFileObject(PackageElement pe) {
-        return env.pkgToJavaFOMap.get(pe);
+        return toolEnv.pkgToJavaFOMap.get(pe);
     }
 
     // TODO: we need to eliminate this, as it is hacky.

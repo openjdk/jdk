@@ -32,6 +32,7 @@
  * @run main/othervm -Xmx384M -XX:+UseParallelGC -XX:-UseParallelOldGC TestGCOld 50 1 20 10 10000
  * @run main/othervm -Xmx384M -XX:+UseConcMarkSweepGC TestGCOld 50 1 20 10 10000
  * @run main/othervm -Xmx384M -XX:+UseG1GC TestGCOld 50 1 20 10 10000
+ * @run main/othervm -Xms64m -Xmx128m -XX:+UseG1GC -XX:+UseDynamicNumberOfGCThreads -Xlog:gc,gc+task=trace TestGCOld 50 5 20 1 5000
  */
 
 import java.text.*;

@@ -446,6 +446,14 @@ void before_exit(JavaThread* thread) {
     os::infinite_sleep();
   }
 
+  EventThreadEnd event;
+  if (event.should_commit()) {
+    event.set_thread(THREAD_TRACE_ID(thread));
+    event.commit();
+  }
+
+  TRACE_VM_EXIT();
+
   // Stop the WatcherThread. We do this before disenrolling various
   // PeriodicTasks to reduce the likelihood of races.
   if (PeriodicTask::num_tasks() > 0) {
@@ -482,13 +490,6 @@ void before_exit(JavaThread* thread) {
 
   if (JvmtiExport::should_post_thread_life()) {
     JvmtiExport::post_thread_end(thread);
-  }
-
-
-  EventThreadEnd event;
-  if (event.should_commit()) {
-      event.set_thread(THREAD_TRACE_ID(thread));
-      event.commit();
   }
 
   // Always call even when there are not JVMTI environments yet, since environments

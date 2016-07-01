@@ -181,26 +181,59 @@ bool ClassLoader::string_ends_with(const char* str, const char* str_to_find) {
 }
 
 // Used to obtain the package name from a fully qualified class name.
-// It is the responsibility of the caller to establish ResourceMark.
-const char* ClassLoader::package_from_name(const char* class_name) {
-  const char* last_slash = strrchr(class_name, '/');
+// It is the responsibility of the caller to establish a ResourceMark.
+const char* ClassLoader::package_from_name(const char* const class_name, bool* bad_class_name) {
+  if (class_name == NULL) {
+    if (bad_class_name != NULL) {
+      *bad_class_name = true;
+    }
+    return NULL;
+  }
+
+  if (bad_class_name != NULL) {
+    *bad_class_name = false;
+  }
+
+  const char* const last_slash = strrchr(class_name, '/');
   if (last_slash == NULL) {
     // No package name
     return NULL;
   }
-  int length = last_slash - class_name;
 
-  // A class name could have just the slash character in the name,
-  // resulting in a negative length.
+  char* class_name_ptr = (char*) class_name;
+  // Skip over '['s
+  if (*class_name_ptr == '[') {
+    do {
+      class_name_ptr++;
+    } while (*class_name_ptr == '[');
+
+    // Fully qualified class names should not contain a 'L'.
+    // Set bad_class_name to true to indicate that the package name
+    // could not be obtained due to an error condition.
+    // In this situation, is_same_class_package returns false.
+    if (*class_name_ptr == 'L') {
+      if (bad_class_name != NULL) {
+        *bad_class_name = true;
+      }
+      return NULL;
+    }
+  }
+
+  int length = last_slash - class_name_ptr;
+
+  // A class name could have just the slash character in the name.
   if (length <= 0) {
     // No package name
+    if (bad_class_name != NULL) {
+      *bad_class_name = true;
+    }
     return NULL;
   }
 
   // drop name after last slash (including slash)
   // Ex., "java/lang/String.class" => "java/lang"
   char* pkg_name = NEW_RESOURCE_ARRAY(char, length + 1);
-  strncpy(pkg_name, class_name, length);
+  strncpy(pkg_name, class_name_ptr, length);
   *(pkg_name+length) = '\0';
 
   return (const char *)pkg_name;
@@ -228,8 +261,9 @@ ClassPathDirEntry::ClassPathDirEntry(const char* dir) : ClassPathEntry() {
 
 ClassFileStream* ClassPathDirEntry::open_stream(const char* name, TRAPS) {
   // construct full path name
-  char path[JVM_MAXPATHLEN];
-  if (jio_snprintf(path, sizeof(path), "%s%s%s", _dir, os::file_separator(), name) == -1) {
+  char* path = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, JVM_MAXPATHLEN);
+  if (jio_snprintf(path, JVM_MAXPATHLEN, "%s%s%s", _dir, os::file_separator(), name) == -1) {
+    FREE_RESOURCE_ARRAY(char, path, JVM_MAXPATHLEN);
     return NULL;
   }
   // check if file exists
@@ -256,6 +290,7 @@ ClassFileStream* ClassPathDirEntry::open_stream(const char* name, TRAPS) {
         if (UsePerfData) {
           ClassLoader::perf_sys_classfile_bytes_read()->inc(num_read);
         }
+        FREE_RESOURCE_ARRAY(char, path, JVM_MAXPATHLEN);
         // Resource allocated
         return new ClassFileStream(buffer,
                                    st.st_size,
@@ -264,6 +299,7 @@ ClassFileStream* ClassPathDirEntry::open_stream(const char* name, TRAPS) {
       }
     }
   }
+  FREE_RESOURCE_ARRAY(char, path, JVM_MAXPATHLEN);
   return NULL;
 }
 
@@ -344,9 +380,9 @@ u1* ClassPathZipEntry::open_versioned_entry(const char* name, jint* filesize, TR
 
     if (is_multi_ver) {
       int n;
-      char entry_name[JVM_MAXPATHLEN];
+      char* entry_name = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, JVM_MAXPATHLEN);
       if (version > 0) {
-        n = jio_snprintf(entry_name, sizeof(entry_name), "META-INF/versions/%d/%s", version, name);
+        n = jio_snprintf(entry_name, JVM_MAXPATHLEN, "META-INF/versions/%d/%s", version, name);
         entry_name[n] = '\0';
         buffer = open_entry((const char*)entry_name, filesize, false, CHECK_NULL);
         if (buffer == NULL) {
@@ -355,7 +391,7 @@ u1* ClassPathZipEntry::open_versioned_entry(const char* name, jint* filesize, TR
       }
       if (buffer == NULL) {
         for (int i = cur_ver; i >= base_version; i--) {
-          n = jio_snprintf(entry_name, sizeof(entry_name), "META-INF/versions/%d/%s", i, name);
+          n = jio_snprintf(entry_name, JVM_MAXPATHLEN, "META-INF/versions/%d/%s", i, name);
           entry_name[n] = '\0';
           buffer = open_entry((const char*)entry_name, filesize, false, CHECK_NULL);
           if (buffer != NULL) {
@@ -363,6 +399,7 @@ u1* ClassPathZipEntry::open_versioned_entry(const char* name, jint* filesize, TR
           }
         }
       }
+      FREE_RESOURCE_ARRAY(char, entry_name, JVM_MAXPATHLEN);
     }
   }
   return buffer;
@@ -508,7 +545,8 @@ bool ctw_visitor(JImageFile* jimage,
         const char* name, const char* extension, void* arg) {
   if (strcmp(extension, "class") == 0) {
     Thread* THREAD = Thread::current();
-    char path[JIMAGE_MAX_PATH];
+    ResourceMark rm(THREAD);
+    char* path = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, JIMAGE_MAX_PATH);
     jio_snprintf(path, JIMAGE_MAX_PATH - 1, "%s/%s.class", package, name);
     ClassLoader::compile_the_world_in(path, *(Handle*)arg, THREAD);
     return !HAS_PENDING_EXCEPTION;
@@ -750,9 +788,10 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
   JavaThread* thread = JavaThread::current();
   ClassPathEntry* new_entry = NULL;
   if ((st->st_mode & S_IFREG) == S_IFREG) {
+    ResourceMark rm(thread);
     // Regular file, should be a zip or jimage file
     // Canonicalized filename
-    char canonical_path[JVM_MAXPATHLEN];
+    char* canonical_path = NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, JVM_MAXPATHLEN);
     if (!get_canonical_path(path, canonical_path, JVM_MAXPATHLEN)) {
       // This matches the classic VM
       if (throw_exception) {
@@ -777,14 +816,13 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
       if (zip != NULL && error_msg == NULL) {
         new_entry = new ClassPathZipEntry(zip, path, is_boot_append);
       } else {
-        ResourceMark rm(thread);
         char *msg;
         if (error_msg == NULL) {
-          msg = NEW_RESOURCE_ARRAY(char, strlen(path) + 128); ;
+          msg = NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, strlen(path) + 128); ;
           jio_snprintf(msg, strlen(path) + 127, "error in opening JAR file %s", path);
         } else {
           int len = (int)(strlen(path) + strlen(error_msg) + 128);
-          msg = NEW_RESOURCE_ARRAY(char, len); ;
+          msg = NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, len); ;
           jio_snprintf(msg, len - 1, "error in opening JAR file <%s> %s", error_msg, path);
         }
         // Don't complain about bad jar files added via -Xbootclasspath/a:.
@@ -1112,13 +1150,11 @@ bool ClassLoader::add_package(const char *fullq_class_name, s2 classpath_index, 
   assert(fullq_class_name != NULL, "just checking");
 
   // Get package name from fully qualified class name.
-  const char *cp = strrchr(fullq_class_name, '/');
+  ResourceMark rm;
+  const char *cp = package_from_name(fullq_class_name);
   if (cp != NULL) {
-    int len = cp - fullq_class_name;
-    PackageEntryTable* pkg_entry_tbl =
-      ClassLoaderData::the_null_class_loader_data()->packages();
-    TempNewSymbol pkg_symbol =
-      SymbolTable::new_symbol(fullq_class_name, len, CHECK_false);
+    PackageEntryTable* pkg_entry_tbl = ClassLoaderData::the_null_class_loader_data()->packages();
+    TempNewSymbol pkg_symbol = SymbolTable::new_symbol(cp, CHECK_false);
     PackageEntry* pkg_entry = pkg_entry_tbl->lookup_only(pkg_symbol);
     if (pkg_entry != NULL) {
       assert(classpath_index != -1, "Unexpected classpath_index");
@@ -1226,11 +1262,9 @@ s2 ClassLoader::classloader_type(Symbol* class_name, ClassPathEntry* e, int clas
   // jimage, it is determined by the class path entry.
   jshort loader_type = ClassLoader::APP_LOADER;
   if (e->is_jrt()) {
-    int length = 0;
-    const jbyte* pkg_string = InstanceKlass::package_from_name(class_name, length);
-    if (pkg_string != NULL) {
-      ResourceMark rm;
-      TempNewSymbol pkg_name = SymbolTable::new_symbol((const char*)pkg_string, length, THREAD);
+    ResourceMark rm;
+    TempNewSymbol pkg_name = InstanceKlass::package_from_name(class_name, CHECK_0);
+    if (pkg_name != NULL) {
       const char* pkg_name_C_string = (const char*)(pkg_name->as_C_string());
       ClassPathImageEntry* cpie = (ClassPathImageEntry*)e;
       JImageFile* jimage = cpie->jimage();

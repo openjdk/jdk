@@ -45,8 +45,8 @@ public class FileInstaller {
         if (args.length != 2) {
             throw new IllegalArgumentException("Unexpected number of arguments for file copy");
         }
-        Path src = Paths.get(Utils.TEST_SRC, args[0]);
-        Path dst = Paths.get(args[1]);
+        Path src = Paths.get(Utils.TEST_SRC, args[0]).toAbsolutePath();
+        Path dst = Paths.get(args[1]).toAbsolutePath();
         if (src.toFile().exists()) {
             if (src.toFile().isDirectory()) {
                 Files.walkFileTree(src, new CopyFileVisitor(src, dst));

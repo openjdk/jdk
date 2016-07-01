@@ -633,7 +633,9 @@ else
 
   # Jmods cannot be created until we have the jlink tool ready to run, which requires
   # all java modules to be compiled and jdk.jlink-launchers.
-  $(JMOD_TARGETS): java.base-libs jdk.jlink-launchers
+  # And we also need to copy jvm.cfg (done in java.base-copy) and tzdb.dat (done in
+  # java.base-gendata) to the appropriate location otherwise jimage, jlink and jmod won't start.
+  $(JMOD_TARGETS): java.base-libs java.base-copy java.base-gendata jdk.jlink-launchers
   # When creating a BUILDJDK, the java compilation has already been done by the
   # normal build and copied in.
   ifneq ($(CREATING_BUILDJDK), true)

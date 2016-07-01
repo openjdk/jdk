@@ -68,8 +68,6 @@ public class ProductionParams {
     public static Option<Boolean> disableNestedBlocks = null;
     public static Option<Boolean> disableArrays = null;
     public static Option<Boolean> enableFinalizers = null;
-    public static Option<Boolean> disableBytecodeGeneration = null;
-    public static Option<Boolean> disableJavacodeGeneration = null;
     // workaraound: to reduce chance throwing ArrayIndexOutOfBoundsException
     public static Option<Integer> chanceExpressionIndex = null;
     public static Option<String> testbaseDir = null;
@@ -78,6 +76,8 @@ public class ProductionParams {
     public static Option<Long> specificSeed = null;
     public static Option<String> classesFile = null;
     public static Option<String> excludeMethodsFile = null;
+    public static Option<String> generators = null;
+    public static Option<String> generatorsFactories = null;
 
     public static void register(OptionResolver optionResolver) {
         productionLimit = optionResolver.addIntegerOption('l', "production-limit", 100, "Limit on steps in the production of an expression");
@@ -120,8 +120,6 @@ public class ProductionParams {
         disableNestedBlocks = optionResolver.addBooleanOption("disable-nested-blocks", "Disable generation of nested blocks");
         disableArrays = optionResolver.addBooleanOption("disable-arrays", "Disable generation of arrays");
         enableFinalizers = optionResolver.addBooleanOption("enable-finalizers", "Enable finalizers (for stress testing)");
-        disableBytecodeGeneration = optionResolver.addBooleanOption("disable-bytecode-generation", "Disable generation of bytecode output");
-        disableJavacodeGeneration = optionResolver.addBooleanOption("disable-javacode-generation", "Disable generation of java source code output");
         chanceExpressionIndex = optionResolver.addIntegerOption("chance-expression-index", 0, "A non negative decimal integer used to restrict chane of generating expression in array index while creating or accessing by index");
         testbaseDir = optionResolver.addStringOption("testbase-dir", ".", "Testbase dir");
         numberOfTests = optionResolver.addIntegerOption('n', "number-of-tests", 0, "Number of test classes to generate");
@@ -129,5 +127,7 @@ public class ProductionParams {
         specificSeed = optionResolver.addLongOption('z', "specificSeed", 0L, "A seed to be set for specific test generation(regular seed still needed for initialization)");
         classesFile = optionResolver.addStringOption('f', "classes-file", "conf/classes.lst", "File to read classes from");
         excludeMethodsFile = optionResolver.addStringOption('r', "exclude-methods-file", "conf/exclude.methods.lst", "File to read excluded methods from");
+        generators = optionResolver.addStringOption("generators", "", "Comma-separated list of generator names");
+        generatorsFactories = optionResolver.addStringOption("generatorsFactories", "", "Comma-separated list of generators factories class names");
     }
 }
