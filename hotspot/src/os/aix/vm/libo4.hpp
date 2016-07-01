@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,56 +22,69 @@
  *
  */
 
-// A C++ wrapper around the libo4 porting library. The libo4 porting library
-// is a set of bridge functions into native AS/400 functionality.
+// Class libo4 is a C++ wrapper around the libo4 porting library. It handles
+// basic stuff like dynamic loading, library initialization etc.
+// The libo4 porting library is a set of functions that bridge from the AIX
+// runtime environment on OS/400 (aka PASE layer) into native OS/400
+// functionality (aka ILE layer) to close some functional gaps that exist in
+// the PASE layer.
 
 #ifndef OS_AIX_VM_LIBO4_HPP
 #define OS_AIX_VM_LIBO4_HPP
 
-
 class libo4 {
 public:
-
   // Initialize the libo4 porting library.
   // Returns true if succeeded, false if error.
   static bool init();
 
-  // cleanup of the libo4 porting library.
+  // Triggers cleanup of the libo4 porting library.
   static void cleanup();
 
-  // returns a number of memory statistics from the
-  // AS/400.
+  // Returns a number of memory statistics from OS/400.
+  //
+  // See libo4.h for details on this API.
   //
   // Specify NULL for numbers you are not interested in.
   //
-  // returns false if an error happened. Activate OsMisc trace for
+  // Returns false if an error happened. Activate OsMisc trace for
   // trace output.
   //
-  static bool get_memory_info (unsigned long long* p_virt_total, unsigned long long* p_real_total,
-    unsigned long long* p_real_free, unsigned long long* p_pgsp_total, unsigned long long* p_pgsp_free);
+  static bool get_memory_info(unsigned long long* p_virt_total,
+                              unsigned long long* p_real_total,
+                              unsigned long long* p_real_free,
+                              unsigned long long* p_pgsp_total,
+                              unsigned long long* p_pgsp_free);
 
-  // returns information about system load
+  // Returns information about system load
   // (similar to "loadavg()" under other Unices)
   //
-  // Specify NULL for numbers you are not interested in.
-  //
-  // returns false if an error happened. Activate OsMisc trace for
-  // trace output.
-  //
-  static bool get_load_avg (double* p_avg1, double* p_avg5, double* p_avg15);
-
-  // this is a replacement for the "realpath()" API which does not really work
-  // on PASE
+  // See libo4.h for details on this API.
   //
   // Specify NULL for numbers you are not interested in.
   //
-  // returns false if an error happened. Activate OsMisc trace for
+  // Returns false if an error happened. Activate OsMisc trace for
   // trace output.
   //
-  static bool realpath (const char* file_name,
-      char* resolved_name, int resolved_name_len);
+  static bool get_load_avg(double* p_avg1, double* p_avg5, double* p_avg15);
 
+  // This is a replacement for the "realpath()" API which does not really work
+  // in PASE together with the (case insensitive but case preserving)
+  // filesystem on OS/400.
+  //
+  // See libo4.h for details on this API.
+  //
+  // Returns false if an error happened. Activate OsMisc trace for
+  // trace output.
+  //
+  static bool realpath(const char* file_name, char* resolved_name,
+                       int resolved_name_len);
+
+  // Call libo4_RemoveEscapeMessageFromJoblogByContext API to remove messages
+  // from the OS/400 job log.
+  //
+  // See libo4.h for details on this API.
+  static bool removeEscapeMessageFromJoblogByContext(const void* context);
 };
 
 #endif // OS_AIX_VM_LIBO4_HPP
-
