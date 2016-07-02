@@ -426,7 +426,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBLCMS, \
         $(LCMS_CFLAGS), \
     CFLAGS_solaris := -xc99=no_lib, \
     CFLAGS_windows := -DCMS_IS_WINDOWS_, \
-    DISABLED_WARNINGS_gcc := format-nonliteral type-limits, \
+    DISABLED_WARNINGS_gcc := format-nonliteral type-limits misleading-indentation, \
     DISABLED_WARNINGS_clang := tautological-compare, \
     DISABLED_WARNINGS_solstudio := E_STATEMENT_NOT_REACHED, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/liblcms/mapfile-vers, \
@@ -507,7 +507,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVAJPEG, \
     CFLAGS := $(CFLAGS_JDKLIB) $(BUILD_LIBJAVAJPEG_HEADERS) \
         $(LIBJAVA_HEADER_FLAGS) \
         -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop, \
-    DISABLED_WARNINGS_gcc := clobbered parentheses array-bounds, \
+    DISABLED_WARNINGS_gcc := clobbered parentheses array-bounds shift-negative-value, \
     DISABLED_WARNINGS_clang := logical-op-parentheses, \
     DISABLED_WARNINGS_microsoft := 4267, \
     MAPFILE := $(BUILD_LIBJAVAJPEG_MAPFILE), \
@@ -943,7 +943,7 @@ ifndef BUILD_HEADLESS_ONLY
       OPTIMIZATION := LOW, \
       CFLAGS := $(LIBSPLASHSCREEN_CFLAGS) $(CFLAGS_JDKLIB) \
                 $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS), \
-      DISABLED_WARNINGS_gcc := sign-compare type-limits unused-result maybe-uninitialized, \
+      DISABLED_WARNINGS_gcc := sign-compare type-limits unused-result maybe-uninitialized shift-negative-value, \
       DISABLED_WARNINGS_clang := incompatible-pointer-types, \
       DISABLED_WARNINGS_solstudio := E_NEWLINE_NOT_LAST E_DECLARATION_IN_CODE \
           E_STATEMENT_NOT_REACHED, \

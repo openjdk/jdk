@@ -34,8 +34,8 @@ void initAlphaTables()
     unsigned int j;
 
     for (i = 1; i < 256; i++) {                 /* SCALE == (1 << 24) */
-        int inc = (i << 16) + (i<<8) + i;       /* approx. SCALE * (i/255.0) */
-        int val = inc + (1 << 23);              /* inc + SCALE*0.5 */
+        unsigned int inc = (i << 16) + (i<<8) + i;       /* approx. SCALE * (i/255.0) */
+        unsigned int val = inc + (1 << 23);              /* inc + SCALE*0.5 */
         for (j = 1; j < 256; j++) {
             mul8table[i][j] = (val >> 24);      /* val / SCALE */
             val += inc;
