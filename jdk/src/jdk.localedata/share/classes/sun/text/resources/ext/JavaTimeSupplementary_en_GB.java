@@ -72,61 +72,59 @@ import sun.util.resources.OpenListResourceBundle;
 public class JavaTimeSupplementary_en_GB extends OpenListResourceBundle {
     @Override
     protected final Object[][] getContents() {
+        final String[] sharedAmPmMarkers = {
+            "am",
+            "pm",
+        };
+
+        final String[] sharedDatePatterns = {
+            "EEEE, d MMMM y GGGG",
+            "d MMMM y GGGG",
+            "d MMM y GGGG",
+            "dd/MM/y G",
+        };
+
+        final String[] sharedTimePatterns = {
+            "HH:mm:ss zzzz",
+            "HH:mm:ss z",
+            "HH:mm:ss",
+            "HH:mm",
+        };
+
+        final String[] sharedJavaTimeDatePatterns = {
+            "EEEE, d MMMM y G",
+            "d MMMM y G",
+            "d MMM y G",
+            "dd/MM/y GGGGG",
+        };
+
         return new Object[][] {
             { "field.dayperiod",
                 "am/pm" },
             { "islamic.AmPmMarkers",
-                new String[] {
-                    "am",
-                    "pm",
-                }
-            },
+                sharedAmPmMarkers },
+            { "islamic.DatePatterns",
+                sharedDatePatterns },
             { "islamic.TimePatterns",
-                new String[] {
-                    "HH:mm:ss zzzz",
-                    "HH:mm:ss z",
-                    "HH:mm:ss",
-                    "HH:mm",
-                }
-            },
+                sharedTimePatterns },
             { "islamic.abbreviated.AmPmMarkers",
-                new String[] {
-                    "am",
-                    "pm",
-                }
-            },
-            { "islamic.narrow.AmPmMarkers",
-                new String[] {
-                    "a",
-                    "p",
-                }
-            },
+                sharedAmPmMarkers },
+            { "java.time.buddhist.DatePatterns",
+                sharedJavaTimeDatePatterns },
+            { "java.time.islamic.DatePatterns",
+                sharedJavaTimeDatePatterns },
+            { "java.time.japanese.DatePatterns",
+                sharedJavaTimeDatePatterns },
+            { "java.time.roc.DatePatterns",
+                sharedJavaTimeDatePatterns },
             { "roc.AmPmMarkers",
-                new String[] {
-                    "am",
-                    "pm",
-                }
-            },
+                sharedAmPmMarkers },
+            { "roc.DatePatterns",
+                sharedDatePatterns },
             { "roc.TimePatterns",
-                new String[] {
-                    "HH:mm:ss zzzz",
-                    "HH:mm:ss z",
-                    "HH:mm:ss",
-                    "HH:mm",
-                }
-            },
+                sharedTimePatterns },
             { "roc.abbreviated.AmPmMarkers",
-                new String[] {
-                    "am",
-                    "pm",
-                }
-            },
-            { "roc.narrow.AmPmMarkers",
-                new String[] {
-                    "a",
-                    "p",
-                }
-            },
+                sharedAmPmMarkers },
         };
     }
 }

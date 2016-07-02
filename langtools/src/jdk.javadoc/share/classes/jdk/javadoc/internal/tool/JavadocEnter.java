@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,11 +67,11 @@ public class JavadocEnter extends Enter {
     protected JavadocEnter(Context context) {
         super(context);
         messager = Messager.instance0(context);
-        docenv = DocEnv.instance(context);
+        toolEnv = ToolEnvironment.instance(context);
     }
 
     final Messager messager;
-    final DocEnv docenv;
+    final ToolEnvironment toolEnv;
 
     @Override
     public void main(List<JCCompilationUnit> trees) {
@@ -87,8 +87,8 @@ public class JavadocEnter extends Enter {
         super.visitTopLevel(tree);
         if (tree.sourcefile.isNameCompatible("package-info", JavaFileObject.Kind.SOURCE)) {
             JCPackageDecl pd = tree.getPackage();
-            TreePath tp = pd == null ? docenv.getTreePath(tree) : docenv.getTreePath(tree, pd);
-            docenv.setElementToTreePath(tree.packge, tp);
+            TreePath tp = pd == null ? toolEnv.getTreePath(tree) : toolEnv.getTreePath(tree, pd);
+            toolEnv.setElementToTreePath(tree.packge, tp);
         }
     }
 
@@ -98,7 +98,7 @@ public class JavadocEnter extends Enter {
         if (tree.sym == null) return;
         if (tree.sym.kind == TYP || tree.sym.kind == ERR) {
             ClassSymbol c = tree.sym;
-            docenv.setElementToTreePath(c, docenv.getTreePath(env.toplevel, tree));
+            toolEnv.setElementToTreePath(c, toolEnv.getTreePath(env.toplevel, tree));
         }
     }
 

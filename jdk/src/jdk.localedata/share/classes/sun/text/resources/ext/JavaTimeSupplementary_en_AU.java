@@ -72,123 +72,100 @@ import sun.util.resources.OpenListResourceBundle;
 public class JavaTimeSupplementary_en_AU extends OpenListResourceBundle {
     @Override
     protected final Object[][] getContents() {
+        final String[] sharedAmPmMarkers = {
+            "am",
+            "pm",
+        };
+
+        final String[] sharedDatePatterns = {
+            "EEEE, d MMMM y GGGG",
+            "d MMMM y GGGG",
+            "d MMM y GGGG",
+            "dd/MM/y G",
+        };
+
+        final String[] sharedDayAbbreviations = {
+            "Sun.",
+            "Mon.",
+            "Tue.",
+            "Wed.",
+            "Thu.",
+            "Fri.",
+            "Sat.",
+        };
+
+        final String[] sharedDayNarrows = {
+            "Su.",
+            "M.",
+            "Tu.",
+            "W.",
+            "Th.",
+            "F.",
+            "Sa.",
+        };
+
+        final String[] sharedJavaTimeDatePatterns = {
+            "EEEE, d MMMM y G",
+            "d MMMM y G",
+            "d MMM y G",
+            "dd/MM/y GGGGG",
+        };
+
+        final String[] sharedMonthNarrows = {
+            "Jan.",
+            "Feb.",
+            "Mar.",
+            "Apr.",
+            "May",
+            "Jun.",
+            "Jul.",
+            "Aug.",
+            "Sep.",
+            "Oct.",
+            "Nov.",
+            "Dec.",
+            "",
+        };
+
         return new Object[][] {
             { "field.dayperiod",
                 "am/pm" },
             { "islamic.AmPmMarkers",
-                new String[] {
-                    "am",
-                    "pm",
-                }
-            },
+                sharedAmPmMarkers },
+            { "islamic.DatePatterns",
+                sharedDatePatterns },
             { "islamic.DayAbbreviations",
-                new String[] {
-                    "Sun.",
-                    "Mon.",
-                    "Tue.",
-                    "Wed.",
-                    "Thu.",
-                    "Fri.",
-                    "Sat.",
-                }
-            },
+                sharedDayAbbreviations },
             { "islamic.DayNarrows",
-                new String[] {
-                    "Su.",
-                    "M.",
-                    "Tu.",
-                    "W.",
-                    "Th.",
-                    "F.",
-                    "Sa.",
-                }
-            },
+                sharedDayNarrows },
             { "islamic.abbreviated.AmPmMarkers",
-                new String[] {
-                    "am",
-                    "pm",
-                }
-            },
+                sharedAmPmMarkers },
             { "islamic.narrow.AmPmMarkers",
-                new String[] {
-                    "am",
-                    "pm",
-                }
-            },
+                sharedAmPmMarkers },
+            { "java.time.buddhist.DatePatterns",
+                sharedJavaTimeDatePatterns },
+            { "java.time.islamic.DatePatterns",
+                sharedJavaTimeDatePatterns },
+            { "java.time.japanese.DatePatterns",
+                sharedJavaTimeDatePatterns },
+            { "java.time.roc.DatePatterns",
+                sharedJavaTimeDatePatterns },
             { "roc.AmPmMarkers",
-                new String[] {
-                    "am",
-                    "pm",
-                }
-            },
+                sharedAmPmMarkers },
+            { "roc.DatePatterns",
+                sharedDatePatterns },
             { "roc.DayAbbreviations",
-                new String[] {
-                    "Sun.",
-                    "Mon.",
-                    "Tue.",
-                    "Wed.",
-                    "Thu.",
-                    "Fri.",
-                    "Sat.",
-                }
-            },
+                sharedDayAbbreviations },
             { "roc.DayNarrows",
-                new String[] {
-                    "Su.",
-                    "M.",
-                    "Tu.",
-                    "W.",
-                    "Th.",
-                    "F.",
-                    "Sa.",
-                }
-            },
+                sharedDayNarrows },
             { "roc.MonthAbbreviations",
-                new String[] {
-                    "Jan.",
-                    "Feb.",
-                    "Mar.",
-                    "Apr.",
-                    "May",
-                    "Jun.",
-                    "Jul.",
-                    "Aug.",
-                    "Sep.",
-                    "Oct.",
-                    "Nov.",
-                    "Dec.",
-                    "",
-                }
-            },
+                sharedMonthNarrows },
             { "roc.MonthNarrows",
-                new String[] {
-                    "Jan.",
-                    "Feb.",
-                    "Mar.",
-                    "Apr.",
-                    "May",
-                    "Jun.",
-                    "Jul.",
-                    "Aug.",
-                    "Sep.",
-                    "Oct.",
-                    "Nov.",
-                    "Dec.",
-                    "",
-                }
-            },
+                sharedMonthNarrows },
             { "roc.abbreviated.AmPmMarkers",
-                new String[] {
-                    "am",
-                    "pm",
-                }
-            },
+                sharedAmPmMarkers },
             { "roc.narrow.AmPmMarkers",
-                new String[] {
-                    "am",
-                    "pm",
-                }
-            },
+                sharedAmPmMarkers },
         };
     }
 }

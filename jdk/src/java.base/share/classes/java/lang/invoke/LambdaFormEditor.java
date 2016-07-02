@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,17 @@
 
 package java.lang.invoke;
 
+import sun.invoke.util.Wrapper;
+
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
-import static java.lang.invoke.LambdaForm.*;
-import static java.lang.invoke.LambdaForm.BasicType.*;
-import static java.lang.invoke.MethodHandleImpl.Intrinsic;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 
-import sun.invoke.util.Wrapper;
+import static java.lang.invoke.LambdaForm.*;
+import static java.lang.invoke.LambdaForm.BasicType.*;
+import static java.lang.invoke.MethodHandleImpl.Intrinsic;
+import static java.lang.invoke.MethodHandleImpl.NF_loop;
 
 /** Transforms on LFs.
  *  A lambda-form editor can derive new LFs from its base LF.
@@ -73,7 +75,8 @@ class LambdaFormEditor {
             FILTER_ARG, FILTER_RETURN, FILTER_RETURN_TO_ZERO,
             COLLECT_ARGS, COLLECT_ARGS_TO_VOID, COLLECT_ARGS_TO_ARRAY,
             FOLD_ARGS, FOLD_ARGS_TO_VOID,
-            PERMUTE_ARGS
+            PERMUTE_ARGS,
+            LOCAL_TYPES
             //maybe add more for guard with test, catch exception, pointwise type conversions
         }
 
@@ -844,6 +847,32 @@ class LambdaFormEditor {
         }
 
         form = new LambdaForm(lambdaForm.debugName, arity2, names2, result2);
+        return putInCache(key, form);
+    }
+
+    LambdaForm noteLoopLocalTypesForm(int pos, BasicType[] localTypes) {
+        assert(lambdaForm.isLoop(pos));
+        int[] desc = BasicType.basicTypeOrds(localTypes);
+        desc = Arrays.copyOf(desc, desc.length + 1);
+        desc[desc.length - 1] = pos;
+        Transform key = Transform.of(Transform.Kind.LOCAL_TYPES, desc);
+        LambdaForm form = getInCache(key);
+        if (form != null) {
+            return form;
+        }
+
+        // replace the null entry in the MHImpl.loop invocation with localTypes
+        Name invokeLoop = lambdaForm.names[pos + 1];
+        assert(invokeLoop.function == NF_loop);
+        Object[] args = Arrays.copyOf(invokeLoop.arguments, invokeLoop.arguments.length);
+        assert(args[0] == null);
+        args[0] = localTypes;
+
+        LambdaFormBuffer buf = buffer();
+        buf.startEdit();
+        buf.changeName(pos + 1, new Name(NF_loop, args));
+        form = buf.endEdit();
+
         return putInCache(key, form);
     }
 

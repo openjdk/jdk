@@ -31,7 +31,6 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
-import jdk.tools.jlink.plugin.ModuleEntry;
 
 /**
  * A ModuleEntry backed by a given nio Path.
@@ -43,9 +42,9 @@ public class PathModuleEntry extends AbstractModuleEntry {
      * Create a new PathModuleEntry.
      *
      * @param module The module name.
-     * @param file The data file identifier.
+     * @param path The path for the resource content.
      * @param type The data type.
-     * @param file The Path for the resource content.
+     * @param file The data file identifier.
      */
     public PathModuleEntry(String module, String path, Type type, Path file) {
         super(module, path, type);

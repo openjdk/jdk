@@ -114,9 +114,11 @@ public abstract class AbstractTypeVisitor6<R, P> implements TypeVisitor<R, P> {
     }
 
     /**
-     * Visits a {@code UnionType} element by calling {@code
+     * {@inheritDoc}
+     *
+     * @implSpec Visits a {@code UnionType} element by calling {@code
      * visitUnknown}.
-
+     *
      * @param t  {@inheritDoc}
      * @param p  {@inheritDoc}
      * @return the result of {@code visitUnknown}
@@ -128,15 +130,18 @@ public abstract class AbstractTypeVisitor6<R, P> implements TypeVisitor<R, P> {
     }
 
     /**
-     * Visits an {@code IntersectionType} element by calling {@code
+     * {@inheritDoc}
+     *
+     * @implSpec Visits an {@code IntersectionType} element by calling {@code
      * visitUnknown}.
-
+     *
      * @param t  {@inheritDoc}
      * @param p  {@inheritDoc}
      * @return the result of {@code visitUnknown}
      *
      * @since 1.8
      */
+    @Override
     public R visitIntersection(IntersectionType t, P p) {
         return visitUnknown(t, p);
     }
@@ -144,16 +149,18 @@ public abstract class AbstractTypeVisitor6<R, P> implements TypeVisitor<R, P> {
     /**
      * {@inheritDoc}
      *
-     * <p> The default implementation of this method in {@code
+     * @implSpec The default implementation of this method in {@code
      * AbstractTypeVisitor6} will always throw {@code
      * UnknownTypeException}.  This behavior is not required of a
      * subclass.
      *
-     * @param t  the type to visit
+     * @param t  {@inheritDoc}
+     * @param p  {@inheritDoc}
      * @return a visitor-specified result
      * @throws UnknownTypeException
      *  a visitor implementation may optionally throw this exception
      */
+    @Override
     public R visitUnknown(TypeMirror t, P p) {
         throw new UnknownTypeException(t, p);
     }

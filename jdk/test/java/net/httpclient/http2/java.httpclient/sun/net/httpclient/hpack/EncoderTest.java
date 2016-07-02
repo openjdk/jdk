@@ -24,17 +24,23 @@ package sun.net.httpclient.hpack;
 
 import org.testng.annotations.Test;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static sun.net.httpclient.hpack.BuffersTestingKit.concat;
+import static sun.net.httpclient.hpack.BuffersTestingKit.forEachSplit;
+import static sun.net.httpclient.hpack.SpecHelper.toHexdump;
+import static sun.net.httpclient.hpack.TestHelper.assertVoidThrows;
 import static java.util.Arrays.asList;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
-import static sun.net.httpclient.hpack.SpecHelper.toHexdump;
-import static sun.net.httpclient.hpack.TestHelper.assertVoidThrows;
 
 // TODO: map textual representation of commands from the spec to actual
 // calls to encoder (actually, this is a good idea for decoder as well)
@@ -196,6 +202,61 @@ public final class EncoderTest {
              "[  3] (s =  57) :authority: www.example.com\n" +
              "      Table size: 164");
         // @formatter:on
+    }
+
+    @Test
+    public void example5AllSplits() {
+
+        List<Consumer<Encoder>> actions = new LinkedList<>();
+        actions.add(e -> e.indexed(2));
+        actions.add(e -> e.indexed(6));
+        actions.add(e -> e.indexed(4));
+        actions.add(e -> e.literalWithIndexing(1, "www.example.com", false));
+
+        encodeAllSplits(
+                actions,
+
+                "8286 8441 0f77 7777 2e65 7861 6d70 6c65\n" +
+                "2e63 6f6d",
+
+                "[  1] (s =  57) :authority: www.example.com\n" +
+                "      Table size:  57");
+    }
+
+    private static void encodeAllSplits(Iterable<Consumer<Encoder>> consumers,
+                                        String expectedHexdump,
+                                        String expectedTableState) {
+        ByteBuffer buffer = SpecHelper.toBytes(expectedHexdump);
+        erase(buffer); // Zeroed buffer of size needed to hold the encoding
+        forEachSplit(buffer, iterable -> {
+            List<ByteBuffer> copy = new LinkedList<>();
+            iterable.forEach(b -> copy.add(ByteBuffer.allocate(b.remaining())));
+            Iterator<ByteBuffer> output = copy.iterator();
+            if (!output.hasNext()) {
+                throw new IllegalStateException("No buffers to encode to");
+            }
+            Encoder e = newCustomEncoder(256); // FIXME: pull up (as a parameter)
+            drainInitialUpdate(e);
+            boolean encoded;
+            ByteBuffer b = output.next();
+            for (Consumer<Encoder> c : consumers) {
+                c.accept(e);
+                do {
+                    encoded = e.encode(b);
+                    if (!encoded) {
+                        if (output.hasNext()) {
+                            b = output.next();
+                        } else {
+                            throw new IllegalStateException("No room for encoding");
+                        }
+                    }
+                }
+                while (!encoded);
+            }
+            copy.forEach(Buffer::flip);
+            ByteBuffer data = concat(copy);
+            test(e, data, expectedHexdump, expectedTableState);
+        });
     }
 
     //
@@ -619,5 +680,13 @@ public final class EncoderTest {
             done = e.encode(b);
             b.flip();
         } while (!done);
+    }
+
+    private static void erase(ByteBuffer buffer) {
+        buffer.clear();
+        while (buffer.hasRemaining()) {
+            buffer.put((byte) 0);
+        }
+        buffer.clear();
     }
 }
