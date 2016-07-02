@@ -32,33 +32,30 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import jdk.tools.jlink.plugin.ExecutableImage;
 import jdk.tools.jlink.builder.ImageBuilder;
 import jdk.tools.jlink.Jlink;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.Plugin.Category;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.PostProcessorPlugin;
-import jdk.tools.jlink.plugin.TransformerPlugin;
 
 /**
  * Plugins configuration.
  */
 public final class ImagePluginConfiguration {
 
-    private static final List<Plugin.Category> CATEGORIES_ORDER = new ArrayList<>();
+    private static final List<Category> CATEGORIES_ORDER = new ArrayList<>();
 
     static {
-        CATEGORIES_ORDER.add(Plugin.Category.FILTER);
-        CATEGORIES_ORDER.add(Plugin.Category.TRANSFORMER);
-        CATEGORIES_ORDER.add(Plugin.Category.MODULEINFO_TRANSFORMER);
-        CATEGORIES_ORDER.add(Plugin.Category.SORTER);
-        CATEGORIES_ORDER.add(Plugin.Category.COMPRESSOR);
-        CATEGORIES_ORDER.add(Plugin.Category.METAINFO_ADDER);
-        CATEGORIES_ORDER.add(Plugin.Category.VERIFIER);
-        CATEGORIES_ORDER.add(Plugin.Category.PROCESSOR);
-        CATEGORIES_ORDER.add(Plugin.Category.PACKAGER);
+        CATEGORIES_ORDER.add(Category.FILTER);
+        CATEGORIES_ORDER.add(Category.TRANSFORMER);
+        CATEGORIES_ORDER.add(Category.MODULEINFO_TRANSFORMER);
+        CATEGORIES_ORDER.add(Category.SORTER);
+        CATEGORIES_ORDER.add(Category.COMPRESSOR);
+        CATEGORIES_ORDER.add(Category.METAINFO_ADDER);
+        CATEGORIES_ORDER.add(Category.VERIFIER);
+        CATEGORIES_ORDER.add(Category.PROCESSOR);
+        CATEGORIES_ORDER.add(Category.PACKAGER);
     }
 
     private ImagePluginConfiguration() {
@@ -72,8 +69,8 @@ public final class ImagePluginConfiguration {
         if (pluginsConfiguration == null) {
             return new ImagePluginStack();
         }
-        Map<Plugin.Category, List<Plugin>> plugins = new LinkedHashMap<>();
-        for (Plugin.Category cat : CATEGORIES_ORDER) {
+        Map<Category, List<Plugin>> plugins = new LinkedHashMap<>();
+        for (Category cat : CATEGORIES_ORDER) {
             plugins.put(cat, new ArrayList<>());
         }
 
@@ -85,7 +82,7 @@ public final class ImagePluginConfiguration {
                         + " added more than once to stack ");
             }
             seen.add(plug.getName());
-            Category category = Utils.getCategory(plug);
+            Category category = plug.getType();
             if (category == null) {
                 throw new PluginException("Invalid category for "
                         + plug.getName());
@@ -94,26 +91,13 @@ public final class ImagePluginConfiguration {
             lst.add(plug);
         }
 
-        List<TransformerPlugin> transformerPlugins = new ArrayList<>();
-        List<PostProcessorPlugin> postProcessingPlugins = new ArrayList<>();
-        for (Entry<Plugin.Category, List<Plugin>> entry : plugins.entrySet()) {
+        List<Plugin> orderedPlugins = new ArrayList<>();
+        plugins.entrySet().stream().forEach((entry) -> {
             // Sort according to plugin constraints
-            List<Plugin> orderedPlugins = PluginOrderingGraph.sort(entry.getValue());
-            Category category = entry.getKey();
-            for (Plugin p : orderedPlugins) {
-                if (category.isPostProcessor()) {
-                    @SuppressWarnings("unchecked")
-                    PostProcessorPlugin pp = (PostProcessorPlugin) p;
-                    postProcessingPlugins.add(pp);
-                } else {
-                    @SuppressWarnings("unchecked")
-                    TransformerPlugin trans = (TransformerPlugin) p;
-                    transformerPlugins.add(trans);
-                }
-            }
-        }
+            orderedPlugins.addAll(PluginOrderingGraph.sort(entry.getValue()));
+        });
         Plugin lastSorter = null;
-        for (Plugin plugin : transformerPlugins) {
+        for (Plugin plugin : orderedPlugins) {
             if (plugin.getName().equals(pluginsConfiguration.getLastSorterPluginName())) {
                 lastSorter = plugin;
                 break;
@@ -145,7 +129,6 @@ public final class ImagePluginConfiguration {
             };
         }
 
-        return new ImagePluginStack(builder, transformerPlugins,
-                lastSorter, postProcessingPlugins);
+        return new ImagePluginStack(builder, orderedPlugins, lastSorter);
     }
 }

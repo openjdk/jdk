@@ -428,7 +428,7 @@ public final class TaskHelper {
             return opt.hasArg;
         }
 
-        public boolean listPlugins() {
+        public boolean shouldListPlugins() {
             return pluginOptions.listPlugins;
         }
 
@@ -570,26 +570,19 @@ public final class TaskHelper {
             log.println(bundleHelper.getMessage("main.command.files"));
         }
 
-        public void listPlugins(boolean showsImageBuilder) {
+        public void listPlugins() {
             log.println("\n" + bundleHelper.getMessage("main.extended.help"));
             List<Plugin> pluginList = PluginRepository.
                     getPlugins(pluginOptions.pluginsLayer);
-            for (Plugin plugin : Utils.
-                    getSortedPreProcessors(pluginList)) {
-                showPlugin(plugin, log, showsImageBuilder);
-            }
-
-            if (showsImageBuilder) {
-                for (Plugin plugin : Utils.getSortedPostProcessors(pluginList)) {
-                    showPlugin(plugin, log, showsImageBuilder);
-                }
+            for (Plugin plugin : Utils.getSortedPlugins(pluginList)) {
+                showPlugin(plugin, log);
             }
 
             log.println("\n" + bundleHelper.getMessage("main.extended.help.footer"));
         }
 
-        private void showPlugin(Plugin plugin, PrintWriter log, boolean showsImageBuilder) {
-            if (showsPlugin(plugin, showsImageBuilder)) {
+        private void showPlugin(Plugin plugin, PrintWriter log) {
+            if (showsPlugin(plugin)) {
                 log.println("\n" + bundleHelper.getMessage("main.plugin.name")
                         + ": " + plugin.getName());
 
@@ -599,7 +592,7 @@ public final class TaskHelper {
                          + ": " + plugin.getClass().getName());
                     log.println(bundleHelper.getMessage("main.plugin.module")
                          + ": " + plugin.getClass().getModule().getName());
-                    Category category = Utils.getCategory(plugin);
+                    Category category = plugin.getType();
                     log.println(bundleHelper.getMessage("main.plugin.category")
                          + ": " + category.getName());
                     log.println(bundleHelper.getMessage("main.plugin.state")
@@ -722,14 +715,8 @@ public final class TaskHelper {
         }
     }
 
-    // Display all plugins or pre processors only.
-    private static boolean showsPlugin(Plugin plugin, boolean showsImageBuilder) {
-        if (!Utils.isDisabled(plugin) && plugin.getOption() != null) {
-            if (Utils.isPostProcessor(plugin) && !showsImageBuilder) {
-                return false;
-            }
-            return true;
-        }
-        return false;
+    // Display all plugins
+    private static boolean showsPlugin(Plugin plugin) {
+        return (!Utils.isDisabled(plugin) && plugin.getOption() != null);
     }
 }

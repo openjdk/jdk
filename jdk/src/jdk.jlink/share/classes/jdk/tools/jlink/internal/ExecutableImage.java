@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.tools.jlink.plugin;
+package jdk.tools.jlink.internal;
 
 import java.nio.file.Path;
 import java.util.List;

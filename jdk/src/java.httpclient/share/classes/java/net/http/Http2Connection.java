@@ -298,7 +298,7 @@ class Http2Connection implements BufferHandler {
 
         ByteBuffer[] buffers = frame.getHeaderBlock();
         for (int i = 0; i < buffers.length; i++) {
-            hpackIn.decode(buffers[i], endOfHeaders, decoder);
+            hpackIn.decode(buffers[i], endOfHeaders && (i == buffers.length - 1), decoder);
         }
     }
 

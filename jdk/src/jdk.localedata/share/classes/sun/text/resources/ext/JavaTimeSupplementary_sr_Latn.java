@@ -72,23 +72,75 @@ import sun.util.resources.OpenListResourceBundle;
 public class JavaTimeSupplementary_sr_Latn extends OpenListResourceBundle {
     @Override
     protected final Object[][] getContents() {
+        final String[] sharedQuarterAbbreviations = {
+            "K1",
+            "K2",
+            "K3",
+            "K4",
+        };
+
+        final String[] sharedQuarterNames = {
+            "prvi kvartal",
+            "drugi kvartal",
+            "tre\u0107i kvartal",
+            "\u010detvrti kvartal",
+        };
+
+        final String[] sharedAmPmMarkers = {
+            "pre podne",
+            "po podne",
+        };
+
+        final String[] sharedDayAbbreviations = {
+            "ned",
+            "pon",
+            "uto",
+            "sre",
+            "\u010det",
+            "pet",
+            "sub",
+        };
+
+        final String[] sharedDayNames = {
+            "nedelja",
+            "ponedeljak",
+            "utorak",
+            "sreda",
+            "\u010detvrtak",
+            "petak",
+            "subota",
+        };
+
+        final String[] sharedDayNarrows = {
+            "n",
+            "p",
+            "u",
+            "s",
+            "\u010d",
+            "p",
+            "s",
+        };
+
+        final String[] sharedEras = {
+            "",
+            "AH",
+        };
+
+        final String[] sharedJavaTimeLongEras = {
+            "BC",
+            "BE",
+        };
+
+        final String[] sharedShortEras = {
+            "Pre RK",
+            "RK",
+        };
+
         return new Object[][] {
             { "QuarterAbbreviations",
-                new String[] {
-                    "K1",
-                    "K2",
-                    "K3",
-                    "K4",
-                }
-            },
+                sharedQuarterAbbreviations },
             { "QuarterNames",
-                new String[] {
-                    "prvi kvartal",
-                    "drugi kvartal",
-                    "tre\u0107i kvartal",
-                    "\u010detvrti kvartal",
-                }
-            },
+                sharedQuarterNames },
             { "calendarname.buddhist",
                 "budisti\u010dki kalendar" },
             { "calendarname.gregorian",
@@ -124,50 +176,15 @@ public class JavaTimeSupplementary_sr_Latn extends OpenListResourceBundle {
             { "field.zone",
                 "vremenska zona" },
             { "islamic.AmPmMarkers",
-                new String[] {
-                    "pre podne",
-                    "po podne",
-                }
-            },
+                sharedAmPmMarkers },
             { "islamic.DayAbbreviations",
-                new String[] {
-                    "ned",
-                    "pon",
-                    "uto",
-                    "sre",
-                    "\u010det",
-                    "pet",
-                    "sub",
-                }
-            },
+                sharedDayAbbreviations },
             { "islamic.DayNames",
-                new String[] {
-                    "nedelja",
-                    "ponedeljak",
-                    "utorak",
-                    "sreda",
-                    "\u010detvrtak",
-                    "petak",
-                    "subota",
-                }
-            },
+                sharedDayNames },
             { "islamic.DayNarrows",
-                new String[] {
-                    "n",
-                    "p",
-                    "u",
-                    "s",
-                    "\u010d",
-                    "p",
-                    "s",
-                }
-            },
+                sharedDayNarrows },
             { "islamic.Eras",
-                new String[] {
-                    "",
-                    "AH",
-                }
-            },
+                sharedEras },
             { "islamic.MonthNames",
                 new String[] {
                     "Muraham",
@@ -186,57 +203,21 @@ public class JavaTimeSupplementary_sr_Latn extends OpenListResourceBundle {
                 }
             },
             { "islamic.QuarterAbbreviations",
-                new String[] {
-                    "K1",
-                    "K2",
-                    "K3",
-                    "K4",
-                }
-            },
+                sharedQuarterAbbreviations },
             { "islamic.QuarterNames",
-                new String[] {
-                    "prvi kvartal",
-                    "drugi kvartal",
-                    "tre\u0107i kvartal",
-                    "\u010detvrti kvartal",
-                }
-            },
+                sharedQuarterNames },
             { "islamic.abbreviated.AmPmMarkers",
-                new String[] {
-                    "pre podne",
-                    "po podne",
-                }
-            },
+                sharedAmPmMarkers },
             { "islamic.long.Eras",
-                new String[] {
-                    "",
-                    "AH",
-                }
-            },
+                sharedEras },
             { "islamic.narrow.Eras",
-                new String[] {
-                    "",
-                    "AH",
-                }
-            },
+                sharedEras },
             { "islamic.short.Eras",
-                new String[] {
-                    "",
-                    "AH",
-                }
-            },
+                sharedEras },
             { "java.time.buddhist.long.Eras",
-                new String[] {
-                    "BC",
-                    "BE",
-                }
-            },
+                sharedJavaTimeLongEras },
             { "java.time.buddhist.short.Eras",
-                new String[] {
-                    "BC",
-                    "BE",
-                }
-            },
+                sharedJavaTimeLongEras },
             { "java.time.japanese.long.Eras",
                 new String[] {
                     "nove ere",
@@ -268,50 +249,15 @@ public class JavaTimeSupplementary_sr_Latn extends OpenListResourceBundle {
                 }
             },
             { "roc.AmPmMarkers",
-                new String[] {
-                    "pre podne",
-                    "po podne",
-                }
-            },
+                sharedAmPmMarkers },
             { "roc.DayAbbreviations",
-                new String[] {
-                    "ned",
-                    "pon",
-                    "uto",
-                    "sre",
-                    "\u010det",
-                    "pet",
-                    "sub",
-                }
-            },
+                sharedDayAbbreviations },
             { "roc.DayNames",
-                new String[] {
-                    "nedelja",
-                    "ponedeljak",
-                    "utorak",
-                    "sreda",
-                    "\u010detvrtak",
-                    "petak",
-                    "subota",
-                }
-            },
+                sharedDayNames },
             { "roc.DayNarrows",
-                new String[] {
-                    "n",
-                    "p",
-                    "u",
-                    "s",
-                    "\u010d",
-                    "p",
-                    "s",
-                }
-            },
+                sharedDayNarrows },
             { "roc.Eras",
-                new String[] {
-                    "Pre RK",
-                    "RK",
-                }
-            },
+                sharedShortEras },
             { "roc.MonthAbbreviations",
                 new String[] {
                     "jan",
@@ -364,45 +310,17 @@ public class JavaTimeSupplementary_sr_Latn extends OpenListResourceBundle {
                 }
             },
             { "roc.QuarterAbbreviations",
-                new String[] {
-                    "K1",
-                    "K2",
-                    "K3",
-                    "K4",
-                }
-            },
+                sharedQuarterAbbreviations },
             { "roc.QuarterNames",
-                new String[] {
-                    "prvi kvartal",
-                    "drugi kvartal",
-                    "tre\u0107i kvartal",
-                    "\u010detvrti kvartal",
-                }
-            },
+                sharedQuarterNames },
             { "roc.abbreviated.AmPmMarkers",
-                new String[] {
-                    "pre podne",
-                    "po podne",
-                }
-            },
+                sharedAmPmMarkers },
             { "roc.long.Eras",
-                new String[] {
-                    "Pre RK",
-                    "RK",
-                }
-            },
+                sharedShortEras },
             { "roc.narrow.Eras",
-                new String[] {
-                    "Pre RK",
-                    "RK",
-                }
-            },
+                sharedShortEras },
             { "roc.short.Eras",
-                new String[] {
-                    "Pre RK",
-                    "RK",
-                }
-            },
+                sharedShortEras },
         };
     }
 }

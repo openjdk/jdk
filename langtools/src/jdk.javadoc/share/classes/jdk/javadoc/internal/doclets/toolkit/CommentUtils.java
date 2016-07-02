@@ -66,9 +66,9 @@ public class CommentUtils {
 
     protected CommentUtils(Configuration configuration) {
         this.configuration = configuration;
-        trees = configuration.root.getDocTrees();
+        trees = configuration.docEnv.getDocTrees();
         treeFactory = trees.getDocTreeFactory();
-        elementUtils = configuration.root.getElementUtils();
+        elementUtils = configuration.docEnv.getElementUtils();
     }
 
     public List<? extends DocTree> makePropertyDescriptionTree(List<? extends DocTree> content) {

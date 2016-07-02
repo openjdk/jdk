@@ -161,7 +161,7 @@ public class ValueTaglet extends BaseInlineTaglet {
             memberName = sigValues[0];
         } else {
             //Case 3: @value in different class.
-            Elements elements = config.root.getElementUtils();
+            Elements elements = config.docEnv.getElementUtils();
             te = elements.getTypeElement(sigValues[0]);
             memberName = sigValues[1];
         }

@@ -91,7 +91,7 @@ public abstract class AbstractDoclet {
      */
     public boolean startDoclet(DocletEnvironment root) {
         configuration = configuration();
-        configuration.root = root;
+        configuration.docEnv = root;
         configuration.cmtUtils = new CommentUtils(configuration);
         configuration.utils = new Utils(configuration);
         utils = configuration.utils;

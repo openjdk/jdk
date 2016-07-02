@@ -60,7 +60,7 @@ public class JavadocClassFinder extends ClassFinder {
         });
     }
 
-    private DocEnv docenv;
+    private ToolEnvironment toolEnv;
     private EnumSet<JavaFileObject.Kind> all = EnumSet.of(JavaFileObject.Kind.CLASS,
                                                           JavaFileObject.Kind.SOURCE,
                                                           JavaFileObject.Kind.HTML);
@@ -72,7 +72,7 @@ public class JavadocClassFinder extends ClassFinder {
 
     public JavadocClassFinder(Context context) {
         super(context);
-        docenv = DocEnv.instance(context);
+        toolEnv = ToolEnvironment.instance(context);
         preferSource = true;
         trees = JavacTrees.instance(context);
     }
@@ -82,7 +82,7 @@ public class JavadocClassFinder extends ClassFinder {
      */
     @Override
     protected EnumSet<JavaFileObject.Kind> getPackageFileKinds() {
-        return docenv.docClasses ? noSource : all;
+        return toolEnv.docClasses ? noSource : all;
     }
 
     /**
@@ -91,7 +91,7 @@ public class JavadocClassFinder extends ClassFinder {
     @Override
     protected void extraFileActions(PackageSymbol pack, JavaFileObject fo) {
         if (fo.isNameCompatible("package", JavaFileObject.Kind.HTML)) {
-            docenv.pkgToJavaFOMap.put(pack, fo);
+            toolEnv.pkgToJavaFOMap.put(pack, fo);
             trees.putJavaFileObject(pack, fo);
         }
     }

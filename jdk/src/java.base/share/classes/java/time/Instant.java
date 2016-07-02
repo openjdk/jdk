@@ -561,7 +561,6 @@ public final class Instant
                 case NANO_OF_SECOND: return nanos;
                 case MICRO_OF_SECOND: return nanos / 1000;
                 case MILLI_OF_SECOND: return nanos / 1000_000;
-                case INSTANT_SECONDS: INSTANT_SECONDS.checkValidIntValue(seconds);
             }
             throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }

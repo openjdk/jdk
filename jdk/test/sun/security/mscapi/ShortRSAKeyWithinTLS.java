@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,10 @@
  */
 
 import java.io.*;
+import java.net.*;
+import java.util.*;
 import java.security.*;
+import java.security.cert.*;
 import javax.net.*;
 import javax.net.ssl.*;
 
@@ -71,22 +74,34 @@ public class ShortRSAKeyWithinTLS {
     void doServerSide() throws Exception {
 
         // load the key store
-        KeyStore ks = KeyStore.getInstance("Windows-MY", "SunMSCAPI");
-        ks.load(null, null);
+        serverKS = KeyStore.getInstance("Windows-MY", "SunMSCAPI");
+        serverKS.load(null, null);
         System.out.println("Loaded keystore: Windows-MY");
 
         // check key size
-        checkKeySize(ks);
+        checkKeySize(serverKS);
 
         // initialize the SSLContext
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, null);
+        kmf.init(serverKS, null);
 
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-        tmf.init(ks);
+        tmf.init(serverKS);
+        TrustManager[] tms = tmf.getTrustManagers();
+        if (tms == null || tms.length == 0) {
+            throw new Exception("unexpected trust manager implementation");
+        } else {
+            if (!(tms[0] instanceof X509TrustManager)) {
+                throw new Exception("unexpected trust manager" +
+                        " implementation: " +
+                        tms[0].getClass().getCanonicalName());
+            }
+        }
+        serverTM = new MyExtendedX509TM((X509TrustManager)tms[0]);
+        tms = new TrustManager[] {serverTM};
 
         SSLContext ctx = SSLContext.getInstance("TLS");
-        ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+        ctx.init(kmf.getKeyManagers(), tms, null);
 
         ServerSocketFactory ssf = ctx.getServerSocketFactory();
         SSLServerSocket sslServerSocket = (SSLServerSocket)
@@ -228,6 +243,8 @@ public class ShortRSAKeyWithinTLS {
 
     Thread clientThread = null;
     Thread serverThread = null;
+    KeyStore serverKS;
+    MyExtendedX509TM serverTM;
 
     /*
      * Primary constructor, used to drive remainder of the test.
@@ -348,5 +365,60 @@ public class ShortRSAKeyWithinTLS {
             }
         }
     }
+
+
+    class MyExtendedX509TM extends X509ExtendedTrustManager
+            implements X509TrustManager {
+
+        X509TrustManager tm;
+
+        MyExtendedX509TM(X509TrustManager tm) {
+            this.tm = tm;
+        }
+
+        public void checkClientTrusted(X509Certificate chain[], String authType)
+                throws CertificateException {
+            tm.checkClientTrusted(chain, authType);
+        }
+
+        public void checkServerTrusted(X509Certificate chain[], String authType)
+                throws CertificateException {
+            tm.checkServerTrusted(chain, authType);
+        }
+
+        public X509Certificate[] getAcceptedIssuers() {
+            List<X509Certificate> certs = new ArrayList<>();
+            try {
+                for (X509Certificate c : tm.getAcceptedIssuers()) {
+                    if (serverKS.getCertificateAlias(c).equals(keyAlias))
+                        certs.add(c);
+                }
+            } catch (KeyStoreException kse) {
+                throw new RuntimeException(kse);
+            }
+            return certs.toArray(new X509Certificate[certs.size()]);
+        }
+
+        public void checkClientTrusted(X509Certificate[] chain, String authType,
+                Socket socket) throws CertificateException {
+            tm.checkClientTrusted(chain, authType);
+        }
+
+        public void checkServerTrusted(X509Certificate[] chain, String authType,
+                Socket socket) throws CertificateException {
+            tm.checkServerTrusted(chain, authType);
+        }
+
+        public void checkClientTrusted(X509Certificate[] chain, String authType,
+            SSLEngine engine) throws CertificateException {
+            tm.checkClientTrusted(chain, authType);
+        }
+
+        public void checkServerTrusted(X509Certificate[] chain, String authType,
+            SSLEngine engine) throws CertificateException {
+            tm.checkServerTrusted(chain, authType);
+        }
+    }
+
 }
 

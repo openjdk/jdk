@@ -46,7 +46,7 @@ public class ImportSnippet extends PersistentSnippet {
     ImportSnippet(ImportKey key, String userSource, Wrap guts,
             String fullname, String name, SubKind subkind, String fullkey,
             boolean isStatic, boolean isStar) {
-        super(key, userSource, guts, name, subkind);
+        super(key, userSource, guts, name, subkind, null);
         this.fullname = fullname;
         this.fullkey = fullkey;
         this.isStatic = isStatic;

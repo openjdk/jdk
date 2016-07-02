@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,9 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 
 import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.REF_invokeStatic;
@@ -209,6 +207,29 @@ class LambdaForm {
                 btypes[i] = basicType(types.charAt(i));
             }
             return btypes;
+        }
+        static String basicTypeDesc(BasicType[] types) {
+            if (types == null) {
+                return null;
+            }
+            if (types.length == 0) {
+                return "";
+            }
+            StringBuilder sb = new StringBuilder();
+            for (BasicType bt : types) {
+                sb.append(bt.basicTypeChar());
+            }
+            return sb.toString();
+        }
+        static int[] basicTypeOrds(BasicType[] types) {
+            if (types == null) {
+                return null;
+            }
+            int[] a = new int[types.length];
+            for(int i = 0; i < types.length; ++i) {
+                a[i] = types[i].ordinal();
+            }
+            return a;
         }
 
         static char basicTypeChar(Class<?> type) {
@@ -563,6 +584,69 @@ class LambdaForm {
             ptypes[i] = basicType(sig.charAt(i)).btClass;
         Class<?> rtype = signatureReturn(sig).btClass;
         return MethodType.methodType(rtype, ptypes);
+    }
+
+    /**
+     * Check if i-th name is a call to MethodHandleImpl.selectAlternative.
+     */
+    boolean isSelectAlternative(int pos) {
+        // selectAlternative idiom:
+        //   t_{n}:L=MethodHandleImpl.selectAlternative(...)
+        //   t_{n+1}:?=MethodHandle.invokeBasic(t_{n}, ...)
+        if (pos+1 >= names.length)  return false;
+        Name name0 = names[pos];
+        Name name1 = names[pos+1];
+        return name0.refersTo(MethodHandleImpl.class, "selectAlternative") &&
+                name1.isInvokeBasic() &&
+                name1.lastUseIndex(name0) == 0 && // t_{n+1}:?=MethodHandle.invokeBasic(t_{n}, ...)
+                lastUseIndex(name0) == pos+1;     // t_{n} is local: used only in t_{n+1}
+    }
+
+    private boolean isMatchingIdiom(int pos, String idiomName, int nArgs) {
+        if (pos+2 >= names.length)  return false;
+        Name name0 = names[pos];
+        Name name1 = names[pos+1];
+        Name name2 = names[pos+2];
+        return name1.refersTo(MethodHandleImpl.class, idiomName) &&
+                name0.isInvokeBasic() &&
+                name2.isInvokeBasic() &&
+                name1.lastUseIndex(name0) == nArgs && // t_{n+1}:L=MethodHandleImpl.<invoker>(<args>, t_{n});
+                lastUseIndex(name0) == pos+1 &&       // t_{n} is local: used only in t_{n+1}
+                name2.lastUseIndex(name1) == 1 &&     // t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
+                lastUseIndex(name1) == pos+2;         // t_{n+1} is local: used only in t_{n+2}
+    }
+
+    /**
+     * Check if i-th name is a start of GuardWithCatch idiom.
+     */
+    boolean isGuardWithCatch(int pos) {
+        // GuardWithCatch idiom:
+        //   t_{n}:L=MethodHandle.invokeBasic(...)
+        //   t_{n+1}:L=MethodHandleImpl.guardWithCatch(*, *, *, t_{n});
+        //   t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
+        return isMatchingIdiom(pos, "guardWithCatch", 3);
+    }
+
+    /**
+     * Check if i-th name is a start of the tryFinally idiom.
+     */
+    boolean isTryFinally(int pos) {
+        // tryFinally idiom:
+        //   t_{n}:L=MethodHandle.invokeBasic(...)
+        //   t_{n+1}:L=MethodHandleImpl.tryFinally(*, *, t_{n})
+        //   t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
+        return isMatchingIdiom(pos, "tryFinally", 2);
+    }
+
+    /**
+     * Check if i-th name is a start of the loop idiom.
+     */
+    boolean isLoop(int pos) {
+        // loop idiom:
+        //   t_{n}:L=MethodHandle.invokeBasic(...)
+        //   t_{n+1}:L=MethodHandleImpl.loop(types, *, *, *, *, t_{n})
+        //   t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
+        return isMatchingIdiom(pos, "loop", 5);
     }
 
     /*
@@ -1419,6 +1503,39 @@ class LambdaForm {
         }
         boolean isConstantZero() {
             return !isParam() && arguments.length == 0 && function.isConstantZero();
+        }
+
+        boolean refersTo(Class<?> declaringClass, String methodName) {
+            return function != null &&
+                    function.member() != null && function.member().refersTo(declaringClass, methodName);
+        }
+
+        /**
+         * Check if MemberName is a call to MethodHandle.invokeBasic.
+         */
+        boolean isInvokeBasic() {
+            if (function == null)
+                return false;
+            if (arguments.length < 1)
+                return false;  // must have MH argument
+            MemberName member = function.member();
+            return member != null && member.refersTo(MethodHandle.class, "invokeBasic") &&
+                    !member.isPublic() && !member.isStatic();
+        }
+
+        /**
+         * Check if MemberName is a call to MethodHandle.linkToStatic, etc.
+         */
+        boolean isLinkerMethodInvoke() {
+            if (function == null)
+                return false;
+            if (arguments.length < 1)
+                return false;  // must have MH argument
+            MemberName member = function.member();
+            return member != null &&
+                    member.getDeclaringClass() == MethodHandle.class &&
+                    !member.isPublic() && member.isStatic() &&
+                    member.getName().startsWith("linkTo");
         }
 
         public String toString() {

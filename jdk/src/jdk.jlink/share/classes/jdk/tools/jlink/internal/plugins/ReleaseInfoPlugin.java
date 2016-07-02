@@ -26,7 +26,6 @@ package jdk.tools.jlink.internal.plugins;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,12 +36,12 @@ import jdk.tools.jlink.internal.Utils;
 import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.Plugin.Category;
 import jdk.tools.jlink.plugin.Plugin.State;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 
 /**
  * This plugin adds/deletes information for 'release' file.
  */
-public final class ReleaseInfoPlugin implements TransformerPlugin {
+public final class ReleaseInfoPlugin implements Plugin {
     // option name
     public static final String NAME = "release-info";
     public static final String KEYS = "keys";

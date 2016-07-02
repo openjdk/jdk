@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,11 +52,12 @@ import java.util.*;
  *
  * @author Benjamin Renaud
  * @deprecated This class is no longer used. Its functionality has been
- * replaced by {@code java.security.KeyStore}, the
- * {@code java.security.cert} package, and
- * {@code java.security.Principal}.
+ * replaced by {@link java.security.KeyStore}, the
+ * {@link java.security.cert} package, and
+ * {@link java.security.Principal}.
+ * This class is subject to removal in a future version of Java SE.
  */
-@Deprecated
+@Deprecated(since="1.2", forRemoval=true)
 public abstract class Identity implements Principal, Serializable {
 
     /** use serialVersionUID from JDK 1.1.x for interoperability */

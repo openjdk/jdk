@@ -27,14 +27,20 @@ import org.testng.annotations.Test;
 import java.io.UncheckedIOException;
 import java.net.ProtocolException;
 import java.nio.ByteBuffer;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static sun.net.httpclient.hpack.TestHelper.*;
 
+//
+// Tests whose names start with "testX" are the ones captured from real HPACK
+// use cases
+//
 public final class DecoderTest {
 
     //
@@ -135,6 +141,23 @@ public final class DecoderTest {
                 ":authority: www.example.com\n" +
                 "custom-key: custom-value");
 
+        // @formatter:on
+    }
+
+    @Test
+    public void example5AllSplits() {
+        // @formatter:off
+        testAllSplits(
+                "8286 8441 0f77 7777 2e65 7861 6d70 6c65\n" +
+                "2e63 6f6d",
+
+                "[  1] (s =  57) :authority: www.example.com\n" +
+                "      Table size:  57",
+
+                ":method: GET\n" +
+                ":scheme: http\n" +
+                ":path: /\n" +
+                ":authority: www.example.com");
         // @formatter:on
     }
 
@@ -331,6 +354,45 @@ public final class DecoderTest {
                 "accept-ranges: bytes\n" +
                 "content-length: 45\n" +
                 "content-type: text/html");
+        // @formatter:on
+    }
+
+    @Test
+    public void testX1() {
+        // Supplier of a decoder with a particular state
+        Supplier<Decoder> s = () -> {
+            Decoder d = new Decoder(4096);
+            // @formatter:off
+            test(d, "88 76 92 ca 54 a7 d7 f4 fa ec af ed 6d da 61 d7 bb 1e ad ff" +
+                    "df 61 97 c3 61 be 94 13 4a 65 b6 a5 04 00 b8 a0 5a b8 db 77" +
+                    "1b 71 4c 5a 37 ff 0f 0d 84 08 00 00 03",
+
+                    "[  1] (s =  65) date: Fri, 24 Jun 2016 14:55:56 GMT\n" +
+                    "[  2] (s =  59) server: Jetty(9.3.z-SNAPSHOT)\n" +
+                    "      Table size: 124",
+
+                    ":status: 200\n" +
+                    "server: Jetty(9.3.z-SNAPSHOT)\n" +
+                    "date: Fri, 24 Jun 2016 14:55:56 GMT\n" +
+                    "content-length: 100000"
+            );
+            // @formatter:on
+            return d;
+        };
+        // For all splits of the following data fed to the supplied decoder we
+        // must get what's expected
+        // @formatter:off
+        testAllSplits(s,
+                "88 bf be 0f 0d 84 08 00 00 03",
+
+                "[  1] (s =  65) date: Fri, 24 Jun 2016 14:55:56 GMT\n" +
+                "[  2] (s =  59) server: Jetty(9.3.z-SNAPSHOT)\n" +
+                "      Table size: 124",
+
+                ":status: 200\n" +
+                "server: Jetty(9.3.z-SNAPSHOT)\n" +
+                "date: Fri, 24 Jun 2016 14:55:56 GMT\n" +
+                "content-length: 100000");
         // @formatter:on
     }
 
@@ -565,6 +627,38 @@ public final class DecoderTest {
     private static void test(String hexdump,
                              String headerTable, String headerList) {
         test(new Decoder(4096), hexdump, headerTable, headerList);
+    }
+
+    private static void testAllSplits(String hexdump,
+                                      String expectedHeaderTable,
+                                      String expectedHeaderList) {
+        testAllSplits(() -> new Decoder(256), hexdump, expectedHeaderTable, expectedHeaderList);
+    }
+
+    private static void testAllSplits(Supplier<Decoder> supplier, String hexdump,
+                                      String expectedHeaderTable, String expectedHeaderList) {
+        ByteBuffer source = SpecHelper.toBytes(hexdump);
+
+        BuffersTestingKit.forEachSplit(source, iterable -> {
+            List<String> actual = new LinkedList<>();
+            Iterator<? extends ByteBuffer> i = iterable.iterator();
+            if (!i.hasNext()) {
+                return;
+            }
+            Decoder d = supplier.get();
+            do {
+                ByteBuffer n = i.next();
+                d.decode(n, !i.hasNext(), (name, value) -> {
+                    if (value == null) {
+                        actual.add(name.toString());
+                    } else {
+                        actual.add(name + ": " + value);
+                    }
+                });
+            } while (i.hasNext());
+            assertEquals(d.getTable().getStateString(), expectedHeaderTable);
+            assertEquals(actual.stream().collect(Collectors.joining("\n")), expectedHeaderList);
+        });
     }
 
     //

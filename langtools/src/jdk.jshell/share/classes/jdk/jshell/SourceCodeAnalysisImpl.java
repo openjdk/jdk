@@ -413,6 +413,55 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         return result;
     }
 
+    @Override
+    public SnippetWrapper wrapper(Snippet snippet) {
+        return new SnippetWrapper() {
+            @Override
+            public String source() {
+                return snippet.source();
+            }
+
+            @Override
+            public String wrapped() {
+                return snippet.outerWrap().wrapped();
+            }
+
+            @Override
+            public String fullClassName() {
+                return snippet.classFullName();
+            }
+
+            @Override
+            public Snippet.Kind kind() {
+                return snippet.kind() == Snippet.Kind.ERRONEOUS
+                        ? ((ErroneousSnippet) snippet).probableKind()
+                        : snippet.kind();
+            }
+
+            @Override
+            public int sourceToWrappedPosition(int pos) {
+                return snippet.outerWrap().snippetIndexToWrapIndex(pos);
+            }
+
+            @Override
+            public int wrappedToSourcePosition(int pos) {
+                return snippet.outerWrap().wrapIndexToSnippetIndex(pos);
+            }
+        };
+    }
+
+    @Override
+    public List<SnippetWrapper> wrappers(String input) {
+        return proc.eval.sourceToSnippetsWithWrappers(input).stream()
+                .map(sn -> wrapper(sn))
+                .collect(toList());
+    }
+
+    @Override
+    public Collection<Snippet> dependents(Snippet snippet) {
+        return proc.maps.getDependents(snippet);
+    }
+
     private boolean isStaticContext(AnalyzeTask at, TreePath path) {
         switch (path.getLeaf().getKind()) {
             case ARRAY_TYPE:
