@@ -438,6 +438,7 @@ public class Enter extends JCTree.Visitor {
         c.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, c, tree);
         c.sourcefile = env.toplevel.sourcefile;
         c.members_field = WriteableScope.create(c);
+        c.clearAnnotationMetadata();
 
         ClassType ct = (ClassType)c.type;
         if (owner.kind != PCK && (c.flags_field & STATIC) == 0) {
@@ -457,6 +458,7 @@ public class Enter extends JCTree.Visitor {
 
         // Enter type parameters.
         ct.typarams_field = classEnter(tree.typarams, localEnv);
+        ct.allparams_field = null;
 
         // install further completer for this type.
         c.completer = typeEnter;

@@ -1506,7 +1506,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             }
             public void visitClassDef(JCClassDecl node) {
                 if (node.sym != null) {
-                    node.sym.reset();
                     node.sym.completer = new ImplicitCompleter(topLevel);
                 }
                 node.sym = null;
