@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,42 +69,21 @@ package sun.text.resources.ext;
 
 import sun.util.resources.OpenListResourceBundle;
 
-public class JavaTimeSupplementary_en_IN extends OpenListResourceBundle {
+public class JavaTimeSupplementary_sr_BA extends OpenListResourceBundle {
     @Override
     protected final Object[][] getContents() {
-        final String[] sharedDatePatterns = {
-            "EEEE d MMMM y GGGG",
-            "GGGG y MMMM d",
-            "dd-MMM-y GGGG",
-            "G y-MM-dd",
-        };
-
-        final String[] sharedJavaTimeDatePatterns = {
-            "EEEE d MMMM y G",
-            "G y MMMM d",
-            "dd-MMM-y G",
-            "GGGGG y-MM-dd",
+        final String[] sharedTimePatterns = {
+            "HH:mm:ss zzzz",
+            "HH:mm:ss z",
+            "HH:mm:ss",
+            "HH:mm",
         };
 
         return new Object[][] {
-            { "islamic.DatePatterns",
-                sharedDatePatterns },
-            { "java.time.buddhist.DatePatterns",
-                sharedJavaTimeDatePatterns },
-            { "java.time.islamic.DatePatterns",
-                sharedJavaTimeDatePatterns },
-            { "java.time.japanese.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "MMMM d, y G",
-                    "dd-MMM-y G",
-                    "M/d/y GGGGG",
-                }
-            },
-            { "java.time.roc.DatePatterns",
-                sharedJavaTimeDatePatterns },
-            { "roc.DatePatterns",
-                sharedDatePatterns },
+            { "islamic.TimePatterns",
+                sharedTimePatterns },
+            { "roc.TimePatterns",
+                sharedTimePatterns },
         };
     }
 }
