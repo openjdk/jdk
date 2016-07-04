@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,42 +69,55 @@ package sun.text.resources.ext;
 
 import sun.util.resources.OpenListResourceBundle;
 
-public class JavaTimeSupplementary_en_IN extends OpenListResourceBundle {
+public class JavaTimeSupplementary_zh_HK extends OpenListResourceBundle {
     @Override
     protected final Object[][] getContents() {
-        final String[] sharedDatePatterns = {
-            "EEEE d MMMM y GGGG",
-            "GGGG y MMMM d",
-            "dd-MMM-y GGGG",
-            "G y-MM-dd",
+        final String[] sharedQuarterAbbreviations = {
+            "Q1",
+            "Q2",
+            "Q3",
+            "Q4",
         };
 
         final String[] sharedJavaTimeDatePatterns = {
-            "EEEE d MMMM y G",
-            "G y MMMM d",
-            "dd-MMM-y G",
-            "GGGGG y-MM-dd",
+            "Gy\u5e74M\u6708d\u65e5EEEE",
+            "Gy\u5e74M\u6708d\u65e5",
+            "Gy\u5e74M\u6708d\u65e5",
+            "Gy/M/d",
+        };
+
+        final String[] sharedJavaTimeLongEras = {
+            "\u516c\u5143\u524d",
+            "\u516c\u5143",
         };
 
         return new Object[][] {
-            { "islamic.DatePatterns",
-                sharedDatePatterns },
-            { "java.time.buddhist.DatePatterns",
-                sharedJavaTimeDatePatterns },
-            { "java.time.islamic.DatePatterns",
-                sharedJavaTimeDatePatterns },
+            { "QuarterAbbreviations",
+                sharedQuarterAbbreviations },
+            { "field.week",
+                "\u661f\u671f" },
+            { "field.weekday",
+                "\u661f\u671f\u5e7e" },
+            { "islamic.QuarterAbbreviations",
+                sharedQuarterAbbreviations },
             { "java.time.japanese.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "MMMM d, y G",
-                    "dd-MMM-y G",
-                    "M/d/y GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
+            { "java.time.long.Eras",
+                sharedJavaTimeLongEras },
             { "java.time.roc.DatePatterns",
                 sharedJavaTimeDatePatterns },
+            { "java.time.short.Eras",
+                sharedJavaTimeLongEras },
             { "roc.DatePatterns",
-                sharedDatePatterns },
+                new String[] {
+                    "GGGGy\u5e74M\u6708d\u65e5EEEE",
+                    "GGGGy\u5e74M\u6708d\u65e5",
+                    "GGGGy\u5e74M\u6708d\u65e5",
+                    "GGGGy/M/d",
+                }
+            },
+            { "roc.QuarterAbbreviations",
+                sharedQuarterAbbreviations },
         };
     }
 }
