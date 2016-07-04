@@ -222,7 +222,6 @@ class LibraryCallKit : public GraphKit {
   Node* round_double_node(Node* n);
   bool runtime_math(const TypeFunc* call_type, address funcAddr, const char* funcName);
   bool inline_math_native(vmIntrinsics::ID id);
-  bool inline_trig(vmIntrinsics::ID id);
   bool inline_math(vmIntrinsics::ID id);
   template <typename OverflowOp>
   bool inline_math_overflow(Node* arg1, Node* arg2);
@@ -1688,94 +1687,6 @@ bool LibraryCallKit::inline_math(vmIntrinsics::ID id) {
   default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));
-  return true;
-}
-
-//------------------------------inline_trig----------------------------------
-// Inline sin/cos/tan instructions, if possible.  If rounding is required, do
-// argument reduction which will turn into a fast/slow diamond.
-bool LibraryCallKit::inline_trig(vmIntrinsics::ID id) {
-  Node* arg = round_double_node(argument(0));
-  Node* n = NULL;
-
-  n = _gvn.transform(n);
-
-  // Rounding required?  Check for argument reduction!
-  if (Matcher::strict_fp_requires_explicit_rounding) {
-    static const double     pi_4 =  0.7853981633974483;
-    static const double neg_pi_4 = -0.7853981633974483;
-    // pi/2 in 80-bit extended precision
-    // static const unsigned char pi_2_bits_x[] = {0x35,0xc2,0x68,0x21,0xa2,0xda,0x0f,0xc9,0xff,0x3f,0x00,0x00,0x00,0x00,0x00,0x00};
-    // -pi/2 in 80-bit extended precision
-    // static const unsigned char neg_pi_2_bits_x[] = {0x35,0xc2,0x68,0x21,0xa2,0xda,0x0f,0xc9,0xff,0xbf,0x00,0x00,0x00,0x00,0x00,0x00};
-    // Cutoff value for using this argument reduction technique
-    //static const double    pi_2_minus_epsilon =  1.564660403643354;
-    //static const double neg_pi_2_plus_epsilon = -1.564660403643354;
-
-    // Pseudocode for sin:
-    // if (x <= Math.PI / 4.0) {
-    //   if (x >= -Math.PI / 4.0) return  fsin(x);
-    //   if (x >= -Math.PI / 2.0) return -fcos(x + Math.PI / 2.0);
-    // } else {
-    //   if (x <=  Math.PI / 2.0) return  fcos(x - Math.PI / 2.0);
-    // }
-    // return StrictMath.sin(x);
-
-    // Pseudocode for cos:
-    // if (x <= Math.PI / 4.0) {
-    //   if (x >= -Math.PI / 4.0) return  fcos(x);
-    //   if (x >= -Math.PI / 2.0) return  fsin(x + Math.PI / 2.0);
-    // } else {
-    //   if (x <=  Math.PI / 2.0) return -fsin(x - Math.PI / 2.0);
-    // }
-    // return StrictMath.cos(x);
-
-    // Actually, sticking in an 80-bit Intel value into C2 will be tough; it
-    // requires a special machine instruction to load it.  Instead we'll try
-    // the 'easy' case.  If we really need the extra range +/- PI/2 we'll
-    // probably do the math inside the SIN encoding.
-
-    // Make the merge point
-    RegionNode* r = new RegionNode(3);
-    Node* phi = new PhiNode(r, Type::DOUBLE);
-
-    // Flatten arg so we need only 1 test
-    Node *abs = _gvn.transform(new AbsDNode(arg));
-    // Node for PI/4 constant
-    Node *pi4 = makecon(TypeD::make(pi_4));
-    // Check PI/4 : abs(arg)
-    Node *cmp = _gvn.transform(new CmpDNode(pi4,abs));
-    // Check: If PI/4 < abs(arg) then go slow
-    Node *bol = _gvn.transform(new BoolNode( cmp, BoolTest::lt ));
-    // Branch either way
-    IfNode *iff = create_and_xform_if(control(),bol, PROB_STATIC_FREQUENT, COUNT_UNKNOWN);
-    set_control(opt_iff(r,iff));
-
-    // Set fast path result
-    phi->init_req(2, n);
-
-    // Slow path - non-blocking leaf call
-    Node* call = NULL;
-    switch (id) {
-    case vmIntrinsics::_dtan:
-      call = make_runtime_call(RC_LEAF, OptoRuntime::Math_D_D_Type(),
-                               CAST_FROM_FN_PTR(address, SharedRuntime::dtan),
-                               "Tan", NULL, arg, top());
-      break;
-    }
-    assert(control()->in(0) == call, "");
-    Node* slow_result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-    r->init_req(1, control());
-    phi->init_req(1, slow_result);
-
-    // Post-merge
-    set_control(_gvn.transform(r));
-    record_for_igvn(r);
-    n = _gvn.transform(phi);
-
-    C->set_has_split_ifs(true); // Has chance for split-if optimization
-  }
-  set_result(n);
   return true;
 }
 
