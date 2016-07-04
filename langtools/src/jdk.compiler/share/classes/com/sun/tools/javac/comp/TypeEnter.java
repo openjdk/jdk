@@ -241,7 +241,14 @@ public class TypeEnter implements Completer {
         public final List<Env<AttrContext>> completeEnvs(List<Env<AttrContext>> envs) {
             boolean firstToComplete = queue.isEmpty();
 
-            doCompleteEnvs(envs);
+            Phase prevTopLevelPhase = topLevelPhase;
+
+            try {
+                topLevelPhase = this;
+                doCompleteEnvs(envs);
+            } finally {
+                topLevelPhase = prevTopLevelPhase;
+            }
 
             if (firstToComplete) {
                 List<Env<AttrContext>> out = queue.toList();
@@ -278,6 +285,7 @@ public class TypeEnter implements Completer {
     }
 
     private final ImportsPhase completeClass = new ImportsPhase();
+    private Phase topLevelPhase;
 
     /**Analyze import clauses.
      */
@@ -773,6 +781,15 @@ public class TypeEnter implements Completer {
 
         @Override
         public void complete(Symbol sym) throws CompletionFailure {
+            Assert.check((topLevelPhase instanceof ImportsPhase) ||
+                         (topLevelPhase == this));
+
+            if (topLevelPhase != this) {
+                //only do the processing based on dependencies in the HierarchyPhase:
+                sym.completer = this;
+                return ;
+            }
+
             Env<AttrContext> env = typeEnvs.get((ClassSymbol) sym);
 
             super.doCompleteEnvs(List.of(env));
