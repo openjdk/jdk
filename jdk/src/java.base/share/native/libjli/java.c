@@ -435,7 +435,8 @@ JavaMain(void * _args)
     ret = 1;
 
     /*
-     * Get the application's main class.
+     * Get the application's main class. It also checks if the main
+     * method exists.
      *
      * See bugid 5030265.  The Main-Class name has already been parsed
      * from the manifest, but not parsed properly for UTF-8 support.
@@ -467,6 +468,16 @@ JavaMain(void * _args)
      */
     appClass = GetApplicationClass(env);
     NULL_CHECK_RETURN_VALUE(appClass, -1);
+
+    /* Build platform specific argument array */
+    mainArgs = CreateApplicationArgs(env, argv, argc);
+    CHECK_EXCEPTION_NULL_LEAVE(mainArgs);
+
+    if (dryRun) {
+        ret = 0;
+        LEAVE();
+    }
+
     /*
      * PostJVMInit uses the class name as the application name for GUI purposes,
      * for example, on OSX this sets the application name in the menu bar for
@@ -476,6 +487,7 @@ JavaMain(void * _args)
      */
     PostJVMInit(env, appClass, vm);
     CHECK_EXCEPTION_LEAVE(1);
+
     /*
      * The LoadMainClass not only loads the main class, it will also ensure
      * that the main method's signature is correct, therefore further checking
@@ -486,22 +498,15 @@ JavaMain(void * _args)
                                        "([Ljava/lang/String;)V");
     CHECK_EXCEPTION_NULL_LEAVE(mainID);
 
-    /* Build platform specific argument array */
-    mainArgs = CreateApplicationArgs(env, argv, argc);
-    CHECK_EXCEPTION_NULL_LEAVE(mainArgs);
+    /* Invoke main method. */
+    (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
 
-    if (dryRun) {
-        ret = 0;
-    } else {
-        /* Invoke main method. */
-        (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
+    /*
+     * The launcher's exit code (in the absence of calls to
+     * System.exit) will be non-zero if main threw an exception.
+     */
+    ret = (*env)->ExceptionOccurred(env) == NULL ? 0 : 1;
 
-        /*
-         * The launcher's exit code (in the absence of calls to
-         * System.exit) will be non-zero if main threw an exception.
-         */
-        ret = (*env)->ExceptionOccurred(env) == NULL ? 0 : 1;
-    }
     LEAVE();
 }
 
