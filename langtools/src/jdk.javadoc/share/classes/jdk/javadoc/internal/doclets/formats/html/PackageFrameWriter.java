@@ -86,7 +86,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
         this.packageElement = packageElement;
         if (utils.getSpecifiedPackages().isEmpty()) {
             documentedClasses = new TreeSet<>(utils.makeGeneralPurposeComparator());
-            documentedClasses.addAll(configuration.root.getIncludedClasses());
+            documentedClasses.addAll(configuration.docEnv.getIncludedClasses());
         }
     }
 

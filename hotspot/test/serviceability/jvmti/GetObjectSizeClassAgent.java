@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,28 +20,32 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+import java.lang.instrument.*;
 
-/* @test
- * @bug 8022853
- * @library /testlibrary
- * @modules java.base/jdk.internal.misc
- * @build jdk.test.lib.*
- * @run main GetKlassPointerGetJavaMirror
- */
+public class GetObjectSizeClassAgent {
 
-import static jdk.test.lib.Asserts.*;
+    static Instrumentation instrumentation;
 
-import jdk.test.lib.*;
-import jdk.internal.misc.Unsafe;
+    public static void premain(String agentArgs, Instrumentation instrumentation) {
+        GetObjectSizeClassAgent.instrumentation = instrumentation;
+    }
 
-public class GetKlassPointerGetJavaMirror {
+    public static void main(String[] args) throws Exception {
+        long sizeA = instrumentation.getObjectSize(A.class);
+        long sizeB = instrumentation.getObjectSize(B.class);
 
-    public static void main(String args[]) throws Exception {
-        Unsafe unsafe = Utils.getUnsafe();
-        Object o = new GetKlassPointerGetJavaMirror();
-        final long metaspaceKlass = unsafe.getKlassPointer(o);
-        Class<?> c = unsafe.getJavaMirror(metaspaceKlass);
-        assertEquals(o.getClass(), c);
+        if (sizeA != sizeB) {
+            throw new RuntimeException("java.lang.Class sizes disagree: " + sizeA + " vs. " + sizeB);
+        }
+
+        System.out.println("GetObjectSizeClass passed");
+    }
+
+    static class A {
+    }
+
+    static class B {
+        void m() {}
     }
 
 }

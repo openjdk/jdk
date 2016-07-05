@@ -42,8 +42,9 @@ public class GcProvokerImpl implements GcProvoker {
         // uses fixed small objects to avoid Humongous objects allocation in G1
         int memoryChunk = 2048;
         List<Object> list = new ArrayList<>();
-        float used = 0;
-        while (used < targetUsage * maxMemory) {
+        long used = 0;
+        long target = (long) (maxMemory * targetUsage);
+        while (used < target) {
             try {
                 list.add(new byte[memoryChunk]);
                 used += memoryChunk;

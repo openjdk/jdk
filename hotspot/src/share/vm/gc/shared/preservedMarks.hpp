@@ -30,7 +30,7 @@
 #include "oops/oop.hpp"
 #include "utilities/stack.hpp"
 
-class GCTaskManager;
+class PreservedMarksSet;
 class WorkGang;
 
 class PreservedMarks VALUE_OBJ_CLASS_SPEC {
@@ -61,6 +61,7 @@ public:
   // reclaim the memory taken up by the stack segments.
   void restore();
 
+  void restore_and_increment(volatile size_t* const _total_size_addr);
   inline static void init_forwarded_mark(oop obj);
 
   // Assert the stack is empty and has no cached segments.
@@ -73,6 +74,24 @@ public:
 class RemoveForwardedPointerClosure: public ObjectClosure {
 public:
   virtual void do_object(oop obj);
+};
+
+class RestorePreservedMarksTaskExecutor {
+public:
+  void virtual restore(PreservedMarksSet* preserved_marks_set,
+                       volatile size_t* total_size_addr) = 0;
+};
+
+class SharedRestorePreservedMarksTaskExecutor : public RestorePreservedMarksTaskExecutor {
+private:
+    WorkGang* _workers;
+
+public:
+    SharedRestorePreservedMarksTaskExecutor(WorkGang* workers) : _workers(workers) { }
+
+    void restore(PreservedMarksSet* preserved_marks_set,
+                 volatile size_t* total_size_addr);
+
 };
 
 class PreservedMarksSet : public CHeapObj<mtGC> {
@@ -91,13 +110,6 @@ private:
   // or == NULL if they have not.
   Padded<PreservedMarks>* _stacks;
 
-  // Internal version of restore() that uses a WorkGang for parallelism.
-  void restore_internal(WorkGang* workers, volatile size_t* total_size_addr);
-
-  // Internal version of restore() that uses a GCTaskManager for parallelism.
-  void restore_internal(GCTaskManager* gc_task_manager,
-                        volatile size_t* total_size_addr);
-
 public:
   uint num() const { return _num; }
 
@@ -111,14 +123,11 @@ public:
   // Allocate stack array.
   void init(uint num);
 
-  // Itrerate over all stacks, restore all presered marks, and reclaim
-  // the memory taken up by the stack segments. If the executor is
-  // NULL, restoration will be done serially. If the executor is not
-  // NULL, restoration could be done in parallel (when it makes
-  // sense). Supported executors: WorkGang (Serial, CMS, G1),
-  // GCTaskManager (PS).
-  template <class E>
-  inline void restore(E* executor);
+  // Iterate over all stacks, restore all preserved marks, and reclaim
+  // the memory taken up by the stack segments.
+  // Supported executors: SharedRestorePreservedMarksTaskExecutor (Serial, CMS, G1),
+  // PSRestorePreservedMarksTaskExecutor (PS).
+  inline void restore(RestorePreservedMarksTaskExecutor* executor);
 
   // Reclaim stack array.
   void reclaim();
