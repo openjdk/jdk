@@ -349,7 +349,7 @@ const charTable[] = {
     {0, 0, 0}
 };
 
-unichar NsCharToJavaChar(unichar nsChar, NSUInteger modifiers)
+unichar NsCharToJavaChar(unichar nsChar, NSUInteger modifiers, BOOL spaceKeyTyped)
 {
     const struct _char *cur;
     // Mask off just the keyboard modifiers from the event modifier mask.
@@ -382,6 +382,11 @@ unichar NsCharToJavaChar(unichar nsChar, NSUInteger modifiers)
         return java_awt_event_KeyEvent_CHAR_UNDEFINED;
     }
 
+    // nsChar receives value 0 when SPACE key is typed.
+    if (nsChar == 0 && spaceKeyTyped == YES) {
+        return java_awt_event_KeyEvent_VK_SPACE;
+    }
+	
     // otherwise return character unchanged
     return nsChar;
 }
@@ -757,13 +762,13 @@ JNF_COCOA_EXIT(env);
  */
 JNIEXPORT jint JNICALL
 Java_sun_lwawt_macosx_NSEvent_nsToJavaChar
-(JNIEnv *env, jclass cls, jchar nsChar, jint modifierFlags)
+(JNIEnv *env, jclass cls, jchar nsChar, jint modifierFlags, jboolean spaceKeyTyped)
 {
     jchar javaChar = 0;
 
 JNF_COCOA_ENTER(env);
 
-    javaChar = NsCharToJavaChar(nsChar, modifierFlags);
+    javaChar = NsCharToJavaChar(nsChar, modifierFlags, spaceKeyTyped);
 
 JNF_COCOA_EXIT(env);
 
