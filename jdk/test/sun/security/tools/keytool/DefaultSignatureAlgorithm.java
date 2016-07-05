@@ -26,6 +26,17 @@
  * @bug 8138766
  * @summary New default -sigalg for keytool
  * @modules java.base/sun.security.tools.keytool
+ * @run main/othervm DefaultSignatureAlgorithm RSA 1024 SHA256withRSA
+ * @run main/othervm DefaultSignatureAlgorithm RSA 3072 SHA256withRSA
+ * @run main/othervm DefaultSignatureAlgorithm RSA 3073 SHA384withRSA
+ * @run main/othervm DefaultSignatureAlgorithm DSA 1024 SHA256withDSA
+ * @run main/othervm/timeout=700 DefaultSignatureAlgorithm DSA 3072
+ *      SHA256withDSA
+ * @run main/othervm DefaultSignatureAlgorithm EC 192 SHA256withECDSA
+ * @run main/othervm DefaultSignatureAlgorithm EC 384 SHA384withECDSA
+ * @run main/othervm DefaultSignatureAlgorithm EC 571 SHA512withECDSA
+ * @run main/othervm DefaultSignatureAlgorithm EC 571 SHA256withECDSA
+ *      SHA256withECDSA
  */
 
 import sun.security.tools.keytool.Main;
@@ -36,29 +47,17 @@ import java.security.cert.X509Certificate;
 
 public class DefaultSignatureAlgorithm {
 
-    private static int counter = 0;
-
     public static void main(String[] args) throws Exception {
-
-        // Calculating large RSA keys are too slow.
-        run("RSA", 1024, null, "SHA256withRSA");
-        run("RSA", 3072, null, "SHA256withRSA");
-        run("RSA", 3073, null, "SHA384withRSA");
-
-        run("DSA", 1024, null, "SHA256withDSA");
-        run("DSA", 3072, null, "SHA256withDSA");
-
-        run("EC", 192, null, "SHA256withECDSA");
-        run("EC", 384, null, "SHA384withECDSA");
-        run("EC", 571, null, "SHA512withECDSA");
-
-        // If you specify one, it will be used.
-        run("EC", 571, "SHA256withECDSA", "SHA256withECDSA");
+        if(args == null || args.length < 3) {
+            throw new RuntimeException("Invalid arguments provided.");
+        }
+        String sigAlg = (args.length == 4) ? args[3] : null;
+        run(args[0], Integer.valueOf(args[1]), args[2], sigAlg);
     }
 
     private static void run(String keyAlg, int keySize,
-                    String sigAlg, String expectedSigAlg) throws Exception {
-        String alias = keyAlg + keySize + (counter++);
+                    String expectedSigAlg, String sigAlg) throws Exception {
+        String alias = keyAlg + keySize + System.currentTimeMillis();
         String cmd = "-keystore ks -storepass changeit" +
                 " -keypass changeit -alias " + alias +
                 " -keyalg " + keyAlg + " -keysize " + keySize +
