@@ -844,9 +844,10 @@ public abstract class JComponent extends Container implements Serializable,
                     Rectangle cr;
 
                     cr = comp.getBounds(tmpRect);
-
-                    boolean hitClip = g.hitClip(cr.x, cr.y, cr.width,
-                                                cr.height);
+                    Shape clip = g.getClip();
+                    boolean hitClip = (clip != null)
+                            ? clip.intersects(cr.x, cr.y, cr.width, cr.height)
+                            : true;
 
                     if (hitClip) {
                         if (checkSiblings && i > 0) {
