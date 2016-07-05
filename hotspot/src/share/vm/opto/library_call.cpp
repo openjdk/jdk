@@ -1403,18 +1403,20 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
          (!compress && src_elem == T_BYTE && (dst_elem == T_BYTE || dst_elem == T_CHAR)),
          "Unsupported array types for inline_string_copy");
 
-  // Range checks
-  generate_string_range_check(src, src_offset, length, compress && src_elem == T_BYTE);
-  generate_string_range_check(dst, dst_offset, length, !compress && dst_elem == T_BYTE);
-  if (stopped()) {
-    return true;
+  // Convert char[] offsets to byte[] offsets
+  bool convert_src = (compress && src_elem == T_BYTE);
+  bool convert_dst = (!compress && dst_elem == T_BYTE);
+  if (convert_src) {
+    src_offset = _gvn.transform(new LShiftINode(src_offset, intcon(1)));
+  } else if (convert_dst) {
+    dst_offset = _gvn.transform(new LShiftINode(dst_offset, intcon(1)));
   }
 
-  // Convert char[] offsets to byte[] offsets
-  if (compress && src_elem == T_BYTE) {
-    src_offset = _gvn.transform(new LShiftINode(src_offset, intcon(1)));
-  } else if (!compress && dst_elem == T_BYTE) {
-    dst_offset = _gvn.transform(new LShiftINode(dst_offset, intcon(1)));
+  // Range checks
+  generate_string_range_check(src, src_offset, length, convert_src);
+  generate_string_range_check(dst, dst_offset, length, convert_dst);
+  if (stopped()) {
+    return true;
   }
 
   Node* src_start = array_element_address(src, src_offset, src_elem);
