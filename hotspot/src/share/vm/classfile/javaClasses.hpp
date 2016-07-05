@@ -275,7 +275,6 @@ class java_lang_Class : AllStatic {
   static int static_oop_field_count(oop java_class);
   static void set_static_oop_field_count(oop java_class, int size);
 
-
   static GrowableArray<Klass*>* fixup_mirror_list() {
     return _fixup_mirror_list;
   }
