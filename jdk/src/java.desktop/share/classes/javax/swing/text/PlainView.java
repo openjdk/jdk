@@ -27,6 +27,7 @@ package javax.swing.text;
 import java.util.Vector;
 import java.util.Properties;
 import java.awt.*;
+import java.util.Objects;
 import javax.swing.event.*;
 
 /**
@@ -281,7 +282,8 @@ public class PlainView extends View implements TabExpander {
     protected void updateMetrics() {
         Component host = getContainer();
         Font f = host.getFont();
-        if (font != f) {
+        FontMetrics fm = (font == null) ? null : host.getFontMetrics(font);
+        if (font != f || !Objects.equals(metrics, fm)) {
             // The font changed, we need to recalculate the
             // longest line.
             calculateLongestLine();
