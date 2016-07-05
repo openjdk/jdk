@@ -25,6 +25,7 @@
 
 package jdk.jshell;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -90,6 +91,51 @@ public abstract class SourceCodeAnalysis {
      * @return the known qualified names
      */
     public abstract QualifiedNames listQualifiedNames(String code, int cursor);
+
+    /**
+     * Returns the wrapper information for the {@code Snippet}. The wrapper changes as
+     * the environment changes, so calls to this method at different times may
+     * yield different results.
+     *
+     * @param snippet the {@code Snippet} from which to retrieve the wrapper
+     * @return information on the wrapper
+     */
+    public abstract SnippetWrapper wrapper(Snippet snippet);
+
+    /**
+     * Returns the wrapper information for the snippet within the
+     * input source string.
+     * <p>
+     * Wrapper information for malformed and incomplete
+     * snippets also generate wrappers. The list is in snippet encounter
+     * order. The wrapper changes as the environment changes, so calls to this
+     * method at different times may yield different results.
+     * <p>
+     * The input should be
+     * exactly one complete snippet of source code, that is, one expression,
+     * statement, variable declaration, method declaration, class declaration,
+     * or import.
+     * To break arbitrary input into individual complete snippets, use
+     * {@link SourceCodeAnalysis#analyzeCompletion(String)}.
+     * <p>
+     * The wrapper may not match that returned by
+     * {@link SourceCodeAnalysis#wrapper(Snippet) wrapper(Snippet)},
+     * were the source converted to a {@code Snippet}.
+     *
+     * @param input the source input from which to generate wrappers
+     * @return a list of wrapper information
+     */
+    public abstract List<SnippetWrapper> wrappers(String input);
+
+    /**
+     * Returns a collection of {@code Snippet}s which might need updating if the
+     * given {@code Snippet} is updated. The returned collection is designed to
+     * be inclusive and may include many false positives.
+     *
+     * @param snippet the {@code Snippet} whose dependents are requested
+     * @return the collection of dependents
+     */
+    public abstract Collection<Snippet> dependents(Snippet snippet);
 
     /**
      * Internal only constructor
@@ -302,7 +348,7 @@ public abstract class SourceCodeAnalysis {
         }
 
         /**
-         * Indicates whether the result is based on up to date data. The
+         * Indicates whether the result is based on up-to-date data. The
          * {@link SourceCodeAnalysis#listQualifiedNames(java.lang.String, int) listQualifiedNames}
          * method may return before the classpath is fully inspected, in which case this method will
          * return {@code false}. If the result is based on a fully inspected classpath, this method
@@ -326,5 +372,84 @@ public abstract class SourceCodeAnalysis {
             return resolvable;
         }
 
+    }
+
+    /**
+     * The wrapping of a snippet of Java source into valid top-level Java
+     * source. The wrapping will always either be an import or include a
+     * synthetic class at the top-level. If a synthetic class is generated, it
+     * will be proceeded by the package and import declarations, and may contain
+     * synthetic class members.
+     * <p>
+     * This interface, in addition to the mapped form, provides the context and
+     * position mapping information.
+     */
+    public interface SnippetWrapper {
+
+        /**
+         * Returns the input that is wrapped. For
+         * {@link SourceCodeAnalysis#wrappers(java.lang.String) wrappers(String)},
+         * this is the source of the snippet within the input. A variable
+         * declaration of {@code N} variables will map to {@code N} wrappers
+         * with the source separated.
+         * <p>
+         * For {@link SourceCodeAnalysis#wrapper(Snippet) wrapper(Snippet)},
+         * this is {@link Snippet#source() }.
+         *
+         * @return the input source corresponding to the wrapper.
+         */
+        String source();
+
+        /**
+         * Returns a Java class definition that wraps the
+         * {@link SnippetWrapper#source()} or, if an import, the import source.
+         * <p>
+         * If the input is not a valid Snippet, this will not be a valid
+         * class/import definition.
+         * <p>
+         * The source may be divided and mapped to different locations within
+         * the wrapped source.
+         *
+         * @return the source wrapped into top-level Java code
+         */
+        String wrapped();
+
+        /**
+         * Returns the fully qualified class name of the
+         * {@link SnippetWrapper#wrapped() } class.
+         * For erroneous input, a best guess is returned.
+         *
+         * @return the name of the synthetic wrapped class; if an import, the
+         * name is not defined
+         */
+        String fullClassName();
+
+        /**
+         * Returns the {@link Snippet.Kind} of the
+         * {@link SnippetWrapper#source()}.
+         *
+         * @return an enum representing the general kind of snippet.
+         */
+        Snippet.Kind kind();
+
+        /**
+         * Maps character position within the source to character position
+         * within the wrapped.
+         *
+         * @param pos the position in {@link SnippetWrapper#source()}
+         * @return the corresponding position in
+         * {@link SnippetWrapper#wrapped() }
+         */
+        int sourceToWrappedPosition(int pos);
+
+        /**
+         * Maps character position within the wrapped to character position
+         * within the source.
+         *
+         * @param pos the position in {@link SnippetWrapper#wrapped()}
+         * @return the corresponding position in
+         * {@link SnippetWrapper#source() }
+         */
+        int wrappedToSourcePosition(int pos);
     }
 }
