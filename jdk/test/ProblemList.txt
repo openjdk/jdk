@@ -351,8 +351,6 @@ com/sun/jdi/GetLocalVariables4Test.sh                           8067354 windows-
 
 java/util/spi/ResourceBundleControlProvider/UserDefaultControlTest.java 8062512 generic-all
 
-java/util/stream/test/org/openjdk/tests/java/util/stream/IntPrimitiveOpsTests.java 8130337 generic-all
-
 java/util/Arrays/ParallelPrefix.java                            8080165,8085982 generic-all
 
 java/util/BitSet/BitSetStreamTest.java                          8079538 generic-all
