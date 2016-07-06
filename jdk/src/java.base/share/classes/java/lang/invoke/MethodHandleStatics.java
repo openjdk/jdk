@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 
 package java.lang.invoke;
 
-import java.util.Properties;
 import jdk.internal.misc.Unsafe;
 import sun.security.action.GetPropertyAction;
+
+import java.util.Properties;
 
 /**
  * This class consists exclusively of static names internal to the
@@ -46,6 +47,7 @@ import sun.security.action.GetPropertyAction;
     static final boolean TRACE_INTERPRETER;
     static final boolean TRACE_METHOD_LINKAGE;
     static final int COMPILE_THRESHOLD;
+    static final boolean LOG_LF_COMPILATION_FAILURE;
     static final int DONT_INLINE_THRESHOLD;
     static final int PROFILE_LEVEL;
     static final boolean PROFILE_GWT;
@@ -64,6 +66,8 @@ import sun.security.action.GetPropertyAction;
                 props.getProperty("java.lang.invoke.MethodHandle.TRACE_METHOD_LINKAGE"));
         COMPILE_THRESHOLD = Integer.parseInt(
                 props.getProperty("java.lang.invoke.MethodHandle.COMPILE_THRESHOLD", "0"));
+        LOG_LF_COMPILATION_FAILURE = Boolean.parseBoolean(
+                props.getProperty("java.lang.invoke.MethodHandle.LOG_LF_COMPILATION_FAILURE", "false"));
         DONT_INLINE_THRESHOLD = Integer.parseInt(
                 props.getProperty("java.lang.invoke.MethodHandle.DONT_INLINE_THRESHOLD", "30"));
         PROFILE_LEVEL = Integer.parseInt(
@@ -87,7 +91,8 @@ import sun.security.action.GetPropertyAction;
         return (DEBUG_METHOD_HANDLE_NAMES |
                 DUMP_CLASS_FILES |
                 TRACE_INTERPRETER |
-                TRACE_METHOD_LINKAGE);
+                TRACE_METHOD_LINKAGE |
+                LOG_LF_COMPILATION_FAILURE);
     }
 
     // handy shared exception makers (they simplify the common case code)
