@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.Security;
+import java.util.Locale;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
@@ -52,9 +53,10 @@ public class OneKDC extends KDC {
     public static final String KTAB = "localkdc.ktab";
     public static final String JAAS_CONF = "localkdc-jaas.conf";
     public static final String REALM = "RABBIT.HOLE";
-    public static String SERVER = "server/host." + REALM.toLowerCase();
-    public static String BACKEND = "backend/host." + REALM.toLowerCase();
-    public static String KDCHOST = "kdc." + REALM.toLowerCase();
+    public static final String REALM_LOWER_CASE = REALM.toLowerCase(Locale.US);
+    public static String SERVER = "server/host." + REALM_LOWER_CASE;
+    public static String BACKEND = "backend/host." + REALM_LOWER_CASE;
+    public static String KDCHOST = "kdc." + REALM_LOWER_CASE;
     /**
      * Creates the KDC and starts it.
      * @param etype Encryption type, null if not specified
