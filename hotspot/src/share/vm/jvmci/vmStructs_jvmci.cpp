@@ -550,7 +550,7 @@
   declare_function(os::javaTimeNanos)                                     \
                                                                           \
   declare_function(Deoptimization::fetch_unroll_info)                     \
-  COMPILER2_PRESENT(declare_function(Deoptimization::uncommon_trap))      \
+  declare_function(Deoptimization::uncommon_trap)                         \
   declare_function(Deoptimization::unpack_frames)                         \
                                                                           \
   declare_function(JVMCIRuntime::new_instance) \
