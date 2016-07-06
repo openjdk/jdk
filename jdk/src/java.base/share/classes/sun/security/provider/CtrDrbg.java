@@ -242,6 +242,11 @@ public class CtrDrbg extends AbstractDrbg {
             if (personalizationString == null) {
                 more = nonce;
             } else {
+                if (nonce.length + personalizationString.length < 0) {
+                    // Length must be represented as a 32 bit integer in df()
+                    throw new IllegalArgumentException(
+                            "nonce plus personalization string is too long");
+                }
                 more = Arrays.copyOf(
                         nonce, nonce.length + personalizationString.length);
                 System.arraycopy(personalizationString, 0, more, nonce.length,
@@ -256,50 +261,73 @@ public class CtrDrbg extends AbstractDrbg {
         reseedAlgorithm(ei, more);
     }
 
+    /**
+     * Block_cipher_df in 10.3.2
+     *
+     * @param input the input string
+     * @return the output block (always of seedLen)
+     */
     private byte[] df(byte[] input) {
+        // 800-90Ar1 10.3.2
+        // 2. L = len (input_string)/8
         int l = input.length;
+        // 3. N = number_of_bits_to_return/8
         int n = seedLen;
-        int slen = 4 + 4 + l + 1;
-        byte[] s = new byte[(slen + blockLen - 1) / blockLen * blockLen];
-        s[0] = (byte)(l >> 24);
-        s[1] = (byte)(l >> 16);
-        s[2] = (byte)(l >> 8);
-        s[3] = (byte)(l);
-        s[4] = (byte)(n >> 24);
-        s[5] = (byte)(n >> 16);
-        s[6] = (byte)(n >> 8);
-        s[7] = (byte)(n);
-        System.arraycopy(input, 0, s, 8, l);
-        s[8+l] = (byte)0x80;
+        // 4. S = L || N || input_string || 0x80
+        byte[] ln = new byte[8];
+        ln[0] = (byte)(l >> 24);
+        ln[1] = (byte)(l >> 16);
+        ln[2] = (byte)(l >> 8);
+        ln[3] = (byte)(l);
+        ln[4] = (byte)(n >> 24);
+        ln[5] = (byte)(n >> 16);
+        ln[6] = (byte)(n >> 8);
+        ln[7] = (byte)(n);
 
+        // 5. Zero padding of S
+        // Not necessary, see bcc
+
+        // 8. K = leftmost (0x00010203...1D1E1F, keylen).
         byte[] k = new byte[keyLen];
         for (int i = 0; i < k.length; i++) {
             k[i] = (byte)i;
         }
 
+        // 6. temp = the Null String
         byte[] temp = new byte[seedLen];
 
+        // 7. i = 0
         for (int i = 0; i * blockLen < temp.length; i++) {
-            byte[] iv = new byte[blockLen + s.length];
+            // 9.1 IV = i || 0^(outlen - len (i)). outLen is blockLen
+            byte[] iv = new byte[blockLen];
             iv[0] = (byte)(i >> 24);
             iv[1] = (byte)(i >> 16);
             iv[2] = (byte)(i >> 8);
             iv[3] = (byte)(i);
-            System.arraycopy(s, 0, iv, blockLen, s.length);
+
             int tailLen = temp.length - blockLen*i;
             if (tailLen > blockLen) {
                 tailLen = blockLen;
             }
-            System.arraycopy(bcc(k, iv), 0, temp, blockLen*i, tailLen);
+            // 9.2 temp = temp || BCC (K, (IV || S)).
+            System.arraycopy(bcc(k, iv, ln, input, new byte[]{(byte)0x80}),
+                    0, temp, blockLen*i, tailLen);
         }
 
+        // 10. K = leftmost(temp, keylen)
         k = Arrays.copyOf(temp, keyLen);
+
+        // 11. x = select(temp, keylen+1, keylen+outlen)
         byte[] x = Arrays.copyOfRange(temp, keyLen, temp.length);
+
+        // 12. temp = the Null string
+        // No need to clean up, temp will be overwritten
 
         for (int i = 0; i * blockLen < seedLen; i++) {
             try {
                 cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(k, keyAlg));
                 int tailLen = temp.length - blockLen*i;
+                // 14. requested_bits = leftmost(temp, nuumber_of_bits_to_return)
                 if (tailLen > blockLen) {
                     tailLen = blockLen;
                 }
@@ -309,21 +337,45 @@ public class CtrDrbg extends AbstractDrbg {
                 throw new InternalError(e);
             }
         }
+
+        // 15. Return
         return temp;
     }
 
-    private byte[] bcc(byte[] k, byte[] data) {
+    /**
+     * Block_Encrypt in 10.3.3
+     *
+     * @param k the key
+     * @param data after concatenated, the data to be operated upon. This is
+     *             a series of byte[], each with an arbitrary length. Note
+     *             that the full length is not necessarily a multiple of
+     *             outlen. XOR with zero is no-op.
+     * @return the result
+     */
+    private byte[] bcc(byte[] k, byte[]... data) {
         byte[] chain = new byte[blockLen];
-        int n = data.length / blockLen;
-        for (int i = 0; i < n; i++) {
-            byte[] inputBlock = Arrays.copyOfRange(
-                    data, i * blockLen, i * blockLen + blockLen);
-            for (int j = 0; j < blockLen; j++) {
-                inputBlock[j] ^= chain[j];
+        int n1 = 0; // index in data
+        int n2 = 0; // index in data[n1]
+        // pack blockLen of bytes into chain from data[][], again and again
+        while (n1 < data.length) {
+            int j;
+            out: for (j = 0; j < blockLen; j++) {
+                while (n2 >= data[n1].length) {
+                    n1++;
+                    if (n1 >= data.length) {
+                        break out;
+                    }
+                    n2 = 0;
+                }
+                chain[j] ^= data[n1][n2];
+                n2++;
+            }
+            if (j == 0) { // all data happens to be consumed in the last loop
+                break;
             }
             try {
                 cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(k, keyAlg));
-                chain = cipher.doFinal(inputBlock);
+                chain = cipher.doFinal(chain);
             } catch (GeneralSecurityException e) {
                 throw new InternalError(e);
             }
@@ -341,6 +393,11 @@ public class CtrDrbg extends AbstractDrbg {
 
             // Step 1: cat bytes
             if (additionalInput != null) {
+                if (ei.length + additionalInput.length < 0) {
+                    // Length must be represented as a 32 bit integer in df()
+                    throw new IllegalArgumentException(
+                            "entropy plus additional input is too long");
+                }
                 byte[] temp = Arrays.copyOf(
                         ei, ei.length + additionalInput.length);
                 System.arraycopy(additionalInput, 0, temp, ei.length,
@@ -430,10 +487,10 @@ public class CtrDrbg extends AbstractDrbg {
 
         // Step 3. temp = Null
         int pos = 0;
+        int len = result.length;
 
         // Step 4. Loop
-        while (pos < result.length) {
-            int tailLen = result.length - pos;
+        while (len > 0) {
             // Step 4.1. Increment
             addOne(v, ctrLen);
             try {
@@ -443,9 +500,14 @@ public class CtrDrbg extends AbstractDrbg {
 
                 // Step 4.3 and 5. Cat bytes and leftmost
                 System.arraycopy(out, 0, result, pos,
-                        (tailLen > blockLen) ? blockLen : tailLen);
+                        (len > blockLen) ? blockLen : len);
             } catch (GeneralSecurityException e) {
                 throw new InternalError(e);
+            }
+            len -= blockLen;
+            if (len <= 0) {
+                // shortcut, so that pos needn't be updated
+                break;
             }
             pos += blockLen;
         }
