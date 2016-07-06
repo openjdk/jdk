@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,17 @@
 
 /*
  * @test
- * @bug 8003280
- * @summary Add lambda tests
- *  complex case of generic method call with lambda argument where target
- *          is a wildcard SAM
- * @compile TargetType19.java
+ * @bug 8048543
+ * @summary JLS8 18.5.3: inference variable seems to be instantiated unexpectedly
+ * @compile InferenceVariableInstantiatedUnexpectedlyTest.java
  */
-import java.util.List;
 
-class TargetType19 {
-
-    interface SAM<X> {
-        void f(List<? extends X> i);
+public class InferenceVariableInstantiatedUnexpectedlyTest {
+    interface Iface<A1 extends A2, A2> {
+        String m(A1 t);
     }
 
-    <Z> void call(SAM<? extends Z> s, Z z) {  }
-
-    { call((List<? extends String> p) -> { }, 1); }
+    public void run() {
+        Iface<? super Integer, Number> i = (Integer a) -> a.toString();
+    }
 }
