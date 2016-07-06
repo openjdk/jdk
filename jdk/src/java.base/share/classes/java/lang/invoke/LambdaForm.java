@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.perf.PerfCounter;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
@@ -39,8 +40,7 @@ import java.util.HashMap;
 
 import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.REF_invokeStatic;
-import static java.lang.invoke.MethodHandleStatics.debugEnabled;
-import static java.lang.invoke.MethodHandleStatics.newInternalError;
+import static java.lang.invoke.MethodHandleStatics.*;
 
 /**
  * The symbolic, non-executable form of a method handle's invocation semantics.
@@ -396,7 +396,7 @@ class LambdaForm {
     /** Customize LambdaForm for a particular MethodHandle */
     LambdaForm customize(MethodHandle mh) {
         LambdaForm customForm = new LambdaForm(debugName, arity, names, result, forceInline, mh);
-        if (COMPILE_THRESHOLD > 0 && isCompiled) {
+        if (COMPILE_THRESHOLD >= 0 && isCompiled) {
             // If shared LambdaForm has been compiled, compile customized version as well.
             customForm.compileToBytecode();
         }
@@ -411,7 +411,7 @@ class LambdaForm {
         }
         assert(transformCache != null); // Customized LambdaForm should always has a link to uncustomized version.
         LambdaForm uncustomizedForm = (LambdaForm)transformCache;
-        if (COMPILE_THRESHOLD > 0 && isCompiled) {
+        if (COMPILE_THRESHOLD >= 0 && isCompiled) {
             // If customized LambdaForm has been compiled, compile uncustomized version as well.
             uncustomizedForm.compileToBytecode();
         }
@@ -717,7 +717,7 @@ class LambdaForm {
      * as a sort of pre-invocation linkage step.)
      */
     public void prepare() {
-        if (COMPILE_THRESHOLD == 0 && !isCompiled) {
+        if (COMPILE_THRESHOLD == 0 && !forceInterpretation() && !isCompiled) {
             compileToBytecode();
         }
         if (this.vmentry != null) {
@@ -736,10 +736,22 @@ class LambdaForm {
         // TO DO: Maybe add invokeGeneric, invokeWithArguments
     }
 
+    private static @Stable PerfCounter LF_FAILED;
+
+    private static PerfCounter failedCompilationCounter() {
+        if (LF_FAILED == null) {
+            LF_FAILED = PerfCounter.newPerfCounter("java.lang.invoke.failedLambdaFormCompilations");
+        }
+        return LF_FAILED;
+    }
+
     /** Generate optimizable bytecode for this form. */
-    MemberName compileToBytecode() {
+    void compileToBytecode() {
+        if (forceInterpretation()) {
+            return; // this should not be compiled
+        }
         if (vmentry != null && isCompiled) {
-            return vmentry;  // already compiled somehow
+            return;  // already compiled somehow
         }
         MethodType invokerType = methodType();
         assert(vmentry == null || vmentry.getMethodType().basicType().equals(invokerType));
@@ -748,9 +760,16 @@ class LambdaForm {
             if (TRACE_INTERPRETER)
                 traceInterpreter("compileToBytecode", this);
             isCompiled = true;
-            return vmentry;
-        } catch (Error | Exception ex) {
-            throw newInternalError(this.toString(), ex);
+        } catch (InvokerBytecodeGenerator.BytecodeGenerationException bge) {
+            // bytecode generation failed - mark this LambdaForm as to be run in interpretation mode only
+            invocationCounter = -1;
+            failedCompilationCounter().increment();
+            if (LOG_LF_COMPILATION_FAILURE) {
+                System.out.println("LambdaForm compilation failed: " + this);
+                bge.printStackTrace(System.out);
+            }
+        } catch (Error | Exception e) {
+            throw newInternalError(this.toString(), e);
         }
     }
 
@@ -856,7 +875,11 @@ class LambdaForm {
     static {
         COMPILE_THRESHOLD = Math.max(-1, MethodHandleStatics.COMPILE_THRESHOLD);
     }
-    private int invocationCounter = 0;
+    private int invocationCounter = 0; // a value of -1 indicates LambdaForm interpretation mode forever
+
+    private boolean forceInterpretation() {
+        return invocationCounter == -1;
+    }
 
     @Hidden
     @DontInline
@@ -896,7 +919,7 @@ class LambdaForm {
 
     private void checkInvocationCounter() {
         if (COMPILE_THRESHOLD != 0 &&
-            invocationCounter < COMPILE_THRESHOLD) {
+            !forceInterpretation() && invocationCounter < COMPILE_THRESHOLD) {
             invocationCounter++;  // benign race
             if (invocationCounter >= COMPILE_THRESHOLD) {
                 // Replace vmentry with a bytecode version of this LF.
@@ -906,7 +929,7 @@ class LambdaForm {
     }
     Object interpretWithArgumentsTracing(Object... argumentValues) throws Throwable {
         traceInterpreter("[ interpretWithArguments", this, argumentValues);
-        if (invocationCounter < COMPILE_THRESHOLD) {
+        if (!forceInterpretation() && invocationCounter < COMPILE_THRESHOLD) {
             int ctr = invocationCounter++;  // benign race
             traceInterpreter("| invocationCounter", ctr);
             if (invocationCounter >= COMPILE_THRESHOLD) {
