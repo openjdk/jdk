@@ -89,10 +89,6 @@ class G1DefaultPolicy: public G1Policy {
 
   size_t _rs_lengths_prediction;
 
-#ifndef PRODUCT
-  bool verify_young_ages(HeapRegion* head, SurvRateGroup *surv_rate_group);
-#endif // PRODUCT
-
   size_t _pending_cards;
 
   // The amount of allocated bytes in old gen during the last mutator and the following
@@ -115,10 +111,6 @@ public:
     assert(hr->is_survivor(), "pre-condition");
     hr->install_surv_rate_group(_survivor_surv_rate_group);
   }
-
-#ifndef PRODUCT
-  bool verify_young_ages();
-#endif // PRODUCT
 
   void record_max_rs_lengths(size_t rs_lengths) {
     _max_rs_lengths = rs_lengths;
