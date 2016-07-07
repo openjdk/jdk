@@ -39,9 +39,9 @@ module jdk.jlink {
     provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.StripNativeCommandsPlugin;
     provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.OrderResourcesPlugin;
     provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.DefaultCompressPlugin;
-    provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.OptimizationPlugin;
     provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.ExcludeVMPlugin;
     provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.IncludeLocalesPlugin;
     provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.GenerateJLIClassesPlugin;
     provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.ReleaseInfoPlugin;
-}
+    provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.ClassForNamePlugin;
+ }

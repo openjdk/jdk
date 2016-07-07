@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,18 +21,24 @@
  * questions.
  */
 
-#ifndef _utf_util_h_
-#define _utf_util_h_
+/*
+ * @test
+ * @bug 8152174
+ * @summary Verify that a missing class file for a type use annotation doesn't cause a NPE when attempting to read the annotation.
+ * @compile NoNpeOnMissingAnnotation.java MissingAnnotation.java
+ * @run main NoNpeOnMissingAnnotation
+ * @clean MissingAnnotation
+ * @run main NoNpeOnMissingAnnotation
+ */
 
-#include "jni.h"
+import java.lang.annotation.*;
 
+public class NoNpeOnMissingAnnotation {
+    public static void main(String... args) throws Exception {
+        System.out.println(NoNpeOnMissingAnnotation.class.
+                           getDeclaredMethod("foo").
+                           getAnnotatedReturnType());
+    }
 
-int JNICALL utf8sToUtf8mLength(jbyte *string, int length);
-void JNICALL utf8sToUtf8m(jbyte *string, int length, jbyte *newString, int newLength);
-int JNICALL utf8mToUtf8sLength(jbyte *string, int length);
-void JNICALL utf8mToUtf8s(jbyte *string, int length, jbyte *newString, int newLength);
-
-int JNICALL utf8ToPlatform(jbyte *utf8, int len, char* output, int outputBufSize);
-int JNICALL utf8FromPlatform(char *str, int len, jbyte *output, int outputBufSize);
-
-#endif
+    @MissingAnnotation Object foo() { return null; }
+}

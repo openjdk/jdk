@@ -24,6 +24,7 @@
  */
 
 /* @test
+ * @bug  8158169
  * @summary unit tests for java.lang.invoke.MethodHandles
  * @run testng test.java.lang.invoke.DropArgumentsTest
  */
@@ -32,6 +33,7 @@ package test.java.lang.invoke;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.Collections;
 import java.util.List;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
@@ -78,6 +80,7 @@ public class DropArgumentsTest {
             {cat, -1, bigType.parameterList(), 0},
             {cat, 0, bigType.parameterList(), -1},
             {cat, 3, bigType.parameterList(), 0},
+            {cat, 0, bigType.parameterList(), 6},
             {cat, 0, bigType.parameterList(), 2}
         };
     }
@@ -95,5 +98,31 @@ public class DropArgumentsTest {
                                    MethodType.methodType(String.class, String.class));
         MethodType bigTypewithVoid = cat.type().insertParameterTypes(0, void.class, String.class, int.class);
         MethodHandle handle2 = MethodHandles.dropArgumentsToMatch(cat, 0, bigTypewithVoid.parameterList(), 1);
+    }
+
+    public static class MethodSet {
+
+        static void mVoid() {
+
+        }
+
+        static void mVoid(int t) {
+
+        }
+    }
+
+    @Test
+    public void dropArgumentsToMatchPosSkipRange() throws Throwable {
+        // newTypes.size() == 1, pos == 1   &&   target.paramSize() == 0, skip == 0
+        MethodHandle mh1 = MethodHandles.lookup().findStatic(MethodSet.class, "mVoid",
+                                                             MethodType.methodType(void.class));
+        MethodHandle handle1 = dropArgumentsToMatch(mh1, 0, Collections.singletonList(int.class), 1);
+        assertEquals(1, handle1.type().parameterList().size());
+
+        // newTypes.size() == 1, pos == 0   &&   target.paramSize() == 1, skip == 1
+        MethodHandle mh2 = MethodHandles.lookup().findStatic(MethodSet.class, "mVoid",
+                                                             MethodType.methodType(void.class, int.class));
+        MethodHandle handle2 = dropArgumentsToMatch(mh2, 1, Collections.singletonList(int.class), 0);
+        assertEquals(2, handle2.type().parameterList().size());
     }
 }

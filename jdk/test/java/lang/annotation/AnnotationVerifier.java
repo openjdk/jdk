@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,33 +22,42 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.tools.jlink.internal.plugins.asm;
 
-import java.util.Set;
-
-/**
- * A pool containing all class and resource files.
+/*
+ * Create class file using ASM, slightly modified the ASMifier output
  */
-public interface AsmGlobalPool extends AsmPool {
 
-    /**
-     * Associate a package to a module, useful when adding new classes in new
-     * packages. WARNING: In order to properly handle new package and/or new
-     * module, module-info class must be added and/or updated.
-     *
-     * @param pkg The new package, following java binary syntax (/-separated
-     * path name).
-     * @param module An existing or new module.
-     * @throws jdk.tools.jlink.plugins.PluginException If a mapping already
-     * exist for this package.
-     */
-    public void addPackageModuleMapping(String pkg, String module);
+import sun.reflect.annotation.AnnotationType;
+import java.lang.annotation.AnnotationFormatError;
+import org.testng.annotations.*;
 
-    /**
-     * Return the set of accessible packages for a given module.
-     *
-     * @param module The module from which packages are accessible.
-     * @return Set of packages or null if the module is not found.
-     */
-    public Set<String> getAccessiblePackages(String module);
+/*
+ * @test
+ * @bug 8158510
+ * @summary Verify valid annotation
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ * @modules java.base/sun.reflect.annotation
+ * @clean AnnotationWithVoidReturn.class AnnotationWithParameter.class
+ * @compile -XDignore.symbol.file ClassFileGenerator.java
+ * @run main ClassFileGenerator
+ * @run testng AnnotationVerifier
+ */
+
+public class AnnotationVerifier {
+
+    @AnnotationWithParameter
+    @AnnotationWithVoidReturn
+    static class BadAnnotation {
+    }
+
+    @Test
+    @ExpectedExceptions(IllegalArgumentException.class)
+    public void annotationValidationIAE() {
+        AnnotationType.getInstance(AnnotationWithParameter.class);
+    }
+
+    @Test(expectedExceptions = AnnotationFormatError.class)
+    public void annotationValidationAFE() {
+        BadAnnotation.class.getAnnotation(AnnotationWithVoidReturn.class);
+    }
 }

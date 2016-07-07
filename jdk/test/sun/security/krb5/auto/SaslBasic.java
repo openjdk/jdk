@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import com.sun.security.jgss.InquireType;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Locale;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.UnsupportedCallbackException;
@@ -46,7 +45,7 @@ public class SaslBasic {
     public static void main(String[] args) throws Exception {
 
         boolean bound = args[0].equals("bound");
-        String name = "host." + OneKDC.REALM.toLowerCase(Locale.US);
+        String name = "host." + OneKDC.REALM_LOWER_CASE;
 
         new OneKDC(null).writeJAASConf();
         System.setProperty("javax.security.auth.useSubjectCredsOnly", "false");
