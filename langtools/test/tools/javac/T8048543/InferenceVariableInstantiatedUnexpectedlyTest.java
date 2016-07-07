@@ -23,14 +23,17 @@
 
 /*
  * @test
- * @bug 8047024
- * @summary AssertionError: exception_index already contains a bytecode offset
- * @compile T8047024_01.java
- * @compile -parameters T8047024.java
+ * @bug 8048543
+ * @summary JLS8 18.5.3: inference variable seems to be instantiated unexpectedly
+ * @compile InferenceVariableInstantiatedUnexpectedlyTest.java
  */
 
-public class T8047024 {
-    public static void main(String [] args) {
-        T8047024_01.run();
+public class InferenceVariableInstantiatedUnexpectedlyTest {
+    interface Iface<A1 extends A2, A2> {
+        String m(A1 t);
+    }
+
+    public void run() {
+        Iface<? super Integer, Number> i = (Integer a) -> a.toString();
     }
 }
