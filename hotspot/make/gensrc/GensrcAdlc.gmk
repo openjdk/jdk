@@ -51,6 +51,9 @@ ifeq ($(call check-jvm-feature, compiler2), true)
     ADLC_CFLAGS_WARNINGS := -W3 -D_CRT_SECURE_NO_WARNINGS
   endif
 
+  # Set the C++ standard if supported
+  ADLC_CFLAGS += $(CXXSTD_CXXFLAG)
+  
   # NOTE: The old build didn't set -DASSERT for windows but it doesn't seem to
   # hurt.
   ADLC_CFLAGS += -DASSERT
