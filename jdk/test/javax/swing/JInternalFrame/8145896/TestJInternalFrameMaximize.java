@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8145896
  * @summary JInternalFrame setMaximum before adding to desktop throws null pointer exception
  * @library ../../regtesthelpers

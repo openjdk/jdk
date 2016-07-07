@@ -26,6 +26,7 @@ import java.awt.event.InputEvent;
 
 /*
  * @test
+ * @key headful
  * @summary Have different components having different preferred sizes
  *          added to a grid layout having various values of row/columns.
  *          Check if the compnents are correctly laid out.

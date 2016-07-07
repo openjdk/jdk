@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+   @test
+  @key headful
    @bug 4473075
    @summary JTable header rendering problem (after setting preferred size)
    @author Semyon Sadetsky

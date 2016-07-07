@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 4173714
   @summary java.awt.button behaves differently under Win32/Solaris
   @author tdv@sparc.spb.su

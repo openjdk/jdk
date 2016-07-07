@@ -21,12 +21,14 @@
  * questions.
  */
 
- /*
+/*
  * @test
+ * @key headful
  * @bug 6897701
  * @summary Verify JMenu and JMenuItem Disabled state for Nimbus LAF
  * @run main JMenuItemsTest
  */
+
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;

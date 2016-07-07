@@ -26,6 +26,7 @@ import java.awt.event.*;
 
 /*
  * @test
+ * @key headful
  * @summary Have different components having different preferred sizes
  *          added to a grid layout. Change the rows and columns of the
  *          grid layout and check the components are re-laid out.

@@ -38,6 +38,7 @@ import java.awt.event.MouseEvent;
 
 /**
  * @test
+ * @key headful
  * @bug 4356202
  * @summary Tests that getLocationOnScreen returns valid value(WindowMaker
  *          only).

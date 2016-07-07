@@ -40,6 +40,7 @@ import test.java.awt.event.helpers.lwcomponents.LWList;
 
 /*
  * @test
+ * @key headful
  * @bug 8043126
  * @summary Check whether MouseEvent.getModifiers(), MouseEvent.getModifiersEx()
  *          and KeyEvent.getModifiers() return correct modifiers when pressing

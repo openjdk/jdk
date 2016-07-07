@@ -21,11 +21,13 @@
  * questions.
  */
 
-/* @test
-   @bug 8001470
-   @summary JTextField's size is computed incorrectly when it contains Indic or Thai characters
-   @author Semyon Sadetsky
-  */
+/*
+ * @test
+ * @key headful
+ * @bug 8001470
+ * @summary JTextField's size is computed incorrectly when it contains Indic or Thai characters
+ * @author Semyon Sadetsky
+ */
 
 import javax.swing.*;
 import java.awt.*;

@@ -21,10 +21,11 @@
  * questions.
  */
 
- /* @test
- @bug 8129940 8132770 8161470
- @summary JRadioButton should run custom FocusTraversalKeys for all LaFs
- @run main FocusTraversal
+/* @test
+ * @key headful
+ * @bug 8129940 8132770 8161470
+ * @summary JRadioButton should run custom FocusTraversalKeys for all LaFs
+ * @run main FocusTraversal
  */
 import java.awt.BorderLayout;
 import java.awt.Component;

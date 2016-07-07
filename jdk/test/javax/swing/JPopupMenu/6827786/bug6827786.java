@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6827786
  * @summary Tests duplicate mnemonics
  * @author Peter Zhelezniakov

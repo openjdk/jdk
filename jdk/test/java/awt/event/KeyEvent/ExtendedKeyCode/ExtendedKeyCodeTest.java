@@ -28,6 +28,7 @@ import java.awt.event.KeyAdapter;
 
 /*
  * @test
+ * @key headful
  * @bug 8007156 8025126
  * @summary Extended key code is not set for a key event
  * @author Alexandr Scherbatiy

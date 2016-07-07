@@ -44,6 +44,7 @@ import javax.swing.table.DefaultTableModel;
 
 /**
  * @test
+ * @key headful
  * @bug 6219960
  * @summary null reference in ToolTipManager
  * @run main bug6219960

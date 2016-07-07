@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 8146321 8151282
  * @summary verifies JInternalFrame Icon and ImageIcon
  * @library ../../regtesthelpers

@@ -34,6 +34,7 @@ import javax.swing.SwingUtilities;
 
 /**
  * @test
+ * @key headful
  * @bug 8149849
  * @summary [hidpi] DnD issues (cannot DnD from JFileChooser to JEditorPane or
  *          other text component) when scale > 1

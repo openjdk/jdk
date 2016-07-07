@@ -36,6 +36,7 @@ import javax.swing.plaf.metal.MetalLookAndFeel;
 
 /**
  * @test
+ * @key headful
  * @bug 8041561
  * @author Alexander Scherbatiy
  * @summary Inconsistent opacity behaviour between JCheckBox and JRadioButton

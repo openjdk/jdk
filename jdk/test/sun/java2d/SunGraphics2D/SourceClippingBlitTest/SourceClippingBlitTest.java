@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 6244574
   @bug 6258142
   @bug 6395165

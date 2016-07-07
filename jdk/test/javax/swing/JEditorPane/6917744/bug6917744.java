@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 6917744
  * @summary JScrollPane Page Up/Down keys do not handle correctly html tables with different cells contents
  * @author Pavel Porvatov

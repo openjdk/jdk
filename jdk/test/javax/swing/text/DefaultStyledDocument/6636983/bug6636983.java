@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6636983
  * @summary test that composed text at the line starts is handled correctly
  * @author Sergey Groznyh

@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6263446
  * @summary Tests that double-clicking to edit a cell doesn't select the content.
  * @author Shannon Hickey

@@ -25,6 +25,7 @@ import java.awt.Dialog;
 
 /*
  * @test
+ * @key headful
  * @bug 8052012
  * @summary Check whether a toolkit modal Dialog created with visible
  *          Dialog constructor stays on top of the windows it blocks.
