@@ -285,8 +285,6 @@ sun/security/krb5/auto/HttpNegotiateServer.java                 8038079 generic-
 
 sun/security/tools/keytool/autotest.sh                          8130302 generic-all
 
-sun/security/x509/URICertStore/ExtensionsWithLDAP.java          8134577 generic-all
-
 ############################################################################
 
 # jdk_sound
