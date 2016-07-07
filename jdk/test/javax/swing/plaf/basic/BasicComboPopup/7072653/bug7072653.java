@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 7072653 8144161
  * @summary JComboBox popup mispositioned if its height exceeds the screen height
  * @run main bug7072653

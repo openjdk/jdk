@@ -25,6 +25,7 @@ import java.awt.Dialog;
 
 /*
  * @test
+ * @key headful
  * @bug 8050885
  * @summary Check that calling toFront method for a dialog in presence of
  *          blocking toolkit modal dialog does not bring it to the top

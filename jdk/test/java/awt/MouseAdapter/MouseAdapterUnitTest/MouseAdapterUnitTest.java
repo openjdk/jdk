@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 4453162
   @summary MouseAdapter should implement MouseMotionListener and MouseWheelListener
   @author andrei.dmitriev: area=

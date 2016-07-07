@@ -25,6 +25,7 @@ import java.awt.Dialog;
 
 /*
  * @test
+ * @key headful
  * @bug 8054359 8055752
  *
  * @summary Check whether FileDialog blocks a toolkit modal Dialog

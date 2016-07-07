@@ -22,6 +22,7 @@
  */
 /*
   @test
+  @key headful
   @bug 6390103
   @summary Non-Focusable choice throws exception when selecting an item, Win32
   @author andrei.dmitriev area=awt.choice

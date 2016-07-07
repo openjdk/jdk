@@ -21,14 +21,16 @@
  * questions.
  */
 
-/* @test
-   @bug 4983388 8015600
-   @summary shortcuts on menus do not work on JDS
-   @author Oleg Mokhovikov
-   @library ../../../../regtesthelpers
-   @build Util
-   @run main bug4983388
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 4983388 8015600
+ * @summary shortcuts on menus do not work on JDS
+ * @author Oleg Mokhovikov
+ * @library ../../../../regtesthelpers
+ * @build Util
+ * @run main bug4983388
+ */
 
 import java.awt.*;
 import javax.swing.*;

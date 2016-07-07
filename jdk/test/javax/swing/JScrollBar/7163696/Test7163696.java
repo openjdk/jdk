@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 7163696
  * @summary Tests that JScrollBar scrolls to the left
  * @author Sergey Malenkov

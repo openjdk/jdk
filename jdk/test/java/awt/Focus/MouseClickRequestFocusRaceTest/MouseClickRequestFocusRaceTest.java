@@ -42,6 +42,7 @@ import jdk.testlibrary.OSInfo;
 
 /**
  * @test
+ * @key headful
  * @bug 5028014
  * @summary Focus request & mouse click being performed nearly synchronously
  *          shouldn't break the focus subsystem

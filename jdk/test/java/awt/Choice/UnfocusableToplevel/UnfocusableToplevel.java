@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 6566434 8039467
   @library ../../regtesthelpers
   @build Util Sysout AbstractTest

@@ -28,6 +28,7 @@ import javax.swing.SwingUtilities;
 
 /**
  * @test
+ * @key headful
  * @bug 8029455
  * @summary Swing should not hang if non-volatile image is used as a backbuffer.
  * @run main/othervm -Dswing.volatileImageBufferEnabled=false HangNonVolatileBuffer

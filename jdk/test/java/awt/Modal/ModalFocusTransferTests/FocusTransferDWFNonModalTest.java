@@ -25,6 +25,7 @@ import java.awt.Dialog;
 
 /*
  * @test
+ * @key headful
  * @bug 8047367 8049339
  * @summary Check whether the focus transfer between windows occurs correctly when the following
  *          happens: a non-modal dialog (D) having null frame owner is shown; a window having D

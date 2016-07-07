@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 5043626
  * @summary  Tests pressing Home or Ctrl+Home set cursor to invisible element <head>
  * @author Alexander Potochkin

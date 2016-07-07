@@ -31,6 +31,7 @@ import javax.swing.SwingUtilities;
 
 /**
  * @test
+ * @key headful
  * @bug 8071306
  * @author Sergey Bylokhov
  */

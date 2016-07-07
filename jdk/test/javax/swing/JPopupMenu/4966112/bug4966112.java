@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 4966112
  * @summary Some Composite components does not show the Context Popup.
  * @library ../../regtesthelpers

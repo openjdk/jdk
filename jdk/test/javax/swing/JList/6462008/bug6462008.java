@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6462008
  * @summary Tests that mouse/keyboard work properly on JList with lead < 0 or > list.getModel().getSize()
  * @author Shannon Hickey

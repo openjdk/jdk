@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8146319
  * @summary JEditorPane function setPage leaves a file lock
  * @run main JEditorPaneTest

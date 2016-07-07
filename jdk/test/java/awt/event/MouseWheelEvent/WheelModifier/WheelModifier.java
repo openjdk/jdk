@@ -21,11 +21,14 @@
  * questions.
  */
 
-/* @test
+/*
+   @test
+   @key headful
    @bug 8041470
    @summary JButtons stay pressed after they have lost focus if you use the mouse wheel
    @author Anton Nashatyrev
-*/
+ */
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;

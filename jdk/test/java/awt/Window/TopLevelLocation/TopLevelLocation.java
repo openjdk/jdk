@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key headful
  * @bug 8027628
  * @author Oleg Pekhovskiy
  * @summary JWindow jumps to (0, 0) after mouse clicked

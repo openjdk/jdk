@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8050885
  * @summary Check that calling toFront method for a frame in presence of
  *          blocking modal dialog having a null Frame parent

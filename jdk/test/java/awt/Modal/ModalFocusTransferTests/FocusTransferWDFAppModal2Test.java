@@ -25,6 +25,7 @@ import java.awt.Dialog;
 
 /*
  * @test
+ * @key headful
  * @bug 8047367 8048263
  * @summary Check whether the focus transfer between windows occurs correctly when
  *          the following happens: a window having a hidden frame owner is shown;
