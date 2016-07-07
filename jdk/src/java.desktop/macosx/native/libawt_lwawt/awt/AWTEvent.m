@@ -278,6 +278,16 @@ const nsKeyToJavaModifierTable[] =
         java_awt_event_KeyEvent_VK_CONTROL
     },
     {
+        NSCommandKeyMask,
+        //kCGSFlagsMaskAppleLeftCommandKey,
+        //kCGSFlagsMaskAppleRightCommandKey,
+        55,
+        54,
+        java_awt_event_InputEvent_META_DOWN_MASK,
+        java_awt_event_InputEvent_META_MASK,
+        java_awt_event_KeyEvent_VK_META
+    },
+    {
         NSAlternateKeyMask,
         //kCGSFlagsMaskAppleLeftAlternateKey,
         //kCGSFlagsMaskAppleRightAlternateKey,
@@ -295,16 +305,6 @@ const nsKeyToJavaModifierTable[] =
         java_awt_event_InputEvent_ALT_MASK | java_awt_event_InputEvent_ALT_GRAPH_MASK,
         java_awt_event_KeyEvent_VK_ALT | java_awt_event_KeyEvent_VK_ALT_GRAPH
     },
-	{
-		NSCommandKeyMask,
-		//kCGSFlagsMaskAppleLeftCommandKey,
-		//kCGSFlagsMaskAppleRightCommandKey,
-		55,
-		54,
-		java_awt_event_InputEvent_META_DOWN_MASK,
-		java_awt_event_InputEvent_META_MASK,
-		java_awt_event_KeyEvent_VK_META
-	},
     // NSNumericPadKeyMask
     {
         NSHelpKeyMask,
@@ -319,6 +319,7 @@ const nsKeyToJavaModifierTable[] =
 };
 
 static BOOL leftAltKeyPressed;
+static BOOL altGRPressed = NO;
 
 /*
  * Almost all unicode characters just go from NS to Java with no translation.
@@ -559,20 +560,28 @@ NsKeyModifiersToJavaKeyInfo(NSUInteger nsFlags, unsigned short eventKeyCode,
  */
 jint NsKeyModifiersToJavaModifiers(NSUInteger nsFlags, BOOL isExtMods)
 {
-	jint javaModifiers = 0;
-	const struct _nsKeyToJavaModifier* cur;
+    jint javaModifiers = 0;
+    const struct _nsKeyToJavaModifier* cur;
 	
-	for (cur = nsKeyToJavaModifierTable; cur->nsMask != 0; ++cur) {
-		if ((cur->nsMask & nsFlags) != 0) {
-				javaModifiers |= isExtMods ? cur->javaExtMask : cur->javaMask;
-				if (cur->nsMask == NSAlternateKeyMask && leftAltKeyPressed == NO) {
-					continue;
-			}
-			break;
-		}
-	}
+    for (cur = nsKeyToJavaModifierTable; cur->nsMask != 0; ++cur) {
+        if ((cur->nsMask & nsFlags) != 0) {
+			
+            if (cur->nsMask == NSAlternateKeyMask) {
+                if (leftAltKeyPressed == YES) {
+                    javaModifiers |= isExtMods? cur->javaExtMask : cur->javaMask;
+                    if (altGRPressed == NO)
+                        break;
+                    } else {
+                        leftAltKeyPressed = YES;
+                        altGRPressed = YES;
+                        continue;
+                    }
+                }
+            javaModifiers |= isExtMods ? cur->javaExtMask : cur->javaMask;
+        }
+    }
 
-	return javaModifiers;
+    return javaModifiers;
 }
 
 /*
