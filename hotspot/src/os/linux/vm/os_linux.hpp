@@ -71,7 +71,6 @@ class Linux {
   static pthread_t _main_thread;
   static Mutex* _createThread_lock;
   static int _page_size;
-  static const int _vm_default_page_size;
 
   static julong available_memory();
   static julong physical_memory() { return _physical_memory; }
@@ -129,8 +128,6 @@ class Linux {
 
   static int page_size(void)                                        { return _page_size; }
   static void set_page_size(int val)                                { _page_size = val; }
-
-  static int vm_default_page_size(void)                             { return _vm_default_page_size; }
 
   static address   ucontext_get_pc(const ucontext_t* uc);
   static void ucontext_set_pc(ucontext_t* uc, address pc);

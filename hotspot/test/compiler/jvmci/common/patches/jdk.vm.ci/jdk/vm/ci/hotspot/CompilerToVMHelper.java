@@ -124,8 +124,8 @@ public class CompilerToVMHelper {
     }
 
     public static HotSpotResolvedObjectType resolveFieldInPool(
-            ConstantPool constantPool, int cpi, byte opcode, long[] info) {
-        return CTVM.resolveFieldInPool((HotSpotConstantPool) constantPool, cpi, opcode, info);
+            ConstantPool constantPool, int cpi, ResolvedJavaMethod method, byte opcode, long[] info) {
+        return CTVM.resolveFieldInPool((HotSpotConstantPool) constantPool, cpi, (HotSpotResolvedJavaMethodImpl) method, opcode, info);
     }
 
     public static int constantPoolRemapInstructionOperandFromCache(
@@ -152,8 +152,8 @@ public class CompilerToVMHelper {
         CTVM.resetCompilationStatistics();
     }
 
-    public static long initializeConfiguration(HotSpotVMConfig config) {
-        return CTVM.initializeConfiguration(config);
+    public static Object[] readConfiguration() {
+        return CTVM.readConfiguration();
     }
 
     public static HotSpotResolvedJavaMethod resolveMethod(

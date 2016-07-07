@@ -1246,8 +1246,7 @@ bool InstructForm::check_branch_variant(ArchDesc &AD, InstructForm *short_branch
       !is_short_branch() &&     // Don't match another short branch variant
       reduce_result() != NULL &&
       strcmp(reduce_result(), short_branch->reduce_result()) == 0 &&
-      _matrule->equivalent(AD.globalNames(), short_branch->_matrule) &&
-      equivalent_predicates(this, short_branch)) {
+      _matrule->equivalent(AD.globalNames(), short_branch->_matrule)) {
     // The instructions are equivalent.
 
     // Now verify that both instructions have the same parameters and
@@ -3491,13 +3490,13 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "LoadRange", "LoadKlass", "LoadNKlass", "LoadL_unaligned", "LoadD_unaligned",
     "LoadPLocked",
     "StorePConditional", "StoreIConditional", "StoreLConditional",
-    "CompareAndSwapI", "CompareAndSwapL", "CompareAndSwapP", "CompareAndSwapN",
-    "WeakCompareAndSwapI", "WeakCompareAndSwapL", "WeakCompareAndSwapP", "WeakCompareAndSwapN",
-    "CompareAndExchangeI", "CompareAndExchangeL", "CompareAndExchangeP", "CompareAndExchangeN",
+    "CompareAndSwapB", "CompareAndSwapS", "CompareAndSwapI", "CompareAndSwapL", "CompareAndSwapP", "CompareAndSwapN",
+    "WeakCompareAndSwapB", "WeakCompareAndSwapS", "WeakCompareAndSwapI", "WeakCompareAndSwapL", "WeakCompareAndSwapP", "WeakCompareAndSwapN",
+    "CompareAndExchangeB", "CompareAndExchangeS", "CompareAndExchangeI", "CompareAndExchangeL", "CompareAndExchangeP", "CompareAndExchangeN",
     "StoreCM",
     "ClearArray",
-    "GetAndAddI", "GetAndSetI", "GetAndSetP",
-    "GetAndAddL", "GetAndSetL", "GetAndSetN",
+    "GetAndSetB", "GetAndSetS", "GetAndAddI", "GetAndSetI", "GetAndSetP",
+    "GetAndAddB", "GetAndAddS", "GetAndAddL", "GetAndSetL", "GetAndSetN",
   };
   int cnt = sizeof(needs_ideal_memory_list)/sizeof(char*);
   if( strcmp(_opType,"PrefetchAllocation")==0 )

@@ -35,6 +35,7 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), linux)
   BUILD_LIBJVM_ostream.cpp_CXXFLAGS := -D_FILE_OFFSET_BITS=64
+  BUILD_LIBJVM_logFileOutput.cpp_CXXFLAGS := -D_FILE_OFFSET_BITS=64
 
   ifeq ($(OPENJDK_TARGET_CPU_ARCH), x86)
     BUILD_LIBJVM_sharedRuntimeTrig.cpp_CXXFLAGS := -DNO_PCH $(CXX_O_FLAG_NONE)

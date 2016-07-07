@@ -28,6 +28,7 @@ import java.util.EnumSet;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.Register.RegisterCategory;
+import jdk.vm.ci.code.RegisterArray;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 
@@ -84,13 +85,13 @@ public class AArch64 extends Architecture {
     public static final Register lr = r30;
 
     // @formatter:off
-    public static final Register[] cpuRegisters = {
+    public static final RegisterArray cpuRegisters = new RegisterArray(
         r0,  r1,  r2,  r3,  r4,  r5,  r6,  r7,
         r8,  r9,  r10, r11, r12, r13, r14, r15,
         r16, r17, r18, r19, r20, r21, r22, r23,
         r24, r25, r26, r27, r28, r29, r30, r31,
         zr,  sp
-    };
+    );
     // @formatter:on
 
     public static final RegisterCategory SIMD = new RegisterCategory("SIMD");
@@ -130,16 +131,16 @@ public class AArch64 extends Architecture {
     public static final Register v31 = new Register(65, 31, "v31", SIMD);
 
     // @formatter:off
-    public static final Register[] simdRegisters = {
+    public static final RegisterArray simdRegisters = new RegisterArray(
         v0,  v1,  v2,  v3,  v4,  v5,  v6,  v7,
         v8,  v9,  v10, v11, v12, v13, v14, v15,
         v16, v17, v18, v19, v20, v21, v22, v23,
         v24, v25, v26, v27, v28, v29, v30, v31
-    };
+    );
     // @formatter:on
 
     // @formatter:off
-    public static final Register[] allRegisters = {
+    public static final RegisterArray allRegisters = new RegisterArray(
         r0,  r1,  r2,  r3,  r4,  r5,  r6,  r7,
         r8,  r9,  r10, r11, r12, r13, r14, r15,
         r16, r17, r18, r19, r20, r21, r22, r23,
@@ -150,7 +151,7 @@ public class AArch64 extends Architecture {
         v8,  v9,  v10, v11, v12, v13, v14, v15,
         v16, v17, v18, v19, v20, v21, v22, v23,
         v24, v25, v26, v27, v28, v29, v30, v31
-    };
+    );
     // @formatter:on
 
     /**
