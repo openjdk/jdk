@@ -417,7 +417,10 @@ class Deflater {
      * <p>In the case of {@link #FULL_FLUSH} or {@link #SYNC_FLUSH}, if
      * the return value is {@code len}, the space available in output
      * buffer {@code b}, this method should be invoked again with the same
-     * {@code flush} parameter and more output space.
+     * {@code flush} parameter and more output space. Make sure that
+     * {@code len} is greater than 6 to avoid flush marker (5 bytes) being
+     * repeatedly output to the output buffer every time this method is
+     * invoked.
      *
      * @param b the buffer for the compressed data
      * @param off the start offset of the data
