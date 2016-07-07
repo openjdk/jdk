@@ -1093,7 +1093,7 @@ public class SwingUtilities2 {
 
         FontRenderContext frc = cache.get(key);
         if (frc == null) {
-            aaHint = (aaHint == null) ? VALUE_ANTIALIAS_OFF : aaHint;
+            aaHint = (aaHint == null) ? VALUE_TEXT_ANTIALIAS_OFF : aaHint;
             frc = new FontRenderContext(tx, aaHint,
                                         VALUE_FRACTIONALMETRICS_DEFAULT);
             cache.put(key, frc);
