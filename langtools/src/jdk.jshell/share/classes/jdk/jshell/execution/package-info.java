@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,16 +23,12 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8047024
- * @summary AssertionError: exception_index already contains a bytecode offset
- * @compile T8047024_01.java
- * @compile -parameters T8047024.java
+/**
+ * Provides implementation support for building JShell execution engines.
+ * Includes concrete and abstract implementations of the
+ * {@link jdk.jshell.spi.ExecutionControl} interface.
+ * Also, provides related communication utilities.
+ * This package may be used to define alternative execution engines.
+ * The default JShell execution engine is included.
  */
-
-public class T8047024 {
-    public static void main(String [] args) {
-        T8047024_01.run();
-    }
-}
+package jdk.jshell.execution;
