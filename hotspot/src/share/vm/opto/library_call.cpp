@@ -2337,6 +2337,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
       return false;
     }
     mismatched = (bt != type);
+  } else if (alias_type->adr_type() == TypeOopPtr::BOTTOM) {
+    mismatched = true; // conservatively mark all "wide" on-heap accesses as mismatched
   }
 
   // First guess at the value type.
