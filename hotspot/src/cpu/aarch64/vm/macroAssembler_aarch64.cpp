@@ -2141,30 +2141,40 @@ void MacroAssembler::cmpxchgw(Register oldv, Register newv, Register addr, Regis
     b(*fail);
 }
 
-// A generic CAS; success or failure is in the EQ flag.
+// A generic CAS; success or failure is in the EQ flag.  A weak CAS
+// doesn't retry and may fail spuriously.  If the oldval is wanted,
+// Pass a register for the result, otherwise pass noreg.
+
+// Clobbers rscratch1
 void MacroAssembler::cmpxchg(Register addr, Register expected,
                              Register new_val,
                              enum operand_size size,
                              bool acquire, bool release,
-                             Register tmp) {
+                             bool weak,
+                             Register result) {
+  if (result == noreg)  result = rscratch1;
   if (UseLSE) {
-    mov(tmp, expected);
-    lse_cas(tmp, new_val, addr, size, acquire, release, /*not_pair*/ true);
-    cmp(tmp, expected);
+    mov(result, expected);
+    lse_cas(result, new_val, addr, size, acquire, release, /*not_pair*/ true);
+    cmp(result, expected);
   } else {
     BLOCK_COMMENT("cmpxchg {");
     Label retry_load, done;
     if ((VM_Version::features() & VM_Version::CPU_STXR_PREFETCH))
       prfm(Address(addr), PSTL1STRM);
     bind(retry_load);
-    load_exclusive(tmp, addr, size, acquire);
+    load_exclusive(result, addr, size, acquire);
     if (size == xword)
-      cmp(tmp, expected);
+      cmp(result, expected);
     else
-      cmpw(tmp, expected);
+      cmpw(result, expected);
     br(Assembler::NE, done);
-    store_exclusive(tmp, new_val, addr, size, release);
-    cbnzw(tmp, retry_load);
+    store_exclusive(rscratch1, new_val, addr, size, release);
+    if (weak) {
+      cmpw(rscratch1, 0u);  // If the store fails, return NE to our caller.
+    } else {
+      cbnzw(rscratch1, retry_load);
+    }
     bind(done);
     BLOCK_COMMENT("} cmpxchg");
   }
