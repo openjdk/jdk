@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,11 @@
  */
 
 /**
- * This document is the API specification for JShell -- support for
- * Java&#x2122; Programming Language 'snippet' evaluating tools, such as
- * Read-Eval-Print Loops (REPLs).
+ * Provides implementation support for building JShell execution engines.
+ * Includes concrete and abstract implementations of the
+ * {@link jdk.jshell.spi.ExecutionControl} interface.
+ * Also, provides related communication utilities.
+ * This package may be used to define alternative execution engines.
+ * The default JShell execution engine is included.
  */
-module jdk.jshell {
-    requires public java.compiler;
-    requires java.desktop;
-    requires java.prefs;
-    requires jdk.compiler;
-    requires jdk.internal.le;
-    requires jdk.jdi;
-
-    exports jdk.jshell;
-    exports jdk.jshell.spi;
-    exports jdk.jshell.execution;
-}
+package jdk.jshell.execution;

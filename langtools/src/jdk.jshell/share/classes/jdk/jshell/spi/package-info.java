@@ -24,16 +24,16 @@
  */
 
 /**
- * Provides support for alternate implementations of the JShell execution
- * engine.  The JShell core tracks and compiles Snippets then sends them
+ * Defines the Service Provider Interface for pluggable JShell execution engines.
+ * The JShell core tracks and compiles Snippets then sends them
  * (represented in a wrapper class) to the execution engine for loading,
  * and in the case of executable Snippets, execution.  The JShell
  * implementation includes a default execution engine (currently a remote
  * process which is JDI controlled).  By implementing the
- * {@link ExecutionControl} interface and installing it with
+ * {@link jdk.jshell.spi.ExecutionControl} interface and installing it with
  * {@link jdk.jshell.JShell.Builder#executionEngine(jdk.jshell.spi.ExecutionControl) }
  * other execution engines can be used.
- * <p>
- * This is not a part of the JShell API.
+ *
+ * @see jdk.jshell.execution jdk.jshell.execution for execution implementation support
  */
 package jdk.jshell.spi;
