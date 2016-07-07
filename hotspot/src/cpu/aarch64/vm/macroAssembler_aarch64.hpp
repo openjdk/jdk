@@ -995,10 +995,11 @@ public:
   }
 
   // A generic CAS; success or failure is in the EQ flag.
+  // Clobbers rscratch1
   void cmpxchg(Register addr, Register expected, Register new_val,
                enum operand_size size,
-               bool acquire, bool release,
-               Register tmp = rscratch1);
+               bool acquire, bool release, bool weak,
+               Register result);
 
   // Calls
 
