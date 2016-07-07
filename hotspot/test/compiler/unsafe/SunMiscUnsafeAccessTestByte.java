@@ -145,16 +145,16 @@ public class SunMiscUnsafeAccessTestByte {
     static void testAccess(Object base, long offset) {
         // Plain
         {
-            UNSAFE.putByte(base, offset, (byte)1);
+            UNSAFE.putByte(base, offset, (byte)0x01);
             byte x = UNSAFE.getByte(base, offset);
-            assertEquals(x, (byte)1, "set byte value");
+            assertEquals(x, (byte)0x01, "set byte value");
         }
 
         // Volatile
         {
-            UNSAFE.putByteVolatile(base, offset, (byte)2);
+            UNSAFE.putByteVolatile(base, offset, (byte)0x23);
             byte x = UNSAFE.getByteVolatile(base, offset);
-            assertEquals(x, (byte)2, "putVolatile byte value");
+            assertEquals(x, (byte)0x23, "putVolatile byte value");
         }
 
 
@@ -166,9 +166,9 @@ public class SunMiscUnsafeAccessTestByte {
     static void testAccess(long address) {
         // Plain
         {
-            UNSAFE.putByte(address, (byte)1);
+            UNSAFE.putByte(address, (byte)0x01);
             byte x = UNSAFE.getByte(address);
-            assertEquals(x, (byte)1, "set byte value");
+            assertEquals(x, (byte)0x01, "set byte value");
         }
     }
 }

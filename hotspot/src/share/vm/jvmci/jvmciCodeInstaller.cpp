@@ -91,7 +91,19 @@ VMReg getVMRegFromLocation(Handle location, int total_frame_size, TRAPS) {
   } else {
     // stack slot
     if (offset % 4 == 0) {
-      return VMRegImpl::stack2reg(offset / 4);
+      VMReg vmReg = VMRegImpl::stack2reg(offset / 4);
+      if (!OopMapValue::legal_vm_reg_name(vmReg)) {
+        // This restriction only applies to VMRegs that are used in OopMap but
+        // since that's the only use of VMRegs it's simplest to put this test
+        // here.  This test should also be equivalent legal_vm_reg_name but JVMCI
+        // clients can use max_oop_map_stack_stack_offset to detect this problem
+        // directly.  The asserts just ensure that the tests are in agreement.
+        assert(offset > CompilerToVM::Data::max_oop_map_stack_offset(), "illegal VMReg");
+        JVMCI_ERROR_NULL("stack offset %d is too large to be encoded in OopMap (max %d)",
+                         offset, CompilerToVM::Data::max_oop_map_stack_offset());
+      }
+      assert(OopMapValue::legal_vm_reg_name(vmReg), "illegal VMReg");
+      return vmReg;
     } else {
       JVMCI_ERROR_NULL("unaligned stack offset %d in oop map", offset);
     }

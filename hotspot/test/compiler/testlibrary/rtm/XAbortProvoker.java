@@ -22,7 +22,7 @@
  *
  */
 
-package rtm;
+package compiler.testlibrary.rtm;
 
 import jdk.test.lib.Utils;
 import jdk.internal.misc.Unsafe;

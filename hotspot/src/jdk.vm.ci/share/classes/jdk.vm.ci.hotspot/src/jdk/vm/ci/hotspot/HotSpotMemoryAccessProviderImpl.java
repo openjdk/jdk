@@ -23,7 +23,7 @@
 package jdk.vm.ci.hotspot;
 
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
-import jdk.vm.ci.hotspot.HotSpotVMConfig.CompressEncoding;
+
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
@@ -206,8 +206,7 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
     }
 
     @Override
-    public JavaConstant readNarrowOopConstant(Constant base, long displacement, CompressEncoding encoding) {
-        assert encoding.equals(runtime.getConfig().getOopEncoding()) : "unexpected oop encoding: " + encoding + " != " + runtime.getConfig().getOopEncoding();
+    public JavaConstant readNarrowOopConstant(Constant base, long displacement) {
         return HotSpotObjectConstantImpl.forObject(readRawObject(base, displacement, true), true);
     }
 
@@ -227,7 +226,7 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
     }
 
     @Override
-    public Constant readNarrowKlassPointerConstant(Constant base, long displacement, CompressEncoding encoding) {
+    public Constant readNarrowKlassPointerConstant(Constant base, long displacement) {
         HotSpotResolvedObjectTypeImpl klass = readKlass(base, displacement, true);
         if (klass == null) {
             return HotSpotCompressedNullConstant.COMPRESSED_NULL;

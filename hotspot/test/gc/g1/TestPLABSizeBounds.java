@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test TestPLABSizeBounds
  * @bug 8134857
  * @summary Regression test to ensure that G1 supports PLAB sizes of half a region size.
- * @requires vm.gc=="G1" | vm.gc=="null"
+ * @requires vm.gc.G1
  * @key gc
  * @library /testlibrary
  * @modules java.base/jdk.internal.misc

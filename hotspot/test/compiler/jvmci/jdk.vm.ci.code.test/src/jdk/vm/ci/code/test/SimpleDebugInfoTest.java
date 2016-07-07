@@ -32,7 +32,7 @@
  *          jdk.vm.ci/jdk.vm.ci.runtime
  *          jdk.vm.ci/jdk.vm.ci.amd64
  *          jdk.vm.ci/jdk.vm.ci.sparc
- * @compile CodeInstallationTest.java DebugInfoTest.java TestAssembler.java amd64/AMD64TestAssembler.java sparc/SPARCTestAssembler.java
+ * @compile CodeInstallationTest.java DebugInfoTest.java TestAssembler.java TestHotSpotVMConfig.java amd64/AMD64TestAssembler.java sparc/SPARCTestAssembler.java
  * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI jdk.vm.ci.code.test.SimpleDebugInfoTest
  */
 
@@ -43,7 +43,6 @@ import org.junit.Test;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.hotspot.HotSpotConstant;
-import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -255,7 +254,7 @@ public class SimpleDebugInfoTest extends DebugInfoTest {
 
     @Test
     public void testRegNarrowObject() {
-        Assume.assumeTrue(HotSpotVMConfig.config().useCompressedOops);
+        Assume.assumeTrue(config.useCompressedOops);
         ResolvedJavaType type = metaAccess.lookupJavaType(objectOnStack());
         DebugInfoCompiler compiler = (asm, values) -> {
             HotSpotConstant wide = (HotSpotConstant) constantReflection.asJavaClass(type);
@@ -269,7 +268,7 @@ public class SimpleDebugInfoTest extends DebugInfoTest {
 
     @Test
     public void testStackNarrowObject() {
-        Assume.assumeTrue(HotSpotVMConfig.config().useCompressedOops);
+        Assume.assumeTrue(config.useCompressedOops);
         ResolvedJavaType type = metaAccess.lookupJavaType(objectOnStack());
         DebugInfoCompiler compiler = (asm, values) -> {
             HotSpotConstant wide = (HotSpotConstant) constantReflection.asJavaClass(type);

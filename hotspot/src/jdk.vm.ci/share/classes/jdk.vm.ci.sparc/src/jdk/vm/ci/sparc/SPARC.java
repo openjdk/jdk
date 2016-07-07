@@ -32,6 +32,7 @@ import java.util.Set;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.Register.RegisterCategory;
+import jdk.vm.ci.code.RegisterArray;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 
@@ -179,35 +180,35 @@ public class SPARC extends Architecture {
     public static final Register q60 = new Register(111, getQuadncoding(60), "q60", FPUq);
 
     // @formatter:off
-    public static final Register[] cpuRegisters = {
+    public static final RegisterArray cpuRegisters = new RegisterArray(
         g0,  g1,  g2,  g3,  g4,  g5,  g6,  g7,
         o0,  o1,  o2,  o3,  o4,  o5,  o6,  o7,
         l0,  l1,  l2,  l3,  l4,  l5,  l6,  l7,
         i0,  i1,  i2,  i3,  i4,  i5,  i6,  i7
-    };
+    );
 
-    public static final Register[] fpusRegisters = {
+    public static final RegisterArray fpusRegisters = new RegisterArray(
         f0,  f1,  f2,  f3,  f4,  f5,  f6,  f7,
         f8,  f9,  f10, f11, f12, f13, f14, f15,
         f16, f17, f18, f19, f20, f21, f22, f23,
         f24, f25, f26, f27, f28, f29, f30, f31
-    };
+    );
 
-    public static final Register[] fpudRegisters = {
+    public static final RegisterArray fpudRegisters = new RegisterArray(
         d0, d2, d4, d6, d8,  d10, d12, d14,
         d16, d18, d20, d22, d24, d26, d28, d30,
         d32, d34, d36, d38, d40, d42, d44, d46,
         d48, d50, d52, d54, d56, d58, d60, d62
-    };
+    );
 
-    public static final Register[] fpuqRegisters = {
+    public static final RegisterArray fpuqRegisters = new RegisterArray(
         q0, q4, q8, q12,
         q16, q20, q24, q28,
         q32, q36, q40, q44,
-        q48, q52, q56, q60,
-    };
+        q48, q52, q56, q60
+    );
 
-    public static final Register[] allRegisters = {
+    public static final RegisterArray allRegisters = new RegisterArray(
         g0,  g1,  g2,  g3,  g4,  g5,  g6,  g7,
         o0,  o1,  o2,  o3,  o4,  o5,  o6,  o7,
         l0,  l1,  l2,  l3,  l4,  l5,  l6,  l7,
@@ -226,8 +227,8 @@ public class SPARC extends Architecture {
         q0, q4, q8, q12,
         q16, q20, q24, q28,
         q32, q36, q40, q44,
-        q48, q52, q56, q60,
-    };
+        q48, q52, q56, q60
+    );
     // @formatter:on
 
     /**
@@ -248,7 +249,7 @@ public class SPARC extends Architecture {
     }
 
     @Override
-    public Register[] getAvailableValueRegisters() {
+    public RegisterArray getAvailableValueRegisters() {
         return allRegisters;
     }
 

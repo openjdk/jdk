@@ -260,9 +260,9 @@ class os: AllStatic {
   // exception processing)  There are guard pages, and above that shadow
   // pages for stack overflow checking.
   static bool uses_stack_guard_pages();
-  static bool allocate_stack_guard_pages();
-  static void map_stack_shadow_pages();
-  static bool stack_shadow_pages_available(Thread *thread, const methodHandle& method);
+  static bool must_commit_stack_guard_pages();
+  static void map_stack_shadow_pages(address sp);
+  static bool stack_shadow_pages_available(Thread *thread, const methodHandle& method, address sp);
 
   // OS interface to Virtual Memory
 

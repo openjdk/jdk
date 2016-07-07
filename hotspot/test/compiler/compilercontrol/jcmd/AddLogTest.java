@@ -26,12 +26,12 @@
  * @bug 8137167
  * @summary Tests jcmd to be able to add a directive to log only specified methods
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib /compiler/testlibrary ../share /
+ * @library /testlibrary /test/lib ../share /
  * @build compiler.compilercontrol.jcmd.AddLogTest
  *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run driver compiler.compilercontrol.jcmd.AddLogTest
  */
 

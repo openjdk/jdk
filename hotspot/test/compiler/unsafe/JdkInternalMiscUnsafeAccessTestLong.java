@@ -145,179 +145,179 @@ public class JdkInternalMiscUnsafeAccessTestLong {
     static void testAccess(Object base, long offset) {
         // Plain
         {
-            UNSAFE.putLong(base, offset, 1L);
+            UNSAFE.putLong(base, offset, 0x0123456789ABCDEFL);
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 1L, "set long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "set long value");
         }
 
         // Volatile
         {
-            UNSAFE.putLongVolatile(base, offset, 2L);
+            UNSAFE.putLongVolatile(base, offset, 0xCAFEBABECAFEBABEL);
             long x = UNSAFE.getLongVolatile(base, offset);
-            assertEquals(x, 2L, "putVolatile long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "putVolatile long value");
         }
 
 
         // Lazy
         {
-            UNSAFE.putLongRelease(base, offset, 1L);
+            UNSAFE.putLongRelease(base, offset, 0x0123456789ABCDEFL);
             long x = UNSAFE.getLongAcquire(base, offset);
-            assertEquals(x, 1L, "putRelease long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "putRelease long value");
         }
 
         // Opaque
         {
-            UNSAFE.putLongOpaque(base, offset, 2L);
+            UNSAFE.putLongOpaque(base, offset, 0xCAFEBABECAFEBABEL);
             long x = UNSAFE.getLongOpaque(base, offset);
-            assertEquals(x, 2L, "putOpaque long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "putOpaque long value");
         }
 
         // Unaligned
         {
-            UNSAFE.putLongUnaligned(base, offset, 2L);
+            UNSAFE.putLongUnaligned(base, offset, 0xCAFEBABECAFEBABEL);
             long x = UNSAFE.getLongUnaligned(base, offset);
-            assertEquals(x, 2L, "putUnaligned long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "putUnaligned long value");
         }
 
         {
-            UNSAFE.putLongUnaligned(base, offset, 1L, true);
+            UNSAFE.putLongUnaligned(base, offset, 0x0123456789ABCDEFL, true);
             long x = UNSAFE.getLongUnaligned(base, offset, true);
-            assertEquals(x, 1L, "putUnaligned big endian long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "putUnaligned big endian long value");
         }
 
         {
-            UNSAFE.putLongUnaligned(base, offset, 2L, false);
+            UNSAFE.putLongUnaligned(base, offset, 0xCAFEBABECAFEBABEL, false);
             long x = UNSAFE.getLongUnaligned(base, offset, false);
-            assertEquals(x, 2L, "putUnaligned little endian long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "putUnaligned little endian long value");
         }
 
-        UNSAFE.putLong(base, offset, 1L);
+        UNSAFE.putLong(base, offset, 0x0123456789ABCDEFL);
 
         // Compare
         {
-            boolean r = UNSAFE.compareAndSwapLong(base, offset, 1L, 2L);
+            boolean r = UNSAFE.compareAndSwapLong(base, offset, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
             assertEquals(r, true, "success compareAndSwap long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 2L, "success compareAndSwap long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "success compareAndSwap long value");
         }
 
         {
-            boolean r = UNSAFE.compareAndSwapLong(base, offset, 1L, 3L);
+            boolean r = UNSAFE.compareAndSwapLong(base, offset, 0x0123456789ABCDEFL, 0xDEADBEEFDEADBEEFL);
             assertEquals(r, false, "failing compareAndSwap long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 2L, "failing compareAndSwap long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "failing compareAndSwap long value");
         }
 
         // Advanced compare
         {
-            long r = UNSAFE.compareAndExchangeLongVolatile(base, offset, 2L, 1L);
-            assertEquals(r, 2L, "success compareAndExchangeVolatile long");
+            long r = UNSAFE.compareAndExchangeLongVolatile(base, offset, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
+            assertEquals(r, 0xCAFEBABECAFEBABEL, "success compareAndExchangeVolatile long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 1L, "success compareAndExchangeVolatile long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "success compareAndExchangeVolatile long value");
         }
 
         {
-            long r = UNSAFE.compareAndExchangeLongVolatile(base, offset, 2L, 3L);
-            assertEquals(r, 1L, "failing compareAndExchangeVolatile long");
+            long r = UNSAFE.compareAndExchangeLongVolatile(base, offset, 0xCAFEBABECAFEBABEL, 0xDEADBEEFDEADBEEFL);
+            assertEquals(r, 0x0123456789ABCDEFL, "failing compareAndExchangeVolatile long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 1L, "failing compareAndExchangeVolatile long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "failing compareAndExchangeVolatile long value");
         }
 
         {
-            long r = UNSAFE.compareAndExchangeLongAcquire(base, offset, 1L, 2L);
-            assertEquals(r, 1L, "success compareAndExchangeAcquire long");
+            long r = UNSAFE.compareAndExchangeLongAcquire(base, offset, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
+            assertEquals(r, 0x0123456789ABCDEFL, "success compareAndExchangeAcquire long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 2L, "success compareAndExchangeAcquire long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "success compareAndExchangeAcquire long value");
         }
 
         {
-            long r = UNSAFE.compareAndExchangeLongAcquire(base, offset, 1L, 3L);
-            assertEquals(r, 2L, "failing compareAndExchangeAcquire long");
+            long r = UNSAFE.compareAndExchangeLongAcquire(base, offset, 0x0123456789ABCDEFL, 0xDEADBEEFDEADBEEFL);
+            assertEquals(r, 0xCAFEBABECAFEBABEL, "failing compareAndExchangeAcquire long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 2L, "failing compareAndExchangeAcquire long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "failing compareAndExchangeAcquire long value");
         }
 
         {
-            long r = UNSAFE.compareAndExchangeLongRelease(base, offset, 2L, 1L);
-            assertEquals(r, 2L, "success compareAndExchangeRelease long");
+            long r = UNSAFE.compareAndExchangeLongRelease(base, offset, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
+            assertEquals(r, 0xCAFEBABECAFEBABEL, "success compareAndExchangeRelease long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 1L, "success compareAndExchangeRelease long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "success compareAndExchangeRelease long value");
         }
 
         {
-            long r = UNSAFE.compareAndExchangeLongRelease(base, offset, 2L, 3L);
-            assertEquals(r, 1L, "failing compareAndExchangeRelease long");
+            long r = UNSAFE.compareAndExchangeLongRelease(base, offset, 0xCAFEBABECAFEBABEL, 0xDEADBEEFDEADBEEFL);
+            assertEquals(r, 0x0123456789ABCDEFL, "failing compareAndExchangeRelease long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 1L, "failing compareAndExchangeRelease long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "failing compareAndExchangeRelease long value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapLong(base, offset, 1L, 2L);
+                success = UNSAFE.weakCompareAndSwapLong(base, offset, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
             }
             assertEquals(success, true, "weakCompareAndSwap long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 2L, "weakCompareAndSwap long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "weakCompareAndSwap long value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapLongAcquire(base, offset, 2L, 1L);
+                success = UNSAFE.weakCompareAndSwapLongAcquire(base, offset, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
             }
             assertEquals(success, true, "weakCompareAndSwapAcquire long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 1L, "weakCompareAndSwapAcquire long");
+            assertEquals(x, 0x0123456789ABCDEFL, "weakCompareAndSwapAcquire long");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapLongRelease(base, offset, 1L, 2L);
+                success = UNSAFE.weakCompareAndSwapLongRelease(base, offset, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
             }
             assertEquals(success, true, "weakCompareAndSwapRelease long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 2L, "weakCompareAndSwapRelease long");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "weakCompareAndSwapRelease long");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapLongVolatile(base, offset, 2L, 1L);
+                success = UNSAFE.weakCompareAndSwapLongVolatile(base, offset, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
             }
             assertEquals(success, true, "weakCompareAndSwapVolatile long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 1L, "weakCompareAndSwapVolatile long");
+            assertEquals(x, 0x0123456789ABCDEFL, "weakCompareAndSwapVolatile long");
         }
 
-        UNSAFE.putLong(base, offset, 2L);
+        UNSAFE.putLong(base, offset, 0xCAFEBABECAFEBABEL);
 
         // Compare set and get
         {
-            long o = UNSAFE.getAndSetLong(base, offset, 1L);
-            assertEquals(o, 2L, "getAndSet long");
+            long o = UNSAFE.getAndSetLong(base, offset, 0x0123456789ABCDEFL);
+            assertEquals(o, 0xCAFEBABECAFEBABEL, "getAndSet long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 1L, "getAndSet long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "getAndSet long value");
         }
 
-        UNSAFE.putLong(base, offset, 1L);
+        UNSAFE.putLong(base, offset, 0x0123456789ABCDEFL);
 
         // get and add, add and get
         {
-            long o = UNSAFE.getAndAddLong(base, offset, 2L);
-            assertEquals(o, 1L, "getAndAdd long");
+            long o = UNSAFE.getAndAddLong(base, offset, 0xCAFEBABECAFEBABEL);
+            assertEquals(o, 0x0123456789ABCDEFL, "getAndAdd long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 1L + 2L, "getAndAdd long");
+            assertEquals(x, (long)(0x0123456789ABCDEFL + 0xCAFEBABECAFEBABEL), "getAndAdd long");
         }
     }
 
     static void testAccess(long address) {
         // Plain
         {
-            UNSAFE.putLong(address, 1L);
+            UNSAFE.putLong(address, 0x0123456789ABCDEFL);
             long x = UNSAFE.getLong(address);
-            assertEquals(x, 1L, "set long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "set long value");
         }
     }
 }
