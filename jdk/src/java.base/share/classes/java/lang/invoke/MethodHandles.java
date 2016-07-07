@@ -3427,7 +3427,8 @@ assertEquals("xy", h3.invoke("x", "y", 1, "a", "b", "c"));
      * @return a possibly adapted method handle
      * @throws NullPointerException if either argument is null
      * @throws IllegalArgumentException if any element of {@code newTypes} is {@code void.class},
-     *         or if either index is out of range in its corresponding list,
+     *         or if {@code skip} is negative or greater than the arity of the target,
+     *         or if {@code pos} is negative or greater than the newTypes list size,
      *         or if the non-skipped target parameter types match the new types at {@code pos}
      * @since 9
      */
