@@ -1223,8 +1223,7 @@ JSHELLAPI_DOCTITLE := JShell API
 JSHELLAPI_WINDOWTITLE := JShell API
 JSHELLAPI_HEADER := <strong>JSHELL API</strong>
 JSHELLAPI_BOTTOM := $(call CommonBottom,$(JSHELLAPI_FIRST_COPYRIGHT_YEAR))
-JSHELLAPI_GROUPNAME := Packages
-JSHELLAPI_REGEXP := jdk.jshell.*
+JSHELLAPI_OVERVIEW := $(LANGTOOLS_TOPDIR)/src/jdk.jshell/share/classes/jdk/jshell/overview.html
 # JSHELLAPI_PKGS is located in NON_CORE_PKGS.gmk
 
 JSHELLAPI_INDEX_HTML = $(JSHELLAPI_DOCDIR)/index.html
@@ -1256,11 +1255,11 @@ $(JSHELLAPI_OPTIONS_FILE):
 	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
 	  $(call OptionPair,-addmods,$(JSHELLAPI_MODULES)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
+	  $(call OptionPair,-overview,$(JSHELLAPI_OVERVIEW)) ; \
 	  $(call OptionPair,-doctitle,$(JSHELLAPI_DOCTITLE)) ; \
 	  $(call OptionPair,-windowtitle,$(JSHELLAPI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
 	  $(call OptionPair,-header,$(JSHELLAPI_HEADER)$(DRAFT_HEADER)) ; \
 	  $(call OptionPair,-bottom,$(JSHELLAPI_BOTTOM)$(DRAFT_BOTTOM)) ; \
-	  $(call OptionTrip,-group,$(JSHELLAPI_GROUPNAME),$(JSHELLAPI_REGEXP)); \
 	  $(call OptionTrip,-linkoffline,$(JSHELLAPI2COREAPI),$(COREAPI_DOCSDIR)/); \
 	) >> $@
 
