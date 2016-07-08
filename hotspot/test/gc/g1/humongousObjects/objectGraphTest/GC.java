@@ -38,6 +38,61 @@ import java.util.function.Consumer;
  * referenced objects after GCs
  */
 public enum GC {
+    CMC {
+        @Override
+        public Runnable get() {
+            return () -> {
+                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
+                WHITE_BOX.g1StartConcMarkCycle();
+                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
+            };
+        }
+
+        public Consumer<ReferenceInfo<Object[]>> getChecker() {
+            return getCheckerImpl(false, false, true, false);
+        }
+
+        @Override
+        public List<String> shouldContain() {
+            return Arrays.asList(GCTokens.WB_INITIATED_CMC);
+        }
+
+        @Override
+        public List<String> shouldNotContain() {
+            return Arrays.asList(GCTokens.WB_INITIATED_YOUNG_GC, GCTokens.WB_INITIATED_MIXED_GC,
+                    GCTokens.FULL_GC, GCTokens.YOUNG_GC);
+        }
+    },
+
+    CMC_NO_SURV_ROOTS {
+        @Override
+        public Runnable get() {
+            return () -> {
+                WHITE_BOX.youngGC();
+                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
+                WHITE_BOX.youngGC();
+                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
+
+                WHITE_BOX.g1StartConcMarkCycle();
+                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
+            };
+        }
+
+        public Consumer<ReferenceInfo<Object[]>> getChecker() {
+            return getCheckerImpl(true, false, true, false);
+        }
+
+        @Override
+        public List<String> shouldContain() {
+            return Arrays.asList(GCTokens.WB_INITIATED_CMC);
+        }
+
+        @Override
+        public List<String> shouldNotContain() {
+            return Arrays.asList(GCTokens.WB_INITIATED_MIXED_GC,
+                    GCTokens.FULL_GC, GCTokens.YOUNG_GC);
+        }
+    },
 
     YOUNG_GC {
         @Override
@@ -60,6 +115,7 @@ public enum GC {
                     GCTokens.CMC, GCTokens.YOUNG_GC);
         }
     },
+
     FULL_GC {
         @Override
         public Runnable get() {

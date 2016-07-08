@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8152981
+ * @bug 8152981 8159135
  * @summary Double icons with JMenuItem setHorizontalTextPosition on Win 10
  * @requires (os.family == "windows")
  * @run main MenuItemIconTest
@@ -89,7 +89,7 @@ public class MenuItemIconTest {
         robot.delay(2000);
         robot.mouseMove(x, y);
         Color c = robot.getPixelColor(x, y);
-        if (c.getRed() == 255) {
+        if (Color.RED.equals(c)) {
             errorMessage = "Test Failed";
         }
         robot.delay(5000);

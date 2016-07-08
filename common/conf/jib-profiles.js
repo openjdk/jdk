@@ -254,7 +254,7 @@ var getJibProfilesProfiles = function (input, common) {
             build_cpu: "x64",
             dependencies: concat(common.dependencies, "devkit"),
             configure_args: concat(common.configure_args, common.configure_args_32bit,
-                "--with-jvm-variants=minimal,client,server", "--with-zlib=system"),
+                "--with-jvm-variants=minimal,server", "--with-zlib=system"),
             default_make_targets: common.default_make_targets
         },
 
@@ -295,8 +295,7 @@ var getJibProfilesProfiles = function (input, common) {
             target_cpu: "x86",
             build_cpu: "x64",
             dependencies: concat(common.dependencies, "devkit", "freetype"),
-            configure_args: concat(common.configure_args,
-                "--with-jvm-variants=client,server", common.configure_args_32bit),
+            configure_args: concat(common.configure_args, common.configure_args_32bit),
             default_make_targets: common.default_make_targets
         }
     };

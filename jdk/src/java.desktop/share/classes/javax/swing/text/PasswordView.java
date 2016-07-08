@@ -139,6 +139,26 @@ public class PasswordView extends FieldView {
     }
 
     /**
+     * Renders the echo character, or whatever graphic should be used
+     * to display the password characters.  The color in the Graphics
+     * object is set to the appropriate foreground color for selected
+     * or unselected text.
+     *
+     * @implSpec This implementation calls
+     * {@link #drawEchoCharacter(Graphics, int, int, char)
+     *      drawEchoCharacter((Graphics) g, (int) x, (int) y, c)}.
+     *
+     * @param g the graphics context
+     * @param x the starting X coordinate {@code >= 0}
+     * @param y the starting Y coordinate {@code >= 0}
+     * @param c the echo character
+     * @return the updated X position {@code >= 0}
+     */
+    protected float drawEchoCharacter(Graphics2D g, float x, float y, char c) {
+        return drawEchoCharacter((Graphics) g, (int) x, (int) y, c);
+    }
+
+    /**
      * Provides a mapping from the document model coordinate space
      * to the coordinate space of the view mapped to it.
      *

@@ -23,16 +23,15 @@
 # questions.
 #
 
+$(eval $(call IncludeCustomExtension, jdk, gensrc/GensrcIcons.gmk))
+
 GENSRC_AWT_ICONS :=
 GENSRC_AWT_ICONS_SRC :=
 GENSRC_AWT_ICONS_TMP := $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop
 GENSRC_AWT_ICONS_DST := $(GENSRC_AWT_ICONS_TMP)/sun/awt/
 
-ifdef OPENJDK
-  X11_ICONS_PATH_PREFIX := $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)
-else
-  X11_ICONS_PATH_PREFIX := $(JDK_TOPDIR)/src/closed/java.desktop/$(OPENJDK_TARGET_OS_TYPE)
-endif
+# Allow this to be overridden from a custom makefile
+X11_ICONS_PATH_PREFIX ?= $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)
 
 GENSRC_AWT_ICONS_SRC += \
     $(X11_ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon16.png \
@@ -114,11 +113,8 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
   GENSRC_OSX_ICONS_DST := $(SUPPORT_OUTPUTDIR)/headers/java.desktop
   GENSRC_OSX_ICONS := $(GENSRC_OSX_ICONS_DST)/AWTIconData.h
 
-  ifdef OPENJDK
-    GENSRC_OSX_ICONS_SRC := $(JDK_TOPDIR)/make/data/macosxicons/JavaApp.icns
-  else
-    GENSRC_OSX_ICONS_SRC := $(JDK_TOPDIR)/make/closed/data/macosxicons/JavaApp.icns
-  endif
+  GENSRC_OSX_ICONS_SRC ?= $(JDK_TOPDIR)/make/data/macosxicons/JavaApp.icns
+
 
   $(GENSRC_OSX_ICONS): $(GENSRC_OSX_ICONS_SRC) $(BUILD_TOOLS_JDK)
 	$(call LogInfo, Generating $(patsubst $(OUTPUT_ROOT)/%, %, $@))

@@ -562,7 +562,7 @@ public class Config {
         boolean inDirectives = true;
         for (String line: lines) {
             line = line.trim();
-            if (line.isEmpty() || line.startsWith("#")) {
+            if (line.isEmpty() || line.startsWith("#") || line.startsWith(";")) {
                 continue;
             }
             if (inDirectives) {

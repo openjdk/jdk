@@ -73,7 +73,7 @@ public class MsgAppletViewer_sv extends ListResourceBundle {
             {"appletviewer.parse.warning.embed.requiresheight", "Varning: <embed>-taggen kr\u00E4ver ett h\u00F6jdattribut."},
             {"appletviewer.parse.warning.embed.requireswidth", "Varning: <embed>-taggen kr\u00E4ver ett breddattribut."},
             {"appletviewer.parse.warning.appnotLongersupported", "Varning: <app>-taggen st\u00F6ds inte l\u00E4ngre, anv\u00E4nd <applet> ist\u00E4llet:"},
-            {"appletviewer.deprecated", "AppletViewer \u00E4r inaktuellt."},
+            {"appletviewer.deprecated", "Varning: Applet-API:t och AppletViewer \u00E4r inaktuella."},
             {"appletviewer.usage", "Syntax: appletviewer <options> url(s)\n\nd\u00E4r <options> \u00E4r:\n  -encoding <encoding>    Ange teckenkodning som anv\u00E4nds av HTML-filer\n  -J<runtime flag>        \u00D6verf\u00F6r argument till java-tolken\n\nAlternativet -J \u00E4r inte standard och kan \u00E4ndras utan f\u00F6reg\u00E5ende meddelande."},
             {"appletviewer.main.err.unsupportedopt", "Alternativ som inte st\u00F6ds: {0}"},
             {"appletviewer.main.err.unrecognizedarg", "Ok\u00E4nt argument: {0}"},

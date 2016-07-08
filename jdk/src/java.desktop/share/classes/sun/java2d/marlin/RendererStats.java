@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,24 +42,24 @@ import sun.awt.util.ThreadGroupUtils;
 public final class RendererStats implements MarlinConst {
 
     // singleton
-    private static volatile RendererStats singleton = null;
+    private static volatile RendererStats SINGLETON = null;
 
     static RendererStats getInstance() {
-        if (singleton == null) {
-            singleton = new RendererStats();
+        if (SINGLETON == null) {
+            SINGLETON = new RendererStats();
         }
-        return singleton;
+        return SINGLETON;
     }
 
     public static void dumpStats() {
-        if (singleton != null) {
-            singleton.dump();
+        if (SINGLETON != null) {
+            SINGLETON.dump();
         }
     }
 
     /* RendererContext collection as hard references
        (only used for debugging purposes) */
-    final ConcurrentLinkedQueue<RendererContext> allContexts
+    static final ConcurrentLinkedQueue<RendererContext> ALL_CONTEXTS
         = new ConcurrentLinkedQueue<RendererContext>();
     // stats
     final StatLong stat_cache_rowAA
@@ -208,8 +208,6 @@ public final class RendererStats implements MarlinConst {
     // monitors
     final Monitor mon_pre_getAATileGenerator
         = new Monitor("MarlinRenderingEngine.getAATileGenerator()");
-    final Monitor mon_npi_currentSegment
-        = new Monitor("NormalizingPathIterator.currentSegment()");
     final Monitor mon_rdr_addLine
         = new Monitor("Renderer.addLine()");
     final Monitor mon_rdr_endRendering
@@ -227,7 +225,6 @@ public final class RendererStats implements MarlinConst {
     // all monitors
     final Monitor[] monitors = new Monitor[]{
         mon_pre_getAATileGenerator,
-        mon_npi_currentSegment,
         mon_rdr_addLine,
         mon_rdr_endRendering,
         mon_rdr_endRendering_Y,
@@ -255,14 +252,14 @@ public final class RendererStats implements MarlinConst {
                 hook.setContextClassLoader(null);
                 Runtime.getRuntime().addShutdownHook(hook);
 
-                if (useDumpThread) {
+                if (USE_DUMP_THREAD) {
                     final Timer statTimer = new Timer("RendererStats");
                     statTimer.scheduleAtFixedRate(new TimerTask() {
                         @Override
                         public void run() {
                             dump();
                         }
-                    }, statDump, statDump);
+                    }, DUMP_INTERVAL, DUMP_INTERVAL);
                 }
                 return null;
             }
@@ -270,15 +267,13 @@ public final class RendererStats implements MarlinConst {
     }
 
     void dump() {
-        if (doStats) {
+        if (DO_STATS) {
             ArrayCache.dumpStats();
         }
-        final RendererContext[] all = allContexts.toArray(
-                                          new RendererContext[allContexts.size()]);
-        for (RendererContext rdrCtx : all) {
+        for (RendererContext rdrCtx : ALL_CONTEXTS) {
             logInfo("RendererContext: " + rdrCtx.name);
 
-            if (doMonitors) {
+            if (DO_MONITORS) {
                 for (Monitor monitor : monitors) {
                     if (monitor.count != 0) {
                         logInfo(monitor.toString());
@@ -292,14 +287,14 @@ public final class RendererStats implements MarlinConst {
                                 + ((100d * monitor.sum) / total) + " %");
                     }
                 }
-                if (doFlushMonitors) {
+                if (DO_FLUSH_MONITORS) {
                     for (Monitor m : monitors) {
                         m.reset();
                     }
                 }
             }
 
-            if (doStats) {
+            if (DO_STATS) {
                 for (StatLong stat : statistics) {
                     if (stat.count != 0) {
                         logInfo(stat.toString());

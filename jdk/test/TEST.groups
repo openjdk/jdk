@@ -27,6 +27,7 @@
 
 tier1 = \
     :jdk_lang \
+    -java/lang/ProcessBuilder/Zombies.java \
     :jdk_util \
     -java/util/concurrent/ThreadPoolExecutor/ConfigChanges.java \
     -java/util/concurrent/forkjoin/FJExceptionTableLeak.java \
@@ -37,6 +38,7 @@ tier1 = \
     tools/pack200
 
 tier2 = \
+    java/lang/ProcessBuilder/Zombies.java \
     java/util/concurrent/ThreadPoolExecutor/ConfigChanges.java \
     java/util/concurrent/forkjoin/FJExceptionTableLeak.java \
     :jdk_io \
