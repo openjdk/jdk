@@ -6,7 +6,7 @@
             <name>OpenJDK (Native)</name>
             <c-extensions>c,m</c-extensions>
             <cpp-extensions>cc,cpp</cpp-extensions>
-            <header-extensions>ad,h,hpp,in_out</header-extensions>
+            <header-extensions>ad,h,hh,hpp,in_out,map,txt</header-extensions>
             <sourceEncoding>UTF-8</sourceEncoding>
             <make-dep-projects/>
             <sourceRootList>
@@ -26,6 +26,9 @@
                     <type>0</type>
                 </confElem>
             </confList>
+            <formatting>
+                <project-formatting-style>false</project-formatting-style>
+            </formatting>
         </data>
     </configuration>
 </project>
