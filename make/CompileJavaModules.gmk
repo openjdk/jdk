@@ -205,11 +205,6 @@ ifdef BUILD_HEADLESS_ONLY
   java.desktop_EXCLUDES += sun/applet
 endif
 
-# Why is this in the open source tree?
-ifdef OPENJDK
-  java.desktop_EXCLUDES += sun/dc
-endif
-
 # Used on windows and macosx
 ifeq ($(filter $(OPENJDK_TARGET_OS), windows macosx), )
   java.desktop_EXCLUDE_FILES += sun/awt/AWTCharset.java
