@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.Plugin.Category;
@@ -56,51 +55,10 @@ public class Utils {
                      .collect(Collectors.toList());
     }
 
-    public static boolean isPostProcessor(Plugin provider) {
-        return provider.getType().isPostProcessor();
-    }
 
-    public static boolean isPreProcessor(Plugin provider) {
-        return !isPostProcessor(provider);
-    }
-
-    public static Category getCategory(Plugin provider) {
-        return provider.getType();
-    }
-
-    public static List<Plugin> getPreProcessors(List<Plugin> plugins) {
+    public static List<Plugin> getSortedPlugins(List<Plugin> plugins) {
         List<Plugin> res = new ArrayList<>();
-        for (Plugin p : plugins) {
-            if (isPreProcessor(p)) {
-                res.add(p);
-            }
-        }
-        return res;
-    }
-
-    public static List<Plugin> getPostProcessors(List<Plugin> plugins) {
-        List<Plugin> res = new ArrayList<>();
-        for (Plugin p : plugins) {
-            if (isPostProcessor(p)) {
-                res.add(p);
-            }
-        }
-        return res;
-    }
-
-    public static List<Plugin> getSortedPostProcessors(List<Plugin> plugins) {
-        List<Plugin> res = getPostProcessors(plugins);
-        res.sort(new Comparator<Plugin>() {
-            @Override
-            public int compare(Plugin o1, Plugin o2) {
-                return o1.getName().compareTo(o2.getName());
-            }
-        });
-        return res;
-    }
-
-    public static List<Plugin> getSortedPreProcessors(List<Plugin> plugins) {
-        List<Plugin> res = getPreProcessors(plugins);
+        res.addAll(plugins);
         res.sort(new Comparator<Plugin>() {
             @Override
             public int compare(Plugin o1, Plugin o2) {

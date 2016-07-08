@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -476,7 +476,8 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
             JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                             "Socket closed");
         } else {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "connect failed");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "connect failed");
         }
         return;
     }
@@ -498,8 +499,8 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
          */
         socklen_t slen = SOCKADDR_LEN;
         if (getsockname(fd, (struct sockaddr *)&him, &slen) == -1) {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                           "Error getting socket name");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "Error getting socket name");
         } else {
             localport = NET_GetPortFromSockaddr((struct sockaddr *)&him);
             (*env)->SetIntField(env, this, psi_localportID, localport);
@@ -536,8 +537,9 @@ Java_java_net_PlainSocketImpl_socketBind(JNIEnv *env, jobject this,
     }
 
     /* bind */
-    if (NET_InetAddressToSockaddr(env, iaObj, localport, (struct sockaddr *)&him, &len, JNI_TRUE) != 0) {
-      return;
+    if (NET_InetAddressToSockaddr(env, iaObj, localport, (struct sockaddr *)&him,
+                                  &len, JNI_TRUE) != 0) {
+        return;
     }
     setDefaultScopeID(env, (struct sockaddr *)&him);
 
@@ -547,8 +549,8 @@ Java_java_net_PlainSocketImpl_socketBind(JNIEnv *env, jobject this,
             NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "BindException",
                            "Bind failed");
         } else {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                           "Bind failed");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "Bind failed");
         }
         return;
     }
@@ -563,8 +565,8 @@ Java_java_net_PlainSocketImpl_socketBind(JNIEnv *env, jobject this,
          * that the system chose for us and store it in the Socket object.
          */
         if (getsockname(fd, (struct sockaddr *)&him, &slen) == -1) {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                           "Error getting socket name");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "Error getting socket name");
             return;
         }
         localport = NET_GetPortFromSockaddr((struct sockaddr *)&him);
@@ -580,8 +582,8 @@ Java_java_net_PlainSocketImpl_socketBind(JNIEnv *env, jobject this,
  * Signature: (I)V
  */
 JNIEXPORT void JNICALL
-Java_java_net_PlainSocketImpl_socketListen (JNIEnv *env, jobject this,
-                                            jint count)
+Java_java_net_PlainSocketImpl_socketListen(JNIEnv *env, jobject this,
+                                           jint count)
 {
     /* this FileDescriptor fd field */
     jobject fdObj = (*env)->GetObjectField(env, this, psi_fdID);
@@ -604,8 +606,8 @@ Java_java_net_PlainSocketImpl_socketListen (JNIEnv *env, jobject this,
         count -= 1;
 
     if (listen(fd, count) == -1) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                       "Listen failed");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "Listen failed");
     }
 }
 
@@ -684,7 +686,8 @@ Java_java_net_PlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
             } else if (errno == ENOMEM) {
                JNU_ThrowOutOfMemoryError(env, "NET_Timeout native heap allocation failed");
             } else {
-               NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Accept failed");
+               JNU_ThrowByNameWithMessageAndLastError
+                   (env, JNU_JAVANETPKG "SocketException", "Accept failed");
             }
             return;
         }
@@ -727,7 +730,8 @@ Java_java_net_PlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
             if (errno == EBADF) {
                 JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
             } else {
-                NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Accept failed");
+                JNU_ThrowByNameWithMessageAndLastError
+                    (env, JNU_JAVANETPKG "SocketException", "Accept failed");
             }
         }
         return;
@@ -781,8 +785,8 @@ Java_java_net_PlainSocketImpl_socketAvailable(JNIEnv *env, jobject this) {
         if (errno == ECONNRESET) {
             JNU_ThrowByName(env, "sun/net/ConnectionResetException", "");
         } else {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                         "ioctl FIONREAD failed");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "ioctl FIONREAD failed");
         }
     }
     return ret;
@@ -936,8 +940,8 @@ Java_java_net_PlainSocketImpl_socketSetOption0(JNIEnv *env, jobject this,
             return;
         }
 #endif /* __solaris__ */
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                      "Error setting socket option");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "Error setting socket option");
     }
 }
 
@@ -981,8 +985,8 @@ Java_java_net_PlainSocketImpl_socketGetOption(JNIEnv *env, jobject this,
         len = SOCKADDR_LEN;
 
         if (getsockname(fd, (struct sockaddr *)&him, &len) < 0) {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                             "Error getting socket name");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "Error getting socket name");
             return -1;
         }
         iaObj = NET_SockaddrToInetAddress(env, (struct sockaddr *)&him, &port);
@@ -1014,8 +1018,8 @@ Java_java_net_PlainSocketImpl_socketGetOption(JNIEnv *env, jobject this,
     }
 
     if (NET_GetSockOpt(fd, level, optname, (void *)&optval, &optlen) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                      "Error getting socket option");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "Error getting socket option");
         return -1;
     }
 
@@ -1063,6 +1067,6 @@ Java_java_net_PlainSocketImpl_socketSendUrgentData(JNIEnv *env, jobject this,
     }
     n = NET_Send(fd, (char *)&d, 1, MSG_OOB);
     if (n == -1) {
-        NET_ThrowByNameWithLastError(env, "java/io/IOException", "Write failed");
+        JNU_ThrowIOExceptionWithLastError(env, "Write failed");
     }
 }

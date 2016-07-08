@@ -51,13 +51,13 @@ class LiteralFactory extends Factory<Literal> {
         } else if (resultType.equals(TypeList.LONG)) {
             literal = new Literal((long) (PseudoRandom.random() * Long.MAX_VALUE), TypeList.LONG);
         } else if (resultType.equals(TypeList.FLOAT)) {
-            literal = new Literal(new Float(String.format(
+            literal = new Literal(Float.valueOf(String.format(
                     (Locale) null,
                     "%." + ProductionParams.floatingPointPrecision.value() + "EF",
                     (float) PseudoRandom.random() * Float.MAX_VALUE)),
                     TypeList.FLOAT);
         } else if (resultType.equals(TypeList.DOUBLE)) {
-            literal = new Literal(new Double(String.format(
+            literal = new Literal(Double.valueOf(String.format(
                     (Locale) null,
                     "%." + 2 * ProductionParams.floatingPointPrecision.value() + "E",
                     PseudoRandom.random() * Double.MAX_VALUE)),

@@ -56,6 +56,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -675,18 +676,12 @@ public class Infer {
                 paramTypes = paramTypes.tail;
             }
 
-            try {
-                funcInterfaceContext.solve(funcInterfaceContext.boundedVars(), types.noWarnings);
-            } catch (InferenceException ex) {
-                checkContext.report(pos, diags.fragment("no.suitable.functional.intf.inst", funcInterface));
-            }
-
             List<Type> actualTypeargs = funcInterface.getTypeArguments();
             for (Type t : funcInterfaceContext.undetvars) {
                 UndetVar uv = (UndetVar)t;
-                if (uv.getInst() == null) {
-                    uv.setInst(actualTypeargs.head);
-                }
+                Optional<Type> inst = uv.getBounds(InferenceBound.EQ).stream()
+                        .filter(b -> !b.containsAny(formalInterface.getTypeArguments())).findFirst();
+                uv.setInst(inst.orElse(actualTypeargs.head));
                 actualTypeargs = actualTypeargs.tail;
             }
 

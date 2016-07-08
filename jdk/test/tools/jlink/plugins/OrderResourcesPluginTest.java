@@ -42,7 +42,7 @@ import jdk.tools.jlink.internal.ModulePoolImpl;
 import jdk.tools.jlink.internal.plugins.OrderResourcesPlugin;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 
 public class OrderResourcesPluginTest {
 
@@ -93,7 +93,7 @@ public class OrderResourcesPluginTest {
             ModulePool out = new ModulePoolImpl();
             Map<String, String> config = new HashMap<>();
             config.put(OrderResourcesPlugin.NAME, "/zazou/**,**/module-info.class");
-            TransformerPlugin p = new OrderResourcesPlugin();
+            Plugin p = new OrderResourcesPlugin();
             p.configure(config);
             p.visit(resources, out);
             check(out.entries().collect(Collectors.toList()), sorted);
@@ -116,7 +116,7 @@ public class OrderResourcesPluginTest {
             ModulePool out = new ModulePoolImpl();
             Map<String, String> config = new HashMap<>();
             config.put(OrderResourcesPlugin.NAME, "@" + order.getAbsolutePath());
-            TransformerPlugin p = new OrderResourcesPlugin();
+            Plugin p = new OrderResourcesPlugin();
             p.configure(config);
             p.visit(resources, out);
             check(out.entries().collect(Collectors.toList()), sorted2);

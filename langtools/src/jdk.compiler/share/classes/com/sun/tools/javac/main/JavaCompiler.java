@@ -1108,7 +1108,7 @@ public class JavaCompiler {
             processAnnotations = procEnvImpl.atLeastOneProcessor();
 
             if (processAnnotations) {
-                options.put("save-parameter-names", "save-parameter-names");
+                options.put("parameters", "parameters");
                 reader.saveParameterNames = true;
                 keepComments = true;
                 genEndPos = true;

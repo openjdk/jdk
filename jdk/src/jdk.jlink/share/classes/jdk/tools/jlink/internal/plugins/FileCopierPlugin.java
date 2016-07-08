@@ -26,7 +26,6 @@ package jdk.tools.jlink.internal.plugins;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -35,7 +34,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -43,14 +41,14 @@ import jdk.tools.jlink.internal.PathModuleEntry;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.internal.Utils;
 
 /**
  *
  * Copy files to image from various locations.
  */
-public class FileCopierPlugin implements TransformerPlugin {
+public class FileCopierPlugin implements Plugin {
 
     public static final String NAME = "copy-files";
 

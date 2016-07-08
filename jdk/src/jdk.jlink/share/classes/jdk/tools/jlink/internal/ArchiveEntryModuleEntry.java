@@ -25,7 +25,6 @@
 
 package jdk.tools.jlink.internal;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -46,7 +45,7 @@ final class ArchiveEntryModuleEntry extends AbstractModuleEntry {
      * @param entry The archive Entry.
      */
     ArchiveEntryModuleEntry(String module, String path, Archive.Entry entry) {
-        super(module, path, getImageFileType(entry));
+        super(module, path, getImageFileType(Objects.requireNonNull(entry)));
         this.entry = entry;
     }
 
@@ -65,7 +64,6 @@ final class ArchiveEntryModuleEntry extends AbstractModuleEntry {
     }
 
     private static ModuleEntry.Type getImageFileType(Archive.Entry entry) {
-        Objects.requireNonNull(entry);
         switch(entry.type()) {
             case CLASS_OR_RESOURCE:
                 return ModuleEntry.Type.CLASS_OR_RESOURCE;

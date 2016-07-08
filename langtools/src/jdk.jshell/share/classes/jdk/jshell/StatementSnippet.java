@@ -39,6 +39,6 @@ import jdk.jshell.Key.StatementKey;
 public class StatementSnippet extends Snippet {
 
     StatementSnippet(StatementKey key, String userSource, Wrap guts) {
-        super(key, userSource, guts, null, SubKind.STATEMENT_SUBKIND);
+        super(key, userSource, guts, null, SubKind.STATEMENT_SUBKIND, null);
     }
 }

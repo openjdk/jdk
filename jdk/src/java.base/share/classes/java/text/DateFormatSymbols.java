@@ -221,7 +221,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * </ul>
      * The zone ID is <em>not</em> localized; it's one of the valid IDs of
      * the {@link java.util.TimeZone TimeZone} class that are not
-     * <a href="../java/util/TimeZone.html#CustomID">custom IDs</a>.
+     * <a href="../util/TimeZone.html#CustomID">custom IDs</a>.
      * All other entries are localized names.
      * @see java.util.TimeZone
      * @serial

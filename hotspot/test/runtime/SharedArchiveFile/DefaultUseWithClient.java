@@ -27,6 +27,7 @@
  * @library /testlibrary
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @ignore 8154204
  * @run main DefaultUseWithClient
  * @bug 8032224
  */

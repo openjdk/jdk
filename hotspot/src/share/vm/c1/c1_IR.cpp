@@ -147,10 +147,8 @@ IRScope::IRScope(Compilation* compilation, IRScope* caller, int caller_bci, ciMe
   _wrote_volatile     = false;
   _start              = NULL;
 
-  if (osr_bci == -1) {
-    _requires_phi_function.clear();
-  } else {
-        // selective creation of phi functions is not possibel in osr-methods
+  if (osr_bci != -1) {
+    // selective creation of phi functions is not possibel in osr-methods
     _requires_phi_function.set_range(0, method->max_locals());
   }
 
@@ -540,7 +538,6 @@ ComputeLinearScanOrder::ComputeLinearScanOrder(Compilation* c, BlockBegin* start
 {
   TRACE_LINEAR_SCAN(2, tty->print_cr("***** computing linear-scan block order"));
 
-  init_visited();
   count_edges(start_block, NULL);
 
   if (compilation()->is_profiling()) {
@@ -646,7 +643,6 @@ void ComputeLinearScanOrder::mark_loops() {
   TRACE_LINEAR_SCAN(3, tty->print_cr("----- marking loops"));
 
   _loop_map = BitMap2D(_num_loops, _max_block_id);
-  _loop_map.clear();
 
   for (int i = _loop_end_blocks.length() - 1; i >= 0; i--) {
     BlockBegin* loop_end   = _loop_end_blocks.at(i);
