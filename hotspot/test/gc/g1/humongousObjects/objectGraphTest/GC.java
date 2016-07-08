@@ -138,6 +138,41 @@ public enum GC {
         }
     },
 
+    MIXED_GC {
+        @Override
+        public Runnable get() {
+            return () -> {
+                WHITE_BOX.youngGC();
+                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
+                WHITE_BOX.youngGC();
+                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
+
+                WHITE_BOX.g1StartConcMarkCycle();
+                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
+
+                WHITE_BOX.youngGC();
+                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
+                // Provoking Mixed GC
+                WHITE_BOX.youngGC();// second evacuation pause will be mixed
+                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
+            };
+        }
+
+        public Consumer<ReferenceInfo<Object[]>> getChecker() {
+            return getCheckerImpl(true, false, true, false);
+        }
+
+        @Override
+        public List<String> shouldContain() {
+            return Arrays.asList(GCTokens.WB_INITIATED_CMC);
+        }
+
+        @Override
+        public List<String> shouldNotContain() {
+            return Arrays.asList(GCTokens.YOUNG_GC);
+        }
+    },
+
     FULL_GC_MEMORY_PRESSURE {
         @Override
         public Runnable get() {

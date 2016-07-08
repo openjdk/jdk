@@ -248,7 +248,7 @@ inline void SimpleCompactHashtable::iterate(const I& iterator) {
     } else {
       u4*entry_max = _entries + BUCKET_OFFSET(_buckets[i + 1]);
       while (entry < entry_max) {
-        iterator.do_value(_base_address, entry[0]);
+        iterator.do_value(_base_address, entry[1]);
         entry += 2;
       }
     }
