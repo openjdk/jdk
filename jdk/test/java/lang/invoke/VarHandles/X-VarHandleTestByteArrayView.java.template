@@ -90,7 +90,7 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
 
 #if[CAS]
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
@@ -100,7 +100,7 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
 #else[CAS]
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
@@ -207,7 +207,7 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
         });
 
         checkUOE(() -> {
-            $type$ r = ($type$) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
+            $type$ r = ($type$) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
         });
 
         checkUOE(() -> {
@@ -281,7 +281,7 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
             });
 
             checkROBE(() -> {
-                $type$ r = ($type$) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
+                $type$ r = ($type$) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
             });
 
             checkROBE(() -> {
@@ -318,7 +318,7 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
             });
 
             checkUOE(() -> {
-                $type$ r = ($type$) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
+                $type$ r = ($type$) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
             });
 
             checkUOE(() -> {
@@ -375,7 +375,7 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
             });
 
             checkUOE(() -> {
-                $type$ r = ($type$) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
+                $type$ r = ($type$) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
             });
 
             checkUOE(() -> {
@@ -465,7 +465,7 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
             });
 
             checkIOOBE(() -> {
-                $type$ r = ($type$) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
+                $type$ r = ($type$) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
             });
 
             checkIOOBE(() -> {
@@ -561,7 +561,7 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                 });
 
                 checkIOOBE(() -> {
-                    $type$ r = ($type$) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
+                    $type$ r = ($type$) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
                 });
 
                 checkIOOBE(() -> {
@@ -648,7 +648,7 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                 });
 
                 checkISE(() -> {
-                    $type$ r = ($type$) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
+                    $type$ r = ($type$) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
                 });
 
                 checkISE(() -> {
@@ -738,7 +738,7 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                     });
 
                     checkISE(() -> {
-                        $type$ r = ($type$) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
+                        $type$ r = ($type$) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
                     });
 
                     checkISE(() -> {
@@ -844,17 +844,17 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                 }
 
                 {
-                    $type$ r = ($type$) vh.compareAndExchangeVolatile(array, i, VALUE_2, VALUE_1);
-                    assertEquals(r, VALUE_2, "success compareAndExchangeVolatile $type$");
+                    $type$ r = ($type$) vh.compareAndExchange(array, i, VALUE_2, VALUE_1);
+                    assertEquals(r, VALUE_2, "success compareAndExchange $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "success compareAndExchangeVolatile $type$ value");
+                    assertEquals(x, VALUE_1, "success compareAndExchange $type$ value");
                 }
 
                 {
-                    $type$ r = ($type$) vh.compareAndExchangeVolatile(array, i, VALUE_2, VALUE_3);
-                    assertEquals(r, VALUE_1, "failing compareAndExchangeVolatile $type$");
+                    $type$ r = ($type$) vh.compareAndExchange(array, i, VALUE_2, VALUE_3);
+                    assertEquals(r, VALUE_1, "failing compareAndExchange $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "failing compareAndExchangeVolatile $type$ value");
+                    assertEquals(x, VALUE_1, "failing compareAndExchange $type$ value");
                 }
 
                 {
@@ -1006,17 +1006,17 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                 }
 
                 {
-                    $type$ r = ($type$) vh.compareAndExchangeVolatile(array, i, VALUE_2, VALUE_1);
-                    assertEquals(r, VALUE_2, "success compareAndExchangeVolatile $type$");
+                    $type$ r = ($type$) vh.compareAndExchange(array, i, VALUE_2, VALUE_1);
+                    assertEquals(r, VALUE_2, "success compareAndExchange $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "success compareAndExchangeVolatile $type$ value");
+                    assertEquals(x, VALUE_1, "success compareAndExchange $type$ value");
                 }
 
                 {
-                    $type$ r = ($type$) vh.compareAndExchangeVolatile(array, i, VALUE_2, VALUE_3);
-                    assertEquals(r, VALUE_1, "failing compareAndExchangeVolatile $type$");
+                    $type$ r = ($type$) vh.compareAndExchange(array, i, VALUE_2, VALUE_3);
+                    assertEquals(r, VALUE_1, "failing compareAndExchange $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "failing compareAndExchangeVolatile $type$ value");
+                    assertEquals(x, VALUE_1, "failing compareAndExchange $type$ value");
                 }
 
                 {

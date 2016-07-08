@@ -137,11 +137,6 @@ MethodLiveness::MethodLiveness(Arena* arena, ciMethod* method)
   _arena = arena;
   _method = method;
   _bit_map_size_bits = method->max_locals();
-
-
-#ifdef COMPILER1
-  _bci_block_start.clear();
-#endif
 }
 
 void MethodLiveness::compute_liveness() {
@@ -587,14 +582,6 @@ MethodLiveness::BasicBlock::BasicBlock(MethodLiveness *analyzer, int start, int 
     new (analyzer->arena()) GrowableArray<MethodLiveness::BasicBlock*>(analyzer->arena(), 5, 0, NULL);
   _exception_predecessors =
     new (analyzer->arena()) GrowableArray<MethodLiveness::BasicBlock*>(analyzer->arena(), 5, 0, NULL);
-  _normal_exit.clear();
-  _exception_exit.clear();
-  _entry.clear();
-
-  // this initialization is not strictly necessary.
-  // _gen and _kill are cleared at the beginning of compute_gen_kill_range()
-  _gen.clear();
-  _kill.clear();
 }
 
 
@@ -1020,7 +1007,6 @@ MethodLivenessResult MethodLiveness::BasicBlock::get_liveness_at(ciMethod* metho
     _last_bci = bci;
   }
 
-  answer.clear();
   answer.set_union(_normal_exit);
   answer.set_difference(_kill);
   answer.set_union(_gen);

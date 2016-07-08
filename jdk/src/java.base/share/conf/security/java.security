@@ -116,15 +116,7 @@ security.provider.tbd=SunPKCS11
 # Example:
 #   jdk.security.provider.preferred=AES/GCM/NoPadding:SunJCE, \
 #         MessageDigest.SHA-256:SUN, Group.HmacSHA2:SunJCE
-#ifdef solaris-sparc
-jdk.security.provider.preferred=AES:SunJCE, SHA1:SUN, Group.SHA2:SUN, \
-      HmacSHA1:SunJCE, Group.HmacSHA2:SunJCE
-#endif
-#ifdef solaris-x86
-jdk.security.provider.preferred=AES:SunJCE, SHA1:SUN, Group.SHA2:SUN, \
-      HmacSHA1:SunJCE, Group.HmacSHA2:SunJCE, RSA:SunRsaSign, \
-      SHA1withRSA:SunRsaSign, Group.SHA2RSA:SunRsaSign
-#endif
+#jdk.security.provider.preferred=
 
 
 #

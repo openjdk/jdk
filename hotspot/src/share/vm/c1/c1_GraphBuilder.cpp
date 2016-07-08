@@ -4227,11 +4227,11 @@ void GraphBuilder::append_char_access(ciMethod* callee, bool is_store) {
   Value index = args->at(1);
   if (is_store) {
     Value value = args->at(2);
-    Instruction* store = append(new StoreIndexed(array, index, NULL, T_CHAR, value, state_before, false));
+    Instruction* store = append(new StoreIndexed(array, index, NULL, T_CHAR, value, state_before, false, true));
     store->set_flag(Instruction::NeedsRangeCheckFlag, false);
     _memory->store_value(value);
   } else {
-    Instruction* load = append(new LoadIndexed(array, index, NULL, T_CHAR, state_before));
+    Instruction* load = append(new LoadIndexed(array, index, NULL, T_CHAR, state_before, true));
     load->set_flag(Instruction::NeedsRangeCheckFlag, false);
     push(load->type(), load);
   }
