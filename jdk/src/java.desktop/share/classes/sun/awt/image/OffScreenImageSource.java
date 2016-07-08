@@ -187,17 +187,19 @@ public class OffScreenImageSource implements ImageProducer {
             sendPixels();
             theConsumer.imageComplete(ImageConsumer.SINGLEFRAMEDONE);
 
-            try {
-                theConsumer.imageComplete(ImageConsumer.STATICIMAGEDONE);
-            } catch (RuntimeException e) {
-                // We did not previously call this method here and
-                // some image consumer filters were not prepared for it to be
-                // called at this time. We allow them to have runtime issues
-                // for this one call only without triggering the IMAGEERROR
-                // condition below.
-                e.printStackTrace();
+            // If 'theconsumer' has not unregistered itself after previous call
+            if (theConsumer != null) {
+                try {
+                    theConsumer.imageComplete(ImageConsumer.STATICIMAGEDONE);
+                } catch (RuntimeException e) {
+                    // We did not previously call this method here and
+                    // some image consumer filters were not prepared for it to be
+                    // called at this time. We allow them to have runtime issues
+                    // for this one call only without triggering the IMAGEERROR
+                    // condition below.
+                    e.printStackTrace();
+                }
             }
-
         } catch (NullPointerException e) {
             e.printStackTrace();
 
