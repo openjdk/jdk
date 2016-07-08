@@ -59,11 +59,9 @@ AC_DEFUN_ONCE([LIB_DETERMINE_DEPENDENCIES],
     NEEDS_LIB_CUPS=true
   fi
 
-  # Check if freetype is needed
-  if test "x$OPENJDK" = "xtrue"; then
+  # A custom hook may have set this already
+  if test "x$NEEDS_LIB_FREETYPE" = "x"; then
     NEEDS_LIB_FREETYPE=true
-  else
-    NEEDS_LIB_FREETYPE=false
   fi
 
   # Check if alsa is needed
