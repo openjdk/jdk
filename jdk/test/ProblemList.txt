@@ -367,6 +367,8 @@ sun/tools/jmap/heapconfig/JMapHeapConfigTest.java               8072131,8132452 
 
 sun/tools/jstatd/TestJstatdExternalRegistry.java                8046285 generic-all
 
+sun/tools/jps/TestJpsJar.java                                   8160923 generic-all
+
 sun/tools/jps/TestJpsJarRelative.java                           6456333 generic-all
 
 sun/tools/jinfo/JInfoRunningProcessFlagTest.java                6734748 generic-all
