@@ -46,6 +46,7 @@ protected:
     vpmsumb,
     tcheck,
     mfdscr,
+    vsx,
     num_features // last entry to count features
   };
   enum Feature_Flag_Set {
@@ -64,6 +65,7 @@ protected:
     vpmsumb_m             = (1 << vpmsumb),
     tcheck_m              = (1 << tcheck ),
     mfdscr_m              = (1 << mfdscr ),
+    vsx_m                 = (1 << vsx    ),
     all_features_m        = (unsigned long)-1
   };
 
@@ -97,10 +99,14 @@ public:
   static bool has_vpmsumb() { return (_features & vpmsumb_m) != 0; }
   static bool has_tcheck()  { return (_features & tcheck_m) != 0; }
   static bool has_mfdscr()  { return (_features & mfdscr_m) != 0; }
+  static bool has_vsx()     { return (_features & vsx_m) != 0; }
 
   // Assembler testing
   static void allow_all();
   static void revert();
+
+  // POWER 8: DSCR current value.
+  static uint64_t _dscr_val;
 };
 
 #endif // CPU_PPC_VM_VM_VERSION_PPC_HPP

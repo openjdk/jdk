@@ -31,7 +31,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SecureRandomParameters;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class HashDrbg extends AbstractHashDrbg {
 
@@ -70,7 +72,7 @@ public class HashDrbg extends AbstractHashDrbg {
         }
     }
 
-    private byte[] hashDf(int requested, byte[]... inputs) {
+    private byte[] hashDf(int requested, List<byte[]> inputs) {
         return hashDf(digest, outLen, requested, inputs);
     }
 
@@ -79,6 +81,9 @@ public class HashDrbg extends AbstractHashDrbg {
      * The function is used inside Hash_DRBG, and can also be used as an
      * approved conditioning function as described in 800-90B 6.4.2.2.
      *
+     * Note: In each current call, requested is seedLen, therefore small,
+     * no need to worry about overflow.
+     *
      * @param digest a {@code MessageDigest} object in reset state
      * @param outLen {@link MessageDigest#getDigestLength} of {@code digest}
      * @param requested requested output length, in bytes
@@ -86,12 +91,18 @@ public class HashDrbg extends AbstractHashDrbg {
      * @return the condensed/expanded output
      */
     public static byte[] hashDf(MessageDigest digest, int outLen,
-                                int requested, byte[]... inputs) {
+                                int requested, List<byte[]> inputs) {
+        // 1. temp = the Null string.
+        // 2. len = upper_int(no_of_bits_to_return / outLen)
         int len = (requested + outLen - 1) / outLen;
         byte[] temp = new byte[len * outLen];
+        // 3. counter = 0x01
         int counter = 1;
 
+        // 4. For i = 1 to len do
         for (int i=0; i<len; i++) {
+            // 4.1 temp = temp
+            //      || Hash (counter || no_of_bits_to_return || input_string).
             digest.update((byte) counter);
             digest.update((byte)(requested >> 21)); // requested*8 as int32
             digest.update((byte)(requested >> 13));
@@ -105,14 +116,17 @@ public class HashDrbg extends AbstractHashDrbg {
             } catch (DigestException e) {
                 throw new AssertionError("will not happen", e);
             }
+            // 4.2 counter = counter + 1
             counter++;
         }
+        // 5. requested_bits = leftmost (temp, no_of_bits_to_return).
         return temp.length == requested? temp: Arrays.copyOf(temp, requested);
+        // 6. Return
     }
 
     // This method is used by both instantiation and reseeding.
     @Override
-    protected final synchronized void hashReseedInternal(byte[] input) {
+    protected final synchronized void hashReseedInternal(List<byte[]> inputs) {
 
         // 800-90Ar1 10.1.1.2: Instantiate Process.
         // 800-90Ar1 10.1.1.3: Reseed Process.
@@ -121,16 +135,21 @@ public class HashDrbg extends AbstractHashDrbg {
         // Step 2: seed = Hash_df (seed_material, seedlen).
         if (v != null) {
             // Step 1 of 10.1.1.3: Prepend 0x01 || V
-            seed = hashDf(seedLen, ONE, v, input);
+            inputs.add(0, ONE);
+            inputs.add(1, v);
+            seed = hashDf(seedLen, inputs);
         } else {
-            seed = hashDf(seedLen, input);
+            seed = hashDf(seedLen, inputs);
         }
 
         // Step 3. V = seed.
         v = seed;
 
         // Step 4. C = Hash_df ((0x00 || V), seedlen).
-        c = hashDf(seedLen, ZERO, v);
+        inputs = new ArrayList<>(2);
+        inputs.add(ZERO);
+        inputs.add(v);
+        c = hashDf(seedLen, inputs);
 
         // Step 5. reseed_counter = 1.
         reseedCounter = 1;
@@ -197,7 +216,7 @@ public class HashDrbg extends AbstractHashDrbg {
         }
 
         // Step 3. Hashgen (requested_number_of_bits, V).
-        hashGen(result, result.length, v);
+        hashGen(result, v);
 
         // Step 4. H = Hash (0x03 || V).
         digest.update((byte)3);
@@ -222,10 +241,7 @@ public class HashDrbg extends AbstractHashDrbg {
     }
 
     // 800-90Ar1 10.1.1.4: Hashgen
-    private void hashGen(byte[] output, int len, byte[] v) {
-
-        // Step 1. m
-        int m = (len + outLen - 1) / outLen;
+    private void hashGen(byte[] output, byte[] v) {
 
         // Step 2. data = V
         byte[] data = v;
@@ -233,32 +249,36 @@ public class HashDrbg extends AbstractHashDrbg {
         // Step 3: W is output not filled
 
         // Step 4: For i = 1 to m
-        for (int i = 0; i < m; i++) {
-            int tailLen = len - i * outLen;
-            if (tailLen < outLen) {
+        int pos = 0;
+        int len = output.length;
+
+        while (len > 0) {
+            if (len < outLen) {
                 // Step 4.1 w = Hash (data).
                 // Step 4.2 W = W || w.
-                System.arraycopy(digest.digest(data), 0, output, i * outLen,
-                        tailLen);
+                System.arraycopy(digest.digest(data), 0, output, pos,
+                        len);
             } else {
                 try {
                     // Step 4.1 w = Hash (data).
                     digest.update(data);
                     // Step 4.2 digest into right position, no need to cat
-                    digest.digest(output, i*outLen, outLen);
+                    digest.digest(output, pos, outLen);
                 } catch (DigestException e) {
                     throw new AssertionError("will not happen", e);
                 }
             }
-            // Unless this is the last around, we will need to increment data.
-            // but we cannot change v, so a copy is made.
-            if (i != m - 1) {
-                if (data == v) {
-                    data = Arrays.copyOf(v, v.length);
-                }
-                // Step 4.3 data = (data + 1) mod 2^seedlen.
-                addBytes(data, seedLen, ONE);
+            len -= outLen;
+            if (len <= 0) {
+                // shortcut, so that data and pos needn't be updated
+                break;
             }
+            // Step 4.3 data = (data + 1) mod 2^seedlen.
+            if (data == v) {
+                data = Arrays.copyOf(v, v.length);
+            }
+            addBytes(data, seedLen, ONE);
+            pos += outLen;
         }
 
         // Step 5: No need to truncate

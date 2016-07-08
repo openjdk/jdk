@@ -33,7 +33,6 @@
  *
  *     SunJSSE does not support dynamic system properties, no way to re-use
  *     system properties in samevm/agentvm mode.
- * @key intermittent
  * @run main/othervm ShortRSAKey512 PKIX
  * @run main/othervm ShortRSAKey512 SunX509
  */

@@ -25,6 +25,8 @@
 
 # Define public interface.
 
+# In addition to regular symbols also include Freetype scaler
+
 SUNWprivate_1.1 {
 	global:
                 getSunFontIDs;
@@ -57,6 +59,23 @@ SUNWprivate_1.1 {
                 Java_sun_font_NativeFont_getGlyphImage;
                 Java_sun_font_NativeFont_getGlyphImageNoDefault;
                 Java_sun_font_NativeFont_getFontMetrics;
+                Java_sun_font_FreetypeFontScaler_initIDs;
+                Java_sun_font_FreetypeFontScaler_createScalerContextNative;
+                Java_sun_font_FreetypeFontScaler_disposeNativeScaler;
+                Java_sun_font_FreetypeFontScaler_getFontMetricsNative;
+                Java_sun_font_FreetypeFontScaler_getGlyphAdvanceNative;
+                Java_sun_font_FreetypeFontScaler_getGlyphCodeNative;
+                Java_sun_font_FreetypeFontScaler_getGlyphImageNative;
+                Java_sun_font_FreetypeFontScaler_getGlyphMetricsNative;
+                Java_sun_font_FreetypeFontScaler_getGlyphOutlineBoundsNative;
+                Java_sun_font_FreetypeFontScaler_getGlyphOutlineNative;
+                Java_sun_font_FreetypeFontScaler_getGlyphVectorOutlineNative;
+                Java_sun_font_FreetypeFontScaler_getLayoutTableCacheNative;
+                Java_sun_font_FreetypeFontScaler_getMissingGlyphCodeNative;
+                Java_sun_font_FreetypeFontScaler_getNumGlyphsNative;
+                Java_sun_font_FreetypeFontScaler_getUnitsPerEMNative;
+                Java_sun_font_FreetypeFontScaler_initNativeScaler;
+                Java_sun_font_FreetypeFontScaler_getGlyphPointNative;
 	local:
 		*;
 };

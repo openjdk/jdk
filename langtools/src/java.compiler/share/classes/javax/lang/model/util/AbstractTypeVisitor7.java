@@ -89,5 +89,6 @@ public abstract class AbstractTypeVisitor7<R, P> extends AbstractTypeVisitor6<R,
      * @param p  {@inheritDoc}
      * @return the result of the visit as defined by a subclass
      */
+    @Override
     public abstract R visitUnion(UnionType t, P p);
 }
