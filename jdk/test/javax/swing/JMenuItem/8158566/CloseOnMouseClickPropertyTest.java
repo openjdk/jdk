@@ -37,7 +37,7 @@ import javax.swing.UIManager;
 
 /*
  * @test
- * @bug 8158566
+ * @bug 8158566 8160879 8160977
  * @summary Provide a Swing property which modifies MenuItemUI behaviour
  */
 public class CloseOnMouseClickPropertyTest {
