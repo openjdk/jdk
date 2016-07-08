@@ -415,14 +415,14 @@ public class CLICompatibility {
         jar("-h")
             .assertSuccess()
             .resultChecker(r ->
-                assertTrue(r.output.startsWith("Usage: jar [OPTION...] [-C dir] files"),
+                assertTrue(r.output.startsWith("Usage: jar [OPTION...] [ [--release VERSION] [-C dir] files]"),
                            "Failed, got [" + r.output + "]")
             );
 
         jar("--help")
             .assertSuccess()
             .resultChecker(r ->
-                assertTrue(r.output.startsWith("Usage: jar [OPTION...] [-C dir] files"),
+                assertTrue(r.output.startsWith("Usage: jar [OPTION...] [ [--release VERSION] [-C dir] files]"),
                            "Failed, got [" + r.output + "]")
             );
 

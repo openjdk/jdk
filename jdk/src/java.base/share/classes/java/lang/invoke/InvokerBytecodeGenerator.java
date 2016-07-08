@@ -25,21 +25,29 @@
 
 package java.lang.invoke;
 
-import java.io.*;
-import java.util.*;
-import java.lang.reflect.Modifier;
-
-import jdk.internal.org.objectweb.asm.*;
-
-import static java.lang.invoke.LambdaForm.*;
-import static java.lang.invoke.LambdaForm.BasicType.*;
-import static java.lang.invoke.MethodHandleStatics.*;
-import static java.lang.invoke.MethodHandleNatives.Constants.*;
-
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.Label;
+import jdk.internal.org.objectweb.asm.MethodVisitor;
+import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.org.objectweb.asm.Type;
 import sun.invoke.util.VerifyAccess;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
 import sun.reflect.misc.ReflectUtil;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Stream;
+
+import static java.lang.invoke.LambdaForm.*;
+import static java.lang.invoke.LambdaForm.BasicType.*;
+import static java.lang.invoke.MethodHandleNatives.Constants.*;
+import static java.lang.invoke.MethodHandleStatics.*;
 
 /**
  * Code generation backend for LambdaForm.
@@ -75,8 +83,8 @@ class InvokerBytecodeGenerator {
     private final MethodType invokerType;
 
     /** Info about local variables in compiled lambda form */
-    private final int[]       localsMap;    // index
-    private final Class<?>[]  localClasses; // type
+    private int[]       localsMap;    // index
+    private Class<?>[]  localClasses; // type
 
     /** ASM bytecode generation. */
     private ClassWriter cw;
@@ -101,8 +109,7 @@ class InvokerBytecodeGenerator {
         this.lambdaForm = lambdaForm;
         this.invokerName = invokerName;
         this.invokerType = invokerType;
-        this.localsMap = new int[localsMapSize+1];
-        // last entry of localsMap is count of allocated local slots
+        this.localsMap = new int[localsMapSize+1]; // last entry of localsMap is count of allocated local slots
         this.localClasses = new Class<?>[localsMapSize+1];
     }
 
@@ -130,7 +137,6 @@ class InvokerBytecodeGenerator {
             }
         }
     }
-
 
     /** instance counters for dumped classes */
     private static final HashMap<String,Integer> DUMP_CLASS_FILES_COUNTERS;
@@ -177,7 +183,6 @@ class InvokerBytecodeGenerator {
                 }
             });
         }
-
     }
 
     private static String makeDumpableClassName(String className) {
@@ -280,14 +285,11 @@ class InvokerBytecodeGenerator {
 
     private static MemberName resolveInvokerMember(Class<?> invokerClass, String name, MethodType type) {
         MemberName member = new MemberName(invokerClass, name, type, REF_invokeStatic);
-        //System.out.println("resolveInvokerMember => "+member);
-        //for (Method m : invokerClass.getDeclaredMethods())  System.out.println("  "+m);
         try {
             member = MEMBERNAME_FACTORY.resolveOrFail(REF_invokeStatic, member, HOST_CLASS, ReflectiveOperationException.class);
         } catch (ReflectiveOperationException e) {
             throw newInternalError(e);
         }
-        //System.out.println("resolveInvokerMember => "+member);
         return member;
     }
 
@@ -541,11 +543,12 @@ class InvokerBytecodeGenerator {
         Name writeBack = null;  // local to write back result
         if (arg instanceof Name) {
             Name n = (Name) arg;
-            if (assertStaticType(cls, n))
-                return;  // this cast was already performed
             if (lambdaForm.useCount(n) > 1) {
                 // This guy gets used more than once.
                 writeBack = n;
+                if (assertStaticType(cls, n)) {
+                    return; // this cast was already performed
+                }
             }
         }
         if (isStaticallyNameable(cls)) {
@@ -679,19 +682,29 @@ class InvokerBytecodeGenerator {
             MethodHandleImpl.Intrinsic intr = name.function.intrinsicName();
             switch (intr) {
                 case SELECT_ALTERNATIVE:
-                    assert isSelectAlternative(i);
+                    assert lambdaForm.isSelectAlternative(i);
                     if (PROFILE_GWT) {
                         assert(name.arguments[0] instanceof Name &&
-                               nameRefersTo((Name)name.arguments[0], MethodHandleImpl.class, "profileBoolean"));
+                                ((Name)name.arguments[0]).refersTo(MethodHandleImpl.class, "profileBoolean"));
                         mv.visitAnnotation(INJECTEDPROFILE_SIG, true);
                     }
                     onStack = emitSelectAlternative(name, lambdaForm.names[i+1]);
                     i++;  // skip MH.invokeBasic of the selectAlternative result
                     continue;
                 case GUARD_WITH_CATCH:
-                    assert isGuardWithCatch(i);
+                    assert lambdaForm.isGuardWithCatch(i);
                     onStack = emitGuardWithCatch(i);
-                    i = i+2; // Jump to the end of GWC idiom
+                    i += 2; // jump to the end of GWC idiom
+                    continue;
+                case TRY_FINALLY:
+                    assert lambdaForm.isTryFinally(i);
+                    onStack = emitTryFinally(i);
+                    i += 2; // jump to the end of the TF idiom
+                    continue;
+                case LOOP:
+                    assert lambdaForm.isLoop(i);
+                    onStack = emitLoop(i);
+                    i += 2; // jump to the end of the LOOP idiom
                     continue;
                 case NEW_ARRAY:
                     Class<?> rtype = name.function.methodType().returnType();
@@ -763,7 +776,7 @@ class InvokerBytecodeGenerator {
      * Emit an invoke for the given name.
      */
     void emitInvoke(Name name) {
-        assert(!isLinkerMethodInvoke(name));  // should use the static path for these
+        assert(!name.isLinkerMethodInvoke());  // should use the static path for these
         if (true) {
             // push receiver
             MethodHandle target = name.function.resolvedHandle();
@@ -952,84 +965,6 @@ class InvokerBytecodeGenerator {
     }
 
     /**
-     * Check if MemberName is a call to a method named {@code name} in class {@code declaredClass}.
-     */
-    private boolean memberRefersTo(MemberName member, Class<?> declaringClass, String name) {
-        return member != null &&
-               member.getDeclaringClass() == declaringClass &&
-               member.getName().equals(name);
-    }
-    private boolean nameRefersTo(Name name, Class<?> declaringClass, String methodName) {
-        return name.function != null &&
-               memberRefersTo(name.function.member(), declaringClass, methodName);
-    }
-
-    /**
-     * Check if MemberName is a call to MethodHandle.invokeBasic.
-     */
-    private boolean isInvokeBasic(Name name) {
-        if (name.function == null)
-            return false;
-        if (name.arguments.length < 1)
-            return false;  // must have MH argument
-        MemberName member = name.function.member();
-        return memberRefersTo(member, MethodHandle.class, "invokeBasic") &&
-               !member.isPublic() && !member.isStatic();
-    }
-
-    /**
-     * Check if MemberName is a call to MethodHandle.linkToStatic, etc.
-     */
-    private boolean isLinkerMethodInvoke(Name name) {
-        if (name.function == null)
-            return false;
-        if (name.arguments.length < 1)
-            return false;  // must have MH argument
-        MemberName member = name.function.member();
-        return member != null &&
-               member.getDeclaringClass() == MethodHandle.class &&
-               !member.isPublic() && member.isStatic() &&
-               member.getName().startsWith("linkTo");
-    }
-
-    /**
-     * Check if i-th name is a call to MethodHandleImpl.selectAlternative.
-     */
-    private boolean isSelectAlternative(int pos) {
-        // selectAlternative idiom:
-        //   t_{n}:L=MethodHandleImpl.selectAlternative(...)
-        //   t_{n+1}:?=MethodHandle.invokeBasic(t_{n}, ...)
-        if (pos+1 >= lambdaForm.names.length)  return false;
-        Name name0 = lambdaForm.names[pos];
-        Name name1 = lambdaForm.names[pos+1];
-        return nameRefersTo(name0, MethodHandleImpl.class, "selectAlternative") &&
-               isInvokeBasic(name1) &&
-               name1.lastUseIndex(name0) == 0 &&        // t_{n+1}:?=MethodHandle.invokeBasic(t_{n}, ...)
-               lambdaForm.lastUseIndex(name0) == pos+1; // t_{n} is local: used only in t_{n+1}
-    }
-
-    /**
-     * Check if i-th name is a start of GuardWithCatch idiom.
-     */
-    private boolean isGuardWithCatch(int pos) {
-        // GuardWithCatch idiom:
-        //   t_{n}:L=MethodHandle.invokeBasic(...)
-        //   t_{n+1}:L=MethodHandleImpl.guardWithCatch(*, *, *, t_{n});
-        //   t_{n+2}:?=MethodHandle.invokeBasic(t_{n+1})
-        if (pos+2 >= lambdaForm.names.length)  return false;
-        Name name0 = lambdaForm.names[pos];
-        Name name1 = lambdaForm.names[pos+1];
-        Name name2 = lambdaForm.names[pos+2];
-        return nameRefersTo(name1, MethodHandleImpl.class, "guardWithCatch") &&
-               isInvokeBasic(name0) &&
-               isInvokeBasic(name2) &&
-               name1.lastUseIndex(name0) == 3 &&          // t_{n+1}:L=MethodHandleImpl.guardWithCatch(*, *, *, t_{n});
-               lambdaForm.lastUseIndex(name0) == pos+1 && // t_{n} is local: used only in t_{n+1}
-               name2.lastUseIndex(name1) == 1 &&          // t_{n+2}:?=MethodHandle.invokeBasic(t_{n+1})
-               lambdaForm.lastUseIndex(name1) == pos+2;   // t_{n+1} is local: used only in t_{n+2}
-    }
-
-    /**
      * Emit bytecode for the selectAlternative idiom.
      *
      * The pattern looks like (Cf. MethodHandleImpl.makeGuardWithTest):
@@ -1153,6 +1088,329 @@ class InvokerBytecodeGenerator {
         mv.visitLabel(L_done);
 
         return result;
+    }
+
+    /**
+     * Emit bytecode for the tryFinally idiom.
+     * <p>
+     * The pattern looks like (Cf. MethodHandleImpl.makeTryFinally):
+     * <blockquote><pre>{@code
+     * // a0: BMH
+     * // a1: target, a2: cleanup
+     * // a3: box, a4: unbox
+     * // a5 (and following): arguments
+     * tryFinally=Lambda(a0:L,a1:L,a2:L,a3:L,a4:L,a5:L)=>{
+     *   t6:L=MethodHandle.invokeBasic(a3:L,a5:L);         // box the arguments into an Object[]
+     *   t7:L=MethodHandleImpl.tryFinally(a1:L,a2:L,t6:L); // call the tryFinally executor
+     *   t8:L=MethodHandle.invokeBasic(a4:L,t7:L);t8:L}    // unbox the result; return the result
+     * }</pre></blockquote>
+     * <p>
+     * It is compiled into bytecode equivalent to the following code:
+     * <blockquote><pre>{@code
+     * Throwable t;
+     * Object r;
+     * try {
+     *     r = a1.invokeBasic(a5);
+     * } catch (Throwable thrown) {
+     *     t = thrown;
+     *     throw t;
+     * } finally {
+     *     r = a2.invokeBasic(t, r, a5);
+     * }
+     * return r;
+     * }</pre></blockquote>
+     * <p>
+     * Specifically, the bytecode will have the following form (the stack effects are given for the beginnings of
+     * blocks, and for the situations after executing the given instruction - the code will have a slightly different
+     * shape if the return type is {@code void}):
+     * <blockquote><pre>{@code
+     * TRY:                 (--)
+     *                      load target                             (-- target)
+     *                      load args                               (-- args... target)
+     *                      INVOKEVIRTUAL MethodHandle.invokeBasic  (depends)
+     * FINALLY_NORMAL:      (-- r)
+     *                      load cleanup                            (-- cleanup r)
+     *                      SWAP                                    (-- r cleanup)
+     *                      ACONST_NULL                             (-- t r cleanup)
+     *                      SWAP                                    (-- r t cleanup)
+     *                      load args                               (-- args... r t cleanup)
+     *                      INVOKEVIRTUAL MethodHandle.invokeBasic  (-- r)
+     *                      GOTO DONE
+     * CATCH:               (-- t)
+     *                      DUP                                     (-- t t)
+     * FINALLY_EXCEPTIONAL: (-- t t)
+     *                      load cleanup                            (-- cleanup t t)
+     *                      SWAP                                    (-- t cleanup t)
+     *                      load default for r                      (-- r t cleanup t)
+     *                      load args                               (-- args... r t cleanup t)
+     *                      INVOKEVIRTUAL MethodHandle.invokeBasic  (-- r t)
+     *                      POP                                     (-- t)
+     *                      ATHROW
+     * DONE:                (-- r)
+     * }</pre></blockquote>
+     */
+    private Name emitTryFinally(int pos) {
+        Name args    = lambdaForm.names[pos];
+        Name invoker = lambdaForm.names[pos+1];
+        Name result  = lambdaForm.names[pos+2];
+
+        Label lFrom = new Label();
+        Label lTo = new Label();
+        Label lCatch = new Label();
+        Label lDone = new Label();
+
+        Class<?> returnType = result.function.resolvedHandle().type().returnType();
+        boolean isNonVoid = returnType != void.class;
+        MethodType type = args.function.resolvedHandle().type()
+                .dropParameterTypes(0,1)
+                .changeReturnType(returnType);
+        MethodType cleanupType = type.insertParameterTypes(0, Throwable.class);
+        if (isNonVoid) {
+            cleanupType = cleanupType.insertParameterTypes(1, returnType);
+        }
+        String cleanupDesc = cleanupType.basicType().toMethodDescriptorString();
+
+        // exception handler table
+        mv.visitTryCatchBlock(lFrom, lTo, lCatch, "java/lang/Throwable");
+
+        // TRY:
+        mv.visitLabel(lFrom);
+        emitPushArgument(invoker, 0); // load target
+        emitPushArguments(args, 1); // load args (skip 0: method handle)
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, MH, "invokeBasic", type.basicType().toMethodDescriptorString(), false);
+        mv.visitLabel(lTo);
+
+        // FINALLY_NORMAL:
+        emitPushArgument(invoker, 1); // load cleanup
+        if (isNonVoid) {
+            mv.visitInsn(Opcodes.SWAP);
+        }
+        mv.visitInsn(Opcodes.ACONST_NULL);
+        if (isNonVoid) {
+            mv.visitInsn(Opcodes.SWAP);
+        }
+        emitPushArguments(args, 1); // load args (skip 0: method handle)
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, MH, "invokeBasic", cleanupDesc, false);
+        mv.visitJumpInsn(Opcodes.GOTO, lDone);
+
+        // CATCH:
+        mv.visitLabel(lCatch);
+        mv.visitInsn(Opcodes.DUP);
+
+        // FINALLY_EXCEPTIONAL:
+        emitPushArgument(invoker, 1); // load cleanup
+        mv.visitInsn(Opcodes.SWAP);
+        if (isNonVoid) {
+            emitZero(BasicType.basicType(returnType)); // load default for result
+        }
+        emitPushArguments(args, 1); // load args (skip 0: method handle)
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, MH, "invokeBasic", cleanupDesc, false);
+        if (isNonVoid) {
+            mv.visitInsn(Opcodes.POP);
+        }
+        mv.visitInsn(Opcodes.ATHROW);
+
+        // DONE:
+        mv.visitLabel(lDone);
+
+        return result;
+    }
+
+    /**
+     * Emit bytecode for the loop idiom.
+     * <p>
+     * The pattern looks like (Cf. MethodHandleImpl.loop):
+     * <blockquote><pre>{@code
+     * // a0: BMH
+     * // a1: inits, a2: steps, a3: preds, a4: finis
+     * // a5: box, a6: unbox
+     * // a7 (and following): arguments
+     * loop=Lambda(a0:L,a1:L,a2:L,a3:L,a4:L,a5:L,a6:L,a7:L)=>{
+     *   t8:L=MethodHandle.invokeBasic(a5:L,a7:L);                  // box the arguments into an Object[]
+     *   t9:L=MethodHandleImpl.loop(bt:L,a1:L,a2:L,a3:L,a4:L,t8:L); // call the loop executor (with supplied types in bt)
+     *   t10:L=MethodHandle.invokeBasic(a6:L,t9:L);t10:L}           // unbox the result; return the result
+     * }</pre></blockquote>
+     * <p>
+     * It is compiled into bytecode equivalent to the code seen in {@link MethodHandleImpl#loop(BasicType[],
+     * MethodHandle[], MethodHandle[], MethodHandle[], MethodHandle[], Object...)}, with the difference that no arrays
+     * will be used for local state storage. Instead, the local state will be mapped to actual stack slots.
+     * <p>
+     * Bytecode generation applies an unrolling scheme to enable better bytecode generation regarding local state type
+     * handling. The generated bytecode will have the following form ({@code void} types are ignored for convenience).
+     * Assume there are {@code C} clauses in the loop.
+     * <blockquote><pre>{@code
+     * INIT: (INIT_SEQ for clause 1)
+     *       ...
+     *       (INIT_SEQ for clause C)
+     * LOOP: (LOOP_SEQ for clause 1)
+     *       ...
+     *       (LOOP_SEQ for clause C)
+     *       GOTO LOOP
+     * DONE: ...
+     * }</pre></blockquote>
+     * <p>
+     * The {@code INIT_SEQ_x} sequence for clause {@code x} (with {@code x} ranging from {@code 0} to {@code C-1}) has
+     * the following shape. Assume slot {@code vx} is used to hold the state for clause {@code x}.
+     * <blockquote><pre>{@code
+     * INIT_SEQ_x:  ALOAD inits
+     *              CHECKCAST MethodHandle[]
+     *              ICONST x
+     *              AALOAD      // load the init handle for clause x
+     *              load args
+     *              INVOKEVIRTUAL MethodHandle.invokeBasic
+     *              store vx
+     * }</pre></blockquote>
+     * <p>
+     * The {@code LOOP_SEQ_x} sequence for clause {@code x} (with {@code x} ranging from {@code 0} to {@code C-1}) has
+     * the following shape. Again, assume slot {@code vx} is used to hold the state for clause {@code x}.
+     * <blockquote><pre>{@code
+     * LOOP_SEQ_x:  ALOAD steps
+     *              CHECKCAST MethodHandle[]
+     *              ICONST x
+     *              AALOAD              // load the step handle for clause x
+     *              load locals
+     *              load args
+     *              INVOKEVIRTUAL MethodHandle.invokeBasic
+     *              store vx
+     *              ALOAD preds
+     *              CHECKCAST MethodHandle[]
+     *              ICONST x
+     *              AALOAD              // load the pred handle for clause x
+     *              load locals
+     *              load args
+     *              INVOKEVIRTUAL MethodHandle.invokeBasic
+     *              IFNE LOOP_SEQ_x+1   // predicate returned false -> jump to next clause
+     *              ALOAD finis
+     *              CHECKCAST MethodHandle[]
+     *              ICONST x
+     *              AALOAD              // load the fini handle for clause x
+     *              load locals
+     *              load args
+     *              INVOKEVIRTUAL MethodHandle.invokeBasic
+     *              GOTO DONE           // jump beyond end of clauses to return from loop
+     * }</pre></blockquote>
+     */
+    private Name emitLoop(int pos) {
+        Name args    = lambdaForm.names[pos];
+        Name invoker = lambdaForm.names[pos+1];
+        Name result  = lambdaForm.names[pos+2];
+
+        // extract clause and loop-local state types
+        // find the type info in the loop invocation
+        BasicType[] loopClauseTypes = (BasicType[]) invoker.arguments[0];
+        Class<?>[] loopLocalStateTypes = Stream.of(loopClauseTypes).
+                filter(bt -> bt != BasicType.V_TYPE).map(BasicType::basicTypeClass).toArray(Class<?>[]::new);
+
+        final int firstLoopStateIndex = extendLocalsMap(loopLocalStateTypes);
+
+        Class<?> returnType = result.function.resolvedHandle().type().returnType();
+        MethodType loopType = args.function.resolvedHandle().type()
+                .dropParameterTypes(0,1)
+                .changeReturnType(returnType);
+        MethodType loopHandleType = loopType.insertParameterTypes(0, loopLocalStateTypes);
+        MethodType predType = loopHandleType.changeReturnType(boolean.class);
+        MethodType finiType = loopHandleType;
+
+        final int nClauses = loopClauseTypes.length;
+
+        // indices to invoker arguments to load method handle arrays
+        final int inits = 1;
+        final int steps = 2;
+        final int preds = 3;
+        final int finis = 4;
+
+        Label lLoop = new Label();
+        Label lDone = new Label();
+        Label lNext;
+
+        // INIT:
+        for (int c = 0, state = 0; c < nClauses; ++c) {
+            MethodType cInitType = loopType.changeReturnType(loopClauseTypes[c].basicTypeClass());
+            emitLoopHandleInvoke(invoker, inits, c, args, false, cInitType, loopLocalStateTypes, firstLoopStateIndex);
+            if (cInitType.returnType() != void.class) {
+                emitStoreInsn(BasicType.basicType(cInitType.returnType()), firstLoopStateIndex + state);
+                ++state;
+            }
+        }
+
+        // LOOP:
+        mv.visitLabel(lLoop);
+
+        for (int c = 0, state = 0; c < nClauses; ++c) {
+            lNext = new Label();
+
+            MethodType stepType = loopHandleType.changeReturnType(loopClauseTypes[c].basicTypeClass());
+            boolean isVoid = stepType.returnType() == void.class;
+
+            // invoke loop step
+            emitLoopHandleInvoke(invoker, steps, c, args, true, stepType, loopLocalStateTypes, firstLoopStateIndex);
+            if (!isVoid) {
+                emitStoreInsn(BasicType.basicType(stepType.returnType()), firstLoopStateIndex + state);
+                ++state;
+            }
+
+            // invoke loop predicate
+            emitLoopHandleInvoke(invoker, preds, c, args, true, predType, loopLocalStateTypes, firstLoopStateIndex);
+            mv.visitJumpInsn(Opcodes.IFNE, lNext);
+
+            // invoke fini
+            emitLoopHandleInvoke(invoker, finis, c, args, true, finiType, loopLocalStateTypes, firstLoopStateIndex);
+            mv.visitJumpInsn(Opcodes.GOTO, lDone);
+
+            // this is the beginning of the next loop clause
+            mv.visitLabel(lNext);
+        }
+
+        mv.visitJumpInsn(Opcodes.GOTO, lLoop);
+
+        // DONE:
+        mv.visitLabel(lDone);
+
+        return result;
+    }
+
+    private int extendLocalsMap(Class<?>[] types) {
+        int firstSlot = localsMap.length - 1;
+        localsMap = Arrays.copyOf(localsMap, localsMap.length + types.length);
+        localClasses = Arrays.copyOf(localClasses, localClasses.length + types.length);
+        System.arraycopy(types, 0, localClasses, firstSlot, types.length);
+        int index = localsMap[firstSlot - 1] + 1;
+        int lastSlots = 0;
+        for (int i = 0; i < types.length; ++i) {
+            localsMap[firstSlot + i] = index;
+            lastSlots = BasicType.basicType(localClasses[firstSlot + i]).basicTypeSlots();
+            index += lastSlots;
+        }
+        localsMap[localsMap.length - 1] = index - lastSlots;
+        return firstSlot;
+    }
+
+    private void emitLoopHandleInvoke(Name holder, int handles, int clause, Name args, boolean pushLocalState,
+                                      MethodType type, Class<?>[] loopLocalStateTypes, int firstLoopStateSlot) {
+        // load handle for clause
+        emitPushArgument(holder, handles);
+        emitIconstInsn(clause);
+        mv.visitInsn(Opcodes.AALOAD);
+        // load loop state (preceding the other arguments)
+        if (pushLocalState) {
+            for (int s = 0; s < loopLocalStateTypes.length; ++s) {
+                emitLoadInsn(BasicType.basicType(loopLocalStateTypes[s]), firstLoopStateSlot + s);
+            }
+        }
+        // load loop args (skip 0: method handle)
+        emitPushArguments(args, 1);
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, MH, "invokeBasic", type.toMethodDescriptorString(), false);
+    }
+
+    private void emitZero(BasicType type) {
+        switch (type) {
+            case I_TYPE: mv.visitInsn(Opcodes.ICONST_0); break;
+            case J_TYPE: mv.visitInsn(Opcodes.LCONST_0); break;
+            case F_TYPE: mv.visitInsn(Opcodes.FCONST_0); break;
+            case D_TYPE: mv.visitInsn(Opcodes.DCONST_0); break;
+            case L_TYPE: mv.visitInsn(Opcodes.ACONST_NULL); break;
+            default: throw new InternalError("unknown type: " + type);
+        }
     }
 
     private void emitPushArguments(Name args) {

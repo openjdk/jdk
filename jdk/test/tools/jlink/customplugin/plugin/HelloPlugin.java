@@ -29,12 +29,12 @@ import java.util.Collections;
 import java.util.Map;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 
 /**
  * Custom plugin
  */
-public final class HelloPlugin implements TransformerPlugin {
+public final class HelloPlugin implements Plugin {
 
     private static final String OUTPUT_FILE = "customplugin.txt";
     public static final String NAME = "hello";
