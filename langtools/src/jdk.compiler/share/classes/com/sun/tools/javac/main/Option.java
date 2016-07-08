@@ -517,11 +517,28 @@ public enum Option {
         }
         @Override
         public boolean process(OptionHelper helper, String option) {
-            option = option.substring(text.length());
-            int eq = option.indexOf('=');
-            String key = (eq < 0) ? option : option.substring(0, eq);
-            String value = (eq < 0) ? option : option.substring(eq+1);
+            return process(helper, option, option.substring(text.length()));
+        }
+
+        @Override
+        public boolean process(OptionHelper helper, String option, String arg) {
+            int eq = arg.indexOf('=');
+            String key = (eq < 0) ? arg : arg.substring(0, eq);
+            String value = (eq < 0) ? arg : arg.substring(eq+1);
             helper.put(key, value);
+            return false;
+        }
+    },
+
+    XDEBUG("-Xdebug:", null, HIDDEN, BASIC) {
+        @Override
+        public boolean process(OptionHelper helper, String option) {
+            String p = option.substring(option.indexOf(':') + 1).trim();
+            String[] subOptions = p.split(";");
+            for (String subOption : subOptions) {
+                subOption = "debug." + subOption.trim();
+                XD.process(helper, subOption, subOption);
+            }
             return false;
         }
     },

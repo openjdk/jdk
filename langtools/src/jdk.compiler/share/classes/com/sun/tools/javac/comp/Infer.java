@@ -62,6 +62,8 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 
+import com.sun.tools.javac.main.Option;
+
 import static com.sun.tools.javac.code.TypeTag.*;
 
 /** Helper class for type parameter inference, used by the attribution phase.
@@ -87,7 +89,7 @@ public class Infer {
     /**
      * folder in which the inference dependency graphs should be written.
      */
-    final private String dependenciesFolder;
+    private final String dependenciesFolder;
 
     /**
      * List of graphs awaiting to be dumped to a file.
@@ -114,7 +116,7 @@ public class Infer {
         Options options = Options.instance(context);
         allowGraphInference = Source.instance(context).allowGraphInference()
                 && options.isUnset("useLegacyInference");
-        dependenciesFolder = options.get("dumpInferenceGraphsTo");
+        dependenciesFolder = options.get("debug.dumpInferenceGraphsTo");
         pendingGraphs = List.nil();
 
         emptyContext = new InferenceContext(this, List.<Type>nil());
