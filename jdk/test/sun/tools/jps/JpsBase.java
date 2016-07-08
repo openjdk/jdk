@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,17 @@ public final class JpsBase {
         return JpsBase.class.getName();
     }
 
+    private static boolean userDirSanityCheck(String fullProcessName) {
+        String userDir = System.getProperty("user.dir");
+        if (!fullProcessName.startsWith(userDir)) {
+            System.err.printf("Test skipped. user.dir '%s' is not a prefix of '%s'\n", userDir, fullProcessName);
+            return false;
+        }
+        return true;
+    }
+
     public static void main(String[] args) throws Exception {
+        System.out.printf("INFO: user.dir:  '%s''\n", System.getProperty("user.dir"));
         long pid = ProcessTools.getProcessId();
 
         List<List<JpsHelper.JpsArg>> combinations = JpsHelper.JpsArg.generateCombinations();
@@ -85,8 +95,12 @@ public final class JpsBase {
                     // 30673 /tmp/jtreg/jtreg-workdir/scratch/JpsBase.jar ...
                     isFull = true;
                     String fullProcessName = getFullProcessName();
-                    pattern = "^" + pid + "\\s+" + replaceSpecialChars(fullProcessName) + ".*";
-                    output.shouldMatch(pattern);
+                    // Skip the test if user.dir is not a prefix of the current path
+                    // It's possible if the test is run from symlinked dir or windows alias drive
+                    if (userDirSanityCheck(fullProcessName)) {
+                        pattern = "^" + pid + "\\s+" + replaceSpecialChars(fullProcessName) + ".*";
+                        output.shouldMatch(pattern);
+                    }
                     break;
                 case m:
                     // If '-m' is specified output should contain the arguments passed to the main method:
