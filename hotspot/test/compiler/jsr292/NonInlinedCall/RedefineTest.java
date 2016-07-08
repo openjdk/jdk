@@ -29,13 +29,16 @@
  *          java.base/jdk.internal.vm.annotation
  * @library /testlibrary /test/lib / ../patches
  * @requires vm.flavor != "minimal"
+ *
  * @build sun.hotspot.WhiteBox
  * @build java.base/java.lang.invoke.MethodHandleHelper
  * @build compiler.jsr292.NonInlinedCall.RedefineTest
- * @run main compiler.jsr292.NonInlinedCall.Agent agent.jar compiler.jsr292.NonInlinedCall.RedefineTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- *                              compiler.jsr292.NonInlinedCall.RedefineTest
+ * @run driver compiler.jsr292.NonInlinedCall.Agent
+ *             agent.jar
+ *             compiler.jsr292.NonInlinedCall.RedefineTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ *                                compiler.jsr292.NonInlinedCall.RedefineTest
  * @run main/bootclasspath/othervm -javaagent:agent.jar
  *                                 -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
