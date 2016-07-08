@@ -3427,7 +3427,8 @@ assertEquals("xy", h3.invoke("x", "y", 1, "a", "b", "c"));
      * @return a possibly adapted method handle
      * @throws NullPointerException if either argument is null
      * @throws IllegalArgumentException if any element of {@code newTypes} is {@code void.class},
-     *         or if either index is out of range in its corresponding list,
+     *         or if {@code skip} is negative or greater than the arity of the target,
+     *         or if {@code pos} is negative or greater than the newTypes list size,
      *         or if the non-skipped target parameter types match the new types at {@code pos}
      * @since 9
      */
@@ -4307,7 +4308,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         assert Stream.of(fstep, fpred, ffini).flatMap(List::stream).map(MethodHandle::type).map(MethodType::parameterList).
                 allMatch(pl -> pl.equals(commonParameterSequence));
 
-        return MethodHandleImpl.makeLoop(loopReturnType, commonSuffix, commonPrefix, finit, fstep, fpred, ffini);
+        return MethodHandleImpl.makeLoop(loopReturnType, commonSuffix, finit, fstep, fpred, ffini);
     }
 
     private static List<MethodHandle> fillParameterTypes(List<MethodHandle> hs, final List<Class<?>> targetParams) {
@@ -4814,10 +4815,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         // The cleanup parameter list (minus the leading Throwable and result parameters) must be a sublist of the
         // target parameter list.
         cleanup = dropArgumentsToMatch(cleanup, (rtype == void.class ? 1 : 2), targetParamTypes, 0);
-        MethodHandle aTarget = target.asSpreader(Object[].class, target.type().parameterCount());
-        MethodHandle aCleanup = cleanup.asSpreader(Object[].class, targetParamTypes.size());
 
-        return MethodHandleImpl.makeTryFinally(aTarget, aCleanup, rtype, targetParamTypes);
+        return MethodHandleImpl.makeTryFinally(target, cleanup, rtype, targetParamTypes);
     }
 
     /**

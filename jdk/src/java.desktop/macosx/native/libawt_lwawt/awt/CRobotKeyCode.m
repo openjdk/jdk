@@ -53,6 +53,7 @@
             [NSNumber numberWithInt : OSX_Shift], [NSNumber numberWithInt : java_awt_event_KeyEvent_VK_SHIFT],
             [NSNumber numberWithInt : OSX_Control], [NSNumber numberWithInt : java_awt_event_KeyEvent_VK_CONTROL],
             [NSNumber numberWithInt : OSX_Option], [NSNumber numberWithInt : java_awt_event_KeyEvent_VK_ALT],
+            [NSNumber numberWithInt : OSX_RightOption], [NSNumber numberWithInt : java_awt_event_KeyEvent_VK_ALT_GRAPH],
             [NSNumber numberWithInt : OSX_CapsLock], [NSNumber numberWithInt : java_awt_event_KeyEvent_VK_CAPS_LOCK],
             [NSNumber numberWithInt : OSX_Escape], [NSNumber numberWithInt : java_awt_event_KeyEvent_VK_ESCAPE],
             [NSNumber numberWithInt : OSX_kVK_Space], [NSNumber numberWithInt : java_awt_event_KeyEvent_VK_SPACE],

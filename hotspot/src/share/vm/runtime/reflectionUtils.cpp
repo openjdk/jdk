@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,10 +73,7 @@ GrowableArray<FilteredField*> *FilteredFieldsMap::_filtered_fields =
 
 
 void FilteredFieldsMap::initialize() {
-  int offset;
-  offset = java_lang_Throwable::get_backtrace_offset();
-  _filtered_fields->append(new FilteredField(SystemDictionary::Throwable_klass(), offset));
-  offset = reflect_ConstantPool::oop_offset();
+  int offset = reflect_ConstantPool::oop_offset();
   _filtered_fields->append(new FilteredField(SystemDictionary::reflect_ConstantPool_klass(), offset));
   offset = reflect_UnsafeStaticFieldAccessorImpl::base_offset();
   _filtered_fields->append(new FilteredField(SystemDictionary::reflect_UnsafeStaticFieldAccessorImpl_klass(), offset));

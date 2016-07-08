@@ -31,10 +31,10 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
-import java.awt.event.KeyEvent;
 import java.awt.event.InputEvent;
 
 import sun.swing.SwingUtilities2;
@@ -385,5 +385,103 @@ public class BasicGraphicsUtils
     static boolean isMenuShortcutKeyDown(InputEvent event) {
         return (event.getModifiers() &
                 Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()) != 0;
+    }
+
+    /**
+     * Draws the given string at the specified location using text properties
+     * and anti-aliasing hints from the provided component.
+     * Nothing is drawn for the null string.
+     *
+     * @param c the component that will display the string, may be null
+     * @param g the graphics context, must not be null
+     * @param string the string to display, may be null
+     * @param x the x coordinate to draw the text at
+     * @param y the y coordinate to draw the text at
+     * @throws NullPointerException if the specified {@code g} is {@code null}
+     *
+     * @since 9
+     */
+    public static void drawString(JComponent c, Graphics2D g, String string,
+                                  float x, float y) {
+        SwingUtilities2.drawString(c, g, string, (int) x, (int) y);
+    }
+
+    /**
+     * Draws the given string at the specified location underlining
+     * the specified character. The provided component is used to query text
+     * properties and anti-aliasing hints.
+     * <p>
+     * The {@code underlinedIndex} parameter points to a char value
+     * (Unicode code unit) in the given string.
+     * If the char value specified at the underlined index is in
+     * the high-surrogate range and the char value at the following index is in
+     * the low-surrogate range then the supplementary character corresponding
+     * to this surrogate pair is underlined.
+     * <p>
+     * No character is underlined if the index is negative or greater
+     * than the string length {@code (index < 0 || index >= string.length())}
+     * or if the char value specified at the given index
+     * is in the low-surrogate range.
+     *
+     * @param c the component that will display the string, may be null
+     * @param g the graphics context, must not be null
+     * @param string the string to display, may be null
+     * @param underlinedIndex index of a a char value (Unicode code unit)
+     *        in the string to underline
+     * @param x the x coordinate to draw the text at
+     * @param y the y coordinate to draw the text at
+     * @throws NullPointerException if the specified {@code g} is {@code null}
+     *
+     * @see #getStringWidth
+     *
+     * @since 9
+     */
+    public static void drawStringUnderlineCharAt(JComponent c, Graphics2D g,
+            String string, int underlinedIndex, float x, float y) {
+        SwingUtilities2.drawStringUnderlineCharAt(c, g, string, underlinedIndex,
+                                                  (int) x, (int) y);
+    }
+
+    /**
+     * Clips the passed in string to the space provided.
+     * The provided component is used to query text properties and anti-aliasing hints.
+     * The unchanged string is returned if the space provided is greater than
+     * the string width.
+     *
+     * @param c the component, may be null
+     * @param fm the FontMetrics used to measure the string width, must be
+     *           obtained from the correct font and graphics. Must not be null.
+     * @param string the string to clip, may be null
+     * @param availTextWidth the amount of space that the string can be drawn in
+     * @return the clipped string that fits in the provided space, an empty
+     *         string if the given string argument is {@code null} or empty
+     * @throws NullPointerException if the specified {@code fm} is {@code null}
+     *
+     * @see #getStringWidth
+     *
+     * @since 9
+     */
+    public static String getClippedString(JComponent c, FontMetrics fm,
+                                          String string, int availTextWidth) {
+        return SwingUtilities2.clipStringIfNecessary(c, fm, string, availTextWidth);
+    }
+
+    /**
+     * Returns the width of the passed in string using text properties
+     * and anti-aliasing hints from the provided component.
+     * If the passed string is {@code null}, returns zero.
+     *
+     * @param c the component, may be null
+     * @param fm the FontMetrics used to measure the advance string width, must
+     *           be obtained from the correct font and graphics. Must not be null.
+     * @param string the string to get the advance width of, may be null
+     * @return the advance width of the specified string, zero is returned for
+     *         {@code null} string
+     * @throws NullPointerException if the specified {@code fm} is {@code null}
+     *
+     * @since 9
+     */
+    public static float getStringWidth(JComponent c, FontMetrics fm, String string) {
+        return SwingUtilities2.stringWidth(c, fm, string);
     }
 }

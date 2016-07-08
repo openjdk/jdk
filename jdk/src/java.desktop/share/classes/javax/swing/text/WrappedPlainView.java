@@ -87,6 +87,17 @@ public class WrappedPlainView extends BoxView implements TabExpander {
     }
 
     /**
+     * Returns the tab size set for the document, defaulting to 8.
+     *
+     * @implSpec This implementation calls {@link #getTabSize() getTabSize()}.
+     *
+     * @return the tab size
+     */
+    protected float getFractionalTabSize() {
+        return getTabSize();
+    }
+
+    /**
      * Renders a line of text, suppressing whitespace at the end
      * and expanding any tabs.  This is implemented to make calls
      * to the methods <code>drawUnselectedText</code> and
@@ -123,6 +134,29 @@ public class WrappedPlainView extends BoxView implements TabExpander {
         } catch (BadLocationException e) {
             throw new StateInvariantError("Can't render: " + p0 + "," + p1);
         }
+    }
+
+    /**
+     * Renders a line of text, suppressing whitespace at the end
+     * and expanding any tabs.  This is implemented to make calls
+     * to the methods <code>drawUnselectedText</code> and
+     * <code>drawSelectedText</code> so that the way selected and
+     * unselected text are rendered can be customized.
+     *
+     * @implSpec This implementation calls
+     * {@link #drawLine(int, int, Graphics, int, int)
+     * drawLine(p0, p1, (Graphics) g, (int) x, (int) y)}.
+     *
+     * @param p0 the starting document location to use &gt;= 0
+     * @param p1 the ending document location to use &gt;= p1
+     * @param g the graphics context
+     * @param x the starting X position &gt;= 0
+     * @param y the starting Y position &gt;= 0
+     * @see #drawUnselectedText
+     * @see #drawSelectedText
+     */
+    protected void drawLine(int p0, int p1, Graphics2D g, float x, float y) {
+        drawLine(p0, p1, (Graphics) g, (int) x, (int) y);
     }
 
     private int drawText(Element elem, int p0, int p1, Graphics g, int x, int y) throws BadLocationException {
@@ -184,6 +218,26 @@ public class WrappedPlainView extends BoxView implements TabExpander {
     }
 
     /**
+     * Renders the given range in the model as normal unselected
+     * text.
+     *
+     * @implSpec This implementation calls
+     * {@link #drawUnselectedText(Graphics, int, int, int, int)
+     * drawUnselectedText((Graphics)g, (int) x, (int) y, p0, p1)}.
+     *
+     * @param g the graphics context
+     * @param x the starting X coordinate &gt;= 0
+     * @param y the starting Y coordinate &gt;= 0
+     * @param p0 the beginning position in the model &gt;= 0
+     * @param p1 the ending position in the model &gt;= p0
+     * @return the X location of the end of the range &gt;= 0
+     * @exception BadLocationException if the range is invalid
+     */
+    protected float drawUnselectedText(Graphics2D g, float x, float y,
+                                     int p0, int p1) throws BadLocationException {
+        return drawUnselectedText((Graphics) g, (int) x, (int) y, p0, p1);
+    }
+    /**
      * Renders the given range in the model as selected text.  This
      * is implemented to render the text in the color specified in
      * the hosting component.  It assumes the highlighter will render
@@ -208,6 +262,28 @@ public class WrappedPlainView extends BoxView implements TabExpander {
         return ret;
     }
 
+    /**
+     * Renders the given range in the model as selected text.  This
+     * is implemented to render the text in the color specified in
+     * the hosting component.  It assumes the highlighter will render
+     * the selected background.
+     *
+     * @implSpec This implementation calls
+     * {@link #drawSelectedText(Graphics, int, int, int, int)
+     * drawSelectedText((Graphics)g, (int) x, (int) y, p0, p1)}.
+     *
+     * @param g the graphics context
+     * @param x the starting X coordinate &gt;= 0
+     * @param y the starting Y coordinate &gt;= 0
+     * @param p0 the beginning position in the model &gt;= 0
+     * @param p1 the ending position in the model &gt;= p0
+     * @return the location of the end of the range.
+     * @exception BadLocationException if the range is invalid
+     */
+    protected float drawSelectedText(Graphics2D g, float x, float y,
+                                     int p0, int p1) throws BadLocationException {
+        return drawSelectedText((Graphics) g, (int) x, (int) y, p0, p1);
+    }
     /**
      * Gives access to a buffer that can be used to fetch
      * text from the associated document.

@@ -131,7 +131,7 @@ const keyTable[] =
     {0x3A, NO,  KL_UNKNOWN,  java_awt_event_KeyEvent_VK_ALT},       // ****
     {0x3B, NO,  KL_UNKNOWN,  java_awt_event_KeyEvent_VK_CONTROL},   // ****
     {0x3C, NO,  KL_UNKNOWN,  java_awt_event_KeyEvent_VK_UNDEFINED},
-    {0x3D, NO,  KL_UNKNOWN,  java_awt_event_KeyEvent_VK_UNDEFINED},
+    {0x3D, NO,  KL_UNKNOWN,  java_awt_event_KeyEvent_VK_ALT_GRAPH},
     {0x3E, NO,  KL_UNKNOWN,  java_awt_event_KeyEvent_VK_UNDEFINED},
     {0x3F, NO,  KL_UNKNOWN,  java_awt_event_KeyEvent_VK_UNDEFINED}, // the 'fn' key on PowerBooks
     {0x40, NO,  KL_STANDARD, java_awt_event_KeyEvent_VK_F17},
@@ -293,18 +293,18 @@ const nsKeyToJavaModifierTable[] =
         61,
         java_awt_event_InputEvent_ALT_DOWN_MASK | java_awt_event_InputEvent_ALT_GRAPH_DOWN_MASK,
         java_awt_event_InputEvent_ALT_MASK | java_awt_event_InputEvent_ALT_GRAPH_MASK,
-        java_awt_event_KeyEvent_VK_ALT
+        java_awt_event_KeyEvent_VK_ALT | java_awt_event_KeyEvent_VK_ALT_GRAPH
     },
-    {
-        NSCommandKeyMask,
-        //kCGSFlagsMaskAppleLeftCommandKey,
-        //kCGSFlagsMaskAppleRightCommandKey,
-        55,
-        54,
-        java_awt_event_InputEvent_META_DOWN_MASK,
-        java_awt_event_InputEvent_META_MASK,
-        java_awt_event_KeyEvent_VK_META
-    },
+	{
+		NSCommandKeyMask,
+		//kCGSFlagsMaskAppleLeftCommandKey,
+		//kCGSFlagsMaskAppleRightCommandKey,
+		55,
+		54,
+		java_awt_event_InputEvent_META_DOWN_MASK,
+		java_awt_event_InputEvent_META_MASK,
+		java_awt_event_KeyEvent_VK_META
+	},
     // NSNumericPadKeyMask
     {
         NSHelpKeyMask,
@@ -554,20 +554,20 @@ NsKeyModifiersToJavaKeyInfo(NSUInteger nsFlags, unsigned short eventKeyCode,
  */
 jint NsKeyModifiersToJavaModifiers(NSUInteger nsFlags, BOOL isExtMods)
 {
-    jint javaModifiers = 0;
-    const struct _nsKeyToJavaModifier* cur;
+	jint javaModifiers = 0;
+	const struct _nsKeyToJavaModifier* cur;
+	
+	for (cur = nsKeyToJavaModifierTable; cur->nsMask != 0; ++cur) {
+		if ((cur->nsMask & nsFlags) != 0) {
+				javaModifiers |= isExtMods ? cur->javaExtMask : cur->javaMask;
+				if (cur->nsMask == NSAlternateKeyMask && leftAltKeyPressed == NO) {
+					continue;
+			}
+			break;
+		}
+	}
 
-    for (cur = nsKeyToJavaModifierTable; cur->nsMask != 0; ++cur) {
-        if ((cur->nsMask & nsFlags) != 0) {
-            javaModifiers |= isExtMods ? cur->javaExtMask : cur->javaMask;
-            if (cur->nsMask == NSAlternateKeyMask && leftAltKeyPressed == NO) {
-                continue;
-            }
-            break;
-        }
-    }
-
-    return javaModifiers;
+	return javaModifiers;
 }
 
 /*

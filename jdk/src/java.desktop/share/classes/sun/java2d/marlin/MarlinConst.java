@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,54 +30,55 @@ package sun.java2d.marlin;
  */
 interface MarlinConst {
     // enable Logs (logger or stdout)
-    static final boolean enableLogs = MarlinProperties.isLoggingEnabled();
+    static final boolean ENABLE_LOGS = MarlinProperties.isLoggingEnabled();
     // use Logger instead of stdout
-    static final boolean useLogger = enableLogs && MarlinProperties.isUseLogger();
+    static final boolean USE_LOGGER = ENABLE_LOGS && MarlinProperties.isUseLogger();
 
     // log new RendererContext
-    static final boolean logCreateContext = enableLogs
+    static final boolean LOG_CREATE_CONTEXT = ENABLE_LOGS
         && MarlinProperties.isLogCreateContext();
     // log misc.Unsafe alloc/realloc/free
-    static final boolean logUnsafeMalloc = enableLogs
+    static final boolean LOG_UNSAFE_MALLOC = ENABLE_LOGS
         && MarlinProperties.isLogUnsafeMalloc();
     // do check unsafe alignment:
-    static final boolean doCheckUnsafe = false;
+    static final boolean DO_CHECK_UNSAFE = false;
 
     // do statistics
-    static final boolean doStats = enableLogs && MarlinProperties.isDoStats();
+    static final boolean DO_STATS = ENABLE_LOGS && MarlinProperties.isDoStats();
     // do monitors
     // disabled to reduce byte-code size a bit...
-    static final boolean doMonitors = false;
-//    static final boolean doMonitors = enableLogs && MarlinProperties.isDoMonitors();
+    static final boolean DO_MONITORS = false;
+//    static final boolean DO_MONITORS = ENABLE_LOGS && MarlinProperties.isDoMonitors();
     // do checks
-    static final boolean doChecks = enableLogs && MarlinProperties.isDoChecks();
+    static final boolean DO_CHECKS = ENABLE_LOGS && MarlinProperties.isDoChecks();
 
     // do AA range checks: disable when algorithm / code is stable
     static final boolean DO_AA_RANGE_CHECK = false;
 
     // enable logs
-    static final boolean doLogWidenArray = enableLogs && false;
+    static final boolean DO_LOG_WIDEN_ARRAY = ENABLE_LOGS && false;
     // enable oversize logs
-    static final boolean doLogOverSize = enableLogs && false;
+    static final boolean DO_LOG_OVERSIZE = ENABLE_LOGS && false;
     // enable traces
-    static final boolean doTrace = enableLogs && false;
+    static final boolean DO_TRACE = ENABLE_LOGS && false;
+
     // do flush monitors
-    static final boolean doFlushMonitors = true;
+    static final boolean DO_FLUSH_MONITORS = true;
     // use one polling thread to dump statistics/monitors
-    static final boolean useDumpThread = false;
+    static final boolean USE_DUMP_THREAD = false;
     // thread dump interval (ms)
-    static final long statDump = 5000L;
+    static final long DUMP_INTERVAL = 5000L;
 
     // do clean dirty array
-    static final boolean doCleanDirty = false;
+    static final boolean DO_CLEAN_DIRTY = false;
 
     // flag to use line simplifier
-    static final boolean useSimplifier = MarlinProperties.isUseSimplifier();
+    static final boolean USE_SIMPLIFIER = MarlinProperties.isUseSimplifier();
 
     // flag to enable logs related bounds checks
-    static final boolean doLogBounds = enableLogs && false;
+    static final boolean DO_LOG_BOUNDS = ENABLE_LOGS && false;
 
-    // Initial Array sizing (initial context capacity) ~ 512K
+    // Initial Array sizing (initial context capacity) ~ 350K
 
     // 2048 pixel (width x height) for initial capacity
     static final int INITIAL_PIXEL_DIM
@@ -88,8 +89,6 @@ interface MarlinConst {
     static final int INITIAL_SMALL_ARRAY  = 1024;
     static final int INITIAL_MEDIUM_ARRAY = 4096;
     static final int INITIAL_LARGE_ARRAY  = 8192;
-    static final int INITIAL_ARRAY_16K    = 16384;
-    static final int INITIAL_ARRAY_32K    = 32768;
     // alpha row dimension
     static final int INITIAL_AA_ARRAY     = INITIAL_PIXEL_DIM;
 

@@ -44,10 +44,10 @@ import sun.java2d.SunGraphics2D;
 public final class AAShapePipe
     implements ShapeDrawPipe, ParallelogramPipe
 {
-    static final RenderingEngine renderengine = RenderingEngine.getInstance();
+    static final RenderingEngine RDR_ENGINE = RenderingEngine.getInstance();
 
     // Per-thread TileState (~1K very small so do not use any Weak Reference)
-    private static final ReentrantContextProvider<TileState> tileStateProvider =
+    private static final ReentrantContextProvider<TileState> TILE_STATE_PROVIDER =
             new ReentrantContextProviderTL<TileState>(
                     ReentrantContextProvider.REF_HARD)
             {
@@ -90,19 +90,19 @@ public final class AAShapePipe
                                   double dx1, double dy1,
                                   double dx2, double dy2)
     {
-        final TileState ts = tileStateProvider.acquire();
+        final TileState ts = TILE_STATE_PROVIDER.acquire();
         try {
             final int[] abox = ts.abox;
 
             final AATileGenerator aatg =
-                renderengine.getAATileGenerator(x, y, dx1, dy1, dx2, dy2, 0, 0,
+                RDR_ENGINE.getAATileGenerator(x, y, dx1, dy1, dx2, dy2, 0, 0,
                                                 sg.getCompClip(), abox);
             if (aatg != null) {
                 renderTiles(sg, ts.computeBBox(ux1, uy1, ux2, uy2),
                             aatg, abox, ts);
             }
         } finally {
-            tileStateProvider.release(ts);
+            TILE_STATE_PROVIDER.release(ts);
         }
     }
 
@@ -115,12 +115,12 @@ public final class AAShapePipe
                                   double dx2, double dy2,
                                   double lw1, double lw2)
     {
-        final TileState ts = tileStateProvider.acquire();
+        final TileState ts = TILE_STATE_PROVIDER.acquire();
         try {
             final int[] abox = ts.abox;
 
             final AATileGenerator aatg =
-                renderengine.getAATileGenerator(x, y, dx1, dy1, dx2, dy2, lw1,
+                RDR_ENGINE.getAATileGenerator(x, y, dx1, dy1, dx2, dy2, lw1,
                                                 lw2, sg.getCompClip(), abox);
             if (aatg != null) {
                 // Note that bbox is of the original shape, not the wide path.
@@ -129,7 +129,7 @@ public final class AAShapePipe
                             aatg, abox, ts);
             }
         } finally {
-            tileStateProvider.release(ts);
+            TILE_STATE_PROVIDER.release(ts);
         }
     }
 
@@ -138,18 +138,18 @@ public final class AAShapePipe
                           sg.strokeHint != SunHints.INTVAL_STROKE_PURE);
         final boolean thin = (sg.strokeState <= SunGraphics2D.STROKE_THINDASHED);
 
-        final TileState ts = tileStateProvider.acquire();
+        final TileState ts = TILE_STATE_PROVIDER.acquire();
         try {
             final int[] abox = ts.abox;
 
             final AATileGenerator aatg =
-                renderengine.getAATileGenerator(s, sg.transform, sg.getCompClip(),
+                RDR_ENGINE.getAATileGenerator(s, sg.transform, sg.getCompClip(),
                                                 bs, thin, adjust, abox);
             if (aatg != null) {
                 renderTiles(sg, s, aatg, abox, ts);
             }
         } finally {
-            tileStateProvider.release(ts);
+            TILE_STATE_PROVIDER.release(ts);
         }
     }
 

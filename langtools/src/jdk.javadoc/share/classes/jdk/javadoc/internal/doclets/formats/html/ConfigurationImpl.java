@@ -360,10 +360,10 @@ public class ConfigurationImpl extends Configuration {
         if (!validateOptions()) {
             return false;
         }
-        if (!root.getSpecifiedElements().isEmpty()) {
+        if (!docEnv.getSpecifiedElements().isEmpty()) {
             Map<String, PackageElement> map = new HashMap<>();
             PackageElement pkg;
-            List<TypeElement> classes = new ArrayList<>(root.getIncludedClasses());
+            List<TypeElement> classes = new ArrayList<>(docEnv.getIncludedClasses());
             for (TypeElement aClass : classes) {
                 pkg = utils.containingPackage(aClass);
                 if (!map.containsKey(utils.getPackageName(pkg))) {
@@ -372,7 +372,7 @@ public class ConfigurationImpl extends Configuration {
             }
         }
         setCreateOverview();
-        setTopFile(root);
+        setTopFile(docEnv);
         workArounds.initDocLint(doclintOpts.values(), tagletManager.getCustomTagNames(),
                 Utils.toLowerCase(htmlVersion.name()));
         return true;
@@ -441,8 +441,8 @@ public class ConfigurationImpl extends Configuration {
         return null;
     }
 
-    protected boolean checkForDeprecation(DocletEnvironment root) {
-        for (TypeElement te : root.getIncludedClasses()) {
+    protected boolean checkForDeprecation(DocletEnvironment docEnv) {
+        for (TypeElement te : docEnv.getIncludedClasses()) {
             if (isGeneratedDoc(te)) {
                 return true;
             }
@@ -496,7 +496,7 @@ public class ConfigurationImpl extends Configuration {
      */
     @Override
     public JavaFileManager getFileManager() {
-        return root.getJavaFileManager();
+        return docEnv.getJavaFileManager();
     }
 
     @Override

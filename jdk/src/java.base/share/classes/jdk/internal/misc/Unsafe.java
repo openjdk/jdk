@@ -1709,9 +1709,9 @@ public final class Unsafe {
     public final float compareAndExchangeFloatAcquire(Object o, long offset,
                                                   float expected,
                                                   float x) {
-        int w = compareAndExchangeIntVolatile(o, offset,
-                                              Float.floatToRawIntBits(expected),
-                                              Float.floatToRawIntBits(x));
+        int w = compareAndExchangeIntAcquire(o, offset,
+                                             Float.floatToRawIntBits(expected),
+                                             Float.floatToRawIntBits(x));
         return Float.intBitsToFloat(w);
     }
 
@@ -1793,9 +1793,9 @@ public final class Unsafe {
     public final double compareAndExchangeDoubleAcquire(Object o, long offset,
                                                         double expected,
                                                         double x) {
-        long w = compareAndExchangeLongVolatile(o, offset,
-                                                Double.doubleToRawLongBits(expected),
-                                                Double.doubleToRawLongBits(x));
+        long w = compareAndExchangeLongAcquire(o, offset,
+                                               Double.doubleToRawLongBits(expected),
+                                               Double.doubleToRawLongBits(x));
         return Double.longBitsToDouble(w);
     }
 

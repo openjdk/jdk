@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "opto/cfgnode.hpp"
 #include "opto/compile.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/graphKit.hpp"
 #include "opto/locknode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/macro.hpp"
@@ -263,41 +264,58 @@ void PhaseMacroExpand::eliminate_card_mark(Node* p2x) {
     // checks if the store done to a different from the value's region.
     // And replace Cmp with #0 (false) to collapse G1 post barrier.
     Node* xorx = p2x->find_out_with(Op_XorX);
-    assert(xorx != NULL, "missing G1 post barrier");
-    Node* shift = xorx->unique_out();
-    Node* cmpx = shift->unique_out();
-    assert(cmpx->is_Cmp() && cmpx->unique_out()->is_Bool() &&
-    cmpx->unique_out()->as_Bool()->_test._test == BoolTest::ne,
-    "missing region check in G1 post barrier");
-    _igvn.replace_node(cmpx, makecon(TypeInt::CC_EQ));
+    if (xorx != NULL) {
+      Node* shift = xorx->unique_out();
+      Node* cmpx = shift->unique_out();
+      assert(cmpx->is_Cmp() && cmpx->unique_out()->is_Bool() &&
+      cmpx->unique_out()->as_Bool()->_test._test == BoolTest::ne,
+      "missing region check in G1 post barrier");
+      _igvn.replace_node(cmpx, makecon(TypeInt::CC_EQ));
 
-    // Remove G1 pre barrier.
+      // Remove G1 pre barrier.
 
-    // Search "if (marking != 0)" check and set it to "false".
-    // There is no G1 pre barrier if previous stored value is NULL
-    // (for example, after initialization).
-    if (this_region->is_Region() && this_region->req() == 3) {
-      int ind = 1;
-      if (!this_region->in(ind)->is_IfFalse()) {
-        ind = 2;
-      }
-      if (this_region->in(ind)->is_IfFalse()) {
-        Node* bol = this_region->in(ind)->in(0)->in(1);
-        assert(bol->is_Bool(), "");
-        cmpx = bol->in(1);
-        if (bol->as_Bool()->_test._test == BoolTest::ne &&
-            cmpx->is_Cmp() && cmpx->in(2) == intcon(0) &&
-            cmpx->in(1)->is_Load()) {
-          Node* adr = cmpx->in(1)->as_Load()->in(MemNode::Address);
-          const int marking_offset = in_bytes(JavaThread::satb_mark_queue_offset() +
-                                              SATBMarkQueue::byte_offset_of_active());
-          if (adr->is_AddP() && adr->in(AddPNode::Base) == top() &&
-              adr->in(AddPNode::Address)->Opcode() == Op_ThreadLocal &&
-              adr->in(AddPNode::Offset) == MakeConX(marking_offset)) {
-            _igvn.replace_node(cmpx, makecon(TypeInt::CC_EQ));
+      // Search "if (marking != 0)" check and set it to "false".
+      // There is no G1 pre barrier if previous stored value is NULL
+      // (for example, after initialization).
+      if (this_region->is_Region() && this_region->req() == 3) {
+        int ind = 1;
+        if (!this_region->in(ind)->is_IfFalse()) {
+          ind = 2;
+        }
+        if (this_region->in(ind)->is_IfFalse()) {
+          Node* bol = this_region->in(ind)->in(0)->in(1);
+          assert(bol->is_Bool(), "");
+          cmpx = bol->in(1);
+          if (bol->as_Bool()->_test._test == BoolTest::ne &&
+              cmpx->is_Cmp() && cmpx->in(2) == intcon(0) &&
+              cmpx->in(1)->is_Load()) {
+            Node* adr = cmpx->in(1)->as_Load()->in(MemNode::Address);
+            const int marking_offset = in_bytes(JavaThread::satb_mark_queue_offset() +
+                                                SATBMarkQueue::byte_offset_of_active());
+            if (adr->is_AddP() && adr->in(AddPNode::Base) == top() &&
+                adr->in(AddPNode::Address)->Opcode() == Op_ThreadLocal &&
+                adr->in(AddPNode::Offset) == MakeConX(marking_offset)) {
+              _igvn.replace_node(cmpx, makecon(TypeInt::CC_EQ));
+            }
           }
         }
       }
+    } else {
+      assert(!GraphKit::use_ReduceInitialCardMarks(), "can only happen with card marking");
+      // This is a G1 post barrier emitted by the Object.clone() intrinsic.
+      // Search for the CastP2X->URShiftX->AddP->LoadB->Cmp path which checks if the card
+      // is marked as young_gen and replace the Cmp with 0 (false) to collapse the barrier.
+      Node* shift = p2x->find_out_with(Op_URShiftX);
+      assert(shift != NULL, "missing G1 post barrier");
+      Node* addp = shift->unique_out();
+      Node* load = addp->find_out_with(Op_LoadB);
+      assert(load != NULL, "missing G1 post barrier");
+      Node* cmpx = load->unique_out();
+      assert(cmpx->is_Cmp() && cmpx->unique_out()->is_Bool() &&
+             cmpx->unique_out()->as_Bool()->_test._test == BoolTest::ne,
+             "missing card value check in G1 post barrier");
+      _igvn.replace_node(cmpx, makecon(TypeInt::CC_EQ));
+      // There is no G1 pre barrier in this case
     }
     // Now CastP2X can be removed since it is used only on dead path
     // which currently still alive until igvn optimize it.
@@ -326,17 +344,15 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
         CallNode *call = in->as_Call();
         if (call->may_modify(tinst, phase)) {
           assert(call->is_ArrayCopy(), "ArrayCopy is the only call node that doesn't make allocation escape");
-
           if (call->as_ArrayCopy()->modifies(offset, offset, phase, false)) {
             return in;
           }
         }
         mem = in->in(TypeFunc::Memory);
       } else if (in->is_MemBar()) {
-        if (ArrayCopyNode::may_modify(tinst, in->as_MemBar(), phase)) {
-          assert(in->in(0)->is_Proj() && in->in(0)->in(0)->is_ArrayCopy(), "should be arraycopy");
-          ArrayCopyNode* ac = in->in(0)->in(0)->as_ArrayCopy();
-          assert(ac->is_clonebasic(), "Only basic clone is a non escaping clone");
+        ArrayCopyNode* ac = NULL;
+        if (ArrayCopyNode::may_modify(tinst, in->as_MemBar(), phase, ac)) {
+          assert(ac != NULL && ac->is_clonebasic(), "Only basic clone is a non escaping clone");
           return ac;
         }
         mem = in->in(TypeFunc::Memory);
