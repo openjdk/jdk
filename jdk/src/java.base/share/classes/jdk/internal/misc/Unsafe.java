@@ -318,24 +318,6 @@ public final class Unsafe {
      */
     public native Object getUncompressedObject(long address);
 
-    /**
-     * Fetches the {@link java.lang.Class} Java mirror for the given native
-     * metaspace {@code Klass} pointer.
-     *
-     * @param metaspaceKlass a native metaspace {@code Klass} pointer
-     * @return the {@link java.lang.Class} Java mirror
-     */
-    public native Class<?> getJavaMirror(long metaspaceKlass);
-
-    /**
-     * Fetches a native metaspace {@code Klass} pointer for the given Java
-     * object.
-     *
-     * @param o Java heap object for which to fetch the class pointer
-     * @return a native metaspace {@code Klass} pointer
-     */
-    public native long getKlassPointer(Object o);
-
     // These work on values in the C heap.
 
     /**

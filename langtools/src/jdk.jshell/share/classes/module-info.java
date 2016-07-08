@@ -23,6 +23,11 @@
  * questions.
  */
 
+/**
+ * This document is the API specification for JShell -- support for
+ * Java&#x2122; Programming Language 'snippet' evaluating tools, such as
+ * Read-Eval-Print Loops (REPLs).
+ */
 module jdk.jshell {
     requires public java.compiler;
     requires java.desktop;
@@ -33,4 +38,5 @@ module jdk.jshell {
 
     exports jdk.jshell;
     exports jdk.jshell.spi;
+    exports jdk.jshell.execution;
 }

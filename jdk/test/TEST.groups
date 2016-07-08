@@ -27,7 +27,6 @@
 
 tier1 = \
     :jdk_lang \
-    -java/lang/ProcessHandle/TreeTest.java \
     :jdk_util \
     -java/util/concurrent/ThreadPoolExecutor/ConfigChanges.java \
     -java/util/concurrent/forkjoin/FJExceptionTableLeak.java \
@@ -38,7 +37,6 @@ tier1 = \
     tools/pack200
 
 tier2 = \
-    java/lang/ProcessHandle/TreeTest.java \
     java/util/concurrent/ThreadPoolExecutor/ConfigChanges.java \
     java/util/concurrent/forkjoin/FJExceptionTableLeak.java \
     :jdk_io \

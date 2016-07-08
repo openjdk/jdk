@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -337,9 +337,108 @@ typedef struct { /* global cpu information AIX 7.1 */
   int spurrflag;                        /* set if running in spurr mode */
   u_longlong_t  version;                /* version number (1, 2, etc.,) */
 /*      >>>>> END OF STRUCTURE DEFINITION <<<<<         */
-#define CURR_VERSION_CPU_TOTAL 1              /* Incremented by one for every new release *
+/* #define CURR_VERSION_CPU_TOTAL 1              Incremented by one for every new release *
                                                * of perfstat_cpu_total_t data structure   */
 } perfstat_cpu_total_t_71;
+
+typedef struct { /* global cpu information AIX 7.2  / 6.1 TL6 (see oslevel -r) */
+  int ncpus;                /* number of active logical processors */
+  int ncpus_cfg;             /* number of configured processors */
+  char description[IDENTIFIER_LENGTH]; /* processor description (type/official name) */
+  u_longlong_t processorHZ; /* processor speed in Hz */
+  u_longlong_t user;        /*  raw total number of clock ticks spent in user mode */
+  u_longlong_t sys;         /* raw total number of clock ticks spent in system mode */
+  u_longlong_t idle;        /* raw total number of clock ticks spent idle */
+  u_longlong_t wait;        /* raw total number of clock ticks spent waiting for I/O */
+  u_longlong_t pswitch;     /* number of process switches (change in currently running process) */
+  u_longlong_t syscall;     /* number of system calls executed */
+  u_longlong_t sysread;     /* number of read system calls executed */
+  u_longlong_t syswrite;    /* number of write system calls executed */
+  u_longlong_t sysfork;     /* number of forks system calls executed */
+  u_longlong_t sysexec;     /* number of execs system calls executed */
+  u_longlong_t readch;      /* number of characters tranferred with read system call */
+  u_longlong_t writech;     /* number of characters tranferred with write system call */
+  u_longlong_t devintrs;    /* number of device interrupts */
+  u_longlong_t softintrs;   /* number of software interrupts */
+  time_t lbolt;             /* number of ticks since last reboot */
+  u_longlong_t loadavg[3];  /* (1<<SBITS) times the average number of runnables processes during the last 1, 5 and 15 minutes.    */
+                            /* To calculate the load average, divide the numbers by (1<<SBITS). SBITS is defined in <sys/proc.h>. */
+  u_longlong_t runque;      /* length of the run queue (processes ready) */
+  u_longlong_t swpque;      /* ength of the swap queue (processes waiting to be paged in) */
+  u_longlong_t bread;       /* number of blocks read */
+  u_longlong_t bwrite;      /* number of blocks written */
+  u_longlong_t lread;       /* number of logical read requests */
+  u_longlong_t lwrite;      /* number of logical write requests */
+  u_longlong_t phread;      /* number of physical reads (reads on raw devices) */
+  u_longlong_t phwrite;     /* number of physical writes (writes on raw devices) */
+  u_longlong_t runocc;      /* updated whenever runque is updated, i.e. the runqueue is occupied.
+                             * This can be used to compute the simple average of ready processes  */
+  u_longlong_t swpocc;      /* updated whenever swpque is updated. i.e. the swpqueue is occupied.
+                             * This can be used to compute the simple average processes waiting to be paged in */
+  u_longlong_t iget;        /* number of inode lookups */
+  u_longlong_t namei;       /* number of vnode lookup from a path name */
+  u_longlong_t dirblk;      /* number of 512-byte block reads by the directory search routine to locate an entry for a file */
+  u_longlong_t msg;         /* number of IPC message operations */
+  u_longlong_t sema;        /* number of IPC semaphore operations */
+  u_longlong_t rcvint;      /* number of tty receive interrupts */
+  u_longlong_t xmtint;      /* number of tyy transmit interrupts */
+  u_longlong_t mdmint;      /* number of modem interrupts */
+  u_longlong_t tty_rawinch; /* number of raw input characters  */
+  u_longlong_t tty_caninch; /* number of canonical input characters (always zero) */
+  u_longlong_t tty_rawoutch;/* number of raw output characters */
+  u_longlong_t ksched;      /* number of kernel processes created */
+  u_longlong_t koverf;      /* kernel process creation attempts where:
+                             * -the user has forked to their maximum limit
+                             * -the configuration limit of processes has been reached */
+  u_longlong_t kexit;       /* number of kernel processes that became zombies */
+  u_longlong_t rbread;      /* number of remote read requests */
+  u_longlong_t rcread;      /* number of cached remote reads */
+  u_longlong_t rbwrt;       /* number of remote writes */
+  u_longlong_t rcwrt;       /* number of cached remote writes */
+  u_longlong_t traps;       /* number of traps */
+  int ncpus_high;           /* index of highest processor online */
+  u_longlong_t puser;       /* raw number of physical processor tics in user mode */
+  u_longlong_t psys;        /* raw number of physical processor tics in system mode */
+  u_longlong_t pidle;       /* raw number of physical processor tics idle */
+  u_longlong_t pwait;       /* raw number of physical processor tics waiting for I/O */
+  u_longlong_t decrintrs;   /* number of decrementer tics interrupts */
+  u_longlong_t mpcrintrs;   /* number of mpc's received interrupts */
+  u_longlong_t mpcsintrs;   /* number of mpc's sent interrupts */
+  u_longlong_t phantintrs;  /* number of phantom interrupts */
+  u_longlong_t idle_donated_purr; /* number of idle cycles donated by a dedicated partition enabled for donation */
+  u_longlong_t idle_donated_spurr;/* number of idle spurr cycles donated by a dedicated partition enabled for donation */
+  u_longlong_t busy_donated_purr; /* number of busy cycles donated by a dedicated partition enabled for donation */
+  u_longlong_t busy_donated_spurr;/* number of busy spurr cycles donated by a dedicated partition enabled for donation */
+  u_longlong_t idle_stolen_purr;  /* number of idle cycles stolen by the hypervisor from a dedicated partition */
+  u_longlong_t idle_stolen_spurr; /* number of idle spurr cycles stolen by the hypervisor from a dedicated partition */
+  u_longlong_t busy_stolen_purr;  /* number of busy cycles stolen by the hypervisor from a dedicated partition */
+  u_longlong_t busy_stolen_spurr; /* number of busy spurr cycles stolen by the hypervisor from a dedicated partition */
+  short iowait;             /* number of processes that are asleep waiting for buffered I/O */
+  short physio;             /* number of processes waiting for raw I/O */
+  longlong_t twait;         /* number of threads that are waiting for filesystem direct(cio) */
+  u_longlong_t hpi;         /* number of hypervisor page-ins */
+  u_longlong_t hpit;        /* Time spent in hypervisor page-ins (in nanoseconds) */
+  u_longlong_t puser_spurr; /* number of spurr cycles spent in user mode */
+  u_longlong_t psys_spurr;  /* number of spurr cycles spent in kernel mode */
+  u_longlong_t pidle_spurr; /* number of spurr cycles spent in idle mode */
+  u_longlong_t pwait_spurr; /* number of spurr cycles spent in wait mode */
+  int spurrflag;            /* set if running in spurr mode */
+  u_longlong_t  version;    /* version number (1, 2, etc.,) */
+  u_longlong_t tb_last;     /*time base counter */
+  u_longlong_t purr_coalescing;   /* If the calling partition is
+                                   * authorized to see pool wide statistics then
+                                   * PURR cycles consumed to coalesce data
+                                   * else set to zero.*/
+  u_longlong_t spurr_coalescing;  /* If the calling partition is
+                                   * authorized to see pool wide statistics then
+                                   * SPURR cycles consumed to coalesce data
+                                   * else set to zero.*/
+
+/*      >>>>> END OF STRUCTURE DEFINITION <<<<<         */
+#define CURR_VERSION_CPU_TOTAL 2 /* Incremented by one for every new release *
+                                  * of perfstat_cpu_total_t data structure   */
+} perfstat_cpu_total_t_72;
+
 
 typedef union {
   uint    w;
@@ -756,7 +855,7 @@ typedef struct { /* WPAR identifier */
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define PERFSTAT_PARTITON_TOTAL_T_LATEST perfstat_partition_total_t_71_1/* latest perfstat_partition_total_t structure */
-#define PERFSTAT_CPU_TOTAL_T_LATEST perfstat_cpu_total_t_71             /* latest perfstat_cpu_total_t structure */
+#define PERFSTAT_CPU_TOTAL_T_LATEST perfstat_cpu_total_t_72             /* latest perfstat_cpu_total_t structure */
 #define PERFSTAT_WPAR_TOTAL_T_LATEST perfstat_wpar_total_t_71           /* latest perfstat_wpar_total_t structure */
 
 class libperfstat {

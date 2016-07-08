@@ -61,7 +61,6 @@ import jdk.tools.jlink.internal.plugins.ZipPlugin;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
 
 public class CompressorPluginTest {
 
@@ -279,9 +278,8 @@ public class CompressorPluginTest {
             ModulePoolImpl inputResources,
             ModuleEntry res,
             List<Pattern> includesPatterns) {
-        TransformerPlugin compressor = (TransformerPlugin) plugin;
         ModulePool compressedModulePool = new ModulePoolImpl(ByteOrder.nativeOrder(), inputResources.getStringTable());
-        compressor.visit(inputResources, compressedModulePool);
+        plugin.visit(inputResources, compressedModulePool);
         String path = res.getPath();
         ModuleEntry compressed = compressedModulePool.findEntry(path).get();
         CompressedResourceHeader header

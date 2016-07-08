@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8154119 8154262 8156077
+ * @bug 8154119 8154262 8156077 8157987
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -48,6 +48,7 @@ public class TestModules extends JavadocTester {
         checkExit(Exit.OK);
         testDescription(true);
         testNoDescription(false);
+        testOverviewSummaryModules();
         testModuleLink();
     }
 
@@ -60,6 +61,7 @@ public class TestModules extends JavadocTester {
         checkExit(Exit.OK);
         testHtml5Description(true);
         testHtml5NoDescription(false);
+        testHtml5OverviewSummaryModules();
         testModuleLink();
     }
 
@@ -91,8 +93,9 @@ public class TestModules extends JavadocTester {
     void test5() {
         javadoc("-d", "out-nomodule", "-use",
                 "-sourcepath", testSrc,
-                "testpkgnomodule");
+                "testpkgnomodule", "testpkgnomodule1");
         checkExit(Exit.OK);
+        testOverviewSummaryPackages();
     }
 
    @Test
@@ -105,6 +108,15 @@ public class TestModules extends JavadocTester {
                 "testpkgmdltags", "testpkgmdl2");
         checkExit(Exit.OK);
         testModuleTags();
+    }
+
+   @Test
+    void test8() {
+        javadoc("-d", "out-html5-nomodule", "-html5", "-use",
+                "-sourcepath", testSrc,
+                "testpkgnomodule", "testpkgnomodule1");
+        checkExit(Exit.OK);
+        testHtml5OverviewSummaryPackages();
     }
 
     void testDescription(boolean found) {
@@ -232,5 +244,73 @@ public class TestModules extends JavadocTester {
         checkOutput("testpkgmdltags/TestClassInModuleTags.html", false,
                 "<dt><span class=\"simpleTagLabel\">Module Tag:</span></dt>\n"
                 + "<dd>Just a simple module tag.</dd>");
+    }
+
+    void testOverviewSummaryModules() {
+        checkOutput("overview-summary.html", true,
+                "<table class=\"overviewSummary\" summary=\"Module Summary table, listing modules, and an explanation\">\n"
+                + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<tr>\n"
+                + "<th class=\"colFirst\" scope=\"col\">Module</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
+                + "</tr>");
+        checkOutput("overview-summary.html", false,
+                "<table class=\"overviewSummary\" summary=\"Packages table, listing packages, and an explanation\">\n"
+                + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<tr>\n"
+                + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
+                + "</tr>");
+    }
+
+    void testOverviewSummaryPackages() {
+        checkOutput("overview-summary.html", false,
+                "<table class=\"overviewSummary\" summary=\"Module Summary table, listing modules, and an explanation\">\n"
+                + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<tr>\n"
+                + "<th class=\"colFirst\" scope=\"col\">Module</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
+                + "</tr>");
+        checkOutput("overview-summary.html", true,
+                "<table class=\"overviewSummary\" summary=\"Packages table, listing packages, and an explanation\">\n"
+                + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<tr>\n"
+                + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
+                + "</tr>");
+    }
+
+    void testHtml5OverviewSummaryModules() {
+        checkOutput("overview-summary.html", true,
+                "<table class=\"overviewSummary\">\n"
+                + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<tr>\n"
+                + "<th class=\"colFirst\" scope=\"col\">Module</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
+                + "</tr>");
+        checkOutput("overview-summary.html", false,
+                "<table class=\"overviewSummary\">\n"
+                + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<tr>\n"
+                + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
+                + "</tr>");
+    }
+
+    void testHtml5OverviewSummaryPackages() {
+        checkOutput("overview-summary.html", false,
+                "<table class=\"overviewSummary\">\n"
+                + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<tr>\n"
+                + "<th class=\"colFirst\" scope=\"col\">Module</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
+                + "</tr>");
+        checkOutput("overview-summary.html", true,
+                "<table class=\"overviewSummary\">\n"
+                + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<tr>\n"
+                + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
+                + "</tr>");
     }
 }
