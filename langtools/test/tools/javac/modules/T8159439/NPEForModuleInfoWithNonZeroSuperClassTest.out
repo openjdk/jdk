@@ -1,0 +1,2 @@
+- compiler.err.cant.access: mod.module-info, (compiler.misc.bad.class.file.header: module-info.class, (compiler.misc.module.info.invalid.super.class))
+1 error

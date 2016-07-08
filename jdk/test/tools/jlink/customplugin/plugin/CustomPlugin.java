@@ -27,9 +27,9 @@ import java.util.Map;
 import java.util.function.Function;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 
-public class CustomPlugin implements TransformerPlugin {
+public class CustomPlugin implements Plugin {
 
     private final static String NAME = "custom-plugin";
 

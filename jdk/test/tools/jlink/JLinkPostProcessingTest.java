@@ -28,10 +28,13 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
+import jdk.tools.jlink.plugin.Plugin;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.internal.PluginRepository;
-import jdk.tools.jlink.plugin.ExecutableImage;
-import jdk.tools.jlink.plugin.PostProcessorPlugin;
+import jdk.tools.jlink.internal.PostProcessor;
+import jdk.tools.jlink.internal.ExecutableImage;
 import tests.Helper;
 
 /*
@@ -50,7 +53,7 @@ import tests.Helper;
  */
 public class JLinkPostProcessingTest {
 
-    private static class PPPlugin implements PostProcessorPlugin {
+    private static class PPPlugin implements PostProcessor, Plugin {
 
         private static ExecutableImage called;
         private static final String NAME = "pp";
@@ -65,6 +68,11 @@ public class JLinkPostProcessingTest {
                 throw new UncheckedIOException(ex);
             }
             return null;
+        }
+
+        @Override
+        public void visit(ModulePool in, ModulePool out) {
+            in.transformAndCopy(Function.identity(), out);
         }
 
         @Override

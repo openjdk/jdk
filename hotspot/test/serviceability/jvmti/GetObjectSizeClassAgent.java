@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,23 +20,32 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.tools.jlink.plugin;
+import java.lang.instrument.*;
 
+public class GetObjectSizeClassAgent {
 
-/**
- * Implement this interface to develop a Transformer plugin.
- * TransformerPlugin are called during image creation. This kind of plugin aims to
- * modify the content of the runtime image.
- */
-public interface TransformerPlugin extends Plugin {
-    /**
-     * Visit the content of the modules that are composing the image.
-     *
-     * @param in Read only content.
-     * @param out The pool to fill with content. This pool must contain
-     * the result of the visit.
-     *
-     * @throws PluginException
-     */
-    public void visit(ModulePool in, ModulePool out);
+    static Instrumentation instrumentation;
+
+    public static void premain(String agentArgs, Instrumentation instrumentation) {
+        GetObjectSizeClassAgent.instrumentation = instrumentation;
+    }
+
+    public static void main(String[] args) throws Exception {
+        long sizeA = instrumentation.getObjectSize(A.class);
+        long sizeB = instrumentation.getObjectSize(B.class);
+
+        if (sizeA != sizeB) {
+            throw new RuntimeException("java.lang.Class sizes disagree: " + sizeA + " vs. " + sizeB);
+        }
+
+        System.out.println("GetObjectSizeClass passed");
+    }
+
+    static class A {
+    }
+
+    static class B {
+        void m() {}
+    }
+
 }

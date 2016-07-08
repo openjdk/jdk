@@ -593,9 +593,9 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION],
       fi
       C_O_FLAG_NONE="-O0"
     elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-      C_O_FLAG_HIGHEST_JVM="-O3"
-      C_O_FLAG_HIGHEST="-O3"
-      C_O_FLAG_HI="-O3 -qstrict"
+      C_O_FLAG_HIGHEST_JVM="-O3 -qhot=level=1 -qinline -qinlglue"
+      C_O_FLAG_HIGHEST="-O3 -qhot=level=1 -qinline -qinlglue"
+      C_O_FLAG_HI="-O3 -qinline -qinlglue"
       C_O_FLAG_NORM="-O2"
       C_O_FLAG_DEBUG="-qnoopt"
       # FIXME: Value below not verified.
@@ -911,8 +911,8 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
   elif test "x$OPENJDK_$1_OS" = xaix; then
     $2JVM_CFLAGS="[$]$2JVM_CFLAGS -DAIX"
     # We may need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
-    $2JVM_CFLAGS="[$]$2JVM_CFLAGS -qtune=balanced -qhot=level=1 -qinline \
-        -qinlglue -qalias=noansi -qstrict -qtls=default -qlanglvl=c99vla \
+    $2JVM_CFLAGS="[$]$2JVM_CFLAGS -qtune=balanced \
+        -qalias=noansi -qstrict -qtls=default -qlanglvl=c99vla \
         -qlanglvl=noredefmac -qnortti -qnoeh -qignerrno"
   elif test "x$OPENJDK_$1_OS" = xbsd; then
     $2COMMON_CCXXFLAGS_JDK="[$]$2COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE"

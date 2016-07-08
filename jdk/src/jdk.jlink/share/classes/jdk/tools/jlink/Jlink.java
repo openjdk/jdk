@@ -32,10 +32,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import jdk.tools.jlink.internal.ExecutableImage;
 import jdk.tools.jlink.internal.JlinkTask;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.ExecutableImage;
 import jdk.tools.jlink.builder.ImageBuilder;
 import jdk.tools.jlink.internal.PluginRepository;
 

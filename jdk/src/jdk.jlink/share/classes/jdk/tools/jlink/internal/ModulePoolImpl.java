@@ -24,8 +24,6 @@
  */
 package jdk.tools.jlink.internal;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.lang.module.ModuleDescriptor;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -168,8 +166,8 @@ public class ModulePoolImpl implements ModulePool {
     }
 
     public ModulePoolImpl(ByteOrder order, StringTable table) {
-        this.order = order;
-        this.table = table;
+        this.order = Objects.requireNonNull(order);
+        this.table = Objects.requireNonNull(table);
     }
 
     /**

@@ -25,7 +25,8 @@
 # @summary (almost) all keytool behaviors
 # @author Weijun Wang
 # @run shell/timeout=600 standard.sh
-#
+# @key intermittent
+
 # This test is always excecuted.
 #
 # set a few environment variables so that the shell-script can run stand-alone
