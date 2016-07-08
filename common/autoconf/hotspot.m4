@@ -161,10 +161,7 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_DTRACE],
     INCLUDE_DTRACE=false
     AC_MSG_RESULT([no, forced])
   elif test "x$enable_dtrace" = "xauto" || test "x$enable_dtrace" = "x"; then
-    if test "x$OPENJDK_TARGET_OS" = "xlinux" && test "x$OPENJDK" != "xtrue"; then
-      INCLUDE_DTRACE=false
-      AC_MSG_RESULT([no, non-open linux build])
-    elif test "x$DTRACE_DEP_MISSING" = "xtrue"; then
+    if test "x$DTRACE_DEP_MISSING" = "xtrue"; then
       INCLUDE_DTRACE=false
       AC_MSG_RESULT([no, missing dependencies])
     else
