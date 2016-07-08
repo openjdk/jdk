@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  * @run main/othervm -Donlyonepreauth NewSalt
  */
 
+import java.util.Locale;
 import sun.security.jgss.GSSUtil;
 import sun.security.krb5.Config;
 
@@ -51,9 +52,9 @@ public class NewSalt {
         }
 
         // Use a different case of name. KDC will return correct salt
-        Context c1 = Context.fromUserPass(OneKDC.USER.toUpperCase(),
+        Context c1 = Context.fromUserPass(OneKDC.USER.toUpperCase(Locale.US),
                 OneKDC.PASS, true);
-        Context c2 = Context.fromUserPass(OneKDC.USER2.toUpperCase(),
+        Context c2 = Context.fromUserPass(OneKDC.USER2.toUpperCase(Locale.US),
                 OneKDC.PASS2, true);
 
         c1.startAsClient(OneKDC.USER2, GSSUtil.GSS_KRB5_MECH_OID);

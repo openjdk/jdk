@@ -60,6 +60,7 @@ public class DryRunTest {
 
     // the module main class
     private static final String MAIN_CLASS = "jdk.test.Main";
+    private static final String MAIN_CLINIT_CLASS = "jdk.test.MainWithClinit";
 
 
     @BeforeTest
@@ -99,10 +100,24 @@ public class DryRunTest {
         String dir = MODS_DIR.toString();
         String mid = TEST_MODULE + "/" + MAIN_CLASS;
 
-        // java -modulepath mods -module $TESTMODULE/$MAINCLASS
         // no resolution failure
         int exitValue = exec("--dry-run", "-modulepath", dir, "-m", mid);
         assertTrue(exitValue == 0);
+    }
+
+    /**
+     * Test dryrun that does not invoke <clinit> of the main class
+     */
+    public void testMainClinit() throws Exception {
+        String dir = MODS_DIR.toString();
+        String mid = TEST_MODULE + "/" + MAIN_CLINIT_CLASS;
+
+        int exitValue = exec("--dry-run", "-modulepath", dir, "-m", mid);
+        assertTrue(exitValue == 0);
+
+        // expect the test to fail if main class is initialized
+        exitValue = exec("-modulepath", dir, "-m", mid);
+        assertTrue(exitValue != 0);
     }
 
     /**

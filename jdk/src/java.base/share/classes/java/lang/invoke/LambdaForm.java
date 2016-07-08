@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.perf.PerfCounter;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
@@ -33,16 +34,13 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 
 import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.REF_invokeStatic;
-import static java.lang.invoke.MethodHandleStatics.debugEnabled;
-import static java.lang.invoke.MethodHandleStatics.newInternalError;
+import static java.lang.invoke.MethodHandleStatics.*;
 
 /**
  * The symbolic, non-executable form of a method handle's invocation semantics.
@@ -210,6 +208,29 @@ class LambdaForm {
             }
             return btypes;
         }
+        static String basicTypeDesc(BasicType[] types) {
+            if (types == null) {
+                return null;
+            }
+            if (types.length == 0) {
+                return "";
+            }
+            StringBuilder sb = new StringBuilder();
+            for (BasicType bt : types) {
+                sb.append(bt.basicTypeChar());
+            }
+            return sb.toString();
+        }
+        static int[] basicTypeOrds(BasicType[] types) {
+            if (types == null) {
+                return null;
+            }
+            int[] a = new int[types.length];
+            for(int i = 0; i < types.length; ++i) {
+                a[i] = types[i].ordinal();
+            }
+            return a;
+        }
 
         static char basicTypeChar(Class<?> type) {
             return basicType(type).btChar;
@@ -375,7 +396,7 @@ class LambdaForm {
     /** Customize LambdaForm for a particular MethodHandle */
     LambdaForm customize(MethodHandle mh) {
         LambdaForm customForm = new LambdaForm(debugName, arity, names, result, forceInline, mh);
-        if (COMPILE_THRESHOLD > 0 && isCompiled) {
+        if (COMPILE_THRESHOLD >= 0 && isCompiled) {
             // If shared LambdaForm has been compiled, compile customized version as well.
             customForm.compileToBytecode();
         }
@@ -390,7 +411,7 @@ class LambdaForm {
         }
         assert(transformCache != null); // Customized LambdaForm should always has a link to uncustomized version.
         LambdaForm uncustomizedForm = (LambdaForm)transformCache;
-        if (COMPILE_THRESHOLD > 0 && isCompiled) {
+        if (COMPILE_THRESHOLD >= 0 && isCompiled) {
             // If customized LambdaForm has been compiled, compile uncustomized version as well.
             uncustomizedForm.compileToBytecode();
         }
@@ -565,6 +586,69 @@ class LambdaForm {
         return MethodType.methodType(rtype, ptypes);
     }
 
+    /**
+     * Check if i-th name is a call to MethodHandleImpl.selectAlternative.
+     */
+    boolean isSelectAlternative(int pos) {
+        // selectAlternative idiom:
+        //   t_{n}:L=MethodHandleImpl.selectAlternative(...)
+        //   t_{n+1}:?=MethodHandle.invokeBasic(t_{n}, ...)
+        if (pos+1 >= names.length)  return false;
+        Name name0 = names[pos];
+        Name name1 = names[pos+1];
+        return name0.refersTo(MethodHandleImpl.class, "selectAlternative") &&
+                name1.isInvokeBasic() &&
+                name1.lastUseIndex(name0) == 0 && // t_{n+1}:?=MethodHandle.invokeBasic(t_{n}, ...)
+                lastUseIndex(name0) == pos+1;     // t_{n} is local: used only in t_{n+1}
+    }
+
+    private boolean isMatchingIdiom(int pos, String idiomName, int nArgs) {
+        if (pos+2 >= names.length)  return false;
+        Name name0 = names[pos];
+        Name name1 = names[pos+1];
+        Name name2 = names[pos+2];
+        return name1.refersTo(MethodHandleImpl.class, idiomName) &&
+                name0.isInvokeBasic() &&
+                name2.isInvokeBasic() &&
+                name1.lastUseIndex(name0) == nArgs && // t_{n+1}:L=MethodHandleImpl.<invoker>(<args>, t_{n});
+                lastUseIndex(name0) == pos+1 &&       // t_{n} is local: used only in t_{n+1}
+                name2.lastUseIndex(name1) == 1 &&     // t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
+                lastUseIndex(name1) == pos+2;         // t_{n+1} is local: used only in t_{n+2}
+    }
+
+    /**
+     * Check if i-th name is a start of GuardWithCatch idiom.
+     */
+    boolean isGuardWithCatch(int pos) {
+        // GuardWithCatch idiom:
+        //   t_{n}:L=MethodHandle.invokeBasic(...)
+        //   t_{n+1}:L=MethodHandleImpl.guardWithCatch(*, *, *, t_{n});
+        //   t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
+        return isMatchingIdiom(pos, "guardWithCatch", 3);
+    }
+
+    /**
+     * Check if i-th name is a start of the tryFinally idiom.
+     */
+    boolean isTryFinally(int pos) {
+        // tryFinally idiom:
+        //   t_{n}:L=MethodHandle.invokeBasic(...)
+        //   t_{n+1}:L=MethodHandleImpl.tryFinally(*, *, t_{n})
+        //   t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
+        return isMatchingIdiom(pos, "tryFinally", 2);
+    }
+
+    /**
+     * Check if i-th name is a start of the loop idiom.
+     */
+    boolean isLoop(int pos) {
+        // loop idiom:
+        //   t_{n}:L=MethodHandle.invokeBasic(...)
+        //   t_{n+1}:L=MethodHandleImpl.loop(types, *, *, *, *, t_{n})
+        //   t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
+        return isMatchingIdiom(pos, "loop", 5);
+    }
+
     /*
      * Code generation issues:
      *
@@ -633,7 +717,7 @@ class LambdaForm {
      * as a sort of pre-invocation linkage step.)
      */
     public void prepare() {
-        if (COMPILE_THRESHOLD == 0 && !isCompiled) {
+        if (COMPILE_THRESHOLD == 0 && !forceInterpretation() && !isCompiled) {
             compileToBytecode();
         }
         if (this.vmentry != null) {
@@ -652,10 +736,22 @@ class LambdaForm {
         // TO DO: Maybe add invokeGeneric, invokeWithArguments
     }
 
+    private static @Stable PerfCounter LF_FAILED;
+
+    private static PerfCounter failedCompilationCounter() {
+        if (LF_FAILED == null) {
+            LF_FAILED = PerfCounter.newPerfCounter("java.lang.invoke.failedLambdaFormCompilations");
+        }
+        return LF_FAILED;
+    }
+
     /** Generate optimizable bytecode for this form. */
-    MemberName compileToBytecode() {
+    void compileToBytecode() {
+        if (forceInterpretation()) {
+            return; // this should not be compiled
+        }
         if (vmentry != null && isCompiled) {
-            return vmentry;  // already compiled somehow
+            return;  // already compiled somehow
         }
         MethodType invokerType = methodType();
         assert(vmentry == null || vmentry.getMethodType().basicType().equals(invokerType));
@@ -664,9 +760,16 @@ class LambdaForm {
             if (TRACE_INTERPRETER)
                 traceInterpreter("compileToBytecode", this);
             isCompiled = true;
-            return vmentry;
-        } catch (Error | Exception ex) {
-            throw newInternalError(this.toString(), ex);
+        } catch (InvokerBytecodeGenerator.BytecodeGenerationException bge) {
+            // bytecode generation failed - mark this LambdaForm as to be run in interpretation mode only
+            invocationCounter = -1;
+            failedCompilationCounter().increment();
+            if (LOG_LF_COMPILATION_FAILURE) {
+                System.out.println("LambdaForm compilation failed: " + this);
+                bge.printStackTrace(System.out);
+            }
+        } catch (Error | Exception e) {
+            throw newInternalError(this.toString(), e);
         }
     }
 
@@ -772,7 +875,11 @@ class LambdaForm {
     static {
         COMPILE_THRESHOLD = Math.max(-1, MethodHandleStatics.COMPILE_THRESHOLD);
     }
-    private int invocationCounter = 0;
+    private int invocationCounter = 0; // a value of -1 indicates LambdaForm interpretation mode forever
+
+    private boolean forceInterpretation() {
+        return invocationCounter == -1;
+    }
 
     @Hidden
     @DontInline
@@ -812,7 +919,7 @@ class LambdaForm {
 
     private void checkInvocationCounter() {
         if (COMPILE_THRESHOLD != 0 &&
-            invocationCounter < COMPILE_THRESHOLD) {
+            !forceInterpretation() && invocationCounter < COMPILE_THRESHOLD) {
             invocationCounter++;  // benign race
             if (invocationCounter >= COMPILE_THRESHOLD) {
                 // Replace vmentry with a bytecode version of this LF.
@@ -822,7 +929,7 @@ class LambdaForm {
     }
     Object interpretWithArgumentsTracing(Object... argumentValues) throws Throwable {
         traceInterpreter("[ interpretWithArguments", this, argumentValues);
-        if (invocationCounter < COMPILE_THRESHOLD) {
+        if (!forceInterpretation() && invocationCounter < COMPILE_THRESHOLD) {
             int ctr = invocationCounter++;  // benign race
             traceInterpreter("| invocationCounter", ctr);
             if (invocationCounter >= COMPILE_THRESHOLD) {
@@ -1419,6 +1526,39 @@ class LambdaForm {
         }
         boolean isConstantZero() {
             return !isParam() && arguments.length == 0 && function.isConstantZero();
+        }
+
+        boolean refersTo(Class<?> declaringClass, String methodName) {
+            return function != null &&
+                    function.member() != null && function.member().refersTo(declaringClass, methodName);
+        }
+
+        /**
+         * Check if MemberName is a call to MethodHandle.invokeBasic.
+         */
+        boolean isInvokeBasic() {
+            if (function == null)
+                return false;
+            if (arguments.length < 1)
+                return false;  // must have MH argument
+            MemberName member = function.member();
+            return member != null && member.refersTo(MethodHandle.class, "invokeBasic") &&
+                    !member.isPublic() && !member.isStatic();
+        }
+
+        /**
+         * Check if MemberName is a call to MethodHandle.linkToStatic, etc.
+         */
+        boolean isLinkerMethodInvoke() {
+            if (function == null)
+                return false;
+            if (arguments.length < 1)
+                return false;  // must have MH argument
+            MemberName member = function.member();
+            return member != null &&
+                    member.getDeclaringClass() == MethodHandle.class &&
+                    !member.isPublic() && member.isStatic() &&
+                    member.getName().startsWith("linkTo");
         }
 
         public String toString() {
