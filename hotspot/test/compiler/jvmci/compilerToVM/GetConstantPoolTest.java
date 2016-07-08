@@ -25,7 +25,7 @@
 /*
  * @test
  * @bug 8136421
- * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
+ * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9" | vm.simpleArch == "aarch64")
  * @library /testlibrary /test/lib /
  * @library ../common/patches
  * @modules java.base/jdk.internal.misc
@@ -136,17 +136,6 @@ public class GetConstantPoolTest {
                     throw new Error("TESTBUG : " + e.getMessage(), e);
                 }
                 return CompilerToVMHelper.getConstantPool(cpInst, ptr);
-            }
-        },
-        OBJECT_TYPE_BASE {
-            @Override
-            ConstantPool getConstantPool() {
-                HotSpotResolvedObjectType type
-                        = HotSpotResolvedObjectType.fromObjectClass(
-                                OBJECT_TYPE_BASE.getClass());
-                long ptrToClass = UNSAFE.getKlassPointer(OBJECT_TYPE_BASE);
-                return CompilerToVMHelper.getConstantPool(type,
-                        getPtrToCpAddress() - ptrToClass);
             }
         },
         ;

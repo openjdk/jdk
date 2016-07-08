@@ -89,7 +89,7 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
 
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
@@ -189,7 +189,7 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
         });
 
         checkUOE(() -> {
-            char r = (char) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
+            char r = (char) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
         });
 
         checkUOE(() -> {
@@ -258,7 +258,7 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
             });
 
             checkUOE(() -> {
-                char r = (char) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
+                char r = (char) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
             });
 
             checkUOE(() -> {
@@ -303,7 +303,7 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
             });
 
             checkUOE(() -> {
-                char r = (char) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
+                char r = (char) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
             });
 
             checkUOE(() -> {

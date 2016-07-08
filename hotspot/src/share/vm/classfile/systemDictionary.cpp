@@ -70,6 +70,7 @@
 #include "services/threadService.hpp"
 #include "trace/traceMacros.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/stringUtils.hpp"
 #include "utilities/ticks.hpp"
 #if INCLUDE_CDS
 #include "classfile/sharedClassUtil.hpp"
@@ -1154,12 +1155,10 @@ Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
     // It is illegal to define classes in the "java." package from
     // JVM_DefineClass or jni_DefineClass unless you're the bootclassloader
     ResourceMark rm(THREAD);
-    char* name = parsed_name->as_C_string();
-    char* index = strrchr(name, '/');
-    *index = '\0'; // chop to just the package name
-    while ((index = strchr(name, '/')) != NULL) {
-      *index = '.'; // replace '/' with '.' in package name
-    }
+    TempNewSymbol pkg_name = InstanceKlass::package_from_name(parsed_name, CHECK_NULL);
+    assert(pkg_name != NULL, "Error in parsing package name starting with 'java/'");
+    char* name = pkg_name->as_C_string();
+    StringUtils::replace_no_expand(name, "/", ".");
     const char* msg_text = "Prohibited package name: ";
     size_t len = strlen(msg_text) + strlen(name) + 1;
     char* message = NEW_RESOURCE_ARRAY(char, len);
@@ -1257,6 +1256,7 @@ instanceKlassHandle SystemDictionary::load_shared_class(
 bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
                                                instanceKlassHandle ik,
                                                Handle class_loader, TRAPS) {
+  ResourceMark rm;
   int path_index = ik->shared_classpath_index();
   SharedClassPathEntry* ent =
             (SharedClassPathEntry*)FileMapInfo::shared_classpath(path_index);
@@ -1270,12 +1270,11 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
   TempNewSymbol pkg_name = NULL;
   PackageEntry* pkg_entry = NULL;
   ModuleEntry* mod_entry = NULL;
-  int length = 0;
+  const char* pkg_string = NULL;
   ClassLoaderData* loader_data = class_loader_data(class_loader);
-  const jbyte* pkg_string = InstanceKlass::package_from_name(class_name, length);
-  if (pkg_string != NULL) {
-    pkg_name = SymbolTable::new_symbol((const char*)pkg_string,
-                                       length, CHECK_(false));
+  pkg_name = InstanceKlass::package_from_name(class_name, CHECK_false);
+  if (pkg_name != NULL) {
+    pkg_string = pkg_name->as_C_string();
     if (loader_data != NULL) {
       pkg_entry = loader_data->packages()->lookup_only(pkg_name);
     }
@@ -1432,15 +1431,14 @@ instanceKlassHandle SystemDictionary::load_instance_class(Symbol* class_name, Ha
   instanceKlassHandle nh = instanceKlassHandle(); // null Handle
 
   if (class_loader.is_null()) {
-    int length = 0;
+    ResourceMark rm;
     PackageEntry* pkg_entry = NULL;
     bool search_only_bootloader_append = false;
     ClassLoaderData *loader_data = class_loader_data(class_loader);
 
     // Find the package in the boot loader's package entry table.
-    const jbyte* pkg_string = InstanceKlass::package_from_name(class_name, length);
-    if (pkg_string != NULL) {
-      TempNewSymbol pkg_name = SymbolTable::new_symbol((const char*)pkg_string, length, CHECK_(nh));
+    TempNewSymbol pkg_name = InstanceKlass::package_from_name(class_name, CHECK_NULL);
+    if (pkg_name != NULL) {
       pkg_entry = loader_data->packages()->lookup_only(pkg_name);
     }
 
@@ -1477,7 +1475,7 @@ instanceKlassHandle SystemDictionary::load_instance_class(Symbol* class_name, Ha
       assert(!DumpSharedSpaces, "Archive dumped after module system initialization");
       // After the module system has been initialized, check if the class'
       // package is in a module defined to the boot loader.
-      if (pkg_string == NULL || pkg_entry == NULL || pkg_entry->in_unnamed_module()) {
+      if (pkg_name == NULL || pkg_entry == NULL || pkg_entry->in_unnamed_module()) {
         // Class is either in the unnamed package, in a named package
         // within a module not defined to the boot loader or in a
         // a named package within the unnamed module.  In all cases,

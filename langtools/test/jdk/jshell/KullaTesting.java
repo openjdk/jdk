@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -154,29 +155,23 @@ public class KullaTesting {
 
     @BeforeMethod
     public void setUp() {
-        inStream = new TestingInputStream();
-        outStream = new ByteArrayOutputStream();
-        errStream = new ByteArrayOutputStream();
-        state = JShell.builder()
-                .in(inStream)
-                .out(new PrintStream(outStream))
-                .err(new PrintStream(errStream))
-                .build();
-        allSnippets = new LinkedHashSet<>();
-        idToSnippet = new LinkedHashMap<>();
-        classpath = new ArrayList<>();
+        setUp(b -> {});
     }
 
     public void setUp(ExecutionControl ec) {
+        setUp(b -> b.executionEngine(ec));
+    }
+
+    public void setUp(Consumer<JShell.Builder> bc) {
         inStream = new TestingInputStream();
         outStream = new ByteArrayOutputStream();
         errStream = new ByteArrayOutputStream();
-        state = JShell.builder()
-                .executionEngine(ec)
+        JShell.Builder builder = JShell.builder()
                 .in(inStream)
                 .out(new PrintStream(outStream))
-                .err(new PrintStream(errStream))
-                .build();
+                .err(new PrintStream(errStream));
+        bc.accept(builder);
+        state = builder.build();
         allSnippets = new LinkedHashSet<>();
         idToSnippet = new LinkedHashMap<>();
         classpath = new ArrayList<>();

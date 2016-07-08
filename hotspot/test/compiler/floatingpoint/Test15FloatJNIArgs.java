@@ -25,9 +25,9 @@
  * @bug 8139258
  * @summary Regression test for 8139258 which failed to properly pass float args
  *          to a jni function on ppc64le.
- * @run main/othervm -Xint Test15FloatJNIArgs
- * @run main/othervm -XX:+TieredCompilation -Xcomp Test15FloatJNIArgs
- * @run main/othervm -XX:-TieredCompilation -Xcomp Test15FloatJNIArgs
+ * @run main/othervm/native -Xint Test15FloatJNIArgs
+ * @run main/othervm/native -XX:+TieredCompilation -Xcomp Test15FloatJNIArgs
+ * @run main/othervm/native -XX:-TieredCompilation -Xcomp Test15FloatJNIArgs
  */
 
 public class Test15FloatJNIArgs {

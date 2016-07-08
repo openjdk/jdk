@@ -40,31 +40,6 @@
 #define JVMCI_ERROR_OK(...)   JVMCI_ERROR_(JVMCIEnv::ok, __VA_ARGS__)
 #define CHECK_OK              CHECK_(JVMCIEnv::ok)
 
-class ParseClosure : public StackObj {
-  int _lineNo;
-  char* _filename;
-  bool _abort;
-protected:
-  void abort() { _abort = true; }
-  void warn_and_abort(const char* message) {
-    warn(message);
-    abort();
-  }
-  void warn(const char* message) {
-    warning("Error at line %d while parsing %s: %s", _lineNo, _filename == NULL ? "?" : _filename, message);
-  }
- public:
-  ParseClosure() : _lineNo(0), _filename(NULL), _abort(false) {}
-  void parse_line(char* line) {
-    _lineNo++;
-    do_line(line);
-  }
-  virtual void do_line(char* line) = 0;
-  int lineNo() { return _lineNo; }
-  bool is_aborted() { return _abort; }
-  void set_filename(char* path) {_filename = path; _lineNo = 0;}
-};
-
 class JVMCIRuntime: public AllStatic {
  public:
   // Constants describing whether JVMCI wants to be able to adjust the compilation

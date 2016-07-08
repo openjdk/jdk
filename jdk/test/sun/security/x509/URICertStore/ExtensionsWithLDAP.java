@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,33 +23,34 @@
  * questions.
  */
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
-import java.io.StringBufferInputStream;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathValidator;
 import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
-import java.text.DateFormat;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /*
  * @test
  * @bug 8134708
  * @summary Check if LDAP resources from CRLDP and AIA extensions can be loaded
- * @run main/othervm ExtensionsWithLDAP
+ * @run main/othervm ExtensionsWithLDAP CRLDP ldap.host.for.crldp
+ * @run main/othervm ExtensionsWithLDAP AIA ldap.host.for.aia
  */
 public class ExtensionsWithLDAP {
 
@@ -125,29 +126,18 @@ public class ExtensionsWithLDAP {
         + "hnxn9+e0Ah+t8dS5EKfn44w5bI5PCu2bqxs6RCTxNjcY\n"
         + "-----END CERTIFICATE-----";
 
-
-    private static final String LDAP_HOST_CRLDP = "ldap.host.for.crldp";
-    private static final String LDAP_HOST_AIA = "ldap.host.for.aia";
-
-    // a date within the certificates validity period
-    static final Date validationDate;
-    static {
-        try {
-            validationDate = DateFormat.getDateInstance(
-                    DateFormat.MEDIUM, Locale.US).parse("Sep 02, 2015");
-        } catch (ParseException e) {
-            throw new RuntimeException("Couldn't parse date", e);
-        }
-    }
-
     public static void main(String[] args) throws Exception {
+        String extension = args[0];
+        String targetHost = args[1];
+
         // enable CRLDP and AIA extensions
         System.setProperty("com.sun.security.enableCRLDP", "true");
         System.setProperty("com.sun.security.enableAIAcaIssuers", "true");
 
-        // register a local name service
-        String hostsFileName = System.getProperty("test.src", ".") + "/ExtensionsWithLDAPHosts";
-        System.setProperty("jdk.net.hosts.file", hostsFileName);
+        Path hostsFilePath = Paths.get(System.getProperty("test.src", ".")
+                + File.separator + extension);
+        System.setProperty("jdk.net.hosts.file",
+                hostsFilePath.toFile().getAbsolutePath());
 
         X509Certificate trustedCert = loadCertificate(CA_CERT);
         X509Certificate eeCert = loadCertificate(EE_CERT);
@@ -158,31 +148,29 @@ public class ExtensionsWithLDAP {
         CertPath cp = (CertPath) CertificateFactory.getInstance("X509")
                 .generateCertPath(Arrays.asList(eeCert));
 
-        PKIXParameters params = new PKIXParameters(trustedCertsSet);
-        params.setDate(validationDate);
-
-        // certpath validator should try to parse CRLDP and AIA extensions,
-        // and load CRLs/certs which they point to
-        // if a local name service catched requests for resolving host names
-        // which extensions contain, then it means that certpath validator
-        // tried to load CRLs/certs which they point to
-        try {
-            CertPathValidator.getInstance("PKIX").validate(cp, params);
+        // CertPath validator should try to parse CRLDP and AIA extensions,
+        // and load CRLs/certs which they point to.
+        // If proxy server catches requests for resolving host names
+        // which extensions contain, then it means that CertPath validator
+        // tried to load CRLs/certs which they point to.
+        List<String> hosts = new ArrayList<>();
+        Consumer<Socket> socketConsumer = (Socket socket) -> {
+            InetSocketAddress remoteAddress
+                    = (InetSocketAddress) socket.getRemoteSocketAddress();
+            hosts.add(remoteAddress.getHostName());
+        };
+        try (SocksProxy proxy = SocksProxy.startProxy(socketConsumer)) {
+            CertPathValidator.getInstance("PKIX").validate(cp,
+                    new PKIXParameters(trustedCertsSet));
             throw new RuntimeException("CertPathValidatorException not thrown");
         } catch (CertPathValidatorException cpve) {
             System.out.println("Expected exception: " + cpve);
         }
 
-        // check if it tried to resolve a host name from CRLDP extension
-        if (!LocalNameService.requestedHosts.contains(LDAP_HOST_CRLDP)) {
+        if (!hosts.contains(targetHost)) {
             throw new RuntimeException(
-                    "A hostname from CRLDP extension not requested");
-        }
-
-        // check if it tried to resolve a host name from AIA extension
-        if (!LocalNameService.requestedHosts.contains(LDAP_HOST_AIA)) {
-            throw new RuntimeException(
-                    "A hostname from AIA extension not requested");
+                    String.format("The %s from %s extension is not requested",
+                            targetHost, extension));
         }
 
         System.out.println("Test passed");
@@ -192,15 +180,9 @@ public class ExtensionsWithLDAP {
     public static X509Certificate loadCertificate(String s)
             throws IOException, CertificateException {
 
-        try (StringBufferInputStream is = new StringBufferInputStream(s)) {
+        try (ByteArrayInputStream is = new ByteArrayInputStream(s.getBytes())) {
             return (X509Certificate) CertificateFactory.getInstance("X509")
                     .generateCertificate(is);
         }
     }
-
-    // a local name service which log requested host names
-    public static class LocalNameService {
-
-        static final List<String> requestedHosts = new ArrayList<>();
-                }
-                }
+}

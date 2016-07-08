@@ -54,12 +54,14 @@ public:
                                       const s2 classpath_index,
                                       instanceKlassHandle result, TRAPS) {
       if (ClassLoader::add_package(_file_name, classpath_index, THREAD)) {
+#if INCLUDE_CDS
         if (DumpSharedSpaces) {
           s2 classloader_type = ClassLoader::classloader_type(
                           class_name, e, classpath_index, CHECK_(result));
           result->set_shared_classpath_index(classpath_index);
           result->set_class_loader_type(classloader_type);
         }
+#endif
         return result;
       } else {
         return instanceKlassHandle(); // NULL

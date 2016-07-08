@@ -38,6 +38,7 @@ import javax.crypto.NoSuchPaddingException;
  * @bug 8076359 8133151 8145344 8150512 8155847
  * @summary Test the value for new jdk.security.provider.preferred
  *          security property
+ * @run main/othervm PreferredProviderTest
  */
 public class PreferredProviderTest {
 
@@ -59,12 +60,14 @@ public class PreferredProviderTest {
             verifyDigestProvider(os, type, Arrays.asList(
                     new DataTuple("SHA-256", "SUN")));
         } else {
-            //For solaris the preferred algorithm/provider is already set in
-            //java.security file which will be verified.
+            //Solaris has different providers that support the same algorithm
+            //which makes for better testing.
             switch (type) {
                 case "sparcv9":
                     preferredProp = "AES:SunJCE, SHA1:SUN, Group.SHA2:SUN, " +
                             "HmacSHA1:SunJCE, Group.HmacSHA2:SunJCE";
+                    Security.setProperty(
+                            "jdk.security.provider.preferred", preferredProp);
                     verifyPreferredProviderProperty(os, type, preferredProp);
 
                     verifyDigestProvider(os, type, Arrays.asList(
@@ -89,7 +92,8 @@ public class PreferredProviderTest {
                             "HmacSHA1:SunJCE, Group.HmacSHA2:SunJCE, " +
                             "RSA:SunRsaSign, SHA1withRSA:SunRsaSign, " +
                             "Group.SHA2RSA:SunRsaSign";
-
+                    Security.setProperty(
+                            "jdk.security.provider.preferred", preferredProp);
                     verifyPreferredProviderProperty(os, type, preferredProp);
 
                     verifyKeyFactoryProvider(os, type, Arrays.asList(
