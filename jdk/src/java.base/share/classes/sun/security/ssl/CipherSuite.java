@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -376,36 +376,38 @@ final class CipherSuite implements Comparable<CipherSuite> {
     static enum KeyExchange {
 
         // key exchange algorithms
-        K_NULL       ("NULL",       false),
-        K_RSA        ("RSA",        true),
-        K_RSA_EXPORT ("RSA_EXPORT", true),
-        K_DH_RSA     ("DH_RSA",     false),
-        K_DH_DSS     ("DH_DSS",     false),
-        K_DHE_DSS    ("DHE_DSS",    true),
-        K_DHE_RSA    ("DHE_RSA",    true),
-        K_DH_ANON    ("DH_anon",    true),
+        K_NULL       ("NULL",       false,      false),
+        K_RSA        ("RSA",        true,       false),
+        K_RSA_EXPORT ("RSA_EXPORT", true,       false),
+        K_DH_RSA     ("DH_RSA",     false,      false),
+        K_DH_DSS     ("DH_DSS",     false,      false),
+        K_DHE_DSS    ("DHE_DSS",    true,       false),
+        K_DHE_RSA    ("DHE_RSA",    true,       false),
+        K_DH_ANON    ("DH_anon",    true,       false),
 
-        K_ECDH_ECDSA ("ECDH_ECDSA",  ALLOW_ECC),
-        K_ECDH_RSA   ("ECDH_RSA",    ALLOW_ECC),
-        K_ECDHE_ECDSA("ECDHE_ECDSA", ALLOW_ECC),
-        K_ECDHE_RSA  ("ECDHE_RSA",   ALLOW_ECC),
-        K_ECDH_ANON  ("ECDH_anon",   ALLOW_ECC),
+        K_ECDH_ECDSA ("ECDH_ECDSA",  ALLOW_ECC, true),
+        K_ECDH_RSA   ("ECDH_RSA",    ALLOW_ECC, true),
+        K_ECDHE_ECDSA("ECDHE_ECDSA", ALLOW_ECC, true),
+        K_ECDHE_RSA  ("ECDHE_RSA",   ALLOW_ECC, true),
+        K_ECDH_ANON  ("ECDH_anon",   ALLOW_ECC, true),
 
         // Kerberos cipher suites
-        K_KRB5       ("KRB5", true),
-        K_KRB5_EXPORT("KRB5_EXPORT", true),
+        K_KRB5       ("KRB5", true,             false),
+        K_KRB5_EXPORT("KRB5_EXPORT", true,      false),
 
         // renegotiation protection request signaling cipher suite
-        K_SCSV       ("SCSV",        true);
+        K_SCSV       ("SCSV",        true,      false);
 
         // name of the key exchange algorithm, e.g. DHE_DSS
         final String name;
         final boolean allowed;
+        final boolean isEC;
         private final boolean alwaysAvailable;
 
-        KeyExchange(String name, boolean allowed) {
+        KeyExchange(String name, boolean allowed, boolean isEC) {
             this.name = name;
             this.allowed = allowed;
+            this.isEC = isEC;
             this.alwaysAvailable = allowed &&
                 (!name.startsWith("EC")) && (!name.startsWith("KRB"));
         }
@@ -415,7 +417,7 @@ final class CipherSuite implements Comparable<CipherSuite> {
                 return true;
             }
 
-            if (name.startsWith("EC")) {
+            if (isEC) {
                 return (allowed && JsseJce.isEcAvailable());
             } else if (name.startsWith("KRB")) {
                 return (allowed && JsseJce.isKerberosAvailable());
