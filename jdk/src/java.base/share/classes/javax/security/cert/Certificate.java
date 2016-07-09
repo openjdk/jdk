@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,10 +58,11 @@ import java.security.SignatureException;
  * @since 1.4
  * @see X509Certificate
  * @deprecated Use the classes in {@code java.security.cert} instead.
+ *      This class is subject to removal in a future version of Java SE.
  *
  * @author Hemma Prafullchandra
  */
-@Deprecated
+@Deprecated(since="9", forRemoval=true)
 public abstract class Certificate {
 
     /**
