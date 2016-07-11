@@ -425,8 +425,8 @@ public class JavaCompiler {
 
         verboseCompilePolicy = options.isSet("verboseCompilePolicy");
 
-        if (options.isSet("shouldStopPolicy") &&
-            CompileState.valueOf(options.get("shouldStopPolicy")) == CompileState.ATTR)
+        if (options.isSet("shouldstop.at") &&
+            CompileState.valueOf(options.get("shouldstop.at")) == CompileState.ATTR)
             compilePolicy = CompilePolicy.ATTR_ONLY;
         else
             compilePolicy = CompilePolicy.decode(options.get("compilePolicy"));
@@ -439,14 +439,14 @@ public class JavaCompiler {
             : null;
 
         shouldStopPolicyIfError =
-            options.isSet("shouldStopPolicy") // backwards compatible
-            ? CompileState.valueOf(options.get("shouldStopPolicy"))
-            : options.isSet("shouldStopPolicyIfError")
-            ? CompileState.valueOf(options.get("shouldStopPolicyIfError"))
+            options.isSet("shouldstop.at") // backwards compatible
+            ? CompileState.valueOf(options.get("shouldstop.at"))
+            : options.isSet("shouldstop.ifError")
+            ? CompileState.valueOf(options.get("shouldstop.ifError"))
             : CompileState.INIT;
         shouldStopPolicyIfNoError =
-            options.isSet("shouldStopPolicyIfNoError")
-            ? CompileState.valueOf(options.get("shouldStopPolicyIfNoError"))
+            options.isSet("shouldstop.ifNoError")
+            ? CompileState.valueOf(options.get("shouldstop.ifNoError"))
             : CompileState.GENERATE;
 
         if (options.isUnset("oldDiags"))

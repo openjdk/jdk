@@ -260,6 +260,9 @@ public class CheckResourceKeys {
                 // ignore debug flag names
                 if (cs.startsWith("debug."))
                     continue;
+                // ignore shouldstop flag names
+                if (cs.startsWith("shouldstop."))
+                    continue;
                 // explicit known exceptions
                 if (noResourceRequired.contains(cs))
                     continue;

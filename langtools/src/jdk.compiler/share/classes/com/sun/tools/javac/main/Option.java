@@ -543,6 +543,19 @@ public enum Option {
         }
     },
 
+    XSHOULDSTOP("-Xshouldstop:", null, HIDDEN, BASIC) {
+        @Override
+        public boolean process(OptionHelper helper, String option) {
+            String p = option.substring(option.indexOf(':') + 1).trim();
+            String[] subOptions = p.split(";");
+            for (String subOption : subOptions) {
+                subOption = "shouldstop." + subOption.trim();
+                XD.process(helper, subOption, subOption);
+            }
+            return false;
+        }
+    },
+
     XADDEXPORTS("-XaddExports:", "opt.arg.addExports", "opt.addExports", EXTENDED, BASIC) {
         @Override
         public boolean process(OptionHelper helper, String option) {
