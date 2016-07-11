@@ -32,16 +32,16 @@
  *          java.base/jdk.internal.org.objectweb.asm.tree
  *          jdk.vm.ci/jdk.vm.ci.hotspot
  *          jdk.vm.ci/jdk.vm.ci.code
+ *          jdk.vm.ci/jdk.vm.ci.code.site
  *          jdk.vm.ci/jdk.vm.ci.meta
  *          jdk.vm.ci/jdk.vm.ci.runtime
  *
- * @ignore 8144964
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build compiler.jvmci.common.JVMCIHelpers
  *     compiler.jvmci.events.JvmciNotifyInstallEventTest
  * @run driver jdk.test.lib.FileInstaller ../common/services/ ./META-INF/services/
  * @run driver jdk.test.lib.FileInstaller ./JvmciNotifyInstallEventTest.config
- *     ./META-INF/services/jdk.vm.ci.hotspot.HotSpotVMEventListener
+ *     ./META-INF/services/jdk.vm.ci.hotspot.services.HotSpotVMEventListener
  * @run driver ClassFileInstaller
  *      compiler.jvmci.common.JVMCIHelpers$EmptyHotspotCompiler
  *      compiler.jvmci.common.JVMCIHelpers$EmptyCompilerFactory
@@ -52,6 +52,11 @@
  *      compiler.jvmci.common.testcases.SimpleClass
  *      jdk.test.lib.Asserts
  *      jdk.test.lib.Utils
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *     -Xbootclasspath/a:. -Xmixed
+ *     -XX:+UseJVMCICompiler -XX:-BootstrapJVMCI
+ *     -Dcompiler.jvmci.events.JvmciNotifyInstallEventTest.failoninit=false
+ *     compiler.jvmci.events.JvmciNotifyInstallEventTest
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *     -Djvmci.compiler=EmptyCompiler -Xbootclasspath/a:. -Xmixed
  *     -XX:+UseJVMCICompiler -XX:-BootstrapJVMCI
@@ -75,7 +80,7 @@ import compiler.jvmci.common.testcases.SimpleClass;
 import jdk.test.lib.Asserts;
 import java.lang.reflect.Method;
 import jdk.test.lib.Utils;
-import jdk.vm.ci.hotspot.HotSpotVMEventListener;
+import jdk.vm.ci.hotspot.services.HotSpotVMEventListener;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.site.DataPatch;
@@ -88,7 +93,7 @@ import jdk.vm.ci.hotspot.HotSpotCompiledCode.Comment;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 
-public class JvmciNotifyInstallEventTest implements HotSpotVMEventListener {
+public class JvmciNotifyInstallEventTest extends HotSpotVMEventListener {
     private static final String METHOD_NAME = "testMethod";
     private static final boolean FAIL_ON_INIT = !Boolean.getBoolean(
             "compiler.jvmci.events.JvmciNotifyInstallEventTest.failoninit");
