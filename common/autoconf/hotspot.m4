@@ -198,8 +198,8 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
     AC_MSG_ERROR([Specified JVM feature 'management' requires feature 'nmt'])
   fi
 
-  if HOTSPOT_CHECK_JVM_FEATURE(jvmci) && ! HOTSPOT_CHECK_JVM_FEATURE(compiler2); then
-    AC_MSG_ERROR([Specified JVM feature 'jvmci' requires feature 'compiler2'])
+  if HOTSPOT_CHECK_JVM_FEATURE(jvmci) && ! (HOTSPOT_CHECK_JVM_FEATURE(compiler1) || HOTSPOT_CHECK_JVM_FEATURE(compiler2)); then
+    AC_MSG_ERROR([Specified JVM feature 'jvmci' requires feature 'compiler2' or 'compiler1'])
   fi
 
   if HOTSPOT_CHECK_JVM_FEATURE(compiler2) && ! HOTSPOT_CHECK_JVM_FEATURE(all-gcs); then
@@ -239,7 +239,7 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
     fi
   fi
 
-  # Only enable jvmci on x86_64, sparcv9 and aarch64, and only on server.
+  # Only enable jvmci on x86_64, sparcv9 and aarch64.
   if test "x$OPENJDK_TARGET_CPU" = "xx86_64" || \
       test "x$OPENJDK_TARGET_CPU" = "xsparcv9" || \
       test "x$OPENJDK_TARGET_CPU" = "xaarch64" ; then
@@ -253,7 +253,7 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
 
   # Enable features depending on variant.
   JVM_FEATURES_server="compiler1 compiler2 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci"
-  JVM_FEATURES_client="compiler1 $NON_MINIMAL_FEATURES $JVM_FEATURES"
+  JVM_FEATURES_client="compiler1 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci"
   JVM_FEATURES_core="$NON_MINIMAL_FEATURES $JVM_FEATURES"
   JVM_FEATURES_minimal="compiler1 minimal $JVM_FEATURES"
   JVM_FEATURES_zero="zero $NON_MINIMAL_FEATURES $JVM_FEATURES"
