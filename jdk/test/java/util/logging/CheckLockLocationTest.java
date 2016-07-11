@@ -30,13 +30,16 @@
  * @run  main/othervm CheckLockLocationTest
  */
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.attribute.UserPrincipal;
+import java.util.UUID;
 import java.util.logging.FileHandler;
 public class CheckLockLocationTest {
 
@@ -78,7 +81,11 @@ public class CheckLockLocationTest {
         } catch (IOException ex) {
             throw new RuntimeException("Test failed: should have been able"
                     + " to create FileHandler for " + "%t/" + WRITABLE_DIR
-                    + "/log.log in writable directory.", ex);
+                    + "/log.log in writable directory"
+                    + (!writableDir.canRead() // concurrent tests running or user conf issue?
+                        ? ": directory not readable.\n\tPlease check your "
+                         + "environment and machine configuration."
+                        : "."), ex);
         } finally {
             // the above test leaves files in the directory.  Get rid of the
             // files created and the directory
@@ -149,8 +156,41 @@ public class CheckLockLocationTest {
                     + " writable working directory "
                     + writableDir.getAbsolutePath() );
         }
+
+        if (!writableDir.canRead()) {
+            throw new RuntimeException("Test setup failed: can't read "
+                    + " writable working directory "
+                    + writableDir.getAbsolutePath() );
+        }
+
         // writableDirectory and its contents will be deleted after the test
-        // that uses it
+        // that uses it.
+
+        // check that we can write in the new writable dir.
+        File dummyFile = new File(writableDir, UUID.randomUUID().toString() + ".txt" );
+        try {
+            if (!dummyFile.createNewFile()) {
+                throw new RuntimeException("Test setup failed: can't create "
+                        + " dummy file in writable working directory "
+                        + dummyFile.getAbsolutePath() );
+            }
+            try (OutputStream os = new FileOutputStream(dummyFile)) {
+                os.write('A');
+            } finally {
+                dummyFile.delete();
+            }
+            if (dummyFile.canRead()) {
+                throw new RuntimeException("Test setup failed: can't delete "
+                        + " dummy file in writable working directory "
+                        + dummyFile.getAbsolutePath() );
+            }
+            System.out.println("Successfully created and deleted dummy file: " +
+                dummyFile.getAbsolutePath());
+        } catch(IOException x) {
+            throw new RuntimeException("Test setup failed: can't write "
+                        + " or delete dummy file in writable working directory "
+                        + dummyFile.getAbsolutePath(), x);
+        }
 
         // Create a plain file which we will attempt to use as a directory
         // (%t/not-a-dir)
