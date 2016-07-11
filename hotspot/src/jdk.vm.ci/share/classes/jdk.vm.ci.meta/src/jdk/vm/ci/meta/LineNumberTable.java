@@ -30,32 +30,46 @@ package jdk.vm.ci.meta;
 public class LineNumberTable {
 
     private final int[] lineNumbers;
-    private final int[] bci;
+    private final int[] bcis;
 
     /**
      *
-     * @param lineNumbers an array or source line numbers. This array is now owned by this object
+     * @param lineNumbers an array of source line numbers. This array is now owned by this object
      *            and should not be mutated by the caller.
-     * @param bci an array of bytecode indexes the same length at {@code lineNumbers} whose entries
+     * @param bcis an array of bytecode indexes the same length at {@code lineNumbers} whose entries
      *            are sorted in ascending order. This array is now owned by this object and must not
      *            be mutated by the caller.
      */
     @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `lineNumbers` and `bcis`")
-    public LineNumberTable(int[] lineNumbers, int[] bci) {
-        assert bci.length == lineNumbers.length;
+    public LineNumberTable(int[] lineNumbers, int[] bcis) {
+        assert bcis.length == lineNumbers.length;
         this.lineNumbers = lineNumbers;
-        this.bci = bci;
+        this.bcis = bcis;
     }
 
     /**
-     * Gets a source line number for {@code atBci}.
+     * Gets a source line number for bytecode index {@code atBci}.
      */
     public int getLineNumber(int atBci) {
-        for (int i = 0; i < this.bci.length - 1; i++) {
-            if (this.bci[i] <= atBci && atBci < this.bci[i + 1]) {
+        for (int i = 0; i < this.bcis.length - 1; i++) {
+            if (this.bcis[i] <= atBci && atBci < this.bcis[i + 1]) {
                 return lineNumbers[i];
             }
         }
         return lineNumbers[lineNumbers.length - 1];
+    }
+
+    /**
+     * Gets a copy of the array of line numbers that was passed to this object's constructor.
+     */
+    public int[] getLineNumbers() {
+        return lineNumbers.clone();
+    }
+
+    /**
+     * Gets a copy of the array of bytecode indexes that was passed to this object's constructor.
+     */
+    public int[] getBcis() {
+        return bcis.clone();
     }
 }

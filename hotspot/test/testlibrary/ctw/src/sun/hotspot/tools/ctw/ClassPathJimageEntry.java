@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,37 +23,46 @@
 
 package sun.hotspot.tools.ctw;
 
-import java.io.BufferedReader;
+import jdk.internal.jimage.ImageReader;
+
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.concurrent.Executor;
 
 /**
- * Handler for files containing a list of classes to compile.
+ * Handler for jimage-files containing classes to compile.
  */
-public class ClassesListInFile extends PathHandler {
-    public ClassesListInFile(Path root, Executor executor) {
+public class ClassPathJimageEntry extends PathHandler {
+    public ClassPathJimageEntry(Path root, Executor executor) {
         super(root, executor);
+        try {
+            URL url = root.toUri().toURL();
+            setLoader(new URLClassLoader(new URL[]{url}));
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void process() {
-        CompileTheWorld.OUT.println("# list: " + root);
+        CompileTheWorld.OUT.println("# jimage: " + root);
         if (!Files.exists(root)) {
             return;
         }
         try {
-            try (BufferedReader reader = Files.newBufferedReader(root,
-                    StandardCharsets.UTF_8)) {
-                String line;
-                while (!isFinished() && ((line = reader.readLine()) != null)) {
-                    processClass(line);
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+            ImageReader reader = ImageReader.open(root);
+            Arrays.stream(reader.getEntryNames())
+                    .filter(name -> name.endsWith(".class"))
+                    .filter(name -> !name.endsWith("module-info.class"))
+                    .map(Utils::fileNameToClassName)
+                    .forEach(this::processClass);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
         }
     }
 }

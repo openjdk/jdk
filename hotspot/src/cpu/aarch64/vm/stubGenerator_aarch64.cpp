@@ -801,6 +801,12 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", stub_name);
     __ align(CodeEntryAlignment);
     __ bind(start);
+
+    Label unaligned_copy_long;
+    if (AvoidUnalignedAccesses) {
+      __ tbnz(d, 3, unaligned_copy_long);
+    }
+
     if (direction == copy_forwards) {
       __ sub(s, s, bias);
       __ sub(d, d, bias);
@@ -901,6 +907,198 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ ret(lr);
+
+    if (AvoidUnalignedAccesses) {
+      Label drain, again;
+      // Register order for storing. Order is different for backward copy.
+
+      __ bind(unaligned_copy_long);
+
+      // source address is even aligned, target odd aligned
+      //
+      // when forward copying word pairs we read long pairs at offsets
+      // {0, 2, 4, 6} (in long words). when backwards copying we read
+      // long pairs at offsets {-2, -4, -6, -8}. We adjust the source
+      // address by -2 in the forwards case so we can compute the
+      // source offsets for both as {2, 4, 6, 8} * unit where unit = 1
+      // or -1.
+      //
+      // when forward copying we need to store 1 word, 3 pairs and
+      // then 1 word at offsets {0, 1, 3, 5, 7}. Rather thna use a
+      // zero offset We adjust the destination by -1 which means we
+      // have to use offsets { 1, 2, 4, 6, 8} * unit for the stores.
+      //
+      // When backwards copyng we need to store 1 word, 3 pairs and
+      // then 1 word at offsets {-1, -3, -5, -7, -8} i.e. we use
+      // offsets {1, 3, 5, 7, 8} * unit.
+
+      if (direction == copy_forwards) {
+        __ sub(s, s, 16);
+        __ sub(d, d, 8);
+      }
+
+      // Fill 8 registers
+      //
+      // for forwards copy s was offset by -16 from the original input
+      // value of s so the register contents are at these offsets
+      // relative to the 64 bit block addressed by that original input
+      // and so on for each successive 64 byte block when s is updated
+      //
+      // t0 at offset 0,  t1 at offset 8
+      // t2 at offset 16, t3 at offset 24
+      // t4 at offset 32, t5 at offset 40
+      // t6 at offset 48, t7 at offset 56
+
+      // for backwards copy s was not offset so the register contents
+      // are at these offsets into the preceding 64 byte block
+      // relative to that original input and so on for each successive
+      // preceding 64 byte block when s is updated. this explains the
+      // slightly counter-intuitive looking pattern of register usage
+      // in the stp instructions for backwards copy.
+      //
+      // t0 at offset -16, t1 at offset -8
+      // t2 at offset -32, t3 at offset -24
+      // t4 at offset -48, t5 at offset -40
+      // t6 at offset -64, t7 at offset -56
+
+      __ ldp(t0, t1, Address(s, 2 * unit));
+      __ ldp(t2, t3, Address(s, 4 * unit));
+      __ ldp(t4, t5, Address(s, 6 * unit));
+      __ ldp(t6, t7, Address(__ pre(s, 8 * unit)));
+
+      __ subs(count, count, 16);
+      __ br(Assembler::LO, drain);
+
+      int prefetch = PrefetchCopyIntervalInBytes;
+      bool use_stride = false;
+      if (direction == copy_backwards) {
+         use_stride = prefetch > 256;
+         prefetch = -prefetch;
+         if (use_stride) __ mov(stride, prefetch);
+      }
+
+      __ bind(again);
+
+      if (PrefetchCopyIntervalInBytes > 0)
+        __ prfm(use_stride ? Address(s, stride) : Address(s, prefetch), PLDL1KEEP);
+
+      if (direction == copy_forwards) {
+       // allowing for the offset of -8 the store instructions place
+       // registers into the target 64 bit block at the following
+       // offsets
+       //
+       // t0 at offset 0
+       // t1 at offset 8,  t2 at offset 16
+       // t3 at offset 24, t4 at offset 32
+       // t5 at offset 40, t6 at offset 48
+       // t7 at offset 56
+
+        __ str(t0, Address(d, 1 * unit));
+        __ stp(t1, t2, Address(d, 2 * unit));
+        __ ldp(t0, t1, Address(s, 2 * unit));
+        __ stp(t3, t4, Address(d, 4 * unit));
+        __ ldp(t2, t3, Address(s, 4 * unit));
+        __ stp(t5, t6, Address(d, 6 * unit));
+        __ ldp(t4, t5, Address(s, 6 * unit));
+        __ str(t7, Address(__ pre(d, 8 * unit)));
+        __ ldp(t6, t7, Address(__ pre(s, 8 * unit)));
+      } else {
+       // d was not offset when we started so the registers are
+       // written into the 64 bit block preceding d with the following
+       // offsets
+       //
+       // t1 at offset -8
+       // t3 at offset -24, t0 at offset -16
+       // t5 at offset -48, t2 at offset -32
+       // t7 at offset -56, t4 at offset -48
+       //                   t6 at offset -64
+       //
+       // note that this matches the offsets previously noted for the
+       // loads
+
+        __ str(t1, Address(d, 1 * unit));
+        __ stp(t3, t0, Address(d, 3 * unit));
+        __ ldp(t0, t1, Address(s, 2 * unit));
+        __ stp(t5, t2, Address(d, 5 * unit));
+        __ ldp(t2, t3, Address(s, 4 * unit));
+        __ stp(t7, t4, Address(d, 7 * unit));
+        __ ldp(t4, t5, Address(s, 6 * unit));
+        __ str(t6, Address(__ pre(d, 8 * unit)));
+        __ ldp(t6, t7, Address(__ pre(s, 8 * unit)));
+      }
+
+      __ subs(count, count, 8);
+      __ br(Assembler::HS, again);
+
+      // Drain
+      //
+      // this uses the same pattern of offsets and register arguments
+      // as above
+      __ bind(drain);
+      if (direction == copy_forwards) {
+        __ str(t0, Address(d, 1 * unit));
+        __ stp(t1, t2, Address(d, 2 * unit));
+        __ stp(t3, t4, Address(d, 4 * unit));
+        __ stp(t5, t6, Address(d, 6 * unit));
+        __ str(t7, Address(__ pre(d, 8 * unit)));
+      } else {
+        __ str(t1, Address(d, 1 * unit));
+        __ stp(t3, t0, Address(d, 3 * unit));
+        __ stp(t5, t2, Address(d, 5 * unit));
+        __ stp(t7, t4, Address(d, 7 * unit));
+        __ str(t6, Address(__ pre(d, 8 * unit)));
+      }
+      // now we need to copy any remaining part block which may
+      // include a 4 word block subblock and/or a 2 word subblock.
+      // bits 2 and 1 in the count are the tell-tale for whetehr we
+      // have each such subblock
+      {
+        Label L1, L2;
+        __ tbz(count, exact_log2(4), L1);
+       // this is the same as above but copying only 4 longs hence
+       // with ony one intervening stp between the str instructions
+       // but note that the offsets and registers still follow the
+       // same pattern
+        __ ldp(t0, t1, Address(s, 2 * unit));
+        __ ldp(t2, t3, Address(__ pre(s, 4 * unit)));
+        if (direction == copy_forwards) {
+          __ str(t0, Address(d, 1 * unit));
+          __ stp(t1, t2, Address(d, 2 * unit));
+          __ str(t3, Address(__ pre(d, 4 * unit)));
+        } else {
+          __ str(t1, Address(d, 1 * unit));
+          __ stp(t3, t0, Address(d, 3 * unit));
+          __ str(t2, Address(__ pre(d, 4 * unit)));
+        }
+        __ bind(L1);
+
+        __ tbz(count, 1, L2);
+       // this is the same as above but copying only 2 longs hence
+       // there is no intervening stp between the str instructions
+       // but note that the offset and register patterns are still
+       // the same
+        __ ldp(t0, t1, Address(__ pre(s, 2 * unit)));
+        if (direction == copy_forwards) {
+          __ str(t0, Address(d, 1 * unit));
+          __ str(t1, Address(__ pre(d, 2 * unit)));
+        } else {
+          __ str(t1, Address(d, 1 * unit));
+          __ str(t0, Address(__ pre(d, 2 * unit)));
+        }
+        __ bind(L2);
+
+       // for forwards copy we need to re-adjust the offsets we
+       // applied so that s and d are follow the last words written
+
+       if (direction == copy_forwards) {
+         __ add(s, s, 16);
+         __ add(d, d, 8);
+       }
+
+      }
+
+      __ ret(lr);
+      }
   }
 
   // Small copy: less than 16 bytes.
@@ -1024,11 +1222,9 @@ class StubGenerator: public StubCodeGenerator {
     // (96 bytes if SIMD because we do 32 byes per instruction)
     __ bind(copy80);
     if (UseSIMDForMemoryOps) {
-      __ ldpq(v0, v1, Address(s, 0));
-      __ ldpq(v2, v3, Address(s, 32));
+      __ ld4(v0, v1, v2, v3, __ T16B, Address(s, 0));
       __ ldpq(v4, v5, Address(send, -32));
-      __ stpq(v0, v1, Address(d, 0));
-      __ stpq(v2, v3, Address(d, 32));
+      __ st4(v0, v1, v2, v3, __ T16B, Address(d, 0));
       __ stpq(v4, v5, Address(dend, -32));
     } else {
       __ ldp(t0, t1, Address(s, 0));

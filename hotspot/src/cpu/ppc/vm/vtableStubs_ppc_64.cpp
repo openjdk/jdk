@@ -243,7 +243,7 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
 }
 
 int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
-  if (TraceJumps || DebugVtables || CountCompiledCalls || VerifyOops) {
+  if (DebugVtables || CountCompiledCalls || VerifyOops) {
     return 1000;
   } else {
     int decode_klass_size = MacroAssembler::instr_size_for_decode_klass_not_null();

@@ -2434,7 +2434,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ ldrsb(r0, field);
   __ push(ztos);
   // Rewrite bytecode to be faster
-  if (!is_static) {
+  if (rc == may_rewrite) {
     // use btos rewriting, no truncating to t/f bit is needed for getfield.
     patch_bytecode(Bytecodes::_fast_bgetfield, bc, r1);
   }
@@ -2670,7 +2670,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     if (!is_static) pop_and_check_object(obj);
     __ andw(r0, r0, 0x1);
     __ strb(r0, field);
-    if (!is_static) {
+    if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_zputfield, bc, r1, true, byte_no);
     }
     __ b(Done);
