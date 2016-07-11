@@ -54,7 +54,7 @@ public class ClassPathDirEntry extends PathHandler {
 
     @Override
     public void process() {
-        System.out.println("# dir: " + root);
+        CompileTheWorld.OUT.println("# dir: " + root);
         if (!Files.exists(root)) {
             return;
         }

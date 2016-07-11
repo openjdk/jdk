@@ -34,21 +34,24 @@
  *          jdk.vm.ci/jdk.vm.ci.code
  *          jdk.vm.ci/jdk.vm.ci.meta
  *          jdk.vm.ci/jdk.vm.ci.runtime
+ *
  * @ignore 8144964
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build compiler.jvmci.common.JVMCIHelpers
  *     compiler.jvmci.events.JvmciNotifyInstallEventTest
- * @run main jdk.test.lib.FileInstaller ../common/services/ ./META-INF/services/
- * @run main jdk.test.lib.FileInstaller ./JvmciNotifyInstallEventTest.config
+ * @run driver jdk.test.lib.FileInstaller ../common/services/ ./META-INF/services/
+ * @run driver jdk.test.lib.FileInstaller ./JvmciNotifyInstallEventTest.config
  *     ./META-INF/services/jdk.vm.ci.hotspot.HotSpotVMEventListener
- * @run main ClassFileInstaller
- *     compiler.jvmci.common.JVMCIHelpers$EmptyHotspotCompiler
- *     compiler.jvmci.common.JVMCIHelpers$EmptyCompilerFactory
- *     compiler.jvmci.events.JvmciNotifyInstallEventTest
- *     compiler.jvmci.common.CTVMUtilities
- *     compiler.jvmci.common.testcases.SimpleClass
- *     jdk.test.lib.Asserts
- *     jdk.test.lib.Utils
+ * @run driver ClassFileInstaller
+ *      compiler.jvmci.common.JVMCIHelpers$EmptyHotspotCompiler
+ *      compiler.jvmci.common.JVMCIHelpers$EmptyCompilerFactory
+ *      compiler.jvmci.common.JVMCIHelpers$EmptyCompilationRequestResult
+ *       compiler.jvmci.common.JVMCIHelpers$EmptyVMEventListener
+ *      compiler.jvmci.events.JvmciNotifyInstallEventTest
+ *      compiler.jvmci.common.CTVMUtilities
+ *      compiler.jvmci.common.testcases.SimpleClass
+ *      jdk.test.lib.Asserts
+ *      jdk.test.lib.Utils
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *     -Djvmci.compiler=EmptyCompiler -Xbootclasspath/a:. -Xmixed
  *     -XX:+UseJVMCICompiler -XX:-BootstrapJVMCI

@@ -28,6 +28,8 @@ import jdk.test.lib.Utils;
 import sun.hotspot.code.NMethod;
 import sun.hotspot.cpuinfo.CPUInfo;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.concurrent.Callable;

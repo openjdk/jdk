@@ -30,7 +30,7 @@
  * @library /compiler/patches /testlibrary /test/lib /
  * @build java.base/java.lang.Helper
  * @build compiler.intrinsics.string.TestStringIntrinsicRangeChecks
- * @run main compiler.intrinsics.string.TestStringIntrinsicRangeChecks
+ * @run main/othervm -Xbatch -XX:CompileThreshold=100 -XX:-TieredCompilation compiler.intrinsics.string.TestStringIntrinsicRangeChecks
  */
 package compiler.intrinsics.string;
 

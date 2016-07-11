@@ -29,6 +29,8 @@
 #include "register_aarch64.hpp"
 # include "interp_masm_aarch64.hpp"
 
+REGISTER_DEFINITION(Register, noreg);
+
 REGISTER_DEFINITION(Register, r0);
 REGISTER_DEFINITION(Register, r1);
 REGISTER_DEFINITION(Register, r2);
@@ -61,6 +63,8 @@ REGISTER_DEFINITION(Register, r28);
 REGISTER_DEFINITION(Register, r29);
 REGISTER_DEFINITION(Register, r30);
 REGISTER_DEFINITION(Register, sp);
+
+REGISTER_DEFINITION(FloatRegister, fnoreg);
 
 REGISTER_DEFINITION(FloatRegister, v0);
 REGISTER_DEFINITION(FloatRegister, v1);

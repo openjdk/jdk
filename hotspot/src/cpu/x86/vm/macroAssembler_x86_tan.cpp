@@ -1060,7 +1060,7 @@ void MacroAssembler::fast_tan(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
 
   bind(B1_4);
   addq(rsp, 16);
-
+  pop(rbx);
 }
 #else
 // The 32 bit code is at most SSE2 compliant
