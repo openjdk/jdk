@@ -209,7 +209,7 @@ function prettyPrint(file) {
         }
         print("function ");
         if (func.name) {
-            print(func.name);
+            print(func.name.name);
         }
         printFunctionBody(func, extra, end);
         if (funcDecl) {
@@ -608,7 +608,7 @@ function prettyPrint(file) {
 
          visitVariable: function(node, extra) {
              indent();
-             print("var " + node.name);
+             print("var " + node.binding.name);
              var init = node.initializer;
              if (init) {
                  print(" = ");

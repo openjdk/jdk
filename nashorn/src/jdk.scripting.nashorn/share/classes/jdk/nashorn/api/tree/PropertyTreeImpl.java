@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ final class PropertyTreeImpl extends TreeImpl implements PropertyTree  {
     private final ExpressionTree value;
     private final FunctionExpressionTree getter;
     private final FunctionExpressionTree setter;
+    private final boolean isStatic, isComputed;
+
     PropertyTreeImpl(final PropertyNode node,
             final ExpressionTree key,
             final ExpressionTree value,
@@ -42,6 +44,8 @@ final class PropertyTreeImpl extends TreeImpl implements PropertyTree  {
         this.value  = value;
         this.getter = getter;
         this.setter = setter;
+        this.isStatic = node.isStatic();
+        this.isComputed = node.isComputed();
     }
 
     @Override
@@ -67,6 +71,16 @@ final class PropertyTreeImpl extends TreeImpl implements PropertyTree  {
     @Override
     public FunctionExpressionTree getSetter() {
         return setter;
+    }
+
+    @Override
+    public boolean isStatic() {
+        return isStatic;
+    }
+
+    @Override
+    public boolean isComputed() {
+        return isComputed;
     }
 
     @Override
