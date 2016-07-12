@@ -21,11 +21,12 @@
  * questions.
  *
  */
+
 package p;
 
 /**
  * Test class -- implements I, extends E, both define m, so all should be well.
  */
-public class Dok extends p.E {
+public class Dok extends E {
 
 }

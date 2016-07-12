@@ -28,19 +28,22 @@
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestArrayCopyNoInitDeopt
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *
+ * @build compiler.arraycopy.TestArrayCopyNoInitDeopt
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  *                                jdk.test.lib.Platform
  * @run main/othervm -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:TypeProfileLevel=020
- *                   TestArrayCopyNoInitDeopt
+ *                   compiler.arraycopy.TestArrayCopyNoInitDeopt
  */
 
-import sun.hotspot.WhiteBox;
-import sun.hotspot.code.NMethod;
-import jdk.test.lib.Platform;
-import java.lang.reflect.*;
+package compiler.arraycopy;
+
 import compiler.whitebox.CompilerWhiteBoxTest;
+import jdk.test.lib.Platform;
+import sun.hotspot.WhiteBox;
+
+import java.lang.reflect.Method;
 
 public class TestArrayCopyNoInitDeopt {
 

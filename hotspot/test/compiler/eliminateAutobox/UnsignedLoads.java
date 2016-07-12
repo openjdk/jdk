@@ -27,10 +27,14 @@
  * @test
  * @modules java.base/jdk.internal.misc
  * @library /testlibrary
+ *
  * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+EliminateAutoBox
  *                   -XX:CompileOnly=::valueOf,::byteValue,::shortValue,::testUnsignedByte,::testUnsignedShort
- *                   UnsignedLoads
+ *                   compiler.eliminateAutobox.UnsignedLoads
  */
+
+package compiler.eliminateAutobox;
+
 import static jdk.test.lib.Asserts.assertEQ;
 
 public class UnsignedLoads {

@@ -59,17 +59,16 @@
 
 package compiler.jvmci.compilerToVM;
 
-import java.lang.reflect.Method;
-import jdk.vm.ci.hotspot.HotSpotStackFrameReference;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.test.lib.Asserts;
-
 import compiler.jvmci.common.CTVMUtilities;
 import compiler.testlibrary.CompilerUtils;
 import compiler.whitebox.CompilerWhiteBoxTest;
-
+import jdk.test.lib.Asserts;
+import jdk.vm.ci.hotspot.CompilerToVMHelper;
+import jdk.vm.ci.hotspot.HotSpotStackFrameReference;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import sun.hotspot.WhiteBox;
+
+import java.lang.reflect.Method;
 
 public class MaterializeVirtualObjectTest {
     private static final WhiteBox WB;

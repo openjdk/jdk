@@ -21,10 +21,10 @@
  * questions.
  */
 
-package execution;
+package compiler.types.correctness.execution;
 
-import hierarchies.TypeHierarchy;
-import scenarios.Scenario;
+import compiler.types.correctness.hierarchies.TypeHierarchy;
+import compiler.types.correctness.scenarios.Scenario;
 
 /**
  * Profile type execution scenario. Executes tester method

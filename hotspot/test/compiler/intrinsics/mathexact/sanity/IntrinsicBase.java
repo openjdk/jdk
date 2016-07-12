@@ -21,14 +21,15 @@
  * questions.
  */
 
+package compiler.intrinsics.mathexact.sanity;
+
+import compiler.testlibrary.intrinsics.Verifier;
+import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.test.lib.Platform;
 
 import java.io.FileOutputStream;
 import java.lang.reflect.Executable;
 import java.util.Properties;
-
-import compiler.whitebox.CompilerWhiteBoxTest;
-import compiler.testlibrary.intrinsics.Verifier;
 
 public abstract class IntrinsicBase extends CompilerWhiteBoxTest {
     protected String javaVmName;

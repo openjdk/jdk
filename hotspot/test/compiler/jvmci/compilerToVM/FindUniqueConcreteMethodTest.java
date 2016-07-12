@@ -40,19 +40,20 @@
 
 package compiler.jvmci.compilerToVM;
 
+import compiler.jvmci.common.CTVMUtilities;
 import compiler.jvmci.common.testcases.MultipleImplementer1;
 import compiler.jvmci.common.testcases.SingleImplementer;
-import compiler.jvmci.common.testcases.SingleSubclass;
-import compiler.jvmci.common.CTVMUtilities;
 import compiler.jvmci.common.testcases.SingleImplementerInterface;
-import java.lang.reflect.Method;
-import java.util.HashSet;
-import java.util.Set;
+import compiler.jvmci.common.testcases.SingleSubclass;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
+
+import java.lang.reflect.Method;
+import java.util.HashSet;
+import java.util.Set;
 
 public class FindUniqueConcreteMethodTest {
     public static void main(String args[]) {

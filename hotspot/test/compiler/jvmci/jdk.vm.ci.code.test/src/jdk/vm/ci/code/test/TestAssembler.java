@@ -23,11 +23,6 @@
 
 package jdk.vm.ci.code.test;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.Arrays;
-
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.DebugInfo;
 import jdk.vm.ci.code.Register;
@@ -51,8 +46,13 @@ import jdk.vm.ci.meta.InvokeTarget;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ValueKind;
 import jdk.vm.ci.meta.VMConstant;
+import jdk.vm.ci.meta.ValueKind;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Simple assembler used by the code installation tests.

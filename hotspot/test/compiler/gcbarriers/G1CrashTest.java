@@ -27,10 +27,13 @@
  * @bug 8023472
  * @summary C2 optimization breaks with G1
  *
- * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -Dcount=100000 G1CrashTest
+ * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation
+ *      -Dcount=100000 compiler.gcbarriers.G1CrashTest
  *
  * @author pbiswal@palantir.com
  */
+
+package compiler.gcbarriers;
 
 public class G1CrashTest {
     static Object[] set = new Object[11];

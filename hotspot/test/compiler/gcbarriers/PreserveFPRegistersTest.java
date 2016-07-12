@@ -28,8 +28,11 @@
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @library /testlibrary /test/lib
  * @run main/bootclasspath/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions
- *      -XX:+WhiteBoxAPI -Xmx300m -XX:+UseG1GC PreserveFPRegistersTest
+ *      -XX:+WhiteBoxAPI -Xmx300m -XX:+UseG1GC
+ *      compiler.gcbarriers.PreserveFPRegistersTest
  */
+
+package compiler.gcbarriers;
 
 import sun.hotspot.WhiteBox;
 

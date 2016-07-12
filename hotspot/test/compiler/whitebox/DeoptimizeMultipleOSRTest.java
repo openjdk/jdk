@@ -21,23 +21,28 @@
  * questions.
  */
 
-import sun.hotspot.WhiteBox;
-import java.lang.reflect.Executable;
-import java.lang.reflect.Method;
-import compiler.whitebox.CompilerWhiteBoxTest;
 
 /*
  * @test DeoptimizeMultipleOSRTest
  * @bug 8061817
+ * @summary testing of WB::deoptimizeMethod()
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
- * @modules java.management
- * @build DeoptimizeMultipleOSRTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,DeoptimizeMultipleOSRTest::triggerOSR DeoptimizeMultipleOSRTest
- * @summary testing of WB::deoptimizeMethod()
+ *          java.management
+ * @build compiler.whitebox.DeoptimizeMultipleOSRTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:CompileCommand=compileonly,compiler.whitebox.DeoptimizeMultipleOSRTest::triggerOSR
+ *                   compiler.whitebox.DeoptimizeMultipleOSRTest
  */
+
+package compiler.whitebox;
+
+import sun.hotspot.WhiteBox;
+
+import java.lang.reflect.Method;
+
 public class DeoptimizeMultipleOSRTest {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final long BACKEDGE_THRESHOLD = 150000;

@@ -39,11 +39,9 @@
 
 package compiler.jvmci.meta;
 
-import java.lang.reflect.Field;
 import jdk.internal.vm.annotation.Stable;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.runtime.JVMCI;
 
 public class StableFieldTest {

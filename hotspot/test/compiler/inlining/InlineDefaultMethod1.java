@@ -25,25 +25,32 @@
  * @test
  * @bug 8036100
  * @summary Default method returns true for a while, and then returns false
- * @run main/othervm -Xcomp -XX:CompileOnly=InlineDefaultMethod1::test
- *                   -XX:CompileOnly=I1::m -XX:CompileOnly=I2::m
- *                   InlineDefaultMethod1
+ *
+ * @run main/othervm -Xcomp
+ *      -XX:CompileCommand=compileonly,compiler.inlining.InlineDefaultMethod1::test
+ *      -XX:CompileCommand=compileonly,compiler.inlining.InlineDefaultMethod1$I1::m
+ *      -XX:CompileCommand=compileonly,compiler.inlining.InlineDefaultMethod1$I2::m
+ *      compiler.inlining.InlineDefaultMethod1
  */
-interface I1 {
-    default public int m() { return 0; }
-}
 
-interface I2 extends I1 {
-    default public int m() { return 1; }
-}
-
-abstract class A implements I1 {
-}
-
-class B extends A implements I2 {
-}
+package compiler.inlining;
 
 public class InlineDefaultMethod1 {
+    interface I1 {
+        default public int m() { return 0; }
+    }
+
+    interface I2 extends I1 {
+        default public int m() { return 1; }
+    }
+
+    static abstract class A implements I1 {
+    }
+
+    static class B extends A implements I2 {
+    }
+
+
     public static void test(A obj) {
         int id = obj.m();
         if (id != 1) {

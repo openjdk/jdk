@@ -25,9 +25,16 @@
  * @test
  * @bug 8140574
  * @summary Verify proper re-execution of checks after merging of uncommon traps
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileCommand=compileonly,TestUncommonTrapMerging::test* TestUncommonTrapMerging Test1
- * @run main/othervm -XX:CompileCommand=compileonly,TestUncommonTrapMerging::test* TestUncommonTrapMerging Test2
+ *
+ * @run main/othervm -Xcomp -XX:-TieredCompilation
+ *                   -XX:CompileCommand=compileonly,compiler.rangechecks.TestUncommonTrapMerging::test*
+ *                   compiler.rangechecks.TestUncommonTrapMerging Test1
+ * @run main/othervm -XX:CompileCommand=compileonly,compiler.rangechecks.TestUncommonTrapMerging::test*
+ *                   compiler.rangechecks.TestUncommonTrapMerging Test2
  */
+
+package compiler.rangechecks;
+
 public class TestUncommonTrapMerging {
 
     public static void main(String[] args) throws Throwable {

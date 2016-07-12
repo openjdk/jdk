@@ -50,18 +50,18 @@
 package compiler.jvmci.compilerToVM;
 
 import compiler.jvmci.common.CTVMUtilities;
-import jdk.vm.ci.code.InstalledCode;
-import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
-import sun.hotspot.code.NMethod;
-
-import java.util.List;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.CompilationResult;
+import jdk.vm.ci.code.InstalledCode;
+import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotCompilationRequest;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import sun.hotspot.code.NMethod;
+
+import java.util.List;
 
 public class InvalidateInstalledCodeTest {
     private static final CodeCacheProvider CACHE_PROVIDER

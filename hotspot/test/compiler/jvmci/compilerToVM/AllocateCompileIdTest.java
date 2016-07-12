@@ -48,21 +48,20 @@
 package compiler.jvmci.compilerToVM;
 
 import compiler.jvmci.common.CTVMUtilities;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Pair;
+import jdk.test.lib.Utils;
+import jdk.vm.ci.hotspot.CompilerToVMHelper;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import sun.hotspot.code.NMethod;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.HashSet;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.Pair;
-import jdk.test.lib.Utils;
-import sun.hotspot.code.NMethod;
 
 public class AllocateCompileIdTest {
 

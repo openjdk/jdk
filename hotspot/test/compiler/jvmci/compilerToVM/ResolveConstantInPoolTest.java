@@ -48,17 +48,20 @@
 
 package compiler.jvmci.compilerToVM;
 
-import compiler.jvmci.compilerToVM.ConstantPoolTestsHelper.DummyClasses;
 import compiler.jvmci.compilerToVM.ConstantPoolTestCase.ConstantTypes;
-import static compiler.jvmci.compilerToVM.ConstantPoolTestCase.ConstantTypes.*;
 import compiler.jvmci.compilerToVM.ConstantPoolTestCase.Validator;
+import compiler.jvmci.compilerToVM.ConstantPoolTestsHelper.DummyClasses;
+import jdk.test.lib.Asserts;
+import jdk.vm.ci.hotspot.CompilerToVMHelper;
+import jdk.vm.ci.meta.ConstantPool;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.HashMap;
 import java.util.Map;
-import jdk.test.lib.Asserts;
-import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.meta.ConstantPool;
+
+import static compiler.jvmci.compilerToVM.ConstantPoolTestCase.ConstantTypes.CONSTANT_METHODHANDLE;
+import static compiler.jvmci.compilerToVM.ConstantPoolTestCase.ConstantTypes.CONSTANT_METHODTYPE;
 
 /**
  * Test for {@code jdk.vm.ci.hotspot.CompilerToVM.resolveConstantInPool} method

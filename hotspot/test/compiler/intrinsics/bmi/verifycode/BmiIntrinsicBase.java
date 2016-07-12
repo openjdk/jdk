@@ -22,6 +22,9 @@
  *
  */
 
+package compiler.intrinsics.bmi.verifycode;
+
+import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
@@ -34,7 +37,6 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
-import compiler.whitebox.CompilerWhiteBoxTest;
 
 public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
 

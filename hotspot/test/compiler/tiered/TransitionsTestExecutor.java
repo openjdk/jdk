@@ -21,6 +21,9 @@
  * questions.
  */
 
+package compiler.tiered;
+
+import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.ProcessTools;
 
@@ -29,7 +32,6 @@ import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import compiler.whitebox.CompilerWhiteBoxTest;
 
 /**
  * Executes given test in a separate VM with enabled Tiered Compilation for
@@ -59,9 +61,6 @@ public class TransitionsTestExecutor {
         Collections.addAll(args, policy, testName);
 
         OutputAnalyzer out = ProcessTools.executeTestJvm(args.toArray(new String[args.size()]));
-        int exitCode = out.getExitValue();
-        if (exitCode != 0) {
-            throw new Error("Test execution failed with exit code " + exitCode);
-        }
+        out.shouldHaveExitValue(0);
     }
 }

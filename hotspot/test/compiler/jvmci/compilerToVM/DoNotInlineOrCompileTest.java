@@ -48,14 +48,15 @@
 package compiler.jvmci.compilerToVM;
 
 import compiler.jvmci.common.CTVMUtilities;
+import jdk.test.lib.Asserts;
+import jdk.vm.ci.hotspot.CompilerToVMHelper;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import sun.hotspot.WhiteBox;
+
 import java.lang.reflect.Executable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import jdk.test.lib.Asserts;
-import sun.hotspot.WhiteBox;
 
 public class DoNotInlineOrCompileTest {
 

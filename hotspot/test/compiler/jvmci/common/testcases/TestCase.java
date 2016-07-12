@@ -25,13 +25,9 @@
 package compiler.jvmci.common.testcases;
 
 import java.lang.reflect.Executable;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.Set;
 
 /**

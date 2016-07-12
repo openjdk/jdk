@@ -78,20 +78,21 @@ package compiler.jvmci.events;
 import compiler.jvmci.common.CTVMUtilities;
 import compiler.jvmci.common.testcases.SimpleClass;
 import jdk.test.lib.Asserts;
-import java.lang.reflect.Method;
 import jdk.test.lib.Utils;
-import jdk.vm.ci.hotspot.services.HotSpotVMEventListener;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.site.DataPatch;
 import jdk.vm.ci.code.site.Site;
-import jdk.vm.ci.meta.Assumptions.Assumption;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode.Comment;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import jdk.vm.ci.hotspot.services.HotSpotVMEventListener;
+import jdk.vm.ci.meta.Assumptions.Assumption;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+
+import java.lang.reflect.Method;
 
 public class JvmciNotifyInstallEventTest extends HotSpotVMEventListener {
     private static final String METHOD_NAME = "testMethod";

@@ -28,16 +28,22 @@
  * @library /testlibrary
  * @modules java.base/jdk.internal.misc
  *          java.management
+ *
+ * @run driver compiler.cpuflags.RestoreMXCSR
  */
-import jdk.test.lib.*;
+
+package compiler.cpuflags;
+
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
 
 public class RestoreMXCSR {
-  public static void main(String[] args) throws Exception {
-    ProcessBuilder pb;
-    OutputAnalyzer out;
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb;
+        OutputAnalyzer out;
 
-    pb = ProcessTools.createJavaProcessBuilder("-XX:+RestoreMXCSROnJNICalls", "-version");
-    out = new OutputAnalyzer(pb.start());
-    out.shouldHaveExitValue(0);
-  }
+        pb = ProcessTools.createJavaProcessBuilder("-XX:+RestoreMXCSROnJNICalls", "-version");
+        out = new OutputAnalyzer(pb.start());
+        out.shouldHaveExitValue(0);
+    }
 }
