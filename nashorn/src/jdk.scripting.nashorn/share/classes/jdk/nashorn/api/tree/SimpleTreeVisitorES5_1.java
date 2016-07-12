@@ -61,6 +61,45 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
         return null;
     }
 
+    /**
+     * Visits a {@code ModuleTree} tree by calling {@code
+     * visitUnknown}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of {@code visitUnknown}
+     */
+    @Override
+    public R visitModule(ModuleTree node, P p) {
+        return visitUnknown(node, p);
+    }
+
+    /**
+     * Visits an {@code ExportEntryTree} tree by calling {@code
+     * visitUnknown}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of {@code visitUnknown}
+     */
+    @Override
+    public R visitExportEntry(ExportEntryTree node, P p) {
+        return visitUnknown(node, p);
+    }
+
+    /**
+     * Visits an {@code ImportEntryTree} tree by calling {@code
+     * visitUnknown}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of {@code visitUnknown}
+     */
+    @Override
+    public R visitImportEntry(ImportEntryTree node, P p) {
+        return visitUnknown(node, p);
+    }
+
     @Override
     public R visitBinary(final BinaryTree node, final P r) {
         node.getLeftOperand().accept(this, r);
@@ -103,6 +142,32 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
         node.getParameter().accept(this, r);
         node.getBlock().accept(this, r);
         return null;
+    }
+
+    /**
+     * Visits a {@code ClassDeclarationTree} tree by calling {@code
+     * visitUnknown}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of {@code visitUnknown}
+     */
+    @Override
+    public R visitClassDeclaration(ClassDeclarationTree node, P p) {
+        return visitUnknown(node, p);
+    }
+
+    /**
+     * Visits a {@code ClassExpressionTree} tree by calling {@code
+     * visitUnknown}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of {@code visitUnknown}
+     */
+    @Override
+    public R visitClassExpression(ClassExpressionTree node, P p) {
+        return visitUnknown(node, p);
     }
 
     @Override
@@ -171,6 +236,19 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
             stat.accept(this, r);
         }
         return null;
+    }
+
+    /**
+     * Visits a {@code ForOfLoopTree} tree by calling {@code
+     * visitUnknown}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of {@code visitUnknown}
+     */
+    @Override
+    public R visitForOfLoop(ForOfLoopTree node, P p) {
+        return visitUnknown(node, p);
     }
 
     @Override
@@ -305,9 +383,35 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
         return null;
     }
 
+    /**
+     * Visits a {@code TemplateLiteralTree} tree by calling {@code
+     * visitUnknown}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of {@code visitUnknown}
+     */
+    @Override
+    public R visitTemplateLiteral(TemplateLiteralTree node, P p) {
+        return visitUnknown(node, p);
+    }
+
     @Override
     public R visitEmptyStatement(final EmptyStatementTree node, final P r) {
         return null;
+    }
+
+    /**
+     * Visits a {@code SpreadTree} tree by calling {@code
+     * visitUnknown}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of {@code visitUnknown}
+     */
+    @Override
+    public R visitSpread(SpreadTree node, P p) {
+        return visitUnknown(node, p);
     }
 
     @Override
@@ -382,9 +486,36 @@ public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
         return null;
     }
 
+    /**
+     * Visits a {@code YieldTree} tree by calling {@code
+     * visitUnknown}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of {@code visitUnknown}
+     */
     @Override
-    public R visitUnknown(final Tree node, final P r) {
+    public R visitYield(YieldTree node, P p) {
+        return visitUnknown(node, p);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec The default implementation of this method in {@code
+     * SimpleTreeVisitorES5_1} will always throw {@code
+     * UnknownTypeException}. This behavior is not required of a
+     * subclass.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return abnormal return by throwing exception always
+     * @throws UnknownTreeException
+     *  a visitor implementation may optionally throw this exception
+     */
+    @Override
+    public R visitUnknown(final Tree node, final P p) {
         // unknown in ECMAScript 5.1 edition
-        throw new UnknownTreeException(node, r);
+        throw new UnknownTreeException(node, p);
     }
 }
