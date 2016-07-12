@@ -4913,7 +4913,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 TOOLCHAIN_MINIMUM_VERSION_clang="3.2"
 TOOLCHAIN_MINIMUM_VERSION_gcc="4.3"
 TOOLCHAIN_MINIMUM_VERSION_microsoft=""
-TOOLCHAIN_MINIMUM_VERSION_solstudio="5.12"
+TOOLCHAIN_MINIMUM_VERSION_solstudio="5.13"
 TOOLCHAIN_MINIMUM_VERSION_xlc=""
 
 # Prepare the system so that TOOLCHAIN_CHECK_COMPILER_VERSION can be called.
@@ -5094,7 +5094,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1468235634
+DATE_WHEN_GENERATED=1468281874
 
 ###############################################################################
 #
