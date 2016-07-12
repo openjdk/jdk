@@ -40,6 +40,7 @@ import com.sun.tools.doclint.DocLint;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.StringUtils;
+import com.sun.tools.javadoc.main.JavaScriptScanner;
 import com.sun.tools.javadoc.main.RootDocImpl;
 
 /**
@@ -189,6 +190,11 @@ public class ConfigurationImpl extends Configuration {
     public Set<String> doclintOpts = new LinkedHashSet<>();
 
     /**
+     * Whether or not to check for JavaScript in doc comments.
+     */
+    private boolean allowScriptInComments;
+
+    /**
      * Unique Resource Handler for this package.
      */
     public final MessageRetriever standardmessage;
@@ -309,8 +315,11 @@ public class ConfigurationImpl extends Configuration {
                 doclintOpts.add(DocLint.XMSGS_CUSTOM_PREFIX + opt.substring(opt.indexOf(":") + 1));
             } else if (opt.startsWith("-xdoclint/package:")) {
                 doclintOpts.add(DocLint.XCHECK_PACKAGE + opt.substring(opt.indexOf(":") + 1));
+            } else if (opt.equals("--allow-script-in-comments")) {
+                allowScriptInComments = true;
             }
         }
+
         if (root.specifiedClasses().length > 0) {
             Map<String,PackageDoc> map = new HashMap<>();
             PackageDoc pd;
@@ -322,13 +331,35 @@ public class ConfigurationImpl extends Configuration {
                 }
             }
         }
+
         setCreateOverview();
         setTopFile(root);
 
         if (root instanceof RootDocImpl) {
             ((RootDocImpl) root).initDocLint(doclintOpts, tagletManager.getCustomTagNames(),
                     StringUtils.toLowerCase(htmlVersion.name()));
+            JavaScriptScanner jss = ((RootDocImpl) root).initJavaScriptScanner(isAllowScriptInComments());
+            if (jss != null) {
+                // In a more object-oriented world, this would be done by methods on the Option objects.
+                // Note that -windowtitle silently removes any and all HTML elements, and so does not need
+                // to be handled here.
+                checkJavaScript(jss, "-header", header);
+                checkJavaScript(jss, "-footer", footer);
+                checkJavaScript(jss, "-top", top);
+                checkJavaScript(jss, "-bottom", bottom);
+                checkJavaScript(jss, "-doctitle", doctitle);
+                checkJavaScript(jss, "-packagesheader", packagesheader);
+            }
         }
+    }
+
+    private void checkJavaScript(JavaScriptScanner jss, final String opt, String value) {
+        jss.parse(value, new JavaScriptScanner.Reporter() {
+            public void report() {
+                root.printError(getText("doclet.JavaScript_in_option", opt));
+                throw new FatalError();
+            }
+        });
     }
 
     /**
@@ -366,7 +397,8 @@ public class ConfigurationImpl extends Configuration {
             option.equals("-html5") ||
             option.equals("-xdoclint") ||
             option.startsWith("-xdoclint:") ||
-            option.startsWith("-xdoclint/package:")) {
+            option.startsWith("-xdoclint/package:") ||
+            option.startsWith("--allow-script-in-comments")) {
             return 1;
         } else if (option.equals("-help")) {
             // Uugh: first, this should not be hidden inside optionLength,
@@ -665,5 +697,14 @@ public class ConfigurationImpl extends Configuration {
             list.add(sii);
         }
         tagSearchIndexKeys = tagSearchIndexMap.keySet();
+    }
+
+    /**
+     * Returns whether or not to allow JavaScript in comments.
+     * Default is off; can be set true from a command line option.
+     * @return the allowScriptInComments
+     */
+    public boolean isAllowScriptInComments() {
+        return allowScriptInComments;
     }
 }

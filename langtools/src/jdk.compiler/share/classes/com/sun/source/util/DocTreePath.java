@@ -98,7 +98,7 @@ public class DocTreePath implements Iterable<DocTree> {
      * @param t the DocCommentTree to create the path for.
      */
     public DocTreePath(TreePath treePath, DocCommentTree t) {
-        this.treePath = Objects.requireNonNull(treePath);
+        this.treePath = treePath;
         this.docComment = Objects.requireNonNull(t);
         this.parent = null;
         this.leaf = t;
