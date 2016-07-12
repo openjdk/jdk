@@ -90,6 +90,8 @@ public abstract class AbstractDoclet {
         } catch (Configuration.Fault f) {
             root.printError(f.getMessage());
             return false;
+        } catch (FatalError fe) {
+            return false;
         } catch (DocletAbortException e) {
             e.printStackTrace();
             Throwable cause = e.getCause();

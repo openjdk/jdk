@@ -237,6 +237,8 @@ public class HtmlDoclet extends AbstractDoclet {
                 }
             } catch (IOException e) {
                 throw new DocletAbortException(e);
+            } catch (FatalError fe) {
+                throw fe;
             } catch (DocletAbortException de) {
                 de.printStackTrace();
                 throw de;

@@ -588,7 +588,7 @@ public class JavacParser implements Parser {
     /**
      * Ident = IDENTIFIER
      */
-    protected Name ident() {
+    public Name ident() {
         return ident(false);
     }
 

@@ -34,6 +34,8 @@
 
 package jdk.javadoc.internal.doclets.toolkit;
 
+import java.net.URI;
+
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.IdentifierTree;
@@ -43,9 +45,11 @@ import com.sun.source.util.DocTreeFactory;
 import com.sun.source.util.DocTreePath;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -54,6 +58,11 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.Elements;
 import javax.tools.FileObject;
+import javax.tools.JavaFileObject;
+import javax.tools.SimpleJavaFileObject;
+
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 public class CommentUtils {
@@ -183,6 +192,16 @@ public class CommentUtils {
         }
         DocTreePath treePath = trees.getDocTreePath(fo);
         return new DocCommentDuo(treePath.getTreePath(), dcTree);
+    }
+
+    public DocCommentTree parse(URI uri, String text) {
+        return trees.getDocCommentTree(new SimpleJavaFileObject(
+                uri, JavaFileObject.Kind.SOURCE) {
+            @Override @DefinedBy(Api.COMPILER)
+            public CharSequence getCharContent(boolean ignoreEncoding) {
+                return text;
+            }
+        });
     }
 
     public void setDocCommentTree(Element element, List<DocTree> fullBody,

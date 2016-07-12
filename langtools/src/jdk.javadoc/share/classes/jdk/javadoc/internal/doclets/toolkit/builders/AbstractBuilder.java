@@ -35,6 +35,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
+import jdk.javadoc.internal.doclets.toolkit.util.UncheckedDocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.InternalException;
 import jdk.javadoc.internal.doclets.toolkit.util.SimpleDocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
@@ -167,6 +168,8 @@ public abstract class AbstractBuilder {
             Throwable cause = e.getCause();
             if (cause instanceof DocletException) {
                 throw (DocletException) cause;
+            } else if (cause instanceof UncheckedDocletException) {
+                throw (DocletException) cause.getCause();
             } else {
                 // use InternalException, so that a stacktrace showing the position of
                 // the internal exception is generated

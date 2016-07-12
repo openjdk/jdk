@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import javax.tools.FileObject;
 
 import com.sun.javadoc.*;
 import com.sun.source.util.TreePath;
+import com.sun.tools.doclets.internal.toolkit.util.DocletAbortException;
+import com.sun.tools.doclets.internal.toolkit.util.FatalError;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Position;
@@ -128,6 +130,15 @@ public abstract class DocImpl implements Doc, Comparable<Object> {
     Comment comment() {
         if (comment == null) {
             String d = documentation();
+            if (env.javaScriptScanner != null) {
+                env.javaScriptScanner.parse(d, new JavaScriptScanner.Reporter() {
+                    @Override
+                    public void report() {
+                        env.error(DocImpl.this, "javadoc.JavaScript_in_comment");
+                        throw new FatalError();
+                    }
+                });
+            }
             if (env.doclint != null
                     && treePath != null
                     && env.shouldCheck(treePath.getCompilationUnit())
