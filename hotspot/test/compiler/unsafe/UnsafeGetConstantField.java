@@ -37,24 +37,26 @@
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions
  *                                 -Xbatch -XX:-TieredCompilation
  *                                 -XX:+FoldStableValues
- *                                 -XX:CompileCommand=dontinline,UnsafeGetConstantField.checkGetAddress()
- *                                 -XX:CompileCommand=dontinline,*.test*
+ *                                 -XX:CompileCommand=dontinline,compiler.unsafe.UnsafeGetConstantField::checkGetAddress
+ *                                 -XX:CompileCommand=dontinline,*::test*
  *                                 -XX:+UseUnalignedAccesses
- *                         -XaddReads:java.base=ALL-UNNAMED
+ *                                 -XaddReads:java.base=ALL-UNNAMED
  *                                 compiler.unsafe.UnsafeGetConstantField
  *
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions
  *                                 -Xbatch -XX:-TieredCompilation
  *                                 -XX:+FoldStableValues
- *                                 -XX:CompileCommand=dontinline,UnsafeGetConstantField.checkGetAddress()
- *                                 -XX:CompileCommand=dontinline,*.test*
- *                                 -XX:CompileCommand=inline,*Unsafe.get*
+ *                                 -XX:CompileCommand=dontinline,compiler.unsafe.UnsafeGetConstantField::checkGetAddress
+ *                                 -XX:CompileCommand=dontinline,*::test*
+ *                                 -XX:CompileCommand=inline,*Unsafe::get*
  *                                 -XX:-UseUnalignedAccesses
- *                         -XaddReads:java.base=ALL-UNNAMED
+ *                                 -XaddReads:java.base=ALL-UNNAMED
  *                                 compiler.unsafe.UnsafeGetConstantField
  */
+
 package compiler.unsafe;
 
+import jdk.internal.misc.Unsafe;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.FieldVisitor;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -63,14 +65,28 @@ import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.vm.annotation.Stable;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
-import jdk.internal.misc.Unsafe;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_FINAL;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_STATIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACONST_NULL;
+import static jdk.internal.org.objectweb.asm.Opcodes.ALOAD;
+import static jdk.internal.org.objectweb.asm.Opcodes.ARETURN;
+import static jdk.internal.org.objectweb.asm.Opcodes.DUP;
+import static jdk.internal.org.objectweb.asm.Opcodes.GETFIELD;
+import static jdk.internal.org.objectweb.asm.Opcodes.GETSTATIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static jdk.internal.org.objectweb.asm.Opcodes.INVOKESTATIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+import static jdk.internal.org.objectweb.asm.Opcodes.NEW;
+import static jdk.internal.org.objectweb.asm.Opcodes.PUTFIELD;
+import static jdk.internal.org.objectweb.asm.Opcodes.PUTSTATIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.RETURN;
 
 public class UnsafeGetConstantField {
     static final Class<?> THIS_CLASS = UnsafeGetConstantField.class;

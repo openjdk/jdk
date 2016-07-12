@@ -21,6 +21,24 @@
  * questions.
  */
 
+/*
+ * @test SegmentedCodeCacheDtraceTest
+ * @bug 8015774
+ * @summary testing of dtrace for segmented code cache
+ * @requires os.family=="solaris"
+ * @modules java.base/jdk.internal.misc
+ * @library /testlibrary /test/lib /
+ *
+ * @build compiler.codecache.dtrace.SegmentedCodeCacheDtraceTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm/timeout=600 -Xbootclasspath/a:.
+ *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *     compiler.codecache.dtrace.SegmentedCodeCacheDtraceTest
+ */
+
+package compiler.codecache.dtrace;
+
 import compiler.testlibrary.CompilerUtils;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolFinder;
@@ -28,6 +46,7 @@ import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.Utils;
 import jdk.test.lib.dtrace.DtraceResultsAnalyzer;
 import jdk.test.lib.dtrace.DtraceRunner;
+
 import java.io.IOException;
 import java.lang.reflect.Executable;
 import java.nio.file.Files;
@@ -44,20 +63,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-/*
- * @test SegmentedCodeCacheDtraceTest
- * @bug 8015774
- * @requires os.family=="solaris"
- * @modules java.base/jdk.internal.misc
- * @library /testlibrary / /test/lib
- * @build SegmentedCodeCacheDtraceTestWorker
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *     sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+TieredCompilation
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     SegmentedCodeCacheDtraceTest
- * @summary testing of dtrace for segmented code cache
- */
 public class SegmentedCodeCacheDtraceTest {
 
     private static final String WORKER_CLASS_NAME

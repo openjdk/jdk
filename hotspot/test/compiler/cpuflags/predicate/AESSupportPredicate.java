@@ -21,9 +21,10 @@
  * questions.
  *
  */
-package predicate;
+package compiler.cpuflags.predicate;
 
 import sun.hotspot.cpuinfo.CPUInfo;
+
 import java.util.function.BooleanSupplier;
 
 public class AESSupportPredicate implements BooleanSupplier {

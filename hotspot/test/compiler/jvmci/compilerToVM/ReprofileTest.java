@@ -51,15 +51,15 @@
 package compiler.jvmci.compilerToVM;
 
 import compiler.jvmci.common.CTVMUtilities;
+import compiler.whitebox.CompilerWhiteBoxTest;
+import jdk.test.lib.Asserts;
+import jdk.vm.ci.hotspot.CompilerToVMHelper;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import jdk.vm.ci.meta.ProfilingInfo;
+
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-
-import compiler.whitebox.CompilerWhiteBoxTest;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.meta.ProfilingInfo;
-import jdk.test.lib.Asserts;
 
 public class ReprofileTest {
 

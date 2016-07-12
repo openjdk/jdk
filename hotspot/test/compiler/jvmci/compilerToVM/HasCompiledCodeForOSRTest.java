@@ -49,17 +49,16 @@
 package compiler.jvmci.compilerToVM;
 
 import compiler.jvmci.common.CTVMUtilities;
+import compiler.testlibrary.CompilerUtils;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
+import jdk.vm.ci.hotspot.CompilerToVMHelper;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import sun.hotspot.code.NMethod;
 
 import java.lang.reflect.Executable;
 import java.util.ArrayList;
 import java.util.List;
-
-import compiler.testlibrary.CompilerUtils;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
-import sun.hotspot.code.NMethod;
 
 public class HasCompiledCodeForOSRTest {
     public static void main(String[] args) {

@@ -26,12 +26,15 @@
  * @test
  * @bug 8031320
  * @summary Verify processing of RTMLockingThreshold option.
- * @library /testlibrary
+ * @library /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestRTMLockingThresholdOption
- * @run main/othervm TestRTMLockingThresholdOption
+ *
+ * @build compiler.rtm.cli.TestRTMLockingThresholdOption
+ * @run main/othervm compiler.rtm.cli.TestRTMLockingThresholdOption
  */
+
+package compiler.rtm.cli;
 
 public class TestRTMLockingThresholdOption
         extends RTMGenericCommandLineOptionTest {

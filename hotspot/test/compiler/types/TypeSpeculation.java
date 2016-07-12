@@ -25,9 +25,14 @@
  * @test
  * @bug 8024070
  * @summary Test that type speculation doesn't cause incorrect execution
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:TypeProfileLevel=222 -XX:+UseTypeSpeculation TypeSpeculation
  *
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseOnStackReplacement
+ *                   -XX:-BackgroundCompilation -XX:TypeProfileLevel=222
+ *                   -XX:+UseTypeSpeculation
+ *                   compiler.types.TypeSpeculation
  */
+
+package compiler.types;
 
 public class TypeSpeculation {
 

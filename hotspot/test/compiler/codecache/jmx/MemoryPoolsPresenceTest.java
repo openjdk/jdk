@@ -21,29 +21,38 @@
  * questions.
  */
 
+/**
+ * @test MemoryPoolsPresenceTest
+ * @summary verify that MemoryManagerMXBean exists for every code cache segment
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @library /testlibrary /test/lib
+ *
+ * @build compiler.codecache.jmx.MemoryPoolsPresenceTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+WhiteBoxAPI
+ *     -XX:+SegmentedCodeCache
+ *     compiler.codecache.jmx.MemoryPoolsPresenceTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+WhiteBoxAPI
+ *     -XX:-SegmentedCodeCache
+ *     compiler.codecache.jmx.MemoryPoolsPresenceTest
+ */
+
+package compiler.codecache.jmx;
+
 import jdk.test.lib.Asserts;
+import sun.hotspot.code.BlobType;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryManagerMXBean;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import sun.hotspot.code.BlobType;
 
-/**
- * @test MemoryPoolsPresenceTest
- * @library /testlibrary /test/lib
- * @modules java.base/jdk.internal.misc
- * @modules java.management
- * @build MemoryPoolsPresenceTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *     sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *     -XX:+WhiteBoxAPI -XX:+SegmentedCodeCache MemoryPoolsPresenceTest
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *     -XX:+WhiteBoxAPI -XX:-SegmentedCodeCache MemoryPoolsPresenceTest
- * @summary verify that MemoryManagerMXBean exists for every code cache segment
- */
 public class MemoryPoolsPresenceTest {
 
     private static final String CC_MANAGER = "CodeCacheManager";

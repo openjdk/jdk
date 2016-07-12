@@ -31,19 +31,22 @@
  *        compiler.testlibrary.CompilerUtils
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm/timeout=60
+ * @run main/othervm
  *        -Xbootclasspath/a:.
  *        -Xmixed
  *        -XX:+UnlockDiagnosticVMOptions
  *        -XX:+WhiteBoxAPI
  *        -XX:+PrintCompilation
- *        BlockingCompilation
+ *        compiler.whitebox.BlockingCompilation
  */
 
+package compiler.whitebox;
+
 import compiler.testlibrary.CompilerUtils;
+import sun.hotspot.WhiteBox;
+
 import java.lang.reflect.Method;
 import java.util.Random;
-import sun.hotspot.WhiteBox;
 
 public class BlockingCompilation {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
@@ -94,7 +97,9 @@ public class BlockingCompilation {
 
         // Blocking compilations on all levels, using the default versions of
         // WB.enqueueMethodForCompilation() and manually setting compiler directives.
-        String directive = "[{ match: \"BlockingCompilation.foo\", BackgroundCompilation: false }]";
+        String directive = "[{ match: \""
+                + BlockingCompilation.class.getName().replace('.', '/')
+                + ".foo\", BackgroundCompilation: false }]";
         if (WB.addCompilerDirective(directive) != 1) {
             throw new Exception("Failed to add compiler directive");
         }

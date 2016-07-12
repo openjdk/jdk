@@ -26,10 +26,13 @@
  * @test
  * @bug 8078426
  * @summary split if finds predicates on several incoming paths when unswitched's loops are optimized out
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:-UseCompressedOops TestSplitIfUnswitchedLoopsEliminated
  *
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseOnStackReplacement
+ *                   -XX:-BackgroundCompilation -XX:-UseCompressedOops
+ *                   compiler.loopopts.TestSplitIfUnswitchedLoopsEliminated
  */
 
+package compiler.loopopts;
 
 public class TestSplitIfUnswitchedLoopsEliminated {
 

@@ -48,13 +48,13 @@
 
 package compiler.jvmci.compilerToVM;
 
-import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.code.InstalledCode;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
+import jdk.vm.ci.code.InstalledCode;
+import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import sun.hotspot.code.NMethod;
 
 import java.util.List;
-import jdk.test.lib.Utils;
 
 public class DisassembleCodeBlobTest {
 

@@ -25,9 +25,13 @@
  * @test
  * @bug 8054224
  * @summary Recursive method compiled by C1 is unable to catch StackOverflowError
- * @run main/othervm -Xcomp -XX:CompileOnly=Test.run -XX:+TieredCompilation -XX:TieredStopAtLevel=2 -Xss512K TestRecursiveReplacedException
  *
+ * @run main/othervm -Xcomp -XX:+TieredCompilation -XX:TieredStopAtLevel=2 -Xss512K
+ *      -XX:CompileCommand=compileonly,compiler.exceptions.TestRecursiveReplacedException::run
+ *      compiler.exceptions.TestRecursiveReplacedException
  */
+
+package compiler.exceptions;
 
 public class TestRecursiveReplacedException {
 

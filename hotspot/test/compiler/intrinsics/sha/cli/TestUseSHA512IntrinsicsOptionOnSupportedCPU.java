@@ -28,13 +28,19 @@
  * @library /testlibrary /test/lib testcases /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestUseSHA512IntrinsicsOptionOnSupportedCPU
+ *
+ * @build compiler.intrinsics.sha.cli.TestUseSHA512IntrinsicsOptionOnSupportedCPU
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
- *                   TestUseSHA512IntrinsicsOptionOnSupportedCPU
+ *                   compiler.intrinsics.sha.cli.TestUseSHA512IntrinsicsOptionOnSupportedCPU
  */
+
+package compiler.intrinsics.sha.cli;
+
+import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForSupportedCPU;
+
 public class TestUseSHA512IntrinsicsOptionOnSupportedCPU {
     public static void main(String args[]) throws Throwable {
         new SHAOptionsBase(new GenericTestCaseForSupportedCPU(

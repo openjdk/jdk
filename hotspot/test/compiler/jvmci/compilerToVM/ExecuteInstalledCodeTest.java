@@ -1,22 +1,17 @@
 package compiler.jvmci.compilerToVM;
 
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Pair;
+import jdk.test.lib.Utils;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
-import jdk.test.lib.Pair;
 import sun.hotspot.code.NMethod;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Executable;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /*
  * @test

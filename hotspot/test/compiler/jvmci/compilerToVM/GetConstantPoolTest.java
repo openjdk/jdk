@@ -45,15 +45,15 @@
  */
 package compiler.jvmci.compilerToVM;
 
-import java.lang.reflect.Field;
-import jdk.vm.ci.meta.ConstantPool;
+import jdk.internal.misc.Unsafe;
+import jdk.test.lib.Utils;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.hotspot.PublicMetaspaceWrapperObject;
-import jdk.test.lib.Utils;
+import jdk.vm.ci.meta.ConstantPool;
 import sun.hotspot.WhiteBox;
-import jdk.internal.misc.Unsafe;
+
+import java.lang.reflect.Field;
 
 /**
  * Tests for jdk.vm.ci.hotspot.CompilerToVM::getConstantPool method

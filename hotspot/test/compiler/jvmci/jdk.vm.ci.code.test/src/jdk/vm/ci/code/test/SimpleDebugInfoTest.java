@@ -38,15 +38,14 @@
 
 package jdk.vm.ci.code.test;
 
-import org.junit.Assume;
-import org.junit.Test;
-
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.hotspot.HotSpotConstant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
+import org.junit.Assume;
+import org.junit.Test;
 
 public class SimpleDebugInfoTest extends DebugInfoTest {
 

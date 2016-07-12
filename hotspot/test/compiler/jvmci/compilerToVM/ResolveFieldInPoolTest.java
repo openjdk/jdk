@@ -48,21 +48,23 @@
 
 package compiler.jvmci.compilerToVM;
 
-import compiler.jvmci.compilerToVM.ConstantPoolTestsHelper.DummyClasses;
 import compiler.jvmci.compilerToVM.ConstantPoolTestCase.ConstantTypes;
-import static compiler.jvmci.compilerToVM.ConstantPoolTestCase.ConstantTypes.*;
 import compiler.jvmci.compilerToVM.ConstantPoolTestCase.TestedCPEntry;
 import compiler.jvmci.compilerToVM.ConstantPoolTestCase.Validator;
-import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Map;
+import compiler.jvmci.compilerToVM.ConstantPoolTestsHelper.DummyClasses;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.meta.ConstantPool;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
-import jdk.internal.misc.Unsafe;
+
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
+
+import static compiler.jvmci.compilerToVM.ConstantPoolTestCase.ConstantTypes.CONSTANT_FIELDREF;
 
 /**
  * Test for {@code jdk.vm.ci.hotspot.CompilerToVM.resolveFieldInPool} method

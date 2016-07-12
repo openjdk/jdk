@@ -33,10 +33,9 @@
  */
 package jdk.vm.ci.runtime.test;
 
+import jdk.vm.ci.meta.JavaConstant;
 import org.junit.Assert;
 import org.junit.Test;
-
-import jdk.vm.ci.meta.JavaConstant;
 
 public class ConstantTest extends FieldUniverse {
 

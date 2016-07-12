@@ -23,20 +23,21 @@
 
 /**
  * @test NonTieredLevelsTest
+ * @summary Verify that only one level can be used
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
- * @modules java.management
+ *          java.management
  * @ignore 8157984
- * @build NonTieredLevelsTest
+ * @build compiler.tiered.NonTieredLevelsTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:-TieredCompilation
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCounterDecay
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
- *                   NonTieredLevelsTest
- * @summary Verify that only one level can be used
- * @author igor.ignatyev@oracle.com
+ *                   compiler.tiered.NonTieredLevelsTest
  */
+
+package compiler.tiered;
 
 import java.util.function.IntPredicate;
 import compiler.whitebox.CompilerWhiteBoxTest;
