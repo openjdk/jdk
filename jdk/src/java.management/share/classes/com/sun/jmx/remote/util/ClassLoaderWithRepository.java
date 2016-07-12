@@ -39,8 +39,9 @@ public class ClassLoaderWithRepository extends ClassLoader {
    }
 
     protected Class<?> findClass(String name) throws ClassNotFoundException {
+        Class<?> cls;
         try {
-            return repository.loadClass(name);
+            cls = repository.loadClass(name);
         } catch (ClassNotFoundException cne) {
             if (cl2 != null) {
                 return cl2.loadClass(name);
@@ -48,6 +49,15 @@ public class ClassLoaderWithRepository extends ClassLoader {
                 throw cne;
             }
         }
+
+        if(!cls.getName().equals(name)){
+            if (cl2 != null) {
+                return cl2.loadClass(name);
+            } else {
+                throw new ClassNotFoundException(name);
+            }
+        }
+        return cls;
     }
 
     private ClassLoaderRepository repository;
