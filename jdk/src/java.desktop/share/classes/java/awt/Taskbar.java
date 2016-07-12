@@ -364,7 +364,8 @@ public class Taskbar {
      * @throws SecurityException if a security manager exists and it denies the
      * {@code AWTPermission("showWindowWithoutWarningBanner")} permission.
      * @throws UnsupportedOperationException if the current platform
-     * does not support the {@link Taskbar.Feature#ICON_BADGE_NUMBER} feature
+     * does not support the {@link Taskbar.Feature#ICON_BADGE_NUMBER}
+     * or {@link Taskbar.Feature#ICON_BADGE_TEXT} feature
      */
     public void setIconBadge(final String badge) {
         checkAWTPermission();
