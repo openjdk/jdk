@@ -107,6 +107,8 @@ final class XTaskbarPeer implements TaskbarPeer {
                 val = Long.parseLong(badge);
                 visible = true;
             } catch (NumberFormatException e) {
+                throw new UnsupportedOperationException("The " + Feature.ICON_BADGE_TEXT
+                    + " feature is not supported on the current platform!");
             }
         }
         setBadge(val, visible);
