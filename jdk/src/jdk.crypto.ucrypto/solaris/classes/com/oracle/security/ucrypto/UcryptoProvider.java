@@ -235,13 +235,14 @@ public final class UcryptoProvider extends Provider {
 
     @Override
     public Provider configure(String configArg) throws InvalidParameterException {
-        // default policy entry only grants read access to default config
-        if (!defConfigName.equals(configArg)) {
-            throw new InvalidParameterException("Ucrypto provider can only be " +
-                "configured with default configuration file");
+        try {
+            init(configArg);
+        } catch (UcryptoException ue) {
+            InvalidParameterException ipe =
+                    new InvalidParameterException("Error using " + configArg);
+            ipe.initCause(ue.getCause());
+            throw ipe;
         }
-        // re-read the config
-        init(defConfigName);
         return this;
     }
 
