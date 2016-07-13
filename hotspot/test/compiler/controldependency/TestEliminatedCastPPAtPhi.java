@@ -29,7 +29,7 @@
  * @requires vm.gc=="Serial" | vm.gc=="Parallel"
  *
  * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
- *      -XX:+IgnoreUnrecognizedVMOptions -XX:+StressGCM
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions -XX:+StressGCM
  *      compiler.controldependency.TestEliminatedCastPPAtPhi
  *
  */

@@ -27,7 +27,7 @@
  * @bug 8069191
  * @summary predicate moved out of loops and CastPP removal causes dependency to be lost
  *
- * @run main/othervm -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:+StressGCM
+ * @run main/othervm -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM
  *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestPredicateLostDependency::m1
  *                   compiler.loopopts.TestPredicateLostDependency
  *
