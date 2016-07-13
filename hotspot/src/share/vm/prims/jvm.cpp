@@ -84,21 +84,6 @@
 #include "classfile/sharedClassUtil.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #endif
-#ifdef TARGET_OS_FAMILY_linux
-# include "jvm_linux.h"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "jvm_solaris.h"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "jvm_windows.h"
-#endif
-#ifdef TARGET_OS_FAMILY_aix
-# include "jvm_aix.h"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "jvm_bsd.h"
-#endif
 
 #include <errno.h>
 

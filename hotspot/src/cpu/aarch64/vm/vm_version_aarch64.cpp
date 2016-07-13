@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,10 +29,10 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/java.hpp"
 #include "runtime/stubCodeGenerator.hpp"
+#include "utilities/macros.hpp"
 #include "vm_version_aarch64.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "os_linux.inline.hpp"
-#endif
+
+#include OS_HEADER_INLINE(os)
 
 #ifndef BUILTIN_SIM
 #include <sys/auxv.h>

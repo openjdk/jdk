@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "asm/register.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #ifdef COMPILER2
 #include "opto/adlcVMDeps.hpp"
@@ -139,25 +140,7 @@ public:
 
   static void set_regName();
 
-#ifdef TARGET_ARCH_x86
-# include "vmreg_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "vmreg_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "vmreg_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "vmreg_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "vmreg_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "vmreg_aarch64.hpp"
-#endif
-
+#include CPU_HEADER(vmreg)
 
 };
 

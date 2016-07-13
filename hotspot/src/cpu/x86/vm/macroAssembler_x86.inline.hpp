@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,9 @@
  *
  */
 
-#ifndef OS_BSD_VM_MUTEX_BSD_INLINE_HPP
-#define OS_BSD_VM_MUTEX_BSD_INLINE_HPP
+#ifndef CPU_X86_VM_MACROASSEMBLER_X86_INLINE_HPP
+#define CPU_X86_VM_MACROASSEMBLER_X86_INLINE_HPP
 
-#include "os_bsd.inline.hpp"
-#include "runtime/interfaceSupport.hpp"
-#include "runtime/thread.inline.hpp"
+// Still empty.
 
-
-// Reconciliation History
-// mutex_solaris.inline.hpp     1.5 99/06/22 16:38:49
-// End
-
-#endif // OS_BSD_VM_MUTEX_BSD_INLINE_HPP
+#endif // CPU_X86_VM_MACROASSEMBLER_X86_INLINE_HPP
