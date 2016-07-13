@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,83 @@
 // This file holds the platform specific parts of the StubRoutines
 // definition. See stubRoutines.hpp for a description on how to
 // extend it.
+
+static bool returns_to_call_stub(address return_pc) { return return_pc == _call_stub_return_address; }
+
+enum platform_dependent_constants {
+  code_size1 = 20000 LP64_ONLY(+10000),         // simply increase if too small (assembler will crash if too small)
+  code_size2 = 33800 LP64_ONLY(+1200)           // simply increase if too small (assembler will crash if too small)
+};
+
+class x86 {
+ friend class StubGenerator;
+ friend class VMStructs;
+
+#ifdef _LP64
+ private:
+  static address _get_previous_fp_entry;
+  static address _get_previous_sp_entry;
+
+  static address _f2i_fixup;
+  static address _f2l_fixup;
+  static address _d2i_fixup;
+  static address _d2l_fixup;
+
+  static address _float_sign_mask;
+  static address _float_sign_flip;
+  static address _double_sign_mask;
+  static address _double_sign_flip;
+
+ public:
+
+  static address get_previous_fp_entry() {
+    return _get_previous_fp_entry;
+  }
+
+  static address get_previous_sp_entry() {
+    return _get_previous_sp_entry;
+  }
+
+  static address f2i_fixup() {
+    return _f2i_fixup;
+  }
+
+  static address f2l_fixup() {
+    return _f2l_fixup;
+  }
+
+  static address d2i_fixup() {
+    return _d2i_fixup;
+  }
+
+  static address d2l_fixup() {
+    return _d2l_fixup;
+  }
+
+  static address float_sign_mask() {
+    return _float_sign_mask;
+  }
+
+  static address float_sign_flip() {
+    return _float_sign_flip;
+  }
+
+  static address double_sign_mask() {
+    return _double_sign_mask;
+  }
+
+  static address double_sign_flip() {
+    return _double_sign_flip;
+  }
+#else // !LP64
+
+ private:
+  static address _verify_fpu_cntrl_wrd_entry;
+
+ public:
+  static address verify_fpu_cntrl_wrd_entry() { return _verify_fpu_cntrl_wrd_entry; }
+
+#endif // !LP64
 
  private:
   static address _verify_mxcsr_entry;
@@ -138,4 +215,6 @@
   static address _Pi4x4_addr()      { return _Pi4x4_adr; }
   static address _ones_addr()      { return _ones_adr; }
 
-#endif // CPU_X86_VM_STUBROUTINES_X86_32_HPP
+};
+
+#endif // CPU_X86_VM_STUBROUTINES_X86_HPP

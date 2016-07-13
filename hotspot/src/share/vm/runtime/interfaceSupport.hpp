@@ -34,6 +34,7 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 
 // Wrapper for all entry points to the virtual machine.
@@ -90,21 +91,8 @@ class InterfaceSupport: AllStatic {
 
  public:
   // OS dependent stuff
-#ifdef TARGET_OS_FAMILY_linux
-# include "interfaceSupport_linux.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "interfaceSupport_solaris.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "interfaceSupport_windows.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_aix
-# include "interfaceSupport_aix.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "interfaceSupport_bsd.hpp"
-#endif
+
+#include OS_HEADER(interfaceSupport)
 
 };
 

@@ -278,7 +278,7 @@ void VM_Version::initialize() {
       os_too_old = false;
     }
 #endif
-#ifdef linux
+#ifdef LINUX
     // At least Linux kernel 4.2, as the problematic behavior of syscalls
     // being called in the middle of a transaction has been addressed.
     // Please, refer to commit b4b56f9ecab40f3b4ef53e130c9f6663be491894

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,10 @@
  * questions.
  */
 
-/* Switch to the correct jni_md.h file without reliance on -I options. */
-#ifdef TARGET_ARCH_x86
-# include "jni_x86.h"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "jni_sparc.h"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "jni_zero.h"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "jni_arm.h"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "jni_ppc.h"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "jni_aarch64.h"
-#endif
+#include "utilities/macros.hpp"
 
+/* Switch to the correct jni_md.h file without reliance on -I options. */
+#include CPU_HEADER_H(jni)
 
 /*
   The local copies of JNI header files may be refreshed

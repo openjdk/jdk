@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "c1/c1_CodeStubs.hpp"
 #include "ci/ciMethodData.hpp"
 #include "oops/methodData.hpp"
+#include "utilities/macros.hpp"
 
 class Compilation;
 class ScopeValue;
@@ -257,21 +258,7 @@ class LIR_Assembler: public CompilationResourceObj {
 
   void atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr dest, LIR_Opr tmp);
 
-#ifdef TARGET_ARCH_x86
-# include "c1_LIRAssembler_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "c1_LIRAssembler_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "c1_LIRAssembler_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "c1_LIRAssembler_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "c1_LIRAssembler_aarch64.hpp"
-#endif
+#include CPU_HEADER(c1_LIRAssembler)
 
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,32 +22,11 @@
  *
  */
 
-#ifndef CPU_X86_VM_STUBROUTINES_X86_32_HPP
-#define CPU_X86_VM_STUBROUTINES_X86_32_HPP
+#ifndef OS_CPU_AIX_PPC_VM_BYTES_AIX_PPC_INLINE_HPP
+#define OS_CPU_AIX_PPC_VM_BYTES_AIX_PPC_INLINE_HPP
 
-// This file holds the platform specific parts of the StubRoutines
-// definition. See stubRoutines.hpp for a description on how to
-// extend it.
+#if defined(VM_LITTLE_ENDIAN)
+// Aix is not little endian.
+#endif // VM_LITTLE_ENDIAN
 
-enum platform_dependent_constants {
-  code_size1 =  20000,           // simply increase if too small (assembler will crash if too small)
-  code_size2 = 33800            // simply increase if too small (assembler will crash if too small)
-};
-
-class x86 {
- friend class StubGenerator;
- friend class VMStructs;
-
- private:
-  static address _verify_fpu_cntrl_wrd_entry;
-
- public:
-  static address verify_fpu_cntrl_wrd_entry()                { return _verify_fpu_cntrl_wrd_entry; }
-
-# include "stubRoutines_x86.hpp"
-
-};
-
-  static bool    returns_to_call_stub(address return_pc)     { return return_pc == _call_stub_return_address; }
-
-#endif // CPU_X86_VM_STUBROUTINES_X86_32_HPP
+#endif // OS_CPU_AIX_PPC_VM_BYTES_AIX_PPC_INLINE_HPP

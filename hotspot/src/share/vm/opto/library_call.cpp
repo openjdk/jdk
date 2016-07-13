@@ -3304,7 +3304,7 @@ bool LibraryCallKit::inline_native_isInterrupted() {
   // drop through to next case
   set_control( _gvn.transform(new IfTrueNode(iff_bit)));
 
-#ifndef TARGET_OS_FAMILY_windows
+#ifndef _WINDOWS
   // (c) Or, if interrupt bit is set and clear_int is false, use 2nd fast path.
   Node* clr_arg = argument(1);
   Node* cmp_arg = _gvn.transform(new CmpINode(clr_arg, intcon(0)));
@@ -3321,7 +3321,7 @@ bool LibraryCallKit::inline_native_isInterrupted() {
 #else
   // To return true on Windows you must read the _interrupted field
   // and check the event state i.e. take the slow path.
-#endif // TARGET_OS_FAMILY_windows
+#endif // _WINDOWS
 
   // (d) Otherwise, go to the slow path.
   slow_region->add_req(control());
