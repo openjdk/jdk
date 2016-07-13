@@ -25,6 +25,7 @@
  * @test NullCheckDroppingsTest
  * @bug 8054492
  * @summary Casting can result in redundant null checks in generated code
+ * @requires vm.flavor == "server"
  * @library /testlibrary /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -85,18 +86,16 @@ public class CastNullCheckDroppingsTest {
     int[]   asink;
 
     public static void main(String[] args) throws Exception {
-
-        // Only test C2 in Server VM
         if (!Platform.isServer()) {
-            return;
+            throw new Error("TESTBUG: Not server VM");
         }
         // Make sure background compilation is disabled
         if (WHITE_BOX.getBooleanVMFlag("BackgroundCompilation")) {
-            throw new AssertionError("Background compilation enabled");
+            throw new Error("TESTBUG: Background compilation enabled");
         }
         // Make sure Tiered compilation is disabled
         if (WHITE_BOX.getBooleanVMFlag("TieredCompilation")) {
-            throw new AssertionError("Tiered compilation enabled");
+            throw new Error("TESTBUG: Tiered compilation enabled");
         }
 
         Method methodClassCast = CastNullCheckDroppingsTest.class.getDeclaredMethod("testClassCast", String.class);
