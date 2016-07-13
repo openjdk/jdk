@@ -25,6 +25,7 @@
 package sun.swing;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.awt.image.*;
 import java.util.*;
 
@@ -99,9 +100,7 @@ public abstract class CachedPainter {
         }
     }
 
-    private void paint0(Component c, Graphics g, int x,
-                         int y, int w, int h, Object... args) {
-        Object key = getClass();
+    private Image getImage(Object key, Component c, int w, int h, Object... args) {
         GraphicsConfiguration config = getGraphicsConfiguration(c);
         ImageCache cache = getCache(key);
         Image image = cache.getImage(key, config, w, h, args);
@@ -133,14 +132,40 @@ public abstract class CachedPainter {
                 g2.dispose();
             }
 
-            // Render to the passed in Graphics
-            paintImage(c, g, x, y, w, h, image, args);
-
             // If we did this 3 times and the contents are still lost
             // assume we're painting to a VolatileImage that is bogus and
             // give up.  Presumably we'll be called again to paint.
         } while ((image instanceof VolatileImage) &&
                  ((VolatileImage)image).contentsLost() && ++attempts < 3);
+
+        return image;
+    }
+
+    private void paint0(Component c, Graphics g, int x,
+                        int y, int w, int h, Object... args) {
+        Object key = getClass();
+        GraphicsConfiguration config = getGraphicsConfiguration(c);
+        ImageCache cache = getCache(key);
+        Image image = cache.getImage(key, config, w, h, args);
+
+        if (image == null) {
+            double sx = 1;
+            double sy = 1;
+            if (g instanceof Graphics2D) {
+                AffineTransform tx = ((Graphics2D) g).getTransform();
+                sx = tx.getScaleX();
+                sy = tx.getScaleY();
+            }
+            image = new PainterMultiResolutionCachedImage(sx, sy, w, h);
+            cache.setImage(key, config, w, h, args, image);
+        }
+
+        if (image instanceof PainterMultiResolutionCachedImage) {
+            ((PainterMultiResolutionCachedImage) image).setParams(c, args);
+        }
+
+        // Render to the passed in Graphics
+        paintImage(c, g, x, y, w, h, image, args);
     }
 
     /**
@@ -209,5 +234,63 @@ public abstract class CachedPainter {
             return null;
         }
         return c.getGraphicsConfiguration();
+    }
+
+    class PainterMultiResolutionCachedImage extends AbstractMultiResolutionImage {
+
+        private final double scaleX;
+        private final double scaleY;
+        private final int baseWidth;
+        private final int baseHeight;
+        private Component c;
+        private Object[] args;
+
+        public PainterMultiResolutionCachedImage(double scaleX, double scaleY,
+                                                 int baseWidth, int baseHeight) {
+            this.scaleX = scaleX;
+            this.scaleY = scaleY;
+            this.baseWidth = baseWidth;
+            this.baseHeight = baseHeight;
+        }
+
+        public void setParams(Component c, Object[] args) {
+            this.c = c;
+            this.args = args;
+        }
+
+        @Override
+        public int getWidth(ImageObserver observer) {
+            return baseWidth;
+        }
+
+        @Override
+        public int getHeight(ImageObserver observer) {
+            return baseHeight;
+        }
+
+        @Override
+        public Image getResolutionVariant(double destWidth, double destHeight) {
+            int w = (int) Math.ceil(destWidth);
+            int h = (int) Math.ceil(destHeight);
+            return getImage(this, c, w, h, args);
+        }
+
+        @Override
+        protected Image getBaseImage() {
+            return getResolutionVariant(baseWidth, baseHeight);
+        }
+
+        @Override
+        public java.util.List<Image> getResolutionVariants() {
+
+            if (scaleX == 1 && scaleY == 1) {
+                return Arrays.asList(getResolutionVariant(baseWidth, baseHeight));
+            }
+
+            return Arrays.asList(
+                    getResolutionVariant(baseWidth, baseHeight),
+                    getResolutionVariant(scaleX * baseWidth, scaleY * baseHeight)
+            );
+        }
     }
 }
