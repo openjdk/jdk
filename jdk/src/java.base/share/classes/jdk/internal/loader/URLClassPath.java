@@ -695,7 +695,7 @@ public class URLClassPath {
                     throw new FileNotFoundException(p.getPath());
                 }
                 return checkJar(new JarFile(new File(p.getPath()), true, ZipFile.OPEN_READ,
-                        JarFile.Release.RUNTIME));
+                        JarFile.runtimeVersion()));
             }
             URLConnection uc = (new URL(getBaseURL(), "#runtime")).openConnection();
             uc.setRequestProperty(USER_AGENT_JAVA_VERSION, JAVA_VERSION);
