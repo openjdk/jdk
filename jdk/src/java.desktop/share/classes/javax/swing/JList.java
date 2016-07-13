@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -338,6 +338,11 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
     private transient DropLocation dropLocation;
 
     /**
+     * Flag to indicate UI update is in progress
+     */
+    private transient boolean updateInProgress;
+
+    /**
      * A subclass of <code>TransferHandler.DropLocation</code> representing
      * a drop location for a <code>JList</code>.
      *
@@ -531,11 +536,18 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      * @see SwingUtilities#updateComponentTreeUI
      */
     public void updateUI() {
-        setUI((ListUI)UIManager.getUI(this));
+        if (!updateInProgress) {
+            updateInProgress = true;
+            try {
+                setUI((ListUI)UIManager.getUI(this));
 
-        ListCellRenderer<? super E> renderer = getCellRenderer();
-        if (renderer instanceof Component) {
-            SwingUtilities.updateComponentTreeUI((Component)renderer);
+                ListCellRenderer<? super E> renderer = getCellRenderer();
+                if (renderer instanceof Component) {
+                    SwingUtilities.updateComponentTreeUI((Component)renderer);
+                }
+            } finally {
+                updateInProgress = false;
+            }
         }
     }
 
