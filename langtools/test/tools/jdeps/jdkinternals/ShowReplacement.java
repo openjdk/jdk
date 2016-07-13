@@ -59,14 +59,17 @@ public class ShowReplacement {
     public void compileAll() throws Exception {
         CompilerUtils.cleanDir(CLASSES_DIR);
 
-        assertTrue(CompilerUtils.compile(Paths.get(TEST_SRC, "p"),
+        Path tmp = Paths.get("tmp");
+        assertTrue(CompilerUtils.compile(Paths.get(TEST_SRC, "src", "apple"), tmp));
+        assertTrue(CompilerUtils.compile(Paths.get(TEST_SRC, "src", "q"),
                                          CLASSES_DIR,
+                                         "-cp", tmp.toString(),
                                          "-XaddExports:java.base/sun.security.util=ALL-UNNAMED"));
     }
 
     @Test
     public void withReplacement() {
-        Path file = Paths.get("p", "WithRepl.class");
+        Path file = Paths.get("q", "WithRepl.class");
         String[] output = JdepsUtil.jdeps("-jdkinternals", CLASSES_DIR.resolve(file).toString());
         int i = 0;
         while (!output[i].contains("Suggested Replacement")) {
@@ -90,9 +93,29 @@ public class ShowReplacement {
         }
     }
 
+    /*
+     * A JDK internal class has been removed while its package still exists.
+     */
     @Test
     public void noReplacement() {
-        Path file = Paths.get("p", "NoRepl.class");
+        Path file = Paths.get("q", "NoRepl.class");
+        String[] output = JdepsUtil.jdeps("-jdkinternals", CLASSES_DIR.resolve(file).toString());
+        int i = 0;
+        // expect no replacement
+        while (i < output.length && !output[i].contains("Suggested Replacement")) {
+            i++;
+        }
+
+        // no replacement
+        assertEquals(output.length-i, 0);
+    }
+
+    /*
+     * A JDK internal package has been removed.
+     */
+    @Test
+    public void removedPackage() {
+        Path file = Paths.get("q", "RemovedPackage.class");
         String[] output = JdepsUtil.jdeps("-jdkinternals", CLASSES_DIR.resolve(file).toString());
         int i = 0;
         // expect no replacement
