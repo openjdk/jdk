@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug     6541476
- * @summary Test verifies that ImageIO PNG plugin correcly handles the
+ * @bug     6541476 7059970
+ * @summary Test verifies that ImageIO PNG plug-in correctly handles the
  *          iTxt chunk (International textual data).
  *
  * @run     main ITXtTest
  */
-
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -157,21 +156,22 @@ public class ITXtTest {
 
         File file = new File("test.png");
 
-        writeTo(file, src);
-        ITXtTest dst = readFrom(file);
-
-        if (dst == null || !dst.equals(src)) {
-            throw new RuntimeException("Test failed.");
+        try {
+            writeTo(file, src);
+            ITXtTest dst = readFrom(file);
+            if (dst == null || !dst.equals(src)) {
+                throw new RuntimeException("Test failed.");
+            }
+        } finally {
+            file.delete();
         }
-
         System.out.println("Test passed.");
     }
 
     private static void writeTo(File f, ITXtTest t) {
         BufferedImage src = createBufferedImage();
-        try {
-            ImageOutputStream imageOutputStream =
-                ImageIO.createImageOutputStream(f);
+        try (ImageOutputStream imageOutputStream =
+                ImageIO.createImageOutputStream(f)) {
 
             ImageTypeSpecifier imageTypeSpecifier =
                 new ImageTypeSpecifier(src);
@@ -191,7 +191,6 @@ public class ITXtTest {
             m.setFromTree(format, root);
 
             imageWriter.write(new IIOImage(src, null, m));
-            imageOutputStream.close();
             System.out.println("Writing done.");
         } catch (Throwable e) {
             throw new RuntimeException("Writing test failed.", e);
@@ -199,10 +198,11 @@ public class ITXtTest {
     }
 
     private static ITXtTest readFrom(File f) {
-        try {
-            ImageInputStream iis = ImageIO.createImageInputStream(f);
-            ImageReader r = ImageIO.getImageReaders(iis).next();
-            r.setInput(iis);
+        try (ImageInputStream imageInputStream =
+                ImageIO.createImageInputStream(f)) {
+
+            ImageReader r = ImageIO.getImageReaders(imageInputStream).next();
+            r.setInput(imageInputStream);
 
             IIOImage dst = r.readAll(0, null);
 
@@ -234,3 +234,4 @@ public class ITXtTest {
         return image;
     }
 }
+
