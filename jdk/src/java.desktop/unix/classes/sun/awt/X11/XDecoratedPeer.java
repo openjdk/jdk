@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1010,7 +1010,22 @@ abstract class XDecoratedPeer extends XWindowPeer {
         if (focusLog.isLoggable(PlatformLogger.Level.FINE)) {
             focusLog.fine("WM_TAKE_FOCUS on {0}", this);
         }
-        requestWindowFocus(cl.get_data(1), true);
+
+        if (XWM.getWMID() == XWM.UNITY_COMPIZ_WM) {
+            // JDK-8159460
+            Window focusedWindow = XKeyboardFocusManagerPeer.getInstance()
+                    .getCurrentFocusedWindow();
+            Window activeWindow = XWindowPeer.getDecoratedOwner(focusedWindow);
+            if (activeWindow != target) {
+                requestWindowFocus(cl.get_data(1), true);
+            } else {
+                WindowEvent we = new WindowEvent(focusedWindow,
+                        WindowEvent.WINDOW_GAINED_FOCUS);
+                sendEvent(we);
+            }
+        } else {
+            requestWindowFocus(cl.get_data(1), true);
+        }
     }
 
     /**
