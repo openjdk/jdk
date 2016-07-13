@@ -25,9 +25,11 @@
  * @test CorrectnessTest
  * @bug 8038418
  * @summary Tests correctness of type usage with type profiling and speculations
+ * @requires vm.flavor == "server"
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ *
  * @ignore 8066173
  * @build compiler.types.correctness.CorrectnessTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
@@ -88,7 +90,7 @@ public class CorrectnessTest {
 
     public static void main(String[] args) {
         if (!Platform.isServer()) {
-            System.out.println("ALL TESTS SKIPPED");
+            throw new Error("TESTBUG: Not server VM");
         }
         Asserts.assertGTE(args.length, 1);
         ProfilingType profilingType = ProfilingType.valueOf(args[0]);

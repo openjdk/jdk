@@ -52,11 +52,9 @@ import java.lang.reflect.Executable;
 import java.util.concurrent.Callable;
 
 public class IntrinsicAvailableTest extends CompilerWhiteBoxTest {
-    protected String VMName;
 
     public IntrinsicAvailableTest(IntrinsicAvailableTestTestCase testCase) {
         super(testCase);
-        VMName = System.getProperty("java.vm.name");
     }
 
     public static class IntrinsicAvailableTestTestCase implements TestCase {

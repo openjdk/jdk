@@ -25,9 +25,11 @@
  * @test IsMethodCompilableTest
  * @bug 8007270 8006683 8007288 8022832
  * @summary testing of WB::isMethodCompilable()
+ * @requires vm.flavor == "server"
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ *
  * @build jdk.test.lib.*
  *        sun.hotspot.WhiteBox
  * @build compiler.whitebox.IsMethodCompilableTest
@@ -84,7 +86,7 @@ public class IsMethodCompilableTest extends CompilerWhiteBoxTest {
 
         // Only c2 compilations can be disabled through PerMethodRecompilationCutoff
         if (!Platform.isServer()) {
-            return;
+            throw new Error("TESTBUG: Not server VM");
         }
 
         if (skipXcompOSR()) {

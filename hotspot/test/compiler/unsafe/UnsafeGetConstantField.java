@@ -28,7 +28,7 @@
  * @summary tests on constant folding of unsafe get operations
  * @library /testlibrary
  *
- * @requires vm.flavor != "client"
+ * @requires vm.flavor == "server"
  *
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.vm.annotation
@@ -93,11 +93,12 @@ public class UnsafeGetConstantField {
     static final Unsafe U = Unsafe.getUnsafe();
 
     public static void main(String[] args) {
-        if (Platform.isServer()) {
-            testUnsafeGetAddress();
-            testUnsafeGetField();
-            testUnsafeGetFieldUnaligned();
+        if (!Platform.isServer()) {
+            throw new Error("TESTBUG: Not server VM");
         }
+        testUnsafeGetAddress();
+        testUnsafeGetField();
+        testUnsafeGetFieldUnaligned();
         System.out.println("TEST PASSED");
     }
 
