@@ -25,7 +25,7 @@
  * @library /lib/testlibrary/
  * @build jdk.testlibrary.*
  * @run main TestAvailable
- * @bug 7031075
+ * @bug 7031075 8161426
  * @summary Make sure that available() method behaves as expected.
  * @key randomness
  */
@@ -40,9 +40,8 @@ public class TestAvailable {
     public static void main(String args[]) throws Throwable {
         Random r = RandomFactory.getRandom();
         for (int n = 0; n < 10; n++) {
-            byte[] src = new byte[r.nextInt(100)];
+            byte[] src = new byte[r.nextInt(100) + 1];
             r.nextBytes(src);
-
             // test InflaterInputStream
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             try (DeflaterOutputStream dos = new DeflaterOutputStream(baos)) {
