@@ -132,12 +132,12 @@ public class MultiReleaseJarURLConnection {
         URL rootUrl = new URL(urlFile);
         JarURLConnection juc = (JarURLConnection)rootUrl.openConnection();
         JarFile rootJar = juc.getJarFile();
-        JarFile.Release root = rootJar.getVersion();
+        Runtime.Version root = rootJar.getVersion();
 
         URL runtimeUrl = new URL(urlFile + "#runtime");
         juc = (JarURLConnection)runtimeUrl.openConnection();
         JarFile runtimeJar = juc.getJarFile();
-        JarFile.Release runtime = runtimeJar.getVersion();
+        Runtime.Version runtime = runtimeJar.getVersion();
         if (style.equals("unversioned")) {
             Assert.assertEquals(root, runtime);
         } else {

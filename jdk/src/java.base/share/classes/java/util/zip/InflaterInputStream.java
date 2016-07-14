@@ -179,6 +179,10 @@ class InflaterInputStream extends FilterInputStream {
         ensureOpen();
         if (reachEOF) {
             return 0;
+        } else if (inf.finished()) {
+            // the end of the compressed data stream has been reached
+            reachEOF = true;
+            return 0;
         } else {
             return 1;
         }

@@ -943,26 +943,6 @@ ProcessPlatformOption(const char *arg)
     return JNI_FALSE;
 }
 
-int
-filterArgs(StdArg *stdargs, const int nargc, StdArg **pargv) {
-    StdArg* argv = NULL;
-    int nargs = 0;
-    int i;
-
-    /* Copy the non-vm args */
-    for (i = 0; i < nargc ; i++) {
-        const char *arg = stdargs[i].arg;
-        if (arg[0] == '-' && arg[1] == 'J')
-            continue;
-        argv = (StdArg*) JLI_MemRealloc(argv, (nargs+1) * sizeof(StdArg));
-        argv[nargs].arg = JLI_StringDup(arg);
-        argv[nargs].has_wildcard = stdargs[i].has_wildcard;
-        nargs++;
-    }
-    *pargv = argv;
-    return nargs;
-}
-
 /*
  * At this point we have the arguments to the application, and we need to
  * check with original stdargs in order to compare which of these truly
@@ -975,12 +955,13 @@ CreateApplicationArgs(JNIEnv *env, char **strv, int argc)
     int i, j, idx;
     size_t tlen;
     jobjectArray outArray, inArray;
-    char *ostart, *astart, **nargv;
+    char *arg, **nargv;
     jboolean needs_expansion = JNI_FALSE;
     jmethodID mid;
-    int filteredargc, stdargc;
+    int stdargc;
     StdArg *stdargs;
-    StdArg *filteredargs;
+    int *appArgIdx;
+    int isTool;
     jclass cls = GetLauncherHelperClass(env);
     NULL_CHECK0(cls);
 
@@ -991,8 +972,6 @@ CreateApplicationArgs(JNIEnv *env, char **strv, int argc)
     stdargs = JLI_GetStdArgs();
     stdargc = JLI_GetStdArgc();
 
-    filteredargc = filterArgs(stdargs, stdargc, &filteredargs);
-
     // sanity check, this should never happen
     if (argc > stdargc) {
         JLI_TraceLauncher("Warning: app args is larger than the original, %d %d\n", argc, stdargc);
@@ -1001,22 +980,35 @@ CreateApplicationArgs(JNIEnv *env, char **strv, int argc)
     }
 
     // sanity check, match the args we have, to the holy grail
-    idx = filteredargc - argc;
-    ostart = filteredargs[idx].arg;
-    astart = strv[0];
-    // sanity check, ensure that the first argument of the arrays are the same
-    if (JLI_StrCmp(ostart, astart) != 0) {
-        // some thing is amiss the args don't match
-        JLI_TraceLauncher("Warning: app args parsing error\n");
-        JLI_TraceLauncher("passing arguments as-is\n");
+    idx = JLI_GetAppArgIndex();
+    isTool = (idx == 0);
+    if (isTool) { idx++; } // skip tool name
+    JLI_TraceLauncher("AppArgIndex: %d points to %s\n", idx, stdargs[idx].arg);
+
+    appArgIdx = calloc(argc, sizeof(int));
+    for (i = idx, j = 0; i < stdargc; i++) {
+        if (isTool) { // filter -J used by tools to pass JVM options
+            arg = stdargs[i].arg;
+            if (arg[0] == '-' && arg[1] == 'J') {
+                continue;
+            }
+        }
+        appArgIdx[j++] = i;
+    }
+    // sanity check, ensure same number of arguments for application
+    if (j != argc) {
+        JLI_TraceLauncher("Warning: app args count doesn't match, %d %d\n", j, argc);
+        JLI_TraceLauncher("passing arguments as-is.\n");
+        JLI_MemFree(appArgIdx);
         return NewPlatformStringArray(env, strv, argc);
     }
 
     // make a copy of the args which will be expanded in java if required.
     nargv = (char **)JLI_MemAlloc(argc * sizeof(char*));
-    for (i = 0, j = idx; i < argc; i++, j++) {
-        jboolean arg_expand = (JLI_StrCmp(filteredargs[j].arg, strv[i]) == 0)
-                                ? filteredargs[j].has_wildcard
+    for (i = 0; i < argc; i++) {
+        j = appArgIdx[i];
+        jboolean arg_expand = (JLI_StrCmp(stdargs[j].arg, strv[i]) == 0)
+                                ? stdargs[j].has_wildcard
                                 : JNI_FALSE;
         if (needs_expansion == JNI_FALSE)
             needs_expansion = arg_expand;
@@ -1039,6 +1031,7 @@ CreateApplicationArgs(JNIEnv *env, char **strv, int argc)
             JLI_MemFree(nargv[i]);
         }
         JLI_MemFree(nargv);
+        JLI_MemFree(appArgIdx);
         return NewPlatformStringArray(env, strv, argc);
     }
     NULL_CHECK0(mid = (*env)->GetStaticMethodID(env, cls,
@@ -1053,6 +1046,6 @@ CreateApplicationArgs(JNIEnv *env, char **strv, int argc)
         JLI_MemFree(nargv[i]);
     }
     JLI_MemFree(nargv);
-    JLI_MemFree(filteredargs);
+    JLI_MemFree(appArgIdx);
     return outArray;
 }

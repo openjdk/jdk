@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8159943
+ * @bug 8159943 8154797
  * @modules java.base/sun.util.locale.provider
  *          java.base/sun.util.resources
  *          jdk.localedata
@@ -65,6 +65,7 @@ public class JavaTimeSupplementaryTest {
         "field.",
         "islamic.",
         "roc.",
+        "timezone."
     };
 
     // All available locales for the COMPAT FormatData resource bundles

@@ -309,6 +309,8 @@ public class JavaTimeSupplementary_bg extends OpenListResourceBundle {
                 sharedAmPmMarkers },
             { "roc.narrow.AmPmMarkers",
                 sharedAmPmMarkers },
+            { "timezone.gmtFormat",
+                "\u0413\u0440\u0438\u043d\u0443\u0438\u0447{0}" },
         };
     }
 }
