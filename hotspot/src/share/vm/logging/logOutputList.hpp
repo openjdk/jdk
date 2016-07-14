@@ -60,6 +60,11 @@ class LogOutputList VALUE_OBJ_CLASS_SPEC {
   void add_output(LogOutput* output, LogLevelType level);
   void update_output_level(LogOutputNode* node, LogLevelType level);
 
+  // Bookkeeping functions to keep track of number of active readers/iterators for the list.
+  jint increase_readers();
+  jint decrease_readers();
+  void wait_until_no_readers() const;
+
  public:
   LogOutputList() : _active_readers(0) {
     for (size_t i = 0; i < LogLevel::Count; i++) {
@@ -82,11 +87,6 @@ class LogOutputList VALUE_OBJ_CLASS_SPEC {
 
   // Set (add/update/remove) the output to the specified level.
   void set_output_level(LogOutput* output, LogLevelType level);
-
-  // Bookkeeping functions to keep track of number of active readers/iterators for the list.
-  jint increase_readers();
-  jint decrease_readers();
-  void wait_until_no_readers() const;
 
   class Iterator VALUE_OBJ_CLASS_SPEC {
     friend class LogOutputList;
