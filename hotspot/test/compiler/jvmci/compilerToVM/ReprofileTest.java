@@ -25,7 +25,7 @@
 /**
  * @test
  * @bug 8136421
- * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9" | vm.simpleArch == "aarch64")
+ * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9" | vm.simpleArch == "aarch64") & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 3)
  * @library /testlibrary /test/lib /
  * @library ../common/patches
  * @modules java.base/jdk.internal.misc
@@ -35,7 +35,6 @@
  *          jdk.vm.ci/jdk.vm.ci.code
  *          jdk.vm.ci/jdk.vm.ci.meta
  *
- * @ignore 8157861
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build sun.hotspot.WhiteBox
  * @build compiler.jvmci.compilerToVM.ReprofileTest
@@ -44,7 +43,7 @@
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *                   -Xmixed
+ *                   -Xmixed -Xbatch
  *                   compiler.jvmci.compilerToVM.ReprofileTest
  */
 
