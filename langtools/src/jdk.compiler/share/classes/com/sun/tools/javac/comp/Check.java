@@ -1152,10 +1152,6 @@ public class Check {
         case TYP:
             if (sym.isLocal()) {
                 mask = LocalClassFlags;
-                if (sym.name.isEmpty()) { // Anonymous class
-                    // JLS: Anonymous classes are final.
-                    implicit |= FINAL;
-                }
                 if ((sym.owner.flags_field & STATIC) == 0 &&
                     (flags & ENUM) != 0)
                     log.error(pos, "enums.must.be.static");
