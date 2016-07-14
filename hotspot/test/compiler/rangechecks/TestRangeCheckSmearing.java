@@ -28,7 +28,6 @@
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @ignore 8157984
  * @build compiler.rangechecks.TestRangeCheckSmearing
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                jdk.test.lib.Platform
@@ -41,6 +40,7 @@
 package compiler.rangechecks;
 
 import compiler.whitebox.CompilerWhiteBoxTest;
+import compiler.testlibrary.CompilerUtils;
 import jdk.test.lib.Platform;
 import sun.hotspot.WhiteBox;
 
@@ -402,7 +402,7 @@ public class TestRangeCheckSmearing {
             System.out.println("ArrayIndexOutOfBoundsException was not thrown in "+name);
         }
 
-        if (Platform.isServer()) {
+        if (CompilerUtils.getMaxCompilationLevel() == CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
             if (exceptionRequired == WHITE_BOX.isMethodCompiled(m)) {
                 System.out.println((exceptionRequired?"Didn't deoptimized":"deoptimized") + " in "+name);
                 test_success = false;
