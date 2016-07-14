@@ -27,7 +27,7 @@
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @ignore 8157984
+ * @requires vm.opt.TieredStopAtLevel==null
  * @build compiler.tiered.NonTieredLevelsTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
