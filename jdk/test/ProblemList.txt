@@ -138,6 +138,8 @@ java/lang/instrument/RetransformBigClass.sh                     8061177 generic-
 
 java/lang/instrument/BootClassPath/BootClassPathTest.sh         8072130 macosx-all
 
+java/lang/instrument/DaemonThread/TestDaemonThread.java         8161225 generic-all
+
 java/lang/management/MemoryMXBean/LowMemoryTest.java            8130339 generic-all
 
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
