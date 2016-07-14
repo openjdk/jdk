@@ -25,12 +25,15 @@
  * @test
  * @bug 8022585
  * @summary VM crashes when ran with -XX:+PrintInlining
- * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining PrintInlining
+ * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining
+ *                   compiler.print.PrintInlining
  *
  */
 
+package compiler.print;
+
 public class PrintInlining {
-  public static void main(String[] args) {
-    System.out.println("Passed");
-  }
+    public static void main(String[] args) {
+        System.out.println("Passed");
+    }
 }

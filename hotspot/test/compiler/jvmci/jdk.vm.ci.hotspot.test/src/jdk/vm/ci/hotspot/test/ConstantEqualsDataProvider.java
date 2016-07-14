@@ -23,15 +23,16 @@
 
 package jdk.vm.ci.hotspot.test;
 
-import static jdk.vm.ci.hotspot.test.TestHelper.CONSTANT_REFLECTION_PROVIDER;
-import static jdk.vm.ci.hotspot.test.TestHelper.DUMMY_CLASS_INSTANCE;
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.JavaConstant;
+import org.testng.annotations.DataProvider;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Objects;
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.JavaConstant;
-import org.testng.annotations.DataProvider;
+
+import static jdk.vm.ci.hotspot.test.TestHelper.CONSTANT_REFLECTION_PROVIDER;
+import static jdk.vm.ci.hotspot.test.TestHelper.DUMMY_CLASS_INSTANCE;
 
 public class ConstantEqualsDataProvider {
     @DataProvider(name = "constantEqualsDataProvider")

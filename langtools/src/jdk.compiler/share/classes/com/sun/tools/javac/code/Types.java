@@ -1126,10 +1126,13 @@ public class Types {
 
             @Override
             public Boolean visitWildcardType(WildcardType t, Type s) {
-                if (s.isPartial())
-                    return visit(s, t);
-                else
+                if (!s.hasTag(WILDCARD)) {
                     return false;
+                } else {
+                    WildcardType t2 = (WildcardType)s;
+                    return (t.kind == t2.kind || (t.isExtendsBound() && s.isExtendsBound())) &&
+                            isSameType(t.type, t2.type, true);
+                }
             }
 
             @Override

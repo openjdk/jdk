@@ -39,8 +39,9 @@ public class ModularJarArchive extends JarArchive {
     public ModularJarArchive(String mn, Path jmod) {
         super(mn, jmod);
         String filename = Objects.requireNonNull(jmod.getFileName()).toString();
-        if (!filename.endsWith(JAR_EXT))
+        if (!filename.endsWith(JAR_EXT)) {
             throw new UnsupportedOperationException("Unsupported format: " + filename);
+        }
     }
 
     @Override

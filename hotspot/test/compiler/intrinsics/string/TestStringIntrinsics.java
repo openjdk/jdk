@@ -21,16 +21,23 @@
  * questions.
  */
 
-import java.lang.annotation.*;
-import java.lang.reflect.*;
-import java.util.Arrays;
-
 /*
  * @test
  * @bug 8054307
  * @summary Tests correctness of string related intrinsics and C2 optimizations.
- * @run main/timeout=240 TestStringIntrinsics
+ *
+ * @run main/timeout=240 compiler.intrinsics.string.TestStringIntrinsics
  */
+
+package compiler.intrinsics.string;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+
 public class TestStringIntrinsics {
 
     public enum Operation {

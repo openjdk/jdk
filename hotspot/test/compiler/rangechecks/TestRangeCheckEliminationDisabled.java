@@ -28,8 +28,11 @@
  * @summary Tests PostLoopMultiversioning with RangeCheckElimination disabled.
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+PostLoopMultiversioning -XX:-RangeCheckElimination
- *                   TestRangeCheckEliminationDisabled
+ *                   compiler.rangechecks.TestRangeCheckEliminationDisabled
  */
+
+package compiler.rangechecks;
+
 public class TestRangeCheckEliminationDisabled {
 
     public static void main(String[] args) {

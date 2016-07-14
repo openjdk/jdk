@@ -24,22 +24,26 @@
 /*
  * @test IsMethodCompilableTest
  * @bug 8007270 8006683 8007288 8022832
+ * @summary testing of WB::isMethodCompilable()
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.lib.*
  *        sun.hotspot.WhiteBox
- * @build IsMethodCompilableTest
+ * @build compiler.whitebox.IsMethodCompilableTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  *                                jdk.test.lib.Platform
- * @run main/othervm/timeout=2400 -Xbootclasspath/a:. -Xmixed -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:PerMethodRecompilationCutoff=3 -XX:-UseCounterDecay -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::* IsMethodCompilableTest
- * @summary testing of WB::isMethodCompilable()
- * @author igor.ignatyev@oracle.com
+ * @run main/othervm/timeout=2400 -XX:-TieredCompilation -Xmixed
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:PerMethodRecompilationCutoff=3 -XX:-UseCounterDecay
+ *      -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
+ *      compiler.whitebox.IsMethodCompilableTest
  */
 
+package compiler.whitebox;
+
 import jdk.test.lib.Platform;
-import compiler.whitebox.CompilerWhiteBoxTest;
 
 public class IsMethodCompilableTest extends CompilerWhiteBoxTest {
     /**

@@ -25,9 +25,14 @@
  * @test
  * @bug 8160425
  * @summary Test vectorization with a signalling NaN.
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-OptimizeFill TestNaNVector
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-OptimizeFill -XX:MaxVectorSize=4 TestNaNVector
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-OptimizeFill
+ *      compiler.vectorization.TestNaNVector
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-OptimizeFill
+ *      -XX:MaxVectorSize=4 compiler.vectorization.TestNaNVector
  */
+
+package compiler.vectorization;
+
 public class TestNaNVector {
     private char[] array;
     private static final int LEN = 1024;

@@ -25,8 +25,9 @@ package compiler.testlibrary;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
-import java.util.stream.IntStream;
 import sun.hotspot.WhiteBox;
+
+import java.util.stream.IntStream;
 
 public class CompilerUtils {
 

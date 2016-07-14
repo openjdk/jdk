@@ -34,8 +34,6 @@ import java.util.Objects;
 import java.util.ServiceLoader;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.PostProcessorPlugin;
-import jdk.tools.jlink.plugin.TransformerPlugin;
 
 /**
  *
@@ -59,17 +57,7 @@ public final class PluginRepository {
      */
     public static Plugin getPlugin(String name,
             Layer pluginsLayer) {
-        Plugin tp = getPlugin(TransformerPlugin.class, name, pluginsLayer);
-        Plugin ppp = getPlugin(PostProcessorPlugin.class, name, pluginsLayer);
-
-        // We should not have a transformer plugin and a post processor plugin
-        // of the same name. That kind of duplicate is detected here.
-        if (tp != null && ppp != null) {
-            throw new PluginException("Multiple plugin "
-                        + "for the name " + name);
-        }
-
-        return tp != null? tp : ppp;
+        return getPlugin(Plugin.class, name, pluginsLayer);
     }
 
     /**
@@ -112,10 +100,7 @@ public final class PluginRepository {
     }
 
     public static List<Plugin> getPlugins(Layer pluginsLayer) {
-        List<Plugin> plugins = new ArrayList<>();
-        plugins.addAll(getPlugins(TransformerPlugin.class, pluginsLayer));
-        plugins.addAll(getPlugins(PostProcessorPlugin.class, pluginsLayer));
-        return plugins;
+        return getPlugins(Plugin.class, pluginsLayer);
     }
 
     private static <T extends Plugin> T getPlugin(Class<T> clazz, String name,
@@ -138,10 +123,10 @@ public final class PluginRepository {
     }
 
     /**
-     * The post processors accessible in the current context.
+     * The plugins accessible in the current context.
      *
      * @param pluginsLayer
-     * @return The list of post processors.
+     * @return The list of plugins.
      */
     private static <T extends Plugin> List<T> getPlugins(Class<T> clazz, Layer pluginsLayer) {
         Objects.requireNonNull(pluginsLayer);

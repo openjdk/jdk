@@ -44,8 +44,8 @@ package compiler.jvmci.compilerToVM;
 
 import compiler.jvmci.common.testcases.SimpleClass;
 import compiler.whitebox.CompilerWhiteBoxTest;
-import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.test.lib.Asserts;
+import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import sun.hotspot.WhiteBox;
 
 import java.lang.reflect.Executable;

@@ -871,12 +871,17 @@ void java_lang_Class::fixup_module_field(KlassHandle k, Handle module) {
 
 int  java_lang_Class::oop_size(oop java_class) {
   assert(_oop_size_offset != 0, "must be set");
-  return java_class->int_field(_oop_size_offset);
+  int size = java_class->int_field(_oop_size_offset);
+  assert(size > 0, "Oop size must be greater than zero, not %d", size);
+  return size;
 }
+
 void java_lang_Class::set_oop_size(oop java_class, int size) {
   assert(_oop_size_offset != 0, "must be set");
+  assert(size > 0, "Oop size must be greater than zero, not %d", size);
   java_class->int_field_put(_oop_size_offset, size);
 }
+
 int  java_lang_Class::static_oop_field_count(oop java_class) {
   assert(_static_oop_field_count_offset != 0, "must be set");
   return java_class->int_field(_static_oop_field_count_offset);

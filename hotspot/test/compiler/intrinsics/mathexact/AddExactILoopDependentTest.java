@@ -25,13 +25,14 @@
  * @test
  * @bug 8024924
  * @summary Test non constant addExact
- * @library /testlibrary
+ * @library /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @compile AddExactILoopDependentTest.java Verify.java
- * @run main AddExactILoopDependentTest
  *
+ * @run main compiler.intrinsics.mathexact.AddExactILoopDependentTest
  */
+
+package compiler.intrinsics.mathexact;
 
 public class AddExactILoopDependentTest {
   public static void main(String[] args) {

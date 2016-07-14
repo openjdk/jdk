@@ -21,21 +21,23 @@
  * questions.
  */
 
-import compiler.whitebox.CompilerWhiteBoxTest;
-
 /*
  * @test MakeMethodNotCompilableTest
  * @bug 8012322 8006683 8007288 8022832
+ * @summary testing of WB::makeMethodNotCompilable()
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
- * @modules java.management
- * @build MakeMethodNotCompilableTest
+ *          java.management
+ * @build compiler.whitebox.MakeMethodNotCompilableTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmixed -XX:-UseCounterDecay MakeMethodNotCompilableTest
- * @summary testing of WB::makeMethodNotCompilable()
- * @author igor.ignatyev@oracle.com
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI -Xmixed -XX:-UseCounterDecay
+ *                   compiler.whitebox.MakeMethodNotCompilableTest
  */
+
+package compiler.whitebox;
+
 public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
     private int bci;
     public static void main(String[] args) throws Exception {

@@ -27,18 +27,24 @@
  * @summary testing that -XX:-UseOnStackReplacement works with both -XX:(+/-)TieredCompilation
  * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib /
+ *
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+PrintCompilation
- *                   -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:-UseOnStackReplacement DisableOSRTest
+ *                   -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:-UseOnStackReplacement
+ *                   compiler.interpreter.DisableOSRTest
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+PrintCompilation
- *                   -XX:-BackgroundCompilation -XX:+TieredCompilation -XX:-UseOnStackReplacement DisableOSRTest
+ *                   -XX:-BackgroundCompilation -XX:+TieredCompilation -XX:-UseOnStackReplacement
+ *                   compiler.interpreter.DisableOSRTest
  */
+
+package compiler.interpreter;
+
+import sun.hotspot.WhiteBox;
 
 import java.lang.reflect.Method;
 import java.util.Random;
-import sun.hotspot.WhiteBox;
 
 public class DisableOSRTest {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();

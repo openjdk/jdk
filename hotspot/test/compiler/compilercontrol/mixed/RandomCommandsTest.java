@@ -26,10 +26,14 @@
  * @bug 8137167
  * @summary Randomly generates commands with random types
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib ../share /
+ * @library /testlibrary /test/lib /
+ *
  * @build compiler.compilercontrol.mixed.RandomCommandsTest
- *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
- *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
+ *        compiler.compilercontrol.share.pool.sub.*
+ *        compiler.compilercontrol.share.pool.subpack.*
+ *        sun.hotspot.WhiteBox
+ *        compiler.testlibrary.CompilerUtils
+ *        compiler.compilercontrol.share.actions.*
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run driver/timeout=600 compiler.compilercontrol.mixed.RandomCommandsTest

@@ -49,7 +49,6 @@ import jdk.tools.jlink.Jlink;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
 
 public class PrevisitorTest {
 
@@ -107,7 +106,7 @@ public class PrevisitorTest {
         }
     }
 
-    private static class CustomPlugin implements TransformerPlugin, ResourcePrevisitor {
+    private static class CustomPlugin implements Plugin, ResourcePrevisitor {
 
         private static String NAME = "plugin";
 
