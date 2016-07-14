@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.nashorn.api.tree;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
@@ -35,6 +36,7 @@ import jdk.nashorn.internal.ir.BreakNode;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
+import jdk.nashorn.internal.ir.ClassNode;
 import jdk.nashorn.internal.ir.ContinueNode;
 import jdk.nashorn.internal.ir.DebuggerNode;
 import jdk.nashorn.internal.ir.EmptyNode;
@@ -56,6 +58,7 @@ import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.SwitchNode;
+import jdk.nashorn.internal.ir.TemplateLiteral;
 import jdk.nashorn.internal.ir.TernaryNode;
 import jdk.nashorn.internal.ir.ThrowNode;
 import jdk.nashorn.internal.ir.TryNode;
@@ -87,11 +90,14 @@ final class IRTranslator extends SimpleNodeVisitor {
             return null;
         }
 
-        assert (node.getKind() == FunctionNode.Kind.SCRIPT) : "script function expected";
+        assert node.getKind() == FunctionNode.Kind.SCRIPT ||
+                node.getKind() == FunctionNode.Kind.MODULE :
+                "script or module function expected";
 
         final Block body = node.getBody();
         return new CompilationUnitTreeImpl(node,
-                translateStats(body != null? getOrderedStatements(body.getStatements()) : null));
+                translateStats(body != null? getOrderedStatements(body.getStatements()) : null),
+                translateModule(node));
     }
 
     @Override
@@ -184,8 +190,15 @@ final class IRTranslator extends SimpleNodeVisitor {
 
     @Override
     public boolean enterExpressionStatement(final ExpressionStatement expressionStatement) {
-        curStat = new ExpressionStatementTreeImpl(expressionStatement,
+        if (expressionStatement.destructuringDeclarationType() != null) {
+            ExpressionTree expr = translateExpr(expressionStatement.getExpression());
+            assert expr instanceof AssignmentTree : "destructuring decl. statement does not have assignment";
+            AssignmentTree assign = (AssignmentTree)expr;
+            curStat = new DestructuringDeclTreeImpl(expressionStatement, assign.getVariable(), assign.getExpression());
+        } else {
+            curStat = new ExpressionStatementTreeImpl(expressionStatement,
                 translateExpr(expressionStatement.getExpression()));
+        }
         return false;
     }
 
@@ -209,6 +222,11 @@ final class IRTranslator extends SimpleNodeVisitor {
                     translateExpr(forNode.getInit()),
                     translateExpr(forNode.getModify()),
                     translateBlock(forNode.getBody()));
+        } else if (forNode.isForOf()) {
+            curStat = new ForOfLoopTreeImpl(forNode,
+                    translateExpr(forNode.getInit()),
+                    translateExpr(forNode.getModify()),
+                    translateBlock(forNode.getBody()));
         } else {
             curStat = new ForLoopTreeImpl(forNode,
                     translateExpr(forNode.getInit()),
@@ -224,8 +242,7 @@ final class IRTranslator extends SimpleNodeVisitor {
     public boolean enterFunctionNode(final FunctionNode functionNode) {
         assert !functionNode.isDeclared() || functionNode.isAnonymous() : "should not reach here for function declaration";
 
-        final List<? extends ExpressionTree> paramTrees
-                    = translateExprs(functionNode.getParameters());
+        final List<? extends ExpressionTree> paramTrees = translateParameters(functionNode);
         final BlockTree blockTree = (BlockTree) translateBlock(functionNode.getBody(), true);
         curExpr = new FunctionExpressionTreeImpl(functionNode, paramTrees, blockTree);
 
@@ -291,14 +308,7 @@ final class IRTranslator extends SimpleNodeVisitor {
     @Override
     public boolean enterObjectNode(final ObjectNode objectNode) {
         final List<PropertyNode> propNodes = objectNode.getElements();
-        final List<PropertyTreeImpl> propTrees = new ArrayList<>(propNodes.size());
-        for (final PropertyNode propNode : propNodes) {
-            propTrees.add(new PropertyTreeImpl(propNode,
-                    translateExpr(propNode.getKey()),
-                    translateExpr(propNode.getValue()),
-                    (FunctionExpressionTree) translateExpr(propNode.getGetter()),
-                    (FunctionExpressionTree) translateExpr(propNode.getSetter())));
-        }
+        final List<? extends PropertyTree> propTrees = translateProperties(propNodes);
         curExpr = new ObjectLiteralTreeImpl(objectNode, propTrees);
         return false;
     }
@@ -347,6 +357,12 @@ final class IRTranslator extends SimpleNodeVisitor {
     }
 
     @Override
+    public boolean enterTemplateLiteral(final TemplateLiteral templateLiteral) {
+        curExpr = new TemplateLiteralTreeImpl(templateLiteral, translateExprs(templateLiteral.getExpressions()));
+        return false;
+    }
+
+    @Override
     public boolean enterTernaryNode(final TernaryNode ternaryNode) {
         curExpr = new ConditionalExpressionTreeImpl(ternaryNode,
                 translateExpr(ternaryNode.getTest()),
@@ -386,6 +402,14 @@ final class IRTranslator extends SimpleNodeVisitor {
         if (unaryNode.isTokenType(TokenType.NEW)) {
             curExpr = new NewTreeImpl(unaryNode,
                     translateExpr(unaryNode.getExpression()));
+        } else if (unaryNode.isTokenType(TokenType.YIELD) ||
+                unaryNode.isTokenType(TokenType.YIELD_STAR)) {
+            curExpr = new YieldTreeImpl(unaryNode,
+                    translateExpr(unaryNode.getExpression()));
+        } else if (unaryNode.isTokenType(TokenType.SPREAD_ARGUMENT) ||
+                unaryNode.isTokenType(TokenType.SPREAD_ARRAY)) {
+            curExpr = new SpreadTreeImpl(unaryNode,
+                    translateExpr(unaryNode.getExpression()));
         } else {
             curExpr = new UnaryTreeImpl(unaryNode,
                     translateExpr(unaryNode.getExpression()));
@@ -399,12 +423,19 @@ final class IRTranslator extends SimpleNodeVisitor {
         if (initNode instanceof FunctionNode && ((FunctionNode)initNode).isDeclared()) {
             final FunctionNode funcNode = (FunctionNode) initNode;
 
-            final List<? extends ExpressionTree> paramTrees
-                    = translateExprs(funcNode.getParameters());
+            final List<? extends ExpressionTree> paramTrees = translateParameters(funcNode);
             final BlockTree blockTree = (BlockTree) translateBlock(funcNode.getBody(), true);
             curStat = new FunctionDeclarationTreeImpl(varNode, paramTrees, blockTree);
+        } else if (initNode instanceof ClassNode && ((ClassNode)initNode).isStatement()) {
+            final ClassNode classNode = (ClassNode) initNode;
+
+            curStat = new ClassDeclarationTreeImpl(varNode,
+                    translateIdent(classNode.getIdent()),
+                    translateExpr(classNode.getClassHeritage()),
+                    translateProperty(classNode.getConstructor()),
+                    translateProperties(classNode.getClassElements()));
         } else {
-            curStat = new VariableTreeImpl(varNode, translateExpr(initNode));
+            curStat = new VariableTreeImpl(varNode, translateIdent(varNode.getName()), translateExpr(initNode));
         }
 
         return false;
@@ -429,6 +460,25 @@ final class IRTranslator extends SimpleNodeVisitor {
         curStat = new WithTreeImpl(withNode,
                 translateExpr(withNode.getExpression()),
                 translateBlock(withNode.getBody()));
+
+        return false;
+    }
+
+    /**
+     * Callback for entering a ClassNode
+     *
+     * @param  classNode  the node
+     * @return true if traversal should continue and node children be traversed, false otherwise
+     */
+    @Override
+    public boolean enterClassNode(final ClassNode classNode) {
+        assert !classNode.isStatement(): "should not reach here for class declaration";
+
+        curExpr = new ClassExpressionTreeImpl(classNode,
+            translateIdent(classNode.getIdent()),
+            translateExpr(classNode.getClassHeritage()),
+            translateProperty(classNode.getConstructor()),
+            translateProperties(classNode.getClassElements()));
 
         return false;
     }
@@ -493,6 +543,24 @@ final class IRTranslator extends SimpleNodeVisitor {
         return statTrees;
     }
 
+    private List<? extends ExpressionTree> translateParameters(final FunctionNode func) {
+        Map<IdentNode, Expression> paramExprs = func.getParameterExpressions();
+        if (paramExprs != null) {
+            List<IdentNode> params = func.getParameters();
+            final List<ExpressionTreeImpl> exprTrees = new ArrayList<>(params.size());
+            for (final IdentNode ident : params) {
+                Expression expr = paramExprs.containsKey(ident)? paramExprs.get(ident) : ident;
+                curExpr = null;
+                expr.accept(this);
+                assert curExpr != null;
+                exprTrees.add(curExpr);
+            }
+            return exprTrees;
+        } else {
+            return translateExprs(func.getParameters());
+        }
+    }
+
     private List<? extends ExpressionTree> translateExprs(final List<? extends Expression> exprs) {
         if (exprs == null) {
             return null;
@@ -531,5 +599,26 @@ final class IRTranslator extends SimpleNodeVisitor {
 
     private static IdentifierTree translateIdent(final IdentNode ident) {
         return new IdentifierTreeImpl(ident);
+    }
+
+    private List<? extends PropertyTree> translateProperties(final List<PropertyNode> propNodes) {
+        final List<PropertyTree> propTrees = new ArrayList<>(propNodes.size());
+        for (final PropertyNode propNode : propNodes) {
+            propTrees.add(translateProperty(propNode));
+        }
+        return propTrees;
+    }
+
+    private PropertyTree translateProperty(final PropertyNode propNode) {
+        return new PropertyTreeImpl(propNode,
+                    translateExpr(propNode.getKey()),
+                    translateExpr(propNode.getValue()),
+                    (FunctionExpressionTree) translateExpr(propNode.getGetter()),
+                    (FunctionExpressionTree) translateExpr(propNode.getSetter()));
+    }
+
+    private ModuleTree translateModule(final FunctionNode func) {
+        return func.getKind() == FunctionNode.Kind.MODULE?
+            ModuleTreeImpl.create(func) : null;
     }
 }
