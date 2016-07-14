@@ -25,9 +25,11 @@
  * @test
  * @bug 8141624
  * @summary Limit calculation of pre loop during super word optimization is wrong
- * @run main/othervm TestBestAlign
+ * @run main/othervm compiler.loopopts.superword.TestBestAlign
  * @author gunter.haug@sap.com
  */
+
+package compiler.loopopts.superword;
 
 public class TestBestAlign {
 

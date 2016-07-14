@@ -27,12 +27,19 @@
  * @bug 8150465
  * @summary Unsafe methods to produce uninitialized arrays
  * @modules java.base/jdk.internal.misc
- * @run main/othervm -ea -Diters=200   -Xint                   AllocateUninitializedArray
- * @run main/othervm -ea -Diters=30000 -XX:TieredStopAtLevel=1 AllocateUninitializedArray
- * @run main/othervm -ea -Diters=30000 -XX:TieredStopAtLevel=4 AllocateUninitializedArray
+ *
+ * @run main/othervm -ea -Diters=200   -Xint
+ *      compiler.intrinsics.unsafe.AllocateUninitializedArray
+ * @run main/othervm -ea -Diters=30000 -XX:TieredStopAtLevel=1
+ *      compiler.intrinsics.unsafe.AllocateUninitializedArray
+ * @run main/othervm -ea -Diters=30000 -XX:TieredStopAtLevel=4
+ *      compiler.intrinsics.unsafe.AllocateUninitializedArray
  */
-import java.lang.reflect.Field;
+
+package compiler.intrinsics.unsafe;
+
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.util.concurrent.Callable;
 
 public class AllocateUninitializedArray {

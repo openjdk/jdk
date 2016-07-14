@@ -26,10 +26,18 @@
  * @bug 8074551
  * @modules java.base/jdk.internal.misc
  * @library /testlibrary
- * @run main PollutedTrapCounts
+ *
+ * @run driver compiler.jsr292.PollutedTrapCounts
  */
-import java.lang.invoke.*;
-import jdk.test.lib.*;
+
+package compiler.jsr292;
+
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 
 public class PollutedTrapCounts {
     public static void main(String[] args) throws Exception {
@@ -38,7 +46,7 @@ public class PollutedTrapCounts {
                 "-XX:-TieredCompilation", "-Xbatch",
                 "-XX:PerBytecodeRecompilationCutoff=10", "-XX:PerMethodRecompilationCutoff=10",
                 "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
-                    "PollutedTrapCounts$Test");
+                    Test.class.getName());
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 

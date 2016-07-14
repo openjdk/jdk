@@ -25,10 +25,11 @@
  * @test
  * @bug 8028198
  * @summary Verify that split through phi does the right thing
- * @compile SplitThruPhiTest.java
- * @run main SplitThruPhiTest
  *
+ * @run main compiler.intrinsics.mathexact.SplitThruPhiTest
  */
+
+package compiler.intrinsics.mathexact;
 
 public class SplitThruPhiTest {
   public static volatile int value = 19;

@@ -23,12 +23,12 @@
 
 package compiler.compilercontrol.share.actions;
 
+import compiler.compilercontrol.share.pool.PoolHelper;
 import compiler.compilercontrol.share.scenario.State;
 import compiler.testlibrary.CompilerUtils;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Pair;
 import jdk.test.lib.Utils;
-import pool.PoolHelper;
 import sun.hotspot.WhiteBox;
 
 import java.lang.reflect.Executable;

@@ -26,13 +26,14 @@ package compiler.jvmci.compilerToVM;
 
 import compiler.jvmci.common.CTVMUtilities;
 import compiler.testlibrary.CompilerUtils;
+import jdk.test.lib.Pair;
 import jdk.test.lib.Utils;
 import jdk.vm.ci.code.InstalledCode;
 import sun.hotspot.WhiteBox;
 import sun.hotspot.code.NMethod;
 
-import java.lang.reflect.Executable;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -42,7 +43,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import jdk.test.lib.Pair;
 
 /**
  * A test case for tests which require compiled code.

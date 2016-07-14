@@ -24,11 +24,16 @@
 /*
  * @test
  * @bug 8159016
- * @requires vm.gc == "Parallel" | vm.gc == "null"
  * @summary Tests correct dominator information after over-unrolling a loop.
+ * @requires vm.gc == "Parallel" | vm.gc == "null"
+ *
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:-TieredCompilation
- *                   -XX:-UseG1GC -XX:+UseParallelGC TestOverunrolling
+ *                   -XX:-UseG1GC -XX:+UseParallelGC
+ *                   compiler.loopopts.TestOverunrolling
  */
+
+package compiler.loopopts;
+
 public class TestOverunrolling {
 
     public static Object test(int arg) {

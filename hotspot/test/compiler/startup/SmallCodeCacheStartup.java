@@ -28,11 +28,18 @@
  *          to initialize all compiler threads. The option -Xcomp gives the VM more time to
  *          trigger the old bug.
  * @library /testlibrary
- * @ignore 8134286
  * @modules java.base/jdk.internal.misc
  *          java.management
+ *
+ * @ignore 8134286
+ * @run driver compiler.startup.SmallCodeCacheStartup
  */
-import jdk.test.lib.*;
+
+package compiler.startup;
+
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
+
 import static jdk.test.lib.Asserts.assertTrue;
 
 public class SmallCodeCacheStartup {

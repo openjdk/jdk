@@ -137,8 +137,8 @@ final class StringLatin1 {
                 char c1 = (char) CharacterDataLatin1.instance.toUpperCase(getChar(value, k));
                 char c2 = (char) CharacterDataLatin1.instance.toUpperCase(getChar(other, k));
                 if (c1 != c2) {
-                    c1 = (char) CharacterDataLatin1.instance.toLowerCase(c1);
-                    c2 = (char) CharacterDataLatin1.instance.toLowerCase(c2);
+                    c1 = Character.toLowerCase(c1);
+                    c2 = Character.toLowerCase(c2);
                     if (c1 != c2) {
                         return c1 - c2;
                     }

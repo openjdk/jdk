@@ -563,13 +563,18 @@ public abstract class Snippet {
     private Status status;
     private List<String> unresolved;
     private DiagList diagnostics;
+    private final DiagList syntheticDiags;
 
-    Snippet(Key key, String userSource, Wrap guts, String unitName, SubKind subkind) {
+    Snippet(Key key, String userSource, Wrap guts, String unitName,
+            SubKind subkind, DiagList syntheticDiags) {
         this.key = key;
         this.source = userSource;
         this.guts = guts;
         this.unitName = unitName;
         this.subkind = subkind;
+        this.syntheticDiags = syntheticDiags==null
+                ? new DiagList()
+                : syntheticDiags;
         this.status = Status.NONEXISTENT;
         setSequenceNumber(0);
     }
@@ -642,6 +647,10 @@ public abstract class Snippet {
 
     DiagList diagnostics() {
         return diagnostics;
+    }
+
+    DiagList syntheticDiags() {
+        return syntheticDiags;
     }
 
     /**

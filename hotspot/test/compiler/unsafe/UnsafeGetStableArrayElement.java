@@ -39,15 +39,18 @@
  *                   -XX:CompileCommand=dontinline,*Test::test*
  *                   compiler.unsafe.UnsafeGetStableArrayElement
  */
+
 package compiler.unsafe;
 
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
-import java.util.concurrent.Callable;
 import jdk.test.lib.Platform;
 
+import java.util.concurrent.Callable;
+
 import static jdk.internal.misc.Unsafe.*;
-import static jdk.test.lib.Asserts.*;
+import static jdk.test.lib.Asserts.assertEQ;
+import static jdk.test.lib.Asserts.assertNE;
 
 public class UnsafeGetStableArrayElement {
     @Stable static final boolean[] STABLE_BOOLEAN_ARRAY = new boolean[16];

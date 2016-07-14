@@ -110,7 +110,7 @@ public class IndexBuilder {
         comparator = classesOnly
                 ? utils.makeAllClassesComparator()
                 : utils.makeIndexUseComparator();
-        buildIndexMap(configuration.root);
+        buildIndexMap(configuration.docEnv);
     }
 
     /**

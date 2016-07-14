@@ -25,9 +25,12 @@
  * @test
  * @bug 8055910
  * @summary Arrays.copyOf doesn't perform subtype check
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestArraysCopyOfNoTypeCheck
  *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   compiler.arraycopy.TestArraysCopyOfNoTypeCheck
  */
+
+package compiler.arraycopy;
 
 import java.util.Arrays;
 

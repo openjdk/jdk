@@ -556,6 +556,8 @@ protected:
   GCTaskThread* install_worker(uint worker_id);
   // Add GC workers as needed.
   void add_workers(bool initializing);
+  // Base name (without worker id #) of threads.
+  const char* group_name();
 };
 
 //

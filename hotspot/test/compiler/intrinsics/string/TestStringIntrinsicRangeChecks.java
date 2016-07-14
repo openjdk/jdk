@@ -27,7 +27,7 @@
  * @test
  * @bug 8155608
  * @summary Verifies that string intrinsics throw array out of bounds exceptions.
- * @library /compiler/patches /testlibrary /test/lib /
+ * @library /compiler/patches /testlibrary /test/lib
  * @build java.base/java.lang.Helper
  * @build compiler.intrinsics.string.TestStringIntrinsicRangeChecks
  * @run main/othervm -Xbatch -XX:CompileThreshold=100 -XX:-TieredCompilation compiler.intrinsics.string.TestStringIntrinsicRangeChecks
@@ -35,7 +35,8 @@
 package compiler.intrinsics.string;
 
 import java.lang.Helper;
-import java.lang.reflect.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 public class TestStringIntrinsicRangeChecks {
     // Prepare test arrays

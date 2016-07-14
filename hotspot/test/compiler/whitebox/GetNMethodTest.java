@@ -22,24 +22,28 @@
  *
  */
 
-import sun.hotspot.code.BlobType;
-import sun.hotspot.code.NMethod;
-import jdk.test.lib.Asserts;
-import compiler.whitebox.CompilerWhiteBoxTest;
-
 /*
  * @test GetNMethodTest
  * @bug 8038240
+ * @summary testing of WB::getNMethod()
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
- * @modules java.management
- * @build GetNMethodTest
+ *          java.management
+ * @build compiler.whitebox.GetNMethodTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCounterDecay -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::* GetNMethodTest
- * @summary testing of WB::getNMethod()
- * @author igor.ignatyev@oracle.com
+ * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:-UseCounterDecay
+ *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
+ *                   compiler.whitebox.GetNMethodTest
  */
+
+package compiler.whitebox;
+
+import jdk.test.lib.Asserts;
+import sun.hotspot.code.BlobType;
+import sun.hotspot.code.NMethod;
+
 public class GetNMethodTest extends CompilerWhiteBoxTest {
     public static void main(String[] args) throws Exception {
         CompilerWhiteBoxTest.main(GetNMethodTest::new, args);

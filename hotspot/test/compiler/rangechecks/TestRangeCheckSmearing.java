@@ -28,21 +28,28 @@
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestRangeCheckSmearing
+ * @ignore 8157984
+ * @build compiler.rangechecks.TestRangeCheckSmearing
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                jdk.test.lib.Platform
  * @run main/othervm -ea -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestRangeCheckSmearing
+ *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   compiler.rangechecks.TestRangeCheckSmearing
  *
  */
 
-import java.lang.annotation.*;
-import java.lang.reflect.*;
-import java.util.*;
-import sun.hotspot.WhiteBox;
-import sun.hotspot.code.NMethod;
-import jdk.test.lib.Platform;
+package compiler.rangechecks;
+
 import compiler.whitebox.CompilerWhiteBoxTest;
+import jdk.test.lib.Platform;
+import sun.hotspot.WhiteBox;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.HashMap;
 
 public class TestRangeCheckSmearing {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
