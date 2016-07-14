@@ -22,10 +22,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package testpkgmdl2;
+package testpkg2mdl2;
 
-import testpkg2mdl2.TestInterfaceInModule2;
-
-public class TestClassInModule2 implements TestInterfaceInModule2 {
-    void testMethod() {}
+public interface TestInterfaceInModule2 {
+    void testMethod();
 }
