@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8031321
+ * @requires vm.flavor == "server"
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
