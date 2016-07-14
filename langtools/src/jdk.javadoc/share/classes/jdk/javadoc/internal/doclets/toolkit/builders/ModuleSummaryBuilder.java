@@ -167,23 +167,34 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
     }
 
     /**
-     * Build the module package summary.
+     * Build the modules summary.
      *
      * @param node the XML element that specifies which components to document
      * @param summaryContentTree the content tree to which the summaries will
      *                           be added
      */
-    public void buildPackageSummary(XMLNode node, Content summaryContentTree) {
-        Set<PackageElement> packages = configuration.modulePackages.get(mdle);
-        if (!packages.isEmpty()) {
-            String packageTableSummary
-                    = configuration.getText("doclet.Member_Table_Summary",
-                            configuration.getText("doclet.Package_Summary"),
-                            configuration.getText("doclet.packages"));
-            moduleWriter.addPackagesSummary(
-                    packages, configuration.getText("doclet.Package_Summary"),
-                    packageTableSummary, summaryContentTree);
+    public void buildModulesSummary(XMLNode node, Content summaryContentTree) {
+        moduleWriter.addModulesSummary(summaryContentTree);
+    }
+
+    /**
+     * Build the package summary.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param summaryContentTree the content tree to which the summaries will be added
+     */
+    public void buildPackagesSummary(XMLNode node, Content summaryContentTree) {
+        moduleWriter.addPackagesSummary(summaryContentTree);
         }
+
+    /**
+     * Build the services summary.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param summaryContentTree the content tree to which the summaries will be added
+     */
+    public void buildServicesSummary(XMLNode node, Content summaryContentTree) {
+        moduleWriter.addServicesSummary(summaryContentTree);
     }
 
     /**

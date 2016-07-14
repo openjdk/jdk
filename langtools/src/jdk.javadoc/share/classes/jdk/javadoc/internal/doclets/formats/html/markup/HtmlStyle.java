@@ -49,6 +49,7 @@ public enum HtmlStyle {
     colFirst,
     colLast,
     colOne,
+    colSecond,
     constantsSummary,
     constantValuesContainer,
     contentContainer,
@@ -65,6 +66,7 @@ public enum HtmlStyle {
     header,
     horizontal,
     footer,
+    implementationLabel,
     indexContainer,
     indexNav,
     inheritance,
@@ -87,7 +89,10 @@ public enum HtmlStyle {
     overviewSummary,
     packageHierarchyLabel,
     packageLabelInClass,
+    packagesSummary,
     paramLabel,
+    providesSummary,
+    requiresSummary,
     returnLabel,
     rightContainer,
     rightIframe,
@@ -111,5 +116,6 @@ public enum HtmlStyle {
     typeNameLabel,
     typeNameLink,
     typeSummary,
-    useSummary
+    useSummary,
+    usesSummary
 }

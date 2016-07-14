@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,10 +20,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package testpkgmdl2;
 
-import testpkg2mdl2.TestInterfaceInModule2;
+package q;
 
-public class TestClassInModule2 implements TestInterfaceInModule2 {
-    void testMethod() {}
+import apple.applescript.AppleScriptEngine;
+
+public class RemovedPackage {
+    AppleScriptEngine scriptEngine;
 }
