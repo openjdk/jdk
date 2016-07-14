@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -390,6 +390,7 @@ public class DefaultLoggerBridgeTest {
             throw new RuntimeException("identical loggers");
         }
 
+        final java.util.logging.Logger sink;
         final java.util.logging.Logger appSink;
         final java.util.logging.Logger sysSink;
         final MyHandler appHandler;
@@ -404,10 +405,13 @@ public class DefaultLoggerBridgeTest {
             if (appSink == sysSink) {
                 throw new RuntimeException("identical backend loggers");
             }
-            appSink.addHandler(appHandler = new MyHandler());
-            sysSink.addHandler(sysHandler = new MyHandler());
-            appSink.setUseParentHandlers(VERBOSE);
-            sysSink.setUseParentHandlers(VERBOSE);
+            sink = java.util.logging.Logger.getLogger("foo");
+            if (appSink != sink) {
+                throw new RuntimeException("expected same application logger");
+            }
+
+            sink.addHandler(appHandler = sysHandler = new MyHandler());
+            sink.setUseParentHandlers(VERBOSE);
         } finally {
             allowAll.get().set(old);
         }

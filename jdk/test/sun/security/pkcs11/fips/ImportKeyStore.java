@@ -37,7 +37,7 @@ setenv LD_LIBRARY_PATH $WS/test/sun/security/pkcs11/nss/lib/solaris-sparc
 modutil -create -dbdir .
 modutil -changepw "NSS Internal PKCS #11 Module" -dbdir .
 
-$JHOME/bin/keytool -list -storetype PKCS11 -providerclass sun.security.pkcs11.SunPKCS11 -providerarg "--name=NSS\nnssSecmodDirectory=." -v -storepass test12
+$JHOME/bin/keytool -list -storetype PKCS11 -addprovider SunPKCS11 -providerarg "--name=NSS\nnssSecmodDirectory=." -v -storepass test12
 
 modutil -fips true -dbdir .
 
