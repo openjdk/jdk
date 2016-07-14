@@ -26,6 +26,7 @@
  * @test
  * @bug 8130150 8131779 8139907
  * @summary Verify that the Montgomery multiply and square intrinsic works and correctly checks their arguments.
+ * @requires vm.flavor == "server"
  * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  *
@@ -314,9 +315,11 @@ public class MontgomeryMultiplyTest {
     }
 
     public static void main(String args[]) {
-        if (Platform.isServer() &&
-            wb.isIntrinsicAvailable(getExecutable(true), COMP_LEVEL_FULL_OPTIMIZATION) &&
-            wb.isIntrinsicAvailable(getExecutable(false), COMP_LEVEL_FULL_OPTIMIZATION)) {
+        if (!Platform.isServer()) {
+            throw new Error("TESTBUG: Not server VM");
+        }
+        if (wb.isIntrinsicAvailable(getExecutable(true), COMP_LEVEL_FULL_OPTIMIZATION) &&
+                wb.isIntrinsicAvailable(getExecutable(false), COMP_LEVEL_FULL_OPTIMIZATION)) {
             try {
                 new MontgomeryMultiplyTest().testMontgomeryMultiplyChecks();
                 new MontgomeryMultiplyTest().testResultValues();

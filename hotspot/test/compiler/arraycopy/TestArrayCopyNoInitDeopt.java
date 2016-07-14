@@ -25,6 +25,7 @@
  * @test
  * @bug 8072016
  * @summary Infinite deoptimization/recompilation cycles in case of arraycopy with tightly coupled allocation
+ * @requires vm.flavor == "server"
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -86,9 +87,11 @@ public class TestArrayCopyNoInitDeopt {
     }
 
     static public void main(String[] args) throws Exception {
+        if (!Platform.isServer()) {
+            throw new Error("TESTBUG: Not server VM");
+        }
         // Only execute if C2 is available
-        if (Platform.isServer() &&
-            TIERED_STOP_AT_LEVEL == CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
+        if (TIERED_STOP_AT_LEVEL == CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
             int[] src = new int[10];
             Object src_obj = new Object();
             Method method_m1 = TestArrayCopyNoInitDeopt.class.getMethod("m1", Object.class);
