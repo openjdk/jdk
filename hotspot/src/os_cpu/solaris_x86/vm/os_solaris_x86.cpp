@@ -74,7 +74,6 @@
 # include <sys/socket.h>
 # include <sys/trap.h>
 # include <sys/lwp.h>
-# include <pwd.h>
 # include <poll.h>
 # include <sys/lwp.h>
 # include <procfs.h>     //  see comment in <sys/procfs.h>
