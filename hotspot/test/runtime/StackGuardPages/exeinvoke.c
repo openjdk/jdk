@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include <jni.h>
 #include <alloca.h>
 #include <signal.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <stdlib.h>
 #include <sys/ucontext.h>
@@ -45,6 +46,8 @@
 #include <errno.h>
 
 #include <pthread.h>
+
+#define CLASS_PATH_OPT "-Djava.class.path="
 
 JavaVM* _jvm;
 
@@ -120,6 +123,7 @@ void *run_java_overflow (void *p) {
     fprintf(stderr, "Test ERROR. Can't call detach from current thread\n");
     exit(7);
   }
+  return NULL;
 }
 
 void do_overflow(){
@@ -209,24 +213,42 @@ void *run_native_overflow(void *p) {
 void usage() {
   fprintf(stderr, "Usage: invoke test_java_overflow\n");
   fprintf(stderr, "       invoke test_native_overflow\n");
-  exit(7);
 }
 
 
 int main (int argc, const char** argv) {
   JavaVMInitArgs vm_args;
-  JavaVMOption options[2];
+  JavaVMOption options[3];
   JNIEnv* env;
+  int optlen;
+  char *javaclasspath = NULL;
+  char javaclasspathopt[4096];
 
   printf("Test started with pid: %ld\n", (long) getpid());
 
+  /* set the java class path so the DoOverflow class can be found */
+  javaclasspath = getenv("CLASSPATH");
+
+  if (javaclasspath == NULL) {
+    fprintf(stderr, "Test ERROR. CLASSPATH is not set\n");
+    exit(7);
+  }
+  optlen = strlen(CLASS_PATH_OPT) + strlen(javaclasspath) + 1;
+  if (optlen > 4096) {
+    fprintf(stderr, "Test ERROR. CLASSPATH is too long\n");
+    exit(7);
+  }
+  snprintf(javaclasspathopt, sizeof(javaclasspathopt), "%s%s",
+      CLASS_PATH_OPT, javaclasspath);
+
   options[0].optionString = "-Xint";
-  options[1].optionString = "-Xss512k";
+  options[1].optionString = "-Xss328k";
+  options[2].optionString = javaclasspathopt;
 
   vm_args.version = JNI_VERSION_1_2;
   vm_args.ignoreUnrecognized = JNI_TRUE;
   vm_args.options = options;
-  vm_args.nOptions = 2;
+  vm_args.nOptions = 3;
 
   if (JNI_CreateJavaVM (&_jvm, (void **)&env, &vm_args) < 0 ) {
     fprintf(stderr, "Test ERROR. Can't create JavaVM\n");
@@ -263,4 +285,5 @@ int main (int argc, const char** argv) {
 
   fprintf(stderr, "Test ERROR. Unknown parameter %s\n", ((argc > 1) ? argv[1] : "none"));
   usage();
+  exit(7);
 }
