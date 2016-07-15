@@ -21,29 +21,36 @@
  * questions.
  */
 
-import java.util.ArrayList;
+package MyPackage;
 
-/* @test TestMetaspaceInitialization
- * @bug 8024945
- * @summary Tests to initialize metaspace with a very low MetaspaceSize
- * @modules java.base/jdk.internal.misc
- * @library /testlibrary
- * @run main/othervm -XX:MetaspaceSize=0 TestMetaspaceInitialization
+/**
+ * @test
+ * @summary Verifies the JVMTI GetNamedModule API
+ * @compile GetNamedModuleTest.java
+ * @run main/othervm/native -agentlib:GetNamedModuleTest MyPackage.GetNamedModuleTest
  */
-public class TestMetaspaceInitialization {
-    private class Internal {
-        public int x;
-        public Internal(int x) {
-            this.x = x;
+
+import java.io.PrintStream;
+
+public class GetNamedModuleTest {
+
+    static {
+        try {
+            System.loadLibrary("GetNamedModuleTest");
+        } catch (UnsatisfiedLinkError ule) {
+            System.err.println("Could not load GetNamedModuleTest library");
+            System.err.println("java.library.path: "
+                + System.getProperty("java.library.path"));
+            throw ule;
         }
     }
 
-    private void test() {
-        ArrayList<Internal> l = new ArrayList<>();
-        l.add(new Internal(17));
-    }
+    native static int check();
 
-    public static void main(String[] args) {
-        new TestMetaspaceInitialization().test();
+    public static void main(String args[]) {
+        int status = check();
+        if (status != 0) {
+            throw new RuntimeException("Non-zero status returned from the agent: " + status);
+        }
     }
 }
