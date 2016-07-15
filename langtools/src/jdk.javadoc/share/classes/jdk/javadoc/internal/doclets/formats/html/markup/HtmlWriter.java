@@ -77,6 +77,26 @@ public class HtmlWriter {
     protected final List<String> packageTableHeader;
 
     /**
+     * Header for tables displaying modules and description..
+     */
+    protected final List<String> requiresTableHeader;
+
+    /**
+     * Header for tables displaying packages and description..
+     */
+    protected final List<String> exportedPackagesTableHeader;
+
+    /**
+     * Header for tables displaying types and description..
+     */
+    protected final List<String> usesTableHeader;
+
+    /**
+     * Header for tables displaying types and description..
+     */
+    protected final List<String> providesTableHeader;
+
+    /**
      * Summary for use tables displaying class and package use.
      */
     protected final String useTableSummary;
@@ -107,6 +127,8 @@ public class HtmlWriter {
     public final Content summaryLabel;
 
     public final Content detailLabel;
+
+    public final Content moduleSubNavLabel;
 
     public final Content framesLabel;
 
@@ -192,6 +214,19 @@ public class HtmlWriter {
         packageTableHeader = new ArrayList<>();
         packageTableHeader.add(configuration.getText("doclet.Package"));
         packageTableHeader.add(configuration.getText("doclet.Description"));
+        requiresTableHeader = new ArrayList<>();
+        requiresTableHeader.add(configuration.getText("doclet.Module"));
+        requiresTableHeader.add(configuration.getText("doclet.Description"));
+        exportedPackagesTableHeader = new ArrayList<>();
+        exportedPackagesTableHeader.add(configuration.getText("doclet.Package"));
+        exportedPackagesTableHeader.add(configuration.getText("doclet.Module"));
+        exportedPackagesTableHeader.add(configuration.getText("doclet.Description"));
+        usesTableHeader = new ArrayList<>();
+        usesTableHeader.add(configuration.getText("doclet.Type"));
+        usesTableHeader.add(configuration.getText("doclet.Description"));
+        providesTableHeader = new ArrayList<>();
+        providesTableHeader.add(configuration.getText("doclet.Type"));
+        providesTableHeader.add(configuration.getText("doclet.Description"));
         useTableSummary = configuration.getText("doclet.Use_Table_Summary",
                 configuration.getText("doclet.packages"));
         modifierTypeHeader = configuration.getText("doclet.0_and_1",
@@ -208,6 +243,7 @@ public class HtmlWriter {
         nextclassLabel = getNonBreakResource("doclet.Next_Class");
         summaryLabel = getResource("doclet.Summary");
         detailLabel = getResource("doclet.Detail");
+        moduleSubNavLabel = getResource("doclet.Module_Sub_Nav");
         framesLabel = getResource("doclet.Frames");
         noframesLabel = getNonBreakResource("doclet.No_Frames");
         treeLabel = getResource("doclet.Tree");

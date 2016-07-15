@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,7 +180,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
     void dispose() {
         reverse.dispose();
 
-        if (doCleanDirty) {
+        if (DO_CLEAN_DIRTY) {
             // Force zero-fill dirty arrays:
             Arrays.fill(offset0, 0f);
             Arrays.fill(offset1, 0f);
@@ -226,7 +226,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
                                boolean rev,
                                float threshold)
     {
-        if ((omx == 0 && omy == 0) || (mx == 0 && my == 0)) {
+        if ((omx == 0f && omy == 0f) || (mx == 0f && my == 0f)) {
             return;
         }
 
@@ -338,12 +338,14 @@ final class Stroker implements PathConsumer2D, MarlinConst {
     }
 
     private void drawRoundCap(float cx, float cy, float mx, float my) {
-        emitCurveTo(cx+mx-C*my, cy+my+C*mx,
-                    cx-my+C*mx, cy+mx+C*my,
-                    cx-my,      cy+mx);
-        emitCurveTo(cx-my-C*mx, cy+mx-C*my,
-                    cx-mx-C*my, cy-my+C*mx,
-                    cx-mx,      cy-my);
+        final float Cmx = C * mx;
+        final float Cmy = C * my;
+        emitCurveTo(cx + mx - Cmy, cy + my + Cmx,
+                    cx - my + Cmx, cy + mx + Cmy,
+                    cx - my,       cy + mx);
+        emitCurveTo(cx - my - Cmx, cy + mx - Cmy,
+                    cx - mx - Cmy, cy - my + Cmx,
+                    cx - mx,       cy - my);
     }
 
     // Put the intersection point of the lines (x0, y0) -> (x1, y1)
@@ -412,8 +414,8 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         }
         this.sx0 = this.cx0 = x0;
         this.sy0 = this.cy0 = y0;
-        this.cdx = this.sdx = 1;
-        this.cdy = this.sdy = 0;
+        this.cdx = this.sdx = 1f;
+        this.cdy = this.sdy = 0f;
         this.prev = MOVE_TO;
     }
 
@@ -452,10 +454,10 @@ final class Stroker implements PathConsumer2D, MarlinConst {
                 return;
             }
             emitMoveTo(cx0, cy0 - lineWidth2);
-            this.cmx = this.smx = 0;
+            this.cmx = this.smx = 0f;
             this.cmy = this.smy = -lineWidth2;
-            this.cdx = this.sdx = 1;
-            this.cdy = this.sdy = 0;
+            this.cdx = this.sdx = 1f;
+            this.cdy = this.sdy = 0f;
             finish();
             return;
         }
@@ -1232,7 +1234,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
             end = 0;
             numCurves = 0;
 
-            if (doStats) {
+            if (DO_STATS) {
                 curveTypesUseMark = 0;
                 curvesUseMark = 0;
             }
@@ -1246,10 +1248,10 @@ final class Stroker implements PathConsumer2D, MarlinConst {
             end = 0;
             numCurves = 0;
 
-            if (doStats) {
-                RendererContext.stats.stat_rdr_poly_stack_types
+            if (DO_STATS) {
+                rdrCtx.stats.stat_rdr_poly_stack_types
                     .add(curveTypesUseMark);
-                RendererContext.stats.stat_rdr_poly_stack_curves
+                rdrCtx.stats.stat_rdr_poly_stack_curves
                     .add(curvesUseMark);
                 // reset marks
                 curveTypesUseMark = 0;
@@ -1272,15 +1274,15 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         private void ensureSpace(final int n) {
             // use substraction to avoid integer overflow:
             if (curves.length - end < n) {
-                if (doStats) {
-                    RendererContext.stats.stat_array_stroker_polystack_curves
+                if (DO_STATS) {
+                    rdrCtx.stats.stat_array_stroker_polystack_curves
                         .add(end + n);
                 }
                 curves = rdrCtx.widenDirtyFloatArray(curves, end, end + n);
             }
             if (curveTypes.length <= numCurves) {
-                if (doStats) {
-                    RendererContext.stats.stat_array_stroker_polystack_curveTypes
+                if (DO_STATS) {
+                    rdrCtx.stats.stat_array_stroker_polystack_curveTypes
                         .add(numCurves + 1);
                 }
                 curveTypes = rdrCtx.widenDirtyByteArray(curveTypes,
@@ -1323,7 +1325,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         }
 
         void popAll(PathConsumer2D io) {
-            if (doStats) {
+            if (DO_STATS) {
                 // update used marks:
                 if (numCurves > curveTypesUseMark) {
                     curveTypesUseMark = numCurves;

@@ -24,11 +24,10 @@
  */
 package javax.swing.plaf;
 
-import javax.swing.Action;
-import javax.swing.BoundedRangeModel;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.Insets;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import javax.swing.text.*;
 
 /**
@@ -64,6 +63,27 @@ public abstract class TextUI extends ComponentUI
     public abstract Rectangle modelToView(JTextComponent t, int pos, Position.Bias bias) throws BadLocationException;
 
     /**
+     * Converts the given location in the model to a place in
+     * the view coordinate system.
+     *
+     * @implSpec This implementation calls
+     * {@link #modelToView(JTextComponent, int, Position.Bias) modelToView(t, pos, bias)}.
+     *
+     * @param t the text component for which this UI is installed
+     * @param pos  the local location in the model to translate {@code >= 0}
+     * @param bias the bias for the position
+     * @return the coordinates as a {@code Rectangle2D}
+     * @exception BadLocationException  if the given position does not
+     *            represent a valid location in the associated document
+     *
+     * @since 9
+     */
+    public Rectangle2D modelToView2D(JTextComponent t, int pos, Position.Bias bias)
+            throws BadLocationException {
+        return modelToView(t, pos, bias);
+    }
+
+    /**
      * Converts the given place in the view coordinate system
      * to the nearest representative location in the model.
      *
@@ -93,6 +113,33 @@ public abstract class TextUI extends ComponentUI
      */
     public abstract int viewToModel(JTextComponent t, Point pt,
                                     Position.Bias[] biasReturn);
+
+    /**
+     * Provides a mapping from the view coordinate space to the logical
+     * coordinate space of the model.
+     *
+     * @implSpec This implementation calls
+     * {@link #viewToModel(JTextComponent, Point, Position.Bias[])
+     * viewToModel(t, new Point((int) pt.getX(), (int) pt.getY()),
+     *             biasReturn)}.
+     *
+     * @param t the text component for which this UI is installed
+     * @param pt the location in the view to translate.
+     * @param biasReturn
+     *           filled in by this method to indicate whether
+     *           the point given is closer to the previous or the next
+     *           character in the model
+     *
+     * @return the location within the model that best represents the
+     *         given point in the view {@code >= 0}
+     *
+     * @since 9
+     */
+    public int viewToModel2D(JTextComponent t, Point2D pt,
+                             Position.Bias[] biasReturn) {
+        return viewToModel(t, new Point((int) pt.getX(), (int) pt.getY()),
+                           biasReturn);
+    }
 
     /**
      * Provides a way to determine the next visually represented model
@@ -178,5 +225,23 @@ public abstract class TextUI extends ComponentUI
      */
     public String getToolTipText(JTextComponent t, Point pt) {
         return null;
+    }
+    /**
+     * Returns the string to be used as the tooltip at the passed in location.
+     *
+     * @implSpec This implementation calls
+     * {@link #getToolTipText(JTextComponent, Point)
+     *     getToolTipText(t, new Point((int) pt.getX(), (int) pt.getY())))}.
+     *
+     * @param t  the text component for which this UI is installed
+     * @param pt a {@code Point} specifying location for which to get a tooltip
+     * @return a {@code String} containing the tooltip
+     *
+     * @see javax.swing.text.JTextComponent#getToolTipText
+     *
+     * @since 9
+     */
+    public String getToolTipText2D(JTextComponent t, Point2D pt) {
+        return getToolTipText(t, new Point((int) pt.getX(), (int) pt.getY()));
     }
 }

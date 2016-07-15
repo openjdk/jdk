@@ -119,7 +119,7 @@ public class AddLimitMods extends ModuleTestBase {
         //real test
         new JavacTask(tb)
                 .options("-modulepath", modulePath.toString(),
-                         "-XDshouldStopPolicyIfNoError=FLOW",
+                         "-Xshouldstop:ifNoError=FLOW",
                          "-limitmods", "java.base")
                 .outdir(modulePath)
                 .files(findJavaFiles(m1))
@@ -128,7 +128,7 @@ public class AddLimitMods extends ModuleTestBase {
 
         new JavacTask(tb)
                 .options("-modulepath", modulePath.toString(),
-                         "-XDshouldStopPolicyIfNoError=FLOW",
+                         "-Xshouldstop:ifNoError=FLOW",
                          "-limitmods", "java.base",
                          "-addmods", "m2")
                 .outdir(modulePath)
@@ -138,7 +138,7 @@ public class AddLimitMods extends ModuleTestBase {
 
         new JavacTask(tb)
                 .options("-modulepath", modulePath.toString(),
-                         "-XDshouldStopPolicyIfNoError=FLOW",
+                         "-Xshouldstop:ifNoError=FLOW",
                          "-limitmods", "java.base",
                          "-addmods", "m2,m3")
                 .outdir(modulePath)
@@ -148,7 +148,7 @@ public class AddLimitMods extends ModuleTestBase {
 
         new JavacTask(tb)
                 .options("-modulepath", modulePath.toString(),
-                         "-XDshouldStopPolicyIfNoError=FLOW",
+                         "-Xshouldstop:ifNoError=FLOW",
                          "-limitmods", "m2")
                 .outdir(modulePath)
                 .files(findJavaFiles(m1))
@@ -157,7 +157,7 @@ public class AddLimitMods extends ModuleTestBase {
 
         new JavacTask(tb)
                 .options("-modulepath", modulePath.toString(),
-                         "-XDshouldStopPolicyIfNoError=FLOW",
+                         "-Xshouldstop:ifNoError=FLOW",
                          "-limitmods", "m3")
                 .outdir(modulePath)
                 .files(findJavaFiles(m1))
@@ -166,7 +166,7 @@ public class AddLimitMods extends ModuleTestBase {
 
         new JavacTask(tb)
                 .options("-modulepath", modulePath.toString(),
-                         "-XDshouldStopPolicyIfNoError=FLOW",
+                         "-Xshouldstop:ifNoError=FLOW",
                          "-limitmods", "m3",
                          "-addmods", "m2")
                 .outdir(modulePath)
@@ -473,7 +473,7 @@ public class AddLimitMods extends ModuleTestBase {
                                            auxOptions,
                                            "-modulepath", modulePath.toString(),
                                            "-classpath", classpathOut.toString(),
-                                           "-XDshouldStopPolicyIfNoError=FLOW"))
+                                           "-Xshouldstop:ifNoError=FLOW"))
                    .outdir(modulePath)
                    .files(findJavaFiles(m2))
                    .run(success ? Task.Expect.SUCCESS : Task.Expect.FAIL)

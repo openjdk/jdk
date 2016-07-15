@@ -25,20 +25,19 @@
 
 package com.sun.tools.jdeps;
 
-import static com.sun.tools.jdeps.JdepsConfiguration.*;
-
 import com.sun.tools.classfile.Dependency.Location;
+
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.MissingResourceException;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -369,35 +368,29 @@ public class Analyzer {
         }
     }
 
-    static final JdkInternals REMOVED_JDK_INTERNALS = new JdkInternals();
+    static final Jdk8Internals REMOVED_JDK_INTERNALS = new Jdk8Internals();
 
-    static class JdkInternals extends Module {
-        private final String BUNDLE = "com.sun.tools.jdeps.resources.jdkinternals";
-
-        private final Set<String> jdkinternals;
-        private final Set<String> jdkUnsupportedClasses;
-        private JdkInternals() {
+    static class Jdk8Internals extends Module {
+        private final String JDK8_INTERNALS = "/com/sun/tools/jdeps/resources/jdk8_internals.txt";
+        private final Set<String> jdk8Internals;
+        private Jdk8Internals() {
             super("JDK removed internal API");
-
-            try {
-                ResourceBundle rb = ResourceBundle.getBundle(BUNDLE);
-                this.jdkinternals = rb.keySet();
-            } catch (MissingResourceException e) {
-                throw new InternalError("Cannot find jdkinternals resource bundle");
+            try (InputStream in = JdepsTask.class.getResourceAsStream(JDK8_INTERNALS);
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+                this.jdk8Internals = reader.lines()
+                                          .filter(ln -> !ln.startsWith("#"))
+                                          .collect(Collectors.toSet());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
-
-            this.jdkUnsupportedClasses = getUnsupportedClasses();
         }
 
         public boolean contains(Location location) {
-            if (jdkUnsupportedClasses.contains(location.getName() + ".class")) {
-                return false;
-            }
-
             String cn = location.getClassName();
             int i = cn.lastIndexOf('.');
             String pn = i > 0 ? cn.substring(0, i) : "";
-            return jdkinternals.contains(cn) || jdkinternals.contains(pn);
+
+            return jdk8Internals.contains(pn);
         }
 
         @Override
@@ -413,26 +406,6 @@ public class Analyzer {
         @Override
         public boolean isExported(String pn) {
             return false;
-        }
-
-        private Set<String> getUnsupportedClasses() {
-            // jdk.unsupported may not be observable
-            Optional<Module> om = Profile.FULL_JRE.findModule(JDK_UNSUPPORTED);
-            if (om.isPresent()) {
-                return om.get().reader().entries();
-            }
-
-            // find from local run-time image
-            SystemModuleFinder system = new SystemModuleFinder();
-            if (system.find(JDK_UNSUPPORTED).isPresent()) {
-                try {
-                    return system.getClassReader(JDK_UNSUPPORTED).entries();
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            }
-
-            return Collections.emptySet();
         }
     }
 }

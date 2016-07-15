@@ -44,7 +44,7 @@ public final class ScriptRunData {
         if (cp >= data[cache] && cp < data[cache+2]) {
             return data[cache+1];
         }
-        if (cp >= CHAR_START & cp < CHAR_LIMIT) {
+        if ((cp >= CHAR_START) && (cp < CHAR_LIMIT)) {
             int probe = dataPower;
             int index = 0;
 

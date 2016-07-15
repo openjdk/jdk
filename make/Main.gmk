@@ -933,10 +933,6 @@ create-main-targets-include:
 
 ################################################################################
 
-
-# workaround issue when building open targets when closed jib-profiles.js is used
-installer: product-images test-image
-
 .PHONY: $(ALL_TARGETS)
 
 FRC: # Force target

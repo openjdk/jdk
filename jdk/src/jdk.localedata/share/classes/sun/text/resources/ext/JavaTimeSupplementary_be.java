@@ -308,6 +308,8 @@ public class JavaTimeSupplementary_be extends OpenListResourceBundle {
                 sharedAbbreviatedAmPmMarkers },
             { "roc.narrow.AmPmMarkers",
                 sharedNarrowAmPmMarkers },
+            { "timezone.hourFormat",
+                "+HH.mm;-HH.mm" },
         };
     }
 }

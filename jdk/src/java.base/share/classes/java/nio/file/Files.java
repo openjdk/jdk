@@ -3290,8 +3290,8 @@ public final class Files {
      * a size of {@code 0}. All bytes in the byte array are written to the file.
      * The method ensures that the file is closed when all bytes have been
      * written (or an I/O error or other runtime exception is thrown). If an I/O
-     * error occurs then it may do so after the file has created or truncated,
-     * or after some bytes have been written to the file.
+     * error occurs then it may do so after the file has been created or
+     * truncated, or after some bytes have been written to the file.
      *
      * <p> <b>Usage example</b>: By default the method creates a new file or
      * overwrites an existing file. Suppose you instead want to append bytes
@@ -3360,7 +3360,8 @@ public final class Files {
      * a size of {@code 0}. The method ensures that the file is closed when all
      * lines have been written (or an I/O error or other runtime exception is
      * thrown). If an I/O error occurs then it may do so after the file has
-     * created or truncated, or after some bytes have been written to the file.
+     * been created or truncated, or after some bytes have been written to the
+     * file.
      *
      * @param   path
      *          the path to the file

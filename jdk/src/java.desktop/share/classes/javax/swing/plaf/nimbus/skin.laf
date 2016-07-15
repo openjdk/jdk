@@ -13407,7 +13407,7 @@
             <cacheSettingsInherited>false</cacheSettingsInherited>
             <cacheMode>NO_CACHING</cacheMode>
             <uiproperties>
-               <uiProperty name="rendererUseListColors" type="BOOLEAN" value="true"/>
+               <uiProperty name="rendererUseListColors" type="BOOLEAN" value="false"/>
                <uiProperty name="rendererUseUIBorder" type="BOOLEAN" value="true"/>
                <uiProperty name="cellNoFocusBorder" type="BORDER">
                    <border type="empty" top="2" left="5" bottom="2" right="5"/>
@@ -13513,10 +13513,10 @@
                   <uiproperties/>
                </style>
                <backgroundStates>
-                  <state stateKeys="Disabled">
+                  <state stateKeys="Selected">
                      <style>
                         <textForeground>
-                           <matte red="142" green="143" blue="145" alpha="255" uiDefaultParentName="nimbusDisabledText" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
+                           <matte red="255" green="255" blue="255" alpha="255" uiDefaultParentName="nimbusLightBackground" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
                         </textForeground>
                         <textBackground/>
                         <background>
@@ -13524,6 +13524,56 @@
                         </background>
                         <inherit-textForeground>false</inherit-textForeground>
                         <inherit-background>false</inherit-background>
+                        <uiproperties/>
+                     </style>
+                     <canvas>
+                        <size width="100" height="30"/>
+                        <nextLayerNameIndex>2</nextLayerNameIndex>
+                        <stretchingInsets top="0" bottom="0" left="0" right="0"/>
+                        <layer name="Layer 1">
+                           <opacity>1.0</opacity>
+                           <fillOpacity>1.0</fillOpacity>
+                           <blendingMode>NORMAL</blendingMode>
+                           <locked>false</locked>
+                           <visible>true</visible>
+                           <shapes/>
+                           <effects/>
+                        </layer>
+                     </canvas>
+                  </state>
+                  <state stateKeys="Disabled+Selected">
+                     <style>
+                        <textForeground/>
+                        <textBackground/>
+                        <background>
+                           <matte red="57" green="105" blue="138" alpha="255" uiDefaultParentName="nimbusSelectionBackground" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
+                        </background>
+                        <inherit-background>false</inherit-background>
+                        <uiproperties/>
+                     </style>
+                     <canvas>
+                        <size width="100" height="30"/>
+                        <nextLayerNameIndex>2</nextLayerNameIndex>
+                        <stretchingInsets top="0" bottom="0" left="0" right="0"/>
+                        <layer name="Layer 1">
+                           <opacity>1.0</opacity>
+                           <fillOpacity>1.0</fillOpacity>
+                           <blendingMode>NORMAL</blendingMode>
+                           <locked>false</locked>
+                           <visible>true</visible>
+                           <shapes/>
+                           <effects/>
+                        </layer>
+                     </canvas>
+                  </state>
+                  <state stateKeys="Disabled">
+                     <style>
+                        <textForeground>
+                           <matte red="142" green="143" blue="145" alpha="255" uiDefaultParentName="nimbusDisabledText" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
+                        </textForeground>
+                        <textBackground/>
+                        <background/>
+                        <inherit-textForeground>false</inherit-textForeground>
                         <uiproperties/>
                      </style>
                      <canvas>

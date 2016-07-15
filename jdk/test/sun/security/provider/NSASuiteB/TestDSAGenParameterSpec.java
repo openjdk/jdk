@@ -35,7 +35,6 @@ import java.security.spec.InvalidParameterSpecException;
 /*
  * @test
  * @bug 8075286
- * @key intermittent
  * @summary Verify that DSAGenParameterSpec can and can only be used to generate
  *          DSA within some certain range of key sizes as described in the class
  *          specification (L, N) as (1024, 160), (2048, 224), (2048, 256) and

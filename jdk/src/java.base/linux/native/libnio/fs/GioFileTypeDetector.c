@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,6 @@ Java_sun_nio_fs_GioFileTypeDetector_initializeGio
     }
 
     g_type_init = (g_type_init_func)dlsym(gio_handle, "g_type_init");
-    (*g_type_init)();
 
     g_object_unref = (g_object_unref_func)dlsym(gio_handle, "g_object_unref");
 
@@ -104,9 +103,7 @@ Java_sun_nio_fs_GioFileTypeDetector_initializeGio
     g_file_info_get_content_type = (g_file_info_get_content_type_func)
         dlsym(gio_handle, "g_file_info_get_content_type");
 
-
-    if (g_type_init == NULL ||
-        g_object_unref == NULL ||
+    if (g_object_unref == NULL ||
         g_file_new_for_path == NULL ||
         g_file_query_info == NULL ||
         g_file_info_get_content_type == NULL)
@@ -115,7 +112,10 @@ Java_sun_nio_fs_GioFileTypeDetector_initializeGio
         return JNI_FALSE;
     }
 
-    (*g_type_init)();
+    if (g_type_init != NULL) {
+        (*g_type_init)();
+    }
+
     return JNI_TRUE;
 }
 

@@ -26,7 +26,7 @@
  * @bug 8047024
  * @summary AssertionError: exception_index already contains a bytecode offset
  * @compile T8047024_01.java
- * @compile -XDsave-parameter-names=true T8047024.java
+ * @compile -parameters T8047024.java
  */
 
 public class T8047024 {

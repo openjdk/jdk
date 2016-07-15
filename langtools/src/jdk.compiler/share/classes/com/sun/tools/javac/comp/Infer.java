@@ -56,10 +56,13 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+
+import com.sun.tools.javac.main.Option;
 
 import static com.sun.tools.javac.code.TypeTag.*;
 
@@ -86,7 +89,7 @@ public class Infer {
     /**
      * folder in which the inference dependency graphs should be written.
      */
-    final private String dependenciesFolder;
+    private final String dependenciesFolder;
 
     /**
      * List of graphs awaiting to be dumped to a file.
@@ -113,7 +116,7 @@ public class Infer {
         Options options = Options.instance(context);
         allowGraphInference = Source.instance(context).allowGraphInference()
                 && options.isUnset("useLegacyInference");
-        dependenciesFolder = options.get("dumpInferenceGraphsTo");
+        dependenciesFolder = options.get("debug.dumpInferenceGraphsTo");
         pendingGraphs = List.nil();
 
         emptyContext = new InferenceContext(this, List.<Type>nil());
@@ -675,18 +678,12 @@ public class Infer {
                 paramTypes = paramTypes.tail;
             }
 
-            try {
-                funcInterfaceContext.solve(funcInterfaceContext.boundedVars(), types.noWarnings);
-            } catch (InferenceException ex) {
-                checkContext.report(pos, diags.fragment("no.suitable.functional.intf.inst", funcInterface));
-            }
-
             List<Type> actualTypeargs = funcInterface.getTypeArguments();
             for (Type t : funcInterfaceContext.undetvars) {
                 UndetVar uv = (UndetVar)t;
-                if (uv.getInst() == null) {
-                    uv.setInst(actualTypeargs.head);
-                }
+                Optional<Type> inst = uv.getBounds(InferenceBound.EQ).stream()
+                        .filter(b -> !b.containsAny(formalInterface.getTypeArguments())).findFirst();
+                uv.setInst(inst.orElse(actualTypeargs.head));
                 actualTypeargs = actualTypeargs.tail;
             }
 

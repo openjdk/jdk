@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,16 +369,24 @@ public class ProgressMonitor implements Accessible
 
 
     /**
-     * Returns true if the user hits the Cancel button in the progress dialog.
+     * Returns true if the user hits the Cancel button or closes
+     * the progress dialog.
      *
-     * @return true if the user hits the Cancel button in the progress dialog
+     * @return true if the user hits the Cancel button or closes
+     * the progress dialog
      */
     public boolean isCanceled() {
-        if (pane == null) return false;
+        if (pane == null) {
+            return false;
+        }
+
         Object v = pane.getValue();
-        return ((v != null) &&
-                (cancelOption.length == 1) &&
-                (v.equals(cancelOption[0])));
+        if (v == null) {
+            return false;
+        }
+
+        return (((cancelOption.length == 1) && v.equals(cancelOption[0])) ||
+                v.equals(Integer.valueOf(JOptionPane.CLOSED_OPTION)));
     }
 
 
