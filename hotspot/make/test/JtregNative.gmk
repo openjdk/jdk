@@ -64,7 +64,8 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), linux)
 BUILD_HOTSPOT_JTREG_NATIVE_SRC += \
-    $(HOTSPOT_TOPDIR)/test/runtime/execstack
+    $(HOTSPOT_TOPDIR)/test/runtime/execstack \
+    $(HOTSPOT_TOPDIR)/test/runtime/jsig
 endif
 
 ifeq ($(TOOLCHAIN_TYPE), solstudio)
