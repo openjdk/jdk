@@ -51,16 +51,32 @@ public final class ModuleEntryFactory {
                 original.getPath(), original.getType(), file);
     }
 
-    private static String moduleFrom(String path) {
+    static String moduleFrom(String path) {
         Objects.requireNonNull(path);
         if (path.isEmpty() || path.charAt(0) != '/') {
             throw new IllegalArgumentException(path + " must start with /");
         }
-        String noRoot = path.substring(1);
-        int idx = noRoot.indexOf('/');
+        int idx = path.indexOf('/', 1);
         if (idx == -1) {
             throw new IllegalArgumentException("/ missing after module: " + path);
         }
-        return noRoot.substring(0, idx);
+        return path.substring(1, idx);
+    }
+
+    static String packageFrom(String path) {
+        Objects.requireNonNull(path);
+        int idx = path.lastIndexOf('/');
+        if (idx == -1) {
+            throw new IllegalArgumentException("/ missing from path: " + path);
+        }
+        if (path.startsWith("/")) {
+            int jdx = path.indexOf('/', 1);
+            if (jdx == -1) {
+                throw new IllegalArgumentException("/ missing after module: " + path);
+            }
+            return path.substring(jdx + 1, idx);
+        } else {
+            return path.substring(0, idx);
+        }
     }
 }

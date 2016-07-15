@@ -70,6 +70,24 @@ public class HtmlConstants {
             new Comment("============ MODULE DESCRIPTION ===========");
 
     /**
+     * Marker to identify start of modules summary.
+     */
+    public static final Content START_OF_MODULES_SUMMARY =
+            new Comment("============ MODULES SUMMARY ===========");
+
+    /**
+     * Marker to identify start of packages summary.
+     */
+    public static final Content START_OF_PACKAGES_SUMMARY =
+            new Comment("============ PACKAGES SUMMARY ===========");
+
+    /**
+     * Marker to identify start of services summary.
+     */
+    public static final Content START_OF_SERVICES_SUMMARY =
+            new Comment("============ SERVICES SUMMARY ===========");
+
+    /**
      * Marker to identify start of class data.
      */
     public static final Content START_OF_CLASS_DATA =

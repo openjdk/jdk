@@ -53,6 +53,19 @@ function generate {
           ;;
       esac
 
+      if [ "$package" == "jdk.internal.misc" ]; then
+        case $type in
+          boolean|byte|char|short|float|double)
+            args="$args -KCAS"
+            ;;
+        esac
+        case $type in
+          byte|char|short|float|double)
+            args="$args -KAtomicAdd"
+            ;;
+        esac
+      fi
+
       case $type in
         short|char|int|long)
           args="$args -KUnaligned"
@@ -66,29 +79,29 @@ function generate {
           value3=false
           ;;
         byte)
-          value1=(byte)1
-          value2=(byte)2
-          value3=(byte)3
+          value1=(byte)0x01
+          value2=(byte)0x23
+          value3=(byte)0x45
           ;;
         short)
-          value1=(short)1
-          value2=(short)2
-          value3=(short)3
+          value1=(short)0x0123
+          value2=(short)0x4567
+          value3=(short)0x89AB
           ;;
         char)
-          value1=\'a\'
-          value2=\'b\'
-          value3=\'c\'
+          value1=\'\\\\u0123\'
+          value2=\'\\\\u4567\'
+          value3=\'\\\\u89AB\'
           ;;
         int)
-          value1=1
-          value2=2
-          value3=3
+          value1=0x01234567
+          value2=0x89ABCDEF
+          value3=0xCAFEBABE
           ;;
         long)
-          value1=1L
-          value2=2L
-          value3=3L
+          value1=0x0123456789ABCDEFL
+          value2=0xCAFEBABECAFEBABEL
+          value3=0xDEADBEEFDEADBEEFL
           ;;
         float)
           value1=1.0f

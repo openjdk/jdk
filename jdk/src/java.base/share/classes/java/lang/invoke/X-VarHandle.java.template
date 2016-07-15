@@ -132,7 +132,7 @@ final class VarHandle$Type$s {
         }
 
         @ForceInline
-        static $type$ compareAndExchangeVolatile(FieldInstanceReadWrite handle, Object holder, $type$ expected, $type$ value) {
+        static $type$ compareAndExchange(FieldInstanceReadWrite handle, Object holder, $type$ expected, $type$ value) {
             return UNSAFE.compareAndExchange$Type$Volatile(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                                handle.fieldOffset,
                                                {#if[Object]?handle.fieldType.cast(expected):expected},
@@ -205,9 +205,9 @@ final class VarHandle$Type$s {
 
         @ForceInline
         static $type$ addAndGet(FieldInstanceReadWrite handle, Object holder, $type$ value) {
-            return UNSAFE.getAndAdd$Type$(Objects.requireNonNull(handle.receiverType.cast(holder)),
+            return {#if[ShorterThanInt]?($type$)}(UNSAFE.getAndAdd$Type$(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                        handle.fieldOffset,
-                                       value) + value;
+                                       value) + value);
         }
 #end[AtomicAdd]
 
@@ -313,7 +313,7 @@ final class VarHandle$Type$s {
 
 
         @ForceInline
-        static $type$ compareAndExchangeVolatile(FieldStaticReadWrite handle, $type$ expected, $type$ value) {
+        static $type$ compareAndExchange(FieldStaticReadWrite handle, $type$ expected, $type$ value) {
             return UNSAFE.compareAndExchange$Type$Volatile(handle.base,
                                                handle.fieldOffset,
                                                {#if[Object]?handle.fieldType.cast(expected):expected},
@@ -386,9 +386,9 @@ final class VarHandle$Type$s {
 
         @ForceInline
         static $type$ addAndGet(FieldStaticReadWrite handle, $type$ value) {
-            return UNSAFE.getAndAdd$Type$(handle.base,
+            return {#if[ShorterThanInt]?($type$)}(UNSAFE.getAndAdd$Type$(handle.base,
                                        handle.fieldOffset,
-                                       value) + value;
+                                       value) + value);
         }
 #end[AtomicAdd]
 
@@ -523,7 +523,7 @@ final class VarHandle$Type$s {
         }
 
         @ForceInline
-        static $type$ compareAndExchangeVolatile(Array handle, Object oarray, int index, $type$ expected, $type$ value) {
+        static $type$ compareAndExchange(Array handle, Object oarray, int index, $type$ expected, $type$ value) {
 #if[Object]
             Object[] array = (Object[]) handle.arrayType.cast(oarray);
 #else[Object]
@@ -646,9 +646,9 @@ final class VarHandle$Type$s {
 #else[Object]
             $type$[] array = ($type$[]) oarray;
 #end[Object]
-            return UNSAFE.getAndAdd$Type$(array,
+            return {#if[ShorterThanInt]?($type$)}(UNSAFE.getAndAdd$Type$(array,
                     (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
-                    value) + value;
+                    value) + value);
         }
 #end[AtomicAdd]
 

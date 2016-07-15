@@ -153,7 +153,11 @@ public class HtmlDoclet extends AbstractDoclet {
         FrameOutputWriter.generate(configuration);
 
         if (configuration.createoverview) {
-            PackageIndexWriter.generate(configuration);
+            if (configuration.showModules) {
+                ModuleIndexWriter.generate(configuration);
+            } else {
+                PackageIndexWriter.generate(configuration);
+            }
         }
         if (configuration.helpfile.length() == 0 &&
             !configuration.nohelp) {

@@ -180,7 +180,7 @@ public class Resolve {
         }
 
         static EnumSet<VerboseResolutionMode> getVerboseResolutionMode(Options opts) {
-            String s = opts.get("verboseResolution");
+            String s = opts.get("debug.verboseResolution");
             EnumSet<VerboseResolutionMode> res = EnumSet.noneOf(VerboseResolutionMode.class);
             if (s == null) return res;
             if (s.contains("all")) {

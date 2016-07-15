@@ -69,6 +69,7 @@ private:
   s2 _classpath_index;
   bool _is_exported_unqualified;
   bool _is_exported_allUnnamed;
+  bool _must_walk_exports;
   GrowableArray<ModuleEntry*>* _exported_pending_delete; // transitioned from qualified to unqualified, delete at safepoint
   GrowableArray<ModuleEntry*>* _qualified_exports;
   TRACE_DEFINE_TRACE_ID_FIELD;
@@ -82,6 +83,7 @@ public:
     _classpath_index = -1;
     _is_exported_unqualified = false;
     _is_exported_allUnnamed = false;
+    _must_walk_exports = false;
     _exported_pending_delete = NULL;
     _qualified_exports = NULL;
   }
@@ -147,6 +149,7 @@ public:
 
   // add the module to the package's qualified exports
   void add_qexport(ModuleEntry* m);
+  void set_export_walk_required(ClassLoaderData* m_loader_data);
 
   PackageEntry* next() const {
     return (PackageEntry*)HashtableEntry<Symbol*, mtModule>::next();

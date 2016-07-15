@@ -1208,22 +1208,43 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * <ul>
          * <li>if the field is declared {@code final}, then the write, atomic
          *     update, and numeric atomic update access modes are unsupported.
-         * <li>if the field type is anything other than {@code int},
-         *     {@code long} or a reference type, then atomic update access modes
-         *     are unsupported.  (Future major platform releases of the JDK may
-         *     support additional types for certain currently unsupported access
-         *     modes.)
-         * <li>if the field type is anything other than {@code int} or
-         *     {@code long}, then numeric atomic update access modes are
-         *     unsupported.  (Future major platform releases of the JDK may
-         *     support additional numeric types for certain currently
-         *     unsupported access modes.)
+         * <li>if the field type is anything other than {@code byte},
+         *     {@code short}, {@code char}, {@code int} or {@code long},
+         *     {@code float}, or {@code double} then numeric atomic update
+         *     access modes are unsupported.
          * </ul>
          * <p>
          * If the field is declared {@code volatile} then the returned VarHandle
          * will override access to the field (effectively ignore the
          * {@code volatile} declaration) in accordance to it's specified
          * access modes.
+         * <p>
+         * If the field type is {@code float} or {@code double} then numeric
+         * and atomic update access modes compare values using their bitwise
+         * representation (see {@link Float#floatToRawIntBits} and
+         * {@link Double#doubleToRawLongBits}, respectively).
+         * @apiNote
+         * Bitwise comparison of {@code float} values or {@code double} values,
+         * as performed by the numeric and atomic update access modes, differ
+         * from the primitive {@code ==} operator and the {@link Float#equals}
+         * and {@link Double#equals} methods, specifically with respect to
+         * comparing NaN values or comparing {@code -0.0} with {@code +0.0}.
+         * Care should be taken when performing a compare and set or a compare
+         * and exchange operation with such values since the operation may
+         * unexpectedly fail.
+         * There are many possible NaN values that are considered to be
+         * {@code NaN} in Java, although no IEEE 754 floating-point operation
+         * provided by Java can distinguish between them.  Operation failure can
+         * occur if the expected or witness value is a NaN value and it is
+         * transformed (perhaps in a platform specific manner) into another NaN
+         * value, and thus has a different bitwise representation (see
+         * {@link Float#intBitsToFloat} or {@link Double#longBitsToDouble} for more
+         * details).
+         * The values {@code -0.0} and {@code +0.0} have different bitwise
+         * representations but are considered equal when using the primitive
+         * {@code ==} operator.  Operation failure can occur if, for example, a
+         * numeric algorithm computes an expected value to be say {@code -0.0}
+         * and previously computed the witness value to be say {@code +0.0}.
          * @param recv the receiver class, of type {@code R}, that declares the
          * non-static field
          * @param name the field's name
@@ -1306,22 +1327,43 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * <ul>
          * <li>if the field is declared {@code final}, then the write, atomic
          *     update, and numeric atomic update access modes are unsupported.
-         * <li>if the field type is anything other than {@code int},
-         *     {@code long} or a reference type, then atomic update access modes
-         *     are unsupported.  (Future major platform releases of the JDK may
-         *     support additional types for certain currently unsupported access
-         *     modes.)
-         * <li>if the field type is anything other than {@code int} or
-         *     {@code long}, then numeric atomic update access modes are
-         *     unsupported.  (Future major platform releases of the JDK may
-         *     support additional numeric types for certain currently
-         *     unsupported access modes.)
+         * <li>if the field type is anything other than {@code byte},
+         *     {@code short}, {@code char}, {@code int} or {@code long},
+         *     {@code float}, or {@code double}, then numeric atomic update
+         *     access modes are unsupported.
          * </ul>
          * <p>
          * If the field is declared {@code volatile} then the returned VarHandle
          * will override access to the field (effectively ignore the
          * {@code volatile} declaration) in accordance to it's specified
          * access modes.
+         * <p>
+         * If the field type is {@code float} or {@code double} then numeric
+         * and atomic update access modes compare values using their bitwise
+         * representation (see {@link Float#floatToRawIntBits} and
+         * {@link Double#doubleToRawLongBits}, respectively).
+         * @apiNote
+         * Bitwise comparison of {@code float} values or {@code double} values,
+         * as performed by the numeric and atomic update access modes, differ
+         * from the primitive {@code ==} operator and the {@link Float#equals}
+         * and {@link Double#equals} methods, specifically with respect to
+         * comparing NaN values or comparing {@code -0.0} with {@code +0.0}.
+         * Care should be taken when performing a compare and set or a compare
+         * and exchange operation with such values since the operation may
+         * unexpectedly fail.
+         * There are many possible NaN values that are considered to be
+         * {@code NaN} in Java, although no IEEE 754 floating-point operation
+         * provided by Java can distinguish between them.  Operation failure can
+         * occur if the expected or witness value is a NaN value and it is
+         * transformed (perhaps in a platform specific manner) into another NaN
+         * value, and thus has a different bitwise representation (see
+         * {@link Float#intBitsToFloat} or {@link Double#longBitsToDouble} for more
+         * details).
+         * The values {@code -0.0} and {@code +0.0} have different bitwise
+         * representations but are considered equal when using the primitive
+         * {@code ==} operator.  Operation failure can occur if, for example, a
+         * numeric algorithm computes an expected value to be say {@code -0.0}
+         * and previously computed the witness value to be say {@code +0.0}.
          * @param decl the class that declares the static field
          * @param name the field's name
          * @param type the field's type, of type {@code T}
@@ -1590,22 +1632,43 @@ return mh1;
          * <ul>
          * <li>if the field is declared {@code final}, then the write, atomic
          *     update, and numeric atomic update access modes are unsupported.
-         * <li>if the field type is anything other than {@code int},
-         *     {@code long} or a reference type, then atomic update access modes
-         *     are unsupported.  (Future major platform releases of the JDK may
-         *     support additional types for certain currently unsupported access
-         *     modes.)
-         * <li>if the field type is anything other than {@code int} or
-         *     {@code long}, then numeric atomic update access modes are
-         *     unsupported.  (Future major platform releases of the JDK may
-         *     support additional numeric types for certain currently
-         *     unsupported access modes.)
+         * <li>if the field type is anything other than {@code byte},
+         *     {@code short}, {@code char}, {@code int} or {@code long},
+         *     {@code float}, or {@code double} then numeric atomic update
+         *     access modes are unsupported.
          * </ul>
          * <p>
          * If the field is declared {@code volatile} then the returned VarHandle
          * will override access to the field (effectively ignore the
          * {@code volatile} declaration) in accordance to it's specified
          * access modes.
+         * <p>
+         * If the field type is {@code float} or {@code double} then numeric
+         * and atomic update access modes compare values using their bitwise
+         * representation (see {@link Float#floatToRawIntBits} and
+         * {@link Double#doubleToRawLongBits}, respectively).
+         * @apiNote
+         * Bitwise comparison of {@code float} values or {@code double} values,
+         * as performed by the numeric and atomic update access modes, differ
+         * from the primitive {@code ==} operator and the {@link Float#equals}
+         * and {@link Double#equals} methods, specifically with respect to
+         * comparing NaN values or comparing {@code -0.0} with {@code +0.0}.
+         * Care should be taken when performing a compare and set or a compare
+         * and exchange operation with such values since the operation may
+         * unexpectedly fail.
+         * There are many possible NaN values that are considered to be
+         * {@code NaN} in Java, although no IEEE 754 floating-point operation
+         * provided by Java can distinguish between them.  Operation failure can
+         * occur if the expected or witness value is a NaN value and it is
+         * transformed (perhaps in a platform specific manner) into another NaN
+         * value, and thus has a different bitwise representation (see
+         * {@link Float#intBitsToFloat} or {@link Double#longBitsToDouble} for more
+         * details).
+         * The values {@code -0.0} and {@code +0.0} have different bitwise
+         * representations but are considered equal when using the primitive
+         * {@code ==} operator.  Operation failure can occur if, for example, a
+         * numeric algorithm computes an expected value to be say {@code -0.0}
+         * and previously computed the witness value to be say {@code +0.0}.
          * @param f the reflected field, with a field of type {@code T}, and
          * a declaring class of type {@code R}
          * @return a VarHandle giving access to non-static fields or a static
@@ -2289,17 +2352,38 @@ return mh1;
      * Certain access modes of the returned VarHandle are unsupported under
      * the following conditions:
      * <ul>
-     * <li>if the component type is anything other than {@code int},
-     *     {@code long} or a reference type, then atomic update access modes
-     *     are unsupported.  (Future major platform releases of the JDK may
-     *     support additional types for certain currently unsupported access
-     *     modes.)
-     * <li>if the component type is anything other than {@code int} or
-     *     {@code long}, then numeric atomic update access modes are
-     *     unsupported.  (Future major platform releases of the JDK may
-     *     support additional numeric types for certain currently
-     *     unsupported access modes.)
+     * <li>if the component type is anything other than {@code byte},
+     *     {@code short}, {@code char}, {@code int} or {@code long},
+     *     {@code float}, or {@code double} then numeric atomic update access
+     *     modes are unsupported.
      * </ul>
+     * <p>
+     * If the component type is {@code float} or {@code double} then numeric
+     * and atomic update access modes compare values using their bitwise
+     * representation (see {@link Float#floatToRawIntBits} and
+     * {@link Double#doubleToRawLongBits}, respectively).
+     * @apiNote
+     * Bitwise comparison of {@code float} values or {@code double} values,
+     * as performed by the numeric and atomic update access modes, differ
+     * from the primitive {@code ==} operator and the {@link Float#equals}
+     * and {@link Double#equals} methods, specifically with respect to
+     * comparing NaN values or comparing {@code -0.0} with {@code +0.0}.
+     * Care should be taken when performing a compare and set or a compare
+     * and exchange operation with such values since the operation may
+     * unexpectedly fail.
+     * There are many possible NaN values that are considered to be
+     * {@code NaN} in Java, although no IEEE 754 floating-point operation
+     * provided by Java can distinguish between them.  Operation failure can
+     * occur if the expected or witness value is a NaN value and it is
+     * transformed (perhaps in a platform specific manner) into another NaN
+     * value, and thus has a different bitwise representation (see
+     * {@link Float#intBitsToFloat} or {@link Double#longBitsToDouble} for more
+     * details).
+     * The values {@code -0.0} and {@code +0.0} have different bitwise
+     * representations but are considered equal when using the primitive
+     * {@code ==} operator.  Operation failure can occur if, for example, a
+     * numeric algorithm computes an expected value to be say {@code -0.0}
+     * and previously computed the witness value to be say {@code +0.0}.
      * @param arrayClass the class of an array, of type {@code T[]}
      * @return a VarHandle giving access to elements of an array
      * @throws NullPointerException if the arrayClass is null
@@ -2363,16 +2447,11 @@ return mh1;
      * int misalignedAtIndex = (misalignedAtZeroIndex + index) % sizeOfT;
      * boolean isMisaligned = misalignedAtIndex != 0;
      * }</pre>
-     *
-     * @implNote
-     * The variable types {@code float} and {@code double} are supported as if
-     * by transformation to and access with the variable types {@code int} and
-     * {@code long} respectively.  For example, the transformation of a
-     * {@code double} value to a long value is performed as if using
-     * {@link Double#doubleToRawLongBits(double)}, and the reverse
-     * transformation is performed as if using
-     * {@link Double#longBitsToDouble(long)}.
-     *
+     * <p>
+     * If the variable type is {@code float} or {@code double} then atomic
+     * update access modes compare values using their bitwise representation
+     * (see {@link Float#floatToRawIntBits} and
+     * {@link Double#doubleToRawLongBits}, respectively).
      * @param viewArrayClass the view array class, with a component type of
      * type {@code T}
      * @param byteOrder the endianness of the view array elements, as
@@ -2449,16 +2528,11 @@ return mh1;
      * int misalignedAtIndex = bb.alignmentOffset(index, sizeOfT);
      * boolean isMisaligned = misalignedAtIndex != 0;
      * }</pre>
-     *
-     * @implNote
-     * The variable types {@code float} and {@code double} are supported as if
-     * by transformation to and access with the variable types {@code int} and
-     * {@code long} respectively.  For example, the transformation of a
-     * {@code double} value to a long value is performed as if using
-     * {@link Double#doubleToRawLongBits(double)}, and the reverse
-     * transformation is performed as if using
-     * {@link Double#longBitsToDouble(long)}.
-     *
+     * <p>
+     * If the variable type is {@code float} or {@code double} then atomic
+     * update access modes compare values using their bitwise representation
+     * (see {@link Float#floatToRawIntBits} and
+     * {@link Double#doubleToRawLongBits}, respectively).
      * @param viewArrayClass the view array class, with a component type of
      * type {@code T}
      * @param byteOrder the endianness of the view array elements, as
@@ -3353,7 +3427,8 @@ assertEquals("xy", h3.invoke("x", "y", 1, "a", "b", "c"));
      * @return a possibly adapted method handle
      * @throws NullPointerException if either argument is null
      * @throws IllegalArgumentException if any element of {@code newTypes} is {@code void.class},
-     *         or if either index is out of range in its corresponding list,
+     *         or if {@code skip} is negative or greater than the arity of the target,
+     *         or if {@code pos} is negative or greater than the newTypes list size,
      *         or if the non-skipped target parameter types match the new types at {@code pos}
      * @since 9
      */

@@ -90,7 +90,7 @@ static CFTypeRef animationTimeKey = NULL;
     apple_laf_JRSUIConstants_ ## clazz ## __ ## constant
 
 #define CONSTANT_CHECK(clazz, constant)                                \
-    JRS_CONSTANT(clazz, constant) == JNI_CONSTANT(clazz, constant)
+    ( JRS_CONSTANT(clazz, constant) == JNI_CONSTANT(clazz, constant) )
 
 #define CONSISTENCY_CHECK(clazz, constant)                            \
     if ( !CONSTANT_CHECK(clazz, constant) ) return NO;

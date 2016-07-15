@@ -42,11 +42,11 @@ import java.util.List;
 import static org.testng.Assert.*;
 
 public class VarHandleTestAccessShort extends VarHandleBaseTest {
-    static final short static_final_v = (short)1;
+    static final short static_final_v = (short)0x0123;
 
     static short static_v;
 
-    final short final_v = (short)1;
+    final short final_v = (short)0x0123;
 
     short v;
 
@@ -99,18 +99,18 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_OPAQUE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
 
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
 
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
     }
 
 
@@ -220,89 +220,47 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         // Plain
         {
             short x = (short) vh.get(recv);
-            assertEquals(x, (short)1, "get short value");
+            assertEquals(x, (short)0x0123, "get short value");
         }
 
 
         // Volatile
         {
             short x = (short) vh.getVolatile(recv);
-            assertEquals(x, (short)1, "getVolatile short value");
+            assertEquals(x, (short)0x0123, "getVolatile short value");
         }
 
         // Lazy
         {
             short x = (short) vh.getAcquire(recv);
-            assertEquals(x, (short)1, "getRelease short value");
+            assertEquals(x, (short)0x0123, "getRelease short value");
         }
 
         // Opaque
         {
             short x = (short) vh.getOpaque(recv);
-            assertEquals(x, (short)1, "getOpaque short value");
+            assertEquals(x, (short)0x0123, "getOpaque short value");
         }
     }
 
     static void testInstanceFinalFieldUnsupported(VarHandleTestAccessShort recv, VarHandle vh) {
         checkUOE(() -> {
-            vh.set(recv, (short)2);
+            vh.set(recv, (short)0x4567);
         });
 
         checkUOE(() -> {
-            vh.setVolatile(recv, (short)2);
+            vh.setVolatile(recv, (short)0x4567);
         });
 
         checkUOE(() -> {
-            vh.setRelease(recv, (short)2);
+            vh.setRelease(recv, (short)0x4567);
         });
 
         checkUOE(() -> {
-            vh.setOpaque(recv, (short)2);
+            vh.setOpaque(recv, (short)0x4567);
         });
 
-        checkUOE(() -> {
-            boolean r = vh.compareAndSet(recv, (short)1, (short)2);
-        });
 
-        checkUOE(() -> {
-            short r = (short) vh.compareAndExchangeVolatile(recv, (short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            short r = (short) vh.compareAndExchangeAcquire(recv, (short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            short r = (short) vh.compareAndExchangeRelease(recv, (short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSet(recv, (short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetVolatile(recv, (short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetAcquire(recv, (short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetRelease(recv, (short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            short r = (short) vh.getAndSet(recv, (short)1);
-        });
-
-        checkUOE(() -> {
-            short o = (short) vh.getAndAdd(recv, (short)1);
-        });
-
-        checkUOE(() -> {
-            short o = (short) vh.addAndGet(recv, (short)1);
-        });
     }
 
 
@@ -310,249 +268,353 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         // Plain
         {
             short x = (short) vh.get();
-            assertEquals(x, (short)1, "get short value");
+            assertEquals(x, (short)0x0123, "get short value");
         }
 
 
         // Volatile
         {
             short x = (short) vh.getVolatile();
-            assertEquals(x, (short)1, "getVolatile short value");
+            assertEquals(x, (short)0x0123, "getVolatile short value");
         }
 
         // Lazy
         {
             short x = (short) vh.getAcquire();
-            assertEquals(x, (short)1, "getRelease short value");
+            assertEquals(x, (short)0x0123, "getRelease short value");
         }
 
         // Opaque
         {
             short x = (short) vh.getOpaque();
-            assertEquals(x, (short)1, "getOpaque short value");
+            assertEquals(x, (short)0x0123, "getOpaque short value");
         }
     }
 
     static void testStaticFinalFieldUnsupported(VarHandle vh) {
         checkUOE(() -> {
-            vh.set((short)2);
+            vh.set((short)0x4567);
         });
 
         checkUOE(() -> {
-            vh.setVolatile((short)2);
+            vh.setVolatile((short)0x4567);
         });
 
         checkUOE(() -> {
-            vh.setRelease((short)2);
+            vh.setRelease((short)0x4567);
         });
 
         checkUOE(() -> {
-            vh.setOpaque((short)2);
+            vh.setOpaque((short)0x4567);
         });
 
-        checkUOE(() -> {
-            boolean r = vh.compareAndSet((short)1, (short)2);
-        });
 
-        checkUOE(() -> {
-            short r = (short) vh.compareAndExchangeVolatile((short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            short r = (short) vh.compareAndExchangeAcquire((short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            short r = (short) vh.compareAndExchangeRelease((short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSet((short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetVolatile((short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetAcquire((short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetRelease((short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            short r = (short) vh.getAndSet((short)1);
-        });
-
-        checkUOE(() -> {
-            short o = (short) vh.getAndAdd((short)1);
-        });
-
-        checkUOE(() -> {
-            short o = (short) vh.addAndGet((short)1);
-        });
     }
 
 
     static void testInstanceField(VarHandleTestAccessShort recv, VarHandle vh) {
         // Plain
         {
-            vh.set(recv, (short)1);
+            vh.set(recv, (short)0x0123);
             short x = (short) vh.get(recv);
-            assertEquals(x, (short)1, "set short value");
+            assertEquals(x, (short)0x0123, "set short value");
         }
 
 
         // Volatile
         {
-            vh.setVolatile(recv, (short)2);
+            vh.setVolatile(recv, (short)0x4567);
             short x = (short) vh.getVolatile(recv);
-            assertEquals(x, (short)2, "setVolatile short value");
+            assertEquals(x, (short)0x4567, "setVolatile short value");
         }
 
         // Lazy
         {
-            vh.setRelease(recv, (short)1);
+            vh.setRelease(recv, (short)0x0123);
             short x = (short) vh.getAcquire(recv);
-            assertEquals(x, (short)1, "setRelease short value");
+            assertEquals(x, (short)0x0123, "setRelease short value");
         }
 
         // Opaque
         {
-            vh.setOpaque(recv, (short)2);
+            vh.setOpaque(recv, (short)0x4567);
             short x = (short) vh.getOpaque(recv);
-            assertEquals(x, (short)2, "setOpaque short value");
+            assertEquals(x, (short)0x4567, "setOpaque short value");
         }
 
+        vh.set(recv, (short)0x0123);
 
+        // Compare
+        {
+            boolean r = vh.compareAndSet(recv, (short)0x0123, (short)0x4567);
+            assertEquals(r, true, "success compareAndSet short");
+            short x = (short) vh.get(recv);
+            assertEquals(x, (short)0x4567, "success compareAndSet short value");
+        }
+
+        {
+            boolean r = vh.compareAndSet(recv, (short)0x0123, (short)0x89AB);
+            assertEquals(r, false, "failing compareAndSet short");
+            short x = (short) vh.get(recv);
+            assertEquals(x, (short)0x4567, "failing compareAndSet short value");
+        }
+
+        {
+            short r = (short) vh.compareAndExchange(recv, (short)0x4567, (short)0x0123);
+            assertEquals(r, (short)0x4567, "success compareAndExchange short");
+            short x = (short) vh.get(recv);
+            assertEquals(x, (short)0x0123, "success compareAndExchange short value");
+        }
+
+        {
+            short r = (short) vh.compareAndExchange(recv, (short)0x4567, (short)0x89AB);
+            assertEquals(r, (short)0x0123, "failing compareAndExchange short");
+            short x = (short) vh.get(recv);
+            assertEquals(x, (short)0x0123, "failing compareAndExchange short value");
+        }
+
+        {
+            short r = (short) vh.compareAndExchangeAcquire(recv, (short)0x0123, (short)0x4567);
+            assertEquals(r, (short)0x0123, "success compareAndExchangeAcquire short");
+            short x = (short) vh.get(recv);
+            assertEquals(x, (short)0x4567, "success compareAndExchangeAcquire short value");
+        }
+
+        {
+            short r = (short) vh.compareAndExchangeAcquire(recv, (short)0x0123, (short)0x89AB);
+            assertEquals(r, (short)0x4567, "failing compareAndExchangeAcquire short");
+            short x = (short) vh.get(recv);
+            assertEquals(x, (short)0x4567, "failing compareAndExchangeAcquire short value");
+        }
+
+        {
+            short r = (short) vh.compareAndExchangeRelease(recv, (short)0x4567, (short)0x0123);
+            assertEquals(r, (short)0x4567, "success compareAndExchangeRelease short");
+            short x = (short) vh.get(recv);
+            assertEquals(x, (short)0x0123, "success compareAndExchangeRelease short value");
+        }
+
+        {
+            short r = (short) vh.compareAndExchangeRelease(recv, (short)0x4567, (short)0x89AB);
+            assertEquals(r, (short)0x0123, "failing compareAndExchangeRelease short");
+            short x = (short) vh.get(recv);
+            assertEquals(x, (short)0x0123, "failing compareAndExchangeRelease short value");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSet(recv, (short)0x0123, (short)0x4567);
+            }
+            assertEquals(success, true, "weakCompareAndSet short");
+            short x = (short) vh.get(recv);
+            assertEquals(x, (short)0x4567, "weakCompareAndSet short value");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetAcquire(recv, (short)0x4567, (short)0x0123);
+            }
+            assertEquals(success, true, "weakCompareAndSetAcquire short");
+            short x = (short) vh.get(recv);
+            assertEquals(x, (short)0x0123, "weakCompareAndSetAcquire short");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetRelease(recv, (short)0x0123, (short)0x4567);
+            }
+            assertEquals(success, true, "weakCompareAndSetRelease short");
+            short x = (short) vh.get(recv);
+            assertEquals(x, (short)0x4567, "weakCompareAndSetRelease short");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetVolatile(recv, (short)0x4567, (short)0x0123);
+            }
+            assertEquals(success, true, "weakCompareAndSetVolatile short");
+            short x = (short) vh.get(recv);
+            assertEquals(x, (short)0x0123, "weakCompareAndSetVolatile short value");
+        }
+
+        // Compare set and get
+        {
+            short o = (short) vh.getAndSet(recv, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndSet short");
+            short x = (short) vh.get(recv);
+            assertEquals(x, (short)0x4567, "getAndSet short value");
+        }
+
+        vh.set(recv, (short)0x0123);
+
+        // get and add, add and get
+        {
+            short o = (short) vh.getAndAdd(recv, (short)0x89AB);
+            assertEquals(o, (short)0x0123, "getAndAdd short");
+            short c = (short) vh.addAndGet(recv, (short)0x89AB);
+            assertEquals(c, (short)((short)0x0123 + (short)0x89AB + (short)0x89AB), "getAndAdd short value");
+        }
     }
 
     static void testInstanceFieldUnsupported(VarHandleTestAccessShort recv, VarHandle vh) {
-        checkUOE(() -> {
-            boolean r = vh.compareAndSet(recv, (short)1, (short)2);
-        });
 
-        checkUOE(() -> {
-            short r = (short) vh.compareAndExchangeVolatile(recv, (short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            short r = (short) vh.compareAndExchangeAcquire(recv, (short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            short r = (short) vh.compareAndExchangeRelease(recv, (short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSet(recv, (short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetVolatile(recv, (short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetAcquire(recv, (short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetRelease(recv, (short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            short r = (short) vh.getAndSet(recv, (short)1);
-        });
-
-        checkUOE(() -> {
-            short o = (short) vh.getAndAdd(recv, (short)1);
-        });
-
-        checkUOE(() -> {
-            short o = (short) vh.addAndGet(recv, (short)1);
-        });
     }
 
 
     static void testStaticField(VarHandle vh) {
         // Plain
         {
-            vh.set((short)1);
+            vh.set((short)0x0123);
             short x = (short) vh.get();
-            assertEquals(x, (short)1, "set short value");
+            assertEquals(x, (short)0x0123, "set short value");
         }
 
 
         // Volatile
         {
-            vh.setVolatile((short)2);
+            vh.setVolatile((short)0x4567);
             short x = (short) vh.getVolatile();
-            assertEquals(x, (short)2, "setVolatile short value");
+            assertEquals(x, (short)0x4567, "setVolatile short value");
         }
 
         // Lazy
         {
-            vh.setRelease((short)1);
+            vh.setRelease((short)0x0123);
             short x = (short) vh.getAcquire();
-            assertEquals(x, (short)1, "setRelease short value");
+            assertEquals(x, (short)0x0123, "setRelease short value");
         }
 
         // Opaque
         {
-            vh.setOpaque((short)2);
+            vh.setOpaque((short)0x4567);
             short x = (short) vh.getOpaque();
-            assertEquals(x, (short)2, "setOpaque short value");
+            assertEquals(x, (short)0x4567, "setOpaque short value");
         }
 
+        vh.set((short)0x0123);
 
+        // Compare
+        {
+            boolean r = vh.compareAndSet((short)0x0123, (short)0x4567);
+            assertEquals(r, true, "success compareAndSet short");
+            short x = (short) vh.get();
+            assertEquals(x, (short)0x4567, "success compareAndSet short value");
+        }
+
+        {
+            boolean r = vh.compareAndSet((short)0x0123, (short)0x89AB);
+            assertEquals(r, false, "failing compareAndSet short");
+            short x = (short) vh.get();
+            assertEquals(x, (short)0x4567, "failing compareAndSet short value");
+        }
+
+        {
+            short r = (short) vh.compareAndExchange((short)0x4567, (short)0x0123);
+            assertEquals(r, (short)0x4567, "success compareAndExchange short");
+            short x = (short) vh.get();
+            assertEquals(x, (short)0x0123, "success compareAndExchange short value");
+        }
+
+        {
+            short r = (short) vh.compareAndExchange((short)0x4567, (short)0x89AB);
+            assertEquals(r, (short)0x0123, "failing compareAndExchange short");
+            short x = (short) vh.get();
+            assertEquals(x, (short)0x0123, "failing compareAndExchange short value");
+        }
+
+        {
+            short r = (short) vh.compareAndExchangeAcquire((short)0x0123, (short)0x4567);
+            assertEquals(r, (short)0x0123, "success compareAndExchangeAcquire short");
+            short x = (short) vh.get();
+            assertEquals(x, (short)0x4567, "success compareAndExchangeAcquire short value");
+        }
+
+        {
+            short r = (short) vh.compareAndExchangeAcquire((short)0x0123, (short)0x89AB);
+            assertEquals(r, (short)0x4567, "failing compareAndExchangeAcquire short");
+            short x = (short) vh.get();
+            assertEquals(x, (short)0x4567, "failing compareAndExchangeAcquire short value");
+        }
+
+        {
+            short r = (short) vh.compareAndExchangeRelease((short)0x4567, (short)0x0123);
+            assertEquals(r, (short)0x4567, "success compareAndExchangeRelease short");
+            short x = (short) vh.get();
+            assertEquals(x, (short)0x0123, "success compareAndExchangeRelease short value");
+        }
+
+        {
+            short r = (short) vh.compareAndExchangeRelease((short)0x4567, (short)0x89AB);
+            assertEquals(r, (short)0x0123, "failing compareAndExchangeRelease short");
+            short x = (short) vh.get();
+            assertEquals(x, (short)0x0123, "failing compareAndExchangeRelease short value");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSet((short)0x0123, (short)0x4567);
+            }
+            assertEquals(success, true, "weakCompareAndSet short");
+            short x = (short) vh.get();
+            assertEquals(x, (short)0x4567, "weakCompareAndSet short value");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetAcquire((short)0x4567, (short)0x0123);
+            }
+            assertEquals(success, true, "weakCompareAndSetAcquire short");
+            short x = (short) vh.get();
+            assertEquals(x, (short)0x0123, "weakCompareAndSetAcquire short");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetRelease((short)0x0123, (short)0x4567);
+            }
+            assertEquals(success, true, "weakCompareAndSetRelease short");
+            short x = (short) vh.get();
+            assertEquals(x, (short)0x4567, "weakCompareAndSetRelease short");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = vh.weakCompareAndSetRelease((short)0x4567, (short)0x0123);
+            }
+            assertEquals(success, true, "weakCompareAndSetVolatile short");
+            short x = (short) vh.get();
+            assertEquals(x, (short)0x0123, "weakCompareAndSetVolatile short");
+        }
+
+        // Compare set and get
+        {
+            short o = (short) vh.getAndSet((short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndSet short");
+            short x = (short) vh.get();
+            assertEquals(x, (short)0x4567, "getAndSet short value");
+        }
+
+        vh.set((short)0x0123);
+
+        // get and add, add and get
+        {
+            short o = (short) vh.getAndAdd( (short)0x89AB);
+            assertEquals(o, (short)0x0123, "getAndAdd short");
+            short c = (short) vh.addAndGet((short)0x89AB);
+            assertEquals(c, (short)((short)0x0123 + (short)0x89AB + (short)0x89AB), "getAndAdd short value");
+        }
     }
 
     static void testStaticFieldUnsupported(VarHandle vh) {
-        checkUOE(() -> {
-            boolean r = vh.compareAndSet((short)1, (short)2);
-        });
 
-        checkUOE(() -> {
-            short r = (short) vh.compareAndExchangeVolatile((short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            short r = (short) vh.compareAndExchangeAcquire((short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            short r = (short) vh.compareAndExchangeRelease((short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSet((short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetVolatile((short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetAcquire((short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetRelease((short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            short r = (short) vh.getAndSet((short)1);
-        });
-
-        checkUOE(() -> {
-            short o = (short) vh.getAndAdd((short)1);
-        });
-
-        checkUOE(() -> {
-            short o = (short) vh.addAndGet((short)1);
-        });
     }
 
 
@@ -562,34 +624,149 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         for (int i = 0; i < array.length; i++) {
             // Plain
             {
-                vh.set(array, i, (short)1);
+                vh.set(array, i, (short)0x0123);
                 short x = (short) vh.get(array, i);
-                assertEquals(x, (short)1, "get short value");
+                assertEquals(x, (short)0x0123, "get short value");
             }
 
 
             // Volatile
             {
-                vh.setVolatile(array, i, (short)2);
+                vh.setVolatile(array, i, (short)0x4567);
                 short x = (short) vh.getVolatile(array, i);
-                assertEquals(x, (short)2, "setVolatile short value");
+                assertEquals(x, (short)0x4567, "setVolatile short value");
             }
 
             // Lazy
             {
-                vh.setRelease(array, i, (short)1);
+                vh.setRelease(array, i, (short)0x0123);
                 short x = (short) vh.getAcquire(array, i);
-                assertEquals(x, (short)1, "setRelease short value");
+                assertEquals(x, (short)0x0123, "setRelease short value");
             }
 
             // Opaque
             {
-                vh.setOpaque(array, i, (short)2);
+                vh.setOpaque(array, i, (short)0x4567);
                 short x = (short) vh.getOpaque(array, i);
-                assertEquals(x, (short)2, "setOpaque short value");
+                assertEquals(x, (short)0x4567, "setOpaque short value");
             }
 
+            vh.set(array, i, (short)0x0123);
 
+            // Compare
+            {
+                boolean r = vh.compareAndSet(array, i, (short)0x0123, (short)0x4567);
+                assertEquals(r, true, "success compareAndSet short");
+                short x = (short) vh.get(array, i);
+                assertEquals(x, (short)0x4567, "success compareAndSet short value");
+            }
+
+            {
+                boolean r = vh.compareAndSet(array, i, (short)0x0123, (short)0x89AB);
+                assertEquals(r, false, "failing compareAndSet short");
+                short x = (short) vh.get(array, i);
+                assertEquals(x, (short)0x4567, "failing compareAndSet short value");
+            }
+
+            {
+                short r = (short) vh.compareAndExchange(array, i, (short)0x4567, (short)0x0123);
+                assertEquals(r, (short)0x4567, "success compareAndExchange short");
+                short x = (short) vh.get(array, i);
+                assertEquals(x, (short)0x0123, "success compareAndExchange short value");
+            }
+
+            {
+                short r = (short) vh.compareAndExchange(array, i, (short)0x4567, (short)0x89AB);
+                assertEquals(r, (short)0x0123, "failing compareAndExchange short");
+                short x = (short) vh.get(array, i);
+                assertEquals(x, (short)0x0123, "failing compareAndExchange short value");
+            }
+
+            {
+                short r = (short) vh.compareAndExchangeAcquire(array, i, (short)0x0123, (short)0x4567);
+                assertEquals(r, (short)0x0123, "success compareAndExchangeAcquire short");
+                short x = (short) vh.get(array, i);
+                assertEquals(x, (short)0x4567, "success compareAndExchangeAcquire short value");
+            }
+
+            {
+                short r = (short) vh.compareAndExchangeAcquire(array, i, (short)0x0123, (short)0x89AB);
+                assertEquals(r, (short)0x4567, "failing compareAndExchangeAcquire short");
+                short x = (short) vh.get(array, i);
+                assertEquals(x, (short)0x4567, "failing compareAndExchangeAcquire short value");
+            }
+
+            {
+                short r = (short) vh.compareAndExchangeRelease(array, i, (short)0x4567, (short)0x0123);
+                assertEquals(r, (short)0x4567, "success compareAndExchangeRelease short");
+                short x = (short) vh.get(array, i);
+                assertEquals(x, (short)0x0123, "success compareAndExchangeRelease short value");
+            }
+
+            {
+                short r = (short) vh.compareAndExchangeRelease(array, i, (short)0x4567, (short)0x89AB);
+                assertEquals(r, (short)0x0123, "failing compareAndExchangeRelease short");
+                short x = (short) vh.get(array, i);
+                assertEquals(x, (short)0x0123, "failing compareAndExchangeRelease short value");
+            }
+
+            {
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = vh.weakCompareAndSet(array, i, (short)0x0123, (short)0x4567);
+                }
+                assertEquals(success, true, "weakCompareAndSet short");
+                short x = (short) vh.get(array, i);
+                assertEquals(x, (short)0x4567, "weakCompareAndSet short value");
+            }
+
+            {
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = vh.weakCompareAndSetAcquire(array, i, (short)0x4567, (short)0x0123);
+                }
+                assertEquals(success, true, "weakCompareAndSetAcquire short");
+                short x = (short) vh.get(array, i);
+                assertEquals(x, (short)0x0123, "weakCompareAndSetAcquire short");
+            }
+
+            {
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = vh.weakCompareAndSetRelease(array, i, (short)0x0123, (short)0x4567);
+                }
+                assertEquals(success, true, "weakCompareAndSetRelease short");
+                short x = (short) vh.get(array, i);
+                assertEquals(x, (short)0x4567, "weakCompareAndSetRelease short");
+            }
+
+            {
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = vh.weakCompareAndSetVolatile(array, i, (short)0x4567, (short)0x0123);
+                }
+                assertEquals(success, true, "weakCompareAndSetVolatile short");
+                short x = (short) vh.get(array, i);
+                assertEquals(x, (short)0x0123, "weakCompareAndSetVolatile short");
+            }
+
+            // Compare set and get
+            {
+                short o = (short) vh.getAndSet(array, i, (short)0x4567);
+                assertEquals(o, (short)0x0123, "getAndSet short");
+                short x = (short) vh.get(array, i);
+                assertEquals(x, (short)0x4567, "getAndSet short value");
+            }
+
+            vh.set(array, i, (short)0x0123);
+
+            // get and add, add and get
+            {
+                short o = (short) vh.getAndAdd(array, i, (short)0x89AB);
+                assertEquals(o, (short)0x0123, "getAndAdd short");
+                short c = (short) vh.addAndGet(array, i, (short)0x89AB);
+                assertEquals(c, (short)((short)0x0123 + (short)0x89AB + (short)0x89AB), "getAndAdd short value");
+            }
         }
     }
 
@@ -597,49 +774,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         short[] array = new short[10];
 
         int i = 0;
-        checkUOE(() -> {
-            boolean r = vh.compareAndSet(array, i, (short)1, (short)2);
-        });
 
-        checkUOE(() -> {
-            short r = (short) vh.compareAndExchangeVolatile(array, i, (short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            short r = (short) vh.compareAndExchangeAcquire(array, i, (short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            short r = (short) vh.compareAndExchangeRelease(array, i, (short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSet(array, i, (short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetVolatile(array, i, (short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetAcquire(array, i, (short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            boolean r = vh.weakCompareAndSetRelease(array, i, (short)1, (short)2);
-        });
-
-        checkUOE(() -> {
-            short r = (short) vh.getAndSet(array, i, (short)1);
-        });
-
-        checkUOE(() -> {
-            short o = (short) vh.getAndAdd(array, i, (short)1);
-        });
-
-        checkUOE(() -> {
-            short o = (short) vh.addAndGet(array, i, (short)1);
-        });
     }
 
     static void testArrayIndexOutOfBounds(VarHandle vh) throws Throwable {
@@ -653,7 +788,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                vh.set(array, ci, (short)1);
+                vh.set(array, ci, (short)0x0123);
             });
 
             checkIOOBE(() -> {
@@ -661,7 +796,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                vh.setVolatile(array, ci, (short)1);
+                vh.setVolatile(array, ci, (short)0x0123);
             });
 
             checkIOOBE(() -> {
@@ -669,7 +804,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                vh.setRelease(array, ci, (short)1);
+                vh.setRelease(array, ci, (short)0x0123);
             });
 
             checkIOOBE(() -> {
@@ -677,10 +812,52 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                vh.setOpaque(array, ci, (short)1);
+                vh.setOpaque(array, ci, (short)0x0123);
             });
 
+            checkIOOBE(() -> {
+                boolean r = vh.compareAndSet(array, ci, (short)0x0123, (short)0x4567);
+            });
 
+            checkIOOBE(() -> {
+                short r = (short) vh.compareAndExchange(array, ci, (short)0x4567, (short)0x0123);
+            });
+
+            checkIOOBE(() -> {
+                short r = (short) vh.compareAndExchangeAcquire(array, ci, (short)0x4567, (short)0x0123);
+            });
+
+            checkIOOBE(() -> {
+                short r = (short) vh.compareAndExchangeRelease(array, ci, (short)0x4567, (short)0x0123);
+            });
+
+            checkIOOBE(() -> {
+                boolean r = vh.weakCompareAndSet(array, ci, (short)0x0123, (short)0x4567);
+            });
+
+            checkIOOBE(() -> {
+                boolean r = vh.weakCompareAndSetVolatile(array, ci, (short)0x0123, (short)0x4567);
+            });
+
+            checkIOOBE(() -> {
+                boolean r = vh.weakCompareAndSetAcquire(array, ci, (short)0x0123, (short)0x4567);
+            });
+
+            checkIOOBE(() -> {
+                boolean r = vh.weakCompareAndSetRelease(array, ci, (short)0x0123, (short)0x4567);
+            });
+
+            checkIOOBE(() -> {
+                short o = (short) vh.getAndSet(array, ci, (short)0x0123);
+            });
+
+            checkIOOBE(() -> {
+                short o = (short) vh.getAndAdd(array, ci, (short)0x89AB);
+            });
+
+            checkIOOBE(() -> {
+                short o = (short) vh.addAndGet(array, ci, (short)0x89AB);
+            });
         }
     }
 }

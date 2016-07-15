@@ -27,7 +27,8 @@ package sun.security.provider;
 
 import sun.security.util.HexDumpEncoder;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 public abstract class AbstractHashDrbg extends AbstractDrbg {
@@ -113,16 +114,13 @@ public abstract class AbstractHashDrbg extends AbstractDrbg {
         // 800-90Ar1 10.1.2.3: Hmac_DRBG Instantiate Process.
 
         // Step 1: entropy_input || nonce || personalization_string.
-        byte[] seed = Arrays.copyOf(entropy, entropy.length + nonce.length +
-                ((personalizationString == null) ? 0
-                        : personalizationString.length));
-        System.arraycopy(nonce, 0, seed, entropy.length, nonce.length);
+        List<byte[]> inputs = new ArrayList<>(3);
+        inputs.add(entropy);
+        inputs.add(nonce);
         if (personalizationString != null) {
-            System.arraycopy(personalizationString, 0,
-                    seed, entropy.length + nonce.length,
-                    personalizationString.length);
+            inputs.add(personalizationString);
         }
-        hashReseedInternal(seed);
+        hashReseedInternal(inputs);
     }
 
     @Override
@@ -140,13 +138,17 @@ public abstract class AbstractHashDrbg extends AbstractDrbg {
         // 800-90Ar1 10.1.2.4: Hmac_DRBG Reseed Process.
 
         // Step 1: entropy_input || additional_input.
+        List<byte[]> inputs = new ArrayList<>(2);
+        inputs.add(ei);
         if (additionalInput != null) {
-            ei = Arrays.copyOf(ei, ei.length + additionalInput.length);
-            System.arraycopy(additionalInput, 0, ei,
-                    ei.length - additionalInput.length, additionalInput.length);
+            inputs.add(additionalInput);
         }
-        hashReseedInternal(ei);
+        hashReseedInternal(inputs);
     }
 
-    protected abstract void hashReseedInternal(byte[] seed);
+    /**
+     * Operates on multiple inputs.
+     * @param inputs not null, each element neither null
+     */
+    protected abstract void hashReseedInternal(List<byte[]> inputs);
 }

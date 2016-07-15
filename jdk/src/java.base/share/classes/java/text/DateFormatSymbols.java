@@ -418,7 +418,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * Gets short month strings. For example: "Jan", "Feb", etc.
      *
      * <p>If the language requires different forms for formatting and
-     * stand-alone usages, This method returns short month names in
+     * stand-alone usages, this method returns short month names in
      * the formatting form. For example, the preferred abbreviation
      * for January in the Catalan language is <em>de gen.</em> in the
      * formatting form, while it is <em>gen.</em> in the stand-alone

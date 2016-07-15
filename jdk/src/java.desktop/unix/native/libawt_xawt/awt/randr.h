@@ -5,8 +5,8 @@
 /*
  * $XFree86: xc/include/extensions/randr.h,v 1.4 2001/11/24 07:24:58 keithp Exp $
  *
- * Copyright © 2000, Compaq Computer Corporation,
- * Copyright © 2002, Hewlett Packard, Inc.
+ * Copyright Â© 2000, Compaq Computer Corporation,
+ * Copyright Â© 2002, Hewlett Packard, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -31,6 +31,7 @@
 #ifndef _RANDR_H_
 #define _RANDR_H_
 
+typedef unsigned short  Connection;
 typedef unsigned short  Rotation;
 typedef unsigned short  SizeID;
 typedef unsigned short  SubpixelOrder;

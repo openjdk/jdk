@@ -25,7 +25,7 @@
  * @test TestG1PercentageOptions
  * @key gc
  * @bug 8068942
- * @requires vm.gc=="G1" | vm.gc=="null"
+ * @requires vm.gc.G1
  * @summary Test argument processing of various percentage options
  * @library /testlibrary
  * @modules java.base/jdk.internal.misc

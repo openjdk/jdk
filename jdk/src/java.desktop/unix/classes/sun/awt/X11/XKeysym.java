@@ -952,7 +952,7 @@ public class XKeysym {
         keysym2UCSHash.put( (long)0x9f4, (char)0x251c); // XK_leftt --> BOX DRAWINGS LIGHT VERTICAL AND RIGHT
         keysym2UCSHash.put( (long)0x9f5, (char)0x2524); // XK_rightt --> BOX DRAWINGS LIGHT VERTICAL AND LEFT
         keysym2UCSHash.put( (long)0x9f6, (char)0x2534); // XK_bott --> BOX DRAWINGS LIGHT UP AND HORIZONTAL
-        keysym2UCSHash.put( (long)0x9f7, (char)0x242c); // XK_topt -->
+        keysym2UCSHash.put( (long)0x9f7, (char)0x252c); // XK_topt --> BOX DRAWINGS LIGHT DOWN AND HORIZONTAL
         keysym2UCSHash.put( (long)0x9f8, (char)0x2502); // XK_vertbar --> BOX DRAWINGS LIGHT VERTICAL
         keysym2UCSHash.put( (long)0xaa1, (char)0x2003); // XK_emspace --> EM SPACE
         keysym2UCSHash.put( (long)0xaa2, (char)0x2002); // XK_enspace --> EN SPACE

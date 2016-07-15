@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -350,16 +350,20 @@ static WCHAR* getWideString(UINT codePage, char* str, int len, int *pwlen) {
 
 /*
  * Convert UTF-8 to a platform string
+ * NOTE: outputBufSize includes the space for the trailing 0.
  */
-int JNICALL utf8ToPlatform(jbyte *utf8, int len, char* output, int outputMaxLen) {
+int JNICALL utf8ToPlatform(jbyte *utf8, int len, char* output, int outputBufSize) {
     int wlen;
     int plen;
     WCHAR* wstr;
     UINT codepage;
+    int outputMaxLen;
 
     UTF_ASSERT(utf8);
     UTF_ASSERT(output);
-    UTF_ASSERT(outputMaxLen > len);
+    UTF_ASSERT(len >= 0);
+    UTF_ASSERT(outputBufSize > len);
+    outputMaxLen = outputBufSize - 1; // leave space for trailing 0
 
     /* Zero length is ok, but we don't need to do much */
     if ( len == 0 ) {
@@ -394,16 +398,20 @@ just_copy_bytes:
 
 /*
  * Convert Platform Encoding to UTF-8.
+ * NOTE: outputBufSize includes the space for the trailing 0.
  */
-int JNICALL utf8FromPlatform(char *str, int len, jbyte *output, int outputMaxLen) {
+int JNICALL utf8FromPlatform(char *str, int len, jbyte *output, int outputBufSize) {
     int wlen;
     int plen;
     WCHAR* wstr;
     UINT codepage;
+    int outputMaxLen;
 
     UTF_ASSERT(str);
     UTF_ASSERT(output);
-    UTF_ASSERT(outputMaxLen > len);
+    UTF_ASSERT(len >= 0);
+    UTF_ASSERT(outputBufSize > len);
+    outputMaxLen = outputBufSize - 1; // leave space for trailing 0
 
     /* Zero length is ok, but we don't need to do much */
     if ( len == 0 ) {
@@ -449,18 +457,21 @@ typedef enum {TO_UTF8, FROM_UTF8} conv_direction;
 /*
  * Do iconv() conversion.
  *    Returns length or -1 if output overflows.
+ * NOTE: outputBufSize includes the space for the trailing 0.
  */
-static int iconvConvert(conv_direction drn, char *bytes, size_t len, char *output, size_t outputMaxLen) {
+static int iconvConvert(conv_direction drn, char *bytes, size_t len, char *output, size_t outputBufSize) {
 
     static char *codeset = 0;
     iconv_t func;
     size_t bytes_converted;
     size_t inLeft, outLeft;
     char *inbuf, *outbuf;
+    int outputMaxLen;
 
     UTF_ASSERT(bytes);
     UTF_ASSERT(output);
-    UTF_ASSERT(outputMaxLen > len);
+    UTF_ASSERT(outputBufSize > len);
+    outputMaxLen = outputBufSize - 1; // leave space for trailing 0
 
     /* Zero length is ok, but we don't need to do much */
     if ( len == 0 ) {
@@ -524,17 +535,19 @@ just_copy_bytes:
 /*
  * Convert UTF-8 to Platform Encoding.
  *    Returns length or -1 if output overflows.
+ * NOTE: outputBufSize includes the space for the trailing 0.
  */
-int JNICALL utf8ToPlatform(jbyte *utf8, int len, char *output, int outputMaxLen) {
-    return iconvConvert(FROM_UTF8, (char*)utf8, len, output, outputMaxLen);
+int JNICALL utf8ToPlatform(jbyte *utf8, int len, char *output, int outputBufSize) {
+    return iconvConvert(FROM_UTF8, (char*)utf8, len, output, outputBufSize);
 }
 
 /*
  * Convert Platform Encoding to UTF-8.
  *    Returns length or -1 if output overflows.
+ * NOTE: outputBufSize includes the space for the trailing 0.
  */
-int JNICALL utf8FromPlatform(char *str, int len, jbyte *output, int outputMaxLen) {
-    return iconvConvert(TO_UTF8, str, len, (char*) output, outputMaxLen);
+int JNICALL utf8FromPlatform(char *str, int len, jbyte *output, int outputBufSize) {
+    return iconvConvert(TO_UTF8, str, len, (char*) output, outputBufSize);
 }
 
 #endif

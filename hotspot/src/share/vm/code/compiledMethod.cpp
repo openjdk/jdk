@@ -63,7 +63,7 @@ bool CompiledMethod::is_method_handle_return(address return_pc) {
 bool CompiledMethod::is_deopt_entry(address pc) {
   return pc == deopt_handler_begin()
 #if INCLUDE_JVMCI
-    || pc == (deopt_handler_begin() + NativeCall::instruction_size)
+    || (is_compiled_by_jvmci() && pc == (deopt_handler_begin() + NativeCall::instruction_size))
 #endif
     ;
 }
