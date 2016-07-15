@@ -1360,6 +1360,9 @@ final class XWM
               case LG3D_WM:
                   res = zeroInsets;
                   break;
+              case UNITY_COMPIZ_WM:
+                  res = new Insets(28, 1, 1, 1);
+                  break;
               case MOTIF_WM:
               case OPENLOOK_WM:
               default:
