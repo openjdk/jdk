@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2011 SAP SE. All rights reserved.
+ * Copyright (c) 2002-2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011 SAP AG.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,9 @@
  * questions.
  */
 
-class TestMT {
+class Test {
 
-    static boolean loadLib(String libName) {
+    static boolean loadLib(String libName){
         try {
             System.loadLibrary(libName);
             System.out.println("Loaded library "+ libName + ".");
@@ -37,7 +37,8 @@ class TestMT {
         return false;
     }
 
-    public static int counter        = 1;
+    public static int counter = 1;
+
     static int Runner() {
         counter = counter * -1;
         int i = counter;
@@ -45,11 +46,11 @@ class TestMT {
         return i;
     }
 
-    public static int run(String msg) {
-        try {
+    public static int run() {
+        try{
             Runner();
         } catch (StackOverflowError e) {
-            System.out.println(msg + " caught stack overflow error.");
+            System.out.println("Caught stack overflow error.");
             return 0;
         } catch (OutOfMemoryError e) {
             return 0;
@@ -58,28 +59,7 @@ class TestMT {
     }
 
     public static void main(String argv[]) {
-        try {
-            for (int i = 0; i < 20; i++) {
-                Thread t = new DoStackOverflow("SpawnedThread " + i);
-                t.start();
-            }
-            run("Main thread");
-            loadLib("test-rwx");
-            run("Main thread");
-        } catch (Exception e) {
-            System.out.println(e);
-        }
-    }
-
-    static class DoStackOverflow extends Thread {
-        public DoStackOverflow(String name) {
-            super(name);
-        }
-        public void run() {
-            for (int i = 0; i < 10; ++i) {
-                TestMT.run(getName());
-                yield();
-            }
-        }
+        loadLib(argv[0]);
+        System.exit(run());
     }
 }
