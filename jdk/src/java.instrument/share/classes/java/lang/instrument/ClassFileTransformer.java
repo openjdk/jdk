@@ -38,7 +38,7 @@ import java.security.ProtectionDomain;
  * A transformer of class files. An agent registers an implementation of this
  * interface using the {@link Instrumentation#addTransformer addTransformer}
  * method so that the transformer's {@link
- * ClassFileTransformer#transform(Module,String,Class,ProtectionDomain,byte[])
+ * ClassFileTransformer#transform(Module,ClassLoader,String,Class,ProtectionDomain,byte[])
  * transform} method is invoked when classes are loaded,
  * {@link Instrumentation#redefineClasses redefined}, or
  * {@link Instrumentation#retransformClasses retransformed}. The implementation
@@ -170,13 +170,13 @@ public interface ClassFileTransformer {
     /**
      * Transforms the given class file and returns a new replacement class file.
      * This method is invoked when the {@link Module Module} bearing {@link
-     * ClassFileTransformer#transform(Module,String,Class,ProtectionDomain,byte[])
+     * ClassFileTransformer#transform(Module,ClassLoader,String,Class,ProtectionDomain,byte[])
      * transform} is not overridden.
      *
      * @implSpec The default implementation returns null.
      *
      * @param loader                the defining loader of the class to be transformed,
-     *                              may be <code>null</code> if the bootstrap loader
+     *                              may be {@code null} if the bootstrap loader
      * @param className             the name of the class in the internal form of fully
      *                              qualified class and interface names as defined in
      *                              <i>The Java Virtual Machine Specification</i>.
@@ -208,9 +208,11 @@ public interface ClassFileTransformer {
      *
      * @implSpec The default implementation of this method invokes the
      * {@link #transform(ClassLoader,String,Class,ProtectionDomain,byte[]) transform}
-     * method with the {@link Module#getClassLoader() ClassLoader} for the module.
+     * method.
      *
      * @param module                the module of the class to be transformed
+     * @param loader                the defining loader of the class to be transformed,
+     *                              may be {@code null} if the bootstrap loader
      * @param className             the name of the class in the internal form of fully
      *                              qualified class and interface names as defined in
      *                              <i>The Java Virtual Machine Specification</i>.
@@ -230,14 +232,12 @@ public interface ClassFileTransformer {
      */
     default byte[]
     transform(  Module              module,
+                ClassLoader         loader,
                 String              className,
                 Class<?>            classBeingRedefined,
                 ProtectionDomain    protectionDomain,
                 byte[]              classfileBuffer)
         throws IllegalClassFormatException {
-
-        PrivilegedAction<ClassLoader> pa = module::getClassLoader;
-        ClassLoader loader = AccessController.doPrivileged(pa);
 
         // invoke the legacy transform method
         return transform(loader,
