@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -387,11 +387,15 @@ public class LogManager {
                         assert rootLogger == null;
                         assert initializedCalled && !initializationDone;
 
+                        // create root logger before reading primordial
+                        // configuration - to ensure that it will be added
+                        // before the global logger, and not after.
+                        owner.rootLogger = owner.new RootLogger();
+
                         // Read configuration.
                         owner.readPrimordialConfiguration();
 
                         // Create and retain Logger for the root of the namespace.
-                        owner.rootLogger = owner.new RootLogger();
                         owner.addLogger(owner.rootLogger);
                         if (!owner.rootLogger.isLevelInitialized()) {
                             owner.rootLogger.setLevel(defaultLevel);
@@ -516,7 +520,7 @@ public class LogManager {
         if (result == null) {
             // only allocate the new logger once
             Logger newLogger = new Logger(name, resourceBundleName,
-                    module == null ? null : module, this, false);
+                                          module, this, false);
             do {
                 if (addLogger(newLogger)) {
                     // We successfully added the new Logger that we
@@ -569,15 +573,13 @@ public class LogManager {
         } while (logger == null);
 
         // LogManager will set the sysLogger's handlers via LogManager.addLogger method.
-        if (logger != sysLogger && sysLogger.accessCheckedHandlers().length == 0) {
-            // if logger already exists but handlers not set
+        if (logger != sysLogger) {
+            // if logger already exists we merge the two logger configurations.
             final Logger l = logger;
             AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 @Override
                 public Void run() {
-                    for (Handler hdl : l.accessCheckedHandlers()) {
-                        sysLogger.addHandler(hdl);
-                    }
+                    l.mergeWithSystemLogger(sysLogger);
                     return null;
                 }
             });

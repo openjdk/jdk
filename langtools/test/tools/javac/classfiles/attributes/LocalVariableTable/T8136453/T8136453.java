@@ -50,7 +50,7 @@ public class T8136453 {
 
     void run() {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        List<String> opts = Arrays.asList("-XDsave-parameter-names");
+        List<String> opts = Arrays.asList("-parameters");
         JavacTask task = (JavacTask) compiler.getTask(null, null, null, opts, null, null);
         TypeElement t = task.getElements().getTypeElement("T");
         ExecutableElement testMethod = ElementFilter.methodsIn(t.getEnclosedElements()).get(0);

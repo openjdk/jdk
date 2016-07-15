@@ -148,7 +148,8 @@ public class ReaderBulkReadContract {
 
     private static File createTempFileWithContents(String contents) {
         try {
-            File file = File.createTempFile("ReaderContract", "");
+            File testDir = new File(System.getProperty("test.dir", "."));
+            File file = File.createTempFile("ReaderContract", "", testDir);
             try (FileWriter w = new FileWriter(file)) {
                 w.write(contents);
             }

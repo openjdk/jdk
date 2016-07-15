@@ -23,17 +23,14 @@
 
 /**
  * @test
+ * @bug 8055299
  * @library /lib/testlibrary
  * @modules jdk.httpserver
  * @build jdk.testlibrary.SimpleSSLContext
- * @run main Equals
- * @bug 8055299
+ * @run main/othervm -Djavax.net.debug=ssl,handshake,record Equals
  */
-
 import com.sun.net.httpserver.*;
-
 import java.net.*;
-import java.util.*;
 import java.io.*;
 import javax.net.ssl.*;
 import java.util.concurrent.*;
@@ -43,54 +40,59 @@ public class Equals {
 
     static SSLContext ctx;
 
-    public static void main (String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
         HttpsServer s2 = null;
-        ExecutorService executor=null;
+        ExecutorService executor = null;
         try {
-            InetSocketAddress addr = new InetSocketAddress (0);
-            s2 = HttpsServer.create (addr, 0);
-            HttpHandler h = new Handler ();
-            HttpContext c2 = s2.createContext ("/test1", h);
+            InetSocketAddress addr = new InetSocketAddress(0);
+            s2 = HttpsServer.create(addr, 0);
+            HttpHandler h = new Handler();
+            HttpContext c2 = s2.createContext("/test1", h);
             executor = Executors.newCachedThreadPool();
-            s2.setExecutor (executor);
+            s2.setExecutor(executor);
             ctx = new SimpleSSLContext().get();
-            s2.setHttpsConfigurator(new HttpsConfigurator (ctx));
+            s2.setHttpsConfigurator(new HttpsConfigurator(ctx));
             s2.start();
-
             int httpsport = s2.getAddress().getPort();
+            System.out.printf("%nServer address: %s%n", s2.getAddress());
             test(httpsport);
-            System.out.println ("OK");
+            System.out.println("OK");
         } finally {
-            if (s2 != null)
+            if (s2 != null) {
                 s2.stop(2);
-            if (executor != null)
-                executor.shutdown ();
+            }
+            if (executor != null) {
+                executor.shutdown();
+            }
         }
     }
 
     static class Handler implements HttpHandler {
+
         int invocation = 1;
-        public void handle (HttpExchange t)
-            throws IOException
-        {
+
+        public void handle(HttpExchange t)
+                throws IOException {
             InputStream is = t.getRequestBody();
-            while (is.read () != -1) {
+            while (is.read() != -1) {
             }
             is.close();
-            t.sendResponseHeaders (200, 0);
+            t.sendResponseHeaders(200, 0);
             t.close();
         }
     }
 
-    static void test (int port) throws Exception {
-        URL url = new URL ("https://localhost:"+port+"/test1/");
+    static void test(int port) throws Exception {
+        System.out.printf("%nClient using port number: %s%n", port);
+        String spec = String.format("https://localhost:%s/test1/", port);
+        URL url = new URL(spec);
         HttpsURLConnection urlcs = (HttpsURLConnection) url.openConnection();
-        urlcs.setHostnameVerifier (new HostnameVerifier () {
-            public boolean verify (String s, SSLSession s1) {
+        urlcs.setHostnameVerifier(new HostnameVerifier() {
+            public boolean verify(String s, SSLSession s1) {
                 return true;
             }
         });
-        urlcs.setSSLSocketFactory (ctx.getSocketFactory());
+        urlcs.setSSLSocketFactory(ctx.getSocketFactory());
 
         InputStream is = urlcs.getInputStream();
         while (is.read() != -1) {

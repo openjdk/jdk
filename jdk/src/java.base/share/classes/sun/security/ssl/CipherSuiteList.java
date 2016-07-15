@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,20 +112,15 @@ final class CipherSuiteList {
     boolean containsEC() {
         if (containsEC == null) {
             for (CipherSuite c : cipherSuites) {
-                switch (c.keyExchange) {
-                case K_ECDH_ECDSA:
-                case K_ECDH_RSA:
-                case K_ECDHE_ECDSA:
-                case K_ECDHE_RSA:
-                case K_ECDH_ANON:
+                if (c.keyExchange.isEC) {
                     containsEC = true;
                     return true;
-                default:
-                    break;
                 }
             }
+
             containsEC = false;
         }
+
         return containsEC;
     }
 

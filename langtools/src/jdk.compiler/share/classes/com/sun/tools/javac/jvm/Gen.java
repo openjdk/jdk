@@ -38,6 +38,7 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.jvm.Code.*;
 import com.sun.tools.javac.jvm.Items.*;
+import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree.*;
 
@@ -124,7 +125,7 @@ public class Gen extends JCTree.Visitor {
             ? options.isSet(G)
             : options.isSet(G_CUSTOM, "vars");
         genCrt = options.isSet(XJCOV);
-        debugCode = options.isSet("debugcode");
+        debugCode = options.isSet("debug.code");
         allowBetterNullChecks = target.hasObjects();
         pool = new Pool(types);
 

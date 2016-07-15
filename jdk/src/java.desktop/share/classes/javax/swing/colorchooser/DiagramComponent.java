@@ -60,7 +60,8 @@ final class DiagramComponent extends JComponent implements MouseListener, MouseM
         getInsets(this.insets);
         this.width = getWidth() - this.insets.left - this.insets.right;
         this.height = getHeight() - this.insets.top - this.insets.bottom;
-
+        if ((this.width <= 0) || (this.height <= 0))
+            return;
         boolean update = (this.image == null)
                 || (this.width != this.image.getWidth())
                 || (this.height != this.image.getHeight());

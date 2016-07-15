@@ -294,6 +294,8 @@ public class JavaTimeSupplementary_sq extends OpenListResourceBundle {
                 sharedAmPmMarkers },
             { "roc.narrow.AmPmMarkers",
                 sharedAmPmMarkers },
+            { "timezone.gmtFormat",
+                "Ora e Grenui\u00e7it: {0}" },
         };
     }
 }

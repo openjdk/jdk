@@ -81,7 +81,9 @@ ATTACH_PKGS = com.sun.tools.attach \
 
 JCONSOLE_PKGS = com.sun.tools.jconsole
 
-JSHELLAPI_PKGS = jdk.jshell
+JSHELLAPI_PKGS = jdk.jshell \
+    jdk.jshell.spi \
+    jdk.jshell.execution
 
 TREEAPI_PKGS = com.sun.source.doctree \
     com.sun.source.tree \

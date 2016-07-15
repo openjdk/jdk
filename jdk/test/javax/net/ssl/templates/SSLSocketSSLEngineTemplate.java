@@ -31,7 +31,6 @@
  * @bug 7105780
  * @summary Add SSLSocket client/SSLEngine server to templates directory.
  * @run main/othervm SSLSocketSSLEngineTemplate
- * @key intermittent
  */
 
 /**

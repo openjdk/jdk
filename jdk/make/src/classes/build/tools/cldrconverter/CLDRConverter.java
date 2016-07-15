@@ -693,6 +693,8 @@ public class CLDRConverter {
         "field.weekday",
         "field.dayperiod",
         "field.hour",
+        "timezone.hourFormat",
+        "timezone.gmtFormat",
         "field.minute",
         "field.second",
         "field.zone",

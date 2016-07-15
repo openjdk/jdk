@@ -60,7 +60,6 @@ class ThreadGroup implements Thread.UncaughtExceptionHandler {
     int maxPriority;
     boolean destroyed;
     boolean daemon;
-    boolean vmAllowSuspension;
 
     int nUnstartedThreads = 0;
     int nthreads;
@@ -121,7 +120,6 @@ class ThreadGroup implements Thread.UncaughtExceptionHandler {
         this.name = name;
         this.maxPriority = parent.maxPriority;
         this.daemon = parent.daemon;
-        this.vmAllowSuspension = parent.vmAllowSuspension;
         this.parent = parent;
         parent.add(this);
     }
@@ -1075,10 +1073,6 @@ class ThreadGroup implements Thread.UncaughtExceptionHandler {
      */
     @Deprecated(since="1.2")
     public boolean allowThreadSuspension(boolean b) {
-        this.vmAllowSuspension = b;
-        if (!b) {
-            VM.unsuspendSomeThreads();
-        }
         return true;
     }
 

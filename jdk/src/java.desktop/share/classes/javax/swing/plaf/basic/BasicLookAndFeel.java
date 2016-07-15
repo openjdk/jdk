@@ -1055,6 +1055,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
             "RadioButtonMenuItem.checkIcon", radioButtonMenuItemIcon,
             "RadioButtonMenuItem.arrowIcon", menuItemArrowIcon,
             "RadioButtonMenuItem.commandSound", null,
+            "RadioButtonMenuItem.closeOnMouseClick", Boolean.TRUE,
 
             "CheckBoxMenuItem.font", dialogPlain12,
             "CheckBoxMenuItem.acceleratorFont", dialogPlain12,
@@ -1071,6 +1072,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
             "CheckBoxMenuItem.checkIcon", checkBoxMenuItemIcon,
             "CheckBoxMenuItem.arrowIcon", menuItemArrowIcon,
             "CheckBoxMenuItem.commandSound", null,
+            "CheckBoxMenuItem.closeOnMouseClick", Boolean.TRUE,
 
             "Menu.font", dialogPlain12,
             "Menu.acceleratorFont", dialogPlain12,

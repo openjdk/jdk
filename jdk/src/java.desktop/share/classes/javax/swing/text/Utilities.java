@@ -86,6 +86,27 @@ public class Utilities {
 
     /**
      * Draws the given text, expanding any tabs that are contained
+     * using the given tab expansion technique.
+     *
+     * @param s  the source of the text
+     * @param x  the X origin {@code >= 0}
+     * @param y  the Y origin {@code >= 0}
+     * @param g  the graphics context
+     * @param e  how to expand the tabs.  If this value is null,
+     *           tabs will be expanded as a space character.
+     * @param startOffset starting offset of the text in the document {@code >= 0}
+     * @return  the X location at the end of the rendered text
+     */
+    public static final float drawTabbedText(Segment s, float x, float y,
+                                             Graphics2D g,
+                                             TabExpander e,
+                                             int startOffset)
+    {
+        return drawTabbedText(s, (int) x, (int) y, (Graphics) g, e, startOffset);
+    }
+
+    /**
+     * Draws the given text, expanding any tabs that are contained
      * using the given tab expansion technique.  This particular
      * implementation renders in a 1.1 style coordinate system
      * where ints are used and 72dpi is assumed.
@@ -208,6 +229,23 @@ public class Utilities {
         return getTabbedTextWidth(null, s, metrics, x, e, startOffset, null);
     }
 
+    /**
+     * Determines the width of the given segment of text taking tabs
+     * into consideration.
+     *
+     * @param s  the source of the text
+     * @param metrics the font metrics to use for the calculation
+     * @param x  the X origin {@code >= 0}
+     * @param e  how to expand the tabs.  If this value is null,
+     *   tabs will be expanded as a space character.
+     * @param startOffset starting offset of the text in the document {@code >= 0}
+     * @return  the width of the text
+     */
+    public static final float getTabbedTextWidth(Segment s, FontMetrics metrics,
+                                                 float x, TabExpander e,
+                                                 int startOffset) {
+        return getTabbedTextWidth(s, metrics, (int) x, e, startOffset);
+    }
 
     // In addition to the previous method it can extend spaces for
     // justification.
@@ -334,6 +372,34 @@ public class Utilities {
                                                 int startOffset,
                                                 boolean round) {
         return getTabbedTextOffset(null, s, metrics, x0, x, e, startOffset, round, null);
+    }
+
+    /**
+     * Determines the relative offset into the given text that
+     * best represents the given span in the view coordinate
+     * system.
+     *
+     * @param s  the source of the text
+     * @param metrics the font metrics to use for the calculation
+     * @param x0 the starting view location representing the start
+     *   of the given text {@code >= 0}.
+     * @param x  the target view location to translate to an
+     *   offset into the text {@code >= 0}.
+     * @param e  how to expand the tabs.  If this value is null,
+     *   tabs will be expanded as a space character.
+     * @param startOffset starting offset of the text in the document {@code >= 0}
+     * @param round whether or not to round
+     * @return  the offset into the text {@code >= 0}
+     */
+    public static final int getTabbedTextOffset(Segment s,
+                                                FontMetrics metrics,
+                                                float x0, float x,
+                                                TabExpander e,
+                                                int startOffset,
+                                                boolean round)
+    {
+        return getTabbedTextOffset(null, s, metrics, (int) x0, (int) x, e,
+                                   startOffset, round, null);
     }
 
     // In addition to the previous method it can extend spaces for
@@ -499,6 +565,26 @@ public class Utilities {
     }
 
     /**
+     * Determine where to break the given text to fit
+     * within the given span. This tries to find a word boundary.
+     * @param s  the source of the text
+     * @param metrics the font metrics to use for the calculation
+     * @param x0 the starting view location representing the start
+     *        of the given text.
+     * @param x  the target view location to translate to an
+     *        offset into the text.
+     * @param e  how to expand the tabs.  If this value is null,
+     *        tabs will be expanded as a space character.
+     * @param startOffset starting offset in the document of the text
+     * @return  the offset into the given text
+     */
+    public static final int getBreakLocation(Segment s, FontMetrics metrics,
+                                             float x0, float x, TabExpander e,
+                                             int startOffset) {
+        return getBreakLocation(s, metrics, (int) x0, (int) x, e, startOffset);
+    }
+
+    /**
      * Determines the starting row model position of the row that contains
      * the specified model position.  The component given must have a
      * size to compute the result.  If the component doesn't have a size
@@ -598,6 +684,24 @@ public class Utilities {
 
     /**
      * Determines the position in the model that is closest to the given
+     * view location in the row above.  The component given must have a
+     * size to compute the result.  If the component doesn't have a size
+     * a value of -1 will be returned.
+     *
+     * @param c the editor
+     * @param offs the offset in the document {@code >= 0}
+     * @param x the X coordinate {@code >= 0}
+     * @return the position {@code >= 0} if the request can be computed, otherwise
+     *  a value of -1 will be returned.
+     * @exception BadLocationException if the offset is out of range
+     */
+    public static final int getPositionAbove(JTextComponent c, int offs, float x)
+            throws BadLocationException {
+        return getPositionAbove(c, offs, (int) x);
+    }
+
+    /**
+     * Determines the position in the model that is closest to the given
      * view location in the row below.  The component given must have a
      * size to compute the result.  If the component doesn't have a size
      * a value of -1 will be returned.
@@ -632,6 +736,24 @@ public class Utilities {
             r = (lastOffs <= n) ? c.modelToView(lastOffs) : null;
         }
         return offs;
+    }
+
+    /**
+     * Determines the position in the model that is closest to the given
+     * view location in the row below.  The component given must have a
+     * size to compute the result.  If the component doesn't have a size
+     * a value of -1 will be returned.
+     *
+     * @param c the editor
+     * @param offs the offset in the document {@code >= 0}
+     * @param x the X coordinate {@code >= 0}
+     * @return the position {@code >= 0} if the request can be computed, otherwise
+     *  a value of -1 will be returned.
+     * @exception BadLocationException if the offset is out of range
+     */
+    public static final int getPositionBelow(JTextComponent c, int offs, float x)
+            throws BadLocationException {
+        return getPositionBelow(c, offs, (int) x);
     }
 
     /**

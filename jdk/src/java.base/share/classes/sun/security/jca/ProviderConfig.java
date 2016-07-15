@@ -159,6 +159,8 @@ final class ProviderConfig {
     /**
      * Get the provider object. Loads the provider if it is not already loaded.
      */
+    // com.sun.net.ssl.internal.ssl.Provider has been deprecated since JDK 9
+    @SuppressWarnings("deprecation")
     synchronized Provider getProvider() {
         // volatile variable load
         Provider p = provider;
