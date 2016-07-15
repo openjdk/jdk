@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,14 @@
 #include <jni.h>
 #include "com_sun_security_auth_module_SolarisSystem.h"
 #include <stdio.h>
-#include <pwd.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+
+/* For POSIX-compliant getpwuid_r on Solaris */
+#if defined(__solaris__)
+#define _POSIX_PTHREAD_SEMANTICS
+#endif
 #include <pwd.h>
 
 static void throwIllegalArgumentException(JNIEnv *env, const char *msg) {
@@ -43,8 +47,10 @@ Java_com_sun_security_auth_module_SolarisSystem_getSolarisInfo
                                                 (JNIEnv *env, jobject obj) {
 
     int i;
-    char pwd_buf[1024];
+    long pwd_bufsize;
+    char *pwd_buf = NULL;
     struct passwd pwd;
+    struct passwd* p = NULL;
     jsize numSuppGroups = getgroups(0, NULL);
     jfieldID fid;
     jstring jstr;
@@ -53,20 +59,31 @@ Java_com_sun_security_auth_module_SolarisSystem_getSolarisInfo
     gid_t *groups;
     jclass cls;
 
+    pwd_bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+    if (pwd_bufsize == -1) {
+        pwd_bufsize = 1024;
+    }
+    pwd_buf = (char *)malloc(pwd_bufsize);
     groups = (gid_t *)calloc(numSuppGroups, sizeof(gid_t));
 
-    if (groups == NULL) {
-        jclass cls = (*env)->FindClass(env,"java/lang/OutOfMemoryError");
-        if (cls != NULL)
+    if (pwd_buf == NULL || groups == NULL) {
+        if (pwd_buf != NULL) {
+            free(pwd_buf);
+        }
+        if (groups != NULL) {
+            free(groups);
+        }
+        cls = (*env)->FindClass(env,"java/lang/OutOfMemoryError");
+        if (cls != NULL) {
             (*env)->ThrowNew(env, cls, NULL);
+        }
         return;
     }
 
     cls = (*env)->GetObjectClass(env, obj);
 
-    memset(pwd_buf, 0, sizeof(pwd_buf));
-    if (getpwuid_r(getuid(), &pwd, pwd_buf, sizeof(pwd_buf)) != NULL &&
-        getgroups(numSuppGroups, groups) != -1) {
+    if (getpwuid_r(getuid(), &pwd, pwd_buf, sizeof(pwd_buf), &p) != 0 &&
+        p != NULL && getgroups(numSuppGroups, groups) != -1) {
 
         /*
          * set username
@@ -129,7 +146,7 @@ Java_com_sun_security_auth_module_SolarisSystem_getSolarisInfo
         (*env)->SetObjectField(env, obj, fid, jgroups);
     }
 cleanupAndReturn:
+    free(pwd_buf);
     free(groups);
-
     return;
 }
