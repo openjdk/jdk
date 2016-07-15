@@ -1300,8 +1300,16 @@ public class ServiceDialog extends JDialog implements ActionListener {
                 if (sc == null) {
                     sc = SheetCollate.UNCOLLATED;
                 }
+                if (sc != null &&
+                    !psCurrent.isAttributeValueSupported(sc, docFlavor, asCurrent)) {
+                    scSupported = false;
+                }
+            } else {
+                if (!psCurrent.isAttributeValueSupported(sc, docFlavor, asCurrent)) {
+                    scSupported = false;
+                }
             }
-            cbCollate.setSelected(sc == SheetCollate.COLLATED);
+            cbCollate.setSelected(sc == SheetCollate.COLLATED && scSupported);
             updateCollateCB();
         }
     }
