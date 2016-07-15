@@ -34,16 +34,18 @@
 #include "utilities/exceptions.hpp"
 
 // put OS-includes here
-# include <sys/types.h>
-# include <sys/mman.h>
-# include <errno.h>
-# include <stdio.h>
-# include <unistd.h>
-# include <sys/stat.h>
-# include <signal.h>
-# include <pwd.h>
-# include <procfs.h>
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <errno.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <signal.h>
+#include <procfs.h>
 
+/* For POSIX-compliant getpwuid_r on Solaris */
+#define _POSIX_PTHREAD_SEMANTICS
+#include <pwd.h>
 
 static char* backing_store_file_name = NULL;  // name of the backing store
                                               // file, if successfully created.
@@ -453,12 +455,8 @@ static char* get_user_name(uid_t uid) {
 
   char* pwbuf = NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
 
-#ifdef _GNU_SOURCE
   struct passwd* p = NULL;
   int result = getpwuid_r(uid, &pwent, pwbuf, (size_t)bufsize, &p);
-#else  // _GNU_SOURCE
-  struct passwd* p = getpwuid_r(uid, &pwent, pwbuf, (int)bufsize);
-#endif // _GNU_SOURCE
 
   if (p == NULL || p->pw_name == NULL || *(p->pw_name) == '\0') {
     if (PrintMiscellaneous && Verbose) {

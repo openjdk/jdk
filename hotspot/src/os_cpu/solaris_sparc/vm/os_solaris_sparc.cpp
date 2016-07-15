@@ -74,7 +74,6 @@
 # include <sys/systeminfo.h>
 # include <sys/socket.h>
 # include <sys/lwp.h>
-# include <pwd.h>
 # include <poll.h>
 # include <sys/lwp.h>
 
