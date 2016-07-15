@@ -22,6 +22,7 @@
  *
  */
 
+#include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
 #include "memory/resourceArea.hpp"
 #include "unittest.hpp"

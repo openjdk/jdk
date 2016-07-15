@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,10 +56,11 @@ final class ECDHCrypt {
     }
 
     // Called by ServerHandshaker for ephemeral ECDH
-    ECDHCrypt(String curveName, SecureRandom random) {
+    ECDHCrypt(int curveId, SecureRandom random) {
         try {
             KeyPairGenerator kpg = JsseJce.getKeyPairGenerator("EC");
-            ECGenParameterSpec params = new ECGenParameterSpec(curveName);
+            ECGenParameterSpec params =
+                    EllipticCurvesExtension.getECGenParamSpec(curveId);
             kpg.initialize(params, random);
             KeyPair kp = kpg.generateKeyPair();
             privateKey = kp.getPrivate();

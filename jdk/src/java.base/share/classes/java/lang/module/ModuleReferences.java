@@ -201,7 +201,7 @@ class ModuleReferences {
                 return new JarFile(path.toFile(),
                                    true,               // verify
                                    ZipFile.OPEN_READ,
-                                   JarFile.Release.RUNTIME);
+                                   JarFile.runtimeVersion());
             } catch (IOException ioe) {
                 throw new UncheckedIOException(ioe);
             }

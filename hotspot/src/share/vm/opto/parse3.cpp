@@ -109,7 +109,7 @@ void Parse::do_field_access(bool is_get, bool is_field) {
     return;
   }
 
-  assert(field->will_link(method()->holder(), bc()), "getfield: typeflow responsibility");
+  assert(field->will_link(method(), bc()), "getfield: typeflow responsibility");
 
   // Note:  We do not check for an unloaded field type here any more.
 

@@ -25,7 +25,6 @@ package jdk.vm.ci.hotspot;
 import java.lang.reflect.Array;
 import java.util.Objects;
 
-import jdk.internal.vm.annotation.Stable;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantReflectionProvider;

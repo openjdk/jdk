@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,41 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.hotspotvmconfig;
+package testpkgnomodule1;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-/**
- * Refers to a C++ type in the VM.
- */
-@Target(ElementType.FIELD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface HotSpotVMType {
-
-    /**
-     * Types of information this annotation can return.
-     */
-    enum Type {
-        /**
-         * Returns the size of the type (C++ {@code sizeof()}).
-         */
-        SIZE;
-    }
-
-    /**
-     * Specifies what type of information to return.
-     *
-     * @see Type
-     */
-    Type get();
-
-    /**
-     * Returns the name of the type.
-     *
-     * @return name of type
-     */
-    String name();
+public class TestClassNoModulePkg1 {
 }

@@ -94,7 +94,8 @@ final class ServerHandshaker extends Handshaker {
     // we remember it for the RSA premaster secret version check
     private ProtocolVersion clientRequestedVersion;
 
-    private EllipticCurvesExtension supportedCurves;
+    // client supported elliptic curves
+    private EllipticCurvesExtension requestedCurves;
 
     // the preferable signature algorithm used by ServerKeyExchange message
     SignatureAndHashAlgorithm preferableSignatureAlgorithm;
@@ -741,7 +742,7 @@ final class ServerHandshaker extends Handshaker {
                 throw new SSLException("Client did not resume a session");
             }
 
-            supportedCurves = (EllipticCurvesExtension)
+            requestedCurves = (EllipticCurvesExtension)
                         mesg.extensions.get(ExtensionType.EXT_ELLIPTIC_CURVES);
 
             // We only need to handle the "signature_algorithm" extension
@@ -1572,26 +1573,15 @@ final class ServerHandshaker extends Handshaker {
     // If we cannot continue because we do not support any of the curves that
     // the client requested, return false. Otherwise (all is well), return true.
     private boolean setupEphemeralECDHKeys() {
-        int index = -1;
-        if (supportedCurves != null) {
-            // if the client sent the supported curves extension, pick the
-            // first one that we support;
-            for (int curveId : supportedCurves.curveIds()) {
-                if (EllipticCurvesExtension.isSupported(curveId)) {
-                    index = curveId;
-                    break;
-                }
-            }
-            if (index < 0) {
-                // no match found, cannot use this ciphersuite
-                return false;
-            }
-        } else {
-            // pick our preference
-            index = EllipticCurvesExtension.DEFAULT.curveIds()[0];
+        int index = (requestedCurves != null) ?
+                requestedCurves.getPreferredCurve(algorithmConstraints) :
+                EllipticCurvesExtension.getActiveCurves(algorithmConstraints);
+        if (index < 0) {
+            // no match found, cannot use this ciphersuite
+            return false;
         }
-        String oid = EllipticCurvesExtension.getCurveOid(index);
-        ecdh = new ECDHCrypt(oid, sslContext.getSecureRandom());
+
+        ecdh = new ECDHCrypt(index, sslContext.getSecureRandom());
         return true;
     }
 
@@ -1633,18 +1623,16 @@ final class ServerHandshaker extends Handshaker {
             return false;
         }
         // For ECC certs, check whether we support the EC domain parameters.
-        // If the client sent a EllipticCurves ClientHello extension,
+        // If the client sent a SupportedEllipticCurves ClientHello extension,
         // check against that too.
         if (keyAlgorithm.equals("EC")) {
             if (publicKey instanceof ECPublicKey == false) {
                 return false;
             }
             ECParameterSpec params = ((ECPublicKey)publicKey).getParams();
-            int index = EllipticCurvesExtension.getCurveIndex(params);
-            if (!EllipticCurvesExtension.isSupported(index)) {
-                return false;
-            }
-            if ((supportedCurves != null) && !supportedCurves.contains(index)) {
+            int id = EllipticCurvesExtension.getCurveIndex(params);
+            if ((id <= 0) || !EllipticCurvesExtension.isSupported(id) ||
+                ((requestedCurves != null) && !requestedCurves.contains(id))) {
                 return false;
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import static jdk.test.lib.Asserts.*;
 /* @test TestPerfCountersAndMemoryPools
  * @bug 8023476
  * @library /testlibrary
- * @requires vm.gc=="Serial" | vm.gc=="null"
+ * @requires vm.gc.Serial
  * @summary Tests that a MemoryPoolMXBeans and PerfCounters for metaspace
  *          report the same data.
  * @modules java.base/jdk.internal.misc

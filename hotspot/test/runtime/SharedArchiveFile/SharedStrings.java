@@ -28,7 +28,7 @@
  * Feature support: G1GC only, compressed oops/kptrs, 64-bit os, not on windows
  * @requires (sun.arch.data.model != "32") & (os.family != "windows")
  * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
- * @requires (vm.gc=="G1" | vm.gc=="null")
+ * @requires vm.gc.G1
  * @library /testlibrary /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

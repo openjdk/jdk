@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,6 +275,15 @@ final class JsseJce {
         }
     }
 
+    static AlgorithmParameters getAlgorithmParameters(String algorithm)
+            throws NoSuchAlgorithmException {
+        if (cryptoProvider == null) {
+            return AlgorithmParameters.getInstance(algorithm);
+        } else {
+            return AlgorithmParameters.getInstance(algorithm, cryptoProvider);
+        }
+    }
+
     static SecureRandom getSecureRandom() throws KeyManagementException {
         if (cryptoProvider == null) {
             return new SecureRandom();
@@ -394,6 +403,7 @@ final class JsseJce {
                 JsseJce.getKeyAgreement("ECDH");
                 JsseJce.getKeyFactory("EC");
                 JsseJce.getKeyPairGenerator("EC");
+                JsseJce.getAlgorithmParameters("EC");
             } catch (Exception e) {
                 mediator = false;
             }

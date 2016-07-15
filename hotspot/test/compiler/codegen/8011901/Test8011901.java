@@ -30,21 +30,21 @@
  *
  */
 
-import java.lang.reflect.*;
-import sun.misc.*;
+import java.lang.reflect.Field;
+import jdk.internal.misc.Unsafe;
 
 public class Test8011901 {
 
     private long ctl;
 
-    private static final sun.misc.Unsafe U;
+    private static final Unsafe U;
     private static final long CTL;
 
     static {
         try {
-            Field unsafe = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
+            Field unsafe = Unsafe.class.getDeclaredField("theUnsafe");
             unsafe.setAccessible(true);
-            U = (sun.misc.Unsafe) unsafe.get(null);
+            U = (Unsafe) unsafe.get(null);
             CTL = U.objectFieldOffset(Test8011901.class.getDeclaredField("ctl"));
         } catch (Exception e) {
             throw new Error(e);

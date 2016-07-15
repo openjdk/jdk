@@ -47,6 +47,7 @@ import com.sun.tools.javac.jvm.Pool.DynamicMethod;
 import com.sun.tools.javac.jvm.Pool.Method;
 import com.sun.tools.javac.jvm.Pool.MethodHandle;
 import com.sun.tools.javac.jvm.Pool.Variable;
+import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.util.*;
 
 import static com.sun.tools.javac.code.Flags.*;
@@ -84,7 +85,7 @@ public class ClassWriter extends ClassFile {
 
     /** Switch: describe the generated stackmap.
      */
-    boolean debugstackmap;
+    private boolean debugstackmap;
 
     /**
      * Target class version.
@@ -181,20 +182,18 @@ public class ClassWriter extends ClassFile {
 
         verbose        = options.isSet(VERBOSE);
         genCrt         = options.isSet(XJCOV);
-        debugstackmap  = options.isSet("debugstackmap");
+        debugstackmap = options.isSet("debug.stackmap");
 
         emitSourceFile = options.isUnset(G_CUSTOM) ||
                             options.isSet(G_CUSTOM, "source");
 
-        String dumpModFlags = options.get("dumpmodifiers");
-        dumpClassModifiers =
-            (dumpModFlags != null && dumpModFlags.indexOf('c') != -1);
-        dumpFieldModifiers =
-            (dumpModFlags != null && dumpModFlags.indexOf('f') != -1);
-        dumpInnerClassModifiers =
-            (dumpModFlags != null && dumpModFlags.indexOf('i') != -1);
-        dumpMethodModifiers =
-            (dumpModFlags != null && dumpModFlags.indexOf('m') != -1);
+        String modifierFlags = options.get("debug.dumpmodifiers");
+        if (modifierFlags != null) {
+            dumpClassModifiers = modifierFlags.indexOf('c') != -1;
+            dumpFieldModifiers = modifierFlags.indexOf('f') != -1;
+            dumpInnerClassModifiers = modifierFlags.indexOf('i') != -1;
+            dumpMethodModifiers = modifierFlags.indexOf('m') != -1;
+        }
     }
 
 /******************************************************************
@@ -210,10 +209,10 @@ public class ClassWriter extends ClassFile {
      *  For example, to dump everything:
      *    javac -XDdumpmodifiers=cifm MyProg.java
      */
-    private final boolean dumpClassModifiers; // -XDdumpmodifiers=c
-    private final boolean dumpFieldModifiers; // -XDdumpmodifiers=f
-    private final boolean dumpInnerClassModifiers; // -XDdumpmodifiers=i
-    private final boolean dumpMethodModifiers; // -XDdumpmodifiers=m
+    private boolean dumpClassModifiers; // -XDdumpmodifiers=c
+    private boolean dumpFieldModifiers; // -XDdumpmodifiers=f
+    private boolean dumpInnerClassModifiers; // -XDdumpmodifiers=i
+    private boolean dumpMethodModifiers; // -XDdumpmodifiers=m
 
 
     /** Return flags as a string, separated by " ".

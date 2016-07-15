@@ -30,7 +30,8 @@ grant codeBase "jrt:/jdk.crypto.ucrypto" {
         permission java.security.SecurityPermission "putProviderProperty.OracleUcrypto";
         permission java.security.SecurityPermission "clearProviderProperties.OracleUcrypto";
         permission java.security.SecurityPermission "removeProviderProperty.OracleUcrypto";
-        permission java.io.FilePermission "${java.home}/conf/security/ucrypto-solaris.cfg", "read";
+        // Needed for reading Ucrypto config file
+        permission java.io.FilePermission "<<ALL FILES>>", "read";
 };
 
 grant codeBase "jrt:/java.sql" {

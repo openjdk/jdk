@@ -33,8 +33,10 @@
  * @author Andreas Sterbenz
  * @library ..
  * @library ../../../../java/security/testlibrary
- * @run main/othervm ClientJSSEServerJSSE
- * @run main/othervm ClientJSSEServerJSSE sm policy
+ * @run main/othervm -Djdk.tls.namedGroups="secp256r1,sect193r1"
+ *      ClientJSSEServerJSSE
+ * @run main/othervm -Djdk.tls.namedGroups="secp256r1,sect193r1"
+ *      ClientJSSEServerJSSE sm policy
  */
 
 import java.security.Provider;

@@ -630,7 +630,11 @@ void TemplateInterpreterGenerator::generate_counter_overflow(Label& do_continue)
   __ b(do_continue);
 }
 
-// See if we've got enough room on the stack for locals plus overhead.
+// See if we've got enough room on the stack for locals plus overhead
+// below JavaThread::stack_overflow_limit(). If not, throw a StackOverflowError
+// without going through the signal handler, i.e., reserved and yellow zones
+// will not be made usable. The shadow zone must suffice to handle the
+// overflow.
 // The expression stack grows down incrementally, so the normal guard
 // page mechanism will work for that.
 //
@@ -674,40 +678,25 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   // compute rsp as if this were going to be the last frame on
   // the stack before the red zone
 
-  const Address stack_base(rthread, Thread::stack_base_offset());
-  const Address stack_size(rthread, Thread::stack_size_offset());
-
   // locals + overhead, in bytes
   __ mov(r0, overhead_size);
   __ add(r0, r0, r3, Assembler::LSL, Interpreter::logStackElementSize);  // 2 slots per parameter.
 
-  __ ldr(rscratch1, stack_base);
-  __ ldr(rscratch2, stack_size);
+  const Address stack_limit(rthread, JavaThread::stack_overflow_limit_offset());
+  __ ldr(rscratch1, stack_limit);
 
 #ifdef ASSERT
-  Label stack_base_okay, stack_size_okay;
-  // verify that thread stack base is non-zero
-  __ cbnz(rscratch1, stack_base_okay);
-  __ stop("stack base is zero");
-  __ bind(stack_base_okay);
-  // verify that thread stack size is non-zero
-  __ cbnz(rscratch2, stack_size_okay);
-  __ stop("stack size is zero");
-  __ bind(stack_size_okay);
+  Label limit_okay;
+  // Verify that thread stack limit is non-zero.
+  __ cbnz(rscratch1, limit_okay);
+  __ stop("stack overflow limit is zero");
+  __ bind(limit_okay);
 #endif
 
-  // Add stack base to locals and subtract stack size
-  __ sub(rscratch1, rscratch1, rscratch2); // Stack limit
+  // Add stack limit to locals.
   __ add(r0, r0, rscratch1);
 
-  // Use the bigger size for banging.
-  const int max_bang_size = MAX2(JavaThread::stack_shadow_zone_size(),
-                                 JavaThread::stack_red_zone_size() + JavaThread::stack_yellow_zone_size());
-
-  // add in the red and yellow zone sizes
-  __ add(r0, r0, max_bang_size * 2);
-
-  // check against the current stack bottom
+  // Check against the current stack bottom.
   __ cmp(sp, r0);
   __ br(Assembler::HI, after_frame_check);
 
@@ -1088,9 +1077,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ ldr(r2, constMethod);
   __ load_unsigned_short(r2, size_of_parameters);
 
-  // native calls don't need the stack size check since they have no
+  // Native calls don't need the stack size check since they have no
   // expression stack and the arguments are already on the stack and
-  // we only add a handful of words to the stack
+  // we only add a handful of words to the stack.
 
   // rmethod: Method*
   // r2: size of parameters

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -489,69 +489,72 @@ public class Transfers {
                 debug = verbose = true;
         }
 
-        sourceFile = File.createTempFile("xfer.src.", "");
+        File testDir = new File(System.getProperty("test.dir", "."));
+
+        sourceFile = File.createTempFile("xfer.src.", "", testDir);
         sourceFile.deleteOnExit();
-        targetFile = File.createTempFile("xfer.tgt.", "");
+        targetFile = File.createTempFile("xfer.tgt.", "", testDir);
         targetFile.deleteOnExit();
 
-        File fn = File.createTempFile("xfer.fch.", "");
+        File fn = File.createTempFile("xfer.fch.", "", testDir);
         fn.deleteOnExit();
-        FileChannel fc = new RandomAccessFile(fn, "rw").getChannel();
 
         Random rnd = new Random();
         int failures = 0;
 
-        for (boolean to = false;; to = true) {
-            for (boolean user = false;; user = true) {
-                if (!verbose)
-                    out.print((to ? "To " : "From ") +
-                              (user ? "user channel" : "file channel")
-                              + ":");
-                IntGenerator offGen = new IntGenerator(MAX_XFER_SIZE + 2);
-                while (offGen.hasNext()) {
-                    int off = offGen.next();
-                    if (!verbose) out.print(" " + off);
-                    IntGenerator lenGen = new IntGenerator(MAX_XFER_SIZE + 2);
-                    while (lenGen.hasNext()) {
-                        int len = lenGen.next();
-                        long s = rnd.nextLong();
-                        String chName = null;
-                        try {
-                            if (to) {
-                                Target tgt;
-                                if (user)
-                                    tgt = new UserTarget(len, s);
-                                else
-                                    tgt = new FileTarget(len, s);
-                                chName = tgt.name();
-                                testTo(s, fc, off, len, tgt);
+        try (FileChannel fc = new RandomAccessFile(fn, "rw").getChannel()) {
+            for (boolean to = false;; to = true) {
+                for (boolean user = false;; user = true) {
+                    if (!verbose)
+                        out.print((to ? "To " : "From ") +
+                                  (user ? "user channel" : "file channel")
+                                  + ":");
+                    IntGenerator offGen = new IntGenerator(MAX_XFER_SIZE + 2);
+                    while (offGen.hasNext()) {
+                        int off = offGen.next();
+                        if (!verbose) out.print(" " + off);
+                        IntGenerator lenGen = new IntGenerator(MAX_XFER_SIZE + 2);
+                        while (lenGen.hasNext()) {
+                            int len = lenGen.next();
+                            long s = rnd.nextLong();
+                            String chName = null;
+                            try {
+                                if (to) {
+                                    Target tgt;
+                                    if (user)
+                                        tgt = new UserTarget(len, s);
+                                    else
+                                        tgt = new FileTarget(len, s);
+                                    chName = tgt.name();
+                                    testTo(s, fc, off, len, tgt);
+                                }
+                                else {
+                                    Source src;
+                                    if (user)
+                                        src = new UserSource(len, s);
+                                    else
+                                        src = new FileSource(len, s);
+                                    chName = src.name();
+                                    testFrom(s, src, fc, off, len);
+                                }
+                            } catch (Failure x) {
+                                out.println();
+                                out.println("FAILURE: " + chName
+                                            + ", offset " + off
+                                            + ", length " + len);
+                                x.printStackTrace(out);
+                                failures++;
                             }
-                            else {
-                                Source src;
-                                if (user)
-                                    src = new UserSource(len, s);
-                                else
-                                    src = new FileSource(len, s);
-                                chName = src.name();
-                                testFrom(s, src, fc, off, len);
-                            }
-                        } catch (Failure x) {
-                            out.println();
-                            out.println("FAILURE: " + chName
-                                        + ", offset " + off
-                                        + ", length " + len);
-                            x.printStackTrace(out);
-                            failures++;
                         }
                     }
+                    if (!verbose)
+                        out.println();
+                    if (user)
+                        break;
                 }
-                if (!verbose)
-                    out.println();
-                if (user)
+                if (to)
                     break;
             }
-            if (to)
-                break;
         }
 
         sourceFile.delete();
@@ -563,6 +566,6 @@ public class Transfers {
             throw new RuntimeException("Some tests failed");
         }
 
+        out.println("Test succeeded.");
     }
-
 }

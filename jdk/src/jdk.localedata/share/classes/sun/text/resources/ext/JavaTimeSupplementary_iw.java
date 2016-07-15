@@ -324,6 +324,10 @@ public class JavaTimeSupplementary_iw extends OpenListResourceBundle {
                 sharedAmPmMarkers },
             { "roc.narrow.AmPmMarkers",
                 sharedAmPmMarkers },
+            { "timezone.gmtFormat",
+                "GMT{0}\u200e" },
+            { "timezone.hourFormat",
+                "\u200e+HH:mm;-HH:mm\u200e" },
         };
     }
 }
