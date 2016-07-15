@@ -213,7 +213,7 @@ java/rmi/transport/dgcDeadLock/DGCDeadLock.java                 8029360 macosx-a
 
 # jdk_security
 
-sun/security/pkcs11/ec/TestKeyFactory.java                      7157786 generic-all
+sun/security/pkcs11/ec/TestKeyFactory.java                      8026976 generic-all
 
 sun/security/krb5/auto/Unreachable.java                         7164518 macosx-all
 
