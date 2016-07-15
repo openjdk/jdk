@@ -27,14 +27,14 @@
  * @bug 8026049 8151163
  * @modules java.base/jdk.internal.misc
  * @library /testlibrary
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-UseUnalignedAccesses -Djdk.test.lib.random.seed=0 HeapByteBufferTest
- * @run main/othervm -Djdk.test.lib.random.seed=0 HeapByteBufferTest
- * @summary Verify that heap byte buffers are correctly accessed.
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-UseUnalignedAccesses -Djdk.test.lib.random.seed=0 DirectByteBufferTest
+ * @run main/othervm -Djdk.test.lib.random.seed=0 DirectByteBufferTest
+ * @summary Verify that direct byte buffers are correctly accessed.
  */
 
-public class HeapByteBufferTest extends ByteBufferTest {
+public class DirectByteBufferTest extends ByteBufferTest {
 
-    public HeapByteBufferTest(long iterations, boolean direct) {
+    public DirectByteBufferTest(long iterations, boolean direct) {
         super(iterations, direct);
     }
 
@@ -45,6 +45,6 @@ public class HeapByteBufferTest extends ByteBufferTest {
         if (args.length > 0)
             iterations = Long.parseLong(args[0]);
 
-        new HeapByteBufferTest(iterations, false).run();
+        new DirectByteBufferTest(iterations, true).run();
     }
 }
