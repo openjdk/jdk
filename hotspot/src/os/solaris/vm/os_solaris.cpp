@@ -79,7 +79,6 @@
 # include <link.h>
 # include <poll.h>
 # include <pthread.h>
-# include <pwd.h>
 # include <schedctl.h>
 # include <setjmp.h>
 # include <signal.h>
