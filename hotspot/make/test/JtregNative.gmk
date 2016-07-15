@@ -65,7 +65,8 @@ endif
 ifeq ($(OPENJDK_TARGET_OS), linux)
 BUILD_HOTSPOT_JTREG_NATIVE_SRC += \
     $(HOTSPOT_TOPDIR)/test/runtime/execstack \
-    $(HOTSPOT_TOPDIR)/test/runtime/jsig
+    $(HOTSPOT_TOPDIR)/test/runtime/jsig \
+    $(HOTSPOT_TOPDIR)/test/runtime/StackGuardPages
 endif
 
 ifeq ($(TOOLCHAIN_TYPE), solstudio)
@@ -77,6 +78,8 @@ endif
 ifeq ($(OPENJDK_TARGET_OS), linux)
     BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rw := -z noexecstack
     BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rwx := -z execstack
+    BUILD_HOTSPOT_JTREG_EXECUTABLES_LDFLAGS_exeinvoke := -ljvm -lpthread
+    BUILD_TEST_invoke_exeinvoke.c_OPTIMIZATION := NONE
 endif
 
 BUILD_HOTSPOT_JTREG_OUTPUT_DIR := $(BUILD_OUTPUT)/support/test/hotspot/jtreg/native
