@@ -820,6 +820,28 @@ jobject Modules::get_module_by_package_name(jobject loader, jstring package, TRA
 }
 
 
+jobject Modules::get_named_module(Handle h_loader, const char* package_str, TRAPS) {
+  assert(ModuleEntryTable::javabase_defined(),
+         "Attempt to call get_named_module before java.base is defined");
+  assert(h_loader.is_null() || java_lang_ClassLoader::is_subclass(h_loader->klass()),
+         "Class loader is not a subclass of java.lang.ClassLoader");
+  assert(package_str != NULL, "the package_str should not be NULL");
+
+  if (strlen(package_str) == 0) {
+    return NULL;
+  }
+  TempNewSymbol package_sym = SymbolTable::new_symbol(package_str, CHECK_NULL);
+  const PackageEntry* const pkg_entry =
+    get_package_entry_by_name(package_sym, h_loader, THREAD);
+  const ModuleEntry* const module_entry = (pkg_entry != NULL ? pkg_entry->module() : NULL);
+
+  if (module_entry != NULL && module_entry->module() != NULL && module_entry->is_named()) {
+    return JNIHandles::make_local(THREAD, JNIHandles::resolve(module_entry->module()));
+  }
+  return NULL;
+}
+
+
 // This method is called by JFR and by the above method.
 jobject Modules::get_module(Symbol* package_name, Handle h_loader, TRAPS) {
   const PackageEntry* const pkg_entry =
