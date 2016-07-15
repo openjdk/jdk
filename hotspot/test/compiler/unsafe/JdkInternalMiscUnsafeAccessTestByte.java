@@ -145,43 +145,161 @@ public class JdkInternalMiscUnsafeAccessTestByte {
     static void testAccess(Object base, long offset) {
         // Plain
         {
-            UNSAFE.putByte(base, offset, (byte)1);
+            UNSAFE.putByte(base, offset, (byte)0x01);
             byte x = UNSAFE.getByte(base, offset);
-            assertEquals(x, (byte)1, "set byte value");
+            assertEquals(x, (byte)0x01, "set byte value");
         }
 
         // Volatile
         {
-            UNSAFE.putByteVolatile(base, offset, (byte)2);
+            UNSAFE.putByteVolatile(base, offset, (byte)0x23);
             byte x = UNSAFE.getByteVolatile(base, offset);
-            assertEquals(x, (byte)2, "putVolatile byte value");
+            assertEquals(x, (byte)0x23, "putVolatile byte value");
         }
 
 
         // Lazy
         {
-            UNSAFE.putByteRelease(base, offset, (byte)1);
+            UNSAFE.putByteRelease(base, offset, (byte)0x01);
             byte x = UNSAFE.getByteAcquire(base, offset);
-            assertEquals(x, (byte)1, "putRelease byte value");
+            assertEquals(x, (byte)0x01, "putRelease byte value");
         }
 
         // Opaque
         {
-            UNSAFE.putByteOpaque(base, offset, (byte)2);
+            UNSAFE.putByteOpaque(base, offset, (byte)0x23);
             byte x = UNSAFE.getByteOpaque(base, offset);
-            assertEquals(x, (byte)2, "putOpaque byte value");
+            assertEquals(x, (byte)0x23, "putOpaque byte value");
         }
 
 
+        UNSAFE.putByte(base, offset, (byte)0x01);
 
+        // Compare
+        {
+            boolean r = UNSAFE.compareAndSwapByte(base, offset, (byte)0x01, (byte)0x23);
+            assertEquals(r, true, "success compareAndSwap byte");
+            byte x = UNSAFE.getByte(base, offset);
+            assertEquals(x, (byte)0x23, "success compareAndSwap byte value");
+        }
+
+        {
+            boolean r = UNSAFE.compareAndSwapByte(base, offset, (byte)0x01, (byte)0x45);
+            assertEquals(r, false, "failing compareAndSwap byte");
+            byte x = UNSAFE.getByte(base, offset);
+            assertEquals(x, (byte)0x23, "failing compareAndSwap byte value");
+        }
+
+        // Advanced compare
+        {
+            byte r = UNSAFE.compareAndExchangeByteVolatile(base, offset, (byte)0x23, (byte)0x01);
+            assertEquals(r, (byte)0x23, "success compareAndExchangeVolatile byte");
+            byte x = UNSAFE.getByte(base, offset);
+            assertEquals(x, (byte)0x01, "success compareAndExchangeVolatile byte value");
+        }
+
+        {
+            byte r = UNSAFE.compareAndExchangeByteVolatile(base, offset, (byte)0x23, (byte)0x45);
+            assertEquals(r, (byte)0x01, "failing compareAndExchangeVolatile byte");
+            byte x = UNSAFE.getByte(base, offset);
+            assertEquals(x, (byte)0x01, "failing compareAndExchangeVolatile byte value");
+        }
+
+        {
+            byte r = UNSAFE.compareAndExchangeByteAcquire(base, offset, (byte)0x01, (byte)0x23);
+            assertEquals(r, (byte)0x01, "success compareAndExchangeAcquire byte");
+            byte x = UNSAFE.getByte(base, offset);
+            assertEquals(x, (byte)0x23, "success compareAndExchangeAcquire byte value");
+        }
+
+        {
+            byte r = UNSAFE.compareAndExchangeByteAcquire(base, offset, (byte)0x01, (byte)0x45);
+            assertEquals(r, (byte)0x23, "failing compareAndExchangeAcquire byte");
+            byte x = UNSAFE.getByte(base, offset);
+            assertEquals(x, (byte)0x23, "failing compareAndExchangeAcquire byte value");
+        }
+
+        {
+            byte r = UNSAFE.compareAndExchangeByteRelease(base, offset, (byte)0x23, (byte)0x01);
+            assertEquals(r, (byte)0x23, "success compareAndExchangeRelease byte");
+            byte x = UNSAFE.getByte(base, offset);
+            assertEquals(x, (byte)0x01, "success compareAndExchangeRelease byte value");
+        }
+
+        {
+            byte r = UNSAFE.compareAndExchangeByteRelease(base, offset, (byte)0x23, (byte)0x45);
+            assertEquals(r, (byte)0x01, "failing compareAndExchangeRelease byte");
+            byte x = UNSAFE.getByte(base, offset);
+            assertEquals(x, (byte)0x01, "failing compareAndExchangeRelease byte value");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapByte(base, offset, (byte)0x01, (byte)0x23);
+            }
+            assertEquals(success, true, "weakCompareAndSwap byte");
+            byte x = UNSAFE.getByte(base, offset);
+            assertEquals(x, (byte)0x23, "weakCompareAndSwap byte value");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapByteAcquire(base, offset, (byte)0x23, (byte)0x01);
+            }
+            assertEquals(success, true, "weakCompareAndSwapAcquire byte");
+            byte x = UNSAFE.getByte(base, offset);
+            assertEquals(x, (byte)0x01, "weakCompareAndSwapAcquire byte");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapByteRelease(base, offset, (byte)0x01, (byte)0x23);
+            }
+            assertEquals(success, true, "weakCompareAndSwapRelease byte");
+            byte x = UNSAFE.getByte(base, offset);
+            assertEquals(x, (byte)0x23, "weakCompareAndSwapRelease byte");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapByteVolatile(base, offset, (byte)0x23, (byte)0x01);
+            }
+            assertEquals(success, true, "weakCompareAndSwapVolatile byte");
+            byte x = UNSAFE.getByte(base, offset);
+            assertEquals(x, (byte)0x01, "weakCompareAndSwapVolatile byte");
+        }
+
+        UNSAFE.putByte(base, offset, (byte)0x23);
+
+        // Compare set and get
+        {
+            byte o = UNSAFE.getAndSetByte(base, offset, (byte)0x01);
+            assertEquals(o, (byte)0x23, "getAndSet byte");
+            byte x = UNSAFE.getByte(base, offset);
+            assertEquals(x, (byte)0x01, "getAndSet byte value");
+        }
+
+        UNSAFE.putByte(base, offset, (byte)0x01);
+
+        // get and add, add and get
+        {
+            byte o = UNSAFE.getAndAddByte(base, offset, (byte)0x23);
+            assertEquals(o, (byte)0x01, "getAndAdd byte");
+            byte x = UNSAFE.getByte(base, offset);
+            assertEquals(x, (byte)((byte)0x01 + (byte)0x23), "getAndAdd byte");
+        }
     }
 
     static void testAccess(long address) {
         // Plain
         {
-            UNSAFE.putByte(address, (byte)1);
+            UNSAFE.putByte(address, (byte)0x01);
             byte x = UNSAFE.getByte(address);
-            assertEquals(x, (byte)1, "set byte value");
+            assertEquals(x, (byte)0x01, "set byte value");
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,9 @@ import jdk.nashorn.internal.ir.FunctionNode;
 final class FunctionExpressionTreeImpl extends ExpressionTreeImpl
     implements FunctionExpressionTree {
     private final FunctionNode funcNode;
-    private final String funcName;
+    private final IdentifierTree funcName;
     private final List<? extends ExpressionTree> params;
-    private final BlockTree body;
+    private final Tree body;
 
     FunctionExpressionTreeImpl(final FunctionNode node,
             final List<? extends ExpressionTree> params,
@@ -46,11 +46,17 @@ final class FunctionExpressionTreeImpl extends ExpressionTreeImpl
         if (node.isAnonymous() || kind == FunctionNode.Kind.GETTER || kind == FunctionNode.Kind.SETTER) {
             funcName = null;
         } else {
-            funcName = node.getIdent().getName();
+            funcName = new IdentifierTreeImpl(node.getIdent());
         }
 
         this.params = params;
-        this.body = body;
+        if (node.getFlag(FunctionNode.HAS_EXPRESSION_BODY)) {
+            StatementTree first = body.getStatements().get(0);
+            assert first instanceof ReturnTree : "consise func. expression should have a return statement";
+            this.body = ((ReturnTree)first).getExpression();
+        } else {
+            this.body = body;
+        }
     }
 
     @Override
@@ -59,7 +65,7 @@ final class FunctionExpressionTreeImpl extends ExpressionTreeImpl
     }
 
     @Override
-    public String getName() {
+    public IdentifierTree getName() {
         return funcName;
     }
 
@@ -69,13 +75,23 @@ final class FunctionExpressionTreeImpl extends ExpressionTreeImpl
     }
 
     @Override
-    public BlockTree getBody() {
+    public Tree getBody() {
         return body;
     }
 
     @Override
     public boolean isStrict() {
         return funcNode.isStrict();
+    }
+
+    @Override
+    public boolean isArrow() {
+        return funcNode.getKind() == FunctionNode.Kind.ARROW;
+    }
+
+    @Override
+    public boolean isGenerator() {
+        return funcNode.getKind() == FunctionNode.Kind.GENERATOR;
     }
 
     @Override

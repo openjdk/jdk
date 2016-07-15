@@ -28,6 +28,7 @@
     "expression": {
       "endPosition": "34",
       "kind": "IDENTIFIER",
+      "this": "true",
       "name": "this",
       "startPosition": "30"
     },

@@ -63,11 +63,11 @@ public class EventsBalancedTest {
         test(null, Arrays.asList(b, a));
 
         for (CompileState stop : CompileState.values()) {
-            test(Arrays.asList("-XDshouldStopPolicyIfNoError=" + stop,
-                               "-XDshouldStopPolicyIfError=" + stop),
+            test(Arrays.asList("-Xshouldstop:ifNoError=" + stop,
+                               "-Xshouldstop:ifError=" + stop),
                  Arrays.asList(a, b));
-            test(Arrays.asList("-XDshouldStopPolicyIfNoError=" + stop,
-                               "-XDshouldStopPolicyIfError=" + stop),
+            test(Arrays.asList("-Xshouldstop:ifNoError=" + stop,
+                               "-Xshouldstop:ifError=" + stop),
                  Arrays.asList(b, a));
         }
     }

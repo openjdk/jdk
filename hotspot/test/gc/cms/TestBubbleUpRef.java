@@ -28,7 +28,7 @@ import java.util.ListIterator;
 
 /*
  * @test
- * @requires vm.gc=="ConcMarkSweep" | vm.gc == "null"
+ * @requires vm.gc.ConcMarkSweep
  * @key cte_test
  * @bug 4950157
  * @summary Stress the behavior of ergonomics when the heap is nearly full and

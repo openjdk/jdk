@@ -22,24 +22,34 @@
  */
 package jdk.vm.ci.meta;
 
+/**
+ * Maps bytecode indexes to source line numbers.
+ *
+ * @see "https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.12"
+ */
 public class LineNumberTable {
 
     private final int[] lineNumbers;
     private final int[] bci;
 
+    /**
+     *
+     * @param lineNumbers an array or source line numbers. This array is now owned by this object
+     *            and should not be mutated by the caller.
+     * @param bci an array of bytecode indexes the same length at {@code lineNumbers} whose entries
+     *            are sorted in ascending order. This array is now owned by this object and must not
+     *            be mutated by the caller.
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `lineNumbers` and `bcis`")
     public LineNumberTable(int[] lineNumbers, int[] bci) {
+        assert bci.length == lineNumbers.length;
         this.lineNumbers = lineNumbers;
         this.bci = bci;
     }
 
-    public int[] getLineNumberEntries() {
-        return lineNumbers;
-    }
-
-    public int[] getBciEntries() {
-        return bci;
-    }
-
+    /**
+     * Gets a source line number for {@code atBci}.
+     */
     public int getLineNumber(int atBci) {
         for (int i = 0; i < this.bci.length - 1; i++) {
             if (this.bci[i] <= atBci && atBci < this.bci[i + 1]) {

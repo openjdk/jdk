@@ -25,6 +25,7 @@
 
 package sun.security.util;
 
+import java.security.Timestamp;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 
@@ -40,16 +41,19 @@ public class CertConstraintParameters {
     private final boolean trustedMatch;
     // PKIXParameter date
     private final Date pkixDate;
+    // Timestamp of the signed JAR file
+    private final Timestamp jarTimestamp;
 
     public CertConstraintParameters(X509Certificate c, boolean match,
-            Date pkixdate) {
+            Date pkixdate, Timestamp jarTime) {
         cert = c;
         trustedMatch = match;
         pkixDate = pkixdate;
+        jarTimestamp = jarTime;
     }
 
     public CertConstraintParameters(X509Certificate c) {
-        this(c, false, null);
+        this(c, false, null, null);
     }
 
     // Returns if the trust anchor has a match if anchor checking is enabled.
@@ -63,6 +67,10 @@ public class CertConstraintParameters {
 
     public Date getPKIXParamDate() {
         return pkixDate;
+    }
+
+    public Timestamp getJARTimestamp() {
+        return jarTimestamp;
     }
 
 }

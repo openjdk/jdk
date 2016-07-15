@@ -645,6 +645,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_putDoubleOpaque:          return inline_unsafe_access( is_store, T_DOUBLE,   Opaque, false);
 
   case vmIntrinsics::_compareAndSwapObject:             return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap,      Volatile);
+  case vmIntrinsics::_compareAndSwapByte:               return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap,      Volatile);
+  case vmIntrinsics::_compareAndSwapShort:              return inline_unsafe_load_store(T_SHORT,  LS_cmp_swap,      Volatile);
   case vmIntrinsics::_compareAndSwapInt:                return inline_unsafe_load_store(T_INT,    LS_cmp_swap,      Volatile);
   case vmIntrinsics::_compareAndSwapLong:               return inline_unsafe_load_store(T_LONG,   LS_cmp_swap,      Volatile);
 
@@ -652,6 +654,14 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_weakCompareAndSwapObjectAcquire:  return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Acquire);
   case vmIntrinsics::_weakCompareAndSwapObjectRelease:  return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Release);
   case vmIntrinsics::_weakCompareAndSwapObjectVolatile: return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Volatile);
+  case vmIntrinsics::_weakCompareAndSwapByte:           return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap_weak, Relaxed);
+  case vmIntrinsics::_weakCompareAndSwapByteAcquire:    return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap_weak, Acquire);
+  case vmIntrinsics::_weakCompareAndSwapByteRelease:    return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap_weak, Release);
+  case vmIntrinsics::_weakCompareAndSwapByteVolatile:   return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap_weak, Volatile);
+  case vmIntrinsics::_weakCompareAndSwapShort:          return inline_unsafe_load_store(T_SHORT,  LS_cmp_swap_weak, Relaxed);
+  case vmIntrinsics::_weakCompareAndSwapShortAcquire:   return inline_unsafe_load_store(T_SHORT,  LS_cmp_swap_weak, Acquire);
+  case vmIntrinsics::_weakCompareAndSwapShortRelease:   return inline_unsafe_load_store(T_SHORT,  LS_cmp_swap_weak, Release);
+  case vmIntrinsics::_weakCompareAndSwapShortVolatile:  return inline_unsafe_load_store(T_SHORT,  LS_cmp_swap_weak, Volatile);
   case vmIntrinsics::_weakCompareAndSwapInt:            return inline_unsafe_load_store(T_INT,    LS_cmp_swap_weak, Relaxed);
   case vmIntrinsics::_weakCompareAndSwapIntAcquire:     return inline_unsafe_load_store(T_INT,    LS_cmp_swap_weak, Acquire);
   case vmIntrinsics::_weakCompareAndSwapIntRelease:     return inline_unsafe_load_store(T_INT,    LS_cmp_swap_weak, Release);
@@ -664,6 +674,12 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_compareAndExchangeObjectVolatile: return inline_unsafe_load_store(T_OBJECT, LS_cmp_exchange,  Volatile);
   case vmIntrinsics::_compareAndExchangeObjectAcquire:  return inline_unsafe_load_store(T_OBJECT, LS_cmp_exchange,  Acquire);
   case vmIntrinsics::_compareAndExchangeObjectRelease:  return inline_unsafe_load_store(T_OBJECT, LS_cmp_exchange,  Release);
+  case vmIntrinsics::_compareAndExchangeByteVolatile:   return inline_unsafe_load_store(T_BYTE,   LS_cmp_exchange,  Volatile);
+  case vmIntrinsics::_compareAndExchangeByteAcquire:    return inline_unsafe_load_store(T_BYTE,   LS_cmp_exchange,  Acquire);
+  case vmIntrinsics::_compareAndExchangeByteRelease:    return inline_unsafe_load_store(T_BYTE,   LS_cmp_exchange,  Release);
+  case vmIntrinsics::_compareAndExchangeShortVolatile:  return inline_unsafe_load_store(T_SHORT,  LS_cmp_exchange,  Volatile);
+  case vmIntrinsics::_compareAndExchangeShortAcquire:   return inline_unsafe_load_store(T_SHORT,  LS_cmp_exchange,  Acquire);
+  case vmIntrinsics::_compareAndExchangeShortRelease:   return inline_unsafe_load_store(T_SHORT,  LS_cmp_exchange,  Release);
   case vmIntrinsics::_compareAndExchangeIntVolatile:    return inline_unsafe_load_store(T_INT,    LS_cmp_exchange,  Volatile);
   case vmIntrinsics::_compareAndExchangeIntAcquire:     return inline_unsafe_load_store(T_INT,    LS_cmp_exchange,  Acquire);
   case vmIntrinsics::_compareAndExchangeIntRelease:     return inline_unsafe_load_store(T_INT,    LS_cmp_exchange,  Release);
@@ -671,8 +687,13 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_compareAndExchangeLongAcquire:    return inline_unsafe_load_store(T_LONG,   LS_cmp_exchange,  Acquire);
   case vmIntrinsics::_compareAndExchangeLongRelease:    return inline_unsafe_load_store(T_LONG,   LS_cmp_exchange,  Release);
 
+  case vmIntrinsics::_getAndAddByte:                    return inline_unsafe_load_store(T_BYTE,   LS_get_add,       Volatile);
+  case vmIntrinsics::_getAndAddShort:                   return inline_unsafe_load_store(T_SHORT,  LS_get_add,       Volatile);
   case vmIntrinsics::_getAndAddInt:                     return inline_unsafe_load_store(T_INT,    LS_get_add,       Volatile);
   case vmIntrinsics::_getAndAddLong:                    return inline_unsafe_load_store(T_LONG,   LS_get_add,       Volatile);
+
+  case vmIntrinsics::_getAndSetByte:                    return inline_unsafe_load_store(T_BYTE,   LS_get_set,       Volatile);
+  case vmIntrinsics::_getAndSetShort:                   return inline_unsafe_load_store(T_SHORT,  LS_get_set,       Volatile);
   case vmIntrinsics::_getAndSetInt:                     return inline_unsafe_load_store(T_INT,    LS_get_set,       Volatile);
   case vmIntrinsics::_getAndSetLong:                    return inline_unsafe_load_store(T_LONG,   LS_get_set,       Volatile);
   case vmIntrinsics::_getAndSetObject:                  return inline_unsafe_load_store(T_OBJECT, LS_get_set,       Volatile);
@@ -2849,6 +2870,48 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   // longs, and Object. Adding others should be straightforward.
   Node* load_store = NULL;
   switch(type) {
+  case T_BYTE:
+    switch(kind) {
+      case LS_get_add:
+        load_store = _gvn.transform(new GetAndAddBNode(control(), mem, adr, newval, adr_type));
+        break;
+      case LS_get_set:
+        load_store = _gvn.transform(new GetAndSetBNode(control(), mem, adr, newval, adr_type));
+        break;
+      case LS_cmp_swap_weak:
+        load_store = _gvn.transform(new WeakCompareAndSwapBNode(control(), mem, adr, newval, oldval, mo));
+        break;
+      case LS_cmp_swap:
+        load_store = _gvn.transform(new CompareAndSwapBNode(control(), mem, adr, newval, oldval, mo));
+        break;
+      case LS_cmp_exchange:
+        load_store = _gvn.transform(new CompareAndExchangeBNode(control(), mem, adr, newval, oldval, adr_type, mo));
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+    break;
+  case T_SHORT:
+    switch(kind) {
+      case LS_get_add:
+        load_store = _gvn.transform(new GetAndAddSNode(control(), mem, adr, newval, adr_type));
+        break;
+      case LS_get_set:
+        load_store = _gvn.transform(new GetAndSetSNode(control(), mem, adr, newval, adr_type));
+        break;
+      case LS_cmp_swap_weak:
+        load_store = _gvn.transform(new WeakCompareAndSwapSNode(control(), mem, adr, newval, oldval, mo));
+        break;
+      case LS_cmp_swap:
+        load_store = _gvn.transform(new CompareAndSwapSNode(control(), mem, adr, newval, oldval, mo));
+        break;
+      case LS_cmp_exchange:
+        load_store = _gvn.transform(new CompareAndExchangeSNode(control(), mem, adr, newval, oldval, adr_type, mo));
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+    break;
   case T_INT:
     switch(kind) {
       case LS_get_add:

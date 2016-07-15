@@ -243,7 +243,7 @@ public class Main {
             return Result.OK;
 
         // init Dependencies
-        if (options.isSet("completionDeps")) {
+        if (options.isSet("debug.completionDeps")) {
             Dependencies.GraphDependencies.preRegister(context);
         }
 

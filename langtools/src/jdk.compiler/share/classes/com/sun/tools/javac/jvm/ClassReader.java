@@ -242,7 +242,7 @@ public class ClassReader {
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
         allowModules     = source.allowModules();
 
-        saveParameterNames = options.isSet("save-parameter-names");
+        saveParameterNames = options.isSet(PARAMETERS);
 
         profile = Profile.instance(context);
 

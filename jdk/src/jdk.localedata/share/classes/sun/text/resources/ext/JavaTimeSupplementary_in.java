@@ -347,6 +347,8 @@ public class JavaTimeSupplementary_in extends OpenListResourceBundle {
                 sharedEras },
             { "roc.short.Eras",
                 sharedEras },
+            { "timezone.hourFormat",
+                "+HH.mm;-HH.mm" },
         };
     }
 }

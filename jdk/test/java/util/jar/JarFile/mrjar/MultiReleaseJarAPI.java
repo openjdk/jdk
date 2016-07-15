@@ -40,25 +40,19 @@ import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static java.util.jar.JarFile.Release;
-
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-
 public class MultiReleaseJarAPI {
-
-    static final int MAJOR_VERSION = Runtime.version().major();
 
     String userdir = System.getProperty("user.dir",".");
     CreateMultiReleaseTestJars creator =  new CreateMultiReleaseTestJars();
     File unversioned = new File(userdir, "unversioned.jar");
     File multirelease = new File(userdir, "multi-release.jar");
     File signedmultirelease = new File(userdir, "signed-multi-release.jar");
-    Release[] values = JarFile.Release.values();
-
 
     @BeforeClass
     public void initialize() throws Exception {
@@ -81,7 +75,7 @@ public class MultiReleaseJarAPI {
             Assert.assertFalse(jf.isMultiRelease());
         }
 
-        try (JarFile jf = new JarFile(unversioned, true, ZipFile.OPEN_READ, Release.RUNTIME)) {
+        try (JarFile jf = new JarFile(unversioned, true, ZipFile.OPEN_READ, Runtime.version())) {
             Assert.assertFalse(jf.isMultiRelease());
         }
 
@@ -89,7 +83,7 @@ public class MultiReleaseJarAPI {
             Assert.assertFalse(jf.isMultiRelease());
         }
 
-        try (JarFile jf = new JarFile(multirelease, true, ZipFile.OPEN_READ, Release.RUNTIME)) {
+        try (JarFile jf = new JarFile(multirelease, true, ZipFile.OPEN_READ, Runtime.version())) {
             Assert.assertTrue(jf.isMultiRelease());
         }
 
@@ -110,68 +104,68 @@ public class MultiReleaseJarAPI {
     private void testCustomMultiReleaseValue(String value, boolean expected) throws Exception {
         creator.buildCustomMultiReleaseJar("custom-mr.jar", value);
         File custom = new File(userdir, "custom-mr.jar");
-        try (JarFile jf = new JarFile(custom, true, ZipFile.OPEN_READ, Release.RUNTIME)) {
+        try (JarFile jf = new JarFile(custom, true, ZipFile.OPEN_READ, Runtime.version())) {
             Assert.assertEquals(jf.isMultiRelease(), expected);
         }
         Files.delete(custom.toPath());
     }
 
-    @Test
-    public void testVersioning() throws Exception {
-        // multi-release jar
-        JarFile jar = new JarFile(multirelease);
-        Assert.assertEquals(Release.BASE, jar.getVersion());
-        jar.close();
+    @DataProvider(name = "versions")
+    public Object[][] createVersionData() throws Exception {
+        return new Object[][]{
+                {JarFile.baseVersion(), 8},
+                {JarFile.runtimeVersion(), Runtime.version().major()},
+                {Runtime.version(), Runtime.version().major()},
+                {Runtime.Version.parse("7.1"), JarFile.baseVersion().major()},
+                {Runtime.Version.parse("9"), 9},
+                {Runtime.Version.parse("9.1.5-ea+200"), 9}
+        };
+    }
 
-        for (Release value : values) {
-            System.err.println("test versioning for Release " + value);
-            try (JarFile jf = new JarFile(multirelease, true, ZipFile.OPEN_READ, value)) {
-                Assert.assertEquals(value, jf.getVersion());
-            }
+    @Test(dataProvider="versions")
+    public void testVersioning(Runtime.Version value, int xpected) throws Exception {
+        Runtime.Version expected = Runtime.Version.parse(String.valueOf(xpected));
+        Runtime.Version base = JarFile.baseVersion();
+
+        // multi-release jar, opened as unversioned
+        try (JarFile jar = new JarFile(multirelease)) {
+            Assert.assertEquals(jar.getVersion(), base);
+        }
+
+        System.err.println("test versioning for Release " + value);
+        try (JarFile jf = new JarFile(multirelease, true, ZipFile.OPEN_READ, value)) {
+            Assert.assertEquals(jf.getVersion(), expected);
         }
 
         // regular, unversioned, jar
-        for (Release value : values) {
-            try (JarFile jf = new JarFile(unversioned, true, ZipFile.OPEN_READ, value)) {
-                Assert.assertEquals(Release.BASE, jf.getVersion());
-            }
-        }
-
-        // assure that we have a Release object corresponding to the actual runtime version
-        String version = "VERSION_" + MAJOR_VERSION;
-        boolean runtimeVersionExists = false;
-        for (Release value : values) {
-            if (version.equals(value.name())) runtimeVersionExists = true;
-        }
-        Assert.assertTrue(runtimeVersionExists);
-    }
-
-    @Test
-    public void testAliasing() throws Exception {
-        for (Release value : values) {
-            System.err.println("test aliasing for Release " + value);
-            String name = value.name();
-            String prefix;
-            if (name.equals("BASE")) {
-                prefix = "";
-            } else if (name.equals("RUNTIME")) {
-                prefix = "META-INF/versions/" + MAJOR_VERSION + "/";
-            } else {
-                prefix = "META-INF/versions/" + name.substring(8) + "/";
-            }
-            // test both multi-release jars
-            readAndCompare(multirelease, value, "README", prefix + "README");
-            readAndCompare(multirelease, value, "version/Version.class", prefix + "version/Version.class");
-            // and signed multi-release jars
-            readAndCompare(signedmultirelease, value, "README", prefix + "README");
-            readAndCompare(signedmultirelease, value, "version/Version.class", prefix + "version/Version.class");
+        try (JarFile jf = new JarFile(unversioned, true, ZipFile.OPEN_READ, value)) {
+            Assert.assertEquals(jf.getVersion(), base);
         }
     }
 
-    private void readAndCompare(File jar, Release version, String name, String realName) throws Exception {
+    @Test(dataProvider="versions")
+    public void testAliasing(Runtime.Version version, int xpected) throws Exception {
+        int n = Math.max(version.major(), JarFile.baseVersion().major());
+        Runtime.Version value = Runtime.Version.parse(String.valueOf(n));
+        System.err.println("test aliasing for Release " + version);
+        String prefix;
+        if (JarFile.baseVersion().equals(value)) {
+            prefix = "";
+        } else {
+            prefix = "META-INF/versions/" + value.major() + "/";
+        }
+        // test both multi-release jars
+        readAndCompare(multirelease, value, "README", prefix + "README");
+        readAndCompare(multirelease, value, "version/Version.class", prefix + "version/Version.class");
+        // and signed multi-release jars
+        readAndCompare(signedmultirelease, value, "README", prefix + "README");
+        readAndCompare(signedmultirelease, value, "version/Version.class", prefix + "version/Version.class");
+    }
+
+    private void readAndCompare(File jar, Runtime.Version version, String name, String realName) throws Exception {
         byte[] baseBytes;
         byte[] versionedBytes;
-        try (JarFile jf = new JarFile(jar, true, ZipFile.OPEN_READ, Release.BASE)) {
+        try (JarFile jf = new JarFile(jar, true, ZipFile.OPEN_READ, JarFile.baseVersion())) {
             ZipEntry ze = jf.getEntry(realName);
             try (InputStream is = jf.getInputStream(ze)) {
                 baseBytes = is.readAllBytes();
@@ -200,7 +194,7 @@ public class MultiReleaseJarAPI {
             ze1 = jf.getEntry(vname);
         }
         Assert.assertEquals(ze1.getName(), vname);
-        try (JarFile jf = new JarFile(multirelease, true, ZipFile.OPEN_READ, Release.VERSION_9)) {
+        try (JarFile jf = new JarFile(multirelease, true, ZipFile.OPEN_READ, Runtime.Version.parse("9"))) {
             ze2 = jf.getEntry(rname);
         }
         Assert.assertEquals(ze2.getName(), rname);

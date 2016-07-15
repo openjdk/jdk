@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * file are correct, including those within InnerClasses attributes.
  * @author John Rose (jrose). Entered as a regression test by Bill Maddox (maddox).
  *
- * @compile/ref=ClassModifiers.out  -XDdumpmodifiers=ci ClassModifiers.java
+ * @compile/ref=ClassModifiers.out  -Xdebug:dumpmodifiers=ci ClassModifiers.java
  *
  */
 

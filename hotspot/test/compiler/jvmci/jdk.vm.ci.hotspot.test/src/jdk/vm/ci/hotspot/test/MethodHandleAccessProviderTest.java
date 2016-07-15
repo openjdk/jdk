@@ -29,6 +29,7 @@
  * @modules jdk.vm.ci/jdk.vm.ci.meta
  *          jdk.vm.ci/jdk.vm.ci.runtime
  *          jdk.vm.ci/jdk.vm.ci.hotspot
+ * @ignore 8161068
  * @run testng/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *      jdk.vm.ci.hotspot.test.MethodHandleAccessProviderTest
  */

@@ -89,7 +89,7 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
 
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
@@ -224,7 +224,7 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
             });
 
             checkROBE(() -> {
-                float r = (float) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
+                float r = (float) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
             });
 
             checkROBE(() -> {
@@ -321,7 +321,7 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
             });
 
             checkIOOBE(() -> {
-                float r = (float) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
+                float r = (float) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
             });
 
             checkIOOBE(() -> {
@@ -406,7 +406,7 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
                 });
 
                 checkIOOBE(() -> {
-                    float r = (float) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
+                    float r = (float) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
                 });
 
                 checkIOOBE(() -> {
@@ -482,7 +482,7 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
                 });
 
                 checkISE(() -> {
-                    float r = (float) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
+                    float r = (float) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
                 });
 
                 checkISE(() -> {
@@ -561,7 +561,7 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
                     });
 
                     checkISE(() -> {
-                        float r = (float) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
+                        float r = (float) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
                     });
 
                     checkISE(() -> {
@@ -656,17 +656,17 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
                 }
 
                 {
-                    float r = (float) vh.compareAndExchangeVolatile(array, i, VALUE_2, VALUE_1);
-                    assertEquals(r, VALUE_2, "success compareAndExchangeVolatile float");
+                    float r = (float) vh.compareAndExchange(array, i, VALUE_2, VALUE_1);
+                    assertEquals(r, VALUE_2, "success compareAndExchange float");
                     float x = (float) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "success compareAndExchangeVolatile float value");
+                    assertEquals(x, VALUE_1, "success compareAndExchange float value");
                 }
 
                 {
-                    float r = (float) vh.compareAndExchangeVolatile(array, i, VALUE_2, VALUE_3);
-                    assertEquals(r, VALUE_1, "failing compareAndExchangeVolatile float");
+                    float r = (float) vh.compareAndExchange(array, i, VALUE_2, VALUE_3);
+                    assertEquals(r, VALUE_1, "failing compareAndExchange float");
                     float x = (float) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "failing compareAndExchangeVolatile float value");
+                    assertEquals(x, VALUE_1, "failing compareAndExchange float value");
                 }
 
                 {
@@ -805,17 +805,17 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
                 }
 
                 {
-                    float r = (float) vh.compareAndExchangeVolatile(array, i, VALUE_2, VALUE_1);
-                    assertEquals(r, VALUE_2, "success compareAndExchangeVolatile float");
+                    float r = (float) vh.compareAndExchange(array, i, VALUE_2, VALUE_1);
+                    assertEquals(r, VALUE_2, "success compareAndExchange float");
                     float x = (float) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "success compareAndExchangeVolatile float value");
+                    assertEquals(x, VALUE_1, "success compareAndExchange float value");
                 }
 
                 {
-                    float r = (float) vh.compareAndExchangeVolatile(array, i, VALUE_2, VALUE_3);
-                    assertEquals(r, VALUE_1, "failing compareAndExchangeVolatile float");
+                    float r = (float) vh.compareAndExchange(array, i, VALUE_2, VALUE_3);
+                    assertEquals(r, VALUE_1, "failing compareAndExchange float");
                     float x = (float) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "failing compareAndExchangeVolatile float value");
+                    assertEquals(x, VALUE_1, "failing compareAndExchange float value");
                 }
 
                 {

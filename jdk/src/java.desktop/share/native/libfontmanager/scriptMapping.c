@@ -85,7 +85,7 @@ hb_script_t ICU_to_Harfbuzz_ScriptCode[] = {
 int MAX_ICU_SCRIPTCODE = 45;
 
 hb_script_t getHBScriptCode(int code) {
-    if (code > MAX_ICU_SCRIPTCODE) {
+    if ((code < 0) || (code > MAX_ICU_SCRIPTCODE)) {
         return HB_SCRIPT_INVALID;
     }
     return ICU_to_Harfbuzz_ScriptCode[code];

@@ -71,6 +71,8 @@
   static_field(CompilerToVM::Data,             _heap_end_addr,                         HeapWord**)                                   \
   static_field(CompilerToVM::Data,             _heap_top_addr,                         HeapWord**)                                   \
                                                                                                                                      \
+  static_field(CompilerToVM::Data,             _max_oop_map_stack_offset,              int)                                          \
+                                                                                                                                     \
   static_field(CompilerToVM::Data,             cardtable_start_address,                jbyte*)                                       \
   static_field(CompilerToVM::Data,             cardtable_shift,                        int)                                          \
                                                                                                                                      \
@@ -539,6 +541,8 @@
   declare_function(SharedRuntime::exception_handler_for_return_address)   \
   declare_function(SharedRuntime::OSR_migration_end)                      \
   declare_function(SharedRuntime::enable_stack_reserved_zone)             \
+  declare_function(SharedRuntime::frem)                                   \
+  declare_function(SharedRuntime::drem)                                   \
                                                                           \
   declare_function(os::dll_load)                                          \
   declare_function(os::dll_lookup)                                        \
@@ -733,22 +737,6 @@
 #endif
 
 
-// whole purpose of this function is to work around bug c++/27724 in gcc 4.1.1
-// with optimization turned on it doesn't affect produced code
-static inline uint64_t cast_uint64_t(size_t x)
-{
-  return x;
-}
-
-#define ASSIGN_CONST_TO_64BIT_VAR(var, expr) \
-  JNIEXPORT uint64_t var = cast_uint64_t(expr);
-
-#define ASSIGN_OFFSET_TO_64BIT_VAR(var, type, field)   \
-  ASSIGN_CONST_TO_64BIT_VAR(var, offset_of(type, field))
-
-#define ASSIGN_STRIDE_TO_64BIT_VAR(var, array) \
-  ASSIGN_CONST_TO_64BIT_VAR(var, (char*)&array[1] - (char*)&array[0])
-
 //
 // Instantiation of VMStructEntries, VMTypeEntries and VMIntConstantEntries
 //
@@ -871,37 +859,31 @@ VMAddressEntry JVMCIVMStructs::localHotSpotVMAddresses[] = {
   GENERATE_VM_ADDRESS_LAST_ENTRY()
 };
 
+int JVMCIVMStructs::localHotSpotVMStructs_count() {
+  // Ignore sentinel entry at the end
+  return (sizeof(localHotSpotVMStructs) / sizeof(VMStructEntry)) - 1;
+}
+int JVMCIVMStructs::localHotSpotVMTypes_count() {
+  // Ignore sentinel entry at the end
+  return (sizeof(localHotSpotVMTypes) / sizeof(VMTypeEntry)) - 1;
+}
+int JVMCIVMStructs::localHotSpotVMIntConstants_count() {
+  // Ignore sentinel entry at the end
+  return (sizeof(localHotSpotVMIntConstants) / sizeof(VMIntConstantEntry)) - 1;
+}
+int JVMCIVMStructs::localHotSpotVMLongConstants_count() {
+  // Ignore sentinel entry at the end
+  return (sizeof(localHotSpotVMLongConstants) / sizeof(VMLongConstantEntry)) - 1;
+}
+int JVMCIVMStructs::localHotSpotVMAddresses_count() {
+  // Ignore sentinel entry at the end
+  return (sizeof(localHotSpotVMAddresses) / sizeof(VMAddressEntry)) - 1;
+}
+
 extern "C" {
 JNIEXPORT VMStructEntry* jvmciHotSpotVMStructs = JVMCIVMStructs::localHotSpotVMStructs;
-ASSIGN_OFFSET_TO_64BIT_VAR(jvmciHotSpotVMStructEntryTypeNameOffset,   VMStructEntry, typeName);
-ASSIGN_OFFSET_TO_64BIT_VAR(jvmciHotSpotVMStructEntryFieldNameOffset,  VMStructEntry, fieldName);
-ASSIGN_OFFSET_TO_64BIT_VAR(jvmciHotSpotVMStructEntryTypeStringOffset, VMStructEntry, typeString);
-ASSIGN_OFFSET_TO_64BIT_VAR(jvmciHotSpotVMStructEntryIsStaticOffset,   VMStructEntry, isStatic);
-ASSIGN_OFFSET_TO_64BIT_VAR(jvmciHotSpotVMStructEntryOffsetOffset,     VMStructEntry, offset);
-ASSIGN_OFFSET_TO_64BIT_VAR(jvmciHotSpotVMStructEntryAddressOffset,    VMStructEntry, address);
-ASSIGN_STRIDE_TO_64BIT_VAR(jvmciHotSpotVMStructEntryArrayStride, jvmciHotSpotVMStructs);
-
 JNIEXPORT VMTypeEntry* jvmciHotSpotVMTypes = JVMCIVMStructs::localHotSpotVMTypes;
-ASSIGN_OFFSET_TO_64BIT_VAR(jvmciHotSpotVMTypeEntryTypeNameOffset,       VMTypeEntry, typeName);
-ASSIGN_OFFSET_TO_64BIT_VAR(jvmciHotSpotVMTypeEntrySuperclassNameOffset, VMTypeEntry, superclassName);
-ASSIGN_OFFSET_TO_64BIT_VAR(jvmciHotSpotVMTypeEntryIsOopTypeOffset,      VMTypeEntry, isOopType);
-ASSIGN_OFFSET_TO_64BIT_VAR(jvmciHotSpotVMTypeEntryIsIntegerTypeOffset,  VMTypeEntry, isIntegerType);
-ASSIGN_OFFSET_TO_64BIT_VAR(jvmciHotSpotVMTypeEntryIsUnsignedOffset,     VMTypeEntry, isUnsigned);
-ASSIGN_OFFSET_TO_64BIT_VAR(jvmciHotSpotVMTypeEntrySizeOffset,           VMTypeEntry, size);
-ASSIGN_STRIDE_TO_64BIT_VAR(jvmciHotSpotVMTypeEntryArrayStride, jvmciHotSpotVMTypes);
-
 JNIEXPORT VMIntConstantEntry* jvmciHotSpotVMIntConstants = JVMCIVMStructs::localHotSpotVMIntConstants;
-ASSIGN_OFFSET_TO_64BIT_VAR(jvmciHotSpotVMIntConstantEntryNameOffset,  VMIntConstantEntry, name);
-ASSIGN_OFFSET_TO_64BIT_VAR(jvmciHotSpotVMIntConstantEntryValueOffset, VMIntConstantEntry, value);
-ASSIGN_STRIDE_TO_64BIT_VAR(jvmciHotSpotVMIntConstantEntryArrayStride, jvmciHotSpotVMIntConstants);
-
 JNIEXPORT VMLongConstantEntry* jvmciHotSpotVMLongConstants = JVMCIVMStructs::localHotSpotVMLongConstants;
-ASSIGN_OFFSET_TO_64BIT_VAR(jvmciHotSpotVMLongConstantEntryNameOffset,  VMLongConstantEntry, name);
-ASSIGN_OFFSET_TO_64BIT_VAR(jvmciHotSpotVMLongConstantEntryValueOffset, VMLongConstantEntry, value);
-ASSIGN_STRIDE_TO_64BIT_VAR(jvmciHotSpotVMLongConstantEntryArrayStride, jvmciHotSpotVMLongConstants);
-
 JNIEXPORT VMAddressEntry* jvmciHotSpotVMAddresses = JVMCIVMStructs::localHotSpotVMAddresses;
-ASSIGN_OFFSET_TO_64BIT_VAR(jvmciHotSpotVMAddressEntryNameOffset,  VMAddressEntry, name);
-ASSIGN_OFFSET_TO_64BIT_VAR(jvmciHotSpotVMAddressEntryValueOffset, VMAddressEntry, value);
-ASSIGN_STRIDE_TO_64BIT_VAR(jvmciHotSpotVMAddressEntryArrayStride, jvmciHotSpotVMAddresses);
 }

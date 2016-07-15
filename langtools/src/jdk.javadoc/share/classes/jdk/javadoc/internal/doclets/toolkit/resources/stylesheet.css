@@ -412,18 +412,20 @@ table tr td dl, table tr td dl dt, table tr td dl dd {
 /*
 Table styles
 */
-.overviewSummary, .memberSummary, .typeSummary, .useSummary, .constantsSummary, .deprecatedSummary {
+.overviewSummary, .memberSummary, .typeSummary, .useSummary, .constantsSummary, .deprecatedSummary,
+.requiresSummary, .packagesSummary, .providesSummary, .usesSummary {
     width:100%;
     border-spacing:0;
     border-left:1px solid #EEE; 
     border-right:1px solid #EEE; 
     border-bottom:1px solid #EEE; 
 }
-.overviewSummary, .memberSummary  {
+.overviewSummary, .memberSummary, .requiresSummary, .packagesSummary, .providesSummary, .usesSummary  {
     padding:0px;
 }
 .overviewSummary caption, .memberSummary caption, .typeSummary caption,
-.useSummary caption, .constantsSummary caption, .deprecatedSummary caption {
+.useSummary caption, .constantsSummary caption, .deprecatedSummary caption,
+.requiresSummary caption, .packagesSummary caption, .providesSummary caption, .usesSummary caption {
     position:relative;
     text-align:left;
     background-repeat:no-repeat;
@@ -439,16 +441,26 @@ Table styles
 }
 .overviewSummary caption a:link, .memberSummary caption a:link, .typeSummary caption a:link,
 .useSummary caption a:link, .constantsSummary caption a:link, .deprecatedSummary caption a:link,
+.requiresSummary caption a:link, .packagesSummary caption a:link, providesSummary caption a:link,
+.usesSummary caption a:link,
 .overviewSummary caption a:hover, .memberSummary caption a:hover, .typeSummary caption a:hover,
 .useSummary caption a:hover, .constantsSummary caption a:hover, .deprecatedSummary caption a:hover,
+.requiresSummary caption a:hover, .packagesSummary caption a:hover, providesSummary caption a:hover,
+.usesSummary caption a:hover,
 .overviewSummary caption a:active, .memberSummary caption a:active, .typeSummary caption a:active,
 .useSummary caption a:active, .constantsSummary caption a:active, .deprecatedSummary caption a:active,
+.requiresSummary caption a:active, .packagesSummary caption a:active, providesSummary caption a:active,
+.usesSummary caption a:active,
 .overviewSummary caption a:visited, .memberSummary caption a:visited, .typeSummary caption a:visited,
-.useSummary caption a:visited, .constantsSummary caption a:visited, .deprecatedSummary caption a:visited {
+.useSummary caption a:visited, .constantsSummary caption a:visited, .deprecatedSummary caption a:visited
+.requiresSummary caption a:visited, .packagesSummary caption a:visited, providesSummary caption a:visited,
+.usesSummary caption a:visited {
     color:#FFFFFF;
 }
 .overviewSummary caption span, .memberSummary caption span, .typeSummary caption span,
-.useSummary caption span, .constantsSummary caption span, .deprecatedSummary caption span {
+.useSummary caption span, .constantsSummary caption span, .deprecatedSummary caption span,
+.requiresSummary caption span, .packagesSummary caption span, .providesSummary caption span,
+.usesSummary caption span {
     white-space:nowrap;
     padding-top:5px;
     padding-left:12px;
@@ -491,7 +503,8 @@ Table styles
     display:inline;
 }
 .overviewSummary .tabEnd, .memberSummary .tabEnd, .typeSummary .tabEnd,
-.useSummary .tabEnd, .constantsSummary .tabEnd, .deprecatedSummary .tabEnd {
+.useSummary .tabEnd, .constantsSummary .tabEnd, .deprecatedSummary .tabEnd,
+.requiresSummary .tabEnd, .packagesSummary .tabEnd, .providesSummary .tabEnd, .usesSummary .tabEnd {
     display:none;
     width:5px;
     position:relative;
@@ -516,18 +529,19 @@ Table styles
 
 }
 .overviewSummary td, .memberSummary td, .typeSummary td,
-.useSummary td, .constantsSummary td, .deprecatedSummary td {
+.useSummary td, .constantsSummary td, .deprecatedSummary td,
+.requiresSummary td, .packagesSummary td, .providesSummary td, .usesSummary td {
     text-align:left;
     padding:0px 0px 12px 10px;
 }
-th.colOne, th.colFirst, th.colLast, .useSummary th, .constantsSummary th,
-td.colOne, td.colFirst, td.colLast, .useSummary td, .constantsSummary td{
+th.colOne, th.colFirst, th.colSecond, th.colLast, .useSummary th, .constantsSummary th, .packagesSummary th,
+td.colOne, td.colFirst, td.colSecond, td.colLast, .useSummary td, .constantsSummary td {
     vertical-align:top;
     padding-right:0px;
     padding-top:8px;
     padding-bottom:3px;
 }
-th.colFirst, th.colLast, th.colOne, .constantsSummary th {
+th.colFirst, th.colSecond, th.colLast, th.colOne, .constantsSummary th, .packagesSummary th {
     background:#dee3e9;
     text-align:left;
     padding:8px 3px 3px 7px;
@@ -539,10 +553,19 @@ td.colFirst, th.colFirst {
 td.colLast, th.colLast {
     font-size:13px;
 }
-td.colOne, th.colOne {
+td.colOne, th.colOne, .constantsSummary th, .packagesSummary th {
+    font-size:13px;
+}
+.providesSummary th.colFirst, .providesSummary th.colLast, .providesSummary td.colFirst,
+.providesSummary td.colLast {
+    white-space:normal;
+    width:50%;
     font-size:13px;
 }
 .overviewSummary td.colFirst, .overviewSummary th.colFirst,
+.requiresSummary td.colFirst, .requiresSummary th.colFirst,
+.packagesSummary td.colFirst, .packagesSummary td.colSecond, .packagesSummary th.colFirst, .packagesSummary th,
+.usesSummary td.colFirst, .usesSummary th.colFirst,
 .useSummary td.colFirst, .useSummary th.colFirst,
 .overviewSummary td.colOne, .overviewSummary th.colOne,
 .memberSummary td.colFirst, .memberSummary th.colFirst,
@@ -551,7 +574,7 @@ td.colOne, th.colOne {
     width:25%;
     vertical-align:top;
 }
-td.colOne a:link, td.colOne a:active, td.colOne a:visited, td.colOne a:hover, td.colFirst a:link, td.colFirst a:active, td.colFirst a:visited, td.colFirst a:hover, td.colLast a:link, td.colLast a:active, td.colLast a:visited, td.colLast a:hover, .constantValuesContainer td a:link, .constantValuesContainer td a:active, .constantValuesContainer td a:visited, .constantValuesContainer td a:hover {
+td.colOne a:link, td.colOne a:active, td.colOne a:visited, td.colOne a:hover, td.colFirst a:link, td.colFirst a:active, td.colFirst a:visited, td.colFirst a:hover, td.colSecond a:link, td.colSecond a:active, td.colSecond a:visited, td.colSecond a:hover, td.colLast a:link, td.colLast a:active, td.colLast a:visited, td.colLast a:hover, .constantValuesContainer td a:link, .constantValuesContainer td a:active, .constantValuesContainer td a:visited, .constantValuesContainer td a:hover {
     font-weight:bold;
 }
 .tableSubHeadingColor {
@@ -611,7 +634,7 @@ h1.hidden {
     margin:3px 10px 2px 0px;
     color:#474747;
 }
-.deprecatedLabel, .descfrmTypeLabel, .memberNameLabel, .memberNameLink,
+.deprecatedLabel, .descfrmTypeLabel, .implementationLabel, .memberNameLabel, .memberNameLink,
 .moduleLabelInClass, .overrideSpecifyLabel, .packageLabelInClass,
 .packageHierarchyLabel, .paramLabel, .returnLabel, .seeLabel, .simpleTagLabel,
 .throwsLabel, .typeNameLabel, .typeNameLink, .searchTagLink {

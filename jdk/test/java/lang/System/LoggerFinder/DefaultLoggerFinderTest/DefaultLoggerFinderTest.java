@@ -299,10 +299,9 @@ public class DefaultLoggerFinderTest {
 
         final java.util.logging.Logger appSink = java.util.logging.Logger.getLogger("foo");
         final java.util.logging.Logger sysSink = accessSystemLogger.demandSystemLogger("foo");
-        appSink.addHandler(new MyHandler());
-        sysSink.addHandler(new MyHandler());
-        appSink.setUseParentHandlers(VERBOSE);
-        sysSink.setUseParentHandlers(VERBOSE);
+        final java.util.logging.Logger sink = java.util.logging.Logger.getLogger("foo");
+        sink.addHandler(new MyHandler());
+        sink.setUseParentHandlers(VERBOSE);
 
         Stream.of(args).map(TestCases::valueOf).forEach((testCase) -> {
             LoggerFinder provider;
