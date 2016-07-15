@@ -1961,6 +1961,11 @@ void InstanceKlass::remove_unshareable_info() {
     m->remove_unshareable_info();
   }
 
+  // cached_class_file might be pointing to a malloc'ed buffer allocated by
+  // event-based tracing code at CDS dump time. It's not usable at runtime
+  // so let's clear it.
+  set_cached_class_file(NULL);
+
   // do array classes also.
   array_klasses_do(remove_unshareable_in_class);
 }

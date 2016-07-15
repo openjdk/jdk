@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,34 +20,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.hotspotvmconfig;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package jdk.vm.ci.code;
 
 /**
- * Refers to a C++ flag in the VM.
+ * Used to suppress <a href="http://findbugs.sourceforge.net">FindBugs</a> warnings.
  */
-@Target(ElementType.FIELD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface HotSpotVMFlag {
+@interface SuppressFBWarnings {
+    /**
+     * The set of FindBugs
+     * <a href="http://findbugs.sourceforge.net/bugDescriptions.html">warnings</a> that are to be
+     * suppressed in annotated element. The value can be a bug category, kind or pattern.
+     */
+    String[] value();
 
     /**
-     * Returns the name of this flag.
-     *
-     * @return name of flag.
+     * Reason why the warning is suppressed.
      */
-    String name();
-
-    /**
-     * List of architectures where this constant is required. Names are derived from
-     * {@link HotSpotVMConfig#getHostArchitectureName()}. An empty list implies that the constant is
-     * required on all architectures.
-     */
-    @SuppressWarnings("javadoc")
-    String[] archs() default {};
-
-    boolean optional() default false;
+    String justification();
 }

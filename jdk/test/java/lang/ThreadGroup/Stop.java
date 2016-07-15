@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,60 +28,41 @@
  *          unpredictable results.
  */
 
-public class Stop implements Runnable {
-    private static boolean groupStopped = false ;
-    private static final Object lock = new Object();
+import java.util.concurrent.CountDownLatch;
 
-    private static final ThreadGroup group = new ThreadGroup("");
-    private static final Thread first = new Thread(group, new Stop());
-    private static final Thread second = new Thread(group, new Stop());
-
-    public void run() {
-        while (true) {
-            // Give the other thread a chance to start
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-            }
-
-            // When the first thread runs, it will stop the group.
-            if (Thread.currentThread() == first) {
-                synchronized (lock) {
-                    try {
-                        group.stop();
-                    } finally {
-                        // Signal the main thread it is time to check
-                        // that the stopped thread group was successful
-                        groupStopped = true;
-                        lock.notifyAll();
-                    }
-                }
-            }
-        }
-    }
+public class Stop {
 
     public static void main(String[] args) throws Exception {
+        final CountDownLatch ready = new CountDownLatch(1);
+        final ThreadGroup group = new ThreadGroup("");
+
+        final Thread second = new Thread(group, () -> {
+            ready.countDown();
+            while (true) {
+                try {
+                    Thread.sleep(60000);
+                } catch (InterruptedException shouldNotHappen) {
+                }
+            }
+        });
+
+        final Thread first = new Thread(group, () -> {
+            // Wait until "second" is started
+            try {
+                ready.await();
+            } catch (InterruptedException shouldNotHappen) {
+            }
+            // Now stop the group
+            group.stop();
+        });
+
         // Launch two threads as part of the same thread group
         first.start();
         second.start();
 
-        // Wait for the thread group stop to be issued
-        synchronized(lock){
-            while (!groupStopped) {
-                lock.wait();
-                // Give the other thread a chance to stop
-                Thread.sleep(1000);
-            }
-        }
-
         // Check that the second thread is terminated when the
         // first thread terminates the thread group.
-        boolean failed = second.isAlive();
-
-        // Clean up any threads that may have not been terminated
-        first.stop();
-        second.stop();
-        if (failed)
-            throw new RuntimeException("Failure.");
+        second.join();
+        // Test passed - if never get here the test times out and fails.
     }
 }

@@ -26,8 +26,11 @@
 package com.sun.tools.javac.code;
 
 
+import com.sun.tools.javac.code.Attribute.TypeCompound;
+import com.sun.tools.javac.code.Kinds.Kind;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.ListBuffer;
 
 /**
  * Container for all annotations (attributes in javac) on a Symbol.
@@ -142,9 +145,22 @@ public class SymbolMetadata {
             throw new NullPointerException();
         }
         setDeclarationAttributes(other.getDeclarationAttributes());
-        setTypeAttributes(other.getTypeAttributes());
-        setInitTypeAttributes(other.getInitTypeAttributes());
-        setClassInitTypeAttributes(other.getClassInitTypeAttributes());
+        if ((sym.flags() & Flags.BRIDGE) != 0) {
+            Assert.check(other.sym.kind == Kind.MTH);
+            ListBuffer<TypeCompound> typeAttributes = new ListBuffer<>();
+            for (TypeCompound tc : other.getTypeAttributes()) {
+                // Carry over only contractual type annotations: i.e nothing interior to method body.
+                if (!tc.position.type.isLocal())
+                    typeAttributes.append(tc);
+            }
+            setTypeAttributes(typeAttributes.toList());
+        } else {
+            setTypeAttributes(other.getTypeAttributes());
+        }
+        if (sym.kind == Kind.TYP) {
+            setInitTypeAttributes(other.getInitTypeAttributes());
+            setClassInitTypeAttributes(other.getClassInitTypeAttributes());
+        }
     }
 
     public SymbolMetadata reset() {

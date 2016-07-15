@@ -36,11 +36,6 @@
 #include "gc/shared/gcCause.hpp"
 #include "utilities/pair.hpp"
 
-// A G1Policy makes policy decisions that determine the
-// characteristics of the collector.  Examples include:
-//   * choice of collection set.
-//   * when to collect.
-
 class HeapRegion;
 class G1CollectionSet;
 class CollectionSetChooser;
@@ -109,10 +104,7 @@ public:
   const G1Predictions& predictor() const { return _predictor; }
   const G1Analytics* analytics()   const { return const_cast<const G1Analytics*>(_analytics); }
 
-  // Add the given number of bytes to the total number of allocated bytes in the old gen.
   void add_bytes_allocated_in_old_since_last_gc(size_t bytes) { _bytes_allocated_in_old_since_last_gc += bytes; }
-
-  // Accessors
 
   void set_region_eden(HeapRegion* hr) {
     hr->set_eden();
@@ -164,8 +156,6 @@ public:
     return _mmu_tracker->max_gc_time() * 1000.0;
   }
 
-  // Returns an estimate of the survival rate of the region at yg-age
-  // "yg_age".
   double predict_yg_surv_rate(int age, SurvRateGroup* surv_rate_group) const;
 
   double predict_yg_surv_rate(int age) const;
@@ -250,16 +240,9 @@ private:
 public:
   size_t pending_cards() const { return _pending_cards; }
 
-  // Calculate the minimum number of old regions we'll add to the CSet
-  // during a mixed GC.
   uint calc_min_old_cset_length() const;
-
-  // Calculate the maximum number of old regions we'll add to the CSet
-  // during a mixed GC.
   uint calc_max_old_cset_length() const;
 
-  // Returns the given amount of uncollected reclaimable space
-  // as a percentage of the current heap capacity.
   double reclaimable_bytes_perc(size_t reclaimable_bytes) const;
 
 private:
@@ -293,12 +276,8 @@ public:
 
   G1GCPhaseTimes* phase_times() const { return _phase_times; }
 
-  // Check the current value of the young list RSet lengths and
-  // compare it against the last prediction. If the current value is
-  // higher, recalculate the young list target length prediction.
   void revise_young_list_target_length_if_necessary(size_t rs_lengths);
 
-  // This should be called after the heap is resized.
   void record_new_heap_size(uint new_number_of_regions);
 
   void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
@@ -309,42 +288,31 @@ public:
 
   bool about_to_start_mixed_phase() const;
 
-  // Record the start and end of an evacuation pause.
   void record_collection_pause_start(double start_time_sec);
   void record_collection_pause_end(double pause_time_ms, size_t cards_scanned, size_t heap_used_bytes_before_gc);
 
-  // Record the start and end of a full collection.
   void record_full_collection_start();
   void record_full_collection_end();
 
-  // Must currently be called while the world is stopped.
   void record_concurrent_mark_init_end(double mark_init_elapsed_time_ms);
 
-  // Record start and end of remark.
   void record_concurrent_mark_remark_start();
   void record_concurrent_mark_remark_end();
 
-  // Record start, end, and completion of cleanup.
   void record_concurrent_mark_cleanup_start();
   void record_concurrent_mark_cleanup_end();
   void record_concurrent_mark_cleanup_completed();
 
   virtual void print_phases();
 
-  // Record how much space we copied during a GC. This is typically
-  // called when a GC alloc region is being retired.
   void record_bytes_copied_during_gc(size_t bytes) {
     _bytes_copied_during_gc += bytes;
   }
 
-  // The amount of space we copied during a GC.
   size_t bytes_copied_during_gc() const {
     return _bytes_copied_during_gc;
   }
 
-  // Determine whether there are candidate regions so that the
-  // next GC should be mixed. The two action strings are used
-  // in the ergo output when the method returns true or false.
   bool next_gc_should_be_mixed(const char* true_action_str,
                                const char* false_action_str) const;
 
@@ -356,18 +324,8 @@ private:
   void initiate_conc_mark();
 
 public:
-  // This sets the initiate_conc_mark_if_possible() flag to start a
-  // new cycle, as long as we are not already in one. It's best if it
-  // is called during a safepoint when the test whether a cycle is in
-  // progress or not is stable.
   bool force_initial_mark_if_outside_cycle(GCCause::Cause gc_cause);
 
-  // This is called at the very beginning of an evacuation pause (it
-  // has to be the first thing that the pause does). If
-  // initiate_conc_mark_if_possible() is true, and the concurrent
-  // marking thread has completed its work during the previous cycle,
-  // it will set during_initial_mark_pause() to so that the pause does
-  // the initial-mark work and start a marking cycle.
   void decide_on_conc_mark_initiation();
 
   void finished_recalculating_age_indexes(bool is_survivors) {
@@ -431,7 +389,6 @@ public:
 
   void update_max_gc_locker_expansion();
 
-  // Calculates survivor space parameters.
   void update_survivors_policy();
 };
 

@@ -37,14 +37,13 @@ import jdk.vm.ci.hotspot.HotSpotJVMCIBackendFactory;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.hotspot.HotSpotStackIntrospection;
-import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.runtime.JVMCIBackend;
 import jdk.vm.ci.sparc.SPARC;
 import jdk.vm.ci.sparc.SPARC.CPUFeature;
 
 public class SPARCHotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFactory {
 
-    protected TargetDescription createTarget(HotSpotVMConfig config) {
+    protected TargetDescription createTarget(SPARCHotSpotVMConfig config) {
         final int stackFrameAlignment = 16;
         final int implicitNullCheckLimit = 4096;
         final boolean inlineObjects = false;
@@ -56,7 +55,7 @@ public class SPARCHotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
         return new HotSpotCodeCacheProvider(runtime, runtime.getConfig(), target, regConfig);
     }
 
-    protected EnumSet<CPUFeature> computeFeatures(HotSpotVMConfig config) {
+    protected EnumSet<CPUFeature> computeFeatures(SPARCHotSpotVMConfig config) {
         EnumSet<CPUFeature> features = EnumSet.noneOf(CPUFeature.class);
         if ((config.vmVersionFeatures & config.sparcVis1Instructions) != 0) {
             features.add(CPUFeature.VIS1);
@@ -143,10 +142,11 @@ public class SPARCHotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
     @SuppressWarnings("try")
     public JVMCIBackend createJVMCIBackend(HotSpotJVMCIRuntimeProvider runtime, JVMCIBackend host) {
         assert host == null;
-        TargetDescription target = createTarget(runtime.getConfig());
+        SPARCHotSpotVMConfig config = new SPARCHotSpotVMConfig(runtime.getConfigStore());
+        TargetDescription target = createTarget(config);
 
         HotSpotMetaAccessProvider metaAccess = new HotSpotMetaAccessProvider(runtime);
-        RegisterConfig regConfig = new SPARCHotSpotRegisterConfig(target, runtime.getConfig());
+        RegisterConfig regConfig = new SPARCHotSpotRegisterConfig(target, config.useCompressedOops);
         HotSpotCodeCacheProvider codeCache = createCodeCache(runtime, target, regConfig);
         HotSpotConstantReflectionProvider constantReflection = new HotSpotConstantReflectionProvider(runtime);
         StackIntrospection stackIntrospection = new HotSpotStackIntrospection(runtime);

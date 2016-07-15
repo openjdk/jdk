@@ -50,7 +50,7 @@ from keytool is correct (you can read everything in english fine).
 <li>	keytool -import -v -file /tmp/cert -storepass password
 	Check error (Certificate reply and cert are the same)
 <li>	keytool -printcert -file /tmp/cert
-<li>	keytool -list -storepass password -provider sun.security.provider.Sun
+<li>	keytool -list -storepass password -addprovider SUN
 </ol>
 
 Error tests
@@ -93,19 +93,19 @@ PKCS#11 tests
 <ol>
 <li>	sccs edit cert8.db key3.db
 
-<li>	keytool -keystore NONE -storepass test12 -storetype PKCS11 -providerName SunPKCS11-nss -providerClass sun.security.pkcs11.SunPKCS11 -providerArg p11-nss.txt -genkey -alias genkey -dname cn=genkey -keysize 512 -keyalg rsa
-<li>	keytool -keystore NONE -storepass test12 -storetype PKCS11 -providerName SunPKCS11-nss -providerClass sun.security.pkcs11.SunPKCS11 -providerArg p11-nss.txt -list
-<li>	keytool -keystore NONE -storepass test12 -storetype PKCS11 -providerName SunPKCS11-nss -providerClass sun.security.pkcs11.SunPKCS11 -providerArg p11-nss.txt -list -alias genkey
-<li>	keytool -keystore NONE -storepass test12 -storetype PKCS11 -providerName SunPKCS11-nss -providerClass sun.security.pkcs11.SunPKCS11 -providerArg p11-nss.txt -certreq -alias genkey -file genkey.certreq
-<li>	keytool -keystore NONE -storepass test12 -storetype PKCS11 -providerName SunPKCS11-nss -providerClass sun.security.pkcs11.SunPKCS11 -providerArg p11-nss.txt -export -alias genkey -file genkey.cert
+<li>	keytool -keystore NONE -storepass test12 -storetype PKCS11 -providerName SunPKCS11-nss -addprovider SunPKCS11 -providerArg p11-nss.txt -genkey -alias genkey -dname cn=genkey -keysize 512 -keyalg rsa
+<li>	keytool -keystore NONE -storepass test12 -storetype PKCS11 -providerName SunPKCS11-nss -addprovider SunPKCS11 -providerArg p11-nss.txt -list
+<li>	keytool -keystore NONE -storepass test12 -storetype PKCS11 -providerName SunPKCS11-nss -addprovider SunPKCS11 -providerArg p11-nss.txt -list -alias genkey
+<li>	keytool -keystore NONE -storepass test12 -storetype PKCS11 -providerName SunPKCS11-nss -addprovider SunPKCS11 -providerArg p11-nss.txt -certreq -alias genkey -file genkey.certreq
+<li>	keytool -keystore NONE -storepass test12 -storetype PKCS11 -providerName SunPKCS11-nss -addprovider SunPKCS11 -providerArg p11-nss.txt -export -alias genkey -file genkey.cert
 <li>	keytool -printcert -file genkey.cert
-<li>	keytool -keystore NONE -storepass test12 -storetype PKCS11 -providerName SunPKCS11-nss -providerClass sun.security.pkcs11.SunPKCS11 -providerArg p11-nss.txt -selfcert -alias genkey -dname cn=selfCert
+<li>	keytool -keystore NONE -storepass test12 -storetype PKCS11 -providerName SunPKCS11-nss -addprovider SunPKCS11 -providerArg p11-nss.txt -selfcert -alias genkey -dname cn=selfCert
 
-<li>	keytool -keystore NONE -storepass test12 -storetype PKCS11 -providerName SunPKCS11-nss -providerClass sun.security.pkcs11.SunPKCS11 -providerArg p11-nss.txt -list -alias genkey -v
+<li>	keytool -keystore NONE -storepass test12 -storetype PKCS11 -providerName SunPKCS11-nss -addprovider SunPKCS11 -providerArg p11-nss.txt -list -alias genkey -v
 (check that cert subject DN is [cn=selfCert])
 
-<li>	keytool -keystore NONE -storepass test12 -storetype PKCS11 -providerName SunPKCS11-nss -providerClass sun.security.pkcs11.SunPKCS11 -providerArg p11-nss.txt -delete -alias genkey
-<li>	keytool -keystore NONE -storepass test12 -storetype PKCS11 -providerName SunPKCS11-nss -providerClass sun.security.pkcs11.SunPKCS11 -providerArg p11-nss.txt -list
+<li>	keytool -keystore NONE -storepass test12 -storetype PKCS11 -providerName SunPKCS11-nss -addprovider SunPKCS11 -providerArg p11-nss.txt -delete -alias genkey
+<li>	keytool -keystore NONE -storepass test12 -storetype PKCS11 -providerName SunPKCS11-nss -addprovider SunPKCS11 -providerArg p11-nss.txt -list
 (check for empty database listing)
 
 <li>	sccs unedit cert8.db key3.db

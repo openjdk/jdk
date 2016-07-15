@@ -117,36 +117,15 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_OPEN_OR_CUSTOM],
   AC_ARG_ENABLE([openjdk-only], [AS_HELP_STRING([--enable-openjdk-only],
       [suppress building custom source even if present @<:@disabled@:>@])],,[enable_openjdk_only="no"])
 
-  AC_MSG_CHECKING([for presence of closed sources])
-  if test -d "$SRC_ROOT/jdk/src/closed"; then
-    CLOSED_SOURCE_PRESENT=yes
+  AC_MSG_CHECKING([if custom source is suppressed (openjdk-only)])
+  AC_MSG_RESULT([$enable_openjdk_only])
+  if test "x$enable_openjdk_only" = "xyes"; then
+    SUPPRESS_CUSTOM_EXTENSIONS="true"
+  elif test "x$enable_openjdk_only" = "xno"; then
+    SUPPRESS_CUSTOM_EXTENSIONS="false"
   else
-    CLOSED_SOURCE_PRESENT=no
+    AC_MSG_ERROR([Invalid value for --enable-openjdk-only: $enable_openjdk_only])
   fi
-  AC_MSG_RESULT([$CLOSED_SOURCE_PRESENT])
-
-  AC_MSG_CHECKING([if closed source is suppressed (openjdk-only)])
-  SUPPRESS_CLOSED_SOURCE="$enable_openjdk_only"
-  AC_MSG_RESULT([$SUPPRESS_CLOSED_SOURCE])
-
-  if test "x$CLOSED_SOURCE_PRESENT" = xno; then
-    OPENJDK=true
-    if test "x$SUPPRESS_CLOSED_SOURCE" = "xyes"; then
-      AC_MSG_WARN([No closed source present, --enable-openjdk-only makes no sense])
-    fi
-  else
-    if test "x$SUPPRESS_CLOSED_SOURCE" = "xyes"; then
-      OPENJDK=true
-    else
-      OPENJDK=false
-    fi
-  fi
-
-  if test "x$OPENJDK" = "xtrue"; then
-    SET_OPENJDK="OPENJDK=true"
-  fi
-
-  AC_SUBST(SET_OPENJDK)
 
   # custom-make-dir is deprecated. Please use your custom-hook.m4 to override
   # the IncludeCustomExtension macro.

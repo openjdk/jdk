@@ -539,6 +539,7 @@ public class DefaultLoggerTest {
             throw new RuntimeException("identical loggers");
         }
 
+        final java.util.logging.Logger sink;
         final java.util.logging.Logger appSink;
         final java.util.logging.Logger sysSink;
         final java.util.logging.Handler appHandler;
@@ -548,10 +549,9 @@ public class DefaultLoggerTest {
         try {
             appSink = java.util.logging.Logger.getLogger("foo");
             sysSink = accessSystemLogger.demandSystemLogger("foo");
-            appSink.addHandler(appHandler = new MyHandler());
-            sysSink.addHandler(sysHandler = new MyHandler());
-            appSink.setUseParentHandlers(false);
-            sysSink.setUseParentHandlers(false);
+            sink = java.util.logging.Logger.getLogger("foo");
+            sink.addHandler(appHandler = sysHandler = new MyHandler());
+            sink.setUseParentHandlers(false);
             provider = LoggerFinder.getLoggerFinder();
         } finally {
             allowAll.get().set(false);

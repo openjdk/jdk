@@ -290,19 +290,15 @@ $(call CopyrightLine,$(COPYRIGHT_URL),$(FIRST_COPYRIGHT_YEAR),)\
 
 # Common javadoc options used by all bundles
 
-ifdef OPENJDK
-  ADDITIONAL_JAVADOCFLAGS = \
-      -Xdocrootparent $(DOCS_BASE_URL)
-else
-  ADDITIONAL_JAVADOCFLAGS =
-endif
+# This flag may be overridden from a custom makefile
+DOCROOTPARENT_FLAG = -Xdocrootparent $(DOCS_BASE_URL)
 
 define COMMON_JAVADOCFLAGS
     $(call OptionOnly,-XDignore.symbol.file=true) ; \
     $(call OptionOnly,-quiet) ; \
     $(call OptionOnly,-use) ; \
     $(call OptionOnly,-keywords) ; \
-    $(call OptionOnly,$(ADDITIONAL_JAVADOCFLAGS))
+    $(call OptionOnly,$(DOCROOTPARENT_FLAG))
 endef
 
 # Common javadoc tags used by all bundles
@@ -1038,8 +1034,6 @@ ALL_OTHER_TARGETS += mgmtdocs
 
 MGMT_DOCDIR := $(JRE_API_DOCSDIR)/management/extension
 MGMT2COREAPI := ../../$(JDKJRE2COREAPI)
-JVM_MIB_NAME := JVM-MANAGEMENT-MIB.mib
-JVM_MIB_SRC := $(JDK_TOPDIR)/src/closed/jdk.snmp/share/classes/sun/management/snmp/$(JVM_MIB_NAME)
 MGMT_DOCTITLE := Monitoring and Management Interface for the Java$(TRADEMARK) Platform
 MGMT_WINDOWTITLE := Monitoring and Management Interface for the Java Platform
 MGMT_HEADER := <strong>Monitoring and Management Interface for the Java Platform</strong>
@@ -1063,11 +1057,6 @@ $(MGMT_INDEX_FILE): GET2DOCSDIR=$(MGMT2COREAPI)/..
 # Run javadoc if the index file is out of date or missing
 $(MGMT_INDEX_FILE): $(MGMT_OPTIONS_FILE) $(MGMT_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
 	$(prep-javadoc)
-	@if [ -f $(JVM_MIB_SRC) ] ; then \
-	  $(CP) $(JVM_MIB_SRC) $(@D)/.. ; \
-	else \
-	  $(ECHO) "WARNING: File $(JVM_MIB_NAME) not available."; \
-	fi
 	$(call JavadocSummary,$(MGMT_OPTIONS_FILE),$(MGMT_PACKAGES_FILE))
 	$(JAVADOC_CMD_SMALL) -d $(@D) \
 	    @$(MGMT_OPTIONS_FILE) @$(MGMT_PACKAGES_FILE)
@@ -1223,8 +1212,7 @@ JSHELLAPI_DOCTITLE := JShell API
 JSHELLAPI_WINDOWTITLE := JShell API
 JSHELLAPI_HEADER := <strong>JSHELL API</strong>
 JSHELLAPI_BOTTOM := $(call CommonBottom,$(JSHELLAPI_FIRST_COPYRIGHT_YEAR))
-JSHELLAPI_GROUPNAME := Packages
-JSHELLAPI_REGEXP := jdk.jshell.*
+JSHELLAPI_OVERVIEW := $(LANGTOOLS_TOPDIR)/src/jdk.jshell/share/classes/jdk/jshell/overview.html
 # JSHELLAPI_PKGS is located in NON_CORE_PKGS.gmk
 
 JSHELLAPI_INDEX_HTML = $(JSHELLAPI_DOCDIR)/index.html
@@ -1256,11 +1244,11 @@ $(JSHELLAPI_OPTIONS_FILE):
 	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
 	  $(call OptionPair,-addmods,$(JSHELLAPI_MODULES)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
+	  $(call OptionPair,-overview,$(JSHELLAPI_OVERVIEW)) ; \
 	  $(call OptionPair,-doctitle,$(JSHELLAPI_DOCTITLE)) ; \
 	  $(call OptionPair,-windowtitle,$(JSHELLAPI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
 	  $(call OptionPair,-header,$(JSHELLAPI_HEADER)$(DRAFT_HEADER)) ; \
 	  $(call OptionPair,-bottom,$(JSHELLAPI_BOTTOM)$(DRAFT_BOTTOM)) ; \
-	  $(call OptionTrip,-group,$(JSHELLAPI_GROUPNAME),$(JSHELLAPI_REGEXP)); \
 	  $(call OptionTrip,-linkoffline,$(JSHELLAPI2COREAPI),$(COREAPI_DOCSDIR)/); \
 	) >> $@
 
@@ -1705,3 +1693,7 @@ $(JAVADOC_ARCHIVE): $(COREAPI_INDEX_FILE)
 #############################################################
 .PHONY: all docs coredocs otherdocs \
      $(ALL_OTHER_TARGETS) zip-docs
+
+################################################################################
+
+$(eval $(call IncludeCustomExtension, , Javadoc-post.gmk))

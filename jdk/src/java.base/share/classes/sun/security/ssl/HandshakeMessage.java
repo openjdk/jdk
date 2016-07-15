@@ -313,11 +313,6 @@ static final class ClientHello extends HandshakeMessage {
             this.cookie = null;
         }
 
-        if (cipherSuites.containsEC()) {
-            extensions.add(EllipticCurvesExtension.DEFAULT);
-            extensions.add(EllipticPointFormatsExtension.DEFAULT);
-        }
-
         clnt_random = new RandomCookie(generator);
         compression_methods = NULL_COMPRESSION;
     }

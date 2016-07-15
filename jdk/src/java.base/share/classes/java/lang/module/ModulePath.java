@@ -523,7 +523,7 @@ class ModulePath implements ConfigurableModuleFinder {
         try (JarFile jf = new JarFile(file.toFile(),
                                       true,               // verify
                                       ZipFile.OPEN_READ,
-                                      JarFile.Release.RUNTIME))
+                                      JarFile.runtimeVersion()))
         {
             ModuleDescriptor md;
             JarEntry entry = jf.getJarEntry(MODULE_INFO);
