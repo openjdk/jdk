@@ -684,7 +684,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
   AC_SUBST(CXXFLAGS_TESTEXE)
 
   LDFLAGS_TESTLIB="$LDFLAGS_JDKLIB"
-  LDFLAGS_TESTEXE="$LDFLAGS_JDKEXE"
+  LDFLAGS_TESTEXE="$LDFLAGS_JDKEXE $JAVA_BASE_LDFLAGS"
 
   AC_SUBST(LDFLAGS_TESTLIB)
   AC_SUBST(LDFLAGS_TESTEXE)
@@ -1148,11 +1148,11 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
 
   $2LDFLAGS_JDKLIB="${$2LDFLAGS_JDKLIB} ${SHARED_LIBRARY_FLAGS}"
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    $2LDFLAGS_JDKLIB="${$2LDFLAGS_JDKLIB} \
+    $2JAVA_BASE_LDFLAGS="${$2JAVA_BASE_LDFLAGS} \
         -libpath:${OUTPUT_ROOT}/support/modules_libs/java.base"
     $2JDKLIB_LIBS=""
   else
-    $2LDFLAGS_JDKLIB="${$2LDFLAGS_JDKLIB} \
+    $2JAVA_BASE_LDFLAGS="${$2JAVA_BASE_LDFLAGS} \
         -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_$1_CPU_LIBDIR)"
 
     if test "x$1" = "xTARGET"; then
@@ -1161,17 +1161,17 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
       # Only add client/minimal dir if client/minimal is being built.
     # Default to server for other variants.
       if HOTSPOT_CHECK_JVM_VARIANT(server); then
-        $2LDFLAGS_JDKLIB="${$2LDFLAGS_JDKLIB} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_$1_CPU_LIBDIR)/server"
+        $2JAVA_BASE_LDFLAGS="${$2JAVA_BASE_LDFLAGS} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_$1_CPU_LIBDIR)/server"
       elif HOTSPOT_CHECK_JVM_VARIANT(client); then
-        $2LDFLAGS_JDKLIB="${$2LDFLAGS_JDKLIB} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_$1_CPU_LIBDIR)/client"
+        $2JAVA_BASE_LDFLAGS="${$2JAVA_BASE_LDFLAGS} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_$1_CPU_LIBDIR)/client"
       elif HOTSPOT_CHECK_JVM_VARIANT(minimal); then
-        $2LDFLAGS_JDKLIB="${$2LDFLAGS_JDKLIB} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_$1_CPU_LIBDIR)/minimal"
+        $2JAVA_BASE_LDFLAGS="${$2JAVA_BASE_LDFLAGS} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_$1_CPU_LIBDIR)/minimal"
     else
-        $2LDFLAGS_JDKLIB="${$2LDFLAGS_JDKLIB} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_$1_CPU_LIBDIR)/server"
+        $2JAVA_BASE_LDFLAGS="${$2JAVA_BASE_LDFLAGS} -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_$1_CPU_LIBDIR)/server"
     fi
     elif test "x$1" = "xBUILD"; then
       # When building a buildjdk, it's always only the server variant
-      $2LDFLAGS_JDKLIB="${$2LDFLAGS_JDKLIB} \
+      $2JAVA_BASE_LDFLAGS="${$2JAVA_BASE_LDFLAGS} \
           -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base\$(OPENJDK_$1_CPU_LIBDIR)/server"
     fi
 
@@ -1181,6 +1181,8 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
     fi
 
   fi
+
+$2LDFLAGS_JDKLIB="${$2LDFLAGS_JDKLIB} ${$2JAVA_BASE_LDFLAGS}"
 
   # Set $2JVM_LIBS (per os)
   if test "x$OPENJDK_$1_OS" = xlinux; then
