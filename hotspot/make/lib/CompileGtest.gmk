@@ -23,7 +23,10 @@
 # questions.
 #
 
-GTEST_TEST_SRC := $(HOTSPOT_TOPDIR)/test/native
+$(eval $(call IncludeCustomExtension, hotspot, lib/CompileGtest.gmk))
+
+GTEST_TEST_SRC += $(HOTSPOT_TOPDIR)/test/native
+GTEST_LAUNCHER_SRC := $(HOTSPOT_TOPDIR)/test/native/gtestLauncher.cpp
 GTEST_FRAMEWORK_SRC := $(SRC_ROOT)/test/fmw/gtest
 
 # On Windows, there are no internal debug symbols so must set copying to true
@@ -65,7 +68,7 @@ $(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBJVM, \
         $(BUILD_LIBJVM_ALL_OBJS)), \
     CFLAGS := $(JVM_CFLAGS) -I$(GTEST_FRAMEWORK_SRC) \
         -I$(GTEST_FRAMEWORK_SRC)/include \
-        -I$(GTEST_TEST_SRC), \
+        $(addprefix -I,$(GTEST_TEST_SRC)), \
     CFLAGS_windows := /EHsc, \
     CFLAGS_solaris := -DGTEST_HAS_EXCEPTIONS=0 -library=stlport4, \
     CFLAGS_macosx := -DGTEST_OS_MAC=1, \
@@ -73,7 +76,7 @@ $(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBJVM, \
     CXXFLAGS_DEBUG_SYMBOLS := $(JVM_CFLAGS_SYMBOLS), \
     DISABLED_WARNINGS_gcc := undef, \
     DISABLED_WARNINGS_clang := undef switch format-nonliteral \
-        tautological-undefined-compare, \
+        tautological-undefined-compare $(BUILD_LIBJVM_DISABLED_WARNINGS_clang), \
     DISABLED_WARNINGS_solstudio := identexpected, \
     LDFLAGS := $(JVM_LDFLAGS), \
     LDFLAGS_solaris := -library=stlport4 $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -83,6 +86,8 @@ $(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBJVM, \
     USE_MAPFILE_FOR_SYMBOLS := true, \
     COPY_DEBUG_SYMBOLS := $(GTEST_COPY_DEBUG_SYMBOLS), \
     ZIP_EXTERNAL_DEBUG_SYMBOLS := false, \
+    PRECOMPILED_HEADER := $(JVM_PRECOMPILED_HEADER), \
+    PRECOMPILED_HEADER_EXCLUDE := gtest-all.cc gtestMain.cpp, \
 ))
 
 TARGETS += $(BUILD_GTEST_LIBJVM)
@@ -93,7 +98,7 @@ $(eval $(call SetupNativeCompilation, BUILD_GTEST_LAUNCHER, \
     TOOLCHAIN := $(JVM_TOOLCHAIN), \
     PROGRAM := gtestLauncher, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR)/gtest, \
-    EXTRA_FILES := $(GTEST_TEST_SRC)/gtestLauncher.cpp, \
+    EXTRA_FILES := $(GTEST_LAUNCHER_SRC), \
     OBJECT_DIR := $(JVM_OUTPUTDIR)/gtest/launcher-objs, \
     CFLAGS := $(JVM_CFLAGS) -I$(GTEST_FRAMEWORK_SRC) \
         -I$(GTEST_FRAMEWORK_SRC)/include, \

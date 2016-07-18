@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,6 @@ BOOT_MODULES += \
 
 # to be deprivileged
 BOOT_MODULES += \
-    java.smartcardio \
     jdk.naming.rmi \
     #
 
@@ -104,6 +103,7 @@ PLATFORM_MODULES += \
 PLATFORM_MODULES += \
     java.compiler \
     java.scripting \
+    java.smartcardio \
     java.sql \
     java.sql.rowset \
     jdk.accessibility \

@@ -4183,13 +4183,16 @@ jint os::init_2(void) {
 
   // Check minimum allowable stack size for thread creation and to initialize
   // the java system classes, including StackOverflowError - depends on page
-  // size.  Add a page for compiler2 recursion in main thread.
-  // Add in 2*BytesPerWord times page size to account for VM stack during
+  // size.  Add two 4K pages for compiler2 recursion in main thread.
+  // Add in 4*BytesPerWord 4K pages to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   size_t min_stack_allowed =
-            (size_t)(JavaThread::stack_yellow_zone_size() + JavaThread::stack_red_zone_size() +
+            (size_t)(JavaThread::stack_guard_zone_size() +
                      JavaThread::stack_shadow_zone_size() +
-                     (2*BytesPerWord COMPILER2_PRESENT(+1)) * os::vm_page_size());
+                     (4*BytesPerWord COMPILER2_PRESENT(+2)) * 4 * K);
+
+  min_stack_allowed = align_size_up(min_stack_allowed, os::vm_page_size());
+
   if (actual_reserve_size < min_stack_allowed) {
     tty->print_cr("\nThe stack size specified is too small, "
                   "Specify at least %dk",
@@ -5247,6 +5250,12 @@ int os::fork_and_exec(char* cmd) {
 
 static int mallocDebugIntervalCounter = 0;
 static int mallocDebugCounter = 0;
+
+// For debugging possible bugs inside HeapWalk (a ring buffer)
+#define SAVE_COUNT 8
+static PROCESS_HEAP_ENTRY saved_heap_entries[SAVE_COUNT];
+static int saved_heap_entry_index;
+
 bool os::check_heap(bool force) {
   if (++mallocDebugCounter < MallocVerifyStart && !force) return true;
   if (++mallocDebugIntervalCounter >= MallocVerifyInterval || force) {
@@ -5267,13 +5276,28 @@ bool os::check_heap(bool force) {
     if (HeapLock(heap) != 0) {
       PROCESS_HEAP_ENTRY phe;
       phe.lpData = NULL;
+      memset(saved_heap_entries, 0, sizeof(saved_heap_entries));
+      saved_heap_entry_index = 0;
+      int count = 0;
+
       while (HeapWalk(heap, &phe) != 0) {
+        count ++;
         if ((phe.wFlags & PROCESS_HEAP_ENTRY_BUSY) &&
             !HeapValidate(heap, 0, phe.lpData)) {
           tty->print_cr("C heap has been corrupted (time: %d allocations)", mallocDebugCounter);
-          tty->print_cr("corrupted block near address %#x, length %d", phe.lpData, phe.cbData);
+          tty->print_cr("corrupted block near address %#x, length %d, count %d", phe.lpData, phe.cbData, count);
           HeapUnlock(heap);
           fatal("corrupted C heap");
+        } else {
+          // Save previous seen entries in a ring buffer. We have seen strange
+          // heap corruption fatal errors that produced mdmp files, but when we load
+          // these mdmp files in WinDBG, "!heap -triage" shows no error.
+          // We can examine the saved_heap_entries[] array in the mdmp file to
+          // diagnose such seemingly spurious errors reported by HeapWalk.
+          saved_heap_entries[saved_heap_entry_index++] = phe;
+          if (saved_heap_entry_index >= SAVE_COUNT) {
+            saved_heap_entry_index = 0;
+          }
         }
       }
       DWORD err = GetLastError();

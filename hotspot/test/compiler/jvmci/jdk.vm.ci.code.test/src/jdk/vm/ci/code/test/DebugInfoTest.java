@@ -44,6 +44,10 @@ public class DebugInfoTest extends CodeInstallationTest {
     }
 
     protected void test(DebugInfoCompiler compiler, Method method, int bci, JavaKind... slotKinds) {
+        test(compiler, method, bci, new Location[0], new Location[0], new int[0], slotKinds);
+    }
+
+    protected void test(DebugInfoCompiler compiler, Method method, int bci, Location[] objects, Location[] derivedBase, int[] sizeInBytes, JavaKind... slotKinds) {
         ResolvedJavaMethod resolvedMethod = metaAccess.lookupJavaMethod(method);
 
         int numLocals = resolvedMethod.getMaxLocals();
@@ -54,7 +58,7 @@ public class DebugInfoTest extends CodeInstallationTest {
 
             BytecodeFrame frame = new BytecodeFrame(null, resolvedMethod, bci, false, false, values, slotKinds, numLocals, numStack, 0);
             DebugInfo info = new DebugInfo(frame, vobjs);
-            info.setReferenceMap(new HotSpotReferenceMap(new Location[0], new Location[0], new int[0], 8));
+            info.setReferenceMap(new HotSpotReferenceMap(objects, derivedBase, sizeInBytes, 8));
 
             asm.emitTrap(info);
         }, method);

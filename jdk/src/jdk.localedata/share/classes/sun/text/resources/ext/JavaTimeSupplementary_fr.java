@@ -329,6 +329,10 @@ public class JavaTimeSupplementary_fr extends OpenListResourceBundle {
                 sharedEras },
             { "roc.short.Eras",
                 sharedEras },
+            { "timezone.gmtFormat",
+                "UTC{0}" },
+            { "timezone.hourFormat",
+                "+HH:mm;\u2212HH:mm" },
         };
     }
 }

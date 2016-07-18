@@ -20,20 +20,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.lang.reflect.Executable;
-import java.util.concurrent.Callable;
-import java.util.Objects;
 
-import jdk.test.lib.*;
-import compiler.whitebox.CompilerWhiteBoxTest;
 /*
  * @test
  * @bug 8130832
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib /compiler/whitebox /compiler/testlibrary /
+ * @library /testlibrary /test/lib /
  * @build IntrinsicAvailableTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
@@ -45,6 +40,14 @@ import compiler.whitebox.CompilerWhiteBoxTest;
  *                   -XX:-UseCRC32Intrinsics
  *                   IntrinsicAvailableTest
  */
+
+import java.lang.reflect.Executable;
+import java.util.concurrent.Callable;
+import java.util.Objects;
+
+import jdk.test.lib.*;
+import compiler.whitebox.CompilerWhiteBoxTest;
+
 public class IntrinsicAvailableTest extends CompilerWhiteBoxTest {
     protected String VMName;
 

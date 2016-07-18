@@ -395,6 +395,17 @@ hotspot_jprt = \
   :hotspot_fast_gc_gcold \
   :hotspot_fast_runtime \
   :hotspot_fast_serviceability
+  
+hotspot_runtime_tier2 = \
+  runtime/ \
+  serviceability/ \
+ -:hotspot_fast_runtime \
+ -:hotspot_fast_serviceability \
+ -:hotspot_runtime_tier2_platform_agnostic
+ 
+hotspot_runtime_tier2_platform_agnostic = \
+  runtime/SelectionResolution \
+ -:hotspot_fast_runtime
 
 #All tests that depends on nashorn extension.
 #

@@ -21,18 +21,16 @@
  * questions.
  */
 
-import sha.predicate.IntrinsicPredicates;
-
 /**
  * @test
  * @bug 8035968
  * @summary Verify that SHA-1 multi block intrinsic is actually used.
- * @library /testlibrary /test/lib /compiler/testlibrary ../
+ * @library /testlibrary /test/lib / ../
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestSHA intrinsics.Verifier TestSHA1MultiBlockIntrinsics
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @build TestSHA compiler.testlibrary.intrinsics.Verifier TestSHA1MultiBlockIntrinsics
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
@@ -58,9 +56,12 @@ import sha.predicate.IntrinsicPredicates;
  *                   -XX:CompileOnly=sun/security/provider/SHA -XX:-UseSHA
  *                   -Dalgorithm=SHA-1 TestSHA1MultiBlockIntrinsics
  * @run main/othervm -DverificationStrategy=VERIFY_INTRINSIC_USAGE
- *                   intrinsics.Verifier positive.log positive_def.log
+ *                   compiler.testlibrary.intrinsics.Verifier positive.log positive_def.log
  *                   negative.log
  */
+
+import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
+
 public class TestSHA1MultiBlockIntrinsics {
     public static void main(String args[]) throws Exception {
         new SHASanityTestBase(IntrinsicPredicates.SHA1_INTRINSICS_AVAILABLE,

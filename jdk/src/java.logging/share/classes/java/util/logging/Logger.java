@@ -259,13 +259,185 @@ public class Logger {
     private static final RuntimePermission GET_CLASS_LOADER_PERMISSION =
             new RuntimePermission("getClassLoader");
 
+    // A value class that holds the logger configuration data.
+    // This configuration can be shared between an application logger
+    // and a system logger of the same name.
+    private static final class ConfigurationData {
+
+        // The delegate field is used to avoid races while
+        // merging configuration. This will ensure that any pending
+        // configuration action on an application logger will either
+        // be finished before the merge happens, or will be forwarded
+        // to the system logger configuration after the merge is completed.
+        // By default delegate=this.
+        private volatile ConfigurationData delegate;
+
+        volatile boolean useParentHandlers;
+        volatile Filter filter;
+        volatile Level levelObject;
+        volatile int levelValue;  // current effective level value
+        final CopyOnWriteArrayList<Handler> handlers =
+            new CopyOnWriteArrayList<>();
+
+        ConfigurationData() {
+            delegate = this;
+            useParentHandlers = true;
+            levelValue = Level.INFO.intValue();
+        }
+
+        void setUseParentHandlers(boolean flag) {
+            useParentHandlers = flag;
+            if (delegate != this) {
+                // merge in progress - propagate value to system peer.
+                final ConfigurationData system = delegate;
+                synchronized (system) {
+                    system.useParentHandlers = useParentHandlers;
+                }
+            }
+        }
+
+        void setFilter(Filter f) {
+            filter = f;
+            if (delegate != this) {
+                // merge in progress - propagate value to system peer.
+                final ConfigurationData system = delegate;
+                synchronized (system) {
+                    system.filter = filter;
+                }
+            }
+        }
+
+        void setLevelObject(Level l) {
+            levelObject = l;
+            if (delegate != this) {
+                // merge in progress - propagate value to system peer.
+                final ConfigurationData system = delegate;
+                synchronized (system) {
+                    system.levelObject = levelObject;
+                }
+            }
+        }
+
+        void setLevelValue(int v) {
+            levelValue = v;
+            if (delegate != this) {
+                // merge in progress - propagate value to system peer.
+                final ConfigurationData system = delegate;
+                synchronized (system) {
+                    system.levelValue = levelValue;
+                }
+            }
+        }
+
+        void addHandler(Handler h) {
+            if (handlers.add(h)) {
+                if (delegate != this) {
+                    // merge in progress - propagate value to system peer.
+                    final ConfigurationData system = delegate;
+                    synchronized (system) {
+                        system.handlers.addIfAbsent(h);
+                    }
+                }
+            }
+        }
+
+        void removeHandler(Handler h) {
+            if (handlers.remove(h)) {
+                if (delegate != this) {
+                    // merge in progress - propagate value to system peer.
+                    final ConfigurationData system = delegate;
+                    synchronized (system) {
+                        system.handlers.remove(h);
+                    }
+                }
+            }
+        }
+
+        ConfigurationData merge(Logger systemPeer) {
+            if (!systemPeer.isSystemLogger) {
+                // should never come here
+                throw new InternalError("not a system logger");
+            }
+
+            ConfigurationData system = systemPeer.config;
+
+            if (system == this) {
+                // nothing to do
+                return system;
+            }
+
+            synchronized (system) {
+                // synchronize before checking on delegate to counter
+                // race conditions where two threads might attempt to
+                // merge concurrently
+                if (delegate == system) {
+                    // merge already performed;
+                    return system;
+                }
+
+                // publish system as the temporary delegate configuration.
+                // This should take care of potential race conditions where
+                // an other thread might attempt to call e.g. setlevel on
+                // the application logger while merge is in progress.
+                // (see implementation of ConfigurationData::setLevel)
+                delegate = system;
+
+                // merge this config object data into the system config
+                system.useParentHandlers = useParentHandlers;
+                system.filter = filter;
+                system.levelObject = levelObject;
+                system.levelValue = levelValue;
+
+                // Prevent race condition in case two threads attempt to merge
+                // configuration and add handlers at the same time. We don't want
+                // to add the same handlers twice.
+                //
+                // Handlers are created and loaded by LogManager.addLogger. If we
+                // reach here, then it means that the application logger has
+                // been created first and added with LogManager.addLogger, and the
+                // system logger was created after - and no handler has been added
+                // to it by LogManager.addLogger. Therefore, system.handlers
+                // should be empty.
+                //
+                // A non empty cfg.handlers list indicates a race condition
+                // where two threads might attempt to merge the configuration
+                // or add handlers concurrently. Though of no consequence for
+                // the other data (level etc...) this would be an issue if we
+                // added the same handlers twice.
+                //
+                for (Handler h : handlers) {
+                    if (!system.handlers.contains(h)) {
+                        systemPeer.addHandler(h);
+                    }
+                }
+                system.handlers.retainAll(handlers);
+                system.handlers.addAllAbsent(handlers);
+            }
+
+            // sanity: update effective level after merging
+            synchronized(treeLock) {
+                systemPeer.updateEffectiveLevel();
+            }
+
+            return system;
+        }
+
+    }
+
+    // The logger configuration data. Ideally, this should be final
+    // for system loggers, and replace-once for application loggers.
+    // When an application requests a logger by name, we do not know a-priori
+    // whether that corresponds to a system logger name or not.
+    // So if no system logger by that name already exists, we simply return an
+    // application logger.
+    // If a system class later requests a system logger of the same name, then
+    // the application logger and system logger configurations will be merged
+    // in a single instance of ConfigurationData that both loggers will share.
+    private volatile ConfigurationData config;
+
     private volatile LogManager manager;
     private String name;
-    private final CopyOnWriteArrayList<Handler> handlers =
-        new CopyOnWriteArrayList<>();
     private volatile LoggerBundle loggerBundle = NO_RESOURCE_BUNDLE;
-    private volatile boolean useParentHandlers = true;
-    private volatile Filter filter;
     private boolean anonymous;
 
     // Cache to speed up behavior of findResourceBundle:
@@ -280,8 +452,6 @@ public class Logger {
     // references from children to parents.
     private volatile Logger parent;    // our nearest parent.
     private ArrayList<LogManager.LoggerWeakRef> kids;   // WeakReferences to loggers that have us as parent
-    private volatile Level levelObject;
-    private volatile int levelValue;  // current effective level value
     private WeakReference<Module> callerModuleRef;
     private final boolean isSystemLogger;
 
@@ -384,9 +554,29 @@ public class Logger {
            LogManager manager, boolean isSystemLogger) {
         this.manager = manager;
         this.isSystemLogger = isSystemLogger;
-        setupResourceInfo(resourceBundleName, caller);
+        this.config = new ConfigurationData();
         this.name = name;
-        levelValue = Level.INFO.intValue();
+        setupResourceInfo(resourceBundleName, caller);
+    }
+
+    // Called by LogManager when a system logger is created
+    // after a user logger of the same name.
+    // Ensure that both loggers will share the same
+    // configuration.
+    final void mergeWithSystemLogger(Logger system) {
+        // sanity checks
+        if (!system.isSystemLogger
+                || anonymous
+                || name == null
+                || !name.equals(system.name)) {
+            // should never come here
+            throw new InternalError("invalid logger merge");
+        }
+        checkPermission();
+        final ConfigurationData cfg = config;
+        if (cfg != system.config) {
+            config = cfg.merge(system);
+        }
     }
 
     private void setCallerModuleRef(Module callerModule) {
@@ -408,7 +598,7 @@ public class Logger {
         // The manager field is not initialized here.
         this.name = name;
         this.isSystemLogger = true;
-        levelValue = Level.INFO.intValue();
+        config = new ConfigurationData();
     }
 
     // It is called from LoggerContext.addLocalLogger() when the logger
@@ -451,7 +641,7 @@ public class Logger {
     private static Logger demandLogger(String name, String resourceBundleName, Class<?> caller) {
         LogManager manager = LogManager.getLogManager();
         if (!SystemLoggerHelper.disableCallerCheck) {
-            if (caller.getClassLoader() == null) {
+            if (isSystem(caller.getModule())) {
                 return manager.demandSystemLogger(name, resourceBundleName, caller);
             }
         }
@@ -740,7 +930,7 @@ public class Logger {
      */
     public void setFilter(Filter newFilter) throws SecurityException {
         checkPermission();
-        filter = newFilter;
+        config.setFilter(newFilter);
     }
 
     /**
@@ -749,7 +939,7 @@ public class Logger {
      * @return  a filter object (may be null)
      */
     public Filter getFilter() {
-        return filter;
+        return config.filter;
     }
 
     /**
@@ -765,7 +955,7 @@ public class Logger {
         if (!isLoggable(record.getLevel())) {
             return;
         }
-        Filter theFilter = filter;
+        Filter theFilter = config.filter;
         if (theFilter != null && !theFilter.isLoggable(record)) {
             return;
         }
@@ -784,7 +974,7 @@ public class Logger {
             }
 
             final boolean useParentHdls = isSystemLogger
-                ? logger.useParentHandlers
+                ? logger.config.useParentHandlers
                 : logger.getUseParentHandlers();
 
             if (!useParentHdls) {
@@ -1804,13 +1994,13 @@ public class Logger {
     public void setLevel(Level newLevel) throws SecurityException {
         checkPermission();
         synchronized (treeLock) {
-            levelObject = newLevel;
+            config.setLevelObject(newLevel);
             updateEffectiveLevel();
         }
     }
 
     final boolean isLevelInitialized() {
-        return levelObject != null;
+        return config.levelObject != null;
     }
 
     /**
@@ -1821,7 +2011,7 @@ public class Logger {
      * @return  this Logger's level
      */
     public Level getLevel() {
-        return levelObject;
+        return config.levelObject;
     }
 
     /**
@@ -1833,6 +2023,7 @@ public class Logger {
      * @return  true if the given message level is currently being logged.
      */
     public boolean isLoggable(Level level) {
+        int levelValue = config.levelValue;
         if (level.intValue() < levelValue || levelValue == offValue) {
             return false;
         }
@@ -1862,7 +2053,7 @@ public class Logger {
     public void addHandler(Handler handler) throws SecurityException {
         Objects.requireNonNull(handler);
         checkPermission();
-        handlers.add(handler);
+        config.addHandler(handler);
     }
 
     /**
@@ -1880,7 +2071,7 @@ public class Logger {
         if (handler == null) {
             return;
         }
-        handlers.remove(handler);
+        config.removeHandler(handler);
     }
 
     /**
@@ -1895,7 +2086,7 @@ public class Logger {
     // This method should ideally be marked final - but unfortunately
     // it needs to be overridden by LogManager.RootLogger
     Handler[] accessCheckedHandlers() {
-        return handlers.toArray(emptyHandlers);
+        return config.handlers.toArray(emptyHandlers);
     }
 
     /**
@@ -1912,7 +2103,7 @@ public class Logger {
      */
     public void setUseParentHandlers(boolean useParentHandlers) {
         checkPermission();
-        this.useParentHandlers = useParentHandlers;
+        config.setUseParentHandlers(useParentHandlers);
     }
 
     /**
@@ -1922,7 +2113,7 @@ public class Logger {
      * @return  true if output is to be sent to the logger's parent
      */
     public boolean getUseParentHandlers() {
-        return useParentHandlers;
+        return config.useParentHandlers;
     }
 
     /**
@@ -2256,11 +2447,13 @@ public class Logger {
 
         // Figure out our current effective level.
         int newLevelValue;
+        final ConfigurationData cfg = config;
+        final Level levelObject = cfg.levelObject;
         if (levelObject != null) {
             newLevelValue = levelObject.intValue();
         } else {
             if (parent != null) {
-                newLevelValue = parent.levelValue;
+                newLevelValue = parent.config.levelValue;
             } else {
                 // This may happen during initialization.
                 newLevelValue = Level.INFO.intValue();
@@ -2268,11 +2461,11 @@ public class Logger {
         }
 
         // If our effective value hasn't changed, we're done.
-        if (levelValue == newLevelValue) {
+        if (cfg.levelValue == newLevelValue) {
             return;
         }
 
-        levelValue = newLevelValue;
+        cfg.setLevelValue(newLevelValue);
 
         // System.err.println("effective level: \"" + getName() + "\" := " + level);
 

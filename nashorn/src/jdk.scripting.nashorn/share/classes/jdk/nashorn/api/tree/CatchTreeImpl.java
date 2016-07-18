@@ -28,12 +28,12 @@ package jdk.nashorn.api.tree;
 import jdk.nashorn.internal.ir.CatchNode;
 
 final class CatchTreeImpl extends TreeImpl implements CatchTree {
-    private final IdentifierTree param;
+    private final ExpressionTree param;
     private final BlockTree block;
     private final ExpressionTree condition;
 
     CatchTreeImpl(final CatchNode node,
-            final IdentifierTree param,
+            final ExpressionTree param,
             final BlockTree block,
             final ExpressionTree condition) {
         super(node);
@@ -48,7 +48,7 @@ final class CatchTreeImpl extends TreeImpl implements CatchTree {
     }
 
     @Override
-    public IdentifierTree getParameter() {
+    public ExpressionTree getParameter() {
         return param;
     }
 

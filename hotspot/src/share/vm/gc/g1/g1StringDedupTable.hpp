@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,8 +229,8 @@ public:
   // and deletes the previously active table.
   static void finish_rehash(G1StringDedupTable* rehashed_table);
 
-  // If the table entry cache has grown too large, trim it down according to policy
-  static void trim_entry_cache();
+  // If the table entry cache has grown too large, delete overflowed entries.
+  static void clean_entry_cache();
 
   static void unlink_or_oops_do(G1StringDedupUnlinkOrOopsDoClosure* cl, uint worker_id);
 

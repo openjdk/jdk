@@ -173,7 +173,125 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
         }
 
 
+        UNSAFE.putFloat(base, offset, 1.0f);
 
+        // Compare
+        {
+            boolean r = UNSAFE.compareAndSwapFloat(base, offset, 1.0f, 2.0f);
+            assertEquals(r, true, "success compareAndSwap float");
+            float x = UNSAFE.getFloat(base, offset);
+            assertEquals(x, 2.0f, "success compareAndSwap float value");
+        }
+
+        {
+            boolean r = UNSAFE.compareAndSwapFloat(base, offset, 1.0f, 3.0f);
+            assertEquals(r, false, "failing compareAndSwap float");
+            float x = UNSAFE.getFloat(base, offset);
+            assertEquals(x, 2.0f, "failing compareAndSwap float value");
+        }
+
+        // Advanced compare
+        {
+            float r = UNSAFE.compareAndExchangeFloatVolatile(base, offset, 2.0f, 1.0f);
+            assertEquals(r, 2.0f, "success compareAndExchangeVolatile float");
+            float x = UNSAFE.getFloat(base, offset);
+            assertEquals(x, 1.0f, "success compareAndExchangeVolatile float value");
+        }
+
+        {
+            float r = UNSAFE.compareAndExchangeFloatVolatile(base, offset, 2.0f, 3.0f);
+            assertEquals(r, 1.0f, "failing compareAndExchangeVolatile float");
+            float x = UNSAFE.getFloat(base, offset);
+            assertEquals(x, 1.0f, "failing compareAndExchangeVolatile float value");
+        }
+
+        {
+            float r = UNSAFE.compareAndExchangeFloatAcquire(base, offset, 1.0f, 2.0f);
+            assertEquals(r, 1.0f, "success compareAndExchangeAcquire float");
+            float x = UNSAFE.getFloat(base, offset);
+            assertEquals(x, 2.0f, "success compareAndExchangeAcquire float value");
+        }
+
+        {
+            float r = UNSAFE.compareAndExchangeFloatAcquire(base, offset, 1.0f, 3.0f);
+            assertEquals(r, 2.0f, "failing compareAndExchangeAcquire float");
+            float x = UNSAFE.getFloat(base, offset);
+            assertEquals(x, 2.0f, "failing compareAndExchangeAcquire float value");
+        }
+
+        {
+            float r = UNSAFE.compareAndExchangeFloatRelease(base, offset, 2.0f, 1.0f);
+            assertEquals(r, 2.0f, "success compareAndExchangeRelease float");
+            float x = UNSAFE.getFloat(base, offset);
+            assertEquals(x, 1.0f, "success compareAndExchangeRelease float value");
+        }
+
+        {
+            float r = UNSAFE.compareAndExchangeFloatRelease(base, offset, 2.0f, 3.0f);
+            assertEquals(r, 1.0f, "failing compareAndExchangeRelease float");
+            float x = UNSAFE.getFloat(base, offset);
+            assertEquals(x, 1.0f, "failing compareAndExchangeRelease float value");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapFloat(base, offset, 1.0f, 2.0f);
+            }
+            assertEquals(success, true, "weakCompareAndSwap float");
+            float x = UNSAFE.getFloat(base, offset);
+            assertEquals(x, 2.0f, "weakCompareAndSwap float value");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapFloatAcquire(base, offset, 2.0f, 1.0f);
+            }
+            assertEquals(success, true, "weakCompareAndSwapAcquire float");
+            float x = UNSAFE.getFloat(base, offset);
+            assertEquals(x, 1.0f, "weakCompareAndSwapAcquire float");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapFloatRelease(base, offset, 1.0f, 2.0f);
+            }
+            assertEquals(success, true, "weakCompareAndSwapRelease float");
+            float x = UNSAFE.getFloat(base, offset);
+            assertEquals(x, 2.0f, "weakCompareAndSwapRelease float");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapFloatVolatile(base, offset, 2.0f, 1.0f);
+            }
+            assertEquals(success, true, "weakCompareAndSwapVolatile float");
+            float x = UNSAFE.getFloat(base, offset);
+            assertEquals(x, 1.0f, "weakCompareAndSwapVolatile float");
+        }
+
+        UNSAFE.putFloat(base, offset, 2.0f);
+
+        // Compare set and get
+        {
+            float o = UNSAFE.getAndSetFloat(base, offset, 1.0f);
+            assertEquals(o, 2.0f, "getAndSet float");
+            float x = UNSAFE.getFloat(base, offset);
+            assertEquals(x, 1.0f, "getAndSet float value");
+        }
+
+        UNSAFE.putFloat(base, offset, 1.0f);
+
+        // get and add, add and get
+        {
+            float o = UNSAFE.getAndAddFloat(base, offset, 2.0f);
+            assertEquals(o, 1.0f, "getAndAdd float");
+            float x = UNSAFE.getFloat(base, offset);
+            assertEquals(x, (float)(1.0f + 2.0f), "getAndAdd float");
+        }
     }
 
     static void testAccess(long address) {

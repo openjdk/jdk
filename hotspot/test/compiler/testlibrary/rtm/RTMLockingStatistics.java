@@ -22,7 +22,7 @@
  *
  */
 
-package rtm;
+package compiler.testlibrary.rtm;
 
 import java.util.EnumMap;
 import java.util.LinkedList;

@@ -66,7 +66,9 @@ public class URLJarFile extends JarFile {
 
     static JarFile getJarFile(URL url, URLJarFileCloseController closeController) throws IOException {
         if (isFileURL(url)) {
-            Release version = "runtime".equals(url.getRef()) ? Release.RUNTIME : Release.BASE;
+            Runtime.Version version = "runtime".equals(url.getRef())
+                    ? JarFile.runtimeVersion()
+                    : JarFile.baseVersion();
             return new URLJarFile(url, closeController, version);
         } else {
             return retrieve(url, closeController);
@@ -90,12 +92,14 @@ public class URLJarFile extends JarFile {
         this.closeController = closeController;
     }
 
-    private URLJarFile(File file, URLJarFileCloseController closeController, Release version) throws IOException {
+    private URLJarFile(File file, URLJarFileCloseController closeController, Runtime.Version version)
+            throws IOException {
         super(file, true, ZipFile.OPEN_READ | ZipFile.OPEN_DELETE, version);
         this.closeController = closeController;
     }
 
-    private URLJarFile(URL url, URLJarFileCloseController closeController, Release version) throws IOException {
+    private URLJarFile(URL url, URLJarFileCloseController closeController, Runtime.Version version)
+            throws IOException {
         super(new File(ParseUtil.decode(url.getFile())), true, ZipFile.OPEN_READ, version);
         this.closeController = closeController;
     }
@@ -200,7 +204,9 @@ public class URLJarFile extends JarFile {
         {
 
             JarFile result = null;
-            Release version = "runtime".equals(url.getRef()) ? Release.RUNTIME : Release.BASE;
+            Runtime.Version version = "runtime".equals(url.getRef())
+                    ? JarFile.runtimeVersion()
+                    : JarFile.baseVersion();
 
             /* get the stream before asserting privileges */
             try (final InputStream in = url.openConnection().getInputStream()) {

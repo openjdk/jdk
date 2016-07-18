@@ -156,8 +156,6 @@ int       os::Aix::_on_pase = -1;
 //  SS - service pack, if known, 0 otherwise
 uint32_t  os::Aix::_os_version = 0;
 
-int       os::Aix::_stack_page_size = -1;
-
 // -1 = uninitialized, 0 - no, 1 - yes
 int       os::Aix::_xpg_sus_mode = -1;
 
@@ -1499,7 +1497,6 @@ void os::print_memory_info(outputStream* st) {
     g_multipage_support.error);
   st->cr();
   st->print_cr("  os::vm_page_size:       %s", describe_pagesize(os::vm_page_size()));
-  // not used in OpenJDK st->print_cr("  os::stack_page_size:    %s", describe_pagesize(os::stack_page_size()));
 
   // print out LDR_CNTRL because it affects the default page sizes
   const char* const ldr_cntrl = ::getenv("LDR_CNTRL");
@@ -3451,10 +3448,6 @@ void os::init(void) {
     FLAG_SET_ERGO(bool, Use64KPages, true);
   }
 
-  // Short-wire stack page size to base page size; if that works, we just remove
-  // that stack page size altogether.
-  Aix::_stack_page_size = Aix::_page_size;
-
   // For now UseLargePages is just ignored.
   FLAG_SET_ERGO(bool, UseLargePages, false);
   _page_sizes[0] = 0;
@@ -3589,15 +3582,15 @@ jint os::init_2(void) {
 
   // Check minimum allowable stack size for thread creation and to initialize
   // the java system classes, including StackOverflowError - depends on page
-  // size. Add a page for compiler2 recursion in main thread.
-  // Add in 2*BytesPerWord times page size to account for VM stack during
+  // size. Add two 4K pages for compiler2 recursion in main thread.
+  // Add in 4*BytesPerWord 4K pages to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   os::Aix::min_stack_allowed = MAX2(os::Aix::min_stack_allowed,
                                     JavaThread::stack_guard_zone_size() +
                                     JavaThread::stack_shadow_zone_size() +
-                                    (2*BytesPerWord COMPILER2_PRESENT(+1)) * Aix::vm_default_page_size());
+                                    (4*BytesPerWord COMPILER2_PRESENT(+2)) * 4 * K);
 
-  os::Aix::min_stack_allowed = align_size_up(os::Aix::min_stack_allowed, os::Aix::page_size());
+  os::Aix::min_stack_allowed = align_size_up(os::Aix::min_stack_allowed, os::vm_page_size());
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;
   if (threadStackSizeInBytes != 0 &&

@@ -31,7 +31,7 @@ import jdk.test.lib.Platform;
  * @key gc
  * @bug 8059066
  * @summary Tests that the card table does not commit the same page twice
- * @requires vm.gc=="Parallel" | vm.gc=="null"
+ * @requires vm.gc.Parallel
  * @library /testlibrary
  * @modules java.base/jdk.internal.misc
  *          java.management

@@ -112,6 +112,18 @@ class JVMCIJavaClasses : AllStatic {
   start_class(HotSpotForeignCallTarget)                                                                                                                        \
     long_field(HotSpotForeignCallTarget, address)                                                                                                              \
   end_class                                                                                                                                                    \
+  start_class(VMField)                                                                                                                                         \
+    oop_field(VMField, name, "Ljava/lang/String;")                                                                                                             \
+    oop_field(VMField, type, "Ljava/lang/String;")                                                                                                             \
+    long_field(VMField, offset)                                                                                                                                \
+    long_field(VMField, address)                                                                                                                               \
+    oop_field(VMField, value, "Ljava/lang/Long;")                                                                                                              \
+  end_class                                                                                                                                                    \
+  start_class(VMFlag)                                                                                                                                          \
+    oop_field(VMFlag, name, "Ljava/lang/String;")                                                                                                              \
+    oop_field(VMFlag, type, "Ljava/lang/String;")                                                                                                              \
+    oop_field(VMFlag, value, "Ljava/lang/Object;")                                                                                                             \
+  end_class                                                                                                                                                    \
   start_class(Assumptions_NoFinalizableSubclass)                                                                                                               \
     oop_field(Assumptions_NoFinalizableSubclass, receiverType, "Ljdk/vm/ci/meta/ResolvedJavaType;")                                                            \
   end_class                                                                                                                                                    \

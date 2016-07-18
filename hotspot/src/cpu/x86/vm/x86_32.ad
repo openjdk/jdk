@@ -2127,6 +2127,31 @@ encode %{
     emit_rm( cbuf, 0x0, 1, $mem_ptr$$reg );
   %}
 
+  enc_class enc_cmpxchgb(eSIRegP mem_ptr) %{
+    // [Lock]
+    if( os::is_MP() )
+      emit_opcode(cbuf,0xF0);
+
+    // CMPXCHGB [Eptr]
+    emit_opcode(cbuf,0x0F);
+    emit_opcode(cbuf,0xB0);
+    emit_rm( cbuf, 0x0, 1, $mem_ptr$$reg );
+  %}
+
+  enc_class enc_cmpxchgw(eSIRegP mem_ptr) %{
+    // [Lock]
+    if( os::is_MP() )
+      emit_opcode(cbuf,0xF0);
+
+    // 16-bit mode
+    emit_opcode(cbuf, 0x66);
+
+    // CMPXCHGW [Eptr]
+    emit_opcode(cbuf,0x0F);
+    emit_opcode(cbuf,0xB1);
+    emit_rm( cbuf, 0x0, 1, $mem_ptr$$reg );
+  %}
+
   enc_class enc_flags_ne_to_boolean( iRegI res ) %{
     int res_encoding = $res$$reg;
 
@@ -7262,6 +7287,34 @@ instruct compareAndSwapP( rRegI res,  pRegP mem_ptr, eAXRegP oldval, eCXRegP new
   ins_pipe( pipe_cmpxchg );
 %}
 
+instruct compareAndSwapB( rRegI res, pRegP mem_ptr, eAXRegI oldval, eCXRegI newval, eFlagsReg cr ) %{
+  match(Set res (CompareAndSwapB mem_ptr (Binary oldval newval)));
+  match(Set res (WeakCompareAndSwapB mem_ptr (Binary oldval newval)));
+  effect(KILL cr, KILL oldval);
+  format %{ "CMPXCHGB [$mem_ptr],$newval\t# If EAX==[$mem_ptr] Then store $newval into [$mem_ptr]\n\t"
+            "MOV    $res,0\n\t"
+            "JNE,s  fail\n\t"
+            "MOV    $res,1\n"
+          "fail:" %}
+  ins_encode( enc_cmpxchgb(mem_ptr),
+              enc_flags_ne_to_boolean(res) );
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct compareAndSwapS( rRegI res, pRegP mem_ptr, eAXRegI oldval, eCXRegI newval, eFlagsReg cr ) %{
+  match(Set res (CompareAndSwapS mem_ptr (Binary oldval newval)));
+  match(Set res (WeakCompareAndSwapS mem_ptr (Binary oldval newval)));
+  effect(KILL cr, KILL oldval);
+  format %{ "CMPXCHGW [$mem_ptr],$newval\t# If EAX==[$mem_ptr] Then store $newval into [$mem_ptr]\n\t"
+            "MOV    $res,0\n\t"
+            "JNE,s  fail\n\t"
+            "MOV    $res,1\n"
+          "fail:" %}
+  ins_encode( enc_cmpxchgw(mem_ptr),
+              enc_flags_ne_to_boolean(res) );
+  ins_pipe( pipe_cmpxchg );
+%}
+
 instruct compareAndSwapI( rRegI res, pRegP mem_ptr, eAXRegI oldval, eCXRegI newval, eFlagsReg cr) %{
   match(Set res (CompareAndSwapI mem_ptr (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapI mem_ptr (Binary oldval newval)));
@@ -7292,11 +7345,74 @@ instruct compareAndExchangeP( pRegP mem_ptr, eAXRegP oldval, eCXRegP newval, eFl
   ins_pipe( pipe_cmpxchg );
 %}
 
+instruct compareAndExchangeB( pRegP mem_ptr, eAXRegI oldval, eCXRegI newval, eFlagsReg cr) %{
+  match(Set oldval (CompareAndExchangeB mem_ptr (Binary oldval newval)));
+  effect(KILL cr);
+  format %{ "CMPXCHGB [$mem_ptr],$newval\t# If EAX==[$mem_ptr] Then store $newval into [$mem_ptr]\n\t" %}
+  ins_encode( enc_cmpxchgb(mem_ptr) );
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct compareAndExchangeS( pRegP mem_ptr, eAXRegI oldval, eCXRegI newval, eFlagsReg cr) %{
+  match(Set oldval (CompareAndExchangeS mem_ptr (Binary oldval newval)));
+  effect(KILL cr);
+  format %{ "CMPXCHGW [$mem_ptr],$newval\t# If EAX==[$mem_ptr] Then store $newval into [$mem_ptr]\n\t" %}
+  ins_encode( enc_cmpxchgw(mem_ptr) );
+  ins_pipe( pipe_cmpxchg );
+%}
+
 instruct compareAndExchangeI( pRegP mem_ptr, eAXRegI oldval, eCXRegI newval, eFlagsReg cr) %{
   match(Set oldval (CompareAndExchangeI mem_ptr (Binary oldval newval)));
   effect(KILL cr);
   format %{ "CMPXCHG [$mem_ptr],$newval\t# If EAX==[$mem_ptr] Then store $newval into [$mem_ptr]\n\t" %}
   ins_encode( enc_cmpxchg(mem_ptr) );
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xaddB_no_res( memory mem, Universe dummy, immI add, eFlagsReg cr) %{
+  predicate(n->as_LoadStore()->result_not_used());
+  match(Set dummy (GetAndAddB mem add));
+  effect(KILL cr);
+  format %{ "ADDB  [$mem],$add" %}
+  ins_encode %{
+    if (os::is_MP()) { __ lock(); }
+    __ addb($mem$$Address, $add$$constant);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+// Important to match to xRegI: only 8-bit regs.
+instruct xaddB( memory mem, xRegI newval, eFlagsReg cr) %{
+  match(Set newval (GetAndAddB mem newval));
+  effect(KILL cr);
+  format %{ "XADDB  [$mem],$newval" %}
+  ins_encode %{
+    if (os::is_MP()) { __ lock(); }
+    __ xaddb($mem$$Address, $newval$$Register);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xaddS_no_res( memory mem, Universe dummy, immI add, eFlagsReg cr) %{
+  predicate(n->as_LoadStore()->result_not_used());
+  match(Set dummy (GetAndAddS mem add));
+  effect(KILL cr);
+  format %{ "ADDS  [$mem],$add" %}
+  ins_encode %{
+    if (os::is_MP()) { __ lock(); }
+    __ addw($mem$$Address, $add$$constant);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xaddS( memory mem, rRegI newval, eFlagsReg cr) %{
+  match(Set newval (GetAndAddS mem newval));
+  effect(KILL cr);
+  format %{ "XADDS  [$mem],$newval" %}
+  ins_encode %{
+    if (os::is_MP()) { __ lock(); }
+    __ xaddw($mem$$Address, $newval$$Register);
+  %}
   ins_pipe( pipe_cmpxchg );
 %}
 
@@ -7319,6 +7435,25 @@ instruct xaddI( memory mem, rRegI newval, eFlagsReg cr) %{
   ins_encode %{
     if (os::is_MP()) { __ lock(); }
     __ xaddl($mem$$Address, $newval$$Register);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+// Important to match to xRegI: only 8-bit regs.
+instruct xchgB( memory mem, xRegI newval) %{
+  match(Set newval (GetAndSetB mem newval));
+  format %{ "XCHGB  $newval,[$mem]" %}
+  ins_encode %{
+    __ xchgb($newval$$Register, $mem$$Address);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xchgS( memory mem, rRegI newval) %{
+  match(Set newval (GetAndSetS mem newval));
+  format %{ "XCHGW  $newval,[$mem]" %}
+  ins_encode %{
+    __ xchgw($newval$$Register, $mem$$Address);
   %}
   ins_pipe( pipe_cmpxchg );
 %}
