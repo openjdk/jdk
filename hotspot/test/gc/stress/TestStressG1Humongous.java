@@ -26,6 +26,9 @@
  * @key gc
  * @key stress
  * @summary Stress G1 by humongous allocations in situation near OOM
+ * Fails intermittently on 32-bit VMs due to 8160827 so quarantine
+ * it on those platforms:
+ * @requires vm.bits != "32"
  * @requires vm.gc.G1
  * @requires !vm.flightRecorder
  * @run main/othervm/timeout=200 -Xlog:gc=debug -Xmx1g -XX:+UseG1GC -XX:G1HeapRegionSize=4m
