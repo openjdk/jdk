@@ -50,6 +50,7 @@ public final class RegisterSaveLayout {
      * @param registers the keys in the map
      * @param slots frame slot index for each register in {@code registers}
      */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `registers` and `slots`")
     public RegisterSaveLayout(Register[] registers, int[] slots) {
         assert registers.length == slots.length;
         this.registers = registers;

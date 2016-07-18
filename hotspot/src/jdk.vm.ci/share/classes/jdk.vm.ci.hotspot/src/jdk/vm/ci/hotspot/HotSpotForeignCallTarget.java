@@ -29,6 +29,7 @@ public class HotSpotForeignCallTarget implements InvokeTarget {
     /**
      * The entry point address of this call's target.
      */
+    @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD", justification = "accessed by subclasses")//
     protected long address;
 
     public HotSpotForeignCallTarget(long address) {

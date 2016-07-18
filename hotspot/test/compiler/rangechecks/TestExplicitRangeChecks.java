@@ -26,10 +26,10 @@
  * @bug 8073480
  * @summary explicit range checks should be recognized by C2
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib /compiler/whitebox /
+ * @library /testlibrary /test/lib /
  * @build TestExplicitRangeChecks
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main ClassFileInstaller jdk.test.lib.Platform
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                jdk.test.lib.Platform
  * @run main/othervm -ea -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileCommand=compileonly,TestExplicitRangeChecks.test* TestExplicitRangeChecks
  *

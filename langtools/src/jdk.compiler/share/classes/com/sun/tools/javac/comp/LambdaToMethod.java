@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,8 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.type.TypeKind;
 
+import com.sun.tools.javac.main.Option;
+
 /**
  * This pass desugars lambda expressions into static methods
  *
@@ -104,7 +106,7 @@ public class LambdaToMethod extends TreeTranslator {
     private KlassInfo kInfo;
 
     /** dump statistics about lambda code generation */
-    private boolean dumpLambdaToMethodStats;
+    private final boolean dumpLambdaToMethodStats;
 
     /** force serializable representation, for stress testing **/
     private final boolean forceSerializable;
@@ -142,7 +144,7 @@ public class LambdaToMethod extends TreeTranslator {
         transTypes = TransTypes.instance(context);
         analyzer = new LambdaAnalyzerPreprocessor();
         Options options = Options.instance(context);
-        dumpLambdaToMethodStats = options.isSet("dumpLambdaToMethodStats");
+        dumpLambdaToMethodStats = options.isSet("debug.dumpLambdaToMethodStats");
         attr = Attr.instance(context);
         forceSerializable = options.isSet("forceSerializable");
     }

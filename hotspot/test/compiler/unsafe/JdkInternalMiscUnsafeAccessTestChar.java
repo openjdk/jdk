@@ -145,61 +145,179 @@ public class JdkInternalMiscUnsafeAccessTestChar {
     static void testAccess(Object base, long offset) {
         // Plain
         {
-            UNSAFE.putChar(base, offset, 'a');
+            UNSAFE.putChar(base, offset, '\u0123');
             char x = UNSAFE.getChar(base, offset);
-            assertEquals(x, 'a', "set char value");
+            assertEquals(x, '\u0123', "set char value");
         }
 
         // Volatile
         {
-            UNSAFE.putCharVolatile(base, offset, 'b');
+            UNSAFE.putCharVolatile(base, offset, '\u4567');
             char x = UNSAFE.getCharVolatile(base, offset);
-            assertEquals(x, 'b', "putVolatile char value");
+            assertEquals(x, '\u4567', "putVolatile char value");
         }
 
 
         // Lazy
         {
-            UNSAFE.putCharRelease(base, offset, 'a');
+            UNSAFE.putCharRelease(base, offset, '\u0123');
             char x = UNSAFE.getCharAcquire(base, offset);
-            assertEquals(x, 'a', "putRelease char value");
+            assertEquals(x, '\u0123', "putRelease char value");
         }
 
         // Opaque
         {
-            UNSAFE.putCharOpaque(base, offset, 'b');
+            UNSAFE.putCharOpaque(base, offset, '\u4567');
             char x = UNSAFE.getCharOpaque(base, offset);
-            assertEquals(x, 'b', "putOpaque char value");
+            assertEquals(x, '\u4567', "putOpaque char value");
         }
 
         // Unaligned
         {
-            UNSAFE.putCharUnaligned(base, offset, 'b');
+            UNSAFE.putCharUnaligned(base, offset, '\u4567');
             char x = UNSAFE.getCharUnaligned(base, offset);
-            assertEquals(x, 'b', "putUnaligned char value");
+            assertEquals(x, '\u4567', "putUnaligned char value");
         }
 
         {
-            UNSAFE.putCharUnaligned(base, offset, 'a', true);
+            UNSAFE.putCharUnaligned(base, offset, '\u0123', true);
             char x = UNSAFE.getCharUnaligned(base, offset, true);
-            assertEquals(x, 'a', "putUnaligned big endian char value");
+            assertEquals(x, '\u0123', "putUnaligned big endian char value");
         }
 
         {
-            UNSAFE.putCharUnaligned(base, offset, 'b', false);
+            UNSAFE.putCharUnaligned(base, offset, '\u4567', false);
             char x = UNSAFE.getCharUnaligned(base, offset, false);
-            assertEquals(x, 'b', "putUnaligned little endian char value");
+            assertEquals(x, '\u4567', "putUnaligned little endian char value");
         }
 
+        UNSAFE.putChar(base, offset, '\u0123');
 
+        // Compare
+        {
+            boolean r = UNSAFE.compareAndSwapChar(base, offset, '\u0123', '\u4567');
+            assertEquals(r, true, "success compareAndSwap char");
+            char x = UNSAFE.getChar(base, offset);
+            assertEquals(x, '\u4567', "success compareAndSwap char value");
+        }
+
+        {
+            boolean r = UNSAFE.compareAndSwapChar(base, offset, '\u0123', '\u89AB');
+            assertEquals(r, false, "failing compareAndSwap char");
+            char x = UNSAFE.getChar(base, offset);
+            assertEquals(x, '\u4567', "failing compareAndSwap char value");
+        }
+
+        // Advanced compare
+        {
+            char r = UNSAFE.compareAndExchangeCharVolatile(base, offset, '\u4567', '\u0123');
+            assertEquals(r, '\u4567', "success compareAndExchangeVolatile char");
+            char x = UNSAFE.getChar(base, offset);
+            assertEquals(x, '\u0123', "success compareAndExchangeVolatile char value");
+        }
+
+        {
+            char r = UNSAFE.compareAndExchangeCharVolatile(base, offset, '\u4567', '\u89AB');
+            assertEquals(r, '\u0123', "failing compareAndExchangeVolatile char");
+            char x = UNSAFE.getChar(base, offset);
+            assertEquals(x, '\u0123', "failing compareAndExchangeVolatile char value");
+        }
+
+        {
+            char r = UNSAFE.compareAndExchangeCharAcquire(base, offset, '\u0123', '\u4567');
+            assertEquals(r, '\u0123', "success compareAndExchangeAcquire char");
+            char x = UNSAFE.getChar(base, offset);
+            assertEquals(x, '\u4567', "success compareAndExchangeAcquire char value");
+        }
+
+        {
+            char r = UNSAFE.compareAndExchangeCharAcquire(base, offset, '\u0123', '\u89AB');
+            assertEquals(r, '\u4567', "failing compareAndExchangeAcquire char");
+            char x = UNSAFE.getChar(base, offset);
+            assertEquals(x, '\u4567', "failing compareAndExchangeAcquire char value");
+        }
+
+        {
+            char r = UNSAFE.compareAndExchangeCharRelease(base, offset, '\u4567', '\u0123');
+            assertEquals(r, '\u4567', "success compareAndExchangeRelease char");
+            char x = UNSAFE.getChar(base, offset);
+            assertEquals(x, '\u0123', "success compareAndExchangeRelease char value");
+        }
+
+        {
+            char r = UNSAFE.compareAndExchangeCharRelease(base, offset, '\u4567', '\u89AB');
+            assertEquals(r, '\u0123', "failing compareAndExchangeRelease char");
+            char x = UNSAFE.getChar(base, offset);
+            assertEquals(x, '\u0123', "failing compareAndExchangeRelease char value");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapChar(base, offset, '\u0123', '\u4567');
+            }
+            assertEquals(success, true, "weakCompareAndSwap char");
+            char x = UNSAFE.getChar(base, offset);
+            assertEquals(x, '\u4567', "weakCompareAndSwap char value");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapCharAcquire(base, offset, '\u4567', '\u0123');
+            }
+            assertEquals(success, true, "weakCompareAndSwapAcquire char");
+            char x = UNSAFE.getChar(base, offset);
+            assertEquals(x, '\u0123', "weakCompareAndSwapAcquire char");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapCharRelease(base, offset, '\u0123', '\u4567');
+            }
+            assertEquals(success, true, "weakCompareAndSwapRelease char");
+            char x = UNSAFE.getChar(base, offset);
+            assertEquals(x, '\u4567', "weakCompareAndSwapRelease char");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapCharVolatile(base, offset, '\u4567', '\u0123');
+            }
+            assertEquals(success, true, "weakCompareAndSwapVolatile char");
+            char x = UNSAFE.getChar(base, offset);
+            assertEquals(x, '\u0123', "weakCompareAndSwapVolatile char");
+        }
+
+        UNSAFE.putChar(base, offset, '\u4567');
+
+        // Compare set and get
+        {
+            char o = UNSAFE.getAndSetChar(base, offset, '\u0123');
+            assertEquals(o, '\u4567', "getAndSet char");
+            char x = UNSAFE.getChar(base, offset);
+            assertEquals(x, '\u0123', "getAndSet char value");
+        }
+
+        UNSAFE.putChar(base, offset, '\u0123');
+
+        // get and add, add and get
+        {
+            char o = UNSAFE.getAndAddChar(base, offset, '\u4567');
+            assertEquals(o, '\u0123', "getAndAdd char");
+            char x = UNSAFE.getChar(base, offset);
+            assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAdd char");
+        }
     }
 
     static void testAccess(long address) {
         // Plain
         {
-            UNSAFE.putChar(address, 'a');
+            UNSAFE.putChar(address, '\u0123');
             char x = UNSAFE.getChar(address);
-            assertEquals(x, 'a', "set char value");
+            assertEquals(x, '\u0123', "set char value");
         }
     }
 }

@@ -226,6 +226,7 @@
                   "expression": {
                     "endPosition": "163",
                     "kind": "IDENTIFIER",
+                    "this": "true",
                     "name": "this",
                     "startPosition": "159"
                   },
@@ -269,6 +270,7 @@
                     "expression": {
                       "endPosition": "191",
                       "kind": "IDENTIFIER",
+                      "this": "true",
                       "name": "this",
                       "startPosition": "187"
                     },

@@ -908,6 +908,17 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
+     * Add gap between navigation bar elements.
+     *
+     * @param liNav the content tree to which the gap will be added
+     */
+    protected void addNavGap(Content liNav) {
+        liNav.addContent(getSpace());
+        liNav.addContent("|");
+        liNav.addContent(getSpace());
+    }
+
+    /**
      * Get summary table header.
      *
      * @param header the header for the table

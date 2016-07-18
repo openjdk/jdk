@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,5 +39,5 @@ class TargetType19 {
 
     <Z> void call(SAM<? extends Z> s, Z z) {  }
 
-   { call((List<? extends String> p) -> { }, 1); }
+    { call((List<? extends String> p) -> { }, 1); }
 }

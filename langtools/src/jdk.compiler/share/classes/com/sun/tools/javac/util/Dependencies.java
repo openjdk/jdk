@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Stack;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.tools.JavaFileObject;
 
@@ -126,9 +124,9 @@ public abstract class Dependencies {
          */
         GraphDependencies(Context context) {
             super(context);
-            Options options = Options.instance(context);
             //fetch filename
-            String[] modes = options.get("completionDeps").split(",");
+            Options options = Options.instance(context);
+            String[] modes = options.get("debug.completionDeps").split(",");
             for (String mode : modes) {
                 if (mode.startsWith("file=")) {
                     dependenciesFile = mode.substring(5);

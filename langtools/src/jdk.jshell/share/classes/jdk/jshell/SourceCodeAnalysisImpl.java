@@ -996,7 +996,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     //tweaked by tests to disable reading parameter names from classfiles so that tests using
     //JDK's classes are stable for both release and fastdebug builds:
     private final String[] keepParameterNames = new String[] {
-        "-XDsave-parameter-names=true"
+        "-parameters"
     };
 
     private String documentationImpl(String code, int cursor) {

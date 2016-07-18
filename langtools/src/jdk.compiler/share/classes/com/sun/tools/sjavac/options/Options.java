@@ -313,7 +313,7 @@ public class Options {
         }
 
         // Enable dependency generation
-        args.add("-XDcompletionDeps=source,class");
+        args.add("-Xdebug:completionDeps=source,class");
 
         // This can't be anything but 'none'. Enforced by sjavac main method.
         args.add("-implicit:" + implicitPolicy);

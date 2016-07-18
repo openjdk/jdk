@@ -104,9 +104,9 @@ final class LdapBindingEnumeration
     }
 
     @Override
-    protected LdapBindingEnumeration getReferredResults(
+    protected AbstractLdapNamingEnumeration<? extends NameClassPair> getReferredResults(
             LdapReferralContext refCtx) throws NamingException{
         // repeat the original operation at the new context
-        return (LdapBindingEnumeration)refCtx.listBindings(listArg);
+        return (AbstractLdapNamingEnumeration<? extends NameClassPair>)refCtx.listBindings(listArg);
     }
 }

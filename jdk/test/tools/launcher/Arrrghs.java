@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 5030233 6214916 6356475 6571029 6684582 6742159 4459600 6758881 6753938
- *      6894719 6968053 7151434 7146424 8007333 8077822 8143640
+ *      6894719 6968053 7151434 7146424 8007333 8077822 8143640 8132379
  * @summary Argument parsing validation.
  * @compile -XDignore.symbol.file Arrrghs.java
  * @run main/othervm Arrrghs
@@ -383,6 +383,12 @@ public class Arrrghs extends TestHelper {
         checkArgumentWildcard("empty\\*?", "empty\\*?");
         checkArgumentWildcard("empty\\?*", "empty\\?*");
 
+        // 8132379: java should not filter out -J options for application
+        String[] args = { "-J-one", "-Jtwo", "lib\\???.java", "-J-Dsomething",
+           "a", "-J-Dlast.arg" };
+        String[] expected = { "-J-one", "-Jtwo", "lib\\Fbo.java",
+           "lib\\Foo.java", "-J-Dsomething", "a", "-J-Dlast.arg" };
+        checkArgumentWildcard(args, expected);
     }
 
     void doArgumentCheck(String inArgs, String... expArgs) {

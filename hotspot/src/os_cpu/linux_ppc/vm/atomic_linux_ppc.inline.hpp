@@ -291,12 +291,30 @@ inline void* Atomic::xchg_ptr(void* exchange_value, volatile void* dest) {
   return (void*)xchg_ptr((intptr_t)exchange_value, (volatile intptr_t*)dest);
 }
 
+inline void cmpxchg_pre_membar(cmpxchg_memory_order order) {
+  if (order != memory_order_relaxed) {
+    __asm__ __volatile__ (
+      /* fence */
+      strasm_sync
+      );
+  }
+}
+
+inline void cmpxchg_post_membar(cmpxchg_memory_order order) {
+  if (order != memory_order_relaxed) {
+    __asm__ __volatile__ (
+      /* fence */
+      strasm_sync
+      );
+  }
+}
+
 #define VM_HAS_SPECIALIZED_CMPXCHG_BYTE
-inline jbyte Atomic::cmpxchg(jbyte exchange_value, volatile jbyte* dest, jbyte compare_value) {
+inline jbyte Atomic::cmpxchg(jbyte exchange_value, volatile jbyte* dest, jbyte compare_value, cmpxchg_memory_order order) {
 
   // Note that cmpxchg guarantees a two-way memory barrier across
-  // the cmpxchg, so it's really a a 'fence_cmpxchg_acquire'
-  // (see atomic.hpp).
+  // the cmpxchg, so it's really a a 'fence_cmpxchg_fence' if not
+  // specified otherwise (see atomic.hpp).
 
   // Using 32 bit internally.
   volatile int *dest_base = (volatile int*)((uintptr_t)dest & ~3);
@@ -312,9 +330,9 @@ inline jbyte Atomic::cmpxchg(jbyte exchange_value, volatile jbyte* dest, jbyte c
 
   unsigned int old_value, value32;
 
+  cmpxchg_pre_membar(order);
+
   __asm__ __volatile__ (
-    /* fence */
-    strasm_sync
     /* simple guard */
     "   lbz     %[old_value], 0(%[dest])                  \n"
     "   cmpw    %[masked_compare_val], %[old_value]       \n"
@@ -331,8 +349,6 @@ inline jbyte Atomic::cmpxchg(jbyte exchange_value, volatile jbyte* dest, jbyte c
     "   xor     %[value32], %[xor_value], %[value32]      \n"
     "   stwcx.  %[value32], 0, %[dest_base]               \n"
     "   bne-    1b                                        \n"
-    /* acquire */
-    strasm_sync
     /* exit */
     "2:                                                   \n"
     /* out */
@@ -353,21 +369,23 @@ inline jbyte Atomic::cmpxchg(jbyte exchange_value, volatile jbyte* dest, jbyte c
       "memory"
     );
 
+  cmpxchg_post_membar(order);
+
   return (jbyte)(unsigned char)old_value;
 }
 
-inline jint Atomic::cmpxchg(jint exchange_value, volatile jint* dest, jint compare_value) {
+inline jint Atomic::cmpxchg(jint exchange_value, volatile jint* dest, jint compare_value, cmpxchg_memory_order order) {
 
   // Note that cmpxchg guarantees a two-way memory barrier across
-  // the cmpxchg, so it's really a a 'fence_cmpxchg_acquire'
-  // (see atomic.hpp).
+  // the cmpxchg, so it's really a a 'fence_cmpxchg_fence' if not
+  // specified otherwise (see atomic.hpp).
 
   unsigned int old_value;
   const uint64_t zero = 0;
 
+  cmpxchg_pre_membar(order);
+
   __asm__ __volatile__ (
-    /* fence */
-    strasm_sync
     /* simple guard */
     "   lwz     %[old_value], 0(%[dest])                \n"
     "   cmpw    %[compare_value], %[old_value]          \n"
@@ -379,8 +397,6 @@ inline jint Atomic::cmpxchg(jint exchange_value, volatile jint* dest, jint compa
     "   bne-    2f                                      \n"
     "   stwcx.  %[exchange_value], %[dest], %[zero]     \n"
     "   bne-    1b                                      \n"
-    /* acquire */
-    strasm_sync
     /* exit */
     "2:                                                 \n"
     /* out */
@@ -397,21 +413,23 @@ inline jint Atomic::cmpxchg(jint exchange_value, volatile jint* dest, jint compa
       "memory"
     );
 
+  cmpxchg_post_membar(order);
+
   return (jint) old_value;
 }
 
-inline jlong Atomic::cmpxchg(jlong exchange_value, volatile jlong* dest, jlong compare_value) {
+inline jlong Atomic::cmpxchg(jlong exchange_value, volatile jlong* dest, jlong compare_value, cmpxchg_memory_order order) {
 
   // Note that cmpxchg guarantees a two-way memory barrier across
-  // the cmpxchg, so it's really a a 'fence_cmpxchg_acquire'
-  // (see atomic.hpp).
+  // the cmpxchg, so it's really a a 'fence_cmpxchg_fence' if not
+  // specified otherwise (see atomic.hpp).
 
   long old_value;
   const uint64_t zero = 0;
 
+  cmpxchg_pre_membar(order);
+
   __asm__ __volatile__ (
-    /* fence */
-    strasm_sync
     /* simple guard */
     "   ld      %[old_value], 0(%[dest])                \n"
     "   cmpd    %[compare_value], %[old_value]          \n"
@@ -423,8 +441,6 @@ inline jlong Atomic::cmpxchg(jlong exchange_value, volatile jlong* dest, jlong c
     "   bne-    2f                                      \n"
     "   stdcx.  %[exchange_value], %[dest], %[zero]     \n"
     "   bne-    1b                                      \n"
-    /* acquire */
-    strasm_sync
     /* exit */
     "2:                                                 \n"
     /* out */
@@ -441,15 +457,17 @@ inline jlong Atomic::cmpxchg(jlong exchange_value, volatile jlong* dest, jlong c
       "memory"
     );
 
+  cmpxchg_post_membar(order);
+
   return (jlong) old_value;
 }
 
-inline intptr_t Atomic::cmpxchg_ptr(intptr_t exchange_value, volatile intptr_t* dest, intptr_t compare_value) {
-  return (intptr_t)cmpxchg((jlong)exchange_value, (volatile jlong*)dest, (jlong)compare_value);
+inline intptr_t Atomic::cmpxchg_ptr(intptr_t exchange_value, volatile intptr_t* dest, intptr_t compare_value, cmpxchg_memory_order order) {
+  return (intptr_t)cmpxchg((jlong)exchange_value, (volatile jlong*)dest, (jlong)compare_value, order);
 }
 
-inline void* Atomic::cmpxchg_ptr(void* exchange_value, volatile void* dest, void* compare_value) {
-  return (void*)cmpxchg((jlong)exchange_value, (volatile jlong*)dest, (jlong)compare_value);
+inline void* Atomic::cmpxchg_ptr(void* exchange_value, volatile void* dest, void* compare_value, cmpxchg_memory_order order) {
+  return (void*)cmpxchg((jlong)exchange_value, (volatile jlong*)dest, (jlong)compare_value, order);
 }
 
 #undef strasm_sync

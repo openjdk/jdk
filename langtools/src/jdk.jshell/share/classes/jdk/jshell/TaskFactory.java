@@ -222,7 +222,7 @@ class TaskFactory {
             this(wraps.stream(),
                     new WrapSourceHandler(),
                     Util.join(new String[] {
-                        "-XDshouldStopPolicy=FLOW", "-Xlint:unchecked",
+                        "-Xshouldstop:at=FLOW", "-Xlint:unchecked",
                         "-XaddExports:jdk.jshell/jdk.internal.jshell.remote=ALL-UNNAMED",
                         "-proc:none"
                     }, extraArgs));
