@@ -53,7 +53,7 @@ final class WSReceiver {
     private final Supplier<WSShared<ByteBuffer>> buffersSupplier =
             new WSSharedPool<>(() -> ByteBuffer.allocateDirect(32768), 2);
     private final RawChannel channel;
-    private final RawChannel.NonBlockingEvent channelEvent;
+    private final RawChannel.RawEvent channelEvent;
     private final WSSignalHandler handler;
     private final AtomicLong demand = new AtomicLong();
     private final AtomicBoolean readable = new AtomicBoolean();
@@ -251,8 +251,8 @@ final class WSReceiver {
         assert newDemand >= 0 : newDemand;
     }
 
-    private RawChannel.NonBlockingEvent createChannelEvent() {
-        return new RawChannel.NonBlockingEvent() {
+    private RawChannel.RawEvent createChannelEvent() {
+        return new RawChannel.RawEvent() {
 
             @Override
             public int interestOps() {
