@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,17 @@ package jdk.nashorn.api.tree;
 import java.util.List;
 
 /**
- * A tree node for a function expression.
+ * A tree node for <a href="http://www.ecma-international.org/ecma-262/6.0/#sec-function-defining-expressions">function expressions</a> including <a href="http://www.ecma-international.org/ecma-262/6.0/#sec-arrow-function-definitions">arrow functions</a>.
  *
  * For example:
  * <pre>
  *   <em>var</em> func = <em>function</em>
  *      ( <em>parameters</em> )
  *      <em>body</em>
+ * </pre>
+ *
+ * <pre>
+ *   <em>var</em> func = <em>(x) =&gt; x+1</em>
  * </pre>
  *
  * @since 9
@@ -45,7 +49,7 @@ public interface FunctionExpressionTree extends ExpressionTree {
      *
      * @return name the function declared
      */
-    String getName();
+    IdentifierTree getName();
 
     /**
      * Returns the parameters of this function.
@@ -55,11 +59,13 @@ public interface FunctionExpressionTree extends ExpressionTree {
     List<? extends ExpressionTree> getParameters();
 
     /**
-     * Returns the body of code of this function.
+     * Returns the body of this function. This may be a {@link BlockTree} when this
+     * function has a block body. This is an {@link ExpressionTree} when the function body
+     * is a concise expression as in an expression arrow, or in an expression closure.
      *
-     * @return the body of code
+     * @return the body of this function
      */
-    BlockTree getBody();
+    Tree getBody();
 
     /**
      * Is this a strict function?
@@ -67,4 +73,18 @@ public interface FunctionExpressionTree extends ExpressionTree {
      * @return true if this function is strict
      */
     boolean isStrict();
+
+    /**
+     * Is this a arrow function?
+     *
+     * @return true if this is a arrow function
+     */
+    boolean isArrow();
+
+    /**
+     * Is this a generator function?
+     *
+     * @return true if this is a generator function
+     */
+    boolean isGenerator();
 }

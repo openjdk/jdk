@@ -1040,7 +1040,6 @@ public class ClassWriter extends ClassFile {
             inner.markAbstractIfNeeded(types);
             char flags = (char) adjustFlags(inner.flags_field);
             if ((flags & INTERFACE) != 0) flags |= ABSTRACT; // Interfaces are always ABSTRACT
-            if (inner.name.isEmpty()) flags &= ~FINAL; // Anonymous class: unset FINAL flag
             flags &= ~STRICTFP; //inner classes should not have the strictfp flag set.
             if (dumpInnerClassModifiers) {
                 PrintWriter pw = log.getWriter(Log.WriterKind.ERROR);
@@ -1679,7 +1678,6 @@ public class ClassWriter extends ClassFile {
             if ((flags & PROTECTED) != 0) flags |= PUBLIC;
             flags = flags & ClassFlags & ~STRICTFP;
             if ((flags & INTERFACE) == 0) flags |= ACC_SUPER;
-            if (c.isInner() && c.name.isEmpty()) flags &= ~FINAL;
         }
 
         if (dumpClassModifiers) {

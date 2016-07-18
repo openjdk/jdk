@@ -35,33 +35,32 @@
 
 package java.util.concurrent.atomic;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 
 /**
- * An object reference that may be updated atomically. See the {@link
- * java.util.concurrent.atomic} package specification for description
- * of the properties of atomic variables.
+ * An object reference that may be updated atomically.  See the {@link
+ * VarHandle} specification for descriptions of the properties of
+ * atomic accesses.
  * @since 1.5
  * @author Doug Lea
  * @param <V> The type of object referred to by this reference
  */
 public class AtomicReference<V> implements java.io.Serializable {
     private static final long serialVersionUID = -1848883965231344442L;
-
-    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
-    private static final long VALUE;
-
+    private static final VarHandle VALUE;
     static {
         try {
-            VALUE = U.objectFieldOffset
-                (AtomicReference.class.getDeclaredField("value"));
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            VALUE = l.findVarHandle(AtomicReference.class, "value", Object.class);
         } catch (ReflectiveOperationException e) {
             throw new Error(e);
         }
     }
 
-    private volatile V value;
+    private volatile Object value;
 
     /**
      * Creates a new AtomicReference with the given initial value.
@@ -79,16 +78,19 @@ public class AtomicReference<V> implements java.io.Serializable {
     }
 
     /**
-     * Gets the current value.
+     * Returns the current value,
+     * with memory effects as specified by {@link VarHandle#getVolatile}.
      *
      * @return the current value
      */
+    @SuppressWarnings("unchecked")
     public final V get() {
-        return value;
+        return (V)value;
     }
 
     /**
-     * Sets to the given value.
+     * Sets the value to {@code newValue},
+     * with memory effects as specified by {@link VarHandle#setVolatile}.
      *
      * @param newValue the new value
      */
@@ -97,52 +99,53 @@ public class AtomicReference<V> implements java.io.Serializable {
     }
 
     /**
-     * Eventually sets to the given value.
+     * Sets the value to {@code newValue},
+     * with memory effects as specified by {@link VarHandle#setRelease}.
      *
      * @param newValue the new value
      * @since 1.6
      */
     public final void lazySet(V newValue) {
-        U.putObjectRelease(this, VALUE, newValue);
+        VALUE.setRelease(this, newValue);
     }
 
     /**
-     * Atomically sets the value to the given updated value
-     * if the current value {@code ==} the expected value.
-     * @param expect the expected value
-     * @param update the new value
+     * Atomically sets the value to {@code newValue}
+     * if the current value {@code == expectedValue},
+     * with memory effects as specified by {@link VarHandle#compareAndSet}.
+     *
+     * @param expectedValue the expected value
+     * @param newValue the new value
      * @return {@code true} if successful. False return indicates that
      * the actual value was not equal to the expected value.
      */
-    public final boolean compareAndSet(V expect, V update) {
-        return U.compareAndSwapObject(this, VALUE, expect, update);
+    public final boolean compareAndSet(V expectedValue, V newValue) {
+        return VALUE.compareAndSet(this, expectedValue, newValue);
     }
 
     /**
-     * Atomically sets the value to the given updated value
-     * if the current value {@code ==} the expected value.
+     * Possibly atomically sets the value to {@code newValue}
+     * if the current value {@code == expectedValue},
+     * with memory effects as specified by {@link VarHandle#weakCompareAndSet}.
      *
-     * <p><a href="package-summary.html#weakCompareAndSet">May fail
-     * spuriously and does not provide ordering guarantees</a>, so is
-     * only rarely an appropriate alternative to {@code compareAndSet}.
-     *
-     * @param expect the expected value
-     * @param update the new value
+     * @param expectedValue the expected value
+     * @param newValue the new value
      * @return {@code true} if successful
      */
-    public final boolean weakCompareAndSet(V expect, V update) {
-        return U.compareAndSwapObject(this, VALUE, expect, update);
+    public final boolean weakCompareAndSet(V expectedValue, V newValue) {
+        return VALUE.weakCompareAndSet(this, expectedValue, newValue);
     }
 
     /**
-     * Atomically sets to the given value and returns the old value.
+     * Atomically sets the value to {@code newValue} and returns the old value,
+     * with memory effects as specified by {@link VarHandle#getAndSet}.
      *
      * @param newValue the new value
      * @return the previous value
      */
     @SuppressWarnings("unchecked")
     public final V getAndSet(V newValue) {
-        return (V)U.getAndSetObject(this, VALUE, newValue);
+        return (V)VALUE.getAndSet(this, newValue);
     }
 
     /**
@@ -156,12 +159,14 @@ public class AtomicReference<V> implements java.io.Serializable {
      * @since 1.8
      */
     public final V getAndUpdate(UnaryOperator<V> updateFunction) {
-        V prev, next;
-        do {
-            prev = get();
-            next = updateFunction.apply(prev);
-        } while (!compareAndSet(prev, next));
-        return prev;
+        V prev = get(), next = null;
+        for (boolean haveNext = false;;) {
+            if (!haveNext)
+                next = updateFunction.apply(prev);
+            if (weakCompareAndSetVolatile(prev, next))
+                return prev;
+            haveNext = (prev == (prev = get()));
+        }
     }
 
     /**
@@ -175,12 +180,14 @@ public class AtomicReference<V> implements java.io.Serializable {
      * @since 1.8
      */
     public final V updateAndGet(UnaryOperator<V> updateFunction) {
-        V prev, next;
-        do {
-            prev = get();
-            next = updateFunction.apply(prev);
-        } while (!compareAndSet(prev, next));
-        return next;
+        V prev = get(), next = null;
+        for (boolean haveNext = false;;) {
+            if (!haveNext)
+                next = updateFunction.apply(prev);
+            if (weakCompareAndSetVolatile(prev, next))
+                return next;
+            haveNext = (prev == (prev = get()));
+        }
     }
 
     /**
@@ -199,12 +206,14 @@ public class AtomicReference<V> implements java.io.Serializable {
      */
     public final V getAndAccumulate(V x,
                                     BinaryOperator<V> accumulatorFunction) {
-        V prev, next;
-        do {
-            prev = get();
-            next = accumulatorFunction.apply(prev, x);
-        } while (!compareAndSet(prev, next));
-        return prev;
+        V prev = get(), next = null;
+        for (boolean haveNext = false;;) {
+            if (!haveNext)
+                next = accumulatorFunction.apply(prev, x);
+            if (weakCompareAndSetVolatile(prev, next))
+                return prev;
+            haveNext = (prev == (prev = get()));
+        }
     }
 
     /**
@@ -223,12 +232,14 @@ public class AtomicReference<V> implements java.io.Serializable {
      */
     public final V accumulateAndGet(V x,
                                     BinaryOperator<V> accumulatorFunction) {
-        V prev, next;
-        do {
-            prev = get();
-            next = accumulatorFunction.apply(prev, x);
-        } while (!compareAndSet(prev, next));
-        return next;
+        V prev = get(), next = null;
+        for (boolean haveNext = false;;) {
+            if (!haveNext)
+                next = accumulatorFunction.apply(prev, x);
+            if (weakCompareAndSetVolatile(prev, next))
+                return next;
+            haveNext = (prev == (prev = get()));
+        }
     }
 
     /**
@@ -237,6 +248,168 @@ public class AtomicReference<V> implements java.io.Serializable {
      */
     public String toString() {
         return String.valueOf(get());
+    }
+
+    // jdk9
+
+    /**
+     * Returns the current value, with memory semantics of reading as
+     * if the variable was declared non-{@code volatile}.
+     *
+     * @return the value
+     * @since 9
+     */
+    public final V getPlain() {
+        return (V)VALUE.get(this);
+    }
+
+    /**
+     * Sets the value to {@code newValue}, with memory semantics
+     * of setting as if the variable was declared non-{@code volatile}
+     * and non-{@code final}.
+     *
+     * @param newValue the new value
+     * @since 9
+     */
+    public final void setPlain(V newValue) {
+        VALUE.set(this, newValue);
+    }
+
+    /**
+     * Returns the current value,
+     * with memory effects as specified by {@link VarHandle#getOpaque}.
+     *
+     * @return the value
+     * @since 9
+     */
+    public final V getOpaque() {
+        return (V)VALUE.getOpaque(this);
+    }
+
+    /**
+     * Sets the value to {@code newValue},
+     * with memory effects as specified by {@link VarHandle#setOpaque}.
+     *
+     * @param newValue the new value
+     * @since 9
+     */
+    public final void setOpaque(V newValue) {
+        VALUE.setOpaque(this, newValue);
+    }
+
+    /**
+     * Returns the current value,
+     * with memory effects as specified by {@link VarHandle#getAcquire}.
+     *
+     * @return the value
+     * @since 9
+     */
+    public final V getAcquire() {
+        return (V)VALUE.getAcquire(this);
+    }
+
+    /**
+     * Sets the value to {@code newValue},
+     * with memory effects as specified by {@link VarHandle#setRelease}.
+     *
+     * @param newValue the new value
+     * @since 9
+     */
+    public final void setRelease(V newValue) {
+        VALUE.setRelease(this, newValue);
+    }
+
+    /**
+     * Atomically sets the value to {@code newValue} if the current value,
+     * referred to as the <em>witness value</em>, {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#compareAndExchange}.
+     *
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return the witness value, which will be the same as the
+     * expected value if successful
+     * @since 9
+     */
+    public final V compareAndExchange(V expectedValue, V newValue) {
+        return (V)VALUE.compareAndExchange(this, expectedValue, newValue);
+    }
+
+    /**
+     * Atomically sets the value to {@code newValue} if the current value,
+     * referred to as the <em>witness value</em>, {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#compareAndExchangeAcquire}.
+     *
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return the witness value, which will be the same as the
+     * expected value if successful
+     * @since 9
+     */
+    public final V compareAndExchangeAcquire(V expectedValue, V newValue) {
+        return (V)VALUE.compareAndExchangeAcquire(this, expectedValue, newValue);
+    }
+
+    /**
+     * Atomically sets the value to {@code newValue} if the current value,
+     * referred to as the <em>witness value</em>, {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#compareAndExchangeRelease}.
+     *
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return the witness value, which will be the same as the
+     * expected value if successful
+     * @since 9
+     */
+    public final V compareAndExchangeRelease(V expectedValue, V newValue) {
+        return (V)VALUE.compareAndExchangeRelease(this, expectedValue, newValue);
+    }
+
+    /**
+     * Possibly atomically sets the value to {@code newValue}
+     * if the current value {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#weakCompareAndSetVolatile}.
+     *
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return {@code true} if successful
+     * @since 9
+     */
+    public final boolean weakCompareAndSetVolatile(V expectedValue, V newValue) {
+        return VALUE.weakCompareAndSetVolatile(this, expectedValue, newValue);
+    }
+
+    /**
+     * Possibly atomically sets the value to {@code newValue}
+     * if the current value {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#weakCompareAndSetAcquire}.
+     *
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return {@code true} if successful
+     * @since 9
+     */
+    public final boolean weakCompareAndSetAcquire(V expectedValue, V newValue) {
+        return VALUE.weakCompareAndSetAcquire(this, expectedValue, newValue);
+    }
+
+    /**
+     * Possibly atomically sets the value to {@code newValue}
+     * if the current value {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#weakCompareAndSetRelease}.
+     *
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return {@code true} if successful
+     * @since 9
+     */
+    public final boolean weakCompareAndSetRelease(V expectedValue, V newValue) {
+        return VALUE.weakCompareAndSetRelease(this, expectedValue, newValue);
     }
 
 }

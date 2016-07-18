@@ -35,53 +35,27 @@
 
 package java.util.concurrent.atomic;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 
 /**
  * An array of object references in which elements may be updated
- * atomically.  See the {@link java.util.concurrent.atomic} package
- * specification for description of the properties of atomic
- * variables.
+ * atomically.  See the {@link VarHandle} specification for
+ * descriptions of the properties of atomic accesses.
  * @since 1.5
  * @author Doug Lea
  * @param <E> The base class of elements held in this array
  */
 public class AtomicReferenceArray<E> implements java.io.Serializable {
     private static final long serialVersionUID = -6209656149925076980L;
-
-    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
-    private static final long ARRAY;
-    private static final int ABASE;
-    private static final int ASHIFT;
+    private static final VarHandle AA
+        = MethodHandles.arrayElementVarHandle(Object[].class);
     private final Object[] array; // must have exact type Object[]
-
-    static {
-        try {
-            ARRAY = U.objectFieldOffset
-                (AtomicReferenceArray.class.getDeclaredField("array"));
-            ABASE = U.arrayBaseOffset(Object[].class);
-            int scale = U.arrayIndexScale(Object[].class);
-            if ((scale & (scale - 1)) != 0)
-                throw new Error("array index scale not a power of two");
-            ASHIFT = 31 - Integer.numberOfLeadingZeros(scale);
-        } catch (ReflectiveOperationException e) {
-            throw new Error(e);
-        }
-    }
-
-    private long checkedByteOffset(int i) {
-        if (i < 0 || i >= array.length)
-            throw new IndexOutOfBoundsException("index " + i);
-
-        return byteOffset(i);
-    }
-
-    private static long byteOffset(int i) {
-        return ((long) i << ASHIFT) + ABASE;
-    }
 
     /**
      * Creates a new AtomicReferenceArray of the given length, with all
@@ -115,44 +89,44 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
     }
 
     /**
-     * Gets the current value at position {@code i}.
+     * Returns the current value of the element at index {@code i},
+     * with memory effects as specified by {@link VarHandle#getVolatile}.
      *
      * @param i the index
      * @return the current value
      */
-    public final E get(int i) {
-        return getRaw(checkedByteOffset(i));
-    }
-
     @SuppressWarnings("unchecked")
-    private E getRaw(long offset) {
-        return (E) U.getObjectVolatile(array, offset);
+    public final E get(int i) {
+        return (E)AA.getVolatile(array, i);
     }
 
     /**
-     * Sets the element at position {@code i} to the given value.
+     * Sets the element at index {@code i} to {@code newValue},
+     * with memory effects as specified by {@link VarHandle#setVolatile}.
      *
      * @param i the index
      * @param newValue the new value
      */
     public final void set(int i, E newValue) {
-        U.putObjectVolatile(array, checkedByteOffset(i), newValue);
+        AA.setVolatile(array, i, newValue);
     }
 
     /**
-     * Eventually sets the element at position {@code i} to the given value.
+     * Sets the element at index {@code i} to {@code newValue},
+     * with memory effects as specified by {@link VarHandle#setRelease}.
      *
      * @param i the index
      * @param newValue the new value
      * @since 1.6
      */
     public final void lazySet(int i, E newValue) {
-        U.putObjectRelease(array, checkedByteOffset(i), newValue);
+        AA.setRelease(array, i, newValue);
     }
 
     /**
-     * Atomically sets the element at position {@code i} to the given
-     * value and returns the old value.
+     * Atomically sets the element at index {@code i} to {@code
+     * newValue} and returns the old value,
+     * with memory effects as specified by {@link VarHandle#getAndSet}.
      *
      * @param i the index
      * @param newValue the new value
@@ -160,42 +134,36 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      */
     @SuppressWarnings("unchecked")
     public final E getAndSet(int i, E newValue) {
-        return (E)U.getAndSetObject(array, checkedByteOffset(i), newValue);
+        return (E)AA.getAndSet(array, i, newValue);
     }
 
     /**
-     * Atomically sets the element at position {@code i} to the given
-     * updated value if the current value {@code ==} the expected value.
+     * Atomically sets the element at index {@code i} to {@code newValue}
+     * if the element's current value {@code == expectedValue},
+     * with memory effects as specified by {@link VarHandle#compareAndSet}.
      *
      * @param i the index
-     * @param expect the expected value
-     * @param update the new value
+     * @param expectedValue the expected value
+     * @param newValue the new value
      * @return {@code true} if successful. False return indicates that
      * the actual value was not equal to the expected value.
      */
-    public final boolean compareAndSet(int i, E expect, E update) {
-        return compareAndSetRaw(checkedByteOffset(i), expect, update);
-    }
-
-    private boolean compareAndSetRaw(long offset, E expect, E update) {
-        return U.compareAndSwapObject(array, offset, expect, update);
+    public final boolean compareAndSet(int i, E expectedValue, E newValue) {
+        return AA.compareAndSet(array, i, expectedValue, newValue);
     }
 
     /**
-     * Atomically sets the element at position {@code i} to the given
-     * updated value if the current value {@code ==} the expected value.
-     *
-     * <p><a href="package-summary.html#weakCompareAndSet">May fail
-     * spuriously and does not provide ordering guarantees</a>, so is
-     * only rarely an appropriate alternative to {@code compareAndSet}.
+     * Possibly atomically sets the element at index {@code i} to
+     * {@code newValue} if the element's current value {@code == expectedValue},
+     * with memory effects as specified by {@link VarHandle#weakCompareAndSet}.
      *
      * @param i the index
-     * @param expect the expected value
-     * @param update the new value
+     * @param expectedValue the expected value
+     * @param newValue the new value
      * @return {@code true} if successful
      */
-    public final boolean weakCompareAndSet(int i, E expect, E update) {
-        return compareAndSet(i, expect, update);
+    public final boolean weakCompareAndSet(int i, E expectedValue, E newValue) {
+        return AA.weakCompareAndSet(array, i, expectedValue, newValue);
     }
 
     /**
@@ -210,13 +178,14 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      * @since 1.8
      */
     public final E getAndUpdate(int i, UnaryOperator<E> updateFunction) {
-        long offset = checkedByteOffset(i);
-        E prev, next;
-        do {
-            prev = getRaw(offset);
-            next = updateFunction.apply(prev);
-        } while (!compareAndSetRaw(offset, prev, next));
-        return prev;
+        E prev = get(i), next = null;
+        for (boolean haveNext = false;;) {
+            if (!haveNext)
+                next = updateFunction.apply(prev);
+            if (weakCompareAndSetVolatile(i, prev, next))
+                return prev;
+            haveNext = (prev == (prev = get(i)));
+        }
     }
 
     /**
@@ -231,23 +200,25 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      * @since 1.8
      */
     public final E updateAndGet(int i, UnaryOperator<E> updateFunction) {
-        long offset = checkedByteOffset(i);
-        E prev, next;
-        do {
-            prev = getRaw(offset);
-            next = updateFunction.apply(prev);
-        } while (!compareAndSetRaw(offset, prev, next));
-        return next;
+        E prev = get(i), next = null;
+        for (boolean haveNext = false;;) {
+            if (!haveNext)
+                next = updateFunction.apply(prev);
+            if (weakCompareAndSetVolatile(i, prev, next))
+                return next;
+            haveNext = (prev == (prev = get(i)));
+        }
     }
 
     /**
      * Atomically updates the element at index {@code i} with the
-     * results of applying the given function to the current and
-     * given values, returning the previous value. The function should
-     * be side-effect-free, since it may be re-applied when attempted
+     * results of applying the given function to the current and given
+     * values, returning the previous value. The function should be
+     * side-effect-free, since it may be re-applied when attempted
      * updates fail due to contention among threads.  The function is
-     * applied with the current value at index {@code i} as its first
-     * argument, and the given update as the second argument.
+     * applied with the current value of the element at index {@code i}
+     * as its first argument, and the given update as the second
+     * argument.
      *
      * @param i the index
      * @param x the update value
@@ -257,23 +228,25 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      */
     public final E getAndAccumulate(int i, E x,
                                     BinaryOperator<E> accumulatorFunction) {
-        long offset = checkedByteOffset(i);
-        E prev, next;
-        do {
-            prev = getRaw(offset);
-            next = accumulatorFunction.apply(prev, x);
-        } while (!compareAndSetRaw(offset, prev, next));
-        return prev;
+        E prev = get(i), next = null;
+        for (boolean haveNext = false;;) {
+            if (!haveNext)
+                next = accumulatorFunction.apply(prev, x);
+            if (weakCompareAndSetVolatile(i, prev, next))
+                return prev;
+            haveNext = (prev == (prev = get(i)));
+        }
     }
 
     /**
      * Atomically updates the element at index {@code i} with the
-     * results of applying the given function to the current and
-     * given values, returning the updated value. The function should
-     * be side-effect-free, since it may be re-applied when attempted
+     * results of applying the given function to the current and given
+     * values, returning the updated value. The function should be
+     * side-effect-free, since it may be re-applied when attempted
      * updates fail due to contention among threads.  The function is
-     * applied with the current value at index {@code i} as its first
-     * argument, and the given update as the second argument.
+     * applied with the current value of the element at index {@code i}
+     * as its first argument, and the given update as the second
+     * argument.
      *
      * @param i the index
      * @param x the update value
@@ -283,13 +256,14 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      */
     public final E accumulateAndGet(int i, E x,
                                     BinaryOperator<E> accumulatorFunction) {
-        long offset = checkedByteOffset(i);
-        E prev, next;
-        do {
-            prev = getRaw(offset);
-            next = accumulatorFunction.apply(prev, x);
-        } while (!compareAndSetRaw(offset, prev, next));
-        return next;
+        E prev = get(i), next = null;
+        for (boolean haveNext = false;;) {
+            if (!haveNext)
+                next = accumulatorFunction.apply(prev, x);
+            if (weakCompareAndSetVolatile(i, prev, next))
+                return next;
+            haveNext = (prev == (prev = get(i)));
+        }
     }
 
     /**
@@ -304,7 +278,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
         StringBuilder b = new StringBuilder();
         b.append('[');
         for (int i = 0; ; i++) {
-            b.append(getRaw(byteOffset(i)));
+            b.append(get(i));
             if (i == iMax)
                 return b.append(']').toString();
             b.append(',').append(' ');
@@ -326,7 +300,199 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
             throw new java.io.InvalidObjectException("Not array type");
         if (a.getClass() != Object[].class)
             a = Arrays.copyOf((Object[])a, Array.getLength(a), Object[].class);
-        U.putObjectVolatile(this, ARRAY, a);
+        Field arrayField = java.security.AccessController.doPrivileged(
+            (java.security.PrivilegedAction<Field>) () -> {
+                try {
+                    Field f = AtomicReferenceArray.class
+                        .getDeclaredField("array");
+                    f.setAccessible(true);
+                    return f;
+                } catch (ReflectiveOperationException e) {
+                    throw new Error(e);
+                }});
+        try {
+            arrayField.set(this, a);
+        } catch (IllegalAccessException e) {
+            throw new Error(e);
+        }
+    }
+
+    // jdk9
+
+    /**
+     * Returns the current value of the element at index {@code i},
+     * with memory semantics of reading as if the variable was declared
+     * non-{@code volatile}.
+     *
+     * @param i the index
+     * @return the value
+     * @since 9
+     */
+    public final E getPlain(int i) {
+        return (E)AA.get(array, i);
+    }
+
+    /**
+     * Sets the element at index {@code i} to {@code newValue},
+     * with memory semantics of setting as if the variable was
+     * declared non-{@code volatile} and non-{@code final}.
+     *
+     * @param i the index
+     * @param newValue the new value
+     * @since 9
+     */
+    public final void setPlain(int i, E newValue) {
+        AA.set(array, i, newValue);
+    }
+
+    /**
+     * Returns the current value of the element at index {@code i},
+     * with memory effects as specified by {@link VarHandle#getOpaque}.
+     *
+     * @param i the index
+     * @return the value
+     * @since 9
+     */
+    public final E getOpaque(int i) {
+        return (E)AA.getOpaque(array, i);
+    }
+
+    /**
+     * Sets the element at index {@code i} to {@code newValue},
+     * with memory effects as specified by {@link VarHandle#setOpaque}.
+     *
+     * @param i the index
+     * @param newValue the new value
+     * @since 9
+     */
+    public final void setOpaque(int i, E newValue) {
+        AA.setOpaque(array, i, newValue);
+    }
+
+    /**
+     * Returns the current value of the element at index {@code i},
+     * with memory effects as specified by {@link VarHandle#getAcquire}.
+     *
+     * @param i the index
+     * @return the value
+     * @since 9
+     */
+    public final E getAcquire(int i) {
+        return (E)AA.getAcquire(array, i);
+    }
+
+    /**
+     * Sets the element at index {@code i} to {@code newValue},
+     * with memory effects as specified by {@link VarHandle#setRelease}.
+     *
+     * @param i the index
+     * @param newValue the new value
+     * @since 9
+     */
+    public final void setRelease(int i, E newValue) {
+        AA.setRelease(array, i, newValue);
+    }
+
+    /**
+     * Atomically sets the element at index {@code i} to {@code newValue}
+     * if the element's current value, referred to as the <em>witness
+     * value</em>, {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#compareAndExchange}.
+     *
+     * @param i the index
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return the witness value, which will be the same as the
+     * expected value if successful
+     * @since 9
+     */
+    public final E compareAndExchange(int i, E expectedValue, E newValue) {
+        return (E)AA.compareAndExchange(array, i, expectedValue, newValue);
+    }
+
+    /**
+     * Atomically sets the element at index {@code i} to {@code newValue}
+     * if the element's current value, referred to as the <em>witness
+     * value</em>, {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#compareAndExchangeAcquire}.
+     *
+     * @param i the index
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return the witness value, which will be the same as the
+     * expected value if successful
+     * @since 9
+     */
+    public final E compareAndExchangeAcquire(int i, E expectedValue, E newValue) {
+        return (E)AA.compareAndExchangeAcquire(array, i, expectedValue, newValue);
+    }
+
+    /**
+     * Atomically sets the element at index {@code i} to {@code newValue}
+     * if the element's current value, referred to as the <em>witness
+     * value</em>, {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#compareAndExchangeRelease}.
+     *
+     * @param i the index
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return the witness value, which will be the same as the
+     * expected value if successful
+     * @since 9
+     */
+    public final E compareAndExchangeRelease(int i, E expectedValue, E newValue) {
+        return (E)AA.compareAndExchangeRelease(array, i, expectedValue, newValue);
+    }
+
+    /**
+     * Possibly atomically sets the element at index {@code i} to
+     * {@code newValue} if the element's current value {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#weakCompareAndSetVolatile}.
+     *
+     * @param i the index
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return {@code true} if successful
+     * @since 9
+     */
+    public final boolean weakCompareAndSetVolatile(int i, E expectedValue, E newValue) {
+        return AA.weakCompareAndSetVolatile(array, i, expectedValue, newValue);
+    }
+
+    /**
+     * Possibly atomically sets the element at index {@code i} to
+     * {@code newValue} if the element's current value {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#weakCompareAndSetAcquire}.
+     *
+     * @param i the index
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return {@code true} if successful
+     * @since 9
+     */
+    public final boolean weakCompareAndSetAcquire(int i, E expectedValue, E newValue) {
+        return AA.weakCompareAndSetAcquire(array, i, expectedValue, newValue);
+    }
+
+    /**
+     * Possibly atomically sets the element at index {@code i} to
+     * {@code newValue} if the element's current value {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#weakCompareAndSetRelease}.
+     *
+     * @param i the index
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return {@code true} if successful
+     * @since 9
+     */
+    public final boolean weakCompareAndSetRelease(int i, E expectedValue, E newValue) {
+        return AA.weakCompareAndSetRelease(array, i, expectedValue, newValue);
     }
 
 }

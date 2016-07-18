@@ -61,7 +61,7 @@ Assert.assertTrue(stats.get(1) instanceof FunctionDeclarationTree);
 Assert.assertTrue(stats.get(2) instanceof VariableTree);
 
 var print_hello = stats.get(1);
-Assert.assertEquals(print_hello.name, "print_hello");
+Assert.assertEquals(print_hello.name.name, "print_hello");
 var print_hello_stats = print_hello.body.statements;
 Assert.assertTrue(print_hello_stats.get(0) instanceof VariableTree);
 Assert.assertTrue(print_hello_stats.get(1) instanceof ExpressionStatementTree);

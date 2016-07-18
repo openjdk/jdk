@@ -2,15 +2,25 @@
   {
     "endPosition": "6",
     "kind": "VARIABLE",
-    "name": "a",
-    "startPosition": "5",
+    "binding": {
+      "endPosition": "6",
+      "kind": "IDENTIFIER",
+      "name": "a",
+      "startPosition": "5"
+    },
+    "startPosition": "1",
     "initializer": "null"
   },
   {
     "endPosition": "16",
     "kind": "VARIABLE",
-    "name": "x",
-    "startPosition": "11",
+    "binding": {
+      "endPosition": "12",
+      "kind": "IDENTIFIER",
+      "name": "x",
+      "startPosition": "11"
+    },
+    "startPosition": "7",
     "initializer": {
       "endPosition": "16",
       "kind": "NUMBER_LITERAL",
@@ -21,15 +31,25 @@
   {
     "endPosition": "24",
     "kind": "VARIABLE",
-    "name": "x23",
-    "startPosition": "21",
+    "binding": {
+      "endPosition": "24",
+      "kind": "IDENTIFIER",
+      "name": "x23",
+      "startPosition": "21"
+    },
+    "startPosition": "17",
     "initializer": "null"
   },
   {
     "endPosition": "32",
     "kind": "VARIABLE",
-    "name": "$y",
-    "startPosition": "26",
+    "binding": {
+      "endPosition": "28",
+      "kind": "IDENTIFIER",
+      "name": "$y",
+      "startPosition": "26"
+    },
+    "startPosition": "17",
     "initializer": {
       "endPosition": "32",
       "kind": "NUMBER_LITERAL",
@@ -40,8 +60,13 @@
   {
     "endPosition": "36",
     "kind": "VARIABLE",
-    "name": "_z",
-    "startPosition": "34",
+    "binding": {
+      "endPosition": "36",
+      "kind": "IDENTIFIER",
+      "name": "_z",
+      "startPosition": "34"
+    },
+    "startPosition": "17",
     "initializer": "null"
   }
 ]

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,22 +26,26 @@
 package jdk.nashorn.api.tree;
 
 /**
- * A tree node for a variable declaration.
+ * A tree node for a <a href="http://www.ecma-international.org/ecma-262/6.0/#sec-variable-statement">variable declaration statement</a>.
  *
  * For example:
  * <pre>
- *   <em>var</em> <em>name</em> <em>initializer</em> ;
+ *   <em>var</em> <em>name</em> [ <em>initializer</em> ] ;
+ *   <em>var</em> <em>binding_pattern</em> [ <em>initializer</em> ];
  * </pre>
  *
  * @since 9
  */
 public interface VariableTree extends StatementTree {
     /**
-     * Returns the name of this variable.
+     * Returns the binding of this declaration. This is an {@link IdentifierTree}
+     * for a binding identifier case (simple variable declaration).
+     * This is an {@link ObjectLiteralTree} or a {@link ArrayLiteralTree} for a
+     * destructuring declaration.
      *
-     * @return the name of this variable
+     * @return the binding expression of this declaration
      */
-    String getName();
+    ExpressionTree getBinding();
 
     /**
      * Returns the initial value expression for this variable. This is
@@ -50,4 +54,18 @@ public interface VariableTree extends StatementTree {
      * @return the initial value expression
      */
     ExpressionTree getInitializer();
+
+    /**
+     * Is this a const declaration?
+     *
+     * @return true if this is a const declaration
+     */
+    boolean isConst();
+
+    /**
+     * Is this a let declaration?
+     *
+     * @return true if this is a let declaration
+     */
+    boolean isLet();
 }

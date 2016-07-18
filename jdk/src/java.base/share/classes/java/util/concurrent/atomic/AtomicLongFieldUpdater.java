@@ -42,6 +42,7 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongUnaryOperator;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
@@ -153,8 +154,8 @@ public abstract class AtomicLongFieldUpdater<T> {
     public abstract void lazySet(T obj, long newValue);
 
     /**
-     * Gets the current value held in the field of the given object managed
-     * by this updater.
+     * Returns the current value held in the field of the given object
+     * managed by this updater.
      *
      * @param obj An object whose field to get
      * @return the current value
@@ -366,7 +367,7 @@ public abstract class AtomicLongFieldUpdater<T> {
     }
 
     private static final class CASUpdater<T> extends AtomicLongFieldUpdater<T> {
-        private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
+        private static final Unsafe U = Unsafe.getUnsafe();
         private final long offset;
         /**
          * if field is protected, the subclass constructing updater, else
@@ -497,7 +498,7 @@ public abstract class AtomicLongFieldUpdater<T> {
     }
 
     private static final class LockedUpdater<T> extends AtomicLongFieldUpdater<T> {
-        private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
+        private static final Unsafe U = Unsafe.getUnsafe();
         private final long offset;
         /**
          * if field is protected, the subclass constructing updater, else

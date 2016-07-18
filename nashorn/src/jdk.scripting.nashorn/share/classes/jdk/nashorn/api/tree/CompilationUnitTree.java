@@ -62,4 +62,12 @@ public interface CompilationUnitTree extends Tree {
      * @return the line map for this compilation unit
      */
     LineMap getLineMap();
+
+    /**
+     * Return the {@link ModuleTree} associated with this compilation unit. This is null,
+     * if there is no module information from this compilation unit.
+     *
+     * @return the Module info or null
+     */
+    ModuleTree getModule();
 }

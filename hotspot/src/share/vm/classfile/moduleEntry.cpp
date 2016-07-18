@@ -40,7 +40,6 @@
 
 ModuleEntry* ModuleEntryTable::_javabase_module = NULL;
 
-
 void ModuleEntry::set_location(Symbol* location) {
   if (_location != NULL) {
     // _location symbol's refcounts are managed by ModuleEntry,
@@ -115,7 +114,32 @@ void ModuleEntry::add_read(ModuleEntry* m) {
       // Lazily create a module's reads list
       _reads = new (ResourceObj::C_HEAP, mtModule)GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, true);
     }
+
+    // Determine, based on this newly established read edge to module m,
+    // if this module's read list should be walked at a GC safepoint.
+    set_read_walk_required(m->loader_data());
+
+    // Establish readability to module m
     _reads->append_if_missing(m);
+  }
+}
+
+// If the module's loader, that a read edge is being established to, is
+// not the same loader as this module's and is not one of the 3 builtin
+// class loaders, then this module's reads list must be walked at GC
+// safepoint. Modules have the same life cycle as their defining class
+// loaders and should be removed if dead.
+void ModuleEntry::set_read_walk_required(ClassLoaderData* m_loader_data) {
+  assert_locked_or_safepoint(Module_lock);
+  if (!_must_walk_reads &&
+      loader_data() != m_loader_data &&
+      !m_loader_data->is_builtin_class_loader_data()) {
+    _must_walk_reads = true;
+    if (log_is_enabled(Trace, modules)) {
+      ResourceMark rm;
+      log_trace(modules)("ModuleEntry::set_read_walk_required(): module %s reads list must be walked",
+                         (name() != NULL) ? name()->as_C_string() : UNNAMED_MODULE);
+    }
   }
 }
 
@@ -127,14 +151,28 @@ bool ModuleEntry::has_reads() const {
 // Purge dead module entries out of reads list.
 void ModuleEntry::purge_reads() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
-  if (has_reads()) {
+
+  if (_must_walk_reads && has_reads()) {
+    // This module's _must_walk_reads flag will be reset based
+    // on the remaining live modules on the reads list.
+    _must_walk_reads = false;
+
+    if (log_is_enabled(Trace, modules)) {
+      ResourceMark rm;
+      log_trace(modules)("ModuleEntry::purge_reads(): module %s reads list being walked",
+                         (name() != NULL) ? name()->as_C_string() : UNNAMED_MODULE);
+    }
+
     // Go backwards because this removes entries that are dead.
     int len = _reads->length();
     for (int idx = len - 1; idx >= 0; idx--) {
       ModuleEntry* module_idx = _reads->at(idx);
-      ClassLoaderData* cld = module_idx->loader();
-      if (cld->is_unloading()) {
+      ClassLoaderData* cld_idx = module_idx->loader_data();
+      if (cld_idx->is_unloading()) {
         _reads->delete_at(idx);
+      } else {
+        // Update the need to walk this module's reads based on live modules
+        set_read_walk_required(cld_idx);
       }
     }
   }
@@ -248,7 +286,7 @@ ModuleEntry* ModuleEntryTable::new_entry(unsigned int hash, Handle module_handle
     entry->set_module(loader_data->add_handle(module_handle));
   }
 
-  entry->set_loader(loader_data);
+  entry->set_loader_data(loader_data);
   entry->set_version(version);
   entry->set_location(location);
 
@@ -375,11 +413,11 @@ void ModuleEntryTable::print(outputStream* st) {
 
 void ModuleEntry::print(outputStream* st) {
   ResourceMark rm;
-  st->print_cr("entry "PTR_FORMAT" name %s module "PTR_FORMAT" loader %s version %s location %s strict %s next "PTR_FORMAT,
+  st->print_cr("entry " PTR_FORMAT " name %s module " PTR_FORMAT " loader %s version %s location %s strict %s next " PTR_FORMAT,
                p2i(this),
                name() == NULL ? UNNAMED_MODULE : name()->as_C_string(),
                p2i(module()),
-               loader()->loader_name(),
+               loader_data()->loader_name(),
                version() != NULL ? version()->as_C_string() : "NULL",
                location() != NULL ? location()->as_C_string() : "NULL",
                BOOL_TO_STR(!can_read_all_unnamed()), p2i(next()));
@@ -401,5 +439,5 @@ void ModuleEntryTable::verify() {
 }
 
 void ModuleEntry::verify() {
-  guarantee(loader() != NULL, "A module entry must be associated with a loader.");
+  guarantee(loader_data() != NULL, "A module entry must be associated with a loader.");
 }

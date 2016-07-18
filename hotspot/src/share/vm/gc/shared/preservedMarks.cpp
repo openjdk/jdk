@@ -48,10 +48,10 @@ void PreservedMarks::restore_and_increment(volatile size_t* const total_size_add
 
 #ifndef PRODUCT
 void PreservedMarks::assert_empty() {
-  assert(_stack.is_empty(), "stack expected to be empty, size = "SIZE_FORMAT,
+  assert(_stack.is_empty(), "stack expected to be empty, size = " SIZE_FORMAT,
          _stack.size());
   assert(_stack.cache_size() == 0,
-         "stack expected to have no cached segments, cache size = "SIZE_FORMAT,
+         "stack expected to have no cached segments, cache size = " SIZE_FORMAT,
          _stack.cache_size());
 }
 #endif // ndef PRODUCT

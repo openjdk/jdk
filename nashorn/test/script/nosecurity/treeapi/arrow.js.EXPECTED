@@ -1,0 +1,103 @@
+[
+  {
+    "endPosition": "15",
+    "kind": "VARIABLE",
+    "binding": {
+      "endPosition": "6",
+      "kind": "IDENTIFIER",
+      "name": "f",
+      "startPosition": "5"
+    },
+    "startPosition": "1",
+    "initializer": {
+      "endPosition": "12",
+      "arrow": "true",
+      "kind": "FUNCTION_EXPRESSION",
+      "name": "null",
+      "body": {
+        "leftOperand": {
+          "endPosition": "13",
+          "kind": "IDENTIFIER",
+          "name": "x",
+          "startPosition": "12"
+        },
+        "endPosition": "15",
+        "kind": "MULTIPLY",
+        "rightOperand": {
+          "endPosition": "15",
+          "kind": "NUMBER_LITERAL",
+          "value": "2",
+          "startPosition": "14"
+        },
+        "startPosition": "12"
+      },
+      "strict": "false",
+      "startPosition": "12",
+      "parameters": [
+        {
+          "endPosition": "10",
+          "kind": "IDENTIFIER",
+          "name": "x",
+          "startPosition": "9"
+        }
+      ]
+    }
+  },
+  {
+    "expression": {
+      "endPosition": "35",
+      "kind": "FUNCTION_INVOCATION",
+      "functionSelect": {
+        "identifier": "map",
+        "expression": {
+          "endPosition": "19",
+          "kind": "ARRAY_LITERAL",
+          "elements": [],
+          "startPosition": "17"
+        },
+        "endPosition": "23",
+        "kind": "MEMBER_SELECT",
+        "startPosition": "17"
+      },
+      "arguments": [
+        {
+          "endPosition": "29",
+          "arrow": "true",
+          "kind": "FUNCTION_EXPRESSION",
+          "name": "null",
+          "body": {
+            "leftOperand": {
+              "endPosition": "30",
+              "kind": "IDENTIFIER",
+              "name": "v",
+              "startPosition": "29"
+            },
+            "endPosition": "34",
+            "kind": "PLUS",
+            "rightOperand": {
+              "endPosition": "34",
+              "kind": "NUMBER_LITERAL",
+              "value": "1",
+              "startPosition": "33"
+            },
+            "startPosition": "29"
+          },
+          "strict": "false",
+          "startPosition": "29",
+          "parameters": [
+            {
+              "endPosition": "25",
+              "kind": "IDENTIFIER",
+              "name": "v",
+              "startPosition": "24"
+            }
+          ]
+        }
+      ],
+      "startPosition": "17"
+    },
+    "endPosition": "35",
+    "kind": "EXPRESSION_STATEMENT",
+    "startPosition": "17"
+  }
+]

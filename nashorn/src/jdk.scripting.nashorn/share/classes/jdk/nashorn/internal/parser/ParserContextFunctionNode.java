@@ -24,9 +24,12 @@
  */
 package jdk.nashorn.internal.parser;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import jdk.nashorn.internal.codegen.Namespace;
+import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.Module;
@@ -70,6 +73,7 @@ class ParserContextFunctionNode extends ParserContextBaseNode {
     private Module module;
 
     private int debugFlags;
+    private Map<IdentNode, Expression> parameterExpressions;
 
     /**
      * @param token The token for the function
@@ -167,6 +171,22 @@ class ParserContextFunctionNode extends ParserContextBaseNode {
 
     void setParameters(List<IdentNode> parameters) {
         this.parameters = parameters;
+    }
+
+    /**
+     * Return ES6 function parameter expressions
+     *
+     * @return ES6 function parameter expressions
+     */
+    public Map<IdentNode, Expression> getParameterExpressions() {
+        return parameterExpressions;
+    }
+
+    void addParameterExpression(IdentNode ident, Expression node) {
+        if (parameterExpressions == null) {
+            parameterExpressions = new HashMap<>();
+        }
+        parameterExpressions.put(ident, node);
     }
 
     /**

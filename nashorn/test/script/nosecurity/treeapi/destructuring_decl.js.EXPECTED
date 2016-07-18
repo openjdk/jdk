@@ -1,0 +1,101 @@
+[
+  {
+    "endPosition": "20",
+    "kind": "VARIABLE",
+    "binding": {
+      "endPosition": "11",
+      "kind": "ARRAY_LITERAL",
+      "elements": [
+        {
+          "endPosition": "7",
+          "kind": "IDENTIFIER",
+          "name": "a",
+          "startPosition": "6"
+        },
+        {
+          "endPosition": "10",
+          "kind": "IDENTIFIER",
+          "name": "b",
+          "startPosition": "9"
+        }
+      ],
+      "startPosition": "5"
+    },
+    "startPosition": "1",
+    "initializer": {
+      "endPosition": "20",
+      "kind": "ARRAY_LITERAL",
+      "elements": [
+        {
+          "endPosition": "16",
+          "kind": "NUMBER_LITERAL",
+          "value": "1",
+          "startPosition": "15"
+        },
+        {
+          "endPosition": "19",
+          "kind": "NUMBER_LITERAL",
+          "value": "2",
+          "startPosition": "18"
+        }
+      ],
+      "startPosition": "14"
+    }
+  },
+  {
+    "endPosition": "41",
+    "kind": "VARIABLE",
+    "binding": {
+      "endPosition": "35",
+      "kind": "OBJECT_LITERAL",
+      "startPosition": "27",
+      "properties": [
+        {
+          "getter": "null",
+          "endPosition": "30",
+          "kind": "PROPERTY",
+          "setter": "null",
+          "value": {
+            "endPosition": "30",
+            "kind": "IDENTIFIER",
+            "name": "x",
+            "startPosition": "29"
+          },
+          "startPosition": "29",
+          "key": {
+            "endPosition": "30",
+            "kind": "IDENTIFIER",
+            "name": "x",
+            "startPosition": "29"
+          }
+        },
+        {
+          "getter": "null",
+          "endPosition": "33",
+          "kind": "PROPERTY",
+          "setter": "null",
+          "value": {
+            "endPosition": "33",
+            "kind": "IDENTIFIER",
+            "name": "y",
+            "startPosition": "32"
+          },
+          "startPosition": "32",
+          "key": {
+            "endPosition": "33",
+            "kind": "IDENTIFIER",
+            "name": "y",
+            "startPosition": "32"
+          }
+        }
+      ]
+    },
+    "startPosition": "23",
+    "initializer": {
+      "endPosition": "41",
+      "kind": "IDENTIFIER",
+      "name": "obj",
+      "startPosition": "38"
+    }
+  }
+]

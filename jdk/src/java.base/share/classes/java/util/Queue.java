@@ -124,7 +124,6 @@ package java.util;
  * always well-defined for queues with the same elements but different
  * ordering properties.
  *
- *
  * <p>This interface is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
  * Java Collections Framework</a>.

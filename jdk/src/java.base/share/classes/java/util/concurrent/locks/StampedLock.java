@@ -35,7 +35,10 @@
 
 package java.util.concurrent.locks;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.concurrent.TimeUnit;
+import jdk.internal.vm.annotation.ReservedStackAccess;
 
 /**
  * A capability-based lock with three modes for controlling read/write
@@ -108,6 +111,10 @@ import java.util.concurrent.TimeUnit;
  * into initial unlocked state, so they are not useful for remote
  * locking.
  *
+ * <p>Like {@link java.util.concurrent.Semaphore Semaphore}, but unlike most
+ * {@link Lock} implementations, StampedLocks have no notion of ownership.
+ * Locks acquired in one thread can be released or converted in another.
+ *
  * <p>The scheduling policy of StampedLock does not consistently
  * prefer readers over writers or vice versa.  All "try" methods are
  * best-effort and do not necessarily conform to any scheduling or
@@ -126,7 +133,7 @@ import java.util.concurrent.TimeUnit;
  * in a class that maintains simple two-dimensional points. The sample
  * code illustrates some try/catch conventions even though they are
  * not strictly needed here because no exceptions can occur in their
- * bodies.<br>
+ * bodies.
  *
  * <pre> {@code
  * class Point {
@@ -234,9 +241,7 @@ public class StampedLock implements java.io.Serializable {
      * used in the acquire methods to reduce (increasingly expensive)
      * context switching while also avoiding sustained memory
      * thrashing among many threads.  We limit spins to the head of
-     * queue. A thread spin-waits up to SPINS times (where each
-     * iteration decreases spin count with 50% probability) before
-     * blocking. If, upon wakening it fails to obtain lock, and is
+     * queue. If, upon wakening, a thread fails to obtain lock, and is
      * still (or becomes) the first waiting thread (which indicates
      * that some other thread barged and obtained lock), it escalates
      * spins (up to MAX_HEAD_SPINS) to reduce the likelihood of
@@ -252,7 +257,7 @@ public class StampedLock implements java.io.Serializable {
      * to normal volatile reads (of "state").  To force orderings of
      * reads before a validation and the validation itself in those
      * cases where this is not already forced, we use
-     * Unsafe.loadFence.
+     * VarHandle.acquireFence.
      *
      * The memory layout keeps lock state and queue pointers together
      * (normally on the same cache line). This usually works well for
@@ -290,7 +295,20 @@ public class StampedLock implements java.io.Serializable {
     private static final long ABITS = RBITS | WBIT;
     private static final long SBITS = ~RBITS; // note overlap with ABITS
 
-    // Initial value for lock state; avoid failure value zero
+    /*
+     * 3 stamp modes can be distinguished by examining (m = stamp & ABITS):
+     * write mode: m == WBIT
+     * optimistic read mode: m == 0L (even when read lock is held)
+     * read mode: m > 0L && m <= RFULL (the stamp is a copy of state, but the
+     * read hold count in the stamp is unused other than to determine mode)
+     *
+     * This differs slightly from the encoding of state:
+     * (state & ABITS) == 0L indicates the lock is currently unlocked.
+     * (state & ABITS) == RBITS is a special transient value
+     * indicating spin-locked to manipulate reader bits overflow.
+     */
+
+    /** Initial value for lock state; avoids failure value zero. */
     private static final long ORIGIN = WBIT << 1;
 
     // Special value from cancelled acquire methods so caller can throw IE
@@ -341,25 +359,27 @@ public class StampedLock implements java.io.Serializable {
      * Exclusively acquires the lock, blocking if necessary
      * until available.
      *
-     * @return a stamp that can be used to unlock or convert mode
+     * @return a write stamp that can be used to unlock or convert mode
      */
+    @ReservedStackAccess
     public long writeLock() {
         long s, next;  // bypass acquireWrite in fully unlocked case only
         return ((((s = state) & ABITS) == 0L &&
-                 U.compareAndSwapLong(this, STATE, s, next = s + WBIT)) ?
+                 STATE.compareAndSet(this, s, next = s + WBIT)) ?
                 next : acquireWrite(false, 0L));
     }
 
     /**
      * Exclusively acquires the lock if it is immediately available.
      *
-     * @return a stamp that can be used to unlock or convert mode,
+     * @return a write stamp that can be used to unlock or convert mode,
      * or zero if the lock is not available
      */
+    @ReservedStackAccess
     public long tryWriteLock() {
         long s, next;
         return ((((s = state) & ABITS) == 0L &&
-                 U.compareAndSwapLong(this, STATE, s, next = s + WBIT)) ?
+                 STATE.compareAndSet(this, s, next = s + WBIT)) ?
                 next : 0L);
     }
 
@@ -371,7 +391,7 @@ public class StampedLock implements java.io.Serializable {
      *
      * @param time the maximum time to wait for the lock
      * @param unit the time unit of the {@code time} argument
-     * @return a stamp that can be used to unlock or convert mode,
+     * @return a write stamp that can be used to unlock or convert mode,
      * or zero if the lock is not available
      * @throws InterruptedException if the current thread is interrupted
      * before acquiring the lock
@@ -399,10 +419,11 @@ public class StampedLock implements java.io.Serializable {
      * Behavior under interruption matches that specified
      * for method {@link Lock#lockInterruptibly()}.
      *
-     * @return a stamp that can be used to unlock or convert mode
+     * @return a write stamp that can be used to unlock or convert mode
      * @throws InterruptedException if the current thread is interrupted
      * before acquiring the lock
      */
+    @ReservedStackAccess
     public long writeLockInterruptibly() throws InterruptedException {
         long next;
         if (!Thread.interrupted() &&
@@ -415,33 +436,34 @@ public class StampedLock implements java.io.Serializable {
      * Non-exclusively acquires the lock, blocking if necessary
      * until available.
      *
-     * @return a stamp that can be used to unlock or convert mode
+     * @return a read stamp that can be used to unlock or convert mode
      */
+    @ReservedStackAccess
     public long readLock() {
         long s = state, next;  // bypass acquireRead on common uncontended case
         return ((whead == wtail && (s & ABITS) < RFULL &&
-                 U.compareAndSwapLong(this, STATE, s, next = s + RUNIT)) ?
+                 STATE.compareAndSet(this, s, next = s + RUNIT)) ?
                 next : acquireRead(false, 0L));
     }
 
     /**
      * Non-exclusively acquires the lock if it is immediately available.
      *
-     * @return a stamp that can be used to unlock or convert mode,
+     * @return a read stamp that can be used to unlock or convert mode,
      * or zero if the lock is not available
      */
+    @ReservedStackAccess
     public long tryReadLock() {
-        for (;;) {
-            long s, m, next;
-            if ((m = (s = state) & ABITS) == WBIT)
-                return 0L;
-            else if (m < RFULL) {
-                if (U.compareAndSwapLong(this, STATE, s, next = s + RUNIT))
+        long s, m, next;
+        while ((m = (s = state) & ABITS) != WBIT) {
+            if (m < RFULL) {
+                if (STATE.compareAndSet(this, s, next = s + RUNIT))
                     return next;
             }
             else if ((next = tryIncReaderOverflow(s)) != 0L)
                 return next;
         }
+        return 0L;
     }
 
     /**
@@ -452,11 +474,12 @@ public class StampedLock implements java.io.Serializable {
      *
      * @param time the maximum time to wait for the lock
      * @param unit the time unit of the {@code time} argument
-     * @return a stamp that can be used to unlock or convert mode,
+     * @return a read stamp that can be used to unlock or convert mode,
      * or zero if the lock is not available
      * @throws InterruptedException if the current thread is interrupted
      * before acquiring the lock
      */
+    @ReservedStackAccess
     public long tryReadLock(long time, TimeUnit unit)
         throws InterruptedException {
         long s, m, next, deadline;
@@ -464,7 +487,7 @@ public class StampedLock implements java.io.Serializable {
         if (!Thread.interrupted()) {
             if ((m = (s = state) & ABITS) != WBIT) {
                 if (m < RFULL) {
-                    if (U.compareAndSwapLong(this, STATE, s, next = s + RUNIT))
+                    if (STATE.compareAndSet(this, s, next = s + RUNIT))
                         return next;
                 }
                 else if ((next = tryIncReaderOverflow(s)) != 0L)
@@ -486,10 +509,11 @@ public class StampedLock implements java.io.Serializable {
      * Behavior under interruption matches that specified
      * for method {@link Lock#lockInterruptibly()}.
      *
-     * @return a stamp that can be used to unlock or convert mode
+     * @return a read stamp that can be used to unlock or convert mode
      * @throws InterruptedException if the current thread is interrupted
      * before acquiring the lock
      */
+    @ReservedStackAccess
     public long readLockInterruptibly() throws InterruptedException {
         long next;
         if (!Thread.interrupted() &&
@@ -502,7 +526,7 @@ public class StampedLock implements java.io.Serializable {
      * Returns a stamp that can later be validated, or zero
      * if exclusively locked.
      *
-     * @return a stamp, or zero if exclusively locked
+     * @return a valid optimistic read stamp, or zero if exclusively locked
      */
     public long tryOptimisticRead() {
         long s;
@@ -522,8 +546,26 @@ public class StampedLock implements java.io.Serializable {
      * since issuance of the given stamp; else false
      */
     public boolean validate(long stamp) {
-        U.loadFence();
+        VarHandle.acquireFence();
         return (stamp & SBITS) == (state & SBITS);
+    }
+
+    /**
+     * Returns an unlocked state, incrementing the version and
+     * avoiding special failure value 0L.
+     *
+     * @param s a write-locked state (or stamp)
+     */
+    private static long unlockWriteState(long s) {
+        return ((s += WBIT) == 0L) ? ORIGIN : s;
+    }
+
+    private long unlockWriteInternal(long s) {
+        long next; WNode h;
+        STATE.setVolatile(this, next = unlockWriteState(s));
+        if ((h = whead) != null && h.status != 0)
+            release(h);
+        return next;
     }
 
     /**
@@ -534,13 +576,11 @@ public class StampedLock implements java.io.Serializable {
      * @throws IllegalMonitorStateException if the stamp does
      * not match the current state of this lock
      */
+    @ReservedStackAccess
     public void unlockWrite(long stamp) {
-        WNode h;
         if (state != stamp || (stamp & WBIT) == 0L)
             throw new IllegalMonitorStateException();
-        U.putLongVolatile(this, STATE, (stamp += WBIT) == 0L ? ORIGIN : stamp);
-        if ((h = whead) != null && h.status != 0)
-            release(h);
+        unlockWriteInternal(stamp);
     }
 
     /**
@@ -551,22 +591,23 @@ public class StampedLock implements java.io.Serializable {
      * @throws IllegalMonitorStateException if the stamp does
      * not match the current state of this lock
      */
+    @ReservedStackAccess
     public void unlockRead(long stamp) {
         long s, m; WNode h;
-        for (;;) {
-            if (((s = state) & SBITS) != (stamp & SBITS) ||
-                (stamp & ABITS) == 0L || (m = s & ABITS) == 0L || m == WBIT)
-                throw new IllegalMonitorStateException();
+        while (((s = state) & SBITS) == (stamp & SBITS)
+               && (stamp & RBITS) > 0L
+               && ((m = s & RBITS) > 0L)) {
             if (m < RFULL) {
-                if (U.compareAndSwapLong(this, STATE, s, s - RUNIT)) {
+                if (STATE.compareAndSet(this, s, s - RUNIT)) {
                     if (m == RUNIT && (h = whead) != null && h.status != 0)
                         release(h);
-                    break;
+                    return;
                 }
             }
             else if (tryDecReaderOverflow(s) != 0L)
-                break;
+                return;
         }
+        throw new IllegalMonitorStateException();
     }
 
     /**
@@ -577,32 +618,12 @@ public class StampedLock implements java.io.Serializable {
      * @throws IllegalMonitorStateException if the stamp does
      * not match the current state of this lock
      */
+    @ReservedStackAccess
     public void unlock(long stamp) {
-        long a = stamp & ABITS, m, s; WNode h;
-        while (((s = state) & SBITS) == (stamp & SBITS)) {
-            if ((m = s & ABITS) == 0L)
-                break;
-            else if (m == WBIT) {
-                if (a != m)
-                    break;
-                U.putLongVolatile(this, STATE, (s += WBIT) == 0L ? ORIGIN : s);
-                if ((h = whead) != null && h.status != 0)
-                    release(h);
-                return;
-            }
-            else if (a == 0L || a >= WBIT)
-                break;
-            else if (m < RFULL) {
-                if (U.compareAndSwapLong(this, STATE, s, s - RUNIT)) {
-                    if (m == RUNIT && (h = whead) != null && h.status != 0)
-                        release(h);
-                    return;
-                }
-            }
-            else if (tryDecReaderOverflow(s) != 0L)
-                return;
-        }
-        throw new IllegalMonitorStateException();
+        if ((stamp & WBIT) != 0)
+            unlockWrite(stamp);
+        else
+            unlockRead(stamp);
     }
 
     /**
@@ -623,7 +644,7 @@ public class StampedLock implements java.io.Serializable {
             if ((m = s & ABITS) == 0L) {
                 if (a != 0L)
                     break;
-                if (U.compareAndSwapLong(this, STATE, s, next = s + WBIT))
+                if (STATE.compareAndSet(this, s, next = s + WBIT))
                     return next;
             }
             else if (m == WBIT) {
@@ -632,8 +653,7 @@ public class StampedLock implements java.io.Serializable {
                 return stamp;
             }
             else if (m == RUNIT && a != 0L) {
-                if (U.compareAndSwapLong(this, STATE, s,
-                                         next = s - RUNIT + WBIT))
+                if (STATE.compareAndSet(this, s, next = s - RUNIT + WBIT))
                     return next;
             }
             else
@@ -654,30 +674,32 @@ public class StampedLock implements java.io.Serializable {
      * @return a valid read stamp, or zero on failure
      */
     public long tryConvertToReadLock(long stamp) {
-        long a = stamp & ABITS, m, s, next; WNode h;
+        long a, s, next; WNode h;
         while (((s = state) & SBITS) == (stamp & SBITS)) {
-            if ((m = s & ABITS) == 0L) {
-                if (a != 0L)
+            if ((a = stamp & ABITS) >= WBIT) {
+                // write stamp
+                if (s != stamp)
                     break;
-                else if (m < RFULL) {
-                    if (U.compareAndSwapLong(this, STATE, s, next = s + RUNIT))
+                STATE.setVolatile(this, next = unlockWriteState(s) + RUNIT);
+                if ((h = whead) != null && h.status != 0)
+                    release(h);
+                return next;
+            }
+            else if (a == 0L) {
+                // optimistic read stamp
+                if ((s & ABITS) < RFULL) {
+                    if (STATE.compareAndSet(this, s, next = s + RUNIT))
                         return next;
                 }
                 else if ((next = tryIncReaderOverflow(s)) != 0L)
                     return next;
             }
-            else if (m == WBIT) {
-                if (a != m)
+            else {
+                // already a read stamp
+                if ((s & ABITS) == 0L)
                     break;
-                U.putLongVolatile(this, STATE, next = s + (WBIT + RUNIT));
-                if ((h = whead) != null && h.status != 0)
-                    release(h);
-                return next;
-            }
-            else if (a != 0L && a < WBIT)
                 return stamp;
-            else
-                break;
+            }
         }
         return 0L;
     }
@@ -693,29 +715,22 @@ public class StampedLock implements java.io.Serializable {
      * @return a valid optimistic read stamp, or zero on failure
      */
     public long tryConvertToOptimisticRead(long stamp) {
-        long a = stamp & ABITS, m, s, next; WNode h;
-        U.loadFence();
-        for (;;) {
-            if (((s = state) & SBITS) != (stamp & SBITS))
-                break;
-            if ((m = s & ABITS) == 0L) {
-                if (a != 0L)
+        long a, m, s, next; WNode h;
+        VarHandle.acquireFence();
+        while (((s = state) & SBITS) == (stamp & SBITS)) {
+            if ((a = stamp & ABITS) >= WBIT) {
+                // write stamp
+                if (s != stamp)
                     break;
-                return s;
+                return unlockWriteInternal(s);
             }
-            else if (m == WBIT) {
-                if (a != m)
-                    break;
-                U.putLongVolatile(this, STATE,
-                                  next = (s += WBIT) == 0L ? ORIGIN : s);
-                if ((h = whead) != null && h.status != 0)
-                    release(h);
-                return next;
-            }
-            else if (a == 0L || a >= WBIT)
+            else if (a == 0L)
+                // already an optimistic read stamp
+                return stamp;
+            else if ((m = s & ABITS) == 0L) // invalid read stamp
                 break;
             else if (m < RFULL) {
-                if (U.compareAndSwapLong(this, STATE, s, next = s - RUNIT)) {
+                if (STATE.compareAndSet(this, s, next = s - RUNIT)) {
                     if (m == RUNIT && (h = whead) != null && h.status != 0)
                         release(h);
                     return next & SBITS;
@@ -734,12 +749,11 @@ public class StampedLock implements java.io.Serializable {
      *
      * @return {@code true} if the lock was held, else false
      */
+    @ReservedStackAccess
     public boolean tryUnlockWrite() {
-        long s; WNode h;
+        long s;
         if (((s = state) & WBIT) != 0L) {
-            U.putLongVolatile(this, STATE, (s += WBIT) == 0L ? ORIGIN : s);
-            if ((h = whead) != null && h.status != 0)
-                release(h);
+            unlockWriteInternal(s);
             return true;
         }
         return false;
@@ -752,11 +766,12 @@ public class StampedLock implements java.io.Serializable {
      *
      * @return {@code true} if the read lock was held, else false
      */
+    @ReservedStackAccess
     public boolean tryUnlockRead() {
         long s, m; WNode h;
         while ((m = (s = state) & ABITS) != 0L && m < WBIT) {
             if (m < RFULL) {
-                if (U.compareAndSwapLong(this, STATE, s, s - RUNIT)) {
+                if (STATE.compareAndSet(this, s, s - RUNIT)) {
                     if (m == RUNIT && (h = whead) != null && h.status != 0)
                         release(h);
                     return true;
@@ -832,32 +847,30 @@ public class StampedLock implements java.io.Serializable {
      * Returns a plain {@link Lock} view of this StampedLock in which
      * the {@link Lock#lock} method is mapped to {@link #readLock},
      * and similarly for other methods. The returned Lock does not
-     * support a {@link Condition}; method {@link
-     * Lock#newCondition()} throws {@code
-     * UnsupportedOperationException}.
+     * support a {@link Condition}; method {@link Lock#newCondition()}
+     * throws {@code UnsupportedOperationException}.
      *
      * @return the lock
      */
     public Lock asReadLock() {
         ReadLockView v;
-        return ((v = readLockView) != null ? v :
-                (readLockView = new ReadLockView()));
+        if ((v = readLockView) != null) return v;
+        return readLockView = new ReadLockView();
     }
 
     /**
      * Returns a plain {@link Lock} view of this StampedLock in which
      * the {@link Lock#lock} method is mapped to {@link #writeLock},
      * and similarly for other methods. The returned Lock does not
-     * support a {@link Condition}; method {@link
-     * Lock#newCondition()} throws {@code
-     * UnsupportedOperationException}.
+     * support a {@link Condition}; method {@link Lock#newCondition()}
+     * throws {@code UnsupportedOperationException}.
      *
      * @return the lock
      */
     public Lock asWriteLock() {
         WriteLockView v;
-        return ((v = writeLockView) != null ? v :
-                (writeLockView = new WriteLockView()));
+        if ((v = writeLockView) != null) return v;
+        return writeLockView = new WriteLockView();
     }
 
     /**
@@ -870,8 +883,8 @@ public class StampedLock implements java.io.Serializable {
      */
     public ReadWriteLock asReadWriteLock() {
         ReadWriteLockView v;
-        return ((v = readWriteLockView) != null ? v :
-                (readWriteLockView = new ReadWriteLockView()));
+        if ((v = readWriteLockView) != null) return v;
+        return readWriteLockView = new ReadWriteLockView();
     }
 
     // view classes
@@ -917,35 +930,32 @@ public class StampedLock implements java.io.Serializable {
     // Needed because view-class lock methods throw away stamps.
 
     final void unstampedUnlockWrite() {
-        WNode h; long s;
+        long s;
         if (((s = state) & WBIT) == 0L)
             throw new IllegalMonitorStateException();
-        U.putLongVolatile(this, STATE, (s += WBIT) == 0L ? ORIGIN : s);
-        if ((h = whead) != null && h.status != 0)
-            release(h);
+        unlockWriteInternal(s);
     }
 
     final void unstampedUnlockRead() {
-        for (;;) {
-            long s, m; WNode h;
-            if ((m = (s = state) & ABITS) == 0L || m >= WBIT)
-                throw new IllegalMonitorStateException();
-            else if (m < RFULL) {
-                if (U.compareAndSwapLong(this, STATE, s, s - RUNIT)) {
+        long s, m; WNode h;
+        while ((m = (s = state) & RBITS) > 0L) {
+            if (m < RFULL) {
+                if (STATE.compareAndSet(this, s, s - RUNIT)) {
                     if (m == RUNIT && (h = whead) != null && h.status != 0)
                         release(h);
-                    break;
+                    return;
                 }
             }
             else if (tryDecReaderOverflow(s) != 0L)
-                break;
+                return;
         }
+        throw new IllegalMonitorStateException();
     }
 
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
         s.defaultReadObject();
-        U.putLongVolatile(this, STATE, ORIGIN); // reset to unlocked state
+        STATE.setVolatile(this, ORIGIN); // reset to unlocked state
     }
 
     // internals
@@ -961,15 +971,16 @@ public class StampedLock implements java.io.Serializable {
     private long tryIncReaderOverflow(long s) {
         // assert (s & ABITS) >= RFULL;
         if ((s & ABITS) == RFULL) {
-            if (U.compareAndSwapLong(this, STATE, s, s | RBITS)) {
+            if (STATE.compareAndSet(this, s, s | RBITS)) {
                 ++readerOverflow;
-                U.putLongVolatile(this, STATE, s);
+                STATE.setVolatile(this, s);
                 return s;
             }
         }
-        else if ((LockSupport.nextSecondarySeed() &
-                  OVERFLOW_YIELD_RATE) == 0)
+        else if ((LockSupport.nextSecondarySeed() & OVERFLOW_YIELD_RATE) == 0)
             Thread.yield();
+        else
+            Thread.onSpinWait();
         return 0L;
     }
 
@@ -982,7 +993,7 @@ public class StampedLock implements java.io.Serializable {
     private long tryDecReaderOverflow(long s) {
         // assert (s & ABITS) >= RFULL;
         if ((s & ABITS) == RFULL) {
-            if (U.compareAndSwapLong(this, STATE, s, s | RBITS)) {
+            if (STATE.compareAndSet(this, s, s | RBITS)) {
                 int r; long next;
                 if ((r = readerOverflow) > 0) {
                     readerOverflow = r - 1;
@@ -990,13 +1001,14 @@ public class StampedLock implements java.io.Serializable {
                 }
                 else
                     next = s - RUNIT;
-                U.putLongVolatile(this, STATE, next);
+                STATE.setVolatile(this, next);
                 return next;
             }
         }
-        else if ((LockSupport.nextSecondarySeed() &
-                  OVERFLOW_YIELD_RATE) == 0)
+        else if ((LockSupport.nextSecondarySeed() & OVERFLOW_YIELD_RATE) == 0)
             Thread.yield();
+        else
+            Thread.onSpinWait();
         return 0L;
     }
 
@@ -1010,14 +1022,14 @@ public class StampedLock implements java.io.Serializable {
     private void release(WNode h) {
         if (h != null) {
             WNode q; Thread w;
-            U.compareAndSwapInt(h, WSTATUS, WAITING, 0);
+            WSTATUS.compareAndSet(h, WAITING, 0);
             if ((q = h.next) == null || q.status == CANCELLED) {
                 for (WNode t = wtail; t != null && t != h; t = t.prev)
                     if (t.status <= 0)
                         q = t;
             }
             if (q != null && (w = q.thread) != null)
-                U.unpark(w);
+                LockSupport.unpark(w);
         }
     }
 
@@ -1035,25 +1047,25 @@ public class StampedLock implements java.io.Serializable {
         for (int spins = -1;;) { // spin while enqueuing
             long m, s, ns;
             if ((m = (s = state) & ABITS) == 0L) {
-                if (U.compareAndSwapLong(this, STATE, s, ns = s + WBIT))
+                if (STATE.compareAndSet(this, s, ns = s + WBIT))
                     return ns;
             }
             else if (spins < 0)
                 spins = (m == WBIT && wtail == whead) ? SPINS : 0;
             else if (spins > 0) {
-                if (LockSupport.nextSecondarySeed() >= 0)
-                    --spins;
+                --spins;
+                Thread.onSpinWait();
             }
             else if ((p = wtail) == null) { // initialize queue
                 WNode hd = new WNode(WMODE, null);
-                if (U.compareAndSwapObject(this, WHEAD, null, hd))
+                if (WHEAD.weakCompareAndSetVolatile(this, null, hd))
                     wtail = hd;
             }
             else if (node == null)
                 node = new WNode(WMODE, p);
             else if (node.prev != p)
                 node.prev = p;
-            else if (U.compareAndSwapObject(this, WTAIL, p, node)) {
+            else if (WTAIL.weakCompareAndSetVolatile(this, p, node)) {
                 p.next = node;
                 break;
             }
@@ -1067,11 +1079,10 @@ public class StampedLock implements java.io.Serializable {
                     spins = HEAD_SPINS;
                 else if (spins < MAX_HEAD_SPINS)
                     spins <<= 1;
-                for (int k = spins;;) { // spin at head
+                for (int k = spins; k > 0; --k) { // spin at head
                     long s, ns;
                     if (((s = state) & ABITS) == 0L) {
-                        if (U.compareAndSwapLong(this, STATE, s,
-                                                 ns = s + WBIT)) {
+                        if (STATE.compareAndSet(this, s, ns = s + WBIT)) {
                             whead = node;
                             node.prev = null;
                             if (wasInterrupted)
@@ -1079,17 +1090,16 @@ public class StampedLock implements java.io.Serializable {
                             return ns;
                         }
                     }
-                    else if (LockSupport.nextSecondarySeed() >= 0 &&
-                             --k <= 0)
-                        break;
+                    else
+                        Thread.onSpinWait();
                 }
             }
             else if (h != null) { // help release stale waiters
                 WNode c; Thread w;
                 while ((c = h.cowait) != null) {
-                    if (U.compareAndSwapObject(h, WCOWAIT, c, c.cowait) &&
+                    if (WCOWAIT.weakCompareAndSetVolatile(h, c, c.cowait) &&
                         (w = c.thread) != null)
-                        U.unpark(w);
+                        LockSupport.unpark(w);
                 }
             }
             if (whead == h) {
@@ -1098,7 +1108,7 @@ public class StampedLock implements java.io.Serializable {
                         (p = np).next = node;   // stale
                 }
                 else if ((ps = p.status) == 0)
-                    U.compareAndSwapInt(p, WSTATUS, 0, WAITING);
+                    WSTATUS.compareAndSet(p, 0, WAITING);
                 else if (ps == CANCELLED) {
                     if ((pp = p.prev) != null) {
                         node.prev = pp;
@@ -1112,13 +1122,15 @@ public class StampedLock implements java.io.Serializable {
                     else if ((time = deadline - System.nanoTime()) <= 0L)
                         return cancelWaiter(node, node, false);
                     Thread wt = Thread.currentThread();
-                    U.putObject(wt, PARKBLOCKER, this);
                     node.thread = wt;
                     if (p.status < 0 && (p != h || (state & ABITS) != 0L) &&
-                        whead == h && node.prev == p)
-                        U.park(false, time);  // emulate LockSupport.park
+                        whead == h && node.prev == p) {
+                        if (time == 0L)
+                            LockSupport.park(this);
+                        else
+                            LockSupport.parkNanos(this, time);
+                    }
                     node.thread = null;
-                    U.putObject(wt, PARKBLOCKER, null);
                     if (Thread.interrupted()) {
                         if (interruptible)
                             return cancelWaiter(node, node, true);
@@ -1146,7 +1158,7 @@ public class StampedLock implements java.io.Serializable {
             if ((h = whead) == (p = wtail)) {
                 for (long m, s, ns;;) {
                     if ((m = (s = state) & ABITS) < RFULL ?
-                        U.compareAndSwapLong(this, STATE, s, ns = s + RUNIT) :
+                        STATE.compareAndSet(this, s, ns = s + RUNIT) :
                         (m < WBIT && (ns = tryIncReaderOverflow(s)) != 0L)) {
                         if (wasInterrupted)
                             Thread.currentThread().interrupt();
@@ -1154,8 +1166,8 @@ public class StampedLock implements java.io.Serializable {
                     }
                     else if (m >= WBIT) {
                         if (spins > 0) {
-                            if (LockSupport.nextSecondarySeed() >= 0)
-                                --spins;
+                            --spins;
+                            Thread.onSpinWait();
                         }
                         else {
                             if (spins == 0) {
@@ -1170,7 +1182,7 @@ public class StampedLock implements java.io.Serializable {
             }
             if (p == null) { // initialize queue
                 WNode hd = new WNode(WMODE, null);
-                if (U.compareAndSwapObject(this, WHEAD, null, hd))
+                if (WHEAD.weakCompareAndSetVolatile(this, null, hd))
                     wtail = hd;
             }
             else if (node == null)
@@ -1178,27 +1190,25 @@ public class StampedLock implements java.io.Serializable {
             else if (h == p || p.mode != RMODE) {
                 if (node.prev != p)
                     node.prev = p;
-                else if (U.compareAndSwapObject(this, WTAIL, p, node)) {
+                else if (WTAIL.weakCompareAndSetVolatile(this, p, node)) {
                     p.next = node;
                     break;
                 }
             }
-            else if (!U.compareAndSwapObject(p, WCOWAIT,
-                                             node.cowait = p.cowait, node))
+            else if (!WCOWAIT.compareAndSet(p, node.cowait = p.cowait, node))
                 node.cowait = null;
             else {
                 for (;;) {
                     WNode pp, c; Thread w;
                     if ((h = whead) != null && (c = h.cowait) != null &&
-                        U.compareAndSwapObject(h, WCOWAIT, c, c.cowait) &&
+                        WCOWAIT.compareAndSet(h, c, c.cowait) &&
                         (w = c.thread) != null) // help release
-                        U.unpark(w);
+                        LockSupport.unpark(w);
                     if (h == (pp = p.prev) || h == p || pp == null) {
                         long m, s, ns;
                         do {
                             if ((m = (s = state) & ABITS) < RFULL ?
-                                U.compareAndSwapLong(this, STATE, s,
-                                                     ns = s + RUNIT) :
+                                STATE.compareAndSet(this, s, ns = s + RUNIT) :
                                 (m < WBIT &&
                                  (ns = tryIncReaderOverflow(s)) != 0L)) {
                                 if (wasInterrupted)
@@ -1221,13 +1231,15 @@ public class StampedLock implements java.io.Serializable {
                             return cancelWaiter(node, p, false);
                         }
                         Thread wt = Thread.currentThread();
-                        U.putObject(wt, PARKBLOCKER, this);
                         node.thread = wt;
                         if ((h != pp || (state & ABITS) == WBIT) &&
-                            whead == h && p.prev == pp)
-                            U.park(false, time);
+                            whead == h && p.prev == pp) {
+                            if (time == 0L)
+                                LockSupport.park(this);
+                            else
+                                LockSupport.parkNanos(this, time);
+                        }
                         node.thread = null;
-                        U.putObject(wt, PARKBLOCKER, null);
                         if (Thread.interrupted()) {
                             if (interruptible)
                                 return cancelWaiter(node, p, true);
@@ -1248,32 +1260,32 @@ public class StampedLock implements java.io.Serializable {
                 for (int k = spins;;) { // spin at head
                     long m, s, ns;
                     if ((m = (s = state) & ABITS) < RFULL ?
-                        U.compareAndSwapLong(this, STATE, s, ns = s + RUNIT) :
+                        STATE.compareAndSet(this, s, ns = s + RUNIT) :
                         (m < WBIT && (ns = tryIncReaderOverflow(s)) != 0L)) {
                         WNode c; Thread w;
                         whead = node;
                         node.prev = null;
                         while ((c = node.cowait) != null) {
-                            if (U.compareAndSwapObject(node, WCOWAIT,
-                                                       c, c.cowait) &&
+                            if (WCOWAIT.compareAndSet(node, c, c.cowait) &&
                                 (w = c.thread) != null)
-                                U.unpark(w);
+                                LockSupport.unpark(w);
                         }
                         if (wasInterrupted)
                             Thread.currentThread().interrupt();
                         return ns;
                     }
-                    else if (m >= WBIT &&
-                             LockSupport.nextSecondarySeed() >= 0 && --k <= 0)
+                    else if (m >= WBIT && --k <= 0)
                         break;
+                    else
+                        Thread.onSpinWait();
                 }
             }
             else if (h != null) {
                 WNode c; Thread w;
                 while ((c = h.cowait) != null) {
-                    if (U.compareAndSwapObject(h, WCOWAIT, c, c.cowait) &&
+                    if (WCOWAIT.compareAndSet(h, c, c.cowait) &&
                         (w = c.thread) != null)
-                        U.unpark(w);
+                        LockSupport.unpark(w);
                 }
             }
             if (whead == h) {
@@ -1282,7 +1294,7 @@ public class StampedLock implements java.io.Serializable {
                         (p = np).next = node;   // stale
                 }
                 else if ((ps = p.status) == 0)
-                    U.compareAndSwapInt(p, WSTATUS, 0, WAITING);
+                    WSTATUS.compareAndSet(p, 0, WAITING);
                 else if (ps == CANCELLED) {
                     if ((pp = p.prev) != null) {
                         node.prev = pp;
@@ -1296,14 +1308,16 @@ public class StampedLock implements java.io.Serializable {
                     else if ((time = deadline - System.nanoTime()) <= 0L)
                         return cancelWaiter(node, node, false);
                     Thread wt = Thread.currentThread();
-                    U.putObject(wt, PARKBLOCKER, this);
                     node.thread = wt;
                     if (p.status < 0 &&
                         (p != h || (state & ABITS) == WBIT) &&
-                        whead == h && node.prev == p)
-                        U.park(false, time);
+                        whead == h && node.prev == p) {
+                            if (time == 0L)
+                                LockSupport.park(this);
+                            else
+                                LockSupport.parkNanos(this, time);
+                    }
                     node.thread = null;
-                    U.putObject(wt, PARKBLOCKER, null);
                     if (Thread.interrupted()) {
                         if (interruptible)
                             return cancelWaiter(node, node, true);
@@ -1325,7 +1339,7 @@ public class StampedLock implements java.io.Serializable {
      * AbstractQueuedSynchronizer (see its detailed explanation in AQS
      * internal documentation).
      *
-     * @param node if nonnull, the waiter
+     * @param node if non-null, the waiter
      * @param group either node or the group node is cowaiting with
      * @param interrupted if already interrupted
      * @return INTERRUPTED if interrupted or Thread.interrupted, else zero
@@ -1337,7 +1351,7 @@ public class StampedLock implements java.io.Serializable {
             // unsplice cancelled nodes from group
             for (WNode p = group, q; (q = p.cowait) != null;) {
                 if (q.status == CANCELLED) {
-                    U.compareAndSwapObject(p, WCOWAIT, q, q.cowait);
+                    WCOWAIT.compareAndSet(p, q, q.cowait);
                     p = group; // restart
                 }
                 else
@@ -1346,7 +1360,7 @@ public class StampedLock implements java.io.Serializable {
             if (group == node) {
                 for (WNode r = group.cowait; r != null; r = r.cowait) {
                     if ((w = r.thread) != null)
-                        U.unpark(w);       // wake up uncancelled co-waiters
+                        LockSupport.unpark(w); // wake up uncancelled co-waiters
                 }
                 for (WNode pred = node.prev; pred != null; ) { // unsplice
                     WNode succ, pp;        // find valid successor
@@ -1357,23 +1371,23 @@ public class StampedLock implements java.io.Serializable {
                             if (t.status != CANCELLED)
                                 q = t;     // don't link if succ cancelled
                         if (succ == q ||   // ensure accurate successor
-                            U.compareAndSwapObject(node, WNEXT,
-                                                   succ, succ = q)) {
+                            WNEXT.compareAndSet(node, succ, succ = q)) {
                             if (succ == null && node == wtail)
-                                U.compareAndSwapObject(this, WTAIL, node, pred);
+                                WTAIL.compareAndSet(this, node, pred);
                             break;
                         }
                     }
                     if (pred.next == node) // unsplice pred link
-                        U.compareAndSwapObject(pred, WNEXT, node, succ);
+                        WNEXT.compareAndSet(pred, node, succ);
                     if (succ != null && (w = succ.thread) != null) {
+                        // wake up succ to observe new pred
                         succ.thread = null;
-                        U.unpark(w);       // wake up succ to observe new pred
+                        LockSupport.unpark(w);
                     }
                     if (pred.status != CANCELLED || (pp = pred.prev) == null)
                         break;
                     node.prev = pp;        // repeat if new pred wrong/cancelled
-                    U.compareAndSwapObject(pp, WNEXT, pred, succ);
+                    WNEXT.compareAndSet(pp, pred, succ);
                     pred = pp;
                 }
             }
@@ -1397,34 +1411,22 @@ public class StampedLock implements java.io.Serializable {
         return (interrupted || Thread.interrupted()) ? INTERRUPTED : 0L;
     }
 
-    // Unsafe mechanics
-    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
-    private static final long STATE;
-    private static final long WHEAD;
-    private static final long WTAIL;
-    private static final long WNEXT;
-    private static final long WSTATUS;
-    private static final long WCOWAIT;
-    private static final long PARKBLOCKER;
-
+    // VarHandle mechanics
+    private static final VarHandle STATE;
+    private static final VarHandle WHEAD;
+    private static final VarHandle WTAIL;
+    private static final VarHandle WNEXT;
+    private static final VarHandle WSTATUS;
+    private static final VarHandle WCOWAIT;
     static {
         try {
-            STATE = U.objectFieldOffset
-                (StampedLock.class.getDeclaredField("state"));
-            WHEAD = U.objectFieldOffset
-                (StampedLock.class.getDeclaredField("whead"));
-            WTAIL = U.objectFieldOffset
-                (StampedLock.class.getDeclaredField("wtail"));
-
-            WSTATUS = U.objectFieldOffset
-                (WNode.class.getDeclaredField("status"));
-            WNEXT = U.objectFieldOffset
-                (WNode.class.getDeclaredField("next"));
-            WCOWAIT = U.objectFieldOffset
-                (WNode.class.getDeclaredField("cowait"));
-
-            PARKBLOCKER = U.objectFieldOffset
-                (Thread.class.getDeclaredField("parkBlocker"));
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            STATE = l.findVarHandle(StampedLock.class, "state", long.class);
+            WHEAD = l.findVarHandle(StampedLock.class, "whead", WNode.class);
+            WTAIL = l.findVarHandle(StampedLock.class, "wtail", WNode.class);
+            WSTATUS = l.findVarHandle(WNode.class, "status", int.class);
+            WNEXT = l.findVarHandle(WNode.class, "next", WNode.class);
+            WCOWAIT = l.findVarHandle(WNode.class, "cowait", WNode.class);
         } catch (ReflectiveOperationException e) {
             throw new Error(e);
         }

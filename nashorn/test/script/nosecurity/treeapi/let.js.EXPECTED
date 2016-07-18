@@ -1,0 +1,20 @@
+[
+  {
+    "endPosition": "10",
+    "kind": "VARIABLE",
+    "binding": {
+      "endPosition": "6",
+      "kind": "IDENTIFIER",
+      "name": "x",
+      "startPosition": "5"
+    },
+    "let": "true",
+    "startPosition": "1",
+    "initializer": {
+      "endPosition": "10",
+      "kind": "NUMBER_LITERAL",
+      "value": "3",
+      "startPosition": "9"
+    }
+  }
+]

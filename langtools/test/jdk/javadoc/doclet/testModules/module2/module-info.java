@@ -28,4 +28,10 @@
   */
 module module2 {
     exports testpkgmdl2;
+
+    exports testpkg2mdl2 to module1;
+
+    uses testpkgmdl2.TestClassInModule2;
+
+    provides testpkg2mdl2.TestInterfaceInModule2 with testpkgmdl2.TestClassInModule2;
 }

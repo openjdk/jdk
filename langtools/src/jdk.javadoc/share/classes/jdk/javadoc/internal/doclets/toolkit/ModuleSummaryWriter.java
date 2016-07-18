@@ -91,15 +91,25 @@ public interface ModuleSummaryWriter {
     public abstract void addModuleTags(Content moduleContentTree);
 
     /**
-     * Adds the table of packages to the documentation tree.
+     * Adds the modules summary to the documentation tree.
      *
-     * @param packages the set of packages that should be added.
-     * @param label the label for this table.
-     * @param tableSummary the summary string for the table
      * @param summaryContentTree the content tree to which the summary will be added
      */
-    public abstract void addPackagesSummary(Set<PackageElement> packages, String label,
-            String tableSummary, Content summaryContentTree);
+    public abstract void addModulesSummary(Content summaryContentTree);
+
+    /**
+     * Adds the packages summary to the documentation tree.
+     *
+     * @param summaryContentTree the content tree to which the summary will be added
+     */
+    public abstract void addPackagesSummary(Content summaryContentTree);
+
+    /**
+     * Adds the services summary to the documentation tree.
+     *
+     * @param summaryContentTree the content tree to which the summary will be added
+     */
+    public abstract void addServicesSummary(Content summaryContentTree);
 
     /**
      * Adds the module content tree to the documentation tree.
