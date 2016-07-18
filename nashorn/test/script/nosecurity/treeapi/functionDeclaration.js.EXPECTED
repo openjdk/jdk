@@ -2,7 +2,12 @@
   {
     "endPosition": "17",
     "kind": "FUNCTION",
-    "name": "a",
+    "name": {
+      "endPosition": "11",
+      "kind": "IDENTIFIER",
+      "name": "a",
+      "startPosition": "10"
+    },
     "body": {
       "endPosition": "16",
       "kind": "BLOCK",
@@ -16,7 +21,12 @@
   {
     "endPosition": "62",
     "kind": "FUNCTION",
-    "name": "d",
+    "name": {
+      "endPosition": "28",
+      "kind": "IDENTIFIER",
+      "name": "d",
+      "startPosition": "27"
+    },
     "body": {
       "endPosition": "60",
       "kind": "BLOCK",
@@ -24,7 +34,12 @@
         {
           "endPosition": "60",
           "kind": "FUNCTION",
-          "name": "e",
+          "name": {
+            "endPosition": "46",
+            "kind": "IDENTIFIER",
+            "name": "e",
+            "startPosition": "45"
+          },
           "body": {
             "endPosition": "59",
             "kind": "BLOCK",
@@ -70,7 +85,12 @@
   {
     "endPosition": "89",
     "kind": "FUNCTION",
-    "name": "f",
+    "name": {
+      "endPosition": "73",
+      "kind": "IDENTIFIER",
+      "name": "f",
+      "startPosition": "72"
+    },
     "body": {
       "endPosition": "88",
       "kind": "BLOCK",
@@ -122,7 +142,12 @@
   {
     "endPosition": "121",
     "kind": "FUNCTION",
-    "name": "j",
+    "name": {
+      "endPosition": "100",
+      "kind": "IDENTIFIER",
+      "name": "j",
+      "startPosition": "99"
+    },
     "body": {
       "endPosition": "120",
       "kind": "BLOCK",

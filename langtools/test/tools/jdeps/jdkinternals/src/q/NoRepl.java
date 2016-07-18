@@ -21,12 +21,14 @@
  * questions.
  */
 
-package p;
+package q;
 
-import sun.security.util.HostnameChecker;
+import java.io.IOException;
+import java.io.OutputStream;
+import sun.security.util.DerEncoder;
 
-public class WithRepl {
-   public static void main(String[] argv) throws Exception {
-        HostnameChecker hc = HostnameChecker.getInstance(HostnameChecker.TYPE_LDAP);
-   }
+public class NoRepl implements DerEncoder {
+    public void derEncode(OutputStream out) throws IOException {
+        throw new IOException();
+    }
 }

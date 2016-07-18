@@ -35,6 +35,7 @@ import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALL
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.CompilerConstants;
@@ -105,6 +106,9 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
 
     /** List of parameters. */
     private final List<IdentNode> parameters;
+
+    /** Map of ES6 function parameter expressions. */
+    private final Map<IdentNode, Expression> parameterExpressions;
 
     /** First token of function. **/
     private final long firstToken;
@@ -242,6 +246,9 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     /** Does this function use new.target? */
     public static final int ES6_USES_NEW_TARGET         = 1 << 25;
 
+    /** Does this function have expression as its body? */
+    public static final int HAS_EXPRESSION_BODY         = 1 << 26;
+
     /** Does this function or any nested functions contain an eval? */
     private static final int HAS_DEEP_EVAL = HAS_EVAL | HAS_NESTED_EVAL;
 
@@ -306,6 +313,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      * @param ident      the identifier
      * @param name       the name of the function
      * @param parameters parameter list
+     * @param paramExprs the ES6 function parameter expressions
      * @param kind       kind of function as in {@link FunctionNode.Kind}
      * @param flags      initial flags
      * @param body       body of the function
@@ -324,6 +332,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         final IdentNode ident,
         final String name,
         final List<IdentNode> parameters,
+        final Map<IdentNode, Expression> paramExprs,
         final FunctionNode.Kind kind,
         final int flags,
         final Block body,
@@ -338,6 +347,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         this.name             = name;
         this.kind             = kind;
         this.parameters       = parameters;
+        this.parameterExpressions = paramExprs;
         this.firstToken       = firstToken;
         this.lastToken        = lastToken;
         this.namespace        = namespace;
@@ -375,6 +385,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         this.lastToken        = lastToken;
         this.body             = body;
         this.parameters       = parameters;
+        this.parameterExpressions = functionNode.parameterExpressions;
         this.thisProperties   = thisProperties;
         this.rootClass        = rootClass;
         this.source           = source;
@@ -974,6 +985,15 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      */
     public List<IdentNode> getParameters() {
         return Collections.unmodifiableList(parameters);
+    }
+
+    /**
+     * Get the ES6 style parameter expressions of this function. This may be null.
+     *
+     * @return a Map of parameter IdentNode to Expression node (for ES6 parameter expressions)
+     */
+    public Map<IdentNode, Expression> getParameterExpressions() {
+        return parameterExpressions;
     }
 
     /**

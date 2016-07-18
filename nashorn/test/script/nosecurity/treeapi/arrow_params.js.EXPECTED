@@ -1,0 +1,411 @@
+[
+  {
+    "endPosition": "20",
+    "kind": "VARIABLE",
+    "binding": {
+      "endPosition": "7",
+      "kind": "IDENTIFIER",
+      "name": "f1",
+      "startPosition": "5"
+    },
+    "startPosition": "1",
+    "initializer": {
+      "endPosition": "17",
+      "arrow": "true",
+      "kind": "FUNCTION_EXPRESSION",
+      "name": "null",
+      "body": {
+        "leftOperand": {
+          "endPosition": "18",
+          "kind": "IDENTIFIER",
+          "name": "x",
+          "startPosition": "17"
+        },
+        "endPosition": "20",
+        "kind": "MULTIPLY",
+        "rightOperand": {
+          "endPosition": "20",
+          "kind": "NUMBER_LITERAL",
+          "value": "3",
+          "startPosition": "19"
+        },
+        "startPosition": "17"
+      },
+      "strict": "false",
+      "startPosition": "17",
+      "parameters": [
+        {
+          "expression": {
+            "endPosition": "14",
+            "kind": "NUMBER_LITERAL",
+            "value": "2",
+            "startPosition": "13"
+          },
+          "endPosition": "14",
+          "kind": "ASSIGNMENT",
+          "variable": {
+            "endPosition": "12",
+            "kind": "IDENTIFIER",
+            "name": "x",
+            "startPosition": "11"
+          },
+          "startPosition": "11"
+        }
+      ]
+    }
+  },
+  {
+    "endPosition": "44",
+    "kind": "VARIABLE",
+    "binding": {
+      "endPosition": "28",
+      "kind": "IDENTIFIER",
+      "name": "f2",
+      "startPosition": "26"
+    },
+    "startPosition": "22",
+    "initializer": {
+      "endPosition": "41",
+      "arrow": "true",
+      "kind": "FUNCTION_EXPRESSION",
+      "name": "null",
+      "body": {
+        "leftOperand": {
+          "endPosition": "42",
+          "kind": "IDENTIFIER",
+          "name": "x",
+          "startPosition": "41"
+        },
+        "endPosition": "44",
+        "kind": "MULTIPLY",
+        "rightOperand": {
+          "endPosition": "44",
+          "kind": "IDENTIFIER",
+          "name": "y",
+          "startPosition": "43"
+        },
+        "startPosition": "41"
+      },
+      "strict": "false",
+      "startPosition": "41",
+      "parameters": [
+        {
+          "endPosition": "38",
+          "kind": "OBJECT_LITERAL",
+          "startPosition": "32",
+          "properties": [
+            {
+              "getter": "null",
+              "endPosition": "34",
+              "kind": "PROPERTY",
+              "setter": "null",
+              "value": {
+                "endPosition": "34",
+                "kind": "IDENTIFIER",
+                "name": "x",
+                "startPosition": "33"
+              },
+              "startPosition": "33",
+              "key": {
+                "endPosition": "34",
+                "kind": "IDENTIFIER",
+                "name": "x",
+                "startPosition": "33"
+              }
+            },
+            {
+              "getter": "null",
+              "endPosition": "37",
+              "kind": "PROPERTY",
+              "setter": "null",
+              "value": {
+                "endPosition": "37",
+                "kind": "IDENTIFIER",
+                "name": "y",
+                "startPosition": "36"
+              },
+              "startPosition": "36",
+              "key": {
+                "endPosition": "37",
+                "kind": "IDENTIFIER",
+                "name": "y",
+                "startPosition": "36"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "endPosition": "68",
+    "kind": "VARIABLE",
+    "binding": {
+      "endPosition": "52",
+      "kind": "IDENTIFIER",
+      "name": "f3",
+      "startPosition": "50"
+    },
+    "startPosition": "46",
+    "initializer": {
+      "endPosition": "65",
+      "arrow": "true",
+      "kind": "FUNCTION_EXPRESSION",
+      "name": "null",
+      "body": {
+        "leftOperand": {
+          "endPosition": "66",
+          "kind": "IDENTIFIER",
+          "name": "x",
+          "startPosition": "65"
+        },
+        "endPosition": "68",
+        "kind": "PLUS",
+        "rightOperand": {
+          "endPosition": "68",
+          "kind": "IDENTIFIER",
+          "name": "y",
+          "startPosition": "67"
+        },
+        "startPosition": "65"
+      },
+      "strict": "false",
+      "startPosition": "65",
+      "parameters": [
+        {
+          "endPosition": "62",
+          "kind": "ARRAY_LITERAL",
+          "elements": [
+            {
+              "endPosition": "58",
+              "kind": "IDENTIFIER",
+              "name": "x",
+              "startPosition": "57"
+            },
+            {
+              "endPosition": "61",
+              "kind": "IDENTIFIER",
+              "name": "y",
+              "startPosition": "60"
+            }
+          ],
+          "startPosition": "56"
+        }
+      ]
+    }
+  },
+  {
+    "endPosition": "105",
+    "kind": "VARIABLE",
+    "binding": {
+      "endPosition": "76",
+      "kind": "IDENTIFIER",
+      "name": "f4",
+      "startPosition": "74"
+    },
+    "startPosition": "70",
+    "initializer": {
+      "endPosition": "102",
+      "arrow": "true",
+      "kind": "FUNCTION_EXPRESSION",
+      "name": "null",
+      "body": {
+        "leftOperand": {
+          "endPosition": "103",
+          "kind": "IDENTIFIER",
+          "name": "x",
+          "startPosition": "102"
+        },
+        "endPosition": "105",
+        "kind": "MULTIPLY",
+        "rightOperand": {
+          "endPosition": "105",
+          "kind": "IDENTIFIER",
+          "name": "y",
+          "startPosition": "104"
+        },
+        "startPosition": "102"
+      },
+      "strict": "false",
+      "startPosition": "102",
+      "parameters": [
+        {
+          "expression": {
+            "endPosition": "99",
+            "kind": "OBJECT_LITERAL",
+            "startPosition": "87",
+            "properties": [
+              {
+                "getter": "null",
+                "endPosition": "92",
+                "kind": "PROPERTY",
+                "setter": "null",
+                "value": {
+                  "endPosition": "92",
+                  "kind": "NUMBER_LITERAL",
+                  "value": "4",
+                  "startPosition": "91"
+                },
+                "startPosition": "88",
+                "key": {
+                  "endPosition": "89",
+                  "kind": "IDENTIFIER",
+                  "name": "y",
+                  "startPosition": "88"
+                }
+              },
+              {
+                "getter": "null",
+                "endPosition": "98",
+                "kind": "PROPERTY",
+                "setter": "null",
+                "value": {
+                  "endPosition": "98",
+                  "kind": "NUMBER_LITERAL",
+                  "value": "5",
+                  "startPosition": "97"
+                },
+                "startPosition": "94",
+                "key": {
+                  "endPosition": "95",
+                  "kind": "IDENTIFIER",
+                  "name": "x",
+                  "startPosition": "94"
+                }
+              }
+            ]
+          },
+          "endPosition": "99",
+          "kind": "ASSIGNMENT",
+          "variable": {
+            "endPosition": "86",
+            "kind": "OBJECT_LITERAL",
+            "startPosition": "80",
+            "properties": [
+              {
+                "getter": "null",
+                "endPosition": "82",
+                "kind": "PROPERTY",
+                "setter": "null",
+                "value": {
+                  "endPosition": "82",
+                  "kind": "IDENTIFIER",
+                  "name": "x",
+                  "startPosition": "81"
+                },
+                "startPosition": "81",
+                "key": {
+                  "endPosition": "82",
+                  "kind": "IDENTIFIER",
+                  "name": "x",
+                  "startPosition": "81"
+                }
+              },
+              {
+                "getter": "null",
+                "endPosition": "85",
+                "kind": "PROPERTY",
+                "setter": "null",
+                "value": {
+                  "endPosition": "85",
+                  "kind": "IDENTIFIER",
+                  "name": "y",
+                  "startPosition": "84"
+                },
+                "startPosition": "84",
+                "key": {
+                  "endPosition": "85",
+                  "kind": "IDENTIFIER",
+                  "name": "y",
+                  "startPosition": "84"
+                }
+              }
+            ]
+          },
+          "startPosition": "80"
+        }
+      ]
+    }
+  },
+  {
+    "endPosition": "136",
+    "kind": "VARIABLE",
+    "binding": {
+      "endPosition": "113",
+      "kind": "IDENTIFIER",
+      "name": "f5",
+      "startPosition": "111"
+    },
+    "startPosition": "107",
+    "initializer": {
+      "endPosition": "133",
+      "arrow": "true",
+      "kind": "FUNCTION_EXPRESSION",
+      "name": "null",
+      "body": {
+        "leftOperand": {
+          "endPosition": "134",
+          "kind": "IDENTIFIER",
+          "name": "x",
+          "startPosition": "133"
+        },
+        "endPosition": "136",
+        "kind": "PLUS",
+        "rightOperand": {
+          "endPosition": "136",
+          "kind": "IDENTIFIER",
+          "name": "y",
+          "startPosition": "135"
+        },
+        "startPosition": "133"
+      },
+      "strict": "false",
+      "startPosition": "133",
+      "parameters": [
+        {
+          "expression": {
+            "endPosition": "130",
+            "kind": "ARRAY_LITERAL",
+            "elements": [
+              {
+                "endPosition": "126",
+                "kind": "NUMBER_LITERAL",
+                "value": "3",
+                "startPosition": "125"
+              },
+              {
+                "endPosition": "129",
+                "kind": "NUMBER_LITERAL",
+                "value": "6",
+                "startPosition": "128"
+              }
+            ],
+            "startPosition": "124"
+          },
+          "endPosition": "130",
+          "kind": "ASSIGNMENT",
+          "variable": {
+            "endPosition": "123",
+            "kind": "ARRAY_LITERAL",
+            "elements": [
+              {
+                "endPosition": "119",
+                "kind": "IDENTIFIER",
+                "name": "x",
+                "startPosition": "118"
+              },
+              {
+                "endPosition": "122",
+                "kind": "IDENTIFIER",
+                "name": "y",
+                "startPosition": "121"
+              }
+            ],
+            "startPosition": "117"
+          },
+          "startPosition": "117"
+        }
+      ]
+    }
+  }
+]

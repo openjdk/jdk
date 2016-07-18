@@ -35,32 +35,30 @@
 
 package java.util.concurrent.atomic;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.function.IntBinaryOperator;
 import java.util.function.IntUnaryOperator;
 
 /**
  * An {@code int} value that may be updated atomically.  See the
- * {@link java.util.concurrent.atomic} package specification for
- * description of the properties of atomic variables. An
- * {@code AtomicInteger} is used in applications such as atomically
- * incremented counters, and cannot be used as a replacement for an
- * {@link java.lang.Integer}. However, this class does extend
- * {@code Number} to allow uniform access by tools and utilities that
- * deal with numerically-based classes.
+ * {@link VarHandle} specification for descriptions of the properties
+ * of atomic accesses. An {@code AtomicInteger} is used in
+ * applications such as atomically incremented counters, and cannot be
+ * used as a replacement for an {@link java.lang.Integer}. However,
+ * this class does extend {@code Number} to allow uniform access by
+ * tools and utilities that deal with numerically-based classes.
  *
  * @since 1.5
  * @author Doug Lea
  */
 public class AtomicInteger extends Number implements java.io.Serializable {
     private static final long serialVersionUID = 6214790243416807050L;
-
-    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
-    private static final long VALUE;
-
+    private static final VarHandle VALUE;
     static {
         try {
-            VALUE = U.objectFieldOffset
-                (AtomicInteger.class.getDeclaredField("value"));
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            VALUE = l.findVarHandle(AtomicInteger.class, "value", int.class);
         } catch (ReflectiveOperationException e) {
             throw new Error(e);
         }
@@ -84,7 +82,8 @@ public class AtomicInteger extends Number implements java.io.Serializable {
     }
 
     /**
-     * Gets the current value.
+     * Returns the current value,
+     * with memory effects as specified by {@link VarHandle#getVolatile}.
      *
      * @return the current value
      */
@@ -93,7 +92,8 @@ public class AtomicInteger extends Number implements java.io.Serializable {
     }
 
     /**
-     * Sets to the given value.
+     * Sets the value to {@code newValue},
+     * with memory effects as specified by {@link VarHandle#setVolatile}.
      *
      * @param newValue the new value
      */
@@ -102,108 +102,122 @@ public class AtomicInteger extends Number implements java.io.Serializable {
     }
 
     /**
-     * Eventually sets to the given value.
+     * Sets the value to {@code newValue},
+     * with memory effects as specified by {@link VarHandle#setRelease}.
      *
      * @param newValue the new value
      * @since 1.6
      */
     public final void lazySet(int newValue) {
-        U.putIntRelease(this, VALUE, newValue);
+        VALUE.setRelease(this, newValue);
     }
 
     /**
-     * Atomically sets to the given value and returns the old value.
+     * Atomically sets the value to {@code newValue} and returns the old value,
+     * with memory effects as specified by {@link VarHandle#getAndSet}.
      *
      * @param newValue the new value
      * @return the previous value
      */
     public final int getAndSet(int newValue) {
-        return U.getAndSetInt(this, VALUE, newValue);
+        return (int)VALUE.getAndSet(this, newValue);
     }
 
     /**
-     * Atomically sets the value to the given updated value
-     * if the current value {@code ==} the expected value.
+     * Atomically sets the value to {@code newValue}
+     * if the current value {@code == expectedValue},
+     * with memory effects as specified by {@link VarHandle#compareAndSet}.
      *
-     * @param expect the expected value
-     * @param update the new value
+     * @param expectedValue the expected value
+     * @param newValue the new value
      * @return {@code true} if successful. False return indicates that
      * the actual value was not equal to the expected value.
      */
-    public final boolean compareAndSet(int expect, int update) {
-        return U.compareAndSwapInt(this, VALUE, expect, update);
+    public final boolean compareAndSet(int expectedValue, int newValue) {
+        return VALUE.compareAndSet(this, expectedValue, newValue);
     }
 
     /**
-     * Atomically sets the value to the given updated value
-     * if the current value {@code ==} the expected value.
+     * Possibly atomically sets the value to {@code newValue}
+     * if the current value {@code == expectedValue},
+     * with memory effects as specified by {@link VarHandle#weakCompareAndSet}.
      *
-     * <p><a href="package-summary.html#weakCompareAndSet">May fail
-     * spuriously and does not provide ordering guarantees</a>, so is
-     * only rarely an appropriate alternative to {@code compareAndSet}.
-     *
-     * @param expect the expected value
-     * @param update the new value
+     * @param expectedValue the expected value
+     * @param newValue the new value
      * @return {@code true} if successful
      */
-    public final boolean weakCompareAndSet(int expect, int update) {
-        return U.compareAndSwapInt(this, VALUE, expect, update);
+    public final boolean weakCompareAndSet(int expectedValue, int newValue) {
+        return VALUE.weakCompareAndSet(this, expectedValue, newValue);
     }
 
     /**
-     * Atomically increments by one the current value.
+     * Atomically increments the current value,
+     * with memory effects as specified by {@link VarHandle#getAndAdd}.
+     *
+     * <p>Equivalent to {@code getAndAdd(1)}.
      *
      * @return the previous value
      */
     public final int getAndIncrement() {
-        return U.getAndAddInt(this, VALUE, 1);
+        return (int)VALUE.getAndAdd(this, 1);
     }
 
     /**
-     * Atomically decrements by one the current value.
+     * Atomically decrements the current value,
+     * with memory effects as specified by {@link VarHandle#getAndAdd}.
+     *
+     * <p>Equivalent to {@code getAndAdd(-1)}.
      *
      * @return the previous value
      */
     public final int getAndDecrement() {
-        return U.getAndAddInt(this, VALUE, -1);
+        return (int)VALUE.getAndAdd(this, -1);
     }
 
     /**
-     * Atomically adds the given value to the current value.
+     * Atomically adds the given value to the current value,
+     * with memory effects as specified by {@link VarHandle#getAndAdd}.
      *
      * @param delta the value to add
      * @return the previous value
      */
     public final int getAndAdd(int delta) {
-        return U.getAndAddInt(this, VALUE, delta);
+        return (int)VALUE.getAndAdd(this, delta);
     }
 
     /**
-     * Atomically increments by one the current value.
+     * Atomically increments the current value,
+     * with memory effects as specified by {@link VarHandle#addAndGet}.
+     *
+     * <p>Equivalent to {@code addAndGet(1)}.
      *
      * @return the updated value
      */
     public final int incrementAndGet() {
-        return U.getAndAddInt(this, VALUE, 1) + 1;
+        return (int)VALUE.addAndGet(this, 1);
     }
 
     /**
-     * Atomically decrements by one the current value.
+     * Atomically decrements the current value,
+     * with memory effects as specified by {@link VarHandle#addAndGet}.
+     *
+     * <p>Equivalent to {@code addAndGet(-1)}.
      *
      * @return the updated value
      */
     public final int decrementAndGet() {
-        return U.getAndAddInt(this, VALUE, -1) - 1;
+        return (int)VALUE.addAndGet(this, -1);
     }
 
     /**
-     * Atomically adds the given value to the current value.
+     * Atomically adds the given value to the current value,
+     * with memory effects as specified by {@link VarHandle#addAndGet}.
      *
      * @param delta the value to add
      * @return the updated value
      */
     public final int addAndGet(int delta) {
-        return U.getAndAddInt(this, VALUE, delta) + delta;
+        return (int)VALUE.addAndGet(this, delta);
     }
 
     /**
@@ -217,12 +231,14 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @since 1.8
      */
     public final int getAndUpdate(IntUnaryOperator updateFunction) {
-        int prev, next;
-        do {
-            prev = get();
-            next = updateFunction.applyAsInt(prev);
-        } while (!compareAndSet(prev, next));
-        return prev;
+        int prev = get(), next = 0;
+        for (boolean haveNext = false;;) {
+            if (!haveNext)
+                next = updateFunction.applyAsInt(prev);
+            if (weakCompareAndSetVolatile(prev, next))
+                return prev;
+            haveNext = (prev == (prev = get()));
+        }
     }
 
     /**
@@ -236,12 +252,14 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @since 1.8
      */
     public final int updateAndGet(IntUnaryOperator updateFunction) {
-        int prev, next;
-        do {
-            prev = get();
-            next = updateFunction.applyAsInt(prev);
-        } while (!compareAndSet(prev, next));
-        return next;
+        int prev = get(), next = 0;
+        for (boolean haveNext = false;;) {
+            if (!haveNext)
+                next = updateFunction.applyAsInt(prev);
+            if (weakCompareAndSetVolatile(prev, next))
+                return next;
+            haveNext = (prev == (prev = get()));
+        }
     }
 
     /**
@@ -260,12 +278,14 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      */
     public final int getAndAccumulate(int x,
                                       IntBinaryOperator accumulatorFunction) {
-        int prev, next;
-        do {
-            prev = get();
-            next = accumulatorFunction.applyAsInt(prev, x);
-        } while (!compareAndSet(prev, next));
-        return prev;
+        int prev = get(), next = 0;
+        for (boolean haveNext = false;;) {
+            if (!haveNext)
+                next = accumulatorFunction.applyAsInt(prev, x);
+            if (weakCompareAndSetVolatile(prev, next))
+                return prev;
+            haveNext = (prev == (prev = get()));
+        }
     }
 
     /**
@@ -284,12 +304,14 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      */
     public final int accumulateAndGet(int x,
                                       IntBinaryOperator accumulatorFunction) {
-        int prev, next;
-        do {
-            prev = get();
-            next = accumulatorFunction.applyAsInt(prev, x);
-        } while (!compareAndSet(prev, next));
-        return next;
+        int prev = get(), next = 0;
+        for (boolean haveNext = false;;) {
+            if (!haveNext)
+                next = accumulatorFunction.applyAsInt(prev, x);
+            if (weakCompareAndSetVolatile(prev, next))
+                return next;
+            haveNext = (prev == (prev = get()));
+        }
     }
 
     /**
@@ -301,7 +323,10 @@ public class AtomicInteger extends Number implements java.io.Serializable {
     }
 
     /**
-     * Returns the value of this {@code AtomicInteger} as an {@code int}.
+     * Returns the current value of this {@code AtomicInteger} as an
+     * {@code int},
+     * with memory effects as specified by {@link VarHandle#getVolatile}.
+     *
      * Equivalent to {@link #get()}.
      */
     public int intValue() {
@@ -309,8 +334,9 @@ public class AtomicInteger extends Number implements java.io.Serializable {
     }
 
     /**
-     * Returns the value of this {@code AtomicInteger} as a {@code long}
-     * after a widening primitive conversion.
+     * Returns the current value of this {@code AtomicInteger} as a
+     * {@code long} after a widening primitive conversion,
+     * with memory effects as specified by {@link VarHandle#getVolatile}.
      * @jls 5.1.2 Widening Primitive Conversions
      */
     public long longValue() {
@@ -318,8 +344,9 @@ public class AtomicInteger extends Number implements java.io.Serializable {
     }
 
     /**
-     * Returns the value of this {@code AtomicInteger} as a {@code float}
-     * after a widening primitive conversion.
+     * Returns the current value of this {@code AtomicInteger} as a
+     * {@code float} after a widening primitive conversion,
+     * with memory effects as specified by {@link VarHandle#getVolatile}.
      * @jls 5.1.2 Widening Primitive Conversions
      */
     public float floatValue() {
@@ -327,12 +354,175 @@ public class AtomicInteger extends Number implements java.io.Serializable {
     }
 
     /**
-     * Returns the value of this {@code AtomicInteger} as a {@code double}
-     * after a widening primitive conversion.
+     * Returns the current value of this {@code AtomicInteger} as a
+     * {@code double} after a widening primitive conversion,
+     * with memory effects as specified by {@link VarHandle#getVolatile}.
      * @jls 5.1.2 Widening Primitive Conversions
      */
     public double doubleValue() {
         return (double)get();
+    }
+
+    // jdk9
+
+    /**
+     * Returns the current value, with memory semantics of reading as
+     * if the variable was declared non-{@code volatile}.
+     *
+     * @return the value
+     * @since 9
+     */
+    public final int getPlain() {
+        return (int)VALUE.get(this);
+    }
+
+    /**
+     * Sets the value to {@code newValue}, with memory semantics
+     * of setting as if the variable was declared non-{@code volatile}
+     * and non-{@code final}.
+     *
+     * @param newValue the new value
+     * @since 9
+     */
+    public final void setPlain(int newValue) {
+        VALUE.set(this, newValue);
+    }
+
+    /**
+     * Returns the current value,
+     * with memory effects as specified by {@link VarHandle#getOpaque}.
+     *
+     * @return the value
+     * @since 9
+     */
+    public final int getOpaque() {
+        return (int)VALUE.getOpaque(this);
+    }
+
+    /**
+     * Sets the value to {@code newValue},
+     * with memory effects as specified by {@link VarHandle#setOpaque}.
+     *
+     * @param newValue the new value
+     * @since 9
+     */
+    public final void setOpaque(int newValue) {
+        VALUE.setOpaque(this, newValue);
+    }
+
+    /**
+     * Returns the current value,
+     * with memory effects as specified by {@link VarHandle#getAcquire}.
+     *
+     * @return the value
+     * @since 9
+     */
+    public final int getAcquire() {
+        return (int)VALUE.getAcquire(this);
+    }
+
+    /**
+     * Sets the value to {@code newValue},
+     * with memory effects as specified by {@link VarHandle#setRelease}.
+     *
+     * @param newValue the new value
+     * @since 9
+     */
+    public final void setRelease(int newValue) {
+        VALUE.setRelease(this, newValue);
+    }
+
+    /**
+     * Atomically sets the value to {@code newValue} if the current value,
+     * referred to as the <em>witness value</em>, {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#compareAndExchange}.
+     *
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return the witness value, which will be the same as the
+     * expected value if successful
+     * @since 9
+     */
+    public final int compareAndExchange(int expectedValue, int newValue) {
+        return (int)VALUE.compareAndExchange(this, expectedValue, newValue);
+    }
+
+    /**
+     * Atomically sets the value to {@code newValue} if the current value,
+     * referred to as the <em>witness value</em>, {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#compareAndExchangeAcquire}.
+     *
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return the witness value, which will be the same as the
+     * expected value if successful
+     * @since 9
+     */
+    public final int compareAndExchangeAcquire(int expectedValue, int newValue) {
+        return (int)VALUE.compareAndExchangeAcquire(this, expectedValue, newValue);
+    }
+
+    /**
+     * Atomically sets the value to {@code newValue} if the current value,
+     * referred to as the <em>witness value</em>, {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#compareAndExchangeRelease}.
+     *
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return the witness value, which will be the same as the
+     * expected value if successful
+     * @since 9
+     */
+    public final int compareAndExchangeRelease(int expectedValue, int newValue) {
+        return (int)VALUE.compareAndExchangeRelease(this, expectedValue, newValue);
+    }
+
+    /**
+     * Possibly atomically sets the value to {@code newValue} if
+     * the current value {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#weakCompareAndSetVolatile}.
+     *
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return {@code true} if successful
+     * @since 9
+     */
+    public final boolean weakCompareAndSetVolatile(int expectedValue, int newValue) {
+        return VALUE.weakCompareAndSetVolatile(this, expectedValue, newValue);
+    }
+
+    /**
+     * Possibly atomically sets the value to {@code newValue} if
+     * the current value {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#weakCompareAndSetAcquire}.
+     *
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return {@code true} if successful
+     * @since 9
+     */
+    public final boolean weakCompareAndSetAcquire(int expectedValue, int newValue) {
+        return VALUE.weakCompareAndSetAcquire(this, expectedValue, newValue);
+    }
+
+    /**
+     * Possibly atomically sets the value to {@code newValue} if
+     * the current value {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#weakCompareAndSetRelease}.
+     *
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return {@code true} if successful
+     * @since 9
+     */
+    public final boolean weakCompareAndSetRelease(int expectedValue, int newValue) {
+        return VALUE.weakCompareAndSetRelease(this, expectedValue, newValue);
     }
 
 }

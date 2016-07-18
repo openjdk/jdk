@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
@@ -53,10 +54,38 @@ void PackageEntry::add_qexport(ModuleEntry* m) {
   if (!has_qual_exports_list()) {
     // Lazily create a package's qualified exports list.
     // Initial size is small, do not anticipate export lists to be large.
-    _qualified_exports =
-      new (ResourceObj::C_HEAP, mtModule) GrowableArray<ModuleEntry*>(QUAL_EXP_SIZE, true);
+    _qualified_exports = new (ResourceObj::C_HEAP, mtModule) GrowableArray<ModuleEntry*>(QUAL_EXP_SIZE, true);
   }
+
+  // Determine, based on this newly established export to module m,
+  // if this package's export list should be walked at a GC safepoint.
+  set_export_walk_required(m->loader_data());
+
+  // Establish exportability to module m
   _qualified_exports->append_if_missing(m);
+}
+
+// If the module's loader, that an export is being established to, is
+// not the same loader as this module's and is not one of the 3 builtin
+// class loaders, then this package's export list must be walked at GC
+// safepoint. Modules have the same life cycle as their defining class
+// loaders and should be removed if dead.
+void PackageEntry::set_export_walk_required(ClassLoaderData* m_loader_data) {
+  assert_locked_or_safepoint(Module_lock);
+  ModuleEntry* this_pkg_mod = module();
+  if (!_must_walk_exports &&
+      (this_pkg_mod == NULL || this_pkg_mod->loader_data() != m_loader_data) &&
+      !m_loader_data->is_builtin_class_loader_data()) {
+    _must_walk_exports = true;
+    if (log_is_enabled(Trace, modules)) {
+      ResourceMark rm;
+      assert(name() != NULL, "PackageEntry without a valid name");
+      log_trace(modules)("PackageEntry::set_export_walk_required(): package %s defined in module %s, exports list must be walked",
+                         name()->as_C_string(),
+                         (this_pkg_mod == NULL || this_pkg_mod->name() == NULL) ?
+                           UNNAMED_MODULE : this_pkg_mod->name()->as_C_string());
+    }
+  }
 }
 
 // Set the package's exported states based on the value of the ModuleEntry.
@@ -96,14 +125,34 @@ void PackageEntry::set_is_exported_allUnnamed() {
 // Remove dead module entries within the package's exported list.
 void PackageEntry::purge_qualified_exports() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
-  if (_qualified_exports != NULL) {
+  if (_must_walk_exports &&
+      _qualified_exports != NULL &&
+      !_qualified_exports->is_empty()) {
+    ModuleEntry* pkg_module = module();
+
+    // This package's _must_walk_exports flag will be reset based
+    // on the remaining live modules on the exports list.
+    _must_walk_exports = false;
+
+    if (log_is_enabled(Trace, modules)) {
+      ResourceMark rm;
+      assert(name() != NULL, "PackageEntry without a valid name");
+      ModuleEntry* pkg_mod = module();
+      log_trace(modules)("PackageEntry::purge_qualified_exports(): package %s defined in module %s, exports list being walked",
+                         name()->as_C_string(),
+                         (pkg_mod == NULL || pkg_mod->name() == NULL) ? UNNAMED_MODULE : pkg_mod->name()->as_C_string());
+    }
+
     // Go backwards because this removes entries that are dead.
     int len = _qualified_exports->length();
     for (int idx = len - 1; idx >= 0; idx--) {
       ModuleEntry* module_idx = _qualified_exports->at(idx);
-      ClassLoaderData* cld = module_idx->loader();
-      if (cld->is_unloading()) {
+      ClassLoaderData* cld_idx = module_idx->loader_data();
+      if (cld_idx->is_unloading()) {
         _qualified_exports->delete_at(idx);
+      } else {
+        // Update the need to walk this package's exports based on live modules
+        set_export_walk_required(cld_idx);
       }
     }
   }
@@ -297,8 +346,8 @@ void PackageEntryTable::print(outputStream* st) {
 
 void PackageEntry::print(outputStream* st) {
   ResourceMark rm;
-  st->print_cr("package entry "PTR_FORMAT" name %s module %s classpath_index "
-               INT32_FORMAT " is_exported_unqualified %d is_exported_allUnnamed %d " "next "PTR_FORMAT,
+  st->print_cr("package entry " PTR_FORMAT " name %s module %s classpath_index "
+               INT32_FORMAT " is_exported_unqualified %d is_exported_allUnnamed %d " "next " PTR_FORMAT,
                p2i(this), name()->as_C_string(),
                (module()->is_named() ? module()->name()->as_C_string() : UNNAMED_MODULE),
                _classpath_index, _is_exported_unqualified, _is_exported_allUnnamed, p2i(next()));

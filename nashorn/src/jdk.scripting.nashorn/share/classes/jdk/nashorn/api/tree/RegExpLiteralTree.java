@@ -30,7 +30,7 @@ package jdk.nashorn.api.tree;
  *
  * @since 9
  */
-public interface RegExpLiteralTree extends Tree {
+public interface RegExpLiteralTree extends ExpressionTree {
     /**
      * Regular expression pattern to match.
      *

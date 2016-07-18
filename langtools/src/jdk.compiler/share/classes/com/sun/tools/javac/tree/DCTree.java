@@ -578,7 +578,7 @@ public abstract class DCTree implements DocTree {
         public final String signature;
 
         // The following are not directly exposed through ReferenceTree
-        // use DocTrees.getElement(TreePath,ReferenceTree)
+        // use DocTrees.getElement(DocTreePath)
         public final JCTree qualifierExpression;
         public final Name memberName;
         public final List<JCTree> paramTypes;

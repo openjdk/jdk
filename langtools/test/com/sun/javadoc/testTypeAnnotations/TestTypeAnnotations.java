@@ -28,7 +28,6 @@
  * @author   Bhavesh Patel
  * @library  ../lib
  * @modules jdk.javadoc
- * @ignore 8006735 output type annotations in javadoc
  * @build    JavadocTester
  * @run main TestTypeAnnotations
  */

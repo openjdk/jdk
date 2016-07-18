@@ -79,7 +79,6 @@ package java.util.concurrent.locks;
  * and measurement will establish whether the use of a read-write lock is
  * suitable for your application.
  *
- *
  * <p>Although the basic operation of a read-write lock is straight-forward,
  * there are many policy decisions that an implementation must make, which
  * may affect the effectiveness of the read-write lock in a given application.

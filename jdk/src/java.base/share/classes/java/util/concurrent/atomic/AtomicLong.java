@@ -35,31 +35,30 @@
 
 package java.util.concurrent.atomic;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongUnaryOperator;
 
 /**
  * A {@code long} value that may be updated atomically.  See the
- * {@link java.util.concurrent.atomic} package specification for
- * description of the properties of atomic variables. An
- * {@code AtomicLong} is used in applications such as atomically
- * incremented sequence numbers, and cannot be used as a replacement
- * for a {@link java.lang.Long}. However, this class does extend
- * {@code Number} to allow uniform access by tools and utilities that
- * deal with numerically-based classes.
+ * {@link VarHandle} specification for descriptions of the properties
+ * of atomic accesses. An {@code AtomicLong} is used in applications
+ * such as atomically incremented sequence numbers, and cannot be used
+ * as a replacement for a {@link java.lang.Long}. However, this class
+ * does extend {@code Number} to allow uniform access by tools and
+ * utilities that deal with numerically-based classes.
  *
  * @since 1.5
  * @author Doug Lea
  */
 public class AtomicLong extends Number implements java.io.Serializable {
     private static final long serialVersionUID = 1927816293512124184L;
-
-    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
-    private static final long VALUE;
+    private static final VarHandle VALUE;
 
     /**
      * Records whether the underlying JVM supports lockless
-     * compareAndSwap for longs. While the Unsafe.compareAndSwapLong
+     * compareAndSwap for longs. While the intrinsic compareAndSwapLong
      * method works in either case, some constructions should be
      * handled at Java level to avoid locking user-visible locks.
      */
@@ -73,8 +72,8 @@ public class AtomicLong extends Number implements java.io.Serializable {
 
     static {
         try {
-            VALUE = U.objectFieldOffset
-                (AtomicLong.class.getDeclaredField("value"));
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            VALUE = l.findVarHandle(AtomicLong.class, "value", long.class);
         } catch (ReflectiveOperationException e) {
             throw new Error(e);
         }
@@ -98,7 +97,8 @@ public class AtomicLong extends Number implements java.io.Serializable {
     }
 
     /**
-     * Gets the current value.
+     * Returns the current value,
+     * with memory effects as specified by {@link VarHandle#getVolatile}.
      *
      * @return the current value
      */
@@ -107,119 +107,132 @@ public class AtomicLong extends Number implements java.io.Serializable {
     }
 
     /**
-     * Sets to the given value.
+     * Sets the value to {@code newValue},
+     * with memory effects as specified by {@link VarHandle#setVolatile}.
      *
      * @param newValue the new value
      */
     public final void set(long newValue) {
-        // Use putLongVolatile instead of ordinary volatile store when
-        // using compareAndSwapLong, for sake of some 32bit systems.
-        U.putLongVolatile(this, VALUE, newValue);
+        VALUE.setVolatile(this, newValue);
     }
 
     /**
-     * Eventually sets to the given value.
+     * Sets the value to {@code newValue},
+     * with memory effects as specified by {@link VarHandle#setRelease}.
      *
      * @param newValue the new value
      * @since 1.6
      */
     public final void lazySet(long newValue) {
-        U.putLongRelease(this, VALUE, newValue);
+        VALUE.setRelease(this, newValue);
     }
 
     /**
-     * Atomically sets to the given value and returns the old value.
+     * Atomically sets the value to {@code newValue} and returns the old value,
+     * with memory effects as specified by {@link VarHandle#getAndSet}.
      *
      * @param newValue the new value
      * @return the previous value
      */
     public final long getAndSet(long newValue) {
-        return U.getAndSetLong(this, VALUE, newValue);
+        return (long)VALUE.getAndSet(this, newValue);
     }
 
     /**
-     * Atomically sets the value to the given updated value
-     * if the current value {@code ==} the expected value.
+     * Atomically sets the value to {@code newValue}
+     * if the current value {@code == expectedValue},
+     * with memory effects as specified by {@link VarHandle#compareAndSet}.
      *
-     * @param expect the expected value
-     * @param update the new value
+     * @param expectedValue the expected value
+     * @param newValue the new value
      * @return {@code true} if successful. False return indicates that
      * the actual value was not equal to the expected value.
      */
-    public final boolean compareAndSet(long expect, long update) {
-        return U.compareAndSwapLong(this, VALUE, expect, update);
+    public final boolean compareAndSet(long expectedValue, long newValue) {
+        return VALUE.compareAndSet(this, expectedValue, newValue);
     }
 
     /**
-     * Atomically sets the value to the given updated value
-     * if the current value {@code ==} the expected value.
+     * Possibly atomically sets the value to {@code newValue}
+     * if the current value {@code == expectedValue},
+     * with memory effects as specified by {@link VarHandle#weakCompareAndSet}.
      *
-     * <p><a href="package-summary.html#weakCompareAndSet">May fail
-     * spuriously and does not provide ordering guarantees</a>, so is
-     * only rarely an appropriate alternative to {@code compareAndSet}.
-     *
-     * @param expect the expected value
-     * @param update the new value
+     * @param expectedValue the expected value
+     * @param newValue the new value
      * @return {@code true} if successful
      */
-    public final boolean weakCompareAndSet(long expect, long update) {
-        return U.compareAndSwapLong(this, VALUE, expect, update);
+    public final boolean weakCompareAndSet(long expectedValue, long newValue) {
+        return VALUE.weakCompareAndSet(this, expectedValue, newValue);
     }
 
     /**
-     * Atomically increments by one the current value.
+     * Atomically increments the current value,
+     * with memory effects as specified by {@link VarHandle#getAndAdd}.
+     *
+     * <p>Equivalent to {@code getAndAdd(1)}.
      *
      * @return the previous value
      */
     public final long getAndIncrement() {
-        return U.getAndAddLong(this, VALUE, 1L);
+        return (long)VALUE.getAndAdd(this, 1L);
     }
 
     /**
-     * Atomically decrements by one the current value.
+     * Atomically decrements the current value,
+     * with memory effects as specified by {@link VarHandle#getAndAdd}.
+     *
+     * <p>Equivalent to {@code getAndAdd(-1)}.
      *
      * @return the previous value
      */
     public final long getAndDecrement() {
-        return U.getAndAddLong(this, VALUE, -1L);
+        return (long)VALUE.getAndAdd(this, -1L);
     }
 
     /**
-     * Atomically adds the given value to the current value.
+     * Atomically adds the given value to the current value,
+     * with memory effects as specified by {@link VarHandle#getAndAdd}.
      *
      * @param delta the value to add
      * @return the previous value
      */
     public final long getAndAdd(long delta) {
-        return U.getAndAddLong(this, VALUE, delta);
+        return (long)VALUE.getAndAdd(this, delta);
     }
 
     /**
-     * Atomically increments by one the current value.
+     * Atomically increments the current value,
+     * with memory effects as specified by {@link VarHandle#addAndGet}.
+     *
+     * <p>Equivalent to {@code addAndGet(1)}.
      *
      * @return the updated value
      */
     public final long incrementAndGet() {
-        return U.getAndAddLong(this, VALUE, 1L) + 1L;
+        return (long)VALUE.addAndGet(this, 1L);
     }
 
     /**
-     * Atomically decrements by one the current value.
+     * Atomically decrements the current value,
+     * with memory effects as specified by {@link VarHandle#addAndGet}.
+     *
+     * <p>Equivalent to {@code addAndGet(-1)}.
      *
      * @return the updated value
      */
     public final long decrementAndGet() {
-        return U.getAndAddLong(this, VALUE, -1L) - 1L;
+        return (long)VALUE.addAndGet(this, -1L);
     }
 
     /**
-     * Atomically adds the given value to the current value.
+     * Atomically adds the given value to the current value,
+     * with memory effects as specified by {@link VarHandle#addAndGet}.
      *
      * @param delta the value to add
      * @return the updated value
      */
     public final long addAndGet(long delta) {
-        return U.getAndAddLong(this, VALUE, delta) + delta;
+        return (long)VALUE.addAndGet(this, delta);
     }
 
     /**
@@ -233,12 +246,14 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @since 1.8
      */
     public final long getAndUpdate(LongUnaryOperator updateFunction) {
-        long prev, next;
-        do {
-            prev = get();
-            next = updateFunction.applyAsLong(prev);
-        } while (!compareAndSet(prev, next));
-        return prev;
+        long prev = get(), next = 0L;
+        for (boolean haveNext = false;;) {
+            if (!haveNext)
+                next = updateFunction.applyAsLong(prev);
+            if (weakCompareAndSetVolatile(prev, next))
+                return prev;
+            haveNext = (prev == (prev = get()));
+        }
     }
 
     /**
@@ -252,12 +267,14 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @since 1.8
      */
     public final long updateAndGet(LongUnaryOperator updateFunction) {
-        long prev, next;
-        do {
-            prev = get();
-            next = updateFunction.applyAsLong(prev);
-        } while (!compareAndSet(prev, next));
-        return next;
+        long prev = get(), next = 0L;
+        for (boolean haveNext = false;;) {
+            if (!haveNext)
+                next = updateFunction.applyAsLong(prev);
+            if (weakCompareAndSetVolatile(prev, next))
+                return next;
+            haveNext = (prev == (prev = get()));
+        }
     }
 
     /**
@@ -276,12 +293,14 @@ public class AtomicLong extends Number implements java.io.Serializable {
      */
     public final long getAndAccumulate(long x,
                                        LongBinaryOperator accumulatorFunction) {
-        long prev, next;
-        do {
-            prev = get();
-            next = accumulatorFunction.applyAsLong(prev, x);
-        } while (!compareAndSet(prev, next));
-        return prev;
+        long prev = get(), next = 0L;
+        for (boolean haveNext = false;;) {
+            if (!haveNext)
+                next = accumulatorFunction.applyAsLong(prev, x);
+            if (weakCompareAndSetVolatile(prev, next))
+                return prev;
+            haveNext = (prev == (prev = get()));
+        }
     }
 
     /**
@@ -300,12 +319,14 @@ public class AtomicLong extends Number implements java.io.Serializable {
      */
     public final long accumulateAndGet(long x,
                                        LongBinaryOperator accumulatorFunction) {
-        long prev, next;
-        do {
-            prev = get();
-            next = accumulatorFunction.applyAsLong(prev, x);
-        } while (!compareAndSet(prev, next));
-        return next;
+        long prev = get(), next = 0L;
+        for (boolean haveNext = false;;) {
+            if (!haveNext)
+                next = accumulatorFunction.applyAsLong(prev, x);
+            if (weakCompareAndSetVolatile(prev, next))
+                return next;
+            haveNext = (prev == (prev = get()));
+        }
     }
 
     /**
@@ -317,8 +338,9 @@ public class AtomicLong extends Number implements java.io.Serializable {
     }
 
     /**
-     * Returns the value of this {@code AtomicLong} as an {@code int}
-     * after a narrowing primitive conversion.
+     * Returns the current value of this {@code AtomicLong} as an {@code int}
+     * after a narrowing primitive conversion,
+     * with memory effects as specified by {@link VarHandle#getVolatile}.
      * @jls 5.1.3 Narrowing Primitive Conversions
      */
     public int intValue() {
@@ -326,7 +348,8 @@ public class AtomicLong extends Number implements java.io.Serializable {
     }
 
     /**
-     * Returns the value of this {@code AtomicLong} as a {@code long}.
+     * Returns the current value of this {@code AtomicLong} as a {@code long},
+     * with memory effects as specified by {@link VarHandle#getVolatile}.
      * Equivalent to {@link #get()}.
      */
     public long longValue() {
@@ -334,8 +357,9 @@ public class AtomicLong extends Number implements java.io.Serializable {
     }
 
     /**
-     * Returns the value of this {@code AtomicLong} as a {@code float}
-     * after a widening primitive conversion.
+     * Returns the current value of this {@code AtomicLong} as a {@code float}
+     * after a widening primitive conversion,
+     * with memory effects as specified by {@link VarHandle#getVolatile}.
      * @jls 5.1.2 Widening Primitive Conversions
      */
     public float floatValue() {
@@ -343,12 +367,175 @@ public class AtomicLong extends Number implements java.io.Serializable {
     }
 
     /**
-     * Returns the value of this {@code AtomicLong} as a {@code double}
-     * after a widening primitive conversion.
+     * Returns the current value of this {@code AtomicLong} as a {@code double}
+     * after a widening primitive conversion,
+     * with memory effects as specified by {@link VarHandle#getVolatile}.
      * @jls 5.1.2 Widening Primitive Conversions
      */
     public double doubleValue() {
         return (double)get();
+    }
+
+    // jdk9
+
+    /**
+     * Returns the current value, with memory semantics of reading as if the
+     * variable was declared non-{@code volatile}.
+     *
+     * @return the value
+     * @since 9
+     */
+    public final long getPlain() {
+        return (long)VALUE.get(this);
+    }
+
+    /**
+     * Sets the value to {@code newValue}, with memory semantics
+     * of setting as if the variable was declared non-{@code volatile}
+     * and non-{@code final}.
+     *
+     * @param newValue the new value
+     * @since 9
+     */
+    public final void setPlain(long newValue) {
+        VALUE.set(this, newValue);
+    }
+
+    /**
+     * Returns the current value,
+     * with memory effects as specified by {@link VarHandle#getOpaque}.
+     *
+     * @return the value
+     * @since 9
+     */
+    public final long getOpaque() {
+        return (long)VALUE.getOpaque(this);
+    }
+
+    /**
+     * Sets the value to {@code newValue},
+     * with memory effects as specified by {@link VarHandle#setOpaque}.
+     *
+     * @param newValue the new value
+     * @since 9
+     */
+    public final void setOpaque(long newValue) {
+        VALUE.setOpaque(this, newValue);
+    }
+
+    /**
+     * Returns the current value,
+     * with memory effects as specified by {@link VarHandle#getAcquire}.
+     *
+     * @return the value
+     * @since 9
+     */
+    public final long getAcquire() {
+        return (long)VALUE.getAcquire(this);
+    }
+
+    /**
+     * Sets the value to {@code newValue},
+     * with memory effects as specified by {@link VarHandle#setRelease}.
+     *
+     * @param newValue the new value
+     * @since 9
+     */
+    public final void setRelease(long newValue) {
+        VALUE.setRelease(this, newValue);
+    }
+
+    /**
+     * Atomically sets the value to {@code newValue} if the current value,
+     * referred to as the <em>witness value</em>, {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#compareAndExchange}.
+     *
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return the witness value, which will be the same as the
+     * expected value if successful
+     * @since 9
+     */
+    public final long compareAndExchange(long expectedValue, long newValue) {
+        return (long)VALUE.compareAndExchange(this, expectedValue, newValue);
+    }
+
+    /**
+     * Atomically sets the value to {@code newValue} if the current value,
+     * referred to as the <em>witness value</em>, {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#compareAndExchangeAcquire}.
+     *
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return the witness value, which will be the same as the
+     * expected value if successful
+     * @since 9
+     */
+    public final long compareAndExchangeAcquire(long expectedValue, long newValue) {
+        return (long)VALUE.compareAndExchangeAcquire(this, expectedValue, newValue);
+    }
+
+    /**
+     * Atomically sets the value to {@code newValue} if the current value,
+     * referred to as the <em>witness value</em>, {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#compareAndExchangeRelease}.
+     *
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return the witness value, which will be the same as the
+     * expected value if successful
+     * @since 9
+     */
+    public final long compareAndExchangeRelease(long expectedValue, long newValue) {
+        return (long)VALUE.compareAndExchangeRelease(this, expectedValue, newValue);
+    }
+
+    /**
+     * Possibly atomically sets the value to {@code newValue}
+     * if the current value {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#weakCompareAndSetVolatile}.
+     *
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return {@code true} if successful
+     * @since 9
+     */
+    public final boolean weakCompareAndSetVolatile(long expectedValue, long newValue) {
+        return VALUE.weakCompareAndSetVolatile(this, expectedValue, newValue);
+    }
+
+    /**
+     * Possibly atomically sets the value to {@code newValue}
+     * if the current value {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#weakCompareAndSetAcquire}.
+     *
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return {@code true} if successful
+     * @since 9
+     */
+    public final boolean weakCompareAndSetAcquire(long expectedValue, long newValue) {
+        return VALUE.weakCompareAndSetAcquire(this, expectedValue, newValue);
+    }
+
+    /**
+     * Possibly atomically sets the value to {@code newValue}
+     * if the current value {@code == expectedValue},
+     * with memory effects as specified by
+     * {@link VarHandle#weakCompareAndSetRelease}.
+     *
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return {@code true} if successful
+     * @since 9
+     */
+    public final boolean weakCompareAndSetRelease(long expectedValue, long newValue) {
+        return VALUE.weakCompareAndSetRelease(this, expectedValue, newValue);
     }
 
 }

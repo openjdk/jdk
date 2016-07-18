@@ -167,6 +167,7 @@ final class SplitIntoFunctions extends NodeVisitor<BlockLexicalContext> {
                 createIdent(name),
                 originalFn.getName() + "$" + name,
                 isProgram ? Collections.singletonList(createReturnParamIdent()) : Collections.<IdentNode>emptyList(),
+                null,
                 FunctionNode.Kind.NORMAL,
                 // We only need IS_SPLIT conservatively, in case it contains any array units so that we force
                 // the :callee's existence, to force :scope to never be in a slot lower than 2. This is actually

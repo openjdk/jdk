@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6474073
+ * @key intermittent
  * @summary Make sure zombies don't get created on Unix
  * @author Martin Buchholz
  */

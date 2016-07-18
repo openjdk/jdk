@@ -35,6 +35,8 @@
 
 package java.util.concurrent;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.concurrent.locks.LockSupport;
 
 /**
@@ -69,9 +71,6 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * cancellation races. Sync control in the current design relies
      * on a "state" field updated via CAS to track completion, along
      * with a simple Treiber stack to hold waiting threads.
-     *
-     * Style note: As usual, we bypass overhead of using
-     * AtomicXFieldUpdaters and instead directly use Unsafe intrinsics.
      */
 
     /**
@@ -163,9 +162,8 @@ public class FutureTask<V> implements RunnableFuture<V> {
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
-        if (!(state == NEW &&
-              U.compareAndSwapInt(this, STATE, NEW,
-                  mayInterruptIfRunning ? INTERRUPTING : CANCELLED)))
+        if (!(state == NEW && STATE.compareAndSet
+              (this, NEW, mayInterruptIfRunning ? INTERRUPTING : CANCELLED)))
             return false;
         try {    // in case call to interrupt throws exception
             if (mayInterruptIfRunning) {
@@ -174,7 +172,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
                     if (t != null)
                         t.interrupt();
                 } finally { // final state
-                    U.putIntRelease(this, STATE, INTERRUPTED);
+                    STATE.setRelease(this, INTERRUPTED);
                 }
             }
         } finally {
@@ -228,9 +226,9 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * @param v the value
      */
     protected void set(V v) {
-        if (U.compareAndSwapInt(this, STATE, NEW, COMPLETING)) {
+        if (STATE.compareAndSet(this, NEW, COMPLETING)) {
             outcome = v;
-            U.putIntRelease(this, STATE, NORMAL); // final state
+            STATE.setRelease(this, NORMAL); // final state
             finishCompletion();
         }
     }
@@ -246,16 +244,16 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * @param t the cause of failure
      */
     protected void setException(Throwable t) {
-        if (U.compareAndSwapInt(this, STATE, NEW, COMPLETING)) {
+        if (STATE.compareAndSet(this, NEW, COMPLETING)) {
             outcome = t;
-            U.putIntRelease(this, STATE, EXCEPTIONAL); // final state
+            STATE.setRelease(this, EXCEPTIONAL); // final state
             finishCompletion();
         }
     }
 
     public void run() {
         if (state != NEW ||
-            !U.compareAndSwapObject(this, RUNNER, null, Thread.currentThread()))
+            !RUNNER.compareAndSet(this, null, Thread.currentThread()))
             return;
         try {
             Callable<V> c = callable;
@@ -296,7 +294,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
      */
     protected boolean runAndReset() {
         if (state != NEW ||
-            !U.compareAndSwapObject(this, RUNNER, null, Thread.currentThread()))
+            !RUNNER.compareAndSet(this, null, Thread.currentThread()))
             return false;
         boolean ran = false;
         int s = state;
@@ -363,7 +361,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
     private void finishCompletion() {
         // assert state > COMPLETING;
         for (WaitNode q; (q = waiters) != null;) {
-            if (U.compareAndSwapObject(this, WAITERS, q, null)) {
+            if (WAITERS.weakCompareAndSetVolatile(this, q, null)) {
                 for (;;) {
                     Thread t = q.thread;
                     if (t != null) {
@@ -425,8 +423,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
                 q = new WaitNode();
             }
             else if (!queued)
-                queued = U.compareAndSwapObject(this, WAITERS,
-                                                q.next = waiters, q);
+                queued = WAITERS.weakCompareAndSetVolatile(this, q.next = waiters, q);
             else if (timed) {
                 final long parkNanos;
                 if (startTime == 0L) { // first time
@@ -475,7 +472,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
                         if (pred.thread == null) // check for race
                             continue retry;
                     }
-                    else if (!U.compareAndSwapObject(this, WAITERS, q, s))
+                    else if (!WAITERS.compareAndSet(this, q, s))
                         continue retry;
                 }
                 break;
@@ -483,19 +480,16 @@ public class FutureTask<V> implements RunnableFuture<V> {
         }
     }
 
-    // Unsafe mechanics
-    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
-    private static final long STATE;
-    private static final long RUNNER;
-    private static final long WAITERS;
+    // VarHandle mechanics
+    private static final VarHandle STATE;
+    private static final VarHandle RUNNER;
+    private static final VarHandle WAITERS;
     static {
         try {
-            STATE = U.objectFieldOffset
-                (FutureTask.class.getDeclaredField("state"));
-            RUNNER = U.objectFieldOffset
-                (FutureTask.class.getDeclaredField("runner"));
-            WAITERS = U.objectFieldOffset
-                (FutureTask.class.getDeclaredField("waiters"));
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            STATE = l.findVarHandle(FutureTask.class, "state", int.class);
+            RUNNER = l.findVarHandle(FutureTask.class, "runner", Thread.class);
+            WAITERS = l.findVarHandle(FutureTask.class, "waiters", WaitNode.class);
         } catch (ReflectiveOperationException e) {
             throw new Error(e);
         }

@@ -439,6 +439,10 @@ final class NashornCompleter implements Completer {
             args.add("-strict");
         }
 
+        if (env._es6) {
+            args.add("--language=es6");
+        }
+
         return Parser.create(args.toArray(new String[0]));
     }
 }

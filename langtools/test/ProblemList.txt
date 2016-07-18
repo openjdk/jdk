@@ -27,9 +27,6 @@
 #
 # javadoc
 
-com/sun/javadoc/testTypeAnnotations/TestTypeAnnotations.java                    8006735    generic-all    output type annotations in javadoc
-com/sun/javadoc/typeAnnotations/smoke/TestSmoke.java                            8013406    generic-all    Test cases fail in javadoc test TestSmoke.java
-
 jdk/javadoc/tool/6176978/T6176978.java                                          8152049    generic-all    no longer applicable, should delete
 jdk/javadoc/tool/InlineTagsWithBraces.java                                      8152050    generic-all    API, re-evaluate @bold, @maybe causes doclint to throw up.
 jdk/javadoc/tool/LangVers.java                                                  8152051    generic-all    API, re-evaluate, unsure of this test.

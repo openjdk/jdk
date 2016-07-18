@@ -37,10 +37,6 @@ import org.testng.annotations.Test;
 public class KullaCompletenessStressTest extends CompletenessStressTest {
     @Override
     public File[] getDirectoriesToTest() {
-        return new File[]{ getKullaSourceDirectory() };
-    }
-
-    public File getKullaSourceDirectory() {
         String src = System.getProperty("test.src");
         File file;
         if (src == null) {
@@ -48,6 +44,11 @@ public class KullaCompletenessStressTest extends CompletenessStressTest {
         } else {
             file = new File(src, "../../../src/jdk.jshell/share/classes");
         }
-        return file;
+        if (!file.exists()) {
+            System.out.println("jdk.jshell sources are not exist. Test has been skipped. Path: " + file.toString());
+            return new File[]{};
+        }else {
+            return new File[]{file};
+        }
     }
 }
