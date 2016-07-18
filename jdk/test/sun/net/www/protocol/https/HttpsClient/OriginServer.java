@@ -36,10 +36,12 @@ import javax.net.*;
  * Http get request in both clear and secure channel
  */
 
-public abstract class OriginServer implements Runnable {
+public abstract class OriginServer implements Runnable, Closeable {
 
     private ServerSocket server = null;
     Exception serverException = null;
+    private volatile boolean closed;
+
     /**
      * Constructs a OriginServer based on ss and
      * obtains a response data's bytecodes using the method
@@ -51,6 +53,14 @@ public abstract class OriginServer implements Runnable {
         newListener();
         if (serverException != null)
             throw serverException;
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (closed)
+            return;
+        closed = true;
+        server.close();
     }
 
     /**
@@ -73,8 +83,10 @@ public abstract class OriginServer implements Runnable {
         try {
             socket = server.accept();
         } catch (IOException e) {
-            System.out.println("Class Server died: " + e.getMessage());
-            serverException = e;
+            if (!closed) {
+                System.out.println("Class Server died: " + e.getMessage());
+                serverException = e;
+            }
             return;
         }
         try {

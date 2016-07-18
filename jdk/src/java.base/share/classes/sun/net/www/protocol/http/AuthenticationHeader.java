@@ -25,8 +25,11 @@
 
 package sun.net.www.protocol.http;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.HashMap;
+import java.util.Set;
+
 import sun.net.www.*;
 import sun.security.action.GetPropertyAction;
 
@@ -67,8 +70,8 @@ import sun.security.action.GetPropertyAction;
  *      -Dhttp.auth.preference="scheme"
  *
  * which in this case, specifies that "scheme" should be used as the auth scheme when offered
- * disregarding the default prioritisation. If scheme is not offered then the default priority
- * is used.
+ * disregarding the default prioritisation. If scheme is not offered, or explicitly
+ * disabled, by {@code disabledSchemes}, then the default priority is used.
  *
  * Attention: when http.auth.preference is set as SPNEGO or Kerberos, it's actually "Negotiate
  * with SPNEGO" or "Negotiate with Kerberos", which means the user will prefer the Negotiate
@@ -113,17 +116,32 @@ public class AuthenticationHeader {
     String hdrname; // Name of the header to look for
 
     /**
-     * parse a set of authentication headers and choose the preferred scheme
-     * that we support for a given host
+     * Parses a set of authentication headers and chooses the preferred scheme
+     * that is supported for a given host.
      */
     public AuthenticationHeader (String hdrname, MessageHeader response,
             HttpCallerInfo hci, boolean dontUseNegotiate) {
+        this(hdrname, response, hci, dontUseNegotiate, Collections.emptySet());
+    }
+
+    /**
+     * Parses a set of authentication headers and chooses the preferred scheme
+     * that is supported for a given host.
+     *
+     * <p> The {@code disabledSchemes} parameter is a, possibly empty, set of
+     * authentication schemes that are disabled.
+     */
+    public AuthenticationHeader(String hdrname,
+                                MessageHeader response,
+                                HttpCallerInfo hci,
+                                boolean dontUseNegotiate,
+                                Set<String> disabledSchemes) {
         this.hci = hci;
         this.dontUseNegotiate = dontUseNegotiate;
-        rsp = response;
+        this.rsp = response;
         this.hdrname = hdrname;
-        schemes = new HashMap<>();
-        parse();
+        this.schemes = new HashMap<>();
+        parse(disabledSchemes);
     }
 
     public HttpCallerInfo getHttpCallerInfo() {
@@ -143,10 +161,11 @@ public class AuthenticationHeader {
      * then the last one will be used. The
      * preferred scheme that we support will be used.
      */
-    private void parse () {
+    private void parse(Set<String> disabledSchemes) {
         Iterator<String> iter = rsp.multiValueIterator(hdrname);
         while (iter.hasNext()) {
             String raw = iter.next();
+            // HeaderParser lower cases everything, so can be used case-insensitively
             HeaderParser hp = new HeaderParser(raw);
             Iterator<String> keys = hp.keys();
             int i, lastSchemeIndex;
@@ -156,7 +175,8 @@ public class AuthenticationHeader {
                     if (lastSchemeIndex != -1) {
                         HeaderParser hpn = hp.subsequence (lastSchemeIndex, i);
                         String scheme = hpn.findKey(0);
-                        schemes.put (scheme, new SchemeMapValue (hpn, raw));
+                        if (!disabledSchemes.contains(scheme))
+                            schemes.put(scheme, new SchemeMapValue (hpn, raw));
                     }
                     lastSchemeIndex = i;
                 }
@@ -164,7 +184,8 @@ public class AuthenticationHeader {
             if (i > lastSchemeIndex) {
                 HeaderParser hpn = hp.subsequence (lastSchemeIndex, i);
                 String scheme = hpn.findKey(0);
-                schemes.put(scheme, new SchemeMapValue (hpn, raw));
+                if (!disabledSchemes.contains(scheme))
+                    schemes.put(scheme, new SchemeMapValue (hpn, raw));
             }
         }
 
