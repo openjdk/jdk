@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.lang.reflect;
 import java.lang.annotation.*;
 import java.util.Map;
 import java.util.Objects;
+import java.util.StringJoiner;
 
 import jdk.internal.misc.SharedSecrets;
 import sun.reflect.annotation.AnnotationParser;
@@ -86,15 +87,6 @@ public abstract class Executable extends AccessibleObject
                getDeclaringClass());
     }
 
-    void separateWithCommas(Class<?>[] types, StringBuilder sb) {
-        for (int j = 0; j < types.length; j++) {
-            sb.append(types[j].getTypeName());
-            if (j < (types.length - 1))
-                sb.append(",");
-        }
-
-    }
-
     void printModifiersIfNonzero(StringBuilder sb, int mask, boolean isDefault) {
         int mod = getModifiers() & mask;
 
@@ -121,13 +113,20 @@ public abstract class Executable extends AccessibleObject
 
             printModifiersIfNonzero(sb, modifierMask, isDefault);
             specificToStringHeader(sb);
-
             sb.append('(');
-            separateWithCommas(parameterTypes, sb);
+            StringJoiner sj = new StringJoiner(",");
+            for (Class<?> parameterType : parameterTypes) {
+                sj.add(parameterType.getTypeName());
+            }
+            sb.append(sj.toString());
             sb.append(')');
+
             if (exceptionTypes.length > 0) {
-                sb.append(" throws ");
-                separateWithCommas(exceptionTypes, sb);
+                StringJoiner joiner = new StringJoiner(",", "throws ", "");
+                for (Class<?> exceptionType : exceptionTypes) {
+                    joiner.add(exceptionType.getTypeName());
+                }
+                sb.append(joiner.toString());
             }
             return sb.toString();
         } catch (Exception e) {
@@ -149,42 +148,34 @@ public abstract class Executable extends AccessibleObject
 
             TypeVariable<?>[] typeparms = getTypeParameters();
             if (typeparms.length > 0) {
-                boolean first = true;
-                sb.append('<');
+                StringJoiner sj = new StringJoiner(",", "<", "> ");
                 for(TypeVariable<?> typeparm: typeparms) {
-                    if (!first)
-                        sb.append(',');
-                    // Class objects can't occur here; no need to test
-                    // and call Class.getName().
-                    sb.append(typeparm.toString());
-                    first = false;
+                    sj.add(typeparm.getTypeName());
                 }
-                sb.append("> ");
+                sb.append(sj.toString());
             }
 
             specificToGenericStringHeader(sb);
 
             sb.append('(');
+            StringJoiner sj = new StringJoiner(",");
             Type[] params = getGenericParameterTypes();
             for (int j = 0; j < params.length; j++) {
                 String param = params[j].getTypeName();
                 if (isVarArgs() && (j == params.length - 1)) // replace T[] with T...
                     param = param.replaceFirst("\\[\\]$", "...");
-                sb.append(param);
-                if (j < (params.length - 1))
-                    sb.append(',');
+                sj.add(param);
             }
+            sb.append(sj.toString());
             sb.append(')');
-            Type[] exceptions = getGenericExceptionTypes();
-            if (exceptions.length > 0) {
-                sb.append(" throws ");
-                for (int k = 0; k < exceptions.length; k++) {
-                    sb.append((exceptions[k] instanceof Class)?
-                              ((Class)exceptions[k]).getName():
-                              exceptions[k].toString());
-                    if (k < (exceptions.length - 1))
-                        sb.append(',');
+
+            Type[] exceptionTypes = getGenericExceptionTypes();
+            if (exceptionTypes.length > 0) {
+                StringJoiner joiner = new StringJoiner(",", " throws ", "");
+                for (Type exceptionType : exceptionTypes) {
+                    joiner.add(exceptionType.getTypeName());
                 }
+                sb.append(joiner.toString());
             }
             return sb.toString();
         } catch (Exception e) {
