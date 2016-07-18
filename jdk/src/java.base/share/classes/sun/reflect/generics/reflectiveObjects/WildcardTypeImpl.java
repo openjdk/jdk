@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.tree.FieldTypeSignature;
 import sun.reflect.generics.visitor.Reifier;
 import java.util.Arrays;
+import java.util.StringJoiner;
 
 
 /**
@@ -156,14 +157,12 @@ public class WildcardTypeImpl extends LazyReflectiveObjectGenerator
 
         assert bounds.length > 0;
 
-        boolean first = true;
+        StringJoiner sj = new StringJoiner(" & ");
         for(Type bound: bounds) {
-            if (!first)
-                sb.append(" & ");
-
-            first = false;
-            sb.append(bound.getTypeName());
+            sj.add(bound.getTypeName());
         }
+        sb.append(sj.toString());
+
         return sb.toString();
     }
 

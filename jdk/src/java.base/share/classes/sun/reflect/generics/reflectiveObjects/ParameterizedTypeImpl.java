@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
+import java.util.StringJoiner;
 import java.util.Objects;
 
 /** Implementing class for ParameterizedType interface. */
@@ -207,10 +208,7 @@ public class ParameterizedTypeImpl implements ParameterizedType {
         StringBuilder sb = new StringBuilder();
 
         if (ownerType != null) {
-            if (ownerType instanceof Class)
-                sb.append(((Class)ownerType).getName());
-            else
-                sb.append(ownerType.toString());
+            sb.append(ownerType.getTypeName());
 
             sb.append(".");
 
@@ -224,17 +222,13 @@ public class ParameterizedTypeImpl implements ParameterizedType {
         } else
             sb.append(rawType.getName());
 
-        if (actualTypeArguments != null &&
-            actualTypeArguments.length > 0) {
-            sb.append("<");
-            boolean first = true;
+        if (actualTypeArguments != null) {
+            StringJoiner sj = new StringJoiner(", ", "<", ">");
+            sj.setEmptyValue("");
             for(Type t: actualTypeArguments) {
-                if (!first)
-                    sb.append(", ");
-                sb.append(t.getTypeName());
-                first = false;
+                sj.add(t.getTypeName());
             }
-            sb.append(">");
+            sb.append(sj.toString());
         }
 
         return sb.toString();
