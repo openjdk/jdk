@@ -3134,8 +3134,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         }
       } else {
         uint op = use->Opcode();
-        if ((use->in(MemNode::Memory) == n) &&
-            (op == Op_StrCompressedCopy || op == Op_StrInflatedCopy)) {
+        if ((op == Op_StrCompressedCopy || op == Op_StrInflatedCopy) &&
+            (use->in(MemNode::Memory) == n)) {
           // They overwrite memory edge corresponding to destination array,
           memnode_worklist.append_if_missing(use);
         } else if (!(op == Op_CmpP || op == Op_Conv2B ||
