@@ -60,7 +60,7 @@ import static java.util.Objects.requireNonNull;
 final class WSWriter {
 
     private final RawChannel channel;
-    private final RawChannel.NonBlockingEvent writeReadinessHandler;
+    private final RawChannel.RawEvent writeReadinessHandler;
     private final Consumer<Throwable> completionCallback;
     private ByteBuffer[] buffers;
     private int offset;
@@ -110,8 +110,8 @@ final class WSWriter {
         return -1;
     }
 
-    private RawChannel.NonBlockingEvent createHandler() {
-        return new RawChannel.NonBlockingEvent() {
+    private RawChannel.RawEvent createHandler() {
+        return new RawChannel.RawEvent() {
 
             @Override
             public int interestOps() {
