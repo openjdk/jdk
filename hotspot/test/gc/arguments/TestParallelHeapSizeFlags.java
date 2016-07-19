@@ -29,6 +29,7 @@
  * parallel collectors.
  * @requires vm.gc=="null"
  * @library /testlibrary /test/lib
+ * @ignore 8161552
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestParallelHeapSizeFlags TestMaxHeapSizeTools
