@@ -1068,6 +1068,12 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
     return NULL;
   }
 
+#if INCLUDE_JVMCI
+  if (comp->is_jvmci() && !JVMCIRuntime::can_initialize_JVMCI()) {
+    return NULL;
+  }
+#endif
+
   if (osr_bci == InvocationEntryBci) {
     // standard compilation
     CompiledMethod* method_code = method->code();

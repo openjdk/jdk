@@ -237,18 +237,6 @@ void SimpleThresholdPolicy::compile(const methodHandle& mh, int bci, CompLevel l
     return;
   }
 
-#if INCLUDE_JVMCI
-  // We can't compile with a JVMCI compiler until the module system is initialized past
-  // phase 3.  The JVMCI API itself isn't available until phase 2 and ServiceLoader isn't
-  // usable until after phase 3.
-  if (level == CompLevel_full_optimization && EnableJVMCI && UseJVMCICompiler) {
-    if (SystemDictionary::java_system_loader() == NULL) {
-      return;
-     }
-     assert(Universe::is_module_initialized(), "must be");
-  }
-#endif
-
   // Check if the method can be compiled. If it cannot be compiled with C1, continue profiling
   // in the interpreter and then compile with C2 (the transition function will request that,
   // see common() ). If the method cannot be compiled with C2 but still can with C1, compile it with

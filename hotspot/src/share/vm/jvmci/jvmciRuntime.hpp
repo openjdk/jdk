@@ -87,6 +87,11 @@ class JVMCIRuntime: public AllStatic {
   static Handle callStatic(const char* className, const char* methodName, const char* returnType, JavaCallArguments* args, TRAPS);
 
   /**
+   * Determines if the VM is sufficiently booted to initialize JVMCI.
+   */
+  static bool can_initialize_JVMCI();
+
+  /**
    * Trigger initialization of HotSpotJVMCIRuntime through JVMCI.getRuntime()
    */
   static void initialize_JVMCI(TRAPS);
