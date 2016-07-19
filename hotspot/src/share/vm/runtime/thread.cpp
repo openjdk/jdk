@@ -3770,6 +3770,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Final system initialization including security manager and system class loader
   call_initPhase3(CHECK_JNI_ERR);
 
+  // cache the system class loader
+  SystemDictionary::compute_java_system_loader(CHECK_(JNI_ERR));
+
 #if INCLUDE_JVMCI
   if (EnableJVMCI && UseJVMCICompiler && (!UseInterpreter || !BackgroundCompilation)) {
     // 8145270: Force initialization of JVMCI runtime otherwise requests for blocking
@@ -3777,8 +3780,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     JVMCIRuntime::force_initialization(CHECK_JNI_ERR);
   }
 #endif
-  // cache the system class loader
-  SystemDictionary::compute_java_system_loader(CHECK_(JNI_ERR));
 
   // Always call even when there are not JVMTI environments yet, since environments
   // may be attached late and JVMTI must track phases of VM execution
