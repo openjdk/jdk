@@ -4914,7 +4914,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 TOOLCHAIN_MINIMUM_VERSION_clang="3.2"
 TOOLCHAIN_MINIMUM_VERSION_gcc="4.3"
 TOOLCHAIN_MINIMUM_VERSION_microsoft=""
-TOOLCHAIN_MINIMUM_VERSION_solstudio="5.12"
+TOOLCHAIN_MINIMUM_VERSION_solstudio="5.13"
 TOOLCHAIN_MINIMUM_VERSION_xlc=""
 
 # Prepare the system so that TOOLCHAIN_CHECK_COMPILER_VERSION can be called.
@@ -5095,7 +5095,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1468427332
+DATE_WHEN_GENERATED=1468926910
 
 ###############################################################################
 #
@@ -52838,8 +52838,8 @@ $as_echo "$JVM_FEATURES" >&6; }
     as_fn_error $? "Specified JVM feature 'management' requires feature 'nmt'" "$LINENO" 5
   fi
 
-  if   [[ " $JVM_FEATURES " =~ " jvmci " ]]   && !   [[ " $JVM_FEATURES " =~ " compiler2 " ]]  ; then
-    as_fn_error $? "Specified JVM feature 'jvmci' requires feature 'compiler2'" "$LINENO" 5
+  if   [[ " $JVM_FEATURES " =~ " jvmci " ]]   && ! (  [[ " $JVM_FEATURES " =~ " compiler1 " ]]   ||   [[ " $JVM_FEATURES " =~ " compiler2 " ]]  ); then
+    as_fn_error $? "Specified JVM feature 'jvmci' requires feature 'compiler2' or 'compiler1'" "$LINENO" 5
   fi
 
   if   [[ " $JVM_FEATURES " =~ " compiler2 " ]]   && !   [[ " $JVM_FEATURES " =~ " all-gcs " ]]  ; then
@@ -52879,7 +52879,7 @@ $as_echo "$JVM_FEATURES" >&6; }
     fi
   fi
 
-  # Only enable jvmci on x86_64, sparcv9 and aarch64, and only on server.
+  # Only enable jvmci on x86_64, sparcv9 and aarch64.
   if test "x$OPENJDK_TARGET_CPU" = "xx86_64" || \
       test "x$OPENJDK_TARGET_CPU" = "xsparcv9" || \
       test "x$OPENJDK_TARGET_CPU" = "xaarch64" ; then
@@ -52893,7 +52893,7 @@ $as_echo "$JVM_FEATURES" >&6; }
 
   # Enable features depending on variant.
   JVM_FEATURES_server="compiler1 compiler2 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci"
-  JVM_FEATURES_client="compiler1 $NON_MINIMAL_FEATURES $JVM_FEATURES"
+  JVM_FEATURES_client="compiler1 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci"
   JVM_FEATURES_core="$NON_MINIMAL_FEATURES $JVM_FEATURES"
   JVM_FEATURES_minimal="compiler1 minimal $JVM_FEATURES"
   JVM_FEATURES_zero="zero $NON_MINIMAL_FEATURES $JVM_FEATURES"
