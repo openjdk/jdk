@@ -340,7 +340,7 @@ void G1PrepareCompactClosure::free_humongous_region(HeapRegion* hr) {
   hr->set_containing_set(NULL);
   _humongous_regions_removed++;
 
-  _g1h->free_humongous_region(hr, &dummy_free_list, false /* par */);
+  _g1h->free_humongous_region(hr, &dummy_free_list, false /* skip_remset */);
   prepare_for_compaction(hr, end);
   dummy_free_list.remove_all();
 }

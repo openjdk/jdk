@@ -501,13 +501,12 @@ double G1DefaultPolicy::average_time_ms(G1GCPhaseTimes::GCParPhases phase) const
 
 double G1DefaultPolicy::young_other_time_ms() const {
   return phase_times()->young_cset_choice_time_ms() +
-         phase_times()->young_free_cset_time_ms();
+         phase_times()->average_time_ms(G1GCPhaseTimes::YoungFreeCSet);
 }
 
 double G1DefaultPolicy::non_young_other_time_ms() const {
   return phase_times()->non_young_cset_choice_time_ms() +
-         phase_times()->non_young_free_cset_time_ms();
-
+         phase_times()->average_time_ms(G1GCPhaseTimes::NonYoungFreeCSet);
 }
 
 double G1DefaultPolicy::other_time_ms(double pause_time_ms) const {
@@ -515,7 +514,7 @@ double G1DefaultPolicy::other_time_ms(double pause_time_ms) const {
 }
 
 double G1DefaultPolicy::constant_other_time_ms(double pause_time_ms) const {
-  return other_time_ms(pause_time_ms) - young_other_time_ms() - non_young_other_time_ms();
+  return other_time_ms(pause_time_ms) - phase_times()->total_free_cset_time_ms();
 }
 
 CollectionSetChooser* G1DefaultPolicy::cset_chooser() const {

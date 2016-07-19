@@ -1159,10 +1159,10 @@ public:
       hr->set_containing_set(NULL);
       if (hr->is_humongous()) {
         _humongous_regions_removed++;
-        _g1->free_humongous_region(hr, _local_cleanup_list, true);
+        _g1->free_humongous_region(hr, _local_cleanup_list, true /* skip_remset */);
       } else {
         _old_regions_removed++;
-        _g1->free_region(hr, _local_cleanup_list, true);
+        _g1->free_region(hr, _local_cleanup_list, true /* skip_remset */);
       }
     } else {
       hr->rem_set()->do_cleanup_work(_hrrs_cleanup_task);
