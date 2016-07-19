@@ -580,15 +580,20 @@ void G1HeapVerifier::verify_dirty_region(HeapRegion* hr) {
   }
 }
 
-void G1HeapVerifier::verify_dirty_young_list(HeapRegion* head) {
-  G1SATBCardTableModRefBS* ct_bs = _g1h->g1_barrier_set();
-  for (HeapRegion* hr = head; hr != NULL; hr = hr->next_in_collection_set()) {
-    verify_dirty_region(hr);
+class G1VerifyDirtyYoungListClosure : public HeapRegionClosure {
+private:
+  G1HeapVerifier* _verifier;
+public:
+  G1VerifyDirtyYoungListClosure(G1HeapVerifier* verifier) : HeapRegionClosure(), _verifier(verifier) { }
+  virtual bool doHeapRegion(HeapRegion* r) {
+    _verifier->verify_dirty_region(r);
+    return false;
   }
-}
+};
 
 void G1HeapVerifier::verify_dirty_young_regions() {
-  verify_dirty_young_list(_g1h->collection_set()->inc_head());
+  G1VerifyDirtyYoungListClosure cl(this);
+  _g1h->collection_set()->iterate(&cl);
 }
 
 bool G1HeapVerifier::verify_no_bits_over_tams(const char* bitmap_name, G1CMBitMapRO* bitmap,

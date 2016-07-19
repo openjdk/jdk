@@ -103,6 +103,7 @@ void G1StringDedupThread::run_service() {
       SuspendibleThreadSetJoiner sts_join;
 
       stat.mark_exec();
+      print_start(stat);
 
       // Process the queue
       for (;;) {
@@ -123,9 +124,8 @@ void G1StringDedupThread::run_service() {
 
       stat.mark_done();
 
-      // Print statistics
       total_stat.add(stat);
-      print(stat, total_stat);
+      print_end(stat, total_stat);
     }
 
     G1StringDedupTable::clean_entry_cache();
@@ -136,14 +136,16 @@ void G1StringDedupThread::stop_service() {
   G1StringDedupQueue::cancel_wait();
 }
 
-void G1StringDedupThread::print(const G1StringDedupStat& last_stat, const G1StringDedupStat& total_stat) {
-  if (log_is_enabled(Info, gc, stringdedup)) {
-    G1StringDedupStat::print_summary(last_stat, total_stat);
-    if (log_is_enabled(Debug, gc, stringdedup)) {
-      G1StringDedupStat::print_statistics(last_stat, false);
-      G1StringDedupStat::print_statistics(total_stat, true);
-      G1StringDedupTable::print_statistics();
-      G1StringDedupQueue::print_statistics();
-    }
+void G1StringDedupThread::print_start(const G1StringDedupStat& last_stat) {
+  G1StringDedupStat::print_start(last_stat);
+}
+
+void G1StringDedupThread::print_end(const G1StringDedupStat& last_stat, const G1StringDedupStat& total_stat) {
+  G1StringDedupStat::print_end(last_stat, total_stat);
+  if (log_is_enabled(Debug, gc, stringdedup)) {
+    G1StringDedupStat::print_statistics(last_stat, false);
+    G1StringDedupStat::print_statistics(total_stat, true);
+    G1StringDedupTable::print_statistics();
+    G1StringDedupQueue::print_statistics();
   }
 }

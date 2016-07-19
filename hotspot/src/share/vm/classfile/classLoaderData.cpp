@@ -142,7 +142,9 @@ void ClassLoaderData::oops_do(OopClosure* f, KlassClosure* klass_closure, bool m
 
   f->do_oop(&_class_loader);
   _dependencies.oops_do(f);
-  _handles->oops_do(f);
+  if (_handles != NULL) {
+    _handles->oops_do(f);
+  }
   if (klass_closure != NULL) {
     classes_do(klass_closure);
   }

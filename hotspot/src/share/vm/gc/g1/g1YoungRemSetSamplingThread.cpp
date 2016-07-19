@@ -71,38 +71,51 @@ void G1YoungRemSetSamplingThread::stop_service() {
   _monitor.notify();
 }
 
+class G1YoungRemSetSamplingClosure : public HeapRegionClosure {
+  SuspendibleThreadSetJoiner* _sts;
+  size_t _regions_visited;
+  size_t _sampled_rs_lengths;
+public:
+  G1YoungRemSetSamplingClosure(SuspendibleThreadSetJoiner* sts) :
+    HeapRegionClosure(), _sts(sts), _regions_visited(0), _sampled_rs_lengths(0) { }
+
+  virtual bool doHeapRegion(HeapRegion* r) {
+    size_t rs_length = r->rem_set()->occupied();
+    _sampled_rs_lengths += rs_length;
+
+    // Update the collection set policy information for this region
+    G1CollectedHeap::heap()->collection_set()->update_young_region_prediction(r, rs_length);
+
+    _regions_visited++;
+
+    if (_regions_visited == 10) {
+      if (_sts->should_yield()) {
+        _sts->yield();
+        // A gc may have occurred and our sampling data is stale and further
+        // traversal of the collection set is unsafe
+        return true;
+      }
+      _regions_visited = 0;
+    }
+    return false;
+  }
+
+  size_t sampled_rs_lengths() const { return _sampled_rs_lengths; }
+};
+
 void G1YoungRemSetSamplingThread::sample_young_list_rs_lengths() {
   SuspendibleThreadSetJoiner sts;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   G1Policy* g1p = g1h->g1_policy();
-  G1CollectionSet* g1cs = g1h->collection_set();
+
   if (g1p->adaptive_young_list_length()) {
-    int regions_visited = 0;
-    HeapRegion* hr = g1cs->inc_head();
-    size_t sampled_rs_lengths = 0;
+    G1YoungRemSetSamplingClosure cl(&sts);
 
-    while (hr != NULL) {
-      size_t rs_length = hr->rem_set()->occupied();
-      sampled_rs_lengths += rs_length;
+    G1CollectionSet* g1cs = g1h->collection_set();
+    g1cs->iterate(&cl);
 
-      // Update the collection set policy information for this region
-      g1cs->update_young_region_prediction(hr, rs_length);
-
-      ++regions_visited;
-
-      // we try to yield every time we visit 10 regions
-      if (regions_visited == 10) {
-        if (sts.should_yield()) {
-          sts.yield();
-          // A gc may have occurred and our sampling data is stale and further
-          // traversal of the collection set is unsafe
-          return;
-        }
-        regions_visited = 0;
-      }
-      assert(hr == g1cs->inc_tail() || hr->next_in_collection_set() != NULL, "next should only be null at tail of icset");
-      hr = hr->next_in_collection_set();
+    if (cl.complete()) {
+      g1p->revise_young_list_target_length_if_necessary(cl.sampled_rs_lengths());
     }
-    g1p->revise_young_list_target_length_if_necessary(sampled_rs_lengths);
   }
 }

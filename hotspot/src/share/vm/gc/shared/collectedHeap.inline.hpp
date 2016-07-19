@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_SHARED_COLLECTEDHEAP_INLINE_HPP
 #define SHARE_VM_GC_SHARED_COLLECTEDHEAP_INLINE_HPP
 
+#include "classfile/javaClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
@@ -94,6 +95,22 @@ void CollectedHeap::post_allocation_setup_obj(KlassHandle klass,
          !((oop)obj)->is_array(), "must not be an array");
   // notify jvmti and dtrace
   post_allocation_notify(klass, (oop)obj, size);
+}
+
+void CollectedHeap::post_allocation_setup_class(KlassHandle klass,
+                                                HeapWord* obj,
+                                                int size) {
+  // Set oop_size field before setting the _klass field
+  // in post_allocation_setup_common() because the klass field
+  // indicates that the object is parsable by concurrent GC.
+  oop new_cls = (oop)obj;
+  assert(size > 0, "oop_size must be positive.");
+  java_lang_Class::set_oop_size(new_cls, size);
+  post_allocation_setup_common(klass, obj);
+  assert(Universe::is_bootstrapping() ||
+         !new_cls->is_array(), "must not be an array");
+  // notify jvmti and dtrace
+  post_allocation_notify(klass, new_cls, size);
 }
 
 void CollectedHeap::post_allocation_setup_array(KlassHandle klass,
@@ -203,6 +220,16 @@ oop CollectedHeap::obj_allocate(KlassHandle klass, int size, TRAPS) {
   assert(size >= 0, "int won't convert to size_t");
   HeapWord* obj = common_mem_allocate_init(klass, size, CHECK_NULL);
   post_allocation_setup_obj(klass, obj, size);
+  NOT_PRODUCT(Universe::heap()->check_for_bad_heap_word_value(obj, size));
+  return (oop)obj;
+}
+
+oop CollectedHeap::class_allocate(KlassHandle klass, int size, TRAPS) {
+  debug_only(check_for_valid_allocation_state());
+  assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
+  assert(size >= 0, "int won't convert to size_t");
+  HeapWord* obj = common_mem_allocate_init(klass, size, CHECK_NULL);
+  post_allocation_setup_class(klass, obj, size); // set oop_size
   NOT_PRODUCT(Universe::heap()->check_for_bad_heap_word_value(obj, size));
   return (oop)obj;
 }

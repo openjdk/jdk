@@ -415,17 +415,8 @@ void LogConfiguration::describe_available(outputStream* out){
 void LogConfiguration::describe_current_configuration(outputStream* out){
   out->print_cr("Log output configuration:");
   for (size_t i = 0; i < _n_outputs; i++) {
-    out->print("#" SIZE_FORMAT ": %s ", i, _outputs[i]->name());
-    out->print_raw(_outputs[i]->config_string());
-    out->print(" ");
-    char delimiter[2] = {0};
-    for (size_t d = 0; d < LogDecorators::Count; d++) {
-      LogDecorators::Decorator decorator = static_cast<LogDecorators::Decorator>(d);
-      if (_outputs[i]->decorators().is_decorator(decorator)) {
-        out->print("%s%s", delimiter, LogDecorators::name(decorator));
-        *delimiter = ',';
-      }
-    }
+    out->print("#" SIZE_FORMAT ": ", i);
+    _outputs[i]->describe(out);
     out->cr();
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,6 @@ public class TestMetaspaceSizeFlags {
     // 8024650: MaxMetaspaceSize was adjusted instead of MetaspaceSize.
     testMaxMetaspaceSizeLTMetaspaceSize(MAX_ALIGNMENT, MAX_ALIGNMENT * 2);
     testMaxMetaspaceSizeGTMetaspaceSize(MAX_ALIGNMENT * 2, MAX_ALIGNMENT);
-    testTooSmallInitialMetaspace(0, 0);
-    testTooSmallInitialMetaspace(0, MAX_ALIGNMENT);
-    testTooSmallInitialMetaspace(MAX_ALIGNMENT, 0);
   }
 
   private static void testMaxMetaspaceSizeEQMetaspaceSize(long maxMetaspaceSize, long metaspaceSize) throws Exception {
@@ -71,11 +68,6 @@ public class TestMetaspaceSizeFlags {
     Asserts.assertGT(mf.maxMetaspaceSize, mf.metaspaceSize);
     Asserts.assertEQ(mf.maxMetaspaceSize, maxMetaspaceSize);
     Asserts.assertEQ(mf.metaspaceSize, metaspaceSize);
-  }
-
-  private static void testTooSmallInitialMetaspace(long maxMetaspaceSize, long metaspaceSize) throws Exception {
-    OutputAnalyzer output = run(maxMetaspaceSize, metaspaceSize);
-    output.shouldContain("Too small initial Metaspace size");
   }
 
   private static MetaspaceFlags runAndGetValue(long maxMetaspaceSize, long metaspaceSize) throws Exception {

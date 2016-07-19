@@ -19,31 +19,59 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-import java.util.ArrayList;
+public class TestPutField
+version 53:0
+{
 
-/* @test TestMetaspaceInitialization
- * @bug 8024945
- * @summary Tests to initialize metaspace with a very low MetaspaceSize
- * @modules java.base/jdk.internal.misc
- * @library /testlibrary
- * @run main/othervm -XX:MetaspaceSize=0 TestMetaspaceInitialization
- */
-public class TestMetaspaceInitialization {
-    private class Internal {
-        public int x;
-        public Internal(int x) {
-            this.x = x;
-        }
-    }
+final Field test_field:"I";
 
-    private void test() {
-        ArrayList<Internal> l = new ArrayList<>();
-        l.add(new Internal(17));
-    }
 
-    public static void main(String[] args) {
-        new TestMetaspaceInitialization().test();
-    }
+public Method <init>:"()V"
+       stack 2 locals 1
+{
+	aload_0;
+	dup;
+	invokespecial Method java/lang/Object.<init>:"()V";
+	bipush 13;
+        putfield Field test_field:"I";
+        return;
+}
+
+public Method aMethod:"()I"
+       stack 2 locals 2
+{
+	aload_0;
+	getfield Field test_field:"I";
+	istore_1;
+	aload_0;
+	bipush 14;
+        putfield Field test_field:"I";
+	iload_1;
+        ireturn;
+}
+
+
+public static Method test:"()V"
+       stack 2 locals 2
+{
+	new class TestPutField;
+	astore_0;
+	aload_0;
+	invokespecial Method <init>:"()V";
+	getstatic Field java/lang/System.out:"Ljava/io/PrintStream;";
+	astore_1;
+	aload_1;
+	aload_0;
+	invokevirtual Method aMethod:"()I";
+	invokevirtual Method java/io/PrintStream.println:"(I)V";
+	aload_1;
+	aload_0;
+	getfield Field test_field:"I";	
+	invokevirtual Method java/io/PrintStream.println:"(I)V";
+        return;
+}
+
 }

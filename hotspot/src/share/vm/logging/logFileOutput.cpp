@@ -428,3 +428,13 @@ char* LogFileOutput::make_file_name(const char* file_name,
   result[result_len] = '\0';
   return result;
 }
+
+void LogFileOutput::describe(outputStream *out) {
+  LogOutput::describe(out);
+  out->print(" ");
+
+  out->print("filecount=%u,filesize=" SIZE_FORMAT "%s", _file_count,
+             byte_size_in_proper_unit(_rotate_size),
+             proper_unit_for_byte_size(_rotate_size));
+}
+

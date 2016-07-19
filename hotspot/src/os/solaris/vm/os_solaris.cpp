@@ -1320,36 +1320,8 @@ bool os::getTimesSecs(double* process_real_time,
 }
 
 bool os::supports_vtime() { return true; }
-
-bool os::enable_vtime() {
-  int fd = ::open("/proc/self/ctl", O_WRONLY);
-  if (fd == -1) {
-    return false;
-  }
-
-  long cmd[] = { PCSET, PR_MSACCT };
-  int res = ::write(fd, cmd, sizeof(long) * 2);
-  ::close(fd);
-  if (res != sizeof(long) * 2) {
-    return false;
-  }
-  return true;
-}
-
-bool os::vtime_enabled() {
-  int fd = ::open("/proc/self/status", O_RDONLY);
-  if (fd == -1) {
-    return false;
-  }
-
-  pstatus_t status;
-  int res = os::read(fd, (void*) &status, sizeof(pstatus_t));
-  ::close(fd);
-  if (res != sizeof(pstatus_t)) {
-    return false;
-  }
-  return status.pr_flags & PR_MSACCT;
-}
+bool os::enable_vtime() { return false; }
+bool os::vtime_enabled() { return false; }
 
 double os::elapsedVTime() {
   return (double)gethrvtime() / (double)hrtime_hz;
