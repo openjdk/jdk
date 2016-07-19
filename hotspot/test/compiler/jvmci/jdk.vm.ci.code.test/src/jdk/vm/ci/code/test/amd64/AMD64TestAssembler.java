@@ -46,6 +46,9 @@ import jdk.vm.ci.meta.VMConstant;
 
 public class AMD64TestAssembler extends TestAssembler {
 
+    private static final Register scratchRegister = AMD64.r12;
+    private static final Register doubleScratch = AMD64.xmm15;
+
     public AMD64TestAssembler(CodeCacheProvider codeCache, TestHotSpotVMConfig config) {
         super(codeCache, config, 16, 16, AMD64Kind.DWORD, AMD64.rax, AMD64.rcx, AMD64.rdi, AMD64.r8, AMD64.r9, AMD64.r10);
     }
@@ -226,6 +229,14 @@ public class AMD64TestAssembler extends TestAssembler {
         return ret;
     }
 
+    private int getAdjustedOffset(StackSlot ret) {
+        if (ret.getRawOffset() < 0) {
+            return ret.getRawOffset() + 16;
+        } else {
+            return -(frameSize - ret.getRawOffset()) + 16;
+        }
+    }
+
     @Override
     public StackSlot emitIntToStack(Register a) {
         StackSlot ret = newStackSlot(AMD64Kind.DWORD);
@@ -234,7 +245,7 @@ public class AMD64TestAssembler extends TestAssembler {
 
     public StackSlot emitIntToStack(StackSlot ret, Register a) {
         // MOV r/m32,r32
-        emitModRMMemory(false, 0x89, a.encoding, AMD64.rbp.encoding, ret.getRawOffset() + 16);
+        emitModRMMemory(false, 0x89, a.encoding, AMD64.rbp.encoding, getAdjustedOffset(ret));
         return ret;
     }
 
@@ -246,7 +257,7 @@ public class AMD64TestAssembler extends TestAssembler {
 
     public StackSlot emitLongToStack(StackSlot ret, Register a) {
         // MOV r/m64,r64
-        emitModRMMemory(true, 0x89, a.encoding, AMD64.rbp.encoding, ret.getRawOffset() + 16);
+        emitModRMMemory(true, 0x89, a.encoding, AMD64.rbp.encoding, getAdjustedOffset(ret));
         return ret;
     }
 
@@ -262,11 +273,7 @@ public class AMD64TestAssembler extends TestAssembler {
         code.emitByte(0x0F);
         code.emitByte(0x11);                               // MOVSS xmm2/m32, xmm1
         code.emitByte(0x85 | ((a.encoding & 0x7) << 3));   // [rbp+offset]
-        if (ret.getRawOffset() < 0) {
-            code.emitInt(ret.getRawOffset() + 16);
-        } else {
-            code.emitInt(-(frameSize - ret.getRawOffset()) + 16);
-        }
+        code.emitInt(getAdjustedOffset(ret));
         return ret;
     }
 
@@ -282,11 +289,7 @@ public class AMD64TestAssembler extends TestAssembler {
         code.emitByte(0x0F);
         code.emitByte(0x11);                               // MOVSD xmm2/m32, xmm1
         code.emitByte(0x85 | ((a.encoding & 0x7) << 3));   // [rbp+offset]
-        if (ret.getRawOffset() < 0) {
-            code.emitInt(ret.getRawOffset() + 16);
-        } else {
-            code.emitInt(-(frameSize - ret.getRawOffset()) + 16);
-        }
+        code.emitInt(getAdjustedOffset(ret));
         return ret;
     }
 
@@ -383,15 +386,16 @@ public class AMD64TestAssembler extends TestAssembler {
         } else if (av instanceof StackSlot) {
             StackSlot slot = (StackSlot) av;
             if (prim instanceof Float) {
-                emitFloatToStack(slot, emitLoadFloat((Float) prim));
+                emitFloatToStack(slot, emitLoadFloat(doubleScratch, (Float) prim));
             } else if (prim instanceof Double) {
-                emitDoubleToStack(slot, emitLoadDouble((Double) prim));
+                emitDoubleToStack(slot, emitLoadDouble(doubleScratch, (Double) prim));
             } else if (prim instanceof Integer) {
-                emitIntToStack(slot, emitLoadInt((Integer) prim));
+                emitIntToStack(slot, emitLoadInt(scratchRegister, (Integer) prim));
             } else if (prim instanceof Long) {
-                emitLongToStack(slot, emitLoadLong((Long) prim));
+                emitLongToStack(slot, emitLoadLong(scratchRegister, (Long) prim));
+            } else {
+                assert false : "Unimplemented";
             }
-            assert false : "Unimplemented";
         } else {
             throw new IllegalArgumentException("Unknown value " + av);
         }
