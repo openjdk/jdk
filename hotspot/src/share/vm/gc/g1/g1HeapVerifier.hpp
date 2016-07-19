@@ -108,7 +108,6 @@ public:
 
   void verify_not_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
   void verify_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
-  void verify_dirty_young_list(HeapRegion* head) PRODUCT_RETURN;
   void verify_dirty_young_regions() PRODUCT_RETURN;
 };
 

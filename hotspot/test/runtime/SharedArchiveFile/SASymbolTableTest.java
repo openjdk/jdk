@@ -24,6 +24,9 @@
 /*
  * @test SASymbolTableTest
  * @summary Walk symbol table using SA, with and without CDS.
+ * Started failing on 2016.06.24 due to 8160376 on MacOS X so quarantine
+ * it on that platform:
+ * @requires os.family != "mac"
  * @library /testlibrary
  * @modules java.base/jdk.internal.misc
  *          jdk.hotspot.agent/sun.jvm.hotspot.oops
