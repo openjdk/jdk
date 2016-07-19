@@ -95,6 +95,8 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("String Dedup Fixup", Level.INFO),
         new LogMessageWithLevel("Expand Heap After Collection", Level.INFO),
         // Free CSet
+        new LogMessageWithLevel("Free Collection Set", Level.INFO),
+        new LogMessageWithLevel("Free Collection Set Serial", Level.DEBUG),
         new LogMessageWithLevel("Young Free Collection Set", Level.DEBUG),
         new LogMessageWithLevel("Non-Young Free Collection Set", Level.DEBUG),
         // Humongous Eager Reclaim

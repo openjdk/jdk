@@ -91,6 +91,9 @@ G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   _redirtied_cards = new WorkerDataArray<size_t>(max_gc_threads, "Redirtied Cards:");
   _gc_par_phases[RedirtyCards]->link_thread_work_items(_redirtied_cards);
 
+  _gc_par_phases[YoungFreeCSet] = new WorkerDataArray<double>(max_gc_threads, "Young Free Collection Set (ms):");
+  _gc_par_phases[NonYoungFreeCSet] = new WorkerDataArray<double>(max_gc_threads, "Non-Young Free Collection Set (ms):");
+
   _gc_par_phases[PreserveCMReferents] = new WorkerDataArray<double>(max_gc_threads, "Parallel Preserve CM Refs (ms):");
 }
 
@@ -278,10 +281,11 @@ void G1GCPhaseTimes::print() {
   info_line_and_account("Clear Card Table", _cur_clear_ct_time_ms);
   info_line_and_account("Expand Heap After Collection", _cur_expand_heap_time_ms);
 
-  double free_cset_time = _recorded_young_free_cset_time_ms + _recorded_non_young_free_cset_time_ms;
-  info_line_and_account("Free Collection Set", free_cset_time);
-  debug_line("Young Free Collection Set", _recorded_young_free_cset_time_ms);
-  debug_line("Non-Young Free Collection Set", _recorded_non_young_free_cset_time_ms);
+  info_line_and_account("Free Collection Set", _recorded_total_free_cset_time_ms);
+  debug_line("Free Collection Set Serial", _recorded_serial_free_cset_time_ms);
+  debug_phase(_gc_par_phases[YoungFreeCSet]);
+  debug_phase(_gc_par_phases[NonYoungFreeCSet]);
+
   info_line_and_account("Merge Per-Thread State", _recorded_merge_pss_time_ms);
 
   info_line("Other", _gc_pause_time_ms - accounted_time_ms);
