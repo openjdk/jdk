@@ -20,24 +20,29 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import jdk.test.lib.ExitCode;
-import jdk.test.lib.Platform;
-import jdk.test.lib.cli.CommandLineOptionTest;
-import common.CodeCacheOptions;
-import sun.hotspot.code.BlobType;
 
 /**
  * @test
  * @bug 8015774
  * @summary Verify SegmentedCodeCache option's processing
- * @library /testlibrary /test/lib
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build TestSegmentedCodeCacheOption jdk.test.lib.*
- * @run main TestSegmentedCodeCacheOption
+ *
+ * @build jdk.test.lib.*
+ * @run driver compiler.codecache.cli.TestSegmentedCodeCacheOption
  */
+
+package compiler.codecache.cli;
+
+import compiler.codecache.cli.common.CodeCacheOptions;
+import jdk.test.lib.ExitCode;
+import jdk.test.lib.Platform;
+import jdk.test.lib.cli.CommandLineOptionTest;
+import sun.hotspot.code.BlobType;
+
 public class TestSegmentedCodeCacheOption {
     private static final String INT_MODE = "-Xint";
     private static final String TIERED_COMPILATION = "TieredCompilation";

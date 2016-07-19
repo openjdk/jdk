@@ -25,10 +25,11 @@
  * @test
  * @bug 8024924
  * @summary Test non constant addExact
- * @compile AddExactICondTest.java
- * @run main AddExactICondTest
  *
+ * @run main compiler.intrinsics.mathexact.AddExactICondTest
  */
+
+package compiler.intrinsics.mathexact;
 
 public class AddExactICondTest {
   public static int result = 0;

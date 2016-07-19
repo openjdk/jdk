@@ -24,8 +24,12 @@
  * @test
  * @bug 8076373
  * @summary Verify if signaling NaNs are preserved.
- * @run main NaNTest
+ *
+ * @run main compiler.floatingpoint.NaNTest
  */
+
+package compiler.floatingpoint;
+
 public class NaNTest {
     static void testFloat() {
         int originalValue = 0x7f800001;

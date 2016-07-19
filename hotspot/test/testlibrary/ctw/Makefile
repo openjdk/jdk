@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2016. Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -35,12 +35,13 @@ endif
 SRC_DIR = src
 BUILD_DIR = build
 OUTPUT_DIR = $(BUILD_DIR)/classes
-WHITEBOX_DIR = ../whitebox
+TESTLIBRARY_DIR = ../../../../test/lib
 
 JAVAC = $(JDK_HOME)/bin/javac
 JAR = $(JDK_HOME)/bin/jar
 
-SRC_FILES = $(shell find $(SRC_DIR) -name '*.java')
+SRC_FILES = $(shell find $(SRC_DIR) $(TESTLIBRARY_DIR)/share/classes -name '*.java')
+WB_SRC_FILES = $(shell find $(TESTLIBRARY_DIR)/sun/hotspot -name '*.java')
 
 MAIN_CLASS = sun.hotspot.tools.ctw.CompileTheWorld
 
@@ -52,22 +53,29 @@ clean: cleantmp
 	@rm -rf ctw.jar wb.jar
 
 cleantmp:
-	@rm -rf filelist manifest.mf
+	@rm -rf filelist wb_filelist manifest.mf
 	@rm -rf $(BUILD_DIR)
 
-ctw.jar: filelist wb.jar manifest.mf
+ctw.jar: filelist wb.jar
 	@mkdir -p $(OUTPUT_DIR)
-	$(JAVAC) -sourcepath $(SRC_DIR) -d $(OUTPUT_DIR) -cp wb.jar @filelist
-	$(JAR) cfm ctw.jar manifest.mf -C $(OUTPUT_DIR) .
+	$(JAVAC) -XaddExports:java.base/jdk.internal.jimage=ALL-UNNAMED \
+		-XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED \
+		-XaddExports:java.base/jdk.internal.reflect=ALL-UNNAMED \
+		-sourcepath $(SRC_DIR) -d $(OUTPUT_DIR) -cp wb.jar @filelist
+	$(JAR) --create --file=$@ --main-class $(MAIN_CLASS) -C $(OUTPUT_DIR) .
 
-wb.jar: 
-	make -C ${WHITEBOX_DIR} wb.jar
-	cp ${WHITEBOX_DIR}/wb.jar ./
-	make -C ${WHITEBOX_DIR} clean
+wb.jar: wb_filelist
+	@mkdir -p $(OUTPUT_DIR)
+	$(JAVAC)  -sourcepath $(TESTLIBRARY_DIR) \
+		-d $(OUTPUT_DIR) \
+		-cp $(OUTPUT_DIR) \
+		@wb_filelist
+	$(JAR) --create --file=$@ -C $(OUTPUT_DIR) .
+
+wb_filelist: $(WB_SRC_FILES)
+	@rm -f $@
+	@echo $(WB_SRC_FILES) > $@
 
 filelist: $(SRC_FILES)
 	@rm -f $@
 	@echo $(SRC_FILES) > $@
-
-manifest.mf:
-	@echo "Main-Class: ${MAIN_CLASS}" > manifest.mf

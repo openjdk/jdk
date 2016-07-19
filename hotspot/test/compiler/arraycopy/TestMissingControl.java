@@ -25,9 +25,14 @@
  * @test
  * @bug 8055153
  * @summary missing control on LoadRange and LoadKlass when array copy macro node is expanded
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:-TieredCompilation TestMissingControl
+ *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:-TieredCompilation
+ *                   compiler.arraycopy.TestMissingControl
  *
  */
+
+package compiler.arraycopy;
+
 public class TestMissingControl {
 
     static int[] m1(int[] a2) {

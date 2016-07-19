@@ -38,9 +38,8 @@
 
 package jdk.vm.ci.code.test;
 
-import org.junit.Test;
-
 import jdk.vm.ci.code.Register;
+import org.junit.Test;
 
 /**
  * Test simple code installation.

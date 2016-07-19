@@ -24,6 +24,7 @@
 package compiler.compilercontrol.share.scenario;
 
 import compiler.compilercontrol.share.method.MethodDescriptor;
+import compiler.compilercontrol.share.pool.PoolHelper;
 import compiler.compilercontrol.share.processors.CommandProcessor;
 import compiler.compilercontrol.share.processors.LogProcessor;
 import compiler.compilercontrol.share.processors.PrintDirectivesProcessor;
@@ -31,7 +32,6 @@ import compiler.compilercontrol.share.processors.PrintProcessor;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.Pair;
-import pool.PoolHelper;
 
 import java.lang.reflect.Executable;
 import java.util.ArrayList;

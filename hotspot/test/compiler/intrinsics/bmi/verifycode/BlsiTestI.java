@@ -24,15 +24,22 @@
 /*
  * @test
  * @bug 8031321
- * @library /testlibrary /test/lib / ..
+ * @requires vm.flavor == "server"
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build BlsiTestI
+ *
+ * @build compiler.intrinsics.bmi.verifycode.BlsiTestI
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseBMI1Instructions BlsiTestI
+ *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UseBMI1Instructions
+ *      compiler.intrinsics.bmi.verifycode.BlsiTestI
  */
+
+package compiler.intrinsics.bmi.verifycode;
+
+import compiler.intrinsics.bmi.TestBlsiI;
 
 import java.lang.reflect.Method;
 

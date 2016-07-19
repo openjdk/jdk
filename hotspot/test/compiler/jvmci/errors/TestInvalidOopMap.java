@@ -52,7 +52,6 @@ import jdk.vm.ci.hotspot.HotSpotReferenceMap;
 import jdk.vm.ci.meta.Assumptions.Assumption;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
-
 import org.junit.Test;
 
 /**

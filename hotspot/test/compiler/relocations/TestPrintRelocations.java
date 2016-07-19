@@ -25,14 +25,19 @@
  * @test
  * @bug 8044538
  * @summary assert hit while printing relocations for jump table entries
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:+PrintRelocations TestPrintRelocations
+ *
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:+PrintRelocations
+ *                   compiler.relocations.TestPrintRelocations
  */
-
 /**
  * The test compiles all methods (-Xcomp) and prints their relocation
  * entries (-XX:+PrintRelocations) to make sure the printing works.
  */
+
+package compiler.relocations;
+
 public class TestPrintRelocations {
 
-   static public void main(String[] args) { }
+    static public void main(String[] args) {
+    }
 }

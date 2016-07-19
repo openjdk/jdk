@@ -32,7 +32,7 @@ const int StackAlignmentInBytes = (2*wordSize);
 
 // Indicates whether the C calling conventions require that
 // 32-bit integer argument values are extended to 64 bits.
-const bool CCallingConventionRequiresIntsAsLongs = false;
+const bool CCallingConventionRequiresIntsAsLongs = true;
 
 #define SUPPORTS_NATIVE_CX8
 
