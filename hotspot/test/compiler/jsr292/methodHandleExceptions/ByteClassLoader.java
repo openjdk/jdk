@@ -1,12 +1,3 @@
-import java.io.BufferedOutputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.jar.JarEntry;
-import java.util.jar.JarOutputStream;
-
 /*
  * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -30,6 +21,17 @@ import java.util.jar.JarOutputStream;
  * questions.
  *
  */
+
+package compiler.jsr292.methodHandleExceptions;
+
+import java.io.BufferedOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 
 /**
  * A ByteClassLoader is used to define classes from collections of bytes, as

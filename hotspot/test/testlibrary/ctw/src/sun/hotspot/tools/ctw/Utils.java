@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,12 @@ public class Utils {
      */
     public static String fileNameToClassName(String filename) {
         assert isClassFile(filename);
-        return filename.substring(0, filename.length() - CLASSFILE_EXT.length())
-                       .replace(File.separatorChar, '.');
+        // workaround for the class naming in jimage : /<module>/<class_name>
+        final char nameSeparator = '/';
+        int nameStart = filename.charAt(0) == nameSeparator
+                ? filename.indexOf(nameSeparator, 1) + 1
+                : 0;
+        return filename.substring(nameStart, filename.length() - CLASSFILE_EXT.length())
+                       .replace(nameSeparator, '.');
     }
 }

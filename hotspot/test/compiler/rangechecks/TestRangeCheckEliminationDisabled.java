@@ -26,8 +26,13 @@
  * @test TestRangeCheckEliminationDisabled
  * @bug 8154763
  * @summary Tests PostLoopMultiversioning with RangeCheckElimination disabled.
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+PostLoopMultiversioning -XX:-RangeCheckElimination TestRangeCheckEliminationDisabled
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+PostLoopMultiversioning -XX:-RangeCheckElimination
+ *                   compiler.rangechecks.TestRangeCheckEliminationDisabled
  */
+
+package compiler.rangechecks;
+
 public class TestRangeCheckEliminationDisabled {
 
     public static void main(String[] args) {

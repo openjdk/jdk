@@ -21,26 +21,34 @@
  * questions.
  */
 
+/*
+ * @test MethodUnloadingTest
+ * @bug 8029443
+ * @summary Tests the unloading of methods to to class unloading
+ * @modules java.base/jdk.internal.misc
+ * @library /testlibrary /test/lib /
+ *
+ * @build compiler.classUnloading.methodUnloading.TestMethodUnloading
+ *        compiler.classUnloading.methodUnloading.WorkerClass
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:-BackgroundCompilation -XX:-UseCompressedOops
+ *                   -XX:CompileCommand=compileonly,compiler.classUnloading.methodUnloading.TestMethodUnloading::doWork
+ *                   compiler.classUnloading.methodUnloading.TestMethodUnloading
+ */
+
+package compiler.classUnloading.methodUnloading;
+
 import sun.hotspot.WhiteBox;
 
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 
-/*
- * @test MethodUnloadingTest
- * @bug 8029443
- * @summary "Tests the unloading of methods to to class unloading"
- * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib
- * @build TestMethodUnloading
- * @build WorkerClass
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-BackgroundCompilation -XX:-UseCompressedOops -XX:CompileOnly=TestMethodUnloading::doWork TestMethodUnloading
- */
 public class TestMethodUnloading {
-    private static final String workerClassName = "WorkerClass";
+    private static final String workerClassName = "compiler.classUnloading.methodUnloading.WorkerClass";
     private static int work = -1;
 
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();

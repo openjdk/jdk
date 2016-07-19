@@ -25,10 +25,10 @@ package compiler.compilercontrol.share.method;
 
 import compiler.compilercontrol.share.method.MethodDescriptor.PatternType;
 import compiler.compilercontrol.share.method.MethodDescriptor.Separator;
+import compiler.compilercontrol.share.pool.PoolHelper;
 import jdk.test.lib.Pair;
 import jdk.test.lib.Triple;
 import jdk.test.lib.Utils;
-import pool.PoolHelper;
 
 import java.lang.reflect.Executable;
 import java.util.ArrayList;

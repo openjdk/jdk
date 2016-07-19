@@ -148,6 +148,22 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
 #undef JVMCI_PRODUCT_FLAG_VALUE_CHANGED_CHECK_CODE
 #undef JVMCI_EXPERIMENTAL_FLAG_VALUE_CHANGED_CHECK_CODE
 
+#ifndef TIERED
+  // JVMCI is only usable as a jit compiler if the VM supports tiered compilation.
+#define JVMCI_CHECK_TIERED_ONLY_FLAG(FLAG)                         \
+  if (!FLAG_IS_DEFAULT(FLAG)) {                                   \
+    jio_fprintf(defaultStream::error_stream(), "VM option '%s' cannot be set in non-tiered VM\n", #FLAG); \
+    return false; \
+  }
+  JVMCI_CHECK_TIERED_ONLY_FLAG(UseJVMCICompiler)
+  JVMCI_CHECK_TIERED_ONLY_FLAG(BootstrapJVMCI)
+  JVMCI_CHECK_TIERED_ONLY_FLAG(PrintBootstrap)
+  JVMCI_CHECK_TIERED_ONLY_FLAG(JVMCIThreads)
+  JVMCI_CHECK_TIERED_ONLY_FLAG(JVMCIHostThreads)
+  JVMCI_CHECK_TIERED_ONLY_FLAG(JVMCICountersExcludeCompiler)
+#undef JVMCI_CHECK_TIERED_ONLY_FLAG
+#endif
+
   return true;
 }
 

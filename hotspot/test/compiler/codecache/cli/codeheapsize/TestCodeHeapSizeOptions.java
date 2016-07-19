@@ -20,26 +20,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package codeheapsize;
 
-import jdk.test.lib.Platform;
-import common.CodeCacheCLITestBase;
-import common.CodeCacheCLITestCase;
-import sun.hotspot.code.BlobType;
-import java.util.EnumSet;
 /**
  * @test
  * @bug 8015774
  * @summary Verify processing of options related to code heaps sizing.
- * @library /testlibrary .. /test/lib
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build TestCodeHeapSizeOptions jdk.test.lib.* codeheapsize.*
- *        common.*
- * @run main/timeout=240 codeheapsize.TestCodeHeapSizeOptions
+ *
+ * @build compiler.codecache.cli.codeheapsize.TestCodeHeapSizeOptions jdk.test.lib.*
+ * @run driver/timeout=240 compiler.codecache.cli.codeheapsize.TestCodeHeapSizeOptions
  */
+
+package compiler.codecache.cli.codeheapsize;
+
+import compiler.codecache.cli.common.CodeCacheCLITestBase;
+import compiler.codecache.cli.common.CodeCacheCLITestCase;
+import jdk.test.lib.Platform;
+import sun.hotspot.code.BlobType;
+
+import java.util.EnumSet;
+
 public class TestCodeHeapSizeOptions extends CodeCacheCLITestBase {
     private static final CodeCacheCLITestCase JVM_STARTUP
             = new CodeCacheCLITestCase(new CodeCacheCLITestCase.Description(

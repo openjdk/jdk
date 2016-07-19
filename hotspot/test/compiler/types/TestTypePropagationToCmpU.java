@@ -25,8 +25,12 @@
  * @test
  * @bug 8080156 8060036
  * @summary Test correctness of type propagation to CmpUNodes.
- * @run main TestTypePropagationToCmpU
+ *
+ * @run main compiler.types.TestTypePropagationToCmpU
  */
+
+package compiler.types;
+
 public class TestTypePropagationToCmpU {
     public static void main(String[] args) {
         try {

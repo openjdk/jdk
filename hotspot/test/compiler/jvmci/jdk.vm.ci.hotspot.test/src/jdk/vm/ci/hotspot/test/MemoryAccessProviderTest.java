@@ -38,12 +38,11 @@
 package jdk.vm.ci.hotspot.test;
 
 import jdk.vm.ci.meta.Constant;
-import org.testng.annotations.Test;
-import org.testng.Assert;
-import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MemoryAccessProvider;
 import jdk.vm.ci.runtime.JVMCI;
+import org.testng.Assert;
+import org.testng.annotations.Test;
 
 public class MemoryAccessProviderTest {
     private static final MemoryAccessProvider PROVIDER = JVMCI.getRuntime().getHostJVMCIBackend().getConstantReflection().getMemoryAccessProvider();

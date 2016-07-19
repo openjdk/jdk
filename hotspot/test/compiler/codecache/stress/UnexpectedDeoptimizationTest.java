@@ -24,22 +24,28 @@
 
 /*
  * @test UnexpectedDeoptimizationTest
- * @library /testlibrary /test/lib
+ * @summary stressing code cache by forcing unexpected deoptimizations
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build UnexpectedDeoptimizationTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ *
+ * @build compiler.codecache.stress.UnexpectedDeoptimizationTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:CompileCommand=dontinline,Helper$TestCase::method
- *                   -XX:+WhiteBoxAPI -XX:-SegmentedCodeCache -XX:-DeoptimizeRandom
- *                   UnexpectedDeoptimizationTest
+ *                   -XX:+WhiteBoxAPI -XX:-DeoptimizeRandom
+ *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
+ *                   -XX:-SegmentedCodeCache
+ *                   compiler.codecache.stress.UnexpectedDeoptimizationTest
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:CompileCommand=dontinline,Helper$TestCase::method
- *                   -XX:+WhiteBoxAPI -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom
- *                   UnexpectedDeoptimizationTest
- * @summary stressing code cache by forcing unexpected deoptimizations
+ *                   -XX:+WhiteBoxAPI -XX:-DeoptimizeRandom
+ *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
+ *                   -XX:+SegmentedCodeCache
+ *                   compiler.codecache.stress.UnexpectedDeoptimizationTest
  */
+
+package compiler.codecache.stress;
+
 public class UnexpectedDeoptimizationTest implements Runnable {
 
     public static void main(String[] args) {

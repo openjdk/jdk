@@ -26,8 +26,13 @@
  * @test
  * @bug 8150804
  * @summary Tests elimination of Phi nodes without losing type information.
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestPhiElimination
+ *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   compiler.types.TestPhiElimination
  */
+
+package compiler.types;
+
 public class TestPhiElimination {
     /*
        A::get() is inlined into test(obj) producing the following graph:
@@ -90,23 +95,20 @@ public class TestPhiElimination {
         }
     }
 
-}
+    static class A extends TestPhiElimination {
+        public Object f;
 
-class A extends TestPhiElimination {
-    public Object f;
-
-    public A create() {
-        return new A();
-    }
-
-    public synchronized Object get() {
-        if (f == null) {
-            f = create();
+        public A create() {
+            return new A();
         }
-        return f;
+
+        public synchronized Object get() {
+            if (f == null) {
+                f = create();
+            }
+            return f;
+        }
     }
-}
 
-class B extends A {
-
+    static class B extends A { }
 }

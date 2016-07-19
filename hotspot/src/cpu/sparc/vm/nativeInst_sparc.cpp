@@ -760,8 +760,7 @@ void NativeJump::verify() {
   Register rd = inv_rd(i0);
 #ifndef _LP64
   if (!(is_op2(i0, Assembler::sethi_op2) && rd != G0 &&
-        (is_op3(i1, Assembler::jmpl_op3, Assembler::arith_op) ||
-        (TraceJumps && is_op3(i1, Assembler::add_op3, Assembler::arith_op))) &&
+        (is_op3(i1, Assembler::jmpl_op3, Assembler::arith_op)) &&
         inv_immed(i1) && (unsigned)get_simm13(i1) < (1 << 10) &&
         rd == inv_rs1(i1))) {
     fatal("not a jump_to instruction");

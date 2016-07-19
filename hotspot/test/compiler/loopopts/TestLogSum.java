@@ -25,14 +25,18 @@
  * @test
  * @bug 8046516
  * @summary Segmentation fault in JVM (easily reproducible)
- * @run main/othervm -XX:-TieredCompilation -Xbatch TestLogSum
+ *
+ * @run main/othervm -XX:-TieredCompilation -Xbatch compiler.loopopts.TestLogSum
  * @author jackkamm@gmail.com
  */
+
+package compiler.loopopts;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 public class TestLogSum {
   public static void main(String[] args) {
     double sum;

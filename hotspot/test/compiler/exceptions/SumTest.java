@@ -25,9 +25,12 @@
  * @test
  * @bug 8066900
  * @summary FP registers are not properly restored by C1 when handling exceptions
- * @run main/othervm -Xbatch SumTest
  *
+ * @run main/othervm -Xbatch compiler.exceptions.SumTest
  */
+
+package compiler.exceptions;
+
 public class SumTest {
     private static class Sum {
 
