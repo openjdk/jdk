@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -45,12 +45,12 @@
 LIBNAME=versionCheck
 SOURCES=versionCheck.c ../agent_util/agent_util.c
 
-# Solaris Sun C Compiler Version 5.5
+# Solaris Studio C Compiler Version 12.4
 ifeq ($(OSNAME), solaris)
     # Sun Solaris Compiler options needed
     COMMON_FLAGS=-mt -KPIC
     # Options that help find errors
-    COMMON_FLAGS+= -Xa -v -xstrconst -xc99=%none
+    COMMON_FLAGS+= -Xa -v -xc99=%none
     # Check LIBARCH for any special compiler options
     LIBARCH=$(shell uname -p)
     ifeq ($(LIBARCH), sparc)
