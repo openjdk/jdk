@@ -49,12 +49,12 @@
  *      compiler.jvmci.events.JvmciNotifyBootstrapFinishedEventTest
  *      jdk.test.lib.Asserts
  *      jdk.test.lib.Utils
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *     -Djvmci.Compiler=EmptyCompiler -Xbootclasspath/a:.
  *     -XX:+UseJVMCICompiler -XX:-BootstrapJVMCI
  *     -Dcompiler.jvmci.events.JvmciNotifyBootstrapFinishedEventTest.bootstrap=false
  *     compiler.jvmci.events.JvmciNotifyBootstrapFinishedEventTest
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *     -Djvmci.Compiler=EmptyCompiler -Xbootclasspath/a:.
  *     -XX:+UseJVMCICompiler -XX:+BootstrapJVMCI
  *     -Dcompiler.jvmci.events.JvmciNotifyBootstrapFinishedEventTest.bootstrap=true
