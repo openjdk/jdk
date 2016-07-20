@@ -422,6 +422,25 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         assertFalse(ResolvedJavaMethod.isSignaturePolymorphic(metaAccess.lookupJavaType(Object.class), "toString", metaAccess));
     }
 
+    /**
+     * All public non-final methods should be available in the vtable.
+     */
+    @Test
+    public void testVirtualMethodTableAccess() {
+        for (Class<?> c : classes) {
+            if (c.isPrimitive() || c.isInterface()) {
+                continue;
+            }
+            ResolvedJavaType receiverType = metaAccess.lookupJavaType(c);
+            for (Method m : c.getMethods()) {
+                ResolvedJavaMethod method = metaAccess.lookupJavaMethod(m);
+                if (!method.isStatic() && !method.isFinal() && !method.getDeclaringClass().isLeaf() && !method.getDeclaringClass().isInterface()) {
+                    assertTrue(method + " not available in " + receiverType, method.isInVirtualMethodTable(receiverType));
+                }
+            }
+        }
+    }
+
     private Method findTestMethod(Method apiMethod) {
         String testName = apiMethod.getName() + "Test";
         for (Method m : getClass().getDeclaredMethods()) {
