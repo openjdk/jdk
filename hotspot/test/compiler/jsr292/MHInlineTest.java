@@ -46,7 +46,7 @@ public class MHInlineTest {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:+IgnoreUnrecognizedVMOptions", "-showversion",
-                "-server", "-XX:-TieredCompilation", "-Xbatch",
+                "-XX:-TieredCompilation", "-Xbatch",
                 "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
                 "-XX:CompileCommand=dontinline,compiler.jsr292.MHInlineTest::test*",
                     Launcher.class.getName());
