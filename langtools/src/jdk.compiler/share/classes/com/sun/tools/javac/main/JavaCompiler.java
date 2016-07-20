@@ -27,6 +27,7 @@ package com.sun.tools.javac.main;
 
 import java.io.*;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -1009,15 +1010,10 @@ public class JavaCompiler {
     }
 
     public List<JCCompilationUnit> initModules(List<JCCompilationUnit> roots) {
-        List<JCCompilationUnit> result = initModules(roots, null);
+        modules.initModules(roots, Collections.emptySet(), Collections.emptySet());
         if (roots.isEmpty()) {
             enterDone = true;
         }
-        return result;
-    }
-
-    List<JCCompilationUnit> initModules(List<JCCompilationUnit> roots, ClassSymbol c) {
-        modules.enter(roots, c);
         return roots;
     }
 

@@ -41,6 +41,7 @@ import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.comp.Infer;
 import com.sun.tools.javac.comp.InferenceContext;
+import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
@@ -537,6 +538,7 @@ public class TypeHarness {
 
         void clear() {
             newRound();
+            Modules.instance(context).newRound();
         }
     }
     // </editor-fold>
