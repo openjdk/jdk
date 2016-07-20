@@ -21,8 +21,8 @@
  * questions.
  */
 
-/* @test
- @bug 8129940 8132770
+ /* @test
+ @bug 8129940 8132770 8161470
  @summary JRadioButton should run custom FocusTraversalKeys for all LaFs
  @run main FocusTraversal
  */
@@ -60,7 +60,7 @@ public class FocusTraversal {
     public static void main(String[] args) throws Exception {
 
         robot = new Robot();
-        robot.delay(2000);
+        robot.waitForIdle();
         UIManager.LookAndFeelInfo[] lookAndFeelArray
                 = UIManager.getInstalledLookAndFeels();
         for (UIManager.LookAndFeelInfo lookAndFeelItem : lookAndFeelArray) {
@@ -72,11 +72,11 @@ public class FocusTraversal {
             throws Exception {
         if (tryLookAndFeel(lookAndFeelString)) {
             createUI(lookAndFeelString);
-            robot.delay(2000);
+            robot.waitForIdle();
             runTestCase();
-            robot.delay(2000);
+            robot.waitForIdle();
             cleanUp();
-            robot.delay(2000);
+            robot.waitForIdle();
         }
     }
 
