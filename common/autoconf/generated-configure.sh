@@ -5095,7 +5095,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1468427332
+DATE_WHEN_GENERATED=1468500131
 
 ###############################################################################
 #
@@ -49810,15 +49810,11 @@ $as_echo "$supports" >&6; }
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     CFLAGS_JDK="${CFLAGS_JDK} -D__solaris__"
     CXXFLAGS_JDK="${CXXFLAGS_JDK} -D__solaris__"
-    CFLAGS_JDKLIB_EXTRA='-xstrconst'
-    CFLAGS_JDK="${CFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
-    CXXFLAGS_JDK="${CXXFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
   fi
 
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     CFLAGS_JDK="${CFLAGS_JDK} -D__solaris__"
     CXXFLAGS_JDK="${CXXFLAGS_JDK} -D__solaris__"
-    CFLAGS_JDKLIB_EXTRA='-xstrconst'
   fi
 
   CFLAGS_JDK="${CFLAGS_JDK} ${EXTRA_CFLAGS}"
@@ -50394,7 +50390,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
     fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     LDFLAGS_SOLSTUDIO="-Wl,-z,defs"
-    LDFLAGS_JDK="$LDFLAGS_JDK $LDFLAGS_SOLSTUDIO -xildoff -ztext"
+    LDFLAGS_JDK="$LDFLAGS_JDK $LDFLAGS_SOLSTUDIO -ztext"
     LDFLAGS_CXX_SOLSTUDIO="-norunpath"
     LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK $LDFLAGS_CXX_SOLSTUDIO -xnolib"
     JVM_LDFLAGS="$JVM_LDFLAGS $LDFLAGS_SOLSTUDIO -library=%none -mt $LDFLAGS_CXX_SOLSTUDIO -z noversion"
@@ -50629,15 +50625,11 @@ $as_echo "$supports" >&6; }
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     OPENJDK_BUILD_CFLAGS_JDK="${OPENJDK_BUILD_CFLAGS_JDK} -D__solaris__"
     OPENJDK_BUILD_CXXFLAGS_JDK="${OPENJDK_BUILD_CXXFLAGS_JDK} -D__solaris__"
-    OPENJDK_BUILD_CFLAGS_JDKLIB_EXTRA='-xstrconst'
-    CFLAGS_JDK="${CFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
-    CXXFLAGS_JDK="${CXXFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
   fi
 
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     OPENJDK_BUILD_CFLAGS_JDK="${OPENJDK_BUILD_CFLAGS_JDK} -D__solaris__"
     OPENJDK_BUILD_CXXFLAGS_JDK="${OPENJDK_BUILD_CXXFLAGS_JDK} -D__solaris__"
-    OPENJDK_BUILD_CFLAGS_JDKLIB_EXTRA='-xstrconst'
   fi
 
   OPENJDK_BUILD_CFLAGS_JDK="${OPENJDK_BUILD_CFLAGS_JDK} ${OPENJDK_BUILD_EXTRA_CFLAGS}"
@@ -51213,7 +51205,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
     fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     LDFLAGS_SOLSTUDIO="-Wl,-z,defs"
-    OPENJDK_BUILD_LDFLAGS_JDK="$OPENJDK_BUILD_LDFLAGS_JDK $LDFLAGS_SOLSTUDIO -xildoff -ztext"
+    OPENJDK_BUILD_LDFLAGS_JDK="$OPENJDK_BUILD_LDFLAGS_JDK $LDFLAGS_SOLSTUDIO -ztext"
     LDFLAGS_CXX_SOLSTUDIO="-norunpath"
     OPENJDK_BUILD_LDFLAGS_CXX_JDK="$OPENJDK_BUILD_LDFLAGS_CXX_JDK $LDFLAGS_CXX_SOLSTUDIO -xnolib"
     OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS $LDFLAGS_SOLSTUDIO -library=%none -mt $LDFLAGS_CXX_SOLSTUDIO -z noversion"

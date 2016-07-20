@@ -719,15 +719,11 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     $2CFLAGS_JDK="${$2CFLAGS_JDK} -D__solaris__"
     $2CXXFLAGS_JDK="${$2CXXFLAGS_JDK} -D__solaris__"
-    $2CFLAGS_JDKLIB_EXTRA='-xstrconst'
-    CFLAGS_JDK="${CFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
-    CXXFLAGS_JDK="${CXXFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
   fi
 
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     $2CFLAGS_JDK="${$2CFLAGS_JDK} -D__solaris__"
     $2CXXFLAGS_JDK="${$2CXXFLAGS_JDK} -D__solaris__"
-    $2CFLAGS_JDKLIB_EXTRA='-xstrconst'
   fi
 
   $2CFLAGS_JDK="${$2CFLAGS_JDK} ${$2EXTRA_CFLAGS}"
@@ -1113,7 +1109,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
     fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     LDFLAGS_SOLSTUDIO="-Wl,-z,defs"
-    $2LDFLAGS_JDK="[$]$2LDFLAGS_JDK $LDFLAGS_SOLSTUDIO -xildoff -ztext"
+    $2LDFLAGS_JDK="[$]$2LDFLAGS_JDK $LDFLAGS_SOLSTUDIO -ztext"
     LDFLAGS_CXX_SOLSTUDIO="-norunpath"
     $2LDFLAGS_CXX_JDK="[$]$2LDFLAGS_CXX_JDK $LDFLAGS_CXX_SOLSTUDIO -xnolib"
     $2JVM_LDFLAGS="[$]$2JVM_LDFLAGS $LDFLAGS_SOLSTUDIO -library=%none -mt $LDFLAGS_CXX_SOLSTUDIO -z noversion"
