@@ -41,6 +41,7 @@ import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.comp.CompileStates;
 import com.sun.tools.javac.comp.Enter;
+import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.main.Arguments;
 import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
@@ -92,6 +93,7 @@ class ReusableContext extends Context implements TaskListener {
             ((ReusableJavaCompiler)ReusableJavaCompiler.instance(this)).clear();
             Types.instance(this).newRound();
             Check.instance(this).newRound();
+            Modules.instance(this).newRound();
             CompileStates.instance(this).clear();
             MultiTaskListener.instance(this).clear();
 
