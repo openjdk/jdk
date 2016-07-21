@@ -73,7 +73,6 @@ import jdk.jshell.Diag;
 import static jdk.jshell.Snippet.Status.*;
 import static org.testng.Assert.*;
 import static jdk.jshell.Snippet.SubKind.METHOD_SUBKIND;
-import jdk.jshell.spi.ExecutionControl;
 
 public class KullaTesting {
 
@@ -156,10 +155,6 @@ public class KullaTesting {
     @BeforeMethod
     public void setUp() {
         setUp(b -> {});
-    }
-
-    public void setUp(ExecutionControl ec) {
-        setUp(b -> b.executionEngine(ec));
     }
 
     public void setUp(Consumer<JShell.Builder> bc) {
