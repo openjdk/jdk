@@ -45,7 +45,7 @@ GCTaskThread::GCTaskThread(GCTaskManager* manager,
   _time_stamp_index(0)
 {
   set_id(which);
-  set_name("ParGC Thread#%d", which);
+  set_name("%s#%d", manager->group_name(), which);
 }
 
 GCTaskThread::~GCTaskThread() {

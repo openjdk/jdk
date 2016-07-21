@@ -43,7 +43,8 @@ private:
   G1StringDedupThread();
   ~G1StringDedupThread();
 
-  void print(const G1StringDedupStat& last_stat, const G1StringDedupStat& total_stat);
+  void print_start(const G1StringDedupStat& last_stat);
+  void print_end(const G1StringDedupStat& last_stat, const G1StringDedupStat& total_stat);
 
   void run_service();
   void stop_service();

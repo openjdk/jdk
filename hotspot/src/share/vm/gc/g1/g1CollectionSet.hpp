@@ -47,10 +47,15 @@ class G1CollectionSet VALUE_OBJ_CLASS_SPEC {
   uint _survivor_region_length;
   uint _old_region_length;
 
-  // The head of the list (via "next_in_collection_set()") representing the
-  // current collection set. Set from the incrementally built collection
-  // set at the start of the pause.
-  HeapRegion* _head;
+  // The actual collection set as a set of region indices.
+  // All entries in _collection_set_regions below _collection_set_cur_length are
+  // assumed to be valid entries.
+  // We assume that at any time there is at most only one writer and (one or more)
+  // concurrent readers. This means we are good with using storestore and loadload
+  // barriers on the writer and reader respectively only.
+  uint* _collection_set_regions;
+  volatile size_t _collection_set_cur_length;
+  size_t _collection_set_max_length;
 
   // The number of bytes in the collection set before the pause. Set from
   // the incrementally built collection set at the start of an evacuation
@@ -70,12 +75,6 @@ class G1CollectionSet VALUE_OBJ_CLASS_SPEC {
   };
 
   CSetBuildType _inc_build_state;
-
-  // The head of the incrementally built collection set.
-  HeapRegion* _inc_head;
-
-  // The tail of the incrementally built collection set.
-  HeapRegion* _inc_tail;
 
   // The number of bytes in the incrementally built collection set.
   // Used to set _collection_set_bytes_used_before at the start of
@@ -105,8 +104,6 @@ class G1CollectionSet VALUE_OBJ_CLASS_SPEC {
   // See the comment for _inc_recorded_rs_lengths_diffs.
   double _inc_predicted_elapsed_time_ms_diffs;
 
-  uint _inc_region_length;
-
   G1CollectorState* collector_state();
   G1GCPhaseTimes* phase_times();
 
@@ -116,6 +113,9 @@ class G1CollectionSet VALUE_OBJ_CLASS_SPEC {
 public:
   G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy);
   ~G1CollectionSet();
+
+  // Initializes the collection set giving the maximum possible length of the collection set.
+  void initialize(uint max_region_length);
 
   CollectionSetChooser* cset_chooser();
 
@@ -133,35 +133,30 @@ public:
   uint survivor_region_length() const { return _survivor_region_length; }
   uint old_region_length() const      { return _old_region_length;      }
 
-  // Incremental CSet Support
-
-  // The head of the incrementally built collection set.
-  HeapRegion* inc_head() { return _inc_head; }
-
-  // The tail of the incrementally built collection set.
-  HeapRegion* inc_tail() { return _inc_tail; }
+  // Incremental collection set support
 
   // Initialize incremental collection set info.
   void start_incremental_building();
 
-  // Perform any final calculations on the incremental CSet fields
+  // Perform any final calculations on the incremental collection set fields
   // before we can use them.
   void finalize_incremental_building();
 
-  void clear_incremental() {
-    _inc_head = NULL;
-    _inc_tail = NULL;
-    _inc_region_length = 0;
-  }
+  // Reset the contents of the collection set.
+  void clear();
 
-  // Stop adding regions to the incremental collection set
+  // Iterate over the collection set, applying the given HeapRegionClosure on all of them.
+  // If may_be_aborted is true, iteration may be aborted using the return value of the
+  // called closure method.
+  void iterate(HeapRegionClosure* cl) const;
+
+  // Iterate over the collection set, applying the given HeapRegionClosure on all of them,
+  // trying to optimally spread out starting position of total_workers workers given the
+  // caller's worker_id.
+  void iterate_from(HeapRegionClosure* cl, uint worker_id, uint total_workers) const;
+
+  // Stop adding regions to the incremental collection set.
   void stop_incremental_building() { _inc_build_state = Inactive; }
-
-  // The head of the list (via "next_in_collection_set()") representing the
-  // current collection set.
-  HeapRegion* head() { return _head; }
-
-  void clear_head() { _head = NULL; }
 
   size_t recorded_rs_lengths() { return _recorded_rs_lengths; }
 
@@ -174,33 +169,32 @@ public:
   }
 
   // Choose a new collection set.  Marks the chosen regions as being
-  // "in_collection_set", and links them together.  The head and number of
-  // the collection set are available via access methods.
+  // "in_collection_set".
   double finalize_young_part(double target_pause_time_ms, G1SurvivorRegions* survivors);
   void finalize_old_part(double time_remaining_ms);
 
-  // Add old region "hr" to the CSet.
+  // Add old region "hr" to the collection set.
   void add_old_region(HeapRegion* hr);
 
   // Update information about hr in the aggregated information for
   // the incrementally built collection set.
   void update_young_region_prediction(HeapRegion* hr, size_t new_rs_length);
 
-  // Add hr to the LHS of the incremental collection set.
+  // Add eden region to the collection set.
   void add_eden_region(HeapRegion* hr);
 
-  // Add hr to the RHS of the incremental collection set.
+  // Add survivor region to the collection set.
   void add_survivor_regions(HeapRegion* hr);
 
 #ifndef PRODUCT
-  void print(HeapRegion* list_head, outputStream* st);
+  bool verify_young_ages();
+
+  void print(outputStream* st);
 #endif // !PRODUCT
 
 private:
-  // Update the incremental cset information when adding a region
-  // (should not be called directly).
+  // Update the incremental collection set information when adding a region.
   void add_young_region_common(HeapRegion* hr);
-
 };
 
 #endif // SHARE_VM_GC_G1_G1COLLECTIONSET_HPP

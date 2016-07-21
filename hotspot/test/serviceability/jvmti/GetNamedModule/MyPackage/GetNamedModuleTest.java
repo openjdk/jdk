@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,36 @@
  * questions.
  */
 
-/*
+package MyPackage;
+
+/**
  * @test
- * @summary Verifies that getUnsafe() actually throws SecurityException when unsafeAccess is prohibited.
- * @library /testlibrary
- * @modules java.base/jdk.internal.misc
- * @ignore 8161947
- * @run main GetUnsafe
+ * @summary Verifies the JVMTI GetNamedModule API
+ * @compile GetNamedModuleTest.java
+ * @run main/othervm/native -agentlib:GetNamedModuleTest MyPackage.GetNamedModuleTest
  */
 
-import jdk.internal.misc.Unsafe;
-import static jdk.test.lib.Asserts.*;
+import java.io.PrintStream;
 
-public class GetUnsafe {
-    public static void main(String args[]) throws Exception {
+public class GetNamedModuleTest {
+
+    static {
         try {
-            Unsafe unsafe = Unsafe.getUnsafe();
-        } catch (SecurityException e) {
-            // Expected
-            return;
+            System.loadLibrary("GetNamedModuleTest");
+        } catch (UnsatisfiedLinkError ule) {
+            System.err.println("Could not load GetNamedModuleTest library");
+            System.err.println("java.library.path: "
+                + System.getProperty("java.library.path"));
+            throw ule;
         }
-        throw new RuntimeException("Did not get expected SecurityException");
+    }
+
+    native static int check();
+
+    public static void main(String args[]) {
+        int status = check();
+        if (status != 0) {
+            throw new RuntimeException("Non-zero status returned from the agent: " + status);
+        }
     }
 }
