@@ -39,6 +39,11 @@ import java.util.Arrays;
  * If a loop with an excessive amount of clauses is created, so that the number of parameters to the resulting loop
  * handle exceeds the allowed maximum, an IAE must be signalled. The test is run first in LambdaForm interpretation mode
  * and then in default mode, wherein bytecode generation falls back to LFI mode due to excessively long methods.
+ * <p>
+ * By default, the test run only checks whether loop handle construction succeeds and fails. If executing the generated
+ * loops is desired, this should be indicated by setting the {@code java.lang.invoke.LoopCombinatorLongSignatureTest.RUN}
+ * environment variable to {@code true}. This is disabled by default as it considerably increases the time needed to run
+ * the test.
  */
 public class LoopCombinatorLongSignatureTest {
 
@@ -51,13 +56,15 @@ public class LoopCombinatorLongSignatureTest {
     static final int ARG_LIMIT = 254; // for internal reasons, this is the maximum allowed number of arguments
 
     public static void main(String[] args) {
+        boolean run = Boolean.parseBoolean(
+                System.getProperty("java.lang.invoke.LoopCombinatorLongSignatureTest.RUN", "false"));
         for (int loopArgs = 0; loopArgs < 2; ++loopArgs) {
-            testLongSignature(loopArgs, false);
-            testLongSignature(loopArgs, true);
+            testLongSignature(loopArgs, false, run);
+            testLongSignature(loopArgs, true, run);
         }
     }
 
-    static void testLongSignature(int loopArgs, boolean excessive) {
+    static void testLongSignature(int loopArgs, boolean excessive, boolean run) {
         int nClauses = ARG_LIMIT - loopArgs + (excessive ? 1 : 0);
 
         System.out.print((excessive ? "(EXCESSIVE)" : "(LONG     )") + " arguments: " + loopArgs + ", clauses: " + nClauses + " -> ");
@@ -78,7 +85,7 @@ public class LoopCombinatorLongSignatureTest {
             MethodHandle loop = MethodHandles.loop(clauses);
             if (excessive) {
                 throw new AssertionError("loop construction should have failed");
-            } else {
+            } else if (run) {
                 int r;
                 if (loopArgs == 0) {
                     r = (int) loop.invoke();
@@ -88,6 +95,8 @@ public class LoopCombinatorLongSignatureTest {
                     r = (int) loop.invokeWithArguments(args);
                 }
                 System.out.println("SUCCEEDED (OK) -> " + r);
+            } else {
+                System.out.println("SUCCEEDED (OK)");
             }
         } catch (IllegalArgumentException iae) {
             if (excessive) {
