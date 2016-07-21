@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,9 +161,6 @@ class ObjectMonitor {
   Thread * volatile _Responsible;
 
   volatile int _Spinner;            // for exit->spinner handoff optimization
-  volatile int _SpinFreq;           // Spin 1-out-of-N attempts: success rate
-  volatile int _SpinClock;
-  volatile intptr_t _SpinState;     // MCS/CLH list of spinners
   volatile int _SpinDuration;
 
   volatile jint  _count;            // reference count to prevent reclamation/deflation
@@ -238,10 +235,6 @@ class ObjectMonitor {
   static int cxq_offset_in_bytes()         { return offset_of(ObjectMonitor, _cxq); }
   static int succ_offset_in_bytes()        { return offset_of(ObjectMonitor, _succ); }
   static int EntryList_offset_in_bytes()   { return offset_of(ObjectMonitor, _EntryList); }
-  static int FreeNext_offset_in_bytes()    { return offset_of(ObjectMonitor, FreeNext); }
-  static int WaitSet_offset_in_bytes()     { return offset_of(ObjectMonitor, _WaitSet); }
-  static int Responsible_offset_in_bytes() { return offset_of(ObjectMonitor, _Responsible); }
-  static int Spinner_offset_in_bytes()     { return offset_of(ObjectMonitor, _Spinner); }
 
   // ObjectMonitor references can be ORed with markOopDesc::monitor_value
   // as part of the ObjectMonitor tagging mechanism. When we combine an
@@ -256,11 +249,6 @@ class ObjectMonitor {
   //
   #define OM_OFFSET_NO_MONITOR_VALUE_TAG(f) \
     ((ObjectMonitor::f ## _offset_in_bytes()) - markOopDesc::monitor_value)
-
-  // Eventually we'll make provisions for multiple callbacks, but
-  // now one will suffice.
-  static int (*SpinCallbackFunction)(intptr_t, int);
-  static intptr_t SpinCallbackArgument;
 
   markOop   header() const;
   void      set_header(markOop hdr);
@@ -312,8 +300,6 @@ class ObjectMonitor {
     _cxq           = NULL;
     _WaitSet       = NULL;
     _recursions    = 0;
-    _SpinFreq      = 0;
-    _SpinClock     = 0;
   }
 
  public:
@@ -353,9 +339,7 @@ class ObjectMonitor {
   void      UnlinkAfterAcquire(Thread * Self, ObjectWaiter * SelfNode);
   int       TryLock(Thread * Self);
   int       NotRunnable(Thread * Self, Thread * Owner);
-  int       TrySpin_Fixed(Thread * Self);
-  int       TrySpin_VaryFrequency(Thread * Self);
-  int       TrySpin_VaryDuration(Thread * Self);
+  int       TrySpin(Thread * Self);
   void      ExitEpilog(Thread * Self, ObjectWaiter * Wakee);
   bool      ExitSuspendEquivalent(JavaThread * Self);
   void      post_monitor_wait_event(EventJavaMonitorWait * event,

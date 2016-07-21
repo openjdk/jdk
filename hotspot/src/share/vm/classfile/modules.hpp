@@ -121,6 +121,7 @@ public:
   // IllegalArgumentException is thrown if loader is neither null nor a subtype of
   // java/lang/ClassLoader.
   static jobject get_module_by_package_name(jobject loader, jstring package, TRAPS);
+  static jobject get_named_module(Handle h_loader, const char* package, TRAPS);
 
   // If package is defined by loader, return the
   // java.lang.reflect.Module object for the module in which the package is defined.
