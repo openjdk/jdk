@@ -82,7 +82,7 @@ class TaskFactory {
             throw new UnsupportedOperationException("Compiler not available, must be run with full JDK 9.");
         }
         Version current = Version.parse(System.getProperty("java.specification.version"));
-        if (INITIAL_SUPPORTED_VER.compareToIgnoreOpt(current) > 0)  {
+        if (INITIAL_SUPPORTED_VER.compareToIgnoreOptional(current) > 0)  {
             throw new UnsupportedOperationException("Wrong compiler, must be run with full JDK 9.");
         }
         this.fileManager = new MemoryFileManager(
