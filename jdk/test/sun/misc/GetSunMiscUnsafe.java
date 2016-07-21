@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,12 @@
  */
 
 
-public class Safe {
+public class GetSunMiscUnsafe {
 
     public static void main(String[] args) throws Exception {
         try {
             sun.misc.Unsafe.getUnsafe();
-        } catch (Exception x) {
+        } catch (SecurityException x) {
             System.err.println("Thrown as expected: " + x);
             return;
         }
