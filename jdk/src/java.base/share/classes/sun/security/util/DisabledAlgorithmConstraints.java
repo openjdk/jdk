@@ -60,6 +60,10 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     public static final String PROPERTY_TLS_DISABLED_ALGS =
             "jdk.tls.disabledAlgorithms";
 
+    // the known security property, jdk.jar.disabledAlgorithms
+    public static final String PROPERTY_JAR_DISABLED_ALGS =
+            "jdk.jar.disabledAlgorithms";
+
     private final String[] disabledAlgorithms;
     private final Constraints algorithmConstraints;
 
@@ -73,6 +77,14 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         this(propertyName, new AlgorithmDecomposer());
     }
 
+    /**
+     * Initialize algorithm constraints with the specified security property
+     * for a specific usage type.
+     *
+     * @param propertyName the security property name that define the disabled
+     *        algorithm constraints
+     * @param decomposer an alternate AlgorithmDecomposer.
+     */
     public DisabledAlgorithmConstraints(String propertyName,
             AlgorithmDecomposer decomposer) {
         super(decomposer);
