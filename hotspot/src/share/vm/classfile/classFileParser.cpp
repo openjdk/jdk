@@ -1025,16 +1025,20 @@ public:
 
 static int skip_annotation_value(const u1*, int, int); // fwd decl
 
+// Safely increment index by val if does not pass limit
+#define SAFE_ADD(index, limit, val) \
+if (index >= limit - val) return limit; \
+index += val;
+
 // Skip an annotation.  Return >=limit if there is any problem.
 static int skip_annotation(const u1* buffer, int limit, int index) {
   assert(buffer != NULL, "invariant");
   // annotation := atype:u2 do(nmem:u2) {member:u2 value}
   // value := switch (tag:u1) { ... }
-  index += 2;  // skip atype
-  if ((index += 2) >= limit)  return limit;  // read nmem
+  SAFE_ADD(index, limit, 4); // skip atype and read nmem
   int nmem = Bytes::get_Java_u2((address)buffer + index - 2);
   while (--nmem >= 0 && index < limit) {
-    index += 2; // skip member
+    SAFE_ADD(index, limit, 2); // skip member
     index = skip_annotation_value(buffer, limit, index);
   }
   return index;
@@ -1052,7 +1056,7 @@ static int skip_annotation_value(const u1* buffer, int limit, int index) {
   //   case @: annotation;
   //   case s: s_con:u2;
   // }
-  if ((index += 1) >= limit)  return limit;  // read tag
+  SAFE_ADD(index, limit, 1); // read tag
   const u1 tag = buffer[index - 1];
   switch (tag) {
     case 'B':
@@ -1065,14 +1069,14 @@ static int skip_annotation_value(const u1* buffer, int limit, int index) {
     case 'J':
     case 'c':
     case 's':
-      index += 2;  // skip con or s_con
+      SAFE_ADD(index, limit, 2);  // skip con or s_con
       break;
     case 'e':
-      index += 4;  // skip e_class, e_name
+      SAFE_ADD(index, limit, 4);  // skip e_class, e_name
       break;
     case '[':
     {
-      if ((index += 2) >= limit)  return limit;  // read nval
+      SAFE_ADD(index, limit, 2); // read nval
       int nval = Bytes::get_Java_u2((address)buffer + index - 2);
       while (--nval >= 0 && index < limit) {
         index = skip_annotation_value(buffer, limit, index);
@@ -1101,8 +1105,8 @@ static void parse_annotations(const ConstantPool* const cp,
   assert(loader_data != NULL, "invariant");
 
   // annotations := do(nann:u2) {annotation}
-  int index = 0;
-  if ((index += 2) >= limit)  return;  // read nann
+  int index = 2; // read nann
+  if (index >= limit)  return;
   int nann = Bytes::get_Java_u2((address)buffer + index - 2);
   enum {  // initial annotation layout
     atype_off = 0,      // utf8 such as 'Ljava/lang/annotation/Retention;'
@@ -1121,7 +1125,8 @@ static void parse_annotations(const ConstantPool* const cp,
     s_size = 9,
     min_size = 6        // smallest possible size (zero members)
   };
-  while ((--nann) >= 0 && (index - 2 + min_size <= limit)) {
+  // Cannot add min_size to index in case of overflow MAX_INT
+  while ((--nann) >= 0 && (index - 2 <= limit - min_size)) {
     int index0 = index;
     index = skip_annotation(buffer, limit, index);
     const u1* const abase = buffer + index0;
@@ -1253,13 +1258,14 @@ void ClassFileParser::parse_field_attributes(const ClassFileStream* const cfs,
         runtime_visible_annotations_length = attribute_length;
         runtime_visible_annotations = cfs->get_u1_buffer();
         assert(runtime_visible_annotations != NULL, "null visible annotations");
+        cfs->guarantee_more(runtime_visible_annotations_length, CHECK);
         parse_annotations(cp,
                           runtime_visible_annotations,
                           runtime_visible_annotations_length,
                           parsed_annotations,
                           _loader_data,
                           CHECK);
-        cfs->skip_u1(runtime_visible_annotations_length, CHECK);
+        cfs->skip_u1_fast(runtime_visible_annotations_length);
       } else if (attribute_name == vmSymbols::tag_runtime_invisible_annotations()) {
         if (runtime_invisible_annotations_exists) {
           classfile_parse_error(
@@ -2574,13 +2580,14 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
         runtime_visible_annotations_length = method_attribute_length;
         runtime_visible_annotations = cfs->get_u1_buffer();
         assert(runtime_visible_annotations != NULL, "null visible annotations");
+        cfs->guarantee_more(runtime_visible_annotations_length, CHECK_NULL);
         parse_annotations(cp,
                           runtime_visible_annotations,
                           runtime_visible_annotations_length,
                           &parsed_annotations,
                           _loader_data,
                           CHECK_NULL);
-        cfs->skip_u1(runtime_visible_annotations_length, CHECK_NULL);
+        cfs->skip_u1_fast(runtime_visible_annotations_length);
       } else if (method_attribute_name == vmSymbols::tag_runtime_invisible_annotations()) {
         if (runtime_invisible_annotations_exists) {
           classfile_parse_error(
@@ -3285,13 +3292,14 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
         runtime_visible_annotations_length = attribute_length;
         runtime_visible_annotations = cfs->get_u1_buffer();
         assert(runtime_visible_annotations != NULL, "null visible annotations");
+        cfs->guarantee_more(runtime_visible_annotations_length, CHECK);
         parse_annotations(cp,
                           runtime_visible_annotations,
                           runtime_visible_annotations_length,
                           parsed_annotations,
                           _loader_data,
                           CHECK);
-        cfs->skip_u1(runtime_visible_annotations_length, CHECK);
+        cfs->skip_u1_fast(runtime_visible_annotations_length);
       } else if (tag == vmSymbols::tag_runtime_invisible_annotations()) {
         if (runtime_invisible_annotations_exists) {
           classfile_parse_error(
