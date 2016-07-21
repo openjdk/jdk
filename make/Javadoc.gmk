@@ -82,7 +82,7 @@ JNLP_FIRST_COPYRIGHT_YEAR = 1998
 PLUGIN2_FIRST_COPYRIGHT_YEAR = 2007
 JDKNET_FIRST_COPYRIGHT_YEAR = 2014
 JACCESSAPI_FIRST_COPYRIGHT_YEAR = 2002
-
+JSOBJECT_FIRST_COPYRIGHT_YEAR = 1993
 
 # Oracle name
 FULL_COMPANY_NAME = Oracle and/or its affiliates
@@ -1027,6 +1027,64 @@ $(HTTPSERVER_PACKAGES_FILE): $(call PackageDependencies,$(HTTPSERVER_PKGS))
 
 #############################################################
 #
+# jsobjectdocs
+#
+
+ALL_OTHER_TARGETS += jsobjectdocs
+
+JSOBJECT_DOCDIR := $(JRE_API_DOCSDIR)/plugin/jsobject
+JSOBJECT2COREAPI := ../../$(JDKJRE2COREAPI)
+JSOBJECT_DOCTITLE := Java$(TRADEMARK) JSObject Doc
+JSOBJECT_WINDOWTITLE := Java JSObject Doc
+JSOBJECT_HEADER := <strong>Java JSObject Doc</strong>
+JSOBJECT_BOTTOM := $(call CommonBottom,$(JSOBJECT_FIRST_COPYRIGHT_YEAR))
+# JSOBJECT_PKGS is located in NON_CORE_PKGS.gmk
+
+JSOBJECT_INDEX_HTML = $(JSOBJECT_DOCDIR)/index.html
+JSOBJECT_OPTIONS_FILE = $(DOCSTMPDIR)/jsobject.options
+JSOBJECT_PACKAGES_FILE = $(DOCSTMPDIR)/jsobject.packages
+
+# The modules required to be documented
+JSOBJECT_MODULES = jdk.jsobject
+
+jsobjectdocs: $(JSOBJECT_INDEX_HTML)
+
+# Set relative location to core api document root
+$(JSOBJECT_INDEX_HTML): GET2DOCSDIR=$(JSOBJECT2COREAPI)/..
+
+# Run javadoc if the index file is out of date or missing
+$(JSOBJECT_INDEX_HTML): $(JSOBJECT_OPTIONS_FILE) $(JSOBJECT_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
+	$(prep-javadoc)
+	$(call JavadocSummary,$(JSOBJECT_OPTIONS_FILE),$(JSOBJECT_PACKAGES_FILE))
+	$(JAVADOC_CMD_SMALL) -d $(@D) \
+	    @$(JSOBJECT_OPTIONS_FILE) @$(JSOBJECT_PACKAGES_FILE)
+
+# Create file with javadoc options in it
+$(JSOBJECT_OPTIONS_FILE):
+	$(prep-target)
+	@($(call COMMON_JAVADOCFLAGS) ; \
+          $(call COMMON_JAVADOCTAGS) ; \
+	  $(call OptionOnly,-Xdoclint:none) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(JSOBJECT_MODULES)) ; \
+	  $(call OptionPair,-encoding,ascii) ; \
+	  $(call OptionOnly,-nodeprecatedlist) ; \
+	  $(call OptionPair,-doctitle,$(JSOBJECT_DOCTITLE)) ; \
+	  $(call OptionPair,-windowtitle,$(JSOBJECT_WINDOWTITLE) $(DRAFT_WINTITLE)); \
+	  $(call OptionPair,-header,$(JSOBJECT_HEADER)$(DRAFT_HEADER)); \
+	  $(call OptionPair,-bottom,$(JSOBJECT_BOTTOM)$(DRAFT_BOTTOM)); \
+	  $(call OptionTrip,-linkoffline,$(JSOBJECT2COREAPI),$(COREAPI_DOCSDIR)/); \
+	) >> $@
+
+# Create a file with the package names in it
+$(JSOBJECT_PACKAGES_FILE): $(call PackageDependencies,$(JSOBJECT_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(JSOBJECT_PKGS))
+
+
+#############################################################
+#
 # mgmtdocs
 #
 
@@ -1610,7 +1668,7 @@ $(JDKNET_PACKAGES_FILE): $(call PackageDependencies,$(JDKNET_PKGS))
 #
 # TODO: Need to decide when the plugin API is ready to publish as experimental API.
 # This target is temporarily added for internal use for now.
-#        
+#
 
 ALL_OTHER_TARGETS += jlinkdocs
 
