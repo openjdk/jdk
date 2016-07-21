@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1707,7 +1707,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
      */
     public InputStream nameList(String path) throws sun.net.ftp.FtpProtocolException, IOException {
         Socket s;
-        s = openDataConnection("NLST " + path);
+        s = openDataConnection(path == null ? "NLST" : "NLST " + path);
         if (s != null) {
             return createInputStream(s.getInputStream());
         }

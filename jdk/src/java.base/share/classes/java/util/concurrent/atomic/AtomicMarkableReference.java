@@ -35,6 +35,9 @@
 
 package java.util.concurrent.atomic;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+
 /**
  * An {@code AtomicMarkableReference} maintains an object reference
  * along with a mark bit, that can be updated atomically.
@@ -188,20 +191,19 @@ public class AtomicMarkableReference<V> {
              casPair(current, Pair.of(expectedReference, newMark)));
     }
 
-    // Unsafe mechanics
-
-    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
-    private static final long PAIR;
+    // VarHandle mechanics
+    private static final VarHandle PAIR;
     static {
         try {
-            PAIR = U.objectFieldOffset
-                (AtomicMarkableReference.class.getDeclaredField("pair"));
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            PAIR = l.findVarHandle(AtomicMarkableReference.class, "pair",
+                                   Pair.class);
         } catch (ReflectiveOperationException e) {
             throw new Error(e);
         }
     }
 
     private boolean casPair(Pair<V> cmp, Pair<V> val) {
-        return U.compareAndSwapObject(this, PAIR, cmp, val);
+        return PAIR.compareAndSet(this, cmp, val);
     }
 }
