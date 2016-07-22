@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -135,7 +135,7 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
         if (DEBUG_START_END_ELEMENT)
             System.out.println(">>> scanStartElementNS()");
                 // Note: namespace processing is on by default
-        fEntityScanner.scanQName(fElementQName);
+        fEntityScanner.scanQName(fElementQName, NameType.ATTRIBUTE);
         // REVISIT - [Q] Why do we need this local variable? -- mrglavas
         String rawname = fElementQName.rawname;
         if (fBindNamespaces) {
@@ -173,11 +173,11 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
             // end tag?
             int c = fEntityScanner.peekChar();
             if (c == '>') {
-                fEntityScanner.scanChar();
+                fEntityScanner.scanChar(null);
                 break;
             } else if (c == '/') {
-                fEntityScanner.scanChar();
-                if (!fEntityScanner.skipChar('>')) {
+                fEntityScanner.scanChar(null);
+                if (!fEntityScanner.skipChar('>', null)) {
                     reportFatalError(
                         "ElementUnterminated",
                         new Object[] { rawname });
@@ -345,7 +345,7 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
     protected void scanStartElementName ()
         throws IOException, XNIException {
         // Note: namespace processing is on by default
-        fEntityScanner.scanQName(fElementQName);
+        fEntityScanner.scanQName(fElementQName, NameType.ATTRIBUTE);
         // Must skip spaces here because the DTD scanner
         // would consume them at the end of the external subset.
         fSawSpace = fEntityScanner.skipSpaces();
@@ -395,11 +395,11 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
             // end tag?
             int c = fEntityScanner.peekChar();
             if (c == '>') {
-                fEntityScanner.scanChar();
+                fEntityScanner.scanChar(null);
                 break;
             } else if (c == '/') {
-                fEntityScanner.scanChar();
-                if (!fEntityScanner.skipChar('>')) {
+                fEntityScanner.scanChar(null);
+                if (!fEntityScanner.skipChar('>', null)) {
                     reportFatalError(
                         "ElementUnterminated",
                         new Object[] { rawname });
@@ -571,11 +571,11 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
             System.out.println(">>> scanAttribute()");
 
         // name
-        fEntityScanner.scanQName(fAttributeQName);
+        fEntityScanner.scanQName(fAttributeQName, NameType.ATTRIBUTE);
 
         // equals
         fEntityScanner.skipSpaces();
-        if (!fEntityScanner.skipChar('=')) {
+        if (!fEntityScanner.skipChar('=', NameType.ATTRIBUTE)) {
             reportFatalError(
                 "EqRequiredInAttribute",
                 new Object[] {
@@ -614,13 +614,20 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
         //REVISIT: one more case needs to be included: external PE and standalone is no
         boolean isVC = fHasExternalDTD && !fStandalone;
 
-        // REVISIT: it seems that this function should not take attributes, and length
-        scanAttributeValue(
-            this.fTempString,
-            fTempString2,
-            fAttributeQName.rawname,
-            isVC,
-            fCurrentElement.rawname);
+        /**
+         * Determine whether this is a namespace declaration that will be subject
+         * to the name limit check in the scanAttributeValue operation.
+         * Namespace declaration format: xmlns="..." or xmlns:prefix="..."
+         * Note that prefix:xmlns="..." isn't a namespace.
+         */
+        String localpart = fAttributeQName.localpart;
+        String prefix = fAttributeQName.prefix != null
+                ? fAttributeQName.prefix : XMLSymbols.EMPTY_STRING;
+        boolean isNSDecl = fBindNamespaces & (prefix == XMLSymbols.PREFIX_XMLNS ||
+                    prefix == XMLSymbols.EMPTY_STRING && localpart == XMLSymbols.PREFIX_XMLNS);
+
+        scanAttributeValue(this.fTempString, fTempString2, fAttributeQName.rawname,
+            isVC, fCurrentElement.rawname, isNSDecl);
         String value = fTempString.toString();
         attributes.setValue(attrIndex, value);
         attributes.setNonNormalizedValue(attrIndex, fTempString2.toString());
@@ -628,17 +635,7 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
 
         // record namespace declarations if any.
         if (fBindNamespaces) {
-
-            String localpart = fAttributeQName.localpart;
-            String prefix =
-                fAttributeQName.prefix != null
-                    ? fAttributeQName.prefix
-                    : XMLSymbols.EMPTY_STRING;
-            // when it's of form xmlns="..." or xmlns:prefix="...",
-            // it's a namespace declaration. but prefix:xmlns="..." isn't.
-            if (prefix == XMLSymbols.PREFIX_XMLNS
-                || prefix == XMLSymbols.EMPTY_STRING
-                && localpart == XMLSymbols.PREFIX_XMLNS) {
+            if (isNSDecl) {
                 if (value.length() > fXMLNameLimit) {
                     fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
                             "MaxXMLNameLimit",
@@ -758,7 +755,7 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
 
         // end
         fEntityScanner.skipSpaces();
-        if (!fEntityScanner.skipChar('>')) {
+        if (!fEntityScanner.skipChar('>', NameType.ELEMENTEND)) {
             reportFatalError(
                 "ETagUnterminated",
                 new Object[] { endElementName.rawname });

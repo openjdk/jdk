@@ -27,6 +27,7 @@
 #include "classfile/classFileStream.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verifier.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/dependencyContext.hpp"
@@ -597,6 +598,8 @@ bool InstanceKlass::link_class_impl(
 
         // also sets rewritten
         this_k->rewrite_class(CHECK_false);
+      } else if (this_k->is_shared()) {
+        SystemDictionaryShared::check_verification_constraints(this_k, CHECK_false);
       }
 
       // relocate jsrs and link methods after they are all rewritten
@@ -606,7 +609,12 @@ bool InstanceKlass::link_class_impl(
       // methods have been rewritten since rewrite may
       // fabricate new Method*s.
       // also does loader constraint checking
-      if (!this_k()->is_shared()) {
+      //
+      // initialize_vtable and initialize_itable need to be rerun for
+      // a shared class if the class is not loaded by the NULL classloader.
+      ClassLoaderData * loader_data = this_k->class_loader_data();
+      if (!(this_k->is_shared() &&
+            loader_data->is_the_null_class_loader_data())) {
         ResourceMark rm(THREAD);
         this_k->vtable()->initialize_vtable(true, CHECK_false);
         this_k->itable()->initialize_itable(true, CHECK_false);
