@@ -32,11 +32,18 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
+import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.StampedLock;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -745,28 +752,41 @@ public class StampedLockTest extends JSR166TestCase {
     public void testTryConvertToOptimisticRead() throws InterruptedException {
         StampedLock lock = new StampedLock();
         long s, p;
-        s = 0L;
-        assertFalse((p = lock.tryConvertToOptimisticRead(s)) != 0L);
+        assertEquals(0L, lock.tryConvertToOptimisticRead(0L));
+
         assertTrue((s = lock.tryOptimisticRead()) != 0L);
-        assertTrue((p = lock.tryConvertToOptimisticRead(s)) != 0L);
+        assertEquals(s, lock.tryConvertToOptimisticRead(s));
+        assertTrue(lock.validate(s));
+
+        assertTrue((p = lock.readLock()) != 0L);
+        assertTrue((s = lock.tryOptimisticRead()) != 0L);
+        assertEquals(s, lock.tryConvertToOptimisticRead(s));
+        assertTrue(lock.validate(s));
+        lock.unlockRead(p);
+
         assertTrue((s = lock.writeLock()) != 0L);
         assertTrue((p = lock.tryConvertToOptimisticRead(s)) != 0L);
         assertTrue(lock.validate(p));
+
         assertTrue((s = lock.readLock()) != 0L);
         assertTrue(lock.validate(s));
         assertTrue((p = lock.tryConvertToOptimisticRead(s)) != 0L);
         assertTrue(lock.validate(p));
+
         assertTrue((s = lock.tryWriteLock()) != 0L);
         assertTrue(lock.validate(s));
         assertTrue((p = lock.tryConvertToOptimisticRead(s)) != 0L);
         assertTrue(lock.validate(p));
+
         assertTrue((s = lock.tryReadLock()) != 0L);
         assertTrue(lock.validate(s));
         assertTrue((p = lock.tryConvertToOptimisticRead(s)) != 0L);
         assertTrue(lock.validate(p));
+
         assertTrue((s = lock.tryWriteLock(100L, MILLISECONDS)) != 0L);
         assertTrue((p = lock.tryConvertToOptimisticRead(s)) != 0L);
         assertTrue(lock.validate(p));
+
         assertTrue((s = lock.tryReadLock(100L, MILLISECONDS)) != 0L);
         assertTrue(lock.validate(s));
         assertTrue((p = lock.tryConvertToOptimisticRead(s)) != 0L);
@@ -780,39 +800,67 @@ public class StampedLockTest extends JSR166TestCase {
     public void testTryConvertToReadLock() throws InterruptedException {
         StampedLock lock = new StampedLock();
         long s, p;
-        s = 0L;
-        assertFalse((p = lock.tryConvertToReadLock(s)) != 0L);
+
+        assertFalse((p = lock.tryConvertToReadLock(0L)) != 0L);
+
         assertTrue((s = lock.tryOptimisticRead()) != 0L);
         assertTrue((p = lock.tryConvertToReadLock(s)) != 0L);
+        assertTrue(lock.isReadLocked());
+        assertEquals(1, lock.getReadLockCount());
         lock.unlockRead(p);
+
+        assertTrue((s = lock.tryOptimisticRead()) != 0L);
+        lock.readLock();
+        assertTrue((p = lock.tryConvertToReadLock(s)) != 0L);
+        assertTrue(lock.isReadLocked());
+        assertEquals(2, lock.getReadLockCount());
+        lock.unlockRead(p);
+        lock.unlockRead(p);
+
         assertTrue((s = lock.writeLock()) != 0L);
         assertTrue((p = lock.tryConvertToReadLock(s)) != 0L);
         assertTrue(lock.validate(p));
+        assertTrue(lock.isReadLocked());
+        assertEquals(1, lock.getReadLockCount());
         lock.unlockRead(p);
+
         assertTrue((s = lock.readLock()) != 0L);
         assertTrue(lock.validate(s));
-        assertTrue((p = lock.tryConvertToReadLock(s)) != 0L);
-        assertTrue(lock.validate(p));
-        lock.unlockRead(p);
+        assertEquals(s, lock.tryConvertToReadLock(s));
+        assertTrue(lock.validate(s));
+        assertTrue(lock.isReadLocked());
+        assertEquals(1, lock.getReadLockCount());
+        lock.unlockRead(s);
+
         assertTrue((s = lock.tryWriteLock()) != 0L);
         assertTrue(lock.validate(s));
         assertTrue((p = lock.tryConvertToReadLock(s)) != 0L);
         assertTrue(lock.validate(p));
+        assertEquals(1, lock.getReadLockCount());
         lock.unlockRead(p);
+
         assertTrue((s = lock.tryReadLock()) != 0L);
         assertTrue(lock.validate(s));
-        assertTrue((p = lock.tryConvertToReadLock(s)) != 0L);
-        assertTrue(lock.validate(p));
-        lock.unlockRead(p);
+        assertEquals(s, lock.tryConvertToReadLock(s));
+        assertTrue(lock.validate(s));
+        assertTrue(lock.isReadLocked());
+        assertEquals(1, lock.getReadLockCount());
+        lock.unlockRead(s);
+
         assertTrue((s = lock.tryWriteLock(100L, MILLISECONDS)) != 0L);
         assertTrue((p = lock.tryConvertToReadLock(s)) != 0L);
         assertTrue(lock.validate(p));
+        assertTrue(lock.isReadLocked());
+        assertEquals(1, lock.getReadLockCount());
         lock.unlockRead(p);
+
         assertTrue((s = lock.tryReadLock(100L, MILLISECONDS)) != 0L);
         assertTrue(lock.validate(s));
-        assertTrue((p = lock.tryConvertToReadLock(s)) != 0L);
-        assertTrue(lock.validate(p));
-        lock.unlockRead(p);
+        assertEquals(s, lock.tryConvertToReadLock(s));
+        assertTrue(lock.validate(s));
+        assertTrue(lock.isReadLocked());
+        assertEquals(1, lock.getReadLockCount());
+        lock.unlockRead(s);
     }
 
     /**
@@ -822,38 +870,52 @@ public class StampedLockTest extends JSR166TestCase {
     public void testTryConvertToWriteLock() throws InterruptedException {
         StampedLock lock = new StampedLock();
         long s, p;
-        s = 0L;
-        assertFalse((p = lock.tryConvertToWriteLock(s)) != 0L);
+
+        assertFalse((p = lock.tryConvertToWriteLock(0L)) != 0L);
+
         assertTrue((s = lock.tryOptimisticRead()) != 0L);
         assertTrue((p = lock.tryConvertToWriteLock(s)) != 0L);
+        assertTrue(lock.isWriteLocked());
         lock.unlockWrite(p);
+
         assertTrue((s = lock.writeLock()) != 0L);
-        assertTrue((p = lock.tryConvertToWriteLock(s)) != 0L);
-        assertTrue(lock.validate(p));
-        lock.unlockWrite(p);
+        assertEquals(s, lock.tryConvertToWriteLock(s));
+        assertTrue(lock.validate(s));
+        assertTrue(lock.isWriteLocked());
+        lock.unlockWrite(s);
+
         assertTrue((s = lock.readLock()) != 0L);
         assertTrue(lock.validate(s));
         assertTrue((p = lock.tryConvertToWriteLock(s)) != 0L);
         assertTrue(lock.validate(p));
+        assertTrue(lock.isWriteLocked());
         lock.unlockWrite(p);
+
         assertTrue((s = lock.tryWriteLock()) != 0L);
         assertTrue(lock.validate(s));
-        assertTrue((p = lock.tryConvertToWriteLock(s)) != 0L);
-        assertTrue(lock.validate(p));
-        lock.unlockWrite(p);
+        assertEquals(s, lock.tryConvertToWriteLock(s));
+        assertTrue(lock.validate(s));
+        assertTrue(lock.isWriteLocked());
+        lock.unlockWrite(s);
+
         assertTrue((s = lock.tryReadLock()) != 0L);
         assertTrue(lock.validate(s));
         assertTrue((p = lock.tryConvertToWriteLock(s)) != 0L);
         assertTrue(lock.validate(p));
+        assertTrue(lock.isWriteLocked());
         lock.unlockWrite(p);
+
         assertTrue((s = lock.tryWriteLock(100L, MILLISECONDS)) != 0L);
         assertTrue((p = lock.tryConvertToWriteLock(s)) != 0L);
         assertTrue(lock.validate(p));
+        assertTrue(lock.isWriteLocked());
         lock.unlockWrite(p);
+
         assertTrue((s = lock.tryReadLock(100L, MILLISECONDS)) != 0L);
         assertTrue(lock.validate(s));
         assertTrue((p = lock.tryConvertToWriteLock(s)) != 0L);
         assertTrue(lock.validate(p));
+        assertTrue(lock.isWriteLocked());
         lock.unlockWrite(p);
     }
 
@@ -901,6 +963,243 @@ public class StampedLockTest extends JSR166TestCase {
         lock.lock();
         lock.unlock();
         assertTrue(lock.tryLock());
+    }
+
+    /**
+     * Lock.newCondition throws UnsupportedOperationException
+     */
+    public void testLockViewsDoNotSupportConditions() {
+        StampedLock sl = new StampedLock();
+        assertThrows(UnsupportedOperationException.class,
+                     () -> sl.asWriteLock().newCondition(),
+                     () -> sl.asReadLock().newCondition(),
+                     () -> sl.asReadWriteLock().writeLock().newCondition(),
+                     () -> sl.asReadWriteLock().readLock().newCondition());
+    }
+
+    /**
+     * Passing optimistic read stamps to unlock operations result in
+     * IllegalMonitorStateException
+     */
+    public void testCannotUnlockOptimisticReadStamps() {
+        Runnable[] actions = {
+            () -> {
+                StampedLock sl = new StampedLock();
+                long stamp = sl.tryOptimisticRead();
+                assertTrue(stamp != 0);
+                sl.unlockRead(stamp);
+            },
+            () -> {
+                StampedLock sl = new StampedLock();
+                long stamp = sl.tryOptimisticRead();
+                sl.unlock(stamp);
+            },
+
+            () -> {
+                StampedLock sl = new StampedLock();
+                long stamp = sl.tryOptimisticRead();
+                sl.writeLock();
+                sl.unlock(stamp);
+            },
+            () -> {
+                StampedLock sl = new StampedLock();
+                long stamp = sl.tryOptimisticRead();
+                sl.readLock();
+                sl.unlockRead(stamp);
+            },
+            () -> {
+                StampedLock sl = new StampedLock();
+                long stamp = sl.tryOptimisticRead();
+                sl.readLock();
+                sl.unlock(stamp);
+            },
+
+            () -> {
+                StampedLock sl = new StampedLock();
+                long stamp = sl.tryConvertToOptimisticRead(sl.writeLock());
+                assertTrue(stamp != 0);
+                sl.writeLock();
+                sl.unlockWrite(stamp);
+            },
+            () -> {
+                StampedLock sl = new StampedLock();
+                long stamp = sl.tryConvertToOptimisticRead(sl.writeLock());
+                sl.writeLock();
+                sl.unlock(stamp);
+            },
+            () -> {
+                StampedLock sl = new StampedLock();
+                long stamp = sl.tryConvertToOptimisticRead(sl.writeLock());
+                sl.readLock();
+                sl.unlockRead(stamp);
+            },
+            () -> {
+                StampedLock sl = new StampedLock();
+                long stamp = sl.tryConvertToOptimisticRead(sl.writeLock());
+                sl.readLock();
+                sl.unlock(stamp);
+            },
+
+            () -> {
+                StampedLock sl = new StampedLock();
+                long stamp = sl.tryConvertToOptimisticRead(sl.readLock());
+                assertTrue(stamp != 0);
+                sl.writeLock();
+                sl.unlockWrite(stamp);
+            },
+            () -> {
+                StampedLock sl = new StampedLock();
+                long stamp = sl.tryConvertToOptimisticRead(sl.readLock());
+                sl.writeLock();
+                sl.unlock(stamp);
+            },
+            () -> {
+                StampedLock sl = new StampedLock();
+                long stamp = sl.tryConvertToOptimisticRead(sl.readLock());
+                sl.readLock();
+                sl.unlockRead(stamp);
+            },
+            () -> {
+                StampedLock sl = new StampedLock();
+                sl.readLock();
+                long stamp = sl.tryConvertToOptimisticRead(sl.readLock());
+                assertTrue(stamp != 0);
+                sl.readLock();
+                sl.unlockRead(stamp);
+            },
+            () -> {
+                StampedLock sl = new StampedLock();
+                long stamp = sl.tryConvertToOptimisticRead(sl.readLock());
+                sl.readLock();
+                sl.unlock(stamp);
+            },
+            () -> {
+                StampedLock sl = new StampedLock();
+                sl.readLock();
+                long stamp = sl.tryConvertToOptimisticRead(sl.readLock());
+                sl.readLock();
+                sl.unlock(stamp);
+            },
+        };
+
+        assertThrows(IllegalMonitorStateException.class, actions);
+    }
+
+    static long writeLockInterruptiblyUninterrupted(StampedLock sl) {
+        try { return sl.writeLockInterruptibly(); }
+        catch (InterruptedException ex) { throw new AssertionError(ex); }
+    }
+
+    static long tryWriteLockUninterrupted(StampedLock sl, long time, TimeUnit unit) {
+        try { return sl.tryWriteLock(time, unit); }
+        catch (InterruptedException ex) { throw new AssertionError(ex); }
+    }
+
+    static long readLockInterruptiblyUninterrupted(StampedLock sl) {
+        try { return sl.readLockInterruptibly(); }
+        catch (InterruptedException ex) { throw new AssertionError(ex); }
+    }
+
+    static long tryReadLockUninterrupted(StampedLock sl, long time, TimeUnit unit) {
+        try { return sl.tryReadLock(time, unit); }
+        catch (InterruptedException ex) { throw new AssertionError(ex); }
+    }
+
+    /**
+     * Invalid write stamps result in IllegalMonitorStateException
+     */
+    public void testInvalidWriteStampsThrowIllegalMonitorStateException() {
+        List<Function<StampedLock, Long>> writeLockers = new ArrayList<>();
+        writeLockers.add((sl) -> sl.writeLock());
+        writeLockers.add((sl) -> writeLockInterruptiblyUninterrupted(sl));
+        writeLockers.add((sl) -> tryWriteLockUninterrupted(sl, Long.MIN_VALUE, DAYS));
+        writeLockers.add((sl) -> tryWriteLockUninterrupted(sl, 0, DAYS));
+
+        List<BiConsumer<StampedLock, Long>> writeUnlockers = new ArrayList<>();
+        writeUnlockers.add((sl, stamp) -> sl.unlockWrite(stamp));
+        writeUnlockers.add((sl, stamp) -> assertTrue(sl.tryUnlockWrite()));
+        writeUnlockers.add((sl, stamp) -> sl.asWriteLock().unlock());
+        writeUnlockers.add((sl, stamp) -> sl.unlock(stamp));
+
+        List<Consumer<StampedLock>> mutaters = new ArrayList<>();
+        mutaters.add((sl) -> {});
+        mutaters.add((sl) -> sl.readLock());
+        for (Function<StampedLock, Long> writeLocker : writeLockers)
+            mutaters.add((sl) -> writeLocker.apply(sl));
+
+        for (Function<StampedLock, Long> writeLocker : writeLockers)
+        for (BiConsumer<StampedLock, Long> writeUnlocker : writeUnlockers)
+        for (Consumer<StampedLock> mutater : mutaters) {
+            final StampedLock sl = new StampedLock();
+            final long stamp = writeLocker.apply(sl);
+            assertTrue(stamp != 0L);
+            assertThrows(IllegalMonitorStateException.class,
+                         () -> sl.unlockRead(stamp));
+            writeUnlocker.accept(sl, stamp);
+            mutater.accept(sl);
+            assertThrows(IllegalMonitorStateException.class,
+                         () -> sl.unlock(stamp),
+                         () -> sl.unlockRead(stamp),
+                         () -> sl.unlockWrite(stamp));
+        }
+    }
+
+    /**
+     * Invalid read stamps result in IllegalMonitorStateException
+     */
+    public void testInvalidReadStampsThrowIllegalMonitorStateException() {
+        List<Function<StampedLock, Long>> readLockers = new ArrayList<>();
+        readLockers.add((sl) -> sl.readLock());
+        readLockers.add((sl) -> readLockInterruptiblyUninterrupted(sl));
+        readLockers.add((sl) -> tryReadLockUninterrupted(sl, Long.MIN_VALUE, DAYS));
+        readLockers.add((sl) -> tryReadLockUninterrupted(sl, 0, DAYS));
+
+        List<BiConsumer<StampedLock, Long>> readUnlockers = new ArrayList<>();
+        readUnlockers.add((sl, stamp) -> sl.unlockRead(stamp));
+        readUnlockers.add((sl, stamp) -> assertTrue(sl.tryUnlockRead()));
+        readUnlockers.add((sl, stamp) -> sl.asReadLock().unlock());
+        readUnlockers.add((sl, stamp) -> sl.unlock(stamp));
+
+        List<Function<StampedLock, Long>> writeLockers = new ArrayList<>();
+        writeLockers.add((sl) -> sl.writeLock());
+        writeLockers.add((sl) -> writeLockInterruptiblyUninterrupted(sl));
+        writeLockers.add((sl) -> tryWriteLockUninterrupted(sl, Long.MIN_VALUE, DAYS));
+        writeLockers.add((sl) -> tryWriteLockUninterrupted(sl, 0, DAYS));
+
+        List<BiConsumer<StampedLock, Long>> writeUnlockers = new ArrayList<>();
+        writeUnlockers.add((sl, stamp) -> sl.unlockWrite(stamp));
+        writeUnlockers.add((sl, stamp) -> assertTrue(sl.tryUnlockWrite()));
+        writeUnlockers.add((sl, stamp) -> sl.asWriteLock().unlock());
+        writeUnlockers.add((sl, stamp) -> sl.unlock(stamp));
+
+
+        for (Function<StampedLock, Long> readLocker : readLockers)
+        for (BiConsumer<StampedLock, Long> readUnlocker : readUnlockers)
+        for (Function<StampedLock, Long> writeLocker : writeLockers)
+        for (BiConsumer<StampedLock, Long> writeUnlocker : writeUnlockers) {
+            final StampedLock sl = new StampedLock();
+            final long stamp = readLocker.apply(sl);
+            assertTrue(stamp != 0L);
+            assertThrows(IllegalMonitorStateException.class,
+                         () -> sl.unlockWrite(stamp));
+            readUnlocker.accept(sl, stamp);
+            assertThrows(IllegalMonitorStateException.class,
+                         () -> sl.unlock(stamp),
+                         () -> sl.unlockRead(stamp),
+                         () -> sl.unlockWrite(stamp));
+            final long writeStamp = writeLocker.apply(sl);
+            assertTrue(writeStamp != 0L);
+            assertTrue(writeStamp != stamp);
+            assertThrows(IllegalMonitorStateException.class,
+                         () -> sl.unlock(stamp),
+                         () -> sl.unlockRead(stamp),
+                         () -> sl.unlockWrite(stamp));
+            writeUnlocker.accept(sl, writeStamp);
+            assertThrows(IllegalMonitorStateException.class,
+                         () -> sl.unlock(stamp),
+                         () -> sl.unlockRead(stamp),
+                         () -> sl.unlockWrite(stamp));
+        }
     }
 
 }

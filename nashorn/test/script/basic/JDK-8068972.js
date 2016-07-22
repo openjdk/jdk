@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,21 +21,33 @@
  * questions.
  */
 
-package jdk.internal.jshell.jdi;
-
 /**
- * Internal exception when Java Debug Interface VirtualMacine is not connected.
- * Copy of jdb VMNotConnectedException.
+ * JDK-8068972: Array.splice should follow the ES6 specification
+ *
+ * @test
+ * @run
  */
-class JDINotConnectedException extends RuntimeException {
 
-    private static final long serialVersionUID = -7433430494903950165L;
 
-    public JDINotConnectedException() {
-        super();
-    }
-
-    public JDINotConnectedException(String s) {
-        super(s);
-    }
+function assertEqualArrays(a, b) {
+    Assert.assertTrue(Array.isArray(a));
+    Assert.assertTrue(Array.isArray(b));
+    Assert.assertTrue(a.length === b.length);
+    Assert.assertTrue(a.every(function(v, j) {
+        return v === b[j];
+    }));
 }
+
+var array = [1, 2, 3, 4, 5, 6, 7];
+
+var result = array.splice();
+assertEqualArrays(array, [1, 2, 3, 4, 5, 6, 7]);
+assertEqualArrays(result, []);
+
+result = array.splice(4);
+assertEqualArrays(array, [1, 2, 3, 4]);
+assertEqualArrays(result, [5, 6, 7]);
+
+result = array.splice(1, 2, -2, -3);
+assertEqualArrays(array, [1, -2, -3, 4]);
+assertEqualArrays(result, [2, 3]);

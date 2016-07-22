@@ -1006,10 +1006,11 @@ CreateApplicationArgs(JNIEnv *env, char **strv, int argc)
     // make a copy of the args which will be expanded in java if required.
     nargv = (char **)JLI_MemAlloc(argc * sizeof(char*));
     for (i = 0; i < argc; i++) {
+        jboolean arg_expand;
         j = appArgIdx[i];
-        jboolean arg_expand = (JLI_StrCmp(stdargs[j].arg, strv[i]) == 0)
-                                ? stdargs[j].has_wildcard
-                                : JNI_FALSE;
+        arg_expand = (JLI_StrCmp(stdargs[j].arg, strv[i]) == 0)
+            ? stdargs[j].has_wildcard
+            : JNI_FALSE;
         if (needs_expansion == JNI_FALSE)
             needs_expansion = arg_expand;
 

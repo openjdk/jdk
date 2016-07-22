@@ -20,6 +20,7 @@
  *
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 package java.net.http;
@@ -466,7 +467,7 @@ class Stream extends ExchangeImpl {
 
         public synchronized void take(int amount) throws InterruptedException {
             assert permits >= 0;
-            while (permits < amount) {
+            while (amount > 0) {
                 int n = Math.min(amount, permits);
                 permits -= n;
                 amount -= n;
@@ -498,7 +499,7 @@ class Stream extends ExchangeImpl {
 
     DataFrame getDataFrame() throws IOException, InterruptedException {
         userRequestFlowController.take();
-        int maxpayloadLen = connection.getMaxSendFrameSize() - 9;
+        int maxpayloadLen = connection.getMaxSendFrameSize();
         ByteBuffer buffer = connection.getBuffer();
         buffer.limit(maxpayloadLen);
         boolean complete = requestProcessor.onRequestBodyChunk(buffer);
