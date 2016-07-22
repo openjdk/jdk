@@ -21,14 +21,33 @@
  * questions.
  */
 
-package p;
+/**
+ * Tests to check representation of ES6 default parameters.
+ *
+ * @test
+ * @option -scripting
+ * @run
+ */
 
-import java.io.IOException;
-import java.io.OutputStream;
-import sun.security.util.DerEncoder;
+load(__DIR__ + "utils.js")
 
-public class NoRepl implements DerEncoder {
-    public void derEncode(OutputStream out) throws IOException {
-        throw new IOException();
-    }
+var code = <<EOF
+
+function func({x, y}) {
 }
+
+var f = function({a, b}) { }
+
+function x({x, y} = { x: 44, y: 45 }) {}
+
+EOF
+
+parse("destructuring_params.js", code, "--language=es6", new (Java.extend(visitor_es6, {
+    visitFunctionDeclaration : function (node, obj) {
+        obj.push(convert(node))
+    },
+    visitVariable : function (node, obj) {
+        obj.push(convert(node))
+    }
+})))
+

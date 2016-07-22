@@ -764,17 +764,6 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     }
 
     /**
-     * Add gap between navigation bar elements.
-     *
-     * @param liNav the content tree to which the gap will be added
-     */
-    protected void addNavGap(Content liNav) {
-        liNav.addContent(getSpace());
-        liNav.addContent("|");
-        liNav.addContent(getSpace());
-    }
-
-    /**
      * Return the TypeElement being documented.
      *
      * @return the TypeElement being documented.

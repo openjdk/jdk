@@ -945,7 +945,7 @@ public class Runtime {
     }
 
     /**
-     * A representation of a version string for an implemenation of the
+     * A representation of a version string for an implementation of the
      * Java&nbsp;SE Platform.  A version string contains a version number
      * optionally followed by pre-release and build information.
      *
@@ -1058,10 +1058,10 @@ public class Runtime {
      * <p> When comparing two version strings, the value of {@code $OPT}, if
      * present, may or may not be significant depending on the chosen
      * comparison method.  The comparison methods {@link #compareTo(Version)
-     * compareTo()} and {@link #compareToIgnoreOpt(Version)
-     * compareToIgnoreOpt()} should be used consistently with the
+     * compareTo()} and {@link #compareToIgnoreOptional(Version)
+     * compareToIgnoreOptional()} should be used consistently with the
      * corresponding methods {@link #equals(Object) equals()} and {@link
-     * #equalsIgnoreOpt(Object) equalsIgnoreOpt()}.  </p>
+     * #equalsIgnoreOptional(Object) equalsIgnoreOptional()}.  </p>
      *
      * <p> A <em>short version string</em>, {@code $SVSTR}, often useful in
      * less formal contexts, is a version number optionally followed by a
@@ -1249,7 +1249,7 @@ public class Runtime {
          * @throws  NullPointerException
          *          If the given object is {@code null}
          */
-        public int compareToIgnoreOpt(Version ob) {
+        public int compareToIgnoreOptional(Version ob) {
             return compare(ob, true);
         }
 
@@ -1270,7 +1270,7 @@ public class Runtime {
                 return ret;
 
             if (!ignoreOpt)
-                return compareOpt(ob);
+                return compareOptional(ob);
 
             return 0;
         }
@@ -1325,7 +1325,7 @@ public class Runtime {
             return 0;
         }
 
-        private int compareOpt(Version ob) {
+        private int compareOptional(Version ob) {
             Optional<String> oOpt = ob.optional();
             if (!optional.isPresent()) {
                 if (oOpt.isPresent())
@@ -1384,7 +1384,7 @@ public class Runtime {
          */
         @Override
         public boolean equals(Object ob) {
-            boolean ret = equalsIgnoreOpt(ob);
+            boolean ret = equalsIgnoreOptional(ob);
             if (!ret)
                 return false;
 
@@ -1407,7 +1407,7 @@ public class Runtime {
          *          ignoring the optinal build information
          *
          */
-        public boolean equalsIgnoreOpt(Object ob) {
+        public boolean equalsIgnoreOptional(Object ob) {
             if (this == ob)
                 return true;
             if (!(ob instanceof Version))

@@ -24,5 +24,8 @@
  */
 package testpkgmdl2;
 
-public class TestClassInModule2 {
+import testpkg2mdl2.TestInterfaceInModule2;
+
+public class TestClassInModule2 implements TestInterfaceInModule2 {
+    void testMethod() {}
 }

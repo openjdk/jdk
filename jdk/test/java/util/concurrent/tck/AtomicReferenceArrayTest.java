@@ -243,4 +243,5 @@ public class AtomicReferenceArrayTest extends JSR166TestCase {
         AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<Integer>(a);
         assertEquals(Arrays.toString(a), aa.toString());
     }
+
 }

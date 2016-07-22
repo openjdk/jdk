@@ -801,15 +801,20 @@ endif
 # of the build in case of failure. The  command line itself is stored in a file,
 # and also logged to stdout if the LOG=cmdlines option has been given.
 #
+# NOTE: If the command redirects stdout, the caller needs to wrap it in a
+# subshell (by adding parentheses around it), otherwise the redirect to the
+# subshell tee process will create a race condition where the target file may
+# not be fully written when the make recipe is done.
+#
 # Param 1 - The path to base the name of the log file / command line file on
 # Param 2 - The command to run
 ExecuteWithLog = \
   $(call LogCmdlines, Exececuting: [$(strip $2)]) \
   $(call WriteFile, $2, $(strip $1).cmdline) \
-  ( ( $(strip $2) > >($(TEE) $(strip $1).log) 2> >($(TEE) $(strip $1).log >&2) || \
+  ( $(strip $2) > >($(TEE) $(strip $1).log) 2> >($(TEE) $(strip $1).log >&2) || \
       ( exitcode=$(DOLLAR)? && \
       $(CP) $(strip $1).log $(MAKESUPPORT_OUTPUTDIR)/failure-logs/$(subst /,_,$(patsubst $(BUILD_OUTPUT)/%,%,$(strip $1))).log && \
-      exit $(DOLLAR)exitcode ) ) && wait )
+      exit $(DOLLAR)exitcode ) )
 
 ################################################################################
 # Find lib dir for module

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8075526 8135108
+ * @bug 8075526 8135108 8155616
  * @summary Test timestamp via ZipEntry.get/setTimeLocal()
  */
 
@@ -39,14 +39,13 @@ public class TestLocalTime {
     public static void main(String[] args) throws Throwable{
         try {
             LocalDateTime ldt = LocalDateTime.now();
-            test(getBytes(ldt), ldt);    // now
-
-            ldt = ldt.withYear(1968); test(getBytes(ldt), ldt);
-            ldt = ldt.withYear(1970); test(getBytes(ldt), ldt);
-            ldt = ldt.withYear(1982); test(getBytes(ldt), ldt);
-            ldt = ldt.withYear(2037); test(getBytes(ldt), ldt);
-            ldt = ldt.withYear(2100); test(getBytes(ldt), ldt);
-            ldt = ldt.withYear(2106); test(getBytes(ldt), ldt);
+            test(ldt);    // now
+            test(ldt.withYear(1968));
+            test(ldt.withYear(1970));
+            test(ldt.withYear(1982));
+            test(ldt.withYear(2037));
+            test(ldt.withYear(2100));
+            test(ldt.withYear(2106));
 
             TimeZone tz = TimeZone.getTimeZone("Asia/Shanghai");
             // dos time does not support < 1980, have to use
@@ -57,10 +56,14 @@ public class TestLocalTime {
             testWithTZ(tz, ldt.withYear(2106));
 
             // for #8135108
-            ldt = LocalDateTime.of(2100, 12, 06, 12, 34, 34, 973);
-            test(getBytes(ldt), ldt);
-            ldt = LocalDateTime.of(2106, 12, 06, 12, 34, 34, 973);
-            test(getBytes(ldt), ldt);
+            test(LocalDateTime.of(2100, 12, 06, 12, 34, 34, 973));
+            test(LocalDateTime.of(2106, 12, 06, 12, 34, 34, 973));
+
+            // for #8155616
+            test(LocalDateTime.of(2016, 03, 13, 2, 50, 00));  // gap
+            test(LocalDateTime.of(2015, 11, 1,  1, 30, 00));  // overlap
+            test(LocalDateTime.of(1968, 04, 28, 2, 51, 25));
+            test(LocalDateTime.of(1970, 04, 26, 2, 31, 52));
 
         } finally {
             TimeZone.setDefault(tz0);
@@ -73,7 +76,6 @@ public class TestLocalTime {
         ZipEntry ze = new ZipEntry("TestLocalTime.java");
         ze.setTimeLocal(mtime);
         check(ze, mtime);
-
         zos.putNextEntry(ze);
         zos.write(new byte[] { 1, 2, 3, 4});
         zos.close();
@@ -85,6 +87,10 @@ public class TestLocalTime {
        byte[] zbytes = getBytes(ldt);
        TimeZone.setDefault(tz0);
        test(zbytes, ldt);
+    }
+
+    static void test(LocalDateTime ldt) throws Throwable {
+        test(getBytes(ldt), ldt);
     }
 
     static void test(byte[] zbytes, LocalDateTime expected) throws Throwable {
@@ -113,6 +119,23 @@ public class TestLocalTime {
         LocalDateTime ldt = ze.getTimeLocal();
         if (ldt.atOffset(ZoneOffset.UTC).toEpochSecond() >> 1
             != expected.atOffset(ZoneOffset.UTC).toEpochSecond() >> 1) {
+            // if the LDT is out of the range of the standard ms-dos date-time
+            // format ( < 1980 ) AND the date-time is within the daylight saving
+            // time gap (which means the LDT is actually "invalid"), the LDT will
+            // be adjusted accordingly when ZipEntry.setTimeLocal() converts the
+            // date-time via ldt -> zdt -> Instant -> FileTime.
+            // See ZonedDateTime.of(LocalDateTime, ZoneId) for more details.
+            if (ldt.getYear() < 1980 || ldt.getYear() > (1980 + 0x7f)) {
+                System.out.println(" Non-MSDOS    ldt : " + ldt);
+                System.out.println("         expected : " + expected);
+                // try to adjust the "expected", assume daylight saving gap
+                expected = ZonedDateTime.of(expected, ZoneId.systemDefault())
+                                        .toLocalDateTime();
+                if (ldt.atOffset(ZoneOffset.UTC).toEpochSecond() >> 1
+                    == expected.atOffset(ZoneOffset.UTC).toEpochSecond() >> 1) {
+                    return;
+                }
+            }
             throw new RuntimeException("Timestamp: storing mtime failed!");
         }
     }

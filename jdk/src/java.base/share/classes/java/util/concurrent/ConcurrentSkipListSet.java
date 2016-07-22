@@ -35,6 +35,8 @@
 
 package java.util.concurrent;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Collections;
@@ -507,15 +509,16 @@ public class ConcurrentSkipListSet<E>
 
     // Support for resetting map in clone
     private void setMap(ConcurrentNavigableMap<E,Object> map) {
-        U.putObjectVolatile(this, MAP, map);
+        MAP.setVolatile(this, map);
     }
 
-    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
-    private static final long MAP;
+    // VarHandle mechanics
+    private static final VarHandle MAP;
     static {
         try {
-            MAP = U.objectFieldOffset
-                (ConcurrentSkipListSet.class.getDeclaredField("m"));
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            MAP = l.findVarHandle(ConcurrentSkipListSet.class, "m",
+                                  ConcurrentNavigableMap.class);
         } catch (ReflectiveOperationException e) {
             throw new Error(e);
         }

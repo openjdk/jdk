@@ -81,7 +81,7 @@ public class JMXSubjectDomainCombiner extends SubjectDomainCombiner {
      * A ProtectionDomain with a null CodeSource and an empty permission set.
      */
     private static final ProtectionDomain pdNoPerms =
-        new ProtectionDomain(nullCodeSource, new Permissions());
+        new ProtectionDomain(nullCodeSource, new Permissions(), null, null);
 
     /**
      * Get the current AccessControlContext combined with the supplied subject.
