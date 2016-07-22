@@ -293,9 +293,6 @@ sun/security/ssl/SSLSocketImpl/AsyncSSLSocketClose.java         8161232 macosx-a
 ############################################################################
 
 # jdk_imageio
-javax/imageio/plugins/shared/CanWriteSequence.java              8148454 generic-all
-javax/imageio/plugins/tiff/MultiPageTest/MultiPageTest.java     8148454 generic-all
-javax/imageio/plugins/tiff/WriteToSequenceAfterAbort.java       8148454 generic-all
 
 ############################################################################
 
