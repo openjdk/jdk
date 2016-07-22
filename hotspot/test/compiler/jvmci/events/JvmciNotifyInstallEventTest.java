@@ -52,17 +52,17 @@
  *      compiler.jvmci.common.testcases.SimpleClass
  *      jdk.test.lib.Asserts
  *      jdk.test.lib.Utils
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *     -Xbootclasspath/a:. -Xmixed
  *     -XX:+UseJVMCICompiler -XX:-BootstrapJVMCI
  *     -Dcompiler.jvmci.events.JvmciNotifyInstallEventTest.failoninit=false
  *     compiler.jvmci.events.JvmciNotifyInstallEventTest
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *     -Djvmci.compiler=EmptyCompiler -Xbootclasspath/a:. -Xmixed
  *     -XX:+UseJVMCICompiler -XX:-BootstrapJVMCI
  *     -Dcompiler.jvmci.events.JvmciNotifyInstallEventTest.failoninit=false
  *     compiler.jvmci.events.JvmciNotifyInstallEventTest
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *     -Djvmci.compiler=EmptyCompiler -Xbootclasspath/a:. -Xmixed
  *     -XX:+UseJVMCICompiler -XX:-BootstrapJVMCI -XX:JVMCINMethodSizeLimit=0
  *     -Dcompiler.jvmci.events.JvmciNotifyInstallEventTest.failoninit=false
