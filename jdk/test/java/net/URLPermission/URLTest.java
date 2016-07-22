@@ -23,167 +23,194 @@
 
 import java.net.URLPermission;
 /*
- * Run the tests once without security manager and once with
- *
  * @test
  * @bug 8010464
  * @modules jdk.httpserver
- * @key intermittent
  * @library /lib/testlibrary/
  * @build jdk.testlibrary.SimpleSSLContext
- * @run main/othervm/java.security.policy=policy.1 URLTest one
- * @run main/othervm URLTest one
- * @run main/othervm/java.security.policy=policy.2 URLTest two
- * @run main/othervm URLTest two
- * @run main/othervm/java.security.policy=policy.3 URLTest three
- * @run main/othervm URLTest three
+ * @run main/othervm URLTest
+ * @summary check URLPermission with Http(s)URLConnection
  */
 
 import java.net.*;
 import java.io.*;
-import java.util.*;
+import java.security.*;
 import java.util.concurrent.*;
-import java.util.logging.*;
 import com.sun.net.httpserver.*;
 import javax.net.ssl.*;
 import jdk.testlibrary.SimpleSSLContext;
 
 public class URLTest {
-    static boolean failed = false;
+
+    static boolean failed;
 
     public static void main (String[] args) throws Exception {
-        boolean no = false, yes = true;
-
-        if (System.getSecurityManager() == null) {
-            yes = false;
-        }
         createServers();
-        InetSocketAddress addr1 = httpServer.getAddress();
-        int port1 = addr1.getPort();
-        InetSocketAddress addr2 = httpsServer.getAddress();
-        int port2 = addr2.getPort();
 
-          // each of the following cases is run with a different policy file
+        try {
+            // Verify without a Security Manager
+            test1();
+            test2();
+            test3();
 
-        switch (args[0]) {
-          case "one":
-            String url1 = "http://127.0.0.1:"+ port1 + "/foo.html";
-            String url2 = "https://127.0.0.1:"+ port2 + "/foo.html";
-            String url3 = "http://127.0.0.1:"+ port1 + "/bar.html";
-            String url4 = "https://127.0.0.1:"+ port2 + "/bar.html";
+            // Set the security manager. Each test will set its own policy.
+            Policy.setPolicy(new CustomPolicy());
+            System.setSecurityManager(new SecurityManager());
+            System.out.println("\n Security Manager has been set.");
 
-            // simple positive test. Should succceed
-            test(url1, "GET", "X-Foo", no);
-            test(url1, "GET", "Z-Bar", "X-Foo", no);
-            test(url1, "GET", "X-Foo", "Z-Bar", no);
-            test(url1, "GET", "Z-Bar", no);
-            test(url2, "POST", "X-Fob", no);
+            test1();
+            test2();
+            test3();
 
-            // reverse the methods, should fail
-            test(url1, "POST", "X-Foo", yes);
-            test(url2, "GET", "X-Fob", yes);
-
-            // different URLs, should fail
-            test(url3, "GET", "X-Foo", yes);
-            test(url4, "POST", "X-Fob", yes);
-            break;
-
-          case "two":
-            url1 = "http://127.0.0.1:"+ port1 + "/foo.html";
-            url2 = "https://127.0.0.1:"+ port2 + "/foo.html";
-            url3 = "http://127.0.0.1:"+ port1 + "/bar.html";
-            url4 = "https://127.0.0.1:"+ port2 + "/bar.html";
-
-            // simple positive test. Should succceed
-            test(url1, "GET", "X-Foo", no);
-            test(url2, "POST", "X-Fob", no);
-            test(url3, "GET", "X-Foo", no);
-            test(url4, "POST", "X-Fob", no);
-            break;
-
-          case "three":
-            url1 = "http://127.0.0.1:"+ port1 + "/foo.html";
-            url2 = "https://127.0.0.1:"+ port2 + "/a/c/d/e/foo.html";
-            url3 = "http://127.0.0.1:"+ port1 + "/a/b/c";
-            url4 = "https://127.0.0.1:"+ port2 + "/a/b/c";
-
-            test(url1, "GET", "X-Foo", yes);
-            test(url2, "POST", "X-Zxc", no);
-            test(url3, "DELETE", "Y-Foo", no);
-            test(url4, "POST", "Y-Foo", yes);
-            break;
-        }
-        shutdown();
-        if (failed) {
-            throw new RuntimeException("Test failed");
+            if (failed)
+                throw new RuntimeException("Test failed");
+        } finally {
+            shutdown();
         }
     }
 
-    public static void test (
-        String u, String method,
-        String header, boolean exceptionExpected
-    )
-        throws Exception
+    static void test1() throws IOException {
+        System.out.println("\n--- Test 1 ---");
+
+        boolean expectException = false;
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            expectException = true;
+            Policy.setPolicy(new CustomPolicy(
+                new URLPermission("http://127.0.0.1:"+httpPort+"/foo.html", "GET:X-Foo,Z-Bar"),
+                new URLPermission("https://127.0.0.1:"+httpsPort+"/foo.html", "POST:X-Fob,T-Bar")));
+        }
+
+        String url1 = "http://127.0.0.1:"+httpPort+"/foo.html";
+        String url2 = "https://127.0.0.1:"+httpsPort+"/foo.html";
+        String url3 = "http://127.0.0.1:"+httpPort+"/bar.html";
+        String url4 = "https://127.0.0.1:"+httpsPort+"/bar.html";
+
+        // simple positive test. Should succeed
+        test(url1, "GET", "X-Foo");
+        test(url1, "GET", "Z-Bar", "X-Foo");
+        test(url1, "GET", "X-Foo", "Z-Bar");
+        test(url1, "GET", "Z-Bar");
+        test(url2, "POST", "X-Fob");
+
+        // reverse the methods, should fail
+        test(url1, "POST", "X-Foo", expectException);
+        test(url2, "GET", "X-Fob", expectException);
+
+        // different URLs, should fail
+        test(url3, "GET", "X-Foo", expectException);
+        test(url4, "POST", "X-Fob", expectException);
+    }
+
+    static void test2() throws IOException {
+        System.out.println("\n--- Test 2 ---");
+
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            Policy.setPolicy(new CustomPolicy(
+                new URLPermission("http://127.0.0.1:"+httpPort+"/*", "GET:X-Foo"),
+                new URLPermission("https://127.0.0.1:"+httpsPort+"/*", "POST:X-Fob")));
+        }
+
+        String url1 = "http://127.0.0.1:"+httpPort+"/foo.html";
+        String url2 = "https://127.0.0.1:"+httpsPort+"/foo.html";
+        String url3 = "http://127.0.0.1:"+httpPort+"/bar.html";
+        String url4 = "https://127.0.0.1:"+httpsPort+"/bar.html";
+
+        // simple positive test. Should succeed
+        test(url1, "GET", "X-Foo");
+        test(url2, "POST", "X-Fob");
+        test(url3, "GET", "X-Foo");
+        test(url4, "POST", "X-Fob");
+    }
+
+    static void test3() throws IOException {
+        System.out.println("\n--- Test 3 ---");
+
+        boolean expectException = false;
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            expectException = true;
+            Policy.setPolicy(new CustomPolicy(
+                new URLPermission("http://127.0.0.1:"+httpPort+"/a/b/-", "DELETE,GET:X-Foo,Y-Foo"),
+                new URLPermission("https://127.0.0.1:"+httpsPort+"/a/c/-", "POST:*")));
+        }
+
+        String url1 = "http://127.0.0.1:"+httpPort+"/foo.html";
+        String url2 = "https://127.0.0.1:"+httpsPort+"/a/c/d/e/foo.html";
+        String url3 = "http://127.0.0.1:"+httpPort+"/a/b/c";
+        String url4 = "https://127.0.0.1:"+httpsPort+"/a/b/c";
+
+        test(url1, "GET", "X-Foo", expectException);
+        test(url2, "POST", "X-Zxc");
+        test(url3, "DELETE", "Y-Foo");
+        test(url4, "POST", "Y-Foo", expectException);
+    }
+
+    // Convenience methods to simplify previous explicit test scenarios.
+    static void test(String u, String method, String header) throws IOException {
+        test(u, method, header, null, false);
+    }
+
+    static void test(String u, String method, String header, boolean expectException)
+        throws IOException
     {
-        test(u, method, header, null, exceptionExpected);
+        test(u, method, header, null, expectException);
     }
 
-    public static void test (
-        String u, String method,
-        String header1, String header2, boolean exceptionExpected
-    )
-        throws Exception
+    static void test(String u, String method, String header1, String header2)
+        throws IOException
+    {
+        test(u, method, header1, header2, false);
+    }
+
+    static void test(String u,
+                     String method,
+                     String header1,
+                     String header2,
+                     boolean expectException)
+        throws IOException
     {
         URL url = new URL(u);
-        System.out.println ("url=" + u + " method="+method + " header1="+header1
-                +" header2 = " + header2
-                +" exceptionExpected="+exceptionExpected);
+        System.out.println("url=" + u + " method=" + method +
+                           " header1=" + header1 + " header2=" + header2 +
+                           " expectException=" + expectException);
         HttpURLConnection urlc = (HttpURLConnection)url.openConnection();
         if (urlc instanceof HttpsURLConnection) {
             HttpsURLConnection ssl = (HttpsURLConnection)urlc;
-            ssl.setHostnameVerifier(new HostnameVerifier() {
-                public boolean verify(String host, SSLSession sess) {
-                    return true;
-                }
-            });
-            ssl.setSSLSocketFactory (ctx.getSocketFactory());
+            ssl.setHostnameVerifier((host, sess) -> true);
+            ssl.setSSLSocketFactory(ctx.getSocketFactory());
         }
         urlc.setRequestMethod(method);
-        if (header1 != null) {
+        if (header1 != null)
             urlc.addRequestProperty(header1, "foo");
-        }
-        if (header2 != null) {
+        if (header2 != null)
             urlc.addRequestProperty(header2, "bar");
-        }
+
         try {
-            int g = urlc.getResponseCode();
-            if (exceptionExpected) {
+            int code = urlc.getResponseCode();
+            if (expectException) {
                 failed = true;
-                System.out.println ("FAIL");
+                System.out.println("FAIL");
                 return;
             }
-            if (g != 200) {
-                String s = Integer.toString(g);
-                throw new RuntimeException("unexpected response "+ s);
-            }
+            if (code != 200)
+                throw new RuntimeException("Unexpected response " + code);
+
             InputStream is = urlc.getInputStream();
-            int c,count=0;
-            byte[] buf = new byte[1024];
-            while ((c=is.read(buf)) != -1) {
-                count += c;
-            }
+            is.readAllBytes();
             is.close();
         } catch (RuntimeException e) {
-            if (! (e instanceof SecurityException) &&
-                        !(e.getCause() instanceof SecurityException)  ||
-                        !exceptionExpected)
-            {
-                System.out.println ("FAIL");
-                //e.printStackTrace();
+            if (!expectException || !(e.getCause() instanceof SecurityException)) {
+                System.out.println ("FAIL. Unexpected: " + e.getMessage());
+                e.printStackTrace();
                 failed = true;
+                return;
+            } else {
+                System.out.println("Got expected exception: " + e.getMessage());
             }
         }
-        System.out.println ("OK");
+        System.out.println ("PASS");
     }
 
     static HttpServer httpServer;
@@ -191,33 +218,31 @@ public class URLTest {
     static HttpContext c, cs;
     static ExecutorService e, es;
     static SSLContext ctx;
-
-    // These ports need to be hard-coded until we support port number
-    // ranges in the permission class
-
-    static final int PORT1 = 12567;
-    static final int PORT2 = 12568;
+    static int httpPort;
+    static int httpsPort;
 
     static void createServers() throws Exception {
-        InetSocketAddress addr1 = new InetSocketAddress (PORT1);
-        InetSocketAddress addr2 = new InetSocketAddress (PORT2);
-        httpServer = HttpServer.create (addr1, 0);
-        httpsServer = HttpsServer.create (addr2, 0);
+        InetSocketAddress any = new InetSocketAddress(0);
+        httpServer = HttpServer.create(any, 0);
+        httpsServer = HttpsServer.create(any, 0);
 
-        MyHandler h = new MyHandler();
+        OkHandler h = new OkHandler();
 
-        c = httpServer.createContext ("/", h);
-        cs = httpsServer.createContext ("/", h);
+        c = httpServer.createContext("/", h);
+        cs = httpsServer.createContext("/", h);
         e = Executors.newCachedThreadPool();
         es = Executors.newCachedThreadPool();
-        httpServer.setExecutor (e);
-        httpsServer.setExecutor (es);
+        httpServer.setExecutor(e);
+        httpsServer.setExecutor(es);
 
         ctx = new SimpleSSLContext().get();
         httpsServer.setHttpsConfigurator(new HttpsConfigurator (ctx));
 
         httpServer.start();
         httpsServer.start();
+
+        httpPort = httpServer.getAddress().getPort();
+        httpsPort = httpsServer.getAddress().getPort();
     }
 
     static void shutdown() {
@@ -227,15 +252,38 @@ public class URLTest {
         es.shutdown();
     }
 
-    static class MyHandler implements HttpHandler {
-
-        MyHandler() {
-        }
-
+    static class OkHandler implements HttpHandler {
         public void handle(HttpExchange x) throws IOException {
             x.sendResponseHeaders(200, -1);
             x.close();
         }
     }
 
+    static class CustomPolicy extends Policy {
+        final PermissionCollection perms = new Permissions();
+        CustomPolicy(Permission... permissions) {
+            java.util.Arrays.stream(permissions).forEach(perms::add);
+
+            // needed for the HTTP(S) server
+            perms.add(new SocketPermission("localhost:1024-", "listen,resolve,accept"));
+            // needed by the test to reset the policy, per testX method
+            perms.add(new SecurityPermission("setPolicy"));
+            // needed to shutdown the ThreadPoolExecutor ( used by the servers )
+            perms.add(new RuntimePermission("modifyThread"));
+            // needed by the client code forHttpsURLConnection.setSSLSocketFactory
+            perms.add(new RuntimePermission("setFactory"));
+        }
+
+        public PermissionCollection getPermissions(ProtectionDomain domain) {
+            return perms;
+        }
+
+        public PermissionCollection getPermissions(CodeSource codesource) {
+            return perms;
+        }
+
+        public boolean implies(ProtectionDomain domain, Permission perm) {
+            return perms.implies(perm);
+        }
+    }
 }
