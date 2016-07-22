@@ -786,7 +786,9 @@ public:
   static void purge_previous_versions(InstanceKlass* ik) { return; };
   static bool has_previous_versions() { return false; }
 
-  void set_cached_class_file(JvmtiCachedClassFileData *data) { ShouldNotReachHere(); }
+  void set_cached_class_file(JvmtiCachedClassFileData *data) {
+    assert(data == NULL, "unexpected call with JVMTI disabled");
+  }
   JvmtiCachedClassFileData * get_cached_class_file() { return (JvmtiCachedClassFileData *)NULL; }
 
 #endif // INCLUDE_JVMTI
