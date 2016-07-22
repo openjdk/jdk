@@ -2346,8 +2346,9 @@ class StubGenerator: public StubCodeGenerator {
     __ subw(count, count, cnt_words, Assembler::LSL, 3 - shift);
     if (UseBlockZeroing) {
       Label non_block_zeroing, rest;
+      Register tmp = rscratch1;
       // count >= BlockZeroingLowLimit && value == 0
-      __ cmp(cnt_words, BlockZeroingLowLimit >> 3);
+      __ subs(tmp, cnt_words, BlockZeroingLowLimit >> 3);
       __ ccmp(value, 0 /* comparing value */, 0 /* NZCV */, Assembler::GE);
       __ br(Assembler::NE, non_block_zeroing);
       __ mov(bz_base, to);

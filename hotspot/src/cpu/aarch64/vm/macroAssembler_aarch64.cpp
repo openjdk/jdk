@@ -4916,7 +4916,7 @@ void MacroAssembler::block_zero(Register base, Register cnt, bool is_large)
   // alignment.
   if (!is_large || !(BlockZeroingLowLimit >= zva_length * 2)) {
     int low_limit = MAX2(zva_length * 2, (int)BlockZeroingLowLimit);
-    cmp(cnt, low_limit >> 3);
+    subs(tmp, cnt, low_limit >> 3);
     br(Assembler::LT, small);
   }
 
