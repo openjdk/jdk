@@ -62,6 +62,26 @@ Parser.prototype.convert = function(tree) {
     var result = {};
     for (var i in obj) {
         var val = obj[i];
+        // skip these ES6 specific properties to reduce noise
+        // in the output - unless there were set to true
+        if (typeof(val) == 'boolean' && val == false) {
+            switch (i) {
+                case "computed":
+                case "static":
+                case "restParameter":
+                case "this":
+                case "super":
+                case "star":
+                case "default":
+                case "starDefaultStar":
+                case "arrow":
+                case "generator":
+                case "let":
+                case "const":
+                    continue;
+             }
+        }
+
         if (val instanceof Parser.Tree) {
             result[i] = this.convert(val);
         } else if (val instanceof Parser.List) {

@@ -27,6 +27,7 @@
 package jdk.nashorn.api.tree;
 
 import jdk.nashorn.internal.ir.IdentNode;
+import jdk.nashorn.internal.ir.Module;
 
 final class IdentifierTreeImpl extends ExpressionTreeImpl implements IdentifierTree {
     private final String name;
@@ -44,6 +45,37 @@ final class IdentifierTreeImpl extends ExpressionTreeImpl implements IdentifierT
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public boolean isRestParameter() {
+        return ((IdentNode)node).isRestParameter();
+    }
+
+    @Override
+    public boolean isSuper() {
+        final IdentNode ident = (IdentNode)node;
+        return ident.isDirectSuper() || "super".equals(ident.getName());
+    }
+
+    @Override
+    public boolean isThis() {
+        return "this".equals(((IdentNode)node).getName());
+    }
+
+    @Override
+    public boolean isStar() {
+        return Module.STAR_NAME.equals(((IdentNode)node).getName());
+    }
+
+    @Override
+    public boolean isDefault() {
+        return Module.DEFAULT_NAME.equals(((IdentNode)node).getName());
+    }
+
+    @Override
+    public boolean isStarDefaultStar() {
+        return Module.DEFAULT_EXPORT_BINDING_NAME.equals(((IdentNode)node).getName());
     }
 
     @Override

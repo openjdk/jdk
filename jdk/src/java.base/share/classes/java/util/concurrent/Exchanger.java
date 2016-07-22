@@ -36,6 +36,10 @@
 
 package java.util.concurrent;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.util.concurrent.locks.LockSupport;
+
 /**
  * A synchronization point at which threads can pair and swap elements
  * within pairs.  Each thread presents some object on entry to the
@@ -155,9 +159,7 @@ public class Exchanger<V> {
      * a value that is enough for common platforms.  Additionally,
      * extra care elsewhere is taken to avoid other false/unintended
      * sharing and to enhance locality, including adding padding (via
-     * @Contended) to Nodes, embedding "bound" as an Exchanger field,
-     * and reworking some park/unpark mechanics compared to
-     * LockSupport versions.
+     * @Contended) to Nodes, embedding "bound" as an Exchanger field.
      *
      * The arena starts out with only one used slot. We expand the
      * effective arena size by tracking collisions; i.e., failed CASes
@@ -234,12 +236,12 @@ public class Exchanger<V> {
      * because most of the logic relies on reads of fields that are
      * maintained as local variables so can't be nicely factored --
      * mainly, here, bulky spin->yield->block/cancel code), and
-     * heavily dependent on intrinsics (Unsafe) to use inlined
+     * heavily dependent on intrinsics (VarHandles) to use inlined
      * embedded CAS and related memory access operations (that tend
      * not to be as readily inlined by dynamic compilers when they are
      * hidden behind other methods that would more nicely name and
      * encapsulate the intended effects). This includes the use of
-     * putXRelease to clear fields of the per-thread Nodes between
+     * setRelease to clear fields of the per-thread Nodes between
      * uses. Note that field Node.item is not declared as volatile
      * even though it is read by releasing threads, because they only
      * do so after CAS operations that must precede access, and all
@@ -252,10 +254,10 @@ public class Exchanger<V> {
      */
 
     /**
-     * The byte distance (as a shift value) between any two used slots
-     * in the arena.  1 << ASHIFT should be at least cacheline size.
+     * The index distance (as a shift value) between any two used slots
+     * in the arena, spacing them out to avoid false sharing.
      */
-    private static final int ASHIFT = 7;
+    private static final int ASHIFT = 5;
 
     /**
      * The maximum supported arena index. The maximum allocatable
@@ -356,27 +358,31 @@ public class Exchanger<V> {
      */
     private final Object arenaExchange(Object item, boolean timed, long ns) {
         Node[] a = arena;
+        int alen = a.length;
         Node p = participant.get();
         for (int i = p.index;;) {                      // access slot at i
-            int b, m, c; long j;                       // j is raw array offset
-            Node q = (Node)U.getObjectVolatile(a, j = (i << ASHIFT) + ABASE);
-            if (q != null && U.compareAndSwapObject(a, j, q, null)) {
+            int b, m, c;
+            int j = (i << ASHIFT) + ((1 << ASHIFT) - 1);
+            if (j < 0 || j >= alen)
+                j = alen - 1;
+            Node q = (Node)AA.getAcquire(a, j);
+            if (q != null && AA.compareAndSet(a, j, q, null)) {
                 Object v = q.item;                     // release
                 q.match = item;
                 Thread w = q.parked;
                 if (w != null)
-                    U.unpark(w);
+                    LockSupport.unpark(w);
                 return v;
             }
             else if (i <= (m = (b = bound) & MMASK) && q == null) {
                 p.item = item;                         // offer
-                if (U.compareAndSwapObject(a, j, null, p)) {
+                if (AA.compareAndSet(a, j, null, p)) {
                     long end = (timed && m == 0) ? System.nanoTime() + ns : 0L;
                     Thread t = Thread.currentThread(); // wait
                     for (int h = p.hash, spins = SPINS;;) {
                         Object v = p.match;
                         if (v != null) {
-                            U.putObjectRelease(p, MATCH, null);
+                            MATCH.setRelease(p, null);
                             p.item = null;             // clear for next use
                             p.hash = h;
                             return v;
@@ -389,22 +395,24 @@ public class Exchanger<V> {
                                      (--spins & ((SPINS >>> 1) - 1)) == 0)
                                 Thread.yield();        // two yields per wait
                         }
-                        else if (U.getObjectVolatile(a, j) != p)
+                        else if (AA.getAcquire(a, j) != p)
                             spins = SPINS;       // releaser hasn't set match yet
                         else if (!t.isInterrupted() && m == 0 &&
                                  (!timed ||
                                   (ns = end - System.nanoTime()) > 0L)) {
-                            U.putObject(t, BLOCKER, this); // emulate LockSupport
                             p.parked = t;              // minimize window
-                            if (U.getObjectVolatile(a, j) == p)
-                                U.park(false, ns);
+                            if (AA.getAcquire(a, j) == p) {
+                                if (ns == 0L)
+                                    LockSupport.park(this);
+                                else
+                                    LockSupport.parkNanos(this, ns);
+                            }
                             p.parked = null;
-                            U.putObject(t, BLOCKER, null);
                         }
-                        else if (U.getObjectVolatile(a, j) == p &&
-                                 U.compareAndSwapObject(a, j, p, null)) {
+                        else if (AA.getAcquire(a, j) == p &&
+                                 AA.compareAndSet(a, j, p, null)) {
                             if (m != 0)                // try to shrink
-                                U.compareAndSwapInt(this, BOUND, b, b + SEQ - 1);
+                                BOUND.compareAndSet(this, b, b + SEQ - 1);
                             p.item = null;
                             p.hash = h;
                             i = p.index >>>= 1;        // descend
@@ -426,7 +434,7 @@ public class Exchanger<V> {
                     i = (i != m || m == 0) ? m : m - 1;
                 }
                 else if ((c = p.collides) < m || m == FULL ||
-                         !U.compareAndSwapInt(this, BOUND, b, b + SEQ + 1)) {
+                         !BOUND.compareAndSet(this, b, b + SEQ + 1)) {
                     p.collides = c + 1;
                     i = (i == 0) ? m : i - 1;          // cyclically traverse
                 }
@@ -455,24 +463,24 @@ public class Exchanger<V> {
 
         for (Node q;;) {
             if ((q = slot) != null) {
-                if (U.compareAndSwapObject(this, SLOT, q, null)) {
+                if (SLOT.compareAndSet(this, q, null)) {
                     Object v = q.item;
                     q.match = item;
                     Thread w = q.parked;
                     if (w != null)
-                        U.unpark(w);
+                        LockSupport.unpark(w);
                     return v;
                 }
                 // create arena on contention, but continue until slot null
                 if (NCPU > 1 && bound == 0 &&
-                    U.compareAndSwapInt(this, BOUND, 0, SEQ))
+                    BOUND.compareAndSet(this, 0, SEQ))
                     arena = new Node[(FULL + 2) << ASHIFT];
             }
             else if (arena != null)
                 return null; // caller must reroute to arenaExchange
             else {
                 p.item = item;
-                if (U.compareAndSwapObject(this, SLOT, null, p))
+                if (SLOT.compareAndSet(this, null, p))
                     break;
                 p.item = null;
             }
@@ -495,19 +503,21 @@ public class Exchanger<V> {
                 spins = SPINS;
             else if (!t.isInterrupted() && arena == null &&
                      (!timed || (ns = end - System.nanoTime()) > 0L)) {
-                U.putObject(t, BLOCKER, this);
                 p.parked = t;
-                if (slot == p)
-                    U.park(false, ns);
+                if (slot == p) {
+                    if (ns == 0L)
+                        LockSupport.park(this);
+                    else
+                        LockSupport.parkNanos(this, ns);
+                }
                 p.parked = null;
-                U.putObject(t, BLOCKER, null);
             }
-            else if (U.compareAndSwapObject(this, SLOT, p, null)) {
+            else if (SLOT.compareAndSet(this, p, null)) {
                 v = timed && ns <= 0L && !t.isInterrupted() ? TIMED_OUT : null;
                 break;
             }
         }
-        U.putObjectRelease(p, MATCH, null);
+        MATCH.setRelease(p, null);
         p.item = null;
         p.hash = h;
         return v;
@@ -556,8 +566,9 @@ public class Exchanger<V> {
     @SuppressWarnings("unchecked")
     public V exchange(V x) throws InterruptedException {
         Object v;
+        Node[] a;
         Object item = (x == null) ? NULL_ITEM : x; // translate null args
-        if ((arena != null ||
+        if (((a = arena) != null ||
              (v = slotExchange(item, false, 0L)) == null) &&
             ((Thread.interrupted() || // disambiguates null return
               (v = arenaExchange(item, false, 0L)) == null)))
@@ -623,31 +634,18 @@ public class Exchanger<V> {
         return (v == NULL_ITEM) ? null : (V)v;
     }
 
-    // Unsafe mechanics
-    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
-    private static final long BOUND;
-    private static final long SLOT;
-    private static final long MATCH;
-    private static final long BLOCKER;
-    private static final int ABASE;
+    // VarHandle mechanics
+    private static final VarHandle BOUND;
+    private static final VarHandle SLOT;
+    private static final VarHandle MATCH;
+    private static final VarHandle AA;
     static {
         try {
-            BOUND = U.objectFieldOffset
-                (Exchanger.class.getDeclaredField("bound"));
-            SLOT = U.objectFieldOffset
-                (Exchanger.class.getDeclaredField("slot"));
-
-            MATCH = U.objectFieldOffset
-                (Node.class.getDeclaredField("match"));
-
-            BLOCKER = U.objectFieldOffset
-                (Thread.class.getDeclaredField("parkBlocker"));
-
-            int scale = U.arrayIndexScale(Node[].class);
-            if ((scale & (scale - 1)) != 0 || scale > (1 << ASHIFT))
-                throw new Error("Unsupported array scale");
-            // ABASE absorbs padding in front of element 0
-            ABASE = U.arrayBaseOffset(Node[].class) + (1 << ASHIFT);
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            BOUND = l.findVarHandle(Exchanger.class, "bound", int.class);
+            SLOT = l.findVarHandle(Exchanger.class, "slot", Node.class);
+            MATCH = l.findVarHandle(Node.class, "match", Object.class);
+            AA = MethodHandles.arrayElementVarHandle(Node[].class);
         } catch (ReflectiveOperationException e) {
             throw new Error(e);
         }
