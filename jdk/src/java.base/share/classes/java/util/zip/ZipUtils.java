@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,9 @@ class ZipUtils {
     // used to adjust values between Windows and java epoch
     private static final long WINDOWS_EPOCH_IN_MICROSECONDS = -11644473600000000L;
 
+    // used to indicate the corresponding windows time is not available
+    public static final long WINDOWS_TIME_NOT_AVAILABLE = Long.MIN_VALUE;
+
     /**
      * Converts Windows time (in microseconds, UTC/GMT) time to FileTime.
      */
@@ -52,6 +55,11 @@ class ZipUtils {
     public static final long fileTimeToWinTime(FileTime ftime) {
         return (ftime.to(TimeUnit.MICROSECONDS) - WINDOWS_EPOCH_IN_MICROSECONDS) * 10;
     }
+
+    /**
+     * The upper bound of the 32-bit unix time, the "year 2038 problem".
+     */
+    public static final long UPPER_UNIXTIME_BOUND = 0x7fffffff;
 
     /**
      * Converts "standard Unix time"(in seconds, UTC/GMT) to FileTime

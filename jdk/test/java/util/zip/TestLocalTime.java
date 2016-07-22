@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8075526 8135108 8155616
+ * @bug 8075526 8135108 8155616 8161942
  * @summary Test timestamp via ZipEntry.get/setTimeLocal()
  */
 
@@ -64,6 +64,9 @@ public class TestLocalTime {
             test(LocalDateTime.of(2015, 11, 1,  1, 30, 00));  // overlap
             test(LocalDateTime.of(1968, 04, 28, 2, 51, 25));
             test(LocalDateTime.of(1970, 04, 26, 2, 31, 52));
+
+            // for #8161942
+            test(LocalDateTime.of(2200, 04, 26, 2, 31, 52));  // unix 2038
 
         } finally {
             TimeZone.setDefault(tz0);
