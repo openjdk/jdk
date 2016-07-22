@@ -162,7 +162,7 @@ public interface Instrumentation {
      *    </li>
      *    <li>for each transformer that was added with <code>canRetransform</code>
      *      false, the bytes returned by
-     *      {@link ClassFileTransformer#transform(Module,String,Class,ProtectionDomain,byte[])
+     *      {@link ClassFileTransformer#transform(Module,ClassLoader,String,Class,ProtectionDomain,byte[])
      *      transform} during the last class load or redefine are
      *      reused as the output of the transformation; note that this is
      *      equivalent to reapplying the previous transformation, unaltered;
@@ -170,7 +170,7 @@ public interface Instrumentation {
      *    </li>
      *    <li>for each transformer that was added with <code>canRetransform</code>
      *      true, the
-     *      {@link ClassFileTransformer#transform(Module,String,Class,ProtectionDomain,byte[])
+     *      {@link ClassFileTransformer#transform(Module,ClassLoader,String,Class,ProtectionDomain,byte[])
      *      transform} method is called in these transformers
      *    </li>
      *    <li>the transformed class file bytes are installed as the new

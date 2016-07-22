@@ -902,13 +902,7 @@ public class Lower extends TreeTranslator {
     /** Return binary operator that corresponds to given access code.
      */
     private OperatorSymbol binaryAccessOperator(int acode) {
-        for (Symbol sym : syms.predefClass.members().getSymbols(NON_RECURSIVE)) {
-            if (sym instanceof OperatorSymbol) {
-                OperatorSymbol op = (OperatorSymbol)sym;
-                if (accessCode(op.opcode) == acode) return op;
-            }
-        }
-        return null;
+        return (OperatorSymbol)operators.lookupBinaryOp(sym -> accessCode(((OperatorSymbol)sym).opcode) == acode);
     }
 
     /** Return tree tag for assignment operation corresponding

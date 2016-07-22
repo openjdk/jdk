@@ -33,9 +33,6 @@ package jdk.jshell.spi;
  * <p>
  * This exception is seen by the execution engine, but not seen by
  * the end user nor through the JShell API.
- *
- * @see ExecutionEnv#createUnresolvedReferenceException(int,
- * java.lang.StackTraceElement[])
  */
 @SuppressWarnings("serial")             // serialVersionUID intentionally omitted
 public class SPIResolutionException extends RuntimeException {
@@ -57,11 +54,9 @@ public class SPIResolutionException extends RuntimeException {
     }
 
     /**
-     * Retrieves the internal identifer of the unresolved identifer.
+     * Retrieves the internal identifier of the unresolved identifier.
      *
-     * @return the internal identifer
-     * @see ExecutionEnv#createUnresolvedReferenceException(int,
-     * java.lang.StackTraceElement[])
+     * @return the internal identifier
      */
     public int id() {
         return id;

@@ -58,7 +58,6 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.URIResolver;
 
-import jdk.internal.module.Modules;
 
 /**
  * @author Morten Jorgensen
@@ -486,10 +485,6 @@ public final class TemplatesImpl implements Templates, Serializable {
                 thisModule.addExports(p, m);
             });
 
-            // For now, the module reads all unnnamed modules. This will be changed once
-            // the XSLT compiler is updated to generate code to invoke addReads.
-            Modules.addReadsAllUnnamed(m);
-
             // java.xml needs to instanitate the translet class
             thisModule.addReads(m);
 
@@ -513,7 +508,7 @@ public final class TemplatesImpl implements Templates, Serializable {
         }
         catch (ClassFormatError e) {
             ErrorMsg err = new ErrorMsg(ErrorMsg.TRANSLET_CLASS_ERR, _name);
-            throw new TransformerConfigurationException(err.toString());
+            throw new TransformerConfigurationException(err.toString(), e);
         }
         catch (LinkageError e) {
             ErrorMsg err = new ErrorMsg(ErrorMsg.TRANSLET_OBJECT_ERR, _name);

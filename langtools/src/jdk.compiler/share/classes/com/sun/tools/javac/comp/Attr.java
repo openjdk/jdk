@@ -1900,7 +1900,8 @@ public class Attr extends JCTree.Visitor {
             Type qualifier = (tree.meth.hasTag(SELECT))
                     ? ((JCFieldAccess) tree.meth).selected.type
                     : env.enclClass.sym.type;
-            restype = adjustMethodReturnType(qualifier, methName, argtypes, restype);
+            Symbol msym = TreeInfo.symbol(tree.meth);
+            restype = adjustMethodReturnType(msym, qualifier, methName, argtypes, restype);
 
             chk.checkRefTypes(tree.typeargs, typeargtypes);
 
@@ -1912,19 +1913,25 @@ public class Attr extends JCTree.Visitor {
         chk.validate(tree.typeargs, localEnv);
     }
     //where
-        Type adjustMethodReturnType(Type qualifierType, Name methodName, List<Type> argtypes, Type restype) {
-            if (methodName == names.clone && types.isArray(qualifierType)) {
+        Type adjustMethodReturnType(Symbol msym, Type qualifierType, Name methodName, List<Type> argtypes, Type restype) {
+            if (msym != null &&
+                    msym.owner == syms.objectType.tsym &&
+                    methodName == names.getClass &&
+                    argtypes.isEmpty()) {
+                // as a special case, x.getClass() has type Class<? extends |X|>
+                return new ClassType(restype.getEnclosingType(),
+                        List.<Type>of(new WildcardType(types.erasure(qualifierType),
+                                BoundKind.EXTENDS,
+                                syms.boundClass)),
+                        restype.tsym,
+                        restype.getMetadata());
+            } else if (msym != null &&
+                    msym.owner == syms.arrayClass &&
+                    methodName == names.clone &&
+                    types.isArray(qualifierType)) {
                 // as a special case, array.clone() has a result that is
                 // the same as static type of the array being cloned
                 return qualifierType;
-            } else if (methodName == names.getClass && argtypes.isEmpty()) {
-                // as a special case, x.getClass() has type Class<? extends |X|>
-                return new ClassType(restype.getEnclosingType(),
-                              List.<Type>of(new WildcardType(types.erasure(qualifierType),
-                                                               BoundKind.EXTENDS,
-                                                             syms.boundClass)),
-                                     restype.tsym,
-                                     restype.getMetadata());
             } else {
                 return restype;
             }
@@ -2989,7 +2996,7 @@ public class Attr extends JCTree.Visitor {
 
             if (!refType.isErroneous()) {
                 refType = types.createMethodTypeWithReturn(refType,
-                        adjustMethodReturnType(lookupHelper.site, that.name, checkInfo.pt.getParameterTypes(), refType.getReturnType()));
+                        adjustMethodReturnType(refSym, lookupHelper.site, that.name, checkInfo.pt.getParameterTypes(), refType.getReturnType()));
             }
 
             //go ahead with standard method reference compatibility check - note that param check
