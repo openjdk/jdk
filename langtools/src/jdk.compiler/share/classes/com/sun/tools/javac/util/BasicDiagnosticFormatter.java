@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,9 +229,9 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
                             DiagnosticPart.SOURCE));
             initFormat();
             initIndentation();
-            if (options.isSet("oldDiags"))
+            if (options.isSet("diags.legacy"))
                 initOldFormat();
-            String fmt = options.get("diagsFormat");
+            String fmt = options.get("diags.layout");
             if (fmt != null) {
                 if (fmt.equals("OLD"))
                     initOldFormat();
@@ -239,12 +239,12 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
                     initFormats(fmt);
             }
             String srcPos = null;
-            if ((((srcPos = options.get("sourcePosition")) != null)) &&
+            if ((((srcPos = options.get("diags.sourcePosition")) != null)) &&
                     srcPos.equals("bottom"))
                     setSourcePosition(SourcePosition.BOTTOM);
             else
                 setSourcePosition(SourcePosition.AFTER_SUMMARY);
-            String indent = options.get("diagsIndentation");
+            String indent = options.get("diags.indent");
             if (indent != null) {
                 String[] levels = indent.split("\\|");
                 try {

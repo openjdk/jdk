@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -568,9 +568,18 @@ class ZipEntry implements ZipConstants, Cloneable {
                     int pos = off + 4;               // reserved 4 bytes
                     if (get16(extra, pos) !=  0x0001 || get16(extra, pos + 2) != 24)
                         break;
-                    mtime = winTimeToFileTime(get64(extra, pos + 4));
-                    atime = winTimeToFileTime(get64(extra, pos + 12));
-                    ctime = winTimeToFileTime(get64(extra, pos + 20));
+                    long wtime = get64(extra, pos + 4);
+                    if (wtime != WINDOWS_TIME_NOT_AVAILABLE) {
+                        mtime = winTimeToFileTime(wtime);
+                    }
+                    wtime = get64(extra, pos + 12);
+                    if (wtime != WINDOWS_TIME_NOT_AVAILABLE) {
+                        atime = winTimeToFileTime(wtime);
+                    }
+                    wtime = get64(extra, pos + 20);
+                    if (wtime != WINDOWS_TIME_NOT_AVAILABLE) {
+                        ctime = winTimeToFileTime(wtime);
+                    }
                     break;
                 case EXTID_EXTT:
                     int flag = Byte.toUnsignedInt(extra[off]);

@@ -76,7 +76,7 @@ public class ComputeFQNsTest extends KullaTesting {
         assertInferredFQNs("class X { ArrayList", "ArrayList".length(), false, "java.util.ArrayList");
     }
 
-    @Test
+    @Test(enabled = false) //TODO 8161165
     public void testSuspendIndexing() throws Throwable {
         compiler.compile(outDir, "package test; public class FQNTest { }");
         String jarName = "test.jar";
