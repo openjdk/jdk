@@ -32,11 +32,16 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
+import jdk.jshell.ClassTracker.ClassInfo;
 import jdk.jshell.Snippet.Kind;
 import jdk.jshell.Snippet.Status;
 import jdk.jshell.Snippet.SubKind;
 import jdk.jshell.TaskFactory.AnalyzeTask;
 import jdk.jshell.TaskFactory.CompileTask;
+import jdk.jshell.spi.ExecutionControl.ClassBytecodes;
+import jdk.jshell.spi.ExecutionControl.ClassInstallException;
+import jdk.jshell.spi.ExecutionControl.EngineTerminationException;
+import jdk.jshell.spi.ExecutionControl.NotImplementedException;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_EVNT;
@@ -75,7 +80,7 @@ final class Unit {
     private SnippetEvent replaceOldEvent;
     private List<SnippetEvent> secondaryEvents;
     private boolean isAttemptingCorral;
-    private List<String> toRedefine;
+    private List<ClassInfo> toRedefine;
     private boolean dependenciesNeeded;
 
     Unit(JShell state, Snippet si, Snippet causalSnippet,
@@ -261,30 +266,29 @@ final class Unit {
     }
 
     /**
-     * Process the class information from the last compile.
-     * Requires loading of returned list.
+     * Process the class information from the last compile. Requires loading of
+     * returned list.
+     *
      * @return the list of classes to load
      */
-    Stream<String> classesToLoad(List<String> classnames) {
+    Stream<ClassBytecodes> classesToLoad(List<String> classnames) {
         toRedefine = new ArrayList<>();
-        List<String> toLoad = new ArrayList<>();
+        List<ClassBytecodes> toLoad = new ArrayList<>();
         if (status.isDefined() && !isImport()) {
             // Classes should only be loaded/redefined if the compile left them
             // in a defined state.  Imports do not have code and are not loaded.
             for (String cn : classnames) {
-                switch (state.executionControl().getClassStatus(cn)) {
-                    case UNKNOWN:
-                        // If not loaded, add to the list of classes to load.
-                        toLoad.add(cn);
-                        dependenciesNeeded = true;
-                        break;
-                    case NOT_CURRENT:
-                        // If loaded but out of date, add to the list of classes to attempt redefine.
-                        toRedefine.add(cn);
-                        break;
-                    case CURRENT:
-                        // Loaded and current, so nothing to do
-                        break;
+                ClassInfo ci = state.classTracker.get(cn);
+                if (ci.isLoaded()) {
+                    if (ci.isCurrent()) {
+                        // nothing to do
+                    } else {
+                        toRedefine.add(ci);
+                    }
+                } else {
+                    // If not loaded, add to the list of classes to load.
+                    toLoad.add(ci.toClassBytecodes());
+                    dependenciesNeeded = true;
                 }
             }
         }
@@ -292,14 +296,30 @@ final class Unit {
     }
 
     /**
-     * Redefine classes needing redefine.
-     * classesToLoad() must be called first.
+     * Redefine classes needing redefine. classesToLoad() must be called first.
+     *
      * @return true if all redefines succeeded (can be vacuously true)
      */
     boolean doRedefines() {
-        return toRedefine.isEmpty()
-                ? true
-                : state.executionControl().redefine(toRedefine);
+        if (toRedefine.isEmpty()) {
+            return true;
+        }
+        ClassBytecodes[] cbcs = toRedefine.stream()
+                .map(ci -> ci.toClassBytecodes())
+                .toArray(size -> new ClassBytecodes[size]);
+        try {
+            state.executionControl().redefine(cbcs);
+            state.classTracker.markLoaded(cbcs);
+            return true;
+        } catch (ClassInstallException ex) {
+            state.classTracker.markLoaded(cbcs, ex.installed());
+            return false;
+        } catch (EngineTerminationException ex) {
+            state.closeDown();
+            return false;
+        } catch (NotImplementedException ex) {
+            return false;
+        }
     }
 
     void markForReplacement() {

@@ -449,7 +449,7 @@ public class JavaCompiler {
             ? CompileState.valueOf(options.get("shouldstop.ifNoError"))
             : CompileState.GENERATE;
 
-        if (options.isUnset("oldDiags"))
+        if (options.isUnset("diags.legacy"))
             log.setDiagnosticFormatter(RichDiagnosticFormatter.instance(context));
 
         PlatformDescription platformProvider = context.get(PlatformDescription.class);

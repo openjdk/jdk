@@ -35,6 +35,8 @@
 
 package java.util.concurrent;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.AbstractQueue;
 import java.util.Arrays;
 import java.util.Collection;
@@ -289,7 +291,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
         lock.unlock(); // must release and then re-acquire main lock
         Object[] newArray = null;
         if (allocationSpinLock == 0 &&
-            U.compareAndSwapInt(this, ALLOCATIONSPINLOCK, 0, 1)) {
+            ALLOCATIONSPINLOCK.compareAndSet(this, 0, 1)) {
             try {
                 int newCap = oldCap + ((oldCap < 64) ?
                                        (oldCap + 2) : // grow faster if small
@@ -1009,13 +1011,14 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
         return new PBQSpliterator<E>(this, null, 0, -1);
     }
 
-    // Unsafe mechanics
-    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
-    private static final long ALLOCATIONSPINLOCK;
+    // VarHandle mechanics
+    private static final VarHandle ALLOCATIONSPINLOCK;
     static {
         try {
-            ALLOCATIONSPINLOCK = U.objectFieldOffset
-                (PriorityBlockingQueue.class.getDeclaredField("allocationSpinLock"));
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            ALLOCATIONSPINLOCK = l.findVarHandle(PriorityBlockingQueue.class,
+                                                 "allocationSpinLock",
+                                                 int.class);
         } catch (ReflectiveOperationException e) {
             throw new Error(e);
         }

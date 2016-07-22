@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5033583 6316717 6470106
+ * @bug 5033583 6316717 6470106 8161500
  * @summary Check toGenericString() and toString() methods
  * @author Joseph D. Darcy
  */
@@ -35,12 +35,8 @@ import java.util.*;
 public class GenericStringTest {
     public static void main(String argv[]) throws Exception{
         int failures = 0;
-        List<Class<?>> classList = new LinkedList<Class<?>>();
-        classList.add(TestClass1.class);
-        classList.add(TestClass2.class);
 
-
-        for(Class<?> clazz: classList)
+        for(Class<?> clazz: List.of(TestClass1.class, TestClass2.class))
             for(Constructor<?> ctor: clazz.getDeclaredConstructors()) {
                 ExpectedGenericString egs = ctor.getAnnotation(ExpectedGenericString.class);
                 String actual = ctor.toGenericString();

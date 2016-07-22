@@ -2377,9 +2377,17 @@ bool ClassVerifier::ends_in_athrow(u4 start_bc_offset) {
       case Bytecodes::_ifnonnull:
         target = bcs.dest();
         if (visited_branches->contains(bci)) {
-          if (bci_stack->is_empty()) return true;
-          // Pop a bytecode starting offset and scan from there.
-          bcs.set_start(bci_stack->pop());
+          if (bci_stack->is_empty()) {
+            if (handler_stack->is_empty()) {
+              return true;
+            } else {
+              // Parse the catch handlers for try blocks containing athrow.
+              bcs.set_start(handler_stack->pop());
+            }
+          } else {
+            // Pop a bytecode starting offset and scan from there.
+            bcs.set_start(bci_stack->pop());
+          }
         } else {
           if (target > bci) { // forward branch
             if (target >= code_length) return false;
@@ -2402,9 +2410,17 @@ bool ClassVerifier::ends_in_athrow(u4 start_bc_offset) {
       case Bytecodes::_goto_w:
         target = (opcode == Bytecodes::_goto ? bcs.dest() : bcs.dest_w());
         if (visited_branches->contains(bci)) {
-          if (bci_stack->is_empty()) return true;
-          // Been here before, pop new starting offset from stack.
-          bcs.set_start(bci_stack->pop());
+          if (bci_stack->is_empty()) {
+            if (handler_stack->is_empty()) {
+              return true;
+            } else {
+              // Parse the catch handlers for try blocks containing athrow.
+              bcs.set_start(handler_stack->pop());
+            }
+          } else {
+            // Been here before, pop new starting offset from stack.
+            bcs.set_start(bci_stack->pop());
+          }
         } else {
           if (target >= code_length) return false;
           // Continue scanning from the target onward.

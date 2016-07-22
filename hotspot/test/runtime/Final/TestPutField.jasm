@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,10 +19,59 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-package jdk.jshell.execution;
 
-/**
- * Temp class needed so the package exists.
- */
-class Internal {}
+public class TestPutField
+version 53:0
+{
+
+final Field test_field:"I";
+
+
+public Method <init>:"()V"
+       stack 2 locals 1
+{
+	aload_0;
+	dup;
+	invokespecial Method java/lang/Object.<init>:"()V";
+	bipush 13;
+        putfield Field test_field:"I";
+        return;
+}
+
+public Method aMethod:"()I"
+       stack 2 locals 2
+{
+	aload_0;
+	getfield Field test_field:"I";
+	istore_1;
+	aload_0;
+	bipush 14;
+        putfield Field test_field:"I";
+	iload_1;
+        ireturn;
+}
+
+
+public static Method test:"()V"
+       stack 2 locals 2
+{
+	new class TestPutField;
+	astore_0;
+	aload_0;
+	invokespecial Method <init>:"()V";
+	getstatic Field java/lang/System.out:"Ljava/io/PrintStream;";
+	astore_1;
+	aload_1;
+	aload_0;
+	invokevirtual Method aMethod:"()I";
+	invokevirtual Method java/io/PrintStream.println:"(I)V";
+	aload_1;
+	aload_0;
+	getfield Field test_field:"I";	
+	invokevirtual Method java/io/PrintStream.println:"(I)V";
+        return;
+}
+
+}

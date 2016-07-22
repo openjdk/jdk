@@ -141,7 +141,6 @@ class JarFile extends ZipFile {
     private boolean verify;
     private final Runtime.Version version;  // current version
     private final int versionMajor;         // version.major()
-    private boolean notVersioned;           // legacy constructor called
     private boolean isMultiRelease;         // is jar multi-release?
 
     // indicates if Class-Path attribute present
@@ -290,7 +289,6 @@ class JarFile extends ZipFile {
      */
     public JarFile(File file, boolean verify, int mode) throws IOException {
         this(file, verify, mode, BASE_VERSION);
-        this.notVersioned = true;
     }
 
     /**
@@ -496,42 +494,14 @@ class JarFile extends ZipFile {
             Iterator<JarEntry>
     {
         final Enumeration<? extends ZipEntry> e = JarFile.super.entries();
-        ZipEntry ze;
 
         public boolean hasNext() {
-            if (notVersioned) {
-                return e.hasMoreElements();
-            }
-            if (ze != null) {
-                return true;
-            }
-            return findNext();
-        }
-
-        private boolean findNext() {
-            while (e.hasMoreElements()) {
-                ZipEntry ze2 = e.nextElement();
-                if (!ze2.getName().startsWith(META_INF_VERSIONS)) {
-                    ze = ze2;
-                    return true;
-                }
-            }
-            return false;
+            return e.hasMoreElements();
         }
 
         public JarEntry next() {
-            ZipEntry ze2;
-
-            if (notVersioned) {
-                ze2 = e.nextElement();
-                return new JarFileEntry(ze2.getName(), ze2);
-            }
-            if (ze != null || findNext()) {
-                ze2 = ze;
-                ze = null;
-                return new JarFileEntry(ze2);
-            }
-            throw new NoSuchElementException();
+            ZipEntry ze = e.nextElement();
+            return new JarFileEntry(ze.getName(), ze);
         }
 
         public boolean hasMoreElements() {
@@ -548,19 +518,7 @@ class JarFile extends ZipFile {
     }
 
     /**
-     * Returns an enumeration of the jar file entries.  The set of entries
-     * returned depends on whether or not the jar file is a multi-release jar
-     * file, and on the constructor used to create the {@code JarFile}.  If the
-     * jar file is not a multi-release jar file, all entries are returned,
-     * regardless of how the {@code JarFile} is created.  If the constructor
-     * does not take a {@code Release} argument, all entries are returned.
-     * If the jar file is a multi-release jar file and the constructor takes a
-     * {@code Release} argument, then the set of entries returned is equivalent
-     * to the set of entries that would be returned if the set was built by
-     * invoking {@link JarFile#getEntry(String)} or
-     * {@link JarFile#getJarEntry(String)} with the name of each base entry in
-     * the jar file.  A base entry is an entry whose path name does not start
-     * with "META-INF/versions/".
+     * Returns an enumeration of the jar file entries.
      *
      * @return an enumeration of the jar file entries
      * @throws IllegalStateException
@@ -571,24 +529,26 @@ class JarFile extends ZipFile {
     }
 
     /**
-     * Returns an ordered {@code Stream} over all the jar file entries.
+     * Returns an ordered {@code Stream} over the jar file entries.
      * Entries appear in the {@code Stream} in the order they appear in
-     * the central directory of the jar file.  The set of entries
-     * returned depends on whether or not the jar file is a multi-release jar
-     * file, and on the constructor used to create the {@code JarFile}.  If the
-     * jar file is not a multi-release jar file, all entries are returned,
-     * regardless of how the {@code JarFile} is created.  If the constructor
-     * does not take a {@code Release} argument, all entries are returned.
-     * If the jar file is a multi-release jar file and the constructor takes a
-     * {@code Release} argument, then the set of entries returned is equivalent
-     * to the set of entries that would be returned if the set was built by
-     * invoking {@link JarFile#getEntry(String)} or
-     * {@link JarFile#getJarEntry(String)} with the name of each base entry in
-     * the jar file.  A base entry is an entry whose path name does not start
-     * with "META-INF/versions/".
+     * the central directory of the jar file.
+     *
      * @return an ordered {@code Stream} of entries in this jar file
      * @throws IllegalStateException if the jar file has been closed
      * @since 1.8
+     *
+     * @apiNote  A versioned view of the stream obtained from a {@code JarFile}
+     * configured to process a multi-release jar file can be created with code
+     * similar to the following:
+     * <pre>
+     * {@code
+     *     Stream<JarEntry> versionedStream(JarFile jf) {
+     *         return jf.stream().map(JarEntry::getName)
+     *                  .filter(name -> !name.startsWith("META-INF/versions/"))
+     *                  .map(jf::getJarEntry);
+     *     }
+     * }
+     * </pre>
      */
     public Stream<JarEntry> stream() {
         return StreamSupport.stream(Spliterators.spliterator(
