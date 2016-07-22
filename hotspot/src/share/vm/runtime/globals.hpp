@@ -229,7 +229,7 @@ typedef const char* (*RangeStrFunc)(void);
 
 struct Flag {
   enum Flags {
-    // value origin
+    // latest value origin
     DEFAULT          = 0,
     COMMAND_LINE     = 1,
     ENVIRON_VAR      = 2,
@@ -260,7 +260,10 @@ struct Flag {
     KIND_COMMERCIAL         = 1 << 17,
     KIND_JVMCI              = 1 << 18,
 
-    KIND_MASK = ~VALUE_ORIGIN_MASK
+    // set this bit if the flag was set on the command line
+    ORIG_COMMAND_LINE       = 1 << 19,
+
+    KIND_MASK = ~(VALUE_ORIGIN_MASK | ORIG_COMMAND_LINE)
   };
 
   enum Error {
@@ -272,7 +275,7 @@ struct Flag {
     MISSING_VALUE,
     // error parsing the textual form of the value
     WRONG_FORMAT,
-    // flag is not writeable
+    // flag is not writable
     NON_WRITABLE,
     // flag value is outside of its bounds
     OUT_OF_BOUNDS,
@@ -367,6 +370,7 @@ struct Flag {
   bool is_default();
   bool is_ergonomic();
   bool is_command_line();
+  void set_command_line();
 
   bool is_product() const;
   bool is_manageable() const;
@@ -396,7 +400,7 @@ struct Flag {
 
   // printRanges will print out flags type, name and range values as expected by -XX:+PrintFlagsRanges
   void print_on(outputStream* st, bool withComments = false, bool printRanges = false);
-  void print_kind(outputStream* st);
+  void print_kind_and_origin(outputStream* st);
   void print_as_flag(outputStream* st);
 
   static const char* flag_error_str(Flag::Error error);
