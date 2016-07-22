@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,14 +34,13 @@ import java.awt.event.*;
  *          depending on the preferred sizes and gaps and click the cornors
  *          of the components to check if events are triggered
  * @library ../../../../lib/testlibrary/
- * @build ExtendedRobot
  * @run main ChangeGridSize
  * @run main ChangeGridSize -hg 20 -vg 20
  */
 
 public class ChangeGridSize {
 
-    private int width = 200;
+    private int width = 300;
     private int height = 200;
     private final int hGap, vGap;
     private final int rows = 3;
@@ -51,7 +50,7 @@ public class ChangeGridSize {
     private Button[] buttons;
     private Frame frame;
 
-    private ExtendedRobot robot;
+    private Robot robot;
     private GridLayout layout;
 
     private volatile boolean actionPerformed = false;
@@ -59,7 +58,7 @@ public class ChangeGridSize {
     public ChangeGridSize(int hGap, int vGap) throws Exception  {
         this.hGap = hGap;
         this.vGap = vGap;
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeAndWait( () -> {
             frame = new Frame("Test frame");
             frame.setSize(width, height);
@@ -123,10 +122,12 @@ public class ChangeGridSize {
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(500);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        robot.waitForIdle(3000);
+        robot.delay(3000);
 
-        if(!actionPerformed)
+        if (!actionPerformed) {
+            frame.dispose();
             throw new RuntimeException("Clicking on the left top of button did not trigger action event");
+        }
 
         actionPerformed = false;
         robot.mouseMove(bottomRightX, bottomRightY);
@@ -134,10 +135,12 @@ public class ChangeGridSize {
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(500);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        robot.waitForIdle(3000);
+        robot.delay(3000);
 
-        if(!actionPerformed)
+        if (!actionPerformed) {
+            frame.dispose();
             throw new RuntimeException("Clicking on the bottom right of button did not trigger action event");
+        }
     }
 
     private void doTest() throws Exception {
@@ -155,6 +158,7 @@ public class ChangeGridSize {
         for (int i = 0; i < buttons.length; i++) {
             if (buttons[i].getSize().width != componentWidth ||
                     buttons[i].getSize().height != componentHeight) {
+                frame.dispose();
                 throw new RuntimeException(
                         "FAIL: Button " + i + " not of proper size" +
                         "Expected: " + componentWidth + "*" + componentHeight +
