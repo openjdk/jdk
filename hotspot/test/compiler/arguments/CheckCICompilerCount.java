@@ -72,14 +72,14 @@ public class CheckCICompilerCount {
             "Improperly specified VM option 'CICompilerCount=0'"
         },
         {
-            "intx CICompilerCount                          := 1                                   {product}"
+            "intx CICompilerCount                          = 1                                        {product} {command line}"
         },
         {
             "CICompilerCount (0) must be at least 1",
             "Improperly specified VM option 'CICompilerCount=0'"
         },
         {
-            "intx CICompilerCount                          := 1                                   {product}"
+            "intx CICompilerCount                          = 1                                        {product} {command line}"
         }
     };
 
@@ -127,14 +127,14 @@ public class CheckCICompilerCount {
             "Improperly specified VM option 'CICompilerCount=1'"
         },
         {
-            "intx CICompilerCount                          := 2                                   {product}"
+            "intx CICompilerCount                          = 2                                        {product} {command line, ergonomic}"
         },
         {
             "CICompilerCount (1) must be at least 2",
             "Improperly specified VM option 'CICompilerCount=1'"
         },
         {
-            "intx CICompilerCount                          := 2                                   {product}"
+            "intx CICompilerCount                          = 2                                        {product} {command line, ergonomic}"
         }
     };
 
