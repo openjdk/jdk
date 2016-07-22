@@ -82,7 +82,7 @@ class TaskFactory {
             throw new UnsupportedOperationException("Compiler not available, must be run with full JDK 9.");
         }
         Version current = Version.parse(System.getProperty("java.specification.version"));
-        if (INITIAL_SUPPORTED_VER.compareToIgnoreOpt(current) > 0)  {
+        if (INITIAL_SUPPORTED_VER.compareToIgnoreOptional(current) > 0)  {
             throw new UnsupportedOperationException("Wrong compiler, must be run with full JDK 9.");
         }
         this.fileManager = new MemoryFileManager(
@@ -223,7 +223,6 @@ class TaskFactory {
                     new WrapSourceHandler(),
                     Util.join(new String[] {
                         "-Xshouldstop:at=FLOW", "-Xlint:unchecked",
-                        "-XaddExports:jdk.jshell/jdk.internal.jshell.remote=ALL-UNNAMED",
                         "-proc:none"
                     }, extraArgs));
         }
@@ -267,7 +266,7 @@ class TaskFactory {
 
         CompileTask(final Collection<OuterWrap> wraps) {
             super(wraps.stream(), new WrapSourceHandler(),
-                    "-Xlint:unchecked", "-XaddExports:jdk.jshell/jdk.internal.jshell.remote=ALL-UNNAMED", "-proc:none", "-parameters");
+                    "-Xlint:unchecked", "-proc:none", "-parameters");
         }
 
         boolean compile() {
@@ -286,7 +285,7 @@ class TaskFactory {
             }
             List<String> list = new ArrayList<>();
             for (OutputMemoryJavaFileObject fo : l) {
-                state.setClassnameToBytes(fo.getName(), fo.getBytes());
+                state.classTracker.setCurrentBytes(fo.getName(), fo.getBytes());
                 list.add(fo.getName());
             }
             return list;

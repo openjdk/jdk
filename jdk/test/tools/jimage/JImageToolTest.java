@@ -63,6 +63,8 @@ public class JImageToolTest {
             String jimage = jimagePath.toAbsolutePath().toString();
             String bootimage = modulesimagePath.toAbsolutePath().toString();
             String extractDir = Paths.get(".", "extract").toAbsolutePath().toString();
+            jimage("list", bootimage);
+            jimage("verify", bootimage);
             jimage("extract", "--dir", extractDir, bootimage);
             System.out.println("Test successful");
          } else {

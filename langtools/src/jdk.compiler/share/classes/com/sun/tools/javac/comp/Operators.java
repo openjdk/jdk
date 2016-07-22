@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -796,6 +796,15 @@ public class Operators {
                     .addBinaryOperator(BOOLEAN, BOOLEAN, BOOLEAN, bool_and),
             new BinaryBooleanOperator(Tag.OR)
                     .addBinaryOperator(BOOLEAN, BOOLEAN, BOOLEAN, bool_or));
+    }
+
+    Symbol lookupBinaryOp(Predicate<Symbol> applicabilityTest) {
+        return binaryOperators.values().stream()
+                .flatMap(List::stream)
+                .map(helper -> helper.doLookup(applicabilityTest))
+                .distinct()
+                .filter(sym -> sym != syms.noSymbol)
+                .findFirst().get();
     }
 
     /**

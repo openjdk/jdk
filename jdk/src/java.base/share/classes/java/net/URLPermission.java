@@ -461,11 +461,10 @@ public final class URLPermission extends Permission {
     }
 
     private String actions() {
-        String b = String.join(",", methods);
-        if (!requestHeaders.isEmpty()) {
-            b += ":" + String.join(",", requestHeaders);
-        }
-        return b;
+        // The colon separator is optional when the request headers list is
+        // empty.This implementation chooses to include it even when the request
+        // headers list is empty.
+        return String.join(",", methods) + ":" + String.join(",", requestHeaders);
     }
 
     /**

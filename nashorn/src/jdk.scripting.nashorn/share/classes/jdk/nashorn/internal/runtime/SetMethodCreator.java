@@ -170,7 +170,7 @@ final class SetMethodCreator {
         assert property     != null;
 
         final MethodHandle boundHandle;
-        if (!property.isAccessorProperty() && find.isInherited()) {
+        if (find.isInheritedOrdinaryProperty()) {
             boundHandle = ScriptObject.addProtoFilter(methodHandle, find.getProtoChainLength());
         } else {
             boundHandle = methodHandle;
