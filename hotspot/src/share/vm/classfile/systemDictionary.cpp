@@ -655,6 +655,21 @@ static void post_class_load_event(const Ticks& start_time,
 #endif // INCLUDE_TRACE
 }
 
+// utility function for class define event
+static void class_define_event(instanceKlassHandle k) {
+#if INCLUDE_TRACE
+  EventClassDefine event(UNTIMED);
+  if (event.should_commit()) {
+    event.set_definedClass(k());
+    oop defining_class_loader = k->class_loader();
+    event.set_definingClassLoader(defining_class_loader != NULL ?
+      defining_class_loader->klass() : (Klass*)NULL);
+    event.commit();
+  }
+#endif // INCLUDE_TRACE
+}
+
+
 Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
                                                         Handle class_loader,
                                                         Handle protection_domain,
@@ -1675,9 +1690,8 @@ void SystemDictionary::define_instance_class(instanceKlassHandle k, TRAPS) {
       JvmtiExport::post_class_load((JavaThread *) THREAD, k());
 
   }
-
   TRACE_KLASS_DEFINITION(k, THREAD);
-
+  class_define_event(k);
 }
 
 // Support parallel classloading
