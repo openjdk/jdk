@@ -96,10 +96,8 @@
  * language-specific manner if no other linker managed to handle the operation.)
  * </p><p>
  * A language runtime that wishes to make at least some of its linkers available
- * to other language runtimes for interoperability will need to declare the
- * class names of those linkers in
- * {@code /META-INF/services/jdk.dynalink.linker.GuardingDynamicLinker} file in
- * its distribution (typically, JAR file).
+ * to other language runtimes for interoperability will need to use a
+ * {@link jdk.dynalink.linker.GuardingDynamicLinkerExporter}.
  * </p><p>
  * Most language runtimes will be able to implement their own linking logic by
  * implementing {@link jdk.dynalink.linker.TypeBasedGuardingDynamicLinker}

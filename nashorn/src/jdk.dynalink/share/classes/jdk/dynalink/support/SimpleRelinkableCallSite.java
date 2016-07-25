@@ -90,9 +90,10 @@ import jdk.dynalink.linker.GuardedInvocation;
 
 /**
  * A relinkable call site that implements monomorphic inline caching strategy,
- * only being linked to a single {@link GuardedInvocation}. If that invocation
- * is invalidated, it will throw it away and ask its associated
- * {@link DynamicLinker} to relink it.
+ * only being linked to a single {@link GuardedInvocation} at any given time.
+ * If the guard of that single invocation fails, or it has an invalidated
+ * switch point, or its invalidating exception triggered, then the call site
+ * will throw it away and ask its associated {@link DynamicLinker} to relink it.
  */
 public class SimpleRelinkableCallSite extends AbstractRelinkableCallSite {
     /**
