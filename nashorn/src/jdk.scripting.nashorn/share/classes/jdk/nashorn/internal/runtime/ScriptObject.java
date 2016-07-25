@@ -796,7 +796,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      * @param start the object on which the lookup was originally initiated
      * @return FindPropertyData or null if not found.
      */
-    protected FindProperty findProperty(final Object key, final boolean deep, boolean isScope, final ScriptObject start) {
+    protected FindProperty findProperty(final Object key, final boolean deep, final boolean isScope, final ScriptObject start) {
 
         final PropertyMap selfMap  = getMap();
         final Property    property = selfMap.findProperty(key);
@@ -2184,7 +2184,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         FindProperty find = findProperty(name, true, NashornCallSiteDescriptor.isScope(desc), this);
 
         // If it's not a scope search, then we don't want any inherited properties except those with user defined accessors.
-        if (find != null && find.isInherited() && !find.getProperty().isAccessorProperty()) {
+        if (find != null && find.isInheritedOrdinaryProperty()) {
             // We should still check if inherited data property is not writable
             if (isExtensible() && !find.getProperty().isWritable()) {
                 return createEmptySetMethod(desc, explicitInstanceOfCheck, "property.not.writable", true);
@@ -3044,7 +3044,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
 
         invalidateGlobalConstant(key);
 
-        if (f != null && f.isInherited() && !f.getProperty().isAccessorProperty()) {
+        if (f != null && f.isInheritedOrdinaryProperty()) {
             final boolean isScope = isScopeFlag(callSiteFlags);
             // If the start object of the find is not this object it means the property was found inside a
             // 'with' statement expression (see WithObject.findProperty()). In this case we forward the 'set'
