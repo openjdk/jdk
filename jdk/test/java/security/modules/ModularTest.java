@@ -82,7 +82,7 @@ public abstract class ModularTest {
 
         String testName = new StringJoiner("_").add(cModuleType.toString())
                 .add(sModuletype.toString()).add(
-                        (addMetaDesc) ? "DESCRIPTOR" : "NO_DESCRIPTOR")
+                        (addMetaDesc) ? "WITH_SERVICE" : "NO_SERVICE")
                 .toString();
 
         System.out.format("%nStarting Test case: '%s'", testName);
@@ -165,10 +165,12 @@ public abstract class ModularTest {
         if (moduleType == MODULE_TYPE.EXPLICIT) {
             System.out.format(" %nGenerating ModuleDescriptor object");
             builder = new Builder(moduleName).exports(pkg);
-            if (isService) {
+            if (isService && serviceInterface != null && serviceImpl != null) {
                 builder.provides(serviceInterface, serviceImpl);
             } else {
-                builder.uses(serviceInterface);
+                if (serviceInterface != null) {
+                    builder.uses(serviceInterface);
+                }
                 if (depends) {
                     builder.requires(serviceModuleName);
                 }
@@ -261,7 +263,7 @@ public abstract class ModularTest {
         String jarName = jarPath.toFile().getName();
         return (moduleType == MODULE_TYPE.EXPLICIT) ? mName
                 : ((moduleType == MODULE_TYPE.AUTO) ? jarName.substring(0,
-                                jarName.indexOf(JAR_EXTN)) : "");
+                                jarName.indexOf(JAR_EXTN)) : null);
     }
 
     /**

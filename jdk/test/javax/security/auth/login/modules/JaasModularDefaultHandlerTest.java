@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,67 +36,53 @@ import org.testng.annotations.BeforeTest;
 
 /**
  * @test
- * @bug 8078813
+ * @bug 8151654
  * @library /lib/testlibrary
  * @library /java/security/modules
  * @build CompilerUtils JarUtils
- * @summary Test custom JAAS module with all possible modular option. The test
- *          includes different combination of JAAS client/login modules
- *          interaction with or without service description.
- * @run testng JaasModularClientTest
+ * @summary Test custom JAAS callback handler with all possible modular option.
+ * @run testng JaasModularDefaultHandlerTest
  */
-public class JaasModularClientTest extends ModularTest {
+public class JaasModularDefaultHandlerTest extends ModularTest {
 
-    private static final Path S_SRC = SRC.resolve("TestLoginModule.java");
-    private static final String S_PKG = "login";
+    private static final Path S_SRC = SRC.resolve("TestCallbackHandler.java");
+    private static final String MODULAR = "M";
+    private static final String S_PKG = "handler";
     private static final String S_JAR_NAME = S_PKG + JAR_EXTN;
-    private static final String S_DESCR_JAR_NAME = S_PKG + DESCRIPTOR
-            + JAR_EXTN;
     private static final String MS_JAR_NAME = MODULAR + S_PKG + JAR_EXTN;
-    private static final String MS_DESCR_JAR_NAME = MODULAR + S_PKG + DESCRIPTOR
-            + JAR_EXTN;
+    private static final String HANDLER = S_PKG + ".TestCallbackHandler";
 
-    private static final Path C_SRC = SRC.resolve("JaasClient.java");
-    private static final String C_PKG = "client";
+    private static final Path C_SRC
+            = SRC.resolve("JaasClientWithDefaultHandler.java");
+    private static final Path CL_SRC = SRC.resolve("TestLoginModule.java");
+    private static final String C_PKG = "login";
     private static final String C_JAR_NAME = C_PKG + JAR_EXTN;
-    private static final String MCN_JAR_NAME = MODULAR + C_PKG + "N" + JAR_EXTN;
+    private static final String MCN_JAR_NAME
+            = MODULAR + C_PKG + "NoMUse" + JAR_EXTN;
     private static final String MC_JAR_NAME = MODULAR + C_PKG + JAR_EXTN;
 
     private static final Path BUILD_DIR = Paths.get(".").resolve("build");
     private static final Path COMPILE_DIR = BUILD_DIR.resolve("bin");
     private static final Path S_BUILD_DIR = COMPILE_DIR.resolve(S_PKG);
-    private static final Path S_WITH_META_DESCR_BUILD_DIR = COMPILE_DIR.resolve(
-            S_PKG + DESCRIPTOR);
     private static final Path C_BLD_DIR = COMPILE_DIR.resolve(C_PKG);
     private static final Path M_BASE_PATH = BUILD_DIR.resolve("mbase");
     private static final Path ARTIFACTS_DIR = BUILD_DIR.resolve("artifacts");
 
     private static final Path S_ARTIFACTS_DIR = ARTIFACTS_DIR.resolve(S_PKG);
     private static final Path S_JAR = S_ARTIFACTS_DIR.resolve(S_JAR_NAME);
-    private static final Path S_WITH_DESCRIPTOR_JAR = S_ARTIFACTS_DIR.resolve(
-            S_DESCR_JAR_NAME);
     private static final Path MS_JAR = S_ARTIFACTS_DIR.resolve(MS_JAR_NAME);
-    private static final Path MS_WITH_DESCR_JAR = S_ARTIFACTS_DIR.resolve(
-            MS_DESCR_JAR_NAME);
 
     private static final Path C_ARTIFACTS_DIR = ARTIFACTS_DIR.resolve(C_PKG);
     private static final Path C_JAR = C_ARTIFACTS_DIR.resolve(C_JAR_NAME);
     private static final Path MC_JAR = C_ARTIFACTS_DIR.resolve(MC_JAR_NAME);
     private static final Path MCN_JAR = C_ARTIFACTS_DIR.resolve(MCN_JAR_NAME);
 
-    private static final String MAIN = C_PKG + ".JaasClient";
-    private static final String S_INTERFACE
-            = "javax.security.auth.spi.LoginModule";
-    private static final String S_IMPL = S_PKG + ".TestLoginModule";
+    private static final String MAIN = C_PKG + ".JaasClientWithDefaultHandler";
     private static final List<String> M_REQUIRED = Arrays.asList("java.base",
             "jdk.security.auth");
-    private static final Path META_DESCR_PATH = Paths.get("META-INF")
-            .resolve("services").resolve(S_INTERFACE);
-    private static final Path S_META_DESCR_FPATH = S_WITH_META_DESCR_BUILD_DIR
-            .resolve(META_DESCR_PATH);
 
-    private static final boolean WITH_S_DESCR = true;
-    private static final boolean WITHOUT_S_DESCR = false;
+    private static final String CLASS_NOT_FOUND_MSG
+            = "java.lang.ClassNotFoundException: handler.TestCallbackHandler";
     private static final String NO_FAILURE = null;
 
     /**
@@ -106,49 +92,31 @@ public class JaasModularClientTest extends ModularTest {
     public Object[][] getTestInput() {
 
         List<List<Object>> params = new ArrayList<>();
-        String[] args = new String[]{};
+        String[] args = new String[]{HANDLER};
         // PARAMETER ORDERS -
         // Client Module Type, Service Module Type,
-        // If Service META descriptor Required,
+        // Service META Descriptor Required,
         // Expected Failure message, Client arguments
         params.add(Arrays.asList(MODULE_TYPE.EXPLICIT, MODULE_TYPE.EXPLICIT,
-                WITH_S_DESCR, NO_FAILURE, args));
-        params.add(Arrays.asList(MODULE_TYPE.EXPLICIT, MODULE_TYPE.EXPLICIT,
-                WITHOUT_S_DESCR, NO_FAILURE, args));
+                false, NO_FAILURE, args));
         params.add(Arrays.asList(MODULE_TYPE.EXPLICIT, MODULE_TYPE.AUTO,
-                WITH_S_DESCR, NO_FAILURE, args));
-        params.add(Arrays.asList(MODULE_TYPE.EXPLICIT, MODULE_TYPE.AUTO,
-                WITHOUT_S_DESCR, NO_FAILURE, args));
+                false, NO_FAILURE, args));
         params.add(Arrays.asList(MODULE_TYPE.EXPLICIT, MODULE_TYPE.UNNAMED,
-                WITH_S_DESCR, NO_FAILURE, args));
-        params.add(Arrays.asList(MODULE_TYPE.EXPLICIT, MODULE_TYPE.UNNAMED,
-                WITHOUT_S_DESCR, NO_FAILURE, args));
+                false, NO_FAILURE, args));
 
         params.add(Arrays.asList(MODULE_TYPE.AUTO, MODULE_TYPE.EXPLICIT,
-                WITH_S_DESCR, NO_FAILURE, args));
-        params.add(Arrays.asList(MODULE_TYPE.AUTO, MODULE_TYPE.EXPLICIT,
-                WITHOUT_S_DESCR, NO_FAILURE, args));
+                false, NO_FAILURE, args));
         params.add(Arrays.asList(MODULE_TYPE.AUTO, MODULE_TYPE.AUTO,
-                WITH_S_DESCR, NO_FAILURE, args));
-        params.add(Arrays.asList(MODULE_TYPE.AUTO, MODULE_TYPE.AUTO,
-                WITHOUT_S_DESCR, NO_FAILURE, args));
+                false, NO_FAILURE, args));
         params.add(Arrays.asList(MODULE_TYPE.AUTO, MODULE_TYPE.UNNAMED,
-                WITH_S_DESCR, NO_FAILURE, args));
-        params.add(Arrays.asList(MODULE_TYPE.AUTO, MODULE_TYPE.UNNAMED,
-                WITHOUT_S_DESCR, NO_FAILURE, args));
+                false, NO_FAILURE, args));
 
         params.add(Arrays.asList(MODULE_TYPE.UNNAMED, MODULE_TYPE.EXPLICIT,
-                WITH_S_DESCR, NO_FAILURE, args));
-        params.add(Arrays.asList(MODULE_TYPE.UNNAMED, MODULE_TYPE.EXPLICIT,
-                WITHOUT_S_DESCR, NO_FAILURE, args));
+                false, NO_FAILURE, args));
         params.add(Arrays.asList(MODULE_TYPE.UNNAMED, MODULE_TYPE.AUTO,
-                WITH_S_DESCR, NO_FAILURE, args));
-        params.add(Arrays.asList(MODULE_TYPE.UNNAMED, MODULE_TYPE.AUTO,
-                WITHOUT_S_DESCR, NO_FAILURE, args));
+                false, NO_FAILURE, args));
         params.add(Arrays.asList(MODULE_TYPE.UNNAMED, MODULE_TYPE.UNNAMED,
-                WITH_S_DESCR, NO_FAILURE, args));
-        params.add(Arrays.asList(MODULE_TYPE.UNNAMED, MODULE_TYPE.UNNAMED,
-                WITHOUT_S_DESCR, NO_FAILURE, args));
+                false, NO_FAILURE, args));
         return params.stream().map(p -> p.toArray()).toArray(Object[][]::new);
     }
 
@@ -162,18 +130,12 @@ public class JaasModularClientTest extends ModularTest {
         boolean done = true;
         try {
             done = CompilerUtils.compile(S_SRC, S_BUILD_DIR);
-            done &= CompilerUtils.compile(S_SRC, S_WITH_META_DESCR_BUILD_DIR);
-            done &= createMetaInfServiceDescriptor(S_META_DESCR_FPATH, S_IMPL);
-            // Generate modular/regular jars with(out) META-INF
-            // service descriptor
+            // Generate modular/regular handler jars.
             generateJar(true, MODULE_TYPE.EXPLICIT, MS_JAR, S_BUILD_DIR, false);
-            generateJar(true, MODULE_TYPE.EXPLICIT, MS_WITH_DESCR_JAR,
-                    S_WITH_META_DESCR_BUILD_DIR, false);
             generateJar(true, MODULE_TYPE.UNNAMED, S_JAR, S_BUILD_DIR, false);
-            generateJar(true, MODULE_TYPE.UNNAMED, S_WITH_DESCRIPTOR_JAR,
-                    S_WITH_META_DESCR_BUILD_DIR, false);
             // Compile client source codes.
             done &= CompilerUtils.compile(C_SRC, C_BLD_DIR);
+            done &= CompilerUtils.compile(CL_SRC, C_BLD_DIR);
             // Generate modular client jar with explicit dependency
             generateJar(false, MODULE_TYPE.EXPLICIT, MC_JAR, C_BLD_DIR, true);
             // Generate modular client jar without any dependency
@@ -198,10 +160,10 @@ public class JaasModularClientTest extends ModularTest {
         ModuleDescriptor mDescriptor = null;
         if (isService) {
             mDescriptor = generateModuleDescriptor(isService, moduleType, S_PKG,
-                    S_PKG, S_INTERFACE, S_IMPL, null, M_REQUIRED, depends);
+                    S_PKG, null, null, null, M_REQUIRED, depends);
         } else {
             mDescriptor = generateModuleDescriptor(isService, moduleType, C_PKG,
-                    C_PKG, S_INTERFACE, null, S_PKG, M_REQUIRED, depends);
+                    C_PKG, null, null, S_PKG, M_REQUIRED, depends);
         }
         generateJar(mDescriptor, jar, compilePath);
     }
@@ -233,7 +195,7 @@ public class JaasModularClientTest extends ModularTest {
                     || sModuletype != MODULE_TYPE.UNNAMED) ? M_BASE_PATH : null;
             String cPath = buildClassPath(cModuleType, cJarPath, sModuletype,
                     sJarPath);
-            Map<String, String> vmArgs = getVMArgs(sModuletype,
+            Map<String, String> vmArgs = getVMArgs(sModuletype, cModuleType,
                     getModuleName(sModuletype, sJarPath, S_PKG));
             output = ProcessTools.executeTestJava(
                     getJavaCommand(cmBasePath, cPath, mName, MAIN, vmArgs,
@@ -250,21 +212,13 @@ public class JaasModularClientTest extends ModularTest {
      * based on client/service module type.
      */
     @Override
-    public Path findJarPath(boolean isService, MODULE_TYPE moduleType,
+    public Path findJarPath(boolean depends, MODULE_TYPE moduleType,
             boolean addMetaDesc, boolean dependsOnServiceModule) {
-        if (isService) {
+        if (depends) {
             if (moduleType == MODULE_TYPE.EXPLICIT) {
-                if (addMetaDesc) {
-                    return MS_WITH_DESCR_JAR;
-                } else {
-                    return MS_JAR;
-                }
+                return MS_JAR;
             } else {
-                if (addMetaDesc) {
-                    return S_WITH_DESCRIPTOR_JAR;
-                } else {
-                    return S_JAR;
-                }
+                return S_JAR;
             }
         } else {
             // Choose corresponding client jar using dependent module
@@ -284,13 +238,15 @@ public class JaasModularClientTest extends ModularTest {
      * VM argument required for the test.
      */
     private Map<String, String> getVMArgs(MODULE_TYPE sModuletype,
-            String addModName) throws IOException {
+            MODULE_TYPE cModuleType, String addModName) throws IOException {
         final Map<String, String> vmArgs = new LinkedHashMap<>();
         vmArgs.put("-Duser.language=", "en");
         vmArgs.put("-Duser.region=", "US");
         vmArgs.put("-Djava.security.auth.login.config=", SRC.resolve(
                 "jaas.conf").toFile().getCanonicalPath());
-        if (addModName != null && sModuletype == MODULE_TYPE.AUTO) {
+        if (addModName != null
+                && !(cModuleType == MODULE_TYPE.EXPLICIT
+                && sModuletype == MODULE_TYPE.EXPLICIT)) {
             vmArgs.put("-addmods ", addModName);
         }
         return vmArgs;
