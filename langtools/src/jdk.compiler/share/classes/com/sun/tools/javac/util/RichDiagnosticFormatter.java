@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -644,7 +644,7 @@ public class RichDiagnosticFormatter extends
                 EnumSet.of(RichFormatterFeature.SIMPLE_NAMES,
                     RichFormatterFeature.WHERE_CLAUSES,
                     RichFormatterFeature.UNIQUE_TYPEVAR_NAMES);
-            String diagOpts = options.get("diags");
+            String diagOpts = options.get("diags.formatterOptions");
             if (diagOpts != null) {
                 for (String args: diagOpts.split(",")) {
                     if (args.equals("-where")) {
