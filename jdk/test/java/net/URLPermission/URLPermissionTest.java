@@ -26,7 +26,7 @@ import java.io.*;
 
 /**
  * @test
- * @bug 8010464 8027570 8027687 8029354 8114860 8071660
+ * @bug 8010464 8027570 8027687 8029354 8114860 8071660 8161291
  */
 
 public class URLPermissionTest {
@@ -355,15 +355,16 @@ public class URLPermissionTest {
     };
 
     static Test[] actionsStringTest = {
-        actionstest("", ""),
+        actionstest("", ":"),
+        actionstest(":", ":"),
         actionstest(":X-Bar", ":X-Bar"),
-        actionstest("GET", "GET"),
-        actionstest("get", "GET"),
-        actionstest("GET,POST", "GET,POST"),
-        actionstest("GET,post", "GET,POST"),
-        actionstest("get,post", "GET,POST"),
-        actionstest("get,post,DELETE", "DELETE,GET,POST"),
-        actionstest("GET,POST:", "GET,POST"),
+        actionstest("GET", "GET:"),
+        actionstest("get", "GET:"),
+        actionstest("GET,POST", "GET,POST:"),
+        actionstest("GET,post", "GET,POST:"),
+        actionstest("get,post", "GET,POST:"),
+        actionstest("get,post,DELETE", "DELETE,GET,POST:"),
+        actionstest("GET,POST:", "GET,POST:"),
         actionstest("GET:X-Foo,X-bar", "GET:X-Bar,X-Foo"),
         actionstest("GET,POST,DELETE:X-Bar,X-Foo,X-Bar,Y-Foo", "DELETE,GET,POST:X-Bar,X-Bar,X-Foo,Y-Foo")
     };
