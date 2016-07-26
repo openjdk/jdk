@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2011 Marti Maria Saguer
+//  Copyright (c) 1998-2016 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -608,7 +608,7 @@ void EmitNGamma(cmsIOHANDLER* m, int n, cmsToneCurve* g[])
 //
 //  Each row contains Pipeline values for all but first component. So, I
 //  detect row changing by keeping a copy of last value of first
-//  component. -1 is used to mark begining of whole block.
+//  component. -1 is used to mark beginning of whole block.
 
 static
 int OutputValueSampler(register const cmsUInt16Number In[], register cmsUInt16Number Out[], register void* Cargo)
@@ -1422,14 +1422,15 @@ void BuildColorantList(char *Colorant, int nColorant, cmsUInt16Number Out[])
     if (nColorant > cmsMAXCHANNELS)
         nColorant = cmsMAXCHANNELS;
 
-    for (j=0; j < nColorant; j++) {
+    for (j = 0; j < nColorant; j++) {
 
-                sprintf(Buff, "%.3f", Out[j] / 65535.0);
-                strcat(Colorant, Buff);
-                if (j < nColorant -1)
-                        strcat(Colorant, " ");
+        snprintf(Buff, 31, "%.3f", Out[j] / 65535.0);
+        Buff[31] = 0;
+        strcat(Colorant, Buff);
+        if (j < nColorant - 1)
+            strcat(Colorant, " ");
 
-        }
+    }
 }
 
 
