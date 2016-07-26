@@ -498,9 +498,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVAJPEG, \
     CFLAGS := $(CFLAGS_JDKLIB) $(BUILD_LIBJAVAJPEG_HEADERS) \
         $(LIBJAVA_HEADER_FLAGS) \
         -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop, \
-    DISABLED_WARNINGS_gcc := clobbered parentheses array-bounds shift-negative-value, \
-    DISABLED_WARNINGS_clang := logical-op-parentheses, \
-    DISABLED_WARNINGS_microsoft := 4267, \
+    DISABLED_WARNINGS_gcc := clobbered, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjpeg/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
