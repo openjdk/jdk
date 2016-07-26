@@ -596,7 +596,7 @@ cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Nu
     return Val;
 }
 
-// Evaluate a segmented funtion for a single value. Return -1 if no valid segment found .
+// Evaluate a segmented function for a single value. Return -1 if no valid segment found .
 // If fn type is 0, perform an interpolation on the table
 static
 cmsFloat64Number EvalSegmentedFn(const cmsToneCurve *g, cmsFloat64Number R)
