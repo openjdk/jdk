@@ -129,6 +129,7 @@ Java_sun_awt_UNIXToolkit_load_1gtk_1icon(JNIEnv *env, jobject this,
         return JNI_FALSE;
     }
     if (!init_method(env, this) ) {
+        free(filename_str);
         return JNI_FALSE;
     }
     (*env)->GetStringUTFRegion(env, filename, 0, len, filename_str);
