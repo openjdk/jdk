@@ -149,7 +149,6 @@ module java.base {
     exports jdk.internal.module to
         java.instrument,
         java.management,
-        java.xml,
         jdk.dynalink,
         jdk.jartool,
         jdk.jlink;
@@ -309,4 +308,3 @@ module java.base {
     provides java.nio.file.spi.FileSystemProvider with
         jdk.internal.jrtfs.JrtFileSystemProvider;
 }
-
