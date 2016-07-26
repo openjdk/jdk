@@ -32,11 +32,18 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
+import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.StampedLock;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -1076,6 +1083,123 @@ public class StampedLockTest extends JSR166TestCase {
         };
 
         assertThrows(IllegalMonitorStateException.class, actions);
+    }
+
+    static long writeLockInterruptiblyUninterrupted(StampedLock sl) {
+        try { return sl.writeLockInterruptibly(); }
+        catch (InterruptedException ex) { throw new AssertionError(ex); }
+    }
+
+    static long tryWriteLockUninterrupted(StampedLock sl, long time, TimeUnit unit) {
+        try { return sl.tryWriteLock(time, unit); }
+        catch (InterruptedException ex) { throw new AssertionError(ex); }
+    }
+
+    static long readLockInterruptiblyUninterrupted(StampedLock sl) {
+        try { return sl.readLockInterruptibly(); }
+        catch (InterruptedException ex) { throw new AssertionError(ex); }
+    }
+
+    static long tryReadLockUninterrupted(StampedLock sl, long time, TimeUnit unit) {
+        try { return sl.tryReadLock(time, unit); }
+        catch (InterruptedException ex) { throw new AssertionError(ex); }
+    }
+
+    /**
+     * Invalid write stamps result in IllegalMonitorStateException
+     */
+    public void testInvalidWriteStampsThrowIllegalMonitorStateException() {
+        List<Function<StampedLock, Long>> writeLockers = new ArrayList<>();
+        writeLockers.add((sl) -> sl.writeLock());
+        writeLockers.add((sl) -> writeLockInterruptiblyUninterrupted(sl));
+        writeLockers.add((sl) -> tryWriteLockUninterrupted(sl, Long.MIN_VALUE, DAYS));
+        writeLockers.add((sl) -> tryWriteLockUninterrupted(sl, 0, DAYS));
+
+        List<BiConsumer<StampedLock, Long>> writeUnlockers = new ArrayList<>();
+        writeUnlockers.add((sl, stamp) -> sl.unlockWrite(stamp));
+        writeUnlockers.add((sl, stamp) -> assertTrue(sl.tryUnlockWrite()));
+        writeUnlockers.add((sl, stamp) -> sl.asWriteLock().unlock());
+        writeUnlockers.add((sl, stamp) -> sl.unlock(stamp));
+
+        List<Consumer<StampedLock>> mutaters = new ArrayList<>();
+        mutaters.add((sl) -> {});
+        mutaters.add((sl) -> sl.readLock());
+        for (Function<StampedLock, Long> writeLocker : writeLockers)
+            mutaters.add((sl) -> writeLocker.apply(sl));
+
+        for (Function<StampedLock, Long> writeLocker : writeLockers)
+        for (BiConsumer<StampedLock, Long> writeUnlocker : writeUnlockers)
+        for (Consumer<StampedLock> mutater : mutaters) {
+            final StampedLock sl = new StampedLock();
+            final long stamp = writeLocker.apply(sl);
+            assertTrue(stamp != 0L);
+            assertThrows(IllegalMonitorStateException.class,
+                         () -> sl.unlockRead(stamp));
+            writeUnlocker.accept(sl, stamp);
+            mutater.accept(sl);
+            assertThrows(IllegalMonitorStateException.class,
+                         () -> sl.unlock(stamp),
+                         () -> sl.unlockRead(stamp),
+                         () -> sl.unlockWrite(stamp));
+        }
+    }
+
+    /**
+     * Invalid read stamps result in IllegalMonitorStateException
+     */
+    public void testInvalidReadStampsThrowIllegalMonitorStateException() {
+        List<Function<StampedLock, Long>> readLockers = new ArrayList<>();
+        readLockers.add((sl) -> sl.readLock());
+        readLockers.add((sl) -> readLockInterruptiblyUninterrupted(sl));
+        readLockers.add((sl) -> tryReadLockUninterrupted(sl, Long.MIN_VALUE, DAYS));
+        readLockers.add((sl) -> tryReadLockUninterrupted(sl, 0, DAYS));
+
+        List<BiConsumer<StampedLock, Long>> readUnlockers = new ArrayList<>();
+        readUnlockers.add((sl, stamp) -> sl.unlockRead(stamp));
+        readUnlockers.add((sl, stamp) -> assertTrue(sl.tryUnlockRead()));
+        readUnlockers.add((sl, stamp) -> sl.asReadLock().unlock());
+        readUnlockers.add((sl, stamp) -> sl.unlock(stamp));
+
+        List<Function<StampedLock, Long>> writeLockers = new ArrayList<>();
+        writeLockers.add((sl) -> sl.writeLock());
+        writeLockers.add((sl) -> writeLockInterruptiblyUninterrupted(sl));
+        writeLockers.add((sl) -> tryWriteLockUninterrupted(sl, Long.MIN_VALUE, DAYS));
+        writeLockers.add((sl) -> tryWriteLockUninterrupted(sl, 0, DAYS));
+
+        List<BiConsumer<StampedLock, Long>> writeUnlockers = new ArrayList<>();
+        writeUnlockers.add((sl, stamp) -> sl.unlockWrite(stamp));
+        writeUnlockers.add((sl, stamp) -> assertTrue(sl.tryUnlockWrite()));
+        writeUnlockers.add((sl, stamp) -> sl.asWriteLock().unlock());
+        writeUnlockers.add((sl, stamp) -> sl.unlock(stamp));
+
+
+        for (Function<StampedLock, Long> readLocker : readLockers)
+        for (BiConsumer<StampedLock, Long> readUnlocker : readUnlockers)
+        for (Function<StampedLock, Long> writeLocker : writeLockers)
+        for (BiConsumer<StampedLock, Long> writeUnlocker : writeUnlockers) {
+            final StampedLock sl = new StampedLock();
+            final long stamp = readLocker.apply(sl);
+            assertTrue(stamp != 0L);
+            assertThrows(IllegalMonitorStateException.class,
+                         () -> sl.unlockWrite(stamp));
+            readUnlocker.accept(sl, stamp);
+            assertThrows(IllegalMonitorStateException.class,
+                         () -> sl.unlock(stamp),
+                         () -> sl.unlockRead(stamp),
+                         () -> sl.unlockWrite(stamp));
+            final long writeStamp = writeLocker.apply(sl);
+            assertTrue(writeStamp != 0L);
+            assertTrue(writeStamp != stamp);
+            assertThrows(IllegalMonitorStateException.class,
+                         () -> sl.unlock(stamp),
+                         () -> sl.unlockRead(stamp),
+                         () -> sl.unlockWrite(stamp));
+            writeUnlocker.accept(sl, writeStamp);
+            assertThrows(IllegalMonitorStateException.class,
+                         () -> sl.unlock(stamp),
+                         () -> sl.unlockRead(stamp),
+                         () -> sl.unlockWrite(stamp));
+        }
     }
 
 }
