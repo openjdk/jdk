@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 8131029
+ * @bug 8131029 8159935 8160127
  * @summary Tests for alternate JDI connector -- listening
- * @modules jdk.jshell/jdk.internal.jshell.jdi
+ * @modules jdk.jshell/jdk.jshell.execution
  * @build KullaTesting ExecutionControlTestBase
  * @run testng JDIListeningExecutionControlTest
  */
@@ -33,7 +33,7 @@
 
 import org.testng.annotations.Test;
 import org.testng.annotations.BeforeMethod;
-import jdk.internal.jshell.jdi.JDIExecutionControl;
+import jdk.jshell.execution.JDIDefaultExecutionControl;
 
 @Test
 public class JDIListeningExecutionControlTest extends ExecutionControlTestBase {
@@ -41,6 +41,6 @@ public class JDIListeningExecutionControlTest extends ExecutionControlTestBase {
     @BeforeMethod
     @Override
     public void setUp() {
-        setUp(new JDIExecutionControl(false));
+        setUp(builder -> builder.executionEngine(JDIDefaultExecutionControl.listen()));
     }
 }

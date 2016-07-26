@@ -26,8 +26,6 @@
 package jdk.internal.misc;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
-import jdk.internal.reflect.CallerSensitive;
-import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.reflect.Field;
@@ -57,7 +55,6 @@ public final class Unsafe {
     private static native void registerNatives();
     static {
         registerNatives();
-        Reflection.registerMethodsToFilter(Unsafe.class, "getUnsafe");
     }
 
     private Unsafe() {}
@@ -87,16 +84,8 @@ public final class Unsafe {
      * }}</pre>
      *
      * (It may assist compilers to make the local variable {@code final}.)
-     *
-     * @throws  SecurityException if the class loader of the caller
-     *          class is not in the system domain in which all permissions
-     *          are granted.
      */
-    @CallerSensitive
     public static Unsafe getUnsafe() {
-        Class<?> caller = Reflection.getCallerClass();
-        if (!VM.isSystemDomainLoader(caller.getClassLoader()))
-            throw new SecurityException("Unsafe");
         return theUnsafe;
     }
 

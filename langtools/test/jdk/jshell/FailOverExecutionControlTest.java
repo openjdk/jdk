@@ -23,23 +23,20 @@
 
 /*
  * @test
- * @bug 8131029
- * @summary Test that fail-over works for FailOverExecutionControl
- * @modules jdk.jshell/jdk.internal.jshell.jdi
+ * @bug 8131029 8160127 8159935
+ * @summary Test that fail-over works for fail-over ExecutionControl generators.
+ * @modules jdk.jshell/jdk.jshell.execution
  *          jdk.jshell/jdk.jshell.spi
  * @build KullaTesting ExecutionControlTestBase
  * @run testng FailOverExecutionControlTest
  */
 
-
-import java.util.Collection;
 import org.testng.annotations.Test;
 import org.testng.annotations.BeforeMethod;
-import jdk.internal.jshell.jdi.FailOverExecutionControl;
-import jdk.internal.jshell.jdi.JDIExecutionControl;
-import jdk.jshell.JShellException;
+import jdk.jshell.execution.JDIDefaultExecutionControl;
 import jdk.jshell.spi.ExecutionControl;
 import jdk.jshell.spi.ExecutionEnv;
+import static jdk.jshell.execution.Util.failOverExecutionControlGenerator;
 
 @Test
 public class FailOverExecutionControlTest extends ExecutionControlTestBase {
@@ -47,56 +44,16 @@ public class FailOverExecutionControlTest extends ExecutionControlTestBase {
     @BeforeMethod
     @Override
     public void setUp() {
-        setUp(new FailOverExecutionControl(
-                new AlwaysFailingExecutionControl(),
-                new AlwaysFailingExecutionControl(),
-                new JDIExecutionControl()));
+        setUp(builder -> builder.executionEngine(failOverExecutionControlGenerator(
+                new AlwaysFailingGenerator(),
+                new AlwaysFailingGenerator(),
+                JDIDefaultExecutionControl.launch())));
     }
 
-    class AlwaysFailingExecutionControl implements ExecutionControl {
+    class AlwaysFailingGenerator implements ExecutionControl.Generator {
 
         @Override
-        public void start(ExecutionEnv env) throws Exception {
-            throw new UnsupportedOperationException("This operation intentionally broken.");
-        }
-
-        @Override
-        public void close() {
-            throw new UnsupportedOperationException("This operation intentionally broken.");
-        }
-
-        @Override
-        public boolean addToClasspath(String path) {
-            throw new UnsupportedOperationException("This operation intentionally broken.");
-        }
-
-        @Override
-        public String invoke(String classname, String methodname) throws JShellException {
-            throw new UnsupportedOperationException("This operation intentionally broken.");
-        }
-
-        @Override
-        public boolean load(Collection<String> classes) {
-            throw new UnsupportedOperationException("This operation intentionally broken.");
-        }
-
-        @Override
-        public boolean redefine(Collection<String> classes) {
-            throw new UnsupportedOperationException("This operation intentionally broken.");
-        }
-
-        @Override
-        public ClassStatus getClassStatus(String classname) {
-            throw new UnsupportedOperationException("This operation intentionally broken.");
-        }
-
-        @Override
-        public void stop() {
-            throw new UnsupportedOperationException("This operation intentionally broken.");
-        }
-
-        @Override
-        public String varValue(String classname, String varname) {
+        public ExecutionControl generate(ExecutionEnv env) throws UnsupportedOperationException {
             throw new UnsupportedOperationException("This operation intentionally broken.");
         }
 

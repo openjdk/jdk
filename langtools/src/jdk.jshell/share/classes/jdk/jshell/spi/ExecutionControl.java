@@ -22,62 +22,152 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.jshell.spi;
 
-import java.util.Collection;
-import jdk.jshell.JShellException;
+import java.io.Serializable;
 
 /**
- * This interface specifies the functionality that must provided to implement
- * a pluggable JShell execution engine.
+ * This interface specifies the functionality that must provided to implement a
+ * pluggable JShell execution engine.
  * <p>
- * The audience for this Service Provider Interface is engineers
- * wishing to implement their own version of the execution engine in support
- * of the JShell API.  This is NOT a part of the JShell API.
+ * The audience for this Service Provider Interface is engineers wishing to
+ * implement their own version of the execution engine in support of the JShell
+ * API.
  * <p>
- * A Snippet is compiled into code wrapped in a 'wrapper class'.  The execution
- * engine is used by the core JShell implementation to load and, for
- * executable Snippets, execute the Snippet.
+ * A Snippet is compiled into code wrapped in a 'wrapper class'. The execution
+ * engine is used by the core JShell implementation to load and, for executable
+ * Snippets, execute the Snippet.
  * <p>
  * Methods defined in this interface should only be called by the core JShell
  * implementation.
  * <p>
- * To install an instance of ExecutionControl, it is passed to
- * {@link jdk.jshell.JShell.Builder#executionEngine(jdk.jshell.spi.ExecutionControl) }.
+ * To install an {@code ExecutionControl}, its {@code Generator} is passed to
+ * {@link jdk.jshell.JShell.Builder#executionEngine(ExecutionControl.Generator)  }.
  */
 public interface ExecutionControl {
 
     /**
-     * Represents the current status of a class in the execution engine.
+     * Defines a functional interface for creating {@link ExecutionControl}
+     * instances.
      */
-    public enum ClassStatus {
-        /**
-         * Class is not known to the execution engine (not loaded).
-         */
-        UNKNOWN,
+    public interface Generator {
 
         /**
-         * Class is loaded, but the loaded/redefined bytes do not match those
-         * returned by {@link ExecutionEnv#getClassBytes(java.lang.String) }.
+         * Generates an execution engine, given an execution environment.
+         *
+         * @param env the context in which the {@link ExecutionControl} is to
+         * be created
+         * @return the created instance
+         * @throws Throwable if problems occurred
          */
-        NOT_CURRENT,
-
-        /**
-         * Class is loaded and loaded/redefined bytes match those
-         * returned by {@link ExecutionEnv#getClassBytes(java.lang.String) }.
-         */
-        CURRENT
-    };
+        ExecutionControl generate(ExecutionEnv env) throws Throwable;
+    }
 
     /**
-     * Initializes the instance. No methods in this interface can be called
-     * before this.
+     * Attempts to load new classes.
      *
-     * @param env the execution environment information provided by JShell
-     * @throws Exception if the instance is unable to initialize
+     * @param cbcs the class name and bytecodes to load
+     * @throws ClassInstallException exception occurred loading the classes,
+     * some or all were not loaded
+     * @throws NotImplementedException if not implemented
+     * @throws EngineTerminationException the execution engine has terminated
      */
-    void start(ExecutionEnv env) throws Exception;
+    void load(ClassBytecodes[] cbcs)
+            throws ClassInstallException, NotImplementedException, EngineTerminationException;
+
+    /**
+     * Attempts to redefine previously loaded classes.
+     *
+     * @param cbcs the class name and bytecodes to redefine
+     * @throws ClassInstallException exception occurred redefining the classes,
+     * some or all were not redefined
+     * @throws NotImplementedException if not implemented
+     * @throws EngineTerminationException the execution engine has terminated
+     */
+    void redefine(ClassBytecodes[] cbcs)
+            throws ClassInstallException, NotImplementedException, EngineTerminationException;
+
+    /**
+     * Invokes an executable Snippet by calling a method on the specified
+     * wrapper class. The method must have no arguments and return String.
+     *
+     * @param className the class whose method should be invoked
+     * @param methodName the name of method to invoke
+     * @return the result of the execution or null if no result
+     * @throws UserException the invoke raised a user exception
+     * @throws ResolutionException the invoke attempted to directly or
+     * indirectly invoke an unresolved snippet
+     * @throws StoppedException if the {@code invoke()} was canceled by
+     * {@link ExecutionControl#stop}
+     * @throws EngineTerminationException the execution engine has terminated
+     * @throws InternalException an internal problem occurred
+     */
+    String invoke(String className, String methodName)
+            throws RunException, EngineTerminationException, InternalException;
+
+    /**
+     * Returns the value of a variable.
+     *
+     * @param className the name of the wrapper class of the variable
+     * @param varName the name of the variable
+     * @return the value of the variable
+     * @throws UserException formatting the value raised a user exception
+     * @throws ResolutionException formatting the value attempted to directly or
+     * indirectly invoke an unresolved snippet
+     * @throws StoppedException if the formatting the value was canceled by
+     * {@link ExecutionControl#stop}
+     * @throws EngineTerminationException the execution engine has terminated
+     * @throws InternalException an internal problem occurred
+     */
+    String varValue(String className, String varName)
+            throws RunException, EngineTerminationException, InternalException;
+
+    /**
+     * Adds the path to the execution class path.
+     *
+     * @param path the path to add
+     * @throws EngineTerminationException the execution engine has terminated
+     * @throws InternalException an internal problem occurred
+     */
+    void addToClasspath(String path)
+            throws EngineTerminationException, InternalException;
+
+    /**
+     * Sets the execution class path to the specified path.
+     *
+     * @param path the path to add
+     * @throws EngineTerminationException the execution engine has terminated
+     * @throws InternalException an internal problem occurred
+     */
+    void setClasspath(String path)
+            throws EngineTerminationException, InternalException;
+
+    /**
+     * Interrupts a running invoke.
+     *
+     * @throws EngineTerminationException the execution engine has terminated
+     * @throws InternalException an internal problem occurred
+     */
+    void stop()
+            throws EngineTerminationException, InternalException;
+
+    /**
+     * Run a non-standard command (or a standard command from a newer version).
+     *
+     * @param command the non-standard command
+     * @param arg the commands argument
+     * @return the commands return value
+     * @throws UserException the command raised a user exception
+     * @throws ResolutionException the command attempted to directly or
+     * indirectly invoke an unresolved snippet
+     * @throws StoppedException if the command was canceled by
+     * {@link ExecutionControl#stop}
+     * @throws EngineTerminationException the execution engine has terminated
+     * @throws NotImplementedException if not implemented
+     * @throws InternalException an internal problem occurred
+     */
+    Object extensionCommand(String command, Object arg)
+            throws RunException, EngineTerminationException, InternalException;
 
     /**
      * Shuts down this execution engine. Implementation should free all
@@ -88,67 +178,206 @@ public interface ExecutionControl {
     void close();
 
     /**
-     * Adds the path to the execution class path.
-     *
-     * @param path the path to add
-     * @return true if successful
+     * Bundles class name with class bytecodes.
      */
-    boolean addToClasspath(String path);
+    public static final class ClassBytecodes implements Serializable {
+
+        private static final long serialVersionUID = 0xC1A55B47EC0DE5L;
+        private final String name;
+        private final byte[] bytecodes;
+
+        /**
+         * Creates a name/bytecode pair.
+         * @param name the class name
+         * @param bytecodes the class bytecodes
+         */
+        public ClassBytecodes(String name, byte[] bytecodes) {
+            this.name = name;
+            this.bytecodes = bytecodes;
+        }
+
+        /**
+         * The bytecodes for the class.
+         *
+         * @return the bytecodes
+         */
+        public byte[] bytecodes() {
+            return bytecodes;
+        }
+
+        /**
+         * The class name.
+         *
+         * @return the class name
+         */
+        public String name() {
+            return name;
+        }
+    }
 
     /**
-     * Invokes an executable Snippet by calling a method on the specified
-     * wrapper class. The method must have no arguments and return String.
-     *
-     * @param classname the class whose method should be invoked
-     * @param methodname the name of method to invoke
-     * @return the result of the execution or null if no result
-     * @throws JShellException if a user exception if thrown,
-     * {@link jdk.jshell.EvalException EvalException} will be thrown; if an
-     * unresolved reference is encountered,
-     * {@link jdk.jshell.UnresolvedReferenceException UnresolvedReferenceException}
-     * will be thrown
+     * The abstract base of all {@code ExecutionControl} exceptions.
      */
-    String invoke(String classname, String methodname) throws JShellException;
+    public static abstract class ExecutionControlException extends Exception {
+
+        private static final long serialVersionUID = 1L;
+
+        public ExecutionControlException(String message) {
+            super(message);
+        }
+    }
 
     /**
-     * Attempts to load new classes. Class bytes are retrieved from
-     * {@link ExecutionEnv#getClassBytes(java.lang.String) }
-     *
-     * @param classes list of class names to load
-     * @return true if load succeeded
+     * Unbidden execution engine termination has occurred.
      */
-    boolean load(Collection<String> classes);
+    public static class EngineTerminationException extends ExecutionControlException {
+
+        private static final long serialVersionUID = 1L;
+
+        public EngineTerminationException(String message) {
+            super(message);
+        }
+    }
 
     /**
-     * Attempts to redefine previously loaded classes. Class bytes are retrieved
-     * from {@link ExecutionEnv#getClassBytes(java.lang.String) }
-     *
-     * @param classes list of class names to redefine
-     * @return true if redefine succeeded
+     * The command is not implemented.
      */
-    boolean redefine(Collection<String> classes);
+    public static class NotImplementedException extends InternalException {
+
+        private static final long serialVersionUID = 1L;
+
+        public NotImplementedException(String message) {
+            super(message);
+        }
+    }
 
     /**
-     * Queries if the class is loaded and the class bytes are current.
-     *
-     * @param classname name of the wrapper class to query
-     * @return {@code UNKNOWN} if the class is not loaded; {@code CURRENT} if
-     * the loaded/redefined bytes are equal to the most recent bytes for this
-     * wrapper class; otherwise {@code NOT_CURRENT}
+     * An internal problem has occurred.
      */
-    ClassStatus getClassStatus(String classname);
+    public static class InternalException extends ExecutionControlException {
+
+        private static final long serialVersionUID = 1L;
+
+        public InternalException(String message) {
+            super(message);
+        }
+    }
 
     /**
-     * Interrupt a running invoke.
+     * A class install (load or redefine) encountered a problem.
      */
-    void stop();
+    public static class ClassInstallException extends ExecutionControlException {
+
+        private static final long serialVersionUID = 1L;
+
+        private final boolean[] installed;
+
+        public ClassInstallException(String message, boolean[] installed) {
+            super(message);
+            this.installed = installed;
+        }
+
+        /**
+         * Indicates which of the passed classes were successfully
+         * loaded/redefined.
+         * @return a one-to-one array with the {@link ClassBytecodes}{@code[]}
+         * array -- {@code true} if installed
+         */
+        public boolean[] installed() {
+            return installed;
+        }
+    }
 
     /**
-     * Returns the value of a variable.
-     *
-     * @param classname the name of the wrapper class of the variable
-     * @param varname the name of the variable
-     * @return the value of the variable
+     * The abstract base of of exceptions specific to running user code.
      */
-    String varValue(String classname, String varname);
+    public static abstract class RunException extends ExecutionControlException {
+
+        private static final long serialVersionUID = 1L;
+
+        private RunException(String message) {
+            super(message);
+        }
+    }
+
+    /**
+     * A 'normal' user exception occurred.
+     */
+    public static class UserException extends RunException {
+
+        private static final long serialVersionUID = 1L;
+
+        private final String causeExceptionClass;
+
+        public UserException(String message, String causeExceptionClass, StackTraceElement[] stackElements) {
+            super(message);
+            this.causeExceptionClass = causeExceptionClass;
+            this.setStackTrace(stackElements);
+        }
+
+        /**
+         * Returns the class of the user exception.
+         * @return the name of the user exception class
+         */
+        public String causeExceptionClass() {
+            return causeExceptionClass;
+        }
+    }
+
+    /**
+     * An exception indicating that a {@code DeclarationSnippet} with unresolved
+     * references has been encountered.
+     * <p>
+     * Contrast this with the initiating {@link SPIResolutionException}
+     * (a {@code RuntimeException}) which is embedded in generated corralled
+     * code.  Also, contrast this with
+     * {@link jdk.jshell.UnresolvedReferenceException} the high-level
+     * exception (with {@code DeclarationSnippet} reference) provided in the
+     * main API.
+     */
+    public static class ResolutionException extends RunException {
+
+        private static final long serialVersionUID = 1L;
+
+        private final int id;
+
+        /**
+         * Constructs an exception indicating that a {@code DeclarationSnippet}
+         * with unresolved references has been encountered.
+         *
+         * @param id An internal identifier of the specific method
+         * @param stackElements the stack trace
+         */
+        public ResolutionException(int id, StackTraceElement[] stackElements) {
+            super("resolution exception: " + id);
+            this.id = id;
+            this.setStackTrace(stackElements);
+        }
+
+        /**
+         * Retrieves the internal identifier of the unresolved identifier.
+         *
+         * @return the internal identifier
+         */
+        public int id() {
+            return id;
+        }
+    }
+
+    /**
+     * An exception indicating that an
+     * {@link ExecutionControl#invoke(java.lang.String, java.lang.String) }
+     * (or theoretically a
+     * {@link ExecutionControl#varValue(java.lang.String, java.lang.String) })
+     * has been interrupted by a {@link ExecutionControl#stop() }.
+     */
+    public static class StoppedException extends RunException {
+
+        private static final long serialVersionUID = 1L;
+
+        public StoppedException() {
+            super("stopped by stop()");
+        }
+    }
+
 }

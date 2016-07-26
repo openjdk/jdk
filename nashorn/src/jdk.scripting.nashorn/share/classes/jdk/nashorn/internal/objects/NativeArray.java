@@ -1329,30 +1329,31 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
             return ScriptRuntime.UNDEFINED;
         }
 
-        final Object start = args.length > 0 ? args[0] : ScriptRuntime.UNDEFINED;
-        final Object deleteCount = args.length > 1 ? args[1] : ScriptRuntime.UNDEFINED;
-
-        Object[] items;
-
-        if (args.length > 2) {
-            items = new Object[args.length - 2];
-            System.arraycopy(args, 2, items, 0, items.length);
-        } else {
-            items = ScriptRuntime.EMPTY_ARRAY;
-        }
-
-        final ScriptObject sobj                = (ScriptObject)obj;
-        final long         len                 = JSType.toUint32(sobj.getLength());
-        final long         relativeStart       = JSType.toLong(start);
+        final ScriptObject sobj          = (ScriptObject)obj;
+        final long         len           = JSType.toUint32(sobj.getLength());
+        final long         relativeStart = JSType.toLong(args.length > 0 ? args[0] : ScriptRuntime.UNDEFINED);
 
         final long actualStart = relativeStart < 0 ? Math.max(len + relativeStart, 0) : Math.min(relativeStart, len);
-        final long actualDeleteCount = Math.min(Math.max(JSType.toLong(deleteCount), 0), len - actualStart);
+        final long actualDeleteCount;
+        Object[] items = ScriptRuntime.EMPTY_ARRAY;
+
+        if (args.length == 0) {
+            actualDeleteCount = 0;
+        } else if (args.length == 1) {
+            actualDeleteCount = len - actualStart;
+        } else {
+            actualDeleteCount = Math.min(Math.max(JSType.toLong(args[1]), 0), len - actualStart);
+            if (args.length > 2) {
+                items = new Object[args.length - 2];
+                System.arraycopy(args, 2, items, 0, items.length);
+            }
+        }
 
         NativeArray returnValue;
 
         if (actualStart <= Integer.MAX_VALUE && actualDeleteCount <= Integer.MAX_VALUE && bulkable(sobj)) {
             try {
-                returnValue =  new NativeArray(sobj.getArray().fastSplice((int)actualStart, (int)actualDeleteCount, items.length));
+                returnValue = new NativeArray(sobj.getArray().fastSplice((int)actualStart, (int)actualDeleteCount, items.length));
 
                 // Since this is a dense bulkable array we can use faster defineOwnProperty to copy new elements
                 int k = (int) actualStart;
