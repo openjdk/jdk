@@ -416,11 +416,10 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* 
     double overall_cm_overhead =
       (double) MaxGCPauseMillis * marking_overhead /
       (double) GCPauseIntervalMillis;
-    double cpu_ratio = 1.0 / (double) os::processor_count();
+    double cpu_ratio = 1.0 / os::initial_active_processor_count();
     double marking_thread_num = ceil(overall_cm_overhead / cpu_ratio);
     double marking_task_overhead =
-      overall_cm_overhead / marking_thread_num *
-                                              (double) os::processor_count();
+      overall_cm_overhead / marking_thread_num * os::initial_active_processor_count();
     double sleep_factor =
                        (1.0 - marking_task_overhead) / marking_task_overhead;
 
