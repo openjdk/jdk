@@ -952,7 +952,7 @@ imageio_fill_input_buffer(j_decompress_ptr cinfo)
                                 sb->hstreamBuffer, 0,
                                 sb->bufferLength);
     if ((ret > 0) && ((unsigned int)ret > sb->bufferLength)) {
-         ret = sb->bufferLength;
+         ret = (int)sb->bufferLength;
     }
     if ((*env)->ExceptionOccurred(env)
         || !GET_ARRAYS(env, data, &(src->next_input_byte))) {
@@ -1050,7 +1050,7 @@ imageio_fill_suspended_buffer(j_decompress_ptr cinfo)
                                 JPEGImageReader_readInputDataID,
                                 sb->hstreamBuffer,
                                 offset, buflen);
-    if ((ret > 0) && ((unsigned int)ret > buflen)) ret = buflen;
+    if ((ret > 0) && ((unsigned int)ret > buflen)) ret = (int)buflen;
     if ((*env)->ExceptionOccurred(env)
         || !GET_ARRAYS(env, data, &(src->next_input_byte))) {
         cinfo->err->error_exit((j_common_ptr) cinfo);
@@ -1774,8 +1774,8 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImageHeader
             v_samp1 = cinfo->comp_info[1].v_samp_factor;
             v_samp2 = cinfo->comp_info[2].v_samp_factor;
 
-            if ((h_samp1 > h_samp0) && (h_samp2 > h_samp0) ||
-                (v_samp1 > v_samp0) && (v_samp2 > v_samp0))
+            if (((h_samp1 > h_samp0) && (h_samp2 > h_samp0)) ||
+                ((v_samp1 > v_samp0) && (v_samp2 > v_samp0)))
             {
                 cinfo->jpeg_color_space = JCS_YCCK;
                 /* Leave the output space as CMYK */
@@ -1866,7 +1866,6 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
     pixelBufferPtr pb;
     sun_jpeg_error_ptr jerr;
     boolean done;
-    boolean mustScale = FALSE;
     boolean progressive = FALSE;
     boolean orderedBands = TRUE;
     imageIODataPtr data = (imageIODataPtr)jlong_to_ptr(ptr);
