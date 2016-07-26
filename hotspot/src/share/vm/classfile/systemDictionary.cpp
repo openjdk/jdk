@@ -2149,7 +2149,7 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
 
   // Create the ModuleEntry for java.base.  This call needs to be done here,
   // after vmSymbols::initialize() is called but before any classes are pre-loaded.
-  ClassLoader::create_javabase();
+  ClassLoader::classLoader_init2(CHECK);
 
   // Preload commonly used klasses
   WKID scan = FIRST_WKID;
