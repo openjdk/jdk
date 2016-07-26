@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -403,13 +403,13 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         public SimpleConfiguration(Options options, Set<DiagnosticPart> parts) {
             this(parts);
             String showSource = null;
-            if ((showSource = options.get("showSource")) != null) {
+            if ((showSource = options.get("diags.showSource")) != null) {
                 if (showSource.equals("true"))
                     setVisiblePart(DiagnosticPart.SOURCE, true);
                 else if (showSource.equals("false"))
                     setVisiblePart(DiagnosticPart.SOURCE, false);
             }
-            String diagOpts = options.get("diags");
+            String diagOpts = options.get("diags.formatterOptions");
             if (diagOpts != null) {//override -XDshowSource
                 Collection<String> args = Arrays.asList(diagOpts.split(","));
                 if (args.contains("short")) {
@@ -422,7 +422,7 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
                     setVisiblePart(DiagnosticPart.SOURCE, false);
             }
             String multiPolicy = null;
-            if ((multiPolicy = options.get("multilinePolicy")) != null) {
+            if ((multiPolicy = options.get("diags.multilinePolicy")) != null) {
                 if (multiPolicy.equals("disabled"))
                     setVisiblePart(DiagnosticPart.SUBDIAGNOSTICS, false);
                 else if (multiPolicy.startsWith("limit:")) {
@@ -447,7 +447,7 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
                 }
             }
             String showCaret = null;
-            if (((showCaret = options.get("showCaret")) != null) &&
+            if (((showCaret = options.get("diags.showCaret")) != null) &&
                 showCaret.equals("false"))
                     setCaretEnabled(false);
             else
