@@ -140,6 +140,7 @@ class os: AllStatic {
   static void  get_summary_cpu_info(char* buf, size_t buflen);
   static void  get_summary_os_info(char* buf, size_t buflen);
 
+  static void initialize_initial_active_processor_count();
  public:
   static void init(void);                      // Called before command line parsing
   static void init_before_ergo(void);          // Called after command line parsing
@@ -226,6 +227,13 @@ class os: AllStatic {
   // Returns the number of CPUs this process is currently allowed to run on.
   // Note that on some OSes this can change dynamically.
   static int active_processor_count();
+
+  // At startup the number of active CPUs this process is allowed to run on.
+  // This value does not change dynamically. May be different from active_processor_count().
+  static int initial_active_processor_count() {
+    assert(_initial_active_processor_count > 0, "Initial active processor count not set yet.");
+    return _initial_active_processor_count;
+  }
 
   // Bind processes to processors.
   //     This is a two step procedure:
@@ -948,8 +956,9 @@ class os: AllStatic {
 
 
  protected:
-  static long _rand_seed;                   // seed for random number generator
-  static int _processor_count;              // number of processors
+  static long _rand_seed;                     // seed for random number generator
+  static int _processor_count;                // number of processors
+  static int _initial_active_processor_count; // number of active processors during initialization.
 
   static char* format_boot_path(const char* format_string,
                                 const char* home,
