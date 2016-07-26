@@ -29,7 +29,7 @@
  * @author Pavel Porvatov
  * @library ../../regtesthelpers
  * @build Util
- * @run main bug6464022
+ * @run main/othervm -mx128m bug6464022
  */
 
 import javax.swing.*;
