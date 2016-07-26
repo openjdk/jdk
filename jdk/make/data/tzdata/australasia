@@ -266,11 +266,11 @@ Zone Australia/Lord_Howe 10:36:20 -	LMT	1895 Feb
 # will produce a binary file with an [A]EST-type as the first 32-bit type;
 # this is required for correct handling of times before 1916 by
 # pre-2013 versions of localtime.
-Zone Antarctica/Macquarie 0	-	zzz	1899 Nov
+Zone Antarctica/Macquarie 0	-	-00	1899 Nov
 			10:00	-	AEST	1916 Oct  1  2:00
 			10:00	1:00	AEDT	1917 Feb
 			10:00	Aus	AE%sT	1919 Apr  1  0:00s
-			0	-	zzz	1948 Mar 25
+			0	-	-00	1948 Mar 25
 			10:00	Aus	AE%sT	1967
 			10:00	AT	AE%sT	2010 Apr  4  3:00
 			11:00	-	MIST	# Macquarie I Standard Time
