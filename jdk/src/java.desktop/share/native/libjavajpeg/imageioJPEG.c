@@ -2634,7 +2634,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_writeTables
     RELEASE_ARRAYS(env, data, NULL);
 }
 
-static void freeArray(void** arr, jint size) {
+static void freeArray(UINT8** arr, jint size) {
     int i;
     if (arr != NULL) {
         for (i = 0; i < size; i++) {
