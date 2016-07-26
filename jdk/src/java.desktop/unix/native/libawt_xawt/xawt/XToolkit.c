@@ -1021,9 +1021,9 @@ int32_t getNumButtons() {
      * before calling XTestFakeButtonEvent().
      */
     xinputAvailable = XQueryExtension(awt_display, INAME, &major_opcode, &first_event, &first_error);
-    DTRACE_PRINTLN3("RobotPeer: XQueryExtension(XINPUT) returns major_opcode = %d, first_event = %d, first_error = %d",
-                    major_opcode, first_event, first_error);
     if (xinputAvailable) {
+        DTRACE_PRINTLN3("RobotPeer: XQueryExtension(XINPUT) returns major_opcode = %d, first_event = %d, first_error = %d",
+                        major_opcode, first_event, first_error);
         devices = XListInputDevices(awt_display, &numDevices);
         for (devIdx = 0; devIdx < numDevices; devIdx++) {
             aDevice = &(devices[devIdx]);
