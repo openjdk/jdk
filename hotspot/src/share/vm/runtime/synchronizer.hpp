@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,8 +143,6 @@ class ObjectSynchronizer : AllStatic {
                             int *error_cnt_ptr, int *warning_cnt_ptr);
   static void verify() PRODUCT_RETURN;
   static int  verify_objmon_isinpool(ObjectMonitor *addr) PRODUCT_RETURN0;
-
-  static void RegisterSpinCallback(int(*)(intptr_t, int), intptr_t);
 
  private:
   enum { _BLOCKSIZE = 128 };

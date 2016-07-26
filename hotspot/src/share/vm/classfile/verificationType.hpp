@@ -333,6 +333,12 @@ class VerificationType VALUE_OBJ_CLASS_SPEC {
   bool is_reference_assignable_from(
     const VerificationType&, ClassVerifier*, bool from_field_is_protected,
     TRAPS) const;
+
+ public:
+  static bool resolve_and_check_assignability(instanceKlassHandle klass, Symbol* name,
+                                              Symbol* from_name, bool from_field_is_protected,
+                                              bool from_is_array, bool from_is_object,
+                                              TRAPS);
 };
 
 #endif // SHARE_VM_CLASSFILE_VERIFICATIONTYPE_HPP
