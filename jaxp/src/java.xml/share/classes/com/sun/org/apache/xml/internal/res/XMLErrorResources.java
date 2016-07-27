@@ -17,9 +17,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: XMLErrorResources.java,v 1.2.4.1 2005/09/15 07:45:37 suresh_emailid Exp $
- */
 package com.sun.org.apache.xml.internal.res;
 
 
