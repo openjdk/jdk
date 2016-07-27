@@ -22,45 +22,38 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.jshell.jdi;
+package jdk.jshell;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Objects;
-import com.sun.jdi.ReferenceType;
-import java.util.List;
-import com.sun.jdi.VirtualMachine;
+import jdk.jshell.spi.ExecutionControl.ClassBytecodes;
 
 /**
  * Tracks the state of a class.
  */
 class ClassTracker {
 
-    private final VirtualMachine vm;
     private final HashMap<String, ClassInfo> map;
 
-    ClassTracker(VirtualMachine vm) {
-        this.vm = vm;
+    ClassTracker() {
         this.map = new HashMap<>();
     }
 
     /**
-     * Associates a class name, class bytes, and ReferenceType.
+     * Associates a class name, class bytes (current and loaded).
      */
     class ClassInfo {
 
-        // The name of the class -- always set
+        // The name of the class
         private final String className;
 
         // The corresponding compiled class bytes when a load or redefine
         // is started.  May not be the loaded bytes.  May be null.
-        private byte[] bytes;
+        private byte[] currentBytes;
 
         // The class bytes successfully loaded/redefined into the remote VM.
         private byte[] loadedBytes;
-
-        // The corresponding JDI ReferenceType.  Used by redefineClasses and
-        // acts as indicator of successful load (null if not loaded).
-        private ReferenceType rt;
 
         private ClassInfo(String className) {
             this.className = className;
@@ -74,37 +67,31 @@ class ClassTracker {
             return loadedBytes;
         }
 
-        byte[] getBytes() {
-            return bytes;
+        byte[] getCurrentBytes() {
+            return currentBytes;
         }
 
-        private void setBytes(byte[] potentialBytes) {
-            this.bytes = potentialBytes;
+        void setCurrentBytes(byte[] bytes) {
+            this.currentBytes = bytes;
         }
 
-        // The class has been successful loaded redefined.  The class bytes
-        // sent are now actually loaded.
-        void markLoaded() {
-            loadedBytes = bytes;
+        void setLoadedBytes(byte[] bytes) {
+            this.loadedBytes = bytes;
         }
 
-        // Ask JDI for the ReferenceType, null if not loaded.
-        ReferenceType getReferenceTypeOrNull() {
-            if (rt == null) {
-                rt = nameToRef(className);
-            }
-            return rt;
+        boolean isLoaded() {
+            return loadedBytes != null;
         }
 
-        private ReferenceType nameToRef(String name) {
-            List<ReferenceType> rtl = vm.classesByName(name);
-            if (rtl.size() != 1) {
-                return null;
-            }
-            return rtl.get(0);
+        boolean isCurrent() {
+            return Arrays.equals(currentBytes, loadedBytes);
         }
 
-        @Override
+        ClassBytecodes toClassBytecodes() {
+            return new ClassBytecodes(className, currentBytes);
+        }
+
+            @Override
         public boolean equals(Object o) {
             return o instanceof ClassInfo
                     && ((ClassInfo) o).className.equals(className);
@@ -116,11 +103,25 @@ class ClassTracker {
         }
     }
 
+    void markLoaded(ClassBytecodes[] cbcs) {
+        for (ClassBytecodes cbc : cbcs) {
+            get(cbc.name()).setLoadedBytes(cbc.bytecodes());
+        }
+    }
+
+    void markLoaded(ClassBytecodes[] cbcs, boolean[] isLoaded) {
+        for (int i = 0; i < cbcs.length; ++i) {
+            if (isLoaded[i]) {
+                ClassBytecodes cbc = cbcs[i];
+                get(cbc.name()).setLoadedBytes(cbc.bytecodes());
+            }
+        }
+    }
+
     // Map a class name to the current compiled class bytes.
-    ClassInfo classInfo(String className, byte[] bytes) {
+    void setCurrentBytes(String className, byte[] bytes) {
         ClassInfo ci = get(className);
-        ci.setBytes(bytes);
-        return ci;
+        ci.setCurrentBytes(bytes);
     }
 
     // Lookup the ClassInfo by class name, create if it does not exist.

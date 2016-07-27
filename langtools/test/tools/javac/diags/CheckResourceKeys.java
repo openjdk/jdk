@@ -263,6 +263,9 @@ public class CheckResourceKeys {
                 // ignore shouldstop flag names
                 if (cs.startsWith("shouldstop."))
                     continue;
+                // ignore diagsformat flag names
+                if (cs.startsWith("diags."))
+                    continue;
                 // explicit known exceptions
                 if (noResourceRequired.contains(cs))
                     continue;

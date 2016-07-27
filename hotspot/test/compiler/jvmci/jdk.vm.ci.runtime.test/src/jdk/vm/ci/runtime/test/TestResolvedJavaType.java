@@ -25,6 +25,7 @@
  * @test
  * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9" | vm.simpleArch == "aarch64")
  * @library ../../../../../
+ * @ignore 8161550
  * @modules java.base/jdk.internal.reflect
  *          jdk.vm.ci/jdk.vm.ci.meta
  *          jdk.vm.ci/jdk.vm.ci.runtime

@@ -83,6 +83,8 @@ class LogOutput : public CHeapObj<mtLogging> {
     // Do nothing by default.
   }
 
+  virtual void describe(outputStream *out);
+
   virtual const char* name() const = 0;
   virtual bool initialize(const char* options, outputStream* errstream) = 0;
   virtual int write(const LogDecorations& decorations, const char* msg) = 0;

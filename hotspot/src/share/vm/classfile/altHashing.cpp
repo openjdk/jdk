@@ -224,7 +224,7 @@ static const jchar ONE_CHAR[] = { (jchar) 0x8180};
 static const jbyte THREE_BYTE[] = { (jbyte) 0x80, (jbyte) 0x81, (jbyte) 0x82};
 static const jbyte FOUR_BYTE[] = { (jbyte) 0x80, (jbyte) 0x81, (jbyte) 0x82, (jbyte) 0x83};
 static const jchar TWO_CHAR[] = { (jchar) 0x8180, (jchar) 0x8382};
-static const jint ONE_INT[] = { 0x83828180};
+static const jint ONE_INT[] = { (jint)0x83828180};
 static const jbyte SIX_BYTE[] = { (jbyte) 0x80, (jbyte) 0x81, (jbyte) 0x82, (jbyte) 0x83, (jbyte) 0x84, (jbyte) 0x85};
 static const jchar THREE_CHAR[] = { (jchar) 0x8180, (jchar) 0x8382, (jchar) 0x8584};
 static const jbyte EIGHT_BYTE[] = {
@@ -235,7 +235,7 @@ static const jchar FOUR_CHAR[] = {
   (jchar) 0x8180, (jchar) 0x8382,
   (jchar) 0x8584, (jchar) 0x8786};
 
-static const jint TWO_INT[] = { 0x83828180, 0x87868584};
+static const jint TWO_INT[] = { (jint)0x83828180, (jint)0x87868584};
 
 static const juint MURMUR3_32_X86_CHECK_VALUE = 0xB0F57EE3;
 
