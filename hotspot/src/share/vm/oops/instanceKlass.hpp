@@ -470,6 +470,12 @@ class InstanceKlass: public Klass {
   static bool find_inner_classes_attr(instanceKlassHandle k,
                                       int* ooff, int* noff, TRAPS);
 
+ private:
+  // Check prohibited package ("java/" only loadable by boot or platform loaders)
+  static void check_prohibited_package(Symbol* class_name,
+                                       Handle class_loader,
+                                       TRAPS);
+ public:
   // tell if two classes have the same enclosing class (at package level)
   bool is_same_package_member(const Klass* class2, TRAPS) const {
     return is_same_package_member_impl(this, class2, THREAD);
