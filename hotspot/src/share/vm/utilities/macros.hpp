@@ -458,14 +458,6 @@
 #define NOT_AARCH64(code) code
 #endif
 
-#ifdef JAVASE_EMBEDDED
-#define EMBEDDED_ONLY(code) code
-#define NOT_EMBEDDED(code)
-#else
-#define EMBEDDED_ONLY(code)
-#define NOT_EMBEDDED(code) code
-#endif
-
 #define define_pd_global(type, name, value) const type pd_##name = value;
 
 // Helper macros for constructing file names for includes.
