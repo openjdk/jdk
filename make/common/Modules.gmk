@@ -58,7 +58,6 @@ BOOT_MODULES += \
     java.security.jgss \
     java.security.sasl \
     java.xml \
-    java.xml.crypto \
     jdk.httpserver \
     jdk.management \
     jdk.net \
@@ -106,6 +105,7 @@ PLATFORM_MODULES += \
     java.smartcardio \
     java.sql \
     java.sql.rowset \
+    java.xml.crypto \
     jdk.accessibility \
     jdk.charsets \
     jdk.crypto.ec \
