@@ -110,7 +110,7 @@ bool Abstract_VM_Version::_parallel_worker_threads_initialized = false;
 #ifndef HOTSPOT_VM_DISTRO
   #error HOTSPOT_VM_DISTRO must be defined
 #endif
-#define VMNAME HOTSPOT_VM_DISTRO " " VMLP EMBEDDED_ONLY("Embedded ") VMTYPE " VM"
+#define VMNAME HOTSPOT_VM_DISTRO " " VMLP VMTYPE " VM"
 
 const char* Abstract_VM_Version::vm_name() {
   return VMNAME;
