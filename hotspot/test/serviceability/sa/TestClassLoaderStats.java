@@ -32,6 +32,9 @@ import jdk.test.lib.apps.LingeredApp;
 
 /*
  * @test
+ * @summary Started failing on 2016.06.24 due to 8160376 on MacOS X so
+ * quarantine it on that platform:
+ * @requires os.family != "mac"
  * @modules java.base/jdk.internal.misc
  * @library /test/lib/share/classes
  * @library /testlibrary
