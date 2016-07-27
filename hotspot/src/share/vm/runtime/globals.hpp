@@ -458,12 +458,6 @@ public:
 #define falseInProduct true
 #endif
 
-#ifdef JAVASE_EMBEDDED
-#define falseInEmbedded false
-#else
-#define falseInEmbedded true
-#endif
-
 // develop flags are settable / visible only during development and are constant in the PRODUCT version
 // product flags are always settable / visible
 // notproduct flags are settable / visible only during development and are not declared in the PRODUCT version
@@ -592,7 +586,7 @@ public:
   product_pd(bool, UseMembar,                                               \
           "(Unstable) Issues membars on thread state transitions")          \
                                                                             \
-  develop(bool, CleanChunkPoolAsync, falseInEmbedded,                       \
+  develop(bool, CleanChunkPoolAsync, true,                                  \
           "Clean the chunk pool asynchronously")                            \
                                                                             \
   experimental(bool, AlwaysSafeConstructors, false,                         \
@@ -2890,15 +2884,10 @@ public:
                                                                             \
   /* notice: the max range value here is max_jint, not max_intx  */         \
   /* because of overflow issue                                   */         \
-  NOT_EMBEDDED(diagnostic(intx, GuaranteedSafepointInterval, 1000,          \
+  diagnostic(intx, GuaranteedSafepointInterval, 1000,                       \
           "Guarantee a safepoint (at least) every so many milliseconds "    \
-          "(0 means none)"))                                                \
-  NOT_EMBEDDED(range(0, max_jint))                                          \
-                                                                            \
-  EMBEDDED_ONLY(product(intx, GuaranteedSafepointInterval, 0,               \
-          "Guarantee a safepoint (at least) every so many milliseconds "    \
-          "(0 means none)"))                                                \
-  EMBEDDED_ONLY(range(0, max_jint))                                         \
+          "(0 means none)")                                                 \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, SafepointTimeoutDelay, 10000,                               \
           "Delay in milliseconds for option SafepointTimeout")              \
@@ -3800,7 +3789,7 @@ public:
                                                                             \
   /* flags for performance data collection */                               \
                                                                             \
-  product(bool, UsePerfData, falseInEmbedded,                               \
+  product(bool, UsePerfData, true,                                          \
           "Flag to disable jvmstat instrumentation for performance testing "\
           "and problem isolation purposes")                                 \
                                                                             \
