@@ -37,12 +37,12 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import jdk.tools.jlink.internal.ModulePoolImpl;
+import jdk.tools.jlink.internal.ResourcePoolManager;
 import jdk.tools.jlink.builder.DefaultImageBuilder;
 
 import jdk.tools.jlink.internal.plugins.FileCopierPlugin;
-import jdk.tools.jlink.plugin.ModuleEntry;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
+import jdk.tools.jlink.plugin.ResourcePool;
 
 public class FileCopierPluginTest {
 
@@ -85,18 +85,20 @@ public class FileCopierPluginTest {
         Map<String, String> conf = new HashMap<>();
         conf.put(FileCopierPlugin.NAME, builder.toString());
         plug.configure(conf);
-        ModulePool pool = new ModulePoolImpl();
-        plug.visit(new ModulePoolImpl(), pool);
-        if (pool.getEntryCount() != expected) {
+        ResourcePoolManager poolMgr = new ResourcePoolManager();
+        ResourcePool pool = plug.transform(
+                new ResourcePoolManager().resourcePool(),
+                poolMgr.resourcePoolBuilder());
+        if (pool.entryCount() != expected) {
             throw new AssertionError("Wrong number of added files");
         }
         pool.entries().forEach(f -> {
-            if (!f.getType().equals(ModuleEntry.Type.OTHER)) {
-                throw new AssertionError("Invalid type " + f.getType()
-                        + " for file " + f.getPath());
+            if (!f.type().equals(ResourcePoolEntry.Type.OTHER)) {
+                throw new AssertionError("Invalid type " + f.type()
+                        + " for file " + f.path());
             }
-            if (f.stream() == null) {
-                throw new AssertionError("Null stream for file " + f.getPath());
+            if (f.content() == null) {
+                throw new AssertionError("Null stream for file " + f.path());
             }
         });
         Path root = new File(".").toPath();

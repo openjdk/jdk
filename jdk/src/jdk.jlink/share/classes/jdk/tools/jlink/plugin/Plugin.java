@@ -191,5 +191,5 @@ public interface Plugin {
      *
      * @throws PluginException
      */
-    public void visit(ModulePool in, ModulePool out);
+    public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out);
 }
