@@ -407,6 +407,127 @@ public class TCKDateTimeFormatterBuilder {
                 {"+HH:mm:ss", 2, 0, 45, "+02:00:45"},
                 {"+HH:mm:ss", 2, 30, 45, "+02:30:45"},
 
+                {"+H", 2, 0, 0, "+2"},
+                {"+H", -2, 0, 0, "-2"},
+                {"+H", 2, 30, 0, "+2"},
+                {"+H", 2, 0, 45, "+2"},
+                {"+H", 2, 30, 45, "+2"},
+                {"+H", 12, 0, 0, "+12"},
+                {"+H", -12, 0, 0, "-12"},
+                {"+H", 12, 30, 0, "+12"},
+                {"+H", 12, 0, 45, "+12"},
+                {"+H", 12, 30, 45, "+12"},
+
+                {"+Hmm", 2, 0, 0, "+2"},
+                {"+Hmm", -2, 0, 0, "-2"},
+                {"+Hmm", 2, 30, 0, "+230"},
+                {"+Hmm", 2, 0, 45, "+2"},
+                {"+Hmm", 2, 30, 45, "+230"},
+                {"+Hmm", 12, 0, 0, "+12"},
+                {"+Hmm", -12, 0, 0, "-12"},
+                {"+Hmm", 12, 30, 0, "+1230"},
+                {"+Hmm", 12, 0, 45, "+12"},
+                {"+Hmm", 12, 30, 45, "+1230"},
+
+                {"+H:mm", 2, 0, 0, "+2"},
+                {"+H:mm", -2, 0, 0, "-2"},
+                {"+H:mm", 2, 30, 0, "+2:30"},
+                {"+H:mm", 2, 0, 45, "+2"},
+                {"+H:mm", 2, 30, 45, "+2:30"},
+                {"+H:mm", 12, 0, 0, "+12"},
+                {"+H:mm", -12, 0, 0, "-12"},
+                {"+H:mm", 12, 30, 0, "+12:30"},
+                {"+H:mm", 12, 0, 45, "+12"},
+                {"+H:mm", 12, 30, 45, "+12:30"},
+
+                {"+HMM", 2, 0, 0, "+200"},
+                {"+HMM", -2, 0, 0, "-200"},
+                {"+HMM", 2, 30, 0, "+230"},
+                {"+HMM", 2, 0, 45, "+200"},
+                {"+HMM", 2, 30, 45, "+230"},
+                {"+HMM", 12, 0, 0, "+1200"},
+                {"+HMM", -12, 0, 0, "-1200"},
+                {"+HMM", 12, 30, 0, "+1230"},
+                {"+HMM", 12, 0, 45, "+1200"},
+                {"+HMM", 12, 30, 45, "+1230"},
+
+                {"+H:MM", 2, 0, 0, "+2:00"},
+                {"+H:MM", -2, 0, 0, "-2:00"},
+                {"+H:MM", 2, 30, 0, "+2:30"},
+                {"+H:MM", 2, 0, 45, "+2:00"},
+                {"+H:MM", 2, 30, 45, "+2:30"},
+                {"+H:MM", 12, 0, 0, "+12:00"},
+                {"+H:MM", -12, 0, 0, "-12:00"},
+                {"+H:MM", 12, 30, 0, "+12:30"},
+                {"+H:MM", 12, 0, 45, "+12:00"},
+                {"+H:MM", 12, 30, 45, "+12:30"},
+
+                {"+HMMss", 2, 0, 0, "+200"},
+                {"+HMMss", -2, 0, 0, "-200"},
+                {"+HMMss", 2, 30, 0, "+230"},
+                {"+HMMss", 2, 0, 45, "+20045"},
+                {"+HMMss", 2, 30, 45, "+23045"},
+                {"+HMMss", 12, 0, 0, "+1200"},
+                {"+HMMss", -12, 0, 0, "-1200"},
+                {"+HMMss", 12, 30, 0, "+1230"},
+                {"+HMMss", 12, 0, 45, "+120045"},
+                {"+HMMss", 12, 30, 45, "+123045"},
+
+                {"+H:MM:ss", 2, 0, 0, "+2:00"},
+                {"+H:MM:ss", -2, 0, 0, "-2:00"},
+                {"+H:MM:ss", 2, 30, 0, "+2:30"},
+                {"+H:MM:ss", 2, 0, 45, "+2:00:45"},
+                {"+H:MM:ss", 2, 30, 45, "+2:30:45"},
+                {"+H:MM:ss", 12, 0, 0, "+12:00"},
+                {"+H:MM:ss", -12, 0, 0, "-12:00"},
+                {"+H:MM:ss", 12, 30, 0, "+12:30"},
+                {"+H:MM:ss", 12, 0, 45, "+12:00:45"},
+                {"+H:MM:ss", 12, 30, 45, "+12:30:45"},
+
+                {"+HMMSS", 2, 0, 0, "+20000"},
+                {"+HMMSS", -2, 0, 0, "-20000"},
+                {"+HMMSS", 2, 30, 0, "+23000"},
+                {"+HMMSS", 2, 0, 45, "+20045"},
+                {"+HMMSS", 2, 30, 45, "+23045"},
+                {"+HMMSS", 12, 0, 0, "+120000"},
+                {"+HMMSS", -12, 0, 0, "-120000"},
+                {"+HMMSS", 12, 30, 0, "+123000"},
+                {"+HMMSS", 12, 0, 45, "+120045"},
+                {"+HMMSS", 12, 30, 45, "+123045"},
+
+                {"+H:MM:SS", 2, 0, 0, "+2:00:00"},
+                {"+H:MM:SS", -2, 0, 0, "-2:00:00"},
+                {"+H:MM:SS", 2, 30, 0, "+2:30:00"},
+                {"+H:MM:SS", 2, 0, 45, "+2:00:45"},
+                {"+H:MM:SS", 2, 30, 45, "+2:30:45"},
+                {"+H:MM:SS", 12, 0, 0, "+12:00:00"},
+                {"+H:MM:SS", -12, 0, 0, "-12:00:00"},
+                {"+H:MM:SS", 12, 30, 0, "+12:30:00"},
+                {"+H:MM:SS", 12, 0, 45, "+12:00:45"},
+                {"+H:MM:SS", 12, 30, 45, "+12:30:45"},
+
+                {"+Hmmss", 2, 0, 0, "+2"},
+                {"+Hmmss", -2, 0, 0, "-2"},
+                {"+Hmmss", 2, 30, 0, "+230"},
+                {"+Hmmss", 2, 0, 45, "+20045"},
+                {"+Hmmss", 2, 30, 45, "+23045"},
+                {"+Hmmss", 12, 0, 0, "+12"},
+                {"+Hmmss", -12, 0, 0, "-12"},
+                {"+Hmmss", 12, 30, 0, "+1230"},
+                {"+Hmmss", 12, 0, 45, "+120045"},
+                {"+Hmmss", 12, 30, 45, "+123045"},
+
+                {"+H:mm:ss", 2, 0, 0, "+2"},
+                {"+H:mm:ss", -2, 0, 0, "-2"},
+                {"+H:mm:ss", 2, 30, 0, "+2:30"},
+                {"+H:mm:ss", 2, 0, 45, "+2:00:45"},
+                {"+H:mm:ss", 2, 30, 45, "+2:30:45"},
+                {"+H:mm:ss", 12, 0, 0, "+12"},
+                {"+H:mm:ss", -12, 0, 0, "-12"},
+                {"+H:mm:ss", 12, 30, 0, "+12:30"},
+                {"+H:mm:ss", 12, 0, 45, "+12:00:45"},
+                {"+H:mm:ss", 12, 30, 45, "+12:30:45"},
+
 
         };
     }
@@ -437,8 +558,6 @@ public class TCKDateTimeFormatterBuilder {
             {"HH:MM:ss"},
             {"HHMMSS"},
             {"HH:MM:SS"},
-            {"+H"},
-            {"+HMM"},
             {"+HHM"},
             {"+A"},
         };
@@ -1188,6 +1307,146 @@ public class TCKDateTimeFormatterBuilder {
             {"+HH:mm:ss", "+01", 3600},
             {"+HH:mm:ss", "+01:01", 3660},
             {"+HH:mm:ss", "+01:01:01", 3661},
+
+            {"+H", "+1", 3600},
+            {"+H", "+101", 3660},
+            {"+H", "+10101", 3661},
+            {"+H", "+1:01", 3660},
+            {"+H", "+1:01:01", 3661},
+            {"+H", "+01", 3600},
+            {"+H", "+0101", 3660},
+            {"+H", "+010101", 3661},
+            {"+H", "+01:01", 3660},
+            {"+H", "+01:01:01", 3661},
+            {"+Hmm", "+1", 3600},
+            {"+Hmm", "+101", 3660},
+            {"+Hmm", "+10101", 3661},
+            {"+Hmm", "+01", 3600},
+            {"+Hmm", "+0101", 3660},
+            {"+Hmm", "+010101", 3661},
+            {"+H:mm", "+1", 3600},
+            {"+H:mm", "+1:01", 3660},
+            {"+H:mm", "+1:01:01", 3661},
+            {"+H:mm", "+01", 3600},
+            {"+H:mm", "+01:01", 3660},
+            {"+H:mm", "+01:01:01", 3661},
+            {"+HMM", "+1", 3600},
+            {"+HMM", "+101", 3660},
+            {"+HMM", "+10101", 3661},
+            {"+HMM", "+01", 3600},
+            {"+HMM", "+0101", 3660},
+            {"+HMM", "+010101", 3661},
+            {"+H:MM", "+1", 3600},
+            {"+H:MM", "+1:01", 3660},
+            {"+H:MM", "+1:01:01", 3661},
+            {"+H:MM", "+01", 3600},
+            {"+H:MM", "+01:01", 3660},
+            {"+H:MM", "+01:01:01", 3661},
+            {"+HMMss", "+1", 3600},
+            {"+HMMss", "+101", 3660},
+            {"+HMMss", "+10101", 3661},
+            {"+HMMss", "+01", 3600},
+            {"+HMMss", "+0101", 3660},
+            {"+HMMss", "+010101", 3661},
+            {"+H:MM:ss", "+1", 3600},
+            {"+H:MM:ss", "+1:01", 3660},
+            {"+H:MM:ss", "+1:01:01", 3661},
+            {"+H:MM:ss", "+01", 3600},
+            {"+H:MM:ss", "+01:01", 3660},
+            {"+H:MM:ss", "+01:01:01", 3661},
+            {"+HMMSS", "+1", 3600},
+            {"+HMMSS", "+101", 3660},
+            {"+HMMSS", "+10101", 3661},
+            {"+HMMSS", "+01", 3600},
+            {"+HMMSS", "+0101", 3660},
+            {"+HMMSS", "+010101", 3661},
+            {"+H:MM:SS", "+1", 3600},
+            {"+H:MM:SS", "+1:01", 3660},
+            {"+H:MM:SS", "+1:01:01", 3661},
+            {"+H:MM:SS", "+01", 3600},
+            {"+H:MM:SS", "+01:01", 3660},
+            {"+H:MM:SS", "+01:01:01", 3661},
+            {"+Hmmss", "+1", 3600},
+            {"+Hmmss", "+101", 3660},
+            {"+Hmmss", "+10101", 3661},
+            {"+Hmmss", "+01", 3600},
+            {"+Hmmss", "+0101", 3660},
+            {"+Hmmss", "+010101", 3661},
+            {"+H:mm:ss", "+1", 3600},
+            {"+H:mm:ss", "+1:01", 3660},
+            {"+H:mm:ss", "+1:01:01", 3661},
+            {"+H:mm:ss", "+01", 3600},
+            {"+H:mm:ss", "+01:01", 3660},
+            {"+H:mm:ss", "+01:01:01", 3661},
+        };
+    }
+
+    @DataProvider(name="strictDoubleDigitHourOffsetParseData")
+    Object[][] data_strictDoubleDigitHour_offset_parse() {
+        return new Object[][] {
+            {"+HH", "+01", 3600},
+            {"+HHmm", "+01", 3600},
+            {"+HHmm", "+0101", 3660},
+            {"+HH:mm", "+01", 3600},
+            {"+HH:mm", "+01:01", 3660},
+            {"+HHMM", "+0101", 3660},
+            {"+HH:MM", "+01:01", 3660},
+            {"+HHMMss", "+0101", 3660},
+            {"+HHMMss", "+010101", 3661},
+            {"+HH:MM:ss", "+01:01", 3660},
+            {"+HH:MM:ss", "+01:01:01", 3661},
+            {"+HHMMSS", "+010101", 3661},
+            {"+HH:MM:SS", "+01:01:01", 3661},
+            {"+HHmmss", "+01", 3600},
+            {"+HHmmss", "+0101", 3660},
+            {"+HHmmss", "+010101", 3661},
+            {"+HH:mm:ss", "+01", 3600},
+            {"+HH:mm:ss", "+01:01", 3660},
+            {"+HH:mm:ss", "+01:01:01", 3661},
+        };
+    }
+
+    @DataProvider(name="strictSingleDigitHourOffsetParseData")
+    Object[][] data_strictSingleDigitHour_offset_parse() {
+        return new Object[][] {
+            {"+H", "+01", 3600},
+            {"+H", "+1", 3600},
+            {"+Hmm", "+01", 3600},
+            {"+Hmm", "+0101", 3660},
+            {"+Hmm", "+1", 3600},
+            {"+Hmm", "+101", 3660},
+            {"+H:mm", "+01", 3600},
+            {"+H:mm", "+01:01", 3660},
+            {"+H:mm", "+1", 3600},
+            {"+H:mm", "+1:01", 3660},
+            {"+HMM", "+0101", 3660},
+            {"+HMM", "+101", 3660},
+            {"+H:MM", "+01:01", 3660},
+            {"+H:MM", "+1:01", 3660},
+            {"+HMMss", "+0101", 3660},
+            {"+HMMss", "+010101", 3661},
+            {"+HMMss", "+101", 3660},
+            {"+HMMss", "+10101", 3661},
+            {"+H:MM:ss", "+01:01", 3660},
+            {"+H:MM:ss", "+01:01:01", 3661},
+            {"+H:MM:ss", "+1:01", 3660},
+            {"+H:MM:ss", "+1:01:01", 3661},
+            {"+HMMSS", "+010101", 3661},
+            {"+HMMSS", "+10101", 3661},
+            {"+H:MM:SS", "+01:01:01", 3661},
+            {"+H:MM:SS", "+1:01:01", 3661},
+            {"+Hmmss", "+01", 3600},
+            {"+Hmmss", "+0101", 3660},
+            {"+Hmmss", "+010101", 3661},
+            {"+Hmmss", "+1", 3600},
+            {"+Hmmss", "+101", 3660},
+            {"+Hmmss", "+10101", 3661},
+            {"+H:mm:ss", "+01", 3600},
+            {"+H:mm:ss", "+01:01", 3660},
+            {"+H:mm:ss", "+01:01:01", 3661},
+            {"+H:mm:ss", "+1", 3600},
+            {"+H:mm:ss", "+1:01", 3660},
+            {"+H:mm:ss", "+1:01:01", 3661},
         };
     }
 
@@ -1203,22 +1462,226 @@ public class TCKDateTimeFormatterBuilder {
                      3600);
     }
 
+    @Test(dataProvider="strictDoubleDigitHourOffsetParseData")
+    public void test_strictDoubleDigitHour_offset_parse_1(String pattern, String offset, int offsetSeconds) {
+        assertEquals(new DateTimeFormatterBuilder().appendOffset(pattern, "Z").toFormatter()
+                .parse(offset).get(OFFSET_SECONDS), offsetSeconds);
+    }
+
+    @Test(dataProvider="strictDoubleDigitHourOffsetParseData")
+    public void test_strictDoubleDigitHour_offset_parse_2(String pattern, String offset, int offsetSeconds) {
+        assertEquals(new DateTimeFormatterBuilder().appendOffset(pattern, "Z")
+                .appendLiteral("text").toFormatter().parse(offset + "text").get(OFFSET_SECONDS), offsetSeconds);
+    }
+
+    @Test(dataProvider="strictSingleDigitHourOffsetParseData")
+    public void test_strictSingleDigitHour_offset_parse_1(String pattern, String offset, int offsetSeconds) {
+        assertEquals(new DateTimeFormatterBuilder().appendOffset(pattern, "Z").toFormatter()
+                .parse(offset).get(OFFSET_SECONDS), offsetSeconds);
+    }
+
+    @Test(dataProvider="strictSingleDigitHourOffsetParseData")
+    public void test_strictSingleDigitHour_offset_parse_2(String pattern, String offset, int offsetSeconds) {
+        assertEquals(new DateTimeFormatterBuilder().appendOffset(pattern, "Z")
+                .appendLiteral("text").toFormatter().parse(offset + "text").get(OFFSET_SECONDS), offsetSeconds);
+    }
+
+    @DataProvider(name="strictOffsetAdjacentParseValidPatternData")
+    Object[][] data_strict_offset_adjacentParse_validPattern() {
+        return new Object[][] {
+            {"+HH", "+01", 3600},
+            {"+HHmm", "+0101", 3660},
+            {"+HH:mm", "+01", 3600},
+            {"+HH:mm", "+01:01", 3660},
+            {"+HHMM", "+0101", 3660},
+            {"+HH:MM", "+01:01", 3660},
+            {"+HHMMss", "+010101", 3661},
+            {"+HH:MM:ss", "+01:01", 3660},
+            {"+HH:MM:ss", "+01:01:01", 3661},
+            {"+HHMMSS", "+010101", 3661},
+            {"+HH:MM:SS", "+01:01:01", 3661},
+            {"+HHmmss", "+010101", 3661},
+            {"+HH:mm:ss", "+01", 3600},
+            {"+HH:mm:ss", "+01:01", 3660},
+            {"+HH:mm:ss", "+01:01:01", 3661},
+
+            {"+H", "+01", 3600},
+            {"+Hmm", "+0101", 3660},
+            {"+H:mm", "+01", 3600},
+            {"+H:mm", "+01:01", 3660},
+            {"+H:mm", "+1:01", 3660},
+            {"+HMM", "+0101", 3660},
+            {"+H:MM", "+01:01", 3660},
+            {"+H:MM", "+1:01", 3660},
+            {"+HMMss", "+010101", 3661},
+            {"+H:MM:ss", "+01:01", 3660},
+            {"+H:MM:ss", "+01:01:01", 3661},
+            {"+H:MM:ss", "+1:01", 3660},
+            {"+H:MM:ss", "+1:01:01", 3661},
+            {"+HMMSS", "+010101", 3661},
+            {"+H:MM:SS", "+01:01:01", 3661},
+            {"+H:MM:SS", "+1:01:01", 3661},
+            {"+Hmmss", "+010101", 3661},
+            {"+H:mm:ss", "+01", 3600},
+            {"+H:mm:ss", "+01:01", 3660},
+            {"+H:mm:ss", "+01:01:01", 3661},
+            {"+H:mm:ss", "+1:01", 3660},
+            {"+H:mm:ss", "+1:01:01", 3661},
+        };
+    }
+
+    @Test(dataProvider="strictOffsetAdjacentParseValidPatternData")
+    public void test_strict_offset_adjacentValidPattern_parse(String pattern, String offset, int offsetSeconds) {
+        TemporalAccessor tmp = new DateTimeFormatterBuilder().appendOffset(pattern, "Z")
+                .appendValue(HOUR_OF_DAY, 2).toFormatter().parse(offset + "12");
+        assertEquals(tmp.get(OFFSET_SECONDS), offsetSeconds);
+        assertEquals(tmp.get(HOUR_OF_DAY), 12);
+    }
+
+    @DataProvider(name="strictOffsetAdjacentParseInvalidPatternData")
+    Object[][] data_strict_offset_adjacentParse_invalidPattern() {
+        return new Object[][] {
+            {"+HHmm", "+01", 3600},
+            {"+HHMMss", "+0101", 3660},
+            {"+HHmmss", "+01", 3600},
+            {"+HHmmss", "+0101", 3660},
+            {"+H", "+1", 3600},
+            {"+Hmm", "+01", 3600},
+            {"+H:mm", "+1", 3600},
+            {"+Hmm", "+1", 3600},
+            {"+Hmm", "+101", 3660},
+            {"+HMM", "+101", 3660},
+            {"+HMMss", "+0101", 3660},
+            {"+HMMss", "+101", 3660},
+            {"+HMMss", "+10101", 3661},
+            {"+HMMSS", "+10101", 3661},
+            {"+Hmmss", "+01", 3600},
+            {"+Hmmss", "+0101", 3660},
+            {"+Hmmss", "+1", 3600},
+            {"+Hmmss", "+101", 3660},
+            {"+Hmmss", "+10101", 3661},
+            {"+H:mm:ss", "+1", 3600},
+        };
+    }
+
+    @Test(dataProvider="strictOffsetAdjacentParseInvalidPatternData", expectedExceptions=DateTimeParseException.class)
+    public void test_strict_offset_adjacentInvalidPattern_parse(String pattern, String offset, int offsetSeconds) {
+       new DateTimeFormatterBuilder().appendOffset(pattern, "Z").appendValue(HOUR_OF_DAY, 2)
+               .toFormatter().parse(offset + "12");
+    }
+
+    @DataProvider(name="lenientOffsetAdjacentParseValidPatternData")
+    Object[][] data_lenient_offset_adjacentParse_validPattern() {
+        return new Object[][] {
+            {"+HH:mm", "+01", 3600},
+            {"+HH:mm", "+01:01", 3660},
+            {"+HH:MM", "+01:01", 3660},
+            {"+HH:MM:ss", "+01:01", 3660},
+            {"+HH:MM:ss", "+01:01:01", 3661},
+            {"+HHMMSS", "+010101", 3661},
+            {"+HH:MM:SS", "+01:01:01", 3661},
+            {"+HHmmss", "+010101", 3661},
+            {"+HH:mm:ss", "+01", 3600},
+            {"+HH:mm:ss", "+01:01", 3660},
+            {"+HH:mm:ss", "+01:01:01", 3661},
+            {"+H:mm", "+01", 3600},
+            {"+H:mm", "+01:01", 3660},
+            {"+H:mm", "+1:01", 3660},
+            {"+H:MM", "+01:01", 3660},
+            {"+H:MM", "+1:01", 3660},
+            {"+HMMss", "+010101", 3661},
+            {"+H:MM:ss", "+01:01", 3660},
+            {"+H:MM:ss", "+01:01:01", 3661},
+            {"+H:MM:ss", "+1:01", 3660},
+            {"+H:MM:ss", "+1:01:01", 3661},
+            {"+HMMSS", "+010101", 3661},
+            {"+H:MM:SS", "+01:01:01", 3661},
+            {"+H:MM:SS", "+1:01:01", 3661},
+            {"+Hmmss", "+010101", 3661},
+            {"+H:mm:ss", "+01", 3600},
+            {"+H:mm:ss", "+01:01", 3660},
+            {"+H:mm:ss", "+01:01:01", 3661},
+            {"+H:mm:ss", "+1:01", 3660},
+            {"+H:mm:ss", "+1:01:01", 3661},
+        };
+    }
+
+    @Test(dataProvider="lenientOffsetAdjacentParseValidPatternData")
+    public void test_lenient_offset_adjacentValidPattern_parse(String pattern, String offset, int offsetSeconds) {
+        TemporalAccessor tmp = new DateTimeFormatterBuilder().parseLenient()
+                .appendOffset(pattern, "Z").appendValue(HOUR_OF_DAY, 2).toFormatter().parse(offset + "12");
+        assertEquals(tmp.get(OFFSET_SECONDS), offsetSeconds);
+        assertEquals(tmp.get(HOUR_OF_DAY), 12);
+    }
+
+    @Test
+    public void test_lenient_offset_adjacentValidPattern_parse1() {
+        TemporalAccessor tmp = new DateTimeFormatterBuilder().parseLenient()
+                .appendOffset("+HMMSS", "Z").appendValue(HOUR_OF_DAY, 2).toFormatter().parse("+10101" + "12");
+        //Equivalent to +101011. In lenient mode, offset will parse upto 6 digit if possible.
+        //It will take 1 digit from HOUR_OF_DAY.
+        assertEquals(tmp.get(OFFSET_SECONDS), 36611);
+        assertEquals(tmp.get(HOUR_OF_DAY), 2);
+    }
+
+  @DataProvider(name="lenientOffsetAdjacentParseInvalidPatternData")
+    Object[][] data_lenient_offset_adjacentParse_invalidPattern() {
+        return new Object[][] {
+            {"+HH", "+01", 3600},
+            {"+HHmm", "+0101", 3660},
+            {"+HHMM", "+0101", 3660},
+            {"+H", "+01", 3600},
+            {"+Hmm", "+0101", 3660},
+            {"+HMM", "+0101", 3660},
+        };
+    }
+
+    @Test(dataProvider="lenientOffsetAdjacentParseInvalidPatternData", expectedExceptions=DateTimeParseException.class)
+    public void test_lenient_offset_adjacentInvalidPattern_parse(String pattern, String offset, int offsetSeconds) {
+       new DateTimeFormatterBuilder().parseLenient().appendOffset(pattern, "Z")
+               .appendValue(HOUR_OF_DAY, 2).toFormatter().parse(offset + "12");
+    }
+
+    @DataProvider(name="badValues")
+    Object[][] data_badOffsetValues() {
+        return new Object[][] {
+            {"+HH", "+24"},
+            {"+HHMM", "-1361"},
+            {"+HH:MM:ss", "+13:12:66"},
+            {"+HH:MM:SS", "+24:60:60"},
+            {"+HHMMSS", "369999"},
+            {"+H:MM", "+28:12"},
+        };
+    }
+
+    @Test(dataProvider="badValues", expectedExceptions=DateTimeParseException.class)
+    public void test_badOffset_parse(String pattern, String offset) {
+        new DateTimeFormatterBuilder().appendOffset(pattern, "Z").toFormatter().parse(offset);
+    }
+
     @Test(expectedExceptions=DateTimeParseException.class)
     public void test_strict_appendOffsetId() {
-        assertEquals(new DateTimeFormatterBuilder().appendOffsetId().toFormatter().parse("+01").get(OFFSET_SECONDS),
-                     3600);
+        new DateTimeFormatterBuilder().appendOffsetId().toFormatter().parse("+01");
     }
 
     @Test(expectedExceptions=DateTimeParseException.class)
     public void test_strict_appendOffset_1() {
-        assertEquals(new DateTimeFormatterBuilder().appendOffset("+HH:MM:ss", "Z").toFormatter().parse("+01").get(OFFSET_SECONDS),
-                     3600);
+        new DateTimeFormatterBuilder().appendOffset("+HH:MM:ss", "Z").toFormatter().parse("+01");
     }
 
     @Test(expectedExceptions=DateTimeParseException.class)
     public void test_strict_appendOffset_2() {
-        assertEquals(new DateTimeFormatterBuilder().appendOffset("+HHMMss", "Z").toFormatter().parse("+01").get(OFFSET_SECONDS),
-                     3600);
+        new DateTimeFormatterBuilder().appendOffset("+HHMMss", "Z").toFormatter().parse("+01");
+    }
+
+    @Test(expectedExceptions=DateTimeParseException.class)
+    public void test_strict_appendOffset_3() {
+        new DateTimeFormatterBuilder().appendOffset("+H:MM:ss", "Z").toFormatter().parse("+1");
+    }
+
+    @Test(expectedExceptions=DateTimeParseException.class)
+    public void test_strict_appendOffset_4() {
+        new DateTimeFormatterBuilder().appendOffset("+HMMss", "Z").toFormatter().parse("+1");
     }
 
     @Test
