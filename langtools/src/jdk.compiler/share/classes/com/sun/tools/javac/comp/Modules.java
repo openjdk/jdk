@@ -757,7 +757,9 @@ public class Modules extends JCTree.Visitor {
 
         @Override
         public void visitRequires(JCRequires tree) {
-            msym.directives = msym.directives.prepend(tree.directive);
+            if (tree.directive != null) {
+                msym.directives = msym.directives.prepend(tree.directive);
+            }
         }
 
         @Override
@@ -1214,9 +1216,9 @@ public class Modules extends JCTree.Visitor {
 
     private void checkCyclicDependencies(JCModuleDecl mod) {
         for (JCDirective d : mod.directives) {
-            if (!d.hasTag(Tag.REQUIRES))
+            JCRequires rd;
+            if (!d.hasTag(Tag.REQUIRES) || (rd = (JCRequires) d).directive == null)
                 continue;
-            JCRequires rd = (JCRequires) d;
             Set<ModuleSymbol> nonSyntheticDeps = new HashSet<>();
             List<ModuleSymbol> queue = List.of(rd.directive.module);
             while (queue.nonEmpty()) {
