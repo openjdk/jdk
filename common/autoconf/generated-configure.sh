@@ -5094,7 +5094,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1467960715
+DATE_WHEN_GENERATED=1469202305
 
 ###############################################################################
 #
@@ -65040,6 +65040,23 @@ $as_echo_n "checking flags for boot jdk java command ... " >&6; }
   FOUND_VERSION=`$ECHO $OUTPUT | $GREP " version \""`
   if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
     boot_jdk_jvmargs="$boot_jdk_jvmargs -XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  # Force en-US environment
+
+  $ECHO "Check if jvm arg is ok: -Duser.language=en -Duser.country=US" >&5
+  $ECHO "Command: $JAVA -Duser.language=en -Duser.country=US -version" >&5
+  OUTPUT=`$JAVA -Duser.language=en -Duser.country=US -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | $GREP -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | $GREP " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs="$boot_jdk_jvmargs -Duser.language=en -Duser.country=US"
     JVM_ARG_OK=true
   else
     $ECHO "Arg failed:" >&5

@@ -60,7 +60,7 @@ public class AtomicReference<V> implements java.io.Serializable {
         }
     }
 
-    private volatile Object value;
+    private volatile V value;
 
     /**
      * Creates a new AtomicReference with the given initial value.
@@ -83,9 +83,8 @@ public class AtomicReference<V> implements java.io.Serializable {
      *
      * @return the current value
      */
-    @SuppressWarnings("unchecked")
     public final V get() {
-        return (V)value;
+        return value;
     }
 
     /**

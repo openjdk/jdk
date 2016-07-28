@@ -31,9 +31,9 @@
  * implementation includes a default execution engine (currently a remote
  * process which is JDI controlled).  By implementing the
  * {@link jdk.jshell.spi.ExecutionControl} interface and installing it with
- * {@link jdk.jshell.JShell.Builder#executionEngine(jdk.jshell.spi.ExecutionControl) }
+ * {@link jdk.jshell.JShell.Builder#executionEngine(jdk.jshell.spi.ExecutionControl.Generator) }
  * other execution engines can be used.
  *
- * @see jdk.jshell.execution jdk.jshell.execution for execution implementation support
+ * @see jdk.jshell.execution for execution implementation support
  */
 package jdk.jshell.spi;

@@ -1023,7 +1023,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         int hash = spread(key.hashCode());
         int binCount = 0;
         for (Node<K,V>[] tab = table;;) {
-            Node<K,V> f; int n, i, fh;
+            Node<K,V> f; int n, i, fh; K fk; V fv;
             if (tab == null || (n = tab.length) == 0)
                 tab = initTable();
             else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
@@ -1032,6 +1032,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             }
             else if ((fh = f.hash) == MOVED)
                 tab = helpTransfer(tab, f);
+            else if (onlyIfAbsent && fh == hash &&  // check first node
+                     ((fk = f.key) == key || fk != null && key.equals(fk)) &&
+                     (fv = f.val) != null)
+                return fv;
             else {
                 V oldVal = null;
                 synchronized (f) {
@@ -1702,7 +1706,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         V val = null;
         int binCount = 0;
         for (Node<K,V>[] tab = table;;) {
-            Node<K,V> f; int n, i, fh;
+            Node<K,V> f; int n, i, fh; K fk; V fv;
             if (tab == null || (n = tab.length) == 0)
                 tab = initTable();
             else if ((f = tabAt(tab, i = (n - 1) & h)) == null) {
@@ -1724,6 +1728,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             }
             else if ((fh = f.hash) == MOVED)
                 tab = helpTransfer(tab, f);
+            else if (fh == h &&                  // check first node
+                     ((fk = f.key) == key || fk != null && key.equals(fk)) &&
+                     (fv = f.val) != null)
+                return fv;
             else {
                 boolean added = false;
                 synchronized (f) {
@@ -4553,14 +4561,21 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             return true;
         }
 
-        public final boolean removeAll(Collection<?> c) {
+        public boolean removeAll(Collection<?> c) {
             if (c == null) throw new NullPointerException();
             boolean modified = false;
-            for (Iterator<E> it = iterator(); it.hasNext();) {
-                if (c.contains(it.next())) {
-                    it.remove();
-                    modified = true;
+            // Use (c instanceof Set) as a hint that lookup in c is as
+            // efficient as this view
+            if (c instanceof Set<?> && c.size() > map.table.length) {
+                for (Iterator<?> it = iterator(); it.hasNext(); ) {
+                    if (c.contains(it.next())) {
+                        it.remove();
+                        modified = true;
+                    }
                 }
+            } else {
+                for (Object e : c)
+                    modified |= remove(e);
             }
             return modified;
         }
@@ -4745,6 +4760,18 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         }
         public final boolean addAll(Collection<? extends V> c) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override public boolean removeAll(Collection<?> c) {
+            if (c == null) throw new NullPointerException();
+            boolean modified = false;
+            for (Iterator<V> it = iterator(); it.hasNext();) {
+                if (c.contains(it.next())) {
+                    it.remove();
+                    modified = true;
+                }
+            }
+            return modified;
         }
 
         public boolean removeIf(Predicate<? super V> filter) {

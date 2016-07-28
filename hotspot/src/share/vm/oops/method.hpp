@@ -470,12 +470,12 @@ class Method : public Metadata {
   DEBUG_ONLY(bool valid_vtable_index() const     { return _vtable_index >= nonvirtual_vtable_index; })
   bool has_vtable_index() const                  { return _vtable_index >= 0; }
   int  vtable_index() const                      { return _vtable_index; }
-  void set_vtable_index(int index)               { _vtable_index = index; }
+  void set_vtable_index(int index);
   DEBUG_ONLY(bool valid_itable_index() const     { return _vtable_index <= pending_itable_index; })
   bool has_itable_index() const                  { return _vtable_index <= itable_index_max; }
   int  itable_index() const                      { assert(valid_itable_index(), "");
                                                    return itable_index_max - _vtable_index; }
-  void set_itable_index(int index)               { _vtable_index = itable_index_max - index; assert(valid_itable_index(), ""); }
+  void set_itable_index(int index);
 
   // interpreter entry
   address interpreter_entry() const              { return _i2i_entry; }

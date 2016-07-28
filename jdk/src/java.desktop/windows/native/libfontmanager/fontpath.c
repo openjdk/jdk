@@ -305,8 +305,8 @@ static int CALLBACK EnumFamilyNamesW(
     familyLC = (*env)->CallObjectMethod(env, fmi->family,
                                         fmi->toLowerCaseMID, fmi->locale);
     /* Delete the created reference after its usage */
-    DeleteLocalReference(env, fmi->family);
     if ((*env)->ExceptionCheck(env)) {
+        DeleteLocalReference(env, fmi->family);
         return 0;
     }
 
@@ -317,10 +317,12 @@ static int CALLBACK EnumFamilyNamesW(
                                                    familyLC);
     if ((*env)->ExceptionCheck(env)) {
         /* Delete the created references before return */
+        DeleteLocalReference(env, fmi->family);
         DeleteLocalReference(env, familyLC);
         return 0;
     } else if (mapHasKey) {
         /* Delete the created references before return */
+        DeleteLocalReference(env, fmi->family);
         DeleteLocalReference(env, familyLC);
         return 1;
     }
@@ -329,6 +331,7 @@ static int CALLBACK EnumFamilyNamesW(
                                   fmi->arrayListClass, fmi->arrayListCtr, 4);
     if (fmi->list == NULL) {
         /* Delete the created references before return */
+        DeleteLocalReference(env, fmi->family);
         DeleteLocalReference(env, familyLC);
         return 0;
     }
@@ -339,6 +342,7 @@ static int CALLBACK EnumFamilyNamesW(
     DeleteLocalReference(env, familyLC);
     if ((*env)->ExceptionCheck(env)) {
         /* Delete the created reference before return */
+        DeleteLocalReference(env, fmi->family);
         DeleteLocalReference(env, fmi->list);
         return 0;
     }
@@ -351,6 +355,7 @@ static int CALLBACK EnumFamilyNamesW(
                         lParam, 0L);
 
     /* Delete the created reference after its usage in the enum function */
+    DeleteLocalReference(env, fmi->family);
     DeleteLocalReference(env, fmi->list);
     return 1;
 }

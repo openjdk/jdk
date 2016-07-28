@@ -346,21 +346,6 @@ public enum Option {
         }
     },
 
-    DIAGS("-XDdiags=", null, HIDDEN, INFO) {
-        @Override
-        public boolean process(OptionHelper helper, String option) {
-            option = option.substring(option.indexOf('=') + 1);
-            String diagsOption = option.contains("%") ?
-                "-XDdiagsFormat=" :
-                "-XDdiags=";
-            diagsOption += option;
-            if (XD.matches(diagsOption))
-                return XD.process(helper, diagsOption);
-            else
-                return false;
-        }
-    },
-
     HELP("-help", "opt.help", STANDARD, INFO) {
         @Override
         public boolean process(OptionHelper helper, String option) {
@@ -506,30 +491,6 @@ public enum Option {
 
     XDIAGS("-Xdiags:", "opt.diags", EXTENDED, BASIC, ONEOF, "compact", "verbose"),
 
-    /* This is a back door to the compiler's option table.
-     * -XDx=y sets the option x to the value y.
-     * -XDx sets the option x to the value x.
-     */
-    XD("-XD", null, HIDDEN, BASIC) {
-        @Override
-        public boolean matches(String s) {
-            return s.startsWith(text);
-        }
-        @Override
-        public boolean process(OptionHelper helper, String option) {
-            return process(helper, option, option.substring(text.length()));
-        }
-
-        @Override
-        public boolean process(OptionHelper helper, String option, String arg) {
-            int eq = arg.indexOf('=');
-            String key = (eq < 0) ? arg : arg.substring(0, eq);
-            String value = (eq < 0) ? arg : arg.substring(eq+1);
-            helper.put(key, value);
-            return false;
-        }
-    },
-
     XDEBUG("-Xdebug:", null, HIDDEN, BASIC) {
         @Override
         public boolean process(OptionHelper helper, String option) {
@@ -552,6 +513,37 @@ public enum Option {
                 subOption = "shouldstop." + subOption.trim();
                 XD.process(helper, subOption, subOption);
             }
+            return false;
+        }
+    },
+
+    DIAGS("-diags:", null, HIDDEN, BASIC, true) {
+        @Override
+        public boolean process(OptionHelper helper, String option) {
+            return HiddenGroup.DIAGS.process(helper, option);
+        }
+    },
+
+    /* This is a back door to the compiler's option table.
+     * -XDx=y sets the option x to the value y.
+     * -XDx sets the option x to the value x.
+     */
+    XD("-XD", null, HIDDEN, BASIC) {
+        @Override
+        public boolean matches(String s) {
+            return s.startsWith(text);
+        }
+        @Override
+        public boolean process(OptionHelper helper, String option) {
+            return process(helper, option, option.substring(text.length()));
+        }
+
+        @Override
+        public boolean process(OptionHelper helper, String option, String arg) {
+            int eq = arg.indexOf('=');
+            String key = (eq < 0) ? arg : arg.substring(0, eq);
+            String value = (eq < 0) ? arg : arg.substring(eq+1);
+            helper.put(key, value);
             return false;
         }
     },
@@ -672,6 +664,26 @@ public enum Option {
         ANYOF
     }
 
+    enum HiddenGroup {
+        DIAGS("diags");
+
+        final String text;
+
+        HiddenGroup(String text) {
+            this.text = text;
+        }
+
+        public boolean process(OptionHelper helper, String option) {
+            String p = option.substring(option.indexOf(':') + 1).trim();
+            String[] subOptions = p.split(";");
+            for (String subOption : subOptions) {
+                subOption = text + "." + subOption.trim();
+                XD.process(helper, subOption, subOption);
+            }
+            return false;
+        }
+    }
+
     public final String text;
 
     final OptionKind kind;
@@ -703,6 +715,12 @@ public enum Option {
     Option(String text, String descrKey,
             OptionKind kind, OptionGroup group) {
         this(text, null, descrKey, kind, group, null, null, false);
+    }
+
+    Option(String text, String descrKey,
+            OptionKind kind, OptionGroup group,
+            boolean doHasSuffix) {
+        this(text, null, descrKey, kind, group, null, null, doHasSuffix);
     }
 
     Option(String text, String argsNameKey, String descrKey,
