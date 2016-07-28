@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -23,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.tools.jlink.builder;
 
 import java.io.BufferedOutputStream;
@@ -58,8 +58,8 @@ import jdk.tools.jlink.internal.BasicImageWriter;
 import jdk.tools.jlink.internal.plugins.FileCopierPlugin;
 import jdk.tools.jlink.internal.plugins.FileCopierPlugin.SymImageFile;
 import jdk.tools.jlink.internal.ExecutableImage;
-import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.PluginException;
 
 /**
@@ -170,10 +170,10 @@ public final class DefaultImageBuilder implements ImageBuilder {
     }
 
     @Override
-    public void storeFiles(ModulePool files) {
+    public void storeFiles(ResourcePool files) {
         try {
             files.entries().forEach(f -> {
-                if (!f.getType().equals(ModuleEntry.Type.CLASS_OR_RESOURCE)) {
+                if (!f.type().equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE)) {
                     try {
                         accept(f);
                     } catch (IOException ioExp) {
@@ -181,17 +181,17 @@ public final class DefaultImageBuilder implements ImageBuilder {
                     }
                 }
             });
-            files.modules().forEach(m -> {
+            files.moduleView().modules().forEach(m -> {
                 // Only add modules that contain packages
-                if (!m.getAllPackages().isEmpty()) {
+                if (!m.packages().isEmpty()) {
                     // Skip the fake module used by FileCopierPlugin when copying files.
-                    if (m.getName().equals(FileCopierPlugin.FAKE_MODULE)) {
+                    if (m.name().equals(FileCopierPlugin.FAKE_MODULE)) {
                         return;
                     }
-                    modules.add(m.getName());
+                    modules.add(m.name());
                 }
             });
-            storeFiles(modules, files.getReleaseProperties());
+            storeFiles(modules, files.releaseProperties());
 
             if (Files.getFileStore(root).supportsFileAttributeView(PosixFileAttributeView.class)) {
                 // launchers in the bin directory need execute permission
@@ -226,16 +226,16 @@ public final class DefaultImageBuilder implements ImageBuilder {
      * @param modules The set of modules that the runtime image contains.
      * @throws IOException
      */
-    protected void prepareApplicationFiles(ModulePool imageContent, Set<String> modules) throws IOException {
+    protected void prepareApplicationFiles(ResourcePool imageContent, Set<String> modules) throws IOException {
         // generate launch scripts for the modules with a main class
         for (String module : modules) {
             String path = "/" + module + "/module-info.class";
-            Optional<ModuleEntry> res = imageContent.findEntry(path);
+            Optional<ResourcePoolEntry> res = imageContent.findEntry(path);
             if (!res.isPresent()) {
                 throw new IOException("module-info.class not found for " + module + " module");
             }
             Optional<String> mainClass;
-            ByteArrayInputStream stream = new ByteArrayInputStream(res.get().getBytes());
+            ByteArrayInputStream stream = new ByteArrayInputStream(res.get().contentBytes());
             mainClass = ModuleDescriptor.read(stream).mainClass();
             if (mainClass.isPresent()) {
                 Path cmd = root.resolve("bin").resolve(module);
@@ -298,14 +298,14 @@ public final class DefaultImageBuilder implements ImageBuilder {
         }
     }
 
-    private void accept(ModuleEntry file) throws IOException {
-        String fullPath = file.getPath();
-        String module = "/" + file.getModule() + "/";
+    private void accept(ResourcePoolEntry file) throws IOException {
+        String fullPath = file.path();
+        String module = "/" + file.moduleName() + "/";
         String filename = fullPath.substring(module.length());
         // Remove radical native|config|...
         filename = filename.substring(filename.indexOf('/') + 1);
-        try (InputStream in = file.stream()) {
-            switch (file.getType()) {
+        try (InputStream in = file.content()) {
+            switch (file.type()) {
                 case NATIVE_LIB:
                     writeEntry(in, destFile(nativeDir(filename), filename));
                     break;

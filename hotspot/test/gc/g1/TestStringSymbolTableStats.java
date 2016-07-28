@@ -46,7 +46,7 @@ public class TestStringSymbolTableStats {
 
     System.out.println("Output:\n" + output.getOutput());
 
-    output.shouldContain("Cleaned string and symbol table");
+    output.shouldMatch("GC\\(\\d+\\) Cleaned string and symbol table");
     output.shouldHaveExitValue(0);
   }
 

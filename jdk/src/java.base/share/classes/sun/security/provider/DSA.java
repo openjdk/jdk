@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,6 +329,10 @@ abstract class DSA extends SignatureSpi {
                 r = values[0].getBigInteger();
                 s = values[1].getBigInteger();
 
+                // Check for trailing signature data
+                if (in.available() != 0) {
+                    throw new IOException("Incorrect signature length");
+                }
             } catch (IOException e) {
                 throw new SignatureException("invalid encoding for signature");
             }

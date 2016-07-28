@@ -55,6 +55,7 @@ private:
     return new GCTaskThread(manager, which, processor_id);
   }
  public:
+
   static void destroy(GCTaskThread* manager) {
     if (manager != NULL) {
       delete manager;

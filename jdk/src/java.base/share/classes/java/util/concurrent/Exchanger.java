@@ -235,22 +235,16 @@ public class Exchanger<V> {
      * As is too common in this sort of code, methods are monolithic
      * because most of the logic relies on reads of fields that are
      * maintained as local variables so can't be nicely factored --
-     * mainly, here, bulky spin->yield->block/cancel code), and
-     * heavily dependent on intrinsics (VarHandles) to use inlined
-     * embedded CAS and related memory access operations (that tend
-     * not to be as readily inlined by dynamic compilers when they are
-     * hidden behind other methods that would more nicely name and
-     * encapsulate the intended effects). This includes the use of
-     * setRelease to clear fields of the per-thread Nodes between
-     * uses. Note that field Node.item is not declared as volatile
-     * even though it is read by releasing threads, because they only
-     * do so after CAS operations that must precede access, and all
-     * uses by the owning thread are otherwise acceptably ordered by
-     * other operations. (Because the actual points of atomicity are
-     * slot CASes, it would also be legal for the write to Node.match
-     * in a release to be weaker than a full volatile write. However,
-     * this is not done because it could allow further postponement of
-     * the write, delaying progress.)
+     * mainly, here, bulky spin->yield->block/cancel code.  Note that
+     * field Node.item is not declared as volatile even though it is
+     * read by releasing threads, because they only do so after CAS
+     * operations that must precede access, and all uses by the owning
+     * thread are otherwise acceptably ordered by other operations.
+     * (Because the actual points of atomicity are slot CASes, it
+     * would also be legal for the write to Node.match in a release to
+     * be weaker than a full volatile write. However, this is not done
+     * because it could allow further postponement of the write,
+     * delaying progress.)
      */
 
     /**
