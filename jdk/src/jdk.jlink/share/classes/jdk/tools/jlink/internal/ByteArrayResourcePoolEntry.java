@@ -25,71 +25,53 @@
 
 package jdk.tools.jlink.internal;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.util.Objects;
-import jdk.tools.jlink.plugin.ModuleEntry;
 
 /**
- * A LinkModuleEntry is the elementary unit of data inside an image. It is
- * generally a file. e.g.: a java class file, a resource file, a shared library,
- * ...
- * <br>
- * A LinkModuleEntry is identified by a path of the form:
- * <ul>
- * <li>For jimage content: /{module name}/{package1}/.../{packageN}/{file
- * name}</li>
- * <li>For other files (shared lib, launchers, config, ...):/{module name}/
- * {@literal bin|conf|native}/{dir1}>/.../{dirN}/{file name}</li>
- * </ul>
+ * A ResourcePoolEntry backed by a given byte[].
  */
-abstract class AbstractModuleEntry implements ModuleEntry {
-    private final String path;
-    private final String module;
-    private final Type type;
+class ByteArrayResourcePoolEntry extends AbstractResourcePoolEntry {
+    private final byte[] buffer;
 
     /**
-     * Create a new AbstractModuleEntry.
+     * Create a new ByteArrayResourcePoolEntry.
      *
      * @param module The module name.
      * @param path The data path identifier.
      * @param type The data type.
+     * @param buf  The byte buffer.
      */
-    AbstractModuleEntry(String module, String path, Type type) {
-        this.module = Objects.requireNonNull(module);
-        this.path = Objects.requireNonNull(path);
-        this.type = Objects.requireNonNull(type);
+    ByteArrayResourcePoolEntry(String module, String path, Type type, byte[] buffer) {
+        super(module, path, type);
+        this.buffer = Objects.requireNonNull(buffer);
     }
 
     @Override
-    public final String getModule() {
-        return module;
+    public byte[] contentBytes() {
+        return buffer.clone();
     }
 
     @Override
-    public final String getPath() {
-        return path;
+    public InputStream content() {
+        return new ByteArrayInputStream(buffer);
     }
 
     @Override
-    public final Type getType() {
-        return type;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(this.path);
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (!(other instanceof AbstractModuleEntry)) {
-            return false;
+    public void write(OutputStream out) {
+        try {
+            out.write(buffer);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
-        AbstractModuleEntry f = (AbstractModuleEntry) other;
-        return f.path.equals(path);
     }
 
     @Override
-    public String toString() {
-        return getPath();
+    public long contentLength() {
+        return buffer.length;
     }
 }

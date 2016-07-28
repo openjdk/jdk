@@ -32,10 +32,11 @@
  * @key headful
  * @bug 6994264
  * @summary Opaque overlapping test for Choice AWT component
- * @library ../../regtesthelpers
+ * @library /java/awt/patchlib  ../../regtesthelpers
  * @modules java.desktop/com.sun.awt
  *          java.desktop/java.awt.peer
  *          java.desktop/sun.awt
+ * @build java.desktop/java.awt.Helper
  * @build Util
  * @run main OpaqueOverlappingChoice
  */
