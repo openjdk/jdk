@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8161147
+ * @requires vm.flavor == "server"
  * @summary Safepoint on backedge breaks UseCountedLoopSafepoints
  * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:+UseCountedLoopSafepoints TestCountedLoopSafepointBackedge
  *
