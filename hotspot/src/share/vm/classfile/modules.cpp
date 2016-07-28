@@ -102,7 +102,8 @@ static PackageEntryTable* get_package_entry_table(Handle h_loader, TRAPS) {
 static ModuleEntry* get_module_entry(jobject module, TRAPS) {
   Handle module_h(THREAD, JNIHandles::resolve(module));
   if (!java_lang_reflect_Module::is_instance(module_h())) {
-    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "Bad module object");
+    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                   "module is not an instance of type java.lang.reflect.Module");
   }
   return java_lang_reflect_Module::module_entry(module_h(), CHECK_NULL);
 }
@@ -267,9 +268,9 @@ void Modules::define_module(jobject module, jstring version,
     THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null module object");
   }
   Handle module_handle(THREAD, JNIHandles::resolve(module));
-  if (!java_lang_reflect_Module::is_subclass(module_handle->klass())) {
+  if (!java_lang_reflect_Module::is_instance(module_handle())) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "module is not a subclass of java.lang.reflect.Module");
+              "module is not an instance of type java.lang.reflect.Module");
   }
 
   char* module_name = get_module_name(module_handle(), CHECK);
@@ -452,9 +453,9 @@ void Modules::set_bootloader_unnamed_module(jobject module, TRAPS) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null module object");
   }
   Handle module_handle(THREAD, JNIHandles::resolve(module));
-  if (!java_lang_reflect_Module::is_subclass(module_handle->klass())) {
+  if (!java_lang_reflect_Module::is_instance(module_handle())) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "module is not a subclass of java.lang.reflect.Module");
+              "module is not an instance of type java.lang.reflect.Module");
   }
 
   // Ensure that this is an unnamed module
@@ -728,7 +729,7 @@ jobject Modules::get_module(jclass clazz, TRAPS) {
   oop module = java_lang_Class::module(mirror);
 
   assert(module != NULL, "java.lang.Class module field not set");
-  assert(java_lang_reflect_Module::is_subclass(module->klass()), "Module is not a java.lang.reflect.Module");
+  assert(java_lang_reflect_Module::is_instance(module), "module is not an instance of type java.lang.reflect.Module");
 
   if (log_is_enabled(Debug, modules)) {
     ResourceMark rm(THREAD);
