@@ -31,7 +31,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 import jdk.tools.jlink.plugin.Plugin;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.internal.PluginRepository;
 import jdk.tools.jlink.internal.PostProcessor;
 import jdk.tools.jlink.internal.ExecutableImage;
@@ -71,8 +72,9 @@ public class JLinkPostProcessingTest {
         }
 
         @Override
-        public void visit(ModulePool in, ModulePool out) {
+        public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
             in.transformAndCopy(Function.identity(), out);
+            return out.build();
         }
 
         @Override

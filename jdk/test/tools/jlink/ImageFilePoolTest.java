@@ -33,10 +33,10 @@
 import java.io.ByteArrayInputStream;
 import java.util.Optional;
 import java.util.function.Function;
-import jdk.tools.jlink.internal.ModuleEntryFactory;
-import jdk.tools.jlink.internal.ModulePoolImpl;
-import jdk.tools.jlink.plugin.ModuleEntry;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.internal.ResourcePoolEntryFactory;
+import jdk.tools.jlink.internal.ResourcePoolManager;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
+import jdk.tools.jlink.plugin.ResourcePool;
 
 public class ImageFilePoolTest {
     public static void main(String[] args) throws Exception {
@@ -51,55 +51,55 @@ public class ImageFilePoolTest {
     private static final String SUFFIX = "END";
 
     private void checkVisitor() throws Exception {
-        ModulePool input = new ModulePoolImpl();
+        ResourcePoolManager input = new ResourcePoolManager();
         for (int i = 0; i < 1000; ++i) {
             String module = "module" + (i / 100);
             input.add(newInMemoryImageFile("/" + module + "/java/class" + i,
-                    ModuleEntry.Type.CONFIG, "class" + i));
+                    ResourcePoolEntry.Type.CONFIG, "class" + i));
         }
-        if (input.getEntryCount() != 1000) {
+        if (input.entryCount() != 1000) {
             throw new AssertionError();
         }
-        ModulePool output = new ModulePoolImpl();
+        ResourcePoolManager output = new ResourcePoolManager();
         ResourceVisitor visitor = new ResourceVisitor();
-        input.transformAndCopy(visitor, output);
+        input.resourcePool().transformAndCopy(visitor, output.resourcePoolBuilder());
         if (visitor.getAmountBefore() == 0) {
             throw new AssertionError("Resources not found");
         }
-        if (visitor.getAmountBefore() != input.getEntryCount()) {
+        if (visitor.getAmountBefore() != input.entryCount()) {
             throw new AssertionError("Number of visited resources. Expected: " +
-                    visitor.getAmountBefore() + ", got: " + input.getEntryCount());
+                    visitor.getAmountBefore() + ", got: " + input.entryCount());
         }
-        if (visitor.getAmountAfter() != output.getEntryCount()) {
+        if (visitor.getAmountAfter() != output.entryCount()) {
             throw new AssertionError("Number of added resources. Expected: " +
-                    visitor.getAmountAfter() + ", got: " + output.getEntryCount());
+                    visitor.getAmountAfter() + ", got: " + output.entryCount());
         }
         output.entries().forEach(outFile -> {
-            String path = outFile.getPath().replaceAll(SUFFIX + "$", "");
-            Optional<ModuleEntry> inFile = input.findEntry(path);
+            String path = outFile.path().replaceAll(SUFFIX + "$", "");
+            Optional<ResourcePoolEntry> inFile = input.findEntry(path);
             if (!inFile.isPresent()) {
                 throw new AssertionError("Unknown resource: " + path);
             }
         });
     }
 
-    private static class ResourceVisitor implements Function<ModuleEntry, ModuleEntry> {
+    private static class ResourceVisitor implements Function<ResourcePoolEntry, ResourcePoolEntry> {
 
         private int amountBefore;
         private int amountAfter;
 
         @Override
-        public ModuleEntry apply(ModuleEntry file) {
+        public ResourcePoolEntry apply(ResourcePoolEntry file) {
             int index = ++amountBefore % 3;
             switch (index) {
                 case 0:
                     ++amountAfter;
-                    return newInMemoryImageFile(file.getPath() + SUFFIX,
-                            file.getType(), file.getPath());
+                    return newInMemoryImageFile(file.path() + SUFFIX,
+                            file.type(), file.path());
                 case 1:
                     ++amountAfter;
-                    return newInMemoryImageFile(file.getPath(),
-                            file.getType(), file.getPath());
+                    return newInMemoryImageFile(file.path(),
+                            file.type(), file.path());
             }
             return null;
         }
@@ -114,7 +114,7 @@ public class ImageFilePoolTest {
     }
 
     private void checkNegative() throws Exception {
-        ModulePoolImpl input = new ModulePoolImpl();
+        ResourcePoolManager input = new ResourcePoolManager();
         try {
             input.add(null);
             throw new AssertionError("NullPointerException is not thrown");
@@ -128,29 +128,22 @@ public class ImageFilePoolTest {
             // expected
         }
         if (input.findEntry("unknown").isPresent()) {
-            throw new AssertionError("ImageFileModulePool does not return null for unknown file");
+            throw new AssertionError("ImageFileResourcePool does not return null for unknown file");
         }
-        if (input.contains(newInMemoryImageFile("/unknown/foo", ModuleEntry.Type.CONFIG, "unknown"))) {
+        if (input.contains(newInMemoryImageFile("/unknown/foo", ResourcePoolEntry.Type.CONFIG, "unknown"))) {
             throw new AssertionError("'contain' returns true for /unknown/foo file");
         }
-        input.add(newInMemoryImageFile("/aaa/bbb", ModuleEntry.Type.CONFIG, ""));
+        input.add(newInMemoryImageFile("/aaa/bbb", ResourcePoolEntry.Type.CONFIG, ""));
         try {
-            input.add(newInMemoryImageFile("/aaa/bbb", ModuleEntry.Type.CONFIG, ""));
-            throw new AssertionError("Exception expected");
-        } catch (Exception e) {
-            // expected
-        }
-        input.setReadOnly();
-        try {
-            input.add(newInMemoryImageFile("/aaa/ccc", ModuleEntry.Type.CONFIG, ""));
+            input.add(newInMemoryImageFile("/aaa/bbb", ResourcePoolEntry.Type.CONFIG, ""));
             throw new AssertionError("Exception expected");
         } catch (Exception e) {
             // expected
         }
     }
 
-    private static ModuleEntry newInMemoryImageFile(String path,
-            ModuleEntry.Type type, String content) {
-        return ModuleEntryFactory.create(path, type, content.getBytes());
+    private static ResourcePoolEntry newInMemoryImageFile(String path,
+            ResourcePoolEntry.Type type, String content) {
+        return ResourcePoolEntryFactory.create(path, type, content.getBytes());
     }
 }

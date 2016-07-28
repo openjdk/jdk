@@ -5,7 +5,7 @@
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
  * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
+ * particular file as subject to the "Classfile" exception as provided
  * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
@@ -25,53 +25,50 @@
 
 package jdk.tools.jlink.internal;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Objects;
 
 /**
- * A ModuleEntry backed by a given byte[].
+ * A ResourcePoolEntry backed by a given nio Path.
  */
-class ByteArrayModuleEntry extends AbstractModuleEntry {
-    private final byte[] buffer;
+public class PathResourcePoolEntry extends AbstractResourcePoolEntry {
+    private final Path file;
 
     /**
-     * Create a new ByteArrayModuleEntry.
+     * Create a new PathResourcePoolEntry.
      *
      * @param module The module name.
-     * @param path The data path identifier.
+     * @param path The path for the resource content.
      * @param type The data type.
-     * @param buf  The byte buffer.
+     * @param file The data file identifier.
      */
-    ByteArrayModuleEntry(String module, String path, Type type, byte[] buffer) {
+    public PathResourcePoolEntry(String module, String path, Type type, Path file) {
         super(module, path, type);
-        this.buffer = Objects.requireNonNull(buffer);
+        this.file = Objects.requireNonNull(file);
+        if (!Files.isRegularFile(file)) {
+            throw new IllegalArgumentException(file + " not a file");
+        }
     }
 
     @Override
-    public byte[] getBytes() {
-        return buffer.clone();
-    }
-
-    @Override
-    public InputStream stream() {
-        return new ByteArrayInputStream(buffer);
-    }
-
-    @Override
-    public void write(OutputStream out) {
+    public final InputStream content() {
         try {
-            out.write(buffer);
+            return Files.newInputStream(file);
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
     }
 
     @Override
-    public long getLength() {
-        return buffer.length;
+    public final long contentLength() {
+        try {
+            return Files.size(file);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
     }
 }

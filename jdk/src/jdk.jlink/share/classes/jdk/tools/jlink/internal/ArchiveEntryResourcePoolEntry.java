@@ -5,7 +5,7 @@
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
  * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classfile" exception as provided
+ * particular file as subject to the "Classpath" exception as provided
  * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
@@ -28,47 +28,53 @@ package jdk.tools.jlink.internal;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Objects;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 /**
- * A ModuleEntry backed by a given nio Path.
+ * A ResourcePoolEntry backed by a given Archive Entry.
  */
-public class PathModuleEntry extends AbstractModuleEntry {
-    private final Path file;
+final class ArchiveEntryResourcePoolEntry extends AbstractResourcePoolEntry {
+    private final Archive.Entry entry;
 
     /**
-     * Create a new PathModuleEntry.
+     * Create a new ArchiveResourcePoolEntry.
      *
      * @param module The module name.
-     * @param path The path for the resource content.
-     * @param type The data type.
-     * @param file The data file identifier.
+     * @param path The data path identifier.
+     * @param entry The archive Entry.
      */
-    public PathModuleEntry(String module, String path, Type type, Path file) {
-        super(module, path, type);
-        this.file = Objects.requireNonNull(file);
-        if (!Files.isRegularFile(file)) {
-            throw new IllegalArgumentException(file + " not a file");
-        }
+    ArchiveEntryResourcePoolEntry(String module, String path, Archive.Entry entry) {
+        super(module, path, getImageFileType(Objects.requireNonNull(entry)));
+        this.entry = entry;
     }
 
     @Override
-    public final InputStream stream() {
+    public InputStream content() {
         try {
-            return Files.newInputStream(file);
+            return entry.stream();
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
     }
 
     @Override
-    public final long getLength() {
-        try {
-            return Files.size(file);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
+    public long contentLength() {
+        return entry.size();
+    }
+
+    private static ResourcePoolEntry.Type getImageFileType(Archive.Entry entry) {
+        switch(entry.type()) {
+            case CLASS_OR_RESOURCE:
+                return ResourcePoolEntry.Type.CLASS_OR_RESOURCE;
+            case CONFIG:
+                return ResourcePoolEntry.Type.CONFIG;
+            case NATIVE_CMD:
+                return ResourcePoolEntry.Type.NATIVE_CMD;
+            case NATIVE_LIB:
+                return ResourcePoolEntry.Type.NATIVE_LIB;
+            default:
+                return ResourcePoolEntry.Type.OTHER;
         }
     }
 }

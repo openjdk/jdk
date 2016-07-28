@@ -22,42 +22,31 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.tools.jlink.internal.plugins;
+package jdk.tools.jlink.plugin;
 
-import jdk.tools.jlink.plugin.ResourcePool;
-import jdk.tools.jlink.plugin.ResourcePoolBuilder;
-import jdk.tools.jlink.plugin.ResourcePoolEntry;
-import jdk.tools.jlink.plugin.Plugin;
+import java.nio.ByteOrder;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
- *
- * Strip Native Commands plugin
+ * Resource pool builder to build a resource pool by incrementally
+ * adding a set of resources one at a time.
  */
-public final class StripNativeCommandsPlugin implements Plugin {
+public interface ResourcePoolBuilder {
+    /**
+     * Add a ResourcePoolEntry.
+     *
+     * @param data The ResourcePoolEntry to add.
+     */
+    public void add(ResourcePoolEntry data);
 
-    public static final String NAME = "strip-native-commands";
-
-    @Override
-    public String getName() {
-        return NAME;
-    }
-
-    @Override
-    public Category getType() {
-        return Category.FILTER;
-    }
-
-    @Override
-    public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
-        in.transformAndCopy((file) -> {
-            return file.type() == ResourcePoolEntry.Type.NATIVE_CMD ? null : file;
-        }, out);
-
-        return out.build();
-    }
-
-    @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(NAME);
-    }
+    /**
+     * Done with adding resource entries. Construct
+     * a ResourcePool with the added resource entries.
+     *
+     * @return a new ResourcePool filled with entries added.
+     */
+    public ResourcePool build();
 }

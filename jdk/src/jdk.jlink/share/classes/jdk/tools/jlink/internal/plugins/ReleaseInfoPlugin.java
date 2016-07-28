@@ -33,7 +33,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
 import jdk.tools.jlink.internal.Utils;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.Plugin.Category;
 import jdk.tools.jlink.plugin.Plugin.State;
 import jdk.tools.jlink.plugin.Plugin;
@@ -117,9 +118,8 @@ public final class ReleaseInfoPlugin implements Plugin {
     }
 
     @Override
-    public void visit(ModulePool in, ModulePool out) {
-        in.transformAndCopy(Function.identity(), out);
-        out.getReleaseProperties().putAll(in.getReleaseProperties());
-        out.getReleaseProperties().putAll(release);
+    public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
+        in.releaseProperties().putAll(release);
+        return in;
     }
 }
