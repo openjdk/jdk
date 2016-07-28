@@ -66,8 +66,9 @@ public class ForkJoinWorkerThread extends Thread {
      * owning thread.
      *
      * Support for (non-public) subclass InnocuousForkJoinWorkerThread
-     * requires that we break quite a lot of encapsulation (via Unsafe)
-     * both here and in the subclass to access and set Thread fields.
+     * requires that we break quite a lot of encapsulation (via helper
+     * methods in ThreadLocalRandom) both here and in the subclass to
+     * access and set Thread fields.
      */
 
     final ForkJoinPool pool;                // the pool this thread works in
@@ -92,8 +93,8 @@ public class ForkJoinWorkerThread extends Thread {
     ForkJoinWorkerThread(ForkJoinPool pool, ThreadGroup threadGroup,
                          AccessControlContext acc) {
         super(threadGroup, null, "aForkJoinWorkerThread");
-        U.putObjectRelease(this, INHERITEDACCESSCONTROLCONTEXT, acc);
-        eraseThreadLocals(); // clear before registering
+        ThreadLocalRandom.setInheritedAccessControlContext(this, acc);
+        ThreadLocalRandom.eraseThreadLocals(this); // clear before registering
         this.pool = pool;
         this.workQueue = pool.registerWorker(this);
     }
@@ -171,35 +172,9 @@ public class ForkJoinWorkerThread extends Thread {
     }
 
     /**
-     * Erases ThreadLocals by nulling out Thread maps.
-     */
-    final void eraseThreadLocals() {
-        U.putObject(this, THREADLOCALS, null);
-        U.putObject(this, INHERITABLETHREADLOCALS, null);
-    }
-
-    /**
      * Non-public hook method for InnocuousForkJoinWorkerThread.
      */
     void afterTopLevelExec() {
-    }
-
-    // Set up to allow setting thread fields in constructor
-    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
-    private static final long THREADLOCALS;
-    private static final long INHERITABLETHREADLOCALS;
-    private static final long INHERITEDACCESSCONTROLCONTEXT;
-    static {
-        try {
-            THREADLOCALS = U.objectFieldOffset
-                (Thread.class.getDeclaredField("threadLocals"));
-            INHERITABLETHREADLOCALS = U.objectFieldOffset
-                (Thread.class.getDeclaredField("inheritableThreadLocals"));
-            INHERITEDACCESSCONTROLCONTEXT = U.objectFieldOffset
-                (Thread.class.getDeclaredField("inheritedAccessControlContext"));
-        } catch (ReflectiveOperationException e) {
-            throw new Error(e);
-        }
     }
 
     /**
@@ -210,7 +185,7 @@ public class ForkJoinWorkerThread extends Thread {
     static final class InnocuousForkJoinWorkerThread extends ForkJoinWorkerThread {
         /** The ThreadGroup for all InnocuousForkJoinWorkerThreads */
         private static final ThreadGroup innocuousThreadGroup =
-            createThreadGroup();
+            ThreadLocalRandom.createThreadGroup("InnocuousForkJoinWorkerThreadGroup");
 
         /** An AccessControlContext supporting no privileges */
         private static final AccessControlContext INNOCUOUS_ACC =
@@ -225,7 +200,7 @@ public class ForkJoinWorkerThread extends Thread {
 
         @Override // to erase ThreadLocals
         void afterTopLevelExec() {
-            eraseThreadLocals();
+            ThreadLocalRandom.eraseThreadLocals(this);
         }
 
         @Override // to always report system loader
@@ -241,33 +216,5 @@ public class ForkJoinWorkerThread extends Thread {
             throw new SecurityException("setContextClassLoader");
         }
 
-        /**
-         * Returns a new group with the system ThreadGroup (the
-         * topmost, parent-less group) as parent.  Uses Unsafe to
-         * traverse Thread.group and ThreadGroup.parent fields.
-         */
-        private static ThreadGroup createThreadGroup() {
-            try {
-                jdk.internal.misc.Unsafe u = jdk.internal.misc.Unsafe.getUnsafe();
-                long tg = u.objectFieldOffset
-                    (Thread.class.getDeclaredField("group"));
-                long gp = u.objectFieldOffset
-                    (ThreadGroup.class.getDeclaredField("parent"));
-                ThreadGroup group = (ThreadGroup)
-                    u.getObject(Thread.currentThread(), tg);
-                while (group != null) {
-                    ThreadGroup parent = (ThreadGroup)u.getObject(group, gp);
-                    if (parent == null)
-                        return new ThreadGroup(group,
-                                               "InnocuousForkJoinWorkerThreadGroup");
-                    group = parent;
-                }
-            } catch (ReflectiveOperationException e) {
-                throw new Error(e);
-            }
-            // fall through if null as cannot-happen safeguard
-            throw new Error("Cannot create ThreadGroup");
-        }
     }
-
 }

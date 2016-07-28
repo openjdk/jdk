@@ -42,6 +42,7 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
@@ -168,8 +169,8 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
     public abstract void lazySet(T obj, V newValue);
 
     /**
-     * Gets the current value held in the field of the given object managed
-     * by this updater.
+     * Returns the current value held in the field of the given object
+     * managed by this updater.
      *
      * @param obj An object whose field to get
      * @return the current value
@@ -284,7 +285,7 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
 
     private static final class AtomicReferenceFieldUpdaterImpl<T,V>
         extends AtomicReferenceFieldUpdater<T,V> {
-        private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
+        private static final Unsafe U = Unsafe.getUnsafe();
         private final long offset;
         /**
          * if field is protected, the subclass constructing updater, else

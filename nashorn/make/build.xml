@@ -27,11 +27,14 @@
   <import file="build-nasgen.xml"/>
   <import file="code_coverage.xml"/>
 
-  <target name="init-conditions">
+  <target name="load-properties">
     <!-- loading locally defined resources and properties. NB they owerwrite default ones defined later -->
     <property file="${user.home}/.nashorn.project.local.properties"/>
 
     <loadproperties srcFile="make/project.properties"/>
+  </target>
+
+  <target name="init-conditions" depends="load-properties">
     <path id="nashorn.jar.path">
          <pathelement location="${nashorn.jar}"/>
     </path>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,8 @@ public class T6769027 {
 
     enum CaretKind {
         DEFAULT("", ""),
-        SHOW("showCaret","true"),
-        HIDE("showCaret","false");
+        SHOW("diags.showCaret","true"),
+        HIDE("diags.showCaret","false");
 
         String key;
         String value;
@@ -81,8 +81,8 @@ public class T6769027 {
 
     enum SourceLineKind {
         DEFAULT("", ""),
-        AFTER_SUMMARY("sourcePosition", "top"),
-        BOTTOM("sourcePosition", "bottom");
+        AFTER_SUMMARY("diags.sourcePosition", "top"),
+        BOTTOM("diags.sourcePosition", "bottom");
 
         String key;
         String value;
@@ -110,9 +110,9 @@ public class T6769027 {
 
         void init(Options opts) {
             if (this != DEFAULT) {
-                String flags = opts.get("diags");
+                String flags = opts.get("diags.formatterOptions");
                 flags = flags == null ? flag : flags + "," + flag;
-                opts.put("diags", flags);
+                opts.put("diags.formatterOptions", flags);
             }
         }
 
@@ -136,9 +136,9 @@ public class T6769027 {
 
         void init(Options opts) {
             if (this != DEFAULT) {
-                String flags = opts.get("diags");
+                String flags = opts.get("diags.formatterOptions");
                 flags = flags == null ? flag : flags + "," + flag;
-                opts.put("diags", flags);
+                opts.put("diags.formatterOptions", flags);
             }
         }
 
@@ -243,11 +243,11 @@ public class T6769027 {
     }
 
     enum MultilinePolicy {
-        ENABLED(0, "multilinePolicy", "enabled"),
-        DISABLED(1, "multilinePolicy", "disabled"),
-        LIMIT_LENGTH(2, "multilinePolicy", "limit:1:*"),
-        LIMIT_DEPTH(3, "multilinePolicy", "limit:*:1"),
-        LIMIT_BOTH(4, "multilinePolicy", "limit:1:1");
+        ENABLED(0, "diags.multilinePolicy", "enabled"),
+        DISABLED(1, "diags.multilinePolicy", "disabled"),
+        LIMIT_LENGTH(2, "diags.multilinePolicy", "limit:1:*"),
+        LIMIT_DEPTH(3, "diags.multilinePolicy", "limit:*:1"),
+        LIMIT_BOTH(4, "diags.multilinePolicy", "limit:1:1");
 
         String name;
         String value;
@@ -371,7 +371,7 @@ public class T6769027 {
         indentString += (detailsIndent == IndentKind.CUSTOM) ? "|3" : "|0";
         indentString += (sourceIndent == IndentKind.CUSTOM) ? "|3" : "|0";
         indentString += (subdiagsIndent == IndentKind.CUSTOM) ? "|3" : "|0";
-        options.put("diagsIndentation", indentString);
+        options.put("diags.indent", indentString);
         MyLog log = new MyLog(ctx);
         JavacMessages messages = JavacMessages.instance(ctx);
         messages.add(locale -> ResourceBundle.getBundle("tester", locale));

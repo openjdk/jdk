@@ -68,6 +68,7 @@ import java.util.function.ToIntFunction;
 import java.util.function.ToLongBiFunction;
 import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
+import jdk.internal.misc.Unsafe;
 
 /**
  * A hash table supporting full concurrency of retrievals and
@@ -747,7 +748,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /* ---------------- Table element access -------------- */
 
     /*
-     * Volatile access methods are used for table elements as well as
+     * Atomic access methods are used for table elements as well as
      * elements of in-progress next table while resizing.  All uses of
      * the tab arguments must be null checked by callers.  All callers
      * also paranoically precheck that tab's length is not zero (or an
@@ -757,14 +758,12 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * errors by users, these checks must operate on local variables,
      * which accounts for some odd-looking inline assignments below.
      * Note that calls to setTabAt always occur within locked regions,
-     * and so in principle require only release ordering, not
-     * full volatile semantics, but are currently coded as volatile
-     * writes to be conservative.
+     * and so require only release ordering.
      */
 
     @SuppressWarnings("unchecked")
     static final <K,V> Node<K,V> tabAt(Node<K,V>[] tab, int i) {
-        return (Node<K,V>)U.getObjectVolatile(tab, ((long)i << ASHIFT) + ABASE);
+        return (Node<K,V>)U.getObjectAcquire(tab, ((long)i << ASHIFT) + ABASE);
     }
 
     static final <K,V> boolean casTabAt(Node<K,V>[] tab, int i,
@@ -773,7 +772,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     static final <K,V> void setTabAt(Node<K,V>[] tab, int i, Node<K,V> v) {
-        U.putObjectVolatile(tab, ((long)i << ASHIFT) + ABASE, v);
+        U.putObjectRelease(tab, ((long)i << ASHIFT) + ABASE, v);
     }
 
     /* ---------------- Fields -------------- */
@@ -1024,7 +1023,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         int hash = spread(key.hashCode());
         int binCount = 0;
         for (Node<K,V>[] tab = table;;) {
-            Node<K,V> f; int n, i, fh;
+            Node<K,V> f; int n, i, fh; K fk; V fv;
             if (tab == null || (n = tab.length) == 0)
                 tab = initTable();
             else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
@@ -1033,6 +1032,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             }
             else if ((fh = f.hash) == MOVED)
                 tab = helpTransfer(tab, f);
+            else if (onlyIfAbsent && fh == hash &&  // check first node
+                     ((fk = f.key) == key || fk != null && key.equals(fk)) &&
+                     (fv = f.val) != null)
+                return fv;
             else {
                 V oldVal = null;
                 synchronized (f) {
@@ -1703,7 +1706,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         V val = null;
         int binCount = 0;
         for (Node<K,V>[] tab = table;;) {
-            Node<K,V> f; int n, i, fh;
+            Node<K,V> f; int n, i, fh; K fk; V fv;
             if (tab == null || (n = tab.length) == 0)
                 tab = initTable();
             else if ((f = tabAt(tab, i = (n - 1) & h)) == null) {
@@ -1725,6 +1728,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             }
             else if ((fh = f.hash) == MOVED)
                 tab = helpTransfer(tab, f);
+            else if (fh == h &&                  // check first node
+                     ((fk = f.key) == key || fk != null && key.equals(fk)) &&
+                     (fv = f.val) != null)
+                return fv;
             else {
                 boolean added = false;
                 synchronized (f) {
@@ -3298,7 +3305,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             return true;
         }
 
-        private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
+        private static final Unsafe U = Unsafe.getUnsafe();
         private static final long LOCKSTATE;
         static {
             try {
@@ -4554,14 +4561,21 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             return true;
         }
 
-        public final boolean removeAll(Collection<?> c) {
+        public boolean removeAll(Collection<?> c) {
             if (c == null) throw new NullPointerException();
             boolean modified = false;
-            for (Iterator<E> it = iterator(); it.hasNext();) {
-                if (c.contains(it.next())) {
-                    it.remove();
-                    modified = true;
+            // Use (c instanceof Set) as a hint that lookup in c is as
+            // efficient as this view
+            if (c instanceof Set<?> && c.size() > map.table.length) {
+                for (Iterator<?> it = iterator(); it.hasNext(); ) {
+                    if (c.contains(it.next())) {
+                        it.remove();
+                        modified = true;
+                    }
                 }
+            } else {
+                for (Object e : c)
+                    modified |= remove(e);
             }
             return modified;
         }
@@ -4746,6 +4760,18 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         }
         public final boolean addAll(Collection<? extends V> c) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override public boolean removeAll(Collection<?> c) {
+            if (c == null) throw new NullPointerException();
+            boolean modified = false;
+            for (Iterator<V> it = iterator(); it.hasNext();) {
+                if (c.contains(it.next())) {
+                    it.remove();
+                    modified = true;
+                }
+            }
+            return modified;
         }
 
         public boolean removeIf(Predicate<? super V> filter) {
@@ -6341,7 +6367,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     // Unsafe mechanics
-    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
+    private static final Unsafe U = Unsafe.getUnsafe();
     private static final long SIZECTL;
     private static final long TRANSFERINDEX;
     private static final long BASECOUNT;

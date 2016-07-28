@@ -69,6 +69,7 @@ class RetransformAgent {
         }
 
         public byte[] transform(Module module,
+                                ClassLoader loader,
                                 String className,
                                 Class<?> classBeingRedefined,
                                 ProtectionDomain    protectionDomain,
