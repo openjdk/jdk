@@ -22,6 +22,7 @@
  */
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -82,6 +83,7 @@ import static com.sun.tools.javac.util.List.*;
  * The code then verifies that {@code [X:=Object,Y:=Object]A<X,Y> == A<Object,Object>}.
  *
  * @author mcimadamore
+ * @author vromero
  */
 public class TypeHarness {
 
@@ -91,19 +93,20 @@ public class TypeHarness {
     protected Names names;
     protected ReusableJavaCompiler tool;
     protected Infer infer;
+    protected Context context;
 
     protected Factory fac;
 
     protected TypeHarness() {
-        Context ctx = new Context();
-        JavacFileManager.preRegister(ctx);
-        MyAttr.preRegister(ctx);
-        tool = new ReusableJavaCompiler(ctx);
-        types = Types.instance(ctx);
-        infer = Infer.instance(ctx);
-        chk = Check.instance(ctx);
-        predef = Symtab.instance(ctx);
-        names = Names.instance(ctx);
+        context = new Context();
+        JavacFileManager.preRegister(context);
+        MyAttr.preRegister(context);
+        tool = new ReusableJavaCompiler(context);
+        types = Types.instance(context);
+        infer = Infer.instance(context);
+        chk = Check.instance(context);
+        predef = Symtab.instance(context);
+        names = Names.instance(context);
         fac = new Factory();
     }
 
@@ -411,8 +414,8 @@ public class TypeHarness {
         public StrToTypeFactory(String pkg, java.util.List<String> imports, java.util.List<String> typeVarDecls) {
             this.pkg = pkg;
             this.imports = imports;
-            this.typeVarDecls = typeVarDecls;
-            this.typeVariables = from(typeVarDecls.stream()
+            this.typeVarDecls = typeVarDecls == null ? new ArrayList<>() : typeVarDecls;
+            this.typeVariables = from(this.typeVarDecls.stream()
                     .map(this::typeVarName)
                     .map(this::getType)
                     .collect(Collectors.toList())
@@ -420,7 +423,7 @@ public class TypeHarness {
         }
 
         TypeVar getTypeVarFromStr(String name) {
-            if (typeVarDecls == null) {
+            if (typeVarDecls.isEmpty()) {
                 return null;
             }
             int index = typeVarDecls.indexOf(name);
@@ -476,7 +479,7 @@ public class TypeHarness {
             public CharSequence getCharContent(boolean ignoreEncodingErrors) {
                 String impStmts = imports.size() > 0 ?
                         imports.stream().map(i -> "import " + i + ";").collect(Collectors.joining("\n")) : "";
-                String tvars = typeVarDecls.size() > 0 ?
+                String tvars = !typeVarDecls.isEmpty() ?
                         typeVarDecls.stream().collect(Collectors.joining(",", "<", ">")) : "";
                 return template
                         .replace("#Package", (pkg == null) ? "" : "package " + pkg + ";")
