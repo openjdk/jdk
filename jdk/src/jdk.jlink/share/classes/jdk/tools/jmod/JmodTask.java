@@ -666,6 +666,10 @@ public class JmodTask {
                     throws IOException
                 {
                     Path relPath = top.relativize(file);
+                    if (relPath.toString().equals(MODULE_INFO)
+                            && !Section.CLASSES.equals(section))
+                        warning("warn.ignore.entry", MODULE_INFO, section);
+
                     if (!relPath.toString().equals(MODULE_INFO)
                             && !matches(relPath, excludes)) {
                         try (InputStream in = Files.newInputStream(file)) {
@@ -693,9 +697,17 @@ public class JmodTask {
             String name = Paths.get(prefix, other).toString()
                                .replace(File.separatorChar, '/');
             ZipEntry ze = new ZipEntry(name);
-            zos.putNextEntry(ze);
-            in.transferTo(zos);
-            zos.closeEntry();
+            try {
+                zos.putNextEntry(ze);
+                in.transferTo(zos);
+                zos.closeEntry();
+            } catch (ZipException x) {
+                if (x.getMessage().contains("duplicate entry")) {
+                    warning("warn.ignore.duplicate.entry", name, prefix);
+                    return;
+                }
+                throw x;
+            }
         }
 
         class JarEntryConsumer implements Consumer<JarEntry>, Predicate<JarEntry> {
