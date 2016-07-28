@@ -30,7 +30,7 @@ package com.sun.jndi.ldap.pool;
  *
  * @author Rosanna Lee
  */
-final public class PoolCleaner extends Thread {
+final public class PoolCleaner implements Runnable {
     final private Pool[] pools;
     final private long period;
 
@@ -42,9 +42,9 @@ final public class PoolCleaner extends Thread {
         super();
         this.period = period;
         this.pools = pools.clone();
-        setDaemon(true);
     }
 
+    @Override
     public void run() {
         long threshold;
         while (true) {

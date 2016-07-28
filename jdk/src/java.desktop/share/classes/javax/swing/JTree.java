@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,6 +319,11 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * The drop location.
      */
     private transient DropLocation dropLocation;
+
+    /**
+     * Flag to indicate UI update is in progress
+     */
+    private transient boolean updateInProgress;
 
     /**
      * A subclass of <code>TransferHandler.DropLocation</code> representing
@@ -713,10 +718,19 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * @see JComponent#updateUI
      */
     public void updateUI() {
-        setUI((TreeUI)UIManager.getUI(this));
+        if (!updateInProgress) {
 
-        SwingUtilities.updateRendererOrEditorUI(getCellRenderer());
-        SwingUtilities.updateRendererOrEditorUI(getCellEditor());
+            updateInProgress = true;
+
+            try {
+                setUI((TreeUI)UIManager.getUI(this));
+
+                SwingUtilities.updateRendererOrEditorUI(getCellRenderer());
+                SwingUtilities.updateRendererOrEditorUI(getCellEditor());
+            } finally {
+                updateInProgress = false;
+            }
+        }
     }
 
 

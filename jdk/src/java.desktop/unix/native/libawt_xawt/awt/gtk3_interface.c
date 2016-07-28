@@ -1586,13 +1586,17 @@ static void gtk3_paint_expander(WidgetType widget_type, GtkStateType state_type,
     fp_gtk_style_context_save (context);
 
     GtkStateFlags flags = get_gtk_flags(state_type);
+    if (expander_style == GTK_EXPANDER_EXPANDED) {
+        flags |= GTK_STATE_FLAG_ACTIVE;
+    }
+
     fp_gtk_style_context_set_state(context, flags);
 
     if (detail != 0) {
         transform_detail_string(detail, context);
     }
 
-    fp_gtk_render_expander (context, cr, x, y, width, height);
+    fp_gtk_render_expander (context, cr, x + 2, y + 2, width - 4, height - 4);
 
     fp_gtk_style_context_restore (context);
 }

@@ -38,34 +38,36 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import jdk.internal.jimage.decompressor.CompressedResourceHeader;
-import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.LinkModule;
-import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
+import jdk.tools.jlink.plugin.ResourcePoolModule;
+import jdk.tools.jlink.plugin.ResourcePoolModuleView;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.internal.plugins.FileCopierPlugin;
 
 /**
- * Pool of module data.
+ * A manager for pool of resources.
  */
-public class ModulePoolImpl implements ModulePool {
+public class ResourcePoolManager {
 
-    private class ModuleImpl implements LinkModule {
+    class ResourcePoolModuleImpl implements ResourcePoolModule {
 
-        final Map<String, ModuleEntry> moduleContent = new LinkedHashMap<>();
+        final Map<String, ResourcePoolEntry> moduleContent = new LinkedHashMap<>();
         private ModuleDescriptor descriptor;
         final String name;
 
-        private ModuleImpl(String name) {
+        private ResourcePoolModuleImpl(String name) {
             this.name = name;
         }
 
         @Override
-        public String getName() {
+        public String name() {
             return name;
         }
 
         @Override
-        public Optional<ModuleEntry> findEntry(String path) {
+        public Optional<ResourcePoolEntry> findEntry(String path) {
             if (!path.startsWith("/")) {
                 path = "/" + path;
             }
@@ -76,41 +78,28 @@ public class ModulePoolImpl implements ModulePool {
         }
 
         @Override
-        public ModuleDescriptor getDescriptor() {
+        public ModuleDescriptor descriptor() {
             if (descriptor == null) {
                 String p = "/" + name + "/module-info.class";
-                Optional<ModuleEntry> content = findEntry(p);
+                Optional<ResourcePoolEntry> content = findEntry(p);
                 if (!content.isPresent()) {
                     throw new PluginException("No module-info for " + name
                             + " module");
                 }
-                ByteBuffer bb = ByteBuffer.wrap(content.get().getBytes());
+                ByteBuffer bb = ByteBuffer.wrap(content.get().contentBytes());
                 descriptor = ModuleDescriptor.read(bb);
             }
             return descriptor;
         }
 
         @Override
-        public void add(ModuleEntry data) {
-            if (isReadOnly()) {
-                throw new PluginException("ModulePool is readonly");
-            }
-            Objects.requireNonNull(data);
-            if (!data.getModule().equals(name)) {
-                throw new PluginException("Can't add resource " + data.getPath()
-                        + " to module " + name);
-            }
-            ModulePoolImpl.this.add(data);
-        }
-
-        @Override
-        public Set<String> getAllPackages() {
+        public Set<String> packages() {
             Set<String> pkgs = new HashSet<>();
-            moduleContent.values().stream().filter(m -> m.getType().
-                    equals(ModuleEntry.Type.CLASS_OR_RESOURCE)).forEach(res -> {
+            moduleContent.values().stream().filter(m -> m.type().
+                    equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE)).forEach(res -> {
                 // Module metadata only contains packages with .class files
-                if (ImageFileCreator.isClassPackage(res.getPath())) {
-                    String[] split = ImageFileCreator.splitPath(res.getPath());
+                if (ImageFileCreator.isClassPackage(res.path())) {
+                    String[] split = ImageFileCreator.splitPath(res.path());
                     String pkg = split[1];
                     if (pkg != null && !pkg.isEmpty()) {
                         pkgs.add(pkg);
@@ -122,35 +111,121 @@ public class ModulePoolImpl implements ModulePool {
 
         @Override
         public String toString() {
-            return getName();
+            return name();
         }
 
         @Override
-        public Stream<? extends ModuleEntry> entries() {
+        public Stream<ResourcePoolEntry> entries() {
             return moduleContent.values().stream();
         }
 
         @Override
-        public int getEntryCount() {
+        public int entryCount() {
             return moduleContent.values().size();
         }
     }
 
-    private final Map<String, ModuleEntry> resources = new LinkedHashMap<>();
-    private final Map<String, ModuleImpl> modules = new LinkedHashMap<>();
-    private final ModuleImpl fileCopierModule = new ModuleImpl(FileCopierPlugin.FAKE_MODULE);
+    public class ResourcePoolImpl implements ResourcePool {
+        @Override
+        public ResourcePoolModuleView moduleView() {
+            return ResourcePoolManager.this.moduleView();
+        }
+
+        @Override
+        public Stream<ResourcePoolEntry> entries() {
+            return ResourcePoolManager.this.entries();
+        }
+
+        @Override
+        public int entryCount() {
+            return ResourcePoolManager.this.entryCount();
+        }
+
+        @Override
+        public Optional<ResourcePoolEntry> findEntry(String path) {
+            return ResourcePoolManager.this.findEntry(path);
+        }
+
+        @Override
+        public Optional<ResourcePoolEntry> findEntryInContext(String path, ResourcePoolEntry context) {
+            return ResourcePoolManager.this.findEntryInContext(path, context);
+        }
+
+        @Override
+        public boolean contains(ResourcePoolEntry data) {
+            return ResourcePoolManager.this.contains(data);
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return ResourcePoolManager.this.isEmpty();
+        }
+
+        @Override
+        public ByteOrder byteOrder() {
+            return ResourcePoolManager.this.byteOrder();
+        }
+
+        @Override
+        public Map<String, String> releaseProperties() {
+            return ResourcePoolManager.this.releaseProperties();
+        }
+
+        public StringTable getStringTable() {
+            return ResourcePoolManager.this.getStringTable();
+        }
+    }
+
+    class ResourcePoolBuilderImpl implements ResourcePoolBuilder {
+        private boolean built;
+
+        @Override
+        public void add(ResourcePoolEntry data) {
+            if (built) {
+                throw new IllegalStateException("resource pool already built!");
+            }
+            ResourcePoolManager.this.add(data);
+        }
+
+        @Override
+        public ResourcePool build() {
+            built = true;
+            return ResourcePoolManager.this.resourcePool();
+        }
+    }
+
+    class ResourcePoolModuleViewImpl implements ResourcePoolModuleView {
+        @Override
+        public Optional<ResourcePoolModule> findModule(String name) {
+            return ResourcePoolManager.this.findModule(name);
+        }
+
+        @Override
+        public Stream<ResourcePoolModule> modules() {
+            return ResourcePoolManager.this.modules();
+        }
+
+        @Override
+        public int moduleCount() {
+            return ResourcePoolManager.this.moduleCount();
+        }
+    }
+
+    private final Map<String, ResourcePoolEntry> resources = new LinkedHashMap<>();
+    private final Map<String, ResourcePoolModule> modules = new LinkedHashMap<>();
+    private final ResourcePoolModuleImpl fileCopierModule = new ResourcePoolModuleImpl(FileCopierPlugin.FAKE_MODULE);
     private Map<String, String> releaseProps = new HashMap<>();
-
     private final ByteOrder order;
-
-    private boolean isReadOnly;
     private final StringTable table;
+    private final ResourcePool poolImpl;
+    private final ResourcePoolBuilder poolBuilderImpl;
+    private final ResourcePoolModuleView moduleViewImpl;
 
-    public ModulePoolImpl() {
+    public ResourcePoolManager() {
         this(ByteOrder.nativeOrder());
     }
 
-    public ModulePoolImpl(ByteOrder order) {
+    public ResourcePoolManager(ByteOrder order) {
         this(order, new StringTable() {
 
             @Override
@@ -165,39 +240,50 @@ public class ModulePoolImpl implements ModulePool {
         });
     }
 
-    public ModulePoolImpl(ByteOrder order, StringTable table) {
+    public ResourcePoolManager(ByteOrder order, StringTable table) {
         this.order = Objects.requireNonNull(order);
         this.table = Objects.requireNonNull(table);
+        this.poolImpl = new ResourcePoolImpl();
+        this.poolBuilderImpl = new ResourcePoolBuilderImpl();
+        this.moduleViewImpl = new ResourcePoolModuleViewImpl();
+    }
+
+    public ResourcePool resourcePool() {
+        return poolImpl;
+    }
+
+    public ResourcePoolBuilder resourcePoolBuilder() {
+        return poolBuilderImpl;
+    }
+
+    public ResourcePoolModuleView moduleView() {
+        return moduleViewImpl;
     }
 
     /**
-     * Add a ModuleEntry.
+     * Add a ResourcePoolEntry.
      *
-     * @param data The ModuleEntry to add.
+     * @param data The ResourcePoolEntry to add.
      */
-    @Override
-    public void add(ModuleEntry data) {
-        if (isReadOnly()) {
-            throw new PluginException("ModulePool is readonly");
-        }
+    public void add(ResourcePoolEntry data) {
         Objects.requireNonNull(data);
-        if (resources.get(data.getPath()) != null) {
-            throw new PluginException("Resource " + data.getPath()
+        if (resources.get(data.path()) != null) {
+            throw new PluginException("Resource " + data.path()
                     + " already present");
         }
-        String modulename = data.getModule();
-        ModuleImpl m = modules.get(modulename);
+        String modulename = data.moduleName();
+        ResourcePoolModuleImpl m = (ResourcePoolModuleImpl)modules.get(modulename);
         // ## TODO: FileCopierPlugin should not add content to a module
         // FAKE_MODULE is not really a module to be added in the image
         if (FileCopierPlugin.FAKE_MODULE.equals(modulename)) {
             m = fileCopierModule;
         }
         if (m == null) {
-            m = new ModuleImpl(modulename);
+            m = new ResourcePoolModuleImpl(modulename);
             modules.put(modulename, m);
         }
-        resources.put(data.getPath(), data);
-        m.moduleContent.put(data.getPath(), data);
+        resources.put(data.path(), data);
+        m.moduleContent.put(data.path(), data);
     }
 
     /**
@@ -206,127 +292,94 @@ public class ModulePoolImpl implements ModulePool {
      * @param name The module name
      * @return the module of matching name, if found
      */
-    @Override
-    public Optional<LinkModule> findModule(String name) {
+    public Optional<ResourcePoolModule> findModule(String name) {
         Objects.requireNonNull(name);
         return Optional.ofNullable(modules.get(name));
     }
 
     /**
-     * The stream of modules contained in this ModulePool.
+     * The stream of modules contained in this ResourcePool.
      *
      * @return The stream of modules.
      */
-    @Override
-    public Stream<? extends LinkModule> modules() {
+    public Stream<ResourcePoolModule> modules() {
         return modules.values().stream();
     }
 
     /**
-     * Return the number of LinkModule count in this ModulePool.
+     * Return the number of ResourcePoolModule count in this ResourcePool.
      *
      * @return the module count.
      */
-    @Override
-    public int getModuleCount() {
+    public int moduleCount() {
         return modules.size();
     }
 
     /**
-     * Get all ModuleEntry contained in this ModulePool instance.
+     * Get all ResourcePoolEntry contained in this ResourcePool instance.
      *
-     * @return The stream of LinkModuleEntries.
+     * @return The stream of ResourcePoolModuleEntries.
      */
-    @Override
-    public Stream<? extends ModuleEntry> entries() {
+    public Stream<ResourcePoolEntry> entries() {
         return resources.values().stream();
     }
 
     /**
-     * Return the number of ModuleEntry count in this ModulePool.
+     * Return the number of ResourcePoolEntry count in this ResourcePool.
      *
      * @return the entry count.
      */
-    @Override
-    public int getEntryCount() {
+    public int entryCount() {
         return resources.values().size();
     }
 
     /**
-     * Get the ModuleEntry for the passed path.
+     * Get the ResourcePoolEntry for the passed path.
      *
      * @param path A data path
-     * @return A ModuleEntry instance or null if the data is not found
+     * @return A ResourcePoolEntry instance or null if the data is not found
      */
-    @Override
-    public Optional<ModuleEntry> findEntry(String path) {
+    public Optional<ResourcePoolEntry> findEntry(String path) {
         Objects.requireNonNull(path);
         return Optional.ofNullable(resources.get(path));
     }
 
     /**
-     * Get the ModuleEntry for the passed path restricted to supplied context.
+     * Get the ResourcePoolEntry for the passed path restricted to supplied context.
      *
      * @param path A data path
      * @param context A context of the search
-     * @return A ModuleEntry instance or null if the data is not found
+     * @return A ResourcePoolEntry instance or null if the data is not found
      */
-    @Override
-    public Optional<ModuleEntry> findEntryInContext(String path, ModuleEntry context) {
+    public Optional<ResourcePoolEntry> findEntryInContext(String path, ResourcePoolEntry context) {
         Objects.requireNonNull(path);
         Objects.requireNonNull(context);
-        LinkModule module = modules.get(context.getModule());
+        ResourcePoolModule module = modules.get(context.moduleName());
         Objects.requireNonNull(module);
-        Optional<ModuleEntry> entry = module.findEntry(path);
+        Optional<ResourcePoolEntry> entry = module.findEntry(path);
         // Navigating other modules via requires and exports is problematic
         // since we cannot construct the runtime model of loaders and layers.
         return entry;
      }
 
     /**
-     * Check if the ModulePool contains the given ModuleEntry.
+     * Check if the ResourcePool contains the given ResourcePoolEntry.
      *
      * @param data The module data to check existence for.
      * @return The module data or null if not found.
      */
-    @Override
-    public boolean contains(ModuleEntry data) {
+    public boolean contains(ResourcePoolEntry data) {
         Objects.requireNonNull(data);
-        return findEntry(data.getPath()).isPresent();
+        return findEntry(data.path()).isPresent();
     }
 
     /**
-     * Check if the ModulePool contains some content at all.
+     * Check if the ResourcePool contains some content at all.
      *
      * @return True, no content, false otherwise.
      */
-    @Override
     public boolean isEmpty() {
         return resources.isEmpty();
-    }
-
-    /**
-     * Visit each ModuleEntry in this ModulePool to transform it and
-     * copy the transformed ModuleEntry to the output ModulePool.
-     *
-     * @param transform The function called for each ModuleEntry found in
-     * the ModulePool. The transform function should return a
-     * ModuleEntry instance which will be added to the output or it should
-     * return null if the passed ModuleEntry is to be ignored for the
-     * output.
-     *
-     * @param output The ModulePool to be filled with Visitor returned
-     * ModuleEntry.
-     */
-    @Override
-    public void transformAndCopy(Function<ModuleEntry, ModuleEntry> transform,
-            ModulePool output) {
-        entries().forEach(resource -> {
-            ModuleEntry res = transform.apply(resource);
-            if (res != null) {
-                output.add(res);
-            }
-        });
     }
 
     /**
@@ -334,14 +387,12 @@ public class ModulePoolImpl implements ModulePool {
      *
      * @return The ByteOrder.
      */
-    @Override
-    public ByteOrder getByteOrder() {
+    public ByteOrder byteOrder() {
         return order;
     }
 
-    @Override
-    public Map<String, String> getReleaseProperties() {
-        return isReadOnly()? Collections.unmodifiableMap(releaseProps) : releaseProps;
+    public Map<String, String> releaseProperties() {
+        return releaseProps;
     }
 
     public StringTable getStringTable() {
@@ -349,32 +400,15 @@ public class ModulePoolImpl implements ModulePool {
     }
 
     /**
-     * Make this Resources instance read-only. No resource can be added.
-     */
-    public void setReadOnly() {
-        isReadOnly = true;
-    }
-
-    /**
-     * Read only state.
-     *
-     * @return true if readonly false otherwise.
-     */
-    @Override
-    public boolean isReadOnly() {
-        return isReadOnly;
-    }
-
-    /**
      * A resource that has been compressed.
      */
-    public static final class CompressedModuleData extends ByteArrayModuleEntry {
+    public static final class CompressedModuleData extends ByteArrayResourcePoolEntry {
 
         final long uncompressed_size;
 
         private CompressedModuleData(String module, String path,
                 byte[] content, long uncompressed_size) {
-            super(module, path, ModuleEntry.Type.CLASS_OR_RESOURCE, content);
+            super(module, path, ResourcePoolEntry.Type.CLASS_OR_RESOURCE, content);
             this.uncompressed_size = uncompressed_size;
         }
 
@@ -388,7 +422,7 @@ public class ModulePoolImpl implements ModulePool {
                 return false;
             }
             CompressedModuleData f = (CompressedModuleData) other;
-            return f.getPath().equals(getPath());
+            return f.path().equals(path());
         }
 
         @Override
@@ -397,7 +431,7 @@ public class ModulePoolImpl implements ModulePool {
         }
     }
 
-    public static CompressedModuleData newCompressedResource(ModuleEntry original,
+    public static CompressedModuleData newCompressedResource(ResourcePoolEntry original,
             ByteBuffer compressed,
             String plugin, String pluginConfig, StringTable strings,
             ByteOrder order) {
@@ -406,7 +440,7 @@ public class ModulePoolImpl implements ModulePool {
         Objects.requireNonNull(plugin);
 
         boolean isTerminal = !(original instanceof CompressedModuleData);
-        long uncompressed_size = original.getLength();
+        long uncompressed_size = original.contentLength();
         if (original instanceof CompressedModuleData) {
             CompressedModuleData comp = (CompressedModuleData) original;
             uncompressed_size = comp.getUncompressedSize();
@@ -417,7 +451,7 @@ public class ModulePoolImpl implements ModulePool {
             configOffset = strings.addString(plugin);
         }
         CompressedResourceHeader rh
-                = new CompressedResourceHeader(compressed.limit(), original.getLength(),
+                = new CompressedResourceHeader(compressed.limit(), original.contentLength(),
                         nameOffset, configOffset, isTerminal);
         // Merge header with content;
         byte[] h = rh.getBytes(order);
@@ -428,9 +462,8 @@ public class ModulePoolImpl implements ModulePool {
         byte[] contentWithHeader = bb.array();
 
         CompressedModuleData compressedResource
-                = new CompressedModuleData(original.getModule(), original.getPath(),
+                = new CompressedModuleData(original.moduleName(), original.path(),
                         contentWithHeader, uncompressed_size);
         return compressedResource;
     }
-
 }
