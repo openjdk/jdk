@@ -26,10 +26,12 @@ package jdk.tools.jlink.internal.plugins;
 
 import java.util.Map;
 
-import jdk.tools.jlink.internal.ModulePoolImpl;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.internal.ResourcePoolManager.ResourcePoolImpl;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.internal.ImagePluginStack;
+import jdk.tools.jlink.internal.ResourcePoolManager;
 import jdk.tools.jlink.internal.ResourcePrevisitor;
 import jdk.tools.jlink.internal.StringTable;
 
@@ -53,21 +55,22 @@ public final class DefaultCompressPlugin implements Plugin, ResourcePrevisitor {
     }
 
     @Override
-    public void visit(ModulePool in, ModulePool out) {
+    public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         if (ss != null && zip != null) {
-            ModulePool output = new ImagePluginStack.OrderedResourcePool(in.getByteOrder(),
-                    ((ModulePoolImpl) in).getStringTable());
-            ss.visit(in, output);
-            zip.visit(output, out);
+            ResourcePoolManager resMgr = new ImagePluginStack.OrderedResourcePoolManager(
+                    in.byteOrder(), ((ResourcePoolImpl)in).getStringTable());
+            return zip.transform(ss.transform(in, resMgr.resourcePoolBuilder()), out);
         } else if (ss != null) {
-            ss.visit(in, out);
+            return ss.transform(in, out);
         } else if (zip != null) {
-            zip.visit(in, out);
+            return zip.transform(in, out);
         }
+
+        return out.build();
     }
 
     @Override
-    public void previsit(ModulePool resources, StringTable strings) {
+    public void previsit(ResourcePool resources, StringTable strings) {
         if (ss != null) {
             ss.previsit(resources, strings);
         }

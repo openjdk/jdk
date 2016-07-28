@@ -36,7 +36,7 @@
 #
 # Except for the French entries,
 # I made up all time zone abbreviations mentioned here; corrections welcome!
-# FORMAT is 'zzz' and GMTOFF is 0 for locations while uninhabited.
+# FORMAT is '-00' and GMTOFF is 0 for locations while uninhabited.
 
 # Argentina - year-round bases
 # Belgrano II, Confin Coast, -770227-0343737, since 1972-02-05
@@ -90,22 +90,22 @@
 # http://www.timeanddate.com/news/time/antartica-time-changes-2010.html
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Antarctica/Casey	0	-	zzz	1969
+Zone Antarctica/Casey	0	-	-00	1969
 			8:00	-	AWST	2009 Oct 18  2:00
 						# Australian Western Std Time
 			11:00	-	CAST	2010 Mar  5  2:00  # Casey Time
 			8:00	-	AWST	2011 Oct 28  2:00
 			11:00	-	CAST	2012 Feb 21 17:00u
 			8:00	-	AWST
-Zone Antarctica/Davis	0	-	zzz	1957 Jan 13
+Zone Antarctica/Davis	0	-	-00	1957 Jan 13
 			7:00	-	DAVT	1964 Nov    # Davis Time
-			0	-	zzz	1969 Feb
+			0	-	-00	1969 Feb
 			7:00	-	DAVT	2009 Oct 18  2:00
 			5:00	-	DAVT	2010 Mar 10 20:00u
 			7:00	-	DAVT	2011 Oct 28  2:00
 			5:00	-	DAVT	2012 Feb 21 20:00u
 			7:00	-	DAVT
-Zone Antarctica/Mawson	0	-	zzz	1954 Feb 13
+Zone Antarctica/Mawson	0	-	-00	1954 Feb 13
 			6:00	-	MAWT	2009 Oct 18  2:00 # Mawson Time
 			5:00	-	MAWT
 # References:
@@ -160,7 +160,7 @@ Zone Antarctica/Mawson	0	-	zzz	1954 Feb 13
 #	fishing stations operated variously 1819/1931
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Indian/Kerguelen	0	-	zzz	1950 # Port-aux-Français
+Zone Indian/Kerguelen	0	-	-00	1950 # Port-aux-Français
 			5:00	-	TFT	# ISO code TF Time
 #
 # year-round base in the main continent
@@ -171,9 +171,9 @@ Zone Indian/Kerguelen	0	-	zzz	1950 # Port-aux-Français
 # It was destroyed by fire on 1952-01-14.
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Antarctica/DumontDUrville 0 -	zzz	1947
+Zone Antarctica/DumontDUrville 0 -	-00	1947
 			10:00	-	PMT	1952 Jan 14 # Port-Martin Time
-			0	-	zzz	1956 Nov
+			0	-	-00	1956 Nov
 			10:00	-	DDUT	# Dumont-d'Urville Time
 
 # France & Italy - year-round base
@@ -199,7 +199,7 @@ Zone Antarctica/DumontDUrville 0 -	zzz	1947
 # was established on 1957-01-29.  Since Syowa station is still the main
 # station of Japan, it's appropriate for the principal location.
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Antarctica/Syowa	0	-	zzz	1957 Jan 29
+Zone Antarctica/Syowa	0	-	-00	1957 Jan 29
 			3:00	-	SYOT	# Syowa Time
 # See:
 # NIPR Antarctic Research Activities (1999-08-17)
@@ -249,7 +249,7 @@ Rule	Troll	2005	max	-	Mar	lastSun	1:00u	2:00	CEST
 # Remove the following line when uncommenting the above '#Rule' lines.
 Rule	Troll	2004	max	-	Oct	lastSun	1:00u	0:00	UTC
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Antarctica/Troll	0	-	zzz	2005 Feb 12
+Zone Antarctica/Troll	0	-	-00	2005 Feb 12
 			0:00	Troll	%s
 
 # Poland - year-round base
@@ -290,7 +290,7 @@ Zone Antarctica/Troll	0	-	zzz	2005 Feb 12
 # happened to be during their visit.  So we still don't really know what time
 # it is at Vostok.  But we'll guess UTC+6.
 #
-Zone Antarctica/Vostok	0	-	zzz	1957 Dec 16
+Zone Antarctica/Vostok	0	-	-00	1957 Dec 16
 			6:00	-	VOST	# Vostok time
 
 # S Africa - year-round bases
@@ -323,7 +323,7 @@ Zone Antarctica/Vostok	0	-	zzz	1957 Dec 16
 # <http://webexhibits.org/daylightsaving/g.html> says Rothera is -03 all year.
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Antarctica/Rothera	0	-	zzz	1976 Dec  1
+Zone Antarctica/Rothera	0	-	-00	1976 Dec  1
 			-3:00	-	ROTT	# Rothera time
 
 # Uruguay - year round base

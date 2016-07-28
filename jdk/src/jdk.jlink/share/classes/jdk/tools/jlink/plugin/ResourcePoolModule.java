@@ -30,58 +30,50 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 /**
-  * Link-time representation of a Java module.
+  * Link-time representation of a module.
   */
-public interface LinkModule {
-
+public interface ResourcePoolModule {
     /**
      * The module name.
      *
-     * @return The name.
+     * @return The module name.
      */
-    public String getName();
+    public String name();
 
     /**
-     * Retrieves a LinkModuleEntry from the given path (e.g:
+     * Retrieves a ResourcePoolEntry from the given path (e.g:
      * /mymodule/com.foo.bar/MyClass.class)
      *
      * @param path The piece of data path.
-     * @return A LinkModuleEntry of the given path, if found.
+     * @return A ResourcePoolEntry of the given path, if found.
      */
-    public Optional<ModuleEntry> findEntry(String path);
+    public Optional<ResourcePoolEntry> findEntry(String path);
 
     /**
      * The module descriptor of this module.
      *
      * @return The module descriptor.
      */
-    public ModuleDescriptor getDescriptor();
-
-    /**
-     * Add a LinkModuleEntry to this module.
-     *
-     * @param data The LinkModuleEntry to add.
-     */
-    public void add(ModuleEntry data);
+    public ModuleDescriptor descriptor();
 
     /**
      * Retrieves all the packages located in this module.
      *
      * @return The set of packages.
      */
-    public Set<String> getAllPackages();
+    public Set<String> packages();
 
     /**
-     * Retrieves the stream of LinkModuleEntry.
+     * Retrieves the stream of ResourcePoolEntry.
      *
-     * @return The LinkModuleEntry stream.
+     * @return The ResourcePoolEntry stream.
      */
-    public Stream<? extends ModuleEntry> entries();
+    public Stream<ResourcePoolEntry> entries();
 
     /**
-     * Return the number of LinkModuleEntry count in this LinkModule.
+     * Return the number of ResourcePoolEntry count in this ResourcePoolModule.
      *
      * @return the entry count.
      */
-    public int getEntryCount();
+    public int entryCount();
 }
