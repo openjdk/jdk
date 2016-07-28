@@ -386,13 +386,21 @@ GCTaskThread* GCTaskManager::install_worker(uint t) {
 
 void GCTaskManager::add_workers(bool initializing) {
   os::ThreadType worker_type = os::pgc_thread;
+  uint previous_created_workers = _created_workers;
+
   _created_workers = WorkerManager::add_workers(this,
                                                 _active_workers,
-                                                (uint) _workers,
+                                                _workers,
                                                 _created_workers,
                                                 worker_type,
                                                 initializing);
   _active_workers = MIN2(_created_workers, _active_workers);
+
+  WorkerManager::log_worker_creation(this, previous_created_workers, _active_workers, _created_workers, initializing);
+}
+
+const char* GCTaskManager::group_name() {
+  return "ParGC Thread";
 }
 
 void GCTaskManager::initialize() {

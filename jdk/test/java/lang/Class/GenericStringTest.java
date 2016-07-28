@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6298888 6992705
+ * @bug 6298888 6992705 8161500
  * @summary Check Class.toGenericString()
  * @author Joseph D. Darcy
  */
@@ -58,15 +58,11 @@ public class GenericStringTest {
         f = GenericStringTest.class.getDeclaredField("mixed2");
         failures += checkToGenericString(f.getType(), "java.util.Map<K,V>[][]");
 
-        Class<?>[] types = {
-            GenericStringTest.class,
-            AnInterface.class,
-            LocalMap.class,
-            AnEnum.class,
-            AnotherEnum.class,
-        };
-
-        for(Class<?> clazz : types) {
+        for(Class<?> clazz : List.of(GenericStringTest.class,
+                                     AnInterface.class,
+                                     LocalMap.class,
+                                     AnEnum.class,
+                                     AnotherEnum.class)) {
             failures += checkToGenericString(clazz, clazz.getAnnotation(ExpectedGenericString.class).value());
         }
 

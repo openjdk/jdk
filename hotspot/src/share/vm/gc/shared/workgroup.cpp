@@ -66,6 +66,7 @@ void AbstractWorkGang::add_workers(uint active_workers, bool initializing) {
   } else {
     worker_type = os::pgc_thread;
   }
+  uint previous_created_workers = _created_workers;
 
   _created_workers = WorkerManager::add_workers(this,
                                                 active_workers,
@@ -74,6 +75,8 @@ void AbstractWorkGang::add_workers(uint active_workers, bool initializing) {
                                                 worker_type,
                                                 initializing);
   _active_workers = MIN2(_created_workers, _active_workers);
+
+  WorkerManager::log_worker_creation(this, previous_created_workers, _active_workers, _created_workers, initializing);
 }
 
 AbstractGangWorker* AbstractWorkGang::worker(uint i) const {

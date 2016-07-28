@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,9 @@ public final class XMLSecurityManager {
         MAX_ELEMENT_DEPTH_LIMIT("MaxElementDepthLimit", XalanConstants.JDK_MAX_ELEMENT_DEPTH,
                 XalanConstants.SP_MAX_ELEMENT_DEPTH, 0, 0),
         MAX_NAME_LIMIT("MaxXMLNameLimit", XalanConstants.JDK_XML_NAME_LIMIT,
-                XalanConstants.SP_XML_NAME_LIMIT, 1000, 1000);
+                XalanConstants.SP_XML_NAME_LIMIT, 1000, 1000),
+        ENTITY_REPLACEMENT_LIMIT("EntityReplacementLimit", XalanConstants.JDK_ENTITY_REPLACEMENT_LIMIT,
+                XalanConstants.SP_ENTITY_REPLACEMENT_LIMIT, 0, 3000000);
 
         final String key;
         final String apiProperty;
