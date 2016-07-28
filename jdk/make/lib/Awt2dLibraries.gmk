@@ -147,8 +147,6 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
   LIBAWT_DIRS += $(JDK_TOPDIR)/src/java.desktop/share/native/common/awt/utility
-else
-  LIBAWT_EXFILES := java2d/ShaderList.c
 endif
 
 ifneq ($(filter $(OPENJDK_TARGET_OS), solaris linux macosx aix), )
