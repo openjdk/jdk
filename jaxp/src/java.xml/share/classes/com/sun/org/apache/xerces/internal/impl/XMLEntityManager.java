@@ -53,7 +53,17 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
 import java.util.StringTokenizer;
+import javax.xml.XMLConstants;
+import javax.xml.catalog.CatalogException;
+import javax.xml.catalog.CatalogFeatures;
+import javax.xml.catalog.CatalogFeatures.Feature;
+import javax.xml.catalog.CatalogManager;
+import javax.xml.catalog.CatalogResolver;
+import javax.xml.catalog.CatalogUriResolver;
 import javax.xml.stream.XMLInputFactory;
+import javax.xml.transform.Source;
+import jdk.xml.internal.JdkXmlUtils;
+import org.xml.sax.InputSource;
 
 
 /**
@@ -184,7 +194,8 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                 EXTERNAL_PARAMETER_ENTITIES,
                 ALLOW_JAVA_ENCODINGS,
                 WARN_ON_DUPLICATE_ENTITYDEF,
-                STANDARD_URI_CONFORMANT
+                STANDARD_URI_CONFORMANT,
+                XMLConstants.USE_CATALOG
     };
 
     /** Feature defaults. */
@@ -194,7 +205,8 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                 Boolean.TRUE,
                 Boolean.TRUE,
                 Boolean.FALSE,
-                Boolean.FALSE
+                Boolean.FALSE,
+                JdkXmlUtils.USE_CATALOG_DEFAULT
     };
 
     /** Recognized properties. */
@@ -205,7 +217,11 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                 VALIDATION_MANAGER,
                 BUFFER_SIZE,
                 SECURITY_MANAGER,
-                XML_SECURITY_PROPERTY_MANAGER
+                XML_SECURITY_PROPERTY_MANAGER,
+                JdkXmlUtils.CATALOG_DEFER,
+                JdkXmlUtils.CATALOG_FILES,
+                JdkXmlUtils.CATALOG_PREFER,
+                JdkXmlUtils.CATALOG_RESOLVE
     };
 
     /** Property defaults. */
@@ -214,7 +230,11 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                 null,
                 null,
                 null,
-                new Integer(DEFAULT_BUFFER_SIZE),
+                DEFAULT_BUFFER_SIZE,
+                null,
+                null,
+                null,
+                null,
                 null,
                 null
     };
@@ -395,6 +415,17 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
     /** Pool of character buffers. */
     private CharacterBufferPool fBufferPool = new CharacterBufferPool(fBufferSize, DEFAULT_INTERNAL_BUFFER_SIZE);
+
+    /** indicate whether Catalog should be used for resolving external resources */
+    private boolean fUseCatalog = true;
+    CatalogFeatures fCatalogFeatures;
+    CatalogResolver fCatalogResolver;
+    CatalogUriResolver fCatalogUriResolver;
+
+    private String fCatalogFile;
+    private String fDefer;
+    private String fPrefer;
+    private String fResolve;
 
     //
     // Constructors
@@ -1007,6 +1038,22 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
             staxInputSource = new StaxXMLInputSource(xmlInputSource, fISCreatedByResolver);
         }
 
+        if (staxInputSource == null) {
+            if (fCatalogFeatures == null) {
+                fCatalogFeatures = JdkXmlUtils.getCatalogFeatures(fDefer, fCatalogFile, fPrefer, fResolve);
+            }
+            fCatalogFile = fCatalogFeatures.get(Feature.FILES);
+            if (fUseCatalog && fCatalogFile != null) {
+                if (fCatalogResolver == null) {
+                    fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
+                }
+                InputSource is = fCatalogResolver.resolveEntity(publicId, literalSystemId);
+                if (is != null && !is.isEmpty()) {
+                    staxInputSource = new StaxXMLInputSource(new XMLInputSource(is, true), true);
+                }
+            }
+        }
+
         // do default resolution
         //this works for both stax & Xerces, if staxInputSource is null,
         //it means parser need to revert to default resolution
@@ -1083,6 +1130,41 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
             resourceIdentifier.setBaseSystemId(baseSystemId);
             resourceIdentifier.setExpandedSystemId(expandedSystemId);
             xmlInputSource = fEntityResolver.resolveEntity(resourceIdentifier);
+        }
+
+        if (xmlInputSource == null) {
+            if (fCatalogFeatures == null) {
+                fCatalogFeatures = JdkXmlUtils.getCatalogFeatures(fDefer, fCatalogFile, fPrefer, fResolve);
+            }
+            fCatalogFile = fCatalogFeatures.get(Feature.FILES);
+            if (fUseCatalog && fCatalogFile != null) {
+                /*
+                 since the method can be called from various processors, both
+                 CatalogResolver and CatalogUriResolver are used to attempt to find
+                 a match
+                */
+                InputSource is = null;
+                try {
+                    if (fCatalogResolver == null) {
+                        fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
+                    }
+                    String pid = (publicId != null? publicId : resourceIdentifier.getNamespace());
+                    if (pid != null || literalSystemId != null) {
+                        is = fCatalogResolver.resolveEntity(pid, literalSystemId);
+                    }
+                } catch (CatalogException e) {}
+                if (is != null && !is.isEmpty()) {
+                    xmlInputSource = new XMLInputSource(is, true);
+                } else if (literalSystemId != null) {
+                    if (fCatalogUriResolver == null) {
+                        fCatalogUriResolver = CatalogManager.catalogUriResolver(fCatalogFeatures);
+                    }
+                    Source source = fCatalogUriResolver.resolve(literalSystemId, baseSystemId);
+                    if (source != null && !source.isEmpty()) {
+                        xmlInputSource = new XMLInputSource(publicId, source.getSystemId(), baseSystemId, true);
+                    }
+                }
+            }
         }
 
         // do default resolution
@@ -1442,12 +1524,19 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
             fStaxEntityResolver = null;
         }
 
-        fSupportDTD = ((Boolean)propertyManager.getProperty(XMLInputFactory.SUPPORT_DTD)).booleanValue();
-        fReplaceEntityReferences = ((Boolean)propertyManager.getProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES)).booleanValue();
-        fSupportExternalEntities = ((Boolean)propertyManager.getProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES)).booleanValue();
+        fSupportDTD = ((Boolean)propertyManager.getProperty(XMLInputFactory.SUPPORT_DTD));
+        fReplaceEntityReferences = ((Boolean)propertyManager.getProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES));
+        fSupportExternalEntities = ((Boolean)propertyManager.getProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES));
 
         // Zephyr feature ignore-external-dtd is the opposite of Xerces' load-external-dtd
-        fLoadExternalDTD = !((Boolean)propertyManager.getProperty(Constants.ZEPHYR_PROPERTY_PREFIX + Constants.IGNORE_EXTERNAL_DTD)).booleanValue();
+        fLoadExternalDTD = !((Boolean)propertyManager.getProperty(Constants.ZEPHYR_PROPERTY_PREFIX + Constants.IGNORE_EXTERNAL_DTD));
+
+        //Use Catalog
+        fUseCatalog = (Boolean)propertyManager.getProperty(XMLConstants.USE_CATALOG);
+        fCatalogFile = (String)propertyManager.getProperty(JdkXmlUtils.CATALOG_FILES);
+        fDefer = (String)propertyManager.getProperty(JdkXmlUtils.CATALOG_DEFER);
+        fPrefer = (String)propertyManager.getProperty(JdkXmlUtils.CATALOG_PREFER);
+        fResolve = (String)propertyManager.getProperty(JdkXmlUtils.CATALOG_RESOLVE);
 
         // JAXP 1.5 feature
         XMLSecurityPropertyManager spm = (XMLSecurityPropertyManager) propertyManager.getProperty(XML_SECURITY_PROPERTY_MANAGER);
@@ -1534,6 +1623,13 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
             spm = new XMLSecurityPropertyManager();
         }
         fAccessExternalDTD = spm.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD);
+
+        //Use Catalog
+        fUseCatalog = componentManager.getFeature(XMLConstants.USE_CATALOG, true);
+        fCatalogFile = (String)componentManager.getProperty(JdkXmlUtils.CATALOG_FILES);
+        fDefer = (String)componentManager.getProperty(JdkXmlUtils.CATALOG_DEFER);
+        fPrefer = (String)componentManager.getProperty(JdkXmlUtils.CATALOG_PREFER);
+        fResolve = (String)componentManager.getProperty(JdkXmlUtils.CATALOG_RESOLVE);
 
         //reset general state
         reset();
@@ -1631,6 +1727,8 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                 fLoadExternalDTD = state;
                 return;
             }
+        } else if (featureId.equals(XMLConstants.USE_CATALOG)) {
+            fUseCatalog = state;
         }
 
     } // setFeature(String,boolean)
@@ -1691,6 +1789,18 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         {
             XMLSecurityPropertyManager spm = (XMLSecurityPropertyManager)value;
             fAccessExternalDTD = spm.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD);
+            return;
+        }
+
+        //Catalog properties
+        if (propertyId.equals(JdkXmlUtils.CATALOG_FILES)) {
+            fCatalogFile = (String)value;
+        } else if (propertyId.equals(JdkXmlUtils.CATALOG_DEFER)) {
+            fDefer = (String)value;
+        } else if (propertyId.equals(JdkXmlUtils.CATALOG_PREFER)) {
+            fPrefer = (String)value;
+        } else if (propertyId.equals(JdkXmlUtils.CATALOG_RESOLVE)) {
+            fResolve = (String)value;
         }
     }
 
@@ -2066,7 +2176,6 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
         // system id has to be a valid URI
         if (strict) {
-
             try {
                 // if it's already an absolute one, return it
                 new URI(systemId);
