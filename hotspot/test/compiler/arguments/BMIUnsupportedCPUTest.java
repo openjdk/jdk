@@ -21,8 +21,11 @@
  * questions.
  */
 
-import jdk.test.lib.*;
-import jdk.test.lib.cli.*;
+package compiler.arguments;
+
+import jdk.test.lib.ExitCode;
+import jdk.test.lib.Platform;
+import jdk.test.lib.cli.CommandLineOptionTest;
 
 /**
  * Test on bit manipulation related command line options,

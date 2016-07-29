@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @ignore 8134286
  * @bug 8023014
  * @summary Test ensures that there is no crash if there is not enough ReservedCodeCacheSize
  *          to initialize all compiler threads. The option -Xcomp gives the VM more time to
@@ -31,8 +30,16 @@
  * @library /testlibrary
  * @modules java.base/jdk.internal.misc
  *          java.management
+ *
+ * @ignore 8134286
+ * @run driver compiler.startup.SmallCodeCacheStartup
  */
-import jdk.test.lib.*;
+
+package compiler.startup;
+
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
+
 import static jdk.test.lib.Asserts.assertTrue;
 
 public class SmallCodeCacheStartup {

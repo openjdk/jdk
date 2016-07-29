@@ -21,20 +21,22 @@
  * questions.
  */
 
-import java.io.PrintWriter;
-import java.io.File;
-
-import jdk.test.lib.*;
-
 /*
  * @test CheckCompileCommandOption
+ * @summary Checks parsing of -XX:CompileCommand=option
  * @bug 8055286 8056964 8059847 8069035
- * @summary "Checks parsing of -XX:CompileCommand=option"
  * @library /testlibrary
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main CheckCompileCommandOption
+ * @run driver compiler.oracle.CheckCompileCommandOption
  */
+
+package compiler.oracle;
+
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
+
+import java.io.File;
 
 public class CheckCompileCommandOption {
 

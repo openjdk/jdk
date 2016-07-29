@@ -29,21 +29,28 @@
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestUseRTMForStackLocks
+ * @build compiler.rtm.locking.TestUseRTMForStackLocks
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI TestUseRTMForStackLocks
+ *                   -XX:+WhiteBoxAPI
+ *                   compiler.rtm.locking.TestUseRTMForStackLocks
  */
 
-import java.util.List;
+package compiler.rtm.locking;
 
-import jdk.test.lib.*;
-import jdk.test.lib.cli.CommandLineOptionTest;
-import jdk.test.lib.cli.predicate.AndPredicate;
-import compiler.testlibrary.rtm.*;
+import compiler.testlibrary.rtm.AbortProvoker;
+import compiler.testlibrary.rtm.AbortType;
+import compiler.testlibrary.rtm.RTMLockingStatistics;
+import compiler.testlibrary.rtm.RTMTestBase;
 import compiler.testlibrary.rtm.predicate.SupportedCPU;
 import compiler.testlibrary.rtm.predicate.SupportedVM;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.cli.CommandLineOptionTest;
+import jdk.test.lib.cli.predicate.AndPredicate;
+
+import java.util.List;
 
 /**
  * Test verifies that RTM-based lock elision could be used for stack locks

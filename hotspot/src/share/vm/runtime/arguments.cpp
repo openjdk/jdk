@@ -2277,11 +2277,7 @@ bool Arguments::sun_java_launcher_is_altjvm() {
 #if INCLUDE_JVMCI
 // Check consistency of jvmci vm argument settings.
 bool Arguments::check_jvmci_args_consistency() {
-  if (!EnableJVMCI && !JVMCIGlobals::check_jvmci_flags_are_consistent()) {
-    JVMCIGlobals::print_jvmci_args_inconsistency_error_message();
-    return false;
-  }
-  return true;
+   return JVMCIGlobals::check_jvmci_flags_are_consistent();
 }
 #endif //INCLUDE_JVMCI
 

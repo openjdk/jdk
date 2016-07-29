@@ -21,26 +21,32 @@
  * questions.
  */
 
+/*
+ * @test InitialAndMaxUsageTest
+ * @summary testing of initial and max usage
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @library /testlibrary /test/lib /
+ *
+ * @build compiler.codecache.jmx.InitialAndMaxUsageTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:-UseCodeCacheFlushing
+ *     -XX:-MethodFlushing -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *     -XX:CompileCommand=compileonly,null::* -XX:-UseLargePages
+ *     -XX:+SegmentedCodeCache
+ *     compiler.codecache.jmx.InitialAndMaxUsageTest
+ */
+
+package compiler.codecache.jmx;
+
 import jdk.test.lib.Asserts;
+import sun.hotspot.code.BlobType;
+
 import java.lang.management.MemoryPoolMXBean;
 import java.util.ArrayList;
 import java.util.List;
-import sun.hotspot.code.BlobType;
 
-/*
- * @test InitialAndMaxUsageTest
- * @library /testlibrary /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build InitialAndMaxUsageTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *     sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:-UseCodeCacheFlushing
- *     -XX:-MethodFlushing -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:+SegmentedCodeCache -XX:CompileCommand=compileonly,null::*
- *     -XX:-UseLargePages InitialAndMaxUsageTest
- * @summary testing of initial and max usage
- */
 public class InitialAndMaxUsageTest {
 
     private static final double CACHE_USAGE_COEF = 0.95d;

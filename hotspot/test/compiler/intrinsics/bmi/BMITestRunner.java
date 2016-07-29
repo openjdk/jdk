@@ -22,10 +22,13 @@
  *
  */
 
+package compiler.intrinsics.bmi;
+
 import jdk.test.lib.Asserts;
 import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.ProcessTools;
 import jdk.test.lib.Utils;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
