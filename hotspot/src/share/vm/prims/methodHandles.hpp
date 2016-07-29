@@ -30,11 +30,11 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
+#include "utilities/macros.hpp"
 
-#ifdef TARGET_ARCH_zero
+#ifdef ZERO
 # include "entry_zero.hpp"
 #endif
-
 
 
 class MacroAssembler;
@@ -192,25 +192,7 @@ public:
             ref_kind == JVM_REF_invokeInterface);
   }
 
-
-#ifdef TARGET_ARCH_x86
-# include "methodHandles_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "methodHandles_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "methodHandles_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "methodHandles_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "methodHandles_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "methodHandles_aarch64.hpp"
-#endif
+#include CPU_HEADER(methodHandles)
 
   // Tracing
   static void trace_method_handle(MacroAssembler* _masm, const char* adaptername) PRODUCT_RETURN;

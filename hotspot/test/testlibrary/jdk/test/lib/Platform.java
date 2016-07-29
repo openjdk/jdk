@@ -60,10 +60,6 @@ public class Platform {
         return vmName.endsWith(" Minimal VM");
     }
 
-    public static boolean isEmbedded() {
-        return vmName.contains("Embedded");
-    }
-
     public static boolean isTieredSupported() {
         return compiler.contains("Tiered Compilers");
     }

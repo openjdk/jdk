@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,8 +274,6 @@ class Bytes: AllStatic {
 #endif // VM_LITTLE_ENDIAN
 };
 
-#if defined(TARGET_OS_ARCH_linux_ppc)
-#include "bytes_linux_ppc.inline.hpp"
-#endif
+#include OS_CPU_HEADER_INLINE(bytes)
 
 #endif // CPU_PPC_VM_BYTES_PPC_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ public class TestShrinkAuxiliaryData {
     private static final int REGION_SIZE = 1024 * 1024;
 
     private final static String[] initialOpts = new String[]{
+        "-XX:NewSize=16m",
         "-XX:MinHeapFreeRatio=10",
         "-XX:MaxHeapFreeRatio=11",
         "-XX:+UseG1GC",

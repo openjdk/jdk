@@ -29,6 +29,10 @@
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
+ * @summary Test of diagnostic command Compiler.queue
+ * Fails intermittently on 32-bit VMs due to 8158756 so quarantine
+ * it on those platforms:
+ * @requires vm.bits != "32"
  * @build jdk.test.lib.*
  *        jdk.test.lib.dcmd.*
  *        sun.hotspot.WhiteBox
@@ -38,7 +42,6 @@
  * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -Xmixed -XX:+WhiteBoxAPI CompilerQueueTest
  * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -Xmixed -XX:-TieredCompilation -XX:+WhiteBoxAPI CompilerQueueTest
  * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -Xint -XX:+WhiteBoxAPI CompilerQueueTest
- * @summary Test of diagnostic command Compiler.queue
  */
 
 import compiler.testlibrary.CompilerUtils;

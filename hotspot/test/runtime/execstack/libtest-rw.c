@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002-2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011 SAP AG.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,19 +20,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_BSD_VM_MUTEX_BSD_INLINE_HPP
-#define OS_BSD_VM_MUTEX_BSD_INLINE_HPP
+/*
+ * This source file is the same as libtest-rwx.c and needs to be a separate
+ * file so it can be built with "-z noexecstack" by the build process.
+ * If any changes are made they probably also need to be made to libtest-rwx.c.
+ */
 
-#include "os_bsd.inline.hpp"
-#include "runtime/interfaceSupport.hpp"
-#include "runtime/thread.inline.hpp"
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include "jni.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+JNIEXPORT jint JNICALL Java_Test_someMethod(JNIEnv *env, jobject mainObject) {
+  return 3;
+}
 
-// Reconciliation History
-// mutex_solaris.inline.hpp     1.5 99/06/22 16:38:49
-// End
-
-#endif // OS_BSD_VM_MUTEX_BSD_INLINE_HPP
+#ifdef __cplusplus
+}
+#endif

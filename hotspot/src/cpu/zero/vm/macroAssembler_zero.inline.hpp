@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2011 SAP SE. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,20 +19,12 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include "jni.h"
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef CPU_ZERO_VM_MACROASSEMBLER_ZERO_INLINE_HPP
+#define CPU_ZERO_VM_MACROASSEMBLER_ZERO_INLINE_HPP
 
-JNIEXPORT jint JNICALL Java_Test_someMethod(JNIEnv *env, jobject mainObject) {
-  return 3;
-}
+// Needed for includes in shared files.
 
-#ifdef __cplusplus
-}
-#endif
+#endif // CPU_ZERO_VM_MACROASSEMBLER_ZERO_INLINE_HPP

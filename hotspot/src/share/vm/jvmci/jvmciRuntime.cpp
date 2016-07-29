@@ -44,6 +44,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/macros.hpp"
 
 #if defined(_MSC_VER)
 #define strtoll _strtoi64
@@ -770,14 +771,14 @@ JVM_ENTRY(void, JVM_RegisterJVMCINatives(JNIEnv *env, jclass c2vmClass))
   }
 
 #ifdef _LP64
-#ifndef TARGET_ARCH_sparc
+#ifndef SPARC
   uintptr_t heap_end = (uintptr_t) Universe::heap()->reserved_region().end();
   uintptr_t allocation_end = heap_end + ((uintptr_t)16) * 1024 * 1024 * 1024;
   guarantee(heap_end < allocation_end, "heap end too close to end of address space (might lead to erroneous TLAB allocations)");
-#endif // TARGET_ARCH_sparc
+#endif // !SPARC
 #else
   fatal("check TLAB allocation code for address space conflicts");
-#endif
+#endif // _LP64
 
   JVMCIRuntime::initialize_well_known_classes(CHECK);
 

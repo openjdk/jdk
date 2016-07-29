@@ -74,8 +74,8 @@ public class TestMetaspaceSizeFlags {
     OutputAnalyzer output = run(maxMetaspaceSize, metaspaceSize);
     output.shouldNotMatch("Error occurred during initialization of VM\n.*");
 
-    String stringMaxMetaspaceSize = output.firstMatch(".* MaxMetaspaceSize .* := (\\d+).*", 1);
-    String stringMetaspaceSize = output.firstMatch(".* MetaspaceSize .* := (\\d+).*", 1);
+    String stringMaxMetaspaceSize = output.firstMatch(".* MaxMetaspaceSize .* = (\\d+).*", 1);
+    String stringMetaspaceSize = output.firstMatch(".* MetaspaceSize .* = (\\d+).*", 1);
 
     return new MetaspaceFlags(Long.parseLong(stringMaxMetaspaceSize),
                               Long.parseLong(stringMetaspaceSize));
